@@ -137,7 +137,10 @@ pub(crate) struct OrderByRangeToken {
 /// already-emitted rows sharing the boundary's `(resume_values, last_rid)` —
 /// so resume skips precisely those duplicates and no more. A well-formed
 /// boundary always carries `skip_count >= 1` (it counts at least the boundary
-/// row itself); a token predating the field is read back as `1`
+/// row itself). This is a versioned invariant of Rust's private client token,
+/// not a restriction of the .NET-compatible `resumeFilter` wire contract;
+/// .NET may represent zero in its own non-interchangeable token model. A Rust
+/// token predating the field is read back as `1`
 /// (`default_boundary_skip_count`) so its boundary row is still discarded and
 /// never re-emitted. Tokens minted by earlier builds may also carry a
 /// now-ignored `rows_emitted` field; serde skips it.

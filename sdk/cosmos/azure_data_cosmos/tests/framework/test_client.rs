@@ -14,6 +14,7 @@ use azure_data_cosmos::{
         ServerCertificateValidation,
     },
     CosmosClient, CosmosError, CosmosRuntime, CosmosStatus, PartitionKey, Query, RoutingStrategy,
+    SubStatusCode,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
@@ -115,12 +116,13 @@ const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
 const FAULT_INJECTION_READINESS_MAX_ATTEMPTS: usize = 20;
 
-async fn retry_container_readiness<T, E, F, Fut, TimeoutError>(
+async fn retry_container_readiness<T, E, F, Fut, TimeoutError, ShouldRetry>(
     region: &str,
     attempt_timeout: Duration,
     retry_delay: Duration,
     max_attempts: Option<usize>,
     timeout_error: TimeoutError,
+    should_retry: ShouldRetry,
     mut probe: F,
 ) -> Result<T, E>
 where
@@ -128,6 +130,7 @@ where
     F: FnMut() -> Fut,
     Fut: Future<Output = Result<T, E>>,
     TimeoutError: Fn(&str, usize) -> E,
+    ShouldRetry: Fn(&E) -> bool,
 {
     let mut attempts = 0;
     let mut last_error = None;
@@ -136,6 +139,9 @@ where
         match tokio::time::timeout(attempt_timeout, probe()).await {
             Ok(Ok(value)) => return Ok(value),
             Ok(Err(error)) => {
+                if !should_retry(&error) {
+                    return Err(error);
+                }
                 if max_attempts.is_some_and(|limit| attempts >= limit) {
                     return Err(error);
                 }
@@ -151,6 +157,11 @@ where
         }
         tokio::time::sleep(retry_delay).await;
     }
+}
+
+fn collection_create_in_progress(error: &CosmosError) -> bool {
+    error.status().status_code() == StatusCode::NotFound
+        && error.status().sub_status() == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS)
 }
 
 fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosError {
@@ -964,6 +975,7 @@ impl TestRunContext {
                 CONTAINER_READINESS_RETRY_DELAY,
                 Some(FAULT_INJECTION_READINESS_MAX_ATTEMPTS),
                 container_readiness_timeout_error,
+                collection_create_in_progress,
                 move || {
                     let db_client = original_db_client;
                     let container_id = original_container_id.clone();
@@ -983,6 +995,7 @@ impl TestRunContext {
                 CONTAINER_READINESS_RETRY_DELAY,
                 Some(FAULT_INJECTION_READINESS_MAX_ATTEMPTS),
                 container_readiness_timeout_error,
+                collection_create_in_progress,
                 move || {
                     let fault_client = fault_client.clone();
                     let db_id = fault_db_id.clone();
@@ -1046,6 +1059,7 @@ impl TestRunContext {
                 CONTAINER_READINESS_RETRY_DELAY,
                 None,
                 container_readiness_timeout_error,
+                |_| true,
                 move || {
                     let client = hub_probe_client.clone();
                     let db_id = hub_db_id.clone();
@@ -1071,6 +1085,7 @@ impl TestRunContext {
                 CONTAINER_READINESS_RETRY_DELAY,
                 None,
                 container_readiness_timeout_error,
+                |_| true,
                 move || {
                     let client = satellite_probe_client.clone();
                     let db_id = satellite_db_id.clone();
@@ -1095,6 +1110,7 @@ impl TestRunContext {
                 CONTAINER_READINESS_RETRY_DELAY,
                 Some(30),
                 container_readiness_timeout_error,
+                |_| true,
                 move || {
                     let db_client = original_db_client;
                     let container_id = original_container_id.clone();
@@ -1296,6 +1312,7 @@ mod tests {
             Duration::ZERO,
             None,
             |_, _| "timed out",
+            |_| true,
             move || {
                 let count = count.clone();
                 async move {
@@ -1325,6 +1342,7 @@ mod tests {
             Duration::ZERO,
             Some(2),
             |_, _| "timed out",
+            |_| true,
             move || {
                 let count = count.clone();
                 async move {
@@ -1354,6 +1372,7 @@ mod tests {
                 2 => "timed out after two attempts",
                 _ => unreachable!(),
             },
+            |_| true,
             move || {
                 let count = count.clone();
                 async move {

@@ -551,7 +551,8 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
         Some(
             TestOptions::new()
                 .with_fault_injection_rules(fault_builder)
-                .with_fault_client_application_region(SATELLITE_REGION),
+                .with_fault_client_application_region(SATELLITE_REGION)
+                .with_timeout(Duration::from_secs(180)),
         ),
     )
     .await

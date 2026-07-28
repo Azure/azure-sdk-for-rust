@@ -2936,22 +2936,22 @@ impl CosmosDriver {
         operation: &CosmosOperation,
         options: &OperationOptions,
     ) -> crate::error::Result<QueryPlan> {
-        // Advertise the SDK's supported query-rewrite features. The default
-        // (`SUPPORTED_QUERY_FEATURES`) is `"None"` until the cross-partition
-        // pipeline gains rewrite support, but the value must be non-empty so
-        // the Gateway V2 thin-client proxy accepts the QueryPlan request.
+        // Advertise exactly the query-rewrite features implemented by the
+        // production dataflow pipeline (`OrderBy,MultipleOrderBy`). The value
+        // must remain non-empty so Gateway V2 accepts the QueryPlan request.
         let query_plan_operation = CosmosOperation::query_plan(
             container.clone(),
             std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
         )
         .with_body(operation.body().unwrap_or_default().to_vec());
 
-        let response = Box::pin(self.execute_operation_direct(
-            &query_plan_operation,
-            OperationOverrides::default(),
-            options,
-        ))
-        .await?;
+        let response = self
+            .execute_operation_direct(
+                &query_plan_operation,
+                OperationOverrides::default(),
+                options,
+            )
+            .await?;
 
         let query_plan_body = match response.body() {
             crate::models::ResponseBody::Bytes(b) => b.clone(),

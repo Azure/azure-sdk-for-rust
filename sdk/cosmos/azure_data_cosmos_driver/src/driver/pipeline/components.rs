@@ -71,10 +71,10 @@ impl std::fmt::Display for RoutingDecision {
     }
 }
 
-/// Maximum retries for backend-driven topology/provisioning signals; about two minutes at 1s spacing.
+/// Maximum retries for backend-driven topology signals; about two minutes at 1s spacing.
 pub const MAX_BACKEND_FAILOVER_RETRIES: u32 = 120;
 
-/// Delay between backend-signal retries; matches Java/Python's 1000ms default.
+/// Delay between backend-failover attempts; matches Java/Python's 1000ms default.
 pub const BACKEND_FAILOVER_RETRY_INTERVAL: std::time::Duration =
     std::time::Duration::from_millis(1000);
 
@@ -125,7 +125,7 @@ pub(crate) struct OperationRetryState {
     /// retry-with attempts. The state is constructed lazily on first
     /// hit and stays alive for the rest of the operation.
     pub retry_with_state: Option<RetryWithRetryState>,
-    /// Backend topology/provisioning retry counter, separate from generic failover retries.
+    /// Multi-write backend-failover counter, separate from generic failover retries.
     pub backend_failover_retry_count: u32,
     /// Bodyless DTX coordinator retry counter.
     #[cfg(feature = "preview_dtx")]
@@ -135,7 +135,7 @@ pub(crate) struct OperationRetryState {
     pub dtx_infra_retry_count: u32,
     /// Maximum failover retries.
     pub max_failover_retries: u32,
-    /// Maximum retries for backend-driven topology/provisioning signals; not customer-tunable.
+    /// Maximum retries for backend-driven topology signals; not customer-tunable.
     pub max_backend_failover_retries: u32,
     /// Maximum session retries.
     pub max_session_retries: u32,
@@ -238,7 +238,7 @@ impl OperationRetryState {
         self.failover_retry_count < self.max_failover_retries
     }
 
-    /// Whether backend-signal budget allows another 403/3, 403/1008, or 404/1013 retry.
+    /// Whether multi-write backend-failover budget allows another 403/3 or 403/1008 retry.
     pub fn can_retry_backend_failover(&self) -> bool {
         self.backend_failover_retry_count < self.max_backend_failover_retries
     }

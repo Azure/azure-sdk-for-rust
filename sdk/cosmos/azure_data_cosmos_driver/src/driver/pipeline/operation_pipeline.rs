@@ -29,8 +29,7 @@ use crate::{
     models::{
         cosmos_headers::QUERY_CONTENT_TYPE, effective_partition_key::EffectivePartitionKey,
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        CosmosStatus, Credential, DefaultConsistencyLevel, OperationType, SessionToken,
-        SubStatusCode,
+        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
     options::{
         resolve_effective_consistency, HedgeThreshold, OperationOptionsView,
@@ -41,10 +40,9 @@ use crate::{
 use super::{
     components::{
         OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
-        TransportRequest, TransportResult, BACKEND_FAILOVER_RETRY_INTERVAL,
-        DATA_PLANE_MAX_PER_RETRY_DELAY, DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
-        DATA_PLANE_MAX_THROTTLE_WAIT, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
-        METADATA_MAX_THROTTLE_WAIT,
+        TransportRequest, TransportResult, DATA_PLANE_MAX_PER_RETRY_DELAY,
+        DATA_PLANE_MAX_THROTTLE_ATTEMPTS, DATA_PLANE_MAX_THROTTLE_WAIT,
+        METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
     },
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
     hedging_eligibility::evaluate_hedge_eligibility,
@@ -494,7 +492,6 @@ pub(crate) async fn execute_operation_pipeline(
                         diagnostics: returned_diagnostics,
                         partition_key_range_id: race_pk_range_id,
                         observed_session_unavailable: race_observed_1002,
-                        all_collection_create_in_progress,
                     } => {
                         // Both legs failed with retriable errors; fall back
                         // into the failover loop against the untried regions.
@@ -512,28 +509,6 @@ pub(crate) async fn execute_operation_pipeline(
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
                         propagate_hedge_session_unavailable(&mut retry_state, race_observed_1002);
-                        if all_collection_create_in_progress
-                            && retry_state.can_retry_backend_failover()
-                        {
-                            retry_state = retry_state.advance_backend_failover();
-                            Box::pin(apply_failover_delay(Some(BACKEND_FAILOVER_RETRY_INTERVAL)))
-                                .await;
-                            diagnostics =
-                                enforce_deadline_or_timeout(deadline, options, diagnostics)?;
-                            continue;
-                        }
-                        if all_collection_create_in_progress {
-                            diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
-                                strategy_config,
-                                primary_region_for_diag,
-                                secondary_region_for_diag,
-                                false,
-                            ));
-                            let diagnostics_ctx = Arc::new(diagnostics.complete());
-                            return Err(crate::error::CosmosErrorBuilder::from_error(last_error)
-                                .with_diagnostics(diagnostics_ctx)
-                                .build());
-                        }
                         if let Err(e) = try_advance_after_both_transient(
                             &mut retry_state,
                             &location,
@@ -809,9 +784,8 @@ pub(crate) async fn execute_operation_pipeline(
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
             OperationAction::InRegionRetry { new_state, delay } => {
-                // Same-region retry path used by transient backend signals
-                // such as 449 RetryWith and 404/1013 CollectionCreateInProgress.
-                // Deliberately does NOT call
+                // Same-region retry path used by `try_handle_retry_with`
+                // (449 RetryWith). Deliberately does NOT call
                 // `advance_to_next_attempt` — we want the next attempt to
                 // hit the same endpoint/region. Deferred write-path effects
                 // also stay buffered: we haven't proven any region was
@@ -823,7 +797,6 @@ pub(crate) async fn execute_operation_pipeline(
                         .as_ref()
                         .map(|s| s.attempt_count)
                         .unwrap_or(0),
-                    backend_signal_attempts = new_state.backend_failover_retry_count,
                     delay = ?delay,
                     "in-region retry triggered",
                 );
@@ -1024,7 +997,6 @@ pub(crate) async fn execute_operation_pipeline(
                         diagnostics: returned_diagnostics,
                         partition_key_range_id: race_pk_range_id,
                         observed_session_unavailable: race_observed_1002,
-                        all_collection_create_in_progress,
                     } => {
                         // Both legs returned a retriable failure with
                         // budget remaining — fall back into the failover
@@ -1042,28 +1014,6 @@ pub(crate) async fn execute_operation_pipeline(
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
                         propagate_hedge_session_unavailable(&mut retry_state, race_observed_1002);
-                        if all_collection_create_in_progress
-                            && retry_state.can_retry_backend_failover()
-                        {
-                            retry_state = retry_state.advance_backend_failover();
-                            Box::pin(apply_failover_delay(Some(BACKEND_FAILOVER_RETRY_INTERVAL)))
-                                .await;
-                            diagnostics =
-                                enforce_deadline_or_timeout(deadline, options, diagnostics)?;
-                            continue;
-                        }
-                        if all_collection_create_in_progress {
-                            diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
-                                strategy_config,
-                                primary_region_for_diag,
-                                secondary_region_for_diag,
-                                false,
-                            ));
-                            let diagnostics_ctx = Arc::new(diagnostics.complete());
-                            return Err(crate::error::CosmosErrorBuilder::from_error(last_error)
-                                .with_diagnostics(diagnostics_ctx)
-                                .build());
-                        }
                         if let Err(e) = try_advance_after_both_transient(
                             &mut retry_state,
                             &location,
@@ -3001,8 +2951,6 @@ pub(crate) enum HedgedRaceResult {
         diagnostics: DiagnosticsContextBuilder,
         partition_key_range_id: Option<PartitionKeyRangeId>,
         observed_session_unavailable: bool,
-        /// Whether both legs returned 404/1013 CollectionCreateInProgress.
-        all_collection_create_in_progress: bool,
     },
 }
 
@@ -3021,13 +2969,11 @@ async fn apply_hedge_leg_effects(
     result: &crate::error::Result<TransportResult>,
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
     race_observed_session_unavailable: &mut bool,
-    all_collection_create_in_progress: &mut bool,
 ) {
     // Pre-transport / request-build errors carry no `TransportResult`
     // and therefore no observable side effects to mirror — they fail
     // before the transport pipeline classifies any response.
     let Ok(transport_result) = result.as_ref() else {
-        *all_collection_create_in_progress = false;
         return;
     };
     let eval = evaluate_hedge_leg_effects(
@@ -3036,7 +2982,6 @@ async fn apply_hedge_leg_effects(
         retry_state_snapshot,
         transport_result,
     );
-    *all_collection_create_in_progress &= eval.collection_create_in_progress;
     if !eval.effects.is_empty() {
         ctx.location_state_store.apply(&eval.effects).await;
     }
@@ -3384,7 +3329,6 @@ async fn execute_hedged(
     // — see `pk_range_id_from_result` and `apply_hedge_leg_effects`.
     let mut captured_pk_range_id: Option<PartitionKeyRangeId> = None;
     let mut race_observed_session_unavailable = false;
-    let mut all_collection_create_in_progress = true;
     match select(primary_attempt, secondary_attempt).await {
         Either::Left(((primary_result, primary_diag), secondary_remaining)) => {
             parent_diagnostics.merge_hedge_attempt(primary_diag);
@@ -3397,7 +3341,6 @@ async fn execute_hedged(
                 &primary_result,
                 shared_hub_region_latch.as_ref(),
                 &mut race_observed_session_unavailable,
-                &mut all_collection_create_in_progress,
             )
             .await;
             match classify_hedge_result(primary_result) {
@@ -3480,7 +3423,6 @@ async fn execute_hedged(
                         &secondary_result,
                         shared_hub_region_latch.as_ref(),
                         &mut race_observed_session_unavailable,
-                        &mut all_collection_create_in_progress,
                     )
                     .await;
                     match classify_hedge_result(secondary_result) {
@@ -3533,7 +3475,6 @@ async fn execute_hedged(
                                 parent_diagnostics,
                                 captured_pk_range_id,
                                 race_observed_session_unavailable,
-                                all_collection_create_in_progress,
                             )
                         }
                     }
@@ -3551,7 +3492,6 @@ async fn execute_hedged(
                 &secondary_result,
                 shared_hub_region_latch.as_ref(),
                 &mut race_observed_session_unavailable,
-                &mut all_collection_create_in_progress,
             )
             .await;
             match classify_hedge_result(secondary_result) {
@@ -3630,7 +3570,6 @@ async fn execute_hedged(
                         &primary_result,
                         shared_hub_region_latch.as_ref(),
                         &mut race_observed_session_unavailable,
-                        &mut all_collection_create_in_progress,
                     )
                     .await;
                     match classify_hedge_result(primary_result) {
@@ -3681,7 +3620,6 @@ async fn execute_hedged(
                                 parent_diagnostics,
                                 captured_pk_range_id,
                                 race_observed_session_unavailable,
-                                all_collection_create_in_progress,
                             )
                         }
                     }
@@ -3777,7 +3715,6 @@ fn finalize_both_transient(
     mut parent_diagnostics: DiagnosticsContextBuilder,
     partition_key_range_id: Option<PartitionKeyRangeId>,
     observed_session_unavailable: bool,
-    all_collection_create_in_progress: bool,
 ) -> HedgedRaceResult {
     let deadline_was_elapsed = deadline_elapsed(deadline);
     tracing::warn!(
@@ -3817,14 +3754,7 @@ fn finalize_both_transient(
             "execute_hedged: both legs transient; bubbling up for failover-loop fallback",
         );
         HedgedRaceResult::BothTransient {
-            last_error: if all_collection_create_in_progress {
-                crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::COLLECTION_CREATE_IN_PROGRESS)
-                    .with_message("collection creation is still in progress in both hedged regions")
-                    .build()
-            } else {
-                transient_outcome_error(primary_region.as_ref(), secondary_region.as_ref())
-            },
+            last_error: transient_outcome_error(primary_region.as_ref(), secondary_region.as_ref()),
             primary_region,
             secondary_region,
             strategy_config,
@@ -3833,7 +3763,6 @@ fn finalize_both_transient(
             diagnostics: parent_diagnostics,
             partition_key_range_id,
             observed_session_unavailable,
-            all_collection_create_in_progress,
         }
     }
 }
@@ -8396,15 +8325,6 @@ mod tests {
     }
 
     #[test]
-    fn classify_hedge_result_404_1013_is_transient() {
-        let tr = http_result(404, Some(1013));
-        assert!(matches!(
-            super::classify_hedge_result(Ok(tr)),
-            super::HedgeClass::Transient
-        ));
-    }
-
-    #[test]
     fn classify_hedge_result_deadline_exceeded_is_transient() {
         let tr =
             super::TransportResult::deadline_exceeded(crate::diagnostics::RequestSentStatus::Sent);
@@ -9099,7 +9019,6 @@ mod tests {
             test_diagnostics(),
             None,
             false,
-            false,
         );
 
         let super::HedgedRaceResult::BothTransient {
@@ -9144,40 +9063,5 @@ mod tests {
         assert_eq!(hedge.alternate_region(), Some(&secondary_for_diag));
         // No leg produced a final response in a both-transient terminal.
         assert_eq!(hedge.response_region(), None);
-    }
-
-    #[test]
-    fn both_collection_create_in_progress_legs_preserve_retry_status() {
-        let threshold =
-            crate::options::HedgeThreshold::new(std::time::Duration::from_millis(200)).unwrap();
-        let strategy_config = super::HedgingStrategyConfig::new(threshold);
-
-        let race = super::finalize_both_transient(
-            &crate::models::ActivityId::from_string("both-collection-creating".to_owned()),
-            None,
-            strategy_config,
-            Some(crate::options::Region::new("region-a")),
-            Some(crate::options::Region::new("region-b")),
-            crate::options::Region::new("region-a"),
-            crate::options::Region::new("region-b"),
-            test_diagnostics(),
-            None,
-            false,
-            true,
-        );
-
-        let super::HedgedRaceResult::BothTransient {
-            last_error,
-            all_collection_create_in_progress,
-            ..
-        } = race
-        else {
-            panic!("collection provisioning must remain retryable after a hedge");
-        };
-        assert!(all_collection_create_in_progress);
-        assert_eq!(
-            last_error.status(),
-            crate::models::CosmosStatus::COLLECTION_CREATE_IN_PROGRESS
-        );
     }
 }

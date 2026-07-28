@@ -115,21 +115,20 @@ pub(crate) fn rewritten_query_from_beginning(
         }
     }
 
-    match offsets.as_slice() {
-        [] => Ok(rewritten_query.to_owned()),
-        [offset] => {
-            let mut result = String::with_capacity(
-                rewritten_query.len() - ORDER_BY_FILTER_PLACEHOLDER.len() + 4,
-            );
-            result.push_str(&rewritten_query[..*offset]);
-            result.push_str("true");
-            result.push_str(&rewritten_query[*offset + ORDER_BY_FILTER_PLACEHOLDER.len()..]);
-            Ok(result)
-        }
-        _ => Err(body_error_msg(
-            "rewritten ORDER BY query contains multiple resume-filter placeholders",
-        )),
+    if offsets.is_empty() {
+        return Ok(rewritten_query.to_owned());
     }
+    let removed_per_placeholder = ORDER_BY_FILTER_PLACEHOLDER.len() - "true".len();
+    let mut result =
+        String::with_capacity(rewritten_query.len() - offsets.len() * removed_per_placeholder);
+    let mut copied_through = 0;
+    for offset in offsets {
+        result.push_str(&rewritten_query[copied_through..offset]);
+        result.push_str("true");
+        copied_through = offset + ORDER_BY_FILTER_PLACEHOLDER.len();
+    }
+    result.push_str(&rewritten_query[copied_through..]);
+    Ok(result)
 }
 
 #[derive(Clone, Copy)]
@@ -598,11 +597,14 @@ mod tests {
     }
 
     #[test]
-    fn rewritten_query_from_beginning_rejects_multiple_syntactic_placeholders() {
+    fn rewritten_query_from_beginning_replaces_multiple_syntactic_placeholders() {
         let rewritten = "SELECT * FROM c WHERE \
             {documentdb-formattableorderbyquery-filter} OR \
             {documentdb-formattableorderbyquery-filter}";
-        assert!(rewritten_query_from_beginning(rewritten).is_err());
+        assert_eq!(
+            rewritten_query_from_beginning(rewritten).unwrap(),
+            "SELECT * FROM c WHERE true OR true"
+        );
     }
 
     #[test]

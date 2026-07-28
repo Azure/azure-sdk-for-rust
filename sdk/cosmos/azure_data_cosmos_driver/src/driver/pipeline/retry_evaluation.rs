@@ -10,7 +10,6 @@
 //! - Transport error (Sent/Unknown, non-idempotent, no PPAF) → Abort
 //! - 403/3 WriteForbidden → FailoverRetry + refresh + mark unavailable
 //! - 404/1002 ReadSessionNotAvailable → SessionRetry (advances region)
-//! - 404/1013 CollectionCreateInProgress → same-region retry after 1s
 //! - 408 RequestTimeout → FailoverRetry + mark partition/endpoint unavailable
 //! - 503, 429/3092, 410 → FailoverRetry + mark partition/endpoint unavailable
 //! - 503, 429/3092, 410, 408 (non-idempotent, PPAF) → FailoverRetry (write region discovery)
@@ -95,9 +94,8 @@ fn make_partition_unavailable(
 ///
 /// Returns `false` for:
 /// - 503 ServiceUnavailable, 408 RequestTimeout, 410 Gone, 429/3092 (system
-///   resource unavailable), 403/3 (write forbidden), 404/1013 (collection
-///   creation in progress) — the retry-trigger set; we have no proof any region
-///   accepted the request.
+///   resource unavailable), 403/3 (write forbidden) — the retry-trigger set;
+///   we have no proof any region accepted the request.
 /// - 449 RetryWith — the request never completed; the backend is asking for
 ///   another attempt in the same region. Deferred effects must not flush.
 /// - Client-synthesized statuses (e.g. `CLIENT_OPERATION_TIMEOUT`) — these
@@ -138,10 +136,6 @@ pub(crate) fn is_region_confirming_status(status: &CosmosStatus) -> bool {
     }
 
     if status.is_write_forbidden() || status.is_database_account_not_found() {
-        return false;
-    }
-
-    if status.is_collection_create_in_progress() {
         return false;
     }
 
@@ -261,8 +255,6 @@ pub(crate) struct HedgeLegEvaluation {
     /// [`build_session_retry_state`]'s `hub_region_processing_only` latch
     /// on the non-hedged path.
     pub(crate) observed_session_unavailable: bool,
-    /// Whether this leg observed 404/1013 CollectionCreateInProgress.
-    pub(crate) collection_create_in_progress: bool,
 }
 
 /// Non-consuming counterpart of [`evaluate_transport_result`] for the
@@ -287,8 +279,6 @@ pub(crate) fn evaluate_hedge_leg_effects(
             request_sent,
             ..
         } => {
-            eval.collection_create_in_progress = status.is_collection_create_in_progress();
-
             // Mirror `build_session_retry_state`'s four-condition latch
             // trigger.
             if status.is_read_session_not_available()
@@ -390,10 +380,6 @@ fn evaluate_http_outcome(
     if let Some(result) =
         try_handle_database_account_not_found(operation, endpoint, retry_state, &status)
     {
-        return result;
-    }
-
-    if let Some(result) = try_handle_collection_create_in_progress(retry_state, &status) {
         return result;
     }
 
@@ -672,28 +658,6 @@ fn try_handle_database_account_not_found(
         });
     }
     Some((OperationAction::FailoverRetry { new_state, delay }, effects))
-}
-
-/// Handles 404/1013 CollectionCreateInProgress while a newly created
-/// collection is still propagating through the account.
-///
-/// Retries the same region at one-second intervals. The endpoint and partition
-/// remain healthy, so this emits no routing effects and does not fail over.
-fn try_handle_collection_create_in_progress(
-    retry_state: &OperationRetryState,
-    status: &CosmosStatus,
-) -> Option<(OperationAction, Vec<LocationEffect>)> {
-    if !(status.is_collection_create_in_progress() && retry_state.can_retry_backend_failover()) {
-        return None;
-    }
-
-    Some((
-        OperationAction::InRegionRetry {
-            new_state: retry_state.clone().advance_backend_failover(),
-            delay: BACKEND_FAILOVER_RETRY_INTERVAL,
-        },
-        Vec::new(),
-    ))
 }
 
 /// Handles 404/1002 ReadSessionNotAvailable — session token is ahead of the
@@ -2202,49 +2166,6 @@ mod tests {
     }
 
     #[test]
-    fn collection_create_in_progress_retries_in_region() {
-        let op = make_read_operation();
-        let result = make_http_error_status(CosmosStatus::COLLECTION_CREATE_IN_PROGRESS);
-        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
-        let endpoint = CosmosEndpoint::global(
-            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
-        );
-
-        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
-
-        assert!(effects.is_empty());
-        match action {
-            OperationAction::InRegionRetry { new_state, delay } => {
-                assert_eq!(new_state.backend_failover_retry_count, 1);
-                assert_eq!(new_state.location, state.location);
-                assert_eq!(delay, BACKEND_FAILOVER_RETRY_INTERVAL);
-            }
-            other => panic!("expected InRegionRetry, got {other:?}"),
-        }
-    }
-
-    #[test]
-    fn collection_create_in_progress_aborts_when_retry_budget_is_exhausted() {
-        let op = make_read_operation();
-        let result = make_http_error_status(CosmosStatus::COLLECTION_CREATE_IN_PROGRESS);
-        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
-        state.backend_failover_retry_count = state.max_backend_failover_retries;
-        let endpoint = CosmosEndpoint::global(
-            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
-        );
-
-        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
-
-        assert!(effects.is_empty());
-        match action {
-            OperationAction::Abort { error } => {
-                assert_eq!(error.status(), CosmosStatus::COLLECTION_CREATE_IN_PROGRESS);
-            }
-            other => panic!("expected Abort, got {other:?}"),
-        }
-    }
-
-    #[test]
     fn service_unavailable_marks_endpoint_unavailable() {
         let op = make_read_operation();
         let result = make_http_error(StatusCode::ServiceUnavailable);
@@ -2672,11 +2593,6 @@ mod tests {
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::Forbidden,
             SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND
-        )));
-        // 404/1013 means the collection is still provisioning in this region.
-        assert!(!is_region_confirming_status(&status_with_substatus(
-            StatusCode::NotFound,
-            SubStatusCode::COLLECTION_CREATE_IN_PROGRESS
         )));
         // 410/1008 is partition migration, not DatabaseAccountNotFound.
         assert!(!is_region_confirming_status(&status_with_substatus(
@@ -3523,20 +3439,6 @@ mod tests {
         let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
         assert!(eval.effects.is_empty());
         assert!(!eval.observed_session_unavailable);
-        assert!(!eval.collection_create_in_progress);
-    }
-
-    #[test]
-    fn hedge_leg_effects_identifies_collection_create_in_progress() {
-        let op = make_read_operation();
-        let endpoint = test_endpoint();
-        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
-        let result = make_http_error_status(CosmosStatus::COLLECTION_CREATE_IN_PROGRESS);
-
-        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
-        assert!(eval.effects.is_empty());
-        assert!(!eval.observed_session_unavailable);
-        assert!(eval.collection_create_in_progress);
     }
 
     /// 503 ServiceUnavailable on a read emits `MarkPartitionUnavailable`

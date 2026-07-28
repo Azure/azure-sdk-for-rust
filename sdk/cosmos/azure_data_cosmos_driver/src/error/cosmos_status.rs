@@ -528,7 +528,6 @@ impl SubStatusCode {
             20307 => Some("ClientQueryPlanRangeNotCoveredByTopology"),
             20308 => Some("ServiceOrderByEnvelopeInvalid"),
             20309 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
-            20311 => Some("ServiceQueryPlanOrderByExpressionsMismatch"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1510,12 +1509,6 @@ impl SubStatusCode {
     pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: SubStatusCode =
         SubStatusCode(20309);
 
-    /// The backend query plan's `orderBy` and `orderByExpressions` arrays
-    /// had mismatched or zero length, so sort keys can't pair with
-    /// directions (20311).
-    pub const SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH: SubStatusCode =
-        SubStatusCode(20311);
-
     /// A topology range resolved for a query-plan EPK range did not
     /// overlap that range (20307). The query planner intersects each
     /// resolved partition with the query-plan range it was resolved
@@ -1730,14 +1723,13 @@ impl CosmosStatus {
     /// Returns `true` if the error is generally considered transient and could
     /// reasonably be retried by a higher layer.
     ///
-    /// The categorical retry-trigger set is `404/1013 / 408 / 429 / 449 / 503`.
-    /// This covers both real service responses (e.g. a service-side 503) and the
+    /// The categorical retry-trigger set is `408 / 429 / 449 / 503`, which
+    /// covers both real service responses (e.g. a service-side 503) and the
     /// SDK's synthetic transport-generated codes (`TRANSPORT_GENERATED_503`,
     /// `CLIENT_OPERATION_TIMEOUT` on `408`, etc.) since both share the same
     /// HTTP status code by construction.
     pub fn is_transient(&self) -> bool {
-        self.is_collection_create_in_progress()
-            || matches!(u16::from(self.status_code), 408 | 429 | 449 | 503)
+        matches!(u16::from(self.status_code), 408 | 429 | 449 | 503)
     }
 
     /// Returns `true` if this is a write-forbidden error (HTTP 403, sub-status 3).
@@ -1758,12 +1750,6 @@ impl CosmosStatus {
     pub fn is_read_session_not_available(&self) -> bool {
         u16::from(self.status_code) == 404
             && self.sub_status == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
-    }
-
-    /// Returns `true` if a collection is still being provisioned (HTTP 404, sub-status 1013).
-    pub fn is_collection_create_in_progress(&self) -> bool {
-        u16::from(self.status_code) == 404
-            && self.sub_status == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS)
     }
 
     /// Returns `true` if this is a partition-key-range-gone error (HTTP 410, sub-status 1002).
@@ -1991,12 +1977,6 @@ impl CosmosStatus {
     pub const READ_SESSION_NOT_AVAILABLE: CosmosStatus = CosmosStatus {
         status_code: StatusCode::NotFound,
         sub_status: Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
-    };
-
-    /// Collection creation is still in progress (HTTP 404, sub-status 1013).
-    pub const COLLECTION_CREATE_IN_PROGRESS: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::NotFound,
-        sub_status: Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS),
     };
 
     // ----- 403: Forbidden -----
@@ -2411,13 +2391,6 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY),
     };
 
-    /// 500 / 20311 — the query plan's `orderBy`/`orderByExpressions`
-    /// arrays had mismatched or zero length.
-    pub const SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH),
-    };
-
     /// 500 / 20307 — a topology range resolved for a query-plan EPK
     /// range did not overlap that range, a `resolve_ranges` contract
     /// violation. Returned instead of panicking the query worker (see
@@ -2535,22 +2508,6 @@ mod tests {
     }
 
     #[test]
-    fn disambiguates_1013_400_vs_404() {
-        let bad_request = CosmosStatus::new(StatusCode::BadRequest).with_sub_status(1013);
-        assert_eq!(
-            bad_request.name(),
-            Some("PartitionKeyDefinitionNotSpecified")
-        );
-        assert!(!bad_request.is_collection_create_in_progress());
-        assert!(!bad_request.is_transient());
-
-        let not_found = CosmosStatus::COLLECTION_CREATE_IN_PROGRESS;
-        assert_eq!(not_found.name(), Some("CollectionCreateInProgress"));
-        assert!(not_found.is_collection_create_in_progress());
-        assert!(not_found.is_transient());
-    }
-
-    #[test]
     fn disambiguates_1008_403_vs_410() {
         let forbidden = CosmosStatus::new(StatusCode::Forbidden).with_sub_status(1008);
         assert_eq!(forbidden.name(), Some("DatabaseAccountNotFound"));
@@ -2563,7 +2520,6 @@ mod tests {
     fn well_known_constants() {
         assert!(CosmosStatus::TRANSPORT_GENERATED_503.is_transport_generated_503());
         assert!(CosmosStatus::READ_SESSION_NOT_AVAILABLE.is_read_session_not_available());
-        assert!(CosmosStatus::COLLECTION_CREATE_IN_PROGRESS.is_collection_create_in_progress());
         assert!(CosmosStatus::PARTITION_KEY_RANGE_GONE.is_partition_key_range_gone());
         assert!(CosmosStatus::WRITE_FORBIDDEN.is_write_forbidden());
         assert!(CosmosStatus::RU_BUDGET_EXCEEDED.is_throttled());

@@ -7,7 +7,8 @@ use azure_core::credentials::Secret;
 use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::diagnostics::{DiagnosticsContext, TransportKind};
 use azure_data_cosmos::models::{
-    ContainerProperties, PartitionKeyDefinition, PartitionKeyVersion, ThroughputProperties,
+    CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, ContainerProperties,
+    IndexingPolicy, PartitionKeyDefinition, PartitionKeyVersion, ThroughputProperties,
 };
 use azure_data_cosmos::options::{
     ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions, ItemWriteOptions,
@@ -919,8 +920,20 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2(
     gateway_v2.create_database(&db_name, None).await?;
     let result = AssertUnwindSafe(async {
         let database = gateway_v2.database_client(&db_name);
+        let composite_index = CompositeIndex::default()
+            .with_property(CompositeIndexProperty::new(
+                "/value",
+                CompositeIndexOrder::Ascending,
+            ))
+            .with_property(CompositeIndexProperty::new(
+                "/label",
+                CompositeIndexOrder::Descending,
+            ));
+        let mut indexing_policy = IndexingPolicy::default().with_composite_index(composite_index);
+        indexing_policy.automatic = true;
         let properties =
-            ContainerProperties::new(container_name.clone(), PartitionKeyDefinition::from("/pk"));
+            ContainerProperties::new(container_name.clone(), PartitionKeyDefinition::from("/pk"))
+                .with_indexing_policy(indexing_policy);
         database
             .create_container(
                 properties,

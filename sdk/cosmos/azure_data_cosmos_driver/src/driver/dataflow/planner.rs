@@ -413,10 +413,11 @@ fn validate_streaming_order_by_snapshot(
                     "continuation token range boundary has an empty RID",
                 ));
             }
-            // A well-formed boundary counts at least its own boundary row, so
-            // `skip_count` is always >= 1. An explicit 0 is corrupt (a legacy
-            // token that omits the field is read back as 1 by serde default,
-            // not 0, so this only rejects a genuinely malformed value).
+            // Rust's versioned client-token boundary counts at least its own
+            // boundary row, so `skip_count` is always >= 1. This is not a
+            // restriction on the .NET-compatible resumeFilter wire contract.
+            // An explicit 0 is corrupt (a legacy token that omits the field is
+            // read back as 1 by serde default, not 0).
             if boundary.skip_count == 0 {
                 return Err(order_by_state_invalid(
                     "continuation token range boundary has a skip count of 0 (must be >= 1)",
@@ -1185,20 +1186,6 @@ fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error:
         return Err(unsupported_feature(
             "DISTINCT combined with ORDER BY in cross-partition queries",
         ));
-    }
-    // Parallel arrays paired by the resume filter; must match in length.
-    if info.order_by_expressions.len() != info.order_by.len() {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(
-                crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH,
-            )
-            .with_message(format!(
-                "query plan's ORDER BY metadata is inconsistent: {} sort direction(s) but {} \
-                 sort-key expression(s)",
-                info.order_by.len(),
-                info.order_by_expressions.len(),
-            ))
-            .build());
     }
     Ok(())
 }

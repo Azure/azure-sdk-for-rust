@@ -7,9 +7,9 @@
 //!
 //! [`StreamingOrderedMerge`] polls one leaf [`Request`] per active EPK range,
 //! buffers one locally-sorted row per range, and repeatedly emits the
-//! globally smallest buffered row (per [`compare_key_tuples`]). A linear
-//! per-pop scan over active children is simpler than a real heap and not a
-//! meaningful cost next to per-page network I/O.
+//! globally smallest buffered row (per [`compare_key_tuples`]) through a
+//! min-heap of child indices. Only the consumed child is reinserted; topology
+//! changes rebuild the heap after every replacement has a head row.
 //!
 //! # Resume model
 //!
@@ -313,11 +313,12 @@ impl StreamingOrderedMerge {
         idx: usize,
         context: &mut PipelineContext<'_>,
         aggregator: &mut PageAggregator,
-    ) -> crate::error::Result<()> {
+    ) -> crate::error::Result<bool> {
         let mut split_retries = 0;
+        let mut topology_changed = false;
         loop {
             if !self.children[idx].buffered.is_empty() || self.children[idx].drained {
-                return Ok(());
+                return Ok(topology_changed);
             }
 
             match self.children[idx].node.next_page(context).await? {
@@ -354,13 +355,13 @@ impl StreamingOrderedMerge {
                         self.children[idx].drained = true;
                     }
                     if !self.children[idx].buffered.is_empty() || self.children[idx].drained {
-                        return Ok(());
+                        return Ok(topology_changed);
                     }
                     // Empty page with a continuation pending is not drained; re-poll.
                 }
                 PageResult::Drained => {
                     self.children[idx].drained = true;
-                    return Ok(());
+                    return Ok(topology_changed);
                 }
                 PageResult::SplitRequired { replacement_nodes } => {
                     split_retries += 1;
@@ -374,6 +375,7 @@ impl StreamingOrderedMerge {
                             .build());
                     }
                     self.handle_split(idx, replacement_nodes)?;
+                    topology_changed = true;
                     // Loop: index `idx` now refers to the first replacement.
                 }
             }
@@ -381,7 +383,7 @@ impl StreamingOrderedMerge {
     }
 
     /// Primes every currently-active child, restoring the merge invariant
-    /// that before each [`select_min_child_index`] every non-drained child
+    /// that before rebuilding the merge heap every non-drained child
     /// has a buffered head row (or is proven drained) — so no child is ever
     /// skipped for lacking a head. Re-reads `len()` each step because
     /// [`prime_child`]'s split handling can splice several replacements in at
@@ -408,9 +410,11 @@ impl StreamingOrderedMerge {
     /// sorts them, and confirms they exactly tile the split child's scope with
     /// no gaps or overlaps, then wraps each in a [`ChildStream`] that inherits
     /// the split child's resume state (see [`wrap_split_replacement`]). No
-    /// topology is re-resolved here — the split child already did that when
-    /// producing the nodes, forwarding its backend continuation into each
-    /// replacement so they resume past every already-emitted row.
+    /// topology is re-resolved here — the split child already performed one
+    /// forced topology refresh before producing the nodes, forwarding its
+    /// backend continuation into each replacement so they resume past every
+    /// already-emitted row. A coverage failure here is therefore the hard
+    /// failure after that recommended refresh/re-resolution attempt.
     fn handle_split(
         &mut self,
         idx: usize,
@@ -457,27 +461,55 @@ impl StreamingOrderedMerge {
         Ok(())
     }
 
-    /// Index of the active child whose buffered head row compares smallest
-    /// (per [`compare_key_tuples`], tie-broken by range identity), or `None` if no child has a
-    /// buffered row.
-    fn select_min_child_index(&self) -> Option<usize> {
-        let mut best: Option<usize> = None;
+    fn build_head_heap(&self) -> Vec<usize> {
+        let mut heap = Vec::with_capacity(self.children.len());
         for idx in 0..self.children.len() {
-            if self.children[idx].buffered.front().is_none() {
-                continue;
+            if self.children[idx].buffered.front().is_some() {
+                self.heap_push(&mut heap, idx);
             }
-            best = Some(match best {
-                None => idx,
-                Some(best_idx) => {
-                    if self.row_less_than(idx, best_idx) {
-                        idx
-                    } else {
-                        best_idx
-                    }
-                }
-            });
         }
-        best
+        heap
+    }
+
+    fn heap_push(&self, heap: &mut Vec<usize>, child_idx: usize) {
+        heap.push(child_idx);
+        let mut pos = heap.len() - 1;
+        while pos > 0 {
+            let parent = (pos - 1) / 2;
+            if !self.row_less_than(heap[pos], heap[parent]) {
+                break;
+            }
+            heap.swap(pos, parent);
+            pos = parent;
+        }
+    }
+
+    fn heap_pop(&self, heap: &mut Vec<usize>) -> Option<usize> {
+        let winner = *heap.first()?;
+        let last = heap.pop().expect("heap has a first element");
+        if !heap.is_empty() {
+            heap[0] = last;
+            let mut pos = 0;
+            loop {
+                let left = pos * 2 + 1;
+                if left >= heap.len() {
+                    break;
+                }
+                let right = left + 1;
+                let smallest = if right < heap.len() && self.row_less_than(heap[right], heap[left])
+                {
+                    right
+                } else {
+                    left
+                };
+                if !self.row_less_than(heap[smallest], heap[pos]) {
+                    break;
+                }
+                heap.swap(pos, smallest);
+                pos = smallest;
+            }
+        }
+        Some(winner)
     }
 
     fn row_less_than(&self, a_idx: usize, b_idx: usize) -> bool {
@@ -512,34 +544,41 @@ impl PipelineNode for StreamingOrderedMerge {
         let mut aggregator = PageAggregator::new();
         aggregator.seed_session_token(self.session_token.clone());
 
-        // Prime every child up front so the first `select_min_child_index`
-        // sees a head row for each non-drained child (see
-        // `prime_all_active_children`).
+        // Prime every child up front so the heap sees a head row for each
+        // non-drained child.
         self.prime_all_active_children(context, &mut aggregator)
             .await?;
+        let mut head_heap = self.build_head_heap();
 
         let cap = self.max_item_count();
         let mut payloads: Vec<Box<RawValue>> = Vec::new();
 
         while payloads.len() < cap {
-            let Some(winner) = self.select_min_child_index() else {
+            let Some(winner) = self.heap_pop(&mut head_heap) else {
                 break;
             };
             let row = self.children[winner]
                 .buffered
                 .pop_front()
-                .expect("select_min_child_index only returns indices with a buffered row");
+                .expect("head heap only contains indices with a buffered row");
             self.children[winner].record_emission(&row.keys, &row.rid)?;
             payloads.push(row.payload);
-            // Re-prime before the next selection only if there's still room,
-            // so unread rows stay unfetched until the next `next_page` call.
-            // Priming *all* active children (not just `winner`) is required:
-            // replenishing `winner` may split it into several replacements,
-            // and every one must have a head row before the next selection or
-            // a later replacement's smaller rows would be skipped.
             if payloads.len() < cap {
-                self.prime_all_active_children(context, &mut aggregator)
-                    .await?;
+                if self.children[winner].buffered.front().is_some() {
+                    self.heap_push(&mut head_heap, winner);
+                } else {
+                    let topology_changed =
+                        self.prime_child(winner, context, &mut aggregator).await?;
+                    if topology_changed {
+                        // Split replacements shift child indices and only the
+                        // first replacement was primed inline.
+                        self.prime_all_active_children(context, &mut aggregator)
+                            .await?;
+                        head_heap = self.build_head_heap();
+                    } else if self.children[winner].buffered.front().is_some() {
+                        self.heap_push(&mut head_heap, winner);
+                    }
+                }
             }
         }
 

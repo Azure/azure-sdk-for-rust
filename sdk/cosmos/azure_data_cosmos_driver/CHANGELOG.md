@@ -5,12 +5,11 @@
 ### Features Added
 
 - Added resumable cross-partition streaming `ORDER BY` query support. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
+- Added public `CosmosStatus` and `SubStatusCode` constants for invalid ORDER BY continuation state, split replacements, rewritten envelopes, and query-plan metadata. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
 
 ### Breaking Changes
 
 ### Bugs Fixed
-
-- Retried `404/1013 CollectionCreateInProgress` responses in-region while newly created containers propagate. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
 
 ### Other Changes
 

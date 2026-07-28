@@ -13,11 +13,9 @@
 //! and each mid-tie-group continuation token is captured before a single
 //! forced split, then both are resumed against the post-split topology.
 //! Assertions cover every seeded id appearing exactly once, monotonic keys
-//! in each direction, and — since ties can't be resolved by `mergeOrder`
-//! alone — that DESC's tied-group order is the exact reverse of ASC's,
-//! proving both share the same underlying document-`_rid` total order
-//! (see `driver::dataflow::order_by::compare_rids`) rather than arbitrary
-//! or storage-order noise that happens to differ per direction.
+//! in each direction, and complete cross-range tie groups across the topology
+//! change. Equal-key rows may reorder because cross-range ties use EPK range
+//! order while RID direction is local to each backend range.
 //!
 //! Exhaustive split/merge permutations are covered in-process by
 //! `azure_data_cosmos_driver`'s mock-pipeline and driver-level tests; this
@@ -208,8 +206,9 @@ async fn drain_resumed_query<T: DeserializeOwned + Send + 'static>(
 /// Reusing the same container and single split, also drains a mixed-direction
 /// multi-column query (`mergeOrder ASC, sortText DESC`) — whose entire tuple
 /// ties within every group and is therefore broken only by `_rid` — to
-/// completion pre-split for an authoritative baseline, then asserts its
-/// post-split resume reproduces that exact sequence, not merely the same ids.
+/// completion pre-split for an authoritative ID baseline, then asserts the
+/// post-split resume returns every ID exactly once and preserves tuple order.
+/// Equal tuples may reorder after the topology change.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "split"),
@@ -240,11 +239,12 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
                     "/sortText",
                     CompositeIndexOrder::Descending,
                 ));
+            let mut indexing_policy =
+                IndexingPolicy::default().with_composite_index(composite_index);
+            indexing_policy.automatic = true;
             let properties =
                 ContainerProperties::new("OrderByResumeAcrossSplit", "/partitionKey".into())
-                    .with_indexing_policy(
-                        IndexingPolicy::default().with_composite_index(composite_index),
-                    );
+                    .with_indexing_policy(indexing_policy);
             let throughput = ThroughputProperties::manual(1000);
             let container_client = std::sync::Arc::new(
                 run_context
@@ -618,6 +618,10 @@ pub async fn order_by_complex_key_resume_across_split_preserves_key_order(
                     }
                 }
             }
+            let mut expected_ids: Vec<String> = (0..PK_COUNT)
+                .flat_map(|p| (0..TIE_GROUP_COUNT).map(move |i| format!("{p}-{i}")))
+                .collect();
+            expected_ids.sort_unstable();
 
             let ranges_before = container_client.read_feed_ranges(None).await?;
             let partitions_before = ranges_before.len();
@@ -671,13 +675,17 @@ pub async fn order_by_complex_key_resume_across_split_preserves_key_order(
             )
             .await?;
 
-            let mut array_ids: Vec<&str> = array_all.iter().map(|item| item.id.as_str()).collect();
-            let mut array_baseline_ids: Vec<&str> =
-                array_baseline.iter().map(|item| item.id.as_str()).collect();
+            let mut array_ids: Vec<String> = array_all.iter().map(|item| item.id.clone()).collect();
+            let mut array_baseline_ids: Vec<String> =
+                array_baseline.iter().map(|item| item.id.clone()).collect();
             array_ids.sort_unstable();
             array_baseline_ids.sort_unstable();
             assert_eq!(
-                array_ids, array_baseline_ids,
+                array_baseline_ids, expected_ids,
+                "array-keyed baseline must return every seeded row"
+            );
+            assert_eq!(
+                array_ids, expected_ids,
                 "array-keyed ORDER BY resume must return every row exactly once"
             );
             let array_key_order = |items: &[ArrayKeyItem]| {
@@ -695,16 +703,18 @@ pub async fn order_by_complex_key_resume_across_split_preserves_key_order(
                 "array DistinctHash key order must survive the split"
             );
 
-            let mut object_ids: Vec<&str> =
-                object_all.iter().map(|item| item.id.as_str()).collect();
-            let mut object_baseline_ids: Vec<&str> = object_baseline
-                .iter()
-                .map(|item| item.id.as_str())
-                .collect();
+            let mut object_ids: Vec<String> =
+                object_all.iter().map(|item| item.id.clone()).collect();
+            let mut object_baseline_ids: Vec<String> =
+                object_baseline.iter().map(|item| item.id.clone()).collect();
             object_ids.sort_unstable();
             object_baseline_ids.sort_unstable();
             assert_eq!(
-                object_ids, object_baseline_ids,
+                object_baseline_ids, expected_ids,
+                "object-keyed baseline must return every seeded row"
+            );
+            assert_eq!(
+                object_ids, expected_ids,
                 "object-keyed ORDER BY resume must return every row exactly once"
             );
             let object_key_order = |items: &[ArrayKeyItem]| {
@@ -747,10 +757,11 @@ pub async fn order_by_live_mixed_types_and_join_resume_matrix() -> Result<(), Bo
                     "/secondary",
                     CompositeIndexOrder::Descending,
                 ));
+            let mut indexing_policy =
+                IndexingPolicy::default().with_composite_index(composite_index);
+            indexing_policy.automatic = true;
             let properties = ContainerProperties::new("OrderByLiveMatrix", "/partitionKey".into())
-                .with_indexing_policy(
-                    IndexingPolicy::default().with_composite_index(composite_index),
-                );
+                .with_indexing_policy(indexing_policy);
             let container_client = run_context
                 .create_container(
                     db_client,
