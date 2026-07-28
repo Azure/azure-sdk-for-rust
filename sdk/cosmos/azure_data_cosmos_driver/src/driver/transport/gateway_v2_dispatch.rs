@@ -488,6 +488,15 @@ pub(crate) fn unwrap_response_for_gateway_v2(
             value.to_string(),
         );
     }
+    if let Some(value) = response.transport_request_id {
+        headers.insert(
+            response_header_names::TRANSPORT_REQUEST_ID,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.partition_key_range_id.as_ref() {
+        headers.insert(response_header_names::PARTITION_KEY_RANGE_ID, value.clone());
+    }
     if let Some(token) = response.session_token {
         // GW2 surfaces only the vector portion of the session token, with the
         // partition key range id carried separately. Classic gateway emits
@@ -2032,6 +2041,8 @@ mod tests {
                     write_byte_token(tokens, 0x0055, 0);
                     write_string_token(tokens, 0x0063, "physical-0");
                     write_u64_token(tokens, 0x0087, 1_234_567);
+                    write_u32_token(tokens, 0x0035, 45);
+                    write_string_token(tokens, 0x0021, "1");
                     write_string_token(tokens, 0x003E, "1:2#3");
                     write_string_token(tokens, 0x0004, "\"etag\"");
                     write_string_token(tokens, 0x0003, "continuation");
@@ -2105,6 +2116,8 @@ mod tests {
             Some("physical-0")
         );
         assert_eq!(parsed_headers.conflict_resolved_timestamp, Some(1_234_567));
+        assert_eq!(parsed_headers.transport_request_id, Some(45));
+        assert_eq!(parsed_headers.partition_key_range_id.as_deref(), Some("1"));
         assert_eq!(
             unwrapped
                 .headers

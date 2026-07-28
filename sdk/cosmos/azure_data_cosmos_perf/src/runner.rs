@@ -434,7 +434,7 @@ pub async fn run(config: RunConfig) {
         // self-corrects against wall-clock drift. Burst on missed ticks.
         let mut ticker = tokio::time::interval(Duration::from_millis(1));
         ticker.set_missed_tick_behavior(MissedTickBehavior::Burst);
-        let mut issued: u64 = 0;
+        let mut issued: u128 = 0;
 
         while !cancelled.load(Ordering::Relaxed) {
             ticker.tick().await;
@@ -443,8 +443,8 @@ pub async fn run(config: RunConfig) {
                     eprintln!("Warning: open-loop operation task failed: {error}");
                 }
             }
-            let elapsed_secs = start.elapsed().as_secs_f64();
-            let target = (elapsed_secs * rate as f64) as u64;
+            let target =
+                start.elapsed().as_nanos().saturating_mul(u128::from(rate)) / 1_000_000_000;
             while issued < target {
                 if cancelled.load(Ordering::Relaxed) {
                     break;
@@ -485,8 +485,7 @@ pub async fn run(config: RunConfig) {
                     Err(_) => {
                         let skipped_now = saturated_skip_count(issued, target);
                         issued = target;
-                        let previous = skipped.fetch_add(skipped_now, Ordering::Relaxed);
-                        let total = previous + skipped_now;
+                        let (previous, total) = add_skipped_saturating(&skipped, skipped_now);
                         if previous / 10_000 != total / 10_000 {
                             println!(
                                 "WARN: max_in_flight={max_in_flight} saturated, skipped {total} \
@@ -747,18 +746,41 @@ fn diagnostics_to_json(diagnostics: &DiagnosticsContext) -> serde_json::Value {
         .expect("DiagnosticsContext::to_json_string should always produce valid JSON")
 }
 
-fn saturated_skip_count(issued_after_increment: u64, target: u64) -> u64 {
+fn saturated_skip_count(issued_after_increment: u128, target: u128) -> u128 {
     debug_assert!(issued_after_increment <= target);
     target - issued_after_increment + 1
 }
 
+fn add_skipped_saturating(counter: &AtomicU64, amount: u128) -> (u64, u64) {
+    let amount = u64::try_from(amount).unwrap_or(u64::MAX);
+    let previous = counter
+        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+            Some(current.saturating_add(amount))
+        })
+        .expect("saturating skipped-issuance update always succeeds");
+    (previous, previous.saturating_add(amount))
+}
+
 #[cfg(test)]
 mod tests {
-    use super::saturated_skip_count;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    use super::{add_skipped_saturating, saturated_skip_count};
 
     #[test]
     fn saturation_batches_current_and_remaining_arrivals() {
         assert_eq!(saturated_skip_count(10, 10), 1);
         assert_eq!(saturated_skip_count(10, 1_000_000), 999_991);
+    }
+
+    #[test]
+    fn skipped_counter_saturates_without_wrapping() {
+        let counter = AtomicU64::new(u64::MAX - 1);
+
+        assert_eq!(
+            add_skipped_saturating(&counter, u128::from(u64::MAX)),
+            (u64::MAX - 1, u64::MAX)
+        );
+        assert_eq!(counter.load(Ordering::Relaxed), u64::MAX);
     }
 }
