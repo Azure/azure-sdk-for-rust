@@ -336,11 +336,10 @@ async fn upsert_item_403_1008_triggers_refresh_and_cross_region_retry() {
 }
 
 /// **403/1008 — bounded bubble-up.** All-region 1008 retries must terminate.
-// Runs on tokio's paused clock: this test exhausts the full 120-attempt
-// backend-failover budget, and each attempt sleeps `BACKEND_FAILOVER_RETRY_INTERVAL`
-// (1s) via `azure_core::sleep` (tokio timer). Paused time auto-advances those
-// sleeps instantly, so the test asserts the same outcome without ~120s of real
-// wall-clock sleeping.
+// Runs on tokio's paused clock: the backend-failover budget sleeps up to 5s of
+// backoff via `azure_core::sleep` (tokio timer). Paused time auto-advances those
+// sleeps, so `tokio::time::Instant` still observes the full 5s of virtual delay
+// without any real wall-clock sleeping.
 #[tokio::test(start_paused = true)]
 async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     let recorder = HostRecorder::new();
@@ -368,7 +367,7 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     seed_item_via_driver(&driver, "all-stale-item").await;
     recorder.clear();
 
-    let started = std::time::Instant::now();
+    let started = tokio::time::Instant::now();
     let result = tokio::time::timeout(
         Duration::from_secs(20),
         read_item(&driver, "all-stale-item"),
@@ -501,8 +500,9 @@ async fn write_403_3_triggers_topology_refresh() {
 }
 
 /// **403/3 — bounded bubble-up.** All-region 403/3 retries must terminate.
-// Paused clock: exhausts the 120-attempt backend-failover budget (1s backoff
-// each) with both regions faulted; paused time makes the retry sleeps instant.
+// Paused clock: the backend-failover budget sleeps up to 5s of backoff with both
+// regions faulted. Paused time auto-advances those sleeps, so `tokio::time::Instant`
+// observes the full virtual delay without real wall-clock sleeping.
 #[tokio::test(start_paused = true)]
 async fn all_regions_403_3_bounded_retries_then_bubble_up() {
     let recorder = HostRecorder::new();
@@ -529,7 +529,7 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
 
     recorder.clear();
 
-    let started = std::time::Instant::now();
+    let started = tokio::time::Instant::now();
     let result = tokio::time::timeout(
         Duration::from_secs(20),
         create_item(&driver, "403-3-all-forbidden-item"),
