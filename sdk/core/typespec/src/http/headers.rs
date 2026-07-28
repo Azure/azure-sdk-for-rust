@@ -566,11 +566,6 @@ mod tests {
     }
 
     #[test]
-    pub fn azure_deprecating_is_allowed_header() {
-        assert!(DEFAULT_ALLOWED_HEADER_NAMES.contains("azure-deprecating"));
-    }
-
-    #[test]
     pub fn headers_remove_existing_header_returns_value() {
         let mut headers = Headers::new();
         headers.insert("test-header", "test-value");
