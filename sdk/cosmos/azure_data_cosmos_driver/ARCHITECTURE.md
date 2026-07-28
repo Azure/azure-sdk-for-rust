@@ -369,6 +369,43 @@ let options = DiagnosticsOptions::builder()
 
 If output exceeds the limit, it's truncated with an indicator.
 
+### Record Bounding (Retry Storms)
+
+Independently of the summary-string size limit, the finalized per-attempt
+`RequestDiagnostics` list itself is bounded so a retry storm cannot grow the
+context — or any artifact derived from it — without limit:
+
+```rust
+use azure_data_cosmos_driver::options::DiagnosticsOptions;
+
+let options = DiagnosticsOptions::builder()
+    .with_max_request_diagnostics(512)  // record cap (default)
+    .build()?;
+```
+
+- **Default**: 512 records
+- **Minimum**: 16 records
+- **Environment Variable**: `AZURE_COSMOS_DIAGNOSTICS_MAX_REQUEST_DIAGNOSTICS`
+
+When an operation makes more attempts than the cap, the finalized list is
+compacted at completion (never mid-operation, so in-flight request handles stay
+valid):
+
+1. **Run-collapse** — runs of near-identical consecutive retries (same region,
+   endpoint, status incl. sub-status, and execution context) are collapsed to
+   their first and last record.
+2. **Exact per-run rollup** — each run keeps an exact count, total RU, and
+   min/max/P50 duration, so no attempt is lost from the aggregate.
+3. **Global-bucket fallback** — a region ping-pong (`A→B→A→B`) or a high-cardinality
+   `410` fan-out across many physical-partition endpoints is bounded by keeping
+   only the largest key buckets.
+4. **Explicit truncation** — every drop is marked on `DiagnosticsContext::compaction()`
+   (`retained_truncated`, `omitted_runs`, `omitted_request_count`), never silent.
+
+`DiagnosticsContext::request_count()` and `total_request_charge()` remain exact
+(the true totals across all attempts); `retained_request_count()` reports how many
+records survived in `requests()`.
+
 ### Compaction & Deduplication (Summary Mode)
 
 Summary mode applies intelligent compaction:

@@ -72,17 +72,18 @@ version = "1.0.0"
 
 [workspace.dependencies.azure_core_test]
 # azure_core_test should only ever be in dev-dependencies herein
-path = "sdk/core/azure_core_test"
+version = "0.2.0"
 
 [workspace.dependencies.azure_core_test_macros]
 # azure_core_test_macros should only ever be in dev-dependencies herein
-path = "sdk/core/azure_core_test_macros"
+version = "0.2.0"
 
 [workspace.dependencies.azure_identity]
 # azure_identity should only ever be in dev-dependencies herein
 version = "1.0.0"
 
 [workspace.dependencies.azure_storage_blob]
+# azure_storage_blob should only ever be in dev-dependencies herein
 version = "1.0.0"
 
 [workspace.dependencies]

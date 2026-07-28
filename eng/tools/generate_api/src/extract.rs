@@ -3,7 +3,9 @@
 
 use crate::{
     driver::PackageMetadata,
-    model::{ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiModel, ApiModule},
+    model::{
+        ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiModel, ApiModule, InherentImplSortKey,
+    },
 };
 use rustdoc_types::{
     Constant, Crate, Function, FunctionHeader, GenericArg, GenericArgs, GenericBound,
@@ -75,9 +77,7 @@ fn extract_module(
             }
             ItemEnum::Impl(impl_block) if include_trait_impl_block(impl_block) => {
                 if let Some(extracted) = extract_trait_impl(krate, child, impl_block) {
-                    if seen_declarations.insert(extracted.declaration.clone()) {
-                        result.items.push(extracted);
-                    }
+                    insert_item(&mut result, &mut seen_declarations, extracted);
                 }
             }
             ItemEnum::Impl(_) => {}
@@ -93,15 +93,14 @@ fn extract_module(
                     );
                 } else {
                     let extracted = extract_item(krate, child);
-                    if seen_declarations.insert(extracted.declaration.clone()) {
-                        result.items.push(extracted);
-                    }
+                    insert_item(&mut result, &mut seen_declarations, extracted);
                 }
             }
             _ if should_include_item(child) => {
                 let extracted = extract_item(krate, child);
-                if seen_declarations.insert(extracted.declaration.clone()) {
-                    result.items.push(extracted);
+                insert_item(&mut result, &mut seen_declarations, extracted);
+                for inherent_impl in inherent_impls_for_item(krate, child) {
+                    insert_item(&mut result, &mut seen_declarations, inherent_impl);
                 }
             }
             _ => {}
@@ -277,6 +276,10 @@ fn expand_item_with_impls(krate: &Crate, target: &Item) -> ExpandedUse {
         items: vec![extract_item(krate, target)],
         modules: Vec::new(),
     };
+
+    for sibling in inherent_impls_for_item(krate, target) {
+        expanded.items.push(sibling);
+    }
 
     for sibling in trait_impls_for_item(krate, target) {
         expanded.items.push(sibling);
@@ -574,14 +577,61 @@ fn insert_expanded(
     expanded: ExpandedUse,
 ) {
     for item in expanded.items {
-        if seen_declarations.insert(item.declaration.clone()) {
-            module.items.push(item);
-        }
+        insert_item(module, seen_declarations, item);
     }
 
     for child_module in expanded.modules {
         insert_module(&mut module.modules, seen_modules, child_module);
     }
+}
+
+fn insert_item(module: &mut ApiModule, seen_declarations: &mut BTreeSet<String>, item: ApiItem) {
+    if seen_declarations.insert(item_dedup_key(&item)) {
+        module.items.push(item);
+    }
+}
+
+fn item_dedup_key(item: &ApiItem) -> String {
+    match item.kind {
+        ApiItemKind::InherentImpl => {
+            let source_id = item.source_id.as_deref().unwrap_or("no-source-id");
+            format!("{source_id}\u{1f}{}", inherent_impl_fingerprint(item))
+        }
+        _ => item.declaration.clone(),
+    }
+}
+
+fn inherent_impl_fingerprint(item: &ApiItem) -> String {
+    let doc_comments = item.doc_comments.join("\u{1f}");
+    let attributes = item
+        .attributes
+        .iter()
+        .map(|attribute| attribute.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\u{1f}");
+    let members = item
+        .members
+        .iter()
+        .map(|member| {
+            format!(
+                "{}\u{1f}{}\u{1f}{}",
+                member.name,
+                member.doc_comments.join("\u{1f}"),
+                member
+                    .attributes
+                    .iter()
+                    .map(|attribute| attribute.text.as_str())
+                    .collect::<Vec<_>>()
+                    .join("\u{1f}")
+            ) + &format!("\u{1f}{}", member.declaration)
+        })
+        .collect::<Vec<_>>()
+        .join("\u{1e}");
+
+    format!(
+        "{}\u{1d}{}\u{1d}{}\u{1d}{}",
+        item.declaration, doc_comments, attributes, members
+    )
 }
 
 fn insert_module(
@@ -614,6 +664,9 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
             .clone()
             .unwrap_or_else(|| fallback_item_name(item).to_string()),
         kind: item_kind(item),
+        source_id: Some(item.id.0.to_string()),
+        owner_kind: None,
+        inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
         attributes,
         declaration: render_item_declaration(krate, item),
@@ -622,9 +675,6 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
 }
 
 fn extract_members(krate: &Crate, item: &Item) -> Vec<ApiMember> {
-    if let Some(impl_ids) = item_impl_ids(item) {
-        return extract_inherent_impl_members(krate, impl_ids);
-    }
     match &item.inner {
         ItemEnum::Trait(trait_item) => extract_trait_members(krate, trait_item),
         _ => Vec::new(),
@@ -709,6 +759,9 @@ fn extract_trait_impl(krate: &Crate, item: &Item, impl_block: &Impl) -> Option<A
     Some(ApiItem {
         name: self_type,
         kind: ApiItemKind::TraitImpl,
+        source_id: Some(item.id.0.to_string()),
+        owner_kind: None,
+        inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
         attributes: extract_attributes(item),
         declaration,
@@ -716,18 +769,80 @@ fn extract_trait_impl(krate: &Crate, item: &Item, impl_block: &Impl) -> Option<A
     })
 }
 
-fn extract_inherent_impl_members(krate: &Crate, impl_ids: &[Id]) -> Vec<ApiMember> {
+fn inherent_impls_for_item(krate: &Crate, target: &Item) -> Vec<ApiItem> {
+    let Some(impl_ids) = item_impl_ids(target) else {
+        return Vec::new();
+    };
+    let owner_kind = item_kind(target);
+
     impl_ids
         .iter()
         .filter_map(|impl_id| krate.index.get(impl_id))
         .filter_map(|impl_item| match &impl_item.inner {
             ItemEnum::Impl(impl_block) if include_inherent_impl_block(impl_block) => {
-                Some(&impl_block.items)
+                extract_inherent_impl(krate, target, owner_kind, impl_item, impl_block)
             }
             _ => None,
         })
-        .flat_map(|items| extract_impl_items(krate, items))
         .collect()
+}
+
+fn extract_inherent_impl(
+    krate: &Crate,
+    target: &Item,
+    owner_kind: ApiItemKind,
+    item: &Item,
+    impl_block: &Impl,
+) -> Option<ApiItem> {
+    let self_type = render_type(&impl_block.for_);
+    let members = extract_impl_items(krate, &impl_block.items);
+    if members.is_empty() {
+        return None;
+    }
+
+    Some(ApiItem {
+        name: target
+            .name
+            .clone()
+            .unwrap_or_else(|| fallback_item_name(target).to_string()),
+        kind: ApiItemKind::InherentImpl,
+        source_id: Some(item.id.0.to_string()),
+        owner_kind: Some(owner_kind),
+        inherent_impl_sort_key: Some(inherent_impl_sort_key(&impl_block.for_)),
+        doc_comments: extract_doc_comments(item),
+        attributes: extract_attributes(item),
+        declaration: render_inherent_impl_declaration(impl_block, &self_type),
+        members,
+    })
+}
+
+fn inherent_impl_sort_key(type_: &Type) -> InherentImplSortKey {
+    InherentImplSortKey {
+        type_arg_classes: inherent_impl_type_arg_classes(type_),
+        rendered_self_type: render_type(type_),
+    }
+}
+
+fn inherent_impl_type_arg_classes(type_: &Type) -> Vec<u8> {
+    match type_ {
+        Type::ResolvedPath(path) => match &path.args {
+            Some(args) => match args.as_ref() {
+                GenericArgs::AngleBracketed { args, .. } => args
+                    .iter()
+                    .filter_map(|arg| match arg {
+                        GenericArg::Type(Type::Generic(_)) => Some(0),
+                        GenericArg::Infer => Some(1),
+                        GenericArg::Type(Type::Infer) => Some(1),
+                        GenericArg::Type(_) => Some(2),
+                        _ => None,
+                    })
+                    .collect(),
+                _ => Vec::new(),
+            },
+            None => Vec::new(),
+        },
+        _ => Vec::new(),
+    }
 }
 
 fn extract_impl_items(krate: &Crate, item_ids: &[Id]) -> Vec<ApiMember> {
@@ -1405,6 +1520,16 @@ fn render_trait_impl_declaration(impl_block: &Impl, trait_path: &Path, self_type
     declaration
 }
 
+fn render_inherent_impl_declaration(impl_block: &Impl, self_type: &str) -> String {
+    let mut declaration = String::from("impl");
+    declaration.push_str(&render_generics_declaration(&impl_block.generics));
+    declaration.push(' ');
+    declaration.push_str(self_type);
+    declaration.push_str(&render_where_clause(&impl_block.generics.where_predicates));
+    declaration.push_str(" {");
+    declaration
+}
+
 fn render_type_alias_declaration(item: &Item, type_alias: &TypeAlias) -> String {
     let mut declaration = format!(
         "pub type {}{} = {}",
@@ -2025,888 +2150,4 @@ fn last_path_segment(path: &str) -> &str {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use rustdoc_types::{
-        Abi, Enum as RustdocEnum, FunctionSignature, Generics, ItemSummary, Module, Struct, Target,
-        Type,
-    };
-    use std::collections::HashMap;
-
-    #[test]
-    fn recognizes_common_derive_trait_paths() {
-        assert_eq!(known_derive_trait_name(&path("Clone", 1)), Some("Clone"));
-        assert_eq!(
-            known_derive_trait_name(&path("fmt::Debug", 1)),
-            Some("Debug")
-        );
-        assert_eq!(
-            known_derive_trait_name(&path("std::fmt::Debug", 1)),
-            Some("Debug")
-        );
-        assert_eq!(
-            known_derive_trait_name(&path("Serialize", 1)),
-            Some("serde::Serialize")
-        );
-        assert_eq!(
-            known_derive_trait_name(&path("serde::de::Deserialize", 1)),
-            Some("serde::Deserialize")
-        );
-        assert_eq!(known_derive_trait_name(&path("SafeDebug", 1)), None);
-    }
-
-    #[test]
-    fn synthesizes_known_derives_and_ignores_workspace_defined_traits() {
-        let struct_id = Id(1);
-        let clone_impl_id = Id(2);
-        let debug_impl_id = Id(3);
-        let serialize_impl_id = Id(4);
-        let safe_debug_impl_id = Id(5);
-        let explicit_default_impl_id = Id(6);
-
-        let krate = crate_with_items(vec![
-            item(
-                struct_id,
-                Some("Model"),
-                ItemEnum::Struct(Struct {
-                    kind: StructKind::Unit,
-                    generics: empty_generics(),
-                    impls: vec![
-                        clone_impl_id,
-                        debug_impl_id,
-                        serialize_impl_id,
-                        safe_debug_impl_id,
-                        explicit_default_impl_id,
-                    ],
-                }),
-            ),
-            impl_item(
-                clone_impl_id,
-                Some(path("Clone", 10)),
-                "Model",
-                struct_id,
-                true,
-            ),
-            impl_item(
-                debug_impl_id,
-                Some(path("fmt::Debug", 11)),
-                "Model",
-                struct_id,
-                true,
-            ),
-            impl_item(
-                serialize_impl_id,
-                Some(path("Serialize", 12)),
-                "Model",
-                struct_id,
-                true,
-            ),
-            impl_item(
-                safe_debug_impl_id,
-                Some(path("SafeDebug", 13)),
-                "Model",
-                struct_id,
-                true,
-            ),
-            impl_item(
-                explicit_default_impl_id,
-                Some(path("Default", 14)),
-                "Model",
-                struct_id,
-                false,
-            ),
-        ]);
-
-        let item = krate.index.get(&struct_id).expect("struct item present");
-        let attribute = synthesize_derive_attribute(&krate, item)
-            .expect("recognized derive attribute should be synthesized");
-
-        assert_eq!(attribute.text, "#[derive(Clone, Debug, serde::Serialize)]");
-    }
-
-    #[test]
-    fn extracts_explicit_trait_impl_blocks_with_members() {
-        let struct_id = Id(1);
-        let impl_id = Id(2);
-        let fmt_id = Id(3);
-
-        let model = extract_model(
-            &package_metadata("demo"),
-            &crate_with_items(vec![
-                item(
-                    struct_id,
-                    Some("MyType"),
-                    ItemEnum::Struct(Struct {
-                        kind: StructKind::Unit,
-                        generics: empty_generics(),
-                        impls: vec![impl_id],
-                    }),
-                ),
-                impl_item_with_items(
-                    impl_id,
-                    Some(path("fmt::Debug", 10)),
-                    "MyType",
-                    struct_id,
-                    false,
-                    vec![fmt_id],
-                ),
-                item(
-                    fmt_id,
-                    Some("fmt"),
-                    ItemEnum::Function(Function {
-                        sig: FunctionSignature {
-                            inputs: vec![
-                                (
-                                    "self".to_string(),
-                                    Type::BorrowedRef {
-                                        lifetime: None,
-                                        is_mutable: false,
-                                        type_: Box::new(Type::Generic("Self".to_string())),
-                                    },
-                                ),
-                                (
-                                    "f".to_string(),
-                                    Type::BorrowedRef {
-                                        lifetime: None,
-                                        is_mutable: true,
-                                        type_: Box::new(Type::ResolvedPath(path(
-                                            "fmt::Formatter",
-                                            11,
-                                        ))),
-                                    },
-                                ),
-                            ],
-                            output: Some(Type::ResolvedPath(path("fmt::Result", 12))),
-                            is_c_variadic: false,
-                        },
-                        generics: empty_generics(),
-                        header: FunctionHeader {
-                            is_const: false,
-                            is_unsafe: false,
-                            is_async: false,
-                            abi: Abi::Rust,
-                        },
-                        has_body: true,
-                    }),
-                ),
-            ]),
-            &mut NoopResolver,
-        )
-        .expect("model extraction should succeed");
-
-        let trait_impl = model
-            .root_module
-            .items
-            .iter()
-            .find(|item| item.kind == ApiItemKind::TraitImpl)
-            .expect("explicit trait impl should be extracted");
-
-        assert_eq!(trait_impl.declaration, "impl fmt::Debug for MyType {");
-        assert_eq!(trait_impl.members.len(), 1);
-        assert_eq!(
-            trait_impl.members[0].declaration,
-            "fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;"
-        );
-    }
-
-    #[test]
-    fn extract_item_synthesizes_async_trait_and_elides_synthetic_lifetimes() {
-        let function_id = Id(2);
-        let trait_id = Id(1);
-
-        let krate = crate_with_items(vec![
-            item(
-                trait_id,
-                Some("Polling"),
-                ItemEnum::Trait(Trait {
-                    is_auto: false,
-                    is_unsafe: false,
-                    is_dyn_compatible: true,
-                    items: vec![function_id],
-                    generics: empty_generics(),
-                    bounds: Vec::new(),
-                    implementations: Vec::new(),
-                }),
-            ),
-            item(
-                function_id,
-                Some("poll"),
-                ItemEnum::Function(Function {
-                    sig: FunctionSignature {
-                        inputs: vec![(
-                            "self".to_string(),
-                            Type::BorrowedRef {
-                                lifetime: Some("'life0".to_string()),
-                                is_mutable: false,
-                                type_: Box::new(Type::Generic("Self".to_string())),
-                            },
-                        )],
-                        output: None,
-                        is_c_variadic: false,
-                    },
-                    generics: Generics {
-                        params: vec![lifetime_param("'life0"), lifetime_param("'async_trait")],
-                        where_predicates: Vec::new(),
-                    },
-                    header: FunctionHeader {
-                        is_const: false,
-                        is_unsafe: false,
-                        is_async: false,
-                        abi: Abi::Rust,
-                    },
-                    has_body: false,
-                }),
-            ),
-        ]);
-
-        let item = krate.index.get(&trait_id).expect("trait item present");
-        let extracted = extract_item(&krate, item);
-
-        assert!(
-            extracted
-                .attributes
-                .iter()
-                .any(|attribute| attribute.text == "#[async_trait]"),
-            "trait should synthesize #[async_trait]"
-        );
-        assert_eq!(extracted.members.len(), 1);
-        assert_eq!(extracted.members[0].declaration, "fn poll(&self);");
-    }
-
-    #[test]
-    fn renders_self_receivers_in_source_like_forms() {
-        let function = Function {
-            sig: FunctionSignature {
-                inputs: vec![
-                    ("self".to_string(), Type::Generic("Self".to_string())),
-                    (
-                        "other".to_string(),
-                        Type::ResolvedPath(path("Pin", 30).with_args(
-                            GenericArgs::AngleBracketed {
-                                args: vec![GenericArg::Type(Type::Generic("Self".to_string()))],
-                                constraints: Vec::new(),
-                            },
-                        )),
-                    ),
-                ],
-                output: Some(Type::Generic("Self".to_string())),
-                is_c_variadic: false,
-            },
-            generics: empty_generics(),
-            header: FunctionHeader {
-                is_const: false,
-                is_unsafe: false,
-                is_async: false,
-                abi: Abi::Rust,
-            },
-            has_body: false,
-        };
-
-        assert_eq!(
-            render_function_declaration("into_self", &function, false),
-            "fn into_self(self, other: Pin<Self>) -> Self;"
-        );
-
-        let mut_ref_function = Function {
-            sig: FunctionSignature {
-                inputs: vec![(
-                    "self".to_string(),
-                    Type::BorrowedRef {
-                        lifetime: None,
-                        is_mutable: true,
-                        type_: Box::new(Type::Generic("Self".to_string())),
-                    },
-                )],
-                output: None,
-                is_c_variadic: false,
-            },
-            generics: empty_generics(),
-            header: FunctionHeader {
-                is_const: false,
-                is_unsafe: false,
-                is_async: false,
-                abi: Abi::Rust,
-            },
-            has_body: false,
-        };
-
-        assert_eq!(
-            render_function_declaration("touch", &mut_ref_function, false),
-            "fn touch(&mut self);"
-        );
-    }
-
-    #[test]
-    fn local_reexport_carries_explicit_trait_impls_for_reexported_items() {
-        let hidden_module_id = Id(1);
-        let struct_id = Id(2);
-        let impl_id = Id(3);
-        let fmt_id = Id(4);
-        let reexport_id = Id(5);
-
-        let model = extract_model(
-            &package_metadata("demo"),
-            &crate_with_root_items(
-                vec![hidden_module_id, reexport_id],
-                vec![
-                    module_item(hidden_module_id, "hidden", vec![struct_id, impl_id], true),
-                    item(
-                        struct_id,
-                        Some("Error"),
-                        ItemEnum::Struct(Struct {
-                            kind: StructKind::Unit,
-                            generics: empty_generics(),
-                            impls: vec![impl_id],
-                        }),
-                    ),
-                    impl_item_with_items(
-                        impl_id,
-                        Some(path("fmt::Debug", 10)),
-                        "Error",
-                        struct_id,
-                        false,
-                        vec![fmt_id],
-                    ),
-                    item(
-                        fmt_id,
-                        Some("fmt"),
-                        ItemEnum::Function(Function {
-                            sig: FunctionSignature {
-                                inputs: vec![
-                                    (
-                                        "self".to_string(),
-                                        Type::BorrowedRef {
-                                            lifetime: None,
-                                            is_mutable: false,
-                                            type_: Box::new(Type::Generic("Self".to_string())),
-                                        },
-                                    ),
-                                    (
-                                        "f".to_string(),
-                                        Type::BorrowedRef {
-                                            lifetime: None,
-                                            is_mutable: true,
-                                            type_: Box::new(Type::ResolvedPath(path(
-                                                "fmt::Formatter",
-                                                11,
-                                            ))),
-                                        },
-                                    ),
-                                ],
-                                output: Some(Type::ResolvedPath(path("fmt::Result", 12))),
-                                is_c_variadic: false,
-                            },
-                            generics: empty_generics(),
-                            header: FunctionHeader {
-                                is_const: false,
-                                is_unsafe: false,
-                                is_async: false,
-                                abi: Abi::Rust,
-                            },
-                            has_body: true,
-                        }),
-                    ),
-                    item(
-                        reexport_id,
-                        Some("Error"),
-                        ItemEnum::Use(rustdoc_types::Use {
-                            source: "crate::hidden::Error".to_string(),
-                            name: "Error".to_string(),
-                            id: Some(struct_id),
-                            is_glob: false,
-                        }),
-                    ),
-                ],
-            ),
-            &mut NoopResolver,
-        )
-        .expect("model extraction should succeed");
-
-        assert!(model.root_module.modules.is_empty());
-        assert!(model
-            .root_module
-            .items
-            .iter()
-            .any(|item| item.declaration == "pub struct Error;"));
-        assert!(model.root_module.items.iter().any(|item| {
-            item.kind == ApiItemKind::TraitImpl
-                && item.declaration == "impl fmt::Debug for Error {"
-                && item.members.iter().any(|member| member.name == "fmt")
-        }));
-    }
-
-    #[test]
-    fn local_reexport_preserves_synthesized_derives_for_reexported_items() {
-        let hidden_module_id = Id(1);
-        let struct_id = Id(2);
-        let clone_impl_id = Id(3);
-        let debug_impl_id = Id(4);
-        let reexport_id = Id(5);
-
-        let model = extract_model(
-            &package_metadata("demo"),
-            &crate_with_root_items(
-                vec![hidden_module_id, reexport_id],
-                vec![
-                    module_item(
-                        hidden_module_id,
-                        "hidden",
-                        vec![struct_id, clone_impl_id, debug_impl_id],
-                        true,
-                    ),
-                    item(
-                        struct_id,
-                        Some("ErrorKind"),
-                        ItemEnum::Struct(Struct {
-                            kind: StructKind::Unit,
-                            generics: empty_generics(),
-                            impls: vec![clone_impl_id, debug_impl_id],
-                        }),
-                    ),
-                    impl_item(
-                        clone_impl_id,
-                        Some(path("Clone", 20)),
-                        "ErrorKind",
-                        struct_id,
-                        true,
-                    ),
-                    impl_item(
-                        debug_impl_id,
-                        Some(path("fmt::Debug", 21)),
-                        "ErrorKind",
-                        struct_id,
-                        true,
-                    ),
-                    item(
-                        reexport_id,
-                        Some("ErrorKind"),
-                        ItemEnum::Use(rustdoc_types::Use {
-                            source: "crate::hidden::ErrorKind".to_string(),
-                            name: "ErrorKind".to_string(),
-                            id: Some(struct_id),
-                            is_glob: false,
-                        }),
-                    ),
-                ],
-            ),
-            &mut NoopResolver,
-        )
-        .expect("model extraction should succeed");
-
-        let item = model
-            .root_module
-            .items
-            .iter()
-            .find(|item| item.declaration == "pub struct ErrorKind;")
-            .expect("re-exported struct should be lifted");
-
-        assert!(model.root_module.modules.is_empty());
-        assert_eq!(
-            item.attributes
-                .iter()
-                .map(|attribute| attribute.text.as_str())
-                .collect::<Vec<_>>(),
-            vec!["#[derive(Clone, Debug)]"]
-        );
-    }
-
-    #[test]
-    fn normalize_attribute_flattens_multiline_reason_strings() {
-        assert_eq!(
-            normalize_attribute(
-                "#[allow(unknown_lints, clippy::infallible_try_from, reason =\n\"maintain a consistent pattern of `try_into()`\")]"
-            ),
-            "#[allow(unknown_lints, clippy::infallible_try_from, reason = \"maintain a consistent pattern of `try_into()`\")]"
-        );
-    }
-
-    #[test]
-    fn normalize_attribute_flattens_multiline_pin_project_arguments() {
-        assert_eq!(
-            normalize_attribute(
-                "#[pin_project(project = ItemIteratorProjection, project_replace =\nItemIteratorProjectionOwned)]"
-            ),
-            "#[pin_project(project = ItemIteratorProjection, project_replace = ItemIteratorProjectionOwned)]"
-        );
-    }
-
-    #[test]
-    fn normalize_attribute_removes_path_separator_spacing() {
-        assert_eq!(
-            normalize_attribute(
-                "#[allow(elided_named_lifetimes, clippy\n:: shadow_same, clippy :: type_complexity)]"
-            ),
-            "#[allow(elided_named_lifetimes, clippy::shadow_same, clippy::type_complexity)]"
-        );
-    }
-
-    #[test]
-    fn extract_members_for_enum_includes_inherent_impl_methods() {
-        let enum_id = Id(1);
-        let impl_id = Id(2);
-        let func_id = Id(3);
-
-        let krate = crate_with_items(vec![
-            item(
-                enum_id,
-                Some("Status"),
-                ItemEnum::Enum(RustdocEnum {
-                    generics: empty_generics(),
-                    has_stripped_variants: false,
-                    variants: Vec::new(),
-                    impls: vec![impl_id],
-                }),
-            ),
-            item(
-                impl_id,
-                None,
-                ItemEnum::Impl(Impl {
-                    is_unsafe: false,
-                    generics: empty_generics(),
-                    provided_trait_methods: Vec::new(),
-                    trait_: None,
-                    for_: Type::ResolvedPath(path("Status", enum_id.0)),
-                    items: vec![func_id],
-                    is_negative: false,
-                    is_synthetic: false,
-                    blanket_impl: None,
-                }),
-            ),
-            item(
-                func_id,
-                Some("is_ready"),
-                ItemEnum::Function(Function {
-                    sig: FunctionSignature {
-                        inputs: vec![(
-                            "self".to_string(),
-                            Type::BorrowedRef {
-                                lifetime: None,
-                                is_mutable: false,
-                                type_: Box::new(Type::Generic("Self".to_string())),
-                            },
-                        )],
-                        output: Some(Type::Primitive("bool".to_string())),
-                        is_c_variadic: false,
-                    },
-                    generics: empty_generics(),
-                    header: FunctionHeader {
-                        is_const: false,
-                        is_unsafe: false,
-                        is_async: false,
-                        abi: Abi::Rust,
-                    },
-                    has_body: true,
-                }),
-            ),
-        ]);
-
-        let enum_item = krate.index.get(&enum_id).expect("enum item present");
-        let extracted = extract_item(&krate, enum_item);
-
-        assert_eq!(extracted.members.len(), 1);
-        assert_eq!(
-            extracted.members[0].declaration,
-            "fn is_ready(&self) -> bool;"
-        );
-    }
-
-    #[test]
-    fn synthesize_derive_attribute_for_enum() {
-        let enum_id = Id(1);
-        let clone_impl_id = Id(2);
-        let debug_impl_id = Id(3);
-
-        let krate = crate_with_items(vec![
-            item(
-                enum_id,
-                Some("Kind"),
-                ItemEnum::Enum(RustdocEnum {
-                    generics: empty_generics(),
-                    has_stripped_variants: false,
-                    variants: Vec::new(),
-                    impls: vec![clone_impl_id, debug_impl_id],
-                }),
-            ),
-            impl_item(
-                clone_impl_id,
-                Some(path("Clone", 10)),
-                "Kind",
-                enum_id,
-                true,
-            ),
-            impl_item(
-                debug_impl_id,
-                Some(path("Debug", 11)),
-                "Kind",
-                enum_id,
-                true,
-            ),
-        ]);
-
-        let enum_item = krate.index.get(&enum_id).expect("enum item present");
-        let attribute = synthesize_derive_attribute(&krate, enum_item)
-            .expect("derive attribute should be synthesized for enum");
-
-        assert_eq!(attribute.text, "#[derive(Clone, Debug)]");
-    }
-
-    #[test]
-    fn extracts_assoc_const_member_from_trait() {
-        let trait_id = Id(1);
-        let const_id = Id(2);
-
-        let krate = crate_with_items(vec![
-            item(
-                trait_id,
-                Some("Configurable"),
-                ItemEnum::Trait(Trait {
-                    is_auto: false,
-                    is_unsafe: false,
-                    is_dyn_compatible: true,
-                    items: vec![const_id],
-                    generics: empty_generics(),
-                    bounds: Vec::new(),
-                    implementations: Vec::new(),
-                }),
-            ),
-            item(
-                const_id,
-                Some("MAX"),
-                ItemEnum::AssocConst {
-                    type_: Type::Primitive("u32".to_string()),
-                    value: None,
-                },
-            ),
-        ]);
-
-        let trait_item = krate.index.get(&trait_id).expect("trait item present");
-        let extracted = extract_item(&krate, trait_item);
-
-        assert_eq!(extracted.members.len(), 1);
-        assert_eq!(extracted.members[0].declaration, "const MAX: u32;");
-    }
-
-    #[test]
-    fn extracts_assoc_type_member_from_trait() {
-        let trait_id = Id(1);
-        let type_id = Id(2);
-
-        let krate = crate_with_items(vec![
-            item(
-                trait_id,
-                Some("IntoIter"),
-                ItemEnum::Trait(Trait {
-                    is_auto: false,
-                    is_unsafe: false,
-                    is_dyn_compatible: true,
-                    items: vec![type_id],
-                    generics: empty_generics(),
-                    bounds: Vec::new(),
-                    implementations: Vec::new(),
-                }),
-            ),
-            item(
-                type_id,
-                Some("Item"),
-                ItemEnum::AssocType {
-                    generics: empty_generics(),
-                    bounds: Vec::new(),
-                    type_: None,
-                },
-            ),
-        ]);
-
-        let trait_item = krate.index.get(&trait_id).expect("trait item present");
-        let extracted = extract_item(&krate, trait_item);
-
-        assert_eq!(extracted.members.len(), 1);
-        assert_eq!(extracted.members[0].declaration, "type Item;");
-    }
-
-    fn crate_with_items(items: Vec<Item>) -> Crate {
-        let module_items = items.iter().map(|item| item.id).collect::<Vec<_>>();
-        crate_with_root_items(module_items, items)
-    }
-
-    fn crate_with_root_items(root_items: Vec<Id>, items: Vec<Item>) -> Crate {
-        let root = Id(0);
-        let mut index = HashMap::new();
-        index.insert(
-            root,
-            item(
-                root,
-                Some("crate"),
-                ItemEnum::Module(Module {
-                    is_crate: true,
-                    items: root_items,
-                    is_stripped: false,
-                }),
-            ),
-        );
-        index.extend(items.into_iter().map(|item| (item.id, item)));
-
-        Crate {
-            root,
-            crate_version: None,
-            includes_private: false,
-            index,
-            paths: HashMap::<Id, ItemSummary>::new(),
-            external_crates: HashMap::new(),
-            target: Target {
-                triple: "x86_64-unknown-linux-gnu".to_string(),
-                target_features: Vec::new(),
-            },
-            format_version: 0,
-        }
-    }
-
-    fn item(id: Id, name: Option<&str>, inner: ItemEnum) -> Item {
-        Item {
-            id,
-            crate_id: 0,
-            name: name.map(str::to_string),
-            span: None,
-            visibility: Visibility::Public,
-            docs: None,
-            links: HashMap::new(),
-            attrs: Vec::new(),
-            deprecation: None,
-            inner,
-        }
-    }
-
-    fn impl_item(
-        id: Id,
-        trait_path: Option<Path>,
-        self_type_name: &str,
-        struct_id: Id,
-        automatically_derived: bool,
-    ) -> Item {
-        impl_item_with_items(
-            id,
-            trait_path,
-            self_type_name,
-            struct_id,
-            automatically_derived,
-            Vec::new(),
-        )
-    }
-
-    fn impl_item_with_items(
-        id: Id,
-        trait_path: Option<Path>,
-        self_type_name: &str,
-        struct_id: Id,
-        automatically_derived: bool,
-        items: Vec<Id>,
-    ) -> Item {
-        item(
-            id,
-            None,
-            ItemEnum::Impl(Impl {
-                is_unsafe: false,
-                generics: empty_generics(),
-                provided_trait_methods: Vec::new(),
-                trait_: trait_path,
-                for_: Type::ResolvedPath(path(self_type_name, struct_id.0)),
-                items,
-                is_negative: false,
-                is_synthetic: false,
-                blanket_impl: None,
-            }),
-        )
-        .with_attrs(if automatically_derived {
-            vec!["#[automatically_derived]".to_string()]
-        } else {
-            Vec::new()
-        })
-    }
-
-    fn module_item(id: Id, name: &str, items: Vec<Id>, is_stripped: bool) -> Item {
-        item(
-            id,
-            Some(name),
-            ItemEnum::Module(Module {
-                is_crate: false,
-                items,
-                is_stripped,
-            }),
-        )
-    }
-
-    fn path(path: &str, id: u32) -> Path {
-        Path {
-            path: path.to_string(),
-            id: Id(id),
-            args: None,
-        }
-    }
-
-    trait PathTestExt {
-        fn with_args(self, args: GenericArgs) -> Self;
-    }
-
-    impl PathTestExt for Path {
-        fn with_args(mut self, args: GenericArgs) -> Self {
-            self.args = Some(Box::new(args));
-            self
-        }
-    }
-
-    fn lifetime_param(name: &str) -> GenericParamDef {
-        GenericParamDef {
-            name: name.to_string(),
-            kind: GenericParamDefKind::Lifetime {
-                outlives: Vec::new(),
-            },
-        }
-    }
-
-    fn empty_generics() -> Generics {
-        Generics {
-            params: Vec::new(),
-            where_predicates: Vec::new(),
-        }
-    }
-
-    fn package_metadata(name: &str) -> PackageMetadata {
-        PackageMetadata {
-            name: name.to_string(),
-            version: "1.0.0".to_string(),
-            manifest_path: std::path::PathBuf::from("Cargo.toml"),
-        }
-    }
-
-    struct NoopResolver;
-
-    impl WorkspaceResolver for NoopResolver {
-        fn is_workspace_crate(&self, _crate_name: &str) -> bool {
-            false
-        }
-
-        fn load_workspace_model(
-            &mut self,
-            _crate_name: &str,
-        ) -> Result<Option<Arc<ApiModel>>, String> {
-            Ok(None)
-        }
-
-        fn load_workspace_crate(
-            &mut self,
-            _crate_name: &str,
-        ) -> Result<Option<Arc<Crate>>, String> {
-            Ok(None)
-        }
-    }
-
-    trait ItemTestExt {
-        fn with_attrs(self, attrs: Vec<String>) -> Self;
-    }
-
-    impl ItemTestExt for Item {
-        fn with_attrs(mut self, attrs: Vec<String>) -> Self {
-            self.attrs = attrs;
-            self
-        }
-    }
-}
+mod tests;

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added support for Arc-connected servers when using the `ManagedIdentityCredential`.
+
 ### Breaking Changes
 
 ### Bugs Fixed
