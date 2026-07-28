@@ -41,8 +41,10 @@ use super::query_plan::SortOrder;
 const ORDER_BY_FILTER_PLACEHOLDER: &str = "{documentdb-formattableorderbyquery-filter}";
 
 /// Produces the executable rewritten query used for a fresh range by replacing
-/// the Gateway's syntactic filter placeholder, never matching inside a SQL
-/// string, quoted identifier, or comment.
+/// every syntactic occurrence of the Gateway's filter placeholder with `true`,
+/// never matching inside a SQL string literal, quoted identifier, or comment.
+/// String literals honor Cosmos NoSQL's JSON-style backslash escapes (and
+/// tolerate doubled quotes) so an escaped quote cannot desynchronize the scan.
 pub(crate) fn rewritten_query_from_beginning(
     rewritten_query: &str,
 ) -> crate::error::Result<String> {
@@ -74,8 +76,15 @@ pub(crate) fn rewritten_query_from_beginning(
                     index += 1;
                 }
             }
+            // Cosmos NoSQL string literals use JSON-style backslash escapes
+            // (`\'`, `\"`, `\\`), so a backslash always consumes the next
+            // byte. Doubled quotes are also tolerated so the scanner stays
+            // in sync with dialects (and this repo's own lexer) that use
+            // them; both forms leave the scanner in the same state.
             SqlScanState::SingleQuoted => {
-                if bytes[index] == b'\'' {
+                if bytes[index] == b'\\' {
+                    index += 2;
+                } else if bytes[index] == b'\'' {
                     if bytes.get(index + 1) == Some(&b'\'') {
                         index += 2;
                     } else {
@@ -87,7 +96,9 @@ pub(crate) fn rewritten_query_from_beginning(
                 }
             }
             SqlScanState::DoubleQuoted => {
-                if bytes[index] == b'"' {
+                if bytes[index] == b'\\' {
+                    index += 2;
+                } else if bytes[index] == b'"' {
                     if bytes.get(index + 1) == Some(&b'"') {
                         index += 2;
                     } else {
@@ -605,6 +616,40 @@ mod tests {
             rewritten_query_from_beginning(rewritten).unwrap(),
             "SELECT * FROM c WHERE true OR true"
         );
+    }
+
+    #[test]
+    fn rewritten_query_from_beginning_handles_backslash_escaped_quotes() {
+        // Cosmos NoSQL literals escape quotes with a backslash. A scanner that
+        // only understands doubled quotes desyncs on `\'` and then either
+        // misses the real placeholder or substitutes inside a user literal.
+        for (rewritten, expected) in [
+            (
+                "SELECT * FROM c WHERE c.n = 'don\\'t' AND \
+                 {documentdb-formattableorderbyquery-filter}",
+                "SELECT * FROM c WHERE c.n = 'don\\'t' AND true",
+            ),
+            (
+                "SELECT * FROM c WHERE c.n = 'a\\\\' AND \
+                 {documentdb-formattableorderbyquery-filter}",
+                "SELECT * FROM c WHERE c.n = 'a\\\\' AND true",
+            ),
+            (
+                "SELECT * FROM c WHERE c.n = \"say \\\"hi\\\"\" AND \
+                 {documentdb-formattableorderbyquery-filter}",
+                "SELECT * FROM c WHERE c.n = \"say \\\"hi\\\"\" AND true",
+            ),
+            (
+                // The placeholder text inside a backslash-escaped literal is
+                // still data, not a substitution point.
+                "SELECT * FROM c WHERE c.n = 'x\\'{documentdb-formattableorderbyquery-filter}' \
+                 AND {documentdb-formattableorderbyquery-filter}",
+                "SELECT * FROM c WHERE c.n = 'x\\'{documentdb-formattableorderbyquery-filter}' \
+                 AND true",
+            ),
+        ] {
+            assert_eq!(rewritten_query_from_beginning(rewritten).unwrap(), expected);
+        }
     }
 
     #[test]

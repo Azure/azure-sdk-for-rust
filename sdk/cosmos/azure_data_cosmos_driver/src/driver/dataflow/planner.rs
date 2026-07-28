@@ -257,6 +257,7 @@ pub(crate) async fn build_streaming_ordered_merge(
     let plain_operation = Arc::new((**operation).clone().with_body(plain_body));
 
     let is_resume = resume.is_some();
+    let query_fingerprint = streaming_ordered_merge::query_fingerprint(operation.body());
     let saved_ranges = match resume {
         None => None,
         Some(PipelineNodeState::Drained) => {
@@ -264,10 +265,13 @@ pub(crate) async fn build_streaming_ordered_merge(
         }
         Some(PipelineNodeState::StreamingOrderedMerge {
             directions: saved_directions,
+            query_fingerprint: saved_fingerprint,
             ranges,
         }) => Some(validate_streaming_order_by_snapshot(
             &directions,
             &saved_directions,
+            &query_fingerprint,
+            saved_fingerprint.as_deref(),
             ranges,
         )?),
         Some(other) => {
@@ -342,6 +346,7 @@ pub(crate) async fn build_streaming_ordered_merge(
         plain_operation,
         directions,
         children,
+        query_fingerprint,
     ));
     Ok(Pipeline::new(root))
 }
@@ -355,21 +360,32 @@ struct ParsedOrderByRange {
 }
 
 /// Validates a resumed `StreamingOrderedMerge` continuation's `ORDER BY`
-/// direction discriminator against the current query, then validates and
-/// parses every saved range: well-formed, sorted, non-overlapping bounds,
-/// and a boundary whose resume-value count matches the columns.
+/// direction and query-fingerprint discriminators against the current query,
+/// then validates and parses every saved range: well-formed, sorted,
+/// non-overlapping bounds, and a boundary whose resume-value count matches the
+/// columns and whose RID is a decodable document RID.
 fn validate_streaming_order_by_snapshot(
     directions: &[SortOrder],
     saved_directions: &[SortOrder],
+    query_fingerprint: &str,
+    saved_fingerprint: Option<&str>,
     ranges: Vec<OrderByRangeToken>,
 ) -> crate::error::Result<Vec<ParsedOrderByRange>> {
     if saved_directions != directions {
         return Err(order_by_state_invalid(format!(
-            "continuation token has {} ORDER BY column(s)/direction(s) but the current query \
-             has {}",
-            saved_directions.len(),
-            directions.len(),
+            "continuation token has ORDER BY direction(s) {saved_directions:?} but the current \
+             query has {directions:?}"
         )));
+    }
+    // Tokens minted before the fingerprint existed carry `None` and can only
+    // be checked on `directions`.
+    if let Some(saved_fingerprint) = saved_fingerprint {
+        if saved_fingerprint != query_fingerprint {
+            return Err(order_by_state_invalid(
+                "continuation token was produced by a different query (query text or parameters \
+                 changed); a streaming ORDER BY token can only resume the query that minted it",
+            ));
+        }
     }
     if ranges.is_empty() {
         return Err(order_by_state_invalid(
@@ -408,10 +424,19 @@ fn validate_streaming_order_by_snapshot(
                     directions.len(),
                 )));
             }
-            if boundary.last_rid.is_empty() {
-                return Err(order_by_state_invalid(
-                    "continuation token range boundary has an empty RID",
-                ));
+            // A non-empty RID isn't enough: the boundary RID is compared
+            // against real backend `_rid`s by `compare_document_rids`, which
+            // silently degrades to raw-string ordering when either side isn't
+            // a decodable document RID. Base64 string order is not monotonic
+            // in document ordinal, so a corrupt RID would drop or keep the
+            // wrong rows inside the boundary tie group. Reject it here, as
+            // .NET does when `ResourceId.TryParse` fails.
+            if crate::models::resource_id::document_ordinal(&boundary.last_rid).is_none() {
+                return Err(order_by_state_invalid(format!(
+                    "continuation token range boundary RID `{}` is not a decodable Cosmos \
+                     document RID",
+                    boundary.last_rid,
+                )));
             }
             // Rust's versioned client-token boundary counts at least its own
             // boundary row, so `skip_count` is always >= 1. This is not a
@@ -2991,6 +3016,100 @@ mod tests {
         );
     }
 
+    /// A token minted for a different query text (or different parameter
+    /// values) must be rejected: the resume filter is built client-side from
+    /// the saved boundary, so replaying it against another query silently
+    /// returns the wrong rows rather than failing at the service.
+    #[test]
+    fn streaming_order_by_snapshot_rejects_mismatched_query_fingerprint() {
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: None,
+        }];
+        let err = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "current-query",
+            Some("other-query"),
+            ranges,
+        )
+        .err()
+        .expect("a token minted by a different query must be rejected");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "got: {err}"
+        );
+    }
+
+    /// A token minted before `query_fingerprint` existed carries `None` and
+    /// still resumes — it is validated on `directions` alone.
+    #[test]
+    fn streaming_order_by_snapshot_accepts_absent_query_fingerprint() {
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: None,
+        }];
+        let parsed = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "current-query",
+            None,
+            ranges,
+        )
+        .expect("a legacy token without a fingerprint stays resumable");
+        assert_eq!(parsed.len(), 1);
+    }
+
+    /// A boundary RID that isn't a decodable Cosmos document RID must be
+    /// rejected: `compare_document_rids` would fall back to raw-string order,
+    /// which is not monotonic in document ordinal, so the discard pass would
+    /// drop or keep the wrong rows inside the boundary tie group.
+    #[test]
+    fn streaming_order_by_snapshot_rejects_undecodable_boundary_rid() {
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: "not-a-rid".to_owned(),
+                skip_count: 1,
+            }),
+        }];
+        let err = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
+            ranges,
+        )
+        .err()
+        .expect("an undecodable boundary RID must be rejected");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "got: {err}"
+        );
+    }
+
+    /// A realistic 16-byte document `_rid`, as the backend emits — the
+    /// boundary validator requires one it can decode.
+    fn valid_rid(doc_id: u64) -> String {
+        let mut bytes = [0u8; 16];
+        bytes[0..8].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D, 0x80, 0x01, 0x02, 0x03]);
+        bytes[8..16].copy_from_slice(&doc_id.to_le_bytes());
+        crate::models::resource_id::encode_rid(&bytes)
+    }
+
     /// A boundary in a resumed `StreamingOrderedMerge` snapshot always counts
     /// at least its own boundary row, so an explicit `skip_count` of 0 is a
     /// corrupt token and must be rejected.
@@ -3006,13 +3125,15 @@ mod tests {
                         value: 5.0.into(),
                     },
                 ],
-                last_rid: "rid-1".to_owned(),
+                last_rid: valid_rid(1),
                 skip_count: 0,
             }),
         }];
         let err = validate_streaming_order_by_snapshot(
             &[SortOrder::Ascending],
             &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
             ranges,
         )
         .err()
@@ -3038,13 +3159,15 @@ mod tests {
                         value: 5.0.into(),
                     },
                 ],
-                last_rid: "rid-1".to_owned(),
+                last_rid: valid_rid(1),
                 skip_count: 1,
             }),
         }];
         let parsed = validate_streaming_order_by_snapshot(
             &[SortOrder::Ascending],
             &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
             ranges,
         )
         .expect("a well-formed boundary with skip_count 1 is valid");
@@ -3057,14 +3180,17 @@ mod tests {
     /// re-emitted.
     #[test]
     fn streaming_order_by_snapshot_defaults_missing_skip_count_to_one() {
-        let token: OrderByRangeToken = serde_json::from_str(
-            r#"{"min_epk":"","max_epk":"FF","boundary":{"resume_values":[{"type":"number","value":5.0}],"last_rid":"rid-1"}}"#,
-        )
+        let token: OrderByRangeToken = serde_json::from_str(&format!(
+            r#"{{"min_epk":"","max_epk":"FF","boundary":{{"resume_values":[{{"type":"number","value":5.0}}],"last_rid":"{rid}"}}}}"#,
+            rid = valid_rid(1),
+        ))
         .unwrap();
         assert_eq!(token.boundary.as_ref().unwrap().skip_count, 1);
         let parsed = validate_streaming_order_by_snapshot(
             &[SortOrder::Ascending],
             &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
             vec![token],
         )
         .expect("a legacy boundary missing skip_count defaults to 1 and is valid");

@@ -86,14 +86,28 @@ pub(crate) enum PipelineNodeState {
 
     /// A streaming cross-partition `ORDER BY` k-way merge.
     ///
-    /// `directions` is a query-shape discriminator validated on resume
-    /// alongside range/boundary compatibility, so a token can never resume
-    /// a structurally incompatible query. `ranges` lists every still-active
-    /// EPK range explicitly (unlike `SequentialDrain`'s sparse cursor, since
-    /// any range may still have unemitted rows), sorted ascending by
-    /// `min_epk`; a fully-drained range is omitted.
+    /// `directions` and `query_fingerprint` are query-shape discriminators
+    /// validated on resume alongside range/boundary compatibility, so a token
+    /// can never resume a structurally incompatible query. `ranges` lists
+    /// every still-active EPK range explicitly (unlike `SequentialDrain`'s
+    /// sparse cursor, since any range may still have unemitted rows), sorted
+    /// ascending by `min_epk`; a fully-drained range is omitted.
     StreamingOrderedMerge {
         directions: Vec<SortOrder>,
+        /// Stable hash of the originating query text and parameters (see
+        /// `super::streaming_ordered_merge::query_fingerprint`).
+        ///
+        /// `directions` alone is far too weak a discriminator — every
+        /// single-column `ASC` query shares it — and
+        /// `ContinuationToken::is_valid_for_operation` only checks the
+        /// operation kind and container RID. Unlike an opaque backend
+        /// continuation (which the service itself binds to the query that
+        /// minted it), this node's value boundary is turned into a resume
+        /// predicate *client-side*, so nothing downstream would catch a
+        /// token replayed against a different query. Absent on tokens
+        /// minted before this field existed, which skip the check.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        query_fingerprint: Option<String>,
         ranges: Vec<OrderByRangeToken>,
     },
 }
@@ -412,6 +426,7 @@ mod tests {
     fn into_child_contribution_rejects_nested_streaming_ordered_merge() {
         let err = PipelineNodeState::StreamingOrderedMerge {
             directions: vec![SortOrder::Ascending],
+            query_fingerprint: None,
             ranges: vec![],
         }
         .into_child_contribution("Parent", 0, 1)
@@ -427,6 +442,7 @@ mod tests {
     fn streaming_ordered_merge_round_trips_untouched_range() {
         let state = PipelineNodeState::StreamingOrderedMerge {
             directions: vec![SortOrder::Ascending, SortOrder::Descending],
+            query_fingerprint: None,
             ranges: vec![OrderByRangeToken {
                 min_epk: "".to_owned(),
                 max_epk: "FF".to_owned(),
@@ -439,15 +455,14 @@ mod tests {
         assert_eq!(parsed, state);
     }
 
-    /// An older token carrying the retired `query_fingerprint` field must
-    /// still deserialize (serde ignores unknown fields), and a freshly
-    /// serialized token must omit it.
+    /// A token predating `query_fingerprint` must still deserialize, leaving
+    /// the field `None` so the planner skips the fingerprint check instead of
+    /// rejecting the token.
     #[test]
-    fn streaming_ordered_merge_ignores_legacy_query_fingerprint_field() {
+    fn streaming_ordered_merge_accepts_token_without_query_fingerprint() {
         let json = r#"{
             "kind": "streaming_ordered_merge",
             "directions": ["Ascending"],
-            "query_fingerprint": "deadbeef",
             "ranges": [{
                 "min_epk": "",
                 "max_epk": "FF"
@@ -458,6 +473,7 @@ mod tests {
             parsed,
             PipelineNodeState::StreamingOrderedMerge {
                 directions: vec![SortOrder::Ascending],
+                query_fingerprint: None,
                 ranges: vec![OrderByRangeToken {
                     min_epk: "".to_owned(),
                     max_epk: "FF".to_owned(),
@@ -470,7 +486,29 @@ mod tests {
         let new_json = serde_json::to_string(&parsed).unwrap();
         assert!(
             !new_json.contains("query_fingerprint"),
-            "new tokens must not emit the retired field: {new_json}"
+            "a token with no fingerprint must not emit a null field: {new_json}"
+        );
+    }
+
+    /// A fingerprinted token round-trips its fingerprint so the planner can
+    /// reject a resume against a different query.
+    #[test]
+    fn streaming_ordered_merge_round_trips_query_fingerprint() {
+        let state = PipelineNodeState::StreamingOrderedMerge {
+            directions: vec![SortOrder::Ascending],
+            query_fingerprint: Some("deadbeef".to_owned()),
+            ranges: vec![OrderByRangeToken {
+                min_epk: String::new(),
+                max_epk: "FF".to_owned(),
+                server_continuation: None,
+                boundary: None,
+            }],
+        };
+        let json = serde_json::to_string(&state).unwrap();
+        assert!(json.contains(r#""query_fingerprint":"deadbeef""#), "{json}");
+        assert_eq!(
+            serde_json::from_str::<PipelineNodeState>(&json).unwrap(),
+            state
         );
     }
 
@@ -478,6 +516,7 @@ mod tests {
     fn streaming_ordered_merge_round_trips_clean_page_boundary() {
         let state = PipelineNodeState::StreamingOrderedMerge {
             directions: vec![SortOrder::Ascending],
+            query_fingerprint: None,
             ranges: vec![OrderByRangeToken {
                 min_epk: "".to_owned(),
                 max_epk: "FF".to_owned(),
@@ -498,6 +537,7 @@ mod tests {
     fn streaming_ordered_merge_round_trips_complex_value_boundary() {
         let state = PipelineNodeState::StreamingOrderedMerge {
             directions: vec![SortOrder::Ascending],
+            query_fingerprint: None,
             ranges: vec![OrderByRangeToken {
                 min_epk: "40".to_owned(),
                 max_epk: "80".to_owned(),
@@ -590,6 +630,7 @@ mod tests {
             parsed,
             PipelineNodeState::StreamingOrderedMerge {
                 directions: vec![SortOrder::Ascending],
+                query_fingerprint: None,
                 ranges: vec![OrderByRangeToken {
                     min_epk: String::new(),
                     max_epk: "80".to_owned(),
@@ -613,6 +654,7 @@ mod tests {
     fn streaming_ordered_merge_omits_absent_continuation_and_boundary() {
         let state = PipelineNodeState::StreamingOrderedMerge {
             directions: vec![SortOrder::Ascending],
+            query_fingerprint: None,
             ranges: vec![OrderByRangeToken {
                 min_epk: String::new(),
                 max_epk: "FF".to_owned(),

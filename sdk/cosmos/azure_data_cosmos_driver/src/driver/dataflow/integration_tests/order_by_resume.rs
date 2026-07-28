@@ -148,6 +148,27 @@ fn real_rid(doc_id: u64) -> String {
     crate::models::resource_id::encode_rid(&bytes)
 }
 
+/// Maps a short human-readable fixture label (`"c"`, `"tied-1"`, `"docA"`) to
+/// a decodable 16-byte Cosmos `_rid` whose document ordinal preserves the
+/// label's lexicographic order, so fixtures exercise
+/// `compare_document_rids`'s real numeric path instead of its raw-string
+/// fallback. Labels must be at most 8 bytes and are packed big-endian into
+/// the ordinal segment. Already-encoded RIDs (e.g. from [`real_rid`]) pass
+/// through unchanged so the two helpers compose.
+fn label_rid(label: &str) -> String {
+    if crate::models::resource_id::document_ordinal(label).is_some() {
+        return label.to_owned();
+    }
+    let label_bytes = label.as_bytes();
+    assert!(
+        label_bytes.len() <= 8,
+        "fixture rid label `{label}` exceeds the 8 bytes that fit in a document ordinal"
+    );
+    let mut ordinal = [0u8; 8];
+    ordinal[..label_bytes.len()].copy_from_slice(label_bytes);
+    real_rid(u64::from_be_bytes(ordinal))
+}
+
 fn resolved(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
     ResolvedRange {
         partition_key_range_id: pk_range_id.to_string(),
@@ -165,7 +186,7 @@ fn envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResp
         .iter()
         .map(|(rid, rank)| {
             serde_json::json!({
-                "_rid": rid,
+                "_rid": label_rid(rid),
                 "orderByItems": [{"item": rank}],
                 "payload": {"id": rid, "rank": rank},
             })
@@ -200,7 +221,7 @@ fn join_envelope_page(rows: &[(&str, i64, &str)], continuation: Option<&str>) ->
         .iter()
         .map(|(rid, rank, id)| {
             serde_json::json!({
-                "_rid": rid,
+                "_rid": label_rid(rid),
                 "orderByItems": [{"item": rank}],
                 "payload": {"id": id},
             })
@@ -234,7 +255,7 @@ fn string_envelope_page(rows: &[(&str, &str)], continuation: Option<&str>) -> Co
         .iter()
         .map(|(rid, key)| {
             serde_json::json!({
-                "_rid": rid,
+                "_rid": label_rid(rid),
                 "orderByItems": [{"item": key}],
                 "payload": {"id": rid, "key": key},
             })
@@ -268,7 +289,7 @@ fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cosm
         .iter()
         .map(|(rid, value)| {
             serde_json::json!({
-                "_rid": rid,
+                "_rid": label_rid(rid),
                 "orderByItems": [{"item": [value]}],
                 "payload": {"id": rid},
             })
@@ -681,10 +702,11 @@ async fn catalog_equal_key_resume_requiring_skip_count_replays_correctly() {
     let resume_values: Vec<OrderByResumeValue> =
         serde_json::from_value(checkpoint["resumeValues"].clone())
             .expect("checkpoint.resumeValues must parse as OrderByResumeValue");
-    let last_rid = checkpoint["lastRid"]
-        .as_str()
-        .expect("checkpoint must declare lastRid")
-        .to_owned();
+    let last_rid = label_rid(
+        checkpoint["lastRid"]
+            .as_str()
+            .expect("checkpoint must declare lastRid"),
+    );
     // A real boundary always emitted at least the boundary row, so a fixture
     // that omits `skipCount` resumes as 1.
     let skip_count = checkpoint
@@ -696,6 +718,7 @@ async fn catalog_equal_key_resume_requiring_skip_count_replays_correctly() {
     let plan = order_by_plan();
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
+        query_fingerprint: None,
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "FF".to_owned(),
@@ -949,13 +972,14 @@ async fn resume_after_split_with_emitted_ties_has_no_omissions_or_duplicates() {
     let plan = order_by_plan();
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
+        query_fingerprint: None,
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "FF".to_owned(),
             server_continuation: None,
             boundary: Some(ValueBoundary {
                 resume_values: vec![OrderByResumeValue::Number { value: 5.0.into() }],
-                last_rid: "c".to_owned(),
+                last_rid: label_rid("c"),
                 skip_count: 1,
             }),
         }],
@@ -1005,13 +1029,14 @@ async fn resume_complex_boundary_across_split_has_no_omissions_or_duplicates() {
     let complex = OrderByItem::Array(vec![OrderByItem::Number(5_i64.into())]).to_resume_value();
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
+        query_fingerprint: None,
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "FF".to_owned(),
             server_continuation: None,
             boundary: Some(ValueBoundary {
                 resume_values: vec![complex],
-                last_rid: "c".to_owned(),
+                last_rid: label_rid("c"),
                 skip_count: 1,
             }),
         }],
@@ -1066,13 +1091,14 @@ async fn resume_distinct_complex_boundary_across_split_drops_before_keeps_after(
     let complex = OrderByItem::Array(vec![OrderByItem::Number(3_i64.into())]).to_resume_value();
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
+        query_fingerprint: None,
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "FF".to_owned(),
             server_continuation: None,
             boundary: Some(ValueBoundary {
                 resume_values: vec![complex],
-                last_rid: "at-3".to_owned(),
+                last_rid: label_rid("at-3"),
                 skip_count: 1,
             }),
         }],
@@ -1121,13 +1147,14 @@ async fn resume_after_merge_clips_widened_range_and_drains() {
     let plan = order_by_plan();
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
+        query_fingerprint: None,
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "80".to_owned(),
             server_continuation: None,
             boundary: Some(ValueBoundary {
                 resume_values: vec![OrderByResumeValue::Number { value: 5.0.into() }],
-                last_rid: "c".to_owned(),
+                last_rid: label_rid("c"),
                 skip_count: 1,
             }),
         }],
@@ -1408,8 +1435,8 @@ async fn run_resume_filtered_binding_cycle(
          continuation into the plain server_continuation field"
     );
     assert_eq!(
-        state2_boundary_rid.as_deref(),
-        Some(ids2[0].as_str()),
+        state2_boundary_rid,
+        Some(label_rid(&ids2[0])),
         "the scalar boundary must advance to the row just emitted"
     );
     drop(pipeline2);
@@ -1496,6 +1523,7 @@ async fn string_boundary_resume_travels_in_resume_filter_not_inline_sql() {
     let plan = order_by_plan();
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
+        query_fingerprint: None,
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "FF".to_owned(),
@@ -1504,7 +1532,7 @@ async fn string_boundary_resume_travels_in_resume_filter_not_inline_sql() {
                 resume_values: vec![OrderByResumeValue::String {
                     value: nasty.to_owned(),
                 }],
-                last_rid: "rid-1".to_owned(),
+                last_rid: label_rid("rid-1"),
                 skip_count: 1,
             }),
         }],
@@ -1809,4 +1837,66 @@ async fn ascending_full_key_ties_span_backend_pages_and_survive_two_resumes() {
 #[tokio::test]
 async fn descending_full_key_ties_span_backend_pages_and_survive_two_resumes() {
     tied_full_key_resume_spans_pages_and_two_cycles(SortOrder::Descending).await;
+}
+
+/// End-to-end: a token minted by one query must not resume a different one.
+/// The client builds the resume filter itself from the saved boundary, so a
+/// query-text or parameter change would otherwise silently return wrong rows
+/// (the service never sees the original query to object). The token is
+/// fingerprinted on the *original* body, not the Gateway-rewritten text, so a
+/// service-side rewrite change never invalidates in-flight tokens.
+#[tokio::test]
+async fn resume_against_a_different_query_is_rejected() {
+    // One row per page so a single `next_page` stops at a clean boundary.
+    let op = order_by_operation_with_page_size(1);
+    let plan = order_by_plan();
+
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut executor =
+        MockRequestExecutor::new(vec![Ok(envelope_page(&[("d1", 1)], Some("ct-1")))]);
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+        .await
+        .unwrap();
+    drain_one(&mut pipeline, &mut executor).await;
+    let state = pipeline.snapshot_state().unwrap();
+    drop(pipeline);
+
+    // Same query text and parameters: resumes cleanly.
+    let mut topology_ok = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    build_streaming_ordered_merge(
+        &plan,
+        &mut topology_ok,
+        &op,
+        Some(round_trip_state(state.clone(), &op)),
+    )
+    .await
+    .expect("the query that minted the token resumes");
+
+    // Same shape (one ascending column) but different parameter values, so
+    // `directions` alone cannot tell them apart.
+    let other_op = Arc::new(
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(
+                br#"{"query":"SELECT * FROM c WHERE c.tenant = @t ORDER BY c.rank","parameters":[{"name":"@t","value":"other"}]}"#
+                    .to_vec(),
+            )
+            .with_max_item_count(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(1).unwrap(),
+            )),
+    );
+    let mut topology_bad = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let err = build_streaming_ordered_merge(
+        &plan,
+        &mut topology_bad,
+        &other_op,
+        Some(round_trip_state(state, &other_op)),
+    )
+    .await
+    .err()
+    .expect("a token minted by a different query must be rejected");
+    assert_eq!(
+        err.status().sub_status(),
+        Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+        "got: {err}"
+    );
 }

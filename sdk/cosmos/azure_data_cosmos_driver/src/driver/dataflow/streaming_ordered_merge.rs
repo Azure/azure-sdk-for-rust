@@ -283,6 +283,16 @@ pub(crate) struct StreamingOrderedMerge {
     directions: Vec<SortOrder>,
     children: Vec<ChildStream>,
     session_token: Option<SessionToken>,
+    /// Stable hash of the originating query text and parameters, persisted in
+    /// every snapshot and re-checked on resume (see
+    /// [`super::snapshot::PipelineNodeState::StreamingOrderedMerge`]).
+    query_fingerprint: String,
+    /// An error raised *after* rows were already consumed into the page being
+    /// assembled. Emitting rows advances each child's resume boundary, so
+    /// dropping the partial page would let a continuation token captured after
+    /// the failure skip those rows permanently. The partial page is returned
+    /// first and this surfaces on the next [`Self::next_page`] call instead.
+    deferred_error: Option<crate::error::CosmosError>,
 }
 
 impl StreamingOrderedMerge {
@@ -290,12 +300,15 @@ impl StreamingOrderedMerge {
         plain_operation: Arc<CosmosOperation>,
         directions: Vec<SortOrder>,
         children: Vec<ChildStream>,
+        query_fingerprint: String,
     ) -> Self {
         Self {
             plain_operation,
             directions,
             children,
             session_token: None,
+            deferred_error: None,
+            query_fingerprint,
         }
     }
 
@@ -537,6 +550,11 @@ impl PipelineNode for StreamingOrderedMerge {
         &mut self,
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult> {
+        // A failure deferred by a prior partial page takes precedence over
+        // everything, including the drained short-circuit below.
+        if let Some(err) = self.deferred_error.take() {
+            return Err(err);
+        }
         if self.children.is_empty() {
             return Ok(PageResult::Drained);
         }
@@ -545,7 +563,8 @@ impl PipelineNode for StreamingOrderedMerge {
         aggregator.seed_session_token(self.session_token.clone());
 
         // Prime every child up front so the heap sees a head row for each
-        // non-drained child.
+        // non-drained child. Nothing has been emitted yet, so a failure here
+        // loses no rows and propagates directly.
         self.prime_all_active_children(context, &mut aggregator)
             .await?;
         let mut head_heap = self.build_head_heap();
@@ -561,19 +580,42 @@ impl PipelineNode for StreamingOrderedMerge {
                 .buffered
                 .pop_front()
                 .expect("head heap only contains indices with a buffered row");
-            self.children[winner].record_emission(&row.keys, &row.rid)?;
+            if let Err(err) = self.children[winner].record_emission(&row.keys, &row.rid) {
+                // The boundary was not advanced, so put the row back and let
+                // it be re-emitted on a later attempt.
+                self.children[winner].buffered.push_front(row);
+                if payloads.is_empty() {
+                    return Err(err);
+                }
+                self.deferred_error = Some(err);
+                break;
+            }
             payloads.push(row.payload);
             if payloads.len() < cap {
                 if self.children[winner].buffered.front().is_some() {
                     self.heap_push(&mut head_heap, winner);
                 } else {
+                    // From here on rows have already been consumed and their
+                    // boundaries advanced, so a fetch failure must not discard
+                    // the page — defer it instead.
                     let topology_changed =
-                        self.prime_child(winner, context, &mut aggregator).await?;
+                        match self.prime_child(winner, context, &mut aggregator).await {
+                            Ok(changed) => changed,
+                            Err(err) => {
+                                self.deferred_error = Some(err);
+                                break;
+                            }
+                        };
                     if topology_changed {
                         // Split replacements shift child indices and only the
                         // first replacement was primed inline.
-                        self.prime_all_active_children(context, &mut aggregator)
-                            .await?;
+                        if let Err(err) = self
+                            .prime_all_active_children(context, &mut aggregator)
+                            .await
+                        {
+                            self.deferred_error = Some(err);
+                            break;
+                        }
                         head_heap = self.build_head_heap();
                     } else if self.children[winner].buffered.front().is_some() {
                         self.heap_push(&mut head_heap, winner);
@@ -586,7 +628,9 @@ impl PipelineNode for StreamingOrderedMerge {
         // so a later snapshot never references them.
         self.children
             .retain(|child| !(child.drained && child.buffered.is_empty()));
-        let is_terminal = self.children.is_empty();
+        // A deferred error still has to be delivered, so the stream can never
+        // be reported terminal while one is pending.
+        let is_terminal = self.children.is_empty() && self.deferred_error.is_none();
 
         self.session_token = aggregator.session_token().cloned();
         let response = aggregator.build_page(&payloads)?;
@@ -650,6 +694,7 @@ impl PipelineNode for StreamingOrderedMerge {
 
         Ok(PipelineNodeState::StreamingOrderedMerge {
             directions: self.directions.clone(),
+            query_fingerprint: Some(self.query_fingerprint.clone()),
             ranges,
         })
     }
@@ -658,6 +703,28 @@ impl PipelineNode for StreamingOrderedMerge {
         // Splits are handled internally (`handle_split`); no parent needed.
         false
     }
+}
+
+/// Stable fingerprint of the originating query body (query text plus
+/// parameters, exactly as the caller supplied it), persisted in a
+/// continuation token so a resume can prove the token belongs to this query.
+///
+/// Hashed with the same MurmurHash3-128 used elsewhere in the driver, so the
+/// value is byte-stable across processes and SDK builds (unlike
+/// `std::hash::DefaultHasher`). The original body is fingerprinted rather than
+/// the Gateway's rewritten query so a service-side rewrite change does not
+/// invalidate in-flight tokens.
+///
+/// Because this hashes the *serialized* body, the query body's serialization
+/// shape (serde field order, optional-field emission) is a compatibility
+/// surface: changing it invalidates in-flight tokens with a hard
+/// `CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID` rather than silently
+/// resuming the wrong query.
+pub(super) fn query_fingerprint(body: Option<&[u8]>) -> String {
+    format!(
+        "{:032x}",
+        crate::models::murmur_hash::murmurhash3_128(body.unwrap_or_default(), 0)
+    )
 }
 
 /// Builds the child streams needed to cover `scope`, given its topology
@@ -1113,7 +1180,12 @@ mod tests {
     }
 
     fn merge(children: Vec<ChildStream>, directions: Vec<SortOrder>) -> StreamingOrderedMerge {
-        StreamingOrderedMerge::new(Arc::new(mocks::operation()), directions, children)
+        StreamingOrderedMerge::new(
+            Arc::new(mocks::operation()),
+            directions,
+            children,
+            "test-fingerprint".to_owned(),
+        )
     }
 
     async fn next_page(node: &mut StreamingOrderedMerge) -> PageResult {
@@ -1397,8 +1469,12 @@ mod tests {
                 std::num::NonZeroU32::new(1).unwrap(),
             )),
         );
-        let mut node =
-            StreamingOrderedMerge::new(operation, vec![SortOrder::Ascending], vec![left, right]);
+        let mut node = StreamingOrderedMerge::new(
+            operation,
+            vec![SortOrder::Ascending],
+            vec![left, right],
+            "test-fingerprint".to_owned(),
+        );
 
         let PageResult::Page {
             response: first, ..
@@ -2408,6 +2484,66 @@ mod tests {
         let mut topology = mocks::NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
         assert!(node.next_page(&mut context).await.is_err());
+    }
+
+    /// Regression: a fetch failure that happens *after* rows were consumed
+    /// into the page under construction must not discard those rows. Emitting
+    /// a row advances its child's resume boundary, and
+    /// `azure_data_cosmos::feed::iterator` deliberately keeps the plan alive
+    /// on error so the caller can still capture a continuation token — so
+    /// dropping the page would permanently skip every consumed row. The merge
+    /// returns the partial page instead and surfaces the error on the next
+    /// call.
+    #[tokio::test]
+    async fn fetch_failure_after_emission_returns_partial_page_then_error() {
+        // A single child so the failing replenish happens inside the pop loop
+        // rather than during the up-front priming pass.
+        let child = ChildStream::fresh(
+            range("", "FF"),
+            Box::new(MockLeaf::with_pages(vec![
+                envelope_page(&[("d1", 1)], Some("ct-1")),
+                Err(mocks::non_topology_gone_error()),
+            ])),
+        );
+        let mut node = merge(vec![child], vec![SortOrder::Ascending]);
+
+        let PageResult::Page {
+            response,
+            is_terminal,
+        } = next_page(&mut node).await
+        else {
+            panic!("expected the already-consumed row to be returned as a partial page");
+        };
+        assert_eq!(
+            ids(&response),
+            vec!["d1"],
+            "the row consumed before the failure must still be delivered"
+        );
+        assert!(
+            !is_terminal,
+            "a stream with a deferred error is never terminal"
+        );
+
+        // The boundary matches exactly what was delivered, so a token captured
+        // here resumes at the right place.
+        match node.snapshot_state().unwrap() {
+            PipelineNodeState::StreamingOrderedMerge { ranges, .. } => {
+                let boundary = ranges[0]
+                    .boundary
+                    .as_ref()
+                    .expect("the emitted row advanced the boundary");
+                assert_eq!(boundary.last_rid, "d1");
+            }
+            other => panic!("expected StreamingOrderedMerge, got {other:?}"),
+        }
+
+        let mut executor = mocks::NoopRequestExecutor;
+        let mut topology = mocks::NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        assert!(
+            node.next_page(&mut context).await.is_err(),
+            "the deferred error must surface on the next call, not be swallowed"
+        );
     }
 
     // ── Catalog-driven scenarios ─────────────────────────────────────────
