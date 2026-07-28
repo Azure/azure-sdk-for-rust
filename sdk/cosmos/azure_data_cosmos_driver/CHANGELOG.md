@@ -10,6 +10,8 @@
 
 ### Other Changes
 
+- Changed the messages and severity of some tracing events. ([#4711](https://github.com/Azure/azure-sdk-for-rust/pull/4711))
+
 ## 0.6.1 (2026-07-23)
 
 ### Bugs Fixed
