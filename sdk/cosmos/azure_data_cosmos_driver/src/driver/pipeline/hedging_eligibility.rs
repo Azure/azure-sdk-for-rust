@@ -59,7 +59,7 @@ const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 /// * `(PartitionKeyRange, ReadFeed)` — `PartitionKeyRange` `ReadFeed` metadata
 ///   cache read. Only the cold first change-feed page is hedged; if the hedge
 ///   wins, later pages are pinned to the winning region (the continuation ETag
-///   is region-affine) via `OperationOverrides::pinned_endpoint`.
+///   is region-affine) via `OperationOverrides::region_pin`.
 ///
 /// See `docs/HEDGING_SPEC.md`.
 const HEDGEABLE_PAIRS: &[(ResourceType, OperationType)] = &[
@@ -320,12 +320,10 @@ pub(crate) fn evaluate_hedge_eligibility(
 /// True when the operation is a metadata cache read that hedges with the fixed
 /// [`METADATA_HEDGE_THRESHOLD`] rather than the data-plane default.
 ///
-/// This lists every metadata read that is *intended* to use the fixed
-/// threshold, including `(PartitionKeyRange, ReadFeed)` which is not yet in
-/// [`HEDGEABLE_PAIRS`] (deferred pending the continuation pin). Keeping it here
-/// means re-enabling PKRange hedging only requires editing `HEDGEABLE_PAIRS`;
-/// actual eligibility is always gated by `should_hedge` / `HEDGEABLE_PAIRS`, so
-/// listing the not-yet-eligible pair here is harmless.
+/// This mirrors the metadata entries of [`HEDGEABLE_PAIRS`]: `(DocumentCollection,
+/// Read)` and `(PartitionKeyRange, ReadFeed)`. Eligibility itself is always
+/// decided by `should_hedge` / [`HEDGEABLE_PAIRS`]; this predicate only selects
+/// which threshold an already-eligible operation uses.
 fn is_metadata_hedge_read(operation: &CosmosOperation) -> bool {
     matches!(
         (operation.resource_type(), operation.operation_type()),
@@ -506,7 +504,7 @@ mod tests {
     fn should_hedge_pkrange_readfeed() {
         // Metadata PartitionKeyRange ReadFeed `(PartitionKeyRange, ReadFeed)` IS
         // hedged; the cache hedges only the cold first change-feed page and pins
-        // later pages to the winner via OperationOverrides::pinned_endpoint.
+        // later pages to the winner via OperationOverrides::region_pin.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_pk_ranges_operation();
         assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));

@@ -79,13 +79,39 @@ fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration, Durat
     }
 }
 
+/// Internal, non-customer-overridable hedging and routing pin carried on
+/// [`OperationOverrides::region_pin`].
+///
+/// Attached to a read whose continuation token is region-affine — today the
+/// PartitionKeyRange change feed, whose ETag is only meaningful to the region
+/// that issued it. Its presence alone suppresses hedging; the optional
+/// `endpoint` additionally forces the attempt onto a specific region.
+///
+/// This deliberately does **not** reuse [`AvailabilityStrategy::Disabled`]:
+/// that is a customer-facing option, and `resolve_availability_strategy` lets
+/// the `AZURE_COSMOS_HEDGING_ENABLED=true` environment switch override it. A
+/// correctness constraint must not be defeatable by configuration, so it lives
+/// here instead.
+///
+/// [`AvailabilityStrategy::Disabled`]: crate::options::AvailabilityStrategy::Disabled
+#[derive(Debug, Clone, Default)]
+pub(crate) struct RegionPin {
+    /// Region this attempt must be routed to, bypassing the normal region
+    /// selection in [`resolve_endpoint`].
+    ///
+    /// `None` keeps normal region selection but still suppresses hedging: the
+    /// continuation was issued by whichever region normal routing picks, and
+    /// racing a second region would send that token somewhere it means nothing.
+    pub endpoint: Option<crate::driver::routing::CosmosEndpoint>,
+}
+
 /// Per-request overrides that take precedence over values from [`CosmosOperation`].
 ///
 /// Used by the dataflow pipeline to inject routing and pagination state that
 /// varies per physical partition or per page, without mutating the shared
 /// `CosmosOperation`. Most fields, when `Some`, emit the corresponding request
-/// header in [`OperationOverrides::apply_headers`]; `pinned_endpoint` instead
-/// overrides the STAGE 2 routing decision.
+/// header in [`OperationOverrides::apply_headers`]; `region_pin` instead
+/// constrains hedging and the STAGE 2 routing decision.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct OperationOverrides {
     /// Feed range to constrain the request to (emits `x-ms-start-epk` / `x-ms-end-epk`).
@@ -107,19 +133,40 @@ pub(crate) struct OperationOverrides {
     /// Continuation token for pagination (emits `x-ms-continuation`).
     pub continuation: Option<String>,
 
-    /// Pins this attempt's routing to a specific endpoint, bypassing the normal
-    /// region selection in [`resolve_endpoint`].
+    /// Constrains this attempt to a single region and forbids hedging.
     ///
     /// Unlike the other fields this is NOT a request header — it is consumed by
-    /// STAGE 2 of the operation pipeline. It keeps a paged read on a specific
-    /// region: the PartitionKeyRange change-feed pages 2..N after a first-page
-    /// hedge win must stay on the region that issued the continuation token
-    /// (whose ETag is only meaningful to that region). When set, the pre-attempt
-    /// hedge (STAGE 2b) is also suppressed so the pin is honored.
-    pub pinned_endpoint: Option<crate::driver::routing::CosmosEndpoint>,
+    /// STAGE 2 (routing), STAGE 2b (pre-attempt hedge dispatch), and STAGE 5b
+    /// (post-attempt hedge upgrade) of the operation pipeline. It keeps a paged
+    /// read on one region: the PartitionKeyRange change feed carries its
+    /// continuation as an ETag that is only meaningful to the region that
+    /// issued it, so every page after the first must neither race another
+    /// region nor be failed over into one.
+    ///
+    /// See [`RegionPin`] for why this is an internal signal rather than
+    /// `AvailabilityStrategy::Disabled`. Boxed so the field stays pointer-sized
+    /// — this struct is captured by the operation future, which is already
+    /// close to the `clippy::large_futures` budget.
+    pub region_pin: Option<Box<RegionPin>>,
 }
 
 impl OperationOverrides {
+    /// The endpoint this attempt is pinned to, if any.
+    ///
+    /// `None` either because there is no pin at all, or because the pin only
+    /// suppresses hedging and leaves region selection alone.
+    pub fn pinned_endpoint(&self) -> Option<&crate::driver::routing::CosmosEndpoint> {
+        self.region_pin.as_ref().and_then(|p| p.endpoint.as_ref())
+    }
+
+    /// Whether hedging must not fire for this attempt.
+    ///
+    /// Distinct from the customer-facing `AvailabilityStrategy::Disabled`,
+    /// which `AZURE_COSMOS_HEDGING_ENABLED=true` deliberately overrides.
+    pub fn hedging_suppressed(&self) -> bool {
+        self.region_pin.is_some()
+    }
+
     /// Applies the override headers to the given header map.
     ///
     /// Headers set here take precedence over any previously-set values for
@@ -393,10 +440,10 @@ pub(crate) async fn execute_operation_pipeline(
         // parity), falling back to parsing the customer-provided global
         // endpoint hostname when metadata has not synced yet.
         let account_name = location_state_store.global_database_account_name();
-        // A pinned endpoint (e.g. PartitionKeyRange pages 2..N after a first-page
+        // A pinned attempt (e.g. PartitionKeyRange pages 2..N after a first-page
         // hedge win) bypasses normal region selection and routes straight to the
         // pinned region so the change-feed continuation stays region-consistent.
-        let routing = match overrides.pinned_endpoint.as_ref() {
+        let routing = match overrides.pinned_endpoint() {
             Some(pinned) => {
                 routing_decision_for_pinned_endpoint(pinned, pipeline_type.is_data_plane())
             }
@@ -440,12 +487,16 @@ pub(crate) async fn execute_operation_pipeline(
         //   applicable read endpoints, env-disabled hedging, or per-op
         //   `AvailabilityStrategy::Disabled`. All gated by
         //   [`evaluate_hedge_eligibility`].
-        // * **Pinned attempts** — when `overrides.pinned_endpoint` is set the
-        //   attempt is deliberately routed to a single region (continuation
-        //   consistency), so racing a second region would defeat the pin.
+        // * **Region-pinned attempts** — when `overrides.region_pin` is set the
+        //   attempt carries a region-affine continuation token, so racing a
+        //   second region would send that token somewhere it means nothing.
+        //   This is checked directly rather than through
+        //   `AvailabilityStrategy::Disabled` because the latter is a customer
+        //   option that `AZURE_COSMOS_HEDGING_ENABLED=true` can override; a
+        //   correctness constraint must not be defeatable by configuration.
         if retry_state.failover_retry_count == 0
             && retry_state.session_token_retry_count == 0
-            && overrides.pinned_endpoint.is_none()
+            && !overrides.hedging_suppressed()
         {
             if let Some(upgrade) = evaluate_hedge_eligibility(
                 operation,
@@ -715,7 +766,12 @@ pub(crate) async fn execute_operation_pipeline(
         // back-to-back upgrades would compound RU consumption without
         // letting the surrounding failover loop make sequential
         // progress against the remaining regions.
-        let action = if retry_state.hedge_already_fired {
+        //
+        // A region-pinned attempt (`overrides.region_pin`) is likewise never
+        // upgraded: it carries a region-affine continuation token, so racing
+        // (or failing over) to another region would send that token somewhere
+        // it is not meaningful. This mirrors the STAGE 2b suppression above.
+        let action = if retry_state.hedge_already_fired || overrides.hedging_suppressed() {
             action
         } else {
             maybe_upgrade_to_hedge(
@@ -1167,7 +1223,7 @@ fn is_effect_already_applied(effect: &LocationEffect, snapshot: &LocationSnapsho
 /// Uses `LocationSnapshot` and `AccountEndpointState` to select the best
 /// available endpoint, respecting excluded regions and unavailability TTL.
 /// Builds a [`RoutingDecision`] that routes an attempt to a specific `pinned`
-/// endpoint (see [`OperationOverrides::pinned_endpoint`]), bypassing the normal
+/// endpoint (see [`OperationOverrides::region_pin`]), bypassing the normal
 /// region selection in [`resolve_endpoint`].
 ///
 /// Mirrors the routing construction used for the hedge secondary in
@@ -8454,7 +8510,7 @@ mod tests {
         ));
     }
 
-    // ── routing_decision_for_pinned_endpoint (pinned_endpoint override) ──
+    // ── OperationOverrides::region_pin ────────────────────────────────
 
     #[test]
     fn routing_decision_for_pinned_endpoint_routes_to_the_pinned_endpoint() {
@@ -8471,6 +8527,47 @@ mod tests {
             routing.transport_mode,
             super::TransportMode::Gateway
         ));
+    }
+
+    #[test]
+    fn no_region_pin_allows_hedging_and_normal_routing() {
+        let overrides = super::OperationOverrides::default();
+
+        assert!(!overrides.hedging_suppressed());
+        assert!(overrides.pinned_endpoint().is_none());
+    }
+
+    #[test]
+    fn endpointless_region_pin_suppresses_hedging_without_pinning_routing() {
+        // The case the pkranges change feed hits when the primary answered the
+        // cold page: later pages still carry that region's ETag, so they must
+        // not be raced even though there is no specific region to force.
+        let overrides = super::OperationOverrides {
+            region_pin: Some(Box::new(super::RegionPin::default())),
+            ..Default::default()
+        };
+
+        assert!(overrides.hedging_suppressed());
+        assert!(overrides.pinned_endpoint().is_none());
+    }
+
+    #[test]
+    fn region_pin_with_endpoint_suppresses_hedging_and_pins_routing() {
+        use crate::driver::routing::CosmosEndpoint;
+        use crate::options::Region;
+        let url = url::Url::parse("https://acct-westus2.documents.azure.com/").unwrap();
+        let overrides = super::OperationOverrides {
+            region_pin: Some(Box::new(super::RegionPin {
+                endpoint: Some(CosmosEndpoint::regional(Region::WEST_US_2, url)),
+            })),
+            ..Default::default()
+        };
+
+        assert!(overrides.hedging_suppressed());
+        assert_eq!(
+            overrides.pinned_endpoint().and_then(|e| e.region()),
+            Some(&Region::WEST_US_2)
+        );
     }
 
     #[test]

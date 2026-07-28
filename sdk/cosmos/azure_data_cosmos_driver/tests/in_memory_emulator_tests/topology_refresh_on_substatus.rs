@@ -335,7 +335,12 @@ async fn upsert_item_403_1008_triggers_refresh_and_cross_region_retry() {
 }
 
 /// **403/1008 — bounded bubble-up.** All-region 1008 retries must terminate.
-#[tokio::test]
+// Runs on tokio's paused clock: this test exhausts the full 120-attempt
+// backend-failover budget, and each attempt sleeps `BACKEND_FAILOVER_RETRY_INTERVAL`
+// (1s) via `azure_core::sleep` (tokio timer). Paused time auto-advances those
+// sleeps instantly, so the test asserts the same outcome without ~120s of real
+// wall-clock sleeping.
+#[tokio::test(start_paused = true)]
 async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     let recorder = HostRecorder::new();
     let east_rule = region_fault_rule(
@@ -490,7 +495,9 @@ async fn write_403_3_triggers_topology_refresh() {
 }
 
 /// **403/3 — bounded bubble-up.** All-region 403/3 retries must terminate.
-#[tokio::test]
+// Paused clock: exhausts the 120-attempt backend-failover budget (1s backoff
+// each) with both regions faulted; paused time makes the retry sleeps instant.
+#[tokio::test(start_paused = true)]
 async fn all_regions_403_3_bounded_retries_then_bubble_up() {
     let recorder = HostRecorder::new();
     let east = region_fault_rule(
@@ -596,7 +603,10 @@ async fn write_403_3_second_attempt_targets_different_region() {
 }
 
 /// **403/3 — persistent one-region failures must not pin retries there.**
-#[tokio::test]
+// Paused clock: the persistent-fault retry loop backs off 1s per attempt via a
+// tokio timer; paused time collapses those sleeps so the runaway guard never
+// costs real wall-clock time.
+#[tokio::test(start_paused = true)]
 async fn write_403_3_persistent_fault_pins_retries_to_same_region() {
     let recorder = HostRecorder::new();
     let rule = region_fault_rule(
@@ -681,7 +691,10 @@ async fn write_403_3_persistent_fault_pins_retries_to_same_region() {
 }
 
 /// **403/3 — backend-driven failover honors caller `excluded_regions`.**
-#[tokio::test]
+// Paused clock: West is excluded so East's persistent 403/3 exhausts the
+// 120-attempt budget (1s backoff each) before bubbling up; paused time makes it
+// instant.
+#[tokio::test(start_paused = true)]
 async fn write_403_3_retry_honors_excluded_region() {
     let recorder = HostRecorder::new();
     let rule = region_fault_rule(
@@ -739,7 +752,9 @@ async fn write_403_3_retry_honors_excluded_region() {
 }
 
 /// **403/1008 — backend-driven failover honors caller `excluded_regions`.**
-#[tokio::test]
+// Paused clock: West is excluded so East's persistent 403/1008 exhausts the
+// 120-attempt budget (1s backoff each); paused time makes it instant.
+#[tokio::test(start_paused = true)]
 async fn create_item_403_1008_retry_honors_excluded_region() {
     let recorder = HostRecorder::new();
     let rule = region_fault_rule(
@@ -797,7 +812,9 @@ async fn create_item_403_1008_retry_honors_excluded_region() {
 }
 
 /// **GetDatabaseAccount metadata refresh is independent of `excluded_regions`.**
-#[tokio::test]
+// Paused clock: the excluded-region retry path exhausts the backend-failover
+// budget with 1s backoffs; paused time collapses those sleeps.
+#[tokio::test(start_paused = true)]
 async fn metadata_refresh_ignores_excluded_regions() {
     let recorder = HostRecorder::new();
     let rule = region_fault_rule(
@@ -869,7 +886,9 @@ async fn metadata_refresh_ignores_excluded_regions() {
 }
 
 /// **Regional-endpoint metadata-refresh fallback ignores `excluded_regions`.**
-#[tokio::test]
+// Paused clock: the excluded-region regional-fallback retry path exhausts the
+// backend-failover budget with 1s backoffs; paused time collapses those sleeps.
+#[tokio::test(start_paused = true)]
 async fn metadata_refresh_regional_fallback_ignores_excluded_regions() {
     let recorder = HostRecorder::new();
     let data_plane_rule = region_fault_rule(

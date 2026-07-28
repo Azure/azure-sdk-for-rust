@@ -20,7 +20,7 @@ use crate::{
             ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
             METADATA_MAX_THROTTLE_WAIT,
         },
-        pipeline::operation_pipeline::OperationOverrides,
+        pipeline::operation_pipeline::{OperationOverrides, RegionPin},
         routing::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
             CosmosEndpoint, LocationStateStore,
@@ -41,8 +41,9 @@ use crate::{
 };
 use arc_swap::ArcSwap;
 use futures::future::BoxFuture;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 #[cfg(feature = "preview_dtx")]
 use std::time::Instant;
@@ -69,6 +70,19 @@ const DTX_OUTER_MAX_EXPONENT: u32 = 5;
 const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
+
+/// Serialization formats advertised (`x-ms-cosmos-supported-serialization-formats`)
+/// on point operations when binary encoding is enabled. Point operations
+/// advertise `CosmosBinary` only — matching the .NET SDK's point-op default
+/// (`RequestInvokerHandler` sets `BinarySerializationFormat =
+/// SupportedSerializationFormats.CosmosBinary`) — so the service is required to
+/// reply in binary, preserving the read-side RU/COGS benefit the caller opted
+/// into. When the caller also asked for a text payload
+/// (`request_text_response`), the driver transcodes the guaranteed-binary
+/// response back to text after receiving it, keeping the wire binary in both
+/// directions. (The broader `JsonText,CosmosBinary` negotiation applies to
+/// query/feed, which is not yet wired.)
+const BINARY_NEGOTIATION_FORMATS: &str = "CosmosBinary";
 
 fn should_retry_account_properties_connectivity_error(
     error: &crate::error::CosmosError,
@@ -122,15 +136,19 @@ struct DriverRequestExecutor<'a> {
     options: &'a OperationOptions,
 }
 
-/// Per-fetch-operation state threaded through the PartitionKeyRange change-feed
-/// page loop by [`CosmosDriver::pk_range_page_fetcher`]. Tracks how many pages
-/// have been fetched (only the cold first page hedges) and the endpoint later
-/// pages are pinned to once a first-page hedge wins.
-#[derive(Default)]
-struct PkRangePinState {
-    calls: u32,
-    pinned: Option<crate::driver::routing::CosmosEndpoint>,
-}
+/// Region pins for the PartitionKeyRange change feed, keyed by container.
+///
+/// The `/pkranges` change-feed continuation is an ETag that only the region
+/// which issued it can interpret, and [`PartitionKeyRangeCache`] persists that
+/// continuation in `ContainerRoutingMap::change_feed_next_if_none_match` across
+/// fetch operations — well beyond the lifetime of the closure that produced it.
+/// Pinning per fetcher closure would therefore leak the token into normal
+/// routing on the next refresh, so the pin lives at driver scope alongside the
+/// cache whose entries it protects.
+///
+/// A cold read (no carried continuation) starts a brand new ETag chain, so it
+/// clears any existing pin; a hedge win on that read installs the new one.
+type PkRangeRegionPins = Mutex<HashMap<ContainerReference, CosmosEndpoint>>;
 
 fn request_target_overrides(
     operation_partition_key: Option<&PartitionKey>,
@@ -262,6 +280,9 @@ pub struct CosmosDriver {
     /// Used to pre-resolve partition key range IDs for PPAF/PPCB
     /// before the first request attempt.
     pk_range_cache: PartitionKeyRangeCache,
+    /// Region pins protecting the change-feed continuations held by
+    /// `pk_range_cache`. See [`PkRangeRegionPins`].
+    pk_range_region_pins: PkRangeRegionPins,
     /// Session token cache for session consistency.
     session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
@@ -1583,6 +1604,7 @@ impl CosmosDriver {
             ))]
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
             pk_range_cache: PartitionKeyRangeCache::new(),
+            pk_range_region_pins: Mutex::new(HashMap::new()),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
             user_agent,
@@ -2004,12 +2026,8 @@ impl CosmosDriver {
         &self,
         container: ContainerReference,
         continuation: Option<String>,
-        pinned_endpoint: Option<crate::driver::routing::CosmosEndpoint>,
-        allow_hedge: bool,
-    ) -> (
-        Option<PkRangeFetchResult>,
-        Option<crate::driver::routing::CosmosEndpoint>,
-    ) {
+        region_pin: Option<RegionPin>,
+    ) -> (Option<PkRangeFetchResult>, Option<CosmosEndpoint>) {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
@@ -2026,16 +2044,17 @@ impl CosmosDriver {
         request_headers.max_item_count = Some(crate::models::MaxItemCountHint::ServerDecides);
         operation = operation.with_request_headers(request_headers);
 
-        // Only the cold first page is hedge-eligible. Later pages (and warm
-        // refreshes) disable hedging so the change-feed continuation stays on a
-        // single region; `pinned_endpoint` then routes them to the first-page
-        // hedge winner's region (the continuation ETag is region-affine).
-        let mut options = OperationOptions::default();
-        if !allow_hedge {
-            options.availability_strategy = Some(crate::options::AvailabilityStrategy::Disabled);
-        }
+        // Hedging is decided entirely by `region_pin`: absent (a cold read) the
+        // request is hedge-eligible; present it is not. The pin carries that
+        // suppression itself rather than going through
+        // `AvailabilityStrategy::Disabled`, which the
+        // `AZURE_COSMOS_HEDGING_ENABLED` env switch is allowed to override —
+        // a region-affine continuation must never be raced regardless of
+        // configuration. When the pin also carries an endpoint (a previous cold
+        // read was won by a hedge), the request is routed back to that region.
+        let options = OperationOptions::default();
         let overrides = OperationOverrides {
-            pinned_endpoint,
+            region_pin: region_pin.map(Box::new),
             ..Default::default()
         };
 
@@ -2143,7 +2162,7 @@ impl CosmosDriver {
     fn hedge_winning_endpoint(
         &self,
         response: &crate::models::CosmosResponse,
-    ) -> Option<crate::driver::routing::CosmosEndpoint> {
+    ) -> Option<CosmosEndpoint> {
         let diagnostics = response.diagnostics();
         let hedge = diagnostics.hedge_diagnostics()?;
         if hedge.terminal_state() != crate::diagnostics::HedgeTerminalState::AlternateWon {
@@ -2162,42 +2181,49 @@ impl CosmosDriver {
     /// Builds the per-fetch-operation closure that the PartitionKeyRange cache
     /// drives page-by-page.
     ///
-    /// Encapsulates the change-feed hedging policy: the cold first page (call 0
-    /// with no carried continuation) is hedge-eligible; if a cross-region hedge
-    /// wins it, later pages are pinned to the winner's endpoint so the
-    /// region-affine continuation ETag stays valid. Warm refreshes (a carried
-    /// continuation on the first call) and every later page disable hedging.
+    /// Encapsulates the change-feed hedging policy. A **cold** call (no carried
+    /// continuation) starts a fresh ETag chain, so it drops any existing pin for
+    /// the container and is hedge-eligible; if a cross-region hedge wins it, the
+    /// winner is recorded as the container's pin. Every call that carries a
+    /// continuation is region-pinned instead: hedging is suppressed, and the
+    /// call is routed back to the recorded winner when there is one.
     ///
-    /// The returned closure owns its own pin state, so a fresh call — including
-    /// the `try_combine` full-refresh recursion inside `fetch_and_build_routing_map`
-    /// — starts unpinned.
+    /// The pin is held on the driver rather than in the closure because the
+    /// cache persists the continuation past the closure's lifetime — see
+    /// [`PkRangeRegionPins`].
     fn pk_range_page_fetcher<'a>(
         &'a self,
     ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
            + Send
            + 'a {
-        let pin_state = Arc::new(std::sync::Mutex::new(PkRangePinState::default()));
         move |container, continuation| {
-            let pin_state = pin_state.clone();
             Box::pin(async move {
-                let (pinned, allow_hedge) = {
-                    let mut st = pin_state.lock().expect("pk-range pin state mutex poisoned");
-                    let is_cold_first_page = st.calls == 0 && continuation.is_none();
-                    st.calls += 1;
-                    let pinned = st.pinned.clone();
-                    // Only the cold first page hedges, and only while unpinned.
-                    (pinned.clone(), is_cold_first_page && pinned.is_none())
-                };
-                let (result, winner) = self
-                    .fetch_pk_ranges_from_service(container, continuation, pinned, allow_hedge)
-                    .await;
-                if allow_hedge {
-                    if let Some(win) = winner {
-                        pin_state
-                            .lock()
-                            .expect("pk-range pin state mutex poisoned")
-                            .pinned = Some(win);
+                let region_pin = {
+                    let mut pins = self
+                        .pk_range_region_pins
+                        .lock()
+                        .expect("pk-range region pin mutex poisoned");
+                    if continuation.is_none() {
+                        // A cold read starts a new ETag chain, so the previous
+                        // chain's pin no longer applies and must not outlive it.
+                        pins.remove(&container);
+                        None
+                    } else {
+                        Some(RegionPin {
+                            endpoint: pins.get(&container).cloned(),
+                        })
                     }
+                };
+                let allow_hedge = region_pin.is_none();
+
+                let (result, winner) = self
+                    .fetch_pk_ranges_from_service(container.clone(), continuation, region_pin)
+                    .await;
+                if let Some(win) = winner.filter(|_| allow_hedge) {
+                    self.pk_range_region_pins
+                        .lock()
+                        .expect("pk-range region pin mutex poisoned")
+                        .insert(container, win);
                 }
                 result
             })
@@ -2397,10 +2423,9 @@ impl CosmosDriver {
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         // PATCH is a virtual operation type: dispatch it to the dedicated
-        // Read-Modify-Write handler before any of the standard pipeline steps
-        // run, because the handler issues its own Read/Replace operations
-        // through this same entry point. `Box::pin` is required so the
-        // resulting async future has a fixed size even though it can recurse.
+        // Read-Modify-Write handler, which issues its own Read/Replace
+        // operations through this same entry point. `Box::pin` gives the
+        // recursive future a fixed size.
         if operation.operation_type() == crate::models::OperationType::Patch {
             let max_attempts = operation.patch_max_attempts();
             return Box::pin(async {
@@ -2416,14 +2441,95 @@ impl CosmosDriver {
             .await;
         }
 
+        // Resolve binary encoding through the same layered view as every other
+        // option, and only honor it for point **item** operations (the resource
+        // must be a `Document`; query/feed/batch and every control-plane
+        // resource are deferred per the binary-encoding spec).
+        let binary =
+            if Self::binary_encoding_applies(operation.resource_type(), operation.operation_type())
+            {
+                self.operation_options_view(&options)
+                    .binary_encoding()
+                    .cloned()
+                    .unwrap_or_default()
+            } else {
+                crate::options::BinaryEncodingOptions::default()
+            };
+        let operation = if binary.enabled {
+            Self::apply_request_binary_encoding(operation)?
+        } else {
+            operation
+        };
+
+        let transcode_response_to_text = binary.enabled && binary.request_text_response;
+
         // TODO: This boxing is a temporary fix to avoid a large future.
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
-        Box::pin(async {
+        let response = Box::pin(async {
             let container = operation.container().cloned();
             let mut plan = Box::pin(self.plan_operation(operation, &options, None)).await?;
             self.execute_plan(&mut plan, container, options).await
         })
-        .await
+        .await?;
+
+        // Driver-side transcoding: convert the binary response body to text
+        // when the caller asked for a text payload over a binary wire.
+        if transcode_response_to_text {
+            if let Some(mut response) = response {
+                response.transcode_body_to_text()?;
+                return Ok(Some(response));
+            }
+        }
+        Ok(response)
+    }
+
+    /// Whether binary encoding applies to an operation.
+    ///
+    /// Honored only for point item operations: the resource must be a
+    /// [`ResourceType::Document`] and the operation one of create/read/replace/
+    /// upsert. Control-plane resources share those operation types but must
+    /// never be binary encoded (some carry JSON bodies).
+    fn binary_encoding_applies(
+        resource_type: crate::models::ResourceType,
+        operation_type: crate::models::OperationType,
+    ) -> bool {
+        resource_type == crate::models::ResourceType::Document
+            && operation_type.supports_binary_encoding()
+    }
+
+    /// Applies request-side binary encoding to an operation: transcodes a text
+    /// request body to Cosmos binary JSON (an already-binary or empty body is
+    /// passed through) and advertises binary responses via the
+    /// `x-ms-cosmos-supported-serialization-formats` header.
+    ///
+    /// This is schema-agnostic — it operates on the raw body bytes — so a
+    /// caller that deals only in text JSON gets a binary wire without encoding
+    /// anything itself.
+    fn apply_request_binary_encoding(
+        operation: CosmosOperation,
+    ) -> crate::error::Result<CosmosOperation> {
+        // Transcode a non-empty *text* body to binary. A body that is already
+        // binary (the SDK's typed fast path) or empty is left in place — no
+        // clone — so only genuinely text bodies pay the conversion.
+        let transcoded = match operation.body() {
+            Some(body) if !body.is_empty() && !crate::binary_json::is_binary(body) => {
+                Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+                        .with_message(format!(
+                            "failed to transcode text request body to Cosmos binary JSON: {e}"
+                        ))
+                        .with_source(e)
+                        .build()
+                })?)
+            }
+            _ => None,
+        };
+        let operation = match transcoded {
+            Some(bytes) => operation.with_body(bytes),
+            None => operation,
+        };
+        Ok(operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS))
     }
 
     /// Executes a singleton operation (operations which return only a single result).
@@ -5761,6 +5867,129 @@ mod tests {
         assert!(
             id.as_str() == "0" || id.as_str() == "1",
             "logical PK must resolve to a single owning range, got {id}",
+        );
+    }
+
+    // ── apply_request_binary_encoding (schema-agnostic request-side encode) ──
+
+    #[test]
+    fn binary_encoding_applies_only_to_document_item_ops() {
+        use crate::models::{OperationType, ResourceType};
+
+        // Point item ops on `Document` are the only combinations that qualify.
+        for op in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::Replace,
+            OperationType::Upsert,
+        ] {
+            assert!(
+                CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                "Document + {op:?} should be binary-encodable",
+            );
+        }
+
+        // Non-item operation types on `Document` are excluded (query/feed/delete/patch).
+        for op in [
+            OperationType::Delete,
+            OperationType::Query,
+            OperationType::ReadFeed,
+            OperationType::Patch,
+        ] {
+            assert!(
+                !CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                "Document + {op:?} must not be binary-encoded",
+            );
+        }
+
+        // Control-plane resources share the create/read/replace/upsert operation
+        // types but must NEVER be binary encoded — some carry JSON bodies.
+        for rt in [
+            ResourceType::Database,
+            ResourceType::DocumentCollection,
+            ResourceType::Offer,
+            ResourceType::StoredProcedure,
+            ResourceType::Trigger,
+            ResourceType::UserDefinedFunction,
+        ] {
+            for op in [
+                OperationType::Create,
+                OperationType::Read,
+                OperationType::Replace,
+                OperationType::Upsert,
+            ] {
+                assert!(
+                    !CosmosDriver::binary_encoding_applies(rt, op),
+                    "{rt:?} + {op:?} must not be binary-encoded (control plane)",
+                );
+            }
+        }
+    }
+
+    fn binary_encoding_test_operation(body: Vec<u8>) -> CosmosOperation {
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let item =
+            crate::models::ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        CosmosOperation::create_item(item).with_body(body)
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_transcodes_text_body_to_binary() {
+        // A caller (e.g. FFI) hands a TEXT JSON body; the driver transcodes it
+        // to Cosmos binary JSON and advertises binary responses. The caller
+        // never encoded binary itself.
+        let text = serde_json::to_vec(&serde_json::json!({ "id": "doc1", "n": 7 })).unwrap();
+        assert!(!crate::binary_json::is_binary(&text));
+
+        let op = binary_encoding_test_operation(text);
+        let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
+
+        let body = op.body().expect("body present");
+        assert!(
+            crate::binary_json::is_binary(body),
+            "text body must be transcoded to binary on the wire",
+        );
+        // Decodes back to the same value.
+        assert_eq!(
+            crate::binary_json::decode(body).unwrap(),
+            serde_json::json!({ "id": "doc1", "n": 7 }),
+        );
+        // Advertises binary responses.
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+        );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_passes_binary_body_through() {
+        // A typed consumer (Rust SDK) may pre-encode to binary; the driver's
+        // request-side transcode sees an already-binary body and passes it
+        // through unchanged.
+        let binary = crate::binary_json::encode(&serde_json::json!({ "id": "doc1", "n": 7 }));
+        let op = binary_encoding_test_operation(binary.clone());
+        let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
+
+        assert_eq!(op.body().unwrap(), binary.as_slice());
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+        );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_errors_on_invalid_text_body() {
+        // A body that is neither binary nor valid JSON surfaces as a
+        // request-body serialization error.
+        let op = binary_encoding_test_operation(b"{not json".to_vec());
+        let err = CosmosDriver::apply_request_binary_encoding(op).unwrap_err();
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
         );
     }
 }

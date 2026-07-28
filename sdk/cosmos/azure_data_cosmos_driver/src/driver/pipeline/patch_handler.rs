@@ -44,7 +44,7 @@ use crate::models::{
     CosmosOperation, CosmosResponse, PartitionKeyKind, PatchInstructions, PatchOperation,
     Precondition, SessionToken,
 };
-use crate::options::OperationOptions;
+use crate::options::{BinaryEncodingOptions, OperationOptions};
 use async_trait::async_trait;
 use azure_core::http::{Etag, StatusCode};
 use std::num::NonZeroU8;
@@ -108,9 +108,14 @@ pub(crate) async fn execute(
 pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     dispatcher: &D,
     operation: CosmosOperation,
-    options: OperationOptions,
+    mut options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
 ) -> crate::error::Result<CosmosResponse> {
+    // PATCH is excluded from binary encoding. Force it off *explicitly*:
+    // `None` would inherit a lower layer (e.g. an account/client that enabled
+    // binary), which would then flow into the internal Read/Replace sub-ops.
+    options.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(false));
+
     // -- 1. Reject caller-set preconditions --
     //
     // PATCH manages its own `If-Match` precondition internally — the handler
@@ -1076,7 +1081,7 @@ mod tests {
 
     use crate::diagnostics::DiagnosticsContextBuilder;
     use crate::models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge};
-    use crate::options::DiagnosticsOptions;
+    use crate::options::{BinaryEncodingOptions, DiagnosticsOptions};
     use std::sync::{Arc, Mutex};
 
     /// A pre-baked response a [`ScriptedDispatcher`] returns for a single
@@ -1900,5 +1905,74 @@ mod tests {
         // The aggregated context inherits its activity_id from the LAST
         // source (the Replace), per `aggregate_sub_operations`'s contract.
         assert_eq!(returned.activity_id(), handed_out[1].activity_id());
+    }
+
+    #[tokio::test]
+    async fn rmw_forces_binary_encoding_off_on_forwarded_sub_ops() {
+        // A caller may set `binary_encoding` on a patch; the handler must force
+        // it OFF explicitly (not `None`, which would inherit an account/client
+        // default) so the forwarded Read/Replace sub-ops stay text.
+        struct OptionsCapturingDispatcher {
+            binary_encodings: Mutex<Vec<Option<BinaryEncodingOptions>>>,
+        }
+
+        #[async_trait]
+        impl SubOperationDispatcher for OptionsCapturingDispatcher {
+            async fn execute_operation(
+                &self,
+                operation: CosmosOperation,
+                options: OperationOptions,
+            ) -> crate::error::Result<CosmosResponse> {
+                self.binary_encodings
+                    .lock()
+                    .unwrap()
+                    .push(options.binary_encoding.clone());
+                let body = match operation.operation_type() {
+                    OperationType::Read => br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    OperationType::Replace => br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                    other => panic!("unexpected sub-op {other:?}"),
+                };
+                let mut headers = CosmosResponseHeaders::new();
+                headers.etag = Some(Etag::from("\"v1\""));
+                let diagnostics = Arc::new(
+                    DiagnosticsContextBuilder::new(
+                        ActivityId::new_uuid(),
+                        Arc::new(DiagnosticsOptions::default()),
+                    )
+                    .complete(),
+                );
+                Ok(from_local_body_and_driver_headers(
+                    body,
+                    headers,
+                    CosmosStatus::from_parts(StatusCode::Ok, None),
+                    diagnostics,
+                ))
+            }
+        }
+
+        let dispatcher = OptionsCapturingDispatcher {
+            binary_encodings: Mutex::new(Vec::new()),
+        };
+
+        // Caller opts a patch into binary encoding + text response.
+        let mut options = OperationOptions::default();
+        options.binary_encoding = Some(
+            BinaryEncodingOptions::new()
+                .with_enabled(true)
+                .with_request_text_response(true),
+        );
+
+        execute_with_dispatcher(&dispatcher, canonical_patch_op(), options, None)
+            .await
+            .expect("PATCH should succeed");
+
+        let captured = dispatcher.binary_encodings.lock().unwrap().clone();
+        assert_eq!(captured.len(), 2, "expected one Read + one Replace sub-op");
+        let disabled = Some(BinaryEncodingOptions::new().with_enabled(false));
+        assert!(
+            captured.iter().all(|be| *be == disabled),
+            "patch must force binary_encoding OFF (explicit disabled, not inherit) \
+             on every forwarded sub-op, got {captured:?}",
+        );
     }
 }

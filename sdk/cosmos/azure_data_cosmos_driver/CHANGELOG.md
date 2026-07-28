@@ -4,18 +4,8 @@
 
 ### Features Added
 
-- Extended cross-region hedging to the two metadata cache reads: Collection
-  `Read` and PartitionKeyRange `ReadFeed`. Hedge eligibility is now expressed as
-  exact `(resource, operation)` pairs (`HEDGEABLE_PAIRS`) so metadata reads are
-  covered without a naive widening also enabling document change-feed hedging;
-  the metadata reads use a fixed 1.5s hedge threshold (matching the .NET
-  control-plane threshold); and for metadata the primary region stays
-  authoritative — a hedge may win only with a definitive success and can never
-  override the primary with a definitive error, guarding the replication-lag
-  race. For the PartitionKeyRange change feed only the cold first page is
-  hedged; when a hedge wins, later pages are pinned to the winning region (via a
-  new internal `OperationOverrides::pinned_endpoint` routing override) so the
-  region-affine continuation stays consistent.
+- Added a schema-agnostic Cosmos binary JSON codec (`binary_json`) and driver-side binary encoding via `OperationOptions.binary_encoding` (`BinaryEncodingOptions`). When enabled, the driver transcodes item request/response bodies between text and Cosmos binary JSON and negotiates the wire format; it is honored only for point `Document` item operations. Off by default and inert on the wire when unset. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
+- Extended cross-region hedging to the container and partition-key-range metadata reads, so a slow (but not failed) region no longer stalls a client's first operation against a container. Metadata hedges use a fixed 1.5s threshold and never let a hedged region override a definitive primary result. ([#4896](https://github.com/Azure/azure-sdk-for-rust/pull/4896))
 
 ### Breaking Changes
 
