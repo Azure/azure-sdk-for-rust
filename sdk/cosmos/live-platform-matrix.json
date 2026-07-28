@@ -52,6 +52,9 @@
         },
         "Session MultiRegion GatewayV2": {
           "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleRegions = $true; testCategory = 'gateway_v2_multi_region' }"
+        },
+        "Session SingleRegion ChangeFeed AllVersionsAndDeletes": {
+          "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableContinuousBackup = $true; testCategory = 'all_versions_and_deletes' }"
         }
       }
     }
