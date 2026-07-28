@@ -4,11 +4,15 @@
 
 ### Features Added
 
-- Added `CosmosOperation::db_operation_name`, returning the canonical OpenTelemetry `db.operation.name` (e.g. `read_item`, `query_items`, `execute_batch`) for an operation. The operation pipeline now populates `DiagnosticsContext::operation_name` from it in production (previously always `None`), so `DiagnosticsContext::operation_name()` is populated for callers inspecting diagnostics and supplies the operation name to the emission layer's tail-sampling classifier and tracing span when no SDK-supplied `CosmosOperationContext` is present. The tracing span's operation label prefers the caller-facing `CosmosOperationContext` identity (consistent with the `db.operation.name` metric), and PATCH aggregates report `patch_item` rather than the underlying Replace. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
+- Added `CosmosOperation::db_operation_name`, returning the canonical OpenTelemetry `db.operation.name` (e.g. `read_item`, `query_items`, `execute_batch`, and `read_all_items_of_logical_partition` for a read feed scoped to one logical partition) for an operation. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- `DiagnosticsContext::operation_name()` is now populated in production (previously always `None`): the operation pipeline sets it from `CosmosOperation::db_operation_name`, so tail-sampling classification and the tracing span have an operation name even when no SDK-supplied `CosmosOperationContext` is present. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
+- The tracing span's operation label now prefers the caller-facing `CosmosOperationContext` identity, matching how the `db.operation.name` metric attribute is resolved. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
+- PATCH operations now report `patch_item` rather than the underlying Replace, on both the aggregated success path and every error path (including read, deserialize, patch-evaluation, serialize, and non-412 replace failures). ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 
 ### Other Changes
 

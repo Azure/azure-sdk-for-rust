@@ -35,11 +35,10 @@ pub(crate) struct Instruments {
 
     /// Development: `azure.cosmosdb.client.active_instance.count` (instances).
     ///
-    /// An up-down counter incremented when the handler is constructed and
-    /// decremented when it is dropped, so the reported value tracks the number
-    /// of live [`CosmosMetricsHandler`](super::CosmosMetricsHandler) instances
-    /// (one per instrumented client, under the intended one-handler-per-client
-    /// registration).
+    /// An up-down counter incremented when a
+    /// [`CosmosClient`](crate::CosmosClient) is created with the handler
+    /// registered, and decremented when that client is dropped, so the reported
+    /// value tracks the number of live client instances per account endpoint.
     pub(crate) active_instance: UpDownCounter<i64>,
 }
 

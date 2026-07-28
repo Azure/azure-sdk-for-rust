@@ -2260,6 +2260,39 @@ impl DiagnosticsContext {
         self
     }
 
+    /// Returns a copy of this context with its canonical `db.operation.name`
+    /// replaced, leaving every other field — including status, hedging
+    /// diagnostics, and compaction metadata — intact.
+    ///
+    /// [`with_operation_name`](Self::with_operation_name) consumes `self`, which
+    /// works when the caller still owns a freshly aggregated context. Error
+    /// paths instead hold an `Arc<DiagnosticsContext>` that a deeper layer
+    /// already attached to a [`CosmosError`](crate::error::CosmosError), so they
+    /// need to re-stamp the identity without taking ownership. The JSON caches
+    /// are intentionally not carried over: they may already have been rendered
+    /// with the old name.
+    pub(crate) fn clone_with_operation_name(&self, operation_name: Option<Arc<str>>) -> Self {
+        DiagnosticsContext {
+            activity_id: self.activity_id.clone(),
+            duration: self.duration,
+            requests: Arc::clone(&self.requests),
+            total_request_charge: self.total_request_charge,
+            regions_contacted: self.regions_contacted.clone(),
+            status: self.status,
+            options: Arc::clone(&self.options),
+            cpu_monitor: self.cpu_monitor.clone(),
+            machine_id: self.machine_id.clone(),
+            operation_name,
+            fault_injection_enabled: self.fault_injection_enabled,
+            hedge_diagnostics: self.hedge_diagnostics.clone(),
+            #[cfg(test)]
+            test_system_usage: self.test_system_usage.clone(),
+            compaction: self.compaction.clone(),
+            cached_json_detailed: OnceLock::new(),
+            cached_json_summary: OnceLock::new(),
+        }
+    }
+
     /// Returns `true` when this context represents a finished operation.
     ///
     /// A [`DiagnosticsContext`] is immutable and finalized at construction, so
@@ -2308,12 +2341,14 @@ impl DiagnosticsContext {
     /// Like [`is_threshold_violated`](Self::is_threshold_violated), but takes an
     /// explicit operation name for point/non-point latency classification.
     ///
-    /// Production `DiagnosticsContext`s do not carry an operation name, so the
-    /// SDK's emission handlers pass the caller-facing name from the
-    /// `CosmosOperationContext` here; otherwise every operation would be
-    /// classified with the stricter 1s point-operation threshold. When
-    /// `operation_name` is `None` this falls back to
-    /// [`operation_name`](Self::operation_name), then to the point threshold.
+    /// The driver stamps its own canonical name onto the context, so the
+    /// explicit argument is an *override*: the SDK's emission handlers pass the
+    /// caller-facing name from the `CosmosOperationContext` so classification
+    /// matches the name the caller sees, which also covers operations the driver
+    /// leaves unmapped (throughput reads, for instance, whose canonical name is
+    /// scope-dependent). When `operation_name` is `None` this falls back to
+    /// [`operation_name`](Self::operation_name), then to the stricter point
+    /// threshold.
     pub fn is_threshold_violated_for(
         &self,
         thresholds: &DiagnosticsThresholds,

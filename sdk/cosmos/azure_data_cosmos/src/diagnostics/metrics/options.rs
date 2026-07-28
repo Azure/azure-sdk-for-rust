@@ -73,11 +73,13 @@ impl MetricsOptions {
 
     /// Enables (or disables) the
     /// `azure.cosmosdb.client.active_instance.count` up-down counter, which
-    /// tracks the number of live [`CosmosMetricsHandler`](super::CosmosMetricsHandler)
-    /// instances: it is incremented by one when the handler is created and
-    /// decremented by one when it is dropped. With the intended one-handler-per-client
-    /// registration this equals the number of live instrumented clients; sharing
-    /// a single handler across several clients reports one. Off by default.
+    /// tracks the number of live [`CosmosClient`](crate::CosmosClient)
+    /// instances: it is incremented by one when a client is built with this
+    /// handler registered and decremented by one when that client — and every
+    /// database/container client derived from it — has been dropped. The counter
+    /// is keyed on the account endpoint (`server.address`, plus `server.port`
+    /// for non-default ports), so sharing one handler across several clients
+    /// still reports each client. Off by default.
     #[must_use]
     pub fn with_active_instance_metric(mut self, enabled: bool) -> Self {
         self.active_instance_metric = enabled;

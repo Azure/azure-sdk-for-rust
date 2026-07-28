@@ -21,6 +21,91 @@ use azure_core::http::Context;
 
 use crate::diagnostics::DiagnosticsContext;
 
+/// Identity of a Cosmos client instance, handed to
+/// [`DiagnosticsHandler::on_client_created`] when a
+/// [`CosmosClient`](crate::CosmosClient) is constructed.
+///
+/// Carries only the account-level coordinates a handler needs to key
+/// client-scoped telemetry; it deliberately exposes no credential material.
+#[derive(Clone, Debug)]
+pub struct CosmosClientInfo {
+    server_address: Option<String>,
+    server_port: Option<u16>,
+}
+
+impl CosmosClientInfo {
+    /// Builds the client identity from the account endpoint.
+    ///
+    /// `server_port` is populated only when the endpoint specifies a port other
+    /// than the scheme default, matching the `server.port` semantic convention.
+    pub(crate) fn from_endpoint(endpoint: &azure_core::http::Url) -> Self {
+        Self {
+            server_address: endpoint.host_str().map(str::to_owned),
+            server_port: endpoint.port(),
+        }
+    }
+
+    /// The account endpoint's host, if the endpoint had one.
+    ///
+    /// Maps to the `server.address` semantic-convention attribute.
+    pub fn server_address(&self) -> Option<&str> {
+        self.server_address.as_deref()
+    }
+
+    /// The account endpoint's port, when it is not the scheme default.
+    ///
+    /// Maps to the `server.port` semantic-convention attribute, which is only
+    /// emitted for non-default ports.
+    pub fn server_port(&self) -> Option<u16> {
+        self.server_port
+    }
+}
+
+/// An opaque handle that represents one live client's registration with a
+/// [`DiagnosticsHandler`].
+///
+/// A handler returns a token from
+/// [`on_client_created`](DiagnosticsHandler::on_client_created) when it needs to
+/// observe the end of that client's lifetime. The SDK stores the token in the
+/// client's shared state, so it is dropped once the [`CosmosClient`](crate::CosmosClient)
+/// and every client derived from it (database, container) have been dropped.
+///
+/// Handlers use this to keep client-scoped state — such as the
+/// `azure.cosmosdb.client.active_instance.count` up-down counter — balanced
+/// without tying that state to the handler object's own lifetime (a single
+/// handler may be registered on many clients, or on none).
+pub struct ClientLifetimeToken {
+    on_drop: Option<Box<dyn FnOnce() + Send + Sync>>,
+}
+
+impl ClientLifetimeToken {
+    /// Creates a token that runs `on_drop` when the client it is attached to is
+    /// released.
+    ///
+    /// `on_drop` runs on whichever thread drops the last client handle, so it
+    /// must be cheap and non-blocking, and it must not panic.
+    pub fn new(on_drop: impl FnOnce() + Send + Sync + 'static) -> Self {
+        Self {
+            on_drop: Some(Box::new(on_drop)),
+        }
+    }
+}
+
+impl Drop for ClientLifetimeToken {
+    fn drop(&mut self) {
+        if let Some(on_drop) = self.on_drop.take() {
+            on_drop();
+        }
+    }
+}
+
+impl fmt::Debug for ClientLifetimeToken {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ClientLifetimeToken")
+            .finish_non_exhaustive()
+    }
+}
+
 /// A sink that consumes a completed [`DiagnosticsContext`] for a single Cosmos
 /// operation.
 ///
@@ -67,6 +152,24 @@ pub trait DiagnosticsHandler: Send + Sync {
     ///   the caller's pipeline/trace context, so read it for operation metadata
     ///   rather than for trace-context correlation.
     fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
+
+    /// Notifies the handler that a new [`CosmosClient`](crate::CosmosClient) was
+    /// constructed with this handler registered.
+    ///
+    /// Called exactly once per client, at construction. Return a
+    /// [`ClientLifetimeToken`] to be notified when that client — and every
+    /// database/container client derived from it — has been dropped; return
+    /// `None` (the default) when the handler does not track client lifetimes.
+    ///
+    /// This is the seam for client-scoped telemetry. A handler object may be
+    /// shared across several clients or registered on none, so its own lifetime
+    /// is not a proxy for a live client; this hook and the returned token are.
+    ///
+    /// * `client` - Account-level identity of the newly created client.
+    fn on_client_created(&self, client: &CosmosClientInfo) -> Option<ClientLifetimeToken> {
+        let _ = client;
+        None
+    }
 }
 
 /// An ordered, cheaply cloneable chain of [`DiagnosticsHandler`]s.
@@ -142,6 +245,21 @@ impl DiagnosticsHandlerChain {
         for handler in self.handlers.iter() {
             handler.handle(diagnostics, cx);
         }
+    }
+
+    /// Notifies every handler that a client was created, collecting the lifetime
+    /// tokens they hand back.
+    ///
+    /// The returned tokens must be stored for the client's lifetime; dropping
+    /// them is what signals client teardown to the handlers.
+    pub(crate) fn dispatch_client_created(
+        &self,
+        client: &CosmosClientInfo,
+    ) -> Arc<[ClientLifetimeToken]> {
+        self.handlers
+            .iter()
+            .filter_map(|handler| handler.on_client_created(client))
+            .collect()
     }
 }
 

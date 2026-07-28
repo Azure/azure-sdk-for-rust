@@ -215,22 +215,34 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 
         // Any non-2xx Read response is mapped by the driver pipeline into
         // `Err(ErrorKind::HttpResponse { .. })` (see retry_evaluation.rs's
-        // `build_http_error`). Propagating with `?` is sufficient — the
-        // caller wants the original error verbatim, complete with
-        // `raw_response` and diagnostics — and there is nothing useful the
-        // PATCH handler can do on a Read failure.
+        // `build_http_error`). The caller wants that error verbatim, complete
+        // with `raw_response`, status, and source — there is nothing useful the
+        // PATCH handler can do on a Read failure — but the diagnostics riding on
+        // it still describe the *sub-op* (`read_item`). Re-stamp the virtual
+        // PATCH operation's identity so the failure reports the same
+        // `db.operation.name` as its success and retry-exhaustion counterparts.
         let read_resp = dispatcher
             .execute_operation(read_op, options.clone())
-            .await?;
+            .await
+            .map_err(|err| {
+                stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
+            })?;
         sub_op_diagnostics.push(read_resp.diagnostics());
-        let etag = read_resp.headers().etag.clone().ok_or_else(|| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
-                .with_message("PATCH cannot proceed: the Read response did not include an ETag")
-                .build()
-        })?;
+        let etag = read_resp
+            .headers()
+            .etag
+            .clone()
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message("PATCH cannot proceed: the Read response did not include an ETag")
+                    .build()
+            })
+            .map_err(|err| {
+                stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
+            })?;
         // R3-DRIVER: forward the session token returned by the Read on the
         // Replace, so the write commits against the same replica view we
         // just read from. This is what mitigates SE-004 (session token
@@ -243,16 +255,25 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             effective_session_token = Some(token);
         }
 
-        // Locally apply the patch ops.
-        let read_body_bytes = read_resp.into_body().single().map_err(|err| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("PATCH could not extract Read response body")
-                .with_source(err)
-                .build()
-        })?;
-        let mut value: serde_json::Value =
-            serde_json::from_slice(&read_body_bytes).map_err(|err| {
+        // Locally apply the patch ops. These failures are synthesized here
+        // rather than returned by the pipeline, so they carry no diagnostics of
+        // their own; hand them the PATCH-identified aggregate of the sub-ops
+        // issued so far.
+        let read_body_bytes = read_resp
+            .into_body()
+            .single()
+            .map_err(|err| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("PATCH could not extract Read response body")
+                    .with_source(err)
+                    .build()
+            })
+            .map_err(|err| {
+                stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
+            })?;
+        let mut value: serde_json::Value = serde_json::from_slice(&read_body_bytes)
+            .map_err(|err| {
                 crate::error::CosmosError::builder()
                     .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
@@ -260,15 +281,24 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                     ))
                     .with_source(err)
                     .build()
+            })
+            .map_err(|err| {
+                stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
             })?;
-        apply_patch_ops(&mut value, &spec.operations)?;
-        let merged_bytes = serde_json::to_vec(&value).map_err(|err| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("PATCH could not serialize merged item")
-                .with_source(err)
-                .build()
+        apply_patch_ops(&mut value, &spec.operations).map_err(|err| {
+            stamp_patch_identity(err.into(), operation_name.clone(), &sub_op_diagnostics)
         })?;
+        let merged_bytes = serde_json::to_vec(&value)
+            .map_err(|err| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("PATCH could not serialize merged item")
+                    .with_source(err)
+                    .build()
+            })
+            .map_err(|err| {
+                stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
+            })?;
 
         // Issue the ETag-guarded Replace, forwarding the Read response's
         // session token (overriding any caller-supplied value).
@@ -384,7 +414,13 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                 last_412 = Some(err);
                 continue;
             }
-            Err(err) => return Err(err),
+            Err(err) => {
+                return Err(stamp_patch_identity(
+                    err,
+                    operation_name.clone(),
+                    &sub_op_diagnostics,
+                ))
+            }
         }
     }
 
@@ -394,6 +430,49 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         &sub_op_diagnostics,
         operation_name,
     ))
+}
+
+/// Re-stamps the virtual PATCH operation's canonical `db.operation.name` onto
+/// the diagnostics attached to a failure escaping the RMW loop.
+///
+/// The handler executes 2+ real sub-operations (`read_item` + `replace_item`),
+/// so a failure surfaced verbatim from a sub-op would report that sub-op's
+/// identity while the matching success and retry-exhaustion paths report
+/// `patch_item`. This keeps "one PATCH operation = one `DiagnosticsContext`"
+/// true on every exit.
+///
+/// The wire error itself flows through untouched — status, sub-status, raw
+/// response, and source are carried forward by
+/// [`CosmosErrorBuilder::from_error`] — only the diagnostics are replaced.
+/// `prior_sub_ops` are the contexts accumulated before the failure; when there
+/// are any, the failing sub-op's context is aggregated with them so the error
+/// carries the whole PATCH attempt history. With a single context there is
+/// nothing to aggregate, so it is copied verbatim (preserving hedging
+/// diagnostics and compaction metadata) with only the name rewritten. Errors
+/// with no diagnostics anywhere are returned unchanged; the operation pipeline
+/// grafts the operation-level context onto them on the way out.
+fn stamp_patch_identity(
+    err: crate::error::CosmosError,
+    operation_name: Option<Arc<str>>,
+    prior_sub_ops: &[Arc<DiagnosticsContext>],
+) -> crate::error::CosmosError {
+    let mut sources: Vec<Arc<DiagnosticsContext>> = prior_sub_ops.to_vec();
+    if let Some(failed) = err.diagnostics() {
+        sources.push(failed);
+    }
+    let stamped = match sources.as_slice() {
+        [] => return err,
+        [only] => Arc::new(only.clone_with_operation_name(operation_name)),
+        many => match DiagnosticsContext::aggregate_sub_operations(many) {
+            Some(ctx) => Arc::new(ctx.with_operation_name(operation_name)),
+            // Unreachable: `many` is non-empty. Keep the error intact rather
+            // than panicking if that ever changes.
+            None => return err,
+        },
+    };
+    crate::error::CosmosErrorBuilder::from_error(err)
+        .with_diagnostics(stamped)
+        .build()
 }
 
 fn missing_body_error(msg: &'static str) -> crate::error::CosmosError {
@@ -1427,6 +1506,16 @@ mod tests {
             "non-412 must propagate verbatim; got {:?}",
             err.status()
         );
+        // The wire failure keeps its own status/response, but its diagnostics
+        // must be labeled with the virtual PATCH operation rather than the
+        // `replace_item` sub-op that actually failed.
+        assert_eq!(
+            err.diagnostics()
+                .as_deref()
+                .and_then(DiagnosticsContext::operation_name),
+            Some("patch_item"),
+            "non-412 Replace failure must carry the PATCH operation identity"
+        );
         // Single Read + single Replace — no retry.
         assert_eq!(dispatcher.calls().len(), 2);
     }
@@ -1456,6 +1545,16 @@ mod tests {
             "PATCH on missing item must surface the Read's 404 verbatim; got {:?}",
             err.status()
         );
+        // The Read's own diagnostics ride along on the error, but they must be
+        // re-labeled with the virtual PATCH operation's name so a failed PATCH
+        // is never reported as a `read_item`.
+        assert_eq!(
+            err.diagnostics()
+                .as_deref()
+                .and_then(DiagnosticsContext::operation_name),
+            Some("patch_item"),
+            "Read failure must carry the PATCH operation identity"
+        );
         // Exactly one sub-op was issued: the Read. No Replace.
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 1, "no Replace must be issued on Read failure");
@@ -1484,6 +1583,44 @@ mod tests {
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 1, "no Replace must be issued without an ETag");
         assert_eq!(calls[0].op_type, OperationType::Read);
+    }
+
+    #[tokio::test]
+    async fn rmw_read_error_on_retry_aggregates_prior_attempts() {
+        // A Read failure on attempt 2 must still be labeled `patch_item` and
+        // must fold in attempt 1's sub-op diagnostics, so the error reports the
+        // whole PATCH — not just the sub-op that happened to fail.
+        let read_failure = http_error(StatusCode::ServiceUnavailable, "read down");
+        let failure_diagnostics = read_failure
+            .diagnostics()
+            .expect("fixture error carries diagnostics");
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "etag conflict")),
+            ScriptedReply::Err(read_failure),
+        ]);
+
+        let err = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op(),
+            OperationOptions::default(),
+            NonZeroU8::new(3),
+        )
+        .await
+        .expect_err("Read failure on retry must abort the loop");
+
+        assert_eq!(err.status().status_code(), StatusCode::ServiceUnavailable);
+        let diagnostics = err.diagnostics().expect("error must carry diagnostics");
+        assert_eq!(diagnostics.operation_name(), Some("patch_item"));
+        assert!(
+            !Arc::ptr_eq(&diagnostics, &failure_diagnostics),
+            "with prior sub-ops in flight the error's diagnostics must be an aggregate, \
+             not the failing sub-op's context verbatim"
+        );
     }
 
     #[tokio::test]

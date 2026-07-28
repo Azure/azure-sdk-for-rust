@@ -88,6 +88,12 @@ pub const ATTR_ERROR_TYPE: &str = attributes::ERROR_TYPE;
 /// `server.address` — host of the contacted endpoint.
 pub const ATTR_SERVER_ADDRESS: &str = attributes::SERVER_ADDRESS;
 
+/// `server.port` — port of the contacted endpoint.
+///
+/// Conditionally required: emitted only when the endpoint uses a non-default
+/// port (i.e. anything other than 443 for HTTPS).
+pub const ATTR_SERVER_PORT: &str = attributes::SERVER_PORT;
+
 /// Fallback value for [`ATTR_ERROR_TYPE`] when the error is otherwise unknown
 /// (per semantic conventions).
 pub const ERROR_TYPE_OTHER: &str = attributes::ERROR_TYPE_OTHER;

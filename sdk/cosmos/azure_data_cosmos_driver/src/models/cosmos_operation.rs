@@ -164,6 +164,11 @@ impl CosmosOperation {
     /// reads, HEAD probes, stored procedures, triggers, UDFs, distributed
     /// transactions) return `None`, which leaves the diagnostics
     /// `operation_name` unset — identical to the pre-population behavior.
+    /// Throughput (offer) operations are also unmapped: the canonical names are
+    /// scope-specific (`read_container_throughput` vs. `read_database_throughput`)
+    /// but an offer operation carries only the account and the offer ID, so the
+    /// scope is not recoverable here. The SDK, which knows whether the caller
+    /// addressed a container or a database, supplies those names instead.
     pub fn db_operation_name(&self) -> Option<&'static str> {
         let name = match (self.operation_type, self.resource_type) {
             // Data-plane item operations.
@@ -187,6 +192,11 @@ impl CosmosOperation {
             (OperationType::ReadFeed, ResourceType::Document) => {
                 if self.is_change_feed {
                     "query_change_feed"
+                } else if self.targets_logical_partition() {
+                    // `read_all_items(container, partition_key)` narrows the
+                    // feed to one logical partition, which semconv names
+                    // distinctly from the cross-partition read.
+                    "read_all_items_of_logical_partition"
                 } else {
                     "read_all_items"
                 }
@@ -206,19 +216,25 @@ impl CosmosOperation {
             (OperationType::Query, ResourceType::Database)
             | (OperationType::SqlQuery, ResourceType::Database) => "query_databases",
             (OperationType::ReadFeed, ResourceType::Database) => "read_all_databases",
-            // Throughput (offer) management. The user-facing throughput *read*
-            // locates the offer by querying the offers feed
-            // (`ContainerClient::read_throughput` -> `find_offer` ->
-            // `query_offers`), so its wire op is `(Query, Offer)`; `(Read, Offer)`
-            // is the throughput poller's internal by-RID re-read after a replace.
-            (OperationType::Read, ResourceType::Offer)
-            | (OperationType::Query, ResourceType::Offer)
-            | (OperationType::SqlQuery, ResourceType::Offer) => "read_throughput",
-            (OperationType::Replace, ResourceType::Offer) => "replace_throughput",
+            // Throughput (offer) management has no driver-layer mapping: the
+            // canonical names are scope-specific (`read_container_throughput` /
+            // `read_database_throughput` and their `replace_` variants), but an
+            // offer operation is addressed by account + offer ID only, so this
+            // layer cannot tell a container offer from a database offer. The
+            // SDK stamps the scoped name via `CosmosOperationContext`.
             // Everything else has no canonical semconv name.
             _ => return None,
         };
         Some(name)
+    }
+
+    /// Returns `true` when this operation targets exactly one logical partition
+    /// (or a hierarchical-partition-key prefix), as opposed to an EPK range or
+    /// the whole container.
+    fn targets_logical_partition(&self) -> bool {
+        self.target
+            .as_ref()
+            .is_some_and(FeedRange::is_logical_partition)
     }
 
     /// Returns a reference to the resource being operated on.
@@ -1189,8 +1205,28 @@ mod tests {
             Some("read_all_items")
         );
         assert_eq!(
+            CosmosOperation::read_all_items(test_container(), PartitionKey::from("pk1"))
+                .db_operation_name(),
+            Some("read_all_items_of_logical_partition")
+        );
+        assert_eq!(
             CosmosOperation::batch(test_container(), PartitionKey::from("pk1")).db_operation_name(),
             Some("execute_batch")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_change_feed_ignores_logical_partition_scope() {
+        // A change feed scoped to one logical partition is still
+        // `query_change_feed`; semconv has no partition-scoped variant for it.
+        let container = test_container();
+        let range = FeedRange::for_partition(
+            PartitionKey::from("pk1"),
+            container.partition_key_definition(),
+        );
+        assert_eq!(
+            CosmosOperation::change_feed(container, Some(range)).db_operation_name(),
+            Some("query_change_feed")
         );
     }
 
@@ -1217,21 +1253,22 @@ mod tests {
     }
 
     #[test]
-    fn db_operation_name_maps_throughput_operations() {
-        // Throughput reads locate the offer by querying the offers feed, so the
-        // user-facing read path is `(Query, Offer)`.
+    fn db_operation_name_none_for_throughput_operations() {
+        // Offer operations carry no database/container scope, and semconv only
+        // defines scoped throughput names, so the driver leaves them unmapped
+        // and the SDK supplies `read_container_throughput` /
+        // `read_database_throughput` (and their `replace_` variants).
         assert_eq!(
             CosmosOperation::query_offers(test_account()).db_operation_name(),
-            Some("read_throughput")
+            None
         );
-        // `(Read, Offer)` is the throughput poller's internal by-RID re-read.
         assert_eq!(
             CosmosOperation::read_offer(test_account(), "offer-rid").db_operation_name(),
-            Some("read_throughput")
+            None
         );
         assert_eq!(
             CosmosOperation::replace_offer(test_account(), "offer-rid").db_operation_name(),
-            Some("replace_throughput")
+            None
         );
     }
 

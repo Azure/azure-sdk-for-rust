@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::{
     clients::ClientContext,
-    diagnostics::DiagnosticsHandler,
+    diagnostics::{CosmosClientInfo, DiagnosticsHandler},
     options::{
         CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
         ThroughputControlGroupOptions, UserAgentSuffix,
@@ -282,6 +282,10 @@ impl CosmosClientBuilder {
         let (account_endpoint, credential) = account.into_parts();
         let endpoint = account_endpoint.into_url();
 
+        // Capture the account coordinates for client-scoped diagnostics before
+        // the endpoint is moved into the driver account.
+        let client_info = CosmosClientInfo::from_endpoint(&endpoint);
+
         // Clone credential for the driver before the SDK consumes it for auth policy.
         let driver_credential = credential.clone();
 
@@ -305,10 +309,7 @@ impl CosmosClientBuilder {
         let driver = runtime.into_inner().create_driver(driver_options).await?;
 
         Ok(CosmosClient {
-            context: ClientContext {
-                driver,
-                diagnostics_handlers: self.options.diagnostics_handlers,
-            },
+            context: ClientContext::new(driver, self.options.diagnostics_handlers, &client_info),
         })
     }
 }
