@@ -20,6 +20,19 @@ From the repository root:
 cargo build -p azure_data_cosmos_perf
 ```
 
+## Sample JSON corpus (`testdata/`, not tracked)
+
+The opt-in test `tests/binary_sampled_testdata.rs` samples a large corpus of
+representative JSON payloads under `testdata/*.json` (~500 MB). This corpus is
+kept as a **local copy** and is intentionally **not tracked in source control**
+to keep the repository small.
+
+Nothing in the build or the CI gates depends on it: the test is gated behind
+`test_category = "binary_encoding"` (ignored otherwise) and requires a live
+account, and the benchmarks generate their own synthetic data. To run that test,
+restore the `testdata/*.json` files locally first; if they are missing,
+`load_sample_pool` fails with a message explaining how to restore them.
+
 ## Usage
 
 ### Key Authentication

@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::options::{OperationOptions, UserAgentSuffix};
+use azure_data_cosmos_driver::options::{BinaryEncodingOptions, OperationOptions, UserAgentSuffix};
 
 use crate::diagnostics::{DiagnosticsHandler, DiagnosticsHandlerChain};
 
@@ -21,6 +21,8 @@ pub struct CosmosClientOptions {
     /// unless overridden by per-request options.
     pub operation: OperationOptions,
     pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
+    /// Options to control binary encoding.
+    pub(crate) binary_encoding: Option<BinaryEncodingOptions>,
     /// Diagnostics emission handlers invoked once per operation at completion.
     pub(crate) diagnostics_handlers: DiagnosticsHandlerChain,
 }
