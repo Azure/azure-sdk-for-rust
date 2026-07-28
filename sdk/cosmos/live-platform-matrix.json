@@ -52,9 +52,6 @@
         },
         "Session MultiRegion GatewayV2": {
           "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleRegions = $true; testCategory = 'gateway_v2_multi_region' }"
-        },
-        "Eventual Avad": {
-          "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual'; enableAutomaticFailover = $false; enableContinuousBackup = $true; testCategory = 'avad' }"
         }
       }
     }

@@ -140,9 +140,3 @@ output DATABASE_NAME string = databaseName
 output AZURE_COSMOS_CONNECTION_STRING string = 'AccountEndpoint=${reference(resourceId, apiVersion).documentEndpoint};AccountKey=${listKeys(resourceId, apiVersion).primaryMasterKey};'
 output ACCOUNT_HOST string = reference(resourceId, apiVersion).documentEndpoint
 output AZURE_COSMOS_DEFAULT_CONSISTENCY string = defaultConsistencyLevel
-
-// Signals for the AllVersionsAndDeletes (full-fidelity) change feed. The feature
-// cannot be enabled at account-create time, so `test-resources-post.ps1` PATCHes
-// the account to turn it on after deployment when this flag is 'true'.
-output AZURE_COSMOS_ENABLE_AVAD string = (testCategory == 'avad') ? 'true' : 'false'
-output AZURE_COSMOS_ACCOUNT_RESOURCE_ID string = resourceId
