@@ -1237,6 +1237,30 @@ fn host_is_local(endpoint: &str) -> bool {
     }
 }
 
+/// Returns `true` when the configured target is the Cosmos DB emulator rather
+/// than a live Azure Cosmos DB account.
+///
+/// Detects both the `AZURE_COSMOS_CONNECTION_STRING=emulator` shorthand and an
+/// explicit connection string pointing at a loopback host. Tests use this to
+/// account for behavior the emulator and the service do not share — most
+/// notably container-level full-fidelity change feed retention, which the
+/// emulator requires but which live continuous-backup accounts reject.
+///
+/// Defaults to `true` when no connection string is configured, matching the
+/// rest of the harness (which falls back to the emulator).
+pub fn targets_emulator() -> bool {
+    let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
+        return true;
+    };
+    if env_var == "emulator" {
+        return true;
+    }
+    match env_var.parse::<ConnectionString>() {
+        Ok(parsed) => host_is_local(parsed.account_endpoint()),
+        Err(_) => false,
+    }
+}
+
 /// Builds a [`CosmosClient`] authenticated with an Entra ID (AAD) token
 /// credential, reading the target account from the same environment the
 /// key-auth client uses (`AZURE_COSMOS_CONNECTION_STRING`).

@@ -12,6 +12,8 @@
 
 ### Other Changes
 
+- Cosmos HTTP error messages now include the service's own explanation from the response body (bounded to 512 characters), so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. The full payload remains available verbatim via `CosmosError::response`.
+
 ## 0.6.1 (2026-07-23)
 
 ### Bugs Fixed

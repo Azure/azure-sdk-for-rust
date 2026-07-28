@@ -6,7 +6,7 @@ param enableAutomaticFailover bool = false
 @description('Flag to enable or disable multiple write locations on CosmosDB Account')
 param enableMultipleWriteLocations bool = false
 
-@description('Enable continuous backup mode, required to read the AllVersionsAndDeletes (full-fidelity) change feed. Incompatible with multiple write locations.')
+@description('Enable continuous backup mode, required to read the AllVersionsAndDeletes (full-fidelity) change feed. The retention window is then derived from the backup retention, so containers must not also set changeFeedPolicy.retentionDuration. Incompatible with multiple write locations.')
 param enableContinuousBackup bool = false
 
 @description('Dictates which tests run for this resource')

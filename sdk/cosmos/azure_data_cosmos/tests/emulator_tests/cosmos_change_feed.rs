@@ -17,12 +17,15 @@
 //! * Resuming a partially-polled `StartFrom::Now` feed does not replay history
 //!   on the partitions that were never polled before the checkpoint.
 //!
-//! A second group exercises the `AllVersionsAndDeletes` ("full fidelity") mode
-//! against a container configured with a change feed retention policy: create,
-//! replace, and delete each surface as a distinct [`ChangeFeedItem`] envelope,
-//! and the mode reads correctly across a cross-partition fan-out. These AVAD
-//! tests are gated on `test_category = "emulator"` only — the vnext (Linux)
-//! emulator does not yet support full-fidelity reads.
+//! A second group exercises the `AllVersionsAndDeletes` ("full fidelity") mode.
+//! How the mode is enabled differs by target: the emulator opts in per container
+//! via a change feed retention policy, while live accounts enable it through
+//! continuous backup and reject an explicit container-level retention (see
+//! [`create_avad_container`]). Create, replace, and delete each surface as a
+//! distinct [`ChangeFeedItem`] envelope, and the mode reads correctly across a
+//! cross-partition fan-out. These AVAD tests are gated on
+//! `test_category = "emulator"` only — the vnext (Linux) emulator does not yet
+//! support full-fidelity reads.
 
 use super::framework;
 
@@ -660,8 +663,22 @@ impl AvadItem {
     }
 }
 
-/// Creates a container whose change feed policy enables full-fidelity
-/// (`AllVersionsAndDeletes`) reads with the given retention window.
+/// Creates a container configured for full-fidelity (`AllVersionsAndDeletes`)
+/// reads.
+///
+/// How the retention window is configured differs between the emulator and a
+/// live account:
+///
+/// * **Emulator**: full-fidelity retention is opted into per container via
+///   `changeFeedPolicy.retentionDuration`, so `retention` is applied.
+/// * **Live account**: `AllVersionsAndDeletes` requires the account to run in
+///   continuous backup mode, and the retention window is then derived from the
+///   backup retention. Setting `changeFeedPolicy.retentionDuration` on such an
+///   account is rejected with HTTP 400 ("The retention duration in the Change
+///   Feed policy should not be set when continuous backup mode is enabled for
+///   the database account"), so the policy is omitted entirely.
+///
+/// See <https://aka.ms/ChangeFeed-AllVersionsAndDeletes>.
 async fn create_avad_container(
     run_context: &TestRunContext,
     db_client: &DatabaseClient,
@@ -669,8 +686,12 @@ async fn create_avad_container(
     retention: Duration,
     throughput: Option<ThroughputProperties>,
 ) -> azure_data_cosmos::Result<ContainerClient> {
-    let properties = ContainerProperties::new(name.to_string(), "/partitionKey".into())
-        .with_change_feed_policy(ChangeFeedPolicy::default().with_retention_duration(retention));
+    let mut properties = ContainerProperties::new(name.to_string(), "/partitionKey".into());
+    if framework::targets_emulator() {
+        properties = properties.with_change_feed_policy(
+            ChangeFeedPolicy::default().with_retention_duration(retention),
+        );
+    }
     let options = throughput.map(|t| CreateContainerOptions::default().with_throughput(t));
     run_context
         .create_container(db_client, properties, options)

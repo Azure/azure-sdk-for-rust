@@ -295,13 +295,19 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let properties = ContainerProperties::new(
+            let mut properties = ContainerProperties::new(
                 "ChangeFeedAvadResumeAcrossSplit",
                 "/partitionKey".into(),
-            )
-            .with_change_feed_policy(
-                ChangeFeedPolicy::default().with_retention_duration(Duration::from_secs(60 * 60)),
             );
+            // Container-level full-fidelity retention is an emulator-only opt-in.
+            // Live accounts enable AllVersionsAndDeletes through continuous
+            // backup and reject an explicit `retentionDuration` with HTTP 400.
+            if framework::targets_emulator() {
+                properties = properties.with_change_feed_policy(
+                    ChangeFeedPolicy::default()
+                        .with_retention_duration(Duration::from_secs(60 * 60)),
+                );
+            }
             let throughput = ThroughputProperties::manual(1000);
             let container_client = Arc::new(
                 run_context
