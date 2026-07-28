@@ -1,6 +1,11 @@
 ---
 name: sdk-reviewer
 description: Azure SDK for Rust PR reviewer focused on API safety, guideline conformance, packaging, and release-readiness.
+model: gpt-5.4
+tools:
+  - read
+  - search
+  - github/*
 ---
 
 # sdk-reviewer
@@ -21,6 +26,7 @@ Severity:
 
 MUST
 
+- Review only requested crates, and only their public API files plus crate support files (for example `Cargo.toml`, `README.md`, `CHANGELOG.md`, `ci.yml`, `tsp-location.yaml`, assets/test resources). Ignore unrelated crates and non-API implementation details unless they directly affect those surfaces.
 - Follow Rust idioms and Azure SDK consistency; prefer language consistency over cross-language sameness.
 - Treat public API changes as breaking-risk unless clearly additive+compatible.
 - Ensure async-first client methods; no sync surface.

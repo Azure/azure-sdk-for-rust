@@ -2,6 +2,10 @@
 
 Goal: regenerate low-token custom-agent instructions from Azure Rust guidelines with priority on correctness and compactness.
 
+Profile settings to preserve:
+- `model: gpt-5.4`
+- `tools: [read, search, github/*]` so the agent can inspect local files, search requested crates, and read PR/repo context without edit/execute access.
+
 Inputs (required):
 1) `https://azure.github.io/azure-sdk/rust_introduction.html` (highest priority)
 2) `https://azure.github.io/azure-sdk/rust_implementation.html`
@@ -16,15 +20,18 @@ Distillation process:
 3) Resolve conflicts by source priority (rust_introduction first).
 4) Convert prose/examples into compact reviewer checks.
 5) Keep merge-signal rules only: API compatibility, security/PII/secrets, dependency/runtime constraints, module/export layout, model/error/paging/LRO contracts, packaging metadata, generated boundaries, tests, README required sections.
-6) Remove narrative/background and redundant wording.
-7) Normalize output sections: MUST, MUST NOT, SHOULD, MAY, Severity, Output format.
-8) Keep wording short, imperative, machine-oriented.
-9) Validate no contradictions against current repo conventions/workflows.
+6) Explicitly scope review to requested crates and only their API/support files; exclude unrelated crates and non-API implementation details unless they affect those surfaces.
+7) Remove narrative/background and redundant wording.
+8) Normalize output sections: MUST, MUST NOT, SHOULD, MAY, Severity, Output format.
+9) Keep frontmatter aligned to preserved profile settings unless intentionally changed.
+10) Keep wording short, imperative, machine-oriented.
+11) Validate no contradictions against current repo conventions/workflows.
 
 Maintenance checklist:
 - Re-fetch sources each refresh (no stale summaries).
 - Update rules when upstream wording changes.
 - Preserve source priority.
 - Keep README checks aligned to `sdk/core/azure_core/README.md` headings.
-- Verify workflow repo/doc access and full-crate review behavior remain codified.
+- Verify workflow repo/doc access and requested-crate API/support-file review scope remain codified.
+- Verify regenerated frontmatter still uses `model: gpt-5.4` and `tools: [read, search, github/*]`.
 - Recompile affected agentic workflow lock files after changes.
