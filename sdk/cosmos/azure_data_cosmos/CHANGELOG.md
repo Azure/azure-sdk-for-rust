@@ -4,7 +4,9 @@
 
 ### Features Added
 
+- Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosClient`. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
 - Added opt-in Cosmos binary JSON encoding for item operations (`create`/`read`/`replace`/`upsert`). Enable it via `CosmosClientBuilder::with_binary_encoding_options` (or the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment-variable fallback). Off by default; when disabled, requests and responses are byte-for-byte unchanged. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
+- Added `FeedOptions::max_fan_out` (and `FeedOptions::with_max_fan_out`) to cap how many physical partitions a cross-partition query or change feed may fan out to. Applies to `ContainerClient::query_items` and `ContainerClient::query_change_feed`. The cap is enforced only at initial query setup; a partition that splits mid-execution and pushes the fan-out higher does not abort the operation. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 - Surfaced the Hedging Detection API through `DiagnosticsContext`: `hedging_started()`, `requested_regions()`, `responded_regions()`, and the exact-count `total_requested_regions()` / `total_responded_regions()`, and re-exported the `RequestedRegion` / `RequestedRegionReason` types (mirroring the existing `DiagnosticsContext` re-export). ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410), [#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
 - Added a pluggable client-side diagnostics emission layer — the `DiagnosticsHandler` trait and ordered `DiagnosticsHandlerChain` (registered via `CosmosClientBuilder::with_diagnostics_handler`) — invoked once per operation (singleton and paginated, on success and failure) with the completed `DiagnosticsContext` plus an SDK-supplied `CosmosOperationContext`; the empty default chain is a zero-overhead no-op. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 - Added the `metrics`-gated `CosmosMetricsHandler` (with `MetricsOptions`), emitting the stable `db.client.operation.duration` histogram plus per-signal opt-in metrics (`with_request_charge_metric`, `with_returned_rows_metric`) and an opt-in extended attribute set (`with_extended_attributes`); a no-op when no meter provider is registered. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
@@ -16,10 +18,13 @@
 
 - Serialized `DiagnosticsContext` output (the diagnostics JSON surfaced to consumers, and the sampled diagnostics log line) now serializes driver-generated operation retries with `execution_context` = `"operation_retry"` instead of `"retry"`, following the driver's `ExecutionContext::Retry` → `OperationRetry` rename. This is additive to the enum (the deprecated `Retry` variant still serializes as `"retry"`), but the wire value emitted for operation retries changes; telemetry/log parsers that match the literal `"retry"` execution context must update. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410), [#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
 - Control-plane APIs are now gated behind the new `control_plane` feature, which is **not** enabled by default. Code using database or container management (`CosmosClient::create_database`/`query_databases`, `DatabaseClient::read`/`create_container`/`query_containers`/`delete`, `ContainerClient::replace`/`delete`), throughput management (`read_throughput`/`begin_replace_throughput`, `ThroughputPoller`), or the associated model and options types (`DatabaseProperties`, `ThroughputProperties`, and the container create/replace/delete/query, database, and throughput option types) must now enable the `control_plane` feature. Reading container properties via `ContainerClient::read()` — along with `ContainerProperties`, `IndexingPolicy`, `ResourceResponse`, and `ReadContainerOptions` — remains available without the feature, since it works with Entra ID authentication and mirrors the metadata read the SDK already performs internally. ([#4854](https://github.com/Azure/azure-sdk-for-rust/pull/4854))
+- Fresh cross-partition queries and change feed reads now fail with a `BadRequest` error if they would fan out to more than 100 physical partitions. Raise `FeedOptions::max_fan_out` to run a broader operation. The limit is checked only at initial query setup — resuming from a continuation token is unaffected, and a partition split that raises the fan-out mid-execution does not abort the operation. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and length-bounded, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
 
 ## 0.37.1 (2026-07-23)
 
@@ -87,7 +92,6 @@
   - `with_driver_runtime_builder` — replaced by `with_runtime(CosmosRuntime)`. The `__internal_in_memory_emulator` harness builds its runtime via `CosmosRuntimeBuilder::from(driver_builder)` (the `From<CosmosDriverRuntimeBuilder>` escape hatch).
   - The `allow_invalid_certificates` Cargo feature has been removed. The capability is now in the default feature set but requires explicit opt-in via `CosmosRuntimeBuilder::with_connection_pool(ConnectionPoolOptionsBuilder::new().with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator).build())`. The new `RequiredUnlessEmulator` policy is not a blanket "disable validation" knob — it validates the server certificate normally and only relaxes validation for detected Cosmos DB emulator hosts (via `AccountEndpoint` + `Region` heuristics, or the `AZURE_COSMOS_EMULATOR_HOST` environment variable). See the driver CHANGELOG for the underlying `EmulatorServerCertValidation` → `ServerCertificateValidation` rename.
 - Per-account driver caching has been removed from the underlying runtime — each `CosmosClient::build(...)` now constructs a fresh `CosmosDriver`. Clients sharing the same `CosmosRuntime` continue to share transport pools, sampler, account cache, etc.; only the per-account `CosmosDriver` instance is no longer reused. ([#4588](https://github.com/Azure/azure-sdk-for-rust/pull/4588))
-
 
 ### Bugs Fixed
 

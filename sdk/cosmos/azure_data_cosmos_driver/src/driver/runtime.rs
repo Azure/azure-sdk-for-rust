@@ -874,7 +874,9 @@ mod tests {
             #[cfg(feature = "fault_injection")]
             evaluation_collector: None,
         };
-        apply_cosmos_headers(&mut request, &user_agent_hv);
+        let client_id = HeaderValue::from_static("00000000-0000-4000-8000-000000000000");
+
+        apply_cosmos_headers(&mut request, &user_agent_hv, &client_id);
 
         let header_value = request
             .headers

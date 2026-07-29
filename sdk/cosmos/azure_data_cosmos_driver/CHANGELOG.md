@@ -4,19 +4,24 @@
 
 ### Features Added
 
+- Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosDriver`, including metadata, retry, hedge, probe, and Gateway 2.0 outer HTTP requests. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
 - Added a schema-agnostic Cosmos binary JSON codec (`binary_json`) and driver-side binary encoding via `OperationOptions.binary_encoding` (`BinaryEncodingOptions`). When enabled, the driver transcodes item request/response bodies between text and Cosmos binary JSON and negotiates the wire format; it is honored only for point `Document` item operations. Off by default and inert on the wire when unset. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
+- Added `PlanOptions` (with `DEFAULT_MAX_FAN_OUT`) to `CosmosDriver::plan_operation`, enforcing a maximum fan-out on fresh cross-partition plans. A fresh plan spanning more leaf request nodes than `PlanOptions::max_fan_out` (default 100) is rejected with the new `CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED` (HTTP 400). The limit is enforced only at initial plan time: resuming from a continuation token skips the check, and a partition split that raises the fan-out mid-execution does not abort the operation. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 - Added the Hedging Detection API on `DiagnosticsContext`: `hedging_started()` (whether a hedge arm actually fanned out), `requested_regions()` (regions dispatched to, in dispatch order with duplicates, each tagged with a reason), and `responded_regions()` (regions that produced an actual service reply, in completion order). All three are materialized at finalization from the full pre-compaction attempt list plus a dispatch-time hedge fan-out log, so a structurally-dropped hedge leg, a retry storm that compacts `requests()`, and multi-round-trip aggregation all report a complete history. Both region histories are bounded by `max_request_diagnostics` (keeping head and tail, dropping the repetitive middle) so a retry storm cannot produce an unbounded diagnostics artifact; `total_requested_regions()` / `total_responded_regions()` report the exact pre-truncation counts, so truncation is detectable rather than silent. Adds the public `RequestedRegion` struct and `RequestedRegionReason` enum (both `#[non_exhaustive]`, with a total `From<ExecutionContext>` mapping) and the new `ExecutionContext::OperationRetry` variant. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410), [#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
 - Added `HedgeTerminalState::as_str()` (and a matching `Display`) returning a stable, low-cardinality `snake_case` identifier for the hedging race outcome, for use as an observability attribute / log-field value. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410), [#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
 
 ### Breaking Changes
 
 - Renamed `ExecutionContext::Retry` to `ExecutionContext::OperationRetry` to distinguish operation-level retries from transport-level `TransportRetry`. The old `Retry` remains for one release as a distinct `#[deprecated]` variant (**not** a serde alias); a `Retry` value still serializes as `"retry"`. The customer-visible wire-format change is that driver-generated operation retries now serialize as `"operation_retry"` instead of `"retry"`, because the dispatch sites emit `OperationRetry`; telemetry parsers that match the literal `"retry"` execution context must update. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410), [#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
+- `CosmosDriver::plan_operation` now takes an additional `plan_options: &PlanOptions` argument (after `continuation`). The continuation token remains its own argument. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 
 ### Bugs Fixed
 
 - Fixed the primary leg of a hedged request being recorded with `ExecutionContext::Initial` even when the hedge was dispatched from a retry. The primary leg now carries the execution context computed from the live retry state, so a hedge that upgraded a session retry or a region failover is no longer misreported as a first attempt in diagnostics. ([#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
 
 ### Other Changes
+
+- Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and bounded to 512 bytes, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. The full payload remains available verbatim via `CosmosError::response`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
 
 ## 0.6.1 (2026-07-23)
 

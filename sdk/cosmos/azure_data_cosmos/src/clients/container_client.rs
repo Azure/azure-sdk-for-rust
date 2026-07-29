@@ -896,6 +896,7 @@ impl ContainerClient {
                 initial_operation,
                 &options.operation,
                 options.feed.continuation_token.as_ref(),
+                &options.feed.to_plan_options(),
             )
             .await?;
         Ok(QueryItemIterator::new(
@@ -1082,6 +1083,7 @@ impl ContainerClient {
                 initial_operation,
                 &options.operation,
                 options.feed.continuation_token.as_ref(),
+                &options.feed.to_plan_options(),
             )
             .await?;
 

@@ -23,7 +23,7 @@ use crate::{
 };
 
 use super::{
-    cosmos_headers::SUPPORTED_CAPABILITIES_BITS,
+    cosmos_headers::{CLIENT_ID, SUPPORTED_CAPABILITIES_BITS},
     cosmos_transport_client::{HttpRequest, HttpResponse},
     rntbd::{RntbdRequestFrame, RntbdResponse, Token},
     AuthorizationContext,
@@ -82,12 +82,13 @@ pub(crate) struct WrapInputs<'a> {
 
 /// Wraps a signed Cosmos HTTP request into a Gateway 2.0 RNTBD request frame.
 pub(crate) fn wrap_request_for_gateway_v2(
-    request: &HttpRequest,
+    mut request: HttpRequest,
     inputs: &WrapInputs<'_>,
 ) -> azure_core::Result<HttpRequest> {
-    let authorization = required_header(request, &AUTHORIZATION, "authorization")?;
-    let date = required_header(request, &X_MS_DATE, "x-ms-date")?;
-    let activity_id = required_header(request, &X_MS_ACTIVITY_ID, "x-ms-activity-id")?;
+    let client_id = request.headers.remove(CLIENT_ID);
+    let authorization = required_header(&request, &AUTHORIZATION, "authorization")?;
+    let date = required_header(&request, &X_MS_DATE, "x-ms-date")?;
+    let activity_id = required_header(&request, &X_MS_ACTIVITY_ID, "x-ms-activity-id")?;
     let activity_id = Uuid::parse_str(&activity_id)
         .map_err(|e| data_conversion_error(format!("x-ms-activity-id is not a valid UUID: {e}")))?;
     let account_name = inputs
@@ -322,6 +323,9 @@ pub(crate) fn wrap_request_for_gateway_v2(
     let mut headers = Headers::new();
     if let Some(user_agent) = request.headers.get_optional_str(&USER_AGENT) {
         headers.insert(USER_AGENT, HeaderValue::from(user_agent.to_owned()));
+    }
+    if let Some(client_id) = client_id {
+        headers.insert(CLIENT_ID, client_id);
     }
     headers.insert(X_MS_ACTIVITY_ID, HeaderValue::from(activity_id.to_string()));
     // Forward x-ms-version (defaults to CURRENT_VERSION = 2020-07-15)
@@ -808,7 +812,7 @@ mod tests {
         let partition_key_definition = PartitionKeyDefinition::new(vec![Cow::from("/pk")]);
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
@@ -884,7 +888,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -908,7 +912,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -971,7 +975,7 @@ mod tests {
             AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
@@ -1020,7 +1024,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1051,7 +1055,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
@@ -1080,7 +1084,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1115,7 +1119,7 @@ mod tests {
             let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
             inputs.collection_rid = Some(rid);
 
-            let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
+            let wrapped = wrap_request_for_gateway_v2(request.clone(), &inputs).unwrap();
             let parsed = parse_wrapped_request(&wrapped, 0);
 
             assert_eq!(
@@ -1141,7 +1145,7 @@ mod tests {
         let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
         inputs.collection_rid = Some("invalid!");
 
-        let err = wrap_request_for_gateway_v2(&request, &inputs).unwrap_err();
+        let err = wrap_request_for_gateway_v2(request, &inputs).unwrap_err();
         assert!(err.to_string().contains("invalid collection RID"));
     }
 
@@ -1158,7 +1162,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1190,7 +1194,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Query, None),
         )
         .unwrap();
@@ -1216,7 +1220,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1243,7 +1247,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1267,7 +1271,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1281,7 +1285,7 @@ mod tests {
             "",
         );
         let wrapped_empty = wrap_request_for_gateway_v2(
-            &empty,
+            empty,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1307,7 +1311,7 @@ mod tests {
             "100",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
         )
         .unwrap();
@@ -1323,7 +1327,7 @@ mod tests {
             "-1",
         );
         let wrapped_unbounded = wrap_request_for_gateway_v2(
-            &unbounded,
+            unbounded,
             &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
         )
         .unwrap();
@@ -1343,7 +1347,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
         )
         .unwrap();
@@ -1371,7 +1375,7 @@ mod tests {
             "\"ignored\"",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Replace, None),
         )
         .unwrap();
@@ -1401,7 +1405,7 @@ mod tests {
             "\"ignored\"",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1419,7 +1423,7 @@ mod tests {
             AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
@@ -1436,7 +1440,7 @@ mod tests {
             AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
@@ -1456,7 +1460,7 @@ mod tests {
         let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
         inputs.effective_consistency = DefaultConsistencyLevel::Eventual;
 
-        let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
+        let wrapped = wrap_request_for_gateway_v2(request, &inputs).unwrap();
         let parsed = parse_wrapped_request(&wrapped, 10);
 
         assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x03));
@@ -1486,7 +1490,7 @@ mod tests {
             let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
             inputs.read_consistency_strategy = strategy;
 
-            let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
+            let wrapped = wrap_request_for_gateway_v2(request.clone(), &inputs).unwrap();
             let parsed = parse_wrapped_request(&wrapped, 10);
 
             assert_eq!(
@@ -1517,7 +1521,7 @@ mod tests {
         inputs.read_consistency_strategy = ReadConsistencyStrategy::Default;
         inputs.effective_consistency = DefaultConsistencyLevel::Session;
 
-        let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
+        let wrapped = wrap_request_for_gateway_v2(request, &inputs).unwrap();
         let parsed = parse_wrapped_request(&wrapped, 10);
 
         assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x02));
@@ -1548,7 +1552,7 @@ mod tests {
         let expected = effective_partition_key_v2_binary(partition_key.values());
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
@@ -1578,7 +1582,7 @@ mod tests {
         let expected = effective_partition_key_v1_binary(partition_key.values());
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
@@ -1621,7 +1625,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
@@ -1656,7 +1660,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Query,
@@ -1706,7 +1710,7 @@ mod tests {
             PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
@@ -1747,7 +1751,7 @@ mod tests {
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &WrapInputs {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
@@ -1783,7 +1787,7 @@ mod tests {
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &WrapInputs {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
@@ -1815,7 +1819,7 @@ mod tests {
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &WrapInputs {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
@@ -1838,8 +1842,12 @@ mod tests {
     }
 
     #[test]
-    fn wrap_only_keeps_user_agent_and_activity_id_headers() {
-        let request = signed_request(None);
+    fn wrap_preserves_client_id_proxy_header_and_drops_inner_headers() {
+        let mut request = signed_request(None);
+        request.headers.insert(
+            CLIENT_ID,
+            HeaderValue::from_static("00000000-0000-4000-8000-000000000000"),
+        );
         let auth_context = AuthorizationContext::new(
             Method::Get,
             ResourceType::Document,
@@ -1847,7 +1855,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1859,6 +1867,10 @@ mod tests {
         assert_eq!(
             wrapped.headers.get_optional_str(&X_MS_ACTIVITY_ID),
             Some(ACTIVITY_ID)
+        );
+        assert_eq!(
+            wrapped.headers.get_optional_str(&CLIENT_ID),
+            Some("00000000-0000-4000-8000-000000000000")
         );
         assert!(wrapped.headers.get_optional_str(&AUTHORIZATION).is_none());
         assert!(wrapped.headers.get_optional_str(&X_MS_DATE).is_none());
@@ -1877,7 +1889,7 @@ mod tests {
         );
 
         let error = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap_err();
@@ -1896,7 +1908,7 @@ mod tests {
         );
 
         let error = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap_err();
@@ -1915,7 +1927,7 @@ mod tests {
         );
 
         let error = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap_err();
