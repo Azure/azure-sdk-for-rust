@@ -2,26 +2,32 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::{offers_client, ClientContext},
+    clients::ClientContext,
     diagnostics::CosmosOperationContext,
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
-    models::TransactionalBatch,
-    models::{BatchResponse, ChangeFeedItem, ItemResponse, ResourceResponse},
-    models::{ContainerProperties, PatchInstructions, ThroughputProperties},
+    models::{BatchResponse, ChangeFeedItem, ItemResponse, PatchInstructions, TransactionalBatch},
     options::{
         BatchOptions, BinaryEncodingOptions, ChangeFeedMode, ChangeFeedOptions,
-        ChangeFeedStartFrom, DeleteContainerOptions, ItemReadOptions, ItemWriteOptions,
-        OperationOptions, PatchItemOptions, Precondition, QueryOptions, ReadContainerOptions,
-        ReadFeedRangesOptions, ReplaceContainerOptions, SessionToken, ThroughputOptions,
+        ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, PatchItemOptions,
+        Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, SessionToken,
     },
     PartitionKey, Query,
 };
 
-use super::ThroughputPoller;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
 use serde::{de::DeserializeOwned, Serialize};
+
+use crate::models::{ContainerProperties, ResourceResponse};
+
+#[cfg(feature = "control_plane")]
+use super::ThroughputPoller;
+#[cfg(feature = "control_plane")]
+use crate::{
+    models::ThroughputProperties,
+    options::{DeleteContainerOptions, ReplaceContainerOptions, ThroughputOptions},
+};
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
@@ -134,6 +140,7 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "control_plane")]
     pub async fn replace(
         &self,
         properties: ContainerProperties,
@@ -169,12 +176,13 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[cfg(feature = "control_plane")]
     pub async fn read_throughput(
         &self,
         options: Option<ThroughputOptions>,
     ) -> crate::Result<Option<ThroughputProperties>> {
         let options = options.unwrap_or_default();
-        offers_client::find_offer(
+        crate::clients::offers_client::find_offer(
             &self.context,
             self.container_ref.account(),
             self.container_ref.rid(),
@@ -209,6 +217,7 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "control_plane")]
     pub async fn begin_replace_throughput(
         &self,
         throughput: ThroughputProperties,
@@ -216,7 +225,7 @@ impl ContainerClient {
     ) -> crate::Result<ThroughputPoller> {
         let options = options.unwrap_or_default();
 
-        offers_client::begin_replace(
+        crate::clients::offers_client::begin_replace(
             self.context.clone(),
             self.container_ref.account().clone(),
             self.container_ref.rid(),
@@ -233,6 +242,7 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[cfg(feature = "control_plane")]
     pub async fn delete(
         &self,
         options: Option<DeleteContainerOptions>,

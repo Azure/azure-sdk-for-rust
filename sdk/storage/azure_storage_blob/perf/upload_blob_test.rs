@@ -16,7 +16,7 @@ use clap::Args;
 use futures::FutureExt;
 
 use crate::{
-    clap_parsers::non_zero_usize,
+    clap_parsers::{non_zero_u64, non_zero_usize},
     extensions::{OnceLockExt, RecordingExt},
 };
 
@@ -31,7 +31,7 @@ pub struct UploadBlobTestOptions {
     concurrency: Option<NonZero<usize>>,
 
     // Size in bytes to partition data into for each transfer.
-    #[arg(long, value_parser = non_zero_usize)]
+    #[arg(long, value_parser = non_zero_u64)]
     partition_size: Option<NonZero<u64>>,
 
     #[arg(long)]

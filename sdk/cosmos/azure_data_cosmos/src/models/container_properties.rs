@@ -504,6 +504,23 @@ impl ChangeFeedPolicy {
     /// `retention` is rounded **up** to the next whole minute when serialized so
     /// a sub-minute request never truncates to `0` (which would disable the
     /// mode).
+    ///
+    /// # Continuous backup accounts
+    ///
+    /// Accounts running in **continuous backup** mode derive the full-fidelity
+    /// retention window from the backup retention, and reject container
+    /// requests that also set a retention duration with HTTP 400
+    /// (`"The retention duration in the Change Feed policy should not be set
+    /// when continuous backup mode is enabled for the database account"`), so
+    /// leave the change feed policy unset on those accounts.
+    ///
+    /// Continuous backup on its own does not make
+    /// [`AllVersionsAndDeletes`](crate::options::ChangeFeedMode::AllVersionsAndDeletes)
+    /// available: the account additionally needs the account-level
+    /// full-fidelity change feed opt-in, which cannot be set when the account is
+    /// created. Without it the account still answers reads in that mode with
+    /// HTTP 400 (`"Change Feed 'All Versions and Deletes' mode must be
+    /// enabled"`). See <https://aka.ms/ChangeFeed-AllVersionsAndDeletes>.
     pub fn with_retention_duration(mut self, retention: Duration) -> Self {
         self.retention_duration = Some(retention);
         self

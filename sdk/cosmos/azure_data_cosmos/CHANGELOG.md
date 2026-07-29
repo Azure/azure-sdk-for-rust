@@ -8,14 +8,18 @@
 - Added a pluggable client-side diagnostics emission layer — the `DiagnosticsHandler` trait and ordered `DiagnosticsHandlerChain` (registered via `CosmosClientBuilder::with_diagnostics_handler`) — invoked once per operation (singleton and paginated, on success and failure) with the completed `DiagnosticsContext` plus an SDK-supplied `CosmosOperationContext`; the empty default chain is a zero-overhead no-op. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 - Added the `metrics`-gated `CosmosMetricsHandler` (with `MetricsOptions`), emitting the stable `db.client.operation.duration` histogram plus per-signal opt-in metrics (`with_request_charge_metric`, `with_returned_rows_metric`) and an opt-in extended attribute set (`with_extended_attributes`); a no-op when no meter provider is registered. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 - Added composable tail-sampled emission handlers — a `TracingLogHandler` leaf that writes a compact `tracing` line and a `SamplingLogHandler` wrapper (holding an `Arc<dyn DiagnosticsHandler>`) that applies the sampling gate plus a shared per-window rate limit, defaulting to wrap a `TracingLogHandler` — and the `distributed_tracing`-gated `CosmosTracingHandler` (backdated span tree), also rate-limited so an error storm can't overwhelm exporters. All emit only for operations which fail or breach a configurable `DiagnosticsThresholds`, and stamp *why* they were sampled (a failure, or which threshold) on the emitted line and span. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
+- Added the non-default `control_plane` feature that gates the control-plane APIs (database and container CRUD, and throughput/offer management). It is intentionally independent of `key_auth` so these APIs are not tied to key-based authentication. ([#4854](https://github.com/Azure/azure-sdk-for-rust/pull/4854))
 
 ### Breaking Changes
+
+- Control-plane APIs are now gated behind the new `control_plane` feature, which is **not** enabled by default. Code using database or container management (`CosmosClient::create_database`/`query_databases`, `DatabaseClient::read`/`create_container`/`query_containers`/`delete`, `ContainerClient::replace`/`delete`), throughput management (`read_throughput`/`begin_replace_throughput`, `ThroughputPoller`), or the associated model and options types (`DatabaseProperties`, `ThroughputProperties`, and the container create/replace/delete/query, database, and throughput option types) must now enable the `control_plane` feature. Reading container properties via `ContainerClient::read()` — along with `ContainerProperties`, `IndexingPolicy`, `ResourceResponse`, and `ReadContainerOptions` — remains available without the feature, since it works with Entra ID authentication and mirrors the metadata read the SDK already performs internally. ([#4854](https://github.com/Azure/azure-sdk-for-rust/pull/4854))
 
 ### Bugs Fixed
 
 ### Other Changes
 
 - Existing `ResponseHeaders` accessors now return Gateway 2.0 backend duration, quota, item-count, and local-LSN response metadata. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
+- Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and length-bounded, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
 
 ## 0.37.1 (2026-07-23)
 
