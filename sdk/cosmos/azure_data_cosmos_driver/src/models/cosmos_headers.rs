@@ -43,12 +43,23 @@ pub(crate) mod request_header_names {
     pub const IS_QUERY: &str = "x-ms-documentdb-isquery";
     pub const IS_QUERY_PLAN_REQUEST: &str = "x-ms-cosmos-is-query-plan-request";
     pub const SUPPORTED_QUERY_FEATURES: &str = "x-ms-cosmos-supported-query-features";
+    /// Advertises which serialization formats the client accepts in responses
+    /// (e.g. `JsonText,CosmosBinary`). The service uses it to decide whether to
+    /// reply with Cosmos binary JSON instead of text.
+    pub const SUPPORTED_SERIALIZATION_FORMATS: &str = "x-ms-cosmos-supported-serialization-formats";
     pub const QUERY_VERSION: &str = "x-ms-cosmos-query-version";
     pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
     pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
     /// Change-feed indicator ("Incremental Feed"). HTTP standard name `a-im`.
     pub const A_IM: &str = "a-im";
     pub const INCREMENTAL_FEED: &str = "Incremental Feed";
+    /// Full-fidelity change-feed indicator ("Full-Fidelity Feed").
+    ///
+    /// Selects the AllVersionsAndDeletes change feed, which returns every
+    /// intermediate version and delete as an envelope with `current`,
+    /// `previous`, and `metadata`. Sent as the `a-im` value in place of
+    /// [`INCREMENTAL_FEED`].
+    pub const FULL_FIDELITY_FEED: &str = "Full-Fidelity Feed";
     /// Wire format version for change feed responses.
     pub const CHANGEFEED_WIRE_FORMAT_VERSION: &str = "x-ms-cosmos-changefeed-wire-format-version";
     /// The wire format version value used by this SDK.
@@ -103,6 +114,7 @@ pub(crate) mod request_header_names {
     pub const ALLOW_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
 
     pub const DATE: &str = "x-ms-date";
+    pub const CLIENT_ID: &str = "x-ms-client-id";
     pub const VERSION: &str = "x-ms-version";
     pub const CACHE_CONTROL: &str = "cache-control";
     pub const COLLECTION_RID: &str = "x-ms-documentdb-collection-rid";
@@ -236,7 +248,21 @@ pub struct CosmosRequestHeaders {
     /// When `true`, the driver emits the standard change-feed indicator
     /// header. Combine with [`Precondition::if_none_match`] to pass a
     /// continuation token.
+    ///
+    /// Mutually exclusive with [`full_fidelity_feed`](Self::full_fidelity_feed);
+    /// if both are set, full-fidelity takes precedence when emitting `a-im`.
     pub incremental_feed: bool,
+
+    /// Requests a full-fidelity change feed read (`a-im: Full-Fidelity Feed`).
+    ///
+    /// When `true`, the driver emits the full-fidelity change-feed indicator,
+    /// selecting the AllVersionsAndDeletes mode where every intermediate
+    /// version and delete is returned inside an envelope
+    /// (`{ current, previous, metadata }`).
+    ///
+    /// Mutually exclusive with [`incremental_feed`](Self::incremental_feed);
+    /// full-fidelity takes precedence when emitting `a-im`.
+    pub full_fidelity_feed: bool,
 
     /// When `true`, emits the change-feed wire format version header
     /// (`x-ms-cosmos-changefeed-wire-format-version: 2021-09-15`).
@@ -281,6 +307,15 @@ pub struct CosmosRequestHeaders {
     /// Sent on query plan requests to indicate which query capabilities the
     /// client supports. The backend uses this to shape its response.
     pub supported_query_features: Option<Cow<'static, str>>,
+
+    /// Serialization formats the client accepts in responses
+    /// (`x-ms-cosmos-supported-serialization-formats`).
+    ///
+    /// When set (e.g. `JsonText,CosmosBinary`), the service may reply with
+    /// Cosmos binary JSON, which the SDK auto-detects and decodes. `None` omits
+    /// the header, so the service replies with text JSON as before. The driver
+    /// is a passthrough here — the SDK decides the value per its enablement.
+    pub supported_serialization_formats: Option<Cow<'static, str>>,
 }
 
 impl CosmosRequestHeaders {
@@ -339,7 +374,16 @@ impl CosmosRequestHeaders {
                 HeaderValue::from(wire),
             );
         }
-        if self.incremental_feed {
+        // `a-im` selects the change feed mode. Full-fidelity
+        // (AllVersionsAndDeletes) takes precedence over incremental
+        // (LatestVersion); the two are mutually exclusive, but guard the
+        // invariant and emit exactly one value.
+        if self.full_fidelity_feed {
+            headers.insert(
+                request_header_names::A_IM,
+                HeaderValue::from_static(request_header_names::FULL_FIDELITY_FEED),
+            );
+        } else if self.incremental_feed {
             headers.insert(
                 request_header_names::A_IM,
                 HeaderValue::from_static(request_header_names::INCREMENTAL_FEED),
@@ -380,12 +424,27 @@ impl CosmosRequestHeaders {
         if let Some(features) = self.supported_query_features.as_ref() {
             headers.insert(
                 request_header_names::SUPPORTED_QUERY_FEATURES,
-                match features {
-                    Cow::Borrowed(s) => HeaderValue::from(*s),
-                    Cow::Owned(s) => HeaderValue::from(s.clone()),
-                },
+                header_value_from_cow(features),
             );
         }
+        if let Some(formats) = self.supported_serialization_formats.as_ref() {
+            headers.insert(
+                request_header_names::SUPPORTED_SERIALIZATION_FORMATS,
+                header_value_from_cow(formats),
+            );
+        }
+    }
+}
+
+/// Converts a `Cow<'static, str>` header value into a [`HeaderValue`].
+///
+/// A `Cow::Borrowed` holds a `&'static str`, so it wraps into a `HeaderValue`
+/// with no allocation; a `Cow::Owned` must clone once because `HeaderValue`
+/// owns a `Cow<'static, str>` and this borrows `&self`.
+fn header_value_from_cow(value: &Cow<'static, str>) -> HeaderValue {
+    match value {
+        Cow::Borrowed(s) => HeaderValue::from(*s),
+        Cow::Owned(s) => HeaderValue::from(s),
     }
 }
 
@@ -1353,6 +1412,74 @@ mod tests {
         cosmos_headers.write_to_headers(&mut headers);
         assert_eq!(
             headers.get_optional_str(&HeaderName::from_static("x-ms-max-item-count")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_emits_incremental_a_im() {
+        let cosmos_headers = CosmosRequestHeaders {
+            incremental_feed: true,
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("a-im")),
+            Some("Incremental Feed")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_emits_supported_serialization_formats() {
+        let cosmos_headers = CosmosRequestHeaders {
+            supported_serialization_formats: Some("JsonText,CosmosBinary".into()),
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-supported-serialization-formats"
+            )),
+            Some("JsonText,CosmosBinary")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_emits_full_fidelity_a_im() {
+        let cosmos_headers = CosmosRequestHeaders {
+            full_fidelity_feed: true,
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("a-im")),
+            Some("Full-Fidelity Feed")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_omits_a_im_when_no_feed_mode() {
+        let cosmos_headers = CosmosRequestHeaders::default();
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("a-im")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_omits_supported_serialization_formats_when_none() {
+        let cosmos_headers = CosmosRequestHeaders::default();
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-supported-serialization-formats"
+            )),
             None
         );
     }
