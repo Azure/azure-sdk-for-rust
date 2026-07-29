@@ -773,11 +773,11 @@ pub mod builders {
         /// To run the processor over AMQP-over-WebSockets (port 443, useful when the
         /// native AMQP ports are blocked), select the transport on the consumer
         /// client with
-        /// [`ConsumerClientBuilder::with_transport_type`](crate::builders::ConsumerClientBuilder::with_transport_type):
+        /// [`ConsumerClientBuilder::with_transport`](crate::builders::ConsumerClientBuilder::with_transport):
         ///
         /// ```no_run
         /// use azure_messaging_eventhubs::{EventProcessor, CheckpointStore, ConsumerClient};
-        /// use azure_messaging_eventhubs::models::TransportType;
+        /// use azure_messaging_eventhubs::models::AmqpTransport;
         /// use std::sync::Arc;
         ///
         /// async fn create_processor(checkpoint_store: Arc<dyn CheckpointStore>) -> Result<(), Box<dyn std::error::Error>> {
@@ -786,7 +786,7 @@ pub mod builders {
         /// let eventhub_namespace = std::env::var("EVENTHUBS_HOST")?;
         /// let eventhub_name = std::env::var("EVENTHUB_NAME")?;
         /// let consumer = ConsumerClient::builder()
-        ///     .with_transport_type(TransportType::AmqpWebSocket)
+        ///     .with_transport(AmqpTransport::WebSocket)
         ///     .open(
         ///         &eventhub_namespace,
         ///         eventhub_name,
