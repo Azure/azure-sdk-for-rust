@@ -33,7 +33,7 @@ this format byte-for-byte.
 This specification defines:
 
 - the byte-level layout of every value kind (§3–§6),
-- the **canonical** encoding a conforming encoder emits when multiple encodings
+- the **canonical** encoding a conforming encoder emits when multiple 
   are valid (§7),
 - decoder conformance requirements, including bounds and resource limits (§8),
 - security considerations for decoding untrusted input (§9).
@@ -70,7 +70,7 @@ flowchart TD
 | `binary_json/conformance.rs` | Encoder byte-exactness + canonical-form snapshots | §3.1, §7 |
 | `binary_json/reader.rs`, `de.rs` (tests) | Decoder conformance per form | §4–§6, §8 |
 | `binary_json/fuzz_tests.rs` | Decoder never panics/hangs/over-allocates on malformed input | §8, §9 |
-| [`BINARY_ENCODING_ROUNDTRIP_FUZZER.md`](BINARY_ENCODING_ROUNDTRIP_FUZZER.md) + harness | End-to-end **round-trip invariant** on random JSON against the live service, at volume | §7 (round-trip), value model (§2) |
+| [`BINARY_ENCODING_ROUNDTRIP_FUZZER.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/BINARY_ENCODING_ROUNDTRIP_FUZZER.md) + harness | End-to-end **round-trip invariant** on random JSON against the live service, at volume | §7 (round-trip), value model (§2) |
 
 Two connections are worth calling out explicitly:
 

@@ -2,7 +2,7 @@
 
 Coverage-guided, **byte-level** fuzzing for the Cosmos binary JSON codec
 (`azure_data_cosmos_driver::binary_json`). Where the live
-[round-trip fuzzer](../../azure_data_cosmos_perf/tests/binary_roundtrip_fuzzer.rs)
+[round-trip fuzzer](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_perf/tests/binary_roundtrip_fuzzer.rs)
 generates random JSON *values* and only ever feeds the decoder **encoder-produced**
 (well-formed) bytes, these targets feed **arbitrary and mutated bytes** straight
 into the decoder — so they exercise the *format*/protocol itself: truncated
@@ -108,7 +108,7 @@ millions of inputs per target.
 
 Seeding libFuzzer with **valid** frames lets it mutate outward from real wire
 shapes and reach the interesting error paths far faster than blind byte flips.
-The [golden vectors](../testdata/binary_json_vectors.json) already contain every
+The [golden vectors](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/testdata/binary_json_vectors.json) already contain every
 marker family as space-separated hex. Materialize them into the `decode` corpus:
 
 PowerShell:
@@ -156,13 +156,13 @@ azure_data_cosmos_driver --lib fuzz`.
 ## CI
 
 Fuzzing runs as a **non-blocking leg of the existing `sdk/cosmos/ci.yml`** — an
-`AdditionalMatrixConfigs` entry ([`sdk/cosmos/fuzz-matrix.json`](../../fuzz-matrix.json))
+`AdditionalMatrixConfigs` entry ([`sdk/cosmos/fuzz-matrix.json`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/fuzz-matrix.json))
 that adds one **Linux + nightly** job (cargo-fuzz/libFuzzer is Linux-only). It
 carries `ContinueOnError: "true"`, so a discovered crash reports "succeeded with
 issues" instead of blocking merge. The job's test-setup hook
-([`Invoke-CosmosTestSetup.ps1`](../../eng/scripts/Invoke-CosmosTestSetup.ps1),
+([`Invoke-CosmosTestSetup.ps1`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/eng/scripts/Invoke-CosmosTestSetup.ps1),
 gated on `AZURE_COSMOS_FUZZ=1`) calls
-[`Run-BinaryJsonFuzz.ps1`](../../eng/scripts/Run-BinaryJsonFuzz.ps1), which
+[`Run-BinaryJsonFuzz.ps1`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/eng/scripts/Run-BinaryJsonFuzz.ps1), which
 installs cargo-fuzz, seeds each corpus from the golden vectors, and runs every
 target under a wall-clock budget that scales by build reason:
 
