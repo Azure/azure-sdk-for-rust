@@ -562,7 +562,6 @@ pub mod builders {
             sas_credential::SasCredential,
             SAS_TOKEN_TYPE,
         },
-        models::TransportType,
         Result, RetryOptions,
     };
     use azure_core::{http::Url, Error};
@@ -598,7 +597,7 @@ pub mod builders {
         custom_endpoint: Option<String>,
 
         /// The transport used to communicate with the Event Hub.
-        transport_type: Option<TransportType>,
+        transport: Option<AmqpTransport>,
     }
 
     impl ProducerClientBuilder {
@@ -657,22 +656,22 @@ pub mod builders {
         /// Sets the transport used to communicate with the Event Hub.
         ///
         /// # Arguments
-        /// * `transport_type` - The transport to use. Defaults to
-        ///   [`TransportType::AmqpTcp`]. Use [`TransportType::AmqpWebSocket`]
-        ///   to tunnel AMQP over WebSockets (port 443) when the native AMQP
+        /// * `transport` - The transport to use. Defaults to
+        ///   [`AmqpTransport::Tcp`]. Use [`AmqpTransport::WebSocket`] to
+        ///   tunnel AMQP over WebSockets (port 443) when the native AMQP
         ///   ports are blocked.
         ///
         /// # Returns
         /// The updated [`ProducerClientBuilder`].
-        pub fn with_transport_type(mut self, transport_type: TransportType) -> Self {
-            self.transport_type = Some(transport_type);
+        pub fn with_transport(mut self, transport: AmqpTransport) -> Self {
+            self.transport = Some(transport);
             self
         }
 
         /// Returns the AMQP transport this builder opens the connection with.
         /// Shared by every `open` path so they cannot drift apart.
         pub(crate) fn transport(&self) -> AmqpTransport {
-            self.transport_type.unwrap_or_default().into()
+            self.transport.unwrap_or_default()
         }
 
         /// Opens the connection to the Event Hub.
@@ -797,7 +796,6 @@ pub mod builders {
 #[cfg(test)]
 mod tests {
     use crate::common::tests::force_errors;
-    use crate::models::TransportType;
     use crate::{models::EventData, EventDataBatchOptions, ProducerClient, Result};
     use azure_core::time::Duration;
     use azure_core_amqp::{error::AmqpErrorKind, AmqpTransport};
@@ -807,20 +805,20 @@ mod tests {
     // Every `open` path on the builder reads the transport through one helper,
     // so this covers the plumbing that the connection-string path shares.
     #[test]
-    fn builder_maps_the_transport_type() {
+    fn builder_reads_the_transport_through_one_helper() {
         assert_eq!(
             ProducerClient::builder()
-                .with_transport_type(TransportType::AmqpWebSocket)
+                .with_transport(AmqpTransport::WebSocket)
                 .transport(),
             AmqpTransport::WebSocket
         );
         assert_eq!(
             ProducerClient::builder()
-                .with_transport_type(TransportType::AmqpTcp)
+                .with_transport(AmqpTransport::Tcp)
                 .transport(),
             AmqpTransport::Tcp
         );
-        // An unset transport type keeps the TCP default.
+        // An unset transport keeps the TCP default.
         assert_eq!(ProducerClient::builder().transport(), AmqpTransport::Tcp);
     }
 
