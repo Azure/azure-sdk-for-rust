@@ -3,8 +3,6 @@
 
 //! Public types for addressing Cosmos DB databases and containers by name or RID.
 
-use std::borrow::Cow;
-
 /// A Cosmos DB resource identifier (RID).
 ///
 /// RIDs are stable, Base64-encoded identifiers assigned by Cosmos DB. Unlike a
@@ -15,14 +13,9 @@ use std::borrow::Cow;
 /// clients via [`CosmosClient::database_client`](crate::CosmosClient::database_client)
 /// and [`DatabaseClient::container_client`](crate::clients::DatabaseClient::container_client).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ResourceId(Cow<'static, str>);
+pub struct ResourceId(String);
 
 impl ResourceId {
-    /// Creates a resource identifier from a static string without allocating.
-    pub const fn from_static(rid: &'static str) -> Self {
-        Self(Cow::Borrowed(rid))
-    }
-
     /// Returns the RID as a string slice.
     pub fn as_str(&self) -> &str {
         &self.0
@@ -31,19 +24,19 @@ impl ResourceId {
 
 impl From<&str> for ResourceId {
     fn from(rid: &str) -> Self {
-        Self(Cow::Owned(rid.to_owned()))
+        Self(rid.to_owned())
     }
 }
 
 impl From<String> for ResourceId {
     fn from(rid: String) -> Self {
-        Self(Cow::Owned(rid))
+        Self(rid)
     }
 }
 
 impl From<&String> for ResourceId {
     fn from(rid: &String) -> Self {
-        Self(Cow::Owned(rid.clone()))
+        Self(rid.clone())
     }
 }
 
@@ -86,7 +79,7 @@ impl std::fmt::Display for ResourceId {
 #[non_exhaustive]
 pub enum ResourceIdentity {
     /// Address the resource by its user-provided name.
-    Name(Cow<'static, str>),
+    Name(String),
     /// Address the resource by its [`ResourceId`] (RID).
     Rid(ResourceId),
 }
@@ -95,7 +88,7 @@ impl ResourceIdentity {
     /// Returns the name when this identity addresses a resource by name.
     pub(crate) fn as_name(&self) -> Option<&str> {
         match self {
-            Self::Name(name) => Some(name),
+            Self::Name(name) => Some(name.as_str()),
             Self::Rid(_) => None,
         }
     }
@@ -116,19 +109,19 @@ impl ResourceIdentity {
 
 impl From<&str> for ResourceIdentity {
     fn from(name: &str) -> Self {
-        Self::Name(Cow::Owned(name.to_owned()))
+        Self::Name(name.to_owned())
     }
 }
 
 impl From<String> for ResourceIdentity {
     fn from(name: String) -> Self {
-        Self::Name(Cow::Owned(name))
+        Self::Name(name)
     }
 }
 
 impl From<&String> for ResourceIdentity {
     fn from(name: &String) -> Self {
-        Self::Name(Cow::Owned(name.clone()))
+        Self::Name(name.clone())
     }
 }
 
@@ -177,9 +170,13 @@ mod tests {
     }
 
     #[test]
-    fn resource_id_from_static_does_not_allocate() {
-        const RID: ResourceId = ResourceId::from_static("static-rid");
-        assert_eq!(RID.as_str(), "static-rid");
+    fn resource_id_from_owned_string_round_trips() {
+        let rid = ResourceId::from(String::from("owned-rid"));
+        assert_eq!(rid.as_str(), "owned-rid");
+
+        let borrowed = String::from("borrowed-rid");
+        let rid = ResourceId::from(&borrowed);
+        assert_eq!(rid.as_str(), "borrowed-rid");
     }
 
     #[test]

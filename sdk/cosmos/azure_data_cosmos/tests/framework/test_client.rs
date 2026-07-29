@@ -939,7 +939,7 @@ impl TestRunContext {
             {
                 Ok(response) => {
                     let created = response.into_model()?;
-                    return db_client.container_client(&*created.id).await;
+                    return db_client.container_client(created.id.as_ref()).await;
                 }
                 Err(e) if e.status().status_code() == StatusCode::TooManyRequests => {
                     println!(
@@ -951,7 +951,8 @@ impl TestRunContext {
                 }
                 Err(e) if e.status().status_code() == StatusCode::Conflict => {
                     // Container already exists, delete and recreate it, then return a client
-                    let container_client = db_client.container_client(&*properties.id).await?;
+                    let container_client =
+                        db_client.container_client(properties.id.as_ref()).await?;
                     container_client.delete(None).await?;
 
                     // recreate
@@ -959,7 +960,7 @@ impl TestRunContext {
                         .create_container(properties.clone(), options.clone())
                         .await?;
                     let created = response.into_model()?;
-                    return db_client.container_client(&*created.id).await;
+                    return db_client.container_client(created.id.as_ref()).await;
                 }
                 Err(e) => return Err(e),
             }

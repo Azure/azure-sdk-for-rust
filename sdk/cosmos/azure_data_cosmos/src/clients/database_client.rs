@@ -30,9 +30,7 @@ impl DatabaseClient {
     pub(crate) fn new(context: ClientContext, identity: ResourceIdentity) -> Self {
         let account = context.driver.account().clone();
         let database_ref = match &identity {
-            ResourceIdentity::Name(name) => {
-                DatabaseReference::from_name(account, name.clone().into_owned())
-            }
+            ResourceIdentity::Name(name) => DatabaseReference::from_name(account, name.clone()),
             ResourceIdentity::Rid(rid) => {
                 DatabaseReference::from_rid(account, rid.as_str().to_owned())
             }
