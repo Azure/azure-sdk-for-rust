@@ -27,28 +27,28 @@ pub enum AmqpTransport {
     Tcp,
     /// AMQP framing tunneled over secure WebSockets (`wss://`, port 443).
     ///
-    /// This variant needs the `native_tls` feature, which the `default` feature
-    /// selects. A build with `fe2o3_amqp` but no `native_tls` can still select
-    /// this variant, but the connection then returns an error when it opens,
-    /// because the WebSocket transport has no TLS backend.
+    /// This variant needs the `websockets_rustls` feature (which the `default`
+    /// feature selects) or the `websockets_native_tls` feature. A build with
+    /// `fe2o3_amqp` and neither of them can still select this variant, but the
+    /// connection then returns an error when it opens.
     WebSocket,
 }
 
 /// Options for configuring an AMQP connection.
 ///
-/// This struct is `#[non_exhaustive]`, so a struct literal cannot build it from
-/// outside this crate. Start from [`Default`] and set the fields you need with
-/// the `with_` methods.
+/// Build it from [`Default`] and set only the fields you need, so a later field
+/// addition does not break the call site:
 ///
 /// ```
 /// use azure_core_amqp::{AmqpConnectionOptions, AmqpTransport};
 ///
-/// let options = AmqpConnectionOptions::default()
-///     .with_transport(AmqpTransport::WebSocket)
-///     .with_max_frame_size(65536);
+/// #[allow(clippy::needless_update)]
+/// let options = AmqpConnectionOptions {
+///     transport: Some(AmqpTransport::WebSocket),
+///     ..Default::default()
+/// };
 /// ```
 #[derive(Debug, Default, Clone)]
-#[non_exhaustive]
 pub struct AmqpConnectionOptions {
     /// Maximum frame size for the connection in bytes.
     pub max_frame_size: Option<u32>,
@@ -72,78 +72,6 @@ pub struct AmqpConnectionOptions {
     pub custom_endpoint: Option<Url>,
     /// The transport used to carry the AMQP protocol. Defaults to [`AmqpTransport::Tcp`].
     pub transport: Option<AmqpTransport>,
-}
-
-impl AmqpConnectionOptions {
-    /// Sets the maximum frame size for the connection in bytes.
-    pub fn with_max_frame_size(mut self, max_frame_size: u32) -> Self {
-        self.max_frame_size = Some(max_frame_size);
-        self
-    }
-
-    /// Sets the maximum number of channels for the connection.
-    pub fn with_channel_max(mut self, channel_max: u16) -> Self {
-        self.channel_max = Some(channel_max);
-        self
-    }
-
-    /// Sets the idle timeout for the connection.
-    pub fn with_idle_timeout(mut self, idle_timeout: Duration) -> Self {
-        self.idle_timeout = Some(idle_timeout);
-        self
-    }
-
-    /// Sets the outgoing locales for the connection.
-    pub fn with_outgoing_locales(mut self, outgoing_locales: Vec<String>) -> Self {
-        self.outgoing_locales = Some(outgoing_locales);
-        self
-    }
-
-    /// Sets the incoming locales for the connection.
-    pub fn with_incoming_locales(mut self, incoming_locales: Vec<String>) -> Self {
-        self.incoming_locales = Some(incoming_locales);
-        self
-    }
-
-    /// Sets the offered capabilities for the connection.
-    pub fn with_offered_capabilities(mut self, offered_capabilities: Vec<AmqpSymbol>) -> Self {
-        self.offered_capabilities = Some(offered_capabilities);
-        self
-    }
-
-    /// Sets the desired capabilities for the connection.
-    pub fn with_desired_capabilities(mut self, desired_capabilities: Vec<AmqpSymbol>) -> Self {
-        self.desired_capabilities = Some(desired_capabilities);
-        self
-    }
-
-    /// Sets the properties for the connection.
-    pub fn with_properties(mut self, properties: AmqpOrderedMap<AmqpSymbol, AmqpValue>) -> Self {
-        self.properties = Some(properties);
-        self
-    }
-
-    /// Sets the buffer size for the connection.
-    pub fn with_buffer_size(mut self, buffer_size: usize) -> Self {
-        self.buffer_size = Some(buffer_size);
-        self
-    }
-
-    /// Sets the custom endpoint for the connection. Use it to connect through a
-    /// local AMQP proxy server.
-    pub fn with_custom_endpoint(mut self, custom_endpoint: Url) -> Self {
-        self.custom_endpoint = Some(custom_endpoint);
-        self
-    }
-
-    /// Sets the transport that carries the AMQP protocol.
-    ///
-    /// [`AmqpTransport::WebSocket`] needs the `native_tls` feature. See that
-    /// variant for the behavior without it.
-    pub fn with_transport(mut self, transport: AmqpTransport) -> Self {
-        self.transport = Some(transport);
-        self
-    }
 }
 
 /// Trait defining the asynchronous APIs for AMQP connection operations.

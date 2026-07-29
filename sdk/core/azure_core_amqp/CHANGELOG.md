@@ -5,11 +5,7 @@
 ### Features Added
 
 - Added `AmqpTransport` and an `AmqpConnectionOptions::transport` field to select the connection transport. `AmqpTransport::WebSocket` tunnels AMQP over secure WebSockets (`wss://`, port 443) for networks that block the native AMQP ports.
-- Added the `native_tls` feature, which selects the TLS backend for both `fe2o3-amqp` and `fe2o3-amqp-ws`. The `default` feature selects it. The `AmqpTransport::WebSocket` transport needs this feature. A build with `fe2o3_amqp` but no `native_tls` compiles, and the connection then returns an error when it opens. A `rustls` backend is not available yet, because the `rustls` feature of `fe2o3-amqp` pulls in `ring`, which `deny.toml` bans (issue #4189).
-
-### Breaking Changes
-
-- `AmqpConnectionOptions` is now `#[non_exhaustive]`, and it has a `with_` method for each field. A struct literal no longer builds it from another crate, and `..Default::default()` does not help, because functional update is also a struct expression. Start from `Default` and chain the methods, for example `AmqpConnectionOptions::default().with_transport(AmqpTransport::WebSocket)`. This makes each later field addition additive.
+- Added the `websockets_rustls` and `websockets_native_tls` features, which turn on the WebSocket transport and pick its TLS stack. The `default` feature selects `websockets_rustls`, which is rustls with the aws-lc-rs provider, the same stack that `azure_core` selects for HTTP. A build with `fe2o3_amqp` and neither feature compiles, and `AmqpTransport::WebSocket` then returns an error when the connection opens. The TCP transport keeps the `fe2o3-amqp/native-tls` stack, because the rustls backend of `fe2o3-amqp` 0.14 pulls in `ring`, which `deny.toml` bans (issue #4189).
 
 ### Bugs Fixed
 
