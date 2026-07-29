@@ -15,6 +15,8 @@
 ### Bugs Fixed
 
 - Bounded `403/3` and `403/1008` topology retries to a 5-second cumulative delay budget, down from ~120 seconds, so a persistent topology error surfaces promptly instead of hanging. The first retry is now immediate; later retries use exponential backoff with jitter. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
+- Fixed a failed or cancelled account-metadata refresh suppressing every subsequent refresh for the full refresh interval, which could leave topology retries routing against stale metadata for their entire budget. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
+- Fixed per-partition endpoint failover discarding failure reports for endpoints that were not current, which could re-select an endpoint already known to have failed when reports arrived out of order. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
 
 ### Other Changes
 

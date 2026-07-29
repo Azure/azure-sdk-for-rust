@@ -9078,6 +9078,49 @@ mod tests {
         );
     }
 
+    /// The hedge `BothTransient` boundary must leave the backend-failover
+    /// budget exactly as it found it: the two legs race concurrently and
+    /// incur no backoff, so charging them delay would shorten the topology
+    /// convergence window without any wall-clock time having been spent.
+    /// Resetting the budget would be equally wrong — a hedged operation would
+    /// get a fresh 5s on every race.
+    #[test]
+    fn try_advance_after_both_transient_preserves_backend_failover_budget() {
+        let regions = ["region-a", "region-b", "region-c"];
+        let location = make_advance_test_location(&regions);
+        let mut state = make_advance_test_state(0, regions.len());
+        // Partially-spent backend budget from a prior sequential 403/1008 round.
+        state.backend_failover_retry_count = 3;
+        state.backend_failover_cumulative_delay = Duration::from_millis(3_000);
+
+        let primary = crate::options::Region::new("region-a");
+        let secondary = crate::options::Region::new("region-b");
+
+        let result = super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            true,
+            Some(&primary),
+            Some(&secondary),
+            dummy_last_error(),
+        );
+
+        assert!(result.is_ok(), "budget remains, so the race must continue");
+        assert_eq!(
+            state.failover_retry_count, 2,
+            "the race charges the generic failover budget",
+        );
+        assert_eq!(
+            state.backend_failover_retry_count, 3,
+            "the concurrent legs must neither consume nor reset the backend retry count",
+        );
+        assert_eq!(
+            state.backend_failover_cumulative_delay,
+            Duration::from_millis(3_000),
+            "no backoff elapsed during the race, so no delay budget may be charged",
+        );
+    }
+
     /// Budget-exhaustion path remains untouched: when
     /// `failover_retry_count + 2 > max_failover_retries`, the
     /// function returns the supplied error without mutating

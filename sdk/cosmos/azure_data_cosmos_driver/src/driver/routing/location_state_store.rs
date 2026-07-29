@@ -175,6 +175,37 @@ impl Drop for LocationStateStore {
     }
 }
 
+/// Restores a pre-claimed `last_refresh_epoch_ms` stamp when the guarded
+/// refresh fails or is cancelled. Rollback CASes on the exact claimed value,
+/// so it no-ops if another refresh already re-stamped the clock.
+struct RefreshClaimGuard<'a> {
+    clock: &'a AtomicU64,
+    claimed: u64,
+    previous: u64,
+    committed: bool,
+}
+
+impl RefreshClaimGuard<'_> {
+    /// Marks the claim as legitimately spent; suppresses the rollback.
+    fn commit(&mut self) {
+        self.committed = true;
+    }
+}
+
+impl Drop for RefreshClaimGuard<'_> {
+    fn drop(&mut self) {
+        if self.committed {
+            return;
+        }
+        let _ = self.clock.compare_exchange(
+            self.claimed,
+            self.previous,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        );
+    }
+}
+
 impl LocationStateStore {
     /// Creates a new location store with a single-endpoint account snapshot.
     #[allow(clippy::too_many_arguments)]
@@ -480,7 +511,22 @@ impl LocationStateStore {
             return;
         }
 
-        self.refresh_account_properties_inner().await;
+        // The CAS above stamps the clock *before* the fetch so concurrent
+        // callers are excluded, but that stamp must not survive a fetch that
+        // never landed: the event-driven retry paths depend on a fresh
+        // snapshot and would otherwise be blinded for a full
+        // `refresh_interval`. The guard restores the previous stamp on
+        // failure or cancellation.
+        let mut claim = RefreshClaimGuard {
+            clock: &self.last_refresh_epoch_ms,
+            claimed: now_ms,
+            previous: last,
+            committed: false,
+        };
+
+        if self.refresh_account_properties_inner().await {
+            claim.commit();
+        }
     }
 
     /// Force-refresh account properties without consulting the
@@ -489,13 +535,15 @@ impl LocationStateStore {
     /// path from retry policies must continue to use
     /// [`refresh_account_properties_if_due`] to throttle bursts.
     ///
-    /// The `last_refresh_epoch_ms` clock is updated by
-    /// [`refresh_account_properties_inner`] only on a successful fetch — if
-    /// this timer-driven refresh fails (network error, service 5xx, ...), the
-    /// event-driven path is NOT throttled and is free to retry recovery
-    /// immediately.
+    /// The `last_refresh_epoch_ms` clock advances only when a fresh snapshot
+    /// is actually applied — if this timer-driven refresh fails (network
+    /// error, service 5xx, ...), the event-driven path is NOT throttled and is
+    /// free to retry recovery immediately. The event-driven path claims the
+    /// clock up front for mutual exclusion but rolls the claim back via
+    /// [`RefreshClaimGuard`] when its own fetch fails or is cancelled, so the
+    /// same guarantee holds there.
     async fn force_refresh_account_properties(&self) {
-        self.refresh_account_properties_inner().await;
+        let _ = self.refresh_account_properties_inner().await;
     }
 
     /// Shared implementation of both `refresh_account_properties_if_due`
@@ -512,7 +560,10 @@ impl LocationStateStore {
     /// rate-limit clock advances; on failure the previous snapshot and
     /// rate-limit timestamp are left intact so the event-driven path can
     /// retry recovery immediately.
-    async fn refresh_account_properties_inner(&self) {
+    ///
+    /// Returns `true` only when a fresh snapshot was actually applied, so
+    /// callers that pre-claimed the rate-limit clock can roll it back.
+    async fn refresh_account_properties_inner(&self) -> bool {
         // Capture the previous properties so the refresh callback can use
         // them for regional fallback if the primary endpoint fails. We
         // intentionally do NOT invalidate the cache here — concurrent
@@ -535,7 +586,7 @@ impl LocationStateStore {
                     error = %e,
                     "LocationStateStore: account metadata refresh failed; routing snapshot not updated",
                 );
-                return;
+                return false;
             }
         };
 
@@ -560,7 +611,7 @@ impl LocationStateStore {
                 endpoint = %self.account_endpoint,
                 "LocationStateStore: account metadata cache produced no value after refresh; routing snapshot not updated",
             );
-            return;
+            return false;
         };
 
         self.last_refresh_epoch_ms
@@ -575,6 +626,7 @@ impl LocationStateStore {
 
         let default_endpoint = self.default_endpoint.clone();
         self.sync_account_properties(properties, &default_endpoint);
+        true
     }
 
     /// Runs the Gateway 2.0 connectivity probe, then syncs the routing
@@ -1594,6 +1646,85 @@ mod tests {
             "event-driven refresh was incorrectly throttled by a previously-failed timer-driven refresh"
         );
         assert_eq!(success_refreshes.load(Ordering::SeqCst), 1);
+    }
+
+    /// Companion to the test above, for the event-driven path. That path
+    /// stamps the rate-limit clock *before* awaiting the fetch so concurrent
+    /// callers are excluded; a failed fetch must roll that stamp back.
+    /// Otherwise a single failure blinds every subsequent retry for a full
+    /// `refresh_interval` — which is exactly as long as the 403 retry budget,
+    /// so the operation would exhaust its retries against stale routing.
+    #[tokio::test]
+    async fn failed_event_driven_refresh_does_not_throttle_itself() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let success_refreshes = Arc::new(AtomicUsize::new(0));
+        let total_refreshes = Arc::new(AtomicUsize::new(0));
+        let success_refreshes_clone = Arc::clone(&success_refreshes);
+        let total_refreshes_clone = Arc::clone(&total_refreshes);
+        // First call fails; subsequent calls succeed.
+        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
+            let total = Arc::clone(&total_refreshes_clone);
+            let success = Arc::clone(&success_refreshes_clone);
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move {
+                    let n = total.fetch_add(1, Ordering::SeqCst);
+                    if n == 0 {
+                        Err(crate::error::CosmosError::builder()
+                            .with_status(crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::BadRequest,
+                            ))
+                            .with_message("simulated network failure")
+                            .build())
+                    } else {
+                        success.fetch_add(1, Ordering::SeqCst);
+                        Ok(payload)
+                    }
+                });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        // First event-driven refresh: claims the clock, then fails.
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
+        assert_eq!(total_refreshes.load(Ordering::SeqCst), 1);
+        assert_eq!(success_refreshes.load(Ordering::SeqCst), 0);
+
+        // A retry arriving within the refresh interval must still be allowed
+        // through, because the failed attempt released its claim.
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
+        assert_eq!(
+            total_refreshes.load(Ordering::SeqCst),
+            2,
+            "a failed event-driven refresh must not throttle the next one"
+        );
+        assert_eq!(success_refreshes.load(Ordering::SeqCst), 1);
+
+        // The now-successful refresh legitimately spends the claim, so the
+        // throttle applies again.
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
+        assert_eq!(
+            total_refreshes.load(Ordering::SeqCst),
+            2,
+            "a successful refresh must still arm the rate limit"
+        );
     }
 
     #[tokio::test]
