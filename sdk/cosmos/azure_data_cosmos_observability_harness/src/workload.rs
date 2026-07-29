@@ -278,13 +278,17 @@ async fn execute(container: &ContainerClient, seeded: &[SeededItem], op: OpKind)
         }
         OpKind::Query => {
             let partition_key = random_item(seeded).partition_key;
-            match container
-                .query_items::<SoakItem>(
-                    "SELECT * FROM c",
-                    FeedScope::partition(partition_key),
-                    None,
-                )
-                .await
+            // Boxed because the query pipeline's future is by far the largest in
+            // this harness and sits right on clippy's `large_futures` threshold,
+            // so it trips the lint on some platform/feature combinations but not
+            // others. Keeping it off the stack settles that permanently, and the
+            // allocation is noise next to the network round trip it wraps.
+            match Box::pin(container.query_items::<SoakItem>(
+                "SELECT * FROM c",
+                FeedScope::partition(partition_key),
+                None,
+            ))
+            .await
             {
                 Ok(iterator) => {
                     let mut pages = iterator.into_pages();
