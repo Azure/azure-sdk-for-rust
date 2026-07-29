@@ -642,6 +642,7 @@ dependencies = [
  "time",
  "tokio",
  "tokio-metrics",
+ "tracing-subscriber",
  "uuid",
 ]
 

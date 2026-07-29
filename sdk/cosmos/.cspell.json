@@ -4,6 +4,7 @@
   ],
   "ignoreWords": [
     "accountname",
+    "acked",
     "activityid",
     "ALPN",
     "apacsoutheast",
@@ -276,6 +277,7 @@
     "RUPM",
     "rwcache",
     "sbyte",
+    "schemaversion",
     "semconv",
     "seqs",
     "serviceunavailable",

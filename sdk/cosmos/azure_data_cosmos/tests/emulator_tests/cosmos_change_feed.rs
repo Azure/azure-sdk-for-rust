@@ -17,12 +17,17 @@
 //! * Resuming a partially-polled `StartFrom::Now` feed does not replay history
 //!   on the partitions that were never polled before the checkpoint.
 //!
-//! A second group exercises the `AllVersionsAndDeletes` ("full fidelity") mode
-//! against a container configured with a change feed retention policy: create,
-//! replace, and delete each surface as a distinct [`ChangeFeedItem`] envelope,
-//! and the mode reads correctly across a cross-partition fan-out. These AVAD
-//! tests are gated on `test_category = "emulator"` only — the vnext (Linux)
-//! emulator does not yet support full-fidelity reads.
+//! A second group exercises the `AllVersionsAndDeletes` ("full fidelity") mode.
+//! How the mode is enabled differs by target: the emulator opts in per container
+//! via a change feed retention policy, while live accounts enable it at the
+//! account level and reject an explicit container-level retention (see
+//! [`create_avad_container`]). Create, replace, and delete each surface as a
+//! distinct [`ChangeFeedItem`] envelope, and the mode reads correctly across a
+//! cross-partition fan-out. These AVAD tests are gated on
+//! `test_category = "emulator"` only — the vnext (Linux) emulator does not yet
+//! support full-fidelity reads. The account-level opt-in cannot be set when an
+//! account is created and is not available on every subscription, so against a
+//! live account that lacks it these tests skip rather than fail.
 
 use super::framework;
 
@@ -660,8 +665,22 @@ impl AvadItem {
     }
 }
 
-/// Creates a container whose change feed policy enables full-fidelity
-/// (`AllVersionsAndDeletes`) reads with the given retention window.
+/// Creates a container configured for full-fidelity (`AllVersionsAndDeletes`)
+/// reads.
+///
+/// How the retention window is configured differs between the emulator and a
+/// live account:
+///
+/// * **Emulator**: full-fidelity retention is opted into per container via
+///   `changeFeedPolicy.retentionDuration`, so `retention` is applied.
+/// * **Live account**: `AllVersionsAndDeletes` requires the account to run in
+///   continuous backup mode, and the retention window is then derived from the
+///   backup retention. Setting `changeFeedPolicy.retentionDuration` on such an
+///   account is rejected with HTTP 400 ("The retention duration in the Change
+///   Feed policy should not be set when continuous backup mode is enabled for
+///   the database account"), so the policy is omitted entirely.
+///
+/// See <https://aka.ms/ChangeFeed-AllVersionsAndDeletes>.
 async fn create_avad_container(
     run_context: &TestRunContext,
     db_client: &DatabaseClient,
@@ -669,8 +688,12 @@ async fn create_avad_container(
     retention: Duration,
     throughput: Option<ThroughputProperties>,
 ) -> azure_data_cosmos::Result<ContainerClient> {
-    let properties = ContainerProperties::new(name.to_string(), "/partitionKey".into())
-        .with_change_feed_policy(ChangeFeedPolicy::default().with_retention_duration(retention));
+    let mut properties = ContainerProperties::new(name.to_string(), "/partitionKey".into());
+    if framework::targets_emulator() {
+        properties = properties.with_change_feed_policy(
+            ChangeFeedPolicy::default().with_retention_duration(retention),
+        );
+    }
     let options = throughput.map(|t| CreateContainerOptions::default().with_throughput(t));
     run_context
         .create_container(db_client, properties, options)
@@ -713,6 +736,59 @@ where
     }
 
     Ok(collected)
+}
+
+/// Whether an error is the service refusing `AllVersionsAndDeletes` because the
+/// account was never enabled for it.
+///
+/// The mode requires an account-level opt-in that cannot be set at creation
+/// time and is not available on every subscription, so a live account that is
+/// otherwise healthy can still reject the read outright. Detecting it lets the
+/// AVAD tests skip rather than fail on such an account, while still running in
+/// full against the emulator (and against any live account that does have the
+/// mode enabled).
+fn avad_unsupported(err: &azure_data_cosmos::CosmosError) -> bool {
+    if err.status().status_code() != StatusCode::BadRequest {
+        return false;
+    }
+    message_reports_avad_unsupported(&err.to_string())
+}
+
+/// The message-text half of [`avad_unsupported`], split out so the exact
+/// wording the service uses can be pinned by a unit test.
+fn message_reports_avad_unsupported(message: &str) -> bool {
+    message.contains("All Versions and Deletes") && message.contains("must be enabled")
+}
+
+/// Result of the initial "prime" poll on an `AllVersionsAndDeletes` feed.
+enum AvadPrime {
+    /// The feed is positioned and the test can proceed.
+    Ready,
+    /// The account does not support the mode; the caller should skip.
+    Unsupported,
+}
+
+/// Performs the initial `StartFrom::Now` poll, which must return an empty page,
+/// and reports whether the account supports the mode at all.
+async fn prime_avad_feed(
+    iterator: &mut ChangeFeedPageIterator<ChangeFeedItem<AvadItem>>,
+) -> Result<AvadPrime, Box<dyn Error>> {
+    match iterator
+        .next()
+        .await
+        .expect("change feed stream always yields a page")
+    {
+        Ok(page) => {
+            assert!(
+                page.items().is_empty(),
+                "StartFrom::Now must start empty, got {}",
+                page.items().len()
+            );
+            Ok(AvadPrime::Ready)
+        }
+        Err(err) if avad_unsupported(&err) => Ok(AvadPrime::Unsupported),
+        Err(err) => Err(err.into()),
+    }
 }
 
 /// AllVersionsAndDeletes surfaces a create, a replace, and a delete of the same
@@ -759,15 +835,13 @@ pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result
 
             // Prime the `Now` position: the first poll (before any writes) is an
             // empty 304 that establishes where the feed starts.
-            let primed = iterator
-                .next()
-                .await
-                .expect("change feed stream always yields a page")?;
-            assert!(
-                primed.items().is_empty(),
-                "StartFrom::Now must start empty, got {}",
-                primed.items().len()
-            );
+            if let AvadPrime::Unsupported = prime_avad_feed(&mut iterator).await? {
+                eprintln!(
+                    "Skipping all_versions_and_deletes_surfaces_create_replace_delete: \
+                     the account does not have AllVersionsAndDeletes enabled."
+                );
+                return Ok(());
+            }
 
             // Create, then replace, then delete the same document.
             container
@@ -889,15 +963,13 @@ pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
                 .await?;
 
             // Prime the per-range `Now` positions before writing.
-            let primed = iterator
-                .next()
-                .await
-                .expect("change feed stream always yields a page")?;
-            assert!(
-                primed.items().is_empty(),
-                "StartFrom::Now must start empty, got {}",
-                primed.items().len()
-            );
+            if let AvadPrime::Unsupported = prime_avad_feed(&mut iterator).await? {
+                eprintln!(
+                    "Skipping all_versions_and_deletes_fans_out_creates_across_partitions: \
+                     the account does not have AllVersionsAndDeletes enabled."
+                );
+                return Ok(());
+            }
 
             let mut expected_ids: Vec<String> = Vec::new();
             for p in 0..PK_COUNT {
@@ -991,6 +1063,16 @@ pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<()
                 .await
                 .expect("the change feed should yield a page")
                 .expect_err("PointInTime start must be rejected for AllVersionsAndDeletes");
+            // An account without AllVersionsAndDeletes enabled also answers 400,
+            // which would let this test pass for the wrong reason. Skip that case
+            // rather than treat it as evidence that PointInTime was rejected.
+            if avad_unsupported(&err) {
+                eprintln!(
+                    "Skipping all_versions_and_deletes_rejects_point_in_time_start: \
+                     the account does not have AllVersionsAndDeletes enabled."
+                );
+                return Ok(());
+            }
             assert_eq!(
                 StatusCode::BadRequest,
                 err.status().status_code(),
@@ -1003,4 +1085,39 @@ pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<()
         Some(TestOptions::for_emulator()),
     )
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::message_reports_avad_unsupported;
+
+    /// The exact message live accounts without the account-level opt-in return,
+    /// as observed in CI, rendered through the SDK's error `Display`.
+    const AVAD_NOT_ENABLED: &str =
+        "400: Cosmos DB returned HTTP 400: Unknown. Details: Change Feed \
+         'All Versions and Deletes' mode must be enabled. Refer to \
+         https://aka.ms/ChangeFeed-AllVersionsAndDeletes for Preview program.";
+
+    #[test]
+    fn detects_account_without_avad_enabled() {
+        assert!(message_reports_avad_unsupported(AVAD_NOT_ENABLED));
+    }
+
+    #[test]
+    fn ignores_the_point_in_time_rejection() {
+        // This 400 is the assertion `all_versions_and_deletes_rejects_point_in_time_start`
+        // exists to make, so it must never be mistaken for an unsupported account.
+        assert!(!message_reports_avad_unsupported(
+            "400: Cosmos DB returned HTTP 400: Unknown. Details: Start from beginning is not \
+             supported with 'All Versions and Deletes' mode."
+        ));
+    }
+
+    #[test]
+    fn ignores_unrelated_bad_requests() {
+        assert!(!message_reports_avad_unsupported(
+            "400: Cosmos DB returned HTTP 400: Unknown. Details: The retention duration in the \
+             Change Feed policy should not be set when continuous backup mode is enabled."
+        ));
+    }
 }
