@@ -33,8 +33,11 @@ extends:
   parameters:
     ServiceDirectory: cosmos
     # macOS/Windows live-test legs need ~63-65 min; raise from the 60-min default
-    # so they finish instead of being cancelled at the agent cap.
-    TestTimeoutInMinutes: 90
+    # so they finish instead of being cancelled at the agent cap. The split and
+    # all_versions_and_deletes legs additionally wait on test-resources-post.ps1
+    # turning on the account level all versions and deletes change feed mode,
+    # which Azure Cosmos DB documents as taking up to 30 minutes.
+    TestTimeoutInMinutes: 150
     RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}
     Artifacts:
     - name: azure_data_cosmos_macros

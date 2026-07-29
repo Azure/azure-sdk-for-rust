@@ -660,6 +660,13 @@ impl AvadItem {
     }
 }
 
+/// The full-fidelity retention window used by the AllVersionsAndDeletes tests.
+///
+/// The service only accepts a `changeFeedPolicy.retentionDuration` between one
+/// hour and 30 days, so one hour is the cheapest window that live accounts will
+/// take.
+const AVAD_RETENTION: Duration = Duration::from_secs(60 * 60);
+
 /// Creates a container whose change feed policy enables full-fidelity
 /// (`AllVersionsAndDeletes`) reads with the given retention window.
 async fn create_avad_container(
@@ -724,8 +731,9 @@ where
 /// the create's LSN. The delete carries a delete `operationType` and metadata
 /// but a minimal `current`.
 ///
-/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
-/// supported by the vnext (Linux) emulator.
+/// Gated on `test_category = "all_versions_and_deletes"`: full-fidelity reads
+/// need a live account with continuous backup and the account level all
+/// versions and deletes change feed mode turned on.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "all_versions_and_deletes"),
@@ -739,8 +747,7 @@ pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result
                 &run_context,
                 db_client,
                 "AvadCreateReplaceDelete",
-                // The emulator accepts a short (5 minute) full-fidelity retention.
-                Duration::from_secs(5 * 60),
+                AVAD_RETENTION,
                 None,
             )
             .await?;
@@ -853,8 +860,9 @@ pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result
 /// create envelope. The container is provisioned with enough throughput to force
 /// multiple physical partitions so the cross-partition merge path is exercised.
 ///
-/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
-/// supported by the vnext (Linux) emulator.
+/// Gated on `test_category = "all_versions_and_deletes"`: full-fidelity reads
+/// need a live account with continuous backup and the account level all
+/// versions and deletes change feed mode turned on.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "all_versions_and_deletes"),
@@ -872,7 +880,7 @@ pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
                 &run_context,
                 db_client,
                 "AvadFanOut",
-                Duration::from_secs(5 * 60),
+                AVAD_RETENTION,
                 Some(ThroughputProperties::manual(11000)),
             )
             .await?;
@@ -954,8 +962,9 @@ pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
 /// `ChangeFeedStartFrom.Time` for all-versions-and-deletes. The client issues
 /// the request and the service returns a `BadRequest`.
 ///
-/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
-/// supported by the vnext (Linux) emulator.
+/// Gated on `test_category = "all_versions_and_deletes"`: full-fidelity reads
+/// need a live account with continuous backup and the account level all
+/// versions and deletes change feed mode turned on.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "all_versions_and_deletes"),
@@ -968,7 +977,7 @@ pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<()
                 &run_context,
                 db_client,
                 "AvadRejectPointInTime",
-                Duration::from_secs(5 * 60),
+                AVAD_RETENTION,
                 None,
             )
             .await?;

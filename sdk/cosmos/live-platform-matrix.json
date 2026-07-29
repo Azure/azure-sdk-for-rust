@@ -18,19 +18,19 @@
     "RustToolchainName": ["stable"],
     "Account Settings": {
       "Eventual SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual'; enableAutomaticFailover = $false; enableContinuousBackup = $true }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual'; enableAutomaticFailover = $false }"
       },
       "Session SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; enableContinuousBackup = $true }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false }"
       },
       "Strong SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; enableAutomaticFailover = $false; enableContinuousBackup = $true }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; enableAutomaticFailover = $false }"
       },
       "Session MultiWrite": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; enableAutomaticFailover = $false; testCategory = 'multi_write'; enableMultipleRegions = $true }"
       },
       "Session Split": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'split'; enableContinuousBackup = $true }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'split'; enableAllVersionsAndDeletesChangeFeed = $true }"
       },
       "Session SingleWrite MultiRegion PartitionFailover": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $true; enableMultipleRegions = $true; testCategory = 'multi_region' }"
@@ -54,7 +54,7 @@
           "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleRegions = $true; testCategory = 'gateway_v2_multi_region' }"
         },
         "Session SingleRegion ChangeFeed AllVersionsAndDeletes": {
-          "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableContinuousBackup = $true; testCategory = 'all_versions_and_deletes' }"
+          "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAllVersionsAndDeletesChangeFeed = $true; testCategory = 'all_versions_and_deletes' }"
         }
       }
     }

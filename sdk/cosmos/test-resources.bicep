@@ -9,6 +9,9 @@ param enableMultipleWriteLocations bool = false
 @description('Enable continuous backup mode, required to read the AllVersionsAndDeletes (full-fidelity) change feed. Incompatible with multiple write locations.')
 param enableContinuousBackup bool = false
 
+@description('Request the account level "All versions and deletes change feed mode" feature. Azure Cosmos DB does not accept this flag while the account is being created, so test-resources-post.ps1 turns it on after deployment. Implies continuous backup.')
+param enableAllVersionsAndDeletesChangeFeed bool = false
+
 @description('Dictates which tests run for this resource')
 param testCategory string = 'emulator'
 
@@ -53,7 +56,10 @@ var multiRegionConfiguration = [
   }
 ]
 var locationsConfiguration = (enableMultipleRegions ? multiRegionConfiguration : singleRegionConfiguration)
-var backupPolicy = (enableContinuousBackup ? {
+// All versions and deletes mode cannot be turned on unless the account already has
+// continuous backups, so asking for the change feed feature implies the backup policy.
+var useContinuousBackup = (enableContinuousBackup || enableAllVersionsAndDeletesChangeFeed)
+var backupPolicy = (useContinuousBackup ? {
   type: 'Continuous'
   continuousModeProperties: {
     tier: 'Continuous7Days'
@@ -140,3 +146,7 @@ output DATABASE_NAME string = databaseName
 output AZURE_COSMOS_CONNECTION_STRING string = 'AccountEndpoint=${reference(resourceId, apiVersion).documentEndpoint};AccountKey=${listKeys(resourceId, apiVersion).primaryMasterKey};'
 output ACCOUNT_HOST string = reference(resourceId, apiVersion).documentEndpoint
 output AZURE_COSMOS_DEFAULT_CONSISTENCY string = defaultConsistencyLevel
+// Consumed by test-resources-post.ps1 so it can finish enabling the all versions
+// and deletes change feed mode once the account exists.
+output COSMOS_ACCOUNT_RESOURCE_ID string = resourceId
+output ENABLE_ALL_VERSIONS_AND_DELETES_CHANGE_FEED string = (enableAllVersionsAndDeletesChangeFeed ? 'true' : 'false')
