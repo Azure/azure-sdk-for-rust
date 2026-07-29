@@ -6,6 +6,7 @@
 //! azure_data_cosmos client surface and (optionally) compare against a
 //! real Cosmos DB account.
 
+pub mod change_feed;
 use std::time::Duration;
 
 pub mod binary_round_trip;

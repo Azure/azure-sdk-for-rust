@@ -25,6 +25,7 @@ pub(crate) mod env_parsing;
 mod identity;
 mod operation_options;
 mod partition_failover;
+mod plan_options;
 mod policies;
 mod priority;
 mod read_consistency;
@@ -48,6 +49,7 @@ pub use operation_options::{
     ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
 };
 pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
+pub use plan_options::{PlanOptions, DEFAULT_MAX_FAN_OUT};
 pub use policies::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
     ServerCertificateValidation, TlsBackend,

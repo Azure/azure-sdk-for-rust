@@ -1307,6 +1307,7 @@ typedef struct cosmos_operation_request {
     const char *continuation_token;     /* feed resume; NULL = none */
 
     int32_t max_item_count;             /* < 0 = unset */
+    uint32_t max_fan_out;               /* 0 = unset (driver default 100) */
     uint8_t patch_max_attempts;         /* 0 = unset */
     int8_t  populate_index_metrics;     /* tri-state: 0 unset / 1 false / 2 true */
     int8_t  populate_query_metrics;     /* tri-state */
