@@ -60,6 +60,34 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 [features]
 in_memory_checkpoint_store = []
 default = ["azure_core_amqp/default"]
+# The AMQP backend and the AMQP-over-WebSockets transport, forwarded from
+# `azure_core_amqp`. The `default` feature selects the backend and the rustls
+# WebSocket stack. To select the other TLS stack, turn off the default features
+# and name the backend and the stack you want:
+#
+#   azure_messaging_eventhubs = { version = "...", default-features = false, features = [
+#     "fe2o3_amqp_native_tls",
+#     "fe2o3_amqp_ws_native_tls",
+#   ] }
+#
+# The base `fe2o3_amqp_ws` feature turns on the transport code and does not
+# select a TLS stack. A build without one of the two TLS features can still
+# select `AmqpTransport::WebSocket`, but the connection then returns an error
+# when it opens.
+fe2o3_amqp = ["azure_core_amqp/fe2o3_amqp"]
+fe2o3_amqp_native_tls = [
+  "fe2o3_amqp",
+  "azure_core_amqp/fe2o3_amqp_native_tls",
+]
+fe2o3_amqp_ws = ["fe2o3_amqp", "azure_core_amqp/fe2o3_amqp_ws"]
+fe2o3_amqp_ws_rustls = [
+  "fe2o3_amqp_ws",
+  "azure_core_amqp/fe2o3_amqp_ws_rustls",
+]
+fe2o3_amqp_ws_native_tls = [
+  "fe2o3_amqp_ws",
+  "azure_core_amqp/fe2o3_amqp_ws_native_tls",
+]
 
 [[bench]]
 name = "benchmarks"
