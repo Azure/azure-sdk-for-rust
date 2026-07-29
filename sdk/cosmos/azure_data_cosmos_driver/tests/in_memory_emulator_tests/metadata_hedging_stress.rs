@@ -130,8 +130,9 @@ const RUN_GUARD: &str = "RUN_HEDGE_STRESS";
 // Configuration
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Tunables. Every field has an env override so a run can be shortened (for a
-/// smoke check) or lengthened (for a publishable measurement) without a rebuild.
+/// Run parameters. Every field has an env override so a run can be shortened
+/// (for a smoke check) or lengthened (for a publishable measurement) without a
+/// rebuild.
 struct StressConfig {
     /// Injected primary-region metadata delay. Must exceed the fixed 1.5 s
     /// metadata hedge threshold for hedging to engage at all.
