@@ -221,6 +221,8 @@
     "OTel",
     "OUTOFMEMORY",
     "othercoll",
+    "otherc",
+    "otherdb",
     "parseable",
     "partitionkey",
     "partitionkeyrangeid",
