@@ -38,7 +38,18 @@ published SDK surface.
 | `metrics` | ✅ | Enables `azure_data_cosmos/metrics` and registers `CosmosMetricsHandler`. |
 | `distributed_tracing` | ✅ | Enables `azure_data_cosmos/distributed_tracing` and registers `CosmosTracingHandler`. |
 | `fault_injection` | ✅ | Enables `azure_data_cosmos/fault_injection` and the `--fault-*` flags. |
-| `otlp` | ❌ | Pulls `opentelemetry-otlp` (gRPC, rustls TLS via `tls-webpki-roots` — no OpenSSL) so `--exporter otlp` works against `http://` or `https://` collectors. |
+| `otlp` | ❌ | Pulls `opentelemetry-otlp` (gRPC) so `--exporter otlp` works. Selects no TLS provider on its own. |
+| `otlp_rustls` | ✅ | Adds rustls with the `aws-lc-rs` provider and bundled webpki roots to the OTLP transport, so `https://` collectors work with no OpenSSL. Inert unless `otlp` is also enabled, which is why it can default on without dragging the gRPC stack into every build. |
+
+`otlp` and `otlp_rustls` are split so enabling the exporter does not lock the
+build into a TLS stack. `--features otlp` gets rustls/`aws-lc-rs` for free; an app
+that wants a different provider drops the default and names its own:
+
+```bash
+cargo build -p azure_data_cosmos_observability_harness \
+  --no-default-features \
+  --features "metrics,distributed_tracing,fault_injection,otlp,opentelemetry-otlp/tls-ring"
+```
 
 The feature names intentionally mirror the SDK's own feature names so the harness
 compiles the exact code path it is validating. `key_auth` is always enabled so the

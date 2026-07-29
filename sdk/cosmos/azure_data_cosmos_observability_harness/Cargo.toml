@@ -39,13 +39,28 @@ uuid = { workspace = true, features = ["v4"] }
 # The metrics and distributed_tracing handlers are feature-gated in
 # `azure_data_cosmos`; mirror those names here so the harness enables the exact
 # same code path it is validating. `fault_injection` exercises the "rich on
-# error" behavior. All three are on by default so a bare `cargo run` registers
+# error" behavior. Those three are on by default so a bare `cargo run` registers
 # every built-in handler. `otlp` is opt-in because it pulls the gRPC stack.
-default = ["metrics", "distributed_tracing", "fault_injection"]
+default = ["metrics", "distributed_tracing", "fault_injection", "otlp_rustls"]
 metrics = ["azure_data_cosmos/metrics"]
 distributed_tracing = ["azure_data_cosmos/distributed_tracing"]
 fault_injection = ["azure_data_cosmos/fault_injection"]
-otlp = ["dep:opentelemetry-otlp"]
+otlp = [
+  "dep:opentelemetry-otlp",
+  "opentelemetry-otlp/grpc-tonic",
+  "opentelemetry-otlp/trace",
+  "opentelemetry-otlp/metrics",
+]
+# TLS for the OTLP gRPC transport, deliberately separate from `otlp` so enabling
+# the exporter does not lock the build into a crypto provider. The weak `?/`
+# references make this inert unless `otlp` is also on, which is why it can sit in
+# `default` without dragging the gRPC stack into every build: `--features otlp`
+# gets rustls/aws-lc-rs, while `--no-default-features` leaves the provider to the
+# caller.
+otlp_rustls = [
+  "opentelemetry-otlp?/tls-aws-lc",
+  "opentelemetry-otlp?/tls-webpki-roots",
+]
 
 [lints]
 workspace = true
