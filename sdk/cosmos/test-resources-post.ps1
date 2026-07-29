@@ -83,8 +83,30 @@ if ($response.StatusCode -notin 200, 201, 202) {
     throw "PATCH $accountUri returned HTTP $($response.StatusCode): $($response.Content)"
 }
 
+# ARM silently drops properties an API version doesn't know about, so an unsupported
+# api-version would leave us polling for the full timeout. Give up early once the
+# account has been idle at 'Succeeded' for a while with the flag still off.
+$idleSucceededPolls = 0
+$idleSucceededLimit = 6
+
 Wait-CosmosDbAccount 'all versions and deletes change feed mode to be enabled' {
-    param($a) ($a.properties.provisioningState -eq 'Succeeded') -and $a.properties.enableAllVersionsAndDeletesChangeFeed
+    param($a)
+
+    if ($a.properties.enableAllVersionsAndDeletesChangeFeed) {
+        return ($a.properties.provisioningState -eq 'Succeeded')
+    }
+
+    if ($a.properties.provisioningState -eq 'Succeeded') {
+        $script:idleSucceededPolls++
+        if ($script:idleSucceededPolls -ge $script:idleSucceededLimit) {
+            throw "The account stayed at 'Succeeded' without picking up 'enableAllVersionsAndDeletesChangeFeed'. The PATCH was accepted but had no effect, which usually means API version '$apiVersion' no longer exposes the property."
+        }
+    }
+    else {
+        $script:idleSucceededPolls = 0
+    }
+
+    return $false
 } | Out-Null
 
 Write-Host 'All versions and deletes change feed mode is enabled.'
