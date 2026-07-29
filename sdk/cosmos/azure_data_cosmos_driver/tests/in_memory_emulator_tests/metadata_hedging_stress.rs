@@ -67,8 +67,10 @@
 //!    shared runtime, so the container cache is warm but the PK-range cache is
 //!    cold and therefore hedge-eligible.
 //! 4. **Saturating storm** — N concurrent container metadata reads.
-//! 5. **Mixed end-to-end** — ~70% warm point reads, ~30% metadata reads.
-//! 6. **Fast-fail brownout** — primary metadata returns 503 immediately (no
+//! 5. **Budgeted storm** — the same storm with the client's concurrent metadata
+//!    hedge ceiling set below N, showing the amplification guardrail binding.
+//! 6. **Mixed end-to-end** — ~70% warm point reads, ~30% metadata reads.
+//! 7. **Fast-fail brownout** — primary metadata returns 503 immediately (no
 //!    delay), i.e. the case hedging is *not* supposed to help, used to confirm
 //!    hedging does not regress an already-fast failover.
 //!
@@ -141,6 +143,9 @@ struct StressConfig {
     refresh_iterations: usize,
     pk_range_iterations: usize,
     storm_concurrency: usize,
+    /// Metadata hedge ceiling applied to the *budgeted* storm scenario. Chosen
+    /// well below `storm_concurrency` so the cap visibly binds.
+    storm_hedge_budget: usize,
     mixed_operations: usize,
     brownout_iterations: usize,
 }
@@ -153,6 +158,7 @@ impl StressConfig {
             refresh_iterations: env_usize("HEDGE_STRESS_REFRESH_ITERS", 15),
             pk_range_iterations: env_usize("HEDGE_STRESS_PKRANGE_ITERS", 10),
             storm_concurrency: env_usize("HEDGE_STRESS_STORM_CONCURRENCY", 32),
+            storm_hedge_budget: env_usize("HEDGE_STRESS_STORM_BUDGET", 8),
             mixed_operations: env_usize("HEDGE_STRESS_MIXED_OPS", 30),
             brownout_iterations: env_usize("HEDGE_STRESS_BROWNOUT_ITERS", 15),
         }
@@ -690,7 +696,60 @@ async fn scenario_saturating_storm(ctx: &MultiRegionTestContext, cfg: &StressCon
     }
 }
 
-/// Scenario 5 — mixed end-to-end. Most traffic is warm data-plane reads that no
+/// Scenario 5 — the same storm, but with the client's concurrent-metadata-hedge
+/// ceiling set well below the storm size. This is the guardrail from #4914: it
+/// shows what the budget buys (bounded amplification on the alternate region)
+/// and what it costs (only the admitted subset gets the latency recovery).
+async fn scenario_budgeted_storm(ctx: &MultiRegionTestContext, cfg: &StressConfig) -> Scenario {
+    let mut arms = Vec::new();
+
+    for arm in Arm::ALL {
+        let faults = FaultSet::new(PrimaryFault::Delay(cfg.delay));
+        let runtime = build_runtime(ctx, &faults).await;
+        let driver = runtime
+            .create_driver(driver_options(arm))
+            .await
+            .expect("driver initializes");
+
+        // The OFF arm never hedges, so the ceiling is irrelevant there; setting
+        // it only on the ON arm keeps the comparison to a single variable.
+        if arm == Arm::On {
+            driver.set_metadata_hedge_limit_for_testing(cfg.storm_hedge_budget);
+        }
+
+        let pending = (0..cfg.storm_concurrency).map(|_| timed_container_read(&driver));
+        let outcomes = futures::future::join_all(pending).await;
+
+        let mut recorder = Recorder::new(arm);
+        for (elapsed, diagnostics, ok) in outcomes {
+            assert!(
+                ok,
+                "container metadata read should succeed even when refused a hedge slot"
+            );
+            recorder.record(elapsed);
+            recorder.record_hedge(diagnostics.as_ref());
+        }
+
+        arms.push(recorder.finish(&faults));
+    }
+
+    Scenario {
+        name: "Budgeted storm — concurrent Collection Reads, hedge ceiling applied",
+        detail: format!(
+            "Same {} concurrent container metadata reads, but the ON arm's client is \
+             capped at {} simultaneous metadata hedge races. Operations refused a slot \
+             skip the hedge and take the ordinary sequential path, so the alternate \
+             region absorbs at most {} extra requests instead of {}.",
+            cfg.storm_concurrency,
+            cfg.storm_hedge_budget,
+            cfg.storm_hedge_budget,
+            cfg.storm_concurrency,
+        ),
+        arms,
+    }
+}
+
+/// Scenario 6 — mixed end-to-end. Most traffic is warm data-plane reads that no
 /// fault touches; the metadata minority is what hedging can act on. This is the
 /// "what does the application actually see" number.
 async fn scenario_mixed_workload(ctx: &MultiRegionTestContext, cfg: &StressConfig) -> Scenario {
@@ -741,7 +800,7 @@ async fn scenario_mixed_workload(ctx: &MultiRegionTestContext, cfg: &StressConfi
     }
 }
 
-/// Scenario 6 — fast-fail brownout. The primary returns 503 immediately, so
+/// Scenario 7 — fast-fail brownout. The primary returns 503 immediately, so
 /// ordinary failover already recovers in milliseconds. Hedging should neither
 /// help nor hurt here; this arm exists to prove the second claim.
 async fn scenario_fast_fail_brownout(ctx: &MultiRegionTestContext, cfg: &StressConfig) -> Scenario {
@@ -927,6 +986,7 @@ async fn metadata_hedging_stress_harness() {
         Box::pin(scenario_refresh_low_contention(&ctx, &cfg)).await,
         Box::pin(scenario_pk_range_cold_chain(&ctx, &cfg)).await,
         Box::pin(scenario_saturating_storm(&ctx, &cfg)).await,
+        Box::pin(scenario_budgeted_storm(&ctx, &cfg)).await,
         Box::pin(scenario_mixed_workload(&ctx, &cfg)).await,
         Box::pin(scenario_fast_fail_brownout(&ctx, &cfg)).await,
     ];
