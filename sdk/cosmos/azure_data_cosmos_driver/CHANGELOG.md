@@ -5,12 +5,17 @@
 ### Features Added
 
 - Added a schema-agnostic Cosmos binary JSON codec (`binary_json`) and driver-side binary encoding via `OperationOptions.binary_encoding` (`BinaryEncodingOptions`). When enabled, the driver transcodes item request/response bodies between text and Cosmos binary JSON and negotiates the wire format; it is honored only for point `Document` item operations. Off by default and inert on the wire when unset. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
+- Added `PlanOptions` (with `DEFAULT_MAX_FAN_OUT`) to `CosmosDriver::plan_operation`, enforcing a maximum fan-out on fresh cross-partition plans. A fresh plan spanning more leaf request nodes than `PlanOptions::max_fan_out` (default 100) is rejected with the new `CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED` (HTTP 400). The limit is enforced only at initial plan time: resuming from a continuation token skips the check, and a partition split that raises the fan-out mid-execution does not abort the operation. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 
 ### Breaking Changes
+
+- `CosmosDriver::plan_operation` now takes an additional `plan_options: &PlanOptions` argument (after `continuation`). The continuation token remains its own argument. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and bounded to 512 bytes, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. The full payload remains available verbatim via `CosmosError::response`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
 
 ## 0.6.1 (2026-07-23)
 

@@ -315,12 +315,23 @@ impl PipelineNode for UnorderedMerge {
         // so on its behalf.
         false
     }
+
+    fn fan_out_width(&self) -> usize {
+        self.children.iter().map(|c| c.fan_out_width()).sum()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::super::mocks::*;
     use super::*;
+
+    #[test]
+    fn fan_out_width_counts_children() {
+        let leaf = || Box::new(MockLeaf::with_pages(vec![])) as Box<dyn PipelineNode>;
+        let merge = UnorderedMerge::new(vec![leaf(), leaf(), leaf()]);
+        assert_eq!(merge.fan_out_width(), 3);
+    }
 
     #[tokio::test]
     async fn polls_children_round_robin() {

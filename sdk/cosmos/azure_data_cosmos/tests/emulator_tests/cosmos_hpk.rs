@@ -197,7 +197,7 @@ fn skip_prefix_query_on_classic_emulator() -> bool {
     // vnext is also a local emulator but *does* serve prefix EPK-range queries,
     // so only the non-vnext local emulator (classic) is skipped.
     let is_classic_emulator =
-        framework::is_emulator_target() && !cfg!(test_category = "emulator_vnext");
+        framework::targets_emulator() && !cfg!(test_category = "emulator_vnext");
     if is_classic_emulator {
         eprintln!(
             "skipping prefix HPK query test: not servable on the classic Cosmos \
