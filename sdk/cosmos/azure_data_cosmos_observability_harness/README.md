@@ -195,8 +195,14 @@ authoritative list.
 
 - The exporters are flushed and shut down on exit (Ctrl+C, duration elapse, or
   error), so the final metric/span batch is emitted before the process ends.
-- `cargo test --all-features` is known to fail on some Windows hosts due to an
-  unrelated `openssl-sys` build issue; validate this crate with default features
-  (and `--features otlp`), which use `rustls`.
+- `cargo test --all-features` and
+  `cargo clippy --all-features --all-targets` both work for this crate on
+  Windows, and are worth running before pushing: CI's `Build Analyze` job runs
+  the equivalent, and the extra features it turns on are enough to move
+  size-sensitive lints such as `clippy::large_futures` past their thresholds.
+  Keep those commands scoped with `-p azure_data_cosmos_observability_harness`
+  though — a workspace-wide `--all-features` also enables
+  `azure_data_cosmos/hmac_openssl`, which fails to build on Windows hosts
+  without OpenSSL.
 
 [emulator-docs]: https://learn.microsoft.com/azure/cosmos-db/how-to-develop-emulator
