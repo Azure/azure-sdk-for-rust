@@ -34,7 +34,7 @@ use crate::{
         UserAgentFeatureFlags,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView, PlanOptions,
         ResolvedThroughputControl, ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse,
@@ -2341,7 +2341,9 @@ impl CosmosDriver {
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
         let response = Box::pin(async {
             let container = operation.container().cloned();
-            let mut plan = Box::pin(self.plan_operation(operation, &options, None)).await?;
+            let mut plan =
+                Box::pin(self.plan_operation(operation, &options, None, &PlanOptions::default()))
+                    .await?;
             self.execute_plan(&mut plan, container, options).await
         })
         .await?;
@@ -2880,11 +2882,19 @@ impl CosmosDriver {
     /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
     ///   for trivial operations; passing one to a cross-partition query
     ///   returns a `Client`-shaped error.
+    ///
+    /// `plan_options` shapes the plan itself — today, the maximum fan-out a
+    /// *fresh* cross-partition operation may produce. A fresh plan exceeding
+    /// [`PlanOptions::max_fan_out`] is rejected with
+    /// [`CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED).
+    /// Resuming from a `continuation` skips the check — the caller already
+    /// opted in when the operation was first planned.
     pub async fn plan_operation(
         &self,
         operation: CosmosOperation,
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
+        plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
@@ -2906,6 +2916,11 @@ impl CosmosDriver {
 
         // Resolve the continuation token (if any) into a planner-ready resume
         // state. Server-issued tokens are only valid for trivial operations.
+        //
+        // A fresh plan (no continuation) is subject to the max fan-out check;
+        // a resume is not, because the caller already opted in to the fan-out
+        // when the operation was first planned.
+        let is_fresh = continuation.is_none();
         let resume_state = match continuation {
             None => None,
             Some(token) => {
@@ -2940,7 +2955,7 @@ impl CosmosDriver {
         //    to the gateway without query planning.
         if operation.is_trivial() {
             let pipeline = planner::build_trivial_pipeline(operation.clone(), resume_state)?;
-            return Ok(OperationPlan::new(pipeline, operation));
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
         // 2. Change feed: resolve the target feed range against the current
@@ -2972,7 +2987,7 @@ impl CosmosDriver {
                 resume_state,
             )
             .await?;
-            return Ok(OperationPlan::new(pipeline, operation));
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
         // 3. Cross-partition query: obtain a query plan and build the fan-out
@@ -3002,7 +3017,7 @@ impl CosmosDriver {
         let pipeline =
             planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
                 .await?;
-        Ok(OperationPlan::new(pipeline, operation))
+        planner::finalize_plan(pipeline, operation, is_fresh, plan_options)
     }
 
     /// Fetches a query plan from the Gateway backend.
@@ -4269,7 +4284,7 @@ mod tests {
         assert_send(driver.execute_operation(todo!(), todo!()));
         assert_send(driver.execute_singleton_operation(todo!(), todo!()));
         assert_send(driver.execute_plan(todo!(), todo!(), todo!()));
-        assert_send(driver.plan_operation(todo!(), todo!(), todo!()));
+        assert_send(driver.plan_operation(todo!(), todo!(), todo!(), todo!()));
     }
 
     // Account properties with two readable locations for regional fallback tests.
