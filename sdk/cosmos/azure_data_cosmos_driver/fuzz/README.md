@@ -90,3 +90,33 @@ The same corpus works for `from_slice`, `transcode_to_text`, and
   `binary_json`.
 - A reproducible crash should be reduced with `cargo fuzz tmin`, added as a
   golden vector / unit test in `src/binary_json/`, and fixed there.
+
+## Windows
+
+`cargo-fuzz` builds on **libFuzzer** (`-fsanitize=fuzzer`), which the Windows
+MSVC target does not support — `cargo fuzz run` fails to link on Windows. Use
+**WSL2** or a **Linux** box. On Windows, the always-on decoder robustness
+coverage lives in `src/binary_json/fuzz_tests.rs` (random / truncated / corrupted
+buffers into `decode`) and runs on stable via `cargo test -p
+azure_data_cosmos_driver --lib fuzz`.
+
+## CI
+
+Fuzzing runs as a **non-blocking leg of the existing `sdk/cosmos/ci.yml`** — an
+`AdditionalMatrixConfigs` entry ([`sdk/cosmos/fuzz-matrix.json`](../../fuzz-matrix.json))
+that adds one **Linux + nightly** job (cargo-fuzz/libFuzzer is Linux-only). It
+carries `ContinueOnError: "true"`, so a discovered crash reports "succeeded with
+issues" instead of blocking merge. The job's test-setup hook
+([`Invoke-CosmosTestSetup.ps1`](../../eng/scripts/Invoke-CosmosTestSetup.ps1),
+gated on `AZURE_COSMOS_FUZZ=1`) calls
+[`Run-BinaryJsonFuzz.ps1`](../../eng/scripts/Run-BinaryJsonFuzz.ps1), which
+installs cargo-fuzz, seeds each corpus from the golden vectors, and runs every
+target under a wall-clock budget that scales by build reason:
+
+- **PR / CI smoke** — ~120 s/target (fast, non-blocking).
+- **Weekly deep run** — ~30 min/target on the scheduled build.
+
+Because it rides the already-registered `cosmos - ci` pipeline, the fuzz job
+shows up automatically as a job on every cosmos PR — no separate pipeline to
+register. Crash inputs are published as the `fuzz-crashes` build artifact so a
+failure can be reproduced and minimized (`cargo fuzz tmin`).

@@ -14,6 +14,33 @@ if ($env:COSMOS_RUSTFLAGS) {
     Write-Host "RUSTFLAGS appended with COSMOS_RUSTFLAGS: $env:RUSTFLAGS"
 }
 
+# Byte-level binary-JSON codec fuzzing (cargo-fuzz). Triggered by
+# AZURE_COSMOS_FUZZ=1 (set as a matrix variable on the fuzz leg in
+# sdk/cosmos/fuzz-matrix.json — a Linux + nightly job). This runs the
+# coverage-guided decoder/serde/transcode fuzz targets, which the value-space
+# live round-trip test cannot cover. cargo-fuzz/libFuzzer is Linux-only, and the
+# leg carries ContinueOnError=true so a crash reports "succeeded with issues"
+# rather than blocking merge. Guarded so it runs once even though Test-Setup.ps1
+# fires per crate.
+if ($env:AZURE_COSMOS_FUZZ -eq '1' -and -not $env:AZURE_COSMOS_FUZZ_RAN) {
+    $env:AZURE_COSMOS_FUZZ_RAN = '1'
+    if (-not $IsLinux) {
+        Write-Host "AZURE_COSMOS_FUZZ=1 but not on Linux; cargo-fuzz is Linux-only. Skipping."
+    }
+    else {
+        # Budget per target scales by build reason: a short smoke on PR/CI so the
+        # gate stays fast, a deep run on the weekly schedule.
+        $isSchedule = ($env:BUILD_REASON -eq 'Schedule') -or ($env:BUILD_DEFINITIONNAME -like '*- weekly')
+        $fuzzSeconds = if ($isSchedule) { 1800 } else { 120 }
+        Write-Host "==> Cosmos binary-JSON fuzz: budget ${fuzzSeconds}s/target (schedule=$isSchedule)"
+        & "$PSScriptRoot\Run-BinaryJsonFuzz.ps1" -MaxTotalTimeSeconds $fuzzSeconds -Workers 4
+    }
+    # A fuzz leg does no live testing; skip the rest of the setup (no emulator,
+    # no connection string) so the archetype's subsequent cargo build/test runs
+    # only the offline unit tests.
+    return
+}
+
 # Vnext (Linux) emulator path. Triggered by AZURE_COSMOS_EMULATOR_FLAVOR=vnext
 # (set as a matrix variable on the cosmos vnext leg in
 # sdk/cosmos/vnext-emulator-matrix.json). Manages the Docker container

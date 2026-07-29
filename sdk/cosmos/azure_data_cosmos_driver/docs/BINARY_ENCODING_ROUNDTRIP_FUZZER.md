@@ -44,6 +44,16 @@ intentionally excluded.
 `project(R, keys(D))` strips the service-added system fields (`_rid`, `_etag`,
 `_ts`, `_self`, `_attachments`) so only the fields we control are compared.
 
+> **Reserved fields are also stripped on the _send_ side.** Cosmos *owns* the
+> `_rid`/`_self`/`_etag`/`_ts`/`_attachments` properties and overwrites any value
+> a client authors. Because the corpus shapes are modeled on real exported
+> service documents (which carry `_self`), and the free-form `arbitrary-json`
+> generator can emit arbitrary keys, every generated document is passed through
+> `strip_reserved_fields` **before** it is sent. Without this, a randomly
+> generated `_self` would round-trip back as the service's own value and cause a
+> **false** mismatch (this is exactly the failure the guard was added to fix).
+> The `no_shape_emits_reserved_system_fields` offline test locks it in.
+
 The harness compares **canonical strings directly** (strongest signal — it can
 print the exact diff) *and* logs a **SHA-256** digest so the "store `H0` once,
 compare later" workflow is available for a persistent corpus. SHA-256 is stable

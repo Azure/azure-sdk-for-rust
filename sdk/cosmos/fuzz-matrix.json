@@ -1,0 +1,16 @@
+{
+  "displayNames": {
+    "fuzz": "binary_json_fuzz"
+  },
+  "matrix": {
+    "Agent": {
+      "fuzz": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": ["nightly"],
+    "AZURE_COSMOS_FUZZ": ["1"],
+    "ContinueOnError": ["true"]
+  }
+}
