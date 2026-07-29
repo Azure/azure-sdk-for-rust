@@ -44,6 +44,7 @@ use super::{
         DATA_PLANE_MAX_THROTTLE_ATTEMPTS, DATA_PLANE_MAX_THROTTLE_WAIT,
         METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
     },
+    hedge_budget::{HedgeBudget, HedgePermit},
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
     hedging_eligibility::evaluate_hedge_eligibility,
     retry_evaluation::{
@@ -299,6 +300,7 @@ pub(crate) async fn execute_operation_pipeline(
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<ResolvedThroughputControl>,
     pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
+    hedge_budget: &HedgeBudget,
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
@@ -502,17 +504,35 @@ pub(crate) async fn execute_operation_pipeline(
         //   option that `AZURE_COSMOS_HEDGING_ENABLED=true` can override; a
         //   correctness constraint must not be something configuration can
         //   turn off.
+        // * **An exhausted hedge concurrency budget** — see [`HedgeBudget`].
+        //   The permit is held for the lifetime of the race and released when it
+        //   ends, so a refusal here means the client already has as many hedge
+        //   races open as it is allowed.
         if retry_state.failover_retry_count == 0
             && retry_state.session_token_retry_count == 0
             && !overrides.hedging_suppressed()
         {
-            if let Some(upgrade) = evaluate_hedge_eligibility(
+            let admitted = evaluate_hedge_eligibility(
                 operation,
                 options,
                 &location.account,
                 &routing,
                 configured_request_timeout,
-            ) {
+            )
+            .and_then(|upgrade| match hedge_budget.try_admit(pipeline_type) {
+                Some(permit) => Some((upgrade, permit)),
+                None => {
+                    // Refuse rather than queue: an operation that waits its turn
+                    // to hedge has already lost the latency argument. It falls
+                    // through to the ordinary sequential path instead.
+                    tracing::debug!(
+                        activity_id = %activity_id,
+                        "cosmos.hedge.concurrency_budget_exhausted",
+                    );
+                    None
+                }
+            });
+            if let Some((upgrade, _hedge_permit)) = admitted {
                 let attempt_ctx = AttemptContext {
                     operation,
                     overrides: &overrides,
@@ -781,18 +801,22 @@ pub(crate) async fn execute_operation_pipeline(
         // upgraded: it carries a region-affine continuation token, so racing
         // (or failing over) to another region would send that token somewhere
         // it is not meaningful. This mirrors the STAGE 2b suppression above.
-        let action = if retry_state.hedge_already_fired || overrides.hedging_suppressed() {
-            action
-        } else {
-            maybe_upgrade_to_hedge(
-                action,
-                operation,
-                options,
-                &location.account,
-                &routing,
-                configured_request_timeout,
-            )
-        };
+        let (action, _hedge_permit) =
+            if retry_state.hedge_already_fired || overrides.hedging_suppressed() {
+                (action, None)
+            } else {
+                maybe_upgrade_to_hedge(
+                    action,
+                    operation,
+                    options,
+                    &location.account,
+                    &routing,
+                    configured_request_timeout,
+                    hedge_budget,
+                    pipeline_type,
+                    activity_id,
+                )
+            };
 
         // ── STAGE 6: Apply location effects ────────────────────────────
         // Single-master write effects are deferred into
@@ -2666,20 +2690,28 @@ fn finalize_hedge_attempt(
 /// `Hedge` variant so STAGE 7 can apply it to the live `retry_state`
 /// before building `AttemptContext` — see
 /// `OperationAction::Hedge::new_state`.
-fn maybe_upgrade_to_hedge(
+///
+/// Returns the (possibly rewritten) action alongside the [`HedgePermit`] that
+/// admitted the race. The caller must hold the permit for as long as the race is
+/// open; dropping it returns the slot to the [`HedgeBudget`].
+#[allow(clippy::too_many_arguments)]
+fn maybe_upgrade_to_hedge<'a>(
     action: OperationAction,
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
     account_state: &AccountEndpointState,
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
-) -> OperationAction {
+    hedge_budget: &'a HedgeBudget,
+    pipeline_type: PipelineType,
+    activity_id: &ActivityId,
+) -> (OperationAction, Option<HedgePermit<'a>>) {
     // Extract `new_state` from the retry-upgrade-eligible variants;
     // return everything else unchanged.
     let new_state = match &action {
         OperationAction::FailoverRetry { new_state, .. } => new_state.clone(),
         OperationAction::SessionRetry { new_state } => new_state.clone(),
-        _ => return action,
+        _ => return (action, None),
     };
 
     match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
@@ -2695,8 +2727,18 @@ fn maybe_upgrade_to_hedge(
                     max_failover_retries = new_state.max_failover_retries,
                     "cosmos.hedge.budget_exhausted_skipping_upgrade",
                 );
-                return action;
+                return (action, None);
             }
+            // Concurrency admission control. Refusing here leaves the operation
+            // on its original sequential retry action rather than queueing it
+            // for a slot — see [`HedgeBudget`].
+            let Some(permit) = hedge_budget.try_admit(pipeline_type) else {
+                tracing::debug!(
+                    activity_id = %activity_id,
+                    "cosmos.hedge.concurrency_budget_exhausted",
+                );
+                return (action, None);
+            };
             // Emit a structured event when an operation is upgraded
             // into the hedge race. Fields mirror the inputs that drove
             // the eligibility decision so operators can correlate
@@ -2708,14 +2750,17 @@ fn maybe_upgrade_to_hedge(
                 hub_region_processing_only = new_state.hub_region_processing_only,
                 "cosmos.hedge.enabled_for_operation",
             );
-            OperationAction::Hedge {
-                secondary_routing: upgrade.secondary_routing,
-                threshold: upgrade.threshold,
-                strategy_config: upgrade.strategy_config,
-                new_state,
-            }
+            (
+                OperationAction::Hedge {
+                    secondary_routing: upgrade.secondary_routing,
+                    threshold: upgrade.threshold,
+                    strategy_config: upgrade.strategy_config,
+                    new_state,
+                },
+                Some(permit),
+            )
         }
-        None => action,
+        None => (action, None),
     }
 }
 

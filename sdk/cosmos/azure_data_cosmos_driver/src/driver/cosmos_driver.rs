@@ -20,6 +20,7 @@ use crate::{
             ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
             METADATA_MAX_THROTTLE_WAIT,
         },
+        pipeline::hedge_budget::HedgeBudget,
         pipeline::operation_pipeline::{OperationOverrides, RegionPin},
         routing::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
@@ -284,6 +285,10 @@ pub struct CosmosDriver {
     /// Region pins protecting the change-feed continuations held by
     /// `pk_range_cache`. See [`PkRangeRegionPins`].
     pk_range_region_pins: PkRangeRegionPins,
+    /// Per-client ceiling on concurrent cross-region metadata hedge races.
+    /// Bounds the request amplification a hedging client can inflict on an
+    /// alternate region during a brownout. See [`HedgeBudget`].
+    hedge_budget: HedgeBudget,
     /// Session token cache for session consistency.
     session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
@@ -1656,6 +1661,7 @@ impl CosmosDriver {
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
             pk_range_cache: PartitionKeyRangeCache::new(),
             pk_range_region_pins: Mutex::new(HashMap::new()),
+            hedge_budget: HedgeBudget::from_env(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
             user_agent,
@@ -1788,6 +1794,21 @@ impl CosmosDriver {
             .unavailable_endpoints
             .keys()
             .any(|url| url.host_str() == Some(host))
+    }
+
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Rewrites this driver's concurrent metadata hedge limit so tests can
+    /// exercise the budget-exhausted branch deterministically, instead of
+    /// racing `AZURE_COSMOS_MAX_CONCURRENT_METADATA_HEDGES` in a shared
+    /// process environment. `0` refuses every metadata hedge.
+    ///
+    /// **Do not call from production code.** May change or be removed at any
+    /// time without a semver bump.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    #[doc(hidden)]
+    pub fn set_metadata_hedge_limit_for_testing(&self, limit: usize) {
+        self.hedge_budget.set_metadata_limit_for_tests(limit);
     }
 
     /// **Internal test hook -- not part of the public API.**
@@ -2263,6 +2284,12 @@ impl CosmosDriver {
     /// The pin is held on the driver rather than in the closure because the
     /// cache persists the continuation past the closure's lifetime — see
     /// [`PkRangeRegionPins`].
+    ///
+    /// A pinned chain that fails is not left pinned: the cache discards the
+    /// failed continuation and retries the fetch cold, which routes back through
+    /// the `continuation.is_none()` branch below and clears the pin. Both halves
+    /// of the region-affine state therefore die together, so an unreachable
+    /// pinned region cannot wedge later force-refreshes.
     fn pk_range_page_fetcher<'a>(
         &'a self,
     ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
@@ -2982,6 +3009,7 @@ impl CosmosDriver {
                 .default_consistency_level,
             effective_throughput_control,
             pre_resolved_pk_range_id,
+            &self.hedge_budget,
         )
         .await
     }

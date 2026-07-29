@@ -313,6 +313,11 @@ impl PartitionKeyRangeCache {
 /// 3. Accumulate all fetched ranges.
 /// 4. If a previous map exists, merge via [`ContainerRoutingMap::try_combine`];
 ///    otherwise create a fresh routing map.
+///
+/// A chain resumed from an inherited continuation is region-pinned by the fetch
+/// closure. If such a chain fails, the continuation is discarded and the fetch is
+/// retried once as a cold chain, which also releases the pin — otherwise every
+/// later refresh would replay the same token against the same unreachable region.
 async fn fetch_and_build_routing_map<F, Fut>(
     container: ContainerReference,
     previous_routing_map: Option<Arc<ContainerRoutingMap>>,
@@ -323,9 +328,17 @@ where
     Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
 {
     let mut all_ranges = HashMap::new();
-    let mut continuation = previous_routing_map
+    // A continuation inherited from the cached map is region-affine: the fetch
+    // closure pins every page of a resumed chain to the region that served the
+    // page before it. That pin is keyed off "this chain carries a continuation",
+    // so it is only ever cleared by a chain that starts *cold*. Remember whether
+    // this call resumed such a chain so a fetch failure can discard the
+    // continuation and the pin together — see the `None` arm below.
+    let inherited_continuation = previous_routing_map
         .as_ref()
         .and_then(|m| m.change_feed_next_if_none_match.clone());
+    let resumed_pinned_chain = inherited_continuation.is_some();
+    let mut continuation = inherited_continuation;
     let mut iterations_completed = 0;
     loop {
         let iteration = iterations_completed;
@@ -348,6 +361,48 @@ where
                      falling back to previous routing map if available",
                     iteration
                 );
+                if resumed_pinned_chain {
+                    // This chain resumed an inherited continuation, so the fetch
+                    // closure pinned it to the region that served the cached
+                    // page. Keeping that continuation would re-pin every later
+                    // force-refresh to the same — quite possibly unavailable —
+                    // region, so a split could never be discovered from a
+                    // healthy one. Retry once as a cold chain instead: "cold" is
+                    // defined identically in both layers as "carries no
+                    // continuation", so dropping the continuation here also
+                    // clears the pin. The two pieces of state are invalidated
+                    // together by construction.
+                    //
+                    // Recursion is bounded: the retry passes no previous map, so
+                    // `resumed_pinned_chain` is `false` inside it and it takes
+                    // the plain fallback below.
+                    tracing::debug!(
+                        "Region-pinned partition key range refresh failed; \
+                         discarding the pinned continuation and retrying cold"
+                    );
+                    let refreshed = Box::pin(fetch_and_build_routing_map(
+                        container,
+                        None,
+                        fetch_pk_ranges,
+                    ))
+                    .await;
+                    if !refreshed.ranges().is_empty() {
+                        return refreshed;
+                    }
+                    // Both the pinned and the cold attempt failed. Keep serving
+                    // the previously cached ranges, but drop the continuation:
+                    // it is affine to a region we could not reach, and the cold
+                    // retry has already cleared the pin that kept it there, so
+                    // replaying it would risk sending a region-affine ETag to a
+                    // different region. Without it the next refresh runs cold.
+                    return previous_routing_map
+                        .map(|p| {
+                            let mut unpinned = (*p).clone();
+                            unpinned.change_feed_next_if_none_match = None;
+                            unpinned
+                        })
+                        .unwrap_or_else(ContainerRoutingMap::empty);
+                }
                 return previous_routing_map
                     .map(|p| (*p).clone())
                     .unwrap_or_else(ContainerRoutingMap::empty);
@@ -1533,8 +1588,8 @@ mod tests {
 
         assert_eq!(
             call_count.load(Ordering::SeqCst),
-            1,
-            "failing fetcher should be invoked exactly once before fallback"
+            2,
+            "the pinned attempt fails, then one cold retry is issued before fallback"
         );
         assert_eq!(
             refreshed.ranges().len(),
@@ -1554,5 +1609,180 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(after.ranges().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn force_refresh_with_unavailable_pinned_region_retries_cold() {
+        // A refresh that resumes a cached continuation is pinned to the region
+        // that served the previous page. When that region is unavailable the
+        // pinned fetch must not be the end of the story: the continuation is
+        // discarded and the fetch retried cold, which is hedge-eligible and can
+        // land in a healthy region.
+        use std::sync::{Arc, Mutex};
+
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        // Seed the cache. `two_range_fetch` stores continuation "test-etag".
+        let seeded = cache
+            .try_lookup(&container, false, two_range_fetch)
+            .await
+            .unwrap();
+        assert_eq!(seeded.ranges().len(), 2);
+        assert_eq!(
+            seeded.change_feed_next_if_none_match.as_deref(),
+            Some("test-etag")
+        );
+
+        // "test-etag" is affine to a region that is now down; a cold call is
+        // served by a healthy region and observes a completed split.
+        let seen = Arc::new(Mutex::new(Vec::<Option<String>>::new()));
+        let recorder = seen.clone();
+        let failover_fetch = move |_container: ContainerReference, continuation: Option<String>| {
+            let recorder = recorder.clone();
+            async move {
+                recorder.lock().unwrap().push(continuation.clone());
+                match continuation.as_deref() {
+                    // Pinned region: unreachable.
+                    Some("test-etag") => None,
+                    // Healthy region drained the cold chain.
+                    Some(_) => Some(PkRangeFetchResult {
+                        ranges: vec![],
+                        continuation,
+                        not_modified: true,
+                    }),
+                    // Cold first page from the healthy region.
+                    None => Some(PkRangeFetchResult {
+                        ranges: vec![
+                            PkRange::new("2".into(), "", "40"),
+                            PkRange::new("3".into(), "40", "80"),
+                            PkRange::new("1".into(), "80", "FF"),
+                        ],
+                        continuation: Some("healthy-etag".to_string()),
+                        not_modified: false,
+                    }),
+                }
+            }
+        };
+
+        let refreshed = cache
+            .try_lookup(&container, true, failover_fetch)
+            .await
+            .unwrap();
+
+        let seen = seen.lock().unwrap().clone();
+        assert_eq!(
+            seen[0].as_deref(),
+            Some("test-etag"),
+            "the first attempt resumes the pinned chain"
+        );
+        assert_eq!(
+            seen[1], None,
+            "the failed pinned chain must be retried cold so the region pin is released"
+        );
+        assert_eq!(
+            refreshed.ranges().len(),
+            3,
+            "the cold retry's post-split map must replace the stale cached one"
+        );
+        assert_eq!(
+            refreshed.change_feed_next_if_none_match.as_deref(),
+            Some("healthy-etag"),
+            "the adopted map carries the healthy region's continuation"
+        );
+    }
+
+    #[tokio::test]
+    async fn failed_pinned_refresh_clears_stale_continuation() {
+        // When both the pinned attempt and the cold retry fail, the cached
+        // ranges are kept (routing must keep working) but the region-affine
+        // continuation is dropped. Without that, every later force-refresh
+        // would replay the same token against the same unreachable region and
+        // the container could never recover a routing map from a healthy one.
+        use std::sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc, Mutex,
+        };
+
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        let seeded = cache
+            .try_lookup(&container, false, two_range_fetch)
+            .await
+            .unwrap();
+        assert_eq!(seeded.ranges().len(), 2);
+
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let count = call_count.clone();
+        let all_regions_down = move |_container: ContainerReference,
+                                     _continuation: Option<String>| {
+            let count = count.clone();
+            async move {
+                count.fetch_add(1, Ordering::SeqCst);
+                None
+            }
+        };
+
+        let refreshed = cache
+            .try_lookup(&container, true, all_regions_down)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            call_count.load(Ordering::SeqCst),
+            2,
+            "pinned attempt plus exactly one cold retry — the retry must not recurse"
+        );
+        assert_eq!(
+            refreshed.ranges().len(),
+            2,
+            "cached ranges survive so routing keeps working"
+        );
+        assert!(
+            refreshed.change_feed_next_if_none_match.is_none(),
+            "the region-affine continuation must be discarded with its pin"
+        );
+
+        // The container is no longer wedged: the next force-refresh starts a
+        // cold, hedge-eligible chain instead of replaying the pinned token.
+        let seen = Arc::new(Mutex::new(Vec::<Option<String>>::new()));
+        let recorder = seen.clone();
+        let recovered_fetch = move |_container: ContainerReference,
+                                    continuation: Option<String>| {
+            let recorder = recorder.clone();
+            async move {
+                recorder.lock().unwrap().push(continuation.clone());
+                if continuation.is_some() {
+                    Some(PkRangeFetchResult {
+                        ranges: vec![],
+                        continuation,
+                        not_modified: true,
+                    })
+                } else {
+                    Some(PkRangeFetchResult {
+                        ranges: vec![
+                            PkRange::new("2".into(), "", "40"),
+                            PkRange::new("3".into(), "40", "80"),
+                            PkRange::new("1".into(), "80", "FF"),
+                        ],
+                        continuation: Some("recovered-etag".to_string()),
+                        not_modified: false,
+                    })
+                }
+            }
+        };
+
+        let recovered = cache
+            .try_lookup(&container, true, recovered_fetch)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            seen.lock().unwrap()[0],
+            None,
+            "the follow-up refresh must run cold, not replay the discarded token"
+        );
+        assert_eq!(recovered.ranges().len(), 3);
     }
 }

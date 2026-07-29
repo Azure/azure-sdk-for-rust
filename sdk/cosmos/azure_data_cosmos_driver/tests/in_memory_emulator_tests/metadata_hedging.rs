@@ -247,3 +247,66 @@ async fn metadata_container_read_not_hedged_when_disabled() {
          no HedgeDiagnostics should be attached; diag={hedge_diag:?}",
     );
 }
+
+/// Enabled + primary slow, but the client's concurrent-metadata-hedge budget is
+/// exhausted ⇒ the read is NOT upgraded into a hedge race. It falls through to
+/// the ordinary sequential path and still succeeds against the slow primary.
+///
+/// This is the amplification guardrail: during a region brownout every metadata
+/// read crosses the threshold at once, and without a ceiling each one would
+/// spawn an extra request into the alternate region — exactly when that region
+/// is least able to absorb it.
+#[tokio::test]
+async fn metadata_container_read_not_hedged_when_budget_exhausted() {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+
+    let rule = container_read_delay_rule(Region::EAST_US, PRIMARY_METADATA_DELAY);
+    let driver = make_driver(&ctx, vec![Arc::clone(&rule)]).await;
+
+    // Refuse every metadata hedge, as an exhausted budget would.
+    driver.set_metadata_hedge_limit_for_testing(0);
+
+    let hedge_diag = container_read_hedge_diagnostics(&driver, hedging_options()).await;
+
+    assert!(
+        hedge_diag.is_none(),
+        "an exhausted hedge budget must skip the hedge upgrade entirely, so the \
+         operation never enters execute_hedged and carries no HedgeDiagnostics; \
+         diag={hedge_diag:?}",
+    );
+    assert!(
+        rule.hit_count() >= 1,
+        "the read must still have been served (slowly) by the primary region",
+    );
+}
+
+/// A finished race returns its slot: with a budget of exactly one, two
+/// *sequential* reads both hedge. Proves the permit is dropped when the race
+/// ends rather than leaking for the lifetime of the driver — a leak here would
+/// silently disable hedging after the first N operations.
+#[tokio::test]
+async fn metadata_hedge_budget_slot_is_released_after_each_race() {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+
+    let rule = container_read_delay_rule(Region::EAST_US, PRIMARY_METADATA_DELAY);
+    let driver = make_driver(&ctx, vec![Arc::clone(&rule)]).await;
+
+    driver.set_metadata_hedge_limit_for_testing(1);
+
+    for round in 1..=2 {
+        let hedge_diag = container_read_hedge_diagnostics(&driver, hedging_options())
+            .await
+            .unwrap_or_else(|| {
+                panic!(
+                    "round {round}: the single budget slot must be free again, so this \
+                     read should hedge",
+                )
+            });
+        assert_eq!(
+            hedge_diag.terminal_state(),
+            HedgeTerminalState::AlternateWon,
+            "round {round}: the alternate region, which has no delay, should win; \
+             diag={hedge_diag:?}",
+        );
+    }
+}

@@ -8,12 +8,15 @@
 - Added a schema-agnostic Cosmos binary JSON codec (`binary_json`) and driver-side binary encoding via `OperationOptions.binary_encoding` (`BinaryEncodingOptions`). When enabled, the driver transcodes item request/response bodies between text and Cosmos binary JSON and negotiates the wire format; it is honored only for point `Document` item operations. Off by default and inert on the wire when unset. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
 - Added `PlanOptions` (with `DEFAULT_MAX_FAN_OUT`) to `CosmosDriver::plan_operation`, enforcing a maximum fan-out on fresh cross-partition plans. A fresh plan spanning more leaf request nodes than `PlanOptions::max_fan_out` (default 100) is rejected with the new `CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED` (HTTP 400). The limit is enforced only at initial plan time: resuming from a continuation token skips the check, and a partition split that raises the fan-out mid-execution does not abort the operation. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 - Extended cross-region hedging to the container and partition-key-range metadata reads, so a slow (but not failed) region no longer stalls a client's first operation against a container. Metadata hedges use a fixed 1.5s threshold and never let a hedged region override a definitive primary result. ([#4896](https://github.com/Azure/azure-sdk-for-rust/pull/4896))
+- Added a per-client concurrency budget bounding how many cross-region metadata hedge races may be open at once (default 32, overridable with `AZURE_COSMOS_MAX_CONCURRENT_METADATA_HEDGES`; `0` disables metadata hedging). An operation refused a slot skips the hedge upgrade and follows the ordinary sequential failover path rather than queueing, so a region brownout can no longer amplify one client's metadata reads without bound. Data-plane hedging is not budgeted: its concurrency scales with application throughput, so a race-scoped cap would refuse hedges to clients that were never going to spawn an alternate leg. ([#4896](https://github.com/Azure/azure-sdk-for-rust/pull/4896))
 
 ### Breaking Changes
 
 - `CosmosDriver::plan_operation` now takes an additional `plan_options: &PlanOptions` argument (after `continuation`). The continuation token remains its own argument. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 
 ### Bugs Fixed
+
+- Fixed a partition-key-range refresh that could remain permanently pinned to an unreachable region. A refresh resuming a region-affine change-feed continuation is routed back to the region that served it, with hedging suppressed; if that region then became unavailable, every subsequent forced refresh repeated the same failing request forever. Such a refresh now retries once from cold, which clears both the continuation and the region pin together. ([#4896](https://github.com/Azure/azure-sdk-for-rust/pull/4896))
 
 ### Other Changes
 
