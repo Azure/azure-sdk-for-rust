@@ -107,7 +107,7 @@ async fn setup() -> Result<ContainerClient, Box<dyn Error>> {
 
     let container = client
         .database_client(DB_NAME)
-        .container_client(CONTAINER_NAME)
+        .container_client(CONTAINER_NAME, None)
         .await?;
 
     Ok(container)

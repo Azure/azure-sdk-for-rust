@@ -74,7 +74,9 @@ impl DatabaseClient {
     pub async fn container_client(
         &self,
         name: &str,
-        #[allow(unused_variables, reason = "for future use")] options: Option<ContainerClientOptions>,
+        #[allow(unused_variables, reason = "for future use")] options: Option<
+            ContainerClientOptions,
+        >,
     ) -> crate::Result<ContainerClient> {
         ContainerClient::new(self.context.clone(), name, &self.database_id).await
     }

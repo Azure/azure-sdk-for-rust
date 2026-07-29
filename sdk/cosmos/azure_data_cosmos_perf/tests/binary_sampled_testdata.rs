@@ -277,7 +277,7 @@ async fn binary_round_trips_sampled_testdata() -> Result<(), Box<dyn Error>> {
             )
             .await,
     )?;
-    let container = db_client.container_client(&container_name).await?;
+    let container = db_client.container_client(&container_name, None).await?;
 
     let mut rng = rand::rng();
     let sampled: Vec<Map<String, Value>> = (0..SAMPLE_COUNT)

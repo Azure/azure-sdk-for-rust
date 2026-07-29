@@ -142,7 +142,7 @@ async fn handler_receives_singleton_success() {
     let (client, handler, db, container) = setup().await;
     let c = client
         .database_client(&db)
-        .container_client(&container)
+        .container_client(&container, None)
         .await
         .unwrap();
 
@@ -181,7 +181,7 @@ async fn handler_receives_singleton_failure() {
     let (client, handler, db, container) = setup().await;
     let c = client
         .database_client(&db)
-        .container_client(&container)
+        .container_client(&container, None)
         .await
         .unwrap();
 
@@ -213,7 +213,7 @@ async fn handler_receives_paginated_success() {
     let (client, handler, db, container) = setup().await;
     let c = client
         .database_client(&db)
-        .container_client(&container)
+        .container_client(&container, None)
         .await
         .unwrap();
 
@@ -271,7 +271,7 @@ async fn handler_receives_paginated_failure() {
     let (client, handler, db, container) = setup().await;
     let c = client
         .database_client(&db)
-        .container_client(&container)
+        .container_client(&container, None)
         .await
         .unwrap();
 
