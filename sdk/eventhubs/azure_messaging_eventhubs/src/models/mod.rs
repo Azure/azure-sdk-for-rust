@@ -10,6 +10,32 @@ pub use azure_core_amqp::AmqpMessage;
 /// An AMQP Value.
 pub use azure_core_amqp::AmqpValue;
 
+/// The transport that carries the AMQP protocol.
+///
+/// Event Hubs is normally reached with AMQP framed directly over a TCP/TLS
+/// socket ([`AmqpTransport::Tcp`], port 5671). Some networks (for example
+/// corporate firewalls) only permit outbound connections on port 443; there,
+/// [`AmqpTransport::WebSocket`] tunnels AMQP over secure WebSockets instead.
+/// Select it with `with_transport` on a client builder.
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::{ProducerClient, models::AmqpTransport};
+/// use azure_identity::DeveloperToolsCredential;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let credential = DeveloperToolsCredential::new(None)?;
+///     let producer = ProducerClient::builder()
+///         .with_transport(AmqpTransport::WebSocket)
+///         .open("my_namespace.servicebus.windows.net", "my_eventhub", credential)
+///         .await?;
+///     Ok(())
+/// }
+/// ```
+pub use azure_core_amqp::AmqpTransport;
+
 /// An AMQP Simple Value.
 ///
 /// An AMQP Simple Value is a primitive type in AMQP 1.0.
@@ -129,51 +155,6 @@ pub struct EventHubPartitionProperties {
 
     /// Indicates whether the partition is empty.
     pub is_empty: bool,
-}
-
-/// The type of transport used to communicate with the Event Hubs service.
-///
-/// Event Hubs is normally accessed using AMQP framed directly over a TCP/TLS
-/// socket (port 5671). Some networks (for example corporate firewalls) only
-/// permit outbound connections on port 443; in those environments AMQP can be
-/// tunneled over WebSockets instead.
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_messaging_eventhubs::{ProducerClient, models::TransportType};
-/// use azure_identity::DeveloperToolsCredential;
-///
-/// #[tokio::main]
-/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-///     let credential = DeveloperToolsCredential::new(None)?;
-///     let producer = ProducerClient::builder()
-///         .with_transport_type(TransportType::AmqpWebSocket)
-///         .open("my_namespace.servicebus.windows.net", "my_eventhub", credential)
-///         .await?;
-///     Ok(())
-/// }
-/// ```
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub enum TransportType {
-    /// AMQP framing over a TCP/TLS socket (port 5671). This is the default.
-    #[default]
-    AmqpTcp,
-    /// AMQP framing tunneled over secure WebSockets (`wss://`, port 443).
-    ///
-    /// This variant needs the `native_tls` feature of `azure_core_amqp`. This
-    /// crate depends on `azure_core_amqp` with its default features, which
-    /// include `native_tls`, so the variant works in every build of this crate.
-    AmqpWebSocket,
-}
-
-impl From<TransportType> for azure_core_amqp::AmqpTransport {
-    fn from(value: TransportType) -> Self {
-        match value {
-            TransportType::AmqpTcp => azure_core_amqp::AmqpTransport::Tcp,
-            TransportType::AmqpWebSocket => azure_core_amqp::AmqpTransport::WebSocket,
-        }
-    }
 }
 
 /// Uniquely identifies a message.

@@ -3,7 +3,7 @@
 
 //! This sample demonstrates AMQP-over-WebSockets transport. It opens both a
 //! [`ProducerClient`] and a [`ConsumerClient`] with
-//! [`TransportType::AmqpWebSocket`], sends a uniquely tagged event, and reads it
+//! [`AmqpTransport::WebSocket`], sends a uniquely tagged event, and reads it
 //! back. The clients talk to the broker over `wss://` on port 443 instead of
 //! AMQP on port 5671, which is useful when a firewall blocks 5671.
 //!
@@ -14,7 +14,7 @@
 
 use azure_core::{time::Duration, Uuid};
 use azure_messaging_eventhubs::{
-    models::TransportType, ConsumerClient, OpenReceiverOptions, ProducerClient, SendEventOptions,
+    models::AmqpTransport, ConsumerClient, OpenReceiverOptions, ProducerClient, SendEventOptions,
     StartLocation, StartPosition,
 };
 use futures::StreamExt;
@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub_name = std::env::var("EVENTHUB_NAME").ok();
 
     let producer = ProducerClient::builder()
-        .with_transport_type(TransportType::AmqpWebSocket)
+        .with_transport(AmqpTransport::WebSocket)
         .open_with_connection_string(&connection_string, eventhub_name.as_deref())
         .await?;
     println!("Opened producer over WebSockets.");
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Sent event with marker {marker} to partition {partition_id}.");
 
     let consumer = ConsumerClient::builder()
-        .with_transport_type(TransportType::AmqpWebSocket)
+        .with_transport(AmqpTransport::WebSocket)
         .open_with_connection_string(&connection_string, eventhub_name.as_deref())
         .await?;
     println!("Opened consumer over WebSockets.");
@@ -83,8 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // `stream` borrows `receiver`; drop it (end of block) before closing.
     }
 
-    // Close in dependency order: the receiver and stream hold references to the
-    // consumer's connection, so they must be released first.
+    // Detach the receiver link before the connection that carries it closes.
     receiver.close().await?;
     consumer.close().await?;
     producer.close().await?;
