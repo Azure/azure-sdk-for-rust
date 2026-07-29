@@ -20,6 +20,7 @@
 
 - Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and length-bounded, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
 - Documented that `ChangeFeedPolicy::with_retention_duration` must not be set on accounts running in continuous backup mode, which derive the full-fidelity retention window from the backup retention and reject an explicit duration with `400 Bad Request`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
+- The `AllVersionsAndDeletes` change feed tests now skip, rather than fail, against an account that does not have the mode enabled. The account-level opt-in cannot be set at creation time and is not available on every subscription. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
 
 ## 0.37.1 (2026-07-23)
 

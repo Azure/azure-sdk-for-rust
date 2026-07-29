@@ -233,6 +233,18 @@ impl AvadDoc {
     }
 }
 
+/// Whether an error is the service refusing `AllVersionsAndDeletes` because the
+/// account was never enabled for it.
+///
+/// The mode requires an account-level opt-in that cannot be set at creation time
+/// and is not available on every subscription, so a live account that is
+/// otherwise healthy can still reject the read outright. Detecting it lets the
+/// AVAD test skip rather than fail on such an account.
+fn avad_unsupported(err: &(dyn Error + 'static)) -> bool {
+    let message = err.to_string();
+    message.contains("All Versions and Deletes") && message.contains("must be enabled")
+}
+
 /// Polls a full-fidelity change feed, accumulating every envelope seen, until
 /// `is_complete` is satisfied by the collection so far or a deadline elapses.
 ///
@@ -355,7 +367,21 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
                 std::time::Instant::now() + Duration::from_secs(15),
                 |_| false,
             )
-            .await?;
+            .await;
+            let pre_split = match pre_split {
+                Ok(pages) => pages,
+                // AllVersionsAndDeletes needs an account-level opt-in that is not
+                // available everywhere; skip instead of failing on an account that
+                // lacks it.
+                Err(err) if avad_unsupported(err.as_ref()) => {
+                    eprintln!(
+                        "Skipping change_feed_all_versions_and_deletes_resume_across_split: \
+                         the account does not have AllVersionsAndDeletes enabled."
+                    );
+                    return Ok(());
+                }
+                Err(err) => return Err(err),
+            };
             assert!(
                 pre_split.is_empty(),
                 "AVAD StartFrom::Now must exclude the pre-existing baseline, saw {}",
