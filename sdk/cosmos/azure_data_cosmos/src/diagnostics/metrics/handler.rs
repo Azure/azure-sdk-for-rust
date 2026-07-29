@@ -417,7 +417,8 @@ mod tests {
         CosmosClientInfo::from_endpoint(&url::Url::parse(&url).expect("valid test endpoint"))
     }
 
-    /// Returns the summed value of the `active_instance.count` up-down counter    /// from the most recent export, or `None` if the metric was never emitted.
+    /// Returns the summed value of the `active_instance.count` up-down counter
+    /// from the most recent export, or `None` if the metric was never emitted.
     ///
     /// The in-memory exporter accumulates one snapshot per `collect()` call, so
     /// we scan every snapshot and keep the value from the last one — the current

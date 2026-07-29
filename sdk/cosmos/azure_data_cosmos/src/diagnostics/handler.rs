@@ -156,7 +156,8 @@ pub trait DiagnosticsHandler: Send + Sync {
     /// Notifies the handler that a new [`CosmosClient`](crate::CosmosClient) was
     /// constructed with this handler registered.
     ///
-    /// Called exactly once per client, at construction. Return a
+    /// Called exactly once per client, at construction — including when the same
+    /// handler was registered on that client's chain more than once. Return a
     /// [`ClientLifetimeToken`] to be notified when that client — and every
     /// database/container client derived from it — has been dropped; return
     /// `None` (the default) when the handler does not track client lifetimes.
@@ -250,16 +251,29 @@ impl DiagnosticsHandlerChain {
     /// Notifies every handler that a client was created, collecting the lifetime
     /// tokens they hand back.
     ///
+    /// A handler that appears in the chain more than once — the chain is
+    /// additive, so the same `Arc` can be registered twice — is notified only
+    /// once, since this is a per-client lifecycle event rather than a per-call
+    /// dispatch. Distinct handler objects are always notified independently.
+    ///
     /// The returned tokens must be stored for the client's lifetime; dropping
     /// them is what signals client teardown to the handlers.
     pub(crate) fn dispatch_client_created(
         &self,
         client: &CosmosClientInfo,
     ) -> Arc<[ClientLifetimeToken]> {
-        self.handlers
-            .iter()
-            .filter_map(|handler| handler.on_client_created(client))
-            .collect()
+        let mut notified: Vec<&Arc<dyn DiagnosticsHandler>> = Vec::new();
+        let mut tokens = Vec::new();
+        for handler in self.handlers.iter() {
+            if notified.iter().any(|seen| Arc::ptr_eq(seen, handler)) {
+                continue;
+            }
+            notified.push(handler);
+            if let Some(token) = handler.on_client_created(client) {
+                tokens.push(token);
+            }
+        }
+        tokens.into()
     }
 }
 
@@ -374,5 +388,86 @@ mod tests {
 
         let recorded = log.lock().unwrap().clone();
         assert_eq!(recorded, vec![("first", op.clone()), ("second", op)]);
+    }
+
+    /// A handler that counts `on_client_created` calls and hands back a token
+    /// which records the matching teardown.
+    struct LifecycleHandler {
+        created: Arc<Mutex<usize>>,
+        dropped: Arc<Mutex<usize>>,
+    }
+
+    impl DiagnosticsHandler for LifecycleHandler {
+        fn handle(&self, _diagnostics: &DiagnosticsContext, _cx: &Context<'_>) {}
+
+        fn on_client_created(&self, _client: &CosmosClientInfo) -> Option<ClientLifetimeToken> {
+            *self.created.lock().unwrap() += 1;
+            let dropped = Arc::clone(&self.dropped);
+            Some(ClientLifetimeToken::new(move || {
+                *dropped.lock().unwrap() += 1;
+            }))
+        }
+    }
+
+    fn client_info() -> CosmosClientInfo {
+        CosmosClientInfo::from_endpoint(
+            &azure_core::http::Url::parse("https://account.documents.azure.com/")
+                .expect("valid test endpoint"),
+        )
+    }
+
+    #[test]
+    fn client_created_notifies_a_repeated_handler_once() {
+        let created = Arc::new(Mutex::new(0));
+        let dropped = Arc::new(Mutex::new(0));
+        let handler: Arc<dyn DiagnosticsHandler> = Arc::new(LifecycleHandler {
+            created: Arc::clone(&created),
+            dropped: Arc::clone(&dropped),
+        });
+
+        // The chain is additive, so the same handler can land on it twice. That
+        // is one registration for client-lifecycle purposes: a client must not
+        // be counted twice just because a handler was added twice.
+        let chain = DiagnosticsHandlerChain::new()
+            .with_handler(Arc::clone(&handler))
+            .with_handler(Arc::clone(&handler));
+        assert_eq!(chain.len(), 2);
+
+        let tokens = chain.dispatch_client_created(&client_info());
+        assert_eq!(*created.lock().unwrap(), 1);
+        assert_eq!(tokens.len(), 1);
+
+        drop(tokens);
+        assert_eq!(*dropped.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn client_created_notifies_distinct_handlers_independently() {
+        let created = Arc::new(Mutex::new(0));
+        let dropped = Arc::new(Mutex::new(0));
+        let make = || -> Arc<dyn DiagnosticsHandler> {
+            Arc::new(LifecycleHandler {
+                created: Arc::clone(&created),
+                dropped: Arc::clone(&dropped),
+            })
+        };
+
+        // Distinct handler objects are separate sinks, so each is notified.
+        let chain = DiagnosticsHandlerChain::from_handlers(vec![make(), make()]);
+        let tokens = chain.dispatch_client_created(&client_info());
+        assert_eq!(*created.lock().unwrap(), 2);
+        assert_eq!(tokens.len(), 2);
+
+        drop(tokens);
+        assert_eq!(*dropped.lock().unwrap(), 2);
+    }
+
+    #[test]
+    fn client_created_is_noop_for_handlers_that_do_not_track_lifetime() {
+        let log = Arc::new(Mutex::new(Vec::new()));
+        // `RecordingHandler` does not override `on_client_created`, so the
+        // default returns `None` and no token is retained.
+        let chain = DiagnosticsHandlerChain::from_handlers(vec![recording("a", &log)]);
+        assert!(chain.dispatch_client_created(&client_info()).is_empty());
     }
 }

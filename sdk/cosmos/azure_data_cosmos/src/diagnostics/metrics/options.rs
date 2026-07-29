@@ -79,7 +79,13 @@ impl MetricsOptions {
     /// database/container client derived from it — has been dropped. The counter
     /// is keyed on the account endpoint (`server.address`, plus `server.port`
     /// for non-default ports), so sharing one handler across several clients
-    /// still reports each client. Off by default.
+    /// still reports each client, and registering the same handler twice on one
+    /// client still reports that client once. Off by default.
+    ///
+    /// Note that two *distinct* metrics handlers built from the same meter and
+    /// registered on the same client each record their own `+1`, just as they
+    /// each record their own duration and request-charge samples. Register a
+    /// single metrics handler per meter.
     #[must_use]
     pub fn with_active_instance_metric(mut self, enabled: bool) -> Self {
         self.active_instance_metric = enabled;

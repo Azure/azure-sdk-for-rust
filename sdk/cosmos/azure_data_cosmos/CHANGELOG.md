@@ -21,6 +21,8 @@
 
 ### Bugs Fixed
 
+- The Cosmos tracing span's operation label now prefers the caller-facing `CosmosOperationContext` identity over the driver-recorded name, matching how the `db.operation.name` metric attribute is resolved. Previously an aggregate whose surfaced sub-operation differed from the caller's operation — such as a PATCH that fails during its internal read — could label the span `read_item` while the metric reported `patch_item`. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
+
 ### Other Changes
 
 - Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and length-bounded, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))

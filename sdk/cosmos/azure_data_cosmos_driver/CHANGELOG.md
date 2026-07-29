@@ -16,7 +16,6 @@
 ### Bugs Fixed
 
 - `DiagnosticsContext::operation_name()` is now populated in production (previously always `None`): the operation pipeline sets it from `CosmosOperation::db_operation_name`, so tail-sampling classification and the tracing span have an operation name even when no SDK-supplied `CosmosOperationContext` is present. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
-- The tracing span's operation label now prefers the caller-facing `CosmosOperationContext` identity, matching how the `db.operation.name` metric attribute is resolved. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 - PATCH operations now report `patch_item` rather than the underlying Replace, on both the aggregated success path and every error path (including read, deserialize, patch-evaluation, serialize, and non-412 replace failures). ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 
 ### Other Changes

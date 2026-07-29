@@ -351,7 +351,7 @@ attributes. This powers client-side Grafana dashboards (R7) with per-combination
 | `db.client.operation.duration` | stable | histogram | `s` | End-to-end operation duration — **the primary metric**. |
 | `db.client.response.returned_rows` | development | histogram | `{row}` | Rows returned in the result set. |
 | `azure.cosmosdb.client.operation.request_charge` | development | histogram | `{request_unit}` | Request units (RU) consumed by the operation. |
-| `azure.cosmosdb.client.active_instance.count` | development | up-down counter | `{instance}` | Number of live Cosmos client instances per account endpoint. *(Opt-in via `MetricsOptions::with_active_instance_metric`; `CosmosMetricsHandler` records +1 when a `CosmosClient` is built with it registered and −1 when that client and every client derived from it is dropped, so the value is independent of how many handler objects exist — [#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874).)* |
+| `azure.cosmosdb.client.active_instance.count` | development | up-down counter | `{instance}` | Number of live Cosmos client instances per account endpoint. *(Opt-in via `MetricsOptions::with_active_instance_metric`; `CosmosMetricsHandler` records +1 when a `CosmosClient` is built with it registered and −1 when that client and every client derived from it is dropped, so the value follows client lifetime rather than handler lifetime — one handler shared across N clients reports N, and a handler registered on no client reports nothing — [#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874).)* |
 
 **Always-on metric attributes (low cardinality, D7):** `db.operation.name`,
 `db.response.status_code`, `db.collection.name`, `db.namespace`, `error.type`, `server.address`,
