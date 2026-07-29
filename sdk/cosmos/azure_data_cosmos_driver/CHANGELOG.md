@@ -20,6 +20,7 @@
 
 ### Other Changes
 
+- Gateway 2.0 responses now preserve backend duration, quota, item-count, quorum, replica, query, and physical-partition RNTBD metadata when converting to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 - Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and bounded to 512 bytes, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. The full payload remains available verbatim via `CosmosError::response`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
 
 ## 0.6.1 (2026-07-23)
