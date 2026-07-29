@@ -51,6 +51,59 @@ cargo +nightly fuzz run decode fuzz/artifacts/decode/crash-<hash>
 cargo +nightly fuzz tmin decode fuzz/artifacts/decode/crash-<hash>
 ```
 
+## Thorough manual run on a Linux VM
+
+For deeper, longer fuzzing than the weekly CI budget (Option A caps each target
+at ~1000 s), run it by hand on any Linux box (or WSL2). This is the same thing CI
+does, without a wall-clock cap:
+
+```bash
+# 1. Toolchain (one-time)
+rustup toolchain install nightly --component rust-src
+cargo install cargo-fuzz --locked
+
+# 2. Get the code and seed the corpus from the golden vectors (recommended —
+#    lets libFuzzer mutate outward from real wire frames).
+cd sdk/cosmos/azure_data_cosmos_driver
+mkdir -p fuzz/corpus/decode
+jq -r '.[] | "\(.name) \(.binary)"' testdata/binary_json_vectors.json |
+while read -r name hex; do
+  echo "$hex" | tr -d ' ' | xxd -r -p > "fuzz/corpus/decode/$name"
+done
+
+# 3a. Run one target for a fixed budget (e.g. 1 hour), 8 parallel workers:
+cargo +nightly fuzz run decode -- -max_total_time=3600 -workers=8 -jobs=8 -print_final_stats=1
+
+# 3b. Or run it open-ended until you Ctrl-C (a true soak):
+cargo +nightly fuzz run decode -- -workers=8 -jobs=8
+
+# 4. Repeat for the other targets (they share the same corpus format):
+cargo +nightly fuzz run from_slice           -- -max_total_time=3600 -workers=8
+cargo +nightly fuzz run transcode_to_text    -- -max_total_time=3600 -workers=8
+cargo +nightly fuzz run decode_reencode_roundtrip -- -max_total_time=3600 -workers=8
+
+# 5. Or drive all four with the CI helper (installs deps, seeds corpus, runs each):
+pwsh ../eng/scripts/Run-BinaryJsonFuzz.ps1 -MaxTotalTimeSeconds 3600 -Workers 8
+```
+
+**If a crash is found**, libFuzzer writes the triggering input to
+`fuzz/artifacts/<target>/crash-<hash>`. Reproduce and minimize it:
+
+```bash
+cargo +nightly fuzz run decode fuzz/artifacts/decode/crash-<hash>   # reproduce
+cargo +nightly fuzz tmin decode fuzz/artifacts/decode/crash-<hash>  # minimize
+```
+
+Then add the minimized input as a golden vector / unit test in
+`src/binary_json/` and fix the codec. The **corpus in `fuzz/corpus/<target>/`
+persists across runs** — keep it (or copy it between machines) to accelerate
+subsequent sessions.
+
+Sizing guidance: `job time ≈ 1 min (compile) + N_targets × per-target budget`.
+On an 8-vCPU VM, `-workers=8` roughly 2× the throughput seen in CI (~3.4K
+exec/s/worker in the first run), so a 1-hour/target soak explores tens of
+millions of inputs per target.
+
 ## Seeding the corpus from the golden vectors
 
 Seeding libFuzzer with **valid** frames lets it mutate outward from real wire

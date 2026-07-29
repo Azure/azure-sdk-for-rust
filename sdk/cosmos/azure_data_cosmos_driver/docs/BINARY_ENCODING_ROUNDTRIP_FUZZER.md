@@ -404,7 +404,60 @@ offline), and this harness validates *the whole pipeline against the live
 service* — and its number-canonicalization calibration (§3.1) feeds the
 backend's observed rewrite rules back into the RFC's §7.
 
-## 9. Planned evolution — `arbitrary-json` + `json-canon` + `sha2`
+### 8.1 This round-trip fuzzer vs. the `cargo-fuzz` codec crate
+
+The two most easily-confused layers are the **two fuzzers**. They sit at
+*opposite ends of the same pipeline* and answer different questions — neither
+replaces the other.
+
+```
+                    round-trip fuzzer starts here (random JSON value)
+                              │
+   JSON value ──encode──► binary bytes ──wire──► service ──► bytes ──decode──► JSON value
+                              ▲                                              │
+                              └──────────── compare (round-trip) ───────────┘
+
+   cargo-fuzz starts HERE (random/mutated bytes) ──► decode ──► Ok/Err (must never crash)
+```
+
+| | **cargo-fuzz crate** (protocol/byte fuzzer) | **round-trip fuzzer** (value fuzzer) |
+| --- | --- | --- |
+| Location | `azure_data_cosmos_driver/fuzz/` | `azure_data_cosmos_perf/tests/binary_roundtrip_fuzzer.rs` |
+| Fuzzes | the **byte/wire format** (the codec) | **value fidelity** (end-to-end pipeline) |
+| Input space | random / mutated **raw bytes** | random **JSON values** (arbitrary-json + corpus shapes) |
+| Decoder sees | **mis-encoded** frames the encoder never emits | only **well-formed** encoder output |
+| Question | "does the decoder ever crash / hang / OOM on garbage?" | "does a value survive store → read back unchanged?" |
+| Oracle | robustness (never panic) + `decode∘encode` idempotence | `canonicalize(sent) == canonicalize(returned)` |
+| Cosmos account | ❌ offline, in-process | ✅ live service |
+| Engine | coverage-guided (libFuzzer) | seeded PRNG (SplitMix64), deterministic per seed |
+| Toolchain / OS | **nightly + Linux** (libFuzzer) | **stable, any OS** |
+| Command | `cargo +nightly fuzz run <target>` | `cargo test … binary_roundtrip_fuzzer` |
+
+**Why both are needed:** the round-trip fuzzer only ever feeds the decoder bytes
+our *own encoder* produced, so it validates **semantic correctness** on the happy
+path against the real service but **cannot** reach the decoder's error-handling
+code (a correct encoder never emits truncated buffers, bad length prefixes, or
+unknown markers). The `cargo-fuzz` crate feeds the decoder **arbitrary garbage**,
+so it validates **robustness/hardening** on the malformed path, offline — but
+says nothing about round-trip value fidelity. This is exactly the reviewer's
+point that arbitrary-json alone does not fuzz the *protocol*.
+
+**Which to use when:**
+
+- Changed the **decoder / reader / codec** (`reader.rs`, `de.rs`, `markers.rs`,
+  `transcode_to_text`) or want offline hardening against malformed input, or are
+  running the weekly deep soak → **cargo-fuzz crate** (`cargo +nightly fuzz run …`,
+  Linux/nightly).
+- Changed the **encoder** or want to prove data survives the **real service**
+  unchanged, or to exercise realistic corpus shapes/sizes and the three binary
+  configs, or to reproduce a specific document by seed → **round-trip fuzzer**
+  (`cargo test … binary_roundtrip_fuzzer`, stable + live account).
+- Changed **codec internals** → run **both**.
+- Quick, always-on, Windows-friendly decoder no-crash coverage without nightly →
+  the in-tree `binary_json/fuzz_tests.rs` (`cargo test -p azure_data_cosmos_driver
+  --lib fuzz`).
+
+
 
 This section captures an agreed enhancement plan for the harness. The current harness uses a hand-rolled seeded generator (§4) and a hand-rolled canonicalizer (§3). Three well-maintained crates can replace the parts of that machinery that are pure boilerplate, while we **keep** the one part that is genuinely Cosmos-specific.
 

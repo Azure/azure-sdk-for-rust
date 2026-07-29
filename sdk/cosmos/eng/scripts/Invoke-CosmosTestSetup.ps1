@@ -29,9 +29,11 @@ if ($env:AZURE_COSMOS_FUZZ -eq '1' -and -not $env:AZURE_COSMOS_FUZZ_RAN) {
     }
     else {
         # Budget per target scales by build reason: a short smoke on PR/CI so the
-        # gate stays fast, a deep run on the weekly schedule.
+        # gate stays fast, a deep run on the weekly schedule. The weekly budget
+        # (4 targets x 1000s + ~5min compile/overhead ~= 73min) is sized to fit
+        # comfortably inside the archetype's 90-minute TestTimeoutInMinutes cap.
         $isSchedule = ($env:BUILD_REASON -eq 'Schedule') -or ($env:BUILD_DEFINITIONNAME -like '*- weekly')
-        $fuzzSeconds = if ($isSchedule) { 1800 } else { 120 }
+        $fuzzSeconds = if ($isSchedule) { 1000 } else { 120 }
         Write-Host "==> Cosmos binary-JSON fuzz: budget ${fuzzSeconds}s/target (schedule=$isSchedule)"
         & "$PSScriptRoot\Run-BinaryJsonFuzz.ps1" -MaxTotalTimeSeconds $fuzzSeconds -Workers 4
     }

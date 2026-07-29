@@ -1,6 +1,8 @@
 {
   "displayNames": {
-    "fuzz": "binary_json_fuzz"
+    "fuzz": "binary_json_fuzz",
+    "1": "",
+    "true": ""
   },
   "matrix": {
     "Agent": {

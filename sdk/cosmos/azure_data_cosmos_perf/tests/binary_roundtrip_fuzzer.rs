@@ -1307,7 +1307,6 @@ fn gen_shaped_document(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Va
 }
 
 /// A small, irregular filler value. Draws from typed scalars, mixed
-
 /// arrays/objects of typed scalars, homogeneous number arrays (to exercise the
 /// uniform-number wire forms), and `arbitrary-json` subtrees — so filler is both
 /// varied and non-trivial in size. Already respects the `wide_numbers`/`unicode`
