@@ -83,14 +83,14 @@
 # AzureSDKOwners: @vincenttran-msft @jalauzon-msft @jaschrep-msft
 
 # PRLabel: %Event Hubs
-/sdk/eventhubs/          @hmlam @j7nw4r @SwayGom @sagar0207 @sjkwak
+/sdk/eventhubs/          @hmlam @j7nw4r @meetamitbhatia @SwayGom @sagar0207 @sjkwak
 
 # PRLabel: %Event Hubs %Storage
-/sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob/    @hmlam @j7nw4r @SwayGom @sagar0207 @sjkwak @jalauzon-msft @vincenttran-msft @jaschrep-msft
+/sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob/    @hmlam @j7nw4r @meetamitbhatia @SwayGom @sagar0207 @sjkwak @jalauzon-msft @vincenttran-msft @jaschrep-msft
 
 # ServiceLabel: %Event Hubs
 # AzureSDKOwners: @LarryOsterman
-# ServiceOwners: @hmlam @j7nw4r @SwayGom @sagar0207 @sjkwak
+# ServiceOwners: @hmlam @j7nw4r @meetamitbhatia @SwayGom @sagar0207 @sjkwak
 
 ####################
 # Management Libraries
