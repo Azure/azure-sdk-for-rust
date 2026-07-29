@@ -19,41 +19,132 @@
 //! [`super::query_response`]) and stopping early once `take` is satisfied — so a
 //! `TOP n` query never drains partitions it doesn't need.
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
 
-use crate::models::{CosmosResponse, FeedRange, ResponseBody};
+use crate::diagnostics::DiagnosticsContext;
+use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
 
-use super::{query_response, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
+use super::{
+    query_response, PageResult, PipelineContext, PipelineNode, PipelineNodeState, SkipTakeStage,
+};
 
 /// Applies a global `OFFSET` (`remaining_skip`) then `LIMIT`/`TOP`
 /// (`remaining_take`, `None` = unbounded) over its single child's pages.
 pub(crate) struct SkipTake {
     child: Box<dyn PipelineNode>,
+    /// Which SQL construct produced this window (`TOP` vs `OFFSET`/`LIMIT`).
+    /// Carried into the continuation snapshot so a resume can reject a token
+    /// whose shape does not match the query plan.
+    stage: SkipTakeStage,
     remaining_skip: u64,
     remaining_take: Option<u64>,
     /// Set once `take` is satisfied (or the child drains) so subsequent pulls
     /// short-circuit to `Drained` without touching the child again.
     exhausted: bool,
+    /// Request charges (RU) from backend pages that were fully consumed by the
+    /// outstanding `OFFSET` and therefore suppressed (see the `continue` in
+    /// [`next_page`](Self::next_page)). Folded into the next emitted page so the
+    /// public page does not under-report the RUs actually billed.
+    suppressed_charge: RequestCharge,
+    /// Diagnostics from those same suppressed pages, in arrival order. Merged
+    /// (as prior attempts) into the next emitted page so `request_count()` and
+    /// per-request diagnostics account for every backend request the skip
+    /// touched.
+    suppressed_diagnostics: Vec<Arc<DiagnosticsContext>>,
+    /// The most recently suppressed page, retained as a template so that if the
+    /// child drains while `suppressed_diagnostics` is still non-empty (i.e. the
+    /// skip consumed the very last backend page without a terminal marker) the
+    /// accumulated charge/diagnostics can still be flushed as a final empty
+    /// page rather than being dropped. `Vec<u8>` is the trimmed (empty) body.
+    pending_flush: Option<(CosmosResponse, Vec<u8>)>,
 }
 
 impl SkipTake {
     /// Wraps `child`, skipping `skip` documents then taking up to `take`
-    /// (`None` = all remaining).
-    pub(crate) fn new(child: Box<dyn PipelineNode>, skip: u64, take: Option<u64>) -> Self {
+    /// (`None` = all remaining). `stage` records whether the window came from
+    /// `TOP` or `OFFSET`/`LIMIT` for continuation-token validation.
+    pub(crate) fn new(
+        child: Box<dyn PipelineNode>,
+        skip: u64,
+        take: Option<u64>,
+        stage: SkipTakeStage,
+    ) -> Self {
         Self {
             child,
+            stage,
             remaining_skip: skip,
             remaining_take: take,
             exhausted: false,
+            suppressed_charge: RequestCharge::default(),
+            suppressed_diagnostics: Vec::new(),
+            pending_flush: None,
         }
     }
 
-    /// Rebuilds a response around a trimmed body, preserving status,
-    /// diagnostics, and headers (with `x-ms-item-count` updated to `emitted`).
-    fn rebuild(response: &CosmosResponse, body: Vec<u8>, emitted: u64) -> CosmosResponse {
+    /// Rebuilds a response around a trimmed body, preserving status and headers
+    /// (with `x-ms-item-count` updated to `emitted`), and folding in any request
+    /// charge and diagnostics accumulated from suppressed (fully-skipped) pages.
+    fn rebuild(
+        &mut self,
+        response: &CosmosResponse,
+        body: Vec<u8>,
+        emitted: u64,
+    ) -> CosmosResponse {
         let mut headers = response.headers().clone();
         headers.item_count = Some(emitted as u32);
-        CosmosResponse::new(body, headers, response.status(), response.diagnostics())
+        // Fold RUs charged by fully-skipped pages into this public page so the
+        // billed total is not under-reported.
+        if self.suppressed_charge != RequestCharge::default() {
+            let base = headers.request_charge.unwrap_or_default();
+            headers.request_charge = Some(base + self.suppressed_charge);
+        }
+        let rebuilt = CosmosResponse::new(body, headers, response.status(), response.diagnostics());
+        // Prepend the suppressed pages' diagnostics (they happened before this
+        // page) so request counts and per-request diagnostics are complete.
+        let merged = rebuilt.with_aggregated_prior_diagnostics(&self.suppressed_diagnostics);
+        self.clear_suppressed();
+        merged
+    }
+
+    /// Accumulates a fully-skipped page's request charge and diagnostics, and
+    /// retains it as the flush template (see [`pending_flush`](Self::pending_flush)).
+    fn suppress(&mut self, response: CosmosResponse, empty_body: Vec<u8>) {
+        self.suppressed_charge =
+            self.suppressed_charge + response.headers().request_charge.unwrap_or_default();
+        self.suppressed_diagnostics.push(response.diagnostics());
+        self.pending_flush = Some((response, empty_body));
+    }
+
+    /// Clears the suppressed-page accumulators after they have been surfaced.
+    fn clear_suppressed(&mut self) {
+        self.suppressed_charge = RequestCharge::default();
+        self.suppressed_diagnostics.clear();
+        self.pending_flush = None;
+    }
+
+    /// Emits a final empty page carrying the accumulated suppressed charge and
+    /// diagnostics, or `None` if nothing is pending. Used when the child drains
+    /// without ever surfacing a terminal page for the fully-skipped tail.
+    fn flush_suppressed(&mut self) -> Option<PageResult> {
+        let (template, body) = self.pending_flush.take()?;
+        // `suppressed_diagnostics` already contains every suppressed page's
+        // diagnostics (including this template's), so aggregate them directly
+        // rather than re-using the template's own diagnostics as a base.
+        let diagnostics =
+            DiagnosticsContext::aggregate_sub_operations(&self.suppressed_diagnostics)
+                .map(Arc::new)
+                .unwrap_or_else(|| template.diagnostics());
+        let mut headers = template.headers().clone();
+        headers.item_count = Some(0);
+        headers.request_charge = Some(self.suppressed_charge);
+        let response = CosmosResponse::new(body, headers, template.status(), diagnostics);
+        self.clear_suppressed();
+        Some(PageResult::Page {
+            response,
+            is_terminal: true,
+        })
     }
 }
 
@@ -71,6 +162,12 @@ impl PipelineNode for SkipTake {
             match self.child.next_page(context).await? {
                 PageResult::Drained => {
                     self.exhausted = true;
+                    // If the skip consumed the final backend page(s) without a
+                    // terminal marker, surface their RU/diagnostics as a final
+                    // empty page rather than dropping them.
+                    if let Some(flushed) = self.flush_suppressed() {
+                        return Ok(flushed);
+                    }
                     return Ok(PageResult::Drained);
                 }
                 PageResult::SplitRequired { replacement_nodes } => {
@@ -114,8 +211,11 @@ impl PipelineNode for SkipTake {
 
                     // Suppress a page that was fully consumed by the outstanding
                     // skip and is not the child's last page — pull the next page
-                    // instead of surfacing an empty intermediate page.
+                    // instead of surfacing an empty intermediate page. Retain the
+                    // page's RU/diagnostics so the next emitted page accounts for
+                    // them.
                     if outcome.emitted == 0 && !terminal {
+                        self.suppress(response, outcome.body);
                         continue;
                     }
 
@@ -123,7 +223,7 @@ impl PipelineNode for SkipTake {
                         self.exhausted = true;
                     }
 
-                    let new_response = Self::rebuild(&response, outcome.body, outcome.emitted);
+                    let new_response = self.rebuild(&response, outcome.body, outcome.emitted);
                     return Ok(PageResult::Page {
                         response: new_response,
                         is_terminal: terminal,
@@ -144,6 +244,7 @@ impl PipelineNode for SkipTake {
             return Ok(PipelineNodeState::Drained);
         }
         Ok(PipelineNodeState::SkipTake {
+            stage: self.stage,
             remaining_skip: self.remaining_skip,
             remaining_take: self.remaining_take,
             child: Box::new(self.child.snapshot_state()?),
@@ -222,7 +323,7 @@ mod tests {
             // If SkipTake pulled again this would be returned, but it must not.
             Ok(PageResult::Drained),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 0, Some(2));
+        let mut node = SkipTake::new(Box::new(child), 0, Some(2), SkipTakeStage::Top);
         assert_eq!(drain_ids(&mut node).await, vec![1, 2]);
     }
 
@@ -235,7 +336,7 @@ mod tests {
             Ok(PageResult::Drained),
         ]);
         // Skip 3, take rest → 4,5,6.
-        let mut node = SkipTake::new(Box::new(child), 3, None);
+        let mut node = SkipTake::new(Box::new(child), 3, None, SkipTakeStage::OffsetLimit);
         assert_eq!(drain_ids(&mut node).await, vec![4, 5, 6]);
     }
 
@@ -248,7 +349,7 @@ mod tests {
             Ok(PageResult::Drained),
         ]);
         // OFFSET 1 LIMIT 3 → 2,3,4.
-        let mut node = SkipTake::new(Box::new(child), 1, Some(3));
+        let mut node = SkipTake::new(Box::new(child), 1, Some(3), SkipTakeStage::OffsetLimit);
         assert_eq!(drain_ids(&mut node).await, vec![2, 3, 4]);
     }
 
@@ -259,14 +360,14 @@ mod tests {
             page_result(&[3], true),
             Ok(PageResult::Drained),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 10, Some(5));
+        let mut node = SkipTake::new(Box::new(child), 10, Some(5), SkipTakeStage::OffsetLimit);
         assert_eq!(drain_ids(&mut node).await, Vec::<u64>::new());
     }
 
     #[tokio::test]
     async fn snapshot_reports_progress_then_drained() {
         let child = MockLeaf::with_pages(vec![page_result(&[1, 2, 3, 4], false)]);
-        let mut node = SkipTake::new(Box::new(child), 1, Some(2));
+        let mut node = SkipTake::new(Box::new(child), 1, Some(2), SkipTakeStage::OffsetLimit);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -297,7 +398,7 @@ mod tests {
             page_result(&[1, 2], false),
             page_result(&[3, 4], false),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 1, Some(5));
+        let mut node = SkipTake::new(Box::new(child), 1, Some(5), SkipTakeStage::OffsetLimit);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -305,14 +406,82 @@ mod tests {
         let _ = node.next_page(&mut context).await.unwrap(); // emits id 2
         match node.snapshot_state().unwrap() {
             PipelineNodeState::SkipTake {
+                stage,
                 remaining_skip,
                 remaining_take,
                 ..
             } => {
+                assert_eq!(stage, SkipTakeStage::OffsetLimit);
                 assert_eq!(remaining_skip, 0);
                 assert_eq!(remaining_take, Some(4));
             }
             other => panic!("expected SkipTake snapshot, got {other:?}"),
+        }
+    }
+
+    /// Builds a query-page response body/charge pair for the RU-accounting tests.
+    fn charged_page(ids: &[u64], is_terminal: bool, ru: f64) -> crate::error::Result<PageResult> {
+        Ok(PageResult::Page {
+            response: response_with_charge(&page_body(ids), ru),
+            is_terminal,
+        })
+    }
+
+    fn request_charge_of(response: &CosmosResponse) -> f64 {
+        response
+            .headers()
+            .request_charge
+            .expect("response should carry a request charge")
+            .value()
+    }
+
+    #[tokio::test]
+    async fn suppressed_pages_request_charge_is_folded_into_next_page() {
+        // OFFSET 3 fully consumes the first two (non-terminal) pages, which are
+        // suppressed; their RU must not be dropped but folded into the first
+        // emitted page. Charges: 3.0 + 5.0 (skipped) + 7.0 (emitted) = 15.0.
+        let child = MockLeaf::with_pages(vec![
+            charged_page(&[1, 2], false, 3.0),
+            charged_page(&[3], false, 5.0),
+            charged_page(&[4, 5], true, 7.0),
+            Ok(PageResult::Drained),
+        ]);
+        let mut node = SkipTake::new(Box::new(child), 3, None, SkipTakeStage::OffsetLimit);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        let page = node.next_page(&mut context).await.unwrap();
+        match page {
+            PageResult::Page { response, .. } => {
+                assert_eq!(ids_of(&response), vec![4, 5]);
+                assert_eq!(request_charge_of(&response), 15.0);
+            }
+            other => panic!("expected page, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn suppressed_terminal_empty_page_reports_accumulated_charge() {
+        // OFFSET past the end: every page is fully skipped. The terminal empty
+        // page must still surface the summed RU (2.0 + 4.0 = 6.0).
+        let child = MockLeaf::with_pages(vec![
+            charged_page(&[1, 2], false, 2.0),
+            charged_page(&[3], true, 4.0),
+            Ok(PageResult::Drained),
+        ]);
+        let mut node = SkipTake::new(Box::new(child), 10, None, SkipTakeStage::OffsetLimit);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        let page = node.next_page(&mut context).await.unwrap();
+        match page {
+            PageResult::Page { response, .. } => {
+                assert_eq!(ids_of(&response), Vec::<u64>::new());
+                assert_eq!(request_charge_of(&response), 6.0);
+            }
+            other => panic!("expected page, got {other:?}"),
         }
     }
 }

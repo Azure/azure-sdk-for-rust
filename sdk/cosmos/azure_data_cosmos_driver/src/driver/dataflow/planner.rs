@@ -21,8 +21,8 @@ use super::{
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan},
     DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, RangedToken,
-    Request, RequestTarget, ResolvedRange, SequentialDrain, SkipTake, TopologyProvider,
-    UnorderedMerge,
+    Request, RequestTarget, ResolvedRange, SequentialDrain, SkipTake, SkipTakeStage,
+    TopologyProvider, UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -155,16 +155,38 @@ pub(crate) async fn build_sequential_drain(
     let query_info = query_plan.query_info.as_ref();
     let mut skip = query_info.and_then(|info| info.offset).unwrap_or(0);
     let mut take = query_info.and_then(combine_take);
+    // Which SQL construct the *query plan* produced (`TOP` vs `OFFSET`/`LIMIT`),
+    // used to validate a resumed continuation's shape below.
+    let plan_stage = query_info.and_then(skip_take_stage);
 
     // A `SkipTake` continuation wraps the fan-out snapshot; peel it so the saved
     // remaining window overrides the plan and the inner child drives the
     // fan-out resume below.
     let inner_resume = match resume {
         Some(PipelineNodeState::SkipTake {
+            stage: token_stage,
             remaining_skip,
             remaining_take,
             child,
         }) => {
+            // `TOP` and `OFFSET`/`LIMIT` share counter logic but are distinct
+            // query features (#4750) with distinct continuation contracts. A
+            // token produced by one must not resume the other, so reject a
+            // stage mismatch (including a skip/take token resumed against a
+            // query that has no skip/take) instead of returning wrong results.
+            if plan_stage != Some(token_stage) {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+                    )
+                    .with_message(format!(
+                        "continuation token was produced by a {} query but was resumed against \
+                         a {} query",
+                        skip_take_stage_label(Some(token_stage)),
+                        skip_take_stage_label(plan_stage),
+                    ))
+                    .build());
+            }
             skip = remaining_skip;
             take = remaining_take;
             Some(*child)
@@ -233,7 +255,11 @@ pub(crate) async fn build_sequential_drain(
     // fan-out's EPK-ordered stream. When none is present the fan-out is the
     // pipeline root directly.
     let root: Box<dyn PipelineNode> = if needs_skip_take {
-        Box::new(SkipTake::new(fanout, skip, take))
+        // `needs_skip_take` is derived from the offset/limit/top that also
+        // determine `plan_stage`, so it is always `Some` here; default
+        // defensively rather than panicking.
+        let stage = plan_stage.unwrap_or(SkipTakeStage::OffsetLimit);
+        Box::new(SkipTake::new(fanout, skip, take, stage))
     } else {
         fanout
     };
@@ -871,6 +897,32 @@ fn combine_take(info: &QueryInfo) -> Option<u64> {
     }
 }
 
+/// Classifies which SQL construct produced a query plan's skip/take window, or
+/// `None` if the plan has no `OFFSET`/`LIMIT`/`TOP`.
+///
+/// `OFFSET`/`LIMIT` takes precedence over `TOP`: the two are mutually exclusive
+/// in the Cosmos SQL grammar, and the presence of an offset or limit
+/// unambiguously identifies the `OFFSET`/`LIMIT` continuation shape.
+fn skip_take_stage(info: &QueryInfo) -> Option<SkipTakeStage> {
+    if info.offset.is_some() || info.limit.is_some() {
+        Some(SkipTakeStage::OffsetLimit)
+    } else if info.top.is_some() {
+        Some(SkipTakeStage::Top)
+    } else {
+        None
+    }
+}
+
+/// Human-readable label for a [`SkipTakeStage`] used in continuation-token
+/// mismatch errors.
+fn skip_take_stage_label(stage: Option<SkipTakeStage>) -> &'static str {
+    match stage {
+        Some(SkipTakeStage::Top) => "TOP",
+        Some(SkipTakeStage::OffsetLimit) => "OFFSET/LIMIT",
+        None => "non-skip/take",
+    }
+}
+
 /// Returns `operation` with its query text replaced by the plan's
 /// `rewrittenQuery`, if the plan provides a non-empty one.
 ///
@@ -946,7 +998,10 @@ mod tests {
 
     use super::*;
     use crate::{
-        driver::dataflow::{mocks::*, query_plan::QueryRange, RangedToken, ResolvedRange},
+        driver::dataflow::{
+            mocks::*, query_plan::QueryRange, PageResult, PipelineContext, RangedToken,
+            ResolvedRange,
+        },
         models::{
             effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
             ContainerReference, DatabaseReference, ItemReference, OperationType, PartitionKey,
@@ -1388,6 +1443,73 @@ mod tests {
             .unwrap();
         // The fan-out is the pipeline root directly (no SkipTake wrapper).
         assert_drain_requests(pipeline, &[("", "FF", "pkrange-a")]);
+    }
+
+    #[tokio::test]
+    async fn skip_take_continuation_rejects_stage_mismatch() {
+        // Plan is an OFFSET/LIMIT query, but the continuation token was produced
+        // by a TOP query. Resuming it must be rejected rather than silently
+        // producing wrong results.
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                offset: Some(2),
+                limit: Some(5),
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")])]);
+
+        let resume = PipelineNodeState::SkipTake {
+            stage: SkipTakeStage::Top,
+            remaining_skip: 0,
+            remaining_take: Some(3),
+            child: Box::new(PipelineNodeState::Drained),
+        };
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect_err("resuming a TOP token against an OFFSET/LIMIT query must fail");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+            "expected SHAPE_MISMATCH for TOP-vs-OFFSET/LIMIT continuation; got {err:?}",
+        );
+    }
+
+    #[tokio::test]
+    async fn skip_take_continuation_accepts_matching_stage() {
+        // A matching-stage continuation (OFFSET/LIMIT token, OFFSET/LIMIT query)
+        // resumes without error. The `Drained` child yields a drained pipeline.
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                offset: Some(2),
+                limit: Some(5),
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")])]);
+
+        let resume = PipelineNodeState::SkipTake {
+            stage: SkipTakeStage::OffsetLimit,
+            remaining_skip: 1,
+            remaining_take: Some(3),
+            child: Box::new(PipelineNodeState::Drained),
+        };
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect("matching-stage continuation should resume");
+        // The saved child was `Drained`, so the resumed pipeline is drained.
+        let mut root = pipeline.into_root();
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        assert!(matches!(
+            root.next_page(&mut context).await.unwrap(),
+            PageResult::Drained
+        ));
     }
 
     #[tokio::test]

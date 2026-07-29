@@ -3239,6 +3239,14 @@ fn local_query_info_to_dataflow(
 /// `Some(String::new())` (no rewrite) if the query carries no `OFFSET` token,
 /// which shouldn't happen for a plan whose `LocalQueryInfo` reports a limit.
 ///
+/// Only the *outer* trailing `OFFSET` clause is rewritten: the grammar places it
+/// after any `SELECT`/`WHERE`/`ORDER BY` at bracket depth zero, so a `SELECT`
+/// list containing a subquery with its own `OFFSET`/`LIMIT` (e.g.
+/// `SELECT (SELECT VALUE x FROM x OFFSET 1 LIMIT 2) ... OFFSET 5 LIMIT 10`) is
+/// left intact. We therefore track parenthesis / bracket / brace nesting and
+/// select the *last* `OFFSET` token seen at depth zero rather than the first
+/// token anywhere.
+///
 /// NOTE (convergence): when the streaming `ORDER BY` work lands, an
 /// `ORDER BY ... OFFSET ... LIMIT` query will need both this rewrite and the
 /// order-by envelope; today the driver rejects cross-partition `ORDER BY`
@@ -3251,7 +3259,27 @@ fn synthesize_offset_limit_rewritten_query(
     use crate::query::lexer::{Lexer, TokenKind};
 
     let tokens = Lexer::tokenize(original_query);
-    let Some(offset_idx) = tokens.iter().position(|t| t.kind == TokenKind::Offset) else {
+    let mut depth: u32 = 0;
+    let mut outer_offset_idx: Option<usize> = None;
+    for (idx, token) in tokens.iter().enumerate() {
+        match token.kind {
+            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => depth += 1,
+            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
+                depth = depth.saturating_sub(1);
+            }
+            TokenKind::Offset if depth == 0 => {
+                // Skip an `OFFSET` that is really a property access such as
+                // `c.offset`; the keyword only starts a clause when it is not
+                // immediately preceded by a member-access dot.
+                let is_property_access = idx > 0 && tokens[idx - 1].kind == TokenKind::Dot;
+                if !is_property_access {
+                    outer_offset_idx = Some(idx);
+                }
+            }
+            _ => {}
+        }
+    }
+    let Some(offset_idx) = outer_offset_idx else {
         return Some(String::new());
     };
     let prefix = original_query[..tokens[offset_idx].span.start].trim_end();
@@ -5517,6 +5545,36 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn synthesize_rewrite_replaces_trailing_offset_limit() {
+        let rewritten =
+            synthesize_offset_limit_rewritten_query("SELECT * FROM c OFFSET 5 LIMIT 10", 5, 10)
+                .unwrap();
+        assert_eq!(rewritten, "SELECT * FROM c OFFSET 0 LIMIT 15");
+    }
+
+    #[test]
+    fn synthesize_rewrite_ignores_property_named_offset() {
+        // `c.offset` is a property path, not the OFFSET keyword; without a
+        // trailing OFFSET clause the query is returned untouched (empty rewrite).
+        let rewritten =
+            synthesize_offset_limit_rewritten_query("SELECT c.offset FROM c", 0, 3).unwrap();
+        assert_eq!(rewritten, "");
+    }
+
+    #[test]
+    fn synthesize_rewrite_targets_outer_offset_not_nested_subquery() {
+        // The SELECT list contains a subquery with its own OFFSET/LIMIT. Only the
+        // outer trailing clause (at bracket depth zero) must be rewritten; the
+        // nested subquery's OFFSET/LIMIT must survive verbatim.
+        let query = "SELECT (SELECT VALUE x FROM x OFFSET 1 LIMIT 2) AS s FROM c OFFSET 5 LIMIT 10";
+        let rewritten = synthesize_offset_limit_rewritten_query(query, 5, 10).unwrap();
+        assert_eq!(
+            rewritten,
+            "SELECT (SELECT VALUE x FROM x OFFSET 1 LIMIT 2) AS s FROM c OFFSET 0 LIMIT 15"
+        );
+    }
 
     fn document_item(epk: &str, id: &str) -> DocumentFeedItem {
         DocumentFeedItem {

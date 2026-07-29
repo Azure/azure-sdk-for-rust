@@ -82,16 +82,41 @@ pub(crate) enum PipelineNodeState {
     /// A global skip/take (`OFFSET` / `LIMIT` / `TOP`) applied over a single
     /// child pipeline.
     ///
+    /// `stage` records which SQL construct produced the window so a
+    /// continuation can only be resumed against a query of the same shape:
+    /// `TOP` and `OFFSET`/`LIMIT` share the same counter logic but are distinct
+    /// query features (#4750), and the planner rejects a token whose `stage`
+    /// does not match the resumed query plan.
+    ///
     /// `remaining_skip` and `remaining_take` are the still-unsatisfied portions
     /// of the window at snapshot time (`remaining_take = None` = unbounded).
     /// `child` is the wrapped fan-out node's own snapshot, so resume rebuilds
     /// the child and re-wraps it with the remaining window.
     SkipTake {
+        stage: SkipTakeStage,
         remaining_skip: u64,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         remaining_take: Option<u64>,
         child: Box<PipelineNodeState>,
     },
+}
+
+/// Distinguishes the SQL construct that produced a
+/// [`PipelineNodeState::SkipTake`] window.
+///
+/// `TOP n` and `OFFSET x LIMIT y` share the same global skip/take counter
+/// logic, but they are separate query features (#4750) with separate
+/// continuation contracts. Serializing the stage into the continuation token
+/// lets the planner reject a `TOP` continuation that is resumed against an
+/// `OFFSET`/`LIMIT` query (or vice versa) instead of silently producing wrong
+/// results.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum SkipTakeStage {
+    /// `TOP n` — a global take with no skip.
+    Top,
+    /// `OFFSET x LIMIT y`, including a bare `OFFSET` or a bare `LIMIT`.
+    OffsetLimit,
 }
 
 /// One entry in a [`PipelineNodeState::SequentialDrain`] `active_tokens`
