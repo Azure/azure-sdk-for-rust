@@ -40,7 +40,12 @@ serde_json.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
-default = ["fe2o3_amqp", "fe2o3-amqp/native-tls", "websockets_rustls"]
+default = [
+  "fe2o3_amqp",
+  "fe2o3_amqp_native_tls",
+  "fe2o3_amqp_ws",
+  "fe2o3_amqp_ws_rustls",
+]
 ffi = []
 test = []
 fe2o3_amqp = [
@@ -53,22 +58,29 @@ fe2o3_amqp = [
   "serde_bytes",
   "azure_core/tokio",
 ]
-# AMQP over WebSockets, in two flavors that differ only in the TLS stack.
-# `fe2o3-amqp-ws` puts its connect entry point behind its own TLS features, so
-# this crate forwards one of them and offers both stacks. Enable one of these.
-# `websockets_rustls` is the default and matches the TLS stack in `sdk/core`:
+# The TLS stack for AMQP framed directly on TCP (`amqps://`, port 5671).
+# `fe2o3_amqp` is the base, and this feature adds the stack, in the same shape as
+# the WebSocket features below. native-tls is the only choice, because the rustls
+# backend of `fe2o3-amqp` 0.14 pulls in `ring`, which `deny.toml` bans (#4189).
+fe2o3_amqp_native_tls = ["fe2o3_amqp", "fe2o3-amqp/native-tls"]
+# AMQP over WebSockets. The base `fe2o3_amqp_ws` feature turns on the transport
+# code and the `fe2o3-amqp-ws` dependency, and it does not select a TLS stack.
+# Add one of the two modifier features to select a stack. This is the shape that
+# `azure_core` uses for HTTP, where `reqwest` is the base and `reqwest_rustls`
+# adds the TLS stack.
+# `fe2o3_amqp_ws_rustls` is the default and matches the TLS stack in `sdk/core`:
 # rustls with the aws-lc-rs provider. The direct `rustls` dependency selects
 # that provider, because `fe2o3-amqp-ws` takes rustls without default features.
-# Enabling both flavors is allowed; `fe2o3-amqp-ws` then uses native-tls.
-websockets_rustls = [
-  "fe2o3_amqp",
-  "dep:fe2o3-amqp-ws",
+# The features are additive, so both modifiers can be on at the same time.
+# `fe2o3-amqp-ws` then uses native-tls, and the connection logs a warning.
+fe2o3_amqp_ws = ["fe2o3_amqp", "dep:fe2o3-amqp-ws"]
+fe2o3_amqp_ws_rustls = [
+  "fe2o3_amqp_ws",
   "fe2o3-amqp-ws/rustls-tls-native-roots",
   "dep:rustls",
 ]
-websockets_native_tls = [
-  "fe2o3_amqp",
-  "dep:fe2o3-amqp-ws",
+fe2o3_amqp_ws_native_tls = [
+  "fe2o3_amqp_ws",
   "fe2o3-amqp-ws/native-tls",
 ]
 
@@ -76,4 +88,4 @@ websockets_native_tls = [
 workspace = true
 
 [package.metadata.docs.rs]
-features = ["fe2o3_amqp", "websockets_rustls"]
+features = ["fe2o3_amqp", "fe2o3_amqp_ws", "fe2o3_amqp_ws_rustls"]
