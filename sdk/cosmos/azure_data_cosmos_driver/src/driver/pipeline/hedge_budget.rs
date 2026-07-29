@@ -20,7 +20,8 @@
 //! # Scope
 //!
 //! Only the **metadata** pipeline is budgeted today; data-plane hedging is
-//! admitted unconditionally.
+//! admitted unconditionally. Extending the budget to the data plane is tracked
+//! by <https://github.com/Azure/azure-sdk-for-rust/issues/4916>.
 //!
 //! The counter tracks hedge *races*, not spawned alternate legs — a permit is
 //! taken when an operation enters the race and released when the race ends, so
@@ -32,7 +33,12 @@
 //! concurrency scales with application throughput, so a race-scoped cap would
 //! refuse hedges to clients that were never going to spawn a leg at all.
 //! Bounding data-plane amplification needs leg-scoped accounting inside the
-//! race, which is a larger change to the hedge state machine.
+//! race, which is a larger change to the hedge state machine: a refused
+//! secondary has no representation in [`HedgedRaceResult`], whose
+//! `BothTransient` variant means "this race consumed two regions" and would
+//! skip a healthy region if returned after only the primary was tried.
+//!
+//! [`HedgedRaceResult`]: super::operation_pipeline::HedgedRaceResult
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
