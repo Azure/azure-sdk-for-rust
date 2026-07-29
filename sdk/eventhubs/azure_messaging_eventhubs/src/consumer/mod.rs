@@ -610,9 +610,9 @@ pub mod builders {
             sas_credential::SasCredential,
             SAS_TOKEN_TYPE,
         },
-        models::TransportType,
         Result,
     };
+    use azure_core_amqp::AmqpTransport;
     use std::sync::Arc;
 
     /// A builder for creating a [`ConsumerClient`].
@@ -640,7 +640,7 @@ pub mod builders {
         instance_id: Option<String>,
         retry_options: Option<RetryOptions>,
         custom_endpoint: Option<String>,
-        transport_type: Option<TransportType>,
+        transport: Option<AmqpTransport>,
     }
 
     impl ConsumerClientBuilder {
@@ -716,22 +716,22 @@ pub mod builders {
         /// Sets the transport used to communicate with the Event Hub.
         ///
         /// # Arguments
-        /// * `transport_type` - The transport to use. Defaults to
-        ///   [`TransportType::AmqpTcp`]. Use [`TransportType::AmqpWebSocket`]
-        ///   to tunnel AMQP over WebSockets (port 443) when the native AMQP
+        /// * `transport` - The transport to use. Defaults to
+        ///   [`AmqpTransport::Tcp`]. Use [`AmqpTransport::WebSocket`] to
+        ///   tunnel AMQP over WebSockets (port 443) when the native AMQP
         ///   ports are blocked.
         ///
         /// # Returns
         /// The updated [`ConsumerClientBuilder`].
-        pub fn with_transport_type(mut self, transport_type: TransportType) -> Self {
-            self.transport_type = Some(transport_type);
+        pub fn with_transport(mut self, transport: AmqpTransport) -> Self {
+            self.transport = Some(transport);
             self
         }
 
         /// Returns the AMQP transport this builder opens the connection with.
         /// Shared by every `open` path so they cannot drift apart.
         pub(crate) fn transport(&self) -> AmqpTransport {
-            self.transport_type.unwrap_or_default().into()
+            self.transport.unwrap_or_default()
         }
 
         /// Opens a connection to the Event Hub.
@@ -876,7 +876,6 @@ pub mod builders {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use crate::models::TransportType;
     use crate::{
         common::tests::force_errors, models::EventData, ConsumerClient, EventDataBatchOptions,
         ProducerClient, Result, StartLocation, StartPosition,
@@ -893,20 +892,20 @@ pub(crate) mod tests {
     // Every `open` path on the builder reads the transport through one helper,
     // so this covers the plumbing that the connection-string path shares.
     #[test]
-    fn builder_maps_the_transport_type() {
+    fn builder_reads_the_transport_through_one_helper() {
         assert_eq!(
             ConsumerClient::builder()
-                .with_transport_type(TransportType::AmqpWebSocket)
+                .with_transport(AmqpTransport::WebSocket)
                 .transport(),
             AmqpTransport::WebSocket
         );
         assert_eq!(
             ConsumerClient::builder()
-                .with_transport_type(TransportType::AmqpTcp)
+                .with_transport(AmqpTransport::Tcp)
                 .transport(),
             AmqpTransport::Tcp
         );
-        // An unset transport type keeps the TCP default.
+        // An unset transport keeps the TCP default.
         assert_eq!(ConsumerClient::builder().transport(), AmqpTransport::Tcp);
     }
     use tracing::info;
