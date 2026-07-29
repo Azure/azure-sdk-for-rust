@@ -18,6 +18,8 @@
 
 ### Other Changes
 
+- Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and length-bounded, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
+
 ## 0.37.1 (2026-07-23)
 
 ### Bugs Fixed
