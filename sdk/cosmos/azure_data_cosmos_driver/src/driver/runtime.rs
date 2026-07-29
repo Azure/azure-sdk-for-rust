@@ -3,7 +3,7 @@
 
 //! Cosmos DB driver runtime environment.
 
-use azure_core::http::{headers::HeaderValue, ClientOptions};
+use azure_core::http::ClientOptions;
 use std::{
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -11,7 +11,6 @@ use std::{
     },
     time::Duration,
 };
-use uuid::Uuid;
 
 use crate::{
     diagnostics::ProxyConfiguration,
@@ -132,9 +131,6 @@ pub struct CosmosDriverRuntime {
     /// Stored as an `Arc` so drivers without a per-driver UA override can clone
     /// it cheaply and stamp requests with the same shared value.
     user_agent: Arc<UserAgent>,
-
-    /// Stable SDK-generated identifier shared by every driver in this runtime.
-    client_id: HeaderValue,
 
     /// Workload identifier for resource governance (1-50 if set).
     workload_id: Option<WorkloadId>,
@@ -308,11 +304,6 @@ impl CosmosDriverRuntime {
     /// instead of recomputing the User-Agent.
     pub fn user_agent(&self) -> &Arc<UserAgent> {
         &self.user_agent
-    }
-
-    /// Returns the client identifier shared by drivers created from this runtime.
-    pub(crate) fn client_id(&self) -> &HeaderValue {
-        &self.client_id
     }
 
     /// Returns the workload identifier.
@@ -707,7 +698,6 @@ impl CosmosDriverRuntimeBuilder {
             env_override_operation_options: Arc::new(OperationOptions::from_env_override()),
             operation_options: RwLock::new(Arc::new(self.operation_options.unwrap_or_default())),
             user_agent,
-            client_id: HeaderValue::from(Uuid::new_v4().to_string()),
             workload_id: self.workload_id,
             correlation_id: self.correlation_id,
             user_agent_suffix: self.user_agent_suffix,

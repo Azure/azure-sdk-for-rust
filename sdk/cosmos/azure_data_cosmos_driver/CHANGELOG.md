@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosDriverRuntime` and is shared by drivers using that runtime, including metadata, retry, hedge, probe, and Gateway 2.0 outer HTTP requests. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
+- Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosDriver`, including metadata, retry, hedge, probe, and Gateway 2.0 outer HTTP requests. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
 - Added a schema-agnostic Cosmos binary JSON codec (`binary_json`) and driver-side binary encoding via `OperationOptions.binary_encoding` (`BinaryEncodingOptions`). When enabled, the driver transcodes item request/response bodies between text and Cosmos binary JSON and negotiates the wire format; it is honored only for point `Document` item operations. Off by default and inert on the wire when unset. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
 
 ### Breaking Changes

@@ -258,7 +258,7 @@ fn is_account_properties_request(snap: &RequestSnapshot) -> bool {
 }
 
 #[tokio::test]
-async fn runtime_client_id_is_stable_across_observed_request_paths() {
+async fn client_id_is_stable_across_observed_request_paths() {
     let observer = RecordingObserver::new();
     let emulator = build_emulator(observer.clone());
 
@@ -310,7 +310,7 @@ async fn runtime_client_id_is_stable_across_observed_request_paths() {
         .collect();
     assert!(
         mismatched.is_empty(),
-        "every request from one CosmosRuntime must carry the same client ID; mismatched: {mismatched:?}"
+        "every request from one CosmosClient must carry the same client ID; mismatched: {mismatched:?}"
     );
 }
 

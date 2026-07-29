@@ -36,7 +36,7 @@ use super::{
     infer_request_sent_status,
     request_signing::sign_request,
     sharded_transport::EndpointKey,
-    unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2_moving_client_id, WrapInputs,
+    unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2, WrapInputs,
 };
 
 use crate::driver::pipeline::components::{
@@ -324,7 +324,7 @@ pub(crate) async fn execute_transport_pipeline(
                 account_name: ctx.account_name.as_deref(),
                 collection_rid: ctx.collection_rid.as_deref(),
             };
-            match wrap_request_for_gateway_v2_moving_client_id(&mut http_request, &wrap_inputs) {
+            match wrap_request_for_gateway_v2(http_request, &wrap_inputs) {
                 Ok(wrapped_request) => http_request = wrapped_request,
                 Err(e) => {
                     let cosmos_err = crate::error::CosmosError::builder()
