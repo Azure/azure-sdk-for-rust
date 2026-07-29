@@ -18,6 +18,8 @@ pub mod excluded_regions_fallback;
 pub mod hedging;
 pub mod host_recorder;
 pub mod metadata_hedging;
+#[cfg(feature = "fault_injection")]
+pub mod metadata_hedging_stress;
 pub mod multi_region;
 pub mod offers;
 pub mod point_operations;
