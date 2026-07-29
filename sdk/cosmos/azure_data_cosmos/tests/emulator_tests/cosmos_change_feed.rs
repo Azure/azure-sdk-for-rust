@@ -1018,6 +1018,15 @@ pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<()
                 "expected BadRequest (400) for AVAD + PointInTime, got {:?}",
                 err.status().status_code()
             );
+            // An account without the full-fidelity change feed enabled also answers
+            // 400, which would let this test pass for the wrong reason. Reject that
+            // case explicitly so provisioning gaps surface here instead of hiding.
+            let message = err.to_string();
+            assert!(
+                !message.contains("must be enabled"),
+                "the 400 came from the account lacking AllVersionsAndDeletes support, \
+                 not from rejecting PointInTime: {message}"
+            );
 
             Ok(())
         },

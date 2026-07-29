@@ -6,7 +6,7 @@ param enableAutomaticFailover bool = false
 @description('Flag to enable or disable multiple write locations on CosmosDB Account')
 param enableMultipleWriteLocations bool = false
 
-@description('Enable continuous backup mode, required to read the AllVersionsAndDeletes (full-fidelity) change feed. The retention window is then derived from the backup retention, so containers must not also set changeFeedPolicy.retentionDuration. Incompatible with multiple write locations.')
+@description('Enable the AllVersionsAndDeletes (full-fidelity) change feed. This turns on both continuous backup mode and the account-level full-fidelity change feed, which are both required. The retention window is then derived from the backup retention, so containers must not also set changeFeedPolicy.retentionDuration. Incompatible with multiple write locations.')
 param enableContinuousBackup bool = false
 
 @description('Dictates which tests run for this resource')
@@ -82,6 +82,10 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
     disableKeyBasedMetadataWriteAccess: false
     enableFreeTier: false
     enableAnalyticalStorage: false
+    // Required (together with continuous backup) for the AllVersionsAndDeletes change feed.
+    // ARM accepts this on 2023-04-15 even though the Bicep type index does not declare it.
+    #disable-next-line BCP037
+    enableFullFidelityChangeFeed: enableContinuousBackup
     databaseAccountOfferType: 'Standard'
     consistencyPolicy: {
       defaultConsistencyLevel: defaultConsistencyLevel
