@@ -814,8 +814,8 @@ impl RecoverableConnection {
     /// Builds the options handed to [`AmqpConnection::open`]. Kept separate from
     /// `create_connection` so the wiring can be asserted without a broker.
     fn connection_options(&self) -> AmqpConnectionOptions {
-        let options = AmqpConnectionOptions::default()
-            .with_properties(
+        AmqpConnectionOptions {
+            properties: Some(
                 vec![
                     ("user-agent", get_user_agent(&self.application_id)),
                     ("version", get_package_version()),
@@ -825,12 +825,11 @@ impl RecoverableConnection {
                 .into_iter()
                 .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
                 .collect(),
-            )
-            .with_desired_capabilities(vec![GEODR_REPLICATION_CAPABILITY.into()])
-            .with_transport(self.transport);
-        match self.custom_endpoint.clone() {
-            Some(custom_endpoint) => options.with_custom_endpoint(custom_endpoint),
-            None => options,
+            ),
+            desired_capabilities: Some(vec![GEODR_REPLICATION_CAPABILITY.into()]),
+            custom_endpoint: self.custom_endpoint.clone(),
+            transport: Some(self.transport),
+            ..Default::default()
         }
     }
 
