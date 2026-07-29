@@ -17,6 +17,7 @@ pub use distributed_transaction::{
     DistributedTransactionOperationResult, DistributedTransactionPatchOperationOptions,
     DistributedTransactionResponse, DistributedWriteTransaction,
 };
+#[cfg(feature = "control_plane")]
 pub use throughput_poller::ThroughputPoller;
 
 // =========================================================================
@@ -29,7 +30,9 @@ mod cosmos_client_builder;
 mod database_client;
 #[cfg(feature = "preview_dtx")]
 pub(crate) mod distributed_transaction;
+#[cfg(feature = "control_plane")]
 pub(crate) mod offers_client;
+#[cfg(feature = "control_plane")]
 mod throughput_poller;
 
 // =========================================================================
@@ -181,6 +184,7 @@ impl ClientContext {
     /// tracing and sampled logging still run. Zero-overhead no-op when no handler
     /// is registered: neither the error's diagnostics nor the operation context
     /// is materialized.
+    #[cfg(feature = "control_plane")]
     pub(crate) fn dispatch_error(
         &self,
         err: &crate::CosmosError,

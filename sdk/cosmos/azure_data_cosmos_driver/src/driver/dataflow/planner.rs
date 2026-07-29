@@ -18,13 +18,15 @@ use crate::{
         effective_partition_key::{normalized_epk_len, EffectivePartitionKey},
         CosmosOperation, FeedRange,
     },
+    options::PlanOptions,
 };
 
 use super::{
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan},
-    DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, RangedToken,
-    Request, RequestTarget, ResolvedRange, SequentialDrain, TopologyProvider, UnorderedMerge,
+    DrainedLeaf, OperationPlan, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState,
+    RangedToken, Request, RequestTarget, ResolvedRange, SequentialDrain, TopologyProvider,
+    UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -102,6 +104,44 @@ pub(crate) fn build_trivial_pipeline(
 
     let root = Request::new(operation, request_target, initial_continuation);
     Ok(Pipeline::new(Box::new(root)))
+}
+
+/// Wraps a built pipeline into an [`OperationPlan`], enforcing the maximum
+/// fan-out on fresh plans.
+///
+/// Every planning branch funnels through here so the fan-out limit is enforced
+/// uniformly regardless of the pipeline's shape. The check counts leaf request
+/// nodes via [`Pipeline::fan_out_width`] — each parent node contributes its own
+/// accounting, so this scales to any future pipeline shape.
+///
+/// The limit is enforced **only at initial plan time**. The check is skipped on
+/// resume (`is_fresh == false`), because a resumed plan already passed it when
+/// it was first created. It is also not a runtime cap: a partition that splits
+/// mid-execution may push the effective fan-out above the limit, and the
+/// operation keeps running rather than aborting.
+///
+/// Returns a [`CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
+/// error when a fresh plan exceeds [`PlanOptions::max_fan_out`].
+pub(crate) fn finalize_plan(
+    pipeline: Pipeline,
+    operation: Arc<CosmosOperation>,
+    is_fresh: bool,
+    plan_options: &PlanOptions,
+) -> crate::error::Result<OperationPlan> {
+    if is_fresh {
+        let width = pipeline.fan_out_width();
+        if width > plan_options.max_fan_out as usize {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
+                .with_message(format!(
+                    "operation fans out to {width} partitions, exceeding the maximum of {}; \
+                     raise max_fan_out (via FeedOptions) to run a broader cross-partition query",
+                    plan_options.max_fan_out
+                ))
+                .build());
+        }
+    }
+    Ok(OperationPlan::new(pipeline, operation))
 }
 
 /// Builds a fan-out [`Pipeline`] from a backend query plan as a sequential drain.
@@ -182,7 +222,9 @@ pub(crate) async fn build_sequential_drain(
         plan_fresh(query_plan, topology_provider, operation).await?
     };
 
-    // TODO: enforce max fan-out (default 100, configurable). See FEED_OPERATIONS_REQS.md §3.
+    // The max fan-out limit is enforced centrally in
+    // `CosmosDriver::plan_operation` via `Pipeline::fan_out_width`, so it
+    // applies uniformly to every pipeline shape and is not duplicated here.
 
     if request_nodes.is_empty() {
         // Resumed past every range that still has work: the pipeline is
@@ -261,6 +303,20 @@ pub(crate) async fn build_unordered_merge(
     } else {
         operation.change_feed_start().cloned()
     };
+
+    // Full-fidelity (AllVersionsAndDeletes) feeds must pin every range to a
+    // concrete starting continuation before the first checkpoint, so a range
+    // that is never polled can't resume from a stale `Now` and drop the
+    // versions/deletes in the gap. Priming is needed whenever no range has yet
+    // recorded a continuation: on a fresh start, and also on resume from a
+    // checkpoint taken *before* the first page was pulled (an empty token set).
+    // A fully drained resume arrives as `PipelineNodeState::Drained` and is
+    // handled earlier, so an empty `UnorderedMerge` token set here only ever
+    // means "nothing has been polled yet". A resume that already carries saved
+    // continuations must NOT prime: those ranges would re-poll from their real
+    // ETags and the discarded primed page would lose real data.
+    let prime_on_first_drain = operation.request_headers().full_fidelity_feed
+        && saved_tokens.as_ref().is_none_or(|tokens| tokens.is_empty());
 
     // On resume the operation rebuilt by the SDK no longer carries the original
     // start headers (the caller only passed the continuation token). Re-derive
@@ -345,7 +401,11 @@ pub(crate) async fn build_unordered_merge(
             .build());
     }
 
-    let root = Box::new(UnorderedMerge::new(request_nodes).with_start_marker(start_marker));
+    let root = Box::new(
+        UnorderedMerge::new(request_nodes)
+            .with_start_marker(start_marker)
+            .with_prime_on_first_drain(prime_on_first_drain),
+    );
     Ok(Pipeline::new(root))
 }
 
@@ -1244,6 +1304,61 @@ mod tests {
             pipeline,
             &[("", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
         );
+    }
+
+    // --- fan-out limit / finalize_plan tests ---
+
+    /// Builds a fresh two-partition sequential drain for the fan-out tests.
+    async fn two_partition_drain() -> Pipeline {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "80", "pkrange-left"),
+            rr("80", "FF", "pkrange-right"),
+        ])]);
+        build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn fan_out_width_sums_leaf_nodes() {
+        let pipeline = two_partition_drain().await;
+        assert_eq!(pipeline.fan_out_width(), 2);
+    }
+
+    #[tokio::test]
+    async fn finalize_plan_allows_fresh_plan_within_limit() {
+        let pipeline = two_partition_drain().await;
+        let op = Arc::new(cross_partition_query_operation());
+        let options = PlanOptions::default().with_max_fan_out(2);
+        finalize_plan(pipeline, op, true, &options).expect("plan at the limit should be allowed");
+    }
+
+    #[tokio::test]
+    async fn finalize_plan_rejects_fresh_plan_exceeding_limit() {
+        let pipeline = two_partition_drain().await;
+        let op = Arc::new(cross_partition_query_operation());
+        let options = PlanOptions::default().with_max_fan_out(1);
+        let err = match finalize_plan(pipeline, op, true, &options) {
+            Ok(_) => panic!("plan over the limit should be rejected"),
+            Err(err) => err,
+        };
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
+            "unexpected error: {err}",
+        );
+    }
+
+    #[tokio::test]
+    async fn finalize_plan_skips_limit_on_resume() {
+        let pipeline = two_partition_drain().await;
+        let op = Arc::new(cross_partition_query_operation());
+        // A width of 2 exceeds the limit of 1, but resume (is_fresh = false)
+        // must not re-check the fan-out.
+        let options = PlanOptions::default().with_max_fan_out(1);
+        finalize_plan(pipeline, op, false, &options).expect("resume must skip the fan-out check");
     }
 
     #[tokio::test]
