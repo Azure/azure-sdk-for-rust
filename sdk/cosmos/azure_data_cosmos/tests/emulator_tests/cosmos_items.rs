@@ -10,14 +10,12 @@ use azure_core::{
 };
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ItemResponse;
-use azure_data_cosmos::models::ResponseHeaders;
 use azure_data_cosmos::models::{ContainerProperties, PartitionKeyVersion};
 use azure_data_cosmos::options::{
     ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Precondition,
 };
 use azure_data_cosmos::PartitionKey;
 use azure_data_cosmos_driver::{
-    diagnostics::RequestDiagnostics,
     models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
     options::{
         ConnectionPoolOptions, OperationOptions as DriverOperationOptions,
@@ -58,39 +56,6 @@ struct InvalidUtf8BodyItem {
     id: Cow<'static, str>,
     partition_key: Cow<'static, str>,
     raw_payload: ByteBuf,
-}
-
-/// Prints a clear, human-readable list of the final response's status/headers
-/// and every diagnostics-tracked request attempt. Used to diagnose CI-only
-/// failures (e.g. a response missing `server_duration_ms`) that don't
-/// reproduce locally.
-fn log_response_and_requests(
-    context: &str,
-    response_status: azure_data_cosmos::CosmosStatus,
-    response_headers: &ResponseHeaders,
-    requests: &[RequestDiagnostics],
-) {
-    eprintln!("=== {context}: server_duration_ms missing ===");
-    eprintln!("final response:");
-    eprintln!("  status:  {response_status:?}");
-    eprintln!("  headers: {response_headers:#?}");
-    eprintln!("tracked requests (count={}):", requests.len());
-    for (i, r) in requests.iter().enumerate() {
-        eprintln!(
-            "  [{i}] status={:?} region={:?} endpoint={:?} activity_id={:?} \
-             request_charge={:?} session_token={:?} server_duration_ms={:?} \
-             timed_out={:?}",
-            r.status(),
-            r.region(),
-            r.endpoint(),
-            r.activity_id(),
-            r.request_charge(),
-            r.session_token(),
-            r.server_duration_ms(),
-            r.timed_out(),
-        );
-    }
-    eprintln!("=== end diagnostics dump ===");
 }
 
 /// Helper function to assert common response properties.
@@ -155,14 +120,6 @@ fn assert_response(
         .iter()
         .filter_map(|r| r.server_duration_ms())
         .next();
-    if server_duration.is_none() {
-        log_response_and_requests(
-            "assert_response",
-            response.status(),
-            response.headers(),
-            &requests,
-        );
-    }
     assert!(
         server_duration.is_some(),
         "expected at least one tracked request to report server_duration_ms"
@@ -1480,14 +1437,6 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
                 .iter()
                 .filter_map(|r| r.server_duration_ms())
                 .next();
-            if duration.is_none() {
-                log_response_and_requests(
-                    "create_item_response_metadata",
-                    response.status(),
-                    response.headers(),
-                    &requests,
-                );
-            }
             assert!(duration.is_some(), "expected server_duration_ms");
             assert!(
                 duration.unwrap() >= 0.0,
