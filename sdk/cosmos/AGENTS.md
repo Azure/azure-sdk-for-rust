@@ -493,7 +493,7 @@ Before considering any task complete, run the following checks **in order** on a
          cargo test -p azure_data_cosmos --test emulator -- --test-threads=1
      ```
 
-     Database create/delete and throughput (offer) operations stay on a key-authenticated management client even in this mode, mirroring live accounts where they are not data-plane RBAC actions. CI runs this as the `windows_stable_aad_emulator` leg (`sdk/cosmos/aad-emulator-matrix.json`); the live counterpart is `sdk/cosmos/live-aad-platform-matrix.json`.
+     Database create/delete and throughput (offer) operations stay on a key-authenticated management client even in this mode, mirroring live accounts where they are not data-plane RBAC actions. CI runs this as the `windows_stable_aad_emulator` Build-stage leg of the `rust - cosmos` pipeline (`sdk/cosmos/aad-emulator-matrix.json`); the live counterpart is `sdk/cosmos/live-aad-platform-matrix.json`. Note that the shared `rust - pullrequest` pipeline uses a fixed repo-wide matrix (`eng/pipelines/templates/stages/pr-platform-matrix.json`) and ignores service `ci.yml` matrix configs, so per-service legs never appear there.
 
 **Common documentation link errors to avoid**:
 
