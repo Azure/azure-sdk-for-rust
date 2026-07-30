@@ -267,7 +267,7 @@ fn renders_inherent_members_inside_impl_blocks() {
     );
     assert_eq!(
         lines[2].related_to_line.as_deref(),
-        Some("module.demo.Foo_1")
+        Some("module.demo.inherent_impl.impl_Foo")
     );
 }
 
@@ -348,7 +348,7 @@ fn keeps_duplicate_member_names_in_separate_inherent_impl_blocks() {
         .iter()
         .flat_map(|line| line.children.iter())
         .filter_map(|line| line.line_id.as_deref())
-        .filter(|line_id| line_id.ends_with(".read_0"))
+        .filter(|line_id| line_id.ends_with(".associated.read"))
         .collect::<Vec<_>>();
 
     assert_eq!(read_line_ids.len(), 2);
@@ -430,7 +430,7 @@ fn links_trait_impl_owner_to_local_definition() {
     let trait_impl = lines
         .iter()
         .find(|line| {
-            line.line_id.as_deref() == Some("module.demo.SecretBytes_1")
+            line.line_id.as_deref() == Some("module.demo.trait_impl.impl_T_From_T_for_SecretBytes")
                 && line.tokens.iter().any(|token| token.value == "impl")
         })
         .expect("expected trait impl line");
@@ -439,7 +439,7 @@ fn links_trait_impl_owner_to_local_definition() {
         find_token(trait_impl, "SecretBytes")
             .navigate_to_id
             .as_deref(),
-        Some("module.demo.SecretBytes_0")
+        Some("module.demo.struct.SecretBytes")
     );
 }
 
@@ -486,7 +486,7 @@ fn links_trait_impl_owner_to_public_reexport() {
     let trait_impl = lines
         .iter()
         .find(|line| {
-            line.line_id.as_deref() == Some("module.demo.SecretBytes_1")
+            line.line_id.as_deref() == Some("module.demo.trait_impl.impl_T_From_T_for_SecretBytes")
                 && line.tokens.iter().any(|token| token.value == "impl")
         })
         .expect("expected trait impl line");
@@ -495,7 +495,7 @@ fn links_trait_impl_owner_to_public_reexport() {
         find_token(trait_impl, "SecretBytes")
             .navigate_to_id
             .as_deref(),
-        Some("module.demo.SecretBytes_0")
+        Some("module.demo.reexport.SecretBytes")
     );
 }
 
@@ -549,14 +549,14 @@ fn links_trait_impl_owner_to_declaration_over_visible_reexport() {
     let trait_impl = lines
         .iter()
         .find(|line| {
-            line.line_id.as_deref() == Some("module.demo.Error_1")
+            line.line_id.as_deref() == Some("module.demo.trait_impl.impl_T_From_T_for_Error")
                 && line.tokens.iter().any(|token| token.value == "impl")
         })
         .expect("expected trait impl line");
 
     assert_eq!(
         find_token(trait_impl, "Error").navigate_to_id.as_deref(),
-        Some("module.demo__hidden.Error_0")
+        Some("module.demo__hidden.struct.Error")
     );
 }
 
@@ -591,7 +591,9 @@ fn keeps_trait_impl_owner_unlinked_without_visible_target() {
     let lines = render_review_lines(&model, &RenderOptions::default(), &lookup);
     let trait_impl = lines
         .iter()
-        .find(|line| line.line_id.as_deref() == Some("module.demo.Error_0"))
+        .find(|line| {
+            line.line_id.as_deref() == Some("module.demo.trait_impl.impl_T_From_T_for_Error")
+        })
         .expect("expected trait impl line");
 
     assert!(find_token(trait_impl, "Error").navigate_to_id.is_none());
@@ -656,14 +658,14 @@ fn links_associated_error_type_to_visible_error_target() {
         .find(|line| {
             line.line_id
                 .as_deref()
-                .is_some_and(|line_id| line_id.starts_with("module.demo.ErrorResponse_"))
+                .is_some_and(|line_id| line_id.starts_with("module.demo.trait_impl."))
                 && line.tokens.iter().any(|token| token.value == "impl")
         })
         .expect("expected trait impl line");
     let error_type = find_child(
         trait_impl,
         &format!(
-            "{}.Error_0",
+            "{}.associated.Error",
             trait_impl.line_id.as_deref().expect("trait impl line id")
         ),
     );
@@ -677,7 +679,7 @@ fn links_associated_error_type_to_visible_error_target() {
     assert!(error_tokens[0].navigate_to_id.is_none());
     assert_eq!(
         error_tokens[1].navigate_to_id.as_deref(),
-        Some("module.demo.Error_0")
+        Some("module.demo.reexport.Error")
     );
 }
 
@@ -714,12 +716,12 @@ fn links_bare_result_to_public_reexport_when_resolved_path_matches() {
     let lines = render_review_lines(&model, &RenderOptions::default(), &lookup);
     let parse = lines
         .iter()
-        .find(|line| line.line_id.as_deref() == Some("module.demo.parse_1"))
+        .find(|line| line.line_id.as_deref() == Some("module.demo.function.parse"))
         .expect("expected parse line");
 
     assert_eq!(
         find_token(parse, "Result").navigate_to_id.as_deref(),
-        Some("module.demo.Result_0")
+        Some("module.demo.reexport.Result")
     );
 }
 
@@ -756,12 +758,12 @@ fn links_crate_result_with_resolved_path_metadata() {
     let lines = render_review_lines(&model, &RenderOptions::default(), &lookup);
     let parse = lines
         .iter()
-        .find(|line| line.line_id.as_deref() == Some("module.demo.parse_1"))
+        .find(|line| line.line_id.as_deref() == Some("module.demo.function.parse"))
         .expect("expected parse line");
 
     assert_eq!(
         find_token(parse, "Result").navigate_to_id.as_deref(),
-        Some("module.demo.Result_0")
+        Some("module.demo.reexport.Result")
     );
 }
 
@@ -805,11 +807,7 @@ fn links_where_clause_references_after_signature_types() {
     let lines = render_review_lines(&model, &RenderOptions::default(), &lookup);
     let parse = lines
         .iter()
-        .find(|line| {
-            line.line_id
-                .as_deref()
-                .is_some_and(|line_id| line_id.starts_with("module.demo.parse_"))
-        })
+        .find(|line| line.line_id.as_deref() == Some("module.demo.function.parse"))
         .expect("expected parse line");
     let input_line_id = lines
         .iter()
@@ -881,7 +879,7 @@ fn keeps_std_result_references_unlinked_without_current_crate_reexport() {
     let lines = render_review_lines(&model, &RenderOptions::default(), &lookup);
     let parse = lines
         .iter()
-        .find(|line| line.line_id.as_deref() == Some("module.demo.parse_0"))
+        .find(|line| line.line_id.as_deref() == Some("module.demo.function.parse"))
         .expect("expected parse line");
 
     let result_tokens = parse
@@ -947,12 +945,12 @@ fn prefers_original_definition_over_public_reexport_for_bare_result_links() {
     let parse = client
         .children
         .iter()
-        .find(|line| line.line_id.as_deref() == Some("module.demo__client.parse_0"))
+        .find(|line| line.line_id.as_deref() == Some("module.demo__client.function.parse"))
         .expect("expected parse line");
 
     assert_eq!(
         find_token(parse, "Result").navigate_to_id.as_deref(),
-        Some("module.demo__errors.Result_0")
+        Some("module.demo__errors.struct.Result")
     );
 }
 
@@ -984,14 +982,14 @@ fn keeps_field_type_links_out_of_navigation_tree() {
     let lines = render_module_contents(&module, &RenderOptions::default(), &lookup);
     let access_token = lines
         .iter()
-        .find(|line| line.line_id.as_deref() == Some("module.demo.AccessToken_0"))
+        .find(|line| line.line_id.as_deref() == Some("module.demo.struct.AccessToken"))
         .expect("expected AccessToken line");
-    let field = find_child(access_token, "module.demo.AccessToken_0.secret_0");
+    let field = find_child(access_token, "module.demo.struct.AccessToken.field.secret");
     let secret = find_token(field, "Secret");
 
     assert_eq!(
         secret.navigate_to_id.as_deref(),
-        Some("module.demo.Secret_1")
+        Some("module.demo.struct.Secret")
     );
     assert_eq!(secret.navigation_display_name, None);
     assert_eq!(secret.render_classes, None);
@@ -999,7 +997,7 @@ fn keeps_field_type_links_out_of_navigation_tree() {
     let declaration = find_token(
         lines
             .iter()
-            .find(|line| line.line_id.as_deref() == Some("module.demo.Secret_1"))
+            .find(|line| line.line_id.as_deref() == Some("module.demo.struct.Secret"))
             .expect("expected Secret line"),
         "Secret",
     );
@@ -1047,16 +1045,19 @@ fn keeps_member_type_references_out_of_navigation_tree() {
     let lines = render_module_contents(&module, &RenderOptions::default(), &lookup);
     let token_credential = lines
         .iter()
-        .find(|line| line.line_id.as_deref() == Some("module.demo.TokenCredential_1"))
+        .find(|line| line.line_id.as_deref() == Some("module.demo.trait.TokenCredential"))
         .expect("expected TokenCredential line");
     let get_token = find_child(
         token_credential,
-        "module.demo.TokenCredential_1.get_token_0",
+        "module.demo.trait.TokenCredential.associated.get_token",
     );
 
     for (value, expected) in [
-        ("TokenRequestOptions", "module.demo.TokenRequestOptions_2"),
-        ("AccessToken", "module.demo.AccessToken_0"),
+        (
+            "TokenRequestOptions",
+            "module.demo.struct.TokenRequestOptions",
+        ),
+        ("AccessToken", "module.demo.struct.AccessToken"),
     ] {
         let token = find_token(get_token, value);
         assert_eq!(token.navigate_to_id.as_deref(), Some(expected));
@@ -1110,10 +1111,10 @@ fn orders_modules_after_non_module_navigation_items() {
     assert_eq!(
         top_level_navigation_line_ids(&lines),
         vec![
-            "module.demo.ANSWER_0",
-            "module.demo.Error_1",
-            "module.demo.sleep_2",
-            "module.demo.AccessToken_3",
+            "module.demo.const.ANSWER",
+            "module.demo.reexport.Error",
+            "module.demo.function.sleep",
+            "module.demo.struct.AccessToken",
             "module.demo__alpha",
             "module.demo__zeta",
         ]
@@ -1199,15 +1200,15 @@ fn includes_same_crate_reexported_functions_in_tree() {
     assert_eq!(
         top_level_navigation_line_ids(&lines),
         vec![
-            "module.demo.sleep_0",
-            "module.demo.Error_1",
+            "module.demo.reexport.sleep",
+            "module.demo.struct.Error",
             "module.demo__sleep"
         ]
     );
 
     let top_level_sleep = lines
         .iter()
-        .find(|line| line.line_id.as_deref() == Some("module.demo.sleep_0"))
+        .find(|line| line.line_id.as_deref() == Some("module.demo.reexport.sleep"))
         .expect("expected root sleep reexport line");
     let sleep_token = top_level_sleep
         .tokens
@@ -1217,7 +1218,7 @@ fn includes_same_crate_reexported_functions_in_tree() {
         .expect("expected reexported sleep token");
     assert_eq!(
         sleep_token.navigate_to_id.as_deref(),
-        Some("module.demo__sleep.sleep_0")
+        Some("module.demo__sleep.function.sleep")
     );
 }
 
@@ -1261,7 +1262,7 @@ fn groups_same_crate_reexports_with_other_reexports() {
 
     assert_eq!(
         top_level_navigation_line_ids(&lines),
-        vec!["module.demo.ClientOptions_0", "module.demo__options"]
+        vec!["module.demo.reexport.ClientOptions", "module.demo__options"]
     );
 }
 
@@ -1308,13 +1309,190 @@ fn same_crate_reexport_links_to_nested_declaration() {
     let lines = render_review_lines(&model, &RenderOptions::default(), &lookup);
     let reexport = lines
         .iter()
-        .find(|line| line.line_id.as_deref() == Some("module.demo.CosmosClient_0"))
+        .find(|line| line.line_id.as_deref() == Some("module.demo.reexport.CosmosClient"))
         .expect("expected root CosmosClient reexport line");
 
     assert_eq!(
         find_token(reexport, "CosmosClient")
             .navigate_to_id
             .as_deref(),
-        Some("module.demo__clients.CosmosClient_0")
+        Some("module.demo__clients.struct.CosmosClient")
+    );
+}
+
+#[test]
+fn keeps_item_line_ids_stable_when_unrelated_siblings_are_inserted() {
+    let base_module = ApiModule {
+        path: "demo".to_string(),
+        doc_comments: Vec::new(),
+        attributes: Vec::new(),
+        items: vec![item("Error", ApiItemKind::Struct, "pub struct Error;")],
+        modules: Vec::new(),
+    };
+    let expanded_module = ApiModule {
+        path: "demo".to_string(),
+        doc_comments: Vec::new(),
+        attributes: Vec::new(),
+        items: vec![
+            item("ANSWER", ApiItemKind::Const, "pub const ANSWER: u32 = 42;"),
+            item("sleep", ApiItemKind::Function, "pub async fn sleep();"),
+            item("Error", ApiItemKind::Struct, "pub struct Error;"),
+        ],
+        modules: Vec::new(),
+    };
+
+    let base_lines = render_module_contents(
+        &base_module,
+        &RenderOptions::default(),
+        &navigation_lookup(&base_module),
+    );
+    let expanded_lines = render_module_contents(
+        &expanded_module,
+        &RenderOptions::default(),
+        &navigation_lookup(&expanded_module),
+    );
+
+    let base_error = base_lines
+        .iter()
+        .find(|line| line.line_id.as_deref() == Some("module.demo.struct.Error"))
+        .expect("expected base Error line");
+    let expanded_error = expanded_lines
+        .iter()
+        .find(|line| line.line_id.as_deref() == Some("module.demo.struct.Error"))
+        .expect("expected expanded Error line");
+
+    assert_eq!(
+        base_error.line_id.as_deref(),
+        expanded_error.line_id.as_deref()
+    );
+}
+
+#[test]
+fn keeps_member_line_ids_stable_when_unrelated_siblings_are_inserted() {
+    let access_token = || {
+        let mut access_token = item(
+            "AccessToken",
+            ApiItemKind::Struct,
+            "pub struct AccessToken {",
+        );
+        access_token.members.push(member(
+            "secret",
+            ApiMemberKind::Field,
+            "pub secret: Secret,",
+        ));
+        access_token
+    };
+    let base_module = ApiModule {
+        path: "demo".to_string(),
+        doc_comments: Vec::new(),
+        attributes: Vec::new(),
+        items: vec![
+            access_token(),
+            item("Secret", ApiItemKind::Struct, "pub struct Secret;"),
+        ],
+        modules: Vec::new(),
+    };
+    let expanded_module = ApiModule {
+        path: "demo".to_string(),
+        doc_comments: Vec::new(),
+        attributes: Vec::new(),
+        items: vec![
+            item("ANSWER", ApiItemKind::Const, "pub const ANSWER: u32 = 42;"),
+            access_token(),
+            item("Secret", ApiItemKind::Struct, "pub struct Secret;"),
+        ],
+        modules: Vec::new(),
+    };
+
+    let base_lines = render_module_contents(
+        &base_module,
+        &RenderOptions::default(),
+        &navigation_lookup(&base_module),
+    );
+    let expanded_lines = render_module_contents(
+        &expanded_module,
+        &RenderOptions::default(),
+        &navigation_lookup(&expanded_module),
+    );
+
+    let base_access_token = base_lines
+        .iter()
+        .find(|line| line.line_id.as_deref() == Some("module.demo.struct.AccessToken"))
+        .expect("expected base AccessToken line");
+    let expanded_access_token = expanded_lines
+        .iter()
+        .find(|line| line.line_id.as_deref() == Some("module.demo.struct.AccessToken"))
+        .expect("expected expanded AccessToken line");
+
+    assert_eq!(
+        find_child(
+            base_access_token,
+            "module.demo.struct.AccessToken.field.secret"
+        )
+        .line_id
+        .as_deref(),
+        find_child(
+            expanded_access_token,
+            "module.demo.struct.AccessToken.field.secret",
+        )
+        .line_id
+        .as_deref()
+    );
+}
+
+#[test]
+fn distinguishes_repeated_trait_impl_methods_by_impl_identity() {
+    let mut from_u8 = item("Error", ApiItemKind::TraitImpl, "impl From<u8> for Error {");
+    from_u8.owner_name = Some("Error".to_string());
+    from_u8.owner_kind = Some(ApiItemKind::Struct);
+    from_u8.members.push(member(
+        "from",
+        ApiMemberKind::Associated,
+        "fn from(value: u8) -> Self;",
+    ));
+
+    let mut from_u16 = item(
+        "Error",
+        ApiItemKind::TraitImpl,
+        "impl From<u16> for Error {",
+    );
+    from_u16.owner_name = Some("Error".to_string());
+    from_u16.owner_kind = Some(ApiItemKind::Struct);
+    from_u16.members.push(member(
+        "from",
+        ApiMemberKind::Associated,
+        "fn from(value: u16) -> Self;",
+    ));
+
+    let module = ApiModule {
+        path: "demo".to_string(),
+        doc_comments: Vec::new(),
+        attributes: Vec::new(),
+        items: vec![
+            item("Error", ApiItemKind::Struct, "pub struct Error;"),
+            from_u8,
+            from_u16,
+        ],
+        modules: Vec::new(),
+    };
+
+    let lines = render_module_contents(
+        &module,
+        &RenderOptions::default(),
+        &navigation_lookup(&module),
+    );
+    let from_line_ids = lines
+        .iter()
+        .flat_map(|line| line.children.iter())
+        .filter_map(|line| line.line_id.as_deref())
+        .filter(|line_id| line_id.ends_with(".associated.from"))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        from_line_ids,
+        vec![
+            "module.demo.trait_impl.impl_From_u8_for_Error.associated.from",
+            "module.demo.trait_impl.impl_From_u16_for_Error.associated.from",
+        ]
     );
 }
