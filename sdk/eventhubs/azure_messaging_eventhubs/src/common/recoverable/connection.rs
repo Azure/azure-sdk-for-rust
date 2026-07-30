@@ -75,7 +75,15 @@ pub(crate) struct RecoverableConnection {
     pub(super) url: Url,
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
-    mgmt_client: AsyncMutex<Option<Arc<AmqpManagement>>>,
+    // The management client is a single cached instance, held in a `OnceCell`
+    // for the same reason the per-path caches are: the expensive build (connect
+    // + session begin + CBS authorize + link attach) must not run while a lock
+    // is held. The build authorizes the `$management` path, and a CBS failure
+    // there runs the recovery hook, which invalidates this cache. Holding a
+    // guard across the build made that a same-task self-deadlock. The `RwLock`
+    // only guards the *cell pointer*, so recovery can swap in a fresh cell
+    // without waiting for a build in flight.
+    mgmt_client: RwLock<Arc<OnceCell<Arc<AmqpManagement>>>>,
     // The sender, session, and receiver caches are keyed by path. Each entry is
     // an independently-initialized `OnceCell`, so concurrent operations on
     // *different* partitions never serialize on a shared lock, and the expensive
@@ -203,7 +211,7 @@ impl RecoverableConnection {
                 session_instances: RwLock::new(HashMap::new()),
                 sender_instances: RwLock::new(HashMap::new()),
                 receiver_instances: RwLock::new(HashMap::new()),
-                mgmt_client: AsyncMutex::new(None),
+                mgmt_client: RwLock::new(Arc::new(OnceCell::new())),
                 authorizer,
                 #[cfg(test)]
                 forced_error: Mutex::new(None),
@@ -300,8 +308,16 @@ impl RecoverableConnection {
             "Closing recoverable connection."
         );
 
-        let mut management_client = self.mgmt_client.lock().await;
-        if let Some(management_client) = management_client.take() {
+        // Swap the cell out under the write lock, then detach without holding
+        // it. The guard is a separate binding so the lock scope is visible and
+        // a debugger can read it.
+        let mut cell_slot = self.mgmt_client.write().await;
+        let management_cell = std::mem::replace(&mut *cell_slot, Arc::new(OnceCell::new()));
+        drop(cell_slot);
+        if let Some(Some(management_client)) = Arc::try_unwrap(management_cell)
+            .ok()
+            .map(OnceCell::into_inner)
+        {
             trace!("Closing management client for {}.", self.url);
             if let Ok(management_client) = Arc::try_unwrap(management_client) {
                 trace!("Detaching management client for {}.", self.url);
@@ -611,22 +627,21 @@ impl RecoverableConnection {
     pub(super) async fn ensure_amqp_management(
         self: &Arc<Self>,
     ) -> azure_core_amqp::Result<Arc<AmqpManagement>> {
-        let mut management_client = self.mgmt_client.lock().await;
-        if management_client.is_none() {
-            *management_client = Some(
+        // Take the cell pointer under a brief read lock, then build without any
+        // lock held. The build reaches the CBS retry loop, whose recovery hook
+        // can invalidate this cache on the same task; holding a guard here would
+        // deadlock that task.
+        let cell = self.mgmt_client.read().await.clone();
+        let management_client = cell
+            .get_or_try_init(|| async {
                 RecoverableManagementClient::create_management_client(
                     self.clone(),
                     &self.retry_options,
                 )
-                .await?,
-            );
-        }
-        if let Some(management_client) = management_client.as_ref() {
-            return Ok(management_client.clone());
-        }
-
-        warn!("Management client is None, cannot ensure management client.");
-        Err(AmqpError::with_message("Missing Management Client"))
+                .await
+            })
+            .await?;
+        Ok(management_client.clone())
     }
 
     /// Ensures that the AMQP Claims-Based Security (CBS) client is created and attached.
@@ -873,7 +888,11 @@ impl RecoverableConnection {
             debug!(connection_id = %connection_id, count, "Recovery: cleared cached receivers.");
         }
         if plan.drop_mgmt_client {
-            self.mgmt_client.lock().await.take();
+            // Swap in a fresh cell instead of clearing the old one in place. The
+            // write lock is held only for the pointer swap, never across a build,
+            // so this never waits for a management-client build in flight (which,
+            // on the CBS failure path, runs on this very task).
+            *self.mgmt_client.write().await = Arc::new(OnceCell::new());
             debug!(connection_id = %connection_id, "Recovery: dropped management client.");
         }
     }
@@ -1531,5 +1550,157 @@ mod tests {
     fn recovery_plan_none_for_non_reconnect_actions() {
         assert!(RecoveryPlan::for_action(&ErrorRecoveryAction::RetryAction).is_none());
         assert!(RecoveryPlan::for_action(&ErrorRecoveryAction::ReturnError).is_none());
+    }
+
+    // The management-client build must not hold any `mgmt_client` lock.
+    //
+    // This points the connection at a local TCP peer that accepts the socket and
+    // never sends the AMQP protocol header, so `create_connection` stays inside
+    // `ensure_amqp_management` for the whole test. The cache lock must still be
+    // free: it only guards the cell pointer, so recovery and `close_connection`
+    // can take it while a build is in flight.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn management_build_does_not_hold_mgmt_lock() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind stalled AMQP peer");
+        let port = listener.local_addr().expect("listener address").port();
+        // Hold every accepted socket open and answer nothing. The first accept
+        // signals the test, which is the synchronization point that makes this
+        // test deterministic. A fixed sleep would not do: on a loaded runner the
+        // build task can still be pending, and the assertions below would then
+        // pass against the old implementation.
+        let (accepted_tx, accepted_rx) = tokio::sync::oneshot::channel();
+        std::thread::spawn(move || {
+            let mut accepted = Vec::new();
+            let mut accepted_tx = Some(accepted_tx);
+            while let Ok((stream, _)) = listener.accept() {
+                if let Some(tx) = accepted_tx.take() {
+                    let _ = tx.send(());
+                }
+                accepted.push(stream);
+            }
+        });
+
+        let url = Url::parse(&format!("amqp://127.0.0.1:{port}")).expect("stalled peer URL");
+        let connection = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+
+        let build = tokio::spawn({
+            let connection = connection.clone();
+            async move {
+                let _ = connection.ensure_amqp_management().await;
+            }
+        });
+
+        // The old code took the `mgmt_client` guard before it opened the
+        // connection, so a completed accept proves the build is past that point
+        // and inside the region that used to be locked.
+        tokio::time::timeout(std::time::Duration::from_secs(30), accepted_rx)
+            .await
+            .expect("the build did not connect to the stalled peer within 30s")
+            .expect("the listener thread dropped the accept signal");
+
+        let build_is_running = !build.is_finished();
+        let lock_is_free = connection.mgmt_client.try_write().is_some();
+        build.abort();
+
+        assert!(
+            build_is_running,
+            "The management-client build finished instead of blocking on the stalled peer."
+        );
+        assert!(
+            lock_is_free,
+            "`ensure_amqp_management` held the `mgmt_client` lock across the build. That is \
+             the self-deadlock: the build authorizes the management path, and a CBS failure \
+             there re-enters the same lock through `apply_recovery_plan` on the same task."
+        );
+    }
+
+    // Recovery must never wait for an in-flight management-client build.
+    //
+    // This test uses production entry points only: one task calls
+    // `ensure_amqp_management` against a TCP peer that accepts the socket and
+    // then answers nothing, so the build stays in flight. A second task then
+    // runs `recover_from_error` for `ReconnectLink`, the action a detached or
+    // stolen CBS link produces. That plan sets `drop_mgmt_client` and leaves the
+    // connection alone.
+    //
+    // While the management client lived behind a single `AsyncMutex` that
+    // `ensure_amqp_management` held across the whole build, the recovery task
+    // waited on that guard and never returned. The same wait happens on one
+    // task in production (build -> CBS authorize -> retry loop -> recovery
+    // hook), where it is a self-deadlock instead of contention.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn recovery_does_not_wait_for_in_flight_management_build() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind stalled AMQP peer");
+        let port = listener.local_addr().expect("listener address").port();
+        // Hold every accepted socket open and answer nothing. The first accept
+        // signals the test, which is the synchronization point that makes this
+        // test deterministic. A fixed sleep would not do: on a loaded runner the
+        // build task can still be pending, and the assertions below would then
+        // pass against the old implementation.
+        let (accepted_tx, accepted_rx) = tokio::sync::oneshot::channel();
+        std::thread::spawn(move || {
+            let mut accepted = Vec::new();
+            let mut accepted_tx = Some(accepted_tx);
+            while let Ok((stream, _)) = listener.accept() {
+                if let Some(tx) = accepted_tx.take() {
+                    let _ = tx.send(());
+                }
+                accepted.push(stream);
+            }
+        });
+
+        let url = Url::parse(&format!("amqp://127.0.0.1:{port}")).expect("stalled peer URL");
+        let connection = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+
+        let build = tokio::spawn({
+            let connection = connection.clone();
+            async move {
+                let _ = connection.ensure_amqp_management().await;
+            }
+        });
+
+        // Wait for the build to reach the stalled peer. The old code took the
+        // `mgmt_client` guard before it opened the connection, so a completed
+        // accept proves the build holds whatever lock the implementation takes.
+        tokio::time::timeout(std::time::Duration::from_secs(30), accepted_rx)
+            .await
+            .expect("the build did not connect to the stalled peer within 30s")
+            .expect("the listener thread dropped the accept signal");
+
+        assert!(
+            !build.is_finished(),
+            "The management-client build finished instead of blocking on the stalled peer."
+        );
+
+        let result = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            RecoverableConnection::recover_from_error(
+                Arc::downgrade(&connection),
+                ErrorRecoveryAction::ReconnectLink,
+            ),
+        )
+        .await;
+        build.abort();
+
+        assert!(
+            result.is_ok(),
+            "Recovery did not complete in 10s: it waited for the in-flight management-client \
+             build. On the production path the same wait happens on a single task and hangs \
+             forever."
+        );
     }
 }
