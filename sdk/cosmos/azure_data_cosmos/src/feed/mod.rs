@@ -24,6 +24,7 @@ pub use query_page::QueryFeedPage;
 // Crate-internal re-exports
 // =========================================================================
 
+#[cfg(feature = "control_plane")]
 pub(crate) use page::FeedBody;
 
 // =========================================================================

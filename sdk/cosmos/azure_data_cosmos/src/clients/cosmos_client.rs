@@ -1,17 +1,24 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::clients::{ClientContext, DatabaseClient};
+use azure_core::http::Url;
+
+#[cfg(feature = "control_plane")]
 use crate::{
-    clients::{ClientContext, DatabaseClient},
     diagnostics::CosmosOperationContext,
     feed::QueryItemIterator,
-    models::DatabaseProperties,
-    models::ResourceResponse,
+    models::{DatabaseProperties, ResourceResponse},
     options::{CreateDatabaseOptions, QueryDatabasesOptions},
     Query,
 };
-use azure_core::http::Url;
+#[cfg(feature = "control_plane")]
 use azure_data_cosmos_driver::models::CosmosOperation;
+
+#[cfg(feature = "control_plane")]
+use azure_data_cosmos_driver::options::PlanOptions;
+
+#[cfg(feature = "control_plane")]
 use serde::Serialize;
 
 pub use super::cosmos_client_builder::CosmosClientBuilder;
@@ -166,6 +173,7 @@ impl CosmosClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
+    #[cfg(feature = "control_plane")]
     pub async fn query_databases(
         &self,
         query: impl Into<Query>,
@@ -181,7 +189,12 @@ impl CosmosClient {
         let plan = self
             .context
             .driver
-            .plan_operation(initial_operation, &operation_options, None)
+            .plan_operation(
+                initial_operation,
+                &operation_options,
+                None,
+                &PlanOptions::default(),
+            )
             .await?;
 
         Ok(QueryItemIterator::new(
@@ -203,6 +216,7 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the new database.
     /// * `options` - Optional parameters for the request.
+    #[cfg(feature = "control_plane")]
     pub async fn create_database(
         &self,
         id: &str,
@@ -241,7 +255,7 @@ impl CosmosClient {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "control_plane"))]
 mod tests {
     use super::*;
 

@@ -12,13 +12,22 @@ use futures::TryStreamExt;
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_options(
         async |run_context| {
-            let cosmos_client = run_context.client();
+            // This test exercises database management (create/read/query/
+            // throughput/delete), which is control-plane and not expressible as
+            // a Cosmos data-plane RBAC action. Use the management client so the
+            // test also works on the AAD live leg (where the primary client is
+            // AAD-authenticated). In key mode this is the same client.
+            let cosmos_client = run_context.management_client();
 
             let test_db_id = run_context.db_name();
 

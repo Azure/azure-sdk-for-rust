@@ -20,6 +20,7 @@ use std::time::{Duration, Instant};
 
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::feed::FeedRange;
+use azure_data_cosmos::options::ReadFeedRangesOptions;
 
 use crate::operations::feed_range_query::FeedRangeCache;
 use crate::stats::Stats;
@@ -72,7 +73,11 @@ impl FeedRangeRefresher {
 
             let container = Arc::clone(&container);
             refresh_once(&stats, &cache, || async move {
-                container.read_feed_ranges(None).await
+                container
+                    .read_feed_ranges(Some(
+                        ReadFeedRangesOptions::default().with_force_refresh(true),
+                    ))
+                    .await
             })
             .await;
         }

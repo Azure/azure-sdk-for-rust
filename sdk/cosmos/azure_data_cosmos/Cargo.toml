@@ -94,6 +94,8 @@ key_auth = [
 distributed_tracing = [
   "dep:opentelemetry",
 ] # Enables the OpenTelemetry distributed-tracing diagnostics handler (off by default)
+control_plane = [
+] # Enables control-plane APIs: Database and Container CRUD, and Throughput/Offer management. Disabled by default. Intentionally does NOT enable `key_auth` so a future Entra ID control-plane path can opt in without key-based authentication.
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [
@@ -108,12 +110,14 @@ preview_dtx = [
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",
+  "control_plane",
 ]
 __tls = []
 
 [package.metadata.docs.rs]
 features = [
   "distributed_tracing",
+  "control_plane",
   "fault_injection",
   "hmac_openssl",
   "hmac_rust",
@@ -130,22 +134,22 @@ features = [
 [[test]]
 name = "emulator"
 path = "tests/emulator.rs"
-required-features = ["key_auth", "fault_injection"]
+required-features = ["key_auth", "control_plane", "fault_injection"]
 
 [[test]]
 name = "multi_write"
 path = "tests/multi_write.rs"
-required-features = ["key_auth", "fault_injection"]
+required-features = ["key_auth", "control_plane", "fault_injection"]
 
 [[test]]
 name = "split"
 path = "tests/split.rs"
-required-features = ["key_auth", "fault_injection"]
+required-features = ["key_auth", "control_plane", "fault_injection"]
 
 [[test]]
 name = "binary_encoding"
 path = "tests/binary_encoding.rs"
-required-features = ["key_auth", "fault_injection"]
+required-features = ["key_auth", "control_plane", "fault_injection"]
 
 [[test]]
 name = "binary_roundtrip_fuzzer"
@@ -155,9 +159,17 @@ required-features = ["key_auth", "fault_injection"]
 [[test]]
 name = "gateway_v2"
 path = "tests/gateway_v2.rs"
-required-features = ["key_auth", "fault_injection"]
+required-features = ["key_auth", "control_plane", "fault_injection"]
 
 [[test]]
 name = "in_memory_emulator"
 path = "tests/in_memory_emulator.rs"
 required-features = ["__internal_in_memory_emulator"]
+
+# The `cosmos` example CLI exercises control-plane operations (database and
+# container CRUD, throughput) alongside data-plane commands, so the whole
+# binary requires the `control_plane` feature to compile.
+[[example]]
+name = "cosmos"
+path = "examples/cosmos/main.rs"
+required-features = ["control_plane"]

@@ -16,6 +16,7 @@ members = [
   "sdk/cosmos/azure_data_cosmos",
   "sdk/cosmos/azure_data_cosmos_benchmarks",
   "sdk/cosmos/azure_data_cosmos_driver",
+  "sdk/cosmos/azure_data_cosmos_emulator",
   "sdk/cosmos/azure_data_cosmos_driver_native",
   "sdk/cosmos/azure_data_cosmos_macros",
   "sdk/cosmos/azure_data_cosmos_perf",
@@ -92,6 +93,7 @@ arbitrary-json = "0.1"
 async-lock = "3.4"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"
+axum = { version = "0.8", features = ["json", "macros"] }
 base64 = "0.22"
 arc-swap = "1.7"
 backtrace = "0.3"
