@@ -10,7 +10,10 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-axum.workspace = true
+# `http2` is enabled here (not at the workspace level) because this crate is
+# the only one that needs h2c (cleartext HTTP/2) support for the hosted
+# Gateway 2.0 adapter.
+axum = { workspace = true, features = ["http2"] }
 # `azure_data_cosmos_driver` (below) depends on `azure_core` via
 # `workspace = true` (the published crate), so this crate must resolve the same
 # copy. Using a local `path` dependency here would instead pull the unreleased
