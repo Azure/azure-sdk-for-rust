@@ -5,7 +5,7 @@
 
 use super::{
     claims_based_security::RecoverableClaimsBasedSecurity, management::RecoverableManagementClient,
-    receiver::RecoverableReceiver, sender::RecoverableSender,
+    receiver::RecoverableReceiver, sender::RecoverableSender, MAX_GENERATION_RETRIES,
 };
 use crate::{
     common::{
@@ -631,8 +631,8 @@ impl RecoverableConnection {
     /// evicted and the whole attach retries against the new generation.
     ///
     /// `init` is therefore an `FnMut`: it may run more than once if recovery keeps
-    /// racing. The retry count is bounded so a pathological storm of back-to-back
-    /// recoveries surfaces an error instead of spinning forever.
+    /// racing. [`MAX_GENERATION_RETRIES`] bounds the loop, so a pathological storm
+    /// of back-to-back recoveries surfaces an error instead of spinning forever.
     async fn get_or_init_generational<T, F, Fut>(
         &self,
         map: &RwLock<HashMap<Url, GenerationalCell<T>>>,
@@ -643,11 +643,6 @@ impl RecoverableConnection {
         F: FnMut() -> Fut,
         Fut: Future<Output = azure_core_amqp::Result<Arc<T>>>,
     {
-        // Generous bound: recovery is rare and each pass makes forward progress
-        // against a newer connection, so reaching this would mean the connection
-        // is being torn down faster than it can be set up.
-        const MAX_GENERATION_RETRIES: usize = 8;
-
         for _ in 0..MAX_GENERATION_RETRIES {
             let generation = self.current_generation();
 

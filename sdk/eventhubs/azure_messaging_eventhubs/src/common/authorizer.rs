@@ -3,7 +3,10 @@
 
 // cspell:ignore sastoken refreshable
 
-use crate::{common::recoverable::RecoverableConnection, error::Result};
+use crate::{
+    common::recoverable::{RecoverableConnection, MAX_GENERATION_RETRIES},
+    error::Result,
+};
 use async_lock::RwLock;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
@@ -141,10 +144,8 @@ impl Authorizer {
         // torn-down connection's CBS link, so we discard it and re-authorize
         // against the new connection instead of caching a stale entry (which the
         // next operation would otherwise use and fail on, costing a second recovery
-        // cycle). Bounded so a storm of back-to-back recoveries surfaces an error
-        // rather than spinning forever.
-        const MAX_GENERATION_RETRIES: usize = 8;
-
+        // cycle). `MAX_GENERATION_RETRIES` bounds the loop, so a storm of
+        // back-to-back recoveries surfaces an error rather than spinning forever.
         for _ in 0..MAX_GENERATION_RETRIES {
             // Fast path: cached token under a brief lock.
             if let Some(token) = self.authorization_scopes.read().await.get(path).cloned() {
