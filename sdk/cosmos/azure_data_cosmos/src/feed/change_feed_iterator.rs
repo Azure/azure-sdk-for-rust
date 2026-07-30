@@ -14,6 +14,7 @@ use futures::future::BoxFuture;
 use futures::Stream;
 use serde::de::DeserializeOwned;
 
+use crate::diagnostics::{CosmosOperationContext, DiagnosticsHandlerChain};
 use crate::{driver_bridge, feed::page::FeedBody, feed::FeedPage, models::CosmosResponse};
 
 type DriverPageFuture = BoxFuture<'static, (OperationPlan, crate::Result<Option<DriverResponse>>)>;
@@ -27,6 +28,11 @@ struct LiveState {
     plan: Option<OperationPlan>,
     in_flight: Option<DriverPageFuture>,
     errored: bool,
+    /// Emission handler chain plus the paged operation's identity, dispatched
+    /// once per page fetch (both success and failure) so change-feed pagination
+    /// honors the same once-per-operation contract as singleton operations.
+    diagnostics: DiagnosticsHandlerChain,
+    op_context: CosmosOperationContext,
 }
 
 impl LiveState {
@@ -35,6 +41,8 @@ impl LiveState {
         container: Option<ContainerReference>,
         plan: OperationPlan,
         options: OperationOptions,
+        diagnostics: DiagnosticsHandlerChain,
+        op_context: CosmosOperationContext,
     ) -> Self {
         Self {
             driver,
@@ -43,6 +51,8 @@ impl LiveState {
             plan: Some(plan),
             in_flight: None,
             errored: false,
+            diagnostics,
+            op_context,
         }
     }
 
@@ -107,6 +117,14 @@ impl LiveState {
             }
             Err(err) => {
                 *this.errored = true;
+                if let Some(page_diagnostics) = err.diagnostics() {
+                    crate::feed::dispatch_page_diagnostics(
+                        this.diagnostics,
+                        this.op_context,
+                        &page_diagnostics,
+                        None,
+                    );
+                }
                 task::Poll::Ready(Some(Err(err)))
             }
             Ok(Some(driver_response)) => {
@@ -119,6 +137,12 @@ impl LiveState {
                 // Return an empty page — do not try to deserialize the
                 // (potentially empty) body.
                 if status.status_code() == azure_core::http::StatusCode::NotModified {
+                    crate::feed::dispatch_page_diagnostics(
+                        this.diagnostics,
+                        this.op_context,
+                        &diagnostics,
+                        Some(0),
+                    );
                     let page = FeedPage::new(Vec::new(), headers, diagnostics);
                     return task::Poll::Ready(Some(Ok(page)));
                 }
@@ -128,11 +152,23 @@ impl LiveState {
                 // `ChangeFeedItem<Doc>`) without stripping any fields.
                 match deserialize_change_feed_items::<T>(response) {
                     Ok(items) => {
+                        crate::feed::dispatch_page_diagnostics(
+                            this.diagnostics,
+                            this.op_context,
+                            &diagnostics,
+                            Some(items.len() as u64),
+                        );
                         let page = FeedPage::new(items, headers, diagnostics);
                         task::Poll::Ready(Some(Ok(page)))
                     }
                     Err(err) => {
                         *this.errored = true;
+                        crate::feed::dispatch_page_diagnostics(
+                            this.diagnostics,
+                            this.op_context,
+                            &diagnostics,
+                            None,
+                        );
                         task::Poll::Ready(Some(Err(err)))
                     }
                 }
@@ -151,8 +187,18 @@ impl LiveState {
     }
 }
 
-/// Deserializes a change feed response body into the caller's item type `T`
-/// (bound to [`ChangeFeedItem<Doc>`](crate::models::ChangeFeedItem)).
+/// Deserializes a change feed response body into the caller's item type.
+///
+/// Every change feed item is returned as a wire-format envelope
+/// (`{ current, ... }`) because the SDK always sends the
+/// `x-ms-cosmos-changefeed-wire-format-version` header (see
+/// [`CosmosOperation::change_feed`]). Each entry in the feed body is
+/// deserialized directly into `T` — which
+/// [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed)
+/// binds to [`ChangeFeedItem<Doc>`](crate::models::ChangeFeedItem) — so the whole
+/// envelope is preserved rather than stripped.
+///
+/// [`CosmosOperation::change_feed`]: azure_data_cosmos_driver::models::CosmosOperation
 fn deserialize_change_feed_items<T: DeserializeOwned>(
     response: CosmosResponse,
 ) -> crate::Result<Vec<T>> {
@@ -163,8 +209,9 @@ fn deserialize_change_feed_items<T: DeserializeOwned>(
 /// A stream of pages from a Cosmos DB change feed operation.
 ///
 /// Yields [`FeedPage<T>`] instances where `T` is
-/// [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem); read the
-/// changed document via [`current()`](crate::models::ChangeFeedItem::current).
+/// [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem): every item is
+/// returned as the wire-format envelope, so the caller reads the post-change
+/// document via [`current()`](crate::models::ChangeFeedItem::current).
 ///
 /// The stream is conceptually infinite: when a partition has no new changes
 /// (304 Not Modified), an empty page is returned instead of terminating the
@@ -176,9 +223,7 @@ fn deserialize_change_feed_items<T: DeserializeOwned>(
 /// # Examples
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{
-///     clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom,
-/// };
+/// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
 /// use futures::StreamExt;
 /// use serde::Deserialize;
 ///
@@ -227,9 +272,18 @@ impl<T: Send + DeserializeOwned + 'static> ChangeFeedPageIterator<T> {
         container: Option<ContainerReference>,
         plan: OperationPlan,
         options: OperationOptions,
+        diagnostics: DiagnosticsHandlerChain,
+        op_context: CosmosOperationContext,
     ) -> Self {
         Self {
-            state: Box::pin(LiveState::new(driver, container, plan, options)),
+            state: Box::pin(LiveState::new(
+                driver,
+                container,
+                plan,
+                options,
+                diagnostics,
+                op_context,
+            )),
             _marker: PhantomData,
         }
     }
@@ -267,7 +321,7 @@ impl<T: Send + DeserializeOwned + 'static> Stream for ChangeFeedPageIterator<T> 
 #[cfg(test)]
 mod tests {
     use super::deserialize_change_feed_items;
-    use crate::models::{ChangeFeedItem, CosmosResponse};
+    use crate::models::{ChangeFeedItem, ChangeFeedOperationType, CosmosResponse};
     use azure_core::http::StatusCode;
     use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
     use azure_data_cosmos_driver::models::{
@@ -322,6 +376,77 @@ mod tests {
         assert_eq!(
             metadata.lsn(),
             Some(crate::models::LogicalSequenceNumber::from(100))
+        );
+    }
+
+    #[test]
+    fn deserializes_all_versions_and_deletes_page() {
+        // AllVersionsAndDeletes binds `T = ChangeFeedItem<Doc>` and keeps the
+        // whole envelope: create + replace + delete, with metadata and a
+        // pre-image preserved rather than stripped.
+        let body = json!({
+            "Documents": [
+                {
+                    "current": { "id": "1" },
+                    "metadata": { "operationType": "create", "lsn": 10, "crts": 1720322460 }
+                },
+                {
+                    "current": { "id": "2" },
+                    "previous": { "id": "2" },
+                    "metadata": { "operationType": "replace", "lsn": 11, "previousImageLSN": 10 }
+                },
+                {
+                    "previous": { "id": "3" },
+                    "metadata": { "operationType": "delete", "lsn": 12, "timeToLiveExpired": true }
+                }
+            ],
+            "_count": 3
+        });
+
+        let items: Vec<ChangeFeedItem<Doc>> =
+            deserialize_change_feed_items(make_response(body)).unwrap();
+        assert_eq!(items.len(), 3);
+
+        // Create: current present, no previous.
+        assert_eq!(
+            items[0].operation_type(),
+            Some(ChangeFeedOperationType::Create)
+        );
+        assert_eq!(items[0].current(), Some(&Doc { id: "1".into() }));
+        assert!(items[0].previous().is_none());
+        assert_eq!(
+            items[0].metadata().and_then(|m| m.lsn()),
+            Some(crate::models::LogicalSequenceNumber::from(10))
+        );
+        assert_eq!(
+            items[0]
+                .metadata()
+                .and_then(|m| m.conflict_resolution_timestamp()),
+            Some(std::time::Duration::from_secs(1720322460))
+        );
+
+        // Replace: both current and previous present.
+        assert_eq!(
+            items[1].operation_type(),
+            Some(ChangeFeedOperationType::Replace)
+        );
+        assert_eq!(items[1].current(), Some(&Doc { id: "2".into() }));
+        assert_eq!(items[1].previous(), Some(&Doc { id: "2".into() }));
+        assert_eq!(
+            items[1].metadata().and_then(|m| m.previous_image_lsn()),
+            Some(crate::models::LogicalSequenceNumber::from(10))
+        );
+
+        // Delete: current absent, previous (pre-image) preserved, TTL flag set.
+        assert_eq!(
+            items[2].operation_type(),
+            Some(ChangeFeedOperationType::Delete)
+        );
+        assert!(items[2].current().is_none());
+        assert_eq!(items[2].previous(), Some(&Doc { id: "3".into() }));
+        assert_eq!(
+            items[2].metadata().and_then(|m| m.time_to_live_expired()),
+            Some(true)
         );
     }
 

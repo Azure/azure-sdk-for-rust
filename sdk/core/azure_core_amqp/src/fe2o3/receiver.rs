@@ -247,8 +247,13 @@ impl From<fe2o3_amqp::link::ReceiverAttachError> for AmqpError {
 impl From<fe2o3_amqp::link::RecvError> for AmqpError {
     fn from(e: fe2o3_amqp::link::RecvError) -> Self {
         match e {
-            fe2o3_amqp::link::RecvError::LinkStateError(_) => {
-                AmqpErrorKind::LinkStateError(Box::new(e)).into()
+            // Delegate to the `LinkStateError` conversion so a remote close or
+            // detach that carries an AMQP error (for example `amqp:link:stolen`)
+            // becomes an `AmqpDescribedError`. Keeping the condition reachable
+            // lets callers classify the failure. The sender path already does
+            // this for `SendError::LinkStateError`.
+            fe2o3_amqp::link::RecvError::LinkStateError(link_state_error) => {
+                AmqpError::from(link_state_error)
             }
             fe2o3_amqp::link::RecvError::TransferLimitExceeded => {
                 AmqpErrorKind::TransferLimitExceeded(Box::new(e)).into()
@@ -316,6 +321,96 @@ mod tests {
             Some(&fe2o3_amqp_types::primitives::Value::String(
                 "test-receiver".into()
             ))
+        );
+    }
+
+    use crate::error::AmqpErrorCondition;
+
+    fn stolen_error() -> fe2o3_amqp_types::definitions::Error {
+        fe2o3_amqp_types::definitions::Error::new(
+            fe2o3_amqp_types::definitions::LinkError::Stolen,
+            Some("New receiver 'x' with higher epoch of '1' is created".to_string()),
+            None,
+        )
+    }
+
+    // A receive that fails because the broker closed the link with
+    // `amqp:link:stolen` must keep the described error. If it collapses to
+    // `LinkStateError`, the condition is only reachable through a fe2o3 type
+    // and no caller can classify the displacement.
+    #[test]
+    fn recv_link_state_remote_closed_with_error_keeps_described_error() {
+        let recv_error = fe2o3_amqp::link::RecvError::LinkStateError(
+            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(stolen_error()),
+        );
+        let amqp_error = AmqpError::from(recv_error);
+        match amqp_error.kind() {
+            AmqpErrorKind::AmqpDescribedError(described) => {
+                assert_eq!(described.condition, AmqpErrorCondition::LinkStolen);
+            }
+            _ => panic!("expected AmqpDescribedError, got {amqp_error:?}"),
+        }
+    }
+
+    #[test]
+    fn recv_link_state_remote_detached_with_error_keeps_described_error() {
+        let recv_error = fe2o3_amqp::link::RecvError::LinkStateError(
+            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(stolen_error()),
+        );
+        let amqp_error = AmqpError::from(recv_error);
+        match amqp_error.kind() {
+            AmqpErrorKind::AmqpDescribedError(described) => {
+                assert_eq!(described.condition, AmqpErrorCondition::LinkStolen);
+            }
+            _ => panic!("expected AmqpDescribedError, got {amqp_error:?}"),
+        }
+    }
+
+    // A plain remote close with no error keeps its transport-level kind so the
+    // retry layer still classifies it as a link reattach.
+    #[test]
+    fn recv_link_state_remote_closed_maps_to_link_closed_by_remote() {
+        let recv_error = fe2o3_amqp::link::RecvError::LinkStateError(
+            fe2o3_amqp::link::LinkStateError::RemoteClosed,
+        );
+        let amqp_error = AmqpError::from(recv_error);
+        assert!(matches!(
+            amqp_error.kind(),
+            AmqpErrorKind::LinkClosedByRemote(_)
+        ));
+    }
+
+    // A plain remote detach with no error keeps its own kind, separate from a
+    // remote close. The two arms are distinct, so both need a test.
+    #[test]
+    fn recv_link_state_remote_detached_maps_to_link_detached_by_remote() {
+        let recv_error = fe2o3_amqp::link::RecvError::LinkStateError(
+            fe2o3_amqp::link::LinkStateError::RemoteDetached,
+        );
+        let amqp_error = AmqpError::from(recv_error);
+        assert!(matches!(
+            amqp_error.kind(),
+            AmqpErrorKind::LinkDetachedByRemote(_)
+        ));
+    }
+
+    // A link-state failure that is neither a close nor a detach still reports
+    // `LinkStateError`, and it now carries the `LinkStateError` itself. It
+    // carried the enclosing `RecvError` before the delegation.
+    #[test]
+    fn recv_link_state_other_carries_the_link_state_error() {
+        let recv_error = fe2o3_amqp::link::RecvError::LinkStateError(
+            fe2o3_amqp::link::LinkStateError::IllegalSessionState,
+        );
+        let amqp_error = AmqpError::from(recv_error);
+        let AmqpErrorKind::LinkStateError(source) = amqp_error.kind() else {
+            panic!("a link-state failure must report LinkStateError");
+        };
+        assert!(
+            source
+                .downcast_ref::<fe2o3_amqp::link::LinkStateError>()
+                .is_some(),
+            "the reported error must carry the LinkStateError, not the enclosing RecvError"
         );
     }
 }

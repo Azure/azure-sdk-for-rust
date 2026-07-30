@@ -516,7 +516,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.37.0"
+version = "0.38.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -527,6 +527,8 @@ dependencies = [
  "base64",
  "clap",
  "futures",
+ "opentelemetry 0.32.0",
+ "opentelemetry_sdk 0.32.1",
  "pin-project",
  "reqwest",
  "serde",
@@ -548,13 +550,15 @@ dependencies = [
  "azure_core 1.1.0",
  "azure_data_cosmos_driver",
  "criterion",
+ "serde",
+ "serde_json",
  "tokio",
  "url",
 ]
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "arc-swap",
  "async-lock",
@@ -638,6 +642,7 @@ dependencies = [
  "time",
  "tokio",
  "tokio-metrics",
+ "tracing-subscriber",
  "uuid",
 ]
 
@@ -673,6 +678,7 @@ dependencies = [
  "include-file",
  "openssl",
  "pin-project",
+ "rand 0.10.2",
  "serde",
  "serde_json",
  "serde_test",
@@ -832,6 +838,8 @@ dependencies = [
 name = "azure_security_keyvault_test"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "azure_core 1.2.0-beta.1",
  "tokio",
 ]
 

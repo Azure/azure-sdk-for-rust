@@ -337,6 +337,7 @@ pub extern "C" fn cosmos_submit_operation(
         operation,
         options,
         continuation,
+        plan_options,
     } = built;
 
     spawn_oneshot(
@@ -349,7 +350,7 @@ pub extern "C" fn cosmos_submit_operation(
             // plan so we can mint the next-page token.
             let container = operation.container().cloned();
             let mut plan = driver_arc
-                .plan_operation(operation, &options, continuation.as_ref())
+                .plan_operation(operation, &options, continuation.as_ref(), &plan_options)
                 .await?;
             let page = driver_arc
                 .execute_plan(&mut plan, container, options)

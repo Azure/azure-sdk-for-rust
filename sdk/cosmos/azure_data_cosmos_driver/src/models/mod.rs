@@ -636,6 +636,20 @@ impl OperationType {
         )
     }
 
+    /// True for the point item ops (create/read/replace/upsert) eligible for
+    /// binary encoding. Necessary but not sufficient: the full gate also
+    /// requires [`ResourceType::Document`] (see
+    /// `CosmosDriver::binary_encoding_applies`).
+    pub(crate) fn supports_binary_encoding(self) -> bool {
+        matches!(
+            self,
+            OperationType::Create
+                | OperationType::Read
+                | OperationType::Replace
+                | OperationType::Upsert
+        )
+    }
+
     /// Returns the HTTP method for this operation type.
     pub fn http_method(self) -> azure_core::http::Method {
         use azure_core::http::Method;
@@ -876,6 +890,35 @@ impl std::fmt::Display for ThroughputControlGroupName {
 mod tests {
     use super::*;
     use serde::{Deserialize, Serialize};
+
+    #[test]
+    fn supports_binary_encoding_covers_only_bodied_point_ops() {
+        // Matches the binary-encoding spec §2 scope table: create/read/replace/
+        // upsert. `delete` is excluded (no request or response body); query,
+        // feed, batch, and stored-procedure paths are deferred.
+        for op in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::Replace,
+            OperationType::Upsert,
+        ] {
+            assert!(op.supports_binary_encoding(), "{op:?} should be supported");
+        }
+        for op in [
+            OperationType::Delete,
+            OperationType::Query,
+            OperationType::SqlQuery,
+            OperationType::ReadFeed,
+            OperationType::Batch,
+            OperationType::Execute,
+            OperationType::Patch,
+        ] {
+            assert!(
+                !op.supports_binary_encoding(),
+                "{op:?} should not be supported"
+            );
+        }
+    }
 
     #[test]
     fn partition_key_version_numeric_mapping() {
