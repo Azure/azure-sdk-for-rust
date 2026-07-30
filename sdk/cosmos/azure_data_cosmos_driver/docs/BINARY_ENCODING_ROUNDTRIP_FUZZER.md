@@ -1,6 +1,6 @@
 # Binary-Encoding Round-Trip Fuzzer — Design
 
-**Status:** Draft · **Companion harness:** `azure_data_cosmos_perf/tests/binary_roundtrip_fuzzer.rs`
+**Status:** Draft · **Companion harness:** `azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs`
 
 ## 1. Goal
 
@@ -333,14 +333,14 @@ every generated doc through both.
 AZURE_COSMOS_CONNECTION_STRING='AccountEndpoint=...;AccountKey=...;' \
 AZURE_COSMOS_ALLOW_INVALID_CERT=true \
 RUSTFLAGS='--cfg test_category="binary_encoding"' \
-  cargo test -p azure_data_cosmos_perf --test binary_roundtrip_fuzzer -- --nocapture
+  cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection -- --nocapture
 
 # Multi-day soak (millions of docs):
 AZURE_COSMOS_CONNECTION_STRING='...' \
 AZURE_COSMOS_FUZZ_ITERATIONS=5000000 \
 AZURE_COSMOS_FUZZ_MAX_DEPTH=6 \
 RUSTFLAGS='--cfg test_category="binary_encoding"' \
-  cargo test -p azure_data_cosmos_perf --test binary_roundtrip_fuzzer --release -- --nocapture
+  cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection --release -- --nocapture
 
 # Reproduce a failure:
 AZURE_COSMOS_FUZZ_SEED=12345678901234567890 ... cargo test ...
@@ -348,7 +348,7 @@ AZURE_COSMOS_FUZZ_SEED=12345678901234567890 ... cargo test ...
 # Calibrate number canonicalization against the account (prints a table, no assert):
 AZURE_COSMOS_CONNECTION_STRING='...' AZURE_COSMOS_FUZZ_CALIBRATE=true \
 RUSTFLAGS='--cfg test_category="binary_encoding"' \
-  cargo test -p azure_data_cosmos_perf --test binary_roundtrip_fuzzer -- --nocapture
+  cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection -- --nocapture
 ```
 
 ### Environment knobs
@@ -422,7 +422,7 @@ replaces the other.
 
 | | **cargo-fuzz crate** (protocol/byte fuzzer) | **round-trip fuzzer** (value fuzzer) |
 | --- | --- | --- |
-| Location | `azure_data_cosmos_driver/fuzz/` | `azure_data_cosmos_perf/tests/binary_roundtrip_fuzzer.rs` |
+| Location | `azure_data_cosmos_driver/fuzz/` | `azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs` |
 | Fuzzes | the **byte/wire format** (the codec) | **value fidelity** (end-to-end pipeline) |
 | Input space | random / mutated **raw bytes** | random **JSON values** (arbitrary-json + corpus shapes) |
 | Decoder sees | **mis-encoded** frames the encoder never emits | only **well-formed** encoder output |

@@ -18,12 +18,12 @@
 //! AZURE_COSMOS_CONNECTION_STRING='AccountEndpoint=...;AccountKey=...;' \
 //! AZURE_COSMOS_ALLOW_INVALID_CERT=true \
 //! RUSTFLAGS='--cfg test_category="binary_encoding"' \
-//!   cargo test -p azure_data_cosmos_perf --test binary_roundtrip_fuzzer -- --nocapture
+//!   cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection -- --nocapture
 //!
 //! # Multi-day soak (millions of docs), release build:
 //! AZURE_COSMOS_CONNECTION_STRING='...' AZURE_COSMOS_FUZZ_ITERATIONS=5000000 \
 //! RUSTFLAGS='--cfg test_category="binary_encoding"' \
-//!   cargo test -p azure_data_cosmos_perf --test binary_roundtrip_fuzzer --release -- --nocapture
+//!   cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection --release -- --nocapture
 //!
 //! # Reproduce a failure exactly:
 //! AZURE_COSMOS_FUZZ_SEED=<seed printed by the failing run> ... cargo test ...
@@ -2071,7 +2071,7 @@ fn assert_roundtrip(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Offline unit tests — validate the canonicalizer and generator without a live
-// account. These run under a normal `cargo test -p azure_data_cosmos_perf`.
+// account. These run under a normal `cargo test -p azure_data_cosmos`.
 // ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -2543,7 +2543,7 @@ mod tests {
     /// default; run explicitly with `--ignored --nocapture`:
     ///
     /// ```bash
-    /// cargo test -p azure_data_cosmos_perf --test binary_roundtrip_fuzzer \
+    /// cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection \
     ///   print_sample_documents -- --ignored --nocapture
     /// ```
     ///

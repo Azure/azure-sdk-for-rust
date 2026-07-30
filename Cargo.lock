@@ -537,6 +537,8 @@ dependencies = [
 name = "azure_data_cosmos"
 version = "0.38.0"
 dependencies = [
+ "arbitrary",
+ "arbitrary-json",
  "async-lock",
  "async-trait",
  "azure_core 1.1.0",
@@ -546,6 +548,7 @@ dependencies = [
  "base64",
  "clap",
  "futures",
+ "json-canon",
  "opentelemetry 0.32.0",
  "opentelemetry_sdk 0.32.1",
  "pin-project",
@@ -553,6 +556,7 @@ dependencies = [
  "serde",
  "serde_bytes",
  "serde_json",
+ "sha2",
  "time",
  "tokio",
  "tracing",
@@ -644,8 +648,6 @@ dependencies = [
 name = "azure_data_cosmos_perf"
 version = "0.1.0"
 dependencies = [
- "arbitrary",
- "arbitrary-json",
  "async-trait",
  "azure_core 1.1.0",
  "azure_data_cosmos",
@@ -656,11 +658,9 @@ dependencies = [
  "futures",
  "hdrhistogram",
  "hostname",
- "json-canon",
  "rand 0.10.2",
  "serde",
  "serde_json",
- "sha2",
  "sysinfo",
  "time",
  "tokio",
