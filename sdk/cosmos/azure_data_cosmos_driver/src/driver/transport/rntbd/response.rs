@@ -96,7 +96,7 @@ impl RntbdResponse {
     /// Writes this response as a Gateway 2.0 RNTBD frame.
     #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
     pub(crate) fn write(&self, out: &mut impl std::io::Write) -> azure_core::Result<()> {
-        let mut metadata = Vec::with_capacity(13);
+        let mut metadata = Vec::with_capacity(14);
         metadata.push(Token::new(
             RntbdResponseToken::PayloadPresent,
             TokenValue::Byte(u8::from(!self.body.is_empty())),
@@ -128,6 +128,12 @@ impl RntbdResponse {
         if let Some(value) = self.request_charge {
             metadata.push(Token::new(
                 RntbdResponseToken::RequestCharge,
+                TokenValue::Double(value),
+            ));
+        }
+        if let Some(value) = self.backend_request_duration_ms {
+            metadata.push(Token::new(
+                RntbdResponseToken::BackendRequestDurationMilliseconds,
                 TokenValue::Double(value),
             ));
         }
@@ -511,7 +517,7 @@ mod tests {
             lsn: Some(11),
             item_count: Some(15),
             request_charge: Some(5.5),
-            backend_request_duration_ms: None,
+            backend_request_duration_ms: Some(1.23),
             owner_full_name: Some("dbs/db/colls/coll/docs/doc1".to_owned()),
             owner_id: None,
             quorum_acked_lsn: None,
