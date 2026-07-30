@@ -84,7 +84,7 @@ pub async fn proxy_disabled_by_default_ignores_env() -> Result<(), Box<dyn Error
 }
 
 /// Verifies that a client built with `with_proxy_allowed(true)`
-/// routes requests through the proxy specified by `HTTPS_PROXY`.
+/// routes requests through the proxy specified by `HTTP_PROXY`/`HTTPS_PROXY`.
 #[tokio::test]
 #[cfg_attr(
     test_category = "emulator_inmemory_gateway_v2",
@@ -122,9 +122,22 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
         }
     });
 
-    let proxy_key = "HTTPS_PROXY";
-    let prev = std::env::var(proxy_key).ok();
-    std::env::set_var(proxy_key, format!("http://127.0.0.1:{port}"));
+    // Set both `HTTP_PROXY` and `HTTPS_PROXY`: which one governs the request
+    // depends on the account endpoint's scheme, which varies by backend (the
+    // hosted in-memory emulator advertises a plain `http://127.0.0.1` account
+    // endpoint, while real accounts and the legacy/vnext emulators use
+    // `https://`). Setting only `HTTPS_PROXY` silently fails to proxy an
+    // `http://` target, since that env var is scheme-specific.
+    let proxy_keys = ["HTTP_PROXY", "HTTPS_PROXY"];
+    let proxy_url = format!("http://127.0.0.1:{port}");
+    let prev_values: Vec<Option<String>> = proxy_keys
+        .iter()
+        .map(|key| {
+            let prev = std::env::var(key).ok();
+            std::env::set_var(key, &proxy_url);
+            prev
+        })
+        .collect();
 
     // Build a client manually with proxy enabled.
     let env_val = std::env::var(CONNECTION_STRING_ENV_VAR)
@@ -179,9 +192,11 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
         .await
         .is_ok();
 
-    match prev {
-        Some(v) => std::env::set_var(proxy_key, v),
-        None => std::env::remove_var(proxy_key),
+    for (key, prev) in proxy_keys.iter().zip(prev_values) {
+        match prev {
+            Some(v) => std::env::set_var(key, v),
+            None => std::env::remove_var(key),
+        }
     }
 
     request_handle.abort();
