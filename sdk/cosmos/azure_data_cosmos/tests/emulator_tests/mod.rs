@@ -11,6 +11,7 @@ mod cosmos_feed_ranges;
 mod cosmos_hpk;
 mod cosmos_items;
 mod cosmos_offers;
+mod cosmos_partition_key_types;
 mod cosmos_patch;
 mod cosmos_proxy;
 mod cosmos_query;
