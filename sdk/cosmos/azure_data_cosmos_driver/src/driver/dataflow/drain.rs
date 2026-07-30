@@ -194,6 +194,10 @@ impl PipelineNode for SequentialDrain {
         // thus it cannot itself be the target of a topology change error that would cause a split or merge.
         false
     }
+
+    fn fan_out_width(&self) -> usize {
+        self.children.iter().map(|c| c.fan_out_width()).sum()
+    }
 }
 
 #[cfg(test)]
@@ -229,6 +233,19 @@ mod tests {
             b"p2"
         );
         assert_drained(drain.next_page(&mut context).await);
+    }
+
+    #[test]
+    fn fan_out_width_sums_children_recursively() {
+        // A leaf counts as 1; a SequentialDrain sums its children, including a
+        // nested parent node — so the total is the leaf count of the tree.
+        let leaf = || Box::new(MockLeaf::with_pages(vec![])) as Box<dyn PipelineNode>;
+        assert_eq!(leaf().fan_out_width(), 1);
+
+        let inner = SequentialDrain::new(vec![leaf(), leaf()]);
+        let outer = SequentialDrain::new(vec![leaf(), Box::new(inner)]);
+        // 1 leaf + (2 leaves inside the nested drain) = 3.
+        assert_eq!(outer.fan_out_width(), 3);
     }
 
     #[tokio::test]

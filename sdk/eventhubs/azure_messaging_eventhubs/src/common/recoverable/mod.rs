@@ -4,7 +4,7 @@
 mod claims_based_security;
 mod connection;
 mod management;
-mod receiver;
+pub(crate) mod receiver;
 mod sender;
 
 pub(crate) use connection::RecoverableConnection;

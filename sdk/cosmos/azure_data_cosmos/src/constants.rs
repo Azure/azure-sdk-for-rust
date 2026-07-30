@@ -6,8 +6,8 @@
 
 //! Constants defining HTTP headers and other values used internally by the SDK.
 
-#[cfg(test)]
+#[cfg(all(test, feature = "control_plane"))]
 use azure_core::http::headers::HeaderName;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "control_plane"))]
 pub const OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");

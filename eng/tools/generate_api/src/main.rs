@@ -36,7 +36,7 @@ fn run() -> Result<(), String> {
     diagnostics::info(format!("Generating file: {}", output_path.display()));
 
     let rendered = match request.format {
-        cli::OutputFormat::Review => render::markdown::render(&model),
+        cli::OutputFormat::Markdown => render::markdown::render(&model),
         cli::OutputFormat::Apiview => {
             let options = render::apiview::RenderOptions::new(!request.no_docs);
             render::apiview::render(&model, &options)?

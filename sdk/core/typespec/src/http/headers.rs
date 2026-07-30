@@ -15,6 +15,8 @@ pub static DEFAULT_ALLOWED_HEADER_NAMES: LazyLock<HashSet<Cow<'static, str>>> =
     LazyLock::new(|| {
         [
             "accept",
+            // cspell:disable-next-line -- Low-impact shared default; keeping this in typespec avoids extra hot-path merging for now. Tracking: https://github.com/Azure/azure-sdk-for-rust/issues/4899
+            "azure-deprecating",
             "cache-control",
             "connection",
             "content-length",

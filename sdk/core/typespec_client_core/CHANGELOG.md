@@ -4,11 +4,16 @@
 
 ### Features Added
 
+- Added `Tracer::start_span_with_options`, `Tracer::start_span_with_parent_and_options`, and `Span::end_at`, along with a `SpanOptions` struct, to allow reconstructing spans with explicit (backdated) start and end timestamps. These are additive with default implementations, so existing `Tracer`/`Span` implementations continue to work unchanged.
+
 ### Breaking Changes
 
 ### Bugs Fixed
 
 ### Other Changes
+
+<!-- cspell:disable-next-line -->
+- Added `azure-deprecating` to the default allowed HTTP header list so shared debug and logging paths stop redacting it.
 
 ## 1.1.0 (2026-07-09)
 

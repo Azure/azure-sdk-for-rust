@@ -1001,11 +1001,138 @@ fn service_error_message(status: &CosmosStatus) -> String {
     )
 }
 
+/// Upper bound, in bytes, on how much of the service's error text is folded
+/// into the error message. The full payload always remains available verbatim
+/// via [`CosmosError::response`](crate::error::CosmosError::response); this cap
+/// only keeps single-line log records and panic messages bounded.
+const MAX_SERVICE_DETAIL_LEN: usize = 512;
+
+/// Extracts the service's human-readable explanation from an error response
+/// body so it can be folded into the error message.
+///
+/// Cosmos error payloads are shaped like
+/// `{"code":"BadRequest","message":"Message: {\"Errors\":[\"...\"]}\r\nActivityId: ..., Request URI: ..."}`.
+/// Only the `Errors` text carries information the caller can act on — the
+/// activity ID is already exposed as typed state on the error, and the request
+/// URI and SDK banner identify service-internal replicas — so those trailers
+/// are stripped. Bodies that are not JSON (or not shaped as expected) fall back
+/// to the raw text so nothing the service said is lost; the untouched payload
+/// (trailers included) is always retrievable via
+/// [`CosmosError::response`](crate::error::CosmosError::response).
+///
+/// The result is normalized to a single line (see [`normalize_single_line`])
+/// before it is truncated, so a service-controlled body cannot inject line
+/// breaks or control characters into a log record through
+/// [`CosmosError`](crate::error::CosmosError)'s single-line `Display`.
+///
+/// Returns `None` when the body is empty or carries no usable text.
+fn service_body_detail(body: &[u8]) -> Option<String> {
+    let text = std::str::from_utf8(body).ok()?.trim();
+    if text.is_empty() {
+        return None;
+    }
+
+    let detail = match serde_json::from_str::<serde_json::Value>(text) {
+        Ok(value) => match value.get("message").and_then(serde_json::Value::as_str) {
+            Some(message) => condense_service_message(message),
+            // Valid JSON without a `message` field: keep the payload as-is.
+            None => text.to_string(),
+        },
+        Err(_) => text.to_string(),
+    };
+
+    // Normalize before truncating so the byte budget applies to the text that
+    // is actually rendered.
+    let detail = normalize_single_line(&detail);
+    if detail.is_empty() {
+        return None;
+    }
+
+    Some(truncate_detail(&detail))
+}
+
+/// Collapses `text` onto a single line: every control character (CR, LF, TAB,
+/// other C0/C1 codes, and DEL) becomes a space, and runs of whitespace collapse
+/// to one space.
+///
+/// The service controls this text, so this is what keeps it from forging or
+/// mangling log records emitted through
+/// [`CosmosError`](crate::error::CosmosError)'s single-line `Display`.
+fn normalize_single_line(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut pending_space = false;
+
+    for ch in text.chars() {
+        if ch.is_control() || ch.is_whitespace() {
+            // Defer the separator so trailing whitespace never lands in `out`.
+            pending_space = !out.is_empty();
+            continue;
+        }
+        if pending_space {
+            out.push(' ');
+            pending_space = false;
+        }
+        out.push(ch);
+    }
+
+    out
+}
+
+/// Reduces a service `message` field to the actionable text: drops the
+/// `Message: ` prefix and the `ActivityId: ...` trailer, and unwraps the
+/// nested `{"Errors":[...]}` envelope when present.
+fn condense_service_message(message: &str) -> String {
+    let head = match message.find("\r\nActivityId:") {
+        Some(index) => &message[..index],
+        None => match message.find("\nActivityId:") {
+            Some(index) => &message[..index],
+            None => message,
+        },
+    };
+    let head = head.trim().strip_prefix("Message:").unwrap_or(head).trim();
+
+    // The inner envelope is itself JSON, e.g. `{"Errors":["..."]}`.
+    if let Ok(inner) = serde_json::from_str::<serde_json::Value>(head) {
+        if let Some(errors) = inner.get("Errors").and_then(serde_json::Value::as_array) {
+            let joined = errors
+                .iter()
+                .filter_map(serde_json::Value::as_str)
+                .collect::<Vec<_>>()
+                .join("; ");
+            if !joined.is_empty() {
+                return joined;
+            }
+        }
+    }
+
+    head.to_string()
+}
+
+/// Truncates `detail` to [`MAX_SERVICE_DETAIL_LEN`] bytes on a character
+/// boundary, appending an ellipsis when anything was dropped. The ellipsis is
+/// counted against the budget, so the result never exceeds the cap.
+fn truncate_detail(detail: &str) -> String {
+    const ELLIPSIS: &str = "...";
+
+    if detail.len() <= MAX_SERVICE_DETAIL_LEN {
+        return detail.to_string();
+    }
+
+    let mut end = MAX_SERVICE_DETAIL_LEN - ELLIPSIS.len();
+    while end > 0 && !detail.is_char_boundary(end) {
+        end -= 1;
+    }
+    format!("{}{ELLIPSIS}", &detail[..end])
+}
+
 /// Builds a typed [`CosmosError`] for a Cosmos HTTP error response.
 ///
 /// Captures the parsed response headers and the raw response body bytes
 /// (e.g. the JSON error payload returned by the service for a 400 /
-/// BadRequest) on the resulting `CosmosError`. The error propagates through the
+/// BadRequest) on the resulting `CosmosError`. The service's own explanation
+/// is also folded into the error message (see [`service_body_detail`]) so a
+/// bare `{err}` log line says *why* the request was rejected instead of only
+/// `HTTP 400: Unknown`. The error propagates through the
 /// pipeline as `crate::error::CosmosError` end-to-end. Callers inspect the wire
 /// payload directly via [`CosmosError::status`](crate::error::CosmosError::status),
 /// [`CosmosError::cosmos_headers`](crate::error::CosmosError::cosmos_headers), and
@@ -1031,9 +1158,14 @@ pub(crate) fn build_service_error(
     // canonical [`CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE`] so
     // callers get a consistent typed status regardless of gateway version.
     let effective_status = synthesize_cross_partition_query_status(*status, body);
+    let mut message = service_error_message(&effective_status);
+    if let Some(detail) = service_body_detail(body) {
+        message.push_str(". Details: ");
+        message.push_str(&detail);
+    }
     crate::error::CosmosError::builder()
         .with_status(effective_status)
-        .with_message(service_error_message(&effective_status))
+        .with_message(message)
         .with_response_parts(crate::models::CosmosResponsePayload::new(
             body.to_vec(),
             cosmos_headers.clone(),
@@ -3608,6 +3740,110 @@ mod tests {
         assert!(
             eval.effects.is_empty(),
             "409 Conflict has no per-status handler; emits no effects",
+        );
+    }
+
+    /// The service's explanation is folded into the error message so a bare
+    /// `{err}` log line says *why* the request was rejected, not just
+    /// `HTTP 400: Unknown`.
+    #[test]
+    fn service_error_message_includes_service_detail() {
+        let body = br#"{"code":"BadRequest","message":"Message: {\"Errors\":[\"The retention duration in the Change Feed policy should not be set when continuous backup mode is enabled for the database account.\"]}\r\nActivityId: 36327452-0aa6-41fa-8f85-491f9755c870, Request URI: /apps/x/services/y, RequestStats: , SDK: Microsoft.Azure.Documents.Common/2.14.0"}"#;
+        let err = build_service_error(
+            &CosmosStatus::from_parts(StatusCode::BadRequest, None),
+            &CosmosResponseHeaders::default(),
+            body,
+        );
+
+        let rendered = err.to_string();
+        assert!(
+            rendered.contains(
+                "The retention duration in the Change Feed policy should not be set \
+                 when continuous backup mode is enabled for the database account."
+            ),
+            "expected the service explanation in {rendered}"
+        );
+        // The activity ID is already typed state on the error, and the request
+        // URI / SDK banner name service-internal replicas — the trailer stays
+        // in the raw body rather than bloating the message.
+        assert!(
+            !rendered.contains("Request URI"),
+            "expected the request trailer to be stripped from {rendered}"
+        );
+    }
+
+    #[test]
+    fn service_body_detail_falls_back_to_raw_text() {
+        assert_eq!(
+            Some("not json at all".to_string()),
+            service_body_detail(b"not json at all")
+        );
+        assert_eq!(None, service_body_detail(b""));
+        assert_eq!(None, service_body_detail(b"   "));
+    }
+
+    #[test]
+    fn service_body_detail_truncates_long_payloads() {
+        let long = "x".repeat(MAX_SERVICE_DETAIL_LEN * 2);
+        let body = serde_json::json!({ "code": "BadRequest", "message": long }).to_string();
+
+        let detail = service_body_detail(body.as_bytes()).expect("detail");
+        // The ellipsis is counted against the budget, so the cap is never exceeded.
+        assert_eq!(MAX_SERVICE_DETAIL_LEN, detail.len());
+        assert!(detail.ends_with("..."));
+    }
+
+    /// Truncating must not split a multi-byte character, and the result must
+    /// still respect the byte cap.
+    #[test]
+    fn service_body_detail_truncates_on_char_boundary() {
+        // 'é' is two bytes, so the naive cut point lands mid-character.
+        let long = "é".repeat(MAX_SERVICE_DETAIL_LEN);
+        let body = serde_json::json!({ "code": "BadRequest", "message": long }).to_string();
+
+        let detail = service_body_detail(body.as_bytes()).expect("detail");
+        assert!(detail.len() <= MAX_SERVICE_DETAIL_LEN);
+        assert!(detail.ends_with("..."));
+        assert!(detail.trim_end_matches('.').chars().all(|c| c == 'é'));
+    }
+
+    /// The body is service-controlled, so newlines and other control characters
+    /// must not reach `CosmosError`'s single-line `Display` — otherwise a
+    /// crafted payload could forge or mangle log records.
+    #[test]
+    fn service_body_detail_normalizes_control_characters() {
+        let body = serde_json::json!({
+            "code": "BadRequest",
+            "message": "first line\r\nERROR: forged\tentry\u{7f}\u{1}  and   spaces  ",
+        })
+        .to_string();
+
+        let detail = service_body_detail(body.as_bytes()).expect("detail");
+        assert_eq!("first line ERROR: forged entry and spaces", detail);
+        assert!(!detail.chars().any(char::is_control));
+    }
+
+    /// The same normalization applies on the raw-text fallback path, where the
+    /// body never went through JSON parsing.
+    #[test]
+    fn service_body_detail_normalizes_raw_text_fallback() {
+        let detail = service_body_detail(b"not json\nsecond line\r\nthird").expect("detail");
+        assert_eq!("not json second line third", detail);
+    }
+
+    /// A body that is nothing but control characters carries no usable text.
+    #[test]
+    fn service_body_detail_rejects_control_only_body() {
+        assert_eq!(None, service_body_detail(b"\r\n\t  \x01"));
+    }
+
+    /// A body with no `message` field (or an unexpected shape) still surfaces
+    /// verbatim rather than being dropped.
+    #[test]
+    fn service_body_detail_keeps_unrecognized_json() {
+        assert_eq!(
+            Some(r#"{"code":"BadRequest"}"#.to_string()),
+            service_body_detail(br#"{"code":"BadRequest"}"#)
         );
     }
 }

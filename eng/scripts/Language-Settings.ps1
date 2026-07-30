@@ -272,7 +272,7 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
 }
 
 function Find-rust-Artifacts-For-Apireview([string]$ArtifactPath, [string]$packageName) {
-  [array]$files = Get-ChildItem -Path $ArtifactPath -Recurse -Filter "$packageName.rust.json"
+  [array]$files = Get-ChildItem -Path $ArtifactPath -Recurse -Filter "$packageName`_rust.json"
 
   if (!$files) {
     Write-Host "$($packageName) does not have api review json"

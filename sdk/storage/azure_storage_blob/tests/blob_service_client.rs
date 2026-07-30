@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod common;
+
 use azure_core::http::{ClientOptions, RequestContent, Url, XmlFormat};
 use azure_core::time::OffsetDateTime;
 use azure_core_test::{recorded, TestContext};
@@ -11,7 +13,7 @@ use azure_storage_blob::models::{
     KeyInfo, ListContainersIncludeType, Metrics, RetentionPolicy,
 };
 use azure_storage_blob::{format_filter_expression, BlobServiceClient, BlobServiceClientOptions};
-use azure_storage_blob_test::{
+use common::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
     get_container_name, poll_until, recorded_test_setup, StorageAccount,
 };

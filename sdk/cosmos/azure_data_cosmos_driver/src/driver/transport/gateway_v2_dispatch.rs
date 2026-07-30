@@ -10,23 +10,20 @@ use azure_core::{
         Method,
     },
 };
-use base64::{
-    engine::general_purpose::{STANDARD as BASE64_STANDARD, URL_SAFE as BASE64_URL_SAFE},
-    Engine as _,
-};
 use uuid::Uuid;
 
 use crate::{
     models::{
         cosmos_headers::{request_header_names, response_header_names},
         effective_partition_key::EffectivePartitionKey,
+        resource_id::decode_rid,
         DefaultConsistencyLevel, OperationType, ResourceType,
     },
     options::ReadConsistencyStrategy,
 };
 
 use super::{
-    cosmos_headers::SUPPORTED_CAPABILITIES_BITS,
+    cosmos_headers::{CLIENT_ID, SUPPORTED_CAPABILITIES_BITS},
     cosmos_transport_client::{HttpRequest, HttpResponse},
     rntbd::{RntbdRequestFrame, RntbdResponse, Token},
     AuthorizationContext,
@@ -85,12 +82,13 @@ pub(crate) struct WrapInputs<'a> {
 
 /// Wraps a signed Cosmos HTTP request into a Gateway 2.0 RNTBD request frame.
 pub(crate) fn wrap_request_for_gateway_v2(
-    request: &HttpRequest,
+    mut request: HttpRequest,
     inputs: &WrapInputs<'_>,
 ) -> azure_core::Result<HttpRequest> {
-    let authorization = required_header(request, &AUTHORIZATION, "authorization")?;
-    let date = required_header(request, &X_MS_DATE, "x-ms-date")?;
-    let activity_id = required_header(request, &X_MS_ACTIVITY_ID, "x-ms-activity-id")?;
+    let client_id = request.headers.remove(CLIENT_ID);
+    let authorization = required_header(&request, &AUTHORIZATION, "authorization")?;
+    let date = required_header(&request, &X_MS_DATE, "x-ms-date")?;
+    let activity_id = required_header(&request, &X_MS_ACTIVITY_ID, "x-ms-activity-id")?;
     let activity_id = Uuid::parse_str(&activity_id)
         .map_err(|e| data_conversion_error(format!("x-ms-activity-id is not a valid UUID: {e}")))?;
     let account_name = inputs
@@ -160,19 +158,9 @@ pub(crate) fn wrap_request_for_gateway_v2(
     metadata.push(Token::collection_name(resource_names.collection));
     if let Some(rid) = inputs.collection_rid.filter(|s| !s.is_empty()) {
         metadata.push(Token::collection_rid(rid.to_owned()));
-        // Both CollectionRid (string, base64) and ResourceId (binary, 8 bytes) are emitted.
-        // The proxy uses ResourceId as the document routing key — without it requests
-        // fail with sub-status 13007 ("error routing the request"). Cosmos rids may use
-        // either standard (`+/`) or url-safe (`-_`) base64; try url-safe first since
-        // standard rejects `-_`.
-        let decoded = BASE64_URL_SAFE
-            .decode(rid)
-            .or_else(|_| BASE64_STANDARD.decode(rid));
-        if let Ok(decoded) = decoded {
-            if !decoded.is_empty() {
-                metadata.push(Token::resource_id(decoded));
-            }
-        }
+        let decoded = decode_rid(rid)
+            .map_err(|e| data_conversion_error(format!("invalid collection RID: {e}")))?;
+        metadata.push(Token::resource_id(decoded));
     }
     metadata.push(Token::payload_present(has_payload));
     if inputs.resource_type == ResourceType::Document
@@ -336,6 +324,9 @@ pub(crate) fn wrap_request_for_gateway_v2(
     if let Some(user_agent) = request.headers.get_optional_str(&USER_AGENT) {
         headers.insert(USER_AGENT, HeaderValue::from(user_agent.to_owned()));
     }
+    if let Some(client_id) = client_id {
+        headers.insert(CLIENT_ID, client_id);
+    }
     headers.insert(X_MS_ACTIVITY_ID, HeaderValue::from(activity_id.to_string()));
     // Forward x-ms-version (defaults to CURRENT_VERSION = 2020-07-15)
     // and Cache-Control. The proxy requires x-ms-version to dispatch the request.
@@ -422,6 +413,93 @@ pub(crate) fn unwrap_response_for_gateway_v2(
     );
     if let Some(charge) = response.request_charge {
         headers.insert(response_header_names::REQUEST_CHARGE, charge.to_string());
+    }
+    if let Some(duration_ms) = response.backend_request_duration_ms {
+        headers.insert(
+            response_header_names::SERVER_DURATION_MS,
+            duration_ms.to_string(),
+        );
+    }
+    if let Some(value) = response.last_state_change_date_time {
+        headers.insert(response_header_names::LAST_STATE_CHANGE_UTC, value);
+    }
+    if let Some(value) = response.storage_max_resource_quota {
+        headers.insert(response_header_names::RESOURCE_QUOTA, value);
+    }
+    if let Some(value) = response.storage_resource_quota_usage {
+        headers.insert(response_header_names::RESOURCE_USAGE, value);
+    }
+    if let Some(value) = response.schema_version {
+        headers.insert(response_header_names::SCHEMA_VERSION, value);
+    }
+    if let Some(value) = response.item_count {
+        headers.insert(response_header_names::ITEM_COUNT, value.to_string());
+    }
+    if let Some(value) = response.owner_id {
+        headers.insert(response_header_names::OWNER_ID, value);
+    }
+    if let Some(value) = response.quorum_acked_lsn {
+        headers.insert(response_header_names::QUORUM_ACKED_LSN, value.to_string());
+    }
+    if let Some(value) = response.current_write_quorum {
+        headers.insert(
+            response_header_names::CURRENT_WRITE_QUORUM,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.current_replica_set_size {
+        headers.insert(
+            response_header_names::CURRENT_REPLICA_SET_SIZE,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.xp_role {
+        headers.insert(response_header_names::XP_ROLE, value.to_string());
+    }
+    if let Some(value) = response.number_of_read_regions {
+        headers.insert(
+            response_header_names::NUMBER_OF_READ_REGIONS,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.local_lsn.filter(|value| *value >= 0) {
+        headers.insert(response_header_names::LOCAL_LSN, value.to_string());
+    }
+    if let Some(value) = response.quorum_acked_local_lsn {
+        headers.insert(
+            response_header_names::QUORUM_ACKED_LOCAL_LSN,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.item_local_lsn.filter(|value| *value >= 0) {
+        headers.insert(response_header_names::ITEM_LOCAL_LSN, value.to_string());
+    }
+    if let Some(value) = response.query_execution_info {
+        headers.insert(response_header_names::QUERY_EXECUTION_INFO, value);
+    }
+    if let Some(value) = response.pending_pk_delete {
+        headers.insert(
+            response_header_names::PENDING_PK_DELETE,
+            if value { "True" } else { "False" },
+        );
+    }
+    if let Some(value) = response.physical_partition_id {
+        headers.insert(response_header_names::PHYSICAL_PARTITION_ID, value);
+    }
+    if let Some(value) = response.conflict_resolved_timestamp {
+        headers.insert(
+            response_header_names::CONFLICT_RESOLVED_TIMESTAMP,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.transport_request_id {
+        headers.insert(
+            response_header_names::TRANSPORT_REQUEST_ID,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.partition_key_range_id.as_ref() {
+        headers.insert(response_header_names::PARTITION_KEY_RANGE_ID, value.clone());
     }
     if let Some(token) = response.session_token {
         // GW2 surfaces only the vector portion of the session token, with the
@@ -821,7 +899,7 @@ mod tests {
         let partition_key_definition = PartitionKeyDefinition::new(vec![Cow::from("/pk")]);
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
@@ -897,7 +975,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -921,7 +999,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -984,7 +1062,7 @@ mod tests {
             AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
@@ -1033,7 +1111,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1064,7 +1142,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
@@ -1093,7 +1171,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1108,12 +1186,43 @@ mod tests {
 
     #[test]
     fn wrap_emits_collection_rid_and_decoded_resource_id_when_supplied() {
-        // Regression: the proxy uses the binary `ResourceId` token (0x0000, 8
-        // bytes) as the document routing key. Both `CollectionRid`
-        // (string base64) and `ResourceId` (decoded bytes) must be emitted.
-        // Cosmos rids use URL-safe base64 (e.g. `wT0aAOnu_xc=`); pin the
-        // url-safe-first decode path so plain `STANDARD` rejection of `-_`
-        // does not cause us to silently drop the routing key.
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+
+        for (rid, expected_resource_id) in [
+            (
+                "-NY+AJoR+cc=",
+                [0xfc, 0xd6, 0x3e, 0x00, 0x9a, 0x11, 0xf9, 0xc7],
+            ),
+            (
+                "YpNuAIVuY-0=",
+                [0x62, 0x93, 0x6e, 0x00, 0x85, 0x6e, 0x63, 0xfd],
+            ),
+        ] {
+            let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
+            inputs.collection_rid = Some(rid);
+
+            let wrapped = wrap_request_for_gateway_v2(request.clone(), &inputs).unwrap();
+            let parsed = parse_wrapped_request(&wrapped, 0);
+
+            assert_eq!(
+                parsed.tokens[&0x0035],
+                ParsedTokenValue::String(rid.into()),
+                "CollectionRid (0x0035) must preserve the wire value"
+            );
+            match &parsed.tokens[&0x0000] {
+                ParsedTokenValue::Bytes(bytes) => assert_eq!(bytes, &expected_resource_id),
+                other => panic!("expected ResourceId bytes, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn wrap_rejects_invalid_collection_rid() {
         let request = signed_request(None);
         let auth_context = AuthorizationContext::new(
             Method::Get,
@@ -1121,24 +1230,10 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
         let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
-        // "wT0aAOnu_xc=" -> 8 bytes containing the url-safe `_` (0x5F maps to 0xFF7F in std b64).
-        let rid = "wT0aAOnu_xc=";
-        inputs.collection_rid = Some(rid);
+        inputs.collection_rid = Some("invalid!");
 
-        let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
-        let parsed = parse_wrapped_request(&wrapped, 0);
-
-        assert_eq!(
-            parsed.tokens[&0x0035],
-            ParsedTokenValue::String(rid.into()),
-            "CollectionRid (0x0035) must be the raw base64 string"
-        );
-        match &parsed.tokens[&0x0000] {
-            ParsedTokenValue::Bytes(bytes) => {
-                assert_eq!(bytes.len(), 8, "ResourceId must be 8 bytes");
-            }
-            other => panic!("expected ResourceId bytes, got {other:?}"),
-        }
+        let err = wrap_request_for_gateway_v2(request, &inputs).unwrap_err();
+        assert!(err.to_string().contains("invalid collection RID"));
     }
 
     #[test]
@@ -1154,7 +1249,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1186,7 +1281,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Query, None),
         )
         .unwrap();
@@ -1212,7 +1307,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1239,7 +1334,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1263,7 +1358,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1277,7 +1372,7 @@ mod tests {
             "",
         );
         let wrapped_empty = wrap_request_for_gateway_v2(
-            &empty,
+            empty,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1303,7 +1398,7 @@ mod tests {
             "100",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
         )
         .unwrap();
@@ -1319,7 +1414,7 @@ mod tests {
             "-1",
         );
         let wrapped_unbounded = wrap_request_for_gateway_v2(
-            &unbounded,
+            unbounded,
             &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
         )
         .unwrap();
@@ -1339,7 +1434,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
         )
         .unwrap();
@@ -1367,7 +1462,7 @@ mod tests {
             "\"ignored\"",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Replace, None),
         )
         .unwrap();
@@ -1397,7 +1492,7 @@ mod tests {
             "\"ignored\"",
         );
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1415,7 +1510,7 @@ mod tests {
             AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
@@ -1432,7 +1527,7 @@ mod tests {
             AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
@@ -1452,7 +1547,7 @@ mod tests {
         let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
         inputs.effective_consistency = DefaultConsistencyLevel::Eventual;
 
-        let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
+        let wrapped = wrap_request_for_gateway_v2(request, &inputs).unwrap();
         let parsed = parse_wrapped_request(&wrapped, 10);
 
         assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x03));
@@ -1482,7 +1577,7 @@ mod tests {
             let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
             inputs.read_consistency_strategy = strategy;
 
-            let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
+            let wrapped = wrap_request_for_gateway_v2(request.clone(), &inputs).unwrap();
             let parsed = parse_wrapped_request(&wrapped, 10);
 
             assert_eq!(
@@ -1513,7 +1608,7 @@ mod tests {
         inputs.read_consistency_strategy = ReadConsistencyStrategy::Default;
         inputs.effective_consistency = DefaultConsistencyLevel::Session;
 
-        let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
+        let wrapped = wrap_request_for_gateway_v2(request, &inputs).unwrap();
         let parsed = parse_wrapped_request(&wrapped, 10);
 
         assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x02));
@@ -1544,7 +1639,7 @@ mod tests {
         let expected = effective_partition_key_v2_binary(partition_key.values());
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
@@ -1574,7 +1669,50 @@ mod tests {
         let expected = effective_partition_key_v1_binary(partition_key.values());
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
+            &wrap_inputs(
+                &auth_context,
+                OperationType::Read,
+                Some(&epk(&partition_key, &partition_key_definition)),
+            ),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 11);
+
+        assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
+    }
+
+    #[test]
+    fn wrap_emits_v1_binary_effective_partition_key_for_version_less_collections() {
+        // A container definition read back from the service with no `version`
+        // field is a legacy V1 container (the service omits `version` only for
+        // V1). Gateway 2.0 routes point ops on the client-computed EPK, so a
+        // version-less container MUST emit the V1 binary EPK token (0x005A),
+        // NOT V2 — mis-detecting it as V2 was the root-cause routing bug this
+        // guards against.
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let partition_key = PartitionKey::from("tenant1");
+        let partition_key_definition: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/tenantId"]}"#).unwrap();
+        assert_eq!(
+            partition_key_definition.version(),
+            PartitionKeyVersion::V1,
+            "sanity check: a version-less definition deserializes to V1"
+        );
+        let expected = effective_partition_key_v1_binary(partition_key.values());
+        assert_ne!(
+            expected,
+            effective_partition_key_v2_binary(partition_key.values()),
+            "sanity check: V1 and V2 EPK encodings differ for this pk value"
+        );
+
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
@@ -1609,7 +1747,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Query,
@@ -1659,7 +1797,7 @@ mod tests {
             PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
@@ -1700,7 +1838,7 @@ mod tests {
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &WrapInputs {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
@@ -1736,7 +1874,7 @@ mod tests {
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &WrapInputs {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
@@ -1768,7 +1906,7 @@ mod tests {
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &WrapInputs {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
@@ -1791,8 +1929,12 @@ mod tests {
     }
 
     #[test]
-    fn wrap_only_keeps_user_agent_and_activity_id_headers() {
-        let request = signed_request(None);
+    fn wrap_preserves_client_id_proxy_header_and_drops_inner_headers() {
+        let mut request = signed_request(None);
+        request.headers.insert(
+            CLIENT_ID,
+            HeaderValue::from_static("00000000-0000-4000-8000-000000000000"),
+        );
         let auth_context = AuthorizationContext::new(
             Method::Get,
             ResourceType::Document,
@@ -1800,7 +1942,7 @@ mod tests {
         );
 
         let wrapped = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1812,6 +1954,10 @@ mod tests {
         assert_eq!(
             wrapped.headers.get_optional_str(&X_MS_ACTIVITY_ID),
             Some(ACTIVITY_ID)
+        );
+        assert_eq!(
+            wrapped.headers.get_optional_str(&CLIENT_ID),
+            Some("00000000-0000-4000-8000-000000000000")
         );
         assert!(wrapped.headers.get_optional_str(&AUTHORIZATION).is_none());
         assert!(wrapped.headers.get_optional_str(&X_MS_DATE).is_none());
@@ -1830,7 +1976,7 @@ mod tests {
         );
 
         let error = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap_err();
@@ -1849,7 +1995,7 @@ mod tests {
         );
 
         let error = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap_err();
@@ -1868,7 +2014,7 @@ mod tests {
         );
 
         let error = wrap_request_for_gateway_v2(
-            &request,
+            request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap_err();
@@ -1886,8 +2032,29 @@ mod tests {
                 404,
                 activity_id,
                 |tokens| {
+                    write_small_string_token(tokens, 0x0002, "2026-07-21T00:00:00Z");
+                    write_string_token(tokens, 0x000E, "documentSize=10240;");
+                    write_string_token(tokens, 0x000F, "documentSize=1;");
+                    write_small_string_token(tokens, 0x0010, "1.0");
                     write_u32_token(tokens, 0x001C, 1002);
+                    write_u32_token(tokens, 0x0014, 1);
                     write_double_token(tokens, 0x0015, 3.5);
+                    write_string_token(tokens, 0x0018, "owner-rid");
+                    write_i64_token(tokens, 0x001A, 40);
+                    write_u32_token(tokens, 0x001E, 3);
+                    write_u32_token(tokens, 0x001F, 4);
+                    write_u32_token(tokens, 0x0026, 1);
+                    write_u32_token(tokens, 0x0030, 2);
+                    write_i64_token(tokens, 0x003A, 41);
+                    write_i64_token(tokens, 0x003B, 40);
+                    write_i64_token(tokens, 0x003C, 39);
+                    write_string_token(tokens, 0x0045, "{\"reverseRidEnabled\":false}");
+                    write_double_token(tokens, 0x0051, 12.75);
+                    write_byte_token(tokens, 0x0055, 0);
+                    write_string_token(tokens, 0x0063, "physical-0");
+                    write_u64_token(tokens, 0x0087, 1_234_567);
+                    write_u32_token(tokens, 0x0035, 45);
+                    write_string_token(tokens, 0x0021, "1");
                     write_string_token(tokens, 0x003E, "1:2#3");
                     write_string_token(tokens, 0x0004, "\"etag\"");
                     write_string_token(tokens, 0x0003, "continuation");
@@ -1920,6 +2087,49 @@ mod tests {
                 .get_optional_str(&HeaderName::from_static("x-ms-request-charge")),
             Some("3.5")
         );
+        assert_eq!(
+            unwrapped.headers.get_optional_str(&HeaderName::from_static(
+                response_header_names::SERVER_DURATION_MS
+            )),
+            Some("12.75")
+        );
+        let parsed_headers = crate::models::CosmosResponseHeaders::from_headers(&unwrapped.headers);
+        assert_eq!(parsed_headers.server_duration_ms, Some(12.75));
+        assert_eq!(
+            parsed_headers.last_state_change_utc.as_deref(),
+            Some("2026-07-21T00:00:00Z")
+        );
+        assert_eq!(
+            parsed_headers.resource_quota.as_deref(),
+            Some("documentSize=10240;")
+        );
+        assert_eq!(
+            parsed_headers.resource_usage.as_deref(),
+            Some("documentSize=1;")
+        );
+        assert_eq!(parsed_headers.schema_version.as_deref(), Some("1.0"));
+        assert_eq!(parsed_headers.item_count, Some(1));
+        assert_eq!(parsed_headers.owner_id.as_deref(), Some("owner-rid"));
+        assert_eq!(parsed_headers.quorum_acked_lsn, Some(40));
+        assert_eq!(parsed_headers.current_write_quorum, Some(3));
+        assert_eq!(parsed_headers.current_replica_set_size, Some(4));
+        assert_eq!(parsed_headers.xp_role, Some(1));
+        assert_eq!(parsed_headers.number_of_read_regions, Some(2));
+        assert_eq!(parsed_headers.local_lsn, Some(41));
+        assert_eq!(parsed_headers.quorum_acked_local_lsn, Some(40));
+        assert_eq!(parsed_headers.item_local_lsn, Some(39));
+        assert_eq!(
+            parsed_headers.query_execution_info.as_deref(),
+            Some("{\"reverseRidEnabled\":false}")
+        );
+        assert_eq!(parsed_headers.pending_pk_delete, Some(false));
+        assert_eq!(
+            parsed_headers.physical_partition_id.as_deref(),
+            Some("physical-0")
+        );
+        assert_eq!(parsed_headers.conflict_resolved_timestamp, Some(1_234_567));
+        assert_eq!(parsed_headers.transport_request_id, Some(45));
+        assert_eq!(parsed_headers.partition_key_range_id.as_deref(), Some("1"));
         assert_eq!(
             unwrapped
                 .headers
@@ -2095,6 +2305,19 @@ mod tests {
         bytes.extend_from_slice(value.as_bytes());
     }
 
+    fn write_small_string_token(bytes: &mut Vec<u8>, id: u16, value: &str) {
+        bytes.extend_from_slice(&id.to_le_bytes());
+        bytes.push(0x07);
+        bytes.push(u8::try_from(value.len()).unwrap());
+        bytes.extend_from_slice(value.as_bytes());
+    }
+
+    fn write_byte_token(bytes: &mut Vec<u8>, id: u16, value: u8) {
+        bytes.extend_from_slice(&id.to_le_bytes());
+        bytes.push(0x00);
+        bytes.push(value);
+    }
+
     fn write_u32_token(bytes: &mut Vec<u8>, id: u16, value: u32) {
         bytes.extend_from_slice(&id.to_le_bytes());
         bytes.push(0x02);
@@ -2104,6 +2327,12 @@ mod tests {
     fn write_i64_token(bytes: &mut Vec<u8>, id: u16, value: i64) {
         bytes.extend_from_slice(&id.to_le_bytes());
         bytes.push(0x05);
+        bytes.extend_from_slice(&value.to_le_bytes());
+    }
+
+    fn write_u64_token(bytes: &mut Vec<u8>, id: u16, value: u64) {
+        bytes.extend_from_slice(&id.to_le_bytes());
+        bytes.push(0x04);
         bytes.extend_from_slice(&value.to_le_bytes());
     }
 

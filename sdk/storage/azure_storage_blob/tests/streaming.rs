@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod common;
+
 use azure_core::{
     http::{Body, NoFormat, RequestContent},
     stream::BytesStream,
@@ -11,7 +13,7 @@ use azure_storage_blob::{
     models::{BlockLookupList, HttpRange},
     BlobClient,
 };
-use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
+use common::{get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt as _;
 use std::error::Error;
 
