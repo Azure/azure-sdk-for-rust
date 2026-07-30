@@ -25,7 +25,7 @@ use crate::{
 use super::{
     cosmos_headers::{CLIENT_ID, SUPPORTED_CAPABILITIES_BITS},
     cosmos_transport_client::{HttpRequest, HttpResponse},
-    rntbd::{RntbdRequestFrame, RntbdResponse, Token},
+    rntbd::{tokens::RntbdRequestToken, RntbdRequestFrame, RntbdResponse, Token},
     AuthorizationContext,
 };
 
@@ -306,6 +306,25 @@ pub(crate) fn wrap_request_for_gateway_v2(
         metadata.push(Token::match_condition(value.to_owned()));
     }
 
+    // Debug-only visibility into exactly which RNTBD metadata tokens are
+    // about to go on the wire. Logs token IDs (resolved to their symbolic
+    // name where recognized), never values — `AuthorizationToken` carries
+    // the request's HMAC signature, which must never be logged. Enable with
+    // e.g. `RUST_LOG=azure_data_cosmos_driver=debug`; the field expressions
+    // below are only evaluated when the level/target is actually enabled.
+    tracing::debug!(
+        operation = ?inputs.operation_type,
+        resource_type = ?inputs.resource_type,
+        tokens = ?metadata
+            .iter()
+            .map(|token| match RntbdRequestToken::try_from(token.id.value()) {
+                Ok(name) => format!("{name:?}"),
+                Err(()) => format!("{:#06x}", token.id.value()),
+            })
+            .collect::<Vec<_>>(),
+        "Gateway 2.0 request RNTBD metadata tokens"
+    );
+
     let frame = RntbdRequestFrame {
         resource_type: inputs.resource_type,
         operation_type: inputs.operation_type,
@@ -527,19 +546,25 @@ pub(crate) fn unwrap_response_for_gateway_v2(
     if let Some(retry_after_ms) = response.retry_after_ms {
         headers.insert("x-ms-retry-after-ms", retry_after_ms.to_string());
     }
-    if let Some(lsn) = response.lsn.filter(|value| *value != 0) {
+    if let Some(lsn) = response.lsn {
         let value = lsn.to_string();
         headers.insert(response_header_names::LSN, value.clone());
         headers.insert(X_MS_LSN, value);
     }
-    if let Some(item_lsn) = response.item_lsn.filter(|value| *value != 0) {
+    if let Some(item_lsn) = response.item_lsn {
         headers.insert(response_header_names::ITEM_LSN, item_lsn.to_string());
     }
-    if let Some(global_committed_lsn) = response.global_committed_lsn.filter(|value| *value != 0) {
+    if let Some(global_committed_lsn) = response.global_committed_lsn {
         headers.insert(X_MS_GLOBAL_COMMITTED_LSN, global_committed_lsn.to_string());
     }
     if let Some(owner_full_name) = response.owner_full_name {
         headers.insert(response_header_names::OWNER_FULL_NAME, owner_full_name);
+    }
+    if let Some(query_metrics) = response.query_metrics {
+        headers.insert(response_header_names::QUERY_METRICS, query_metrics);
+    }
+    if let Some(index_utilization) = response.index_utilization {
+        headers.insert(response_header_names::INDEX_METRICS, index_utilization);
     }
 
     Ok(HttpResponse {
@@ -2062,6 +2087,8 @@ mod tests {
                     write_i64_token(tokens, 0x0032, 43);
                     write_i64_token(tokens, 0x0029, 44);
                     write_string_token(tokens, 0x0017, "dbs/db1/colls/coll1/docs/doc1");
+                    write_string_token(tokens, 0x0028, "metrics-blob");
+                    write_string_token(tokens, 0x0044, "index-blob");
                 },
                 b"{}",
             ),
@@ -2166,6 +2193,24 @@ mod tests {
                 .headers
                 .get_optional_str(&X_MS_GLOBAL_COMMITTED_LSN),
             Some("44")
+        );
+        assert_eq!(
+            unwrapped
+                .headers
+                .get_optional_str(&HeaderName::from_static(response_header_names::ITEM_COUNT)),
+            Some("1")
+        );
+        assert_eq!(
+            unwrapped.headers.get_optional_str(&HeaderName::from_static(
+                response_header_names::QUERY_METRICS
+            )),
+            Some("metrics-blob")
+        );
+        assert_eq!(
+            unwrapped.headers.get_optional_str(&HeaderName::from_static(
+                response_header_names::INDEX_METRICS
+            )),
+            Some("index-blob")
         );
     }
 
