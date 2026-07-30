@@ -87,15 +87,23 @@ extends:
         GenerateVMJobs: true
       # Non-blocking, byte-level codec fuzzing (cargo-fuzz). Adds a single
       # Linux + nightly job whose test-setup hook (Invoke-CosmosTestSetup.ps1,
-      # gated on AZURE_COSMOS_FUZZ=1) installs cargo-fuzz, seeds the corpus from
-      # the golden vectors, and runs the binary_json fuzz targets under a
-      # wall-clock budget that scales by build reason (short smoke on PR/CI,
-      # deep run on the weekly schedule). cargo-fuzz/libFuzzer only works on
-      # Linux + nightly, so it cannot ride the cross-platform matrix. The entry
-      # carries `ContinueOnError: "true"`, so a discovered crash surfaces as
-      # "succeeded with issues" rather than blocking merge; crash inputs are
-      # published as build artifacts. Runner: eng/scripts/Run-BinaryJsonFuzz.ps1.
-      - Name: Cosmos_binary_json_fuzz
-        Path: sdk/cosmos/fuzz-matrix.json
-        Selection: all
-        GenerateVMJobs: true
+      # gated on AZURE_COSMOS_FUZZ=1) seeds each fuzz target's corpus from the
+      # golden vectors and replays it once (libFuzzer -runs=0) to prove the
+      # committed vectors still decode without panicking. cargo-fuzz/libFuzzer
+      # only works on Linux + nightly, so it cannot ride the cross-platform
+      # matrix. The entry carries `ContinueOnError: "true"`, so a discovered
+      # crash surfaces as "succeeded with issues" rather than blocking merge;
+      # crash inputs are published as build artifacts. Runner:
+      # eng/scripts/Run-BinaryJsonFuzz.ps1.
+      #
+      # WEEKLY ONLY: gated to the scheduled/weekly run so it does not run on the
+      # default PR gate (the golden vectors are already covered on every PR by
+      # the offline `decodes_golden_corpus` / `encode_round_trips_golden_corpus`
+      # unit tests in the normal cross-platform matrix). This mirrors the
+      # `RunLiveTests` condition above, so the byte-level fuzz leg and the live
+      # round-trip fuzzer both belong to the weekly pipeline, not the PR gate.
+      - ${{ if or(eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}:
+        - Name: Cosmos_binary_json_fuzz
+          Path: sdk/cosmos/fuzz-matrix.json
+          Selection: all
+          GenerateVMJobs: true
