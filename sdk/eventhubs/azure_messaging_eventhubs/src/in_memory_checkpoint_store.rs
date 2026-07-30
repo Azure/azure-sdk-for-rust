@@ -7,7 +7,7 @@ use azure_core::{
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tracing::{error, trace, warn};
+use tracing::{error, trace};
 
 /// An in-memory checkpoint store for Event Hubs.
 /// This store is used to manage checkpoints and ownerships in memory.
@@ -74,7 +74,10 @@ impl InMemoryCheckpointStore {
             Some(existing) => {
                 let actual_etag = existing.etag.clone();
                 if ownership.etag != actual_etag {
-                    warn!(
+                    // The call returns `Err` from here, so this logs at the
+                    // error level, the same as the other failure path in this
+                    // file.
+                    error!(
                         partition_id = %ownership.partition_id,
                         expected_etag = ?ownership.etag,
                         actual_etag = ?actual_etag,
