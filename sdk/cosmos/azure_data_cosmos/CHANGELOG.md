@@ -4,12 +4,20 @@
 
 ### Features Added
 
+- Added `ResourceId` and `ResourceIdentity` for addressing Cosmos databases and containers by user-provided name or by RID. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+- `CosmosClient::database_client` and `DatabaseClient::container_client` now accept `impl Into<ResourceIdentity>`, so a `&str`/`String` selects name addressing and a `ResourceId` selects RID addressing. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+- Added `DatabaseClient::name()` and `DatabaseClient::rid()` to inspect how a database client was addressed. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+- RID-addressed databases skip the extra database read when resolving throughput offers, reusing the addressed RID directly. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+- Reading and querying items by RID now works end-to-end, including a parent-database cross-check that rejects a container RID belonging to a different database. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - Added opt-in Cosmos binary JSON encoding for item operations (`create`/`read`/`replace`/`upsert`). Enable it via `CosmosClientBuilder::with_binary_encoding_options` (or the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment-variable fallback). Off by default; when disabled, requests and responses are byte-for-byte unchanged. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
 - Added a pluggable client-side diagnostics emission layer — the `DiagnosticsHandler` trait and ordered `DiagnosticsHandlerChain` (registered via `CosmosClientBuilder::with_diagnostics_handler`) — invoked once per operation (singleton and paginated, on success and failure) with the completed `DiagnosticsContext` plus an SDK-supplied `CosmosOperationContext`; the empty default chain is a zero-overhead no-op. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 - Added the `metrics`-gated `CosmosMetricsHandler` (with `MetricsOptions`), emitting the stable `db.client.operation.duration` histogram plus per-signal opt-in metrics (`with_request_charge_metric`, `with_returned_rows_metric`) and an opt-in extended attribute set (`with_extended_attributes`); a no-op when no meter provider is registered. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 - Added composable tail-sampled emission handlers — a `TracingLogHandler` leaf that writes a compact `tracing` line and a `SamplingLogHandler` wrapper (holding an `Arc<dyn DiagnosticsHandler>`) that applies the sampling gate plus a shared per-window rate limit, defaulting to wrap a `TracingLogHandler` — and the `distributed_tracing`-gated `CosmosTracingHandler` (backdated span tree), also rate-limited so an error storm can't overwhelm exporters. All emit only for operations which fail or breach a configurable `DiagnosticsThresholds`, and stamp *why* they were sampled (a failure, or which threshold) on the emitted line and span. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 
 ### Breaking Changes
+
+- `CosmosClient::database_client` and `DatabaseClient::container_client` now take `impl Into<ResourceIdentity>` instead of `&str`; call sites passing a deref-able string (for example a `Cow<str>` field) need `&*value` or `.as_ref()`. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+- `DatabaseClient::id()` now returns `&ResourceIdentity` instead of `&str`. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 
 ### Bugs Fixed
 
