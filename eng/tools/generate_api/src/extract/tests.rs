@@ -626,7 +626,7 @@ fn extracts_module_scope_lint_attrs_without_rewriting_item_attrs() {
             .iter()
             .map(|attribute| attribute.text.as_str())
             .collect::<Vec<_>>(),
-        vec!["#![deny(unsafe_code)]"]
+        vec!["#[deny(unsafe_code)]"]
     );
     assert_eq!(
         model.root_module.items[0]
@@ -635,6 +635,50 @@ fn extracts_module_scope_lint_attrs_without_rewriting_item_attrs() {
             .map(|attribute| attribute.text.as_str())
             .collect::<Vec<_>>(),
         vec!["#[deny(unsafe_code)]"]
+    );
+}
+
+#[test]
+fn extracts_unassociated_trait_impl_blocks() {
+    let trait_id = Id(1);
+    let impl_id = Id(2);
+
+    let model = extract_model(
+        &package_metadata("demo"),
+        &crate_with_items(vec![
+            item(
+                trait_id,
+                Some("LocalTrait"),
+                ItemEnum::Trait(Trait {
+                    is_auto: false,
+                    is_unsafe: false,
+                    is_dyn_compatible: true,
+                    items: Vec::new(),
+                    generics: empty_generics(),
+                    bounds: Vec::new(),
+                    implementations: Vec::new(),
+                }),
+            ),
+            trait_impl_item_for_type(
+                impl_id,
+                path("LocalTrait", trait_id.0),
+                Type::ResolvedPath(path("other_crate::ExternalType", 99)),
+                empty_generics(),
+            ),
+        ]),
+        &mut NoopResolver,
+    )
+    .expect("model extraction should succeed");
+
+    assert_eq!(
+        model
+            .root_module
+            .items
+            .iter()
+            .filter(|item| item.kind == ApiItemKind::TraitImpl)
+            .map(|item| item.declaration.as_str())
+            .collect::<Vec<_>>(),
+        vec!["impl LocalTrait for other_crate::ExternalType {"]
     );
 }
 
@@ -1095,6 +1139,44 @@ fn model_reexport_collects_nested_impls_by_owner_identity() {
             "impl fmt::Debug for Secret<T> {",
         ]
     );
+}
+
+#[test]
+fn model_reexport_resolves_duplicated_leading_module_segments() {
+    let expanded = expand_model_item_reexport(
+        &ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: Vec::new(),
+            modules: vec![ApiModule {
+                path: "demo::credentials".to_string(),
+                doc_comments: Vec::new(),
+                attributes: Vec::new(),
+                items: vec![ApiItem {
+                    name: "Secret".to_string(),
+                    kind: ApiItemKind::Struct,
+                    source_id: Some("secret".to_string()),
+                    navigation_paths: Vec::new(),
+                    owner_name: None,
+                    owner_kind: None,
+                    owner_source_id: None,
+                    inherent_impl_sort_key: None,
+                    doc_comments: Vec::new(),
+                    attributes: Vec::new(),
+                    declaration: "pub struct Secret;".to_string(),
+                    declaration_path_references: Vec::new(),
+                    members: Vec::new(),
+                }],
+                modules: Vec::new(),
+            }],
+        },
+        &["demo", "credentials", "Secret"],
+    )
+    .expect("duplicated leading root segment should still resolve");
+
+    assert_eq!(expanded.items.len(), 1);
+    assert_eq!(expanded.items[0].declaration, "pub struct Secret;");
 }
 
 #[test]
@@ -2070,6 +2152,126 @@ fn extracts_macro_matcher_arms_as_members() {
                 "($(#[$outer:meta])* $name:ident, $header:ident, $(($(#[$inner:meta])*$variant:ident, $value:expr)), *) => { ... };",
             ),
         ]
+    );
+}
+
+#[test]
+fn preserves_macro_arm_literal_whitespace() {
+    let macro_id = Id(1);
+    let krate = crate_with_items(vec![item(
+        macro_id,
+        Some("literal_spaces"),
+        ItemEnum::Macro(
+            r#"macro_rules! literal_spaces {
+    ("a  b") => "x  y";
+}"#
+            .to_string(),
+        ),
+    )]);
+
+    let macro_item = krate.index.get(&macro_id).expect("macro item present");
+    let extracted = extract_item(&krate, macro_item);
+
+    assert_eq!(extracted.members[0].declaration, r#"("a  b") => "x  y";"#);
+}
+
+#[test]
+fn collects_function_where_clause_references_after_signature_types() {
+    let function_id = Id(1);
+
+    let model = extract_model(
+        &package_metadata("demo"),
+        &crate_with_items(vec![item(
+            function_id,
+            Some("parse"),
+            ItemEnum::Function(Function {
+                sig: FunctionSignature {
+                    inputs: vec![("value".to_string(), Type::ResolvedPath(path("Input", 10)))],
+                    output: Some(Type::ResolvedPath(path("Output", 11))),
+                    is_c_variadic: false,
+                },
+                generics: Generics {
+                    params: vec![type_param("T")],
+                    where_predicates: vec![bound_predicate(
+                        Type::Generic("T".to_string()),
+                        vec![trait_bound("Bound", 12)],
+                    )],
+                },
+                header: FunctionHeader {
+                    is_const: false,
+                    is_unsafe: false,
+                    is_async: false,
+                    abi: Abi::Rust,
+                },
+                has_body: false,
+            }),
+        )]),
+        &mut NoopResolver,
+    )
+    .expect("model extraction should succeed");
+
+    let function = model
+        .root_module
+        .items
+        .iter()
+        .find(|item| item.name == "parse")
+        .expect("function should be extracted");
+
+    assert_eq!(
+        function
+            .declaration_path_references
+            .iter()
+            .map(|reference| reference.path.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Input", "Output", "Bound"]
+    );
+}
+
+#[test]
+fn collects_trait_impl_where_clause_references_last() {
+    let impl_id = Id(2);
+    let struct_id = Id(3);
+
+    let trait_impl = trait_impl_item_for_type(
+        impl_id,
+        path("Service", 20).with_args(GenericArgs::AngleBracketed {
+            args: vec![GenericArg::Type(Type::ResolvedPath(path("Request", 21)))],
+            constraints: Vec::new(),
+        }),
+        Type::ResolvedPath(path("Client", struct_id.0)),
+        Generics {
+            params: vec![type_param("T")],
+            where_predicates: vec![bound_predicate(
+                Type::Generic("T".to_string()),
+                vec![trait_bound("Bound", 22)],
+            )],
+        },
+    );
+
+    let ItemEnum::Impl(impl_block) = &trait_impl.inner else {
+        panic!("expected impl item");
+    };
+
+    assert_eq!(
+        collect_trait_impl_declaration_path_references(
+            &crate_with_items(vec![
+                item(
+                    struct_id,
+                    Some("Client"),
+                    ItemEnum::Struct(Struct {
+                        kind: StructKind::Unit,
+                        generics: empty_generics(),
+                        impls: vec![impl_id],
+                    }),
+                ),
+                trait_impl.clone()
+            ]),
+            impl_block,
+        )
+        .iter()
+        .map(|reference| reference.path.as_str())
+        .collect::<Vec<_>>(),
+        vec!["Service", "Request", "Client", "Bound"]
     );
 }
 

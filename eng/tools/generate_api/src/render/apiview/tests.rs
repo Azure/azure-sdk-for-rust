@@ -95,6 +95,13 @@ fn top_level_navigation_line_ids(lines: &[ReviewLine]) -> Vec<&str> {
         .collect()
 }
 
+fn line_text(line: &ReviewLine) -> String {
+    line.tokens
+        .iter()
+        .map(|token| token.value.as_str())
+        .collect()
+}
+
 #[test]
 fn renders_trait_impl_tokens_with_typed_members() {
     let mut impl_item = item(
@@ -168,6 +175,43 @@ fn renders_trait_impl_tokens_with_typed_members() {
             (token_kind::PUNCTUATION, ";"),
         ]
     );
+}
+
+#[test]
+fn renders_root_inner_attrs_and_child_module_outer_attrs() {
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        root_module: ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: vec![ApiAttribute {
+                text: "#![warn(missing_docs)]".to_string(),
+            }],
+            items: Vec::new(),
+            modules: vec![ApiModule {
+                path: "demo::inner".to_string(),
+                doc_comments: Vec::new(),
+                attributes: vec![ApiAttribute {
+                    text: "#[deny(unsafe_code)]".to_string(),
+                }],
+                items: vec![item("Nested", ApiItemKind::Struct, "pub struct Nested;")],
+                modules: Vec::new(),
+            }],
+        },
+    };
+
+    let lookup = NavigationLookup::new(&model);
+    let lines = render_review_lines(&model, &RenderOptions::default(), &lookup);
+
+    assert_eq!(line_text(&lines[0]), "#![warn(missing_docs)]");
+    assert_eq!(line_text(&lines[1]), "#[deny(unsafe_code)]");
+    assert_eq!(
+        lines[1].related_to_line.as_deref(),
+        Some("module.demo__inner")
+    );
+    assert_eq!(lines[2].line_id.as_deref(), Some("module.demo__inner"));
 }
 
 #[test]
@@ -718,6 +762,91 @@ fn links_crate_result_with_resolved_path_metadata() {
     assert_eq!(
         find_token(parse, "Result").navigate_to_id.as_deref(),
         Some("module.demo.Result_0")
+    );
+}
+
+#[test]
+fn links_where_clause_references_after_signature_types() {
+    let input = item("Input", ApiItemKind::Struct, "pub struct Input<T>(T);");
+    let output = item("Output", ApiItemKind::Struct, "pub struct Output;");
+    let bound = item("Bound", ApiItemKind::Trait, "pub trait Bound {");
+
+    let mut parse = item(
+        "parse",
+        ApiItemKind::Function,
+        "pub fn parse<T>(value: Input<T>) -> Output where T: Bound;",
+    );
+    parse.declaration_path_references = vec![
+        path_reference("Input", "input"),
+        path_reference("Output", "output"),
+        path_reference("Bound", "bound"),
+    ];
+    let mut input = input;
+    input.source_id = Some("input".to_string());
+    let mut output = output;
+    output.source_id = Some("output".to_string());
+    let mut bound = bound;
+    bound.source_id = Some("bound".to_string());
+
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        root_module: ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: vec![input, output, bound, parse],
+            modules: Vec::new(),
+        },
+    };
+
+    let lookup = NavigationLookup::new(&model);
+    let lines = render_review_lines(&model, &RenderOptions::default(), &lookup);
+    let parse = lines
+        .iter()
+        .find(|line| {
+            line.line_id
+                .as_deref()
+                .is_some_and(|line_id| line_id.starts_with("module.demo.parse_"))
+        })
+        .expect("expected parse line");
+    let input_line_id = lines
+        .iter()
+        .find(|line| {
+            line.tokens.iter().any(|token| token.value == "struct")
+                && line.tokens.iter().any(|token| token.value == "Input")
+        })
+        .and_then(|line| line.line_id.as_deref())
+        .expect("expected input line");
+    let output_line_id = lines
+        .iter()
+        .find(|line| {
+            line.tokens.iter().any(|token| token.value == "struct")
+                && line.tokens.iter().any(|token| token.value == "Output")
+        })
+        .and_then(|line| line.line_id.as_deref())
+        .expect("expected output line");
+    let bound_line_id = lines
+        .iter()
+        .find(|line| {
+            line.tokens.iter().any(|token| token.value == "trait")
+                && line.tokens.iter().any(|token| token.value == "Bound")
+        })
+        .and_then(|line| line.line_id.as_deref())
+        .expect("expected bound line");
+
+    assert_eq!(
+        find_token(parse, "Input").navigate_to_id.as_deref(),
+        Some(input_line_id)
+    );
+    assert_eq!(
+        find_token(parse, "Output").navigate_to_id.as_deref(),
+        Some(output_line_id)
+    );
+    assert_eq!(
+        find_token(parse, "Bound").navigate_to_id.as_deref(),
+        Some(bound_line_id)
     );
 }
 

@@ -27,6 +27,7 @@ fn find_item_entry<'a>(
     module: &'a ApiModule,
     segments: &[&str],
 ) -> Option<(&'a ApiModule, &'a ApiItem)> {
+    let segments = strip_duplicate_leading_module_segments(module, segments);
     let (head, tail) = segments.split_first()?;
     if tail.is_empty() {
         return module
@@ -36,11 +37,31 @@ fn find_item_entry<'a>(
             .map(|item| (module, item));
     }
 
-    let child = module
+    if let Some(child) = module
         .modules
         .iter()
-        .find(|candidate| candidate.local_name() == *head)?;
-    find_item_entry(child, tail)
+        .find(|candidate| candidate.local_name() == *head)
+    {
+        if let Some(found) = find_item_entry(child, tail) {
+            return Some(found);
+        }
+    }
+
+    if tail.is_empty() {
+        None
+    } else {
+        find_item_entry(module, tail)
+    }
+}
+
+fn strip_duplicate_leading_module_segments<'a>(
+    module: &ApiModule,
+    mut segments: &'a [&'a str],
+) -> &'a [&'a str] {
+    while segments.len() > 1 && segments[0] == module.local_name() {
+        segments = &segments[1..];
+    }
+    segments
 }
 
 pub(crate) fn extract_model(
@@ -96,7 +117,11 @@ fn extract_module(
                 let module = extract_module(krate, child, child_path, resolver)?;
                 insert_module(&mut result.modules, &mut seen_modules, module);
             }
-            ItemEnum::Impl(_) => {}
+            ItemEnum::Impl(impl_block) => {
+                if let Some(extracted) = extract_unassociated_trait_impl(krate, child, impl_block) {
+                    insert_item(&mut result, &mut seen_declarations, extracted);
+                }
+            }
             ItemEnum::Use(use_item) if should_include_item(child) => {
                 if let Some(expanded) =
                     expand_reexport(krate, child, use_item, &result.path, resolver)?
@@ -219,11 +244,10 @@ fn expand_reexport(
     let Some(model) = resolver.load_workspace_model(crate_name)? else {
         return Ok(None);
     };
-    let target_segments = summary
-        .path
-        .iter()
+    let normalized_target_path = normalize_use_path(&summary.path);
+    let target_segments = normalized_target_path
+        .split("::")
         .skip(1)
-        .map(String::as_str)
         .collect::<Vec<&str>>();
     Ok(expand_model_reexport(
         &model,
@@ -347,12 +371,33 @@ fn trait_impls_for_item(krate: &Crate, target: &Item) -> Vec<ApiItem> {
         .filter_map(|impl_id| krate.index.get(impl_id))
         .filter_map(|impl_item| match &impl_item.inner {
             ItemEnum::Impl(impl_block) if include_trait_impl_block(impl_block) => {
-                extract_trait_impl(krate, target, owner_kind, impl_item, impl_block)
+                extract_trait_impl(krate, impl_item, impl_block, Some(target), Some(owner_kind))
             }
             _ => None,
         })
         .map(rebase_trait_impl_item)
         .collect()
+}
+
+fn extract_unassociated_trait_impl(
+    krate: &Crate,
+    item: &Item,
+    impl_block: &Impl,
+) -> Option<ApiItem> {
+    if !include_trait_impl_block(impl_block) {
+        return None;
+    }
+
+    let owner = local_impl_owner(krate, &impl_block.for_);
+    let owner_kind = owner.map(item_kind);
+    extract_trait_impl(krate, item, impl_block, owner, owner_kind).map(rebase_trait_impl_item)
+}
+
+fn local_impl_owner<'a>(krate: &'a Crate, type_: &Type) -> Option<&'a Item> {
+    match type_ {
+        Type::ResolvedPath(path) => krate.index.get(&path.id),
+        _ => None,
+    }
 }
 
 fn rebase_trait_impl_item(mut item: ApiItem) -> ApiItem {
@@ -793,7 +838,12 @@ fn collect_item_declaration_path_references(krate: &Crate, item: &Item) -> Vec<A
             collect_function_declaration_path_references(krate, function, &mut references);
         }
         ItemEnum::Struct(struct_item) => {
-            collect_generics_path_references(krate, &struct_item.generics, &mut references);
+            collect_generic_params_path_references(krate, &struct_item.generics, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &struct_item.generics.where_predicates,
+                &mut references,
+            );
             if let StructKind::Tuple(fields) = &struct_item.kind {
                 for field_id in fields.iter().flatten() {
                     let Some(field_item) = krate.index.get(field_id) else {
@@ -807,22 +857,47 @@ fn collect_item_declaration_path_references(krate: &Crate, item: &Item) -> Vec<A
             }
         }
         ItemEnum::Enum(enum_item) => {
-            collect_generics_path_references(krate, &enum_item.generics, &mut references);
+            collect_generic_params_path_references(krate, &enum_item.generics, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &enum_item.generics.where_predicates,
+                &mut references,
+            );
         }
         ItemEnum::Trait(trait_item) => {
-            collect_generics_path_references(krate, &trait_item.generics, &mut references);
+            collect_generic_params_path_references(krate, &trait_item.generics, &mut references);
             collect_generic_bounds_path_references(krate, &trait_item.bounds, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &trait_item.generics.where_predicates,
+                &mut references,
+            );
         }
         ItemEnum::TraitAlias(trait_alias) => {
-            collect_generics_path_references(krate, &trait_alias.generics, &mut references);
+            collect_generic_params_path_references(krate, &trait_alias.generics, &mut references);
             collect_generic_bounds_path_references(krate, &trait_alias.params, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &trait_alias.generics.where_predicates,
+                &mut references,
+            );
         }
         ItemEnum::Union(union_item) => {
-            collect_generics_path_references(krate, &union_item.generics, &mut references);
+            collect_generic_params_path_references(krate, &union_item.generics, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &union_item.generics.where_predicates,
+                &mut references,
+            );
         }
         ItemEnum::TypeAlias(type_alias) => {
+            collect_generic_params_path_references(krate, &type_alias.generics, &mut references);
             collect_type_path_references(krate, &type_alias.type_, &mut references);
-            collect_generics_path_references(krate, &type_alias.generics, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &type_alias.generics.where_predicates,
+                &mut references,
+            );
         }
         ItemEnum::Constant { type_, .. } => {
             collect_type_path_references(krate, type_, &mut references);
@@ -841,7 +916,7 @@ fn collect_function_declaration_path_references(
     references: &mut Vec<ApiPathReference>,
 ) {
     let synthetic_lifetimes = synthetic_async_trait_lifetimes(function);
-    collect_generics_path_references_with_elision(
+    collect_generic_param_path_references_with_elision(
         krate,
         &function.generics,
         &synthetic_lifetimes,
@@ -858,17 +933,28 @@ fn collect_function_declaration_path_references(
     if let Some(output) = &function.sig.output {
         collect_type_path_references_with_elision(krate, output, &synthetic_lifetimes, references);
     }
+    collect_where_predicates_path_references_with_elision(
+        krate,
+        &function.generics.where_predicates,
+        &synthetic_lifetimes,
+        references,
+    );
 }
 
-fn collect_generics_path_references(
+fn collect_generic_params_path_references(
     krate: &Crate,
     generics: &rustdoc_types::Generics,
     references: &mut Vec<ApiPathReference>,
 ) {
-    collect_generics_path_references_with_elision(krate, generics, &HashSet::new(), references);
+    collect_generic_param_path_references_with_elision(
+        krate,
+        generics,
+        &HashSet::new(),
+        references,
+    );
 }
 
-fn collect_generics_path_references_with_elision(
+fn collect_generic_param_path_references_with_elision(
     krate: &Crate,
     generics: &rustdoc_types::Generics,
     synthetic_lifetimes: &HashSet<String>,
@@ -905,11 +991,17 @@ fn collect_generics_path_references_with_elision(
             GenericParamDefKind::Lifetime { .. } => {}
         }
     }
+}
 
+fn collect_where_predicates_path_references(
+    krate: &Crate,
+    predicates: &[WherePredicate],
+    references: &mut Vec<ApiPathReference>,
+) {
     collect_where_predicates_path_references_with_elision(
         krate,
-        &generics.where_predicates,
-        synthetic_lifetimes,
+        predicates,
+        &HashSet::new(),
         references,
     );
 }
@@ -1311,7 +1403,7 @@ fn collect_trait_impl_declaration_path_references(
     impl_block: &Impl,
 ) -> Vec<ApiPathReference> {
     let mut references = Vec::new();
-    collect_generics_path_references(krate, &impl_block.generics, &mut references);
+    collect_generic_params_path_references(krate, &impl_block.generics, &mut references);
     if let Some(trait_path) = &impl_block.trait_ {
         collect_path_reference(krate, trait_path, &mut references);
         if let Some(args) = &trait_path.args {
@@ -1324,6 +1416,11 @@ fn collect_trait_impl_declaration_path_references(
         }
     }
     collect_type_path_references(krate, &impl_block.for_, &mut references);
+    collect_where_predicates_path_references(
+        krate,
+        &impl_block.generics.where_predicates,
+        &mut references,
+    );
     references
 }
 
@@ -1332,8 +1429,13 @@ fn collect_inherent_impl_declaration_path_references(
     impl_block: &Impl,
 ) -> Vec<ApiPathReference> {
     let mut references = Vec::new();
-    collect_generics_path_references(krate, &impl_block.generics, &mut references);
+    collect_generic_params_path_references(krate, &impl_block.generics, &mut references);
     collect_type_path_references(krate, &impl_block.for_, &mut references);
+    collect_where_predicates_path_references(
+        krate,
+        &impl_block.generics.where_predicates,
+        &mut references,
+    );
     references
 }
 
@@ -1403,11 +1505,16 @@ fn collect_associated_member_declaration_path_references(
             type_,
             ..
         } => {
-            collect_generics_path_references(krate, generics, &mut references);
+            collect_generic_params_path_references(krate, generics, &mut references);
             collect_generic_bounds_path_references(krate, bounds, &mut references);
             if let Some(type_) = type_ {
                 collect_type_path_references(krate, type_, &mut references);
             }
+            collect_where_predicates_path_references(
+                krate,
+                &generics.where_predicates,
+                &mut references,
+            );
         }
         _ => {}
     }
@@ -1555,10 +1662,10 @@ fn known_derive_trait_name(path: &Path) -> Option<&'static str> {
 
 fn extract_trait_impl(
     krate: &Crate,
-    owner: &Item,
-    owner_kind: ApiItemKind,
     item: &Item,
     impl_block: &Impl,
+    owner: Option<&Item>,
+    owner_kind: Option<ApiItemKind>,
 ) -> Option<ApiItem> {
     if has_automatically_derived(item) {
         return None;
@@ -1566,10 +1673,6 @@ fn extract_trait_impl(
 
     let trait_path = impl_block.trait_.as_ref()?;
     let self_type = render_type(&impl_block.for_);
-    let owner_name = owner
-        .name
-        .clone()
-        .unwrap_or_else(|| fallback_item_name(owner).to_string());
     let declaration = render_trait_impl_declaration(impl_block, trait_path, &self_type);
 
     Some(ApiItem {
@@ -1577,9 +1680,14 @@ fn extract_trait_impl(
         kind: ApiItemKind::TraitImpl,
         source_id: Some(qualified_source_id(krate, item.id)),
         navigation_paths: Vec::new(),
-        owner_name: Some(owner_name),
-        owner_kind: Some(owner_kind),
-        owner_source_id: Some(qualified_source_id(krate, owner.id)),
+        owner_name: owner.map(|owner| {
+            owner
+                .name
+                .clone()
+                .unwrap_or_else(|| fallback_item_name(owner).to_string())
+        }),
+        owner_kind,
+        owner_source_id: owner.map(|owner| qualified_source_id(krate, owner.id)),
         inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
         attributes: extract_attributes(item),
@@ -1898,26 +2006,17 @@ fn normalize_attribute(text: &str) -> String {
 
 fn normalize_module_attribute(text: &str, is_crate_root: bool) -> String {
     let normalized = normalize_attribute(text);
-    if should_render_as_inner_module_attribute(&normalized, is_crate_root) {
-        rewrite_attribute_prefix(&normalized, "#![")
+    if is_crate_root {
+        if normalized.starts_with("#![") || normalized.starts_with("#[") {
+            rewrite_attribute_prefix(&normalized, "#![")
+        } else {
+            normalized
+        }
+    } else if normalized.starts_with("#![") {
+        rewrite_attribute_prefix(&normalized, "#[")
     } else {
         normalized
     }
-}
-
-fn should_render_as_inner_module_attribute(attribute: &str, is_crate_root: bool) -> bool {
-    if attribute.starts_with("#![") {
-        return true;
-    }
-    if !attribute.starts_with("#[") {
-        return false;
-    }
-
-    is_crate_root
-        || matches!(
-            attribute_name(attribute),
-            Some("allow" | "deny" | "expect" | "forbid" | "warn")
-        )
 }
 
 fn rewrite_attribute_prefix(attribute: &str, prefix: &str) -> String {
@@ -1930,17 +2029,6 @@ fn rewrite_attribute_prefix(attribute: &str, prefix: &str) -> String {
     };
 
     format!("{prefix}{body}]")
-}
-
-fn attribute_name(attribute: &str) -> Option<&str> {
-    let body = attribute
-        .strip_prefix("#![")
-        .or_else(|| attribute.strip_prefix("#["))?
-        .strip_suffix(']')?;
-    let name_end = body
-        .find(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
-        .unwrap_or(body.len());
-    (name_end > 0).then_some(&body[..name_end])
 }
 
 fn normalize_pin_attribute(attribute: &str) -> String {
@@ -2316,13 +2404,12 @@ fn split_macro_arms(body: &str) -> Vec<String> {
 }
 
 fn summarize_macro_arm(arm: &str) -> String {
-    let arm = collapse_whitespace(arm);
-    if let Some(fat_arrow_index) = find_top_level_fat_arrow(&arm) {
+    if let Some(fat_arrow_index) = find_top_level_fat_arrow(arm) {
         let matcher = arm[..fat_arrow_index].trim();
         let expansion = arm[fat_arrow_index + 2..].trim();
         format!("{matcher} => {};", summarize_macro_expansion(expansion))
     } else {
-        format!("{arm};")
+        format!("{};", arm.trim())
     }
 }
 
@@ -2384,26 +2471,6 @@ fn find_matching_delimiter(
     }
 
     None
-}
-
-fn collapse_whitespace(value: &str) -> String {
-    let mut collapsed = String::new();
-    let mut previous_was_whitespace = false;
-
-    for character in value.chars() {
-        if character.is_whitespace() {
-            previous_was_whitespace = true;
-            continue;
-        }
-
-        if previous_was_whitespace && !collapsed.is_empty() {
-            collapsed.push(' ');
-        }
-        previous_was_whitespace = false;
-        collapsed.push(character);
-    }
-
-    collapsed
 }
 
 fn render_function_declaration(name: &str, function: &Function, is_public: bool) -> String {
@@ -2790,12 +2857,11 @@ fn render_tuple_field(field_item: &Item) -> Option<String> {
 }
 
 fn join_rendered_fields(fields: Vec<Option<String>>) -> String {
-    let field_count = fields.len();
-    let mut rendered = fields.into_iter().flatten().collect::<Vec<_>>();
-    if rendered.len() < field_count {
-        rendered.push("/* private fields */".to_string());
-    }
-    rendered.join(", ")
+    fields
+        .into_iter()
+        .map(|field| field.unwrap_or_else(|| "/* private fields */".to_string()))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn render_named_field(field_item: &Item) -> Option<String> {

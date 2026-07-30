@@ -105,3 +105,35 @@ fn renders_inherent_members_inside_impl_blocks() {
     assert!(rendered.contains("impl Foo {\n    pub fn method(&self);\n}"));
     assert!(!rendered.contains("pub struct Foo;\n    pub fn method(&self);"));
 }
+
+#[test]
+fn renders_root_inner_attrs_and_child_module_outer_attrs() {
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        root_module: ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: vec![ApiAttribute {
+                text: "#![warn(missing_docs)]".to_string(),
+            }],
+            items: Vec::new(),
+            modules: vec![ApiModule {
+                path: "demo::inner".to_string(),
+                doc_comments: Vec::new(),
+                attributes: vec![ApiAttribute {
+                    text: "#[deny(unsafe_code)]".to_string(),
+                }],
+                items: vec![item("Nested", ApiItemKind::Struct, "pub struct Nested;")],
+                modules: Vec::new(),
+            }],
+        },
+    };
+
+    let rendered = render(&model);
+
+    assert!(rendered.contains("#![warn(missing_docs)]"));
+    assert!(rendered.contains("#[deny(unsafe_code)]\npub mod inner {"));
+    assert!(!rendered.contains("#![deny(unsafe_code)]\npub mod inner {"));
+}
