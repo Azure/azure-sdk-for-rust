@@ -217,6 +217,7 @@ Important nested structures:
   - `HasSuffixSpace?`
   - `IsDocumentation?`
   - `NavigationDisplayName?`
+  - `NavigateToId?`
   - `RenderClasses?`
 
 Token kinds used:
@@ -236,9 +237,19 @@ Current APIView decisions:
   - item: `{module_line_id}.{item_name}_{index}`
   - member: `{item_line_id}.{member_name}_{index}`
 - reject duplicate `LineId`s
+- keep the crate root unwrapped and let APIView provide the root tree node
 - include `HasPrefixSpace` and `HasSuffixSpace`
 - doc comments use `Comment` with `IsDocumentation = true`
+- root/module inner attributes render at their scope with the original `#!` text preserved
 - represent nested modules through `ReviewLine.Children`
+- emit navigation metadata on modules and non-impl top-level items; impl blocks stay out of the tree
+- re-export tree nodes navigate by each imported item's leaf name rather than a generic `use` entry
+- APIView tree ordering within a module is:
+  - consts/statics
+  - type aliases/re-exports
+  - macros/proc macros
+  - free functions
+  - type-like items alphabetically
 - type all declaration tokens:
   - keywords use `Keyword`
   - item names use `TypeName` except functions use `MemberName`
