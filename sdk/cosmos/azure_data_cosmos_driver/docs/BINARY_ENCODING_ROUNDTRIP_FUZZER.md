@@ -328,6 +328,16 @@ every generated doc through both.
 
 ## 6. Running the harness
 
+In CI, the harness runs automatically on the **`binary_encoding` live leg**
+(`live-platform-matrix.json` → `Session SingleWrite BinaryEncoding`, which sets
+`testCategory = 'binary_encoding'`). That leg's bicep emits
+`--cfg=test_category="binary_encoding"` into `RUSTFLAGS` and provides the live
+`AZURE_COSMOS_CONNECTION_STRING`, so `binary_encoding_roundtrip_fuzz` (and the
+sibling `binary_encoding` item tests) stop being ignored. The per-run iteration
+budget is set by `AZURE_COSMOS_FUZZ_ITERATIONS` in `sdk/cosmos/ci.yml`
+(default 200 there). Live tests only run on the weekly schedule or when a build
+is queued with **Run live tests** enabled.
+
 ```bash
 # One-shot smoke run (a few hundred docs), local emulator:
 AZURE_COSMOS_CONNECTION_STRING='AccountEndpoint=...;AccountKey=...;' \

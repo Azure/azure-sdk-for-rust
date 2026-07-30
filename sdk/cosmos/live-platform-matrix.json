@@ -32,6 +32,9 @@
       "Session Split": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'split' }"
       },
+      "Session SingleWrite BinaryEncoding": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'binary_encoding' }"
+      },
       "Session SingleWrite MultiRegion PartitionFailover": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $true; enableMultipleRegions = $true; testCategory = 'multi_region' }"
       }
