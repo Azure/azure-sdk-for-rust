@@ -32,9 +32,6 @@
       "Session Split": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'split' }"
       },
-      "Session SingleWrite BinaryEncodingRoundtripFuzz": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'binary_encoding' }"
-      },
       "Session SingleWrite MultiRegion PartitionFailover": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $true; enableMultipleRegions = $true; testCategory = 'multi_region' }"
       }
@@ -55,6 +52,20 @@
         },
         "Session MultiRegion GatewayV2": {
           "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleRegions = $true; testCategory = 'gateway_v2_multi_region' }"
+        }
+      }
+    },
+    {
+      "Agent": {
+        "ubuntu": {
+          "OSVmImage": "env:LINUXVMIMAGE",
+          "Pool": "env:LINUXPOOL"
+        }
+      },
+      "RustToolchainName": ["stable"],
+      "Account Settings": {
+        "Session SingleWrite BinaryEncodingRoundtripFuzz": {
+          "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'binary_encoding' }"
         }
       }
     }

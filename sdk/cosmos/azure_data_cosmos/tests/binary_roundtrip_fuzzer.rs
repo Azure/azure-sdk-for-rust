@@ -1684,6 +1684,57 @@ fn write_options_with_content() -> ItemWriteOptions {
     ItemWriteOptions::default().with_operation_options(operation)
 }
 
+/// Maximum attempts for a single point operation before the run gives up.
+const MAX_OP_ATTEMPTS: u32 = 6;
+
+/// Classifies a Cosmos error as a **transient** transport/service condition that
+/// is unrelated to codec correctness and worth retrying: throttling (429),
+/// request timeout (408), service unavailable / transport-generated 503 (the
+/// bucket that carries DNS/connect blips on CI agents), bad gateway (502),
+/// gateway timeout (504), and generic internal server errors (500). A decode
+/// failure or any other status is treated as a genuine, non-retriable result.
+fn is_transient(err: &azure_data_cosmos::CosmosError) -> bool {
+    matches!(
+        u16::from(err.status().status_code()),
+        408 | 429 | 500 | 502 | 503 | 504
+    )
+}
+
+/// Runs a fallible async point operation, retrying **transient** transport /
+/// service failures with exponential backoff so a long live soak survives the
+/// inevitable network blips (DNS hiccups, 503/429/408, connection resets) that
+/// have nothing to do with binary-encoding correctness. A non-transient error
+/// (e.g. a response decode failure — the signal this fuzzer exists to catch) is
+/// returned immediately. On exhausting [`MAX_OP_ATTEMPTS`] the last transient
+/// error is surfaced as a normal failure.
+async fn with_transient_retry<T, F, Fut>(
+    op_name: &str,
+    context: &str,
+    mut op: F,
+) -> Result<T, Box<dyn Error>>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = azure_data_cosmos::Result<T>>,
+{
+    let mut attempt = 0;
+    loop {
+        attempt += 1;
+        match op().await {
+            Ok(value) => return Ok(value),
+            Err(e) if is_transient(&e) && attempt < MAX_OP_ATTEMPTS => {
+                let backoff =
+                    std::time::Duration::from_millis(200u64 * (1u64 << (attempt - 1)).min(16));
+                eprintln!(
+                    "{context}: {op_name} transient failure (attempt {attempt}/{MAX_OP_ATTEMPTS}), \
+                     retrying in {backoff:?}: {e}"
+                );
+                tokio::time::sleep(backoff).await;
+            }
+            Err(e) => return Err(format!("{context}: {op_name} failed: {e}").into()),
+        }
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // The fuzzer test
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1781,10 +1832,10 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             let context = format!("iter={iter} config={label} id={id} seed={}", cfg.seed);
 
             // CREATE with content response (exercises the response decode path).
-            let created = container
-                .create_item(&pk, &id, &doc, Some(write_options_with_content()))
-                .await
-                .map_err(|e| format!("{context}: create failed: {e}"))?;
+            let created = with_transient_retry("create", &context, || {
+                container.create_item(&pk, &id, &doc, Some(write_options_with_content()))
+            })
+            .await?;
             let created_doc: Value = created
                 .into_model()
                 .map_err(|e| format!("{context}: create response decode failed: {e}"))?;
@@ -1798,10 +1849,9 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             );
 
             // READ back.
-            let read = container
-                .read_item(&pk, &id, None)
-                .await
-                .map_err(|e| format!("{context}: read failed: {e}"))?;
+            let read =
+                with_transient_retry("read", &context, || container.read_item(&pk, &id, None))
+                    .await?;
             let read_doc: Value = read
                 .into_model()
                 .map_err(|e| format!("{context}: read response decode failed: {e}"))?;
@@ -1810,10 +1860,10 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             // REPLACE the item with the same value (exercises the replace point
             // op's request encode + response decode). Binary encoding is honored
             // for replace, so this drives the encoder/decoder just like create.
-            let replaced = container
-                .replace_item(&pk, &id, &doc, Some(write_options_with_content()))
-                .await
-                .map_err(|e| format!("{context}: replace failed: {e}"))?;
+            let replaced = with_transient_retry("replace", &context, || {
+                container.replace_item(&pk, &id, &doc, Some(write_options_with_content()))
+            })
+            .await?;
             let replaced_doc: Value = replaced
                 .into_model()
                 .map_err(|e| format!("{context}: replace response decode failed: {e}"))?;
@@ -1829,10 +1879,10 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             // UPSERT the same value (upsert is a point op that also carries a
             // body; here it updates the existing item). Covers the upsert
             // request-encode + response-decode path.
-            let upserted = container
-                .upsert_item(&pk, &id, &doc, Some(write_options_with_content()))
-                .await
-                .map_err(|e| format!("{context}: upsert failed: {e}"))?;
+            let upserted = with_transient_retry("upsert", &context, || {
+                container.upsert_item(&pk, &id, &doc, Some(write_options_with_content()))
+            })
+            .await?;
             let upserted_doc: Value = upserted
                 .into_model()
                 .map_err(|e| format!("{context}: upsert response decode failed: {e}"))?;
