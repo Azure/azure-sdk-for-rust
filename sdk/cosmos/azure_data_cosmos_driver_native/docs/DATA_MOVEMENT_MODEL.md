@@ -543,7 +543,7 @@ changes, tree stays green. *P4b* does the completion inversion consuming it.
 | Representation | 4 hardcoded typed strings (activity id, session token, etag, continuation) via separate accessor calls | `struct { cosmos_header_id_t id; cosmos_value_t value; }` — an `(id, tagged-union value)` pair |
 | Name model | string-named accessors baked into the ABI | numeric **`cosmos_header_id_t`** enum (append-only, `0 = UNKNOWN` sentinel, 19 known ids) |
 | Id → name mapping | n/a | `cosmos_header_name(id)` returns the canonical `x-ms-*` wire name (statically allocated) |
-| Value model | `const char*` only (numeric/bool headers were stringified) | `cosmos_value_t` tagged union: `String` / `I64` / `F64` / `Bool` — numeric and bool headers carry their native type |
+| Value model | `const char*` only (numeric/bool headers were stringified) | `cosmos_value_t` tagged union: `String` / `I64` / `F64` / `Bool` / `U64` — numeric and bool headers carry their native type (LSNs and `retry-after-ms` use `U64` to preserve the full unsigned range) |
 | SDK usage | string-compare header names | **switch on numeric ids** (codegen-friendly, RNTBD-token style) |
 | Source | — | synthesized from the driver's typed `CosmosResponseHeaders`; `CString` storage for string variants owned by the completion's backing box |
 | Coverage | 4 headers | 19 headers; append-only, exhaustive/raw-map is a follow-up |

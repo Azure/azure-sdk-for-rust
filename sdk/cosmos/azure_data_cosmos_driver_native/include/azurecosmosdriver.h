@@ -696,6 +696,13 @@ enum cosmos_value_kind_t
    * Boolean payload — read from `payload.bool_value`.
    */
   COSMOS_VALUE_KIND_BOOL = 3,
+  /**
+   * Unsigned 64-bit integer payload — read from `payload.u64_value`.
+   * Used for headers whose driver type is `u64` (LSNs, `retry-after-ms`)
+   * so the full range is preserved instead of being saturated to
+   * [`i64::MAX`].
+   */
+  COSMOS_VALUE_KIND_U64 = 4,
 };
 #ifndef __cplusplus
 #if __STDC_VERSION__ >= 202311L
@@ -844,7 +851,7 @@ typedef struct cosmos_bytes_t {
  * by value from a caller-supplied pointer — because `include_error_details`
  * is declared as `bool` in the emitted C header. Materializing an
  * arbitrary caller byte through a Rust `bool` would be undefined behavior,
- * so [`cqoptions_from_ptr`] reads each field byte-by-byte via
+ * so `cqoptions_from_ptr` reads each field byte-by-byte via
  * [`std::ptr::addr_of!`] and inspects the boolean byte as a raw `u8`.
  */
 typedef struct cosmos_completion_queue_options_t {
@@ -886,6 +893,10 @@ typedef union cosmos_value_payload_t {
    * Boolean value. Read iff `kind == CosmosValueKindBool`.
    */
   bool bool_value;
+  /**
+   * Unsigned 64-bit integer. Read iff `kind == CosmosValueKindU64`.
+   */
+  uint64_t u64_value;
 } cosmos_value_payload_t;
 
 /**
@@ -942,7 +953,7 @@ typedef struct cosmos_response_header_t {
  * Header-derived response metadata (activity id, session token, ETag,
  * server continuation, request charge, sub-status, retry-after) is carried
  * **exclusively** in the [`headers`](Self::headers) list, each entry
- * tagged with its stable [`CosmosHeaderId`] and typed via
+ * tagged with its stable [`CosmosHeaderId`](crate::response_header::CosmosHeaderId) and typed via
  * [`CosmosValue`](crate::response_header::CosmosValue). Only genuinely
  * non-header signals live inline:
  *
@@ -1180,7 +1191,7 @@ typedef struct cosmos_driver_options_config_t {
  * address rather than through the `bool_value` field directly, so an
  * arbitrary host-written byte cannot construct an invalid `bool` value
  * (which would be undefined behavior). See
- * [`partition_key_from_components`] for the read-side implementation.
+ * `partition_key_from_components` for the read-side implementation.
  */
 typedef union cosmos_partition_key_component_value_t {
   /**

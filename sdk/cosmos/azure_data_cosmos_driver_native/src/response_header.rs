@@ -149,6 +149,11 @@ pub enum CosmosValueKind {
     CosmosValueKindF64 = 2,
     /// Boolean payload — read from `payload.bool_value`.
     CosmosValueKindBool = 3,
+    /// Unsigned 64-bit integer payload — read from `payload.u64_value`.
+    /// Used for headers whose driver type is `u64` (LSNs, `retry-after-ms`)
+    /// so the full range is preserved instead of being saturated to
+    /// [`i64::MAX`].
+    CosmosValueKindU64 = 4,
 }
 
 /// Payload half of the [`CosmosValue`] tagged union. Only the field selected
@@ -170,6 +175,8 @@ pub union CosmosValuePayload {
     pub f64_value: f64,
     /// Boolean value. Read iff `kind == CosmosValueKindBool`.
     pub bool_value: bool,
+    /// Unsigned 64-bit integer. Read iff `kind == CosmosValueKindU64`.
+    pub u64_value: u64,
 }
 
 /// A tagged union carrying a header (or, in the future, diagnostic) value in
@@ -220,6 +227,14 @@ impl CosmosValue {
         Self {
             kind: CosmosValueKind::CosmosValueKindBool as u8,
             payload: CosmosValuePayload { bool_value: v },
+        }
+    }
+
+    /// Builds a value carrying an unsigned 64-bit integer.
+    fn u64(v: u64) -> Self {
+        Self {
+            kind: CosmosValueKind::CosmosValueKindU64 as u8,
+            payload: CosmosValuePayload { u64_value: v },
         }
     }
 }
@@ -302,6 +317,7 @@ enum SynthesizedValue {
     I64(i64),
     F64(f64),
     Bool(bool),
+    U64(u64),
 }
 
 /// Synthesizes a [`CosmosResponseHeader`] list from the driver's typed
@@ -327,14 +343,6 @@ pub(crate) fn synthesize_response_headers(headers: &CosmosResponseHeaders) -> Ow
                 pairs.push((CosmosHeaderId::$id, SynthesizedValue::$variant($render)));
             }
         };
-    }
-
-    // Unsigned integers are converted to i64 with a saturating fallback so the
-    // native-typed surface stays lossless across the range actually observed
-    // in practice (LSNs / item-counts / retry-after-ms sit far below
-    // i64::MAX).
-    fn u64_to_i64(v: u64) -> i64 {
-        i64::try_from(v).unwrap_or(i64::MAX)
     }
 
     opt!(headers.activity_id, CosmosHeaderIdActivityId, String, |v| v
@@ -383,13 +391,8 @@ pub(crate) fn synthesize_response_headers(headers: &CosmosResponseHeaders) -> Ow
         F64,
         |v| *v
     );
-    opt!(headers.lsn, CosmosHeaderIdLsn, I64, |v| u64_to_i64(*v));
-    opt!(
-        headers.item_lsn,
-        CosmosHeaderIdItemLsn,
-        I64,
-        |v| u64_to_i64(*v)
-    );
+    opt!(headers.lsn, CosmosHeaderIdLsn, U64, |v| *v);
+    opt!(headers.item_lsn, CosmosHeaderIdItemLsn, U64, |v| *v);
     opt!(
         headers.offer_replace_pending,
         CosmosHeaderIdOfferReplacePending,
@@ -399,8 +402,8 @@ pub(crate) fn synthesize_response_headers(headers: &CosmosResponseHeaders) -> Ow
     opt!(
         headers.retry_after_ms,
         CosmosHeaderIdRetryAfterMs,
-        I64,
-        |v| u64_to_i64(*v)
+        U64,
+        |v| *v
     );
     opt!(
         headers.correlated_activity_id,
@@ -453,6 +456,7 @@ pub(crate) fn synthesize_response_headers(headers: &CosmosResponseHeaders) -> Ow
             SynthesizedValue::I64(v) => CosmosValue::i64(v),
             SynthesizedValue::F64(v) => CosmosValue::f64(v),
             SynthesizedValue::Bool(v) => CosmosValue::bool(v),
+            SynthesizedValue::U64(v) => CosmosValue::u64(v),
         };
         list.push(CosmosResponseHeader { id, value });
     }
@@ -522,11 +526,15 @@ mod tests {
         // Set only the plain-typed fields that need no wrapper constructor, so
         // the test exercises the synthesis loop, id assignment, native-typed
         // value emission, and the (ptr, len) view without depending on
-        // typed-value builders.
+        // typed-value builders. `server_duration_ms` exercises the `F64`
+        // variant; `lsn` / `retry_after_ms` exercise the `U64` variant with a
+        // value above `i64::MAX` to prove the full unsigned range survives
+        // (the earlier saturating-to-`i64` path silently clamped these).
         let mut headers = CosmosResponseHeaders::default();
         headers.continuation = Some("next-page".to_owned());
         headers.item_count = Some(42);
-        headers.lsn = Some(1234);
+        headers.server_duration_ms = Some(12.5);
+        headers.lsn = Some(u64::MAX - 1);
         headers.retry_after_ms = Some(500);
         headers.offer_replace_pending = Some(true);
         headers.gateway_version = Some("2.0.0".to_owned());
@@ -534,7 +542,7 @@ mod tests {
         let owned = synthesize_response_headers(&headers);
         let (ptr, len) = owned.as_ptr_len();
         assert!(!ptr.is_null());
-        assert_eq!(len, 6);
+        assert_eq!(len, 7);
 
         // SAFETY: `ptr` addresses `len` initialized entries owned by `owned`.
         let entries = unsafe { std::slice::from_raw_parts(ptr, len) };
@@ -551,6 +559,7 @@ mod tests {
                     1 => CosmosValueKind::CosmosValueKindI64,
                     2 => CosmosValueKind::CosmosValueKindF64,
                     3 => CosmosValueKind::CosmosValueKindBool,
+                    4 => CosmosValueKind::CosmosValueKindU64,
                     other => panic!("unexpected kind {other}"),
                 };
                 let rendered = match kind {
@@ -575,6 +584,9 @@ mod tests {
                             "false".to_owned()
                         }
                     }
+                    CosmosValueKind::CosmosValueKindU64 => {
+                        unsafe { e.value.payload.u64_value }.to_string()
+                    }
                 };
                 (e.id, kind, rendered)
             })
@@ -594,9 +606,14 @@ mod tests {
                     "42".to_owned()
                 ),
                 (
+                    CosmosHeaderId::CosmosHeaderIdServerDurationMs,
+                    CosmosValueKind::CosmosValueKindF64,
+                    12.5f64.to_string()
+                ),
+                (
                     CosmosHeaderId::CosmosHeaderIdLsn,
-                    CosmosValueKind::CosmosValueKindI64,
-                    "1234".to_owned()
+                    CosmosValueKind::CosmosValueKindU64,
+                    (u64::MAX - 1).to_string()
                 ),
                 (
                     CosmosHeaderId::CosmosHeaderIdOfferReplacePending,
@@ -605,7 +622,7 @@ mod tests {
                 ),
                 (
                     CosmosHeaderId::CosmosHeaderIdRetryAfterMs,
-                    CosmosValueKind::CosmosValueKindI64,
+                    CosmosValueKind::CosmosValueKindU64,
                     "500".to_owned()
                 ),
                 (

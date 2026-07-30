@@ -238,7 +238,7 @@ impl OperationHandle {
 /// Header-derived response metadata (activity id, session token, ETag,
 /// server continuation, request charge, sub-status, retry-after) is carried
 /// **exclusively** in the [`headers`](Self::headers) list, each entry
-/// tagged with its stable [`CosmosHeaderId`] and typed via
+/// tagged with its stable [`CosmosHeaderId`](crate::response_header::CosmosHeaderId) and typed via
 /// [`CosmosValue`](crate::response_header::CosmosValue). Only genuinely
 /// non-header signals live inline:
 ///
@@ -486,10 +486,20 @@ impl PendingCompletion {
                 .backtrace()
                 .and_then(|bt| to_cstring(bt.as_ref().to_string()));
             if let Some(resp) = err.response() {
-                // Wire response: synthesize the full header list — includes
-                // sub-status when the service returned `x-ms-substatus`, plus
-                // activity id, session token, ETag, retry-after, etc.
-                p.headers = synthesize_response_headers(resp.headers());
+                // Wire response: overlay the effective sub-status onto the
+                // wire headers before synthesis. `err.status().sub_status()`
+                // is authoritative — for a body-attached deserialization
+                // failure the driver stamps a synthetic code (e.g.
+                // `SERIALIZATION_RESPONSE_BODY_INVALID`) after the wire
+                // response has already been captured, so the raw wire
+                // header alone would miss it. Cloning the driver's typed
+                // header struct is cheap (small `Option<T>` fields) and
+                // keeps a single synthesis path.
+                let mut effective_headers = resp.headers().clone();
+                if let Some(sub) = err.status().sub_status() {
+                    effective_headers.substatus = Some(sub);
+                }
+                p.headers = synthesize_response_headers(&effective_headers);
             } else if let Some(sub) = err.status().sub_status() {
                 // Synthetic (client-side) error with no wire response but
                 // still carrying a sub-status sentinel (e.g. the driver's
@@ -659,7 +669,7 @@ impl Default for CqOptions {
 /// by value from a caller-supplied pointer — because `include_error_details`
 /// is declared as `bool` in the emitted C header. Materializing an
 /// arbitrary caller byte through a Rust `bool` would be undefined behavior,
-/// so [`cqoptions_from_ptr`] reads each field byte-by-byte via
+/// so `cqoptions_from_ptr` reads each field byte-by-byte via
 /// [`std::ptr::addr_of!`] and inspects the boolean byte as a raw `u8`.
 #[repr(C)]
 pub struct CosmosCompletionQueueOptions {
@@ -1368,6 +1378,64 @@ pub fn __test_only_enqueue_completion(
     CompletionQueue::enqueue(queue, pending)
 }
 
+/// Test-only C-ABI helper: enqueues an OK completion whose header list
+/// contains one entry for every [`CosmosValueKind`] discriminant.
+///
+/// Used by `c_tests/completion_headers_abi.c` to verify each tagged-union
+/// leg round-trips through the generated C header. Mints its own operation
+/// handle so a C caller only needs a queue pointer.
+///
+/// Not part of the public ABI — excluded from the header via `build.rs`'s
+/// `export.exclude`; bindings must not depend on it.
+///
+/// Returns [`CosmosErrorCode::CosmosErrorCodeSuccess`] on success, or an
+/// argument-shape rejection code when `queue` is NULL.
+#[doc(hidden)]
+#[no_mangle]
+pub extern "C" fn __test_only_enqueue_ok_completion_with_all_value_kinds(
+    queue: *mut CompletionQueue,
+) -> CosmosErrorCode {
+    use azure_data_cosmos_driver::models::ActivityId;
+
+    if CompletionQueue::from_ptr(queue).is_none() {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
+    }
+
+    // Mint and immediately drop an ephemeral operation handle; only its
+    // inner Arc needs to survive on the pending completion.
+    let op_raw = OperationHandle::new_raw();
+    // SAFETY: `op_raw` was just returned by `new_raw` and is exclusively
+    // owned here, so dereferencing it to clone its inner Arc is sound.
+    let op_inner = unsafe { Arc::clone(&(*op_raw).inner) };
+    OperationHandle::drop_raw(op_raw);
+
+    // One driver field per `CosmosValueKind` so the synthesized header list
+    // exercises every union leg the ABI exposes:
+    //   activity_id           → String
+    //   item_count            → I64
+    //   server_duration_ms    → F64
+    //   offer_replace_pending → Bool
+    //   lsn                   → U64  (value above `i64::MAX` so the C-side
+    //                                 read observes the full unsigned range,
+    //                                 not a saturated `i64::MAX`)
+    let mut headers = CosmosResponseHeaders::default();
+    headers.activity_id = Some(ActivityId::from_string("abi-test-activity".to_owned()));
+    headers.item_count = Some(42);
+    headers.server_duration_ms = Some(12.5);
+    headers.offer_replace_pending = Some(true);
+    headers.lsn = Some(u64::MAX - 1);
+
+    let mut p = PendingCompletion::base(
+        CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+        CosmosErrorCode::CosmosErrorCodeSuccess,
+        0,
+        op_inner,
+    );
+    p.http_status_code = 200;
+    p.headers = synthesize_response_headers(&headers);
+    CompletionQueue::enqueue(queue, p)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1842,11 +1910,17 @@ mod tests {
     #[test]
     fn synthetic_error_sub_status_reaches_headers_list() {
         // Pre-reconciliation, an error completion delivered `sub_status`
-        // through a dedicated inline scalar. Post-reconciliation the
-        // wire path emits it via the synthesized header list — but a
+        // through a dedicated inline scalar. Post-reconciliation the wire
+        // path emits it via the synthesized header list (with the
+        // effective `err.status().sub_status()` overlaid onto the wire
+        // headers so post-hoc codes like `SERIALIZATION_RESPONSE_BODY_INVALID`
+        // survive even when the raw wire header doesn't carry them). A
         // synthetic (no-wire-response) error still carrying a sub-status
-        // sentinel (e.g. driver-side timeout) must reach the SDK by the
-        // same channel so no data is lost across the FFI boundary.
+        // sentinel — e.g. driver-side timeout — must reach the SDK by the
+        // same channel so no data is lost across the FFI boundary. This
+        // test exercises the synthetic branch, which shares the same
+        // `synthesize_response_headers` implementation as the wire
+        // overlay, so both branches inherit the assertions below.
         use crate::response_header::{CosmosHeaderId, CosmosValueKind};
         use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus, SubStatusCode};
         let q = fresh_queue(0, true);

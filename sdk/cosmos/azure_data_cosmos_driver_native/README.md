@@ -128,8 +128,10 @@ below for the production-shape guidance.
 >
 > - **Inline partition keys.** Instead of the
 >   `cosmos_partition_key_builder_new` / `_add_*` / `_build` / `_free` dance,
->   fill an array of `cosmos_partition_key_component_t` (a tagged union: a
->   `kind` plus `string_value` / `number_value` / `bool_value`) and point
+>   fill an array of `cosmos_partition_key_component_t` (each entry is a
+>   `kind` byte plus a nested `value` union whose active leg —
+>   `value.string_value` / `value.number_value` / `value.bool_value` — is
+>   selected by `kind`) and point
 >   `cosmos_CosmosOperationRequest.partition_key_components` /
 >   `partition_key_len` at it. When set, this takes precedence over the
 >   `partition_key` handle and is assembled in one shot. The pre-built handle

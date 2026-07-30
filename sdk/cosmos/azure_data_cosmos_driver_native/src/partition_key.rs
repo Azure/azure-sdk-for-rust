@@ -88,7 +88,7 @@ impl CosmosPartitionKeyComponentKind {
 /// address rather than through the `bool_value` field directly, so an
 /// arbitrary host-written byte cannot construct an invalid `bool` value
 /// (which would be undefined behavior). See
-/// [`partition_key_from_components`] for the read-side implementation.
+/// `partition_key_from_components` for the read-side implementation.
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub union CosmosPartitionKeyComponentValue {
