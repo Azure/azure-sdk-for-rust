@@ -88,6 +88,8 @@
     "dkunda",
     "deprioritizes",
     "derefs",
+    "desynchronize",
+    "desyncs",
     "dhat",
     "directconnectivity",
     "diagnosability",
@@ -343,6 +345,8 @@
     "unrenamed",
     "unroutable",
     "unsharded",
+    "untiled",
+    "unvalidated",
     "upsert",
     "upserted",
     "upserting",
@@ -398,6 +402,15 @@
       "dictionaries": [
         "crates",
         "rust-custom"
+      ]
+    },
+    {
+      "comment": "Cites .NET test names verbatim; `Begining` is a typo in the upstream source.",
+      "filename": [
+        "**/tests/fixtures/streaming_order_by_scenarios.json"
+      ],
+      "words": [
+        "Begining"
       ]
     }
   ],

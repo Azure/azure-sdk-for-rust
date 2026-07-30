@@ -41,7 +41,7 @@ use azure_data_cosmos::{
         IndexingPolicy, ThroughputProperties,
     },
     options::{MaxItemCountHint, QueryOptions},
-    Query,
+    CosmosError, CosmosStatus, Query,
 };
 use framework::{MockItem, TestClient, TestOptions};
 use futures::StreamExt;
@@ -166,6 +166,22 @@ async fn drain_resumed_query<T: DeserializeOwned + Send + 'static>(
         continuation = Some(ContinuationToken::from_string(serialized));
     }
     Ok(collected)
+}
+
+/// Drains `query` until it fails, returning the error. Panics if the query
+/// drains cleanly — callers use this only for queries the driver must reject.
+async fn expect_query_rejection(container_client: &ContainerClient, query: &Query) -> CosmosError {
+    let mut pages = container_client
+        .query_items::<serde_json::Value>(query.clone(), FeedScope::full_container(), None)
+        .await
+        .expect("starting the query should not fail")
+        .into_pages();
+    while let Some(page) = pages.next().await {
+        if let Err(error) = page {
+            return error;
+        }
+    }
+    panic!("expected the query to be rejected, but it drained successfully");
 }
 
 /// Cross-partition streaming `ORDER BY` resume after a live split, for both
@@ -518,7 +534,9 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
 }
 
 /// Real-account query-shape matrix that does not force a split. Page size one
-/// serializes and recreates the iterator at every boundary.
+/// serializes and recreates the iterator at every boundary. Also asserts that
+/// a sort key evaluating to an array or object is rejected client-side rather
+/// than emitting an order the merge cannot reproduce.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "split"),
@@ -559,8 +577,6 @@ pub async fn order_by_live_mixed_types_and_join_resume_matrix() -> Result<(), Bo
                 ("mixed-true", Some(serde_json::json!(true))),
                 ("mixed-number", Some(serde_json::json!(42))),
                 ("mixed-string", Some(serde_json::json!("value"))),
-                ("mixed-array", Some(serde_json::json!([1]))),
-                ("mixed-object", Some(serde_json::json!({"a": 1}))),
             ];
             for (index, (id, sort_key)) in mixed_values.iter().enumerate() {
                 let partition_key = format!("mixed-pk-{index}");
@@ -580,6 +596,30 @@ pub async fn order_by_live_mixed_types_and_join_resume_matrix() -> Result<(), Bo
                     .await?;
             }
 
+            // Array and object sort keys live under their own `testCase` so the
+            // scalar ordering above can still drain: the driver rejects the
+            // whole query as soon as one complex key reaches the merge.
+            for (index, sort_key) in [serde_json::json!([1]), serde_json::json!({"a": 1})]
+                .iter()
+                .enumerate()
+            {
+                let id = format!("complex-{index}");
+                let partition_key = format!("complex-pk-{index}");
+                container_client
+                    .create_item(
+                        &partition_key,
+                        &id,
+                        serde_json::json!({
+                            "id": id,
+                            "partitionKey": partition_key,
+                            "testCase": "mixedComplex",
+                            "sortKey": sort_key
+                        }),
+                        None,
+                    )
+                    .await?;
+            }
+
             let expected_asc = [
                 "mixed-undefined",
                 "mixed-null",
@@ -587,8 +627,6 @@ pub async fn order_by_live_mixed_types_and_join_resume_matrix() -> Result<(), Bo
                 "mixed-true",
                 "mixed-number",
                 "mixed-string",
-                "mixed-array",
-                "mixed-object",
             ];
             let asc = drain_resumed_query::<serde_json::Value>(
                 &container_client,
@@ -613,6 +651,24 @@ pub async fn order_by_live_mixed_types_and_join_resume_matrix() -> Result<(), Bo
                 .map(|item| item["id"].as_str().unwrap())
                 .collect();
             assert_eq!(desc_ids, expected_asc.into_iter().rev().collect::<Vec<_>>());
+
+            // Complex sort keys are rejected client-side in both directions:
+            // the merge cannot reproduce the service's ordering of arrays and
+            // objects, so it refuses rather than emitting a wrong order.
+            for direction in ["ASC", "DESC"] {
+                let error = expect_query_rejection(
+                    &container_client,
+                    &Query::from(format!(
+                        "SELECT * FROM c WHERE c.testCase = 'mixedComplex' ORDER BY c.sortKey {direction}"
+                    )),
+                )
+                .await;
+                assert_eq!(
+                    error.status(),
+                    CosmosStatus::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED,
+                    "ORDER BY {direction} over a complex sort key must be rejected, got: {error}"
+                );
+            }
 
             for (index, secondary) in ["z", "m", "m", "b", "a", "x"].iter().enumerate() {
                 let id = format!("undefined-{index}");

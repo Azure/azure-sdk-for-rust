@@ -327,6 +327,9 @@ async fn drop_database(client: &CosmosClient, db_name: &str) {
 struct GwV2TestItem {
     id: String,
     pk: String,
+    /// Serialized as `sortValue`: `value` is a reserved word in Cosmos SQL, so
+    /// `ORDER BY c.value` fails query-plan generation with `400`/`13013`.
+    #[serde(rename = "sortValue")]
     value: i64,
     label: String,
 }
@@ -860,7 +863,7 @@ async fn drain_order_by_with_transport(
     container: &azure_data_cosmos::clients::ContainerClient,
     expected_transport: TransportKind,
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let query = Query::from("SELECT * FROM c ORDER BY c.value ASC, c.label DESC");
+    let query = Query::from("SELECT * FROM c ORDER BY c.sortValue ASC, c.label DESC");
     let mut continuation = None;
     let mut ids = Vec::new();
     let mut requests_seen = 0_usize;
@@ -922,7 +925,7 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2(
         let database = gateway_v2.database_client(&db_name);
         let composite_index = CompositeIndex::default()
             .with_property(CompositeIndexProperty::new(
-                "/value",
+                "/sortValue",
                 CompositeIndexOrder::Ascending,
             ))
             .with_property(CompositeIndexProperty::new(

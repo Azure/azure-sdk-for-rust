@@ -17,6 +17,8 @@
 
 ### Bugs Fixed
 
+- Fixed session-token parsing rejecting the unset version marker `-1` (as in `0:-1#42`), which the service returns for a partition key range that has no assigned topology version — most commonly a child range immediately after a split. Merging such a token now succeeds and round-trips `-1` verbatim. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
+
 ### Other Changes
 
 - Gateway 2.0 responses now preserve backend duration, quota, item-count, quorum, replica, query, and physical-partition RNTBD metadata when converting to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))

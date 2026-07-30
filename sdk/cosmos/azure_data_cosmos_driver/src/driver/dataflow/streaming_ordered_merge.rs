@@ -370,6 +370,11 @@ pub(crate) struct StreamingOrderedMerge {
     /// the failure skip those rows permanently. The partial page is returned
     /// first and this surfaces on the next [`Self::next_page`] call instead.
     deferred_error: Option<crate::error::CosmosError>,
+    /// Set when a fetched page was committed by its child [`Request`] but then
+    /// failed validation, so every child's committed continuation may now point
+    /// past rows that were never emitted. Sticky: once set, snapshots resume
+    /// from value boundaries instead of server continuations.
+    continuation_unsafe: bool,
 }
 
 impl StreamingOrderedMerge {
@@ -385,6 +390,7 @@ impl StreamingOrderedMerge {
             children,
             session_token: None,
             deferred_error: None,
+            continuation_unsafe: false,
             query_fingerprint,
         }
     }
@@ -631,6 +637,7 @@ impl PipelineNode for StreamingOrderedMerge {
                         Ok(changed) => changed,
                         Err(err) => {
                             self.deferred_error = Some(err);
+                            self.continuation_unsafe = true;
                             break;
                         }
                     };
@@ -642,6 +649,7 @@ impl PipelineNode for StreamingOrderedMerge {
                             .await
                         {
                             self.deferred_error = Some(err);
+                            self.continuation_unsafe = true;
                             break;
                         }
                         head_heap = self.build_head_heap();
@@ -682,13 +690,16 @@ impl PipelineNode for StreamingOrderedMerge {
         for (idx, child) in self.children.iter().enumerate() {
             // Safe to snapshot the backend continuation into the plain
             // `server_continuation` field only when nothing is buffered
-            // (else it points past unemitted rows) and the child runs the
+            // (else it points past unemitted rows), the child runs the
             // plain query (`ChildQueryShape::Plain`) — a resume-filtered
             // child's continuation is bound to that filtered text and would
-            // mismatch the plain query on resume; it resumes from its
-            // scalar `boundary` instead.
+            // mismatch the plain query on resume — and no fetched page failed
+            // validation after being committed (`continuation_unsafe`, which
+            // would likewise point past rows that never reached the caller).
+            // Otherwise the child resumes from its scalar `boundary` instead.
             let server_continuation = if child.buffered.is_empty()
                 && child.query_shape == ChildQueryShape::Plain
+                && !self.continuation_unsafe
             {
                 match child.node.snapshot_state()? {
                     PipelineNodeState::Request {
@@ -2270,6 +2281,64 @@ mod tests {
             err.status(),
             crate::error::CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
+    }
+
+    /// Regression: a page committed by the child `Request` but rejected during
+    /// validation leaves that continuation pointing past rows the caller never
+    /// received. Snapshotting it would silently drop them on resume, so the
+    /// snapshot must fall back to the value boundary instead.
+    #[tokio::test]
+    async fn snapshot_after_failed_page_validation_drops_server_continuation() {
+        // Missing `payload` — rejected by `parse_envelope_page` *after* the
+        // leaf committed `ct-2`.
+        let malformed = serde_json::json!({
+            "_rid": "",
+            "Documents": [{"_rid": "d2", "orderByItems": [{"item": 2}]}],
+            "_count": 1,
+        });
+        let child = ChildStream::fresh(
+            range("", "FF"),
+            Box::new(
+                MockLeaf::with_pages(vec![
+                    envelope_page(&[("d1", 1)], Some("ct-1")),
+                    Ok(PageResult::Page {
+                        response: mocks::response_with_continuation(
+                            &serde_json::to_vec(&malformed).unwrap(),
+                            Some("ct-2"),
+                        ),
+                        is_terminal: false,
+                    }),
+                ])
+                .with_snapshot(PipelineNodeState::Request {
+                    server_continuation: Some("ct-2".to_owned()),
+                }),
+            ),
+        );
+        let mut node = merge(vec![child], vec![SortOrder::Ascending]);
+
+        let PageResult::Page { response, .. } = next_page(&mut node).await else {
+            panic!("expected the already-consumed row to be returned as a partial page");
+        };
+        assert_eq!(ids(&response), vec!["d1"]);
+
+        match node.snapshot_state().unwrap() {
+            PipelineNodeState::StreamingOrderedMerge { ranges, .. } => {
+                assert!(
+                    ranges[0].server_continuation.is_none(),
+                    "the continuation of a page that failed validation must not be snapshotted"
+                );
+                assert_eq!(
+                    ranges[0]
+                        .boundary
+                        .as_ref()
+                        .expect("the emitted row advanced the boundary")
+                        .last_rid,
+                    "d1",
+                    "the range must resume from the last row actually delivered"
+                );
+            }
+            other => panic!("expected StreamingOrderedMerge, got {other:?}"),
+        }
     }
 
     #[tokio::test]
