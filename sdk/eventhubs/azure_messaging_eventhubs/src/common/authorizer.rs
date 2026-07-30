@@ -27,11 +27,13 @@ const TOKEN_REFRESH_BIAS: Duration = Duration::minutes(6); // By default, we ref
 const TOKEN_REFRESH_JITTER_MIN: Duration = Duration::seconds(-5); // Minimum jitter (added from the bias, so a negative number means we refresh before the bias)
 const TOKEN_REFRESH_JITTER_MAX: Duration = Duration::seconds(5); // Maximum jitter (added to the bias)
 
-// Floor delay applied after a pass in which one or more token refreshes failed.
-// A failed refresh leaves the token's `expires_on` unchanged, so its computed
-// refresh_time stays in the past and the next pass would not sleep. Without this
-// floor a persistent failure (credential outage, CBS down) busy-spins, hammering
-// get_token / perform_authorization with no backoff. See PR #4593 review.
+// Floor delay applied after a pass that did not write any fresh token back:
+// either one or more refreshes failed, or a recovery made the pass discard its
+// results. Both outcomes leave the cached token's `expires_on` unchanged, so its
+// computed refresh_time stays in the past and the next pass would not sleep.
+// Without this floor a persistent failure (credential outage, CBS down) or a
+// recovery storm busy-spins, hammering get_token / perform_authorization with no
+// backoff. See PR #4593 review and the `Discarded` arm below (#4454).
 const TOKEN_REFRESH_RETRY_BACKOFF: Duration = Duration::seconds(30);
 
 const EVENTHUBS_AUTHORIZATION_SCOPE: &str = "https://eventhubs.azure.net/.default";
@@ -54,10 +56,17 @@ impl Default for TokenRefreshTimes {
 }
 
 /// What one [`Authorizer::refresh_due_tokens`] pass concluded.
+#[derive(Debug, PartialEq, Eq)]
 enum RefreshPass {
     /// The pass ran to the end. `failed` is true when at least one path did not
     /// refresh, so the caller must back off before the next pass.
     Completed { failed: bool },
+    /// A recovery advanced the generation while the pass was in flight, so the
+    /// pass dropped the tokens it had refreshed (#4454). This is a distinct
+    /// outcome from `Completed { failed: true }`, because nothing failed, but the
+    /// caller must still back off: the cache keeps the old tokens, so they stay
+    /// due and the next pass would not sleep.
+    Discarded,
     /// The recoverable connection is gone, so the refresh task must stop.
     Stop,
 }
@@ -422,6 +431,21 @@ impl Authorizer {
                     );
                     azure_core::sleep::sleep(TOKEN_REFRESH_RETRY_BACKOFF).await;
                 }
+                RefreshPass::Discarded => {
+                    // A recovery advanced the generation mid-pass, so the pass
+                    // dropped its refreshed tokens. Nothing failed, but the cache
+                    // keeps the old tokens, so they stay due and the top-of-loop
+                    // sleep would be skipped exactly as it is after a failed pass.
+                    // Apply the same floor. `ReconnectSession` and `ReconnectLink`
+                    // advance the generation and leave the token cache populated, so
+                    // without this floor a recovery storm turns this loop into an
+                    // uncapped stream of get_token and CBS calls (#4454).
+                    warn!(
+                        backoff = ?TOKEN_REFRESH_RETRY_BACKOFF,
+                        "A recovery discarded the tokens refreshed this pass; backing off before retrying."
+                    );
+                    azure_core::sleep::sleep(TOKEN_REFRESH_RETRY_BACKOFF).await;
+                }
             }
         }
     }
@@ -438,7 +462,10 @@ impl Authorizer {
     /// these tokens are bound to the torn-down connection; writing them back would
     /// repopulate the just-cleared cache with stale entries that the next operation
     /// would use and fail on. On a mismatch we drop them and let the next
-    /// `authorize_path` re-establish fresh tokens against the new connection.
+    /// `authorize_path` re-establish fresh tokens against the new connection. A
+    /// mismatch returns [`RefreshPass::Discarded`], so the caller applies the same
+    /// backoff floor it applies to a failed pass; the cache keeps the old tokens,
+    /// so they stay due and the next pass would otherwise start with no delay.
     ///
     /// `non_refreshable` is owned by the caller's loop and carries across passes:
     /// a path that lands in it is skipped by every later pass.
@@ -576,18 +603,32 @@ impl Authorizer {
                     debug!(
                         "Discarding tokens refreshed during recovery (#4454); the recovery generation advanced mid-refresh."
                     );
-                } else {
-                    for (url, token) in updated_tokens.into_iter() {
-                        scopes.insert(url.clone(), token);
-                    }
-                    debug!("Updated tokens.");
+                    // Report the discard to the caller so it applies the backoff
+                    // floor. The cache keeps the old tokens, so they are still due
+                    // and the next pass would start with no delay (#4454).
+                    return Ok(RefreshPass::Discarded);
                 }
+                for (url, token) in updated_tokens.into_iter() {
+                    scopes.insert(url.clone(), token);
+                }
+                debug!("Updated tokens.");
             }
         }
 
         Ok(RefreshPass::Completed {
             failed: refresh_failed,
         })
+    }
+
+    /// Test hook: hold the token cache's write lock. A recovery that clears the
+    /// authorizer blocks inside [`Authorizer::clear`] until the guard is dropped,
+    /// which gives a test a deterministic point part way through
+    /// `apply_recovery_plan`. See `recovery_generation_differs_for_a_mid_recovery_capture`.
+    #[cfg(test)]
+    pub(crate) async fn lock_scopes_for_test(
+        &self,
+    ) -> async_lock::RwLockWriteGuard<'_, HashMap<Url, AccessToken>> {
+        self.authorization_scopes.write().await
     }
 
     #[cfg(test)]
@@ -1333,7 +1374,6 @@ mod tests {
                 authorizer
                     .refresh_due_tokens(now, bias, &mut non_refreshable)
                     .await
-                    .map(|_| ())
             })
         };
 
@@ -1350,10 +1390,21 @@ mod tests {
 
         // Release the gated refresh; its token is now stale and must be discarded.
         credential.release.store(true, Ordering::SeqCst);
-        refresh_task
+        let outcome = refresh_task
             .await
             .expect("refresh task panicked")
             .expect("refresh_due_tokens returned an error");
+
+        // The pass must report the discard, not a clean completion. The caller
+        // backs off on `Discarded`, and it must: the cache still holds the due
+        // original token, so a `Completed { failed: false }` here would send the
+        // refresh loop straight back around with no sleep, once for every
+        // generation bump a recovery storm produces (#4454).
+        assert_eq!(
+            outcome,
+            RefreshPass::Discarded,
+            "a pass whose tokens a recovery discarded must ask the caller to back off"
+        );
 
         // Exactly one refresh attempt was made, and the cache still holds the
         // original token: the token refreshed against the torn-down connection was

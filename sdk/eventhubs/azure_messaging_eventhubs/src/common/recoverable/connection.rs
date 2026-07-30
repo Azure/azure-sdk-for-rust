@@ -112,15 +112,18 @@ pub(crate) struct RecoverableConnection {
     connection_name: String,
     pub(super) retry_options: RetryOptions,
 
-    // Recovery generation counter (#4454). Bumped by
-    // `apply_recovery_plan` every time it clears the per-path caches (i.e. on every
-    // ReconnectConnection / ReconnectSession / ReconnectLink). Invariant: a cached
-    // resource is only valid if the generation it was created under still equals the
-    // current generation. The four slow paths (authorize_path, get_session,
-    // ensure_sender, ensure_receiver) do their AMQP IO with no map lock held; a
-    // recovery that fires during that window bumps the generation, and the slow path
-    // detects the mismatch on completion and discards its result rather than caching
-    // a resource bound to the dead connection. A single counter is used for all
+    // Recovery generation counter (#4454). `apply_recovery_plan` bumps it twice
+    // around every invalidation it performs, so it advances by two on every
+    // ReconnectConnection / ReconnectSession / ReconnectLink. Only equality against
+    // a captured value is ever tested, so the step size carries no meaning; see
+    // `apply_recovery_plan` for why one bump on either side alone is not enough.
+    //
+    // Invariant: a cached resource is only valid if the generation it was created
+    // under still equals the current generation. The four slow paths
+    // (authorize_path, get_session, ensure_sender, ensure_receiver) do their AMQP IO
+    // with no map lock held; a recovery that fires during that window bumps the
+    // generation, and the slow path detects the mismatch on completion and discards
+    // its result rather than caching a resource bound to the dead connection. A single counter is used for all
     // resource types: session-level recovery is rare, so the occasional extra
     // re-init of an unaffected type after a narrower recovery is cheaper than the
     // bookkeeping of per-type counters.
@@ -1051,40 +1054,55 @@ impl RecoverableConnection {
     /// Side-effecting half of `recover_from_error`: takes the locks and clears
     /// whichever caches the [`RecoveryPlan`] flagged.
     ///
-    /// #4454 stale-resource window. Any plan that clears a per-path
-    /// cache bumps the recovery `generation` first. A slow path
-    /// (authorize_path / get_session / ensure_sender / ensure_receiver) that is
-    /// mid-attach captured the pre-bump generation; on completion it sees the
-    /// mismatch and discards its result instead of caching a resource bound to the
-    /// connection this recovery just tore down. The bump must precede the clears so
-    /// an in-flight attach that resolves its cell *after* the clears still observes
-    /// the newer generation and re-inits.
+    /// #4454 stale-resource window. Any plan that invalidates something brackets
+    /// that invalidation with a bump of the recovery `generation`: one before it
+    /// and one after it. A slow path (authorize_path / get_session / ensure_sender
+    /// / ensure_receiver) that is mid-attach captured a generation from inside or
+    /// before that bracket; on completion it sees the mismatch and discards its
+    /// result instead of caching a resource bound to the connection this recovery
+    /// just tore down. The body explains why one bump on either side alone is not
+    /// enough.
     async fn apply_recovery_plan(&self, plan: RecoveryPlan) {
         let connection_id = self.get_connection_id();
+
+        // A plan that invalidates anything publishes a new generation twice: once
+        // before it touches the connection or any cache, and once after the last
+        // one. Racing slow-path attaches compare the generation they captured
+        // against the current one, so both bumps are needed to make every task that
+        // overlapped this recovery see a difference (#4454).
+        //
+        // A single bump leaves one edge open, whichever side it sits on:
+        //
+        // * Bump only after the invalidation, and a slow path that captured the old
+        //   generation can clone the connection, attach, and reach its post-init
+        //   check before the bump lands. The generation still matches, so it caches
+        //   and returns a resource bound to the connection this recovery drops a
+        //   moment later.
+        // * Bump only before the invalidation, and a slow path can capture the new
+        //   generation and *then* clone the old connection, which `connections`
+        //   still holds. Its post-init check matches too, so the same stale resource
+        //   reaches the caller. The token cache has the same shape: a reader that
+        //   runs after the bump and before `clear()` gets a token that was
+        //   authorized on the CBS link of the connection being dropped.
+        //
+        // With both bumps, a task that captured before the recovery and a task that
+        // captured between the bumps each see a generation that differs from the one
+        // they hold, so both discard and re-attach. A task that captures the final
+        // generation started after the last invalidation, so it finds an empty cache
+        // and builds against the new connection.
+        let invalidates = plan.drop_connection
+            || plan.clear_authorizer
+            || plan.clear_sessions
+            || plan.clear_senders
+            || plan.clear_receivers;
+
+        if invalidates {
+            self.generation.fetch_add(1, Ordering::AcqRel);
+        }
+
         if plan.drop_connection {
             self.connections.lock().await.take();
             debug!(connection_id = %connection_id, "Recovery: dropped AMQP connection.");
-        }
-
-        // Bump the generation before clearing *any* per-path cache, the
-        // authorizer's token cache included, so racing slow-path attaches detect
-        // the recovery and discard their stale results (see the struct field and
-        // `get_or_init_generational`). `authorize_path` and the refresh task read
-        // this generation directly because the token cache is mutable and cannot
-        // use a `OnceCell`; their guard re-reads the generation under the same
-        // `authorization_scopes` write lock that `clear()` takes. If we cleared the
-        // authorizer before the bump, an in-flight `authorize_path` could acquire
-        // that write lock after the clear, still observe the pre-bump generation,
-        // and insert a token bound to the torn-down connection. Bumping first
-        // closes that window (#4454). The bump only matters when a cache is being
-        // cleared; plans that touch neither caches nor the authorizer leave it
-        // untouched.
-        if plan.clear_sessions
-            || plan.clear_senders
-            || plan.clear_receivers
-            || plan.clear_authorizer
-        {
-            self.generation.fetch_add(1, Ordering::AcqRel);
         }
 
         if plan.clear_authorizer {
@@ -1116,6 +1134,11 @@ impl RecoverableConnection {
             // on the CBS failure path, runs on this very task).
             *self.mgmt_client.write().await = Arc::new(OnceCell::new());
             debug!(connection_id = %connection_id, "Recovery: dropped management client.");
+        }
+
+        // Closing bump. See the comment above the opening one.
+        if invalidates {
+            self.generation.fetch_add(1, Ordering::AcqRel);
         }
     }
 
@@ -1517,6 +1540,12 @@ mod tests {
     // #4454: a recovery that clears the per-path caches must bump the recovery
     // generation so racing slow-path attaches can detect it. A simulated
     // ReconnectConnection must advance `generation()`.
+    //
+    // The step is two, not one: `apply_recovery_plan` brackets its invalidation
+    // with a bump on each side, so a task that captures the generation part way
+    // through the recovery also sees a mismatch when it completes. The exact value
+    // is asserted here to pin that bracketing; nothing else compares generations by
+    // anything other than equality.
     #[tokio::test]
     async fn simulate_reconnect_bumps_generation() {
         let url = Url::parse("amqps://example.com").unwrap();
@@ -1531,9 +1560,57 @@ mod tests {
 
         assert_eq!(connection.generation(), 0);
         connection.simulate_reconnect().await;
-        assert_eq!(connection.generation(), 1);
-        connection.simulate_reconnect().await;
         assert_eq!(connection.generation(), 2);
+        connection.simulate_reconnect().await;
+        assert_eq!(connection.generation(), 4);
+    }
+
+    // #4454: a generation captured *part way through* a recovery must also end up
+    // stale. This is the edge a single leading bump leaves open: a slow path that
+    // starts after the bump can still clone the connection that `apply_recovery_plan`
+    // has not taken yet, or read a token that `clear()` has not removed yet, and its
+    // post-init check would then match and hand the caller a resource bound to the
+    // connection this recovery is dropping.
+    //
+    // The token cache's write lock is the seam. Holding it stops the recovery inside
+    // `authorizer.clear()`, which is after the opening bump and before the closing
+    // one, so the test can capture the generation a racing slow path would see.
+    #[tokio::test]
+    async fn recovery_generation_differs_for_a_mid_recovery_capture() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+        connection.disable_connection().await.unwrap();
+
+        let scopes = connection.authorizer.lock_scopes_for_test().await;
+
+        let recovery = {
+            let connection = connection.clone();
+            tokio::spawn(async move { connection.simulate_reconnect().await })
+        };
+
+        // Wait for the opening bump. The recovery then blocks on the guard above.
+        while connection.generation() == 0 {
+            tokio::task::yield_now().await;
+        }
+        let captured_mid_recovery = connection.generation();
+
+        drop(scopes);
+        recovery.await.expect("recovery task panicked");
+
+        assert_ne!(
+            connection.generation(),
+            captured_mid_recovery,
+            "a generation captured during a recovery must not survive it, or a slow \
+             path that started mid-recovery would pass its post-init check and cache \
+             a resource bound to the dropped connection"
+        );
     }
 
     // #4454: the core of the fix. A cell resolved under generation N must be

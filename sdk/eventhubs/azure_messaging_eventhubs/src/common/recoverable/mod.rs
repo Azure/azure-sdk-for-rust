@@ -22,6 +22,11 @@ pub(crate) use sender::RecoverableSender;
 /// progress against a newer connection. To reach it, the connection must go down
 /// faster than it can come up.
 ///
+/// One recovery costs one pass in the usual case. It costs two for a task that
+/// captures its generation inside the recovery, because `apply_recovery_plan`
+/// brackets its invalidation with a generation bump on each side. The bound
+/// therefore covers at least four back-to-back recoveries in the worst case.
+///
 /// Every generation-guarded cache in this crate uses this one value, so the
 /// policy stays the same for connections, senders, receivers, and tokens.
 pub(crate) const MAX_GENERATION_RETRIES: usize = 8;
