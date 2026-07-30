@@ -1352,7 +1352,8 @@ fn host_is_local(endpoint: &str) -> bool {
 /// explicit connection string pointing at a loopback host. Tests use this to
 /// account for behavior the emulator and the service do not share — most
 /// notably container-level full-fidelity change feed retention, which the
-/// emulator requires but which live continuous-backup accounts reject.
+/// emulator requires but which live continuous-backup accounts reject, and
+/// prefix HPK queries, which the classic emulator rejects with 400.
 ///
 /// Defaults to `true` when no connection string is configured, matching the
 /// rest of the harness (which falls back to the emulator).
