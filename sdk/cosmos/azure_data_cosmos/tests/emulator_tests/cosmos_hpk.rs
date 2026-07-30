@@ -10,7 +10,7 @@
 //! and transactional batch. HPK feed-range negative validation lives alongside
 //! the positive feed-range tests in `cosmos_feed_ranges.rs`.
 
-// Use the shared test framework declared in `tests/emulator/mod.rs`.
+// Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
 use super::framework;
 
 use std::error::Error;

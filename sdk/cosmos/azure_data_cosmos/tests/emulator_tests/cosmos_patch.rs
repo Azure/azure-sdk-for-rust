@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Use the shared test framework declared in `tests/emulator/mod.rs`.
+// Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
 use super::framework;
 
 use azure_core::{http::StatusCode, Uuid};
