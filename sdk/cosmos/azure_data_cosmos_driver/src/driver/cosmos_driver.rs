@@ -2394,9 +2394,9 @@ impl CosmosDriver {
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
         let response = Box::pin(async {
             let container = operation.container().cloned();
-            let mut plan =
-                Box::pin(self.plan_operation(operation, &options, None, &PlanOptions::default()))
-                    .await?;
+            let mut plan = self
+                .plan_operation(operation, &options, None, &PlanOptions::default())
+                .await?;
             self.execute_plan(&mut plan, container, options).await
         })
         .await?;
@@ -2953,6 +2953,22 @@ impl CosmosDriver {
     /// Resuming from a `continuation` skips the check — the caller already
     /// opted in when the operation was first planned.
     pub async fn plan_operation(
+        &self,
+        operation: CosmosOperation,
+        options: &OperationOptions,
+        continuation: Option<&ContinuationToken>,
+        plan_options: &PlanOptions,
+    ) -> crate::error::Result<OperationPlan> {
+        // Planning holds the whole pipeline-builder state across several await
+        // points, which makes it one of the largest futures in the driver —
+        // large enough to trip `clippy::large_futures` in callers. Box it once
+        // here so every caller awaits a pointer-sized future instead of having
+        // to pin at its own call site and rediscover this each time the state
+        // grows.
+        Box::pin(self.plan_operation_inner(operation, options, continuation, plan_options)).await
+    }
+
+    async fn plan_operation_inner(
         &self,
         operation: CosmosOperation,
         options: &OperationOptions,
