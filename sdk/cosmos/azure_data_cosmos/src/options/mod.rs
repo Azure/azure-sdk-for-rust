@@ -29,10 +29,12 @@ pub use batch::{
 pub use change_feed::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom};
 pub use client::CosmosClientOptions;
 pub use consistency::ConsistencyLevel;
+pub use container::ReadContainerOptions;
+#[cfg(feature = "control_plane")]
 pub use container::{
-    CreateContainerOptions, DeleteContainerOptions, QueryContainersOptions, ReadContainerOptions,
-    ReplaceContainerOptions,
+    CreateContainerOptions, DeleteContainerOptions, QueryContainersOptions, ReplaceContainerOptions,
 };
+#[cfg(feature = "control_plane")]
 pub use database::{
     CreateDatabaseOptions, DeleteDatabaseOptions, QueryDatabasesOptions, ReadDatabaseOptions,
 };
@@ -40,6 +42,7 @@ pub use feed::{FeedOptions, QueryOptions};
 pub use feed_ranges::ReadFeedRangesOptions;
 pub use item::{ItemReadOptions, ItemWriteOptions, PatchItemOptions};
 pub use routing_strategy::RoutingStrategy;
+#[cfg(feature = "control_plane")]
 pub use throughput::ThroughputOptions;
 
 // =========================================================================
@@ -51,9 +54,11 @@ mod change_feed;
 mod client;
 mod consistency;
 mod container;
+#[cfg(feature = "control_plane")]
 mod database;
 mod feed;
 mod feed_ranges;
 mod item;
 mod routing_strategy;
+#[cfg(feature = "control_plane")]
 mod throughput;

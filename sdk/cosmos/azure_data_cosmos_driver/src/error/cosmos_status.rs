@@ -495,8 +495,9 @@ impl SubStatusCode {
             20115 => Some("ClientQueryPlanComplexProjectionUnsupported"),
             20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
-            20118 => Some("ClientInvalidResourceId"),
-            20119 => Some("ClientMixedNameRidAddressing"),
+            20118 => Some("ClientCrossPartitionFanOutExceeded"),
+            20119 => Some("ClientInvalidResourceId"),
+            20120 => Some("ClientMixedNameRidAddressing"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1329,16 +1330,23 @@ impl SubStatusCode {
     /// operations.
     pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: SubStatusCode = SubStatusCode(20117);
 
+    /// A fresh cross-partition operation fanned out to more leaf request
+    /// nodes than the configured maximum (20118). The pipeline refuses to
+    /// plan an over-broad fan-out; the caller must raise `max_fan_out`
+    /// (via `FeedOptions`) to opt in. Paired with HTTP 400 because it is a
+    /// client-side input-validation rejection of the request.
+    pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: SubStatusCode = SubStatusCode(20118);
+
     /// A caller-supplied resource RID could not be parsed as a valid Cosmos DB
-    /// RID (20118). RIDs are Base64-encoded byte sequences; this is raised when
+    /// RID (20119). RIDs are Base64-encoded byte sequences; this is raised when
     /// the bytes cannot be decoded or are too short to extract the expected
     /// resource hierarchy.
-    pub const CLIENT_INVALID_RESOURCE_ID: SubStatusCode = SubStatusCode(20118);
+    pub const CLIENT_INVALID_RESOURCE_ID: SubStatusCode = SubStatusCode(20119);
 
     /// Name-based and RID-based addressing were mixed across the
-    /// database/container hierarchy (20119). A RID-addressed database requires a
+    /// database/container hierarchy (20120). A RID-addressed database requires a
     /// RID-addressed container and vice versa.
-    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = SubStatusCode(20119);
+    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = SubStatusCode(20120);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -2158,13 +2166,21 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION),
     };
 
-    /// 400 / 20118 — caller-supplied resource RID could not be parsed.
+    /// 400 / 20118 — a fresh cross-partition operation fanned out to more
+    /// leaf request nodes than the configured `max_fan_out`. The caller
+    /// must explicitly raise the limit to run a broader query.
+    pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
+    };
+
+    /// 400 / 20119 — caller-supplied resource RID could not be parsed.
     pub const CLIENT_INVALID_RESOURCE_ID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_INVALID_RESOURCE_ID),
     };
 
-    /// 400 / 20119 — name-based and RID-based addressing were mixed across the
+    /// 400 / 20120 — name-based and RID-based addressing were mixed across the
     /// database/container hierarchy.
     pub const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
@@ -2469,7 +2485,7 @@ mod tests {
 
     #[test]
     fn client_rid_addressing_status_names() {
-        // The 20118/20119 client statuses must resolve to searchable names so the
+        // The 20119/20120 client statuses must resolve to searchable names so the
         // deterministic client-side errors are useful in diagnostics and logs.
         assert_eq!(
             CosmosStatus::CLIENT_INVALID_RESOURCE_ID.name(),

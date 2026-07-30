@@ -61,6 +61,11 @@ pub(crate) struct ParsedRequest {
     pub partition_key_header: Option<String>,
     pub if_match: Option<String>,
     pub if_none_match: Option<String>,
+    /// Value of the `If-Modified-Since` request header, when present. The change
+    /// feed maps a `PointInTime` start position to this header, so the read-feed
+    /// handler uses its presence to detect (and, for AllVersionsAndDeletes,
+    /// reject) point-in-time starts.
+    pub if_modified_since: Option<String>,
     pub session_token: Option<String>,
     pub activity_id: Option<String>,
     pub content_response_on_write: bool,
@@ -92,6 +97,13 @@ pub(crate) struct ParsedRequest {
     pub is_batch: bool,
     #[allow(dead_code)]
     pub is_upsert: bool, // used during dispatch resolution
+    /// Value of the change-feed `A-IM` request header, when present.
+    ///
+    /// `"Incremental Feed"` selects the LatestVersion change feed and
+    /// `"Full-Fidelity Feed"` selects AllVersionsAndDeletes. The emulator's
+    /// read-feed handler consults this to decide whether to return flat
+    /// documents or full-fidelity envelopes.
+    pub a_im: Option<String>,
 }
 
 // Header name constants for request parsing
@@ -99,6 +111,7 @@ static IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-upser
 static PARTITION_KEY: HeaderName = HeaderName::from_static("x-ms-documentdb-partitionkey");
 static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
 static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
+static IF_MODIFIED_SINCE: HeaderName = HeaderName::from_static("if-modified-since");
 static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
 static CONTENT_RESPONSE: HeaderName =
@@ -121,6 +134,7 @@ static SUPPORTED_SERIALIZATION_FORMATS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-supported-serialization-formats");
 static OFFER_AUTOPILOT_SETTINGS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
+static A_IM: HeaderName = HeaderName::from_static("a-im");
 
 /// Parses an HTTP request into a `ParsedRequest`.
 pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
@@ -134,6 +148,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let if_match = headers.get_optional_str(&IF_MATCH).map(|s| s.to_string());
     let if_none_match = headers
         .get_optional_str(&IF_NONE_MATCH)
+        .map(|s| s.to_string());
+    let if_modified_since = headers
+        .get_optional_str(&IF_MODIFIED_SINCE)
         .map(|s| s.to_string());
     let session_token = headers
         .get_optional_str(&SESSION_TOKEN)
@@ -185,6 +202,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let offer_autopilot_settings = headers
         .get_optional_str(&OFFER_AUTOPILOT_SETTINGS)
         .map(|s| s.to_string());
+    let a_im = headers.get_optional_str(&A_IM).map(|s| s.to_string());
 
     // The client advertises binary-response support via
     // `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary`.
@@ -262,6 +280,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         partition_key_header,
         if_match,
         if_none_match,
+        if_modified_since,
         session_token,
         activity_id,
         content_response_on_write,
@@ -276,6 +295,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         is_query_plan,
         is_batch,
         is_upsert,
+        a_im,
     }
 }
 
