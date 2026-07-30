@@ -78,7 +78,7 @@ const DEFAULT_MAX_DEPTH: u32 = 6;
 const DEFAULT_BREADTH: u32 = 6;
 /// Default percent (0-100) of generated documents built in the shape of a real
 /// corpus file (see `SHAPE_SAMPLERS`); the rest are free-form hybrid documents.
-const DEFAULT_SHAPE_RATIO: u32 = 50;
+const DEFAULT_SHAPE_RATIO: u32 = 85;
 /// Default multiplier applied to the internal array / collection sizes of the
 /// corpus shape samplers. `1` keeps documents compact; larger values grow the
 /// per-item payload (e.g. embedding-vector dimensions, nutrient / member /
@@ -2252,7 +2252,12 @@ mod tests {
                 wide_numbers: false,
                 unicode: true,
                 breadth: DEFAULT_BREADTH,
-                shape_ratio: DEFAULT_SHAPE_RATIO,
+                // Force the free-form hybrid-skeleton generator (shape_ratio=0):
+                // this test asserts that *its* depth scales with `max_depth`.
+                // Corpus shape samplers have fixed, sampler-defined depth
+                // independent of the knob, so they would dilute the signal at
+                // the production `DEFAULT_SHAPE_RATIO`.
+                shape_ratio: 0,
                 size_scale: DEFAULT_SIZE_SCALE,
                 calibrate: false,
                 print_docs: false,
