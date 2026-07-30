@@ -326,14 +326,14 @@ fn gen_envelope_float(rng: &mut SplitMix64) -> Value {
 
 /// A single number: envelope-safe by default; when `wide_numbers` is set,
 /// occasionally a wide value beyond `2^53` that drives the calibrated
-/// string-token comparison path (design doc §3.1). The wide branch covers both
-/// sides of the `i64`/`u64` boundary [`normalize_number`] treats differently:
-/// signed i64 (exact-decimal token) and true u64 / wide float (lossy
-/// double token).
+/// string-token comparison path (design doc §3.1). The wide branch spans signed
+/// i64, true u64 above `i64::MAX`, and a wide non-integral float — all of which
+/// the backend stores as lossy doubles, so [`normalize_number`] tokenizes each
+/// via its rounded `f64`.
 fn gen_number(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
     if cfg.wide_numbers && rng.below(4) == 0 {
         return match rng.below(3) {
-            // Signed wide integer → exact-decimal-string path.
+            // Signed wide integer (> 2^53) → lossy double-token path.
             0 => Value::Number(Number::from(rng.next_u64() as i64)),
             // True u64 above i64::MAX → double-token path.
             1 => Value::Number(Number::from((i64::MAX as u64) + 1 + (rng.next_u64() >> 1))),
@@ -1477,12 +1477,11 @@ fn canonicalize(value: &Value) -> String {
 ///
 /// Rules (calibrated against a live account, design doc §3.1):
 /// - integers with magnitude `< 2^53` → exact integer (JCS-safe);
-/// - integers with magnitude `>= 2^53` that fit `i64` → exact **string token**
-///   (Cosmos preserves them exactly, but RFC 8785 / JCS refuses to emit integers
-///   beyond the safe range, so they are compared as a stable decimal token);
-/// - integers above `i64::MAX` → **string token** of the `f64` form (the backend
-///   stores them as IEEE-754 doubles), so a sent `u64` and its returned double
-///   map to the same token;
+/// - integers with magnitude `>= 2^53` (whether `i64` or `u64`) → **string
+///   token** of the `f64` form. The backend stores *every* JSON number as an
+///   IEEE-754 double, so an integer beyond `2^53` is not preserved exactly (e.g.
+///   `28423844363879210` is echoed back as `28423844363879208`); tokenizing the
+///   rounded double makes the sent and returned values compare equal;
 /// - integral-valued floats below `2^53` (e.g. `1.0`) → integer form (the
 ///   backend drops the trailing `.0`);
 /// - integral-valued floats `>= 2^53` → `f64` string token (matches the lossy
@@ -1493,18 +1492,15 @@ fn canonicalize(value: &Value) -> String {
 /// The string tokens are only ever compared for equality (never parsed back), so
 /// representing an out-of-JCS-range number as a token is sound: any two values
 /// Cosmos would round-trip to each other produce the identical token.
-///
-/// **Boundary assumption:** an `i64` >= `2^53` normalizes to an exact-decimal
-/// token, but a `u64 > i64::MAX` normalizes to a lossy double token. This
-/// assumes the backend echoes i64-range integers back as integers; if it ever
-/// returned one as a double, the tokens would differ (false positive) — then
-/// re-calibrate (§3.1).
 fn normalize_number(n: &Number) -> Value {
     if let Some(i) = n.as_i64() {
         if (i.unsigned_abs() as f64) < JCS_SAFE_INT_LIMIT {
             Value::Number(Number::from(i))
         } else {
-            Value::String(i.to_string())
+            // i >= 2^53: the backend stores it as a lossy double, so tokenize the
+            // rounded f64 (not the exact decimal) — otherwise the returned,
+            // double-rounded value would mismatch.
+            Value::String(cosmos_double_token(i as f64))
         }
     } else if let Some(u) = n.as_u64() {
         // u > i64::MAX: Cosmos stores it as a lossy double; token from the double.
@@ -2181,25 +2177,29 @@ mod tests {
 
     #[test]
     fn canonicalize_large_unsigned_integer_matches_backend_double() {
-        // Calibrated (§3.1): the backend stores integers above i64::MAX as
-        // doubles and returns them in scientific notation, so the canonicalizer
-        // models that — a large u64 canonicalizes identically to the double form
-        // the backend returns. Because RFC 8785 (JCS) refuses to emit integers
-        // beyond 2^53, these are compared as stable string tokens (of the f64),
-        // which keeps sent and round-tripped values comparable.
+        // The backend stores integers above 2^53 as doubles, so they must
+        // canonicalize to the same string token as the rounded double form.
         let sent_u64: Value = serde_json::from_str("18446744073709551614").unwrap();
         let backend_double: Value = serde_json::from_str("1.8446744073709552e+19").unwrap();
         assert_eq!(canon(&sent_u64), canon(&backend_double));
 
-        // 2^63 (just above i64::MAX) behaves the same way.
+        // 2^63 (just above i64::MAX).
         let sent_2p63: Value = serde_json::from_str("9223372036854775808").unwrap();
         let backend_2p63: Value = serde_json::from_str("9.223372036854776e+18").unwrap();
         assert_eq!(canon(&sent_2p63), canon(&backend_2p63));
 
-        // i64::MAX exceeds the JCS-safe integer range, so it canonicalizes to
-        // an exact decimal string token (quoted by JCS), not a bare number.
+        // Signed i64 above 2^53 is also stored lossily (regression: the i64
+        // branch used to emit the exact decimal). Two real live-leg cases:
+        let sent_a: Value = serde_json::from_str("28423844363879210").unwrap();
+        let backend_a: Value = serde_json::from_str("28423844363879208").unwrap();
+        assert_eq!(canon(&sent_a), canon(&backend_a));
+        let sent_b: Value = serde_json::from_str("39207287747660610").unwrap();
+        let backend_b: Value = serde_json::from_str("39207287747660608").unwrap();
+        assert_eq!(canon(&sent_b), canon(&backend_b));
+
+        // i64::MAX exceeds 2^53 → lossy double token (2^63), not exact decimal.
         let i64_max: Value = serde_json::from_str("9223372036854775807").unwrap();
-        assert_eq!(canon(&i64_max), r#""9223372036854775807""#);
+        assert_eq!(canon(&i64_max), canon(&sent_2p63));
 
         // A JCS-safe integer stays a bare number.
         assert_eq!(canon(&serde_json::json!(1_000_000)), "1000000");
