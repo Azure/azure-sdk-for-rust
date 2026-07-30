@@ -21,6 +21,9 @@ $process = Start-PipedProcess `
   -FilePath 'cargo' `
   -ArgumentList @(
     'watch',
+    # Ignore generated header files from some crates; should correspond to a .rs file change anyway in this repo.
+    '-i',
+    '*.h',
     '-s',
     "cargo +$resolvedToolchain doc --all-features --workspace --no-deps",
     '-s',

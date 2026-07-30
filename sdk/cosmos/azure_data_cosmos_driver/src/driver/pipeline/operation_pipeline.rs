@@ -40,8 +40,9 @@ use crate::{
 use super::{
     components::{
         OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
-        TransportRequest, TransportResult, DEFAULT_MAX_THROTTLE_ATTEMPTS,
-        DEFAULT_MAX_THROTTLE_WAIT,
+        TransportRequest, TransportResult, DATA_PLANE_MAX_PER_RETRY_DELAY,
+        DATA_PLANE_MAX_THROTTLE_ATTEMPTS, DATA_PLANE_MAX_THROTTLE_WAIT,
+        METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
     },
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
     hedging_eligibility::evaluate_hedge_eligibility,
@@ -56,6 +57,27 @@ use crate::driver::transport::{
     transport_pipeline::{execute_transport_pipeline, TransportPipelineContext},
     AuthorizationContext, EndpointKey,
 };
+
+/// Default throttle-retry budget for a pipeline class when the caller hasn't
+/// configured `ThrottlingRetryOptions`: the maximum number of 429 retries, the
+/// cumulative-wait budget, and the per-retry delay cap ("interval"). Data-plane
+/// gets more retries at a longer interval (count-limited); metadata keeps the
+/// patient, shorter-interval budget.
+fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration, Duration) {
+    if pipeline_type.is_data_plane() {
+        (
+            DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
+            DATA_PLANE_MAX_THROTTLE_WAIT,
+            DATA_PLANE_MAX_PER_RETRY_DELAY,
+        )
+    } else {
+        (
+            METADATA_MAX_THROTTLE_ATTEMPTS,
+            METADATA_MAX_THROTTLE_WAIT,
+            METADATA_MAX_PER_RETRY_DELAY,
+        )
+    }
+}
 
 /// Per-request overrides that take precedence over values from [`CosmosOperation`].
 ///
@@ -203,6 +225,7 @@ pub(crate) async fn execute_operation_pipeline(
     account_endpoint: &AccountEndpoint,
     credential: &Credential,
     user_agent: &azure_core::http::headers::HeaderValue,
+    client_id: &azure_core::http::headers::HeaderValue,
     activity_id: &ActivityId,
     pipeline_type: PipelineType,
     transport_security: TransportSecurity,
@@ -231,14 +254,16 @@ pub(crate) async fn execute_operation_pipeline(
     // bounded by `end_to_end_latency_policy` (see the per-attempt deadline
     // wiring below), not by these knobs in aggregate.
     let throttling_retry_options = options.throttling_retry_options();
+    let (default_attempts, default_wait, max_throttle_per_retry_delay) =
+        default_throttle_budget(pipeline_type);
     let max_throttle_attempts = throttling_retry_options
         .max_retry_count()
         .copied()
-        .unwrap_or(DEFAULT_MAX_THROTTLE_ATTEMPTS);
+        .unwrap_or(default_attempts);
     let max_throttle_wait_time = throttling_retry_options
         .max_retry_wait_time()
         .copied()
-        .unwrap_or(DEFAULT_MAX_THROTTLE_WAIT);
+        .unwrap_or(default_wait);
 
     // Determine if session consistency is active for this operation.
     let session_capturing_disabled = options
@@ -412,6 +437,7 @@ pub(crate) async fn execute_operation_pipeline(
                     account_endpoint,
                     credential,
                     user_agent,
+                    client_id,
                     activity_id,
                     pipeline_type,
                     transport_security,
@@ -596,6 +622,7 @@ pub(crate) async fn execute_operation_pipeline(
                 allow_sent_transport_retry: operation.is_read_only() || operation.is_idempotent(),
                 credential,
                 user_agent,
+                client_id,
                 pipeline_type,
                 transport_security,
                 endpoint_key: routing.endpoint_key.clone(),
@@ -603,6 +630,7 @@ pub(crate) async fn execute_operation_pipeline(
                 collection_rid: operation.container().map(|c| c.rid().to_owned()),
                 max_throttle_attempts,
                 max_throttle_wait_time,
+                max_throttle_per_retry_delay,
             },
             &mut diagnostics,
         )
@@ -928,6 +956,7 @@ pub(crate) async fn execute_operation_pipeline(
                     account_endpoint,
                     credential,
                     user_agent,
+                    client_id,
                     activity_id,
                     pipeline_type,
                     transport_security,
@@ -1244,6 +1273,7 @@ fn resolve_endpoint(
         && is_operation_supported_by_gateway_v2(
             operation.resource_type(),
             operation.operation_type(),
+            operation.request_headers().full_fidelity_feed,
         );
     let transport_mode = if use_gateway_v2 {
         TransportMode::GatewayV2
@@ -1272,6 +1302,7 @@ fn resolve_endpoint(
                 && is_operation_supported_by_gateway_v2(
                     operation.resource_type(),
                     operation.operation_type(),
+                    operation.request_headers().full_fidelity_feed,
                 );
             let ep_url = ep.selected_url(ep_use_gw_v2).clone();
             let ep_endpoint_key = if ep_use_gw_v2 {
@@ -2236,6 +2267,7 @@ struct AttemptContext<'a> {
     account_endpoint: &'a AccountEndpoint,
     credential: &'a Credential,
     user_agent: &'a azure_core::http::headers::HeaderValue,
+    client_id: &'a azure_core::http::headers::HeaderValue,
     activity_id: &'a ActivityId,
     pipeline_type: PipelineType,
     transport_security: TransportSecurity,
@@ -2626,14 +2658,16 @@ async fn perform_single_attempt(
     // `ThrottlingRetryOptions` identically to a non-hedged attempt. Each leg
     // enters the transport pipeline once and starts with a fresh budget.
     let throttling_retry_options = ctx.options.throttling_retry_options();
+    let (default_attempts, default_wait, max_throttle_per_retry_delay) =
+        default_throttle_budget(ctx.pipeline_type);
     let max_throttle_attempts = throttling_retry_options
         .max_retry_count()
         .copied()
-        .unwrap_or(DEFAULT_MAX_THROTTLE_ATTEMPTS);
+        .unwrap_or(default_attempts);
     let max_throttle_wait_time = throttling_retry_options
         .max_retry_wait_time()
         .copied()
-        .unwrap_or(DEFAULT_MAX_THROTTLE_WAIT);
+        .unwrap_or(default_wait);
 
     let result = execute_transport_pipeline(
         transport_request,
@@ -2643,6 +2677,7 @@ async fn perform_single_attempt(
                 || ctx.operation.is_idempotent(),
             credential: ctx.credential,
             user_agent: ctx.user_agent,
+            client_id: ctx.client_id,
             pipeline_type: ctx.pipeline_type,
             transport_security: ctx.transport_security,
             endpoint_key: routing.endpoint_key.clone(),
@@ -2650,6 +2685,7 @@ async fn perform_single_attempt(
             collection_rid: ctx.operation.container().map(|c| c.rid().to_owned()),
             max_throttle_attempts,
             max_throttle_wait_time,
+            max_throttle_per_retry_delay,
         },
         diagnostics,
     )
@@ -5382,6 +5418,72 @@ mod tests {
 
         assert_eq!(routing.transport_mode, TransportMode::Gateway);
         assert_eq!(routing.selected_url, *endpoint.url());
+    }
+
+    #[test]
+    fn resolve_endpoint_falls_back_to_gateway_for_full_fidelity_change_feed() {
+        // A full-fidelity (AllVersionsAndDeletes) change feed is a
+        // `Document`/`ReadFeed` op — otherwise Gateway 2.0 eligible — but must
+        // route through the standard gateway because Gateway 2.0 does not
+        // forward the `A-IM` header. An incremental change feed on the same
+        // endpoint stays on Gateway 2.0.
+        let full_fidelity = CosmosOperation::change_feed_all_versions_and_deletes(
+            test_container(),
+            Some(FeedRange::full()),
+        );
+        let incremental = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()));
+        let endpoint = CosmosEndpoint::regional_with_gateway_v2(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
+            account_write_endpoints: vec![endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let full_fidelity_routing = super::resolve_endpoint(
+            &full_fidelity,
+            &retry_state,
+            &location,
+            true,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            full_fidelity_routing.transport_mode,
+            TransportMode::Gateway,
+            "full-fidelity change feed must fall back to the standard gateway"
+        );
+        assert_eq!(full_fidelity_routing.selected_url, *endpoint.url());
+
+        let incremental_routing = super::resolve_endpoint(
+            &incremental,
+            &retry_state,
+            &location,
+            true,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            incremental_routing.transport_mode,
+            TransportMode::GatewayV2,
+            "incremental change feed remains Gateway 2.0 eligible"
+        );
     }
 
     #[test]

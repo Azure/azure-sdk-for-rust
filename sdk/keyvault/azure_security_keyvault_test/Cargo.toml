@@ -13,6 +13,8 @@ categories = ["development-tools"]
 publish = false
 
 [dependencies]
+async-trait = { workspace = true }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1" }
 tokio = { workspace = true, features = ["rt"] }
 
 [lints]

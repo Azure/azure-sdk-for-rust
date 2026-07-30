@@ -260,6 +260,12 @@ impl PipelineNode for SkipTake {
         // splits, so a `SkipTake` is safe as the pipeline root.
         false
     }
+
+    fn fan_out_width(&self) -> usize {
+        // A `SkipTake` wraps a single fan-out child and issues no request of its
+        // own, so its leaf fan-out is exactly the child's.
+        self.child.fan_out_width()
+    }
 }
 
 #[cfg(test)]

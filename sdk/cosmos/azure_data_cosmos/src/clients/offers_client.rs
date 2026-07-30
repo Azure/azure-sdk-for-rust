@@ -6,20 +6,24 @@
 //! These functions are used by container and database clients to read and
 //! replace throughput offers. All operations go through the Cosmos driver.
 
+use crate::clients::ClientContext;
+use crate::diagnostics::CosmosOperationContext;
 use crate::{feed::FeedBody, models::CosmosResponse, models::ThroughputProperties, Query};
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation};
 use azure_data_cosmos_driver::options::OperationOptions;
-use azure_data_cosmos_driver::CosmosDriver;
-use std::sync::Arc;
 
 /// Queries the offer for a given resource ID (RID) via the driver.
 ///
-/// Returns `None` if no offer is configured for the resource.
+/// Returns `None` if no offer is configured for the resource. The offer-query
+/// operation is dispatched to the client's diagnostics handler chain — on both
+/// success and failure — under the supplied `op_context` identity, so throughput
+/// reads honor the same once-per-operation contract as singleton operations.
 pub(crate) async fn find_offer(
-    driver: &CosmosDriver,
+    context: &ClientContext,
     account: &AccountReference,
     resource_id: &str,
     operation_options: OperationOptions,
+    op_context: CosmosOperationContext,
 ) -> crate::Result<Option<ThroughputProperties>> {
     let query = Query::from("SELECT * FROM c WHERE c.offerResourceId = @rid")
         .with_parameter("@rid", resource_id)?;
@@ -27,62 +31,82 @@ pub(crate) async fn find_offer(
 
     let operation = CosmosOperation::query_offers(account.clone()).with_body(body);
 
-    let driver_response = driver
+    match context
+        .driver
         .execute_operation(operation, operation_options)
-        .await?;
-    let Some(driver_response) = driver_response else {
-        // No offer found for this resource
-        return Ok(None);
-    };
-    tracing::debug!(
-        activity_id = ?driver_response.headers().activity_id,
-        request_charge = ?driver_response.headers().request_charge,
-        "offer query completed"
-    );
-    let feed: FeedBody<ThroughputProperties> = driver_response.into_body().into_single()?;
-    Ok(feed.items.into_iter().next())
+        .await
+    {
+        Ok(Some(driver_response)) => {
+            tracing::debug!(
+                activity_id = ?driver_response.headers().activity_id,
+                request_charge = ?driver_response.headers().request_charge,
+                "offer query completed"
+            );
+            let response = context.complete_operation(driver_response, || op_context);
+            let feed: FeedBody<ThroughputProperties> = response.into_model()?;
+            Ok(feed.items.into_iter().next())
+        }
+        // No offer found for this resource: no operation completed to dispatch.
+        Ok(None) => Ok(None),
+        Err(err) => {
+            let err = crate::CosmosError::from(err);
+            context.dispatch_error(&err, || op_context);
+            Err(err)
+        }
+    }
 }
 
 /// Reads a specific offer by its RID via the driver, returning the full response.
+///
+/// The read is routed through the result-aware completion seam so the offer-read
+/// operation reaches the diagnostics handler chain on both success and failure.
 pub(crate) async fn read_offer_by_id(
-    driver: &CosmosDriver,
+    context: &ClientContext,
     account: &AccountReference,
     offer_id: &str,
+    op_context: CosmosOperationContext,
 ) -> crate::Result<CosmosResponse> {
     let operation = CosmosOperation::read_offer(account.clone(), offer_id.to_owned());
-    let driver_response = driver
+    let driver_result = context
+        .driver
         .execute_singleton_operation(operation, OperationOptions::default())
-        .await?;
-    Ok(crate::driver_bridge::driver_response_to_cosmos_response(
-        driver_response,
-    ))
+        .await;
+    context.complete_result(driver_result, || op_context)
 }
 
 /// Replaces the throughput for a resource and returns a [`ThroughputPoller`] to track the operation.
 ///
 /// Reads the current offer, validates the offer RID, applies the new throughput, and
 /// executes the replace via the driver. Returns a poller for async completion tracking.
+///
+/// The offer-query, offer-replace, and every subsequent poll are dispatched to the
+/// client's diagnostics handler chain under `op_context`, so an asynchronous
+/// throughput replace surfaces each of its wire operations to registered handlers.
 pub(crate) async fn begin_replace(
-    driver: Arc<CosmosDriver>,
+    context: ClientContext,
     account: AccountReference,
     resource_id: &str,
     throughput: ThroughputProperties,
     operation_options: OperationOptions,
+    op_context: CosmosOperationContext,
 ) -> crate::Result<crate::clients::ThroughputPoller> {
-    let mut current_throughput =
-        find_offer(&driver, &account, resource_id, operation_options.clone())
-            .await?
-            .ok_or_else(|| {
-                // No offer exists for the resource — typically the caller
-                // pointed at a resource that doesn't support throughput
-                // (e.g. a serverless or shared-throughput container).
-                crate::DriverCosmosError::builder()
-                    .with_status(
-                        crate::error::CosmosStatus::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE,
-                    )
-                    .with_message("no throughput offer found for this resource")
-                    .build()
-            })?;
+    let mut current_throughput = find_offer(
+        &context,
+        &account,
+        resource_id,
+        operation_options.clone(),
+        op_context.clone(),
+    )
+    .await?
+    .ok_or_else(|| {
+        // No offer exists for the resource — typically the caller
+        // pointed at a resource that doesn't support throughput
+        // (e.g. a serverless or shared-throughput container).
+        crate::DriverCosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE)
+            .with_message("no throughput offer found for this resource")
+            .build()
+    })?;
 
     if current_throughput.offer_id.is_empty() {
         // Service contract violation: an offer was returned but it has
@@ -111,13 +135,13 @@ pub(crate) async fn begin_replace(
         opts
     };
 
-    let driver_response = driver
+    let driver_result = context
+        .driver
         .execute_singleton_operation(operation, replace_options)
-        .await?;
-
-    let response = crate::driver_bridge::driver_response_to_cosmos_response(driver_response);
+        .await;
+    let response = context.complete_result(driver_result, || op_context.clone())?;
 
     Ok(crate::clients::ThroughputPoller::new(
-        response, driver, account, offer_id,
+        response, context, account, offer_id, op_context,
     ))
 }

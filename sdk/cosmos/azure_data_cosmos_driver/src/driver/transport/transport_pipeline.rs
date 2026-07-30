@@ -93,8 +93,10 @@ fn forced_final_retry_delay(deadline: Option<Instant>) -> Option<Duration> {
 ///
 /// Honors the service-specified `x-ms-retry-after-ms` header when present.
 /// Falls back to exponential backoff from a small base delay (5ms) if the
-/// header is absent. Individual retry delays are capped at `max_per_retry_delay`
-/// (5s default) to avoid excessive waits from a misbehaving service response.
+/// header is absent. Individual retry delays are capped at the
+/// `max_per_retry_delay` carried by `throttle_state` — the request class's
+/// per-retry cap (5s for metadata, 15s for data-plane) — to avoid excessive
+/// waits from a misbehaving service response.
 pub(crate) fn evaluate_transport_retry(
     result: &TransportResult,
     throttle_state: &ThrottleRetryState,
@@ -107,35 +109,13 @@ pub(crate) fn evaluate_transport_retry(
         return ThrottleAction::Propagate;
     }
 
-    if throttle_state.attempt_count >= throttle_state.max_attempts {
-        return ThrottleAction::Propagate;
-    }
+    // Service-specified retry delay, else exponential fallback; the budget and
+    // per-retry cap are applied by `next_throttle_retry`.
+    let retry_after_ms = result.cosmos_headers().and_then(|h| h.retry_after_ms);
 
-    // Extract the service-specified retry delay from the parsed cosmos
-    // response headers, or fall back to exponential backoff.
-    let service_delay = result
-        .cosmos_headers()
-        .and_then(|h| h.retry_after_ms)
-        .map(Duration::from_millis);
-
-    let delay = service_delay.unwrap_or_else(|| throttle_state.fallback_delay());
-
-    // Cap individual retry delay to avoid excessive waits.
-    let delay = delay.min(throttle_state.max_per_retry_delay);
-
-    let new_cumulative = throttle_state.cumulative_delay + delay;
-
-    if new_cumulative > throttle_state.max_wait_time {
-        return ThrottleAction::Propagate;
-    }
-
-    ThrottleAction::Retry {
-        delay,
-        new_state: ThrottleRetryState {
-            attempt_count: throttle_state.attempt_count + 1,
-            cumulative_delay: new_cumulative,
-            ..*throttle_state
-        },
+    match throttle_state.next_throttle_retry(retry_after_ms) {
+        Some((delay, new_state)) => ThrottleAction::Retry { delay, new_state },
+        None => ThrottleAction::Propagate,
     }
 }
 
@@ -168,6 +148,7 @@ pub(crate) struct TransportPipelineContext<'a> {
     pub allow_sent_transport_retry: bool,
     pub credential: &'a Credential,
     pub user_agent: &'a azure_core::http::headers::HeaderValue,
+    pub client_id: &'a azure_core::http::headers::HeaderValue,
     pub pipeline_type: PipelineType,
     pub transport_security: TransportSecurity,
     /// Pre-computed `host:port` key for the target endpoint.
@@ -200,6 +181,15 @@ pub(crate) struct TransportPipelineContext<'a> {
     /// (defaulting to 30 seconds). Same per-invocation scope note as
     /// [`max_throttle_attempts`](Self::max_throttle_attempts).
     pub max_throttle_wait_time: Duration,
+    /// Maximum delay for a single 429 (throttle) retry — the per-retry
+    /// "interval" that clamps the service `x-ms-retry-after-ms` value (and the
+    /// backoff fallback).
+    ///
+    /// Resolved by the operation pipeline from the request class: data-plane
+    /// requests get a longer interval (15 seconds) so a larger retry count can
+    /// run before the deadline, while metadata requests keep the shorter
+    /// interval (5 seconds).
+    pub max_throttle_per_retry_delay: Duration,
 }
 
 /// Executes a single transport attempt.
@@ -214,8 +204,11 @@ pub(crate) async fn execute_transport_pipeline(
     ctx: &TransportPipelineContext<'_>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
-    let mut throttle_state =
-        ThrottleRetryState::with_limits(ctx.max_throttle_attempts, ctx.max_throttle_wait_time);
+    let mut throttle_state = ThrottleRetryState::with_limits(
+        ctx.max_throttle_attempts,
+        ctx.max_throttle_wait_time,
+        ctx.max_throttle_per_retry_delay,
+    );
     let mut local_connectivity_retry_count = 0_u32;
     let mut prior_failed_transport_shards = Vec::<FailedTransportShardDiagnostics>::new();
     let mut excluded_shard_id = None;
@@ -279,7 +272,7 @@ pub(crate) async fn execute_transport_pipeline(
         );
 
         // Apply standard Cosmos headers
-        apply_cosmos_headers(&mut http_request, ctx.user_agent);
+        apply_cosmos_headers(&mut http_request, ctx.user_agent, ctx.client_id);
         // V1 RCS emission: when RCS is non-Default on a read,
         // set `x-ms-cosmos-read-consistency-strategy` and strip any
         // `x-ms-consistency-level` header. GatewayV2 emits the equivalent via
@@ -331,7 +324,7 @@ pub(crate) async fn execute_transport_pipeline(
                 account_name: ctx.account_name.as_deref(),
                 collection_rid: ctx.collection_rid.as_deref(),
             };
-            match wrap_request_for_gateway_v2(&http_request, &wrap_inputs) {
+            match wrap_request_for_gateway_v2(http_request, &wrap_inputs) {
                 Ok(wrapped_request) => http_request = wrapped_request,
                 Err(e) => {
                     let cosmos_err = crate::error::CosmosError::builder()
@@ -911,6 +904,7 @@ fn map_http_response_payload(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::driver::pipeline::components::METADATA_MAX_PER_RETRY_DELAY;
     use std::{
         collections::VecDeque,
         sync::{Arc, Mutex},
@@ -935,6 +929,11 @@ mod tests {
         options::DiagnosticsOptions,
     };
 
+    static TEST_CLIENT_ID: azure_core::http::headers::HeaderValue =
+        azure_core::http::headers::HeaderValue::from_static("00000000-0000-4000-8000-000000000000");
+    static TEST_CLIENT_ID_HEADER: azure_core::http::headers::HeaderName =
+        azure_core::http::headers::HeaderName::from_static("x-ms-client-id");
+
     #[derive(Debug)]
     struct HangingTransportClient {
         delay: Duration,
@@ -955,6 +954,44 @@ mod tests {
                     .build(),
                 crate::diagnostics::RequestSentStatus::Unknown,
             ))
+        }
+    }
+
+    #[derive(Debug, Default)]
+    struct ClientIdRecordingRetryTransport {
+        attempts: std::sync::atomic::AtomicUsize,
+        client_ids: Mutex<Vec<Option<String>>>,
+    }
+
+    #[async_trait]
+    impl TransportClient for ClientIdRecordingRetryTransport {
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            self.client_ids.lock().unwrap().push(
+                request
+                    .headers
+                    .get_optional_str(&TEST_CLIENT_ID_HEADER)
+                    .map(str::to_owned),
+            );
+
+            if self
+                .attempts
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+                == 0
+            {
+                let mut headers = azure_core::http::headers::Headers::new();
+                headers.insert("x-ms-retry-after-ms", "0");
+                Ok(HttpResponse {
+                    status: 429,
+                    headers,
+                    body: Vec::new(),
+                })
+            } else {
+                Ok(HttpResponse {
+                    status: 200,
+                    headers: azure_core::http::headers::Headers::new(),
+                    body: Vec::new(),
+                })
+            }
         }
     }
 
@@ -1075,7 +1112,11 @@ mod tests {
         // MaxRetryAttemptsOnRateLimitedRequests = 0) must surface the first
         // 429 to the caller without any retry.
         let result = make_throttled_result_with_retry_after(42);
-        let state = ThrottleRetryState::with_limits(0, Duration::from_secs(30));
+        let state = ThrottleRetryState::with_limits(
+            0,
+            Duration::from_secs(30),
+            METADATA_MAX_PER_RETRY_DELAY,
+        );
 
         assert!(matches!(
             evaluate_transport_retry(&result, &state, false),
@@ -1093,7 +1134,7 @@ mod tests {
         for attempt in 0..2 {
             let state = ThrottleRetryState {
                 attempt_count: attempt,
-                ..ThrottleRetryState::with_limits(2, max_wait)
+                ..ThrottleRetryState::with_limits(2, max_wait, METADATA_MAX_PER_RETRY_DELAY)
             };
             assert!(
                 matches!(
@@ -1107,7 +1148,7 @@ mod tests {
         // attempt_count 2 reaches the cap and propagates.
         let state = ThrottleRetryState {
             attempt_count: 2,
-            ..ThrottleRetryState::with_limits(2, max_wait)
+            ..ThrottleRetryState::with_limits(2, max_wait, METADATA_MAX_PER_RETRY_DELAY)
         };
         assert!(matches!(
             evaluate_transport_retry(&result, &state, false),
@@ -1122,7 +1163,11 @@ mod tests {
         let result = make_throttled_result_with_retry_after(2_000);
         let state = ThrottleRetryState {
             cumulative_delay: Duration::from_millis(500),
-            ..ThrottleRetryState::with_limits(9, Duration::from_secs(1))
+            ..ThrottleRetryState::with_limits(
+                9,
+                Duration::from_secs(1),
+                METADATA_MAX_PER_RETRY_DELAY,
+            )
         };
 
         // 500ms accumulated + 2000ms next delay = 2.5s > 1s budget.
@@ -1298,6 +1343,7 @@ mod tests {
                 allow_sent_transport_retry: false,
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::Metadata,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: endpoint.endpoint_key(),
@@ -1305,6 +1351,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -1319,6 +1366,54 @@ mod tests {
         let requests = completed.requests();
         assert_eq!(requests.len(), 1);
         assert!(requests[0].timed_out());
+    }
+
+    #[tokio::test]
+    async fn client_id_is_stable_across_retry_and_overrides_caller_header() {
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let mut request = test_request(None);
+        request
+            .headers
+            .insert(TEST_CLIENT_ID_HEADER.clone(), "caller-supplied");
+
+        let recording = Arc::new(ClientIdRecordingRetryTransport::default());
+        let client = AdaptiveTransport::Gateway(recording.clone());
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("client-id-retry".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+
+        let result = execute_transport_pipeline(
+            request,
+            &TransportPipelineContext {
+                transport: &client,
+                allow_sent_transport_retry: false,
+                credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
+                pipeline_type: PipelineType::DataPlane,
+                transport_security: TransportSecurity::Secure,
+                endpoint_key: endpoint.endpoint_key(),
+                account_name: None,
+                collection_rid: None,
+                max_throttle_attempts: 1,
+                max_throttle_wait_time: Duration::from_secs(1),
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
+            },
+            &mut diagnostics,
+        )
+        .await;
+
+        assert!(matches!(result.outcome, TransportOutcome::Success { .. }));
+        assert_eq!(
+            *recording.client_ids.lock().unwrap(),
+            vec![
+                Some(TEST_CLIENT_ID.as_str().to_owned()),
+                Some(TEST_CLIENT_ID.as_str().to_owned()),
+            ]
+        );
     }
 
     /// Always returns an HTTP 429 response and counts how many times it was
@@ -1373,6 +1468,7 @@ mod tests {
                 allow_sent_transport_retry: false,
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -1380,6 +1476,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 0,
                 max_throttle_wait_time: Duration::from_secs(30),
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -1436,6 +1533,7 @@ mod tests {
                 allow_sent_transport_retry: false,
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -1443,6 +1541,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_millis(1),
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -1506,6 +1605,7 @@ mod tests {
                     allow_sent_transport_retry: false,
                     credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                     user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                    client_id: &TEST_CLIENT_ID,
                     pipeline_type: PipelineType::DataPlane,
                     transport_security: TransportSecurity::Secure,
                     endpoint_key: test_endpoint_key(),
@@ -1515,6 +1615,7 @@ mod tests {
                     // Generous budget so the cumulative-wait cap is never the
                     // limiter for these small attempt counts.
                     max_throttle_wait_time: Duration::from_secs(300),
+                    max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
                 },
                 &mut diagnostics,
             )
@@ -1546,6 +1647,120 @@ mod tests {
                     "expected HttpError(429) for max_throttle_attempts={max_throttle_attempts}, \
                      got {other:?}"
                 ),
+            }
+        }
+    }
+
+    /// Always returns HTTP 429 with `x-ms-retry-after-ms: 0`, counting each
+    /// invocation. The zero retry-after forces every throttle delay to `0`, so
+    /// the *attempt count* (not the cumulative-wait budget) is the sole limiter
+    /// — keeping the large class-default budgets fast and their wire counts
+    /// deterministic, unlike `AlwaysThrottlesTransportClient` (whose exponential
+    /// fallback only stays cheap for small attempt counts).
+    #[derive(Debug)]
+    struct AlwaysThrottlesZeroDelayClient {
+        request_count: Arc<std::sync::atomic::AtomicUsize>,
+    }
+
+    #[async_trait]
+    impl TransportClient for AlwaysThrottlesZeroDelayClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            self.request_count
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let mut headers = azure_core::http::headers::Headers::new();
+            headers.insert(
+                azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms"),
+                azure_core::http::headers::HeaderValue::from_static("0"),
+            );
+            Ok(HttpResponse {
+                status: 429,
+                headers,
+                body: vec![],
+            })
+        }
+    }
+
+    /// End-to-end: the per-class *default* throttle budgets (data-plane 18 /
+    /// metadata 9, from `default_throttle_budget`) drive the real
+    /// `execute_transport_pipeline` loop to the expected number of wire
+    /// attempts, confirming the values wired in by the operation pipeline are
+    /// the ones honored on the wire. Follows the same mock + `N + 1` accounting
+    /// as `execute_transport_pipeline_honors_configured_max_throttle_attempts`;
+    /// `x-ms-retry-after-ms: 0` makes the attempt count the sole limiter so the
+    /// forced-final retry stays suppressed (total = 1 initial + N retries).
+    #[tokio::test]
+    async fn execute_transport_pipeline_honors_class_default_throttle_budgets() {
+        use crate::driver::pipeline::components::{
+            DATA_PLANE_MAX_PER_RETRY_DELAY, DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
+            DATA_PLANE_MAX_THROTTLE_WAIT, METADATA_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
+        };
+
+        // The data-plane default must retry strictly more often than metadata,
+        // so the two cases below can never collapse to the same wire count.
+        assert!(DATA_PLANE_MAX_THROTTLE_ATTEMPTS > METADATA_MAX_THROTTLE_ATTEMPTS);
+
+        for (pipeline_type, attempts, wait, per_retry) in [
+            (
+                PipelineType::DataPlane,
+                DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
+                DATA_PLANE_MAX_THROTTLE_WAIT,
+                DATA_PLANE_MAX_PER_RETRY_DELAY,
+            ),
+            (
+                PipelineType::Metadata,
+                METADATA_MAX_THROTTLE_ATTEMPTS,
+                METADATA_MAX_THROTTLE_WAIT,
+                METADATA_MAX_PER_RETRY_DELAY,
+            ),
+        ] {
+            let request_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+            let client = AdaptiveTransport::Gateway(Arc::new(AlwaysThrottlesZeroDelayClient {
+                request_count: Arc::clone(&request_count),
+            }));
+            let mut diagnostics = DiagnosticsContextBuilder::new(
+                ActivityId::from_string(format!("throttle-default-{pipeline_type:?}")),
+                Arc::new(DiagnosticsOptions::default()),
+            );
+
+            let result = execute_transport_pipeline(
+                test_request(None),
+                &TransportPipelineContext {
+                    transport: &client,
+                    allow_sent_transport_retry: false,
+                    credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                    user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                    client_id: &TEST_CLIENT_ID,
+                    pipeline_type,
+                    transport_security: TransportSecurity::Secure,
+                    endpoint_key: test_endpoint_key(),
+                    account_name: None,
+                    collection_rid: None,
+                    max_throttle_attempts: attempts,
+                    max_throttle_wait_time: wait,
+                    max_throttle_per_retry_delay: per_retry,
+                },
+                &mut diagnostics,
+            )
+            .await;
+
+            // 1 initial + N retries = N + 1 (forced-final retry suppressed once
+            // the attempt budget is the limiter).
+            let expected = attempts as usize + 1;
+            assert_eq!(
+                request_count.load(std::sync::atomic::Ordering::SeqCst),
+                expected,
+                "{pipeline_type:?} default budget ({attempts} attempts) must yield {expected} \
+                 wire requests, observed {}",
+                request_count.load(std::sync::atomic::Ordering::SeqCst),
+            );
+
+            match result.outcome {
+                TransportOutcome::HttpError { status, .. } => assert!(
+                    status.is_throttled(),
+                    "expected 429 to propagate for {pipeline_type:?}, got {status:?}",
+                ),
+                other => panic!("expected HttpError(429) for {pipeline_type:?}, got {other:?}"),
             }
         }
     }
@@ -1782,6 +1997,7 @@ mod tests {
                 allow_sent_transport_retry: false,
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -1789,6 +2005,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -1835,6 +2052,7 @@ mod tests {
                 allow_sent_transport_retry: false,
                 credential: &credential,
                 user_agent: &user_agent,
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -1842,6 +2060,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -1876,6 +2095,7 @@ mod tests {
                 allow_sent_transport_retry: true,
                 credential: &credential,
                 user_agent: &user_agent,
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -1883,6 +2103,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -1915,6 +2136,7 @@ mod tests {
                     "***not-base64***",
                 )),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -1922,6 +2144,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -2028,6 +2251,7 @@ mod tests {
             allow_sent_transport_retry: false,
             credential,
             user_agent,
+            client_id: &TEST_CLIENT_ID,
             pipeline_type: PipelineType::DataPlane,
             transport_security: TransportSecurity::Secure,
             endpoint_key,
@@ -2035,6 +2259,7 @@ mod tests {
             collection_rid: None,
             max_throttle_attempts: 9,
             max_throttle_wait_time: Duration::from_secs(30),
+            max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
         }
     }
 

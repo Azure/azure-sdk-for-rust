@@ -16,13 +16,16 @@
 //! initialization time and do not participate in per-operation layered resolution.
 
 mod availability_strategy;
+mod binary_encoding;
 mod connection_pool;
 mod diagnostics_options;
+mod diagnostics_thresholds;
 mod driver_options;
 pub(crate) mod env_parsing;
 mod identity;
 mod operation_options;
 mod partition_failover;
+mod plan_options;
 mod policies;
 mod priority;
 mod read_consistency;
@@ -30,10 +33,13 @@ mod region;
 mod throughput_control;
 
 pub use availability_strategy::{AvailabilityStrategy, HedgeThreshold, HedgingStrategy};
+pub use binary_encoding::BinaryEncodingOptions;
 pub use connection_pool::{ConnectionPoolOptions, ConnectionPoolOptionsBuilder};
 pub use diagnostics_options::{
     DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,
 };
+pub(crate) use diagnostics_thresholds::is_point_operation;
+pub use diagnostics_thresholds::DiagnosticsThresholds;
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};
@@ -43,6 +49,7 @@ pub use operation_options::{
     ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
 };
 pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
+pub use plan_options::{PlanOptions, DEFAULT_MAX_FAN_OUT};
 pub use policies::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
     ServerCertificateValidation, TlsBackend,

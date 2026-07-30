@@ -1,9 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// Shared helpers for `azure_storage_blob` integration tests. Each test binary that
+// declares `mod common;` compiles this module and uses only a subset of its helpers,
+// so unused items are expected.
+#![allow(dead_code)]
+
 use std::{
     future::Future,
-    slice,
     sync::{
         atomic::{AtomicUsize, Ordering},
         mpsc::Sender,
@@ -14,17 +18,15 @@ use std::{
 
 use async_trait::async_trait;
 use azure_core::{
-    credentials::TokenCredential,
     error::ErrorKind,
     http::{
         policies::{Policy, PolicyResult},
-        AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
-        StatusCode, Url,
+        AsyncRawResponse, ClientOptions, Context, NoFormat, Request, RequestContent, StatusCode,
+        Url,
     },
     Bytes, Result,
 };
 use azure_core_test::{Recording, TestMode};
-use azure_identity::ManagedIdentityCredential;
 use azure_storage_blob::{
     models::{
         BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
@@ -33,8 +35,6 @@ use azure_storage_blob::{
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
     BlobServiceClient, BlobServiceClientOptions,
 };
-use bytes::BytesMut;
-use futures::{AsyncRead, AsyncReadExt};
 
 pub const KB: usize = 1024;
 pub const MB: usize = KB * 1024;
@@ -126,32 +126,6 @@ pub fn recorded_test_setup(
         "https://{}.blob.core.windows.net/",
         recording.var(account_name_var, None).as_str()
     )
-}
-
-/// Returns a credential suitable for storage operations.
-///
-/// In playback mode, returns the recording's mock credential immediately.
-/// Otherwise, if the environment variable `AZURE_STORAGE_USE_MANAGED_IDENTITY` is set to
-/// `"true"`, returns a [`ManagedIdentityCredential`]. Falls back to the recording's
-/// test credential via [`Recording::credential`].
-///
-/// # Arguments
-///
-/// * `recording` - A reference to a Recording instance.
-pub fn get_test_credential(recording: &Recording) -> Arc<dyn TokenCredential> {
-    if recording.test_mode() == TestMode::Playback {
-        return recording.credential();
-    }
-
-    let use_managed_identity = std::env::var("AZURE_STORAGE_USE_MANAGED_IDENTITY")
-        .map(|v| v.eq_ignore_ascii_case("true"))
-        .unwrap_or(false);
-
-    if use_managed_identity {
-        ManagedIdentityCredential::new(None).expect("failed to create ManagedIdentityCredential")
-    } else {
-        recording.credential()
-    }
 }
 
 /// Takes in a Recording instance and returns a randomized blob name with prefix "blob" of length 16.
@@ -299,62 +273,6 @@ impl ClientOptionsExt for BlobClientOptions {
     fn with_per_try_policy(mut self, policy: Arc<dyn Policy + 'static>) -> Self {
         self.client_options.per_try_policies.push(policy);
         self
-    }
-}
-
-#[async_trait]
-pub trait AsyncReadTestExt {
-    async fn read_into_spare_capacity(
-        &mut self,
-        buffer: &mut BytesMut,
-    ) -> futures::io::Result<usize>;
-}
-
-#[async_trait]
-impl<Stream: AsyncRead + Unpin + Send> AsyncReadTestExt for Stream {
-    async fn read_into_spare_capacity(
-        &mut self,
-        buffer: &mut BytesMut,
-    ) -> futures::io::Result<usize> {
-        let spare_capacity = buffer.spare_capacity_mut();
-        let spare_capacity = unsafe {
-            // spare_capacity_mut() gives us the known remaining capacity of BytesMut.
-            // Those bytes are valid reserved memory but have had no values written
-            // to them. Those are the exact bytes we want to write into.
-            // MaybeUninit<u8> can be safely cast into u8, and so this pointer cast
-            // is safe. Since the spare capacity length is safely known, we can
-            // provide those to from_raw_parts without worry.
-            slice::from_raw_parts_mut(spare_capacity.as_mut_ptr() as *mut u8, spare_capacity.len())
-        };
-        let bytes_read = self.read(spare_capacity).await?;
-        // read() wrote bytes_read-many bytes into the spare capacity.
-        // those values are therefore initialized and we can add them to
-        // the existing buffer length
-        unsafe { buffer.set_len(buffer.len() + bytes_read) };
-        Ok(bytes_read)
-    }
-}
-
-#[async_trait]
-pub trait BodyTestExt {
-    async fn collect_bytes(&mut self) -> azure_core::Result<Bytes>;
-}
-
-#[async_trait]
-impl BodyTestExt for Body {
-    async fn collect_bytes(&mut self) -> azure_core::Result<Bytes> {
-        match self {
-            Body::Bytes(bytes) => Ok(bytes.clone()),
-            Body::SeekableStream(seekable_stream) => {
-                seekable_stream.reset().await?;
-                let capacity =
-                    usize::try_from(seekable_stream.len().unwrap_or(0)).unwrap_or(usize::MAX);
-                let mut bytes = BytesMut::with_capacity(capacity);
-                while seekable_stream.read_into_spare_capacity(&mut bytes).await? != 0 {}
-                seekable_stream.reset().await?;
-                Ok(bytes.freeze())
-            }
-        }
     }
 }
 

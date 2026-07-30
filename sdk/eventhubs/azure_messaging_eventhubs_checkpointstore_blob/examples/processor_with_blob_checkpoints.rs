@@ -24,9 +24,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let consumer_group =
         env::var("EVENTHUBS_CONSUMER_GROUP").unwrap_or_else(|_| "$Default".to_string());
 
-    let eventhub_namespace =
-        env::var("EVENTHUBS_NAMESPACE").expect("EVENTHUBS_NAMESPACE must be set");
-    let eventhub_name = env::var("EVENTHUB_NAME").expect("EVENTHUB_NAME must be set");
+    let eventhubs_connection_string =
+        env::var("EVENTHUBS_CONNECTION_STRING").expect("EVENTHUBS_CONNECTION_STRING must be set");
+    let eventhub_name = env::var("EVENTHUB_NAME").ok();
 
     info!("Setting up Event Hubs processor with blob checkpoint store...");
 
@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let consumer = ConsumerClient::builder()
         .with_application_id("ProcessorExample".to_string())
         .with_consumer_group(consumer_group)
-        .open(&eventhub_namespace, eventhub_name, credential.clone())
+        .open_with_connection_string(&eventhubs_connection_string, eventhub_name.as_deref())
         .await?;
 
     // Create the checkpoint store

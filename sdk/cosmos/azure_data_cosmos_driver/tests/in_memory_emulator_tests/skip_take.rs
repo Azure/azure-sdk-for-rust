@@ -32,7 +32,7 @@ use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, FeedRange, ItemReference, PartitionKey,
     PartitionKeyDefinition,
 };
-use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions};
+use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, PlanOptions};
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
 
@@ -121,7 +121,12 @@ async fn run_query_collecting_ids(
     let operation =
         CosmosOperation::query_items(container.clone(), Some(FeedRange::full())).with_body(body);
     let mut plan = driver
-        .plan_operation(operation, &OperationOptions::default(), None)
+        .plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        )
         .await
         .expect("plan builds a cross-partition pipeline");
 
