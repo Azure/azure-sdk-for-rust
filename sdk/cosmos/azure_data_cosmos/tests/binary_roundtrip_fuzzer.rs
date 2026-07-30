@@ -132,16 +132,20 @@ struct FuzzConfig {
 
 impl FuzzConfig {
     fn from_env() -> Self {
-        let seed = std::env::var(SEED_ENV_VAR)
-            .ok()
-            .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or_else(|| {
-                // Non-deterministic default seed derived from the wall clock.
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map(|d| d.as_nanos() as u64)
-                    .unwrap_or(0x1234_5678_9ABC_DEF0)
-            });
+        let seed = match std::env::var(SEED_ENV_VAR) {
+            // If set, it must parse — don't silently randomize (breaks reproduction).
+            Ok(v) => v.trim().parse::<u64>().unwrap_or_else(|_| {
+                panic!(
+                    "{SEED_ENV_VAR} is set to {v:?} but is not a valid u64 seed; \
+                     provide a decimal u64 (e.g. 12345) or unset it to use a random seed"
+                )
+            }),
+            // Unset: random seed from the wall clock.
+            Err(_) => std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos() as u64)
+                .unwrap_or(0x1234_5678_9ABC_DEF0),
+        };
         Self {
             iterations: env_u64(ITERATIONS_ENV_VAR, DEFAULT_ITERATIONS),
             seed,
@@ -322,10 +326,25 @@ fn gen_envelope_float(rng: &mut SplitMix64) -> Value {
 
 /// A single number: envelope-safe by default; when `wide_numbers` is set,
 /// occasionally a wide value beyond `2^53` that drives the calibrated
-/// string-token comparison path (design doc §3.1).
+/// string-token comparison path (design doc §3.1). The wide branch covers both
+/// sides of the `i64`/`u64` boundary [`normalize_number`] treats differently:
+/// signed i64 (exact-decimal token) and true u64 / wide float (lossy
+/// double token).
 fn gen_number(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
     if cfg.wide_numbers && rng.below(4) == 0 {
-        return Value::Number(Number::from(rng.next_u64() as i64));
+        return match rng.below(3) {
+            // Signed wide integer → exact-decimal-string path.
+            0 => Value::Number(Number::from(rng.next_u64() as i64)),
+            // True u64 above i64::MAX → double-token path.
+            1 => Value::Number(Number::from((i64::MAX as u64) + 1 + (rng.next_u64() >> 1))),
+            // Wide non-integral float → double-token path.
+            _ => {
+                let scaled = (rng.next_u64() >> 8) as f64 * 1.000_000_1;
+                Number::from_f64(scaled)
+                    .map(Value::Number)
+                    .unwrap_or_else(|| Value::Number(Number::from(rng.next_u64() as i64)))
+            }
+        };
     }
     if rng.below(2) == 0 {
         gen_envelope_int(rng)
@@ -1474,6 +1493,12 @@ fn canonicalize(value: &Value) -> String {
 /// The string tokens are only ever compared for equality (never parsed back), so
 /// representing an out-of-JCS-range number as a token is sound: any two values
 /// Cosmos would round-trip to each other produce the identical token.
+///
+/// **Boundary assumption:** an `i64` >= `2^53` normalizes to an exact-decimal
+/// token, but a `u64 > i64::MAX` normalizes to a lossy double token. This
+/// assumes the backend echoes i64-range integers back as integers; if it ever
+/// returned one as a double, the tokens would differ (false positive) — then
+/// re-calibrate (§3.1).
 fn normalize_number(n: &Number) -> Value {
     if let Some(i) = n.as_i64() {
         if (i.unsigned_abs() as f64) < JCS_SAFE_INT_LIMIT {
@@ -1687,12 +1712,9 @@ fn write_options_with_content() -> ItemWriteOptions {
 /// Maximum attempts for a single point operation before the run gives up.
 const MAX_OP_ATTEMPTS: u32 = 6;
 
-/// Classifies a Cosmos error as a **transient** transport/service condition that
-/// is unrelated to codec correctness and worth retrying: throttling (429),
-/// request timeout (408), service unavailable / transport-generated 503 (the
-/// bucket that carries DNS/connect blips on CI agents), bad gateway (502),
-/// gateway timeout (504), and generic internal server errors (500). A decode
-/// failure or any other status is treated as a genuine, non-retriable result.
+/// Transient transport/service status codes worth retrying (429/408/503/... —
+/// includes the transport-generated 503 that carries DNS/connect blips on CI).
+/// Any other status (e.g. a decode failure) is treated as a genuine result.
 fn is_transient(err: &azure_data_cosmos::CosmosError) -> bool {
     matches!(
         u16::from(err.status().status_code()),
@@ -1700,13 +1722,9 @@ fn is_transient(err: &azure_data_cosmos::CosmosError) -> bool {
     )
 }
 
-/// Runs a fallible async point operation, retrying **transient** transport /
-/// service failures with exponential backoff so a long live soak survives the
-/// inevitable network blips (DNS hiccups, 503/429/408, connection resets) that
-/// have nothing to do with binary-encoding correctness. A non-transient error
-/// (e.g. a response decode failure — the signal this fuzzer exists to catch) is
-/// returned immediately. On exhausting [`MAX_OP_ATTEMPTS`] the last transient
-/// error is surfaced as a normal failure.
+/// Runs a point operation, retrying transient failures with exponential backoff
+/// so a long soak survives network blips. Non-transient errors (notably a decode
+/// failure — what this fuzzer exists to catch) return immediately.
 async fn with_transient_retry<T, F, Fut>(
     op_name: &str,
     context: &str,

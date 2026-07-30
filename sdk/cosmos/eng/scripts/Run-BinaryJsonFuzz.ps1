@@ -64,7 +64,12 @@ $vectorsPath = Join-Path $driverDir 'testdata/binary_json_vectors.json'
 
 Write-Host "==> Ensuring nightly toolchain '$Toolchain' + cargo-fuzz"
 rustup toolchain install $Toolchain --profile minimal --component rust-src
-if (-not (cargo "+$Toolchain" fuzz --help 2>$null)) {
+# Detect cargo-fuzz via the installed-binaries list (always exits 0). Probing
+# with `cargo fuzz --help` would exit non-zero when missing and, under
+# $ErrorActionPreference='Stop' on PowerShell 7.4+, abort before we can install.
+$fuzzInstalled = (cargo "+$Toolchain" install --list 2>$null) -match 'cargo-fuzz'
+if (-not $fuzzInstalled) {
+    Write-Host "==> cargo-fuzz not found; installing"
     cargo "+$Toolchain" install cargo-fuzz --locked
 }
 
