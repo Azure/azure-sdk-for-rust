@@ -19,6 +19,10 @@
 
 ### Bugs Fixed
 
+- `ContainerClient::read_feed_ranges` now preserves service errors from partition-range metadata
+  requests, including the original status, headers, and response body, instead of replacing them
+  with a synthetic routing-map error.
+
 ### Other Changes
 
 - Existing `ResponseHeaders` accessors now return Gateway 2.0 backend duration, quota, item-count, and local-LSN response metadata. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))

@@ -2049,17 +2049,16 @@ impl CosmosDriver {
     /// loop is needed here.
     ///
     /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
-    /// terminal: `None` is returned immediately so the caller can surface a
-    /// clear misconfiguration signal.
+    /// terminal and returned immediately.
     ///
-    /// Returns `None` if the pipeline exhausts its cross-region failover
-    /// budget or the response cannot be parsed. The caller (the PK range
-    /// cache) falls back gracefully on `None`.
+    /// Returns the exact pipeline error if cross-region failover is exhausted.
+    /// Successful responses with malformed bodies return a synthetic
+    /// [`CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID`] error.
     async fn fetch_pk_ranges_from_service(
         &self,
         container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
+    ) -> crate::error::Result<PkRangeFetchResult> {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
@@ -2078,48 +2077,11 @@ impl CosmosDriver {
 
         let options = OperationOptions::default();
 
-        match self
+        let response = match self
             .execute_operation_direct(&operation, OperationOverrides::default(), &options)
             .await
         {
-            Ok(response) => {
-                let etag = response.headers().etag.as_ref().map(|e| e.to_string());
-
-                // 304 Not Modified is a success outcome for conditional
-                // changefeed reads: the cached routing map is still current.
-                if response.status().status_code() == azure_core::http::StatusCode::NotModified {
-                    return Some(PkRangeFetchResult {
-                        ranges: vec![],
-                        continuation,
-                        not_modified: true,
-                    });
-                }
-
-                let body_bytes = match response.into_body().single() {
-                    Ok(b) => b,
-                    Err(_) => {
-                        tracing::error!(
-                            container = %container.name(),
-                            "Partition key ranges response was a feed body, expected single payload"
-                        );
-                        return None;
-                    }
-                };
-                match parse_pk_ranges_response(&body_bytes) {
-                    Some(ranges) => Some(PkRangeFetchResult {
-                        ranges,
-                        continuation: etag,
-                        not_modified: false,
-                    }),
-                    None => {
-                        tracing::error!(
-                            container = %container.name(),
-                            "Failed to parse partition key ranges response body"
-                        );
-                        None
-                    }
-                }
-            }
+            Ok(response) => response,
             Err(e) => {
                 // The error is already a typed Cosmos error; just consult
                 // its status when classifying terminal vs. transient.
@@ -2146,7 +2108,7 @@ impl CosmosDriver {
                             error = %e,
                             "Permanent error fetching partition key ranges — check account credentials and container existence"
                         );
-                        return None;
+                        return Err(e);
                     }
                 }
 
@@ -2155,9 +2117,50 @@ impl CosmosDriver {
                     error = %e,
                     "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
                 );
-                None
+                return Err(e);
             }
+        };
+
+        let etag = response.headers().etag.as_ref().map(|e| e.to_string());
+
+        // 304 Not Modified is a success outcome for conditional
+        // changefeed reads: the cached routing map is still current.
+        if response.status().status_code() == azure_core::http::StatusCode::NotModified {
+            return Ok(PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            });
         }
+
+        let body_bytes = response.into_body().single().map_err(|e| {
+            tracing::error!(
+                container = %container.name(),
+                "Partition key ranges response was a feed body, expected single payload"
+            );
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to parse partition key ranges response body")
+                .with_source(e)
+                .build()
+        })?;
+        let ranges = parse_pk_ranges_response(&body_bytes).map_err(|e| {
+            tracing::error!(
+                container = %container.name(),
+                "Failed to parse partition key ranges response body"
+            );
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to parse partition key ranges response body")
+                .with_source(e)
+                .build()
+        })?;
+
+        Ok(PkRangeFetchResult {
+            ranges,
+            continuation: etag,
+            not_modified: false,
+        })
     }
 
     /// Pre-resolves the partition key range ID for a data plane operation.
@@ -3226,6 +3229,33 @@ impl CosmosDriver {
             return None;
         }
         Some(ranges.to_vec())
+    }
+
+    /// Returns the result of resolving all partition key ranges for a container.
+    ///
+    /// Unlike [`resolve_all_partition_key_ranges`](Self::resolve_all_partition_key_ranges),
+    /// this method preserves service and parsing errors instead of falling
+    /// back to a previously cached routing map. A successfully decoded empty
+    /// routing map is returned as an empty vector.
+    ///
+    /// # Errors
+    ///
+    /// Returns the original [`crate::error::CosmosError`] when the service
+    /// request fails, or a synthetic serialization error when a successful
+    /// response contains malformed or invalid partition key ranges.
+    pub async fn try_resolve_all_partition_key_ranges(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+    ) -> crate::error::Result<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+        let routing_map = self
+            .pk_range_cache
+            .try_lookup_strict(container, force_refresh, |c, cont| {
+                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
+            })
+            .await?;
+
+        Ok(routing_map.map_or_else(Vec::new, |map| map.ranges().to_vec()))
     }
 
     /// Returns the partition key ranges covering the given partition key.
@@ -5775,16 +5805,16 @@ mod tests {
     async fn whole_space_single_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<crate::driver::cache::PkRangeFetchResult> {
+    ) -> crate::error::Result<crate::driver::cache::PkRangeFetchResult> {
         use crate::models::partition_key_range::PartitionKeyRange as PkRange;
         if continuation.is_some() {
-            Some(crate::driver::cache::PkRangeFetchResult {
+            Ok(crate::driver::cache::PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
                 not_modified: true,
             })
         } else {
-            Some(crate::driver::cache::PkRangeFetchResult {
+            Ok(crate::driver::cache::PkRangeFetchResult {
                 ranges: vec![PkRange::new("0".into(), "", "FF")],
                 continuation: Some("etag".to_string()),
                 not_modified: false,
@@ -5796,16 +5826,16 @@ mod tests {
     async fn whole_space_two_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<crate::driver::cache::PkRangeFetchResult> {
+    ) -> crate::error::Result<crate::driver::cache::PkRangeFetchResult> {
         use crate::models::partition_key_range::PartitionKeyRange as PkRange;
         if continuation.is_some() {
-            Some(crate::driver::cache::PkRangeFetchResult {
+            Ok(crate::driver::cache::PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
                 not_modified: true,
             })
         } else {
-            Some(crate::driver::cache::PkRangeFetchResult {
+            Ok(crate::driver::cache::PkRangeFetchResult {
                 ranges: vec![
                     PkRange::new("0".into(), "", "80"),
                     PkRange::new("1".into(), "80", "FF"),

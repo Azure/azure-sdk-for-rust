@@ -8,9 +8,12 @@
 
 use std::{collections::HashMap, sync::Arc};
 
-use crate::models::{
-    effective_partition_key::EffectivePartitionKey, partition_key_range::PkRangesResponse,
-    ContainerReference, PartitionKey,
+use crate::{
+    error::{CosmosError, CosmosStatus},
+    models::{
+        effective_partition_key::EffectivePartitionKey, partition_key_range::PkRangesResponse,
+        ContainerReference, PartitionKey,
+    },
 };
 
 use super::{container_routing_map::ContainerRoutingMap, AsyncCache};
@@ -29,6 +32,18 @@ pub(crate) struct PkRangeFetchResult {
     pub not_modified: bool,
 }
 
+/// The result of refreshing a partition key routing map together with the
+/// best map ordinary routing callers can continue to use.
+///
+/// Strict metadata callers inspect `refresh` so service failures remain
+/// observable. Ordinary routing callers inspect `usable`, which falls back to
+/// the previously cached map when a refresh fails or returns no usable map.
+#[derive(Debug)]
+struct PkRangeLookupOutcome {
+    usable: Option<Arc<ContainerRoutingMap>>,
+    refresh: Result<Option<Arc<ContainerRoutingMap>>, CosmosError>,
+}
+
 /// Cache that maps container RIDs to their partition key routing maps.
 ///
 /// When a partition key range ID is needed (for partition-level failover),
@@ -41,7 +56,7 @@ pub(crate) struct PkRangeFetchResult {
 pub(crate) struct PartitionKeyRangeCache {
     /// Keyed by [`ContainerReference`], which provides the container RID
     /// needed for the `x-ms-expected-rid` header on pkrange changefeed calls.
-    cache: AsyncCache<ContainerReference, ContainerRoutingMap>,
+    cache: AsyncCache<ContainerReference, PkRangeLookupOutcome>,
 }
 
 impl PartitionKeyRangeCache {
@@ -69,7 +84,7 @@ impl PartitionKeyRangeCache {
     ) -> Option<String>
     where
         F: Fn(ContainerReference, Option<String>) -> Fut,
-        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+        Fut: std::future::Future<Output = Result<PkRangeFetchResult, CosmosError>>,
     {
         if partition_key.is_empty() {
             return None;
@@ -111,7 +126,7 @@ impl PartitionKeyRangeCache {
     ) -> Option<Vec<String>>
     where
         F: Fn(ContainerReference, Option<String>) -> Fut,
-        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+        Fut: std::future::Future<Output = Result<PkRangeFetchResult, CosmosError>>,
     {
         if partition_key.is_empty() {
             return None;
@@ -155,7 +170,7 @@ impl PartitionKeyRangeCache {
     ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>
     where
         F: Fn(ContainerReference, Option<String>) -> Fut,
-        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+        Fut: std::future::Future<Output = Result<PkRangeFetchResult, CosmosError>>,
     {
         let routing_map = self
             .try_lookup(container, force_refresh, fetch_pk_ranges)
@@ -203,7 +218,7 @@ impl PartitionKeyRangeCache {
     ) -> Option<String>
     where
         F: Fn(ContainerReference, Option<String>) -> Fut,
-        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+        Fut: std::future::Future<Output = Result<PkRangeFetchResult, CosmosError>>,
     {
         let routing_map = self
             .try_lookup(container, force_refresh, fetch_pk_ranges)
@@ -225,7 +240,7 @@ impl PartitionKeyRangeCache {
     ) -> Option<crate::models::partition_key_range::PartitionKeyRange>
     where
         F: Fn(ContainerReference, Option<String>) -> Fut,
-        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+        Fut: std::future::Future<Output = Result<PkRangeFetchResult, CosmosError>>,
     {
         let routing_map = self
             .try_lookup(container, force_refresh, fetch_pk_ranges)
@@ -252,47 +267,102 @@ impl PartitionKeyRangeCache {
     ) -> Option<Arc<ContainerRoutingMap>>
     where
         F: Fn(ContainerReference, Option<String>) -> Fut,
-        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+        Fut: std::future::Future<Output = Result<PkRangeFetchResult, CosmosError>>,
+    {
+        let key = container.clone();
+        let outcome = self
+            .lookup_outcome(container, force_refresh, fetch_pk_ranges)
+            .await?;
+        let usable = outcome.usable.clone();
+
+        if usable.is_none() {
+            self.cache.invalidate_if_same(&key, &outcome).await;
+        }
+
+        usable
+    }
+
+    /// Looks up or fetches the routing map without hiding refresh failures.
+    ///
+    /// A non-forced lookup returns an already cached usable map without
+    /// replaying any error from a previous refresh. A lookup that starts or
+    /// joins a fetch returns that fetch's exact result. Failed refreshes leave
+    /// any previously usable map available to ordinary routing callers.
+    pub(crate) async fn try_lookup_strict<F, Fut>(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+    ) -> Result<Option<Arc<ContainerRoutingMap>>, CosmosError>
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut,
+        Fut: std::future::Future<Output = Result<PkRangeFetchResult, CosmosError>>,
     {
         let key = container.clone();
 
-        let routing_map = if force_refresh {
-            // Retrieve the existing routing map for incremental refresh.
-            let previous = self.cache.get(&key).await;
-            let prev_continuation = previous
-                .as_ref()
-                .and_then(|m| m.change_feed_next_if_none_match.clone());
+        if !force_refresh {
+            if let Some(outcome) = self.cache.get(&key).await {
+                if let Some(usable) = outcome.usable.clone() {
+                    return Ok(Some(usable));
+                }
+                self.cache.invalidate_if_same(&key, &outcome).await;
+            }
+        }
+
+        let Some(outcome) = self
+            .lookup_outcome(container, force_refresh, fetch_pk_ranges)
+            .await
+        else {
+            return Err(CosmosError::builder()
+                .with_status(CosmosStatus::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+                .with_message("partition key range cache lookup did not produce an outcome")
+                .build());
+        };
+        let refresh = outcome.refresh.clone();
+
+        if outcome.usable.is_none() {
+            self.cache.invalidate_if_same(&key, &outcome).await;
+        }
+
+        refresh
+    }
+
+    async fn lookup_outcome<F, Fut>(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+    ) -> Option<Arc<PkRangeLookupOutcome>>
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut,
+        Fut: std::future::Future<Output = Result<PkRangeFetchResult, CosmosError>>,
+    {
+        let key = container.clone();
+
+        if force_refresh {
+            let observed = self.cache.get(&key).await;
+            let previous = observed.as_ref().and_then(|outcome| outcome.usable.clone());
 
             self.cache
                 .get_or_refresh_with(
                     key.clone(),
-                    |existing| {
-                        // If there's no existing entry, we must fetch to populate the cache.
-                        if existing.is_none() {
-                            return true;
-                        }
-                        // Only refresh if the cached value hasn't been updated
-                        // by another concurrent request since we last saw it.
-                        existing.map(|m| &m.change_feed_next_if_none_match)
-                            == Some(&prev_continuation)
+                    |current| match current {
+                        None => true,
+                        Some(current) => observed
+                            .as_ref()
+                            .is_some_and(|observed| std::ptr::eq(observed.as_ref(), current)),
                     },
-                    || fetch_and_build_routing_map(key.clone(), previous, fetch_pk_ranges),
+                    || build_lookup_outcome(key, previous, fetch_pk_ranges),
                 )
-                .await?
+                .await
         } else {
             self.cache
                 .get_or_insert_with(key.clone(), || {
-                    fetch_and_build_routing_map(key.clone(), None, fetch_pk_ranges)
+                    build_lookup_outcome(key, None, fetch_pk_ranges)
                 })
                 .await
-        };
-
-        if routing_map.ranges().is_empty() {
-            self.cache.invalidate_if_same(&key, &routing_map).await;
-            return None;
+                .into()
         }
-
-        Some(routing_map)
     }
 
     /// Invalidates the cached routing map for a container.
@@ -317,10 +387,10 @@ async fn fetch_and_build_routing_map<F, Fut>(
     container: ContainerReference,
     previous_routing_map: Option<Arc<ContainerRoutingMap>>,
     fetch_pk_ranges: F,
-) -> ContainerRoutingMap
+) -> Result<Option<Arc<ContainerRoutingMap>>, CosmosError>
 where
     F: Fn(ContainerReference, Option<String>) -> Fut,
-    Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+    Fut: std::future::Future<Output = Result<PkRangeFetchResult, CosmosError>>,
 {
     let mut all_ranges = HashMap::new();
     let mut continuation = previous_routing_map
@@ -337,22 +407,7 @@ where
             "Fetching partition key ranges"
         );
 
-        let result = match fetch_pk_ranges(container.clone(), continuation.clone()).await {
-            Some(r) => r,
-            None => {
-                // Falling back to the previously cached map (when one exists)
-                // mirrors the merge branch below and avoids regressing the
-                // cache to empty on a single transient fetch failure.
-                tracing::warn!(
-                    "Failed to fetch partition key ranges from service (iteration {}); \
-                     falling back to previous routing map if available",
-                    iteration
-                );
-                return previous_routing_map
-                    .map(|p| (*p).clone())
-                    .unwrap_or_else(ContainerRoutingMap::empty);
-            }
-        };
+        let result = fetch_pk_ranges(container.clone(), continuation.clone()).await?;
 
         if result.not_modified {
             continuation = result.continuation.or(continuation);
@@ -386,66 +441,78 @@ where
         if all_ranges.is_empty() {
             let mut unchanged = (*prev).clone();
             unchanged.change_feed_next_if_none_match = continuation;
-            return unchanged;
+            return Ok(Some(Arc::new(unchanged)));
         }
         return match prev.try_combine(all_ranges.into_values().collect(), continuation) {
-            Ok(Some(map)) => map,
+            Ok(Some(map)) => Ok(Some(Arc::new(map))),
             Ok(None) => {
                 tracing::warn!(
                     "Incremental routing map merge incomplete; falling back to full refresh"
                 );
-                let refreshed = Box::pin(fetch_and_build_routing_map(
+                Box::pin(fetch_and_build_routing_map(
                     container,
                     None,
                     fetch_pk_ranges,
                 ))
-                .await;
-                if refreshed.ranges().is_empty() {
-                    (*prev).clone()
-                } else {
-                    refreshed
-                }
+                .await
             }
             Err(e) => {
                 tracing::warn!(
                     "Incremental routing map merge failed: {}; falling back to full refresh",
                     e
                 );
-                let refreshed = Box::pin(fetch_and_build_routing_map(
+                Box::pin(fetch_and_build_routing_map(
                     container,
                     None,
                     fetch_pk_ranges,
                 ))
-                .await;
-                if refreshed.ranges().is_empty() {
-                    (*prev).clone()
-                } else {
-                    refreshed
-                }
+                .await
             }
         };
     }
 
     // Full (non-incremental) creation.
     match ContainerRoutingMap::try_create(all_ranges.into_values().collect(), None, continuation) {
-        Ok(Some(map)) => map,
+        Ok(Some(map)) => Ok(Some(Arc::new(map))),
         Ok(None) => {
             tracing::warn!("Partition key range fetch returned empty set");
-            ContainerRoutingMap::empty()
+            Ok(None)
         }
         Err(e) => {
             tracing::warn!("Partition key ranges invalid: {}", e);
-            ContainerRoutingMap::empty()
+            Err(CosmosError::builder()
+                .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to resolve routing map for container")
+                .with_source(e)
+                .build())
         }
     }
+}
+
+async fn build_lookup_outcome<F, Fut>(
+    container: ContainerReference,
+    previous_routing_map: Option<Arc<ContainerRoutingMap>>,
+    fetch_pk_ranges: F,
+) -> PkRangeLookupOutcome
+where
+    F: Fn(ContainerReference, Option<String>) -> Fut,
+    Fut: std::future::Future<Output = Result<PkRangeFetchResult, CosmosError>>,
+{
+    let refresh =
+        fetch_and_build_routing_map(container, previous_routing_map.clone(), fetch_pk_ranges).await;
+    let usable = match &refresh {
+        Ok(Some(routing_map)) => Some(routing_map.clone()),
+        Ok(None) | Err(_) => previous_routing_map,
+    };
+
+    PkRangeLookupOutcome { usable, refresh }
 }
 
 /// Parses a pkranges REST response body into partition key ranges.
 pub(crate) fn parse_pk_ranges_response(
     body: &[u8],
-) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
-    let response: PkRangesResponse = serde_json::from_slice(body).ok()?;
-    Some(response.partition_key_ranges)
+) -> Result<Vec<crate::models::partition_key_range::PartitionKeyRange>, serde_json::Error> {
+    serde_json::from_slice::<PkRangesResponse>(body).map(|response| response.partition_key_ranges)
 }
 
 #[cfg(test)]
@@ -457,21 +524,30 @@ mod tests {
         vec![PkRange::new("0".into(), "", "FF")]
     }
 
+    fn test_fetch_error() -> CosmosError {
+        CosmosError::builder()
+            .with_status(CosmosStatus::new(
+                azure_core::http::StatusCode::ServiceUnavailable,
+            ))
+            .with_message("injected partition key range fetch failure")
+            .build()
+    }
+
     /// Simulates a single-page change feed fetch:
     /// - First call (no continuation): returns all ranges + continuation token.
     /// - Subsequent calls (with continuation): returns 304 Not Modified.
     async fn test_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
+    ) -> Result<PkRangeFetchResult, CosmosError> {
         if continuation.is_some() {
-            Some(PkRangeFetchResult {
+            Ok(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
                 not_modified: true,
             })
         } else {
-            Some(PkRangeFetchResult {
+            Ok(PkRangeFetchResult {
                 ranges: test_ranges(),
                 continuation: Some("test-etag".to_string()),
                 not_modified: false,
@@ -623,15 +699,15 @@ mod tests {
     async fn two_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
+    ) -> Result<PkRangeFetchResult, CosmosError> {
         if continuation.is_some() {
-            Some(PkRangeFetchResult {
+            Ok(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
                 not_modified: true,
             })
         } else {
-            Some(PkRangeFetchResult {
+            Ok(PkRangeFetchResult {
                 ranges: vec![
                     PkRange::new("0".into(), "", "80"),
                     PkRange::new("1".into(), "80", "FF"),
@@ -759,8 +835,8 @@ mod tests {
         async fn empty_fetch(
             _container: ContainerReference,
             _continuation: Option<String>,
-        ) -> Option<PkRangeFetchResult> {
-            Some(PkRangeFetchResult {
+        ) -> Result<PkRangeFetchResult, CosmosError> {
+            Ok(PkRangeFetchResult {
                 ranges: vec![],
                 continuation: None,
                 not_modified: true,
@@ -781,13 +857,187 @@ mod tests {
         async fn failing_fetch(
             _container: ContainerReference,
             _continuation: Option<String>,
-        ) -> Option<PkRangeFetchResult> {
-            None
+        ) -> Result<PkRangeFetchResult, CosmosError> {
+            Err(test_fetch_error())
         }
 
         let routing_map = cache.try_lookup(&container, false, failing_fetch).await;
 
         assert!(routing_map.is_none());
+    }
+
+    #[tokio::test]
+    async fn strict_lookup_propagates_initial_failure_and_retries() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let count = Arc::clone(&call_count);
+        let failing_fetch = move |_container: ContainerReference, _continuation: Option<String>| {
+            let count = Arc::clone(&count);
+            async move {
+                count.fetch_add(1, Ordering::SeqCst);
+                Err(test_fetch_error())
+            }
+        };
+
+        for _ in 0..2 {
+            let error = cache
+                .try_lookup_strict(&container, false, failing_fetch.clone())
+                .await
+                .expect_err("strict lookup must preserve the fetch failure");
+            assert_eq!(
+                error.status().status_code(),
+                azure_core::http::StatusCode::ServiceUnavailable
+            );
+            assert_eq!(
+                error.to_string(),
+                test_fetch_error().to_string(),
+                "strict lookup must return the original fetch error"
+            );
+        }
+
+        assert_eq!(
+            call_count.load(Ordering::SeqCst),
+            2,
+            "failed initial lookups must not poison the cache"
+        );
+    }
+
+    #[tokio::test]
+    async fn strict_lookup_distinguishes_empty_map_from_failure() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let count = Arc::clone(&call_count);
+        let empty_fetch = move |_container: ContainerReference, _continuation: Option<String>| {
+            let count = Arc::clone(&count);
+            async move {
+                count.fetch_add(1, Ordering::SeqCst);
+                Ok(PkRangeFetchResult {
+                    ranges: vec![],
+                    continuation: None,
+                    not_modified: true,
+                })
+            }
+        };
+
+        for _ in 0..2 {
+            let result = cache
+                .try_lookup_strict(&container, false, empty_fetch.clone())
+                .await
+                .expect("a successfully decoded empty map is not a fetch failure");
+            assert!(result.is_none());
+        }
+
+        assert_eq!(
+            call_count.load(Ordering::SeqCst),
+            2,
+            "empty maps must be evicted so a later lookup can recover"
+        );
+    }
+
+    #[tokio::test]
+    async fn mixed_callers_share_failed_refresh_but_observe_their_own_semantics() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use tokio::sync::Notify;
+
+        let cache = Arc::new(PartitionKeyRangeCache::new());
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let seeded = cache
+            .try_lookup(&container, false, two_range_fetch)
+            .await
+            .unwrap();
+        assert_eq!(seeded.ranges().len(), 2);
+
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let started = Arc::new(Notify::new());
+        let release = Arc::new(Notify::new());
+        let strict_lookup = {
+            let cache = Arc::clone(&cache);
+            let container = container.clone();
+            let call_count = Arc::clone(&call_count);
+            let started = Arc::clone(&started);
+            let release = Arc::clone(&release);
+            tokio::spawn(async move {
+                cache
+                    .try_lookup_strict(&container, true, move |_, _| {
+                        let call_count = Arc::clone(&call_count);
+                        let started = Arc::clone(&started);
+                        let release = Arc::clone(&release);
+                        async move {
+                            call_count.fetch_add(1, Ordering::SeqCst);
+                            started.notify_one();
+                            release.notified().await;
+                            Err(test_fetch_error())
+                        }
+                    })
+                    .await
+            })
+        };
+
+        started.notified().await;
+        let ordinary_lookup = {
+            let cache = Arc::clone(&cache);
+            let container = container.clone();
+            tokio::spawn(async move {
+                cache
+                    .try_lookup(&container, false, |_, _| async {
+                        panic!("ordinary caller must join the in-flight refresh")
+                    })
+                    .await
+            })
+        };
+
+        release.notify_waiters();
+
+        let strict_error = strict_lookup
+            .await
+            .unwrap()
+            .expect_err("strict caller must observe the refresh failure");
+        assert_eq!(
+            strict_error.status().status_code(),
+            azure_core::http::StatusCode::ServiceUnavailable
+        );
+        let ordinary_map = ordinary_lookup
+            .await
+            .unwrap()
+            .expect("ordinary caller must retain the previous routing map");
+        assert_eq!(ordinary_map.ranges().len(), 2);
+        assert_eq!(
+            call_count.load(Ordering::SeqCst),
+            1,
+            "mixed callers must share one refresh"
+        );
+
+        let strict_cached = cache
+            .try_lookup_strict(&container, false, |_, _| async {
+                panic!("non-forced strict lookup must use the preserved map")
+            })
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(strict_cached.ranges().len(), 2);
+
+        let retry_count = Arc::clone(&call_count);
+        let retry_error = cache
+            .try_lookup_strict(&container, true, move |_, _| {
+                let retry_count = Arc::clone(&retry_count);
+                async move {
+                    retry_count.fetch_add(1, Ordering::SeqCst);
+                    Err(test_fetch_error())
+                }
+            })
+            .await
+            .expect_err("a later forced refresh must retry and preserve its failure");
+        assert_eq!(
+            retry_error.status().status_code(),
+            azure_core::http::StatusCode::ServiceUnavailable
+        );
+        assert_eq!(call_count.load(Ordering::SeqCst), 2);
     }
 
     #[tokio::test]
@@ -893,8 +1143,8 @@ mod tests {
         async fn empty_fetch(
             _container: ContainerReference,
             _continuation: Option<String>,
-        ) -> Option<PkRangeFetchResult> {
-            Some(PkRangeFetchResult {
+        ) -> Result<PkRangeFetchResult, CosmosError> {
+            Ok(PkRangeFetchResult {
                 ranges: vec![],
                 continuation: None,
                 not_modified: true,
@@ -931,7 +1181,7 @@ mod tests {
             let count = count.clone();
             async move {
                 count.fetch_add(1, Ordering::SeqCst);
-                Some(PkRangeFetchResult {
+                Ok(PkRangeFetchResult {
                     ranges: vec![],
                     continuation: None,
                     not_modified: true,
@@ -947,7 +1197,7 @@ mod tests {
 
         // Force refresh with a fetch that returns valid ranges
         let recovering_fetch = |_container: ContainerReference, continuation: Option<String>| async move {
-            Some(match continuation {
+            Ok(match continuation {
                 Some(continuation) => PkRangeFetchResult {
                     ranges: vec![],
                     continuation: Some(continuation),
@@ -993,14 +1243,14 @@ mod tests {
                 seen.lock().unwrap().push(continuation.clone());
                 let page = count.fetch_add(1, Ordering::SeqCst);
                 if page == BOUNDARIES.len() - 1 {
-                    return Some(PkRangeFetchResult {
+                    return Ok(PkRangeFetchResult {
                         ranges: vec![],
                         continuation,
                         not_modified: true,
                     });
                 }
 
-                Some(PkRangeFetchResult {
+                Ok(PkRangeFetchResult {
                     ranges: vec![PkRange::new(
                         page.to_string(),
                         BOUNDARIES[page],
@@ -1037,7 +1287,7 @@ mod tests {
             fetch_and_build_routing_map(container, None, move |_container, continuation| {
                 let count = count.clone();
                 async move {
-                    Some(match count.fetch_add(1, Ordering::SeqCst) {
+                    Ok(match count.fetch_add(1, Ordering::SeqCst) {
                         0 => PkRangeFetchResult {
                             ranges: vec![PkRange::new("0".into(), "", "80")],
                             continuation: Some("etag-before-split".to_string()),
@@ -1060,7 +1310,9 @@ mod tests {
                     })
                 }
             })
-            .await;
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(result.ranges().len(), 2);
         assert_eq!(result.ranges()[0].id, "0");
@@ -1076,14 +1328,16 @@ mod tests {
             container,
             Some(previous),
             |_container, continuation| async move {
-                Some(PkRangeFetchResult {
+                Ok(PkRangeFetchResult {
                     ranges: vec![],
                     continuation,
                     not_modified: true,
                 })
             },
         )
-        .await;
+        .await
+        .unwrap()
+        .unwrap();
 
         assert_eq!(result.ranges().len(), 1);
         assert_eq!(
@@ -1101,14 +1355,16 @@ mod tests {
             container,
             Some(previous),
             |_container, _continuation| async {
-                Some(PkRangeFetchResult {
+                Ok(PkRangeFetchResult {
                     ranges: vec![PkRange::new("ignored".into(), "", "80")],
                     continuation: Some("etag-advanced".to_string()),
                     not_modified: true,
                 })
             },
         )
-        .await;
+        .await
+        .unwrap()
+        .unwrap();
 
         assert_eq!(result.ranges().len(), 1);
         assert_eq!(result.ranges()[0].id, "0");
@@ -1127,14 +1383,16 @@ mod tests {
             container,
             Some(previous),
             |_container, _continuation| async {
-                Some(PkRangeFetchResult {
+                Ok(PkRangeFetchResult {
                     ranges: vec![],
                     continuation: Some("etag-advanced".to_string()),
                     not_modified: true,
                 })
             },
         )
-        .await;
+        .await
+        .unwrap()
+        .unwrap();
 
         assert_eq!(result.ranges().len(), 1);
         assert_eq!(
@@ -1155,7 +1413,7 @@ mod tests {
             fetch_and_build_routing_map(container, None, move |_container, _continuation| {
                 let count = count.clone();
                 async move {
-                    Some(if count.fetch_add(1, Ordering::SeqCst) == 0 {
+                    Ok(if count.fetch_add(1, Ordering::SeqCst) == 0 {
                         PkRangeFetchResult {
                             ranges: test_ranges(),
                             continuation: Some("etag-data".to_string()),
@@ -1170,7 +1428,9 @@ mod tests {
                     })
                 }
             })
-            .await;
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(result.ranges().len(), 1);
         assert_eq!(
@@ -1191,11 +1451,15 @@ mod tests {
         let failing_fetch = move |_container: ContainerReference, _continuation: Option<String>| {
             let count = count.clone();
             async move {
-                (count.fetch_add(1, Ordering::SeqCst) & 1 == 0).then(|| PkRangeFetchResult {
-                    ranges: vec![PkRange::new("0".into(), "", "80")],
-                    continuation: Some("etag-partial".to_string()),
-                    not_modified: false,
-                })
+                if count.fetch_add(1, Ordering::SeqCst) & 1 == 0 {
+                    Ok(PkRangeFetchResult {
+                        ranges: vec![PkRange::new("0".into(), "", "80")],
+                        continuation: Some("etag-partial".to_string()),
+                        not_modified: false,
+                    })
+                } else {
+                    Err(test_fetch_error())
+                }
             }
         };
 
@@ -1225,7 +1489,7 @@ mod tests {
             move |_container, continuation| {
                 let count = count.clone();
                 async move {
-                    Some(if count.fetch_add(1, Ordering::SeqCst) == 0 {
+                    Ok(if count.fetch_add(1, Ordering::SeqCst) == 0 {
                         let mut updated = PkRange::new("0".into(), "", "FF");
                         updated.throughput_fraction = 0.5;
                         PkRangeFetchResult {
@@ -1243,7 +1507,9 @@ mod tests {
                 }
             },
         )
-        .await;
+        .await
+        .unwrap()
+        .unwrap();
 
         assert_eq!(result.ranges()[0].id, "0");
         assert_eq!(result.ranges()[0].throughput_fraction, 0.5);
@@ -1269,7 +1535,7 @@ mod tests {
             move |_container, continuation| {
                 let count = count.clone();
                 async move {
-                    Some(match count.fetch_add(1, Ordering::SeqCst) {
+                    Ok(match count.fetch_add(1, Ordering::SeqCst) {
                         0 => {
                             let mut child = PkRange::new("child".into(), "", "FF");
                             child.parents = Some(vec!["ghost-parent".to_string()]);
@@ -1297,7 +1563,9 @@ mod tests {
                 }
             },
         )
-        .await;
+        .await
+        .unwrap()
+        .unwrap();
 
         assert_eq!(result.ranges()[0].id, "full-left");
         assert_eq!(result.ranges()[1].id, "full-right");
@@ -1327,18 +1595,18 @@ mod tests {
                         0 => {
                             let mut child = PkRange::new("child".into(), "", "FF");
                             child.parents = Some(vec!["ghost-parent".to_string()]);
-                            Some(PkRangeFetchResult {
+                            Ok(PkRangeFetchResult {
                                 ranges: vec![child],
                                 continuation: Some("etag-child".to_string()),
                                 not_modified: false,
                             })
                         }
-                        1 => Some(PkRangeFetchResult {
+                        1 => Ok(PkRangeFetchResult {
                             ranges: vec![],
                             continuation,
                             not_modified: true,
                         }),
-                        2 => None,
+                        2 => Err(test_fetch_error()),
                         call => panic!("unexpected fetch call: {call}"),
                     }
                 }
@@ -1346,10 +1614,10 @@ mod tests {
         )
         .await;
 
-        assert_eq!(result.ranges()[0].id, "0");
+        let error = result.expect_err("failed full refresh must remain observable");
         assert_eq!(
-            result.change_feed_next_if_none_match.as_deref(),
-            Some("etag-previous")
+            error.status().status_code(),
+            azure_core::http::StatusCode::ServiceUnavailable
         );
         assert_eq!(call_count.load(Ordering::SeqCst), 3);
     }
@@ -1369,7 +1637,7 @@ mod tests {
             move |_container, continuation| {
                 let count = count.clone();
                 async move {
-                    Some(match count.fetch_add(1, Ordering::SeqCst) {
+                    Ok(match count.fetch_add(1, Ordering::SeqCst) {
                         0 => {
                             let mut left = PkRange::new("left".into(), "", "AA");
                             left.parents = Some(vec!["0".to_string()]);
@@ -1399,7 +1667,9 @@ mod tests {
                 }
             },
         )
-        .await;
+        .await
+        .unwrap()
+        .unwrap();
 
         assert_eq!(result.ranges()[0].id, "full-left");
         assert_eq!(result.ranges()[1].id, "full-right");
@@ -1425,7 +1695,7 @@ mod tests {
                 let first = first.clone();
                 let second = second.clone();
                 async move {
-                    Some(match continuation.as_deref() {
+                    Ok(match continuation.as_deref() {
                         None => {
                             first.fetch_add(1, Ordering::SeqCst);
                             PkRangeFetchResult {
@@ -1453,7 +1723,9 @@ mod tests {
                     })
                 }
             })
-            .await;
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(result.ranges().len(), 2);
         assert_eq!(first_page_attempts.load(Ordering::SeqCst), 1);
@@ -1475,7 +1747,7 @@ mod tests {
             let count = count.clone();
             async move {
                 count.fetch_add(1, Ordering::SeqCst);
-                Some(PkRangeFetchResult {
+                Ok(PkRangeFetchResult {
                     ranges: vec![],
                     continuation: None,
                     not_modified: true,
@@ -1522,7 +1794,7 @@ mod tests {
             let count = count.clone();
             async move {
                 count.fetch_add(1, Ordering::SeqCst);
-                None
+                Err(test_fetch_error())
             }
         };
 

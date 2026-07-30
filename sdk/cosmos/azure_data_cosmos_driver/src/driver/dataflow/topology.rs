@@ -49,7 +49,7 @@ impl<'a, F> CachedTopologyProvider<'a, F> {
 impl<F, Fut> TopologyProvider for CachedTopologyProvider<'_, F>
 where
     F: Fn(ContainerReference, Option<String>) -> Fut + Send + Sync,
-    Fut: std::future::Future<Output = Option<PkRangeFetchResult>> + Send,
+    Fut: std::future::Future<Output = crate::error::Result<PkRangeFetchResult>> + Send,
 {
     fn resolve_ranges<'a>(
         &'a mut self,
@@ -115,15 +115,15 @@ mod tests {
     async fn single_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
+    ) -> crate::error::Result<PkRangeFetchResult> {
         if continuation.is_some() {
-            Some(PkRangeFetchResult {
+            Ok(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
                 not_modified: true,
             })
         } else {
-            Some(PkRangeFetchResult {
+            Ok(PkRangeFetchResult {
                 ranges: vec![PkRange::new("0".into(), "", "FF")],
                 continuation: Some("etag-1".to_string()),
                 not_modified: false,
@@ -134,15 +134,15 @@ mod tests {
     async fn two_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
+    ) -> crate::error::Result<PkRangeFetchResult> {
         if continuation.is_some() {
-            Some(PkRangeFetchResult {
+            Ok(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
                 not_modified: true,
             })
         } else {
-            Some(PkRangeFetchResult {
+            Ok(PkRangeFetchResult {
                 ranges: vec![
                     PkRange::new("1".into(), "", "80"),
                     PkRange::new("2".into(), "80", "FF"),
@@ -156,15 +156,15 @@ mod tests {
     async fn three_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
+    ) -> crate::error::Result<PkRangeFetchResult> {
         if continuation.is_some() {
-            Some(PkRangeFetchResult {
+            Ok(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
                 not_modified: true,
             })
         } else {
-            Some(PkRangeFetchResult {
+            Ok(PkRangeFetchResult {
                 ranges: vec![
                     PkRange::new("1".into(), "", "40"),
                     PkRange::new("2".into(), "40", "80"),
@@ -179,8 +179,13 @@ mod tests {
     async fn failing_fetch(
         _container: ContainerReference,
         _continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        None
+    ) -> crate::error::Result<PkRangeFetchResult> {
+        Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::ServiceUnavailable,
+            ))
+            .with_message("injected topology fetch failure")
+            .build())
     }
 
     #[tokio::test]

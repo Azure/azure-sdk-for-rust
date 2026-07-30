@@ -1172,30 +1172,31 @@ impl ContainerClient {
         let mut ranges = self
             .context
             .driver
-            .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
-            .await;
+            .try_resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
+            .await?;
 
-        if should_force_refresh_feed_ranges(ranges.as_deref(), options.force_refresh()) {
+        if should_force_refresh_feed_ranges(Some(&ranges), options.force_refresh()) {
             // A valid container always has at least one partition key range.
             // Missing or empty results likely mean a stale/failed cache.
             ranges = self
                 .context
                 .driver
-                .resolve_all_partition_key_ranges(&self.container_ref, true)
-                .await;
+                .try_resolve_all_partition_key_ranges(&self.container_ref, true)
+                .await?;
         }
 
-        let ranges = ranges.ok_or_else(|| {
+        if ranges.is_empty() {
             // Service was reachable but didn't return a usable routing
             // map — a service-side invariant violation, surfaced as a
             // 500 with the client-generated
             // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
             // callers can distinguish it from caller misuse.
-            crate::DriverCosmosError::builder()
+            return Err(crate::DriverCosmosError::builder()
                 .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("failed to resolve routing map for container")
                 .build()
-        })?;
+                .into());
+        }
 
         ranges
             .iter()
