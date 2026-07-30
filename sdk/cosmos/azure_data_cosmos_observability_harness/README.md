@@ -154,7 +154,7 @@ authoritative list.
 | `--endpoint` | `AZURE_COSMOS_ENDPOINT` | `https://localhost:8081` | Account endpoint. |
 | `--key` | `AZURE_COSMOS_KEY` | emulator key | Account key (key auth). |
 | `--connection-string` | `AZURE_COSMOS_CONNECTION_STRING` | — | `AccountEndpoint=...;AccountKey=...;`. The literal `emulator` expands to the local emulator. Overrides `--endpoint`/`--key`. |
-| `--auth` | — | `key` | `key` or `aad` (Entra ID via the developer-tools credential chain). |
+| `--auth` | — | `key` | `key`, `aad` (Entra ID via the developer-tools credential chain), or `workload-identity` (Entra ID via a projected Kubernetes service account token). |
 | `--region` | `AZURE_COSMOS_REGION` | `West US` | Application region for proximity routing. |
 | `--emulator` | — | auto | Relax TLS validation; auto-enabled for `localhost`/`127.0.0.1`. For a custom (non-local) emulator host it exports `AZURE_COSMOS_EMULATOR_HOST` so the SDK relaxes validation for that host. |
 | `--database` / `--container` | — | `observability_soak` / `items` | Created if missing. |
@@ -190,6 +190,21 @@ authoritative list.
 | `--fault-operation` | `all` | `all`, `read`, `write`, or `query`. |
 | `--fault-start-secs` | `0` | Seconds from the start of the load loop before faults activate; `0` faults from the first op. Setup/seeding always run fault-free. Requires `--fault-probability > 0`. |
 | `--fault-duration-secs` | `0` | How long the fault window stays active once it starts; `0` leaves faults active for the rest of the run. Requires `--fault-probability > 0`. |
+
+## Running it continuously
+
+Everything above drives the harness by hand, which is what you want while
+developing or diagnosing. Running it *unattended* for months — so that latency,
+RU and error-rate regressions show up as a trend line rather than being noticed
+by a customer — needs infrastructure that has nothing to do with the SDK: a
+Kubernetes cluster, a collector, a metrics store, a Grafana workspace, alert
+rules and a real Cosmos account.
+
+That lives in the Cosmos DB team's internal tooling repo rather than here, along
+with a local `docker compose` stack and the Grafana dashboard, so this repo keeps
+only the crate itself. The `workload-identity` auth method exists for that
+deployment: it is what lets the harness authenticate from inside a container
+without a key.
 
 ## Notes
 

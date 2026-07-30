@@ -11,7 +11,9 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-azure_core = { workspace = true, features = ["reqwest"] }
+# No explicit `reqwest` feature: `azure_data_cosmos`'s own `default` already
+# enables `azure_core/reqwest`, so naming it here changed nothing.
+azure_core = { workspace = true }
 # `control_plane` is not optional here: the harness provisions its own soak
 # database and container before driving load, so it always needs Database and
 # Container CRUD.
@@ -50,7 +52,6 @@ metrics = ["azure_data_cosmos/metrics"]
 distributed_tracing = ["azure_data_cosmos/distributed_tracing"]
 fault_injection = ["azure_data_cosmos/fault_injection"]
 otlp = [
-  "dep:opentelemetry-otlp",
   "opentelemetry-otlp/grpc-tonic",
   "opentelemetry-otlp/trace",
   "opentelemetry-otlp/metrics",

@@ -159,7 +159,18 @@ pub enum AuthMethod {
     /// Shared account key.
     Key,
     /// Microsoft Entra ID (developer tools credential chain).
+    ///
+    /// Resolves against the signed-in Azure CLI / Azure Developer CLI / Azure
+    /// PowerShell session, so this only works on a developer machine — it has
+    /// no way to authenticate from a container.
     Aad,
+    /// Microsoft Entra ID via Kubernetes workload identity.
+    ///
+    /// Reads the projected service account token the AKS workload identity
+    /// webhook mounts into the pod (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
+    /// `AZURE_FEDERATED_TOKEN_FILE`). This is the keyless option for running the
+    /// harness in a cluster; it has nothing to read on a developer machine.
+    WorkloadIdentity,
 }
 
 /// Selectable OpenTelemetry exporter.
@@ -236,7 +247,7 @@ impl Config {
                     );
                 }
             },
-            AuthMethod::Aad => None,
+            AuthMethod::Aad | AuthMethod::WorkloadIdentity => None,
         };
         Ok((self.endpoint.clone(), key))
     }
@@ -399,6 +410,14 @@ mod tests {
     #[test]
     fn aad_auth_has_no_key() {
         let config = Config::parse_from(["harness", "--auth", "aad"]);
+        let (_endpoint, key) = config.resolve_endpoint_and_key().unwrap();
+        assert!(key.is_none());
+    }
+
+    #[test]
+    fn workload_identity_auth_has_no_key() {
+        let config = Config::parse_from(["harness", "--auth", "workload-identity"]);
+        assert_eq!(config.auth, AuthMethod::WorkloadIdentity);
         let (_endpoint, key) = config.resolve_endpoint_and_key().unwrap();
         assert!(key.is_none());
     }

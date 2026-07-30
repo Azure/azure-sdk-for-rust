@@ -96,6 +96,15 @@ pub async fn build_client(
                 azure_identity::DeveloperToolsCredential::new(None)?;
             AccountReference::with_credential(endpoint, credential)
         }
+        // Kept separate from `Aad` rather than chained behind it: in the cloud
+        // soak a misconfigured federated identity must fail loudly at startup,
+        // not silently fall through to a developer credential that can never
+        // succeed inside a container and only surfaces as a confusing 401.
+        AuthMethod::WorkloadIdentity => {
+            let credential: Arc<dyn azure_core::credentials::TokenCredential> =
+                azure_identity::WorkloadIdentityCredential::new(None)?;
+            AccountReference::with_credential(endpoint, credential)
+        }
     };
 
     Ok((builder.build(account, strategy).await?, fault_activation))
