@@ -71,8 +71,12 @@ struct TestItem {
 /// → runtime env-override layer wiring, plus the live transport data path.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn hedging_override_env_var_reaches_runtime_and_keeps_reads_healthy(
 ) -> Result<(), Box<dyn Error>> {

@@ -1,10 +1,11 @@
 {
   "displayNames": {
-    "vnext": "vnext_emulator"
+    "inmemory-v1": "inmemory_emulator_gateway_v1_dynamic_ports",
+    "inmemory-v2": "inmemory_emulator_gateway_2_0_dynamic_ports"
   },
   "matrix": {
     "Agent": {
-      "vnext": {
+      "ubuntu": {
         "OSVmImage": "env:LINUXVMIMAGE",
         "Pool": "env:LINUXPOOL"
       }
@@ -13,7 +14,8 @@
       "stable"
     ],
     "AZURE_COSMOS_EMULATOR_FLAVOR": [
-      "vnext"
+      "inmemory-v1",
+      "inmemory-v2"
     ]
   }
 }
