@@ -6,16 +6,37 @@
 
 use super::framework;
 
-use framework::{TestClient, TestOptions, CONNECTION_STRING_ENV_VAR, EMULATOR_CONNECTION_STRING};
+use framework::{
+    TestClient, TestOptions, AUTH_MODE_ENV_VAR, CONNECTION_STRING_ENV_VAR,
+    EMULATOR_CONNECTION_STRING,
+};
 use std::error::Error;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
+/// Returns `true` when the suite is running under AAD auth mode.
+///
+/// The proxy tests manipulate the global `HTTPS_PROXY` environment variable to
+/// verify transport behavior. Under AAD mode the credential's own token
+/// acquisition honors `HTTPS_PROXY` and fails against the fake local proxy, so
+/// these transport-focused tests are skipped — proxy routing is orthogonal to
+/// the authentication method.
+fn is_aad_auth_mode() -> bool {
+    std::env::var(AUTH_MODE_ENV_VAR)
+        .map(|v| v.eq_ignore_ascii_case("aad"))
+        .unwrap_or(false)
+}
+
 /// Verifies that a client built with default settings does not route
 /// requests through an HTTP proxy, even when `HTTPS_PROXY` is set.
 #[tokio::test]
 pub async fn proxy_disabled_by_default_ignores_env() -> Result<(), Box<dyn Error>> {
+    if is_aad_auth_mode() {
+        eprintln!("Skipping proxy_disabled test under AAD auth mode.");
+        return Ok(());
+    }
+
     let listener = TcpListener::bind("127.0.0.1:0").await?;
     let port = listener.local_addr()?.port();
     let connect_count = Arc::new(AtomicU32::new(0));
@@ -70,6 +91,10 @@ pub async fn proxy_disabled_by_default_ignores_env() -> Result<(), Box<dyn Error
     ignore = "h2c prior-knowledge transport is incompatible with this HTTP/1 proxy harness"
 )]
 pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> {
+    if is_aad_auth_mode() {
+        eprintln!("Skipping proxy_enabled test under AAD auth mode.");
+        return Ok(());
+    }
     // Skip on the vnext (Linux) emulator pipeline: the vnext gateway does
     // not honor an outbound proxy in the same way the legacy emulator does
     // and the test consistently fails there. Keep enabled for the legacy

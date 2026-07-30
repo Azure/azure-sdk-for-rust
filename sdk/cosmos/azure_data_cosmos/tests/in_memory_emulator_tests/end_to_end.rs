@@ -546,25 +546,27 @@ async fn sdk_query_metadata_databases_and_containers() {
     let db_query = Query::from("SELECT * FROM c WHERE c.id = @id")
         .with_parameter("@id", db_name.as_str())
         .unwrap();
-    let emu_databases: Vec<DatabaseProperties> = backend
-        .emulator_client
-        .query_databases(db_query.clone(), None)
-        .await
-        .unwrap()
-        .try_collect()
-        .await
-        .unwrap();
+    let emu_databases: Vec<DatabaseProperties> = Box::pin(
+        backend
+            .emulator_client
+            .query_databases(db_query.clone(), None),
+    )
+    .await
+    .unwrap()
+    .try_collect()
+    .await
+    .unwrap();
     assert_eq!(emu_databases.len(), 1);
     assert_eq!(emu_databases[0].id.as_deref(), Some(db_name.as_str()));
 
     if let Some(ref real_client) = backend.real_client {
-        let real_databases: Vec<DatabaseProperties> = real_client
-            .query_databases(db_query, None)
-            .await
-            .unwrap()
-            .try_collect()
-            .await
-            .unwrap();
+        let real_databases: Vec<DatabaseProperties> =
+            Box::pin(real_client.query_databases(db_query, None))
+                .await
+                .unwrap()
+                .try_collect()
+                .await
+                .unwrap();
         assert_eq!(real_databases.len(), emu_databases.len());
         assert_eq!(real_databases[0].id, emu_databases[0].id);
     }
@@ -572,27 +574,31 @@ async fn sdk_query_metadata_databases_and_containers() {
     let container_query = Query::from("SELECT * FROM c WHERE c.id = @id")
         .with_parameter("@id", "testcoll")
         .unwrap();
-    let emu_containers: Vec<ContainerProperties> = backend
-        .emulator_client
-        .database_client(&db_name)
-        .query_containers(container_query.clone(), None)
+    let emu_containers: Vec<ContainerProperties> = Box::pin(
+        backend
+            .emulator_client
+            .database_client(&db_name)
+            .query_containers(container_query.clone(), None),
+    )
+    .await
+    .unwrap()
+    .try_collect()
+    .await
+    .unwrap();
+    assert_eq!(emu_containers.len(), 1);
+    assert_eq!(emu_containers[0].id, "testcoll");
+
+    if let Some(ref real_client) = backend.real_client {
+        let real_containers: Vec<ContainerProperties> = Box::pin(
+            real_client
+                .database_client(&db_name)
+                .query_containers(container_query, None),
+        )
         .await
         .unwrap()
         .try_collect()
         .await
         .unwrap();
-    assert_eq!(emu_containers.len(), 1);
-    assert_eq!(emu_containers[0].id, "testcoll");
-
-    if let Some(ref real_client) = backend.real_client {
-        let real_containers: Vec<ContainerProperties> = real_client
-            .database_client(&db_name)
-            .query_containers(container_query, None)
-            .await
-            .unwrap()
-            .try_collect()
-            .await
-            .unwrap();
         assert_eq!(real_containers.len(), emu_containers.len());
         assert_eq!(real_containers[0].id, emu_containers[0].id);
     }
@@ -1085,25 +1091,25 @@ async fn sdk_query_items_with_filter_and_projection() {
             .unwrap()
     }
 
-    let emu_items: Vec<QueryTestItem> = emu_container
-        .query_items(query(), FeedScope::partition("pk1"), None)
-        .await
-        .unwrap()
-        .try_collect()
-        .await
-        .unwrap();
-    assert_eq!(emu_items.len(), 2);
-    assert_eq!(emu_items[0].id, "query-1");
-    assert_eq!(emu_items[1].id, "query-2");
-
-    if let Some(ref real) = real_container {
-        let real_items: Vec<QueryTestItem> = real
-            .query_items(query(), FeedScope::partition("pk1"), None)
+    let emu_items: Vec<QueryTestItem> =
+        Box::pin(emu_container.query_items(query(), FeedScope::partition("pk1"), None))
             .await
             .unwrap()
             .try_collect()
             .await
             .unwrap();
+    assert_eq!(emu_items.len(), 2);
+    assert_eq!(emu_items[0].id, "query-1");
+    assert_eq!(emu_items[1].id, "query-2");
+
+    if let Some(ref real) = real_container {
+        let real_items: Vec<QueryTestItem> =
+            Box::pin(real.query_items(query(), FeedScope::partition("pk1"), None))
+                .await
+                .unwrap()
+                .try_collect()
+                .await
+                .unwrap();
         assert_eq!(real_items.len(), emu_items.len());
         assert_eq!(
             real_items.iter().map(|i| &i.id).collect::<Vec<_>>(),

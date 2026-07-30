@@ -24,7 +24,9 @@ use super::response::headers::{
 };
 #[cfg(feature = "preview_dtx")]
 use super::response::headers::{ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS};
-use super::response::{error_response, success_response, ResponseBuilder};
+use super::response::{
+    error_response, success_response, success_response_with_format, ResponseBuilder,
+};
 use super::ru_model::RuChargingModel;
 use super::session::SessionToken;
 use super::store::{
@@ -651,6 +653,7 @@ pub(crate) async fn handle_operation(
             partition_key_header: Some(operation.partition_key.to_string()),
             if_match: operation.if_match.clone(),
             if_none_match: operation.if_none_match.clone(),
+            if_modified_since: None,
             session_token: operation.session_token.clone(),
             activity_id: None,
             content_response_on_write: true,
@@ -663,7 +666,9 @@ pub(crate) async fn handle_operation(
             end_epk: None,
             is_query_plan: false,
             is_batch: false,
+            binary_response: false,
             is_upsert: matches!(operation_type, OperationType::Upsert),
+            a_im: None,
         };
 
         match operation_type {
@@ -1455,6 +1460,7 @@ pub(crate) async fn handle_operation(
             partition_key_header: Some(operation.partition_key.to_string()),
             if_match: operation.if_match.clone(),
             if_none_match: operation.if_none_match.clone(),
+            if_modified_since: None,
             session_token: operation.session_token.clone(),
             activity_id: None,
             content_response_on_write: true,
@@ -1467,7 +1473,9 @@ pub(crate) async fn handle_operation(
             end_epk: None,
             is_query_plan: false,
             is_batch: false,
+            binary_response: false,
             is_upsert: false,
+            a_im: None,
         }
     }
 
@@ -3141,8 +3149,34 @@ fn handle_read_feed_items(
     parsed: &ParsedRequest,
     start: Instant,
 ) -> AsyncRawResponse {
+    // The service only supports the AllVersionsAndDeletes (full-fidelity) change
+    // feed starting from `Now` or resuming from a continuation. A `Beginning`
+    // start (no `If-None-Match`) or a `PointInTime` start (`If-Modified-Since`)
+    // is rejected with 400. The SDK relies on the service to gate these, so
+    // mirror that here.
+    if is_full_fidelity_feed(parsed.a_im.as_deref()) {
+        if let Some(response) = reject_unsupported_full_fidelity_start(parsed, start) {
+            return response;
+        }
+    }
     match collect_item_documents(store, region_name, parsed, start) {
         Ok((rid, docs, token, mut headers)) => {
+            // Full-fidelity (AllVersionsAndDeletes) change feed reads carry
+            // `A-IM: Full-Fidelity Feed`. The in-memory store only retains the
+            // latest state of each document (no change log), so it cannot replay
+            // historical versions, deletes, or pre-images. It therefore
+            // synthesizes a minimal `create` envelope per current document so the
+            // SDK's full-fidelity code path (header emission, mode dispatch, and
+            // the iterator's raw `ChangeFeedItem<T>` deserialization) can be
+            // exercised end-to-end. Deletes / `previous` images remain covered by
+            // unit tests and are a documented follow-up. Incremental
+            // (`A-IM: Incremental Feed`) and plain read-feed requests are
+            // unchanged and return flat documents.
+            let docs = if is_full_fidelity_feed(parsed.a_im.as_deref()) {
+                docs.into_iter().map(full_fidelity_envelope).collect()
+            } else {
+                docs
+            };
             headers.session_token = token;
             success_document_feed_response(
                 "Documents",
@@ -3154,6 +3188,70 @@ fn handle_read_feed_items(
             )
         }
         Err(response) => response,
+    }
+}
+
+/// Returns `true` when the `A-IM` header selects the full-fidelity
+/// (AllVersionsAndDeletes) change feed.
+fn is_full_fidelity_feed(a_im: Option<&str>) -> bool {
+    a_im.is_some_and(|value| value.eq_ignore_ascii_case("Full-Fidelity Feed"))
+}
+
+/// Rejects AllVersionsAndDeletes change-feed reads that start from an
+/// unsupported position.
+///
+/// Returns `Some(400)` for a `Beginning` start (no `If-None-Match`) or a
+/// `PointInTime` start (`If-Modified-Since` present), and `None` for `Now`
+/// (`If-None-Match: *`) or a resume (`If-None-Match: <etag>`).
+fn reject_unsupported_full_fidelity_start(
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> Option<AsyncRawResponse> {
+    let reason = if parsed.if_modified_since.is_some() {
+        "a point-in-time start"
+    } else if parsed.if_none_match.is_none() {
+        "a start from the beginning"
+    } else {
+        return None;
+    };
+
+    Some(
+        error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            &format!(
+                "The AllVersionsAndDeletes change feed mode does not support {reason}; \
+                 start from Now or resume from a continuation token."
+            ),
+            0.0,
+            "",
+            start,
+        )
+        .build(),
+    )
+}
+
+/// Wraps a current document body in a minimal full-fidelity change envelope.
+///
+/// The emulator has no change log, so every retained document is surfaced as a
+/// `create`. `crts` is taken from the document's `_ts` when available; `lsn` and
+/// `previous` are omitted because the store does not track them.
+fn full_fidelity_envelope(doc: DocumentFeedItem) -> DocumentFeedItem {
+    let crts = doc
+        .body
+        .get("_ts")
+        .cloned()
+        .unwrap_or(serde_json::Value::Null);
+    DocumentFeedItem {
+        body: serde_json::json!({
+            "current": doc.body,
+            "metadata": {
+                "operationType": "create",
+                "crts": crts,
+            },
+        }),
+        cursor: doc.cursor,
     }
 }
 
@@ -4184,6 +4282,21 @@ fn check_throttle(
     None
 }
 
+/// Parses a request body as either Cosmos binary JSON (when it begins with the
+/// `0x80` preamble) or UTF-8 text JSON.
+///
+/// This mirrors the SDK's response-side auto-detection so the emulator accepts
+/// binary-encoded item writes when the client negotiated binary, letting the
+/// full encode → store → decode loop be validated locally. Returns `Err(())` on
+/// a malformed body; callers turn that into a `400 BadRequest`.
+fn decode_request_body(request_body: &[u8]) -> Result<serde_json::Value, ()> {
+    if crate::binary_json::is_binary(request_body) {
+        crate::binary_json::decode(request_body).map_err(|_| ())
+    } else {
+        serde_json::from_slice(request_body).map_err(|_| ())
+    }
+}
+
 async fn handle_create(
     store: &Arc<EmulatorStore>,
     region_name: &str,
@@ -4213,7 +4326,7 @@ async fn handle_create_locked(
         return resp;
     }
 
-    let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
+    let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
         Err(_) => {
             return error_response(
@@ -4390,9 +4503,16 @@ async fn handle_create_locked(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
-                success_response(StatusCode::Created, &response_body, charge, &token, start)
-                    .with_etag(&doc.etag)
-                    .with_lsn(doc.lsn)
+                success_response_with_format(
+                    StatusCode::Created,
+                    &response_body,
+                    parsed.binary_response,
+                    charge,
+                    &token,
+                    start,
+                )
+                .with_etag(&doc.etag)
+                .with_lsn(doc.lsn)
             } else {
                 ResponseBuilder::new(StatusCode::Created, start)
                     .with_request_charge(charge)
@@ -4631,9 +4751,16 @@ fn handle_read(
 
     match result {
         Some(Ok((body, etag, token, charge, lsn, item_lsn, headers))) => {
-            let builder = success_response(StatusCode::Ok, &body, charge, &token, start)
-                .with_etag(&etag)
-                .with_lsn(lsn);
+            let builder = success_response_with_format(
+                StatusCode::Ok,
+                &body,
+                parsed.binary_response,
+                charge,
+                &token,
+                start,
+            )
+            .with_etag(&etag)
+            .with_lsn(lsn);
             decorate_point_response(builder, headers, Some(item_lsn)).build()
         }
         Some(Err(response)) => response,
@@ -4671,7 +4798,7 @@ async fn handle_replace_locked(
         return resp;
     }
 
-    let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
+    let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
         Err(_) => {
             return error_response(
@@ -4961,9 +5088,16 @@ async fn handle_replace_locked(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
-                success_response(StatusCode::Ok, &response_body, charge, &token, start)
-                    .with_etag(&doc.etag)
-                    .with_lsn(doc.lsn)
+                success_response_with_format(
+                    StatusCode::Ok,
+                    &response_body,
+                    parsed.binary_response,
+                    charge,
+                    &token,
+                    start,
+                )
+                .with_etag(&doc.etag)
+                .with_lsn(doc.lsn)
             } else {
                 ResponseBuilder::new(StatusCode::Ok, start)
                     .with_request_charge(charge)
@@ -5008,7 +5142,7 @@ async fn handle_upsert_locked(
         return resp;
     }
 
-    let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
+    let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
         Err(_) => {
             return error_response(
@@ -5187,9 +5321,16 @@ async fn handle_upsert_locked(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
-                success_response(status, &response_body, charge, &token, start)
-                    .with_etag(&doc.etag)
-                    .with_lsn(doc.lsn)
+                success_response_with_format(
+                    status,
+                    &response_body,
+                    parsed.binary_response,
+                    charge,
+                    &token,
+                    start,
+                )
+                .with_etag(&doc.etag)
+                .with_lsn(doc.lsn)
             } else {
                 ResponseBuilder::new(status, start)
                     .with_request_charge(charge)
