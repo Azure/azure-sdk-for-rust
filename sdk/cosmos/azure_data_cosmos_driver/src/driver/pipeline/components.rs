@@ -87,7 +87,13 @@ pub const BACKEND_FAILOVER_BASE_BACKOFF: Duration = Duration::from_millis(1000);
 /// Exponential growth factor applied to [`BACKEND_FAILOVER_BASE_BACKOFF`].
 pub const BACKEND_FAILOVER_BACKOFF_FACTOR: f64 = 2.0;
 
-/// Per-retry ceiling for the exponential backend-failover backoff.
+/// Pre-jitter per-retry ceiling for the exponential backend-failover backoff.
+///
+/// Jitter is applied *after* this clamp, so a single delay can reach
+/// `15s * (1 + BACKEND_FAILOVER_JITTER_RATIO)` = 18.75s before the
+/// cumulative-budget truncation. Clamping before jitter is deliberate:
+/// jittering first would pile probability mass on exactly 15s and defeat the
+/// decorrelation jitter exists for.
 ///
 /// Unreachable at the current 5s budget (delays truncate to the remaining
 /// budget first); retained so the curve stays sane if the budget is raised.

@@ -512,7 +512,9 @@ impl LocationStateStore {
         }
 
         // The CAS above stamps the clock *before* the fetch so concurrent
-        // callers are excluded, but that stamp must not survive a fetch that
+        // event-driven callers are excluded (the timer-driven forced path
+        // deliberately bypasses this claim, since the timer interval is its
+        // own rate limit), but that stamp must not survive a fetch that
         // never landed: the event-driven retry paths depend on a fresh
         // snapshot and would otherwise be blinded for a full
         // `refresh_interval`. The guard restores the previous stamp on
@@ -614,9 +616,6 @@ impl LocationStateStore {
             return false;
         };
 
-        self.last_refresh_epoch_ms
-            .store(epoch_millis(), Ordering::Release);
-
         // Probe Gateway 2.0 proxy endpoints BEFORE syncing into the routing
         // snapshot, so the subsequent rebuild reflects the probe outcome
         // (via `effective_gateway_v2_enabled`). A transition in the probe
@@ -626,6 +625,13 @@ impl LocationStateStore {
 
         let default_endpoint = self.default_endpoint.clone();
         self.sync_account_properties(properties, &default_endpoint);
+
+        // Arm the throttle only after the snapshot is published. Stamping it
+        // earlier would leave the clock advanced past the guard's claimed
+        // value if the probe await were cancelled, blinding the event-driven
+        // path for a full `refresh_interval` against unsynced routing.
+        self.last_refresh_epoch_ms
+            .store(epoch_millis(), Ordering::Release);
         true
     }
 
@@ -1724,6 +1730,84 @@ mod tests {
             total_refreshes.load(Ordering::SeqCst),
             2,
             "a successful refresh must still arm the rate limit"
+        );
+    }
+
+    /// A probe that parks forever on its first call so the test can cancel
+    /// the refresh future while it is suspended inside the probe await.
+    #[derive(Debug, Default)]
+    struct BlockingProbe {
+        calls: AtomicUsize,
+    }
+
+    #[async_trait::async_trait]
+    impl ConnectivityProbe for BlockingProbe {
+        async fn probe_endpoints(&self, _: Vec<(Region, ProbeRole, Url)>) -> ProbeOutcome {
+            if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                std::future::pending::<()>().await;
+            }
+            ProbeOutcome::AllHealthy
+        }
+    }
+
+    /// Cancelling an event-driven refresh while it is suspended inside the
+    /// Gateway 2.0 connectivity probe must leave the throttle unarmed: the
+    /// routing snapshot was never synced, so the next refresh has to be
+    /// allowed through immediately rather than waiting out the interval.
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn cancelled_refresh_during_probe_does_not_throttle_next_refresh() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refreshes = Arc::new(AtomicUsize::new(0));
+        let refreshes_clone = Arc::clone(&refreshes);
+        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
+            let count = Arc::clone(&refreshes_clone);
+            let payload = refresh_payload_with_g2();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move {
+                    count.fetch_add(1, Ordering::SeqCst);
+                    Ok(payload)
+                });
+            fut
+        });
+
+        let probe = Arc::new(BlockingProbe::default());
+        let store = Arc::new(LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            true,
+            // Long interval: only a rolled-back claim can permit refresh #2.
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            Some(Arc::clone(&probe) as Arc<dyn ConnectivityProbe>),
+        ));
+
+        let store_clone = Arc::clone(&store);
+        let handle = tokio::spawn(async move {
+            store_clone
+                .apply(&[LocationEffect::RefreshAccountProperties])
+                .await;
+        });
+
+        while probe.calls.load(Ordering::SeqCst) == 0 {
+            tokio::task::yield_now().await;
+        }
+
+        // Cancel while parked in the probe: the metadata fetch already
+        // landed, but the routing snapshot was never synced.
+        handle.abort();
+        let _ = handle.await;
+
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
+        assert_eq!(
+            refreshes.load(Ordering::SeqCst),
+            2,
+            "a refresh cancelled inside the probe must not throttle the next one"
         );
     }
 
