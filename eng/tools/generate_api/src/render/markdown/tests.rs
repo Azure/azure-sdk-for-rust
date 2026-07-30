@@ -2,10 +2,55 @@
 // Licensed under the MIT License.
 
 use super::*;
-use crate::model::{ApiAttribute, ApiItemKind};
+use crate::model::{
+    ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiMemberKind, ApiModel, ApiModule,
+};
+
+fn item(name: &str, kind: ApiItemKind, declaration: &str) -> ApiItem {
+    ApiItem {
+        name: name.to_string(),
+        kind,
+        source_id: None,
+        navigation_paths: Vec::new(),
+        owner_name: None,
+        owner_kind: None,
+        owner_source_id: None,
+        inherent_impl_sort_key: None,
+        doc_comments: Vec::new(),
+        attributes: Vec::new(),
+        declaration: declaration.to_string(),
+        declaration_path_references: Vec::new(),
+        members: Vec::new(),
+    }
+}
+
+fn member(name: &str, kind: ApiMemberKind, declaration: &str) -> ApiMember {
+    ApiMember {
+        name: name.to_string(),
+        kind,
+        doc_comments: Vec::new(),
+        attributes: Vec::new(),
+        declaration: declaration.to_string(),
+        declaration_path_references: Vec::new(),
+    }
+}
 
 #[test]
 fn renders_explicit_trait_impl_blocks() {
+    let mut item = item(
+        "MyType",
+        ApiItemKind::TraitImpl,
+        "impl fmt::Debug for MyType {",
+    );
+    item.attributes.push(ApiAttribute {
+        text: "#[cfg(feature = \"std\")]".to_string(),
+    });
+    item.members.push(member(
+        "fmt",
+        ApiMemberKind::Associated,
+        "fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;",
+    ));
+
     let model = ApiModel {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
@@ -14,25 +59,7 @@ fn renders_explicit_trait_impl_blocks() {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
             attributes: Vec::new(),
-            items: vec![ApiItem {
-                name: "MyType".to_string(),
-                kind: ApiItemKind::TraitImpl,
-                source_id: None,
-                owner_kind: None,
-                inherent_impl_sort_key: None,
-                doc_comments: Vec::new(),
-                attributes: vec![ApiAttribute {
-                    text: "#[cfg(feature = \"std\")]".to_string(),
-                }],
-                declaration: "impl fmt::Debug for MyType {".to_string(),
-                members: vec![ApiMember {
-                    name: "fmt".to_string(),
-                    doc_comments: Vec::new(),
-                    attributes: Vec::new(),
-                    declaration: "fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;"
-                        .to_string(),
-                }],
-            }],
+            items: vec![item],
             modules: Vec::new(),
         },
     };
@@ -47,6 +74,15 @@ fn renders_explicit_trait_impl_blocks() {
 
 #[test]
 fn renders_inherent_members_inside_impl_blocks() {
+    let mut inherent_impl = item("Foo", ApiItemKind::InherentImpl, "impl Foo {");
+    inherent_impl.owner_name = Some("Foo".to_string());
+    inherent_impl.owner_kind = Some(ApiItemKind::Struct);
+    inherent_impl.members.push(member(
+        "method",
+        ApiMemberKind::Associated,
+        "pub fn method(&self);",
+    ));
+
     let model = ApiModel {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
@@ -56,33 +92,8 @@ fn renders_inherent_members_inside_impl_blocks() {
             doc_comments: Vec::new(),
             attributes: Vec::new(),
             items: vec![
-                ApiItem {
-                    name: "Foo".to_string(),
-                    kind: ApiItemKind::Struct,
-                    source_id: None,
-                    owner_kind: None,
-                    inherent_impl_sort_key: None,
-                    doc_comments: Vec::new(),
-                    attributes: Vec::new(),
-                    declaration: "pub struct Foo;".to_string(),
-                    members: Vec::new(),
-                },
-                ApiItem {
-                    name: "Foo".to_string(),
-                    kind: ApiItemKind::InherentImpl,
-                    source_id: None,
-                    owner_kind: Some(ApiItemKind::Struct),
-                    inherent_impl_sort_key: None,
-                    doc_comments: Vec::new(),
-                    attributes: Vec::new(),
-                    declaration: "impl Foo {".to_string(),
-                    members: vec![ApiMember {
-                        name: "method".to_string(),
-                        doc_comments: Vec::new(),
-                        attributes: Vec::new(),
-                        declaration: "pub fn method(&self);".to_string(),
-                    }],
-                },
+                item("Foo", ApiItemKind::Struct, "pub struct Foo;"),
+                inherent_impl,
             ],
             modules: Vec::new(),
         },
@@ -93,4 +104,36 @@ fn renders_inherent_members_inside_impl_blocks() {
     assert!(rendered.contains("pub struct Foo;"));
     assert!(rendered.contains("impl Foo {\n    pub fn method(&self);\n}"));
     assert!(!rendered.contains("pub struct Foo;\n    pub fn method(&self);"));
+}
+
+#[test]
+fn renders_root_inner_attrs_and_child_module_outer_attrs() {
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        root_module: ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: vec![ApiAttribute {
+                text: "#![warn(missing_docs)]".to_string(),
+            }],
+            items: Vec::new(),
+            modules: vec![ApiModule {
+                path: "demo::inner".to_string(),
+                doc_comments: Vec::new(),
+                attributes: vec![ApiAttribute {
+                    text: "#[deny(unsafe_code)]".to_string(),
+                }],
+                items: vec![item("Nested", ApiItemKind::Struct, "pub struct Nested;")],
+                modules: Vec::new(),
+            }],
+        },
+    };
+
+    let rendered = render(&model);
+
+    assert!(rendered.contains("#![warn(missing_docs)]"));
+    assert!(rendered.contains("#[deny(unsafe_code)]\npub mod inner {"));
+    assert!(!rendered.contains("#![deny(unsafe_code)]\npub mod inner {"));
 }
