@@ -170,6 +170,19 @@ impl CosmosOperation {
         &self.resource_reference
     }
 
+    /// Returns whether this operation uses feed-style paths.
+    ///
+    /// Create and Upsert document operations POST to the parent (collection)
+    /// URL even though they carry an item id, because that is how the Cosmos DB
+    /// REST API models them. Their leaf id therefore never appears in the
+    /// request path.
+    pub(crate) fn uses_feed_paths(&self) -> bool {
+        matches!(
+            self.operation_type,
+            OperationType::Create | OperationType::Upsert
+        ) && self.resource_type == ResourceType::Document
+    }
+
     /// Computes the request path and signing link for this operation.
     ///
     /// Create and Upsert document operations use feed-style paths (targeting
@@ -177,15 +190,22 @@ impl CosmosOperation {
     /// Cosmos DB REST API POSTs these to the collection feed. All other
     /// operations use the standard resource paths.
     pub(crate) fn compute_resource_paths(&self) -> crate::models::ResourcePaths {
-        if matches!(
-            self.operation_type,
-            OperationType::Create | OperationType::Upsert
-        ) && self.resource_type == ResourceType::Document
-        {
+        if self.uses_feed_paths() {
             self.resource_reference.compute_feed_paths()
         } else {
             self.resource_reference.compute_paths()
         }
+    }
+
+    /// Validates that this operation does not mix name and RID addressing.
+    ///
+    /// Delegates to
+    /// [`CosmosResourceReference::validate_addressing`], telling it whether the
+    /// leaf id will appear in the request path so that feed-style operations
+    /// (Create/Upsert) are correctly exempted from the leaf check.
+    pub(crate) fn validate_addressing(&self) -> crate::error::Result<()> {
+        self.resource_reference
+            .validate_addressing(!self.uses_feed_paths())
     }
 
     /// Returns the container for this operation, if applicable.
@@ -1047,6 +1067,17 @@ mod tests {
         )
     }
 
+    /// A container addressed purely by RID (no name-based path available).
+    fn test_container_by_rid() -> ContainerReference {
+        ContainerReference::new_by_rid(
+            test_account(),
+            "Lx1BAA==",
+            "testcontainer",
+            "Lx1BALxJyZ8=",
+            &test_container_props(),
+        )
+    }
+
     #[test]
     fn create_operation() {
         let pk = PartitionKey::from("pk1");
@@ -1057,6 +1088,63 @@ mod tests {
         assert_eq!(op.resource_type(), ResourceType::Document);
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());
+    }
+
+    #[test]
+    fn create_item_on_rid_container_allows_name_id() {
+        // Create POSTs to the parent collection URL, so the item name never
+        // reaches the wire. Confirmed live: this succeeds on a RID-addressed
+        // container.
+        let item_ref =
+            ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
+        let op = CosmosOperation::create_item(item_ref);
+        assert!(op.uses_feed_paths());
+        op.validate_addressing()
+            .expect("create on a RID container may carry a name id");
+        assert_eq!(
+            op.compute_resource_paths().request_path(),
+            "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs"
+        );
+    }
+
+    #[test]
+    fn read_item_on_rid_container_rejects_name_id() {
+        // Read puts the leaf in the path, where the service tries to parse it as
+        // a ResourceId. Confirmed live: this returns
+        // `400 Failed to parse the value 'doc1' as ResourceId`, so fail fast.
+        let item_ref =
+            ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
+        let op = CosmosOperation::read_item(item_ref);
+        assert!(!op.uses_feed_paths());
+        let err = op
+            .validate_addressing()
+            .expect_err("a name leaf under a RID parent must be rejected");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+        );
+    }
+
+    #[test]
+    fn read_item_on_rid_container_accepts_item_rid() {
+        // The supported way to point-read on a RID-addressed container: address
+        // the item by RID too, so the whole path is RID-based.
+        let item_ref = ItemReference::from_rid(
+            &test_container_by_rid(),
+            PartitionKey::from("pk1"),
+            "Lx1BALxJyZ8BAAAAAAAAAA==",
+        );
+        let op = CosmosOperation::read_item(item_ref);
+        op.validate_addressing()
+            .expect("a RID leaf under a RID parent is consistent");
+
+        let paths = op.compute_resource_paths();
+        assert_eq!(
+            paths.request_path(),
+            "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs/Lx1BALxJyZ8BAAAAAAAAAA=="
+        );
+        assert_eq!(paths.signing_link(), "lx1balxjyz8baaaaaaaaaa==");
+        assert!(paths.is_rid_based());
     }
 
     #[test]

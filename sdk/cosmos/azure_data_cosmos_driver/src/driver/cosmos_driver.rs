@@ -3063,18 +3063,21 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
-        // Reject mixed name/RID addressing before any IO work is done. A
-        // reference that mixes a name-addressed parent with a RID-addressed child
-        // (or vice versa) signs and routes inconsistently and the gateway rejects
-        // it with an opaque 401. Validating here — the single choke point every
-        // externally executable operation passes through on its way to a plan —
-        // turns that into a deterministic client-side error for references built
-        // through any path (including direct `plan_operation` + `execute_plan`
-        // callers and multi-page queries), not just `execute_operation`. The
-        // check is a cheap in-memory field comparison and a no-op for every
-        // consistently-addressed reference, so it issues no additional network
-        // calls and does not change the request flow.
-        operation.resource_reference().validate_addressing()?;
+        // Reject mixed name/RID addressing before any IO work is done. The
+        // service classifies a request as name-based or RID-based from its `dbs`
+        // segment alone, so a reference that mixes a name-addressed parent with
+        // a RID-addressed child (or vice versa) signs and routes inconsistently
+        // and the gateway rejects it with an opaque 401, while a name leaf under
+        // a RID-addressed parent is rejected with a 400 the caller cannot act
+        // on. Validating here — the single choke point every externally
+        // executable operation passes through on its way to a plan — turns both
+        // into deterministic client-side errors for references built through any
+        // path (including direct `plan_operation` + `execute_plan` callers and
+        // multi-page queries), not just `execute_operation`. The check is a cheap
+        // in-memory field comparison and a no-op for every consistently-addressed
+        // reference, so it issues no additional network calls and does not change
+        // the request flow.
+        operation.validate_addressing()?;
 
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());

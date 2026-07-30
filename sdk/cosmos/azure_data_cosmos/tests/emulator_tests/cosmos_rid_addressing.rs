@@ -40,10 +40,16 @@ async fn collect_items(
     Ok(items)
 }
 
-/// Exercises the full RID-addressing flow end to end: create a database and
+/// Exercises the RID-addressing flow end to end: create a database and
 /// container by name, discover their service-assigned `_rid`s, then re-address
-/// both purely by RID and confirm every read/write/query operation resolves to
-/// the same resources.
+/// both purely by RID and confirm every operation whose URI is RID-addressed
+/// end to end resolves to the same resources.
+///
+/// Cosmos classifies a request as name-based or RID-based from the `dbs`
+/// segment alone, so a RID-addressed path must be RID-addressed all the way
+/// down. Operations whose URI stops at the container (container read,
+/// throughput, create/upsert, queries, feed reads) therefore work by RID, while
+/// point operations that put an item *name* in the path are rejected.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -115,7 +121,9 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
                 .expect("throughput should be present");
             assert_eq!(Some(400), throughput.throughput());
 
-            // Create an item through the RID-addressed container.
+            // Create an item through the RID-addressed container. Create POSTs
+            // to the collection URL, so the item id never reaches the wire and
+            // the service never tries to parse it as a ResourceId.
             let item = RidItem {
                 id: format!("item-{}", Uuid::new_v4()),
                 pk: "pk-1".to_string(),
@@ -125,8 +133,28 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
                 .create_item(&item.pk, &item.id, &item, None)
                 .await?;
 
-            // Point-read it back by RID.
-            let fetched: RidItem = rid_container
+            // A point operation addressed by *name* cannot work under a
+            // RID-addressed parent: the service classifies the URI as RID-based
+            // from its `dbs` segment alone and then fails to parse the item name
+            // as a ResourceId (`400 Failed to parse the value '{name}' as
+            // ResourceId`). The driver rejects it client-side instead, before
+            // signing or sending anything.
+            for result in [
+                rid_container.read_item(&item.pk, &item.id, None).await.err(),
+                rid_container
+                    .delete_item(&item.pk, &item.id, None)
+                    .await
+                    .err(),
+            ] {
+                let err = result.expect(
+                    "a name-addressed point operation on a RID-addressed container must be rejected",
+                );
+                assert_eq!(CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING, err.status());
+            }
+
+            // The item really was created through the RID-addressed container:
+            // it is readable through the name-addressed one.
+            let fetched: RidItem = name_container
                 .read_item(&item.pk, &item.id, None)
                 .await?
                 .into_model()?;

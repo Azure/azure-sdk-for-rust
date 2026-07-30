@@ -16,6 +16,8 @@
 
 ### Bugs Fixed
 
+- Point operations addressed by name under a RID-addressed parent are now rejected client-side with `CLIENT_MIXED_NAME_RID_ADDRESSING` instead of being sent to the service. Cosmos classifies a request as name-based or RID-based from its `dbs` segment alone, so a RID-addressed path must be RID-addressed end to end; a name leaf (e.g. `/dbs/{rid}/colls/{rid}/docs/{name}`) was rejected by the service with an opaque `400 Failed to parse the value '{name}' as ResourceId`. Feed-style operations are unaffected — Create and Upsert POST to the parent collection URL, so their item id never reaches the wire and remains legal by name. Address the leaf by RID (`ItemReference::from_rid`) to point-operate on a RID-addressed container. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
+
 ### Other Changes
 
 - RID-addressed operations route through standard Gateway rather than Gateway 2.0. Gateway 2.0 derives its `DatabaseName`/`CollectionName` routing tokens by parsing the authorization signing link, but a RID-addressed feed operation signs over a bare lowercased RID that carries no `dbs`/`colls` segments, so wrapping the request failed locally with `CLIENT_BAD_REQUEST` before it was sent. Standard Gateway routes raw RID paths natively. See [#4921](https://github.com/Azure/azure-sdk-for-rust/issues/4921) for native RID support on Gateway 2.0. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
