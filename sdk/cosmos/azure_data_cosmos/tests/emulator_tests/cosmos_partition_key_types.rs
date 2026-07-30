@@ -14,7 +14,7 @@
 //! route to distinct logical partitions. This mirrors the per-type partition
 //! key sanity tests the Python and .NET SDKs maintain.
 
-// Use the shared test framework declared in `tests/emulator/mod.rs`.
+// Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
 use super::framework;
 
 use std::error::Error;

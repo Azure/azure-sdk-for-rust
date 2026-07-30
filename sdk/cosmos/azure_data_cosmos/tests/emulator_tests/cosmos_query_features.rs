@@ -8,10 +8,10 @@
 //! and `GROUP BY`. Scoping every query to one partition (`FeedScope::partition`)
 //! makes it a "trivial" operation that the backend serves directly, without the
 //! client-side cross-partition merge that the SDK's gateway pager does not
-//! implement for these features. This mirrors the aggregate/distinct/orderby/
-//! groupby suites that the Python and .NET SDKs maintain.
+//! implement for these features. This mirrors the aggregate, distinct, order-by,
+//! and group-by suites that the Python and .NET SDKs maintain.
 
-// Use the shared test framework declared in `tests/emulator/mod.rs`.
+// Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
 use super::framework;
 
 use std::collections::HashMap;
@@ -300,14 +300,14 @@ pub async fn single_partition_group_by() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
             let container = seed_container(db_client).await?;
-            let rollups: Vec<CategoryRollup> = run_query(
+            let groups: Vec<CategoryRollup> = run_query(
                 &container,
                 "SELECT c.category AS category, COUNT(1) AS count, SUM(c.amount) AS total \
                  FROM c GROUP BY c.category",
             )
             .await?;
 
-            let by_category: HashMap<String, (i64, i64)> = rollups
+            let by_category: HashMap<String, (i64, i64)> = groups
                 .into_iter()
                 .map(|r| (r.category, (r.count, r.total)))
                 .collect();
