@@ -511,7 +511,7 @@ Only **step 2** is Cosmos-specific and stays in our code; steps 1, 3, 4 become l
 
 ### 9.5 Work plan
 
-1. Add `arbitrary`, `arbitrary-json`, `json-canon`, and `sha2` as **dev-dependencies** of `azure_data_cosmos_perf` (test-only; not shipped in the SDK).
+1. Add `arbitrary`, `arbitrary-json`, `json-canon`, and `sha2` as **dev-dependencies** of the harness crate (test-only; not shipped in the SDK). *(Originally landed in `azure_data_cosmos_perf`; later moved with the harness to `azure_data_cosmos` — see §9.7.)*
 2. Extract the current number logic into a standalone `normalize_numbers(&Value) -> Value` that applies the calibrated `canonicalize_number` rules and leave calibration mode (§6) pointing at it.
 3. Replace `canonicalize` internals with: `normalize_numbers` → `json_canon::to_string` → `sha2` digest. Keep the `project_to_sent_keys` step (§2) unchanged.
 4. Replace `gen_object`/`gen_value` with an `arbitrary-json`-backed generator seeded from the existing `SplitMix64` byte stream (so runs stay reproducible via `AZURE_COSMOS_FUZZ_SEED`).
@@ -532,7 +532,7 @@ Phases 1–4 of §9.5 are implemented in `binary_roundtrip_fuzzer.rs` across fou
 
 | Phase | Change | Status |
 | ----- | ------ | ------ |
-| 1 | Dev-deps `arbitrary`, `arbitrary-json`, `json-canon`, `sha2` wired into `azure_data_cosmos_perf`. | ✅ landed |
+| 1 | Dev-deps `arbitrary`, `arbitrary-json`, `json-canon`, `sha2` wired into the harness crate (initially `azure_data_cosmos_perf`; later relocated with the harness to `azure_data_cosmos`, so the live leg actually runs it). | ✅ landed |
 | 2 | `normalize_number` / `normalize_numbers` extracted as the sole Cosmos-specific number transform (behavior-preserving). | ✅ landed |
 | 3 | `canonicalize` now = `normalize_numbers` → `json_canon::to_string` (RFC 8785); differential hash switched to SHA-256. | ✅ landed |
 | 4 | Generator replaced with `arbitrary-json`, seeded from `SplitMix64` (deterministic per `AZURE_COSMOS_FUZZ_SEED`); a `bound_value` pass keeps the `wide_numbers`/`unicode` envelope contract. | ✅ landed |
