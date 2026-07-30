@@ -8,11 +8,27 @@
 //! one column's envelope value (distinguishing `Undefined` from `null`);
 //! [`compare_key_tuples`] is the shared Cosmos-ordered comparator;
 //! [`OrderByResumeValue`] is the bounded "last emitted" value persisted in
-//! a token (arrays/objects hashed to 128 bits so a token never grows with
-//! document size). On resume, a range's boundary is sent to the backend as
+//! a token. On resume, a range's boundary is sent to the backend as
 //! a structured [`resume_filter_json`] — the .NET-compatible `resumeFilter`
 //! field of the query body — and the already-emitted prefix of the boundary
 //! tie run is trimmed client-side via [`classify_row_vs_boundary`].
+//!
+//! # Complex sort keys
+//!
+//! Sorting on a value that evaluates to an array or object is **not
+//! supported** in a cross-partition query: [`parse_order_by_items`] rejects
+//! such a row with
+//! [`crate::error::CosmosStatus::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED`].
+//! Ordering complex values requires reproducing the backend's structural
+//! hash, and resuming across one requires a hash-shaped resume filter;
+//! neither is worth the correctness risk until there is a real scenario
+//! for it. The Python and JavaScript SDKs reject them the same way.
+//!
+//! A query scoped to a single logical partition is unaffected: it never
+//! reaches this module (the driver short-circuits it to a trivial pipeline
+//! before query planning), so the backend does the sorting and any sort key
+//! is fine. The peer SDKs draw the same line — their rejection also lives
+//! in the cross-partition merge comparator.
 //!
 //! # Type order
 //!
@@ -24,7 +40,6 @@ use std::cmp::Ordering;
 
 use serde::{Deserialize, Serialize};
 
-use super::distinct_hash::distinct_hash;
 use super::query_plan::SortOrder;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -50,9 +65,7 @@ pub(crate) enum OrderByItem {
     Number(OrderByNumber),
     String(String),
     Array(Vec<OrderByItem>),
-    /// Key/value pairs in wire order. Comparison hashes the object with the
-    /// backend / .NET `DistinctHash` (order-independent), so differently-ordered
-    /// wire keys still compare equal.
+    /// Key/value pairs in wire order.
     Object(Vec<(String, OrderByItem)>),
 }
 
@@ -283,6 +296,19 @@ impl OrderByItem {
         }
     }
 
+    /// The JSON type name of this item, for diagnostics.
+    pub(crate) fn type_name(&self) -> &'static str {
+        match self {
+            Self::Undefined => "undefined",
+            Self::Null => "null",
+            Self::Boolean(_) => "bool",
+            Self::Number(_) => "number",
+            Self::String(_) => "string",
+            Self::Array(_) => "array",
+            Self::Object(_) => "object",
+        }
+    }
+
     /// Converts a JSON value into an `OrderByItem`. Never produces
     /// `Undefined` — only the wire-envelope parser does, for a missing
     /// `item` key.
@@ -337,11 +363,19 @@ impl Ord for OrderByItem {
             (Self::Boolean(a), Self::Boolean(b)) => a.cmp(b),
             (Self::Number(a), Self::Number(b)) => a.cmp(b),
             (Self::String(a), Self::String(b)) => compare_strings(a, b),
-            // Arrays and objects use .NET's bytewise `DistinctHash` order,
-            // matching the backend's per-partition order. Object property
-            // order does not matter because the hash folds it out.
-            (Self::Array(_), Self::Array(_)) | (Self::Object(_), Self::Object(_)) => {
-                ComplexHash::of(self).cmp(&ComplexHash::of(other))
+            // Unreachable from the streaming merge — `parse_order_by_items`
+            // rejects complex sort keys. Only the in-memory query oracle
+            // gets here, so a deterministic structural order is enough: the
+            // backend's own array/object order is a structural hash we
+            // deliberately no longer reproduce.
+            (Self::Array(a), Self::Array(b)) => a.cmp(b),
+            (Self::Object(a), Self::Object(b)) => {
+                let key = |o: &Vec<(String, Self)>| {
+                    let mut sorted = o.clone();
+                    sorted.sort_by(|(l, _), (r, _)| compare_strings(l, r));
+                    sorted
+                };
+                key(a).cmp(&key(b))
             }
             _ => unreachable!("rank_cmp already distinguished differing variants"),
         }
@@ -354,22 +388,18 @@ fn compare_strings(a: &str, b: &str) -> Ordering {
 
 impl OrderByItem {
     /// Converts this item to its bounded, serializable resume-value form.
-    pub(crate) fn to_resume_value(&self) -> OrderByResumeValue {
-        match self {
+    /// Returns `None` for a complex (array/object) value, which has no
+    /// resume representation — [`parse_order_by_items`] rejects those
+    /// before they can reach a boundary.
+    pub(crate) fn to_resume_value(&self) -> Option<OrderByResumeValue> {
+        Some(match self {
             Self::Undefined => OrderByResumeValue::Undefined,
             Self::Null => OrderByResumeValue::Null,
             Self::Boolean(b) => OrderByResumeValue::Boolean { value: *b },
             Self::Number(n) => OrderByResumeValue::Number { value: *n },
             Self::String(s) => OrderByResumeValue::String { value: s.clone() },
-            Self::Array(_) => OrderByResumeValue::Complex {
-                complex_type: ComplexTypeTag::Array,
-                hash: ComplexHash::of(self),
-            },
-            Self::Object(_) => OrderByResumeValue::Complex {
-                complex_type: ComplexTypeTag::Object,
-                hash: ComplexHash::of(self),
-            },
-        }
+            Self::Array(_) | Self::Object(_) => return None,
+        })
     }
 
     #[cfg(test)]
@@ -383,8 +413,9 @@ impl OrderByItem {
 /// array of length `expected_len`, each element a JSON object; a missing
 /// `item` key parses as [`OrderByItem::Undefined`].
 ///
-/// Returns a typed [`crate::error::CosmosError`] (not a panic) for any
-/// shape violation.
+/// Rejects a sort key that evaluates to an array or object — see the
+/// module docs. Returns a typed [`crate::error::CosmosError`] (not a
+/// panic) for any violation.
 pub(crate) fn parse_order_by_items(
     value: &serde_json::Value,
     expected_len: usize,
@@ -403,17 +434,24 @@ pub(crate) fn parse_order_by_items(
     }
     elements
         .iter()
-        .map(|element| {
+        .enumerate()
+        .map(|(column, element)| {
             let obj = element.as_object().ok_or_else(|| {
                 envelope_error(format!(
                     "rewritten envelope `orderByItems` entry must be a JSON object, found {}",
                     json_type_name(element)
                 ))
             })?;
-            Ok(match obj.get("item") {
-                Some(item) => OrderByItem::from_json(item),
-                None => OrderByItem::Undefined,
-            })
+            let Some(item) = obj.get("item") else {
+                return Ok(OrderByItem::Undefined);
+            };
+            if matches!(
+                item,
+                serde_json::Value::Array(_) | serde_json::Value::Object(_)
+            ) {
+                return Err(complex_order_by_error(column, json_type_name(item)));
+            }
+            Ok(OrderByItem::from_json(item))
         })
         .collect()
 }
@@ -433,6 +471,19 @@ fn envelope_error(message: impl Into<std::borrow::Cow<'static, str>>) -> crate::
     crate::error::CosmosError::builder()
         .with_status(crate::error::CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID)
         .with_message(message)
+        .build()
+}
+
+/// The user-facing "complex sort key" rejection. `column` is the
+/// zero-based `ORDER BY` column index.
+pub(crate) fn complex_order_by_error(column: usize, found: &str) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED)
+        .with_message(format!(
+            "ORDER BY column {column} sorts on a value that evaluated to a JSON {found}. \
+             Sorting on array or object values is not currently supported; ORDER BY a \
+             scalar value instead."
+        ))
         .build()
 }
 
@@ -474,113 +525,38 @@ pub(crate) fn compare_rids(a: &str, b: &str, direction: SortOrder) -> Ordering {
     }
 }
 
-/// Discriminates which complex JSON shape a hashed resume value came from,
-/// so two colliding hashes from different shapes are never a tie.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub(crate) enum ComplexTypeTag {
-    Array,
-    Object,
-}
-
-/// A bounded 128-bit hash of a complex (array/object) `ORDER BY` value,
-/// split into low/high halves for JSON round-tripping.
-///
-/// This is the backend / .NET SDK structural `DistinctHash` (see
-/// [`super::distinct_hash`]), so it is byte-identical to the hash the
-/// backend derives for the same array/object value. That is what makes a
-/// structured `resumeFilter` seek correctly from a complex boundary,
-/// including across a partition split or merge. Structurally-equal values
-/// hash equal regardless of object property order.
-///
-/// Ordering matches .NET's `UInt128BinaryComparer`: compare each half with
-/// its bytes reversed, low half first. This is the backend's per-partition
-/// complex-value order. An exact-hash tie is broken by `_rid`/`skip_count`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct ComplexHash {
-    pub(crate) low64: u64,
-    pub(crate) high64: u64,
-}
-
-impl ComplexHash {
-    fn of(item: &OrderByItem) -> Self {
-        let hash = distinct_hash(item);
-        Self {
-            low64: hash as u64,
-            high64: (hash >> 64) as u64,
-        }
-    }
-
-    fn binary_order_key(self) -> (u64, u64) {
-        (self.low64.swap_bytes(), self.high64.swap_bytes())
-    }
-}
-
-impl PartialOrd for ComplexHash {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for ComplexHash {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.binary_order_key().cmp(&other.binary_order_key())
-    }
-}
-
 /// The bounded, serializable representation of one column's "last emitted"
-/// value, persisted in a continuation token. Scalars round-trip exactly;
-/// arrays/objects are represented only by their [`ComplexHash`], so a
-/// token never grows with document size.
+/// value, persisted in a continuation token. Every variant round-trips
+/// exactly, so a token never grows with document size — complex sort keys
+/// have no resume representation because they are rejected outright (see
+/// the module docs).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub(crate) enum OrderByResumeValue {
     Undefined,
     Null,
-    Boolean {
-        value: bool,
-    },
-    Number {
-        value: OrderByNumber,
-    },
-    String {
-        value: String,
-    },
-    Complex {
-        complex_type: ComplexTypeTag,
-        hash: ComplexHash,
-    },
+    Boolean { value: bool },
+    Number { value: OrderByNumber },
+    String { value: String },
 }
 
 impl OrderByResumeValue {
-    /// Whether this boundary column is a complex (array/object) value,
-    /// represented only by its bounded [`ComplexHash`].
+    /// Reconstructs the [`OrderByItem`] this came from.
     #[cfg(test)]
-    pub(crate) fn is_complex(&self) -> bool {
-        matches!(self, Self::Complex { .. })
-    }
-
-    /// Reconstructs the [`OrderByItem`] this came from, or `None` for
-    /// [`Self::Complex`] (bytes aren't recoverable from the hash).
-    #[cfg(test)]
-    pub(crate) fn to_scalar_order_by_item(&self) -> Option<OrderByItem> {
+    pub(crate) fn to_order_by_item(&self) -> OrderByItem {
         match self {
-            Self::Undefined => Some(OrderByItem::Undefined),
-            Self::Null => Some(OrderByItem::Null),
-            Self::Boolean { value } => Some(OrderByItem::Boolean(*value)),
-            Self::Number { value } => Some(OrderByItem::Number(*value)),
-            Self::String { value } => Some(OrderByItem::String(value.clone())),
-            Self::Complex { .. } => None,
+            Self::Undefined => OrderByItem::Undefined,
+            Self::Null => OrderByItem::Null,
+            Self::Boolean { value } => OrderByItem::Boolean(*value),
+            Self::Number { value } => OrderByItem::Number(*value),
+            Self::String { value } => OrderByItem::String(value.clone()),
         }
     }
 
     /// The .NET-compatible wire form of this resume value for a query
     /// body's `resumeFilter.value` array (distinct from the token/snapshot
-    /// serde form): `Undefined` -> `[]`; `Null`/`Boolean`/`Number`/`String`
-    /// -> the raw JSON value (integers keep exact i64/u64 precision); a
-    /// complex (array/object) value -> `{"type":..,"low":<i64>,"high":<i64>}`
-    /// where `low`/`high` reinterpret the 64-bit hash halves' bit patterns
-    /// as signed integers (matching .NET's `(long)ulong` cast).
+    /// serde form): `Undefined` -> `[]`; every other variant -> the raw
+    /// JSON value (integers keep exact i64/u64 precision).
     fn to_wire_value(&self) -> serde_json::Value {
         match self {
             Self::Undefined => serde_json::Value::Array(Vec::new()),
@@ -588,17 +564,6 @@ impl OrderByResumeValue {
             Self::Boolean { value } => serde_json::Value::Bool(*value),
             Self::Number { value } => value.to_json_value(),
             Self::String { value } => serde_json::Value::String(value.clone()),
-            Self::Complex { complex_type, hash } => {
-                let type_name = match complex_type {
-                    ComplexTypeTag::Array => "array",
-                    ComplexTypeTag::Object => "object",
-                };
-                serde_json::json!({
-                    "type": type_name,
-                    "low": hash.low64 as i64,
-                    "high": hash.high64 as i64,
-                })
-            }
         }
     }
 
@@ -609,10 +574,6 @@ impl OrderByResumeValue {
             Self::Boolean { .. } => CosmosType::Boolean,
             Self::Number { .. } => CosmosType::Number,
             Self::String { .. } => CosmosType::String,
-            Self::Complex { complex_type, .. } => match complex_type {
-                ComplexTypeTag::Array => CosmosType::Array,
-                ComplexTypeTag::Object => CosmosType::Object,
-            },
         }
     }
 }
@@ -651,9 +612,9 @@ pub(crate) fn resume_filter_json(
 
 /// One column's ascending Cosmos comparison of a returned row's `item`
 /// against a persisted resume-boundary `value`. Cross-type pairs order by
-/// Cosmos type rank; same-type scalars by value; same-type complex
-/// (array/object) values by their exact backend / .NET `DistinctHash`
-/// ([`ComplexHash`]) using .NET's bytewise hash order.
+/// Cosmos type rank; same-type values by value. A complex `item` only
+/// ranks by type here — it is rejected before reaching the discard (see
+/// the module docs), so it never ties with a boundary column.
 fn column_cmp(item: &OrderByItem, value: &OrderByResumeValue) -> Ordering {
     let rank_cmp = item.cosmos_type().cmp(&value.cosmos_type());
     if rank_cmp != Ordering::Equal {
@@ -665,10 +626,6 @@ fn column_cmp(item: &OrderByItem, value: &OrderByResumeValue) -> Ordering {
         (OrderByItem::Boolean(a), OrderByResumeValue::Boolean { value }) => a.cmp(value),
         (OrderByItem::Number(a), OrderByResumeValue::Number { value }) => a.cmp(value),
         (OrderByItem::String(a), OrderByResumeValue::String { value }) => compare_strings(a, value),
-        (
-            OrderByItem::Array(_) | OrderByItem::Object(_),
-            OrderByResumeValue::Complex { hash, .. },
-        ) => ComplexHash::of(item).cmp(hash),
         _ => unreachable!("type rank already distinguished differing variants"),
     }
 }
@@ -687,15 +644,13 @@ pub(crate) enum RowVsBoundary {
 
 /// Classifies a returned row's key tuple against a persisted resume boundary
 /// (bounded [`OrderByResumeValue`]s), applying each column's direction and
-/// stopping at the first non-equal column — the mixed-scalar/complex
-/// counterpart of [`compare_key_tuples`], used by the client-side discard.
+/// stopping at the first non-equal column — the row-vs-boundary counterpart
+/// of [`compare_key_tuples`], used by the client-side discard.
 ///
-/// Every column — scalar, cross-type, or complex — yields a definite
-/// ordering: a complex column compares by the backend's exact `DistinctHash`
-/// ([`column_cmp`]), so a row is reported [`RowVsBoundary::Before`]
-/// (droppable) whenever it sorts before the boundary in that same order.
-/// Panics on a length mismatch; callers validate column-count agreement
-/// first.
+/// Every column yields a definite ordering (see [`column_cmp`]), so a row
+/// is reported [`RowVsBoundary::Before`] (droppable) exactly when it sorts
+/// before the boundary. Panics on a length mismatch; callers validate
+/// column-count agreement first.
 pub(crate) fn classify_row_vs_boundary(
     keys: &[OrderByItem],
     resume_values: &[OrderByResumeValue],
@@ -780,7 +735,10 @@ mod tests {
     }
 
     #[test]
-    fn arrays_order_by_distinct_hash_not_structurally() {
+    fn complex_items_compare_structurally_for_the_in_memory_oracle() {
+        // Complex sort keys are rejected before they ever reach the merge
+        // (see `parse_order_by_items`), so this ordering only has to be
+        // deterministic and total for the in-memory query oracle.
         let arr = |vs: &[i64]| {
             OrderByItem::Array(
                 vs.iter()
@@ -788,24 +746,15 @@ mod tests {
                     .collect(),
             )
         };
-        // Structurally `[2] < [3]`, but .NET's bytewise DistinctHash order
-        // places `[3]` first.
-        assert_eq!(arr(&[2]).cosmos_cmp(&arr(&[3])), Ordering::Greater);
-        // The comparison is exactly .NET's bytewise `DistinctHash` order.
-        let vectors = [arr(&[0]), arr(&[1]), arr(&[2]), arr(&[1, 2]), arr(&[2, 1])];
-        for a in &vectors {
-            for b in &vectors {
-                assert_eq!(a.cosmos_cmp(b), ComplexHash::of(a).cmp(&ComplexHash::of(b)));
-            }
-        }
-        // Structurally-equal arrays still tie (equal hash).
-        assert_eq!(arr(&[1, 2]).cosmos_cmp(&arr(&[1, 2])), Ordering::Equal);
+        assert_eq!(arr(&[2]).cmp(&arr(&[3])), Ordering::Less);
+        assert_eq!(arr(&[1]).cmp(&arr(&[1, 2])), Ordering::Less);
+        assert_eq!(arr(&[1, 2]).cmp(&arr(&[1, 2])), Ordering::Equal);
     }
 
     #[test]
-    fn objects_order_by_distinct_hash_and_ignore_property_order() {
-        // Same content, different wire key order -> equal (the hash folds
-        // property order out), so a differently-serialized object still ties.
+    fn objects_compare_structurally_and_ignore_property_order() {
+        // Property order is a serialization detail, so the same content in a
+        // different wire order must still tie.
         let a = OrderByItem::Object(vec![
             ("b".to_owned(), OrderByItem::Number(1_i64.into())),
             ("a".to_owned(), OrderByItem::Number(2_i64.into())),
@@ -814,71 +763,11 @@ mod tests {
             ("a".to_owned(), OrderByItem::Number(2_i64.into())),
             ("b".to_owned(), OrderByItem::Number(1_i64.into())),
         ]);
-        assert_eq!(
-            a.cosmos_cmp(&b),
-            Ordering::Equal,
-            "same content, different wire key order hashes equal"
-        );
+        assert_eq!(a.cmp(&b), Ordering::Equal);
 
-        // Structurally `{a:2} < {a:3}` (value 2 < 3), but objects order by
-        // `DistinctHash`: hash({a:2})=0xe57aeb1c.. > hash({a:3})=0x0322c08f..,
-        // so it inverts to `Greater` (matching .NET / Java).
         let o2 = OrderByItem::Object(vec![("a".to_owned(), OrderByItem::Number(2_i64.into()))]);
         let o3 = OrderByItem::Object(vec![("a".to_owned(), OrderByItem::Number(3_i64.into()))]);
-        assert_eq!(o2.cosmos_cmp(&o3), Ordering::Greater);
-        assert_eq!(
-            o2.cosmos_cmp(&o3),
-            ComplexHash::of(&o2).cmp(&ComplexHash::of(&o3))
-        );
-    }
-
-    #[test]
-    fn complex_hash_orders_like_dotnet_binary_comparer() {
-        // .NET compares reversed bytes of the low half first, then the high
-        // half. This is bytewise hash order, not numeric UInt128 order.
-        let hash = |high64: u64, low64: u64| ComplexHash { low64, high64 };
-        assert_eq!(hash(1, 0).cmp(&hash(0, u64::MAX)), Ordering::Less);
-        assert_eq!(hash(5, 0x0100).cmp(&hash(5, 1)), Ordering::Less);
-        assert_eq!(hash(1, 7).cmp(&hash(2, 7)), Ordering::Less);
-        assert_eq!(hash(7, 7).cmp(&hash(7, 7)), Ordering::Equal);
-    }
-
-    #[test]
-    fn complex_hash_ordering_matches_order_by_item_ordering() {
-        // The boundary discard compares `ComplexHash::of(item)` against a
-        // stored hash; that must agree with the merge's `OrderByItem` order,
-        // so both use the same backend bytewise `DistinctHash` ordering.
-        let arr = |v: i64| OrderByItem::Array(vec![OrderByItem::Number(v.into())]);
-        let vectors = [
-            arr(0),
-            arr(1),
-            arr(2),
-            arr(3),
-            arr(4),
-            arr(5),
-            arr(6),
-            arr(10),
-        ];
-        let mut sorted = vectors.clone();
-        sorted.sort();
-        assert_eq!(
-            sorted,
-            [
-                arr(0),
-                arr(1),
-                arr(5),
-                arr(3),
-                arr(2),
-                arr(4),
-                arr(10),
-                arr(6),
-            ]
-        );
-        for a in &vectors {
-            for b in &vectors {
-                assert_eq!(a.cmp(b), ComplexHash::of(a).cmp(&ComplexHash::of(b)));
-            }
-        }
+        assert_eq!(o2.cmp(&o3), Ordering::Less);
     }
 
     // ── OrderByNumber: lossless cross-variant comparison ────────────────
@@ -1111,7 +1000,7 @@ mod tests {
             OrderByNumber::from(9_007_199_254_740_993_i64), // 2^53 + 1
         ] {
             let item = OrderByItem::Number(number);
-            let resume = item.to_resume_value();
+            let resume = item.to_resume_value().expect("scalar");
             let json = serde_json::to_string(&resume).unwrap();
             let back: OrderByResumeValue = serde_json::from_str(&json).unwrap();
             assert_eq!(
@@ -1119,8 +1008,8 @@ mod tests {
                 "token round-trip must preserve the exact value for {number:?}"
             );
             assert_eq!(
-                back.to_scalar_order_by_item(),
-                Some(OrderByItem::Number(number)),
+                back.to_order_by_item(),
+                OrderByItem::Number(number),
                 "must reconstruct the exact numeric variant, not a lossy float, for {number:?}"
             );
             // `OrderByNumber`'s `PartialEq` is intentionally value-based
@@ -1136,36 +1025,6 @@ mod tests {
                  numeric value, for {number:?}"
             );
         }
-    }
-
-    #[test]
-    fn complex_hash_distinguishes_adjacent_large_integers() {
-        // Integers within `i64` range take the exact `Number64` long path
-        // (mantissa + `extraBits`), so adjacent values beyond 2^53 never
-        // collide the way a lossy `f64` cast would.
-        let a = OrderByItem::Array(vec![OrderByItem::Number(9_007_199_254_740_992_i64.into())]);
-        let b = OrderByItem::Array(vec![OrderByItem::Number(9_007_199_254_740_993_i64.into())]);
-        assert_ne!(a.to_resume_value(), b.to_resume_value());
-
-        // Even at the very top of the `i64` range the `extraBits` keep
-        // adjacent values distinct.
-        let c = OrderByItem::Object(vec![(
-            "n".to_owned(),
-            OrderByItem::Number((i64::MAX - 1).into()),
-        )]);
-        let d = OrderByItem::Object(vec![("n".to_owned(), OrderByItem::Number(i64::MAX.into()))]);
-        assert_ne!(c.to_resume_value(), d.to_resume_value());
-
-        // Above `i64::MAX`, `Number64` can only carry the value as a `double`
-        // (matching the backend), so `u64::MAX` and `u64::MAX - 1` both round
-        // to 2^64 and intentionally share a hash — the client must agree with
-        // the backend's lossy representation, not out-precision it.
-        let e = OrderByItem::Object(vec![(
-            "n".to_owned(),
-            OrderByItem::Number((u64::MAX - 1).into()),
-        )]);
-        let f = OrderByItem::Object(vec![("n".to_owned(), OrderByItem::Number(u64::MAX.into()))]);
-        assert_eq!(e.to_resume_value(), f.to_resume_value());
     }
 
     // ── Envelope parsing ─────────────────────────────────────────────────
@@ -1242,42 +1101,24 @@ mod tests {
             OrderByItem::Number(5.5.into()),
             OrderByItem::String("s".into()),
         ] {
-            let resume = item.to_resume_value();
+            let resume = item.to_resume_value().expect("scalar");
             let json = serde_json::to_string(&resume).unwrap();
             let back: OrderByResumeValue = serde_json::from_str(&json).unwrap();
             assert_eq!(back, resume);
             // A scalar resume value reconstructs to the exact item it came
             // from (the basis of the `_rid`-aware client-side discard).
-            assert_eq!(resume.to_scalar_order_by_item(), Some(item));
+            assert_eq!(resume.to_order_by_item(), item);
         }
     }
 
     #[test]
-    fn complex_resume_values_hash_deterministically_and_distinguish_shape() {
-        let array = OrderByItem::Array(vec![
-            OrderByItem::Number(1.0.into()),
-            OrderByItem::Number(2.0.into()),
-        ]);
+    fn complex_items_have_no_resume_value() {
+        // Complex sort keys are rejected at envelope-parse time, so they
+        // never need a token representation.
+        let array = OrderByItem::Array(vec![OrderByItem::Number(1.0.into())]);
         let object = OrderByItem::Object(vec![("x".to_owned(), OrderByItem::Number(1.0.into()))]);
-
-        let array_resume = array.to_resume_value();
-        assert!(array_resume.is_complex());
-        // An array and an object never share a resume value even if their
-        // hashes were to collide: the shape tag differs.
-        assert_ne!(array_resume, object.to_resume_value());
-
-        // Same content, different wire key order -> identical resume value
-        // (structurally-equal objects hash identically).
-        let reordered_object_source = serde_json::json!({"x": 1.0});
-        let reordered = OrderByItem::from_json(&reordered_object_source);
-        assert_eq!(reordered.to_resume_value(), object.to_resume_value());
-    }
-
-    #[test]
-    fn distinct_arrays_do_not_share_a_resume_value() {
-        let a = OrderByItem::Array(vec![OrderByItem::Number(1.0.into())]);
-        let b = OrderByItem::Array(vec![OrderByItem::Number(2.0.into())]);
-        assert_ne!(a.to_resume_value(), b.to_resume_value());
+        assert_eq!(array.to_resume_value(), None);
+        assert_eq!(object.to_resume_value(), None);
     }
 
     // ── Resume filter wire model ─────────────────────────────────────────
@@ -1344,52 +1185,6 @@ mod tests {
     }
 
     #[test]
-    fn complex_wire_value_reinterprets_hash_halves_as_signed_i64() {
-        // The `low`/`high` halves are the 64-bit hash bits cast to signed
-        // i64 (matching .NET's `(long)ulong`): the top-bit-set half is
-        // negative, the other stays positive.
-        let value = OrderByResumeValue::Complex {
-            complex_type: ComplexTypeTag::Array,
-            hash: ComplexHash {
-                low64: u64::MAX,
-                high64: 1,
-            },
-        };
-        assert_eq!(
-            value.to_wire_value(),
-            serde_json::json!({"type": "array", "low": -1_i64, "high": 1_i64})
-        );
-
-        let object = OrderByResumeValue::Complex {
-            complex_type: ComplexTypeTag::Object,
-            hash: ComplexHash {
-                low64: 0x8000_0000_0000_0000,
-                high64: 0x7fff_ffff_ffff_ffff,
-            },
-        };
-        assert_eq!(
-            object.to_wire_value(),
-            serde_json::json!({"type": "object", "low": i64::MIN, "high": i64::MAX})
-        );
-    }
-
-    #[test]
-    fn complex_wire_value_round_trips_the_real_hash_bits() {
-        let array = OrderByItem::Array(vec![OrderByItem::Number(1.0.into())]).to_resume_value();
-        let OrderByResumeValue::Complex { hash, .. } = array else {
-            panic!("array resume value must be complex");
-        };
-        assert_eq!(
-            array.to_wire_value(),
-            serde_json::json!({
-                "type": "array",
-                "low": hash.low64 as i64,
-                "high": hash.high64 as i64,
-            })
-        );
-    }
-
-    #[test]
     fn resume_filter_json_is_target_style_with_rid_and_exclude_false() {
         let filter = resume_filter_json(
             &[
@@ -1448,33 +1243,6 @@ mod tests {
     }
 
     #[test]
-    fn classify_row_vs_boundary_complex_orders_by_hash() {
-        let arr = |v: i64| OrderByItem::Array(vec![OrderByItem::Number(v.into())]);
-        // Boundary is the array `[5]` (hash 0x307df76d..).
-        let boundary = [arr(5).to_resume_value()];
-        let directions = [SortOrder::Ascending];
-        // The same array ties the complex boundary (equal hash).
-        assert!(matches!(
-            classify_row_vs_boundary(&[arr(5)], &boundary, &directions),
-            RowVsBoundary::Tie
-        ));
-        // Classification matches the same bytewise hash order as the merge.
-        for v in [0_i64, 1, 2, 3, 4, 6, 10] {
-            let expected = match ComplexHash::of(&arr(v)).cmp(&ComplexHash::of(&arr(5))) {
-                Ordering::Less => "before",
-                Ordering::Greater => "after",
-                Ordering::Equal => "tie",
-            };
-            let got = match classify_row_vs_boundary(&[arr(v)], &boundary, &directions) {
-                RowVsBoundary::Before => "before",
-                RowVsBoundary::After => "after",
-                RowVsBoundary::Tie => "tie",
-            };
-            assert_eq!(got, expected, "array [{v}] vs boundary [5]");
-        }
-    }
-
-    #[test]
     fn classify_row_vs_boundary_orders_across_types() {
         // A String row is always after a Number boundary (type rank).
         assert!(matches!(
@@ -1508,10 +1276,8 @@ mod tests {
             OrderByItem::Number(3.5.into()),
             OrderByItem::String("x".into()),
         ] {
-            let resume = item.to_resume_value();
-            assert_eq!(resume.to_scalar_order_by_item(), Some(item));
+            let resume = item.to_resume_value().expect("scalar");
+            assert_eq!(resume.to_order_by_item(), item);
         }
-        let complex = OrderByItem::Array(vec![OrderByItem::Number(1.0.into())]).to_resume_value();
-        assert_eq!(complex.to_scalar_order_by_item(), None);
     }
 }

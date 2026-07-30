@@ -533,33 +533,6 @@ mod tests {
         assert_eq!(parsed, state);
     }
 
-    #[test]
-    fn streaming_ordered_merge_round_trips_complex_value_boundary() {
-        let state = PipelineNodeState::StreamingOrderedMerge {
-            directions: vec![SortOrder::Ascending],
-            query_fingerprint: None,
-            ranges: vec![OrderByRangeToken {
-                min_epk: "40".to_owned(),
-                max_epk: "80".to_owned(),
-                server_continuation: None,
-                boundary: Some(ValueBoundary {
-                    resume_values: vec![OrderByResumeValue::Complex {
-                        complex_type: super::super::order_by::ComplexTypeTag::Array,
-                        hash: super::super::order_by::ComplexHash {
-                            low64: 1,
-                            high64: 2,
-                        },
-                    }],
-                    last_rid: "rid-2".to_owned(),
-                    skip_count: 1,
-                }),
-            }],
-        };
-        let json = serde_json::to_string(&state).unwrap();
-        let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed, state);
-    }
-
     /// A boundary's `skip_count` round-trips, and a token that predates the
     /// field parses as `skip_count: 1` (via `default_boundary_skip_count`), so
     /// an older continuation token never fails to deserialize and still drops

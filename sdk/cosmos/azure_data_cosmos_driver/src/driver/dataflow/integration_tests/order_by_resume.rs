@@ -17,7 +17,7 @@ use std::{sync::Arc, time::Duration};
 
 use super::super::{
     mocks::{MockRequestExecutor, MockTopologyProvider},
-    order_by::{OrderByItem, OrderByResumeValue},
+    order_by::OrderByResumeValue,
     planner::build_streaming_ordered_merge,
     query_plan::{QueryInfo, QueryPlan, QueryRange, SortOrder},
     snapshot::{OrderByRangeToken, ValueBoundary},
@@ -416,7 +416,7 @@ async fn slow_consumer_fetches_only_one_head_page_per_partition() {
     assert_eq!(
         executor.continuation_calls.len(),
         2,
-        "first output page may prime one backend page per partition, but no more"
+        "first output page may fetch one backend page per partition, but no more"
     );
 
     tokio::time::sleep(Duration::from_millis(10)).await;
@@ -783,12 +783,12 @@ async fn split_mid_merge_splices_replacements_and_preserves_order() {
 
 /// Regression for the in-flight split ordering defect: the split happens
 /// while *replenishing the popped winner mid-pop-loop* (not during the
-/// initial prime), fanning P0 into two sub-ranges. Both replacements must be
-/// primed before the next selection, or P0b's `10, 20` would be skipped and
+/// initial fill), fanning P0 into two sub-ranges. Both replacements must be
+/// filled before the next selection, or P0b's `10, 20` would be skipped and
 /// P1's `50` emitted ahead of them. A default (large) page cap keeps popping
 /// within a single page so the mis-ordering would surface immediately.
 #[tokio::test]
-async fn split_during_replenish_primes_all_replacements_preserving_order() {
+async fn split_during_replenish_fills_all_replacements_preserving_order() {
     let op = order_by_operation();
     let plan = order_by_plan();
 
@@ -1017,125 +1017,34 @@ async fn resume_after_split_with_emitted_ties_has_no_omissions_or_duplicates() {
     );
 }
 
-/// A complex (array/object) boundary now also resumes across a split via
-/// the structured `resumeFilter`, discarding already-emitted ties by hash +
-/// `_rid` client-side — no more topology-change rejection.
+/// Array/object ORDER BY sort keys are not supported: the envelope parser
+/// rejects the page deterministically instead of silently mis-ordering it
+/// (matching the Python and JavaScript SDKs). Sorting complex values needs
+/// the backend's structural hash order, which the client cannot reproduce
+/// from JSON alone.
 #[tokio::test]
-async fn resume_complex_boundary_across_split_has_no_omissions_or_duplicates() {
+async fn complex_order_by_values_are_rejected() {
     let op = order_by_operation();
     let plan = order_by_plan();
-    // Boundary is the array `[5]`, last emitted at rid "c". Built from the
-    // same integer representation the envelope rows carry, so the hashes match.
-    let complex = OrderByItem::Array(vec![OrderByItem::Number(5_i64.into())]).to_resume_value();
-    let resumed_state = PipelineNodeState::StreamingOrderedMerge {
-        directions: vec![SortOrder::Ascending],
-        query_fingerprint: None,
-        ranges: vec![OrderByRangeToken {
-            min_epk: String::new(),
-            max_epk: "FF".to_owned(),
-            server_continuation: None,
-            boundary: Some(ValueBoundary {
-                resume_values: vec![complex],
-                last_rid: label_rid("c"),
-                skip_count: 1,
-            }),
-        }],
-    };
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut executor = MockRequestExecutor::new(vec![Ok(array_envelope_page(&[("a", 5)], None))]);
 
-    // The saved range resolves to two post-split sub-ranges.
-    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
-    ])]);
-    // Every row ties on the same array `[5]` (a whole tie run split across
-    // the two sub-ranges). Per-range `_rid` discard removes a, b, and c;
-    // e and d survive and merge in EPK-range order. Distinct-hash ordering is covered by
-    // `resume_distinct_complex_boundary_across_split_drops_before_keeps_after`.
-    let mut executor = MockRequestExecutor::new(vec![
-        Ok(array_envelope_page(&[("a", 5), ("c", 5), ("e", 5)], None)),
-        Ok(array_envelope_page(&[("b", 5), ("d", 5)], None)),
-    ]);
-
-    let mut pipeline =
-        build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resumed_state))
-            .await
-            .expect("a complex boundary now resumes across a split");
-    // Assert the resume-filtered request bodies carry the structured
-    // complex `resumeFilter` (reaching the executor), then check ordering.
-    let ids = drain_all(&mut pipeline, &mut executor).await;
-    for i in 0..2 {
-        assert_is_complex_resume_filtered_query(&executor.body_text(i));
-    }
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+        .await
+        .expect("planning succeeds; the complex value only surfaces on the first page");
+    let mut noop = super::super::mocks::NoopTopologyProvider;
+    let mut context = PipelineContext::new(&mut executor, Some(&mut noop));
+    let error = pipeline
+        .next_page(&mut context)
+        .await
+        .expect_err("an array ORDER BY value must fail the query");
     assert_eq!(
-        ids,
-        vec!["e", "d"]
-            .into_iter()
-            .map(str::to_owned)
-            .collect::<Vec<_>>(),
-        "already-emitted tied rows (a, b, c) are dropped per range; the \
-         unemitted tied rows (e, d) survive in range order with no duplicates"
+        error.status().sub_status(),
+        Some(crate::error::SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
     );
-}
-
-/// Distinct complex values across a split: the boundary is the array `[3]`,
-/// and each post-split sub-range returns a mix of provably-before, boundary,
-/// and after values. The client discard drops rows whose exact `DistinctHash`
-/// sorts before the boundary (already emitted, since the backend sorts complex
-/// values in that same hash order) plus the boundary tie, and keeps the
-/// after-boundary rows — which then merge in global hash order with no
-/// omissions or duplicates.
-#[tokio::test]
-async fn resume_distinct_complex_boundary_across_split_drops_before_keeps_after() {
-    let op = order_by_operation();
-    let plan = order_by_plan();
-    let complex = OrderByItem::Array(vec![OrderByItem::Number(3_i64.into())]).to_resume_value();
-    let resumed_state = PipelineNodeState::StreamingOrderedMerge {
-        directions: vec![SortOrder::Ascending],
-        query_fingerprint: None,
-        ranges: vec![OrderByRangeToken {
-            min_epk: String::new(),
-            max_epk: "FF".to_owned(),
-            server_continuation: None,
-            boundary: Some(ValueBoundary {
-                resume_values: vec![complex],
-                last_rid: label_rid("at-3"),
-                skip_count: 1,
-            }),
-        }],
-    };
-
-    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
-    ])]);
-    // Each sub-range page is locally hash-sorted (as a backend page is).
-    // Bytewise hash order: [5] < [3] < [2] < [6].
-    // Left: the boundary tie `at-3` (dropped by rid+skip) then `after-2`.
-    // Right: `before-5` (hash before boundary -> dropped) then `after-6`.
-    let mut executor = MockRequestExecutor::new(vec![
-        Ok(array_envelope_page(&[("at-3", 3), ("after-2", 2)], None)),
-        Ok(array_envelope_page(
-            &[("before-5", 5), ("after-6", 6)],
-            None,
-        )),
-    ]);
-
-    let mut pipeline =
-        build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resumed_state))
-            .await
-            .expect("a distinct complex boundary resumes across a split");
-    let ids = drain_all(&mut pipeline, &mut executor).await;
-    for i in 0..2 {
-        assert_is_complex_resume_filtered_query(&executor.body_text(i));
-    }
-    assert_eq!(
-        ids,
-        vec!["after-2", "after-6"]
-            .into_iter()
-            .map(str::to_owned)
-            .collect::<Vec<_>>(),
-        "provably-before (before-5) and the boundary tie (at-3) are dropped; \
-         after-boundary rows (after-2, after-6) survive in hash order, no duplicates"
+    assert!(
+        error.to_string().contains("not currently supported"),
+        "the error must say complex sort keys are unsupported: {error}"
     );
 }
 
@@ -1295,27 +1204,6 @@ fn assert_is_resume_filtered_query(body: &str) {
         filter["exclude"],
         serde_json::Value::Bool(false),
         "Rust resumes target-style with exclude:false: {body}"
-    );
-}
-
-/// Like [`assert_is_resume_filtered_query`], but for a complex (array)
-/// boundary: the single resume value is the typed hash object with signed
-/// `low`/`high` halves.
-fn assert_is_complex_resume_filtered_query(body: &str) {
-    let value: serde_json::Value =
-        serde_json::from_str(body).expect("recorded request body must be valid JSON");
-    let entry = &value["resumeFilter"]["value"][0];
-    assert_eq!(
-        entry["type"], "array",
-        "a complex array boundary serializes as a typed hash: {body}"
-    );
-    assert!(
-        entry["low"].is_i64() && entry["high"].is_i64(),
-        "the hash halves are signed i64 (matching .NET's (long)ulong): {body}"
-    );
-    assert_eq!(
-        value["resumeFilter"]["exclude"],
-        serde_json::Value::Bool(false)
     );
 }
 

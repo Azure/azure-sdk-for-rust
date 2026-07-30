@@ -38,11 +38,10 @@
 //! child's `last_emitted` bookkeeping (for `skip_count` accumulation and
 //! future snapshots) and installs *no* client-side discard on the first
 //! replacement page — reapplying one would wrongly drop later JOIN rows that
-//! share the boundary `(key, _rid)`. This holds for scalar and complex
-//! boundaries alike. A **saved-token** resume across a split instead rebuilds
-//! each range through the structured `resumeFilter` (see
-//! [`build_value_boundary_child`]), whose backend `DistinctHash` seek handles
-//! scalar and complex boundaries alike. A replacement that carries no usable
+//! share the boundary `(key, _rid)`. A **saved-token** resume across a split
+//! instead rebuilds each range through the structured `resumeFilter` (see
+//! [`build_value_boundary_child`]), whose backend seek skips past the
+//! boundary. A replacement that carries no usable
 //! continuation yet inherits an emitted boundary (a resume-filtered range that
 //! split before its first page, or a generic non-`Request` node) is rebuilt
 //! via that boundary discard when its shape allows, else rejected with a typed
@@ -66,8 +65,9 @@ use super::query_plan::SortOrder;
 use super::query_response::{self, PageAggregator};
 use super::snapshot::{OrderByRangeToken, ValueBoundary};
 use super::{
-    intersect_feed_ranges, PageResult, PipelineContext, PipelineNode, PipelineNodeState, Request,
-    RequestTarget, ResolvedRange,
+    intersect_feed_ranges, split_replacement_invalid, validate_exact_coverage, PageResult,
+    PipelineContext, PipelineNode, PipelineNodeState, Request, RequestTarget, ResolvedRange,
+    SplitReplacements,
 };
 
 /// Default emitted-page size when no `max_item_count` hint is set
@@ -126,6 +126,13 @@ enum PendingDiscard {
 }
 
 impl PendingDiscard {
+    /// Drops the leading rows of a freshly fetched page that were already
+    /// emitted before the resume point, per the three-phase seek documented on
+    /// [`PendingDiscard::ResumeBoundary`]. Self-clearing: once a row past the
+    /// boundary is seen the discard is spent and set to
+    /// [`PendingDiscard::None`], otherwise it stays armed (carrying any
+    /// remaining `skip_count`) so a run spanning several pages resolves
+    /// correctly. A no-op for [`PendingDiscard::None`].
     fn apply(
         &mut self,
         rows: &mut VecDeque<query_response::EnvelopeRow>,
@@ -235,8 +242,14 @@ impl ChildStream {
     /// `1`. Returns a typed error only on the (practically unreachable) u32
     /// overflow, so a boundary is never silently truncated.
     fn record_emission(&mut self, keys: &[OrderByItem], rid: &str) -> crate::error::Result<()> {
-        let resume_values: Vec<OrderByResumeValue> =
-            keys.iter().map(OrderByItem::to_resume_value).collect();
+        let resume_values: Vec<OrderByResumeValue> = keys
+            .iter()
+            .enumerate()
+            .map(|(column, key)| {
+                key.to_resume_value()
+                    .ok_or_else(|| super::order_by::complex_order_by_error(column, key.type_name()))
+            })
+            .collect::<crate::error::Result<_>>()?;
         let skip_count = match &self.last_emitted {
             Some(last) if last.rid == rid && last.resume_values == resume_values => {
                 last.skip_count.checked_add(1).ok_or_else(|| {
@@ -270,6 +283,70 @@ impl ChildStream {
             skip_count: le.skip_count,
         })
     }
+
+    /// Fetches until this stream has a buffered head row or is proven drained,
+    /// absorbing each page into `aggregator` and applying any
+    /// [`PendingDiscard`] to the first page. An empty page that still carries a
+    /// continuation is not terminal, so it is re-polled.
+    ///
+    /// A split is reported back rather than handled here: resolving one splices
+    /// replacements into the merge's `children`, which a single stream cannot
+    /// do. See [`StreamingOrderedMerge::handle_split`].
+    async fn ensure_filled(
+        &mut self,
+        context: &mut PipelineContext<'_>,
+        aggregator: &mut PageAggregator,
+        directions: &[SortOrder],
+    ) -> crate::error::Result<FillOutcome> {
+        loop {
+            if !self.buffered.is_empty() || self.drained {
+                return Ok(FillOutcome::Filled);
+            }
+
+            match self.node.next_page(context).await? {
+                PageResult::Page {
+                    response,
+                    is_terminal,
+                } => {
+                    aggregator.absorb(&response)?;
+                    let mut rows: VecDeque<query_response::EnvelopeRow> =
+                        query_response::parse_envelope_page(response.body(), directions.len())?
+                            .into();
+                    let fallback = directions.first().copied().unwrap_or(SortOrder::Ascending);
+                    let rid_direction =
+                        if matches!(&self.pending_discard, PendingDiscard::ResumeBoundary { .. }) {
+                            query_response::effective_rid_direction(response.headers(), fallback)?
+                        } else {
+                            fallback
+                        };
+                    self.pending_discard.apply(&mut rows, rid_direction);
+                    self.buffered = rows;
+                    if is_terminal {
+                        self.drained = true;
+                    }
+                    if !self.buffered.is_empty() || self.drained {
+                        return Ok(FillOutcome::Filled);
+                    }
+                    // Empty page with a continuation pending is not drained; re-poll.
+                }
+                PageResult::Drained => {
+                    self.drained = true;
+                    return Ok(FillOutcome::Filled);
+                }
+                PageResult::SplitRequired { replacements } => {
+                    return Ok(FillOutcome::SplitRequired { replacements });
+                }
+            }
+        }
+    }
+}
+
+/// Result of [`ChildStream::ensure_filled`].
+enum FillOutcome {
+    /// The stream has a buffered head row, or is proven drained.
+    Filled,
+    /// The stream's range split; the caller must splice these replacements in.
+    SplitRequired { replacements: SplitReplacements },
 }
 
 /// Streams cross-partition `ORDER BY` results in globally sorted order
@@ -319,9 +396,11 @@ impl StreamingOrderedMerge {
         }
     }
 
-    /// Ensures the child at `idx` has a buffered row or is drained,
-    /// fetching/splitting as needed. Absorbs pages into `aggregator`.
-    async fn prime_child(
+    /// Ensures the child at `idx` has a buffered row or is drained, fetching
+    /// and resolving splits as needed. Absorbs pages into `aggregator`.
+    /// Returns `true` if a split spliced replacements into `self.children`,
+    /// which invalidates every index at or after `idx`.
+    async fn ensure_stream_filled(
         &mut self,
         idx: usize,
         context: &mut PipelineContext<'_>,
@@ -330,53 +409,14 @@ impl StreamingOrderedMerge {
         let mut split_retries = 0;
         let mut topology_changed = false;
         loop {
-            if !self.children[idx].buffered.is_empty() || self.children[idx].drained {
-                return Ok(topology_changed);
-            }
-
-            match self.children[idx].node.next_page(context).await? {
-                PageResult::Page {
-                    response,
-                    is_terminal,
-                } => {
-                    aggregator.absorb(&response)?;
-                    self.session_token = aggregator.session_token().cloned();
-                    let mut rows: VecDeque<query_response::EnvelopeRow> =
-                        query_response::parse_envelope_page(
-                            response.body(),
-                            self.directions.len(),
-                        )?
-                        .into();
-                    let fallback = self
-                        .directions
-                        .first()
-                        .copied()
-                        .unwrap_or(SortOrder::Ascending);
-                    let rid_direction = if matches!(
-                        &self.children[idx].pending_discard,
-                        PendingDiscard::ResumeBoundary { .. }
-                    ) {
-                        query_response::effective_rid_direction(response.headers(), fallback)?
-                    } else {
-                        fallback
-                    };
-                    self.children[idx]
-                        .pending_discard
-                        .apply(&mut rows, rid_direction);
-                    self.children[idx].buffered = rows;
-                    if is_terminal {
-                        self.children[idx].drained = true;
-                    }
-                    if !self.children[idx].buffered.is_empty() || self.children[idx].drained {
-                        return Ok(topology_changed);
-                    }
-                    // Empty page with a continuation pending is not drained; re-poll.
-                }
-                PageResult::Drained => {
-                    self.children[idx].drained = true;
-                    return Ok(topology_changed);
-                }
-                PageResult::SplitRequired { replacement_nodes } => {
+            // Disjoint field borrows: `children` mutably, `directions` shared.
+            let outcome = self.children[idx]
+                .ensure_filled(context, aggregator, &self.directions)
+                .await?;
+            self.session_token = aggregator.session_token().cloned();
+            match outcome {
+                FillOutcome::Filled => return Ok(topology_changed),
+                FillOutcome::SplitRequired { replacements } => {
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
                         return Err(crate::error::CosmosError::builder()
@@ -387,7 +427,7 @@ impl StreamingOrderedMerge {
                             ))
                             .build());
                     }
-                    self.handle_split(idx, replacement_nodes)?;
+                    self.handle_split(idx, replacements)?;
                     topology_changed = true;
                     // Loop: index `idx` now refers to the first replacement.
                 }
@@ -395,65 +435,48 @@ impl StreamingOrderedMerge {
         }
     }
 
-    /// Primes every currently-active child, restoring the merge invariant
+    /// Fills every currently-active child, restoring the merge invariant
     /// that before rebuilding the merge heap every non-drained child
     /// has a buffered head row (or is proven drained) — so no child is ever
     /// skipped for lacking a head. Re-reads `len()` each step because
-    /// [`prime_child`]'s split handling can splice several replacements in at
-    /// once (only the first is primed inline); already-buffered/drained
-    /// children short-circuit, so no page is re-fetched.
-    async fn prime_all_active_children(
+    /// [`Self::ensure_stream_filled`]'s split handling can splice several
+    /// replacements in at once (only the first is filled inline);
+    /// already-buffered/drained children short-circuit, so no page is
+    /// re-fetched.
+    async fn ensure_all_streams_filled(
         &mut self,
         context: &mut PipelineContext<'_>,
         aggregator: &mut PageAggregator,
     ) -> crate::error::Result<()> {
         let mut idx = 0;
         while idx < self.children.len() {
-            self.prime_child(idx, context, aggregator).await?;
+            self.ensure_stream_filled(idx, context, aggregator).await?;
             idx += 1;
         }
         Ok(())
     }
 
-    /// Handles a child's `SplitRequired` by consuming the `replacement_nodes`
+    /// Handles a child's `SplitRequired` by consuming the [`SplitReplacements`]
     /// the child produced, keeping the merge ignorant of their concrete type.
     ///
-    /// The split child provides one replacement leaf per post-split sub-range;
-    /// this validates each carries a [`feed_range`](PipelineNode::feed_range),
-    /// sorts them, and confirms they exactly tile the split child's scope with
-    /// no gaps or overlaps, then wraps each in a [`ChildStream`] that inherits
-    /// the split child's resume state (see [`wrap_split_replacement`]). No
-    /// topology is re-resolved here — the split child already performed one
-    /// forced topology refresh before producing the nodes, forwarding its
-    /// backend continuation into each replacement so they resume past every
-    /// already-emitted row. A coverage failure here is therefore the hard
-    /// failure after that recommended refresh/re-resolution attempt.
+    /// The split child provides one replacement leaf per post-split sub-range,
+    /// already proven at construction to carry a
+    /// [`feed_range`](PipelineNode::feed_range) and to exactly tile the split
+    /// child's scope. This wraps each in a [`ChildStream`] that inherits the
+    /// split child's resume state (see [`wrap_split_replacement`]). No topology
+    /// is re-resolved here — the split child already performed one forced
+    /// topology refresh before producing the nodes, forwarding its backend
+    /// continuation into each replacement so they resume past every
+    /// already-emitted row.
     fn handle_split(
         &mut self,
         idx: usize,
-        replacement_nodes: Vec<Box<dyn PipelineNode>>,
+        replacements: SplitReplacements,
     ) -> crate::error::Result<()> {
-        let scope = self.children[idx].range.clone();
         let prior_boundary = self.children[idx].boundary();
         let query_shape = self.children[idx].query_shape;
 
-        // Every replacement must own an EPK sub-range; a missing one would
-        // make coverage unverifiable, so reject rather than risk a gap.
-        let mut replacements: Vec<(FeedRange, Box<dyn PipelineNode>)> =
-            Vec::with_capacity(replacement_nodes.len());
-        for node in replacement_nodes {
-            let range = node
-                .feed_range()
-                .ok_or_else(|| {
-                    split_replacement_invalid(
-                        "StreamingOrderedMerge split replacement node has no feed_range",
-                    )
-                })?
-                .clone();
-            replacements.push((range, node));
-        }
-        replacements.sort_by(|a, b| a.0.min_inclusive().cmp(b.0.min_inclusive()));
-        validate_exact_coverage(&scope, replacements.iter().map(|(range, _)| range))?;
+        let replacements = replacements.into_ranged()?;
         // Wrap each replacement before mutating `self.children`, so a rejected
         // replacement leaves the merge unchanged rather than half-spliced.
         let mut wrapped = Vec::with_capacity(replacements.len());
@@ -565,7 +588,7 @@ impl PipelineNode for StreamingOrderedMerge {
         // Prime every child up front so the heap sees a head row for each
         // non-drained child. Nothing has been emitted yet, so a failure here
         // loses no rows and propagates directly.
-        self.prime_all_active_children(context, &mut aggregator)
+        self.ensure_all_streams_filled(context, &mut aggregator)
             .await?;
         let mut head_heap = self.build_head_heap();
 
@@ -598,19 +621,21 @@ impl PipelineNode for StreamingOrderedMerge {
                     // From here on rows have already been consumed and their
                     // boundaries advanced, so a fetch failure must not discard
                     // the page — defer it instead.
-                    let topology_changed =
-                        match self.prime_child(winner, context, &mut aggregator).await {
-                            Ok(changed) => changed,
-                            Err(err) => {
-                                self.deferred_error = Some(err);
-                                break;
-                            }
-                        };
+                    let topology_changed = match self
+                        .ensure_stream_filled(winner, context, &mut aggregator)
+                        .await
+                    {
+                        Ok(changed) => changed,
+                        Err(err) => {
+                            self.deferred_error = Some(err);
+                            break;
+                        }
+                    };
                     if topology_changed {
                         // Split replacements shift child indices and only the
-                        // first replacement was primed inline.
+                        // first replacement was filled inline.
                         if let Err(err) = self
-                            .prime_all_active_children(context, &mut aggregator)
+                            .ensure_all_streams_filled(context, &mut aggregator)
                             .await
                         {
                             self.deferred_error = Some(err);
@@ -736,8 +761,7 @@ pub(super) fn query_fingerprint(body: Option<&[u8]>) -> String {
 ///   see `snapshot_state` / [`ChildQueryShape`]).
 /// - Else + `prior_boundary`: rebuilds via `build_value_boundary_child`,
 ///   which sends the boundary as a structured `resumeFilter`. This is a
-///   per-row seek, so it stays correct across a split for scalar and
-///   complex boundaries alike.
+///   per-row seek, so it stays correct across a split.
 /// - Else: a fresh unfiltered start. On a topology change, resolved
 ///   ranges are clipped to `scope` and must exactly tile it.
 pub(super) fn build_children(
@@ -814,8 +838,7 @@ pub(super) fn build_children(
 
     // Every sub-range resumes from the same last-emitted boundary via a
     // structured `resumeFilter` (a per-row seek), so a split needs no
-    // per-range row-count attribution — scalar and complex boundaries alike
-    // are split-safe.
+    // per-range row-count attribution.
     let mut children = Vec::with_capacity(clipped.len());
     for (owned, resolved_range) in clipped {
         let target = RequestTarget::effective_partition_key_range(
@@ -835,44 +858,6 @@ pub(super) fn build_children(
         children.push(child);
     }
     Ok(children)
-}
-
-/// Returns `Ok(())` if `ranges` (yielded in ascending `min_inclusive` order,
-/// each already clipped to `scope`) exactly tiles `scope` end-to-end with no
-/// gaps or overlaps. Shared by the planner's split/merge resume path
-/// ([`build_children`]) and the live split handler
-/// ([`StreamingOrderedMerge::handle_split`]).
-fn validate_exact_coverage<'a>(
-    scope: &FeedRange,
-    ranges: impl Iterator<Item = &'a FeedRange>,
-) -> crate::error::Result<()> {
-    let mut cursor = scope.min_inclusive().clone();
-    let mut saw_any = false;
-    for owned in ranges {
-        saw_any = true;
-        if owned.min_inclusive() != &cursor {
-            return Err(split_replacement_invalid(format!(
-                "replacement range [{}, {}) does not start at the expected cursor {}",
-                owned.min_inclusive().to_hex(),
-                owned.max_exclusive().to_hex(),
-                cursor.to_hex(),
-            )));
-        }
-        cursor = owned.max_exclusive().clone();
-    }
-    if !saw_any {
-        return Err(split_replacement_invalid(
-            "topology resolution produced no replacement ranges",
-        ));
-    }
-    if &cursor != scope.max_exclusive() {
-        return Err(split_replacement_invalid(format!(
-            "replacement ranges cover up to {} but the prior range extended to {}",
-            cursor.to_hex(),
-            scope.max_exclusive().to_hex(),
-        )));
-    }
-    Ok(())
 }
 
 /// Wraps one split-replacement leaf into a [`ChildStream`] carrying the split
@@ -895,11 +880,12 @@ fn validate_exact_coverage<'a>(
 ///   [`PendingDiscard::ResumeBoundary`] from the boundary, exactly like a
 ///   saved-token resume. Such a leaf re-runs the structured `resumeFilter`
 ///   (the backend seeks to the boundary), so the discard only trims the
-///   already-emitted prefix — safe for scalar and complex boundaries.
+///   already-emitted prefix.
 /// - `Some` + no forwarded continuation + a plain range (or generic node):
 ///   the leaf's resume position is unknown (a plain replay would re-fetch from
-///   the start, which the client discard can't order for a complex boundary),
-///   so reject with a typed error rather than guess. For a real plain
+///   the start, and the client discard has no way to tell which rows that
+///   replay already covered), so reject with a typed error rather than guess.
+///   For a real plain
 ///   `Request` this is unreachable — a plain child that had emitted a row is
 ///   always `Continuing` when it splits, so its replacement always carries a
 ///   forwarded continuation.
@@ -937,8 +923,8 @@ fn wrap_split_replacement(
 
     // No forwarded continuation but the split child had emitted rows. A
     // resume-filtered replacement re-seeks the backend to the boundary, so
-    // rebuild the discard to trim the already-emitted prefix (scalar or
-    // complex). A plain (or generic) replacement's position is unknown; reject.
+    // rebuild the discard to trim the already-emitted prefix. A plain (or
+    // generic) replacement's position is unknown; reject.
     if query_shape != ChildQueryShape::ResumeFilterInjected {
         return Err(split_replacement_invalid(
             "StreamingOrderedMerge split replacement carries no continuation to \
@@ -959,23 +945,13 @@ fn wrap_split_replacement(
     Ok(child)
 }
 
-fn split_replacement_invalid(
-    message: impl Into<std::borrow::Cow<'static, str>>,
-) -> crate::error::CosmosError {
-    crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID)
-        .with_message(message)
-        .build()
-}
-
 /// Builds one child via the value-boundary resume path: sends the
 /// last-emitted boundary to the backend as a structured `resumeFilter`
 /// (`rid` present, `exclude:false`) injected into a clone of the plain
 /// query body, and installs a matching [`PendingDiscard::ResumeBoundary`]
 /// guard so the already-emitted prefix of the boundary tie run is trimmed
-/// client-side. Works for scalar and complex (array/object) boundaries
-/// alike — the backend seek is a per-row predicate, so it stays correct
-/// across a split.
+/// client-side. The backend seek is a per-row predicate, so it stays
+/// correct across a split.
 fn build_value_boundary_child(
     owned_range: FeedRange,
     target: RequestTarget,
@@ -1199,10 +1175,19 @@ mod tests {
     /// merge splices in and wraps with the split child's resume state. Using
     /// non-`Request` (`MockLeaf`) replacements proves the merge consumes the
     /// supplied nodes directly, staying ignorant of their concrete type.
+    /// `scope_min`/`scope_max` are the split child's range; the replacements
+    /// must exactly tile it or [`SplitReplacements::try_tiling`] rejects them.
     fn split_page(
+        scope_min: &str,
+        scope_max: &str,
         replacement_nodes: Vec<Box<dyn PipelineNode>>,
     ) -> crate::error::Result<PageResult> {
-        Ok(PageResult::SplitRequired { replacement_nodes })
+        Ok(PageResult::SplitRequired {
+            replacements: SplitReplacements::try_tiling(
+                &range(scope_min, scope_max),
+                replacement_nodes,
+            )?,
+        })
     }
 
     /// A `MockLeaf` split-replacement leaf covering `[min, max)` with pre-set
@@ -1266,15 +1251,15 @@ mod tests {
 
     /// Regression for the in-flight split ordering defect: when replenishing
     /// the popped winner fans it out into several sub-ranges, *every*
-    /// replacement (not just the first) must be primed before the next
+    /// replacement (not just the first) must be filled before the next
     /// selection. P0 emits `[1, 2]` then splits into P0a (next `3`) and P0b
-    /// (next `10, 20`); if P0b were left unprimed, `50` would be emitted
+    /// (next `10, 20`); if P0b were left unfilled, `50` would be emitted
     /// before `10, 20`. A large page cap keeps popping within one page. The
     /// replacements carry a forwarded continuation (positioned past the `2`
     /// boundary), so the merge wraps and orders them without re-resolving and
     /// with no client-side discard.
     #[tokio::test]
-    async fn split_during_pop_loop_primes_all_split_replacements() {
+    async fn split_during_pop_loop_fills_all_split_replacements() {
         let p0 = ChildStream::fresh(
             range("", "80"),
             Box::new(MockLeaf::with_pages(vec![
@@ -1282,14 +1267,22 @@ mod tests {
                 // The split child yields two sub-range leaves that carry the
                 // forwarded continuation, so their pages already start past the
                 // `2` boundary.
-                split_page(vec![
-                    positioned_replacement_leaf("", "40", vec![envelope_page(&[("d3", 3)], None)]),
-                    positioned_replacement_leaf(
-                        "40",
-                        "80",
-                        vec![envelope_page(&[("d10", 10), ("d20", 20)], None)],
-                    ),
-                ]),
+                split_page(
+                    "",
+                    "80",
+                    vec![
+                        positioned_replacement_leaf(
+                            "",
+                            "40",
+                            vec![envelope_page(&[("d3", 3)], None)],
+                        ),
+                        positioned_replacement_leaf(
+                            "40",
+                            "80",
+                            vec![envelope_page(&[("d10", 10), ("d20", 20)], None)],
+                        ),
+                    ],
+                ),
             ])),
         );
         let p1 = ChildStream::fresh(
@@ -1323,14 +1316,22 @@ mod tests {
             range("", "80"),
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page(&[("d1", 1), ("d2", 2)], Some("p0-ct")),
-                split_page(vec![
-                    positioned_replacement_leaf("", "40", vec![envelope_page(&[("d3", 3)], None)]),
-                    positioned_replacement_leaf(
-                        "40",
-                        "80",
-                        vec![envelope_page(&[("d10", 10), ("d20", 20)], None)],
-                    ),
-                ]),
+                split_page(
+                    "",
+                    "80",
+                    vec![
+                        positioned_replacement_leaf(
+                            "",
+                            "40",
+                            vec![envelope_page(&[("d3", 3)], None)],
+                        ),
+                        positioned_replacement_leaf(
+                            "40",
+                            "80",
+                            vec![envelope_page(&[("d10", 10), ("d20", 20)], None)],
+                        ),
+                    ],
+                ),
             ])),
         );
         let p1 = ChildStream::fresh(
@@ -1401,22 +1402,30 @@ mod tests {
     async fn cascading_split_replacements_preserve_order_and_boundary() {
         // P0 emits [1, 2] then splits into P0a + P0b; P0a splits *again* into
         // P0a1 (next 3) and P0a2 (next 5) before yielding a row.
-        let p0a_cascade = split_page(vec![
-            positioned_replacement_leaf("", "20", vec![envelope_page(&[("d3", 3)], None)]),
-            positioned_replacement_leaf("20", "40", vec![envelope_page(&[("d5", 5)], None)]),
-        ]);
+        let p0a_cascade = split_page(
+            "",
+            "40",
+            vec![
+                positioned_replacement_leaf("", "20", vec![envelope_page(&[("d3", 3)], None)]),
+                positioned_replacement_leaf("20", "40", vec![envelope_page(&[("d5", 5)], None)]),
+            ],
+        );
         let p0 = ChildStream::fresh(
             range("", "80"),
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page(&[("d1", 1), ("d2", 2)], Some("p0-ct")),
-                split_page(vec![
-                    positioned_replacement_leaf("", "40", vec![p0a_cascade]),
-                    positioned_replacement_leaf(
-                        "40",
-                        "80",
-                        vec![envelope_page(&[("d10", 10)], None)],
-                    ),
-                ]),
+                split_page(
+                    "",
+                    "80",
+                    vec![
+                        positioned_replacement_leaf("", "40", vec![p0a_cascade]),
+                        positioned_replacement_leaf(
+                            "40",
+                            "80",
+                            vec![envelope_page(&[("d10", 10)], None)],
+                        ),
+                    ],
+                ),
             ])),
         );
         let mut node = merge(vec![p0], vec![SortOrder::Ascending]);
@@ -1507,7 +1516,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn partial_priming_failure_preserves_absorbed_session_token() {
+    async fn partial_fill_failure_preserves_absorbed_session_token() {
         let left = ChildStream::fresh(
             range("", "80"),
             Box::new(MockLeaf::with_pages(vec![
@@ -1617,33 +1626,30 @@ mod tests {
         );
     }
 
-    /// Cross-partition merge of *distinct* complex values: each partition's
-    /// page is locally sorted by exact `DistinctHash` (as a backend page is),
-    /// and the k-way merge emits them in global bytewise hash order. Numeric
-    /// order would give a different sequence, so this pins the .NET ordering
-    /// end-to-end.
+    /// An array/object ORDER BY value fails the query deterministically:
+    /// the backend sorts complex values by a structural hash the client
+    /// cannot reproduce from JSON, so any client-side merge would silently
+    /// mis-order them. Python and JavaScript reject these the same way.
     #[tokio::test]
-    async fn distinct_complex_values_merge_in_global_hash_order() {
-        // Bytewise hash order: [5] < [3] < [2] < [4] < [10] < [6].
-        let left = ChildStream::fresh(
-            range("", "80"),
+    async fn complex_order_by_values_are_rejected() {
+        let child = ChildStream::fresh(
+            range("", "FF"),
             Box::new(MockLeaf::with_pages(vec![array_envelope_page(
-                &[("a5", 5), ("a3", 3), ("a6", 6)],
+                &[("a", 5)],
                 None,
             )])),
         );
-        let right = ChildStream::fresh(
-            range("80", "FF"),
-            Box::new(MockLeaf::with_pages(vec![array_envelope_page(
-                &[("b2", 2), ("b4", 4), ("b10", 10)],
-                None,
-            )])),
-        );
-        let mut node = merge(vec![left, right], vec![SortOrder::Ascending]);
+        let mut node = merge(vec![child], vec![SortOrder::Ascending]);
+        let mut executor = mocks::MockRequestExecutor::new(vec![]);
+        let mut topology = mocks::NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        let error = node
+            .next_page(&mut context)
+            .await
+            .expect_err("an array ORDER BY value must fail the query");
         assert_eq!(
-            drain_all_ids(&mut node).await,
-            vec!["a5", "a3", "b2", "b4", "b10", "a6"],
-            "arrays merge in global DistinctHash order, not numeric order"
+            error.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
         );
     }
 
@@ -1792,77 +1798,6 @@ mod tests {
         );
     }
 
-    /// A complex (array) boundary discards already-emitted ties via the
-    /// hash-based comparison, keeping same-hash rows past the rid cut-off.
-    /// This test focuses on the tie run (all rows share the boundary hash);
-    /// distinct-hash before/after ordering is covered by
-    /// [`resume_complex_boundary_drops_before_and_keeps_after_by_hash`].
-    #[tokio::test]
-    async fn resume_with_complex_boundary_discards_matching_hash_ties_by_rid() {
-        let boundary =
-            OrderByItem::Array(vec![OrderByItem::Number(5_i64.into())]).to_resume_value();
-        let mut child = ChildStream::fresh(
-            range("", "FF"),
-            Box::new(MockLeaf::with_pages(vec![array_envelope_page(
-                &[("tied-1", 5), ("tied-2", 5), ("tied-3", 5)],
-                None,
-            )])),
-        );
-        child.pending_discard = PendingDiscard::ResumeBoundary {
-            resume_values: vec![boundary],
-            last_rid: "tied-1".to_owned(),
-            skip_count: 1,
-            directions: vec![SortOrder::Ascending],
-        };
-        let mut node = merge(vec![child], vec![SortOrder::Ascending]);
-        let PageResult::Page { response, .. } = next_page(&mut node).await else {
-            panic!("expected a page");
-        };
-        // `tied-1` (== boundary hash, rid <= last_rid) is dropped; `tied-2`
-        // and `tied-3` (same hash, rid > last_rid) survive.
-        assert_eq!(
-            ids(&response),
-            vec!["tied-2".to_owned(), "tied-3".to_owned()]
-        );
-    }
-
-    /// Complex-boundary discard with *distinct* values: a value whose exact
-    /// `DistinctHash` sorts before the boundary is dropped (already emitted by
-    /// the backend, which sorts complex values in the same hash order), and a
-    /// value sorting after it is kept. The page is hash-sorted, as a real
-    /// backend page is.
-    #[tokio::test]
-    async fn resume_complex_boundary_drops_before_and_keeps_after_by_hash() {
-        // Boundary is `[3]`, last emitted at rid "at-3".
-        let boundary =
-            OrderByItem::Array(vec![OrderByItem::Number(3_i64.into())]).to_resume_value();
-        // Bytewise hash order of the page: [5] < [3] < [2] < [6].
-        let mut child = ChildStream::fresh(
-            range("", "FF"),
-            Box::new(MockLeaf::with_pages(vec![array_envelope_page(
-                &[("before-5", 5), ("at-3", 3), ("after-2", 2), ("after-6", 6)],
-                None,
-            )])),
-        );
-        child.pending_discard = PendingDiscard::ResumeBoundary {
-            resume_values: vec![boundary],
-            last_rid: "at-3".to_owned(),
-            skip_count: 1,
-            directions: vec![SortOrder::Ascending],
-        };
-        let mut node = merge(vec![child], vec![SortOrder::Ascending]);
-        let PageResult::Page { response, .. } = next_page(&mut node).await else {
-            panic!("expected a page");
-        };
-        // `before-5` (hash before the boundary) and `at-3` (exact-hash tie,
-        // rid <= last_rid) are dropped; `after-2`/`after-6` (hash after the
-        // boundary) survive.
-        assert_eq!(
-            ids(&response),
-            vec!["after-2".to_owned(), "after-6".to_owned()]
-        );
-    }
-
     // ── skip_count: JOIN duplicate-RID resume ────────────────────────────
 
     #[test]
@@ -2007,7 +1942,7 @@ mod tests {
             range("", "FF"),
             Box::new(MockLeaf::with_pages(vec![
                 join_envelope_page(&page1_rows, Some("p0-ct")),
-                split_page(vec![replacement]),
+                split_page("", "FF", vec![replacement]),
             ])),
         );
         let mut node = merge(vec![split_child], vec![SortOrder::Ascending]);
@@ -2051,10 +1986,14 @@ mod tests {
     async fn live_split_replacement_without_continuation_with_boundary_errors() {
         let split_child = ChildStream::fresh(
             range("", "FF"),
-            Box::new(MockLeaf::with_pages(vec![split_page(vec![
-                replacement_leaf("", "80", vec![envelope_page(&[("d3", 3)], None)]),
-                replacement_leaf("80", "FF", vec![envelope_page(&[("d9", 9)], None)]),
-            ])])),
+            Box::new(MockLeaf::with_pages(vec![split_page(
+                "",
+                "FF",
+                vec![
+                    replacement_leaf("", "80", vec![envelope_page(&[("d3", 3)], None)]),
+                    replacement_leaf("80", "FF", vec![envelope_page(&[("d9", 9)], None)]),
+                ],
+            )])),
         );
         let mut node = merge(vec![split_child], vec![SortOrder::Ascending]);
         // The split child had emitted a row before splitting (a plain boundary).
@@ -2086,10 +2025,14 @@ mod tests {
     async fn live_split_initial_no_boundary_accepts_generic_replacements() {
         let split_child = ChildStream::fresh(
             range("", "FF"),
-            Box::new(MockLeaf::with_pages(vec![split_page(vec![
-                replacement_leaf("", "80", vec![envelope_page(&[("d3", 3)], None)]),
-                replacement_leaf("80", "FF", vec![envelope_page(&[("d9", 9)], None)]),
-            ])])),
+            Box::new(MockLeaf::with_pages(vec![split_page(
+                "",
+                "FF",
+                vec![
+                    replacement_leaf("", "80", vec![envelope_page(&[("d3", 3)], None)]),
+                    replacement_leaf("80", "FF", vec![envelope_page(&[("d9", 9)], None)]),
+                ],
+            )])),
         );
         // `last_emitted` stays `None` — no row emitted before the split.
         let mut node = merge(vec![split_child], vec![SortOrder::Ascending]);
@@ -2098,94 +2041,6 @@ mod tests {
             emitted,
             vec!["d3".to_owned(), "d9".to_owned()],
             "an initial split with no boundary accepts fresh replacements"
-        );
-    }
-
-    /// A `ResumeFilterInjected` child that live-splits *before its first page*
-    /// (so its replacements carry no forwarded continuation) is rebuilt via the
-    /// boundary discard: each replacement re-runs the structured `resumeFilter`
-    /// (the backend `DistinctHash` seek), so the merge reinstalls the boundary
-    /// discard and orders the results. This is safe for a complex boundary
-    /// because the backend seek already excluded the emitted rows. The
-    /// replacement leaves are real `Request`s whose operation body carries that
-    /// `resumeFilter`, mirroring what `Request::split_for_topology_change`
-    /// clones on a live split.
-    #[tokio::test]
-    async fn resume_filter_injected_complex_boundary_live_split_is_accepted_and_ordered() {
-        // Boundary is `[3]`; replacement values `[2]` and `[4]` sort after it.
-        let boundary = ValueBoundary {
-            resume_values: vec![
-                OrderByItem::Array(vec![OrderByItem::Number(3_i64.into())]).to_resume_value()
-            ],
-            last_rid: "rid-1".to_owned(),
-            skip_count: 1,
-        };
-        let filtered_body = query_response::with_resume_filter(
-            query_operation().body(),
-            &boundary.resume_values,
-            Some(&boundary.last_rid),
-            false,
-        )
-        .expect("resume-filter body");
-        let filtered_op = Arc::new((*query_operation()).clone().with_body(filtered_body));
-        let replacement = |min: &'static str, max: &'static str| -> Box<dyn PipelineNode> {
-            let target = RequestTarget::effective_partition_key_range(
-                range(min, max),
-                format!("pk-{min}-{max}"),
-                range(min, max),
-            );
-            Box::new(Request::new(Arc::clone(&filtered_op), target, None))
-        };
-        // The split child (MockLeaf) yields two resume-filtered Request leaves.
-        let split_child = {
-            let mut c = ChildStream::fresh(
-                range("", "80"),
-                Box::new(MockLeaf::with_pages(vec![split_page(vec![
-                    replacement("", "40"),
-                    replacement("40", "80"),
-                ])])),
-            );
-            c.query_shape = ChildQueryShape::ResumeFilterInjected;
-            c.last_emitted = Some(LastEmitted {
-                resume_values: boundary.resume_values.clone(),
-                rid: boundary.last_rid.clone(),
-                skip_count: boundary.skip_count,
-            });
-            c
-        };
-        let mut node = merge(vec![split_child], vec![SortOrder::Ascending]);
-
-        // The backend seek already excluded emitted rows, so each replacement
-        // returns only distinct, later complex values. Bytewise hash order
-        // places `[2]` before `[4]`.
-        let mut executor = mocks::MockRequestExecutor::new(vec![
-            Ok(array_envelope_response(&[("d4", 4)], None)),
-            Ok(array_envelope_response(&[("d2", 2)], None)),
-        ]);
-        let mut topology = mocks::NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
-        let page = node
-            .next_page(&mut context)
-            .await
-            .expect("a resume-filtered complex-boundary split must be accepted, not rejected");
-        let PageResult::Page { response, .. } = page else {
-            panic!("expected a page");
-        };
-        assert_eq!(
-            ids(&response),
-            vec!["d2".to_owned(), "d4".to_owned()],
-            "replacements must be accepted and ordered by hash across the split"
-        );
-        // Both replacement requests carried the structured resumeFilter seek.
-        assert!(
-            executor.body_text(0).contains("resumeFilter"),
-            "first replacement request must carry the resumeFilter body, got: {}",
-            executor.body_text(0)
-        );
-        assert!(
-            executor.body_text(1).contains("resumeFilter"),
-            "second replacement request must carry the resumeFilter body, got: {}",
-            executor.body_text(1)
         );
     }
 
@@ -2220,16 +2075,6 @@ mod tests {
         }
     }
 
-    fn complex_boundary(last_rid: &str) -> ValueBoundary {
-        ValueBoundary {
-            resume_values: vec![
-                OrderByItem::Array(vec![OrderByItem::Number(1.0.into())]).to_resume_value()
-            ],
-            last_rid: last_rid.to_owned(),
-            skip_count: 1,
-        }
-    }
-
     /// A scalar boundary crossing a split fans out into one resume-filtered
     /// child per sub-range, each with the boundary discard installed.
     #[test]
@@ -2257,29 +2102,6 @@ mod tests {
         }
     }
 
-    /// A complex (array/object) boundary now also fans out across a split via
-    /// the structured `resumeFilter` — the old topology-change rejection is
-    /// gone because the backend seek is a per-row predicate.
-    #[test]
-    fn build_children_splits_complex_boundary_into_resume_filtered_children() {
-        let op = query_operation();
-        let scope = range("", "FF");
-        let resolved = vec![
-            resolved_range("", "80", "pk-left"),
-            resolved_range("80", "FF", "pk-right"),
-        ];
-        let boundary = complex_boundary("rid-1");
-        let children = build_children(&resolved, &scope, &op, ASC, None, Some(&boundary))
-            .expect("a complex boundary now resumes across a split");
-        assert_eq!(children.len(), 2);
-        for child in &children {
-            assert!(matches!(
-                child.pending_discard,
-                PendingDiscard::ResumeBoundary { .. }
-            ));
-        }
-    }
-
     /// A merge resolves the saved sub-range to a wider physical range; it
     /// must be clipped to scope before coverage validation, not rejected.
     #[test]
@@ -2293,23 +2115,6 @@ mod tests {
             .expect("a merged (widened) physical range clips to the saved scope");
         assert_eq!(children.len(), 1);
         assert_eq!(children[0].range, scope);
-    }
-
-    /// A complex boundary resumes across a merge (single clipped sub-range)
-    /// via the structured `resumeFilter`.
-    #[test]
-    fn build_children_allows_complex_boundary_across_merge() {
-        let op = query_operation();
-        let scope = range("", "80");
-        let resolved = vec![resolved_range("", "FF", "pk-merged")];
-        let boundary = complex_boundary("rid-1");
-        let children = build_children(&resolved, &scope, &op, ASC, None, Some(&boundary))
-            .expect("a complex boundary resumes across a merge (single clipped range)");
-        assert_eq!(children.len(), 1);
-        assert!(matches!(
-            children[0].pending_discard,
-            PendingDiscard::ResumeBoundary { .. }
-        ));
     }
 
     #[tokio::test]
@@ -2497,7 +2302,7 @@ mod tests {
     #[tokio::test]
     async fn fetch_failure_after_emission_returns_partial_page_then_error() {
         // A single child so the failing replenish happens inside the pop loop
-        // rather than during the up-front priming pass.
+        // rather than during the up-front fill pass.
         let child = ChildStream::fresh(
             range("", "FF"),
             Box::new(MockLeaf::with_pages(vec![
@@ -2620,7 +2425,9 @@ mod tests {
                 continue;
             };
             if scenario.expected_error.is_some() {
-                // Covered by `malformed_envelope_surfaces_typed_error` instead.
+                // Error scenarios are covered by dedicated Rust tests instead:
+                // see `malformed_envelope_surfaces_typed_error` and
+                // `complex_order_by_values_are_rejected`.
                 continue;
             }
 

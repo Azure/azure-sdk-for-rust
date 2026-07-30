@@ -493,6 +493,7 @@ impl SubStatusCode {
             20115 => Some("ClientQueryPlanComplexProjectionUnsupported"),
             20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
+            20118 => Some("ClientOrderByComplexValueUnsupported"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1327,6 +1328,11 @@ impl SubStatusCode {
     /// operations.
     pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: SubStatusCode = SubStatusCode(20117);
 
+    /// An `ORDER BY` query sorted on a value that evaluated to an array or
+    /// object (20118). Cross-partition `ORDER BY` on complex values is not
+    /// currently supported.
+    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = SubStatusCode(20118);
+
     // ----- 20150-20199: SDK configuration / setup errors -----
 
     /// Two fault-injection rules registered with the same id (20150).
@@ -2158,6 +2164,13 @@ impl CosmosStatus {
     pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION),
+    };
+
+    /// 400 / 20118 — a cross-partition `ORDER BY` sorted on an array or
+    /// object value, which is not currently supported.
+    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
     };
 
     // Configuration / setup (HTTP 400, sub-status 20150-20199)

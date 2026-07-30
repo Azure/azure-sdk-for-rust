@@ -665,7 +665,7 @@
     },
     {
       "id": "mixed_type_ordering",
-      "description": "One key per Cosmos type validates the full ascending type-order chain: undefined, null, false, true, number, string, array, object.",
+      "description": "One key per supported Cosmos type validates the ascending type-order chain: undefined, null, false, true, number, string. Array and object sort keys are rejected instead (see complex_order_by_values_rejected).",
       "sources": [
         {
           "sdk": "dotnet",
@@ -766,33 +766,6 @@
                     "payload": {
                       "id": "v-string"
                     }
-                  },
-                  {
-                    "rid": "r7",
-                    "orderByItems": [
-                      {
-                        "item": [
-                          1,
-                          2
-                        ]
-                      }
-                    ],
-                    "payload": {
-                      "id": "v-array"
-                    }
-                  },
-                  {
-                    "rid": "r8",
-                    "orderByItems": [
-                      {
-                        "item": {
-                          "a": 1
-                        }
-                      }
-                    ],
-                    "payload": {
-                      "id": "v-object"
-                    }
                   }
                 ],
                 "continuation": null
@@ -812,31 +785,28 @@
         "v-false",
         "v-true",
         "v-number",
-        "v-string",
-        "v-array",
-        "v-object"
+        "v-string"
       ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
     },
     {
-      "id": "array_keys_ordering_and_continuation",
-      "description": "Array-typed sort keys compare by DistinctHash using .NET UInt128BinaryComparer byte order and round-trip through a bounded complex-value continuation. This differs from structural array order.",
+      "id": "complex_array_order_by_values_rejected",
+      "description": "An array-typed sort key is rejected at envelope-parse time: the backend orders complex values by a structural hash the client cannot reproduce from JSON, so merging them would silently mis-order results. Python and JavaScript reject these the same way.",
       "sources": [
         {
-          "sdk": "dotnet",
-          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
-          "test": "TestSqlQueryResumeValueRoundTrip"
+          "sdk": "python",
+          "path": "azure/cosmos/_execution_context/document_producer.py",
+          "test": "_OrderByHelper.getTypeOrd"
         },
         {
-          "sdk": "java",
-          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
-          "test": "queryOrderByArray"
+          "sdk": "javascript",
+          "path": "sdk/cosmosdb/cosmos/src/queryExecutionContext/orderByComparator.ts",
+          "test": "OrderByComparator.compareValue"
         }
       ],
       "layers": [
-        "comparator",
         "mockPipeline"
       ],
       "query": {
@@ -911,38 +881,30 @@
         1,
         10
       ],
-      "expectedIds": [
-        "greater",
-        "prefix",
-        "short"
-      ],
-      "checkpoint": {
-        "afterItems": 1
-      },
-      "expectedContinuation": {
-        "kind": "streaming_ordered_merge_range_boundary",
-        "resumeValueType": "complex",
-        "complexType": "array"
-      },
-      "expectedError": null
+      "expectedIds": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "client_order_by_complex_value_unsupported",
+        "messageFragment": "not currently supported"
+      }
     },
     {
-      "id": "object_keys_ordering_and_continuation",
-      "description": "Object-typed sort keys compare by property-order-independent DistinctHash using .NET UInt128BinaryComparer byte order and round-trip through a bounded complex-value continuation. This differs from structural object order.",
+      "id": "complex_object_order_by_values_rejected",
+      "description": "An object-typed sort key is rejected at envelope-parse time, for the same reason as array keys.",
       "sources": [
         {
-          "sdk": "dotnet",
-          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
-          "test": "TestSqlQueryResumeValueRoundTrip"
+          "sdk": "python",
+          "path": "azure/cosmos/_execution_context/document_producer.py",
+          "test": "_OrderByHelper.getTypeOrd"
         },
         {
-          "sdk": "java",
-          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
-          "test": "queryOrderByObject"
+          "sdk": "javascript",
+          "path": "sdk/cosmosdb/cosmos/src/queryExecutionContext/orderByComparator.ts",
+          "test": "OrderByComparator.compareValue"
         }
       ],
       "layers": [
-        "comparator",
         "mockPipeline"
       ],
       "query": {
@@ -1016,20 +978,13 @@
         1,
         10
       ],
-      "expectedIds": [
-        "a-1",
-        "b-0",
-        "a-2"
-      ],
-      "checkpoint": {
-        "afterItems": 1
-      },
-      "expectedContinuation": {
-        "kind": "streaming_ordered_merge_range_boundary",
-        "resumeValueType": "complex",
-        "complexType": "object"
-      },
-      "expectedError": null
+      "expectedIds": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "client_order_by_complex_value_unsupported",
+        "messageFragment": "not currently supported"
+      }
     },
     {
       "id": "equal_key_resume_requiring_skip_count",

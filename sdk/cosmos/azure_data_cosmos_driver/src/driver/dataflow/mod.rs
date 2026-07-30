@@ -35,7 +35,6 @@
 //! cross-partition strategies).
 
 mod context;
-mod distinct_hash;
 mod drain;
 mod drained;
 #[cfg(test)]
@@ -59,7 +58,9 @@ pub(crate) use context::{
 };
 pub(crate) use drain::SequentialDrain;
 pub(crate) use drained::DrainedLeaf;
-pub(crate) use node::{PageResult, PipelineNode};
+pub(crate) use node::{
+    split_replacement_invalid, validate_exact_coverage, PageResult, PipelineNode, SplitReplacements,
+};
 pub use pipeline::OperationPlan;
 pub(crate) use pipeline::Pipeline;
 pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};

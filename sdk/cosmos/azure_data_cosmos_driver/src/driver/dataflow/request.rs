@@ -375,9 +375,18 @@ impl Request {
                     partition_key_range_id,
                     range: resolved_range,
                 } = resolved_range;
-                let owned_range = intersect_feed_ranges(&resolved_range, range).expect(
-                    "topology provider must return ranges that overlap the request's owned EPK range",
-                );
+                // A non-overlapping range means the topology provider broke its
+                // contract; surface it as the same typed error the tiling check
+                // below raises rather than panicking.
+                let owned_range = intersect_feed_ranges(&resolved_range, range).ok_or_else(|| {
+                    super::node::split_replacement_invalid(format!(
+                        "topology provider returned range [{}, {}) which does not overlap the request's owned range [{}, {})",
+                        resolved_range.min_inclusive().to_hex(),
+                        resolved_range.max_exclusive().to_hex(),
+                        range.min_inclusive().to_hex(),
+                        range.max_exclusive().to_hex(),
+                    ))
+                })?;
 
                 let target = RequestTarget::effective_partition_key_range(
                     owned_range,
@@ -385,16 +394,17 @@ impl Request {
                     resolved_range,
                 );
 
-                Box::new(Request::new(
+                Ok(Box::new(Request::new(
                     self.operation.clone(),
                     target,
                     continuation.clone(),
-                ))
-                    as Box<dyn PipelineNode>
+                )) as Box<dyn PipelineNode>)
             })
-            .collect();
+            .collect::<crate::error::Result<Vec<_>>>()?;
 
-        Ok(PageResult::SplitRequired { replacement_nodes })
+        Ok(PageResult::SplitRequired {
+            replacements: super::node::SplitReplacements::try_tiling(range, replacement_nodes)?,
+        })
     }
 }
 
@@ -561,8 +571,8 @@ mod tests {
         for mut request in requests {
             let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
             match request.next_page(&mut context).await.unwrap() {
-                PageResult::SplitRequired { replacement_nodes } => {
-                    rewritten.extend(replacement_nodes.into_iter().map(|node| {
+                PageResult::SplitRequired { replacements } => {
+                    rewritten.extend(replacements.into_nodes().into_iter().map(|node| {
                         *node
                             .downcast::<Request>()
                             .expect("scenario helper should only produce request nodes")

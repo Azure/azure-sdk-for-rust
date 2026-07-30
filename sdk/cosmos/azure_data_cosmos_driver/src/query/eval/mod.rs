@@ -2555,7 +2555,10 @@ mod tests {
     }
 
     #[test]
-    fn order_by_complex_values_uses_production_distinct_hash_order() {
+    fn order_by_complex_values_orders_structurally_in_the_oracle() {
+        // The in-memory oracle only promises a deterministic total order for
+        // array/object sort keys; the real service rejects them (see
+        // `order_by::parse_order_by_items`).
         let docs = vec![
             serde_json::json!({"id": "two", "val": [2]}),
             serde_json::json!({"id": "five", "val": [5]}),
@@ -2567,7 +2570,7 @@ mod tests {
             .map(|document| document["id"].as_str().unwrap())
             .collect();
 
-        assert_eq!(ids, vec!["five", "three", "two"]);
+        assert_eq!(ids, vec!["two", "three", "five"]);
     }
 
     #[test]

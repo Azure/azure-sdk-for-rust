@@ -6,6 +6,7 @@
 
 - Added resumable cross-partition streaming `ORDER BY` query support. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
 - Added public `CosmosStatus` and `SubStatusCode` constants for invalid ORDER BY continuation state, split replacements, rewritten envelopes, and query-plan metadata. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
+- Cross-partition `ORDER BY` queries whose sort key evaluates to a JSON array or object now fail with `400`/`20118` `ClientOrderByComplexValueUnsupported` instead of returning results in an order the client cannot reproduce. Queries scoped to a single logical partition are unaffected. This matches the Python and JavaScript SDKs. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
 
 ### Breaking Changes
 
