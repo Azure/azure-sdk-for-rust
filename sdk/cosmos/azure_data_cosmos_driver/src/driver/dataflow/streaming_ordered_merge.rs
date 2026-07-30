@@ -412,8 +412,11 @@ impl StreamingOrderedMerge {
             // Disjoint field borrows: `children` mutably, `directions` shared.
             let outcome = self.children[idx]
                 .ensure_filled(context, aggregator, &self.directions)
-                .await?;
+                .await;
+            // Commit before propagating: a fill that absorbed a page and then
+            // failed to parse it still advanced session state we must not lose.
             self.session_token = aggregator.session_token().cloned();
+            let outcome = outcome?;
             match outcome {
                 FillOutcome::Filled => return Ok(topology_changed),
                 FillOutcome::SplitRequired { replacements } => {
@@ -727,6 +730,10 @@ impl PipelineNode for StreamingOrderedMerge {
     fn topology_can_change(&self) -> bool {
         // Splits are handled internally (`handle_split`); no parent needed.
         false
+    }
+
+    fn fan_out_width(&self) -> usize {
+        self.children.iter().map(|c| c.node.fan_out_width()).sum()
     }
 }
 
@@ -1545,6 +1552,66 @@ mod tests {
         let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
             panic!("expected retry page");
         };
+        assert_eq!(
+            response
+                .headers()
+                .session_token
+                .as_ref()
+                .map(SessionToken::as_str),
+            Some("0:1#10,1:1#20")
+        );
+    }
+
+    #[tokio::test]
+    async fn absorbed_session_token_survives_page_parse_failure() {
+        // A page can absorb cleanly and *then* fail to parse — a complex
+        // (array) ORDER BY key is rejected downstream of `absorb`. The token
+        // it carried must still be committed, or session state from a response
+        // we already received is lost for good.
+        let left = ChildStream::fresh(
+            range("", "80"),
+            Box::new(MockLeaf::with_pages(vec![
+                envelope_page_with_session_token(&[("a", 1)], "0:1#10"),
+            ])),
+        );
+        // First page: complex key, carries a token. Second: parses, no token.
+        let unparseable = {
+            let response = array_envelope_response(&[("b", 2)], None);
+            let headers = crate::models::CosmosResponseHeaders {
+                session_token: Some(SessionToken::new("1:1#20")),
+                ..Default::default()
+            };
+            Ok(PageResult::Page {
+                response: crate::models::CosmosResponse::new(
+                    response.body_bytes().to_vec(),
+                    headers,
+                    response.status(),
+                    response.diagnostics(),
+                ),
+                is_terminal: true,
+            })
+        };
+        let right = ChildStream::fresh(
+            range("80", "FF"),
+            Box::new(MockLeaf::with_pages(vec![
+                unparseable,
+                Ok(PageResult::Page {
+                    response: envelope_response(&[("b", 2)], None),
+                    is_terminal: true,
+                }),
+            ])),
+        );
+        let mut node = merge(vec![left, right], vec![SortOrder::Ascending]);
+        let mut executor = mocks::NoopRequestExecutor;
+        let mut topology = mocks::NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        assert!(node.next_page(&mut context).await.is_err());
+        let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
+            panic!("expected retry page");
+        };
+        // The retry page carries no token of its own, so `1:1#20` can only be
+        // present if the failed fill committed it.
         assert_eq!(
             response
                 .headers()

@@ -25,7 +25,6 @@ futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 time = { workspace = true }
-tokio = { workspace = true }
 
 [dev-dependencies]
 azure_core_test = { path = "../../core/azure_core_test", features = [

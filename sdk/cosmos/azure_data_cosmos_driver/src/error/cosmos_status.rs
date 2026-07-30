@@ -456,6 +456,8 @@ impl SubStatusCode {
             20006 => Some("ChannelClosed"),
             20007 => Some("MalformedContinuationToken"),
             20008 => Some("ClientOperationTimeout"),
+            20020 => Some("SerializationResponseBodyInvalid"),
+            20021 => Some("SerializationRequestBodyInvalid"),
             20401 => Some("ClientGenerated401"),
             20901 => Some("NegativeTimeoutProvided"),
             20902 => Some("MissingPartitionKeyRangeIdInContext"),
@@ -493,7 +495,8 @@ impl SubStatusCode {
             20115 => Some("ClientQueryPlanComplexProjectionUnsupported"),
             20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
-            20118 => Some("ClientOrderByComplexValueUnsupported"),
+            20118 => Some("ClientCrossPartitionFanOutExceeded"),
+            20119 => Some("ClientOrderByComplexValueUnsupported"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1124,6 +1127,9 @@ impl SubStatusCode {
     /// `crate::error::Error::serialization`.
     pub const SERIALIZATION_RESPONSE_BODY_INVALID: SubStatusCode = SubStatusCode(20020);
 
+    /// Request body failed to serialize (20021).
+    pub const SERIALIZATION_REQUEST_BODY_INVALID: SubStatusCode = SubStatusCode(20021);
+
     // ----- Authentication boundary mapping code (20402) -----
 
     /// Credential / AAD token acquisition failed before the request was
@@ -1328,10 +1334,17 @@ impl SubStatusCode {
     /// operations.
     pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: SubStatusCode = SubStatusCode(20117);
 
+    /// A fresh cross-partition operation fanned out to more leaf request
+    /// nodes than the configured maximum (20118). The pipeline refuses to
+    /// plan an over-broad fan-out; the caller must raise `max_fan_out`
+    /// (via `FeedOptions`) to opt in. Paired with HTTP 400 because it is a
+    /// client-side input-validation rejection of the request.
+    pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: SubStatusCode = SubStatusCode(20118);
+
     /// An `ORDER BY` query sorted on a value that evaluated to an array or
-    /// object (20118). Cross-partition `ORDER BY` on complex values is not
+    /// object (20119). Cross-partition `ORDER BY` on complex values is not
     /// currently supported.
-    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = SubStatusCode(20118);
+    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = SubStatusCode(20119);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -1951,6 +1964,13 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID),
     };
 
+    /// Request body failed to serialize (HTTP 400, sub-status 20021). The
+    /// caller supplied an item that could not be encoded.
+    pub const SERIALIZATION_REQUEST_BODY_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
+    };
+
     /// AAD / credential provider token acquisition failed
     /// (HTTP 401, sub-status 20402).
     pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = CosmosStatus {
@@ -2166,7 +2186,15 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION),
     };
 
-    /// 400 / 20118 — a cross-partition `ORDER BY` sorted on an array or
+    /// 400 / 20118 — a fresh cross-partition operation fanned out to more
+    /// leaf request nodes than the configured `max_fan_out`. The caller
+    /// must explicitly raise the limit to run a broader query.
+    pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
+    };
+
+    /// 400 / 20119 — a cross-partition `ORDER BY` sorted on an array or
     /// object value, which is not currently supported.
     pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
@@ -2731,6 +2759,21 @@ mod tests {
     #[test]
     fn name_returns_none_for_unknown() {
         assert_eq!(SubStatusCode::new(65000).name(None), None);
+    }
+
+    #[test]
+    fn name_returns_serialization_boundary_codes() {
+        // Regression guard: the 20020/20021 name mappings must stay in lockstep
+        // with the `SERIALIZATION_*_BODY_INVALID` constants so diagnostics render
+        // a symbolic name instead of a bare number.
+        assert_eq!(
+            SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID.name(None),
+            Some("SerializationResponseBodyInvalid")
+        );
+        assert_eq!(
+            SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID.name(None),
+            Some("SerializationRequestBodyInvalid")
+        );
     }
 
     #[test]

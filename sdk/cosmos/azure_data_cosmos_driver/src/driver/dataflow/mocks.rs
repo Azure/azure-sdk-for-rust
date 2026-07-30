@@ -5,7 +5,7 @@
 
 use std::{collections::VecDeque, sync::Arc};
 
-use azure_core::http::StatusCode;
+use azure_core::http::{Etag, StatusCode};
 use futures::future::BoxFuture;
 
 use super::{
@@ -82,6 +82,11 @@ impl PipelineNode for MockLeaf {
     fn topology_can_change(&self) -> bool {
         // A MockLeaf is just a test stub and doesn't represent a real request, so it can't be the target of a topology change error that requires splitting or merging.
         false
+    }
+
+    fn fan_out_width(&self) -> usize {
+        // A MockLeaf stands in for a single request leaf.
+        1
     }
 }
 
@@ -209,6 +214,45 @@ impl TopologyProvider for MockTopologyProvider {
     }
 }
 
+/// A range-aware topology provider backed by a fixed physical partition layout.
+///
+/// Unlike [`MockTopologyProvider`] (which ignores the requested range and
+/// replays a queue), this resolves *against* the requested range:
+/// `resolve_ranges(range)` returns exactly the configured physical partitions
+/// whose EPK span overlaps `range`, mirroring real routing. This lets fan-out
+/// tests observe when the planner resolves partitions outside the requested
+/// scope — a plain replay mock cannot, because it returns the same partitions
+/// regardless of the range it is asked about.
+pub(crate) struct PhysicalTopologyProvider {
+    partitions: Vec<ResolvedRange>,
+}
+
+impl PhysicalTopologyProvider {
+    pub fn new(partitions: Vec<ResolvedRange>) -> Self {
+        Self { partitions }
+    }
+}
+
+impl TopologyProvider for PhysicalTopologyProvider {
+    fn resolve_ranges<'a>(
+        &'a mut self,
+        range: &'a FeedRange,
+        _refresh: PartitionRoutingRefresh,
+    ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
+        let resolved: Vec<ResolvedRange> = self
+            .partitions
+            .iter()
+            .filter(|p| {
+                // Half-open overlap: [a, b) intersects [c, d) iff a < d && c < b.
+                p.range.min_inclusive() < range.max_exclusive()
+                    && range.min_inclusive() < p.range.max_exclusive()
+            })
+            .cloned()
+            .collect();
+        Box::pin(async move { Ok(resolved) })
+    }
+}
+
 // ── Test helpers ────────────────────────────────────────────────────────────
 
 /// Extracts the `CosmosResponse` from a `PageResult::Page`, panicking otherwise.
@@ -271,6 +315,25 @@ pub(crate) fn response_with_continuation(
     diagnostics.set_operation_status(StatusCode::Ok, None);
     let mut headers = CosmosResponseHeaders::new();
     headers.continuation = continuation.map(str::to_owned);
+    CosmosResponse::new(
+        body.to_vec(),
+        headers,
+        CosmosStatus::new(StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
+/// Creates a test response with the given body and an `ETag`, mirroring the
+/// change feed contract where every poll (including a start-from-`Now` 304)
+/// carries an ETag continuation.
+pub(crate) fn response_with_etag(body: &[u8], etag: &str) -> CosmosResponse {
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    diagnostics.set_operation_status(StatusCode::Ok, None);
+    let mut headers = CosmosResponseHeaders::new();
+    headers.etag = Some(Etag::from(etag.to_owned()));
     CosmosResponse::new(
         body.to_vec(),
         headers,

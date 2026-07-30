@@ -69,7 +69,13 @@ impl std::fmt::Debug for PageResult {
 /// [`StreamingOrderedMerge`](super::streaming_ordered_merge::StreamingOrderedMerge))
 /// can splice replacements without re-checking, and no production path can
 /// construct an unvalidated set — [`Self::untiled`] is `#[cfg(test)]`-only.
-pub(crate) enum SplitReplacements {
+///
+/// The payload is a private enum so the only ways to obtain a value crate-wide
+/// are [`Self::try_tiling`] and the test-only [`Self::untiled`]; the invariant
+/// cannot be bypassed by constructing or mutating a variant directly.
+pub(crate) struct SplitReplacements(Repr);
+
+enum Repr {
     /// Validated by [`SplitReplacements::try_tiling`], stored in ascending
     /// `min_inclusive` order.
     Tiled(Vec<(FeedRange, Box<dyn PipelineNode>)>),
@@ -98,30 +104,30 @@ impl SplitReplacements {
         }
         ranged.sort_by(|a, b| a.0.min_inclusive().cmp(b.0.min_inclusive()));
         validate_exact_coverage(scope, ranged.iter().map(|(range, _)| range))?;
-        Ok(Self::Tiled(ranged))
+        Ok(Self(Repr::Tiled(ranged)))
     }
 
     /// Test-only escape hatch for mock nodes that carry no feed range and so
     /// have no tiling invariant to uphold.
     #[cfg(test)]
     pub(crate) fn untiled(nodes: Vec<Box<dyn PipelineNode>>) -> Self {
-        Self::Untiled(nodes)
+        Self(Repr::Untiled(nodes))
     }
 
     pub(crate) fn len(&self) -> usize {
-        match self {
-            Self::Tiled(ranged) => ranged.len(),
+        match &self.0 {
+            Repr::Tiled(ranged) => ranged.len(),
             #[cfg(test)]
-            Self::Untiled(nodes) => nodes.len(),
+            Repr::Untiled(nodes) => nodes.len(),
         }
     }
 
     /// Consumes the set, yielding nodes in ascending range order.
     pub(crate) fn into_nodes(self) -> Vec<Box<dyn PipelineNode>> {
-        match self {
-            Self::Tiled(ranged) => ranged.into_iter().map(|(_, node)| node).collect(),
+        match self.0 {
+            Repr::Tiled(ranged) => ranged.into_iter().map(|(_, node)| node).collect(),
             #[cfg(test)]
-            Self::Untiled(nodes) => nodes,
+            Repr::Untiled(nodes) => nodes,
         }
     }
 
@@ -131,10 +137,10 @@ impl SplitReplacements {
     pub(crate) fn into_ranged(
         self,
     ) -> crate::error::Result<Vec<(FeedRange, Box<dyn PipelineNode>)>> {
-        match self {
-            Self::Tiled(ranged) => Ok(ranged),
+        match self.0 {
+            Repr::Tiled(ranged) => Ok(ranged),
             #[cfg(test)]
-            Self::Untiled(nodes) => nodes
+            Repr::Untiled(nodes) => nodes
                 .into_iter()
                 .map(|node| {
                     let range = node
@@ -247,6 +253,20 @@ pub(crate) trait PipelineNode: Send + std::any::Any {
     fn feed_range(&self) -> Option<&FeedRange> {
         None
     }
+
+    /// Returns the number of leaf request nodes this node fans out to.
+    ///
+    /// Leaf nodes return `1` (or `0` for a no-op leaf that issues no request).
+    /// Intermediate ("parent") nodes return the sum of their children's widths,
+    /// so a pipeline of any shape reports its total leaf fan-out by recursion.
+    /// The planner uses this to enforce a maximum fan-out on fresh
+    /// cross-partition plans; because every node contributes its own accounting,
+    /// the check scales to any future pipeline shape.
+    ///
+    /// This is a required method (rather than defaulted) so a newly added parent
+    /// node type cannot silently inherit an incorrect leaf-count of `1` — every
+    /// implementer must state its fan-out explicitly.
+    fn fan_out_width(&self) -> usize;
 }
 
 #[cfg(test)]

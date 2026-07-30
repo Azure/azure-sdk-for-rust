@@ -24,7 +24,7 @@ use azure_data_cosmos_driver::models::{
     CosmosOperation, FeedRange, ItemReference, MaxItemCountHint, PartitionKey,
     PartitionKeyDefinition,
 };
-use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions};
+use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, PlanOptions};
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
 
@@ -104,10 +104,14 @@ async fn cross_partition_order_by_returns_globally_sorted_results() {
     let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
         .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank ASC","parameters":[]}"#.to_vec());
 
-    let mut plan = driver
-        .plan_operation(operation, &OperationOptions::default(), None)
-        .await
-        .expect("plan builds a StreamingOrderedMerge pipeline");
+    let mut plan = Box::pin(driver.plan_operation(
+        operation,
+        &OperationOptions::default(),
+        None,
+        &PlanOptions::default(),
+    ))
+    .await
+    .expect("plan builds a StreamingOrderedMerge pipeline");
 
     let mut ranks: Vec<i64> = Vec::new();
     while let Some(response) = driver
@@ -161,10 +165,14 @@ async fn cross_partition_order_by_paginates_with_small_page_size() {
             std::num::NonZeroU32::new(3).unwrap(),
         ));
 
-    let mut plan = driver
-        .plan_operation(operation, &OperationOptions::default(), None)
-        .await
-        .unwrap();
+    let mut plan = Box::pin(driver.plan_operation(
+        operation,
+        &OperationOptions::default(),
+        None,
+        &PlanOptions::default(),
+    ))
+    .await
+    .unwrap();
 
     let mut ranks: Vec<i64> = Vec::new();
     let mut page_sizes: Vec<usize> = Vec::new();
@@ -207,10 +215,14 @@ async fn run_query_collecting_ids(
     let body = serde_json::to_vec(&serde_json::json!({"query": query, "parameters": []})).unwrap();
     let operation =
         CosmosOperation::query_items(container.clone(), Some(FeedRange::full())).with_body(body);
-    let mut plan = driver
-        .plan_operation(operation, &OperationOptions::default(), None)
-        .await
-        .expect("plan builds a StreamingOrderedMerge pipeline");
+    let mut plan = Box::pin(driver.plan_operation(
+        operation,
+        &OperationOptions::default(),
+        None,
+        &PlanOptions::default(),
+    ))
+    .await
+    .expect("plan builds a StreamingOrderedMerge pipeline");
 
     let mut ids = Vec::new();
     while let Some(response) = driver
