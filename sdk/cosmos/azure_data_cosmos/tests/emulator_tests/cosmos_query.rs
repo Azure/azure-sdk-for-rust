@@ -10,7 +10,7 @@ use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
     feed::FeedScope,
-    models::{CosmosStatus, ThroughputProperties},
+    models::ThroughputProperties,
     options::{MaxItemCountHint, QueryOptions},
     Query,
 };
