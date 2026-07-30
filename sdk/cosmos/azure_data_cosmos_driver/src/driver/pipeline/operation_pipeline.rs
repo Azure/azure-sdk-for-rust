@@ -1275,6 +1275,7 @@ fn resolve_endpoint(
             operation.resource_type(),
             operation.operation_type(),
             operation.request_headers().full_fidelity_feed,
+            operation.resource_reference().is_rid_addressed(),
         );
     let transport_mode = if use_gateway_v2 {
         TransportMode::GatewayV2
@@ -1304,6 +1305,7 @@ fn resolve_endpoint(
                     operation.resource_type(),
                     operation.operation_type(),
                     operation.request_headers().full_fidelity_feed,
+                    operation.resource_reference().is_rid_addressed(),
                 );
             let ep_url = ep.selected_url(ep_use_gw_v2).clone();
             let ep_endpoint_key = if ep_use_gw_v2 {
@@ -5449,6 +5451,67 @@ mod tests {
         assert_eq!(
             routing.selected_url.as_str(),
             "https://test-westus2-thin.documents.azure.com:444/"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_falls_back_to_gateway_for_rid_addressed_operations() {
+        // Gateway 2.0 derives its DatabaseName/CollectionName routing tokens by
+        // parsing the signing link, but a RID-addressed feed signs over a bare
+        // lowercased RID with no `dbs`/`colls` segments. Routing such an
+        // operation to Gateway 2.0 would fail the wrap locally with
+        // CLIENT_BAD_REQUEST before the request is ever sent, so it must fall
+        // back to standard Gateway (which routes raw RID paths natively).
+        let rid_container = ContainerReference::new_by_rid(
+            test_account(),
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &test_container_props(),
+        );
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &rid_container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        assert!(operation.resource_reference().is_rid_addressed());
+
+        let endpoint = CosmosEndpoint::regional_with_gateway_v2(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
+            account_write_endpoints: vec![endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.transport_mode, TransportMode::Gateway);
+        assert_eq!(
+            routing.selected_url.as_str(),
+            "https://test-westus2.documents.azure.com/"
         );
     }
 

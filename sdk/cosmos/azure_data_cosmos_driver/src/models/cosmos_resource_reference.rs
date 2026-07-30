@@ -514,7 +514,12 @@ impl CosmosResourceReference {
     /// routed raw but still full-link-signed — so do not derive one helper from
     /// the other. Offers are handled separately and are not considered
     /// RID-addressed for path-encoding purposes.
-    fn is_rid_addressed(&self) -> bool {
+    ///
+    /// Also consumed by
+    /// [`is_operation_supported_by_gateway_v2`](crate::driver::transport::is_operation_supported_by_gateway_v2)
+    /// to route RID-addressed operations to standard Gateway, since Gateway 2.0
+    /// derives its routing tokens by parsing the name-based signing link.
+    pub(crate) fn is_rid_addressed(&self) -> bool {
         if let Some(ref container) = self.container {
             if container.is_by_rid() {
                 return true;
