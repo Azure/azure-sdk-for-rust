@@ -124,15 +124,13 @@ impl ContainerClient {
     /// operations, carrying the operation name plus the database and container
     /// identity the driver context does not know.
     fn operation_context(&self, operation_name: &'static str) -> CosmosOperationContext {
-        CosmosOperationContext::new()
+        let context = CosmosOperationContext::new()
             .with_operation_name(operation_name)
-            .with_database_name(
-                self.container_ref
-                    .database_name()
-                    .expect("SDK container client is always name-addressed")
-                    .to_string(),
-            )
-            .with_container_name(self.container_ref.name().to_string())
+            .with_container_name(self.container_ref.name().to_string());
+        match self.container_ref.database_name() {
+            Some(name) => context.with_database_name(name.to_string()),
+            None => context,
+        }
     }
 
     /// Reads the properties of the container.

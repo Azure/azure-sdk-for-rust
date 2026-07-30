@@ -309,6 +309,19 @@ impl ContainerReference {
     pub fn is_by_rid(&self) -> bool {
         self.name_addressing.is_none()
     }
+
+    /// Returns this reference re-addressed purely by RID, dropping the
+    /// name-based path and parent database name.
+    ///
+    /// The name- and RID-addressed forms of a container describe the same
+    /// physical container and differ only in how requests are routed and
+    /// signed, so a reference resolved by name can be converted without
+    /// re-reading the container. Used by the container cache to keep the
+    /// by-RID index addressing-correct. A no-op when already RID-addressed.
+    pub(crate) fn into_rid_addressed(mut self) -> Self {
+        self.name_addressing = None;
+        self
+    }
 }
 
 // =============================================================================

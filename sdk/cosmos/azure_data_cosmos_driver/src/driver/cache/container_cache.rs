@@ -66,9 +66,10 @@ impl ContainerRidKey {
 /// Stores fully-resolved [`ContainerReference`] values and indexes them by
 /// both name (`account + db_name + container_name`) and RID
 /// (`account + container_rid`). A name-addressed reference fetched or inserted
-/// via either index is cross-populated into the other automatically; a
-/// RID-addressed reference is stored only in the by-RID index, because it has
-/// no database name to form a safe by-name key.
+/// via either index is cross-populated into the other automatically, with the
+/// by-RID copy re-addressed by RID so each index always hands back a reference
+/// matching how it was looked up; a RID-addressed reference is stored only in
+/// the by-RID index, because it has no database name to form a safe by-name key.
 ///
 /// Uses single-pending-I/O semantics per key — concurrent requests for the
 /// same container share one fetch operation.
@@ -219,6 +220,11 @@ impl ContainerCache {
     /// If an entry already exists under either key, the existing entry is
     /// preserved (first-write-wins). RID-addressed references are inserted only
     /// into the by-RID cache, since they carry no database name to key on.
+    ///
+    /// The by-RID index always stores a RID-addressed reference, so a by-RID
+    /// lookup that hits an entry cross-populated by a name-based resolution
+    /// still yields RID-based paths and signing rather than silently falling
+    /// back to name addressing.
     pub(crate) async fn put(&self, container: ContainerReference) {
         let name_key = ContainerNameKey::from_container(&container);
         let rid_key = ContainerRidKey::from_container(&container);
@@ -229,8 +235,9 @@ impl ContainerCache {
                 .get_or_insert_with(name_key, || async { Ok(container_for_name) })
                 .await;
         }
+        let container_for_rid = container.into_rid_addressed();
         self.by_rid
-            .get_or_insert_with(rid_key, || async { Ok(container) })
+            .get_or_insert_with(rid_key, || async { Ok(container_for_rid) })
             .await;
     }
 }
@@ -414,6 +421,47 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(counter.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn rid_lookup_after_name_resolution_stays_rid_addressed() {
+        // Resolving by name cross-populates the by-RID index. A later by-RID
+        // lookup must still yield a RID-addressed reference, otherwise the
+        // caller silently falls back to name-based paths and signing despite
+        // having explicitly addressed the container by RID.
+        let cache = ContainerCache::new();
+        let container = test_container("mydb", "mycoll");
+        let rid = container.rid().to_owned();
+
+        let by_name = cache
+            .get_or_fetch_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll", || async move {
+                Ok(container)
+            })
+            .await
+            .unwrap();
+        assert!(!by_name.is_by_rid());
+        assert_eq!(by_name.database_name(), Some("mydb"));
+
+        let by_rid = cache
+            .get_or_fetch_by_rid(ACCOUNT_ENDPOINT, &rid, || async {
+                panic!("by-RID lookup should be served from the cross-populated cache")
+            })
+            .await
+            .unwrap();
+
+        assert!(by_rid.is_by_rid());
+        assert_eq!(by_rid.database_name(), None);
+        assert_eq!(by_rid.name_based_path(), None);
+        assert_eq!(by_rid.base_path(), by_rid.rid_based_path());
+        // The name-addressed entry is untouched by the re-addressing.
+        assert_eq!(
+            cache
+                .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
+                .await
+                .unwrap()
+                .database_name(),
+            Some("mydb")
+        );
     }
 
     #[tokio::test]
