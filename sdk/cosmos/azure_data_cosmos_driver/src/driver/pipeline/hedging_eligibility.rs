@@ -92,10 +92,6 @@ pub(crate) fn should_hedge(
         return false;
     }
 
-    // Eligibility is gated on the exact `(resource, operation)` PAIR — never a
-    // cartesian resource-set × operation-set — so widening one dimension cannot
-    // enable an unintended combination (e.g. `(Document, ReadFeed)` document
-    // change feed). Writes are excluded structurally: no write pair is listed.
     let pair = (operation.resource_type(), operation.operation_type());
     if !HEDGEABLE_PAIRS.contains(&pair) {
         return false;

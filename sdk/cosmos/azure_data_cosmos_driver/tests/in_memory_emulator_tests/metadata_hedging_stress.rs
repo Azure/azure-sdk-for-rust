@@ -106,8 +106,8 @@ use azure_data_cosmos_driver::models::{
     PartitionKey,
 };
 use azure_data_cosmos_driver::options::{
-    AvailabilityStrategy, DriverOptions, HedgeThreshold, HedgingStrategy, OperationOptions,
-    OperationOptionsBuilder, PartitionFailoverOptions, Region,
+    AvailabilityStrategy, DriverOptions, HedgeThreshold, HedgingOptions, HedgingStrategy,
+    OperationOptions, OperationOptionsBuilder, PartitionFailoverOptions, Region,
 };
 
 use super::{create_item_request, setup_multi_region, MultiRegionTestContext};
@@ -223,6 +223,22 @@ fn account() -> AccountReference {
 }
 
 fn driver_options(arm: Arm) -> DriverOptions {
+    driver_options_with_hedge_budget(arm, None)
+}
+
+/// Same as [`driver_options`], but optionally caps the driver-wide metadata
+/// hedge budget (scenario 5).
+fn driver_options_with_hedge_budget(
+    arm: Arm,
+    metadata_hedge_budget: Option<usize>,
+) -> DriverOptions {
+    let hedging = match metadata_hedge_budget {
+        Some(limit) => HedgingOptions::builder()
+            .with_max_concurrent_metadata_hedges(limit)
+            .build(),
+        None => HedgingOptions::default(),
+    };
+
     DriverOptions::builder(account())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
         .with_operation_options(
@@ -236,6 +252,7 @@ fn driver_options(arm: Arm) -> DriverOptions {
                 .build()
                 .expect("partition failover options build"),
         )
+        .with_hedging_options(hedging)
         .build()
 }
 
@@ -706,16 +723,13 @@ async fn scenario_budgeted_storm(ctx: &MultiRegionTestContext, cfg: &StressConfi
     for arm in Arm::ALL {
         let faults = FaultSet::new(PrimaryFault::Delay(cfg.delay));
         let runtime = build_runtime(ctx, &faults).await;
+        // The OFF arm never hedges, so the ceiling is irrelevant there; applying
+        // it only to the ON arm keeps the comparison to a single variable.
+        let budget = (arm == Arm::On).then_some(cfg.storm_hedge_budget);
         let driver = runtime
-            .create_driver(driver_options(arm))
+            .create_driver(driver_options_with_hedge_budget(arm, budget))
             .await
             .expect("driver initializes");
-
-        // The OFF arm never hedges, so the ceiling is irrelevant there; setting
-        // it only on the ON arm keeps the comparison to a single variable.
-        if arm == Arm::On {
-            driver.set_metadata_hedge_limit_for_testing(cfg.storm_hedge_budget);
-        }
 
         let pending = (0..cfg.storm_concurrency).map(|_| timed_container_read(&driver));
         let outcomes = futures::future::join_all(pending).await;

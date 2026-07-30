@@ -12,10 +12,11 @@
 //! more hedges spawn.
 //!
 //! [`HedgeBudget`] caps how many hedge races a single client may have open at
-//! once. It is deliberately **non-blocking**: an operation that cannot get a
-//! permit does not queue for one, it simply skips the hedge upgrade and follows
-//! the ordinary sequential failover path. A hedge that waits in line has already
-//! lost the latency argument it exists to win.
+//! once, from [`HedgingOptions::max_concurrent_metadata_hedges`]. It is
+//! deliberately **non-blocking**: an operation that cannot get a permit does not
+//! queue for one, it simply skips the hedge upgrade and follows the ordinary
+//! sequential failover path. A hedge that waits in line has already lost the
+//! latency argument it exists to win.
 //!
 //! # Scope
 //!
@@ -39,21 +40,13 @@
 //! skip a healthy region if returned after only the primary was tried.
 //!
 //! [`HedgedRaceResult`]: super::operation_pipeline::HedgedRaceResult
+//! [`HedgingOptions::max_concurrent_metadata_hedges`]:
+//!     crate::options::HedgingOptions::max_concurrent_metadata_hedges
 
-use std::sync::atomic::{AtomicUsize, Ordering};
+use async_lock::{Semaphore, SemaphoreGuard};
 
 use crate::diagnostics::PipelineType;
-
-/// Environment override for the metadata hedge concurrency limit.
-const METADATA_LIMIT_ENV: &str = "AZURE_COSMOS_MAX_CONCURRENT_METADATA_HEDGES";
-
-/// Default ceiling on concurrent metadata hedge races per client.
-///
-/// Sized as a guardrail rather than a throttle. Metadata hedge races are bounded
-/// by distinct container / partition-key-range cache misses, so a client with
-/// more than this many *simultaneous* metadata refreshes in flight is already
-/// pathological — and that is exactly the shape a full-region brownout takes.
-const DEFAULT_METADATA_LIMIT: usize = 32;
+use crate::options::HedgingOptions;
 
 /// Per-client ceiling on concurrent cross-region metadata hedge races.
 ///
@@ -61,24 +54,21 @@ const DEFAULT_METADATA_LIMIT: usize = 32;
 /// races rather than legs, and why the data plane is exempt.
 #[derive(Debug)]
 pub(crate) struct HedgeBudget {
-    metadata: HedgeSlots,
+    metadata: Semaphore,
 }
 
 impl HedgeBudget {
-    /// Builds a budget from the process environment, falling back to
-    /// [`DEFAULT_METADATA_LIMIT`].
-    ///
-    /// `0` disables metadata hedging outright (no permit can ever be issued).
-    /// An unparseable value is ignored in favor of the default, so a typo
-    /// degrades to documented behavior rather than to silently no hedging.
-    pub(crate) fn from_env() -> Self {
-        Self::new(limit_from_env(METADATA_LIMIT_ENV, DEFAULT_METADATA_LIMIT))
+    /// Builds a budget from the driver's [`HedgingOptions`].
+    pub(crate) fn new(options: &HedgingOptions) -> Self {
+        Self::with_metadata_limit(options.max_concurrent_metadata_hedges())
     }
 
     /// Builds a budget with an explicit metadata limit.
-    pub(crate) fn new(metadata_limit: usize) -> Self {
+    ///
+    /// `0` disables metadata hedging outright: no permit can ever be issued.
+    pub(crate) fn with_metadata_limit(metadata_limit: usize) -> Self {
         Self {
-            metadata: HedgeSlots::new(metadata_limit),
+            metadata: Semaphore::new(metadata_limit),
         }
     }
 
@@ -87,118 +77,48 @@ impl HedgeBudget {
     ///
     /// Data-plane races are always admitted — see the [module docs](self).
     ///
+    /// Never blocks and never retries: acquisition is a single `try_acquire`, so
+    /// a caller under contention is refused immediately rather than spinning for
+    /// a slot it did not want to wait for in the first place.
+    ///
     /// The returned permit releases its slot on drop, so a race that ends early
     /// (primary wins pre-threshold, deadline fires) frees its slot immediately.
     pub(crate) fn try_admit(&self, pipeline_type: PipelineType) -> Option<HedgePermit<'_>> {
         if !pipeline_type.is_metadata() {
-            return Some(HedgePermit { slots: None });
+            return Some(HedgePermit::Unbudgeted);
         }
-        self.metadata.try_acquire()
-    }
-
-    /// Overrides the metadata limit so tests can drive the exhausted branch
-    /// deterministically, without racing the process environment.
-    ///
-    /// Production code never calls this; the limit is fixed at construction.
-    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
-    pub(crate) fn set_metadata_limit_for_tests(&self, limit: usize) {
-        self.metadata.limit.store(limit, Ordering::Relaxed);
+        self.metadata.try_acquire().map(HedgePermit::Admitted)
     }
 }
 
 impl Default for HedgeBudget {
     fn default() -> Self {
-        Self::new(DEFAULT_METADATA_LIMIT)
+        Self::new(&HedgingOptions::default())
     }
 }
 
-/// Reads a limit from `name`, falling back to `default` when the variable is
-/// unset, empty, or not a valid `usize`.
-fn limit_from_env(name: &str, default: usize) -> usize {
-    let Ok(raw) = std::env::var(name) else {
-        return default;
-    };
-    match raw.trim().parse::<usize>() {
-        Ok(parsed) => parsed,
-        Err(_) => {
-            tracing::warn!(
-                env_var = name,
-                value = %raw,
-                default,
-                "Ignoring unparseable metadata hedge concurrency limit; using the default",
-            );
-            default
-        }
-    }
-}
-
-/// A counting permit pool with `try`-only acquisition.
+/// Handle for one hedge race that has been allowed to proceed.
 ///
-/// Implemented over an [`AtomicUsize`] rather than a runtime semaphore so the
-/// budget stays executor-agnostic, and because a blocking acquire is never the
-/// right answer here.
+/// Held by the pipeline for as long as the race is open.
 #[derive(Debug)]
-struct HedgeSlots {
-    in_flight: AtomicUsize,
-    /// Fixed at construction in production; atomic only so tests can rewrite it
-    /// through a shared reference. See
-    /// [`HedgeBudget::set_metadata_limit_for_tests`].
-    limit: AtomicUsize,
-}
-
-impl HedgeSlots {
-    fn new(limit: usize) -> Self {
-        Self {
-            in_flight: AtomicUsize::new(0),
-            limit: AtomicUsize::new(limit),
-        }
-    }
-
-    fn try_acquire(&self) -> Option<HedgePermit<'_>> {
-        let limit = self.limit.load(Ordering::Relaxed);
-        let mut current = self.in_flight.load(Ordering::Relaxed);
-        loop {
-            if current >= limit {
-                return None;
-            }
-            match self.in_flight.compare_exchange_weak(
-                current,
-                current + 1,
-                Ordering::AcqRel,
-                Ordering::Relaxed,
-            ) {
-                Ok(_) => return Some(HedgePermit { slots: Some(self) }),
-                Err(observed) => current = observed,
-            }
-        }
-    }
-}
-
-/// RAII handle for one admitted hedge race.
-///
-/// Held by the pipeline for as long as the race is open; dropping it returns the
-/// slot to the pool. A permit for an unbudgeted pipeline holds no slot and its
-/// drop is a no-op.
-#[derive(Debug)]
-pub(crate) struct HedgePermit<'a> {
-    slots: Option<&'a HedgeSlots>,
-}
-
-impl Drop for HedgePermit<'_> {
-    fn drop(&mut self) {
-        if let Some(slots) = self.slots {
-            slots.in_flight.fetch_sub(1, Ordering::AcqRel);
-        }
-    }
+pub(crate) enum HedgePermit<'a> {
+    /// The race is on an unbudgeted pipeline and consumed no slot.
+    Unbudgeted,
+    /// The race holds a metadata slot.
+    ///
+    /// The guard is never read: it exists so that dropping the permit returns
+    /// the slot to the semaphore.
+    Admitted(#[allow(dead_code)] SemaphoreGuard<'a>),
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::options::DEFAULT_MAX_CONCURRENT_METADATA_HEDGES;
 
     #[test]
     fn permits_are_issued_up_to_the_limit() {
-        let budget = HedgeBudget::new(2);
+        let budget = HedgeBudget::with_metadata_limit(2);
 
         let first = budget.try_admit(PipelineType::Metadata);
         let second = budget.try_admit(PipelineType::Metadata);
@@ -212,7 +132,7 @@ mod tests {
 
     #[test]
     fn dropping_a_permit_returns_the_slot() {
-        let budget = HedgeBudget::new(1);
+        let budget = HedgeBudget::with_metadata_limit(1);
 
         let permit = budget.try_admit(PipelineType::Metadata);
         assert!(permit.is_some());
@@ -227,7 +147,7 @@ mod tests {
 
     #[test]
     fn data_plane_is_not_budgeted() {
-        let budget = HedgeBudget::new(0);
+        let budget = HedgeBudget::with_metadata_limit(0);
 
         assert!(
             budget.try_admit(PipelineType::Metadata).is_none(),
@@ -245,7 +165,7 @@ mod tests {
 
     #[test]
     fn slots_are_reusable_across_many_rounds() {
-        let budget = HedgeBudget::new(1);
+        let budget = HedgeBudget::with_metadata_limit(1);
         for _ in 0..64 {
             let permit = budget
                 .try_admit(PipelineType::Metadata)
@@ -256,17 +176,27 @@ mod tests {
     }
 
     #[test]
-    fn unset_env_var_falls_back_to_the_default() {
-        assert_eq!(
-            limit_from_env("AZURE_COSMOS_HEDGE_LIMIT_NEVER_SET_IN_TESTS", 7),
-            7
-        );
+    fn budget_is_built_from_the_driver_option() {
+        let options = HedgingOptions::builder()
+            .with_max_concurrent_metadata_hedges(3)
+            .build();
+        let budget = HedgeBudget::new(&options);
+
+        let permits: Vec<_> = (0..3)
+            .map(|_| {
+                budget
+                    .try_admit(PipelineType::Metadata)
+                    .expect("the configured limit must be admitted in full")
+            })
+            .collect();
+        assert!(budget.try_admit(PipelineType::Metadata).is_none());
+        drop(permits);
     }
 
     #[test]
     fn default_budget_admits_the_documented_number_of_races() {
         let budget = HedgeBudget::default();
-        let permits: Vec<_> = (0..DEFAULT_METADATA_LIMIT)
+        let permits: Vec<_> = (0..DEFAULT_MAX_CONCURRENT_METADATA_HEDGES)
             .map(|_| {
                 budget
                     .try_admit(PipelineType::Metadata)

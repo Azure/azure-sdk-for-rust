@@ -303,6 +303,21 @@ impl PartitionKeyRangeCache {
     }
 }
 
+/// Returns `previous` with its change-feed continuation stripped.
+///
+/// Every caller reaches this having *already* attempted a cold fetch that came
+/// back empty, and a cold attempt is what releases the container's region pin —
+/// both layers define "cold" identically as "carries no continuation". So by the
+/// time we fall back to the cached map, the continuation it still holds is
+/// orphaned: it is affine to a region nothing routes back to any more, and
+/// replaying it would risk handing a region-specific ETag to a region that never
+/// issued it. Dropping it costs one full refresh and makes the next attempt cold.
+fn without_orphaned_continuation(previous: &ContainerRoutingMap) -> ContainerRoutingMap {
+    let mut unpinned = previous.clone();
+    unpinned.change_feed_next_if_none_match = None;
+    unpinned
+}
+
 /// Fetches partition key ranges via change-feed loop and builds a routing map.
 ///
 /// This mirrors the SDK's routing-map-for-container pattern:
@@ -318,6 +333,10 @@ impl PartitionKeyRangeCache {
 /// closure. If such a chain fails, the continuation is discarded and the fetch is
 /// retried once as a cold chain, which also releases the pin — otherwise every
 /// later refresh would replay the same token against the same unreachable region.
+///
+/// Every fallback that returns the previous map *after* a cold retry has run
+/// goes through [`without_orphaned_continuation`], so the pin and the token it
+/// protects are never left half-alive.
 async fn fetch_and_build_routing_map<F, Fut>(
     container: ContainerReference,
     previous_routing_map: Option<Arc<ContainerRoutingMap>>,
@@ -390,17 +409,10 @@ where
                         return refreshed;
                     }
                     // Both the pinned and the cold attempt failed. Keep serving
-                    // the previously cached ranges, but drop the continuation:
-                    // it is affine to a region we could not reach, and the cold
-                    // retry has already cleared the pin that kept it there, so
-                    // replaying it would risk sending a region-affine ETag to a
-                    // different region. Without it the next refresh runs cold.
+                    // the previously cached ranges, but drop the continuation.
                     return previous_routing_map
-                        .map(|p| {
-                            let mut unpinned = (*p).clone();
-                            unpinned.change_feed_next_if_none_match = None;
-                            unpinned
-                        })
+                        .as_deref()
+                        .map(without_orphaned_continuation)
                         .unwrap_or_else(ContainerRoutingMap::empty);
                 }
                 return previous_routing_map
@@ -456,7 +468,7 @@ where
                 ))
                 .await;
                 if refreshed.ranges().is_empty() {
-                    (*prev).clone()
+                    without_orphaned_continuation(&prev)
                 } else {
                     refreshed
                 }
@@ -473,7 +485,7 @@ where
                 ))
                 .await;
                 if refreshed.ranges().is_empty() {
-                    (*prev).clone()
+                    without_orphaned_continuation(&prev)
                 } else {
                     refreshed
                 }
@@ -1363,8 +1375,17 @@ mod tests {
         assert_eq!(call_count.load(Ordering::SeqCst), 4);
     }
 
+    /// A cold retry that comes back empty must not hand the previous map's
+    /// continuation back to the caller.
+    ///
+    /// The ranges survive — a stale map still routes better than no map — but
+    /// the continuation does not. The cold retry ran with `previous = None`,
+    /// which is what releases the region pin, so any continuation left on the
+    /// map would now be a region-affine ETag with nothing pinning it to the
+    /// region that issued it. The next resumed refresh could then send it
+    /// somewhere it means nothing.
     #[tokio::test]
-    async fn failed_full_refresh_after_merge_failure_preserves_previous_map() {
+    async fn failed_full_refresh_after_merge_failure_drops_orphaned_continuation() {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
@@ -1403,8 +1424,9 @@ mod tests {
 
         assert_eq!(result.ranges()[0].id, "0");
         assert_eq!(
-            result.change_feed_next_if_none_match.as_deref(),
-            Some("etag-previous")
+            result.change_feed_next_if_none_match, None,
+            "the cold retry released the pin, so its continuation is orphaned \
+             and must be dropped with it",
         );
         assert_eq!(call_count.load(Ordering::SeqCst), 3);
     }

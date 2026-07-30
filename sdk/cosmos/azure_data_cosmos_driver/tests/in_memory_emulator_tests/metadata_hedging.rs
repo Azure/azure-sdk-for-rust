@@ -40,8 +40,8 @@ use azure_data_cosmos_driver::fault_injection::{
 use azure_data_cosmos_driver::in_memory_emulator::WriteMode;
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation, DatabaseReference};
 use azure_data_cosmos_driver::options::{
-    AvailabilityStrategy, DriverOptions, HedgeThreshold, HedgingStrategy, OperationOptions,
-    OperationOptionsBuilder, PartitionFailoverOptions, Region,
+    AvailabilityStrategy, DriverOptions, HedgeThreshold, HedgingOptions, HedgingStrategy,
+    OperationOptions, OperationOptionsBuilder, PartitionFailoverOptions, Region,
 };
 
 use super::{setup_multi_region, MultiRegionTestContext};
@@ -74,6 +74,16 @@ async fn make_driver(
     ctx: &MultiRegionTestContext,
     rules: Vec<Arc<FaultInjectionRule>>,
 ) -> Arc<CosmosDriver> {
+    make_driver_with_hedging(ctx, rules, HedgingOptions::default()).await
+}
+
+/// Same as [`make_driver`], but with an explicit driver-wide hedging budget, so
+/// a test can drive the budget-exhausted branch deterministically.
+async fn make_driver_with_hedging(
+    ctx: &MultiRegionTestContext,
+    rules: Vec<Arc<FaultInjectionRule>>,
+    hedging: HedgingOptions,
+) -> Arc<CosmosDriver> {
     let runtime = ctx
         .emulator
         .runtime_builder_with_fault_rules(rules)
@@ -89,6 +99,7 @@ async fn make_driver(
                 .build()
                 .expect("partition failover options build"),
         )
+        .with_hedging_options(hedging)
         .build();
 
     runtime
@@ -128,6 +139,44 @@ fn container_read_delay_rule(region: Region, delay: Duration) -> Arc<FaultInject
         .build();
     Arc::new(
         FaultInjectionRuleBuilder::new("metadata-container-read-delay", result)
+            .with_condition(condition)
+            .build(),
+    )
+}
+
+/// Delays the partition-key-range ReadFeed in `region` past the metadata hedge
+/// threshold. Doubles as a request counter for that region.
+fn pk_range_delay_rule(region: Region, delay: Duration) -> Arc<FaultInjectionRule> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::MetadataPartitionKeyRanges)
+        .with_region(region)
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_delay(delay)
+        .with_probability(1.0)
+        .build();
+    Arc::new(
+        FaultInjectionRuleBuilder::new("metadata-pk-range-delay", result)
+            .with_condition(condition)
+            .build(),
+    )
+}
+
+/// Zero-effect rule counting partition-key-range requests to `region`.
+///
+/// Probability 1.0 with no delay, error, or custom response: it increments its
+/// hit count and forwards the request untouched, making it an exact per-region
+/// request counter for an operation that surfaces no diagnostics to the caller.
+fn pk_range_counter_rule(region: Region) -> Arc<FaultInjectionRule> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::MetadataPartitionKeyRanges)
+        .with_region(region)
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_probability(1.0)
+        .build();
+    Arc::new(
+        FaultInjectionRuleBuilder::new("metadata-pk-range-counter", result)
             .with_condition(condition)
             .build(),
     )
@@ -261,10 +310,15 @@ async fn metadata_container_read_not_hedged_when_budget_exhausted() {
     let ctx = setup_multi_region(WriteMode::Single).await;
 
     let rule = container_read_delay_rule(Region::EAST_US, PRIMARY_METADATA_DELAY);
-    let driver = make_driver(&ctx, vec![Arc::clone(&rule)]).await;
-
-    // Refuse every metadata hedge, as an exhausted budget would.
-    driver.set_metadata_hedge_limit_for_testing(0);
+    // A budget of zero refuses every metadata hedge, as an exhausted one would.
+    let driver = make_driver_with_hedging(
+        &ctx,
+        vec![Arc::clone(&rule)],
+        HedgingOptions::builder()
+            .with_max_concurrent_metadata_hedges(0)
+            .build(),
+    )
+    .await;
 
     let hedge_diag = container_read_hedge_diagnostics(&driver, hedging_options()).await;
 
@@ -289,9 +343,14 @@ async fn metadata_hedge_budget_slot_is_released_after_each_race() {
     let ctx = setup_multi_region(WriteMode::Single).await;
 
     let rule = container_read_delay_rule(Region::EAST_US, PRIMARY_METADATA_DELAY);
-    let driver = make_driver(&ctx, vec![Arc::clone(&rule)]).await;
-
-    driver.set_metadata_hedge_limit_for_testing(1);
+    let driver = make_driver_with_hedging(
+        &ctx,
+        vec![Arc::clone(&rule)],
+        HedgingOptions::builder()
+            .with_max_concurrent_metadata_hedges(1)
+            .build(),
+    )
+    .await;
 
     for round in 1..=2 {
         let hedge_diag = container_read_hedge_diagnostics(&driver, hedging_options())
@@ -309,4 +368,70 @@ async fn metadata_hedge_budget_slot_is_released_after_each_race() {
              diag={hedge_diag:?}",
         );
     }
+}
+
+/// Partition-key-range ReadFeed: a **cold** chain hedges, and every page after
+/// it stays pinned to the region that won.
+///
+/// PK-range fetches are driven internally by the cache and surface no
+/// diagnostics to the caller, so hedge activity is observed with per-region
+/// zero-effect counter rules (probability 1.0, no delay / error / body — they
+/// count the request and forward it untouched).
+///
+/// The second half is the important one. The ETag a PK-range page returns is
+/// only meaningful to the region that issued it, so once West wins the cold
+/// chain the continuation is region-affine to West. A forced refresh must
+/// therefore go back to West *and not hedge* — a hedge leg would carry West's
+/// ETag into East, where it means nothing.
+#[tokio::test]
+async fn metadata_pk_range_read_hedges_cold_then_pins_to_the_winner() {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+
+    let east_pk = pk_range_delay_rule(Region::EAST_US, PRIMARY_METADATA_DELAY);
+    let west_pk = pk_range_counter_rule(Region::WEST_US);
+    let driver = make_driver(&ctx, vec![Arc::clone(&east_pk), Arc::clone(&west_pk)]).await;
+
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves");
+
+    // Cold chain: the PK-range cache is empty, so this carries no continuation
+    // and is hedge-eligible. East stalls past the 1.5 s metadata threshold.
+    driver
+        .resolve_all_partition_key_ranges(&container, false)
+        .await
+        .expect("cold partition key range fetch succeeds");
+
+    assert!(
+        east_pk.hit_count() >= 1,
+        "the cold chain must have been attempted against the primary (East US) first",
+    );
+    assert!(
+        west_pk.hit_count() >= 1,
+        "the cold chain stalled past the 1.5s metadata threshold, so it must have \
+         hedged into the alternate region (West US)",
+    );
+
+    let east_after_cold = east_pk.hit_count();
+    let west_after_cold = west_pk.hit_count();
+
+    // Forced refresh: resumes from West's region-affine continuation, so it must
+    // be pinned to West with hedging suppressed.
+    driver
+        .resolve_all_partition_key_ranges(&container, true)
+        .await
+        .expect("forced partition key range refresh succeeds");
+
+    assert_eq!(
+        east_pk.hit_count(),
+        east_after_cold,
+        "a refresh resuming West's continuation must not reach East US: it is \
+         pinned to the region that issued the ETag, and pinning also suppresses \
+         hedging so no alternate leg is spawned",
+    );
+    assert!(
+        west_pk.hit_count() > west_after_cold,
+        "the refresh must still have run — against West US, the pinned region",
+    );
 }

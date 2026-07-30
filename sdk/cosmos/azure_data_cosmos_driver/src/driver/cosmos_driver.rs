@@ -1649,6 +1649,10 @@ impl CosmosDriver {
         // Clone the per-driver registry as-is for the request hot path.
         let throughput_control_groups = options.throughput_control_groups().clone();
 
+        // Read the hedge ceiling once, here: it is fixed for the driver's
+        // lifetime, and `options` is moved into `Self` below.
+        let hedge_budget = HedgeBudget::new(options.hedging_options());
+
         Ok(Self {
             runtime,
             options,
@@ -1661,7 +1665,7 @@ impl CosmosDriver {
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
             pk_range_cache: PartitionKeyRangeCache::new(),
             pk_range_region_pins: Mutex::new(HashMap::new()),
-            hedge_budget: HedgeBudget::from_env(),
+            hedge_budget,
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
             user_agent,
@@ -1794,21 +1798,6 @@ impl CosmosDriver {
             .unavailable_endpoints
             .keys()
             .any(|url| url.host_str() == Some(host))
-    }
-
-    /// **Internal test hook -- not part of the public API.**
-    ///
-    /// Rewrites this driver's concurrent metadata hedge limit so tests can
-    /// exercise the budget-exhausted branch deterministically, instead of
-    /// racing `AZURE_COSMOS_MAX_CONCURRENT_METADATA_HEDGES` in a shared
-    /// process environment. `0` refuses every metadata hedge.
-    ///
-    /// **Do not call from production code.** May change or be removed at any
-    /// time without a semver bump.
-    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
-    #[doc(hidden)]
-    pub fn set_metadata_hedge_limit_for_testing(&self, limit: usize) {
-        self.hedge_budget.set_metadata_limit_for_tests(limit);
     }
 
     /// **Internal test hook -- not part of the public API.**
@@ -2226,7 +2215,8 @@ impl CosmosDriver {
         }
     }
 
-    /// Returns the endpoint of the region that actually produced `response`.
+    /// Maps the region that produced `response` onto the account endpoint that
+    /// serves it.
     ///
     /// Used to pin the pages that follow a change-feed cold read. The ETag a
     /// page returns is only meaningful to the region that issued it, so **every**
@@ -2236,30 +2226,14 @@ impl CosmosDriver {
     /// later page would then be free to carry that region-affine ETag into a
     /// different region.
     ///
-    /// The serving region comes from [`HedgeDiagnostics::response_region`] when
-    /// a race occurred, and otherwise from the final attempt's own diagnostics.
-    /// Because this is only called on the success path, the last recorded
-    /// attempt is by construction the one that produced the response.
-    ///
-    /// `None` only when the response carries no attempt diagnostics or its
-    /// region is absent from the account's preferred read endpoints, in which
-    /// case the caller falls back to a pin that carries no endpoint but still
-    /// forbids hedging.
-    ///
-    /// [`HedgeDiagnostics::response_region`]: crate::diagnostics::HedgeDiagnostics::response_region
+    /// `None` when the response names no serving region, or when that region is
+    /// absent from the account's preferred read endpoints; the caller then falls
+    /// back to a pin that carries no endpoint but still forbids hedging.
     fn response_endpoint(
         &self,
         response: &crate::models::CosmosResponse,
     ) -> Option<CosmosEndpoint> {
-        let diagnostics = response.diagnostics();
-        let requests = diagnostics.requests();
-        let region = match diagnostics
-            .hedge_diagnostics()
-            .and_then(|hedge| hedge.response_region())
-        {
-            Some(region) => region.clone(),
-            None => requests.last()?.region()?.clone(),
-        };
+        let region = response.serving_region()?;
         let snapshot = self.location_state_store.snapshot();
         snapshot
             .account
