@@ -486,6 +486,15 @@ Before considering any task complete, run the following checks **in order** on a
 
      A subset of emulator tests (backup-endpoint fallback, partition failover) are intentionally not gated on `"emulator_vnext"` because they rely on multi-endpoint topology the vnext gateway does not model. See the per-file module headers for the exclusion rationale.
 
+   - To run the emulator suite with the data-plane client authenticated via **Entra ID (AAD)** instead of the account key, set `AZURE_COSMOS_AUTH_MODE=aad`. This requires the Windows emulator started with `/enableaadauthentication`; the framework then mints the emulator's fake JWT via `CosmosEmulatorCredential`.
+
+     ```bash
+     AZURE_COSMOS_AUTH_MODE=aad RUSTFLAGS='--cfg test_category="emulator"' \
+         cargo test -p azure_data_cosmos --test emulator -- --test-threads=1
+     ```
+
+     Database create/delete and throughput (offer) operations stay on a key-authenticated management client even in this mode, mirroring live accounts where they are not data-plane RBAC actions. CI runs this as the `windows_stable_aad_emulator` leg (`sdk/cosmos/aad-emulator-matrix.json`); the live counterpart is `sdk/cosmos/live-aad-platform-matrix.json`.
+
 **Common documentation link errors to avoid**:
 
 - When documenting factory methods or APIs, ensure the linked method names match the actual implementation

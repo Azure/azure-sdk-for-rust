@@ -50,6 +50,7 @@
     "dotenv",
     "downcasted",
     "downcasting",
+    "enableaadauthentication",
     "entra",
     "etag",
     "eventhub",

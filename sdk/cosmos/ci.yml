@@ -89,3 +89,17 @@ extends:
         Path: sdk/cosmos/vnext-emulator-matrix.json
         Selection: all
         GenerateVMJobs: true
+      # Runs the full emulator integration suite on every PR with the primary
+      # (data-plane) client authenticated via Entra ID instead of the account
+      # key, so AAD regressions are caught at PR time rather than waiting for
+      # the weekly live AAD legs (Cosmos_live_test_aad above).
+      #
+      # Windows-only: Invoke-CosmosTestSetup.ps1 skips emulator setup on
+      # non-Windows Azure DevOps agents, and it launches the Windows emulator
+      # with /enableaadauthentication. On the emulator any valid token maps to
+      # a root identity, so the data-plane RBAC limits that force the dual
+      # key/AAD client split on live accounts do not apply here.
+      - Name: Cosmos_aad_emulator
+        Path: sdk/cosmos/aad-emulator-matrix.json
+        Selection: all
+        GenerateVMJobs: true

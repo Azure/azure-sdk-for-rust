@@ -1,0 +1,15 @@
+{
+  "displayNames": {
+    "aad": "aad_emulator"
+  },
+  "matrix": {
+    "Agent": {
+      "windows": {
+        "OSVmImage": "env:WINDOWSVMIMAGE",
+        "Pool": "env:WINDOWSPOOL"
+      }
+    },
+    "RustToolchainName": ["stable"],
+    "AZURE_COSMOS_AUTH_MODE": ["aad"]
+  }
+}
