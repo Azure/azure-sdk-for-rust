@@ -21,7 +21,7 @@
   { "name": "system_string_id", "binary": "80 2C", "json": "id" },
   { "name": "system_string_first", "binary": "80 20", "json": "$s" },
   { "name": "system_string_rid", "binary": "80 25", "json": "_rid" },
-  { "name": "system_string_geometrycollection", "binary": "80 2B", "json": "GeometryCollection" },
+  { "name": "system_string_geometry_collection", "binary": "80 2B", "json": "GeometryCollection" },
   { "name": "system_string_last", "binary": "80 3F", "json": "_id" },
   { "name": "encoded_length_string_empty", "binary": "80 80", "json": "" },
   { "name": "encoded_length_string_hi", "binary": "80 82 68 69", "json": "hi" },
