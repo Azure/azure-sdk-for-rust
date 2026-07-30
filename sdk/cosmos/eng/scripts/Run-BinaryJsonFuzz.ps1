@@ -21,7 +21,15 @@
 
 .PARAMETER MaxTotalTimeSeconds
     Wall-clock budget PER TARGET passed to libFuzzer as `-max_total_time`.
-    PR smoke runs use ~90s; weekly deep runs use ~1800s (30 min).
+    PR smoke runs use ~90s; weekly deep runs use ~1800s (30 min). Ignored when
+    -ValidateOnly is set.
+
+.PARAMETER ValidateOnly
+    Regression mode: replay ONLY the seeded golden-vector corpus through each
+    target once (libFuzzer `-runs=0`, no mutation, no time budget) and assert no
+    crash. This is a fast, deterministic gate suitable for the Build stage — it
+    proves the committed golden vectors still decode without panicking, without
+    the multi-minute coverage-guided soak (which belongs on a live/weekly leg).
 
 .PARAMETER Toolchain
     Nightly toolchain to use. Defaults to the repo's pinned nightly if the
@@ -37,6 +45,7 @@
 [CmdletBinding()]
 param(
     [int] $MaxTotalTimeSeconds = 90,
+    [switch] $ValidateOnly,
     [string] $Toolchain = $(if ($env:RUST_NIGHTLY_TOOLCHAIN) { $env:RUST_NIGHTLY_TOOLCHAIN } else { 'nightly' }),
     [string[]] $Targets = @('decode', 'from_slice', 'transcode_to_text', 'decode_reencode_roundtrip'),
     [int] $Workers = 0  # 0 => libFuzzer default (single); CI can raise it
@@ -78,9 +87,18 @@ Push-Location $driverDir
 try {
     $failed = @()
     foreach ($t in $Targets) {
-        Write-Host "==> Fuzzing '$t' for ${MaxTotalTimeSeconds}s"
-        $runArgs = @("+$Toolchain", 'fuzz', 'run', $t, '--', "-max_total_time=$MaxTotalTimeSeconds", '-print_final_stats=1')
-        if ($Workers -gt 0) { $runArgs += "-workers=$Workers"; $runArgs += "-jobs=$Workers" }
+        if ($ValidateOnly) {
+            # `-runs=0` replays the (golden-vector-seeded) corpus once with no
+            # mutation and exits: a fast, deterministic "do the golden vectors
+            # still decode without panicking?" regression gate.
+            Write-Host "==> Validating '$t' against the golden-vector corpus (-runs=0)"
+            $runArgs = @("+$Toolchain", 'fuzz', 'run', $t, '--', '-runs=0', '-print_final_stats=1')
+        }
+        else {
+            Write-Host "==> Fuzzing '$t' for ${MaxTotalTimeSeconds}s"
+            $runArgs = @("+$Toolchain", 'fuzz', 'run', $t, '--', "-max_total_time=$MaxTotalTimeSeconds", '-print_final_stats=1')
+            if ($Workers -gt 0) { $runArgs += "-workers=$Workers"; $runArgs += "-jobs=$Workers" }
+        }
         & cargo @runArgs
         if ($LASTEXITCODE -ne 0) {
             $failed += $t

@@ -16,30 +16,35 @@ if ($env:COSMOS_RUSTFLAGS) {
 
 # Byte-level binary-JSON codec fuzzing (cargo-fuzz). Triggered by
 # AZURE_COSMOS_FUZZ=1 (set as a matrix variable on the fuzz leg in
-# sdk/cosmos/fuzz-matrix.json — a Linux + nightly job). This runs the
-# coverage-guided decoder/serde/transcode fuzz targets, which the value-space
-# live round-trip test cannot cover. cargo-fuzz/libFuzzer is Linux-only, and the
-# leg carries ContinueOnError=true so a crash reports "succeeded with issues"
-# rather than blocking merge. Guarded so it runs once even though Test-Setup.ps1
-# fires per crate.
+# sdk/cosmos/fuzz-matrix.json — a Linux + nightly job). On the Build stage this
+# runs as a FAST golden-vector regression: it replays only the committed golden
+# vectors through every codec fuzz target (libFuzzer -runs=0, no mutation, no
+# time budget) to prove they still decode without panicking. The long,
+# coverage-guided value-space soak lives in the live round-trip fuzzer
+# (azure_data_cosmos_perf) instead — a time-boxed byte soak here previously
+# overran the archetype's 90-minute TestTimeoutInMinutes. cargo-fuzz/libFuzzer is
+# Linux-only, and the leg carries ContinueOnError=true so a crash reports
+# "succeeded with issues" rather than blocking merge. Guarded so it runs once
+# even though Test-Setup.ps1 fires per crate.
 if ($env:AZURE_COSMOS_FUZZ -eq '1' -and -not $env:AZURE_COSMOS_FUZZ_RAN) {
     $env:AZURE_COSMOS_FUZZ_RAN = '1'
     if (-not $IsLinux) {
         Write-Host "AZURE_COSMOS_FUZZ=1 but not on Linux; cargo-fuzz is Linux-only. Skipping."
     }
     else {
-        # Budget per target scales by build reason: a short smoke on PR/CI so the
-        # gate stays fast, a deep run on the weekly schedule. The weekly budget
-        # (4 targets x 1000s + ~5min compile/overhead ~= 73min) is sized to fit
-        # comfortably inside the archetype's 90-minute TestTimeoutInMinutes cap.
-        $isSchedule = ($env:BUILD_REASON -eq 'Schedule') -or ($env:BUILD_DEFINITIONNAME -like '*- weekly')
-        $fuzzSeconds = if ($isSchedule) { 1000 } else { 120 }
-        Write-Host "==> Cosmos binary-JSON fuzz: budget ${fuzzSeconds}s/target (schedule=$isSchedule)"
-        & "$PSScriptRoot\Run-BinaryJsonFuzz.ps1" -MaxTotalTimeSeconds $fuzzSeconds -Workers 4
+        Write-Host "==> Cosmos binary-JSON fuzz: golden-vector corpus validation (-runs=0)"
+        & "$PSScriptRoot\Run-BinaryJsonFuzz.ps1" -ValidateOnly
     }
-    # A fuzz leg does no live testing; skip the rest of the setup (no emulator,
-    # no connection string) so the archetype's subsequent cargo build/test runs
-    # only the offline unit tests.
+    # A fuzz leg does no live testing. Strip any test_category cfg that
+    # COSMOS_RUSTFLAGS may have injected (e.g. emulator) so the archetype's
+    # subsequent cargo build/test on this leg compiles and runs only the
+    # always-on offline unit tests — never emulator/live-gated tests, which
+    # would panic here with no connection string. Then skip the rest of the
+    # setup (no emulator, no connection string).
+    if ($env:RUSTFLAGS -match 'test_category') {
+        $env:RUSTFLAGS = ($env:RUSTFLAGS -replace '--cfg[= ]test_category="[^"]*"', '' -replace '\s+', ' ').Trim()
+        Write-Host "Stripped test_category from RUSTFLAGS on fuzz leg: '$env:RUSTFLAGS'"
+    }
     return
 }
 
