@@ -1,12 +1,12 @@
 {
   "displayNames": {
-    "fuzz": "binary_json_fuzz",
+    "golden": "binary_codec_golden_vector_validation",
     "1": "",
     "true": ""
   },
   "matrix": {
     "Agent": {
-      "fuzz": {
+      "golden": {
         "OSVmImage": "env:LINUXVMIMAGE",
         "Pool": "env:LINUXPOOL"
       }

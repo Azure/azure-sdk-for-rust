@@ -103,7 +103,7 @@ extends:
       # `RunLiveTests` condition above, so the byte-level fuzz leg and the live
       # round-trip fuzzer both belong to the weekly pipeline, not the PR gate.
       - ${{ if or(eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}:
-        - Name: Cosmos_binary_json_fuzz
+        - Name: Cosmos_binary_codec_golden_vector_validation
           Path: sdk/cosmos/fuzz-matrix.json
           Selection: all
           GenerateVMJobs: true

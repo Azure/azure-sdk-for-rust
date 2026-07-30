@@ -329,7 +329,7 @@ every generated doc through both.
 ## 6. Running the harness
 
 In CI, the harness runs automatically on the **`binary_encoding` live leg**
-(`live-platform-matrix.json` → `Session SingleWrite BinaryEncoding`, which sets
+(`live-platform-matrix.json` → `Session SingleWrite BinaryEncodingRoundtripFuzz`, which sets
 `testCategory = 'binary_encoding'`). That leg's bicep emits
 `--cfg=test_category="binary_encoding"` into `RUSTFLAGS` and provides the live
 `AZURE_COSMOS_CONNECTION_STRING`, so `binary_encoding_roundtrip_fuzz` (and the
