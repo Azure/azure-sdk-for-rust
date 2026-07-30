@@ -152,6 +152,13 @@ pub struct CosmosOperation {
     /// token so never-polled partitions can re-apply it on resume. `None` for
     /// non-change-feed operations.
     change_feed_start: Option<ChangeFeedStartFrom>,
+    /// `true` when this operation is one of the internal sub-operations the
+    /// PATCH handler's Read-Modify-Write loop dispatches, rather than an
+    /// operation the caller requested directly. Set by
+    /// [`as_patch_sub_operation`](Self::as_patch_sub_operation); it only
+    /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
+    /// is dispatched exactly like the standalone Read/Replace it is.
+    is_patch_sub_operation: bool,
 }
 
 impl CosmosOperation {
@@ -185,11 +192,30 @@ impl CosmosOperation {
     /// but an offer operation carries only the account and the offer ID, so the
     /// scope is not recoverable here. The SDK, which knows whether the caller
     /// addressed a container or a database, supplies those names instead.
+    ///
+    /// # PATCH sub-operations
+    ///
+    /// PATCH is a single caller-facing operation that this driver implements as
+    /// a Read followed by an ETag-guarded Replace. The two sub-operations report
+    /// `patch_read_item` and `patch_replace_item` rather than the bare
+    /// `read_item` / `replace_item`, so telemetry encodes *both* facts: that the
+    /// work belongs to a PATCH, and which half of the read-modify-write it is.
+    /// Naming them `read_item`/`replace_item` would make them indistinguishable
+    /// from standalone point operations the caller never issued; naming them
+    /// `patch_item` would hide the decomposition entirely. The operation the
+    /// caller actually invoked keeps reporting `patch_item` on the root span and
+    /// the operation metric.
     pub fn db_operation_name(&self) -> Option<&'static str> {
         let name = match (self.operation_type, self.resource_type) {
             // Data-plane item operations.
             (OperationType::Create, ResourceType::Document) => "create_item",
+            (OperationType::Read, ResourceType::Document) if self.is_patch_sub_operation => {
+                "patch_read_item"
+            }
             (OperationType::Read, ResourceType::Document) => "read_item",
+            (OperationType::Replace, ResourceType::Document) if self.is_patch_sub_operation => {
+                "patch_replace_item"
+            }
             (OperationType::Replace, ResourceType::Document) => "replace_item",
             (OperationType::Delete, ResourceType::Document) => "delete_item",
             (OperationType::Upsert, ResourceType::Document) => "upsert_item",
@@ -438,6 +464,24 @@ impl CosmosOperation {
         self.patch_max_attempts
     }
 
+    /// Marks this operation as an internal sub-operation of a PATCH's
+    /// Read-Modify-Write loop.
+    ///
+    /// The only effect is on [`db_operation_name`](Self::db_operation_name),
+    /// which then reports `patch_read_item` / `patch_replace_item` instead of
+    /// `read_item` / `replace_item`. Routing, retries, and the wire request are
+    /// unchanged — a PATCH sub-op *is* an ordinary point Read or Replace.
+    pub(crate) fn as_patch_sub_operation(mut self) -> Self {
+        self.is_patch_sub_operation = true;
+        self
+    }
+
+    /// Returns `true` when this operation is an internal sub-operation of a
+    /// PATCH's Read-Modify-Write loop.
+    pub fn is_patch_sub_operation(&self) -> bool {
+        self.is_patch_sub_operation
+    }
+
     // ===== Factory Methods =====
 
     /// Creates a new operation with the specified type, resource reference, and target.
@@ -464,6 +508,7 @@ impl CosmosOperation {
             patch_max_attempts: None,
             is_change_feed: false,
             change_feed_start: None,
+            is_patch_sub_operation: false,
         }
     }
 
@@ -1272,6 +1317,77 @@ mod tests {
         assert_eq!(
             CosmosOperation::patch_item(item()).db_operation_name(),
             Some("patch_item")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_distinguishes_patch_sub_operations() {
+        let item =
+            || ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+
+        // A PATCH is one caller-facing operation implemented as a Read plus an
+        // ETag-guarded Replace. The sub-ops report names that encode both the
+        // owning PATCH and which half of the read-modify-write they are, so
+        // telemetry neither hides the decomposition nor makes the sub-ops look
+        // like standalone point operations the caller never issued.
+        assert_eq!(
+            CosmosOperation::read_item(item())
+                .as_patch_sub_operation()
+                .db_operation_name(),
+            Some("patch_read_item")
+        );
+        assert_eq!(
+            CosmosOperation::replace_item(item())
+                .as_patch_sub_operation()
+                .db_operation_name(),
+            Some("patch_replace_item")
+        );
+
+        // The operation the caller actually invoked is unaffected.
+        assert_eq!(
+            CosmosOperation::patch_item(item()).db_operation_name(),
+            Some("patch_item")
+        );
+        assert!(!CosmosOperation::patch_item(item()).is_patch_sub_operation());
+    }
+
+    #[test]
+    fn patch_sub_operation_marker_is_off_by_default() {
+        let item =
+            || ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+
+        assert!(!CosmosOperation::read_item(item()).is_patch_sub_operation());
+        assert!(!CosmosOperation::replace_item(item()).is_patch_sub_operation());
+        assert!(CosmosOperation::read_item(item())
+            .as_patch_sub_operation()
+            .is_patch_sub_operation());
+    }
+
+    #[test]
+    fn patch_sub_operation_marker_only_renames_read_and_replace() {
+        let item =
+            || ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+
+        // The marker is only ever set on the two sub-ops the PATCH handler
+        // dispatches. Guard the mapping anyway so a stray marker on any other
+        // operation cannot silently invent a name.
+        assert_eq!(
+            CosmosOperation::create_item(item())
+                .as_patch_sub_operation()
+                .db_operation_name(),
+            Some("create_item")
+        );
+        assert_eq!(
+            CosmosOperation::upsert_item(item())
+                .as_patch_sub_operation()
+                .db_operation_name(),
+            Some("upsert_item")
+        );
+        assert_eq!(
+            CosmosOperation::delete_item(item())
+                .as_patch_sub_operation()
+                .db_operation_name(),
+            Some("delete_item")
         );
     }
 

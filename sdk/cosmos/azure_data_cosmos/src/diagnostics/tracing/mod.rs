@@ -283,6 +283,123 @@ mod tests {
     }
 
     #[test]
+    fn patch_sub_operations_are_visible_on_attempt_spans() {
+        // A PATCH is one caller-facing operation (`patch_item`) implemented as a
+        // read + replace. The root span keeps the caller's name, but each
+        // attempt span must say which half of the read-modify-write it was, so
+        // an operator can tell a slow/failing Read from a slow/failing Replace
+        // without the decomposition being flattened away.
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+        let started = now_instant - Duration::from_millis(1500);
+        let requests = vec![
+            RequestDiagnostics::for_testing(
+                "https://acct.documents.azure.com:443/",
+                Some(Region::new("West US 2")),
+                CosmosStatus::new(StatusCode::Ok),
+                RequestCharge::new(1.0),
+                started,
+                started + Duration::from_millis(500),
+            )
+            .for_testing_with_operation_name("patch_read_item"),
+            RequestDiagnostics::for_testing(
+                "https://acct.documents.azure.com:443/",
+                Some(Region::new("West US 2")),
+                CosmosStatus::new(StatusCode::Ok),
+                RequestCharge::new(4.0),
+                started + Duration::from_millis(600),
+                started + Duration::from_millis(1500),
+            )
+            .for_testing_with_operation_name("patch_replace_item"),
+        ];
+        let ctx = DiagnosticsContext::for_testing_with_requests(
+            ActivityId::new_uuid(),
+            Duration::from_millis(1500),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("patch_item"),
+            requests,
+        );
+        let op = CosmosOperationContext::new().with_operation_name("patch_item");
+
+        emit_backdated_span_tree(&tracer, &ctx, Some(&op), None, now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let root = spans
+            .iter()
+            .find(|s| s.name == "patch_item")
+            .expect("root span keeps the caller-facing operation name");
+        assert!(
+            root.attributes.iter().any(|kv| {
+                kv.key.as_str() == attributes::DB_OPERATION_NAME
+                    && kv.value.as_str() == "patch_item"
+            }),
+            "the operation the caller invoked is still `patch_item`"
+        );
+
+        let mut child_names: Vec<String> = spans
+            .iter()
+            .filter(|s| s.name == "cosmosdb.request")
+            .filter_map(|s| {
+                s.attributes
+                    .iter()
+                    .find(|kv| kv.key.as_str() == attributes::DB_OPERATION_NAME)
+                    .map(|kv| kv.value.as_str().to_string())
+            })
+            .collect();
+        child_names.sort();
+        assert_eq!(
+            child_names,
+            vec!["patch_read_item", "patch_replace_item"],
+            "each attempt span names the sub-operation that issued it"
+        );
+    }
+
+    #[test]
+    fn attempt_spans_fall_back_to_the_operation_name() {
+        // The non-PATCH case: attempts carry no per-request name, so every child
+        // inherits the operation's identity exactly as before. This is the
+        // overwhelmingly common path and must not regress.
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+        let ctx = context(
+            Duration::from_millis(1500),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_item"),
+            &[
+                (1500, 700, CosmosStatus::new(StatusCode::TooManyRequests)),
+                (700, 700, CosmosStatus::new(StatusCode::Ok)),
+            ],
+            now_instant,
+        );
+
+        emit_backdated_span_tree(&tracer, &ctx, None, None, now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let children: Vec<_> = spans
+            .iter()
+            .filter(|s| s.name == "cosmosdb.request")
+            .collect();
+        assert_eq!(children.len(), 2);
+        for child in children {
+            assert!(
+                child.attributes.iter().any(|kv| {
+                    kv.key.as_str() == attributes::DB_OPERATION_NAME
+                        && kv.value.as_str() == "read_item"
+                }),
+                "an unnamed attempt inherits the operation name"
+            );
+        }
+    }
+
+    #[test]
     fn incomplete_context_is_not_sampled_even_when_slow() {
         // A finalized context with neither a status nor any attempts does not
         // represent a completed operation. The tail-sampling gate must not emit

@@ -21,7 +21,7 @@
 
 ### Bugs Fixed
 
-- The Cosmos tracing span's operation label now prefers the caller-facing `CosmosOperationContext` identity over the driver-recorded name, matching how the `db.operation.name` metric attribute is resolved. Previously an aggregate whose surfaced sub-operation differed from the caller's operation — such as a PATCH that fails during its internal read — could label the span `read_item` while the metric reported `patch_item`. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
+- The Cosmos tracing span's operation label now prefers the caller-facing `CosmosOperationContext` identity over the driver-recorded name, matching how the `db.operation.name` metric attribute is resolved. Previously an aggregate whose surfaced sub-operation differed from the caller's operation — such as a PATCH that fails during its internal read — could label the span `read_item` while the metric reported `patch_item`. Attempt spans now carry the operation that issued them, so a PATCH's attempts report `db.operation.name` of `patch_read_item` / `patch_replace_item` while its operation span and metric stay `patch_item`; attempts of every other operation continue to inherit the operation's own name. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 
 ### Other Changes
 

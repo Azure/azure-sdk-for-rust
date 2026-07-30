@@ -397,6 +397,20 @@ pub struct RequestDiagnostics {
     /// Context describing why this request was made.
     execution_context: ExecutionContext,
 
+    /// Canonical `db.operation.name` of the operation that issued this request.
+    ///
+    /// Normally redundant with the owning [`DiagnosticsContext`]'s
+    /// `operation_name`, and therefore left unset. It is populated when an
+    /// aggregate context spans requests from more than one operation, so the
+    /// per-request identity is not lost to the aggregate's single name — today
+    /// that means a PATCH, whose requests are the `patch_read_item` and
+    /// `patch_replace_item` sub-ops of one caller-facing `patch_item`.
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_optional_shared_str"
+    )]
+    operation_name: Option<Arc<str>>,
+
     /// The pipeline type used for this request.
     pipeline_type: PipelineType,
 
@@ -493,6 +507,7 @@ impl RequestDiagnostics {
     ) -> Self {
         Self {
             execution_context,
+            operation_name: None,
             pipeline_type,
             transport_security,
             transport_kind,
@@ -542,6 +557,7 @@ impl RequestDiagnostics {
             .as_millis() as u64;
         Self {
             execution_context: ExecutionContext::Initial,
+            operation_name: None,
             pipeline_type: PipelineType::DataPlane,
             transport_security: TransportSecurity::Secure,
             transport_kind: TransportKind::Gateway,
@@ -566,6 +582,20 @@ impl RequestDiagnostics {
             #[cfg(feature = "fault_injection")]
             fault_injection_evaluations: Vec::new(),
         }
+    }
+
+    /// **Internal test helper — do not call.**
+    ///
+    /// Stamps this attempt with the sub-operation that issued it, mirroring what
+    /// [`DiagnosticsContext::aggregate_sub_operations`] does in production. Lets
+    /// emission-layer tests exercise per-request naming without reaching into
+    /// the driver's crate-private aggregation path.
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    #[must_use]
+    pub fn for_testing_with_operation_name(mut self, operation_name: impl Into<Arc<str>>) -> Self {
+        self.operation_name = Some(operation_name.into());
+        self
     }
 
     /// Records completion of this request.
@@ -691,6 +721,19 @@ impl RequestDiagnostics {
     /// Returns the execution context describing why this request was made.
     pub fn execution_context(&self) -> ExecutionContext {
         self.execution_context
+    }
+
+    /// Returns the canonical `db.operation.name` of the operation that issued
+    /// this request, when it differs from the owning context's operation name.
+    ///
+    /// This is set only where a single [`DiagnosticsContext`] aggregates
+    /// requests from more than one operation. Today that is the PATCH handler:
+    /// the context reports the caller-facing `patch_item` while its requests
+    /// report the `patch_read_item` / `patch_replace_item` sub-op that produced
+    /// them. `None` — the common case — means the request shares the owning
+    /// context's [`operation_name`](DiagnosticsContext::operation_name).
+    pub fn operation_name(&self) -> Option<&str> {
+        self.operation_name.as_deref()
     }
 
     /// Returns the pipeline type used for this request.
@@ -1048,6 +1091,24 @@ impl FailedTransportShardDiagnostics {
 
 fn is_zero_u32(value: &u32) -> bool {
     *value == 0
+}
+
+/// Serializes an `Option<Arc<str>>` as a plain optional string.
+///
+/// `serde` only implements `Serialize` for `Arc<T>` under its `rc` feature,
+/// which this crate does not enable, so the shared string is written through
+/// its `str` view instead.
+fn serialize_optional_shared_str<S>(
+    value: &Option<Arc<str>>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match value {
+        Some(value) => serializer.serialize_str(value),
+        None => serializer.serialize_none(),
+    }
 }
 
 impl RequestEvent {
@@ -1998,9 +2059,24 @@ impl DiagnosticsContext {
     /// Returns `None` only when `sources` is empty.
     pub(crate) fn aggregate_sub_operations(sources: &[Arc<DiagnosticsContext>]) -> Option<Self> {
         let last = sources.last()?;
+        // Carry each source's operation name down onto the requests it
+        // contributed. The aggregate reports a single operation name (the
+        // caller-facing one — `patch_item`), so without this the sub-op
+        // identity would be lost the moment the contexts are concatenated and
+        // every attempt span would inherit the aggregate's name. Sources that
+        // are themselves aggregates may already carry per-request names; those
+        // are preserved rather than overwritten.
         let aggregated_requests: Vec<RequestDiagnostics> = sources
             .iter()
-            .flat_map(|c| c.requests.iter().cloned())
+            .flat_map(|c| {
+                c.requests.iter().map(|req| {
+                    let mut req = req.clone();
+                    if req.operation_name.is_none() {
+                        req.operation_name = c.operation_name.clone();
+                    }
+                    req
+                })
+            })
             .collect();
         let aggregated_duration = sources
             .iter()
@@ -2256,8 +2332,54 @@ impl DiagnosticsContext {
     /// operation's own name (`patch_item`). Consumes `self` before it is shared
     /// via `Arc`, preserving the type's immutability contract.
     pub(crate) fn with_operation_name(mut self, operation_name: Option<Arc<str>>) -> Self {
+        self.requests = Self::preserve_request_operation_names(
+            &self.requests,
+            self.operation_name.as_ref(),
+            operation_name.as_ref(),
+        );
         self.operation_name = operation_name;
         self
+    }
+
+    /// Pushes a context-level operation name down onto the requests that were
+    /// issued under it, so relabeling the context does not erase where its
+    /// requests came from.
+    ///
+    /// Relabeling happens when a virtual operation is assembled from real
+    /// sub-operations: a PATCH context is stamped `patch_item`, but its
+    /// requests were issued by the `patch_read_item` / `patch_replace_item`
+    /// sub-ops. Without this, the attempt-level view would report the
+    /// aggregate's name for every request and the read/modify/write
+    /// decomposition would be invisible.
+    ///
+    /// Requests that already carry their own name keep it (they came from a
+    /// context that was itself an aggregate). When the name is unchanged, or
+    /// there is no displaced name to record, the existing `Arc` is shared
+    /// rather than the request list being cloned.
+    fn preserve_request_operation_names(
+        requests: &Arc<Vec<RequestDiagnostics>>,
+        previous: Option<&Arc<str>>,
+        replacement: Option<&Arc<str>>,
+    ) -> Arc<Vec<RequestDiagnostics>> {
+        let Some(previous) = previous else {
+            return Arc::clone(requests);
+        };
+        if replacement.is_some_and(|new| new == previous) {
+            return Arc::clone(requests);
+        }
+        if requests.iter().all(|req| req.operation_name.is_some()) {
+            return Arc::clone(requests);
+        }
+        Arc::new(
+            requests
+                .iter()
+                .map(|req| {
+                    let mut req = req.clone();
+                    req.operation_name.get_or_insert_with(|| previous.clone());
+                    req
+                })
+                .collect(),
+        )
     }
 
     /// Returns a copy of this context with its canonical `db.operation.name`
@@ -2275,7 +2397,11 @@ impl DiagnosticsContext {
         DiagnosticsContext {
             activity_id: self.activity_id.clone(),
             duration: self.duration,
-            requests: Arc::clone(&self.requests),
+            requests: Self::preserve_request_operation_names(
+                &self.requests,
+                self.operation_name.as_ref(),
+                operation_name.as_ref(),
+            ),
             total_request_charge: self.total_request_charge,
             regions_contacted: self.regions_contacted.clone(),
             status: self.status,
@@ -4238,6 +4364,85 @@ mod tests {
     }
 
     #[test]
+    fn compaction_does_not_collapse_distinct_patch_sub_operations() {
+        // A run is meant to be a storm of retries of *the same* attempt. A
+        // PATCH's Read and Replace hit the same endpoint and can return the
+        // same status, so without the issuing operation in the compaction key
+        // the aggregate's re-bounding pass collapses them into one run whose RU
+        // total and duration percentiles silently mix a read with a write.
+        //
+        // Sized so neither sub-op compacts on its own (9 < cap) but their
+        // concatenation does (18 > cap), which is the only path where a single
+        // compaction pass ever sees requests from more than one operation.
+        let cap = 16;
+        let per_sub_op = 9;
+        let mut read_b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("patch-read".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut read_b,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            CosmosStatus::new(StatusCode::Ok),
+            1.0,
+            per_sub_op,
+        );
+        read_b.set_operation_name("patch_read_item");
+        read_b.set_operation_status(StatusCode::Ok, None);
+        let read_ctx = Arc::new(read_b.complete());
+        assert!(
+            read_ctx.compaction().is_none(),
+            "sub-op must be under the cap so the aggregate does the compacting"
+        );
+
+        let mut replace_b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("patch-replace".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut replace_b,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            CosmosStatus::new(StatusCode::Ok),
+            10.0,
+            per_sub_op,
+        );
+        replace_b.set_operation_name("patch_replace_item");
+        replace_b.set_operation_status(StatusCode::Ok, None);
+        let replace_ctx = Arc::new(replace_b.complete());
+        assert!(replace_ctx.compaction().is_none());
+
+        let aggregated = DiagnosticsContext::aggregate_sub_operations(&[read_ctx, replace_ctx])
+            .expect("aggregation of two contexts yields Some")
+            .with_operation_name(Some(Arc::from("patch_item")));
+
+        let info = aggregated
+            .compaction()
+            .expect("18 concatenated attempts past a cap of 16 must compact");
+        assert_eq!(
+            info.runs.len(),
+            2,
+            "the read and the replace must be reported as separate runs"
+        );
+
+        // Each run's RU total reflects one sub-op, not a blend of both.
+        let mut charges: Vec<f64> = info
+            .runs
+            .iter()
+            .map(|r| r.total_request_charge.value())
+            .collect();
+        charges.sort_by(f64::total_cmp);
+        assert_eq!(
+            charges,
+            vec![9.0, 90.0],
+            "runs must not blend the read's 1 RU attempts with the replace's 10 RU attempts"
+        );
+    }
+
+    #[test]
     fn retry_storm_429_is_bounded_and_lossless() {
         // A single partition hammered with 429 for the whole retry budget: one
         // run of many near-identical attempts. The retained list must be bounded
@@ -4664,6 +4869,158 @@ mod tests {
             .expect("aggregation of two contexts yields Some")
             .with_operation_name(Some(Arc::from("patch_item")));
         assert_eq!(stamped.operation_name(), Some("patch_item"));
+    }
+
+    #[test]
+    fn aggregate_sub_operations_preserves_per_request_operation_names() {
+        // A PATCH reports `patch_item` at the operation level, but its requests
+        // were issued by the `patch_read_item` / `patch_replace_item` sub-ops.
+        // Aggregation must push each source's name down onto the requests it
+        // contributed, or the decomposition is lost the moment the contexts are
+        // concatenated.
+        let read_ctx = Arc::new(make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.set_operation_name("patch_read_item");
+            builder.set_operation_status(StatusCode::Ok, None);
+        }));
+        let replace_ctx = Arc::new(make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.set_operation_name("patch_replace_item");
+            builder.set_operation_status(StatusCode::Ok, None);
+        }));
+
+        let aggregated = DiagnosticsContext::aggregate_sub_operations(&[read_ctx, replace_ctx])
+            .expect("aggregation of two contexts yields Some")
+            .with_operation_name(Some(Arc::from("patch_item")));
+
+        assert_eq!(aggregated.operation_name(), Some("patch_item"));
+        let requests = aggregated.requests();
+        let names: Vec<Option<&str>> = requests
+            .iter()
+            .map(RequestDiagnostics::operation_name)
+            .collect();
+        assert_eq!(
+            names,
+            vec![Some("patch_read_item"), Some("patch_replace_item")],
+            "each request must keep the sub-op that issued it"
+        );
+    }
+
+    #[test]
+    fn single_operation_requests_carry_no_redundant_name() {
+        // The overwhelmingly common case: one operation, N attempts. The
+        // per-request name stays unset so it costs nothing and the diagnostics
+        // JSON is unchanged; consumers fall back to the context's name.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.start_test_request(
+                ExecutionContext::Retry,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.set_operation_name("read_item");
+            builder.set_operation_status(StatusCode::Ok, None);
+        });
+
+        assert_eq!(ctx.operation_name(), Some("read_item"));
+        assert!(
+            ctx.requests()
+                .iter()
+                .all(|req| req.operation_name().is_none()),
+            "a single-operation context must not duplicate its name onto every request"
+        );
+
+        // Re-stamping with the *same* name is a no-op rather than a reason to
+        // populate every request.
+        let restamped = ctx.clone_with_operation_name(Some(Arc::from("read_item")));
+        assert!(restamped
+            .requests()
+            .iter()
+            .all(|req| req.operation_name().is_none()));
+    }
+
+    #[test]
+    fn clone_with_operation_name_preserves_displaced_request_identity() {
+        // The PATCH error path re-stamps a single sub-op context (it does not
+        // aggregate when only one context exists). The requests must still
+        // remember they came from the Read, otherwise a PATCH that fails during
+        // its internal Read reports `patch_item` on the attempt span and the
+        // read/replace split disappears exactly when it matters most.
+        let read_ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.set_operation_name("patch_read_item");
+            builder.set_operation_status(StatusCode::NotFound, None);
+        });
+
+        let stamped = read_ctx.clone_with_operation_name(Some(Arc::from("patch_item")));
+
+        assert_eq!(stamped.operation_name(), Some("patch_item"));
+        assert_eq!(
+            stamped.requests()[0].operation_name(),
+            Some("patch_read_item")
+        );
+        // The source context is untouched.
+        assert_eq!(read_ctx.requests()[0].operation_name(), None);
+    }
+
+    #[test]
+    fn nested_aggregation_keeps_the_innermost_request_identity() {
+        // Aggregating an aggregate (a PATCH whose sub-ops were themselves
+        // aggregated) must not overwrite names that are already more specific
+        // than the enclosing context's.
+        let read_ctx = Arc::new(make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.set_operation_name("patch_read_item");
+            builder.set_operation_status(StatusCode::Ok, None);
+        }));
+        let replace_ctx = Arc::new(make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.set_operation_name("patch_replace_item");
+            builder.set_operation_status(StatusCode::Ok, None);
+        }));
+
+        let inner = Arc::new(
+            DiagnosticsContext::aggregate_sub_operations(&[read_ctx, replace_ctx])
+                .expect("aggregation of two contexts yields Some")
+                .with_operation_name(Some(Arc::from("patch_item"))),
+        );
+        let outer = DiagnosticsContext::aggregate_sub_operations(&[inner])
+            .expect("aggregation of one context yields Some")
+            .with_operation_name(Some(Arc::from("patch_item")));
+
+        let requests = outer.requests();
+        let names: Vec<Option<&str>> = requests
+            .iter()
+            .map(RequestDiagnostics::operation_name)
+            .collect();
+        assert_eq!(
+            names,
+            vec![Some("patch_read_item"), Some("patch_replace_item")]
+        );
     }
 
     #[test]

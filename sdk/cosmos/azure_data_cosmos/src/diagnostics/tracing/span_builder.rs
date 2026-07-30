@@ -223,6 +223,11 @@ pub(crate) fn emit_backdated_span_tree<T>(
     let parent_cx = Context::current().with_remote_span_context(root.span_context().clone());
 
     // --- Attempt (child) spans ---
+    // Each child prefers its own request-level operation name, which is set
+    // only when the operation aggregates requests from several sub-operations
+    // (a PATCH's `patch_read_item` / `patch_replace_item`). Everywhere else it
+    // is unset and the child inherits the operation's name, so a retry storm on
+    // a plain `read_item` still labels every attempt `read_item`.
     for req in requests.iter() {
         let child_start = to_system(req.started_at());
         let child_end = child_end_of(req);
@@ -238,7 +243,7 @@ pub(crate) fn emit_backdated_span_tree<T>(
             ),
             KeyValue::new(attributes::REQUEST_CHARGE, req.request_charge().value()),
         ];
-        if let Some(name) = op_name_ref {
+        if let Some(name) = req.operation_name().or(op_name_ref) {
             child_attrs.push(KeyValue::new(
                 attributes::DB_OPERATION_NAME,
                 name.to_string(),

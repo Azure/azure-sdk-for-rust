@@ -208,8 +208,12 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         Vec::with_capacity(2 * attempts as usize);
 
     // The aggregated context concatenates the Read + Replace sub-ops and would
-    // otherwise inherit the *last* sub-op's `db.operation.name` (`replace_item`).
-    // Stamp the virtual PATCH operation's own canonical name instead.
+    // otherwise inherit the *last* sub-op's `db.operation.name`. Stamp the
+    // virtual PATCH operation's own canonical name (`patch_item`) instead, so
+    // the operation level reports what the caller actually invoked. The
+    // individual sub-ops keep their own `patch_read_item` / `patch_replace_item`
+    // identity on their per-request diagnostics, so the read/modify/write
+    // decomposition stays visible underneath the aggregate.
     let operation_name: Option<Arc<str>> = operation.db_operation_name().map(Arc::from);
 
     for _ in 0..attempts {
@@ -582,7 +586,7 @@ fn build_read_sub_op(
     item_ref: crate::models::ItemReference,
     caller_session_token: Option<crate::models::SessionToken>,
 ) -> CosmosOperation {
-    let mut op = CosmosOperation::read_item(item_ref);
+    let mut op = CosmosOperation::read_item(item_ref).as_patch_sub_operation();
     if let Some(token) = caller_session_token {
         op = op.with_session_token(token);
     }
@@ -600,6 +604,7 @@ fn build_replace_sub_op(
     read_response_session_token: Option<crate::models::SessionToken>,
 ) -> CosmosOperation {
     let mut op = CosmosOperation::replace_item(item_ref)
+        .as_patch_sub_operation()
         .with_body(merged_bytes)
         .with_precondition(Precondition::if_match(etag));
     if let Some(token) = read_response_session_token {
@@ -889,6 +894,32 @@ mod tests {
 
         assert_eq!(op.operation_type(), OperationType::Replace);
         assert!(op.request_headers().session_token.is_none());
+    }
+
+    #[test]
+    fn sub_ops_report_patch_scoped_operation_names() {
+        // The RMW sub-ops are dispatched exactly like standalone point
+        // operations, so without the marker their telemetry would be
+        // indistinguishable from a `read_item` / `replace_item` the caller
+        // issued directly. The `patch_` prefix keeps them attributable to the
+        // PATCH while still naming which half of the read-modify-write they
+        // are.
+        let read = build_read_sub_op(test_item_ref(), None);
+        assert!(read.is_patch_sub_operation());
+        assert_eq!(read.db_operation_name(), Some("patch_read_item"));
+
+        let replace = build_replace_sub_op(
+            test_item_ref(),
+            b"{\"id\":\"doc1\"}".to_vec(),
+            Etag::from("\"abc\""),
+            None,
+        );
+        assert!(replace.is_patch_sub_operation());
+        assert_eq!(replace.db_operation_name(), Some("patch_replace_item"));
+
+        // The caller-facing operation keeps its own name; that is what the
+        // aggregate context, root span, and operation metric report.
+        assert_eq!(canonical_patch_op().db_operation_name(), Some("patch_item"));
     }
 
     #[test]
