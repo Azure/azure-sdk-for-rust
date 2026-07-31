@@ -2394,9 +2394,9 @@ impl CosmosDriver {
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
         let response = Box::pin(async {
             let container = operation.container().cloned();
-            let mut plan =
-                Box::pin(self.plan_operation(operation, &options, None, &PlanOptions::default()))
-                    .await?;
+            let mut plan = self
+                .plan_operation(operation, &options, None, &PlanOptions::default())
+                .await?;
             self.execute_plan(&mut plan, container, options).await
         })
         .await?;
@@ -2797,12 +2797,21 @@ impl CosmosDriver {
                 false
             }
         };
-        let (diagnostics_builder, transport_security) = Self::new_diagnostics_envelope(
+        let (mut diagnostics_builder, transport_security) = Self::new_diagnostics_envelope(
             &self.runtime,
             activity_id.clone(),
             &endpoint,
             fault_injection_enabled,
         );
+
+        // Populate the canonical `db.operation.name` (e.g. `read_item`,
+        // `query_items`) so the finalized diagnostics carry it in production —
+        // feeding the emission layer's span/log attribute and the point-vs.-
+        // non-point tail-sampling classification. `None` for operations without
+        // a canonical name leaves it unset, matching prior behavior.
+        if let Some(operation_name) = operation.db_operation_name() {
+            diagnostics_builder.set_operation_name(operation_name);
+        }
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
@@ -2950,6 +2959,22 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        // Planning holds the whole pipeline-builder state across several await
+        // points, which makes it one of the largest futures in the driver —
+        // large enough to trip `clippy::large_futures` in callers. Box it once
+        // here so every caller awaits a pointer-sized future instead of having
+        // to pin at its own call site and rediscover this each time the state
+        // grows.
+        Box::pin(self.plan_operation_inner(operation, options, continuation, plan_options)).await
+    }
+
+    async fn plan_operation_inner(
+        &self,
+        operation: CosmosOperation,
+        options: &OperationOptions,
+        continuation: Option<&ContinuationToken>,
+        plan_options: &PlanOptions,
+    ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
             return Err(crate::error::CosmosError::builder()
@@ -3056,9 +3081,9 @@ impl CosmosDriver {
                 .build()
         })?;
 
-        let query_plan = self
-            .resolve_query_plan(container, &operation, options)
-            .await?;
+        // `Box::pin` keeps `plan_operation`'s future small. Inlined, it grows to
+        // 17,288 bytes and trips `clippy::large_futures` at five caller sites.
+        let query_plan = Box::pin(self.resolve_query_plan(container, &operation, options)).await?;
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
