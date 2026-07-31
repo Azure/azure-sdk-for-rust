@@ -2716,7 +2716,9 @@ fn maybe_upgrade_to_hedge<'a>(
         // handlers, so this preserves the backend-failover backoff instead of
         // replacing it with an immediate hedge. A zero delay carries no backoff
         // to preserve, so it stays hedge-eligible like `None`.
-        OperationAction::FailoverRetry { delay: Some(d), .. } if !d.is_zero() => return (action, None),
+        OperationAction::FailoverRetry { delay: Some(d), .. } if !d.is_zero() => {
+            return (action, None)
+        }
         OperationAction::FailoverRetry { new_state, .. } => new_state.clone(),
         OperationAction::SessionRetry { new_state } => new_state.clone(),
         _ => return (action, None),
