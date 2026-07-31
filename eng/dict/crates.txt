@@ -115,6 +115,8 @@ time
 tokio
 tokio_metrics
 tokio-metrics
+tokio_tungstenite
+tokio-tungstenite
 tracing
 tracing_subscriber
 tracing-subscriber

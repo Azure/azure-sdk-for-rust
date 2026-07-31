@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-#[cfg(any(feature = "fe2o3_amqp_ws_rustls", feature = "fe2o3_amqp_ws_native_tls"))]
+#[cfg(feature = "fe2o3_amqp_ws")]
 use crate::fe2o3::error::Fe2o3WebSocketError;
 use crate::{
     connection::{AmqpConnectionApis, AmqpConnectionOptions, AmqpTransport},
@@ -50,7 +50,7 @@ impl Drop for Fe2o3AmqpConnection {
 
 /// The well-known path that Service Bus and Event Hubs expose for the AMQP
 /// WebSocket binding. Matches the suffix used by the other Azure SDKs.
-#[cfg(any(feature = "fe2o3_amqp_ws_rustls", feature = "fe2o3_amqp_ws_native_tls"))]
+#[cfg(feature = "fe2o3_amqp_ws")]
 const WEBSOCKET_PATH: &str = "/$servicebus/websocket/";
 
 /// Builds the secure WebSocket (`wss://`) address used to tunnel AMQP for the
@@ -59,7 +59,7 @@ const WEBSOCKET_PATH: &str = "/$servicebus/websocket/";
 /// explicit port (if any) are carried over, since AMQP-over-WebSockets always
 /// uses TLS and a fixed binding path. When no port is present the default
 /// `wss` port (443) is used.
-#[cfg(any(feature = "fe2o3_amqp_ws_rustls", feature = "fe2o3_amqp_ws_native_tls"))]
+#[cfg(feature = "fe2o3_amqp_ws")]
 fn websocket_address(target: &Url) -> Result<String> {
     let host = target
         .host_str()
@@ -152,46 +152,31 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                         .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
                 }
                 AmqpTransport::WebSocket => {
-                    // The fe2o3-amqp-ws connect entry point only exists when one
-                    // of its TLS backends is on, so the transport needs one too.
-                    #[cfg(not(any(
-                        feature = "fe2o3_amqp_ws_rustls",
-                        feature = "fe2o3_amqp_ws_native_tls"
-                    )))]
+                    // A build without the transport code still accepts the variant,
+                    // so report the missing feature rather than fail to compile.
+                    #[cfg(not(feature = "fe2o3_amqp_ws"))]
                     {
                         Err(AmqpError::with_message(
-                            "The WebSocket transport needs the `fe2o3_amqp_ws_rustls` or the \
-                             `fe2o3_amqp_ws_native_tls` feature of azure_core_amqp. The base \
-                             `fe2o3_amqp_ws` feature does not select a TLS stack.",
+                            "The WebSocket transport needs the `fe2o3_amqp_ws` feature of \
+                             azure_core_amqp.",
                         ))?;
                         unreachable!()
                     }
 
-                    #[cfg(any(
-                        feature = "fe2o3_amqp_ws_rustls",
-                        feature = "fe2o3_amqp_ws_native_tls"
-                    ))]
+                    // Tunnel AMQP over a secure WebSocket (port 443) for networks
+                    // that block the native AMQP ports. The socket connects to the
+                    // websocket address (or the custom endpoint proxy, if set),
+                    // while the AMQP `hostname` remains the real service host.
+                    // `open_with_stream` does not derive the hostname from a URL,
+                    // so it must be set explicitly.
+                    //
+                    // The call passes no connector, so `fe2o3-amqp-ws` uses
+                    // whichever TLS stack its own features select. The
+                    // `fe2o3_amqp_ws_rustls` feature of this crate selects rustls,
+                    // and a direct dependency on `fe2o3-amqp-ws` in the application
+                    // can select another stack instead.
+                    #[cfg(feature = "fe2o3_amqp_ws")]
                     {
-                        // Tunnel AMQP over a secure WebSocket (port 443) for networks
-                        // that block the native AMQP ports. The socket connects to the
-                        // websocket address (or the custom endpoint proxy, if set),
-                        // while the AMQP `hostname` remains the real service host.
-                        // `open_with_stream` does not derive the hostname from a URL,
-                        // so it must be set explicitly.
-                        // The features are additive, so a build can hold both TLS
-                        // stacks. `fe2o3-amqp-ws` then takes the native-tls arm,
-                        // because this call passes no explicit connector.
-                        #[cfg(all(
-                            feature = "fe2o3_amqp_ws_rustls",
-                            feature = "fe2o3_amqp_ws_native_tls"
-                        ))]
-                        warn!(
-                            "Both the `fe2o3_amqp_ws_rustls` and the \
-                             `fe2o3_amqp_ws_native_tls` feature are on. The WebSocket \
-                             connection uses native-tls. Enable only one feature to \
-                             select a stack."
-                        );
-
                         let ws_target = options.custom_endpoint.as_ref().unwrap_or(&url);
                         let ws_address = websocket_address(ws_target)?;
                         debug!("Opening AMQP-over-WebSockets connection to {ws_address}.");
@@ -313,10 +298,7 @@ impl From<Fe2o3ConnectionError> for AmqpError {
     }
 }
 
-#[cfg(all(
-    test,
-    any(feature = "fe2o3_amqp_ws_rustls", feature = "fe2o3_amqp_ws_native_tls")
-))]
+#[cfg(all(test, feature = "fe2o3_amqp_ws"))]
 mod tests {
     use super::*;
 
