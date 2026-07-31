@@ -2478,7 +2478,7 @@ mod tests {
             print_docs: false,
         };
         let mut doc = serde_json::json!({
-            "café": { "naïve": "résumé", "ok": 1 },
+            "kéy1": { "kéy2": "vàl", "ok": 1 },
             "plain": ["a", "bé"],
         });
         bound_value(&mut doc, &cfg);
