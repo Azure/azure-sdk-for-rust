@@ -14,6 +14,8 @@
 
 ### Bugs Fixed
 
+- Unified `403/3` and `403/1008` topology retries under a 5-second cumulative delay budget so a persistent topology error surfaces promptly instead of hanging. Multi-write `403/3` and all `403/1008` come down from ~120 seconds of fixed 1-second retries; single-write `403/3` moves up from three immediate generic retries onto the same topology policy. The first retry is always immediate; later retries use exponential backoff with jitter. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
+
 ### Other Changes
 
 - Gateway 2.0 responses now preserve backend duration, quota, item-count, quorum, replica, query, and physical-partition RNTBD metadata when converting to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
