@@ -112,41 +112,47 @@ async fn seed<S: AsRef<str>>(
 }
 
 /// Runs `query` to completion and returns every result's `id` in emitted order.
-async fn run_query_collecting_ids(
-    driver: &azure_data_cosmos_driver::driver::CosmosDriver,
-    container: &ContainerReference,
-    query: &str,
-) -> Vec<String> {
-    let body = serde_json::to_vec(&serde_json::json!({"query": query, "parameters": []})).unwrap();
-    let operation =
-        CosmosOperation::query_items(container.clone(), Some(FeedRange::full())).with_body(body);
-    let mut plan = driver
-        .plan_operation(
-            operation,
-            &OperationOptions::default(),
-            None,
-            &PlanOptions::default(),
-        )
-        .await
-        .expect("plan builds a cross-partition pipeline");
+fn run_query_collecting_ids<'a>(
+    driver: &'a azure_data_cosmos_driver::driver::CosmosDriver,
+    container: &'a ContainerReference,
+    query: &'a str,
+) -> std::pin::Pin<Box<dyn std::future::Future<Output = Vec<String>> + 'a>> {
+    // The driver's plan/execute futures are large; boxing here keeps every
+    // `.await` call site small and satisfies `clippy::large_futures` without
+    // repeating `Box::pin` at each of the many call sites.
+    Box::pin(async move {
+        let body =
+            serde_json::to_vec(&serde_json::json!({"query": query, "parameters": []})).unwrap();
+        let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+            .with_body(body);
+        let mut plan = driver
+            .plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            )
+            .await
+            .expect("plan builds a cross-partition pipeline");
 
-    let mut ids = Vec::new();
-    while let Some(response) = driver
-        .execute_plan(
-            &mut plan,
-            Some(container.clone()),
-            OperationOptions::default(),
-        )
-        .await
-        .expect("page executes")
-    {
-        let body: serde_json::Value =
-            serde_json::from_slice(&response.into_body().single().unwrap()).unwrap();
-        for item in body["Documents"].as_array().unwrap() {
-            ids.push(item["id"].as_str().unwrap().to_owned());
+        let mut ids = Vec::new();
+        while let Some(response) = driver
+            .execute_plan(
+                &mut plan,
+                Some(container.clone()),
+                OperationOptions::default(),
+            )
+            .await
+            .expect("page executes")
+        {
+            let body: serde_json::Value =
+                serde_json::from_slice(&response.into_body().single().unwrap()).unwrap();
+            for item in body["Documents"].as_array().unwrap() {
+                ids.push(item["id"].as_str().unwrap().to_owned());
+            }
         }
-    }
-    ids
+        ids
+    })
 }
 
 /// Asserts `ids` are a duplicate-free subset of `universe`.

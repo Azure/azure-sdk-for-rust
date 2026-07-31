@@ -797,14 +797,15 @@ pub async fn hpk_query_single_partition_order_by_servable() -> Result<(), Box<dy
 }
 
 /// B9: cross-partition advanced query operators (`DISTINCT`, aggregates,
-/// `GROUP BY`, `OFFSET/LIMIT`) over a hierarchical container are not servable.
+/// `GROUP BY`) over a hierarchical container are not servable.
 ///
-/// The Rust SDK advertises no cross-partition query features
-/// (`SUPPORTED_QUERY_FEATURES=""`), so any full-container query that needs a
-/// client-side pipeline is rejected. HPK fan-out itself works since #4729 (see
-/// B6); these cases fail solely because the SDK lacks the cross-partition
-/// operator pipeline. Each case is expected to error with 400 BadRequest /
-/// 1004 CrossPartitionQueryNotServable.
+/// The Rust SDK only advertises the `OffsetAndLimit,Top` cross-partition query
+/// features (see #4750), so any full-container query needing a client-side
+/// pipeline the SDK does not yet implement is rejected. HPK fan-out itself
+/// works since #4729 (see B6); these cases fail solely because the SDK lacks
+/// the corresponding cross-partition operator pipeline. Each case is expected
+/// to error with 400 BadRequest / 1004 CrossPartitionQueryNotServable.
+/// `OFFSET/LIMIT/TOP` are covered separately by the servable case below.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -823,7 +824,6 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
                 "SELECT DISTINCT c.country FROM c",
                 "SELECT VALUE COUNT(1) FROM c",
                 "SELECT c.state, COUNT(1) AS n FROM c GROUP BY c.state",
-                "SELECT * FROM c OFFSET 1 LIMIT 2",
             ];
 
             for query in advanced {
@@ -855,7 +855,73 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
     .await
 }
 
-/// B10: a full-key equality predicate over the whole container routes to
+/// B9b: cross-partition `OFFSET/LIMIT` and `TOP` over a hierarchical container
+/// are servable via the #4750 skip/take pipeline.
+///
+/// The dataset has 10 distinct documents spread across several physical
+/// partitions. #4750 deliberately excludes `ORDER BY`, so the global row order
+/// is unspecified; the stable contract is the window cardinality, exact-once
+/// delivery, and membership in the seeded id set.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn hpk_query_cross_partition_offset_limit_top_servable() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = seed_three_level(run_context, db_client).await?;
+
+            let universe: Vec<String> = geo_dataset().into_iter().map(|i| i.id).collect();
+            assert_eq!(universe.len(), 10, "seed dataset should have 10 documents");
+
+            // (query, expected window cardinality) for a 10-document container.
+            let cases = [
+                ("SELECT * FROM c OFFSET 1 LIMIT 2", 2),
+                ("SELECT * FROM c OFFSET 8 LIMIT 5", 2),
+                ("SELECT * FROM c OFFSET 20 LIMIT 5", 0),
+                ("SELECT * FROM c OFFSET 3 LIMIT 0", 0),
+                ("SELECT TOP 4 * FROM c", 4),
+                ("SELECT TOP 0 * FROM c", 0),
+                ("SELECT TOP 25 * FROM c", 10),
+            ];
+
+            for (query, expected) in cases {
+                let items: Vec<GeoItem> =
+                    collect_query::<GeoItem>(&container, query, FeedScope::full_container())
+                        .await?;
+
+                assert_eq!(
+                    items.len(),
+                    expected,
+                    "cross-partition query should return {expected} items: {query}"
+                );
+
+                let ids: Vec<String> = items.into_iter().map(|i| i.id).collect();
+                let mut seen = std::collections::HashSet::new();
+                for id in &ids {
+                    assert!(
+                        seen.insert(id.clone()),
+                        "duplicate id {id} for query: {query}"
+                    );
+                    assert!(
+                        universe.contains(id),
+                        "result id {id} is not a seeded document for query: {query}"
+                    );
+                }
+            }
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
 /// the single owning partition (closed point) and returns the matching docs.
 ///
 /// The equality/`IN` collapse-to-point fix landed in #4638 (issue #4574), which
