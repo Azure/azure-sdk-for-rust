@@ -114,8 +114,17 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
             let read_back = rid_container.read(None).await?.into_model()?;
             assert_eq!(container_name, read_back.id);
 
-            // Throughput is reachable by RID.
-            let throughput = rid_container
+            // Throughput is reachable by RID. Reading an offer is a
+            // control-plane operation that the data-plane RBAC role used in
+            // AAD mode cannot perform, so route it through the management (key)
+            // client — still addressed purely by RID. In key mode the
+            // management client is the same as the primary client.
+            let mgmt_rid_container = run_context
+                .management_client()
+                .database_client(ResourceId::from(db_rid.clone()))
+                .container_client(ResourceId::from(container_rid.clone()))
+                .await?;
+            let throughput = mgmt_rid_container
                 .read_throughput(None)
                 .await?
                 .expect("throughput should be present");
@@ -270,13 +279,18 @@ pub async fn container_rid_from_another_database_is_rejected() -> Result<(), Box
                 .resource_id
                 .expect("db1 read should return a _rid");
 
-            // db2 + a container in db2, created out of band.
+            // db2 + a container in db2, created out of band. Database
+            // create/delete is management-plane and is not granted by the
+            // data-plane RBAC role used in AAD mode, so both go through the
+            // management (key) client.
             let db2_name = format!("rid-otherdb-{}", Uuid::new_v4());
             let _ = run_context
-                .client()
+                .management_client()
                 .create_database(&db2_name, None)
                 .await?;
-            let db2_client = run_context.client().database_client(db2_name.as_str());
+            let db2_client = run_context
+                .management_client()
+                .database_client(db2_name.as_str());
             let container2_name = format!("rid-otherc-{}", Uuid::new_v4());
             let container2 = run_context
                 .create_container(
