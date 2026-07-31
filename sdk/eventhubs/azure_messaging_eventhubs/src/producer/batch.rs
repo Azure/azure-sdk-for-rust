@@ -2,11 +2,11 @@
 // Licensed under the MIT license.
 
 use super::ProducerClient;
-use crate::{error::Result, models::EventData, EventHubsError};
-use azure_core::{http::Url, Error, Uuid};
-use azure_core_amqp::{AmqpMessage, AmqpSenderApis, AmqpSymbol};
+use crate::{error::ErrorKind, error::Result, models::EventData, EventHubsError};
+use azure_core::{http::Url, Uuid};
+use azure_core_amqp::{AmqpMessage, AmqpSymbol};
 use std::sync::Mutex;
-use tracing::{debug, warn};
+use tracing::debug;
 
 /// Represents the options that can be set when adding event data to an [`EventDataBatch`].
 pub struct AddEventDataOptions {}
@@ -48,20 +48,25 @@ struct EventDataBatchState {
 pub struct EventDataBatch<'a> {
     producer: &'a ProducerClient,
     batch_state: Mutex<EventDataBatchState>,
-    /// The size the caller asked for, if any. `attach` compares it against the
-    /// maximum the link reports and keeps it when it fits. It stays separate
-    /// from `max_size_in_bytes` so that `attach` can tell "the caller asked for
-    /// this" apart from "nobody asked, use the link maximum".
-    requested_max_size_in_bytes: Option<u64>,
+    /// The size that [`EventDataBatch::resolve_max_size_in_bytes`] decided.
+    /// [`EventDataBatch::try_add_amqp_message`] refuses a message that does not
+    /// fit under it.
     max_size_in_bytes: u64,
     partition_key: Option<String>,
     partition_id: Option<String>,
 }
 
 impl<'a> EventDataBatch<'a> {
+    /// Creates a batch with the maximum size already decided.
+    ///
+    /// The caller must get `max_size_in_bytes` from
+    /// [`EventDataBatch::resolve_max_size_in_bytes`]. The batch does not read
+    /// the size again from `options`, so there is only one place that can get
+    /// it wrong.
     pub(crate) fn new(
         producer: &'a ProducerClient,
         options: Option<EventDataBatchOptions>,
+        max_size_in_bytes: u64,
     ) -> Self {
         Self {
             producer,
@@ -70,62 +75,53 @@ impl<'a> EventDataBatch<'a> {
                 size_in_bytes: 0,
                 batch_envelope: None,
             }),
-            requested_max_size_in_bytes: options.as_ref().and_then(|o| o.max_size_in_bytes),
-            max_size_in_bytes: options
-                .as_ref()
-                .map_or(u64::MAX, |o| o.max_size_in_bytes.unwrap_or(u64::MAX)),
+            max_size_in_bytes,
             partition_key: options.as_ref().and_then(|o| o.partition_key.clone()),
             partition_id: options.and_then(|o| o.partition_id),
         }
     }
 
-    #[tracing::instrument(
-        level = "debug",
-        skip_all,
-        fields(
-            partition_id = self.partition_id.as_deref().unwrap_or("<auto>"),
-        ),
-        err,
-    )]
-    pub(crate) async fn attach(&mut self) -> Result<()> {
-        let path = self.get_batch_path()?;
-        let sender = self.producer.ensure_sender(path.clone()).await?;
-        let link_max_size = sender.max_message_size().await?.ok_or_else(|| {
-            warn!(
-                path = %path,
-                "The sender link did not report a maximum message size; cannot size the batch."
-            );
-            Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "No maximum message size available from the sender link.",
-            )
-        })?;
-
-        self.max_size_in_bytes =
-            Self::resolve_max_size_in_bytes(self.requested_max_size_in_bytes, link_max_size)?;
-        Ok(())
-    }
-
-    /// Decides the batch size from the size the caller asked for and the
+    /// Decides the batch size from the options the caller supplied and the
     /// maximum the link reports.
     ///
     /// A request larger than the link allows is rejected, it is not reduced.
     /// The broker refuses the oversized transfer anyway, and a silent reduction
     /// hides that the requested size was impossible. The other Azure SDKs for
-    /// Event Hubs (.NET, Go and Java) all report an error in this case. With no
-    /// request, the link maximum applies.
-    fn resolve_max_size_in_bytes(requested: Option<u64>, link_max_size: u64) -> Result<u64> {
-        match requested {
-            Some(requested) if requested > link_max_size => Err(Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!(
-                    "The requested maximum batch size ({requested} bytes) is larger than the \
-                     maximum the link allows ({link_max_size} bytes)."
-                ),
-            )
-            .into()),
+    /// Event Hubs (.NET, Go and Java) all report an error in this case.
+    ///
+    /// A request of zero is also rejected. It is too small to hold the batch
+    /// envelope, so every event is refused and the batch can never be sent.
+    /// The Rust client uses `None` for "no request", so zero has no other
+    /// meaning here.
+    ///
+    /// With no request, the link maximum applies.
+    pub(crate) fn resolve_max_size_in_bytes(
+        options: Option<&EventDataBatchOptions>,
+        link_max_size: u64,
+    ) -> Result<u64> {
+        let invalid = |requested| {
+            Err(EventHubsError::from(ErrorKind::InvalidBatchSize {
+                requested,
+                max_allowed: link_max_size,
+            }))
+        };
+        match options.and_then(|o| o.max_size_in_bytes) {
+            Some(0) => invalid(0),
+            Some(requested) if requested > link_max_size => invalid(requested),
             Some(requested) => Ok(requested),
             None => Ok(link_max_size),
+        }
+    }
+
+    /// Returns the AMQP path of the batch: the partition when the caller named
+    /// one, and the Event Hub itself when the caller did not.
+    pub(crate) fn batch_path(base_url: &Url, partition_id: Option<&str>) -> Result<Url> {
+        match partition_id {
+            Some(partition_id) => {
+                let batch_path = format!("{base_url}/Partitions/{partition_id}");
+                Url::parse(&batch_path).map_err(|e| azure_core::Error::from(e).into())
+            }
+            None => Ok(base_url.clone()),
         }
     }
 
@@ -333,13 +329,7 @@ impl<'a> EventDataBatch<'a> {
     }
 
     pub(crate) fn get_batch_path(&self) -> Result<Url> {
-        if let Some(partition_id) = self.partition_id.as_ref() {
-            let batch_path = format!("{}/Partitions/{}", self.producer.base_url(), partition_id);
-
-            Url::parse(&batch_path).map_err(|e| azure_core::Error::from(e).into())
-        } else {
-            Ok(self.producer.base_url().clone())
-        }
+        Self::batch_path(self.producer.base_url(), self.partition_id.as_deref())
     }
 
     fn create_batch_envelope(&self, message: &AmqpMessage) -> AmqpMessage {
@@ -401,6 +391,9 @@ pub struct EventDataBatchOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::RetryOptions;
+    use azure_core_test::credentials::MockCredential;
+    use std::sync::Arc;
 
     #[test]
     fn test_batch_builder() {
@@ -415,13 +408,39 @@ mod tests {
         assert_eq!(options.partition_id, Some("pid".to_string()));
     }
 
+    const LINK_MAX_SIZE: u64 = 1_048_576;
+
+    fn options_with_max_size(max_size_in_bytes: u64) -> EventDataBatchOptions {
+        EventDataBatchOptions {
+            max_size_in_bytes: Some(max_size_in_bytes),
+            ..Default::default()
+        }
+    }
+
+    // A client that never opens a connection. `try_add_event_data` only
+    // serializes and measures, so a batch can be driven without a broker.
+    fn offline_producer() -> ProducerClient {
+        ProducerClient::new(
+            Url::parse("amqps://test.servicebus.windows.net").unwrap(),
+            "eventhub".to_string(),
+            Arc::new(MockCredential),
+            None,
+            RetryOptions::default(),
+            None,
+            None,
+        )
+    }
+
     // The size the caller asks for must reach the batch. Before this was fixed,
     // `attach` replaced it with the link maximum, so a batch capped at 1 KiB
     // accepted far more than 1 KiB.
     #[test]
     fn caller_size_is_kept_when_it_fits() {
-        let size = EventDataBatch::resolve_max_size_in_bytes(Some(1024), 1_048_576)
-            .expect("a size below the link maximum is allowed");
+        let size = EventDataBatch::resolve_max_size_in_bytes(
+            Some(&options_with_max_size(1024)),
+            LINK_MAX_SIZE,
+        )
+        .expect("a size below the link maximum is allowed");
         assert_eq!(size, 1024);
     }
 
@@ -429,17 +448,37 @@ mod tests {
     // behavior and the other Azure SDKs agree on it.
     #[test]
     fn link_size_applies_when_the_caller_asks_for_nothing() {
-        let size = EventDataBatch::resolve_max_size_in_bytes(None, 1_048_576)
+        let size = EventDataBatch::resolve_max_size_in_bytes(None, LINK_MAX_SIZE)
             .expect("the link maximum is always allowed");
-        assert_eq!(size, 1_048_576);
+        assert_eq!(size, LINK_MAX_SIZE);
+
+        let size = EventDataBatch::resolve_max_size_in_bytes(
+            Some(&EventDataBatchOptions::default()),
+            LINK_MAX_SIZE,
+        )
+        .expect("options that ask for no size are the same as no options");
+        assert_eq!(size, LINK_MAX_SIZE);
     }
 
     // A request the link cannot satisfy is an error, not a smaller batch. The
     // message must name both sizes, so the caller can see the limit.
     #[test]
     fn caller_size_above_the_link_maximum_is_rejected() {
-        let error = EventDataBatch::resolve_max_size_in_bytes(Some(2_097_152), 1_048_576)
-            .expect_err("a size above the link maximum must be rejected");
+        let error = EventDataBatch::resolve_max_size_in_bytes(
+            Some(&options_with_max_size(2_097_152)),
+            LINK_MAX_SIZE,
+        )
+        .expect_err("a size above the link maximum must be rejected");
+        assert!(
+            matches!(
+                error.kind,
+                ErrorKind::InvalidBatchSize {
+                    requested: 2_097_152,
+                    max_allowed: LINK_MAX_SIZE,
+                }
+            ),
+            "the caller must be able to match on the kind, got: {error:?}"
+        );
         let message = error.to_string();
         assert!(
             message.contains("2097152") && message.contains("1048576"),
@@ -447,11 +486,103 @@ mod tests {
         );
     }
 
+    // Zero cannot hold the batch envelope, so a batch capped at zero refuses
+    // every event and can never be sent. Report it instead. `None` already
+    // means "no request", so zero is not a sentinel here.
+    #[test]
+    fn caller_size_of_zero_is_rejected() {
+        let error = EventDataBatch::resolve_max_size_in_bytes(
+            Some(&options_with_max_size(0)),
+            LINK_MAX_SIZE,
+        )
+        .expect_err("a size of zero must be rejected");
+        assert!(
+            matches!(
+                error.kind,
+                ErrorKind::InvalidBatchSize {
+                    requested: 0,
+                    max_allowed: LINK_MAX_SIZE,
+                }
+            ),
+            "a size of zero must report the batch size kind, got: {error:?}"
+        );
+    }
+
     // The boundary is inclusive: a request equal to the link maximum fits.
     #[test]
     fn caller_size_equal_to_the_link_maximum_is_allowed() {
-        let size = EventDataBatch::resolve_max_size_in_bytes(Some(1_048_576), 1_048_576)
-            .expect("a size equal to the link maximum is allowed");
-        assert_eq!(size, 1_048_576);
+        let size = EventDataBatch::resolve_max_size_in_bytes(
+            Some(&options_with_max_size(LINK_MAX_SIZE)),
+            LINK_MAX_SIZE,
+        )
+        .expect("a size equal to the link maximum is allowed");
+        assert_eq!(size, LINK_MAX_SIZE);
+    }
+
+    // The whole chain the bug broke, without a broker: the option the caller
+    // supplies decides the effective size, the effective size reaches the
+    // batch, and the batch stops accepting events at it. A regression in any
+    // one of the three fails this test.
+    #[test]
+    fn the_resolved_size_stops_the_batch() {
+        const MAX_SIZE: u64 = 1024;
+        let producer = offline_producer();
+        let options = options_with_max_size(MAX_SIZE);
+
+        let max_size_in_bytes =
+            EventDataBatch::resolve_max_size_in_bytes(Some(&options), LINK_MAX_SIZE)
+                .expect("1024 bytes is below the link maximum");
+        let batch = EventDataBatch::new(&producer, Some(options), max_size_in_bytes);
+        assert_eq!(batch.max_size_in_bytes, MAX_SIZE);
+
+        let body = "x".repeat(128);
+        let mut accepted = 0;
+        for _ in 0..64 {
+            if !batch
+                .try_add_event_data(body.clone(), None)
+                .expect("adding an event of a known size cannot fail")
+            {
+                break;
+            }
+            accepted += 1;
+        }
+
+        assert!(
+            accepted > 0,
+            "a batch capped at {MAX_SIZE} bytes must accept at least one 128 byte event"
+        );
+        assert!(
+            batch.size() <= MAX_SIZE,
+            "batch grew to {} bytes, past its {MAX_SIZE} byte cap",
+            batch.size()
+        );
+        assert_eq!(
+            accepted,
+            batch.len(),
+            "every accepted event must be in the batch"
+        );
+        // A 128 byte body serializes to well under 256 bytes, so a 1024 byte
+        // cap holds a handful of them. The exact count depends on the AMQP
+        // encoding; the bound only has to be tight enough to fail if the cap
+        // reverts to the link maximum.
+        assert!(
+            accepted < 16,
+            "a {MAX_SIZE} byte batch accepted {accepted} events of 128 bytes, so the cap was ignored"
+        );
+    }
+
+    // With no request the batch takes the link maximum, and it is the link
+    // maximum that reaches the field.
+    #[test]
+    fn the_link_size_stops_the_batch_when_the_caller_asks_for_nothing() {
+        let producer = offline_producer();
+        let max_size_in_bytes = EventDataBatch::resolve_max_size_in_bytes(None, LINK_MAX_SIZE)
+            .expect("the link maximum is always allowed");
+        let batch = EventDataBatch::new(&producer, None, max_size_in_bytes);
+
+        assert_eq!(batch.max_size_in_bytes, LINK_MAX_SIZE);
+        assert!(batch
+            .try_add_event_data("x".repeat(128), None)
+            .expect("adding an event of a known size cannot fail"));
     }
 }
