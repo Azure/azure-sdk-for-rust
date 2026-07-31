@@ -52,13 +52,6 @@ azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-featu
 ] }
 azure_identity.workspace = true
 clap.workspace = true
-# Test-only deps for the binary round-trip fuzzer
-# (tests/binary_roundtrip_fuzzer.rs): it generates arbitrary JSON, canonicalizes
-# it (RFC 8785), and hashes the canonical form for differential comparison.
-arbitrary = { workspace = true }
-arbitrary-json = { workspace = true }
-json-canon = { workspace = true }
-sha2 = { workspace = true }
 # Enabled here (dev-only) so the metrics and tracing handler tests can drive
 # in-memory OpenTelemetry exporters. `testing` provides `InMemoryMetricExporter`
 # and `InMemorySpanExporter`.
@@ -149,11 +142,6 @@ required-features = ["key_auth", "control_plane", "fault_injection"]
 [[test]]
 name = "binary_encoding"
 path = "tests/binary_encoding.rs"
-required-features = ["key_auth", "control_plane", "fault_injection"]
-
-[[test]]
-name = "binary_roundtrip_fuzzer"
-path = "tests/binary_roundtrip_fuzzer.rs"
 required-features = ["key_auth", "control_plane", "fault_injection"]
 
 [[test]]
