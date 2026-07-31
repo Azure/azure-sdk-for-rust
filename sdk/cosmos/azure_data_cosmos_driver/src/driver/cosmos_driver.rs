@@ -1401,10 +1401,12 @@ impl CosmosDriver {
         &self,
         container_rid: &str,
     ) -> crate::error::Result<ContainerReference> {
-        // A container RID decodes to at least 8 bytes: the first 4 identify the
-        // parent database, the next 4 the container. Anything shorter (e.g. a
-        // bare database RID) is not a container RID — fail fast rather than
-        // issuing a request that the service would reject.
+        // A container RID decodes to exactly 8 bytes: the first 4 identify the
+        // parent database, the next 4 the container. A shorter value (e.g. a
+        // bare 4-byte database RID) or a longer one (e.g. a 16-byte document
+        // RID) is not a container RID — fail fast rather than issuing a request
+        // that the service would reject, or misrouting a document RID into the
+        // `colls` segment.
         let decoded = crate::models::resource_id::decode_rid(container_rid).map_err(|e| {
             crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
@@ -1412,14 +1414,14 @@ impl CosmosDriver {
                 .with_source(e)
                 .build()
         })?;
-        if decoded.len() < 8 {
+        if decoded.len() != 8 {
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
                 .with_message(format!(
-                    "'{container_rid}' is not a container RID (decodes to {} bytes; a container RID requires at least 8)",
+                    "'{container_rid}' is not a container RID (decodes to {} bytes; a container RID must be exactly 8)",
                     decoded.len()
                 ))
-                .with_source(std::io::Error::other("container RID too short"))
+                .with_source(std::io::Error::other("container RID has non-container byte length"))
                 .build());
         }
         let db_rid = crate::models::resource_id::ResourceId::new(
@@ -3850,6 +3852,31 @@ mod tests {
             err.status(),
             crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
+    }
+
+    #[tokio::test]
+    async fn resolve_container_by_rid_rejects_non_container_byte_length() {
+        // A container RID decodes to exactly 8 bytes. A 4-byte database RID and a
+        // 16-byte document RID must both be rejected up front with
+        // CLIENT_INVALID_RESOURCE_ID rather than being misrouted into the
+        // `colls` segment of a service request.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        for byte_len in [4usize, 16] {
+            let rid = crate::models::resource_id::encode_rid(&vec![0u8; byte_len]);
+            let err = match driver.resolve_container_by_rid(&rid).await {
+                Ok(_) => panic!("a {byte_len}-byte RID must not resolve as a container"),
+                Err(e) => e,
+            };
+            assert_eq!(
+                err.status(),
+                crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID,
+                "{byte_len}-byte RID should be rejected as invalid"
+            );
+        }
     }
 
     #[tokio::test]
