@@ -101,16 +101,6 @@ impl<'a> EventDataBatch<'a> {
             )
         })?;
 
-        if let Some(requested) = self.requested_max_size_in_bytes {
-            if requested > link_max_size {
-                warn!(
-                    path = %path,
-                    requested,
-                    link_max_size,
-                    "The requested batch size is larger than the link allows."
-                );
-            }
-        }
         self.max_size_in_bytes =
             Self::resolve_max_size_in_bytes(self.requested_max_size_in_bytes, link_max_size)?;
         Ok(())
