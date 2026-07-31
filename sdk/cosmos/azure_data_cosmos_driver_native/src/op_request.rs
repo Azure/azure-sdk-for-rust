@@ -453,7 +453,7 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CosmosOperationKind {
-    /// Invalid / uninitialized — always rejected with `INVALID_ARGUMENT`.
+    /// Invalid / uninitialized — always rejected (`400` / `CLIENT_FFI_NULL_ARGUMENT`).
     CosmosOperationKindInvalid = 0,
 
     // Account-scope.
@@ -592,7 +592,7 @@ impl CosmosPreconditionKind {
 /// Self-describing request passed to the two submit entry points. The host
 /// fills out the fields relevant to `kind`; irrelevant fields must be left
 /// NULL / sentinel (strict validation rejects mismatches with
-/// `INVALID_ARGUMENT`).
+/// `400` / `CLIENT_FFI_NULL_ARGUMENT`).
 ///
 /// All pointers are borrowed for the duration of the submit call only.
 #[repr(C)]

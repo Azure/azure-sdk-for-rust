@@ -20,13 +20,18 @@
 //
 // COSMOS_STATUS_SUCCESS: value returned by every fallible function on success.
 #define COSMOS_STATUS_SUCCESS 0
-// COSMOS_STATUS_NO_SUB_STATUS: low-16-bit value meaning "no sub-status present".
-#define COSMOS_STATUS_NO_SUB_STATUS 0xFFFF
+// COSMOS_STATUS_SUB_STATUS_PRESENT: high-bit flag set when a packed status
+// carries a sub-status. Using a dedicated flag (instead of reserving a
+// low-16 value) keeps every real sub-status representable, including
+// 0xFFFF (ScriptCompileError), with no collision against the absent case.
+#define COSMOS_STATUS_SUB_STATUS_PRESENT 0x40000000
 
 // Decode helpers for the packed cosmos_status_code_t. COSMOS_STATUS_HTTP
-// extracts the HTTP status (high 16 bits); COSMOS_STATUS_SUB extracts the
-// sub-status (low 16 bits, COSMOS_STATUS_NO_SUB_STATUS when absent).
-#define COSMOS_STATUS_HTTP(code) ((int)(((uint32_t)(code) >> 16) & 0xFFFFu))
+// extracts the HTTP status; COSMOS_STATUS_HAS_SUB reports whether a
+// sub-status is present; COSMOS_STATUS_SUB extracts it (low 16 bits,
+// valid only when COSMOS_STATUS_HAS_SUB is non-zero).
+#define COSMOS_STATUS_HTTP(code) ((int)(((uint32_t)(code) >> 16) & 0x3FFFu))
+#define COSMOS_STATUS_HAS_SUB(code) (((uint32_t)(code) & 0x40000000u) != 0u)
 #define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))
 
 /**
@@ -250,7 +255,7 @@ enum cosmos_CosmosOperationKind
 #endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   /**
-   * Invalid / uninitialized — always rejected with `INVALID_ARGUMENT`.
+   * Invalid / uninitialized — always rejected (`400` / `CLIENT_FFI_NULL_ARGUMENT`).
    */
   COSMOS_OPERATION_KIND_INVALID = 0,
   /**
@@ -458,7 +463,8 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
  * Discriminant for a [`CosmosPartitionKeyComponent`].
  *
  * Stored on the component as a raw `i32` (validated, never transmuted), so an
- * out-of-range host value yields `INVALID_OPTION_VALUE` instead of UB.
+ * out-of-range host value yields `400` / `CLIENT_FFI_INVALID_OPTION_VALUE`
+ * instead of UB.
  */
 enum cosmos_partition_key_component_kind_t
 #if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
@@ -508,16 +514,12 @@ typedef int32_t cosmos_partition_key_component_kind_t;
  * This enum is the **single source of truth** for those names on the C side.
  * Each discriminant is a literal copy of the corresponding
  * [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
- * literals to emit `= N`). The `sub_status_mirror_matches_driver` unit test is
- * CI-verified to fail the build if any *mirrored* value drifts from the driver
- * constant it copies, so an existing variant can never silently disagree.
+ * literals to emit `= N`). Each discriminant must exactly match the driver
+ * constant it copies.
  *
- * The test can **not**, however, detect a driver constant that has *no* mirror
- * here — [`SubStatusCode`] is a set of associated `pub const`s, not an
- * enumerable type, so there is nothing to iterate over to prove completeness.
- * Keeping this enum in sync when the driver adds a new synthetic `2xxxx`
- * sub-status is therefore a **manual** step: add the matching variant here
- * (the test will still catch a wrong value on any variant you do add).
+ * [`SubStatusCode`] is a set of associated `pub const`s, not an enumerable
+ * type, so keeping this enum in sync when the driver adds a new synthetic
+ * `2xxxx` sub-status is a **manual** step: add the matching variant here.
  *
  * The values are *not* exhaustive of the `2xxxx` range: the driver leaves gaps
  * (e.g. `20009`, `20013`, `20103`) for future use. Do not invent variants for
@@ -745,15 +747,19 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE = 20353,
   /**
-   * `CLIENT_FFI_OPERATION_CONSUMED` (20354).
+   * `CLIENT_FFI_OPERATION_CONSUMED` (20354). Reserved: mirrors the driver
+   * constant but no current wrapper path produces it (the handle-mutator
+   * surface it described was superseded by the flat submit model).
    */
   COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CONSUMED = 20354,
   /**
-   * `CLIENT_FFI_PRECONDITION_ALREADY_SET` (20355).
+   * `CLIENT_FFI_PRECONDITION_ALREADY_SET` (20355). Reserved: mirrors the
+   * driver constant but no current wrapper path produces it.
    */
   COSMOS_SUB_STATUS_CLIENT_FFI_PRECONDITION_ALREADY_SET = 20355,
   /**
-   * `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356).
+   * `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356). Reserved: mirrors
+   * the driver constant but no current wrapper path produces it.
    */
   COSMOS_SUB_STATUS_CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR = 20356,
   /**
@@ -908,10 +914,16 @@ typedef struct cosmos_runtime_t cosmos_runtime_t;
 /**
  * 32-bit packed Cosmos status returned by every fallible C function.
  *
- * Layout: `(http_status << 16) | sub_status`. `0` is success. A low-16-bit
- * value of [`COSMOS_STATUS_NO_SUB_STATUS`] (`0xFFFF`) means "no sub-status".
- * Decode on the host with `http = code >> 16` and
- * `sub = code & 0xFFFF` (treating `0xFFFF` as absent).
+ * Layout: `(http_status << 16) | sub_status`. `0` is success. The
+ * [`COSMOS_STATUS_SUB_STATUS_PRESENT`] flag is set when a sub-status is
+ * present, and the low 16 bits carry it only then. Decode on the host with
+ * `http = (code >> 16) & 0x3FFF`, `has_sub = code & 0x40000000`, and
+ * `sub = code & 0xFFFF` (valid only when `has_sub` is set).
+ *
+ * This is a `#[repr(transparent)]` newtype over `i32`, so it stays
+ * ABI-identical to a bare `int32_t` in the generated header
+ * (`cosmos_status_code_t`) while keeping packed status codes from being
+ * silently mixed with unrelated integers on the Rust side.
  */
 typedef int32_t cosmos_status_code_t;
 
@@ -1348,7 +1360,7 @@ typedef struct cosmos_runtime_options_t {
  * Self-describing request passed to the two submit entry points. The host
  * fills out the fields relevant to `kind`; irrelevant fields must be left
  * NULL / sentinel (strict validation rejects mismatches with
- * `INVALID_ARGUMENT`).
+ * `400` / `CLIENT_FFI_NULL_ARGUMENT`).
  *
  * All pointers are borrowed for the duration of the submit call only.
  */
@@ -1500,17 +1512,23 @@ void cosmos_string_free(const char *s);
  *   free its copy immediately after this call returns.
  * - `out_account` — receives the new FFI handle on success. Must be
  *   non-NULL.
- * - `out_error` — optional. On `INVALID_*` failures receives a rich
- *   `cosmos_error_t *` describing the failure. NULL silently drops it.
+ * - `out_error` — optional. On a URL-parse failure
+ *   (`CLIENT_INVALID_ACCOUNT_ENDPOINT_URL`) receives a rich `cosmos_error_t *`
+ *   describing the failure; the NULL / UTF-8 preflight failures return a
+ *   status code only. NULL silently drops it.
  *
  * # Returns
  *
- * - `SUCCESS` (0) with `*out_account` populated.
- * - `INVALID_ARGUMENT` (1) when `endpoint`, `key`, or `out_account` is
- *   NULL.
- * - `INVALID_UTF8` (2) when `endpoint` or `key` is not valid UTF-8.
- * - `INVALID_ACCOUNT_REFERENCE` (4003) when `endpoint` is not a parsable
- *   URL. `*out_error` is populated when non-NULL.
+ * A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+ * decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+ *
+ * - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_account` populated.
+ * - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `endpoint`, `key`, or
+ *   `out_account` is NULL.
+ * - `400` / `CLIENT_FFI_INVALID_UTF8` when `endpoint` or `key` is not valid
+ *   UTF-8.
+ * - `400` / `CLIENT_INVALID_ACCOUNT_ENDPOINT_URL` when `endpoint` is not a
+ *   parsable URL. `*out_error` is populated when non-NULL.
  */
 cosmos_status_code_t cosmos_account_ref_with_master_key(const char *endpoint,
                                                         const char *key,
@@ -1668,8 +1686,15 @@ void cosmos_container_ref_free(struct cosmos_container_ref_t *container);
  *
  * # Returns
  *
- * `SUCCESS` (0) on success, the standard coarse codes on failure
- * derived from the driver-side error.
+ * A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+ * decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+ *
+ * - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_container` populated.
+ * - `400` / `CLIENT_FFI_NULL_ARGUMENT` when any pointer argument is NULL.
+ * - `400` / `CLIENT_FFI_INVALID_UTF8` when `database_id` or `container_id`
+ *   is not valid UTF-8.
+ * - The packed HTTP/sub-status derived from the driver-side error on resolve
+ *   failure; `*out_error` is populated when non-NULL.
  */
 cosmos_status_code_t cosmos_driver_resolve_container_blocking(const struct cosmos_runtime_t *runtime,
                                                               const struct cosmos_driver_t *driver,
@@ -1696,10 +1721,13 @@ cosmos_status_code_t cosmos_driver_resolve_container_blocking(const struct cosmo
  *
  * # Returns
  *
- * - `SUCCESS` (0) with `*out_database` populated.
- * - `INVALID_ARGUMENT` (1) when `account`, `database_id`, or
+ * A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+ * decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+ *
+ * - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_database` populated.
+ * - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `account`, `database_id`, or
  *   `out_database` is NULL.
- * - `INVALID_UTF8` (2) when `database_id` is not valid UTF-8.
+ * - `400` / `CLIENT_FFI_INVALID_UTF8` when `database_id` is not valid UTF-8.
  */
 cosmos_status_code_t cosmos_database_ref_create(const struct cosmos_account_ref_t *account,
                                                 const char *database_id,
@@ -1753,12 +1781,14 @@ void cosmos_driver_free(struct cosmos_driver_t *driver);
  *
  * # Returns
  *
- * - `SUCCESS` (0) with `*out_driver` populated.
- * - `INVALID_ARGUMENT` (1) when `runtime`, `account`, or `out_driver`
- *   is NULL.
- * - One of the `2xxx` / `3xxx` codes derived from the driver-side
- *   error per spec section 3.5.1 when the underlying
- *   `get_or_create_driver` returns an error.
+ * A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+ * decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+ *
+ * - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_driver` populated.
+ * - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `runtime`, `account`, or
+ *   `out_driver` is NULL.
+ * - The packed HTTP/sub-status derived from the driver-side error when
+ *   `create_driver` fails; `*out_error` is populated when non-NULL.
  */
 cosmos_status_code_t cosmos_driver_get_or_create_blocking(const struct cosmos_runtime_t *runtime,
                                                           const struct cosmos_account_ref_t *account,
@@ -1794,12 +1824,15 @@ struct cosmos_driver_options_config_t cosmos_driver_options_config_default(void)
  *
  * # Returns
  *
- * - `SUCCESS` (0) with `*out_options` populated.
- * - `INVALID_ARGUMENT` (1) when `account` or `out_options` is NULL, or a
- *   region entry is NULL.
- * - `INVALID_UTF8` (2) when a region name is not valid UTF-8.
- * - `INVALID_OPTION_VALUE` (4014) when an operation-option value is out of
- *   range.
+ * A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+ * decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+ *
+ * - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_options` populated.
+ * - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `account` or `out_options` is
+ *   NULL, or a region entry is NULL.
+ * - `400` / `CLIENT_FFI_INVALID_UTF8` when a region name is not valid UTF-8.
+ * - `400` / `CLIENT_FFI_INVALID_OPTION_VALUE` when an operation-option value
+ *   is out of range.
  */
 cosmos_status_code_t cosmos_driver_options_build(const struct cosmos_account_ref_t *account,
                                                  const struct cosmos_driver_options_config_t *config,
@@ -1828,8 +1861,11 @@ void cosmos_set_backtrace_options(uint32_t max_captures_per_second,
  *
  * # Returns
  *
- * - `SUCCESS` (0) with `*out_fr` populated.
- * - `INVALID_ARGUMENT` (1) when `out_fr` is NULL.
+ * A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+ * decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+ *
+ * - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_fr` populated.
+ * - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `out_fr` is NULL.
  */
 cosmos_status_code_t cosmos_feed_range_full(struct cosmos_feed_range_t **out_fr);
 
@@ -1842,8 +1878,11 @@ cosmos_status_code_t cosmos_feed_range_full(struct cosmos_feed_range_t **out_fr)
  *
  * # Returns
  *
- * - `SUCCESS` (0) with `*out_fr` populated.
- * - `INVALID_ARGUMENT` (1) when any pointer is NULL.
+ * A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+ * decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+ *
+ * - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_fr` populated.
+ * - `400` / `CLIENT_FFI_NULL_ARGUMENT` when any pointer is NULL.
  */
 cosmos_status_code_t cosmos_feed_range_for_partition_key(const struct cosmos_container_ref_t *container,
                                                          const struct cosmos_partition_key_t *pk,
@@ -1883,13 +1922,18 @@ struct cosmos_operation_options_t cosmos_operation_options_default(void);
  *
  * # Returns
  *
- * - `SUCCESS` (0) with `*out_pk` populated.
- * - `INVALID_ARGUMENT` (1) when `out_pk` is NULL.
- * - `INVALID_PARTITION_KEY` (4004) when `components` is NULL, `len` is `0`,
- *   or `len` exceeds 3.
- * - `INVALID_OPTION_VALUE` (4014) when a numeric component is non-finite or a
- *   component `kind` is out of range.
- * - `INVALID_UTF8` (2) when a `String` component is not valid UTF-8.
+ * A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+ * decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+ *
+ * - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_pk` populated.
+ * - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `out_pk` is NULL.
+ * - `400` / `CLIENT_PARTITION_KEY_EMPTY` when `components` is NULL or `len`
+ *   is `0`.
+ * - `400` / `CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS` when `len` exceeds 3.
+ * - `400` / `CLIENT_FFI_INVALID_OPTION_VALUE` when a numeric component is
+ *   non-finite or a component `kind` is out of range.
+ * - `400` / `CLIENT_FFI_INVALID_UTF8` when a `String` component is not valid
+ *   UTF-8.
  */
 cosmos_status_code_t cosmos_partition_key_create(const struct cosmos_partition_key_component_t *components,
                                                  uintptr_t len,
@@ -1902,7 +1946,7 @@ cosmos_status_code_t cosmos_partition_key_create(const struct cosmos_partition_k
  *
  * This is the only way to obtain an empty key through the FFI —
  * [`cosmos_partition_key_create`] rejects an empty array with
- * `INVALID_PARTITION_KEY` to catch accidental misuse.
+ * `400` / `CLIENT_PARTITION_KEY_EMPTY` to catch accidental misuse.
  */
 struct cosmos_partition_key_t *cosmos_partition_key_empty(void);
 
@@ -2038,9 +2082,9 @@ cosmos_status_code_t cosmos_runtime_build(const struct cosmos_runtime_options_t 
  *
  * A fresh `cosmos_operation_handle_t *` on success, or NULL on pre-flight
  * failure (with `*out_pre_error` populated when non-NULL). Pre-flight
- * failures include malformed requests (`INVALID_ARGUMENT`), invalid option
- * values (`INVALID_OPTION_VALUE`), and the queue states
- * (`QUEUE_SHUTDOWN` / `QUEUE_FULL`).
+ * failures carry a packed HTTP/sub-status: `400` for malformed requests or
+ * out-of-range option values, and `503` (`CLIENT_FFI_QUEUE_SHUTDOWN` /
+ * `CLIENT_FFI_QUEUE_FULL`) for the queue states.
  */
 struct cosmos_operation_handle_t *cosmos_submit_operation(const struct cosmos_driver_t *driver,
                                                           const struct cosmos_operation_request_t *request,

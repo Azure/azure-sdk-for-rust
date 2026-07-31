@@ -24,7 +24,7 @@ use std::time::Duration;
 use azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder;
 use azure_data_cosmos_driver::options::{CorrelationId, UserAgentSuffix, WorkloadId};
 
-use crate::error::{driver_status_code, CosmosError, CosmosErrorCode, CosmosStatusCode};
+use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
 use crate::runtime::RuntimeContext;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ fn finish_runtime_build(
             // SAFETY: caller guarantees `out_runtime` is non-NULL and writable
             // for one `*mut RuntimeContext`.
             unsafe { *out_runtime = ptr };
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
         }
         Err(RuntimeBuildError::TokioInit(io)) => {
             // The wrapper-side Tokio runtime couldn't be constructed — an
@@ -105,13 +105,13 @@ fn finish_runtime_build(
                 // `*mut CosmosError`.
                 unsafe { *out_error = CosmosError::into_raw(driver_err) };
             }
-            code.as_i32()
+            code.as_status_code()
         }
         Err(RuntimeBuildError::Driver(driver_err)) => {
             // The driver's own build failed with a real `CosmosError`. Return
             // its status verbatim (no coarse re-classification) so the return
             // code equals the rich error's `status` field.
-            let rc = driver_status_code(&driver_err);
+            let rc = CosmosStatusCode::from_driver_error(&driver_err);
             if !out_error.is_null() {
                 // SAFETY: caller guarantees `out_error` is writable for one
                 // `*mut CosmosError`.
@@ -269,7 +269,7 @@ pub extern "C" fn cosmos_runtime_build(
     out_error: *mut *mut CosmosError,
 ) -> CosmosStatusCode {
     if out_runtime.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
     let mut builder = CosmosDriverRuntimeBuilder::new();
     if !options.is_null() {
@@ -278,7 +278,7 @@ pub extern "C" fn cosmos_runtime_build(
         // UTF-8 for the duration of the call.
         builder = match unsafe { (*options).apply_to(builder) } {
             Ok(b) => b,
-            Err(code) => return code.as_i32(),
+            Err(code) => return code.as_status_code(),
         };
     }
     finish_runtime_build(
@@ -317,7 +317,7 @@ mod tests {
         let code = cosmos_runtime_build(&opts, ptr::null_mut(), &mut err);
         assert_eq!(
             code,
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(err.is_null());
     }
@@ -331,7 +331,7 @@ mod tests {
         let mut err: *mut CosmosError = ptr::null_mut();
         assert_eq!(
             cosmos_runtime_build(&opts, &mut runtime, &mut err),
-            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
         );
         assert!(runtime.is_null());
 
@@ -341,7 +341,7 @@ mod tests {
         opts.correlation_id = bad.as_ptr();
         assert_eq!(
             cosmos_runtime_build(&opts, &mut runtime, &mut err),
-            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
         );
         assert!(runtime.is_null());
 
@@ -350,7 +350,7 @@ mod tests {
         opts.cpu_refresh_interval_ms = 999;
         assert_eq!(
             cosmos_runtime_build(&opts, &mut runtime, &mut err),
-            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
         );
         assert!(runtime.is_null());
     }
@@ -361,7 +361,10 @@ mod tests {
         let mut err: *mut CosmosError = ptr::null_mut();
         // A NULL options pointer means "all driver defaults".
         let code = cosmos_runtime_build(ptr::null(), &mut runtime, &mut err);
-        assert_eq!(code, CosmosErrorCode::CosmosErrorCodeSuccess.as_i32());
+        assert_eq!(
+            code,
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        );
         assert!(!runtime.is_null());
         assert!(err.is_null());
         crate::runtime::cosmos_runtime_free(runtime);
@@ -383,7 +386,7 @@ mod tests {
         let code = cosmos_runtime_build(&opts, &mut runtime, &mut err);
         assert_eq!(
             code,
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32(),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code(),
             "flat build must succeed for valid options"
         );
         assert!(!runtime.is_null());

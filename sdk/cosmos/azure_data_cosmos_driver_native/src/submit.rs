@@ -22,6 +22,7 @@
 //! the per-API entry points are thin wrappers that provide the
 //! driver-side future.
 
+use std::any::Any;
 use std::future::Future;
 use std::sync::Arc;
 
@@ -136,6 +137,22 @@ fn pre_flight_spawn(
     ))
 }
 
+/// Extracts a human-readable message from a caught panic payload.
+///
+/// `std`/`catch_unwind` boxes the panic argument as `Box<dyn Any + Send>`:
+/// string-literal panics land as `&'static str`, `format!`-style panics as
+/// `String`. Anything else (a non-string payload) has no recoverable text, so
+/// we fall back to a static label.
+fn panic_payload_message(payload: &(dyn Any + Send)) -> &str {
+    if let Some(s) = payload.downcast_ref::<&'static str>() {
+        s
+    } else if let Some(s) = payload.downcast_ref::<String>() {
+        s.as_str()
+    } else {
+        "unknown panic payload"
+    }
+}
+
 /// Routes one driver-side `Future<Output = Result<R, CosmosError>>`
 /// through the standard submit-and-publish pipeline. `to_success`
 /// converts the success value into the [`SuccessKind`] the completion
@@ -205,20 +222,23 @@ fn spawn_oneshot<Fut, R>(
                 err,
                 ctx.include_error_details,
             ),
-            Some(Err(_panic)) => {
+            Some(Err(panic_payload)) => {
                 // The driver future (or success conversion) panicked. Synthesize
                 // a driver error carrying the CLIENT_FFI_PANIC status and route
                 // it through the normal rich-error path so the completion's
                 // inline fields (http_status_code / sub_status / message) stay
                 // consistent with every other ERROR completion and honor
                 // `include_error_details`.
-                tracing::error!("submit: driver future panicked; synthesizing ERROR completion",);
-                let status = CosmosErrorCode::CosmosErrorCodeInternalError
-                    .to_status()
-                    .expect("panic code always has a status");
+                let panic_msg = panic_payload_message(&*panic_payload);
+                tracing::error!(
+                    panic = %panic_msg,
+                    "submit: driver future panicked; synthesizing ERROR completion"
+                );
                 let panic_err = azure_data_cosmos_driver::error::CosmosError::builder()
-                    .with_status(status)
-                    .with_message("driver future panicked inside the wrapper (panic firewall)")
+                    .with_status(CosmosErrorCode::panic_status())
+                    .with_message(format!(
+                        "driver future panicked inside the wrapper (panic firewall): {panic_msg}"
+                    ))
                     .build();
                 PendingCompletion::error(
                     user_data,
@@ -293,9 +313,9 @@ fn spawn_oneshot<Fut, R>(
 ///
 /// A fresh `cosmos_operation_handle_t *` on success, or NULL on pre-flight
 /// failure (with `*out_pre_error` populated when non-NULL). Pre-flight
-/// failures include malformed requests (`INVALID_ARGUMENT`), invalid option
-/// values (`INVALID_OPTION_VALUE`), and the queue states
-/// (`QUEUE_SHUTDOWN` / `QUEUE_FULL`).
+/// failures carry a packed HTTP/sub-status: `400` for malformed requests or
+/// out-of-range option values, and `503` (`CLIENT_FFI_QUEUE_SHUTDOWN` /
+/// `CLIENT_FFI_QUEUE_FULL`) for the queue states.
 #[no_mangle]
 pub extern "C" fn cosmos_submit_operation(
     driver: *const DriverHandle,
@@ -308,7 +328,7 @@ pub extern "C" fn cosmos_submit_operation(
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code.as_i32();
+                *out_pre_error = code.as_status_code();
             }
         }
     };
@@ -413,7 +433,7 @@ pub extern "C" fn cosmos_submit_singleton_operation(
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code.as_i32();
+                *out_pre_error = code.as_status_code();
             }
         }
     };
@@ -486,7 +506,7 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code.as_i32();
+                *out_pre_error = code.as_status_code();
             }
         }
     };
@@ -563,7 +583,7 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code.as_i32();
+                *out_pre_error = code.as_status_code();
             }
         }
     };
@@ -641,8 +661,21 @@ mod tests {
         assert!(h.is_null());
         assert_eq!(
             err,
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
+    }
+
+    #[test]
+    fn panic_payload_message_extracts_str_string_and_falls_back() {
+        // `&'static str` payload (string-literal panic).
+        let p: Box<dyn Any + Send> = Box::new("boom");
+        assert_eq!(panic_payload_message(&*p), "boom");
+        // `String` payload (`format!`-style panic).
+        let p: Box<dyn Any + Send> = Box::new(String::from("kaboom"));
+        assert_eq!(panic_payload_message(&*p), "kaboom");
+        // Non-string payload has no recoverable text.
+        let p: Box<dyn Any + Send> = Box::new(42_i32);
+        assert_eq!(panic_payload_message(&*p), "unknown panic payload");
     }
 
     #[test]
@@ -658,7 +691,7 @@ mod tests {
         assert!(h.is_null());
         assert_eq!(
             err,
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
     }
 
@@ -676,7 +709,7 @@ mod tests {
         assert!(h.is_null());
         assert_eq!(
             err,
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
     }
 
@@ -694,7 +727,7 @@ mod tests {
         assert!(h.is_null());
         assert_eq!(
             err,
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
     }
 

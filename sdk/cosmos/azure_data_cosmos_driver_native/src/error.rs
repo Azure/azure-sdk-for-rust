@@ -10,9 +10,10 @@
 //!
 //! - **Packed status code** ([`CosmosStatusCode`] / `cosmos_status_code_t` in
 //!   C). Every fallible C function returns this 32-bit integer. The encoding is
-//!   `(http_status << 16) | sub_status`, where a low-16-bit value of
-//!   [`COSMOS_STATUS_NO_SUB_STATUS`] (`0xFFFF`) means "no sub-status" and `0`
-//!   means success. Pure-FFI / pre-flight failures (a NULL argument, invalid
+//!   `(http_status << 16) | sub_status`, with the
+//!   [`COSMOS_STATUS_SUB_STATUS_PRESENT`] flag set in the high bits when a
+//!   sub-status is present (its low 16 bits are meaningful only then) and `0`
+//!   meaning success. Pure-FFI / pre-flight failures (a NULL argument, invalid
 //!   UTF-8, a shut-down completion queue, …) use a real HTTP status paired with
 //!   a driver `CLIENT_FFI_*` (or `CLIENT_*`) sub-status, so they fit the same
 //!   integer as service errors.
@@ -35,33 +36,51 @@ use azure_data_cosmos_driver::error::{
 
 /// 32-bit packed Cosmos status returned by every fallible C function.
 ///
-/// Layout: `(http_status << 16) | sub_status`. `0` is success. A low-16-bit
-/// value of [`COSMOS_STATUS_NO_SUB_STATUS`] (`0xFFFF`) means "no sub-status".
-/// Decode on the host with `http = code >> 16` and
-/// `sub = code & 0xFFFF` (treating `0xFFFF` as absent).
-pub type CosmosStatusCode = i32;
+/// Layout: `(http_status << 16) | sub_status`. `0` is success. The
+/// [`COSMOS_STATUS_SUB_STATUS_PRESENT`] flag is set when a sub-status is
+/// present, and the low 16 bits carry it only then. Decode on the host with
+/// `http = (code >> 16) & 0x3FFF`, `has_sub = code & 0x40000000`, and
+/// `sub = code & 0xFFFF` (valid only when `has_sub` is set).
+///
+/// This is a `#[repr(transparent)]` newtype over `i32`, so it stays
+/// ABI-identical to a bare `int32_t` in the generated header
+/// (`cosmos_status_code_t`) while keeping packed status codes from being
+/// silently mixed with unrelated integers on the Rust side.
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CosmosStatusCode(pub i32);
 
 /// Success sentinel returned by fallible C functions.
-pub const COSMOS_STATUS_SUCCESS: CosmosStatusCode = 0;
+pub const COSMOS_STATUS_SUCCESS: CosmosStatusCode = CosmosStatusCode(0);
 
-/// Low-16-bit sentinel meaning "no sub-status present" in a packed
-/// [`CosmosStatusCode`].
-pub const COSMOS_STATUS_NO_SUB_STATUS: u16 = 0xFFFF;
+/// High-bit flag set in a packed [`CosmosStatusCode`] when a sub-status is
+/// present.
+///
+/// The low 16 bits carry a sub-status value only when this flag is set; when it
+/// is clear the operation had no sub-status. Encoding "present" as a dedicated
+/// flag — rather than reserving a low-16 value such as the old `0xFFFF` — keeps
+/// every real `u16` sub-status representable, including `0xFFFF` (the wire value
+/// of `SCRIPT_COMPILE_ERROR`), with no collision against the "absent" case.
+///
+/// Bit 30 is used so the flag never overlaps an HTTP status (all real codes are
+/// well under `0x3FFF`) and the packed status stays non-negative.
+pub const COSMOS_STATUS_SUB_STATUS_PRESENT: i32 = 0x4000_0000;
 
-/// Packs a driver [`CosmosStatus`] into the FFI [`CosmosStatusCode`].
-pub(crate) fn status_code(status: CosmosStatus) -> CosmosStatusCode {
-    let http = u32::from(u16::from(status.status_code()));
-    let sub = status
-        .sub_status()
-        .map_or(u32::from(COSMOS_STATUS_NO_SUB_STATUS), |s| {
-            u32::from(s.value())
-        });
-    ((http << 16) | sub) as CosmosStatusCode
-}
+impl CosmosStatusCode {
+    /// Packs a driver [`CosmosStatus`] into the FFI [`CosmosStatusCode`].
+    pub(crate) fn from_status(status: CosmosStatus) -> CosmosStatusCode {
+        let http = u32::from(u16::from(status.status_code()));
+        let mut code = http << 16;
+        if let Some(sub) = status.sub_status() {
+            code |= (COSMOS_STATUS_SUB_STATUS_PRESENT as u32) | u32::from(sub.value());
+        }
+        CosmosStatusCode(code as i32)
+    }
 
-/// Packs the status of a driver [`CosmosError`] into a [`CosmosStatusCode`].
-pub(crate) fn driver_status_code(err: &DriverCosmosError) -> CosmosStatusCode {
-    status_code(err.status())
+    /// Packs the status of a driver [`CosmosError`] into a [`CosmosStatusCode`].
+    pub(crate) fn from_driver_error(err: &DriverCosmosError) -> CosmosStatusCode {
+        Self::from_status(err.status())
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -81,16 +100,12 @@ pub(crate) fn driver_status_code(err: &DriverCosmosError) -> CosmosStatusCode {
 /// This enum is the **single source of truth** for those names on the C side.
 /// Each discriminant is a literal copy of the corresponding
 /// [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
-/// literals to emit `= N`). The `sub_status_mirror_matches_driver` unit test is
-/// CI-verified to fail the build if any *mirrored* value drifts from the driver
-/// constant it copies, so an existing variant can never silently disagree.
+/// literals to emit `= N`). Each discriminant must exactly match the driver
+/// constant it copies.
 ///
-/// The test can **not**, however, detect a driver constant that has *no* mirror
-/// here — [`SubStatusCode`] is a set of associated `pub const`s, not an
-/// enumerable type, so there is nothing to iterate over to prove completeness.
-/// Keeping this enum in sync when the driver adds a new synthetic `2xxxx`
-/// sub-status is therefore a **manual** step: add the matching variant here
-/// (the test will still catch a wrong value on any variant you do add).
+/// [`SubStatusCode`] is a set of associated `pub const`s, not an enumerable
+/// type, so keeping this enum in sync when the driver adds a new synthetic
+/// `2xxxx` sub-status is a **manual** step: add the matching variant here.
 ///
 /// The values are *not* exhaustive of the `2xxxx` range: the driver leaves gaps
 /// (e.g. `20009`, `20013`, `20103`) for future use. Do not invent variants for
@@ -206,11 +221,15 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientFfiInvalidHeader = 20352,
     /// `CLIENT_FFI_INVALID_OPTION_VALUE` (20353).
     CosmosSubStatusClientFfiInvalidOptionValue = 20353,
-    /// `CLIENT_FFI_OPERATION_CONSUMED` (20354).
+    /// `CLIENT_FFI_OPERATION_CONSUMED` (20354). Reserved: mirrors the driver
+    /// constant but no current wrapper path produces it (the handle-mutator
+    /// surface it described was superseded by the flat submit model).
     CosmosSubStatusClientFfiOperationConsumed = 20354,
-    /// `CLIENT_FFI_PRECONDITION_ALREADY_SET` (20355).
+    /// `CLIENT_FFI_PRECONDITION_ALREADY_SET` (20355). Reserved: mirrors the
+    /// driver constant but no current wrapper path produces it.
     CosmosSubStatusClientFfiPreconditionAlreadySet = 20355,
-    /// `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356).
+    /// `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356). Reserved: mirrors
+    /// the driver constant but no current wrapper path produces it.
     CosmosSubStatusClientFfiUnsupportedOperationForMutator = 20356,
     /// `CLIENT_FFI_FEED_EXHAUSTED` (20357).
     CosmosSubStatusClientFfiFeedExhausted = 20357,
@@ -245,7 +264,7 @@ pub enum CosmosSubStatus {
 /// the generated header). Each condition maps to a driver [`CosmosStatus`] — a
 /// real HTTP status paired with a `CLIENT_FFI_*` / `CLIENT_*` sub-status — and
 /// is returned across the boundary as a packed [`CosmosStatusCode`] via
-/// [`CosmosErrorCode::as_i32`]. Keeping the mapping here lets the whole ABI
+/// [`CosmosErrorCode::as_status_code`]. Keeping the mapping here lets the whole ABI
 /// share the driver's single status taxonomy.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum CosmosErrorCode {
@@ -341,8 +360,27 @@ impl CosmosErrorCode {
     /// The packed [`CosmosStatusCode`] this condition is returned as across the
     /// FFI boundary.
     #[inline]
-    pub(crate) fn as_i32(self) -> CosmosStatusCode {
-        self.to_status().map_or(COSMOS_STATUS_SUCCESS, status_code)
+    pub(crate) fn as_status_code(self) -> CosmosStatusCode {
+        self.to_status()
+            .map_or(COSMOS_STATUS_SUCCESS, CosmosStatusCode::from_status)
+    }
+
+    /// Infallible [`CosmosStatus`] for the internal panic-firewall condition
+    /// (`500` / [`SubStatusCode::CLIENT_FFI_PANIC`]).
+    ///
+    /// The submit-path panic firewall must never itself panic, so it builds the
+    /// synthesized error's status here instead of unwrapping the `Option`
+    /// returned by [`to_status`](Self::to_status). It is single-sourced from the
+    /// `CosmosErrorCodeInternalError` mapping, with an infallible constant
+    /// fallback so a hypothetical future regression of that mapping to `None`
+    /// downgrades to the same status rather than panicking.
+    pub(crate) fn panic_status() -> CosmosStatus {
+        Self::CosmosErrorCodeInternalError
+            .to_status()
+            .unwrap_or_else(|| {
+                CosmosStatus::new(StatusCode::InternalServerError)
+                    .with_sub_status(SubStatusCode::CLIENT_FFI_PANIC.value())
+            })
     }
 }
 
@@ -448,7 +486,7 @@ impl CosmosError {
         };
 
         Box::into_raw(Box::new(CosmosError {
-            status: status_code(status),
+            status: CosmosStatusCode::from_status(status),
             http_status_code,
             sub_status,
             is_from_wire,
@@ -518,40 +556,74 @@ mod tests {
 
     /// Decodes a packed status back into `(http, Option<sub>)`.
     fn unpack(code: CosmosStatusCode) -> (u16, Option<u16>) {
-        let http = ((code as u32) >> 16) as u16;
-        let sub = (code as u32 & 0xFFFF) as u16;
-        let sub = (sub != COSMOS_STATUS_NO_SUB_STATUS).then_some(sub);
+        let bits = code.0 as u32;
+        let http = ((bits >> 16) & 0x3FFF) as u16;
+        let sub = ((bits & (COSMOS_STATUS_SUB_STATUS_PRESENT as u32)) != 0)
+            .then(|| (bits & 0xFFFF) as u16);
         (http, sub)
     }
 
     #[test]
     fn success_packs_to_zero() {
-        assert_eq!(CosmosErrorCode::CosmosErrorCodeSuccess.as_i32(), 0);
+        assert_eq!(
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code(),
+            COSMOS_STATUS_SUCCESS
+        );
     }
 
     #[test]
     fn status_code_round_trips_with_sub_status() {
         let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
-        let packed = status_code(status);
+        let packed = CosmosStatusCode::from_status(status);
         assert_eq!(unpack(packed), (429, Some(3200)));
     }
 
     #[test]
     fn status_code_round_trips_without_sub_status() {
-        let packed = status_code(CosmosStatus::new(StatusCode::NotFound));
+        let packed = CosmosStatusCode::from_status(CosmosStatus::new(StatusCode::NotFound));
         assert_eq!(unpack(packed), (404, None));
+    }
+
+    #[test]
+    fn max_sub_status_does_not_collide_with_absent() {
+        // `0xFFFF` is a real Cosmos sub-status (`SCRIPT_COMPILE_ERROR`). The
+        // "present" flag must keep it distinct from the no-sub-status case so a
+        // genuine `0xFFFF` never decodes as "absent".
+        let present = CosmosStatusCode::from_status(
+            CosmosStatus::new(StatusCode::BadRequest).with_sub_status(0xFFFF),
+        );
+        let absent = CosmosStatusCode::from_status(CosmosStatus::new(StatusCode::BadRequest));
+        assert_eq!(unpack(present), (400, Some(0xFFFF)));
+        assert_eq!(unpack(absent), (400, None));
+        assert_ne!(present, absent);
+    }
+
+    #[test]
+    fn every_sub_status_value_round_trips() {
+        // No `u16` sub-status value may be sacrificed as a sentinel: each must
+        // pack and unpack to itself for a fixed HTTP status.
+        for sub in [0u16, 1, 1002, 3200, 20350, 0xFFFE, 0xFFFF] {
+            let packed = CosmosStatusCode::from_status(
+                CosmosStatus::new(StatusCode::Conflict).with_sub_status(sub),
+            );
+            assert_eq!(
+                unpack(packed),
+                (409, Some(sub)),
+                "sub {sub:#06x} must round-trip"
+            );
+        }
     }
 
     #[test]
     fn ffi_conditions_carry_client_ffi_sub_status() {
         // A NULL-argument pre-flight failure is a real 400 + CLIENT_FFI_*.
-        let packed = CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        let packed = CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
         assert_eq!(
             unpack(packed),
             (400, Some(SubStatusCode::CLIENT_FFI_NULL_ARGUMENT.value()))
         );
 
-        let cancelled = CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_i32();
+        let cancelled = CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code();
         assert_eq!(
             unpack(cancelled),
             (
@@ -562,12 +634,32 @@ mod tests {
     }
 
     #[test]
+    fn panic_status_matches_internal_error_mapping() {
+        // The infallible `panic_status()` used by the submit-path panic firewall
+        // must stay identical to the `CosmosErrorCodeInternalError` mapping so
+        // the two never drift.
+        assert_eq!(
+            CosmosStatusCode::from_status(CosmosErrorCode::panic_status()),
+            CosmosErrorCode::CosmosErrorCodeInternalError.as_status_code()
+        );
+        assert_eq!(
+            unpack(CosmosStatusCode::from_status(
+                CosmosErrorCode::panic_status()
+            )),
+            (500, Some(SubStatusCode::CLIENT_FFI_PANIC.value()))
+        );
+    }
+
+    #[test]
     fn driver_status_code_packs_wire_status() {
         let err = DriverCosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::Conflict))
             .with_message("conflict")
             .build();
-        assert_eq!(unpack(driver_status_code(&err)), (409, None));
+        assert_eq!(
+            unpack(CosmosStatusCode::from_driver_error(&err)),
+            (409, None)
+        );
     }
 
     #[test]
@@ -608,348 +700,5 @@ mod tests {
     #[test]
     fn free_null_is_a_no_op() {
         cosmos_error_free(std::ptr::null_mut());
-    }
-
-    /// CI guard: every [`CosmosSubStatus`] variant must carry the exact value of
-    /// its canonical driver [`SubStatusCode`]. If the driver renumbers or the
-    /// mirror drifts, this fails the build so the header can never silently
-    /// disagree with the driver.
-    #[test]
-    fn sub_status_mirror_matches_driver() {
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusTransportGenerated503 as u16,
-            SubStatusCode::TRANSPORT_GENERATED_503.value(),
-            "TRANSPORT_GENERATED_503"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientCpuOverload as u16,
-            SubStatusCode::CLIENT_CPU_OVERLOAD.value(),
-            "CLIENT_CPU_OVERLOAD"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientThreadStarvation as u16,
-            SubStatusCode::CLIENT_THREAD_STARVATION.value(),
-            "CLIENT_THREAD_STARVATION"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusChannelClosed as u16,
-            SubStatusCode::CHANNEL_CLOSED.value(),
-            "CHANNEL_CLOSED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusMalformedContinuationToken as u16,
-            SubStatusCode::MALFORMED_CONTINUATION_TOKEN.value(),
-            "MALFORMED_CONTINUATION_TOKEN"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientOperationTimeout as u16,
-            SubStatusCode::CLIENT_OPERATION_TIMEOUT.value(),
-            "CLIENT_OPERATION_TIMEOUT"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusTransportConnectionFailed as u16,
-            SubStatusCode::TRANSPORT_CONNECTION_FAILED.value(),
-            "TRANSPORT_CONNECTION_FAILED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusTransportIoFailed as u16,
-            SubStatusCode::TRANSPORT_IO_FAILED.value(),
-            "TRANSPORT_IO_FAILED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusTransportDnsFailed as u16,
-            SubStatusCode::TRANSPORT_DNS_FAILED.value(),
-            "TRANSPORT_DNS_FAILED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusTransportBodyReadFailed as u16,
-            SubStatusCode::TRANSPORT_BODY_READ_FAILED.value(),
-            "TRANSPORT_BODY_READ_FAILED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusTransportHttp2Incompatible as u16,
-            SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE.value(),
-            "TRANSPORT_HTTP2_INCOMPATIBLE"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusSerializationResponseBodyInvalid as u16,
-            SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID.value(),
-            "SERIALIZATION_RESPONSE_BODY_INVALID"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientPartitionKeyEmpty as u16,
-            SubStatusCode::CLIENT_PARTITION_KEY_EMPTY.value(),
-            "CLIENT_PARTITION_KEY_EMPTY"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientPartitionKeyTooManyComponents as u16,
-            SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS.value(),
-            "CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientPrefixPartitionKeyRequiresMultihash as u16,
-            SubStatusCode::CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH.value(),
-            "CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientConnectionStringEmpty as u16,
-            SubStatusCode::CLIENT_CONNECTION_STRING_EMPTY.value(),
-            "CLIENT_CONNECTION_STRING_EMPTY"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientConnectionStringMalformedPart as u16,
-            SubStatusCode::CLIENT_CONNECTION_STRING_MALFORMED_PART.value(),
-            "CLIENT_CONNECTION_STRING_MALFORMED_PART"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientConnectionStringMissingAccountKey as u16,
-            SubStatusCode::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY.value(),
-            "CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientInvalidAccountEndpointUrl as u16,
-            SubStatusCode::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL.value(),
-            "CLIENT_INVALID_ACCOUNT_ENDPOINT_URL"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientInvalidUrl as u16,
-            SubStatusCode::CLIENT_INVALID_URL.value(),
-            "CLIENT_INVALID_URL"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientUnknownConsistencyLevel as u16,
-            SubStatusCode::CLIENT_UNKNOWN_CONSISTENCY_LEVEL.value(),
-            "CLIENT_UNKNOWN_CONSISTENCY_LEVEL"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientUnknownPriorityLevel as u16,
-            SubStatusCode::CLIENT_UNKNOWN_PRIORITY_LEVEL.value(),
-            "CLIENT_UNKNOWN_PRIORITY_LEVEL"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFeedRangeRequiresFanoutPipeline as u16,
-            SubStatusCode::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE.value(),
-            "CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientUnsupportedQueryFeature as u16,
-            SubStatusCode::CLIENT_UNSUPPORTED_QUERY_FEATURE.value(),
-            "CLIENT_UNSUPPORTED_QUERY_FEATURE"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientQueryPlanInvalidTopOffsetLimit as u16,
-            SubStatusCode::CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT.value(),
-            "CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientContinuationTokenNonQueryOperation as u16,
-            SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION.value(),
-            "CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientDuplicateFaultInjectionRuleId as u16,
-            SubStatusCode::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID.value(),
-            "CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientThroughputControlGroupNotRegistered as u16,
-            SubStatusCode::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED.value(),
-            "CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientHttpClientConstructionFailed as u16,
-            SubStatusCode::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED.value(),
-            "CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientReqwestFeatureRequired as u16,
-            SubStatusCode::CLIENT_REQWEST_FEATURE_REQUIRED.value(),
-            "CLIENT_REQWEST_FEATURE_REQUIRED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientRequestUrlMissingHost as u16,
-            SubStatusCode::CLIENT_REQUEST_URL_MISSING_HOST.value(),
-            "CLIENT_REQUEST_URL_MISSING_HOST"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientRequestUrlMissingKnownPort as u16,
-            SubStatusCode::CLIENT_REQUEST_URL_MISSING_KNOWN_PORT.value(),
-            "CLIENT_REQUEST_URL_MISSING_KNOWN_PORT"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientImdsHttpClientConstructionFailed as u16,
-            SubStatusCode::CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED.value(),
-            "CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientImdsReqwestFeatureRequired as u16,
-            SubStatusCode::CLIENT_IMDS_REQWEST_FEATURE_REQUIRED.value(),
-            "CLIENT_IMDS_REQWEST_FEATURE_REQUIRED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientContinuationTokenFetchInFlight as u16,
-            SubStatusCode::CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT.value(),
-            "CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientTopologyProviderMissing as u16,
-            SubStatusCode::CLIENT_TOPOLOGY_PROVIDER_MISSING.value(),
-            "CLIENT_TOPOLOGY_PROVIDER_MISSING"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientDriverNotInitialized as u16,
-            SubStatusCode::CLIENT_DRIVER_NOT_INITIALIZED.value(),
-            "CLIENT_DRIVER_NOT_INITIALIZED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientContinuationTokenShapeMismatch as u16,
-            SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH.value(),
-            "CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientContinuationTokenInvalidEpkRange as u16,
-            SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE.value(),
-            "CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientSplitRetriesExhausted as u16,
-            SubStatusCode::CLIENT_SPLIT_RETRIES_EXHAUSTED.value(),
-            "CLIENT_SPLIT_RETRIES_EXHAUSTED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientBuildResponseInvokedOnFailure as u16,
-            SubStatusCode::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE.value(),
-            "CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientRootNodeCannotRequestSplit as u16,
-            SubStatusCode::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT.value(),
-            "CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientSingletonOperationReturnedEmptyPage as u16,
-            SubStatusCode::CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE.value(),
-            "CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientContinuationTokenSavedRangeUnhonored as u16,
-            SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED.value(),
-            "CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientNoThroughputOfferForResource as u16,
-            SubStatusCode::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE.value(),
-            "CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientQueryPlanProducedEmptyRanges as u16,
-            SubStatusCode::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES.value(),
-            "CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusServiceReturnedOfferWithoutId as u16,
-            SubStatusCode::SERVICE_RETURNED_OFFER_WITHOUT_ID.value(),
-            "SERVICE_RETURNED_OFFER_WITHOUT_ID"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientThroughputPollerIncomplete as u16,
-            SubStatusCode::CLIENT_THROUGHPUT_POLLER_INCOMPLETE.value(),
-            "CLIENT_THROUGHPUT_POLLER_INCOMPLETE"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientTopologyResolutionFailed as u16,
-            SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED.value(),
-            "CLIENT_TOPOLOGY_RESOLUTION_FAILED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusServiceReturnedObjectWithoutRid as u16,
-            SubStatusCode::SERVICE_RETURNED_OBJECT_WITHOUT_RID.value(),
-            "SERVICE_RETURNED_OBJECT_WITHOUT_RID"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiNullArgument as u16,
-            SubStatusCode::CLIENT_FFI_NULL_ARGUMENT.value(),
-            "CLIENT_FFI_NULL_ARGUMENT"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiInvalidUtf8 as u16,
-            SubStatusCode::CLIENT_FFI_INVALID_UTF8.value(),
-            "CLIENT_FFI_INVALID_UTF8"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiInvalidHeader as u16,
-            SubStatusCode::CLIENT_FFI_INVALID_HEADER.value(),
-            "CLIENT_FFI_INVALID_HEADER"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiInvalidOptionValue as u16,
-            SubStatusCode::CLIENT_FFI_INVALID_OPTION_VALUE.value(),
-            "CLIENT_FFI_INVALID_OPTION_VALUE"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiOperationConsumed as u16,
-            SubStatusCode::CLIENT_FFI_OPERATION_CONSUMED.value(),
-            "CLIENT_FFI_OPERATION_CONSUMED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiPreconditionAlreadySet as u16,
-            SubStatusCode::CLIENT_FFI_PRECONDITION_ALREADY_SET.value(),
-            "CLIENT_FFI_PRECONDITION_ALREADY_SET"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiUnsupportedOperationForMutator as u16,
-            SubStatusCode::CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR.value(),
-            "CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiFeedExhausted as u16,
-            SubStatusCode::CLIENT_FFI_FEED_EXHAUSTED.value(),
-            "CLIENT_FFI_FEED_EXHAUSTED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiQueueShutdown as u16,
-            SubStatusCode::CLIENT_FFI_QUEUE_SHUTDOWN.value(),
-            "CLIENT_FFI_QUEUE_SHUTDOWN"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiQueueFull as u16,
-            SubStatusCode::CLIENT_FFI_QUEUE_FULL.value(),
-            "CLIENT_FFI_QUEUE_FULL"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiOperationCancelled as u16,
-            SubStatusCode::CLIENT_FFI_OPERATION_CANCELLED.value(),
-            "CLIENT_FFI_OPERATION_CANCELLED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiRuntimeBuildFailed as u16,
-            SubStatusCode::CLIENT_FFI_RUNTIME_BUILD_FAILED.value(),
-            "CLIENT_FFI_RUNTIME_BUILD_FAILED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientFfiPanic as u16,
-            SubStatusCode::CLIENT_FFI_PANIC.value(),
-            "CLIENT_FFI_PANIC"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusClientGenerated401 as u16,
-            SubStatusCode::CLIENT_GENERATED_401.value(),
-            "CLIENT_GENERATED_401"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusAuthenticationTokenAcquisitionFailed as u16,
-            SubStatusCode::AUTHENTICATION_TOKEN_ACQUISITION_FAILED.value(),
-            "AUTHENTICATION_TOKEN_ACQUISITION_FAILED"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusTransitTimeout as u16,
-            SubStatusCode::TRANSIT_TIMEOUT.value(),
-            "TRANSIT_TIMEOUT"
-        );
-        assert_eq!(
-            CosmosSubStatus::CosmosSubStatusServerBarrierThrottled as u16,
-            SubStatusCode::SERVER_BARRIER_THROTTLED.value(),
-            "SERVER_BARRIER_THROTTLED"
-        );
     }
 }

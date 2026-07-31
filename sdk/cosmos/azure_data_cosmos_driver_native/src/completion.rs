@@ -33,7 +33,7 @@ use azure_data_cosmos_driver::models::{
 
 use crate::container_ref::ContainerRefHandle;
 use crate::driver::DriverHandle;
-use crate::error::{driver_status_code, CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS};
+use crate::error::{CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS};
 use crate::response_header::{
     synthesize_response_headers, CosmosResponseHeader, OwnedResponseHeaders,
 };
@@ -505,7 +505,7 @@ impl PendingCompletion {
     ) -> Self {
         let mut p = Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            driver_status_code(&err),
+            CosmosStatusCode::from_driver_error(&err),
             user_data,
             op_inner,
         );
@@ -546,7 +546,7 @@ impl PendingCompletion {
     pub(crate) fn cancelled(user_data: isize, op_inner: Arc<OperationInner>) -> Self {
         Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
-            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_i32(),
+            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code(),
             user_data,
             op_inner,
         )
@@ -1641,7 +1641,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
-            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_i32(),
+            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code(),
             std::ptr::null_mut(),
             None,
         );
@@ -1653,7 +1653,7 @@ mod tests {
         assert_eq!(c.was_cancel_requested, 1);
         assert_eq!(
             c.status,
-            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_i32()
+            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code()
         );
         // The operation handle's state should reflect Cancelled.
         assert_eq!(
@@ -1812,7 +1812,9 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            crate::error::status_code(CosmosStatus::new(azure_core::http::StatusCode::NotFound)),
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::NotFound,
+            )),
             std::ptr::null_mut(),
             Some(err),
         );
@@ -1820,7 +1822,9 @@ mod tests {
         let c = wait_one_ffi(q, 100).expect("completion delivered");
         assert_eq!(
             c.status,
-            crate::error::status_code(CosmosStatus::new(azure_core::http::StatusCode::NotFound))
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::NotFound
+            ))
         );
         assert_eq!(c.http_status_code, 404);
         assert!(!c.message.is_null());
@@ -1848,7 +1852,9 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            crate::error::status_code(CosmosStatus::new(azure_core::http::StatusCode::Conflict)),
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::Conflict,
+            )),
             std::ptr::null_mut(),
             Some(err),
         );
@@ -1856,7 +1862,9 @@ mod tests {
         // Coarse status survives.
         assert_eq!(
             c.status,
-            crate::error::status_code(CosmosStatus::new(azure_core::http::StatusCode::Conflict))
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::Conflict
+            ))
         );
         // Rich detail suppressed.
         assert!(c.message.is_null());
@@ -1884,14 +1892,17 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            crate::error::status_code(status),
+            crate::error::CosmosStatusCode::from_status(status),
             std::ptr::null_mut(),
             Some(err),
         );
 
         let c = wait_one_ffi(q, 100).expect("completion delivered");
         // Coarse packed status decodes to 500 / CLIENT_FFI_PANIC (20362) ...
-        assert_eq!(c.status, crate::error::status_code(status));
+        assert_eq!(
+            c.status,
+            crate::error::CosmosStatusCode::from_status(status)
+        );
         // ... and every inline field agrees with it, unlike the old coarse path.
         assert_eq!(c.http_status_code, 500);
         assert_eq!(

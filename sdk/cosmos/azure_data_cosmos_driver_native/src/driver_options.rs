@@ -199,12 +199,15 @@ pub extern "C" fn cosmos_driver_options_config_default() -> CosmosDriverOptionsC
 ///
 /// # Returns
 ///
-/// - `SUCCESS` (0) with `*out_options` populated.
-/// - `INVALID_ARGUMENT` (1) when `account` or `out_options` is NULL, or a
-///   region entry is NULL.
-/// - `INVALID_UTF8` (2) when a region name is not valid UTF-8.
-/// - `INVALID_OPTION_VALUE` (4014) when an operation-option value is out of
-///   range.
+/// A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+/// decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+///
+/// - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_options` populated.
+/// - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `account` or `out_options` is
+///   NULL, or a region entry is NULL.
+/// - `400` / `CLIENT_FFI_INVALID_UTF8` when a region name is not valid UTF-8.
+/// - `400` / `CLIENT_FFI_INVALID_OPTION_VALUE` when an operation-option value
+///   is out of range.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_options_build(
     account: *const AccountRefHandle,
@@ -212,10 +215,10 @@ pub extern "C" fn cosmos_driver_options_build(
     out_options: *mut *mut DriverOptionsHandle,
 ) -> CosmosStatusCode {
     if out_options.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
     let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
 
     let mut builder = DriverOptionsBuilder::new(account_inner.inner.clone());
@@ -231,7 +234,7 @@ pub extern "C" fn cosmos_driver_options_build(
             decode_preferred_regions(cfg.preferred_regions, cfg.preferred_regions_len)
         } {
             Ok(v) => v,
-            Err(code) => return code.as_i32(),
+            Err(code) => return code.as_status_code(),
         };
         if !regions.is_empty() {
             builder = builder.with_preferred_regions(regions);
@@ -242,7 +245,7 @@ pub extern "C" fn cosmos_driver_options_build(
             // pointer fields per the `cosmos_operation_options_t` contract.
             let driver_opts = match unsafe { (*cfg.operation_options).to_driver() } {
                 Ok(o) => o,
-                Err(code) => return code.as_i32(),
+                Err(code) => return code.as_status_code(),
             };
             builder = builder.with_operation_options(driver_opts);
         }
@@ -254,7 +257,7 @@ pub extern "C" fn cosmos_driver_options_build(
     unsafe {
         *out_options = handle;
     }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+    CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
 }
 
 #[cfg(test)]
@@ -296,14 +299,14 @@ mod tests {
         // NULL account.
         assert_eq!(
             cosmos_driver_options_build(ptr::null(), &cfg, &mut opts),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(opts.is_null());
         // NULL out_options.
         let account = make_account();
         assert_eq!(
             cosmos_driver_options_build(account, &cfg, ptr::null_mut()),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         crate::account_ref::cosmos_account_ref_free(account);
     }
@@ -315,7 +318,7 @@ mod tests {
         // A NULL config means "no regions, default operation options".
         assert_eq!(
             cosmos_driver_options_build(account, ptr::null(), &mut opts),
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
         );
         assert!(!opts.is_null());
         let inner = DriverOptionsHandle::inner_arc(opts).unwrap();
@@ -341,7 +344,7 @@ mod tests {
         let mut opts: *mut DriverOptionsHandle = ptr::null_mut();
         assert_eq!(
             cosmos_driver_options_build(account, &cfg, &mut opts),
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
         );
         let inner = DriverOptionsHandle::inner_arc(opts).unwrap();
         let names: Vec<&str> = inner
@@ -368,7 +371,7 @@ mod tests {
         let mut opts: *mut DriverOptionsHandle = ptr::null_mut();
         assert_eq!(
             cosmos_driver_options_build(account, &cfg, &mut opts),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(opts.is_null());
         crate::account_ref::cosmos_account_ref_free(account);

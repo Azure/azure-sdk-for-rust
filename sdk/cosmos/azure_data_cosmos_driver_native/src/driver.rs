@@ -33,7 +33,7 @@ use azure_data_cosmos_driver::options::DriverOptions;
 
 use crate::account_ref::AccountRefHandle;
 use crate::driver_options::DriverOptionsHandle;
-use crate::error::{driver_status_code, CosmosError, CosmosErrorCode, CosmosStatusCode};
+use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
 use crate::runtime::RuntimeContext;
 
 /// The C ABI handle for a [`CosmosDriver`] (`cosmos_driver_t`).
@@ -141,12 +141,14 @@ pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
 ///
 /// # Returns
 ///
-/// - `SUCCESS` (0) with `*out_driver` populated.
-/// - `INVALID_ARGUMENT` (1) when `runtime`, `account`, or `out_driver`
-///   is NULL.
-/// - One of the `2xxx` / `3xxx` codes derived from the driver-side
-///   error per spec section 3.5.1 when the underlying
-///   `get_or_create_driver` returns an error.
+/// A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+/// decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+///
+/// - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_driver` populated.
+/// - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `runtime`, `account`, or
+///   `out_driver` is NULL.
+/// - The packed HTTP/sub-status derived from the driver-side error when
+///   `create_driver` fails; `*out_error` is populated when non-NULL.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_get_or_create_blocking(
     runtime: *const RuntimeContext,
@@ -156,13 +158,13 @@ pub extern "C" fn cosmos_driver_get_or_create_blocking(
     out_error: *mut *mut CosmosError,
 ) -> CosmosStatusCode {
     if out_driver.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
     let Some(runtime_inner) = RuntimeContext::inner_arc(runtime) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
     let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
     // Options is optional — NULL → None.
     let options_owned = if options.is_null() {
@@ -192,10 +194,10 @@ pub extern "C" fn cosmos_driver_get_or_create_blocking(
             unsafe {
                 *out_driver = handle;
             }
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
         }
         Err(driver_err) => {
-            let status = driver_status_code(&driver_err);
+            let status = CosmosStatusCode::from_driver_error(&driver_err);
             if !out_error.is_null() {
                 // SAFETY: caller guarantees `out_error` is writable for
                 // one `*mut CosmosError`.
@@ -243,7 +245,7 @@ mod tests {
                 &mut out,
                 &mut err,
             ),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
             cosmos_driver_get_or_create_blocking(
@@ -253,7 +255,7 @@ mod tests {
                 &mut out,
                 &mut err,
             ),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
             cosmos_driver_get_or_create_blocking(
@@ -263,7 +265,7 @@ mod tests {
                 ptr::null_mut(),
                 &mut err,
             ),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(out.is_null());
         assert!(err.is_null());
@@ -300,7 +302,7 @@ mod tests {
             cosmos_driver_get_or_create_blocking(runtime, account, ptr::null(), &mut out, &mut err);
         assert_ne!(
             rc,
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32(),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code(),
             "unreachable endpoint must fail"
         );
         assert!(out.is_null());

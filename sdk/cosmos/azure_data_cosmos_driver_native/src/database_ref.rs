@@ -93,10 +93,13 @@ fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 ///
 /// # Returns
 ///
-/// - `SUCCESS` (0) with `*out_database` populated.
-/// - `INVALID_ARGUMENT` (1) when `account`, `database_id`, or
+/// A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+/// decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+///
+/// - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_database` populated.
+/// - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `account`, `database_id`, or
 ///   `out_database` is NULL.
-/// - `INVALID_UTF8` (2) when `database_id` is not valid UTF-8.
+/// - `400` / `CLIENT_FFI_INVALID_UTF8` when `database_id` is not valid UTF-8.
 #[no_mangle]
 pub extern "C" fn cosmos_database_ref_create(
     account: *const AccountRefHandle,
@@ -104,14 +107,14 @@ pub extern "C" fn cosmos_database_ref_create(
     out_database: *mut *mut DatabaseRefHandle,
 ) -> CosmosStatusCode {
     if out_database.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
     let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
     let name = match try_cstr_to_str(database_id) {
         Ok(s) => s,
-        Err(code) => return code.as_i32(),
+        Err(code) => return code.as_status_code(),
     };
 
     // `from_name` accepts any `Into<Cow<'static, str>>` — owned `String`
@@ -125,7 +128,7 @@ pub extern "C" fn cosmos_database_ref_create(
     unsafe {
         *out_database = handle;
     }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+    CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
 }
 
 /// Frees a database-reference handle. NULL is a no-op.
@@ -166,7 +169,7 @@ mod tests {
         let db_id = ok_cstr("mydb");
         let mut out: *mut DatabaseRefHandle = ptr::null_mut();
         let rc = cosmos_database_ref_create(account, db_id.as_ptr(), &mut out);
-        assert_eq!(rc, CosmosErrorCode::CosmosErrorCodeSuccess.as_i32());
+        assert_eq!(rc, CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code());
         assert!(!out.is_null());
 
         // Inner reference has the expected name.
@@ -184,15 +187,15 @@ mod tests {
         let mut out: *mut DatabaseRefHandle = ptr::null_mut();
         assert_eq!(
             cosmos_database_ref_create(ptr::null(), db_id.as_ptr(), &mut out),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
             cosmos_database_ref_create(account, ptr::null(), &mut out),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
             cosmos_database_ref_create(account, db_id.as_ptr(), ptr::null_mut()),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         cosmos_account_ref_free_for_tests(account);
     }

@@ -35,7 +35,7 @@ use std::sync::Arc;
 use azure_data_cosmos_driver::models::ContainerReference as DriverContainerReference;
 
 use crate::driver::DriverHandle;
-use crate::error::{driver_status_code, CosmosError, CosmosErrorCode, CosmosStatusCode};
+use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
 use crate::runtime::RuntimeContext;
 
 /// The C ABI handle for a container reference (`cosmos_container_ref_t`).
@@ -120,8 +120,15 @@ pub extern "C" fn cosmos_container_ref_free(container: *mut ContainerRefHandle) 
 ///
 /// # Returns
 ///
-/// `SUCCESS` (0) on success, the standard coarse codes on failure
-/// derived from the driver-side error.
+/// A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+/// decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+///
+/// - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_container` populated.
+/// - `400` / `CLIENT_FFI_NULL_ARGUMENT` when any pointer argument is NULL.
+/// - `400` / `CLIENT_FFI_INVALID_UTF8` when `database_id` or `container_id`
+///   is not valid UTF-8.
+/// - The packed HTTP/sub-status derived from the driver-side error on resolve
+///   failure; `*out_error` is populated when non-NULL.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_resolve_container_blocking(
     runtime: *const RuntimeContext,
@@ -132,21 +139,21 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
     out_error: *mut *mut CosmosError,
 ) -> CosmosStatusCode {
     if out_container.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
     let Some(runtime_inner) = RuntimeContext::inner_arc(runtime) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
     let Some(driver_inner) = DriverHandle::inner_arc(driver) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
     let db_id = match try_cstr_to_str(database_id) {
         Ok(s) => s.to_owned(),
-        Err(code) => return code.as_i32(),
+        Err(code) => return code.as_status_code(),
     };
     let container_id = match try_cstr_to_str(container_id) {
         Ok(s) => s.to_owned(),
-        Err(code) => return code.as_i32(),
+        Err(code) => return code.as_status_code(),
     };
 
     let driver_arc = Arc::clone(&driver_inner.inner);
@@ -163,10 +170,10 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
             unsafe {
                 *out_container = handle;
             }
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
         }
         Err(err) => {
-            let status = driver_status_code(&err);
+            let status = CosmosStatusCode::from_driver_error(&err);
             if !out_error.is_null() {
                 // SAFETY: caller guarantees `out_error` is writable.
                 unsafe {
@@ -203,7 +210,7 @@ mod tests {
                 &mut out,
                 &mut err,
             ),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(out.is_null());
         assert!(err.is_null());

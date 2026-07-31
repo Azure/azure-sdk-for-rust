@@ -54,13 +54,18 @@ fn generate_c_header() {
          //\n\
          // COSMOS_STATUS_SUCCESS: value returned by every fallible function on success.\n\
          #define COSMOS_STATUS_SUCCESS 0\n\
-         // COSMOS_STATUS_NO_SUB_STATUS: low-16-bit value meaning \"no sub-status present\".\n\
-         #define COSMOS_STATUS_NO_SUB_STATUS 0xFFFF\n\
+         // COSMOS_STATUS_SUB_STATUS_PRESENT: high-bit flag set when a packed status\n\
+         // carries a sub-status. Using a dedicated flag (instead of reserving a\n\
+         // low-16 value) keeps every real sub-status representable, including\n\
+         // 0xFFFF (ScriptCompileError), with no collision against the absent case.\n\
+         #define COSMOS_STATUS_SUB_STATUS_PRESENT 0x40000000\n\
          \n\
          // Decode helpers for the packed cosmos_status_code_t. COSMOS_STATUS_HTTP\n\
-         // extracts the HTTP status (high 16 bits); COSMOS_STATUS_SUB extracts the\n\
-         // sub-status (low 16 bits, COSMOS_STATUS_NO_SUB_STATUS when absent).\n\
-         #define COSMOS_STATUS_HTTP(code) ((int)(((uint32_t)(code) >> 16) & 0xFFFFu))\n\
+         // extracts the HTTP status; COSMOS_STATUS_HAS_SUB reports whether a\n\
+         // sub-status is present; COSMOS_STATUS_SUB extracts it (low 16 bits,\n\
+         // valid only when COSMOS_STATUS_HAS_SUB is non-zero).\n\
+         #define COSMOS_STATUS_HTTP(code) ((int)(((uint32_t)(code) >> 16) & 0x3FFFu))\n\
+         #define COSMOS_STATUS_HAS_SUB(code) (((uint32_t)(code) & 0x40000000u) != 0u)\n\
          #define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))",
         env!("CARGO_PKG_VERSION")
     );
@@ -225,7 +230,7 @@ fn generate_c_header() {
             // double-prefixing them into `cosmos_COSMOS_STATUS_*`.
             exclude: vec![
                 "COSMOS_STATUS_SUCCESS".into(),
-                "COSMOS_STATUS_NO_SUB_STATUS".into(),
+                "COSMOS_STATUS_SUB_STATUS_PRESENT".into(),
             ],
             rename,
             ..Default::default()

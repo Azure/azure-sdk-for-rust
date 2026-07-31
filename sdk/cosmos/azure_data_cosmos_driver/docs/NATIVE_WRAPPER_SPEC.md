@@ -585,9 +585,9 @@ A **packed 32-bit status** returned by every fallible C function. It carries the
 
 - `0` (`COSMOS_STATUS_SUCCESS`) — success.
 - The high 16 bits hold the HTTP status (`400`, `404`, `429`, `503`, …).
-- The low 16 bits hold the driver [`SubStatusCode`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs) value, or `COSMOS_STATUS_NO_SUB_STATUS` (`0xFFFF`) when there is none.
+- The low 16 bits hold the driver [`SubStatusCode`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs) value, but only when the `COSMOS_STATUS_SUB_STATUS_PRESENT` (`0x40000000`) flag is set; when that flag is clear there is no sub-status.
 
-Hosts decode with the two macros emitted in the header: `COSMOS_STATUS_HTTP(code) = (code >> 16) & 0xFFFF` and `COSMOS_STATUS_SUB(code) = code & 0xFFFF`. A non-zero low half is compared against the named `COSMOS_SUB_STATUS_*` constants (§3.5.2).
+Hosts decode with the macros emitted in the header: `COSMOS_STATUS_HTTP(code) = (code >> 16) & 0x3FFF`, `COSMOS_STATUS_HAS_SUB(code) = code & 0x40000000`, and `COSMOS_STATUS_SUB(code) = code & 0xFFFF`. When `COSMOS_STATUS_HAS_SUB` is set, the low half is compared against the named `COSMOS_SUB_STATUS_*` constants (§3.5.2). The dedicated present-flag keeps every `SubStatusCode` value representable — including `0xFFFF` (`SCRIPT_COMPILE_ERROR`) — with no collision against the "absent" case.
 
 **Pure-FFI / pre-flight failures speak the same language.** A failure that never reached the wire (a NULL argument, invalid UTF-8, a shut-down queue) still packs a *real* HTTP status paired with a driver `CLIENT_FFI_*` (or `CLIENT_*`) sub-status, so it fits the identical integer as a service error. The internal condition set that performs this mapping lives in `CosmosErrorCode` in [`src/error.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/src/error.rs); it is `pub(crate)` and is **never** exported to the header. The pre-flight / plumbing conditions and the packed status each maps to are:
 
@@ -599,9 +599,6 @@ Hosts decode with the two macros emitted in the header: `COSMOS_STATUS_HTTP(code
   | 400 | `COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE` | A builder setter was passed a value outside its documented range. The builder is left unchanged. |
   | 400 | `COSMOS_SUB_STATUS_CLIENT_INVALID_ACCOUNT_ENDPOINT_URL` | Account endpoint URL or credential could not be parsed. |
   | 400 | `COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_EMPTY` | A `PartitionKey` builder produced an empty / inconsistent key. |
-  | 400 | `COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CONSUMED` | A mutator or second submit was called after the operation handle was already consumed. |
-  | 400 | `COSMOS_SUB_STATUS_CLIENT_FFI_PRECONDITION_ALREADY_SET` | A second precondition setter was called on an operation that already has one. |
-  | 400 | `COSMOS_SUB_STATUS_CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` | A mutator only meaningful for a specific operation kind was applied to an incompatible operation. |
   | 404 | `COSMOS_SUB_STATUS_CLIENT_FFI_FEED_EXHAUSTED` | A single-shot submit of a feed-style operation yielded no further page. |
   | 408 | `COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED` | An operation was cancelled (explicit cancel or queue shutdown). Surfaced on the `COSMOS_COMPLETION_OUTCOME_CANCELLED` completion's status. |
   | 503 | `COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN` | A submit targeted a `cosmos_cq_t` already shut down. Pre-flight rejection — no completion is posted. |
@@ -610,6 +607,8 @@ Hosts decode with the two macros emitted in the header: `COSMOS_STATUS_HTTP(code
   | 500 | `COSMOS_SUB_STATUS_CLIENT_FFI_PANIC` | A driver future spawned by the wrapper panicked; the panic firewall synthesized a failure so the host continuation is released rather than leaked. |
 
   These sub-status values occupy the driver's `20350..=20399` "native FFI wrapper" band (defined once on `SubStatusCode`, added in [#4696](https://github.com/Azure/azure-sdk-for-rust/issues/4696)); the `CLIENT_*` codes reused above (partition-key, account-endpoint URL) are pre-existing driver client-side codes. Hosts should treat an unrecognized non-zero status as fatal-but-recoverable (log + propagate) rather than panic.
+
+  Three further codes in the band — `CLIENT_FFI_OPERATION_CONSUMED` (`20354`), `CLIENT_FFI_PRECONDITION_ALREADY_SET` (`20355`) and `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (`20356`) — are **reserved but not currently produced**. They described the earlier handle-mutator surface that the flat `cosmos_operation_request_t` submit model superseded, so no current path raises them. They remain defined on `SubStatusCode` (and are emitted as `COSMOS_SUB_STATUS_*` constants) so the band stays stable if that surface returns; hosts will not receive them today.
 
 **No separate warning band.** There is no "success with populated error" or coarse warning-code return pattern. Advisories such as the `get_or_create` cache-hit-with-ignored-options case surface through the rich `cosmos_error_t` attached to an otherwise-OK completion (see §4.4.1), not through a distinguished numeric return.
 
