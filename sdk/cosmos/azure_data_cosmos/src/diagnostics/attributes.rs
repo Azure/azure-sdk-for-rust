@@ -36,6 +36,12 @@ pub(crate) const DB_RESPONSE_STATUS_CODE: &str = "db.response.status_code";
 /// `server.address` — the host contacted for the request.
 pub(crate) const SERVER_ADDRESS: &str = "server.address";
 
+/// `server.port` — the port contacted for the request.
+///
+/// Per semantic conventions this is emitted only when the port differs from the
+/// scheme's default (443 for HTTPS).
+pub(crate) const SERVER_PORT: &str = "server.port";
+
 /// `error.type` — a low-cardinality identifier of the error (the status code).
 pub(crate) const ERROR_TYPE: &str = "error.type";
 

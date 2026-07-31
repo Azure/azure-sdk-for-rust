@@ -351,7 +351,7 @@ attributes. This powers client-side Grafana dashboards (R7) with per-combination
 | `db.client.operation.duration` | stable | histogram | `s` | End-to-end operation duration — **the primary metric**. |
 | `db.client.response.returned_rows` | development | histogram | `{row}` | Rows returned in the result set. |
 | `azure.cosmosdb.client.operation.request_charge` | development | histogram | `{request_unit}` | Request units (RU) consumed by the operation. |
-| `azure.cosmosdb.client.active_instance.count` | development | up-down counter | `{instance}` | Number of active Cosmos client instances. *(Deferred — not emitted yet; pending real client-lifecycle wiring, see [#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789).)* |
+| `azure.cosmosdb.client.active_instance.count` | development | up-down counter | `{instance}` | Number of live Cosmos client instances per account endpoint. *(Opt-in via `MetricsOptions::with_active_instance_metric`; `CosmosMetricsHandler` records +1 when a `CosmosClient` is built with it registered and −1 when that client and every client derived from it is dropped, so the value follows client lifetime rather than handler lifetime — one handler shared across N clients reports N, and a handler registered on no client reports nothing — [#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874).)* |
 
 **Always-on metric attributes (low cardinality, D7):** `db.operation.name`,
 `db.response.status_code`, `db.collection.name`, `db.namespace`, `error.type`, `server.address`,
@@ -399,17 +399,30 @@ a metric dimension to control time-series cardinality (D7).
 | `azure.client.id` | Stable per-client instance id (see D10). |
 | `azure.resource_provider.namespace` | `Microsoft.DocumentDB`. |
 
-> **Client instance id (D10).** `azure.client.id` and the active-instance metric use a stable
-> per-client id. Prefer `vmId`; when VM metadata is unreachable, fall back to a **static GUID**
-> so two requests can be attributed to the same `CosmosClient`/driver instance. **Check whether
-> [`DiagnosticsContext`][ctx] already carries this before adding it.**
+> **Client instance id (D10).** `azure.client.id` is a stable per-client instance id. Prefer
+> `vmId`; when VM metadata is unreachable, fall back to a **static GUID** so two requests can be
+> attributed to the same `CosmosClient`/driver instance. **Check whether
+> [`DiagnosticsContext`][ctx] already carries this before adding it.** Note that
+> `azure.cosmosdb.client.active_instance.count` is *not* keyed on `azure.client.id`: semconv
+> defines its attribute set as `server.address` plus `server.port` (the latter only for a
+> non-default port), so the counter reads as "live clients per account endpoint"
+> ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874)).
 
 #### 10.3.1 Canonical `db.operation.name` values
 
 Use the semconv well-known values verbatim — e.g. `read_item`, `create_item`, `upsert_item`,
-`replace_item`, `patch_item`, `delete_item`, `query_items`, `read_all_items`, `read_many_items`,
-`execute_batch`, `execute_bulk`, `query_change_feed`, `read_container`, `create_container`, … .
+`replace_item`, `patch_item`, `delete_item`, `query_items`, `read_all_items`,
+`read_all_items_of_logical_partition`, `read_many_items`, `execute_batch`, `execute_bulk`,
+`query_change_feed`, `read_container`, `create_container`, … .
 If none applies, use a language-agnostic snake_case method name.
+
+Some canonical values encode a scope the driver cannot see. Throughput (offer) operations are the
+notable case: semconv distinguishes `read_database_throughput` / `replace_database_throughput` from
+`read_container_throughput` / `replace_container_throughput`, but the driver's offer requests carry
+no database-vs-container discriminator, and there is no unscoped `read_throughput`. Those names are
+therefore supplied by the SDK's `CosmosOperationContext`, and the driver's mapping leaves offer
+operations unnamed rather than emitting a non-canonical value
+([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874)).
 
 ### 10.4 Traces (span tree) — reconstructed & backdated
 

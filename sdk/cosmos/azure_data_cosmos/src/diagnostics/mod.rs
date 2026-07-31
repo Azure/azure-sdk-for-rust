@@ -46,7 +46,9 @@ pub use azure_data_cosmos_driver::diagnostics::{
 };
 #[doc(inline)]
 pub use azure_data_cosmos_driver::DiagnosticsThresholds;
-pub use handler::{DiagnosticsHandler, DiagnosticsHandlerChain};
+pub use handler::{
+    ClientLifetimeToken, CosmosClientInfo, DiagnosticsHandler, DiagnosticsHandlerChain,
+};
 pub use logging::{SamplingLogHandler, TracingLogHandler};
 pub use operation_context::CosmosOperationContext;
 pub use rate_limiter::RateLimiterConfig;

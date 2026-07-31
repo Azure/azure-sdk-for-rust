@@ -116,11 +116,18 @@ pub(crate) fn emit_backdated_span_tree<T>(
     let op_failed = diagnostics.is_failure();
 
     // --- Operation (root) span ---
-    // Prefer the driver context's operation name; fall back to the SDK-supplied
-    // operation identity when the driver did not record one.
-    let op_name_ref = diagnostics
-        .operation_name()
-        .or_else(|| op.and_then(CosmosOperationContext::operation_name));
+    // Prefer the SDK-supplied operation identity (the caller-facing operation,
+    // e.g. `patch_item`) so the span label agrees with the metric
+    // `db.operation.name` and the tail-sampling classifier, which both read the
+    // same `CosmosOperationContext`. Fall back to the driver context's operation
+    // name for operations not surfaced through the SDK wrapper (which therefore
+    // carry no `CosmosOperationContext`). Preferring the driver value here would
+    // mislabel an aggregate whose surfaced sub-op differs from the operation —
+    // e.g. a PATCH that fails during its internal Read would report `read_item`
+    // on the span while the metric reports `patch_item`.
+    let op_name_ref = op
+        .and_then(CosmosOperationContext::operation_name)
+        .or_else(|| diagnostics.operation_name());
     let op_name = op_name_ref
         .unwrap_or(DEFAULT_OPERATION_SPAN_NAME)
         .to_string();
@@ -292,6 +299,11 @@ pub(crate) fn emit_backdated_span_tree<T>(
     let parent_cx = Context::current().with_remote_span_context(root.span_context().clone());
 
     // --- Attempt (child) spans ---
+    // Each child prefers its own request-level operation name, which is set
+    // only when the operation aggregates requests from several sub-operations
+    // (a PATCH's `patch_read_item` / `patch_replace_item`). Everywhere else it
+    // is unset and the child inherits the operation's name, so a retry storm on
+    // a plain `read_item` still labels every attempt `read_item`.
     for req in requests.iter() {
         let child_start = to_system(req.started_at());
         let child_end = child_end_of(req);
@@ -307,7 +319,7 @@ pub(crate) fn emit_backdated_span_tree<T>(
             ),
             KeyValue::new(attributes::REQUEST_CHARGE, req.request_charge().value()),
         ];
-        if let Some(name) = op_name_ref {
+        if let Some(name) = req.operation_name().or(op_name_ref) {
             child_attrs.push(KeyValue::new(
                 attributes::DB_OPERATION_NAME,
                 name.to_string(),

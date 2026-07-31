@@ -314,14 +314,42 @@ impl ProducerClient {
     /// }
     /// ```
     ///
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            partition_id = batch_options
+                .as_ref()
+                .and_then(|o| o.partition_id.as_deref())
+                .unwrap_or("<auto>"),
+        ),
+        err,
+    )]
     pub async fn create_batch(
         &self,
         batch_options: Option<EventDataBatchOptions>,
     ) -> Result<EventDataBatch<'_>> {
-        let mut batch = EventDataBatch::new(self, batch_options);
+        let path = EventDataBatch::batch_path(
+            self.base_url(),
+            batch_options
+                .as_ref()
+                .and_then(|o| o.partition_id.as_deref()),
+        )?;
+        let sender = self.ensure_sender(path.clone()).await?;
+        let link_max_size = sender.max_message_size().await?.ok_or_else(|| {
+            warn!(
+                path = %path,
+                "The sender link did not report a maximum message size; cannot size the batch."
+            );
+            Error::with_message(
+                AzureErrorKind::Other,
+                "No maximum message size available from the sender link.",
+            )
+        })?;
+        let max_size_in_bytes =
+            EventDataBatch::resolve_max_size_in_bytes(batch_options.as_ref(), link_max_size)?;
 
-        batch.attach().await?;
-        Ok(batch)
+        Ok(EventDataBatch::new(self, batch_options, max_size_in_bytes))
     }
 
     /// Submits a batch of events to the Event Hub.

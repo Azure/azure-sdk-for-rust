@@ -36,6 +36,11 @@ pub const METRIC_RESPONSE_RETURNED_ROWS: &str = "db.client.response.returned_row
 /// cross-region hedge fan-out.
 pub const METRIC_OPERATION_HEDGED: &str = "azure.cosmosdb.client.operation.hedged";
 
+/// Optional up-down counter (instances): number of live
+/// [`CosmosMetricsHandler`](super::CosmosMetricsHandler) instances (one per
+/// instrumented client, under the intended one-handler-per-client registration).
+pub const METRIC_ACTIVE_INSTANCE_COUNT: &str = "azure.cosmosdb.client.active_instance.count";
+
 // =========================================================================
 // Instrument units
 // =========================================================================
@@ -55,6 +60,9 @@ pub const UNIT_ROW: &str = "{row}";
 
 /// Unit for [`METRIC_OPERATION_HEDGED`] — operations.
 pub const UNIT_OPERATION: &str = "{operation}";
+
+/// Unit for [`METRIC_ACTIVE_INSTANCE_COUNT`] — client instances.
+pub const UNIT_INSTANCE: &str = "{instance}";
 
 // =========================================================================
 // Stable attributes (always emitted; operation scope, low cardinality)
@@ -86,6 +94,12 @@ pub const ATTR_ERROR_TYPE: &str = attributes::ERROR_TYPE;
 
 /// `server.address` — host of the contacted endpoint.
 pub const ATTR_SERVER_ADDRESS: &str = attributes::SERVER_ADDRESS;
+
+/// `server.port` — port of the contacted endpoint.
+///
+/// Conditionally required: emitted only when the endpoint uses a non-default
+/// port (i.e. anything other than 443 for HTTPS).
+pub const ATTR_SERVER_PORT: &str = attributes::SERVER_PORT;
 
 /// Fallback value for [`ATTR_ERROR_TYPE`] when the error is otherwise unknown
 /// (per semantic conventions).
