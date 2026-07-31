@@ -6,7 +6,7 @@
 // Rust-side unit tests validate that `synthesize_response_headers` produces
 // the expected `CosmosValue` variants, but they read the values through the
 // Rust type. That path cannot catch a struct-layout, discriminant, or
-// padding mismatch between the wrapper's Rust `#[repr(C)]` definition and
+// padding mismatch between the wrapper's Rust C-layout definition and
 // cbindgen's generated C header. A .NET, Go, or Python binding that reads
 // `header.value.kind` through the generated header and dispatches to the
 // matching `header.value.payload.<leg>` walks the exact marshalling path
@@ -56,12 +56,12 @@ static int make_runtime_and_cq(cosmos_runtime_t **out_runtime,
         return 1;
     }
 
-    cosmos_completion_queue_options_t qopts = {
+    cosmos_completion_queue_options_t queue_options = {
         .capacity_hint = 0,
         .max_capacity = 0,
         .include_error_details = true,
     };
-    cosmos_completion_queue_t *cq = cosmos_completion_queue_create(runtime, &qopts);
+    cosmos_completion_queue_t *cq = cosmos_completion_queue_create(runtime, &queue_options);
     if (cq == NULL) {
         cosmos_runtime_free(runtime);
         return 1;
