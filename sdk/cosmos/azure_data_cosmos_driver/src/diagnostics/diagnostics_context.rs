@@ -6374,7 +6374,7 @@ mod tests {
         );
         record_run(
             &mut read_b,
-            ExecutionContext::Retry,
+            ExecutionContext::OperationRetry,
             "East US",
             "https://east/",
             CosmosStatus::new(StatusCode::Ok),
@@ -6395,7 +6395,7 @@ mod tests {
         );
         record_run(
             &mut replace_b,
-            ExecutionContext::Retry,
+            ExecutionContext::OperationRetry,
             "East US",
             "https://east/",
             CosmosStatus::new(StatusCode::Ok),
@@ -6918,7 +6918,7 @@ mod tests {
                 "https://test.westus2.documents.azure.com",
             );
             builder.start_test_request(
-                ExecutionContext::Retry,
+                ExecutionContext::OperationRetry,
                 Some(Region::WEST_US_2),
                 "https://test.westus2.documents.azure.com",
             );
