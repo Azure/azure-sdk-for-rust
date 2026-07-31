@@ -152,7 +152,11 @@ impl FuzzConfig {
             max_depth: env_u64(MAX_DEPTH_ENV_VAR, DEFAULT_MAX_DEPTH as u64) as u32,
             wide_numbers: env_bool(WIDE_NUMBERS_ENV_VAR, false),
             unicode: env_bool(UNICODE_ENV_VAR, true),
-            breadth: env_u64(BREADTH_ENV_VAR, DEFAULT_BREADTH as u64).max(1) as u32,
+            // Clamp into `[1, u32::MAX]` *before* the `as u32` cast: a raw value
+            // that is a multiple of 2^32 (e.g. 4294967296) would otherwise
+            // truncate to 0 and later panic in `rng.below(0)`.
+            breadth: env_u64(BREADTH_ENV_VAR, DEFAULT_BREADTH as u64).clamp(1, u32::MAX as u64)
+                as u32,
             shape_ratio: env_u64(SHAPE_RATIO_ENV_VAR, DEFAULT_SHAPE_RATIO as u64).min(100) as u32,
             size_scale: env_u64(SIZE_SCALE_ENV_VAR, DEFAULT_SIZE_SCALE as u64).max(1) as u32,
             calibrate: env_bool(CALIBRATE_ENV_VAR, false),
@@ -1426,8 +1430,28 @@ fn bound_value(value: &mut Value, cfg: &FuzzConfig) {
             }
         }
         Value::Object(map) => {
-            for v in map.values_mut() {
-                bound_value(v, cfg);
+            // When Unicode is disabled, object *keys* must be ASCII-filtered
+            // too — property names go through the same binary string-encoding
+            // path as values, so leaving non-ASCII keys would not isolate the
+            // ASCII codec path. `arbitrary-json` can emit non-ASCII keys.
+            if !cfg.unicode && map.keys().any(|k| !k.is_ascii()) {
+                let rebuilt: Map<String, Value> = std::mem::take(map)
+                    .into_iter()
+                    .map(|(k, mut v)| {
+                        bound_value(&mut v, cfg);
+                        let key = if k.is_ascii() {
+                            k
+                        } else {
+                            k.chars().filter(char::is_ascii).collect()
+                        };
+                        (key, v)
+                    })
+                    .collect();
+                *map = rebuilt;
+            } else {
+                for v in map.values_mut() {
+                    bound_value(v, cfg);
+                }
             }
         }
         _ => {}
@@ -1827,14 +1851,17 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             );
         }
 
-        for (label, client) in &clients {
+        for (config_idx, (label, client)) in clients.iter().enumerate() {
             let container = client
                 .database_client(&database_name)
                 .container_client(&container_name)
                 .await?;
 
-            // Distinct id per config so the three stores don't conflict.
-            let id = Uuid::new_v4().to_string();
+            // Deterministic id per (seed, iteration, config) — derived without
+            // touching the document RNG stream so a rerun with the same
+            // AZURE_COSMOS_FUZZ_SEED reproduces the exact document *and* its
+            // canonical form (a random `Uuid` here would defeat that promise).
+            let id = format!("fuzz-{:016x}-{iter}-{config_idx}", cfg.seed);
             let mut doc = base_doc.clone();
             doc.insert("id".to_string(), Value::String(id.clone()));
             doc.insert("pk".to_string(), Value::String(pk.clone()));
@@ -2431,6 +2458,56 @@ mod tests {
                 serde_json::to_string(&doc).unwrap()
             );
         }
+    }
+
+    #[test]
+    fn unicode_off_strips_non_ascii_from_object_keys_and_values() {
+        // AZURE_COSMOS_FUZZ_UNICODE=false must isolate the ASCII codec path:
+        // non-ASCII must be dropped from object *keys* as well as values
+        // (property names go through the same binary string encoding).
+        let cfg = FuzzConfig {
+            iterations: 0,
+            seed: 1,
+            max_depth: 3,
+            wide_numbers: false,
+            unicode: false,
+            breadth: DEFAULT_BREADTH,
+            shape_ratio: DEFAULT_SHAPE_RATIO,
+            size_scale: DEFAULT_SIZE_SCALE,
+            calibrate: false,
+            print_docs: false,
+        };
+        let mut doc = serde_json::json!({
+            "café": { "naïve": "résumé", "ok": 1 },
+            "plain": ["a", "bé"],
+        });
+        bound_value(&mut doc, &cfg);
+        fn assert_ascii(v: &Value) {
+            match v {
+                Value::String(s) => assert!(s.is_ascii(), "non-ASCII value survived: {s:?}"),
+                Value::Array(items) => items.iter().for_each(assert_ascii),
+                Value::Object(map) => {
+                    for (k, v) in map {
+                        assert!(k.is_ascii(), "non-ASCII key survived: {k:?}");
+                        assert_ascii(v);
+                    }
+                }
+                _ => {}
+            }
+        }
+        assert_ascii(&doc);
+    }
+
+    #[test]
+    fn breadth_env_clamps_multiple_of_2_pow_32_to_a_nonzero_u32() {
+        // A raw breadth that is a multiple of 2^32 must NOT truncate to 0 (which
+        // would later panic in `rng.below(0)`). Mirror the `from_env` clamp so
+        // the test does not mutate the process environment (racy under the
+        // parallel harness).
+        let clamp = |raw: u64| raw.clamp(1, u32::MAX as u64) as u32;
+        assert_eq!(clamp(4_294_967_296), u32::MAX); // 2^32 → would truncate to 0
+        assert_eq!(clamp(0), 1);
+        assert_eq!(clamp(6), 6);
     }
 
     #[test]
