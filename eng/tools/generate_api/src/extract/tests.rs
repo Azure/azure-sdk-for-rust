@@ -2530,6 +2530,7 @@ fn package_metadata(name: &str) -> PackageMetadata {
         name: name.to_string(),
         version: "1.0.0".to_string(),
         manifest_path: std::path::PathBuf::from("Cargo.toml"),
+        has_library_target: true,
     }
 }
 

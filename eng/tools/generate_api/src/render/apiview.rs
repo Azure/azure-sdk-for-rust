@@ -154,19 +154,22 @@ fn render_module_contents(
     navigation_lookup: &NavigationLookup,
 ) -> Vec<ReviewLine> {
     let mut lines = Vec::new();
-    let mut item_index = 0;
+    let mut item_line_id_counts = BTreeMap::new();
     for entry in apiview_tree_entries(module) {
         match entry {
             ModuleTreeEntry::Item(item) => {
+                let line_id = allocate_unique_line_id(
+                    item_line_id_base(module, item),
+                    &mut item_line_id_counts,
+                );
                 lines.extend(render_item(
                     module,
                     item,
-                    item_index,
+                    line_id,
                     item_in_tree(item.kind),
                     options,
                     navigation_lookup,
                 ));
-                item_index += 1;
             }
             ModuleTreeEntry::Module(child) => {
                 lines.extend(render_module(child, options, navigation_lookup));
@@ -261,12 +264,11 @@ enum ModuleTreeEntry<'a> {
 fn render_item(
     module: &ApiModule,
     item: &ApiItem,
-    index: usize,
+    line_id: String,
     should_render_tree_node: bool,
     options: &RenderOptions,
     navigation_lookup: &NavigationLookup,
 ) -> Vec<ReviewLine> {
-    let line_id = format!("{}.{}_{index}", module_line_id(&module.path), item.name);
     let name_token_kind = item_name_token_kind(item.kind);
     let mut lines = Vec::new();
 
@@ -391,7 +393,8 @@ fn render_member_lines(
     navigation_lookup: &NavigationLookup,
 ) -> Vec<ReviewLine> {
     let mut lines = Vec::new();
-    for (member_index, member) in members.iter().enumerate() {
+    let mut member_line_id_counts = BTreeMap::new();
+    for member in members.iter() {
         if options.include_docs {
             lines.extend(render_doc_comment_lines(
                 &member.doc_comments,
@@ -424,8 +427,12 @@ fn render_member_lines(
             navigation_lookup,
             member.declaration_path_references.is_empty(),
         );
+        let line_id = allocate_unique_line_id(
+            member_line_id_base(related_to_line, member),
+            &mut member_line_id_counts,
+        );
         lines.push(ReviewLine {
-            line_id: Some(format!("{related_to_line}.{}_{member_index}", member.name)),
+            line_id: Some(line_id),
             tokens,
             children: Vec::new(),
             is_context_end_line: None,
@@ -453,6 +460,111 @@ fn render_doc_comment_lines(
 
 fn module_line_id(path: &str) -> String {
     format!("module.{}", sanitize(path))
+}
+
+fn item_line_id_base(module: &ApiModule, item: &ApiItem) -> String {
+    let module_line_id = module_line_id(&module.path);
+    match item.kind {
+        ApiItemKind::Use => {
+            format!("{module_line_id}.reexport.{}", sanitize_segment(&item.name))
+        }
+        ApiItemKind::InherentImpl | ApiItemKind::TraitImpl => format!(
+            "{module_line_id}.{}.{}",
+            item_kind_slug(item.kind),
+            sanitize_segment(&normalized_declaration_identity(&item.declaration)),
+        ),
+        _ => format!(
+            "{module_line_id}.{}.{}",
+            item_kind_slug(item.kind),
+            sanitize_segment(&item.name),
+        ),
+    }
+}
+
+fn member_line_id_base(related_to_line: &str, member: &ApiMember) -> String {
+    let identity = match member.kind {
+        ApiMemberKind::Field | ApiMemberKind::Variant | ApiMemberKind::Associated => {
+            sanitize_segment(&member.name)
+        }
+        ApiMemberKind::MacroInput | ApiMemberKind::Text => {
+            sanitize_segment(&normalized_declaration_identity(&member.declaration))
+        }
+    };
+    format!(
+        "{related_to_line}.{}.{}",
+        member_kind_slug(member.kind),
+        identity
+    )
+}
+
+fn allocate_unique_line_id(base: String, counts: &mut BTreeMap<String, usize>) -> String {
+    let count = counts.entry(base.clone()).or_default();
+    let line_id = if *count == 0 {
+        base
+    } else {
+        format!("{base}.alt{count}")
+    };
+    *count += 1;
+    line_id
+}
+
+fn item_kind_slug(kind: ApiItemKind) -> &'static str {
+    match kind {
+        ApiItemKind::Use => "reexport",
+        ApiItemKind::Macro => "macro",
+        ApiItemKind::ProcMacro => "proc_macro",
+        ApiItemKind::Function => "function",
+        ApiItemKind::Struct => "struct",
+        ApiItemKind::Enum => "enum",
+        ApiItemKind::Trait => "trait",
+        ApiItemKind::TraitAlias => "trait_alias",
+        ApiItemKind::InherentImpl => "inherent_impl",
+        ApiItemKind::TraitImpl => "trait_impl",
+        ApiItemKind::Union => "union",
+        ApiItemKind::TypeAlias => "type_alias",
+        ApiItemKind::Const => "const",
+        ApiItemKind::Static => "static",
+    }
+}
+
+fn member_kind_slug(kind: ApiMemberKind) -> &'static str {
+    match kind {
+        ApiMemberKind::Associated => "associated",
+        ApiMemberKind::Field => "field",
+        ApiMemberKind::Variant => "variant",
+        ApiMemberKind::MacroInput => "macro_input",
+        ApiMemberKind::Text => "text",
+    }
+}
+
+fn normalized_declaration_identity(declaration: &str) -> String {
+    let declaration = declaration
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    declaration
+        .trim_end_matches('{')
+        .trim_end_matches(';')
+        .trim()
+        .to_string()
+}
+
+fn sanitize_segment(value: &str) -> String {
+    let mut segment = String::new();
+    let mut previous_was_separator = false;
+    for character in value.chars() {
+        if character.is_ascii_alphanumeric() {
+            segment.push(character);
+            previous_was_separator = false;
+        } else if !previous_was_separator && !segment.is_empty() {
+            segment.push('_');
+            previous_was_separator = true;
+        }
+    }
+
+    segment.trim_matches('_').to_string()
 }
 
 fn sanitize(value: &str) -> String {
@@ -881,13 +993,16 @@ fn collect_navigation_targets(lookup: &mut NavigationLookup, module: &ApiModule)
     lookup.insert_path(module.path.clone(), &module_target);
     lookup.insert_simple_name(module.local_name(), &module_target);
 
-    for (index, item) in apiview_sorted_items(module).into_iter().enumerate() {
+    let mut item_line_id_counts = BTreeMap::new();
+    for item in apiview_sorted_items(module) {
+        let line_id =
+            allocate_unique_line_id(item_line_id_base(module, item), &mut item_line_id_counts);
         if !item_in_tree(item.kind) {
             continue;
         }
 
         let target = NavigationTarget {
-            line_id: format!("{}.{}_{index}", module_line_id(&module.path), item.name),
+            line_id,
             display_name: item.name.clone(),
             render_class: item_render_class(item.kind),
             kind: Some(item.kind),
