@@ -11,6 +11,7 @@ use azure_data_cosmos_driver::CosmosDriver;
 use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
     driver::CosmosDriverRuntime,
+    error::CosmosError,
     models::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference, ItemReference, PartitionKey,
@@ -21,7 +22,7 @@ use azure_data_cosmos_driver::{
     },
     SubStatusCode,
 };
-use std::{error::Error, future::Future, sync::Arc};
+use std::{error::Error, future::Future, sync::Arc, time::Duration};
 use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
 
@@ -581,6 +582,55 @@ impl DriverTestRunContext {
         Ok(builder.build())
     }
 
+    fn is_transport_generated_503(error: &(dyn Error + 'static)) -> bool {
+        let mut current = Some(error);
+        while let Some(err) = current {
+            if let Some(cosmos) = err.downcast_ref::<CosmosError>() {
+                return cosmos.status().is_transport_generated_503();
+            }
+            current = err.source();
+        }
+        false
+    }
+
+    /// Retries setup/seed operations that fail with a synthetic transport-generated
+    /// 503. Emulator and live-test accounts can briefly publish regional
+    /// endpoints before DNS is ready, which makes otherwise unrelated tests flaky
+    /// while they seed data. This helper is intentionally opt-in so tests that
+    /// assert operation failures do not mask the failure being exercised.
+    pub async fn retry_transient_transport<T, F, Fut>(
+        &self,
+        operation: &str,
+        mut f: F,
+    ) -> Result<T, Box<dyn Error>>
+    where
+        F: FnMut() -> Fut,
+        Fut: Future<Output = Result<T, Box<dyn Error>>>,
+    {
+        let mut delay = Duration::from_millis(250);
+        let mut last_error = None;
+        for attempt in 1..=6 {
+            match f().await {
+                Ok(result) => return Ok(result),
+                Err(error) if Self::is_transport_generated_503(error.as_ref()) && attempt < 6 => {
+                    last_error = Some(error.to_string());
+                    eprintln!(
+                        "transient transport failure during {operation}; retrying attempt {attempt}/6 after {delay:?}: {}",
+                        last_error.as_deref().unwrap_or("<unknown>")
+                    );
+                    tokio::time::sleep(delay).await;
+                    delay = (delay * 2).min(Duration::from_secs(5));
+                }
+                Err(error) => return Err(error),
+            }
+        }
+        Err(format!(
+            "{operation} failed after transient transport retries: {}",
+            last_error.unwrap_or_else(|| "<no error captured>".into())
+        )
+        .into())
+    }
+
     /// Creates a database using the driver.
     pub async fn create_database(
         &self,
@@ -777,6 +827,22 @@ impl DriverTestRunContext {
         Ok(result)
     }
 
+    /// Creates an item as setup data, retrying transient transport-generated
+    /// 503s that can occur while emulator/live-test regional DNS converges.
+    pub async fn create_seed_item(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        body: &[u8],
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
+        let partition_key = partition_key.into();
+        self.retry_transient_transport("seed create item", || {
+            self.create_item(container, item_id, partition_key.clone(), body)
+        })
+        .await
+    }
+
     /// Creates an item by partition key only (item id is embedded in `body`).
     ///
     /// Convenience overload for tests that include the item id inside the JSON
@@ -791,6 +857,19 @@ impl DriverTestRunContext {
         body: &[u8],
     ) -> Result<CosmosResponse, Box<dyn Error>> {
         self.create_item(container, "_", partition_key, body).await
+    }
+
+    /// Creates an item as setup data by partition key only, retrying transient
+    /// transport-generated 503s. See [`create_seed_item`](Self::create_seed_item).
+    pub async fn create_seed_item_with_pk(
+        &self,
+        container: &ContainerReference,
+        partition_key: impl Into<PartitionKey>,
+        body: &[u8],
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
+        let partition_key = partition_key.into();
+        self.create_seed_item(container, "_", partition_key, body)
+            .await
     }
 
     /// Reads an item using the driver.

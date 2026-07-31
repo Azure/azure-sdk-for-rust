@@ -8,6 +8,7 @@
 //! 2. Register it in [`create_operations`].
 //! 3. Add a CLI flag in `config.rs` to enable/disable it.
 
+mod change_feed;
 mod create_item;
 mod feed_range_query;
 mod feed_range_refresher;
@@ -27,6 +28,7 @@ use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 use crate::config::{Config, ExcludeRegionsScope};
+pub use crate::operations::change_feed::ChangeFeedOperation;
 pub use crate::operations::create_item::CreateItemOperation;
 pub use crate::operations::feed_range_query::{FeedRangeCache, FeedRangeQueryOperation};
 pub use crate::operations::feed_range_refresher::{FeedRangeRefresher, READ_FEED_RANGES_STAT};
@@ -57,16 +59,23 @@ pub trait Operation: Send + Sync {
 
     /// Executes one instance of the operation.
     ///
-    /// Returns `Ok(Some(d))` when the server reported a processing duration
-    /// via the `x-ms-request-duration-ms` response header (this is the
-    /// backend latency surfaced separately from the client-observed
-    /// wall-clock latency). Returns `Ok(None)` when no backend duration
-    /// could be observed (multi-page query streams may aggregate, see
-    /// individual implementations).
+    /// Returns the aggregated backend latency, when available.
     async fn execute(
         &self,
         container: &ContainerClient,
-    ) -> azure_data_cosmos::Result<Option<Duration>>;
+    ) -> azure_data_cosmos::Result<OperationResult>;
+}
+
+/// Successful operation data consumed by the runner.
+pub struct OperationResult {
+    /// Aggregated server-reported processing duration, when available.
+    pub backend_duration: Option<Duration>,
+}
+
+impl OperationResult {
+    pub fn new(backend_duration: Option<Duration>) -> Self {
+        Self { backend_duration }
+    }
 }
 
 /// The item type used for seeding, reading, querying, and upserting.
@@ -81,8 +90,9 @@ pub struct PerfItem {
 /// Bundle returned by [`create_operations`]: the per-worker operations plus
 /// (optionally) a background feed-range refresher.
 ///
-/// `feed_range_refresher` is `None` when the feed-range query op is
-/// disabled (`--no-feed-range-queries`) or when the refresh interval is 0.
+/// `feed_range_refresher` is `None` when both feed-range workloads are
+/// disabled (`--no-feed-range-queries` and `--no-change-feed`) or when the
+/// refresh interval is 0.
 pub struct OperationsBundle {
     pub ops: Vec<Arc<dyn Operation>>,
     pub feed_range_refresher: Option<FeedRangeRefresher>,
@@ -90,8 +100,8 @@ pub struct OperationsBundle {
 
 /// Creates the list of enabled operations based on CLI configuration.
 ///
-/// Asynchronous because the feed-range query op requires an initial
-/// `read_feed_ranges` to seed its shared cache.
+/// Asynchronous because the feed-range query and change-feed operations require
+/// an initial `read_feed_ranges` to seed their shared cache.
 pub async fn create_operations(
     config: &Config,
     container: &ContainerClient,
@@ -118,12 +128,11 @@ pub async fn create_operations(
     }
     if !config.no_creates {
         ops.push(Arc::new(CreateItemOperation::new(
-            seeded_items,
+            seeded_items.clone(),
             write_options,
         )));
     }
-
-    let feed_range_refresher = if config.no_feed_range_queries {
+    let feed_range_refresher = if config.no_feed_range_queries && config.no_change_feed {
         None
     } else {
         let initial = container.read_feed_ranges(None).await?;
@@ -135,7 +144,18 @@ pub async fn create_operations(
                 .into());
         }
         let cache: FeedRangeCache = Arc::new(RwLock::new(Arc::new(initial)));
-        ops.push(Arc::new(FeedRangeQueryOperation::new(cache.clone())));
+        if !config.no_feed_range_queries {
+            ops.push(Arc::new(FeedRangeQueryOperation::new(
+                cache.clone(),
+                config.feed_range_query_max_pages,
+            )));
+        }
+        if !config.no_change_feed {
+            ops.push(Arc::new(ChangeFeedOperation::new(
+                cache.clone(),
+                config.change_feed_max_pages,
+            )));
+        }
 
         if config.feed_range_refresh_secs > 0 {
             Some(FeedRangeRefresher::new(

@@ -11,7 +11,7 @@ use azure_data_cosmos::Query;
 use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope};
 use futures::StreamExt;
 
-use super::{extract_backend_duration, Operation};
+use super::{extract_backend_duration, Operation, OperationResult};
 use crate::seed::SharedItems;
 
 /// Runs a single-partition query against a random seeded partition key.
@@ -35,7 +35,7 @@ impl Operation for QueryItemsOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-    ) -> azure_data_cosmos::Result<Option<Duration>> {
+    ) -> azure_data_cosmos::Result<OperationResult> {
         let item = self.items.random();
         let pk = &item.partition_key;
 
@@ -61,6 +61,6 @@ impl Operation for QueryItemsOperation {
             }
         }
 
-        Ok(backend_total)
+        Ok(OperationResult::new(backend_total))
     }
 }

@@ -211,6 +211,11 @@ impl PipelineNode for Request {
             RequestTarget::EffectivePartitionKeyRange { .. }
         )
     }
+
+    fn fan_out_width(&self) -> usize {
+        // A Request is a single leaf targeting one partition.
+        1
+    }
 }
 
 impl Request {

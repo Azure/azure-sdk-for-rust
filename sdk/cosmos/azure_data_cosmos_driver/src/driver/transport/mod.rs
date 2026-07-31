@@ -374,6 +374,22 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn dataplane_transport_skips_gateway_v2_when_explicitly_disabled() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_gateway_v2_disabled(true)
+            .build()
+            .unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
+            .unwrap();
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway(_)));
+    }
+
+    #[test]
     fn dataplane_transport_falls_back_to_sharded_gateway_when_endpoint_is_standard() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();

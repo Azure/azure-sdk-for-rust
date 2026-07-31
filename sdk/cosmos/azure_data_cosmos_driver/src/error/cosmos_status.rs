@@ -456,6 +456,8 @@ impl SubStatusCode {
             20006 => Some("ChannelClosed"),
             20007 => Some("MalformedContinuationToken"),
             20008 => Some("ClientOperationTimeout"),
+            20020 => Some("SerializationResponseBodyInvalid"),
+            20021 => Some("SerializationRequestBodyInvalid"),
             20401 => Some("ClientGenerated401"),
             20901 => Some("NegativeTimeoutProvided"),
             20902 => Some("MissingPartitionKeyRangeIdInContext"),
@@ -493,6 +495,7 @@ impl SubStatusCode {
             20115 => Some("ClientQueryPlanComplexProjectionUnsupported"),
             20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
+            20118 => Some("ClientCrossPartitionFanOutExceeded"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1117,6 +1120,9 @@ impl SubStatusCode {
     /// `crate::error::Error::serialization`.
     pub const SERIALIZATION_RESPONSE_BODY_INVALID: SubStatusCode = SubStatusCode(20020);
 
+    /// Request body failed to serialize (20021).
+    pub const SERIALIZATION_REQUEST_BODY_INVALID: SubStatusCode = SubStatusCode(20021);
+
     // ----- Authentication boundary mapping code (20402) -----
 
     /// Credential / AAD token acquisition failed before the request was
@@ -1321,6 +1327,13 @@ impl SubStatusCode {
     /// operations.
     pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: SubStatusCode = SubStatusCode(20117);
 
+    /// A fresh cross-partition operation fanned out to more leaf request
+    /// nodes than the configured maximum (20118). The pipeline refuses to
+    /// plan an over-broad fan-out; the caller must raise `max_fan_out`
+    /// (via `FeedOptions`) to opt in. Paired with HTTP 400 because it is a
+    /// client-side input-validation rejection of the request.
+    pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: SubStatusCode = SubStatusCode(20118);
+
     // ----- 20150-20199: SDK configuration / setup errors -----
 
     /// Two fault-injection rules registered with the same id (20150).
@@ -1480,6 +1493,15 @@ impl SubStatusCode {
     /// has no routing information for the operation. Paired with HTTP
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
+
+    /// A topology range resolved for a query-plan EPK range did not
+    /// overlap that range (20307). The query planner intersects each
+    /// resolved partition with the query-plan range it was resolved
+    /// for; an empty intersection means `resolve_ranges` violated its
+    /// contract of returning only overlapping ranges. Surfaced as an
+    /// error (paired with HTTP 500) instead of panicking the worker
+    /// thread, which would deadlock the caller. See issue #4574.
+    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: SubStatusCode = SubStatusCode(20307);
 }
 
 impl Default for SubStatusCode {
@@ -1908,6 +1930,13 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID),
     };
 
+    /// Request body failed to serialize (HTTP 400, sub-status 20021). The
+    /// caller supplied an item that could not be encoded.
+    pub const SERIALIZATION_REQUEST_BODY_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
+    };
+
     /// AAD / credential provider token acquisition failed
     /// (HTTP 401, sub-status 20402).
     pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = CosmosStatus {
@@ -2123,6 +2152,14 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION),
     };
 
+    /// 400 / 20118 — a fresh cross-partition operation fanned out to more
+    /// leaf request nodes than the configured `max_fan_out`. The caller
+    /// must explicitly raise the limit to run a broader query.
+    pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
+    };
+
     // Configuration / setup (HTTP 400, sub-status 20150-20199)
 
     /// 400 / 20150 — duplicate fault-injection rule id.
@@ -2323,6 +2360,15 @@ impl CosmosStatus {
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::ServiceUnavailable,
         sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
+    };
+
+    /// 500 / 20307 — a topology range resolved for a query-plan EPK
+    /// range did not overlap that range, a `resolve_ranges` contract
+    /// violation. Returned instead of panicking the query worker (see
+    /// issue #4574).
+    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY),
     };
 
     /// 500 / 20306 — the service returned a resource read response
@@ -2643,6 +2689,21 @@ mod tests {
     #[test]
     fn name_returns_none_for_unknown() {
         assert_eq!(SubStatusCode::new(65000).name(None), None);
+    }
+
+    #[test]
+    fn name_returns_serialization_boundary_codes() {
+        // Regression guard: the 20020/20021 name mappings must stay in lockstep
+        // with the `SERIALIZATION_*_BODY_INVALID` constants so diagnostics render
+        // a symbolic name instead of a bare number.
+        assert_eq!(
+            SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID.name(None),
+            Some("SerializationResponseBodyInvalid")
+        );
+        assert_eq!(
+            SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID.name(None),
+            Some("SerializationRequestBodyInvalid")
+        );
     }
 
     #[test]

@@ -58,7 +58,7 @@ When no `ORDER BY` is specified, the driver guarantees results in **(EPK, RID) a
 
 Cross-partition queries are expensive by design. Containers may have hundreds of thousands of physical partitions; unbounded fan-out is dangerous from a performance and scalability perspective.
 
-- **Max fan-out**: The pipeline refuses to plan an operation spanning more than N physical partitions. Default: **100**. Configurable by the caller for workloads that intentionally query broadly.
+- **Max fan-out**: The pipeline refuses to plan an operation spanning more than N physical partitions. Default: **100**. Configurable by the caller for workloads that intentionally query broadly. The limit is enforced only at initial plan time (against the topology at that moment): resuming from a continuation token is not re-checked, and a partition that splits mid-execution and raises the effective fan-out above N does not abort the running operation.
 - **Max concurrency**: A separate limit on concurrent in-flight requests within a single pipeline execution. Not needed for the initial `SELECT * WHERE` implementation (sequential drain uses concurrency = 1) but the limit must exist as a configuration point for future concurrent node types.
 
 ### Partition Targeting

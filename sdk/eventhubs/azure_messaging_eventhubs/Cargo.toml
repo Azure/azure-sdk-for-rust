@@ -41,8 +41,13 @@ azure_identity.workspace = true
 azure_messaging_eventhubs = { path = ".", features = [
   "in_memory_checkpoint_store",
 ] }
+# Path-only so `cargo package` works: this crate is a dependency of the
+# checkpoint store crate, and the migration guide's blob sample compiles here.
+azure_messaging_eventhubs_checkpointstore_blob = { path = "../azure_messaging_eventhubs_checkpointstore_blob" }
+azure_storage_blob.workspace = true
 criterion.workspace = true
 fe2o3-amqp = { workspace = true, features = ["tracing"] }
+include-file.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 

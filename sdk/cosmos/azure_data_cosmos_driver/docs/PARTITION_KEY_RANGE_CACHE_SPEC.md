@@ -350,30 +350,29 @@ On the first request for a container:
    a. Calls `fetch_pk_ranges(container, None)` (no continuation for first fetch).
    b. Parses the response: accumulates ranges and captures the `etag` continuation token.
    c. Loops, passing the continuation token to subsequent calls, until the service
-      returns HTTP 304 Not Modified (signaling no more pages), or `MAX_FETCH_ITERATIONS`
-      (10) is reached.
+      returns HTTP 304 Not Modified (signaling no more pages).
 3. The accumulated ranges are passed to `ContainerRoutingMap::try_create`
    to build the routing map, preserving the final continuation token.
-4. The resulting map is stored in the cache.
+4. A valid map is stored in the cache; an empty fallback is evicted.
 5. Concurrent requests for the same container that arrive while the fetch is
    in-flight share the same pending future (single-pending-I/O).
 
 ```mermaid
 flowchart TD
     Start["fetch_and_build_routing_map(container, previous=None, fetch_fn)"]
-    Init["continuation = None"]
+    Init["continuation = None<br/>all_ranges = HashMap&lt;id, range&gt;"]
     Trace1["trace!(iteration, has_continuation)"]
     Fetch["result = fetch_fn(container, continuation)?"]
-    Update["continuation = result.continuation"]
+    Update["continuation = result.continuation.or(continuation)"]
     NM{"result.not_modified?"}
     Break["trace! + break"]
-    Extend["trace!(range_count) + all_ranges.extend(result.ranges)"]
-    Done["debug!(iterations, total_ranges, not_modified)<br/>ContainerRoutingMap::try_create(all_ranges, None, continuation) → map"]
+    Extend["trace!(range_count) + insert ranges by ID"]
+    Done["debug!(iterations, total_ranges)<br/>try_create(all_ranges.into_values(), continuation) → map"]
     Start --> Init --> Trace1
     Trace1 --> Fetch --> Update --> NM
     NM -- yes --> Break --> Done
     NM -- no --> Extend --> Trace1
-    Extend -. "loop bounded by<br/>MAX_FETCH_ITERATIONS = 10" .-> Trace1
+    Extend -. "continue until<br/>HTTP 304" .-> Trace1
 ```
 
 Note: `fetch_and_build_routing_map` is a bare free function (not an associated
@@ -448,12 +447,12 @@ sequenceDiagram
 
 If `fetch_fn` returns `None` (service unreachable or unexpected response):
 
-- **During initial population:** The cache stores an empty routing map via
-  `ContainerRoutingMap::empty()`. All EPK lookups return `None`.
+- **During initial population:** The empty fallback is evicted and the lookup
+  returns `None`.
 - **During incremental refresh:** The previous routing map is preserved. A
   `tracing::warn!` is emitted for diagnostics.
-- **During `try_combine`:** If the merge is incomplete or overlapping, the previous
-  map is preserved as fallback with a warning logged.
+- **During `try_combine`:** If the merge is incomplete or overlapping, the cache
+  performs a full metadata refresh. If recovery fails, the previous map is preserved.
 
 ---
 
@@ -681,17 +680,17 @@ obtain:
 | Scenario | Behavior |
 |----------|----------|
 | Empty partition key (`PartitionKey::EMPTY`) | Returns `None` immediately — cross-partition request, no range resolution needed. |
-| `fetch_fn` returns `None` (initial fetch) | Caches an empty routing map. Lookups return `None`. Warning logged. |
+| `fetch_fn` returns `None` (initial fetch) | Returns `None`; the empty fallback is evicted. Warning logged. |
 | `fetch_fn` returns `None` (incremental refresh) | Falls back to previous routing map. Warning logged. |
-| Incomplete range set (gaps in coverage) | `try_create` returns `Err(IncompleteRanges)`. Falls back to empty map + warning. |
-| Overlapping ranges (data corruption) | `try_create` returns `Err(OverlappingRanges)`. Falls back to empty map + warning. |
+| Incomplete range set (gaps in coverage) | `try_create` returns `Err(IncompleteRanges)`; the empty fallback is evicted and the lookup returns `None`. Warning logged. |
+| Overlapping ranges (data corruption) | `try_create` returns `Err(OverlappingRanges)`; the empty fallback is evicted and the lookup returns `None`. Warning logged. |
 | Partition split (gone parent ranges) | Parent ranges filtered out by `try_create`. Only child ranges kept. |
-| `try_combine` fails (incomplete merge) | Falls back to previous routing map. Warning logged. |
+| `try_combine` fails (incomplete merge) | Performs a full refresh; preserves the previous map if recovery fails. |
 | EPK not found in routing map | `get_range_by_effective_partition_key` returns `None` (should not happen for a valid map). |
 | Concurrent requests for same container | Single-pending-I/O: one fetch, others await. |
 | Concurrent `force_refresh` requests | ETag-based `should_force_refresh` ensures only one refresh runs; others reuse the result. |
 | `invalidate` during in-flight resolve | New requests after invalidation trigger a refetch. In-flight requests finish with the old map. |
-| `Change feed loop exceeds MAX_FETCH_ITERATIONS` | Loop terminates, warning logged, builds map from accumulated ranges so far. |
+| Change feed has more pages | Continues fetching until the service returns HTTP 304. |
 
 ---
 
@@ -922,10 +921,9 @@ principle.
 
 ### 13.4 Change-Feed Loop Safety
 
-The change-feed loop in `fetch_and_build_routing_map` is bounded by
-`MAX_FETCH_ITERATIONS = 10`. This prevents infinite loops if the server never returns
-304 Not Modified. On exceeding the limit, the loop terminates and builds the routing
-map from whatever ranges have been accumulated so far.
+The change-feed loop in `fetch_and_build_routing_map` has no client-side
+iteration cap. It continues until the service returns HTTP 304 Not Modified;
+transport failures terminate the fetch through the normal request error path.
 
 ### 13.5 ETag-Based `should_force_refresh`
 

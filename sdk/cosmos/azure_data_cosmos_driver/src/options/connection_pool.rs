@@ -13,6 +13,14 @@ use crate::options::ServerCertificateValidation;
 #[cfg(feature = "rustls")]
 use crate::options::TlsBackend;
 
+const MIN_DEFAULT_HTTP2_CONNECTIONS_PER_ENDPOINT: usize = 32;
+
+fn default_max_http2_connections_for_parallelism(parallelism: usize) -> usize {
+    parallelism
+        .saturating_mul(2)
+        .clamp(MIN_DEFAULT_HTTP2_CONNECTIONS_PER_ENDPOINT, 256)
+}
+
 /// Configuration for connection pooling behavior.
 ///
 /// Controls how the driver manages connections to Cosmos DB endpoints.
@@ -53,6 +61,7 @@ pub struct ConnectionPoolOptions {
     idle_connection_timeout: Option<Duration>,
 
     max_http2_streams_per_client: u32,
+    target_http2_streams_per_client: u32,
     max_http2_connections_per_endpoint: usize,
     min_http2_connections_per_endpoint: usize,
     idle_http2_client_timeout: Duration,
@@ -67,9 +76,7 @@ pub struct ConnectionPoolOptions {
 
     is_http2_allowed: bool,
 
-    /// Internal, HTTP/2-derived gate: `true` only when HTTP/2 is disallowed, in
-    /// which case the standard gateway is used. Not customer-configurable;
-    /// v1/v2 selection is otherwise server-driven.
+    /// Effective Gateway V2 opt-out after configuration and HTTP/2 gating.
     gateway_v2_disabled: bool,
 
     server_certificate_validation: ServerCertificateValidation,
@@ -142,9 +149,16 @@ impl ConnectionPoolOptions {
         self.idle_connection_timeout
     }
 
-    /// Returns the per-shard HTTP/2 stream budget before another shard is used.
+    /// Returns the hard per-shard HTTP/2 concurrent stream limit.
     pub fn max_http2_streams_per_client(&self) -> u32 {
         self.max_http2_streams_per_client
+    }
+
+    /// Returns the desired (early fan-out) stream occupancy per HTTP/2 shard
+    /// client, used to prefer spreading load across shards before a single
+    /// shard is filled up to `max_http2_streams_per_client`.
+    pub fn target_http2_streams_per_client(&self) -> u32 {
+        self.target_http2_streams_per_client
     }
 
     /// Returns the maximum number of HTTP/2 shard clients per endpoint.
@@ -216,14 +230,13 @@ impl ConnectionPoolOptions {
         self.is_http2_allowed
     }
 
-    /// Returns whether the Gateway 2.0 transport is unavailable for this pool.
+    /// Returns whether Gateway V2 is disabled for this pool.
     ///
-    /// Gateway 2.0 vs. the standard gateway is a server-driven choice (the
-    /// account advertises a Gateway 2.0 endpoint, confirmed by a runtime probe)
-    /// and is not customer-configurable. The single prerequisite the pool
-    /// enforces is HTTP/2: when HTTP/2 is disabled this returns `true` and the
-    /// driver routes every request through the standard gateway transport.
-    pub(crate) fn gateway_v2_disabled(&self) -> bool {
+    /// When `true`, the driver routes every request through the standard gateway
+    /// transport even when the account advertises Gateway V2 endpoints. HTTP/2
+    /// remains a hard prerequisite, so this also returns `true` whenever HTTP/2
+    /// is disabled.
+    pub fn gateway_v2_disabled(&self) -> bool {
         self.gateway_v2_disabled
     }
 
@@ -265,7 +278,8 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_PER_ENDPOINT`: Maximum idle connections per endpoint (default: `1_000` if HTTP/2 is allowed, `10_000` otherwise, min: `10`, max: `64_000`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_CONNECTION_TIMEOUT_MS`: Idle connection timeout in milliseconds (default: none, min: `300_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`: Maximum concurrent streams per HTTP/2 shard client (default: `16`, min: `1`, max: `20`)
-/// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT`: Maximum number of HTTP/2 shard clients per endpoint (default: `available_parallelism * 2`, fallback: `32`, min: `1`, max: `256`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT`: Desired concurrent stream occupancy per HTTP/2 shard client before fanning out to another shard (default: `8`, min: `1`, max: `20`, must be at most `max_http2_streams_per_client`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT`: Maximum number of HTTP/2 shard clients per endpoint (default: `max(available_parallelism * 2, 32)`, fallback: `32`, min: `1`, max: `256`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT`: Minimum number of HTTP/2 shard clients per endpoint (default: `1`, min: `1`, max: `256`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS`: Idle timeout for overflow HTTP/2 shard clients in milliseconds (default: `60_000`, min: `1_000`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_HEALTH_CHECK_INTERVAL_MS`: Background HTTP/2 health-sweep interval in milliseconds (default: `10_000`, min: `100`)
@@ -277,6 +291,8 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`: TCP keepalive probe interval in milliseconds (default: `1_000`, min: `1_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`: TCP keepalive retry count (default: none, min: `1`, max: `255`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED`: Whether HTTP/2 is allowed for gateway mode connections (default: `true`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED`: Whether Gateway V2 is disabled (default: `false`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED_OVERRIDE`: Environment-only incident override that takes precedence over the builder and base environment value (default: unset)
 /// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is relaxed for emulator connections; `true` maps to [`ServerCertificateValidation::RequiredUnlessEmulator`], `false` to [`ServerCertificateValidation::Required`] (default: `false`)
 /// - `AZURE_COSMOS_LOCAL_ADDRESS`: Local IP address to bind to (default: none)
 ///
@@ -310,6 +326,23 @@ fn parse_env_server_cert_validation(raw: &str) -> Option<ServerCertificateValida
         "false" | "0" | "no" | "off" => Some(ServerCertificateValidation::Required),
         _ => None,
     }
+}
+
+fn resolve_gateway_v2_disabled(
+    builder: Option<bool>,
+    env: Option<bool>,
+    env_override: Option<bool>,
+    is_http2_allowed: bool,
+) -> crate::error::Result<bool> {
+    let configured = resolve_from_env(
+        builder,
+        env,
+        "AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED",
+        false,
+        ValidationBounds::none(),
+    )?;
+
+    Ok(env_override.unwrap_or(configured) || !is_http2_allowed)
 }
 
 #[non_exhaustive]
@@ -357,6 +390,8 @@ pub struct ConnectionPoolOptionsBuilder {
     idle_connection_timeout: Option<Duration>,
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT")]
     max_http2_streams_per_client: Option<u32>,
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT")]
+    target_http2_streams_per_client: Option<u32>,
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT")]
     max_http2_connections_per_endpoint: Option<usize>,
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT")]
@@ -402,6 +437,8 @@ pub struct ConnectionPoolOptionsBuilder {
     tcp_keepalive_retries: Option<u32>,
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED")]
     is_http2_allowed: Option<bool>,
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED", overridable)]
+    gateway_v2_disabled: Option<bool>,
     #[option(
         env = "AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED",
         parser = parse_env_server_cert_validation
@@ -501,10 +538,24 @@ impl ConnectionPoolOptionsBuilder {
 
     /// Sets the maximum concurrent streams per HTTP/2 shard client.
     ///
-    /// Must be between 1 and 20 inclusive.
+    /// Must be between 1 and 20 inclusive, and at least the resolved
+    /// `target_http2_streams_per_client`.
     /// Default: 16.
     pub fn with_max_http2_streams_per_client(mut self, value: u32) -> Self {
         self.max_http2_streams_per_client = Some(value);
+        self
+    }
+
+    /// Sets the desired (early fan-out) concurrent stream occupancy per
+    /// HTTP/2 shard client.
+    ///
+    /// The sharded transport prefers spreading load across shards up to this
+    /// target before filling a single shard all the way to
+    /// `max_http2_streams_per_client`. Must be between 1 and 20 inclusive,
+    /// and no greater than the resolved `max_http2_streams_per_client`.
+    /// Default: 8.
+    pub fn with_target_http2_streams_per_client(mut self, value: u32) -> Self {
+        self.target_http2_streams_per_client = Some(value);
         self
     }
 
@@ -602,6 +653,17 @@ impl ConnectionPoolOptionsBuilder {
         self
     }
 
+    /// Sets whether Gateway V2 is disabled for this pool.
+    ///
+    /// Pass `true` to route through the standard gateway even when the account
+    /// advertises Gateway V2 endpoints. The environment-only
+    /// `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED_OVERRIDE` value takes
+    /// precedence over this setting.
+    pub fn with_gateway_v2_disabled(mut self, value: bool) -> Self {
+        self.gateway_v2_disabled = Some(value);
+        self
+    }
+
     /// Sets the server certificate validation behavior.
     pub fn with_server_certificate_validation(
         mut self,
@@ -648,6 +710,7 @@ impl ConnectionPoolOptionsBuilder {
         // ignored by the macro (lenient), so resolution falls back to the
         // default; bounds violations on a present value still hard-error.
         let env = Self::from_env();
+        let env_override = Self::from_env_override();
 
         let effective_is_http2_allowed = resolve_from_env(
             self.is_http2_allowed,
@@ -657,11 +720,12 @@ impl ConnectionPoolOptionsBuilder {
             ValidationBounds::none(),
         )?;
 
-        // Gateway 2.0 vs. the standard gateway is selected by the server (the
-        // account advertises a Gateway 2.0 endpoint) and probed at runtime — it
-        // is intentionally not customer-configurable. HTTP/2 is the one hard
-        // prerequisite, so when HTTP/2 is off the pool is gateway_v2-disabled.
-        let effective_gateway_v2_disabled = !effective_is_http2_allowed;
+        let effective_gateway_v2_disabled = resolve_gateway_v2_disabled(
+            self.gateway_v2_disabled,
+            env.gateway_v2_disabled,
+            env_override.gateway_v2_disabled,
+            effective_is_http2_allowed,
+        )?;
 
         let max_connection_pool_size_default = if effective_is_http2_allowed {
             1_000
@@ -751,15 +815,30 @@ impl ConnectionPoolOptionsBuilder {
             ValidationBounds::range(1, 20),
         )?;
 
-        // Default: available_parallelism * 2 (fallback 32).
+        let target_http2_streams_per_client = resolve_from_env(
+            self.target_http2_streams_per_client,
+            env.target_http2_streams_per_client,
+            "AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT",
+            8_u32.min(max_http2_streams_per_client),
+            ValidationBounds::range(1, 20),
+        )?;
+
+        if target_http2_streams_per_client > max_http2_streams_per_client {
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message(format!(
+                    "target_http2_streams_per_client must be less than or equal to max_http2_streams_per_client, got {} > {}",
+                    target_http2_streams_per_client,
+                    max_http2_streams_per_client
+                )).build());
+        }
+
+        // Default: max(available_parallelism * 2, 32).
         // NOTE: In containerized environments, `available_parallelism()` may
         // report the container's CPU quota or the host's CPU count depending
         // on the runtime. This is a known limitation of `std`; the env-var
         // override can be used to tune when the heuristic is wrong.
         let cpu_based_http2_max = std::thread::available_parallelism()
-            .map(|count| count.get().saturating_mul(2))
-            .unwrap_or(32)
-            .clamp(1, 256);
+            .map(|count| default_max_http2_connections_for_parallelism(count.get()))
+            .unwrap_or(MIN_DEFAULT_HTTP2_CONNECTIONS_PER_ENDPOINT);
 
         let max_http2_connections_per_endpoint = resolve_from_env(
             self.max_http2_connections_per_endpoint,
@@ -891,6 +970,7 @@ impl ConnectionPoolOptionsBuilder {
             max_idle_connections_per_endpoint,
             idle_connection_timeout,
             max_http2_streams_per_client,
+            target_http2_streams_per_client,
             max_http2_connections_per_endpoint,
             min_http2_connections_per_endpoint,
             idle_http2_client_timeout,
@@ -932,6 +1012,7 @@ mod tests {
         // duration-ms via parser, usize, u32, IpAddr).
         let cfg = ConnectionPoolOptionsBuilder::from_env_vars(|key| match key {
             "AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED" => Ok("false".to_string()),
+            "AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED" => Ok("true".to_string()),
             "AZURE_COSMOS_CONNECTION_POOL_MIN_CONNECT_TIMEOUT_MS" => Ok("250".to_string()),
             "AZURE_COSMOS_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_PER_ENDPOINT" => {
                 Ok("4096".to_string())
@@ -944,6 +1025,7 @@ mod tests {
         });
 
         assert_eq!(cfg.is_http2_allowed, Some(false));
+        assert_eq!(cfg.gateway_v2_disabled, Some(true));
         assert_eq!(cfg.min_connect_timeout, Some(Duration::from_millis(250)));
         assert_eq!(cfg.max_idle_connections_per_endpoint, Some(4096));
         assert_eq!(cfg.http2_consecutive_failure_threshold, Some(7));
@@ -954,6 +1036,17 @@ mod tests {
         // Unset fields stay None.
         assert!(cfg.max_connect_timeout.is_none());
         assert!(cfg.proxy_allowed.is_none());
+    }
+
+    #[test]
+    fn env_config_from_override_vars_maps_gateway_v2_kill_switch() {
+        let cfg = ConnectionPoolOptionsBuilder::from_env_override_vars(|key| match key {
+            "AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED_OVERRIDE" => Ok("false".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+
+        assert_eq!(cfg.gateway_v2_disabled, Some(false));
+        assert!(cfg.is_http2_allowed.is_none());
     }
 
     #[test]
@@ -1005,7 +1098,8 @@ mod tests {
         );
         assert_eq!(options.idle_connection_timeout(), None);
         assert_eq!(options.max_http2_streams_per_client(), 16);
-        assert!(options.max_http2_connections_per_endpoint() >= 1);
+        assert_eq!(options.target_http2_streams_per_client(), 8);
+        assert!(options.max_http2_connections_per_endpoint() >= 32);
         assert_eq!(options.min_http2_connections_per_endpoint(), 1);
         assert_eq!(options.idle_http2_client_timeout(), Duration::from_secs(60));
         assert_eq!(
@@ -1043,6 +1137,7 @@ mod tests {
             .with_max_idle_connections_per_endpoint(5_000)
             .with_idle_connection_timeout(Duration::from_millis(600_000))
             .with_max_http2_streams_per_client(12)
+            .with_target_http2_streams_per_client(6)
             .with_max_http2_connections_per_endpoint(24)
             .with_min_http2_connections_per_endpoint(3)
             .with_idle_http2_client_timeout(Duration::from_millis(90_000))
@@ -1084,6 +1179,7 @@ mod tests {
             Some(Duration::from_millis(600_000))
         );
         assert_eq!(options.max_http2_streams_per_client(), 12);
+        assert_eq!(options.target_http2_streams_per_client(), 6);
         assert_eq!(options.max_http2_connections_per_endpoint(), 24);
         assert_eq!(options.min_http2_connections_per_endpoint(), 3);
         assert_eq!(
@@ -1336,6 +1432,114 @@ mod tests {
     }
 
     #[test]
+    fn target_http2_streams_per_client_defaults_to_eight() {
+        let options = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        assert_eq!(options.target_http2_streams_per_client(), 8);
+    }
+
+    #[test]
+    fn target_http2_streams_per_client_default_is_capped_by_max() {
+        let options = ConnectionPoolOptionsBuilder::new()
+            .with_max_http2_streams_per_client(4)
+            .build()
+            .unwrap();
+
+        assert_eq!(options.target_http2_streams_per_client(), 4);
+        assert_eq!(options.max_http2_streams_per_client(), 4);
+    }
+
+    #[test]
+    fn target_http2_streams_per_client_builder_overrides_env() {
+        // Builder value must win over the env-sourced value.
+        let cfg = ConnectionPoolOptionsBuilder::from_env_vars(|key| match key {
+            "AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT" => Ok("10".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+        let mut builder = ConnectionPoolOptionsBuilder::new();
+        builder.target_http2_streams_per_client = cfg.target_http2_streams_per_client;
+        let options = builder
+            .with_target_http2_streams_per_client(7)
+            .build()
+            .unwrap();
+        assert_eq!(options.target_http2_streams_per_client(), 7);
+    }
+
+    #[test]
+    fn target_http2_streams_per_client_env_used_when_unset() {
+        let cfg = ConnectionPoolOptionsBuilder::from_env_vars(|key| match key {
+            "AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT" => Ok("10".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+        assert_eq!(cfg.target_http2_streams_per_client, Some(10));
+
+        let mut builder = ConnectionPoolOptionsBuilder::new();
+        builder.target_http2_streams_per_client = cfg.target_http2_streams_per_client;
+        let options = builder.build().unwrap();
+        assert_eq!(options.target_http2_streams_per_client(), 10);
+    }
+
+    #[test]
+    fn target_http2_streams_per_client_too_small() {
+        let result = ConnectionPoolOptionsBuilder::new()
+            .with_target_http2_streams_per_client(0)
+            .build();
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("target_http2_streams_per_client must be at least 1"));
+    }
+
+    #[test]
+    fn target_http2_streams_per_client_too_large() {
+        let result = ConnectionPoolOptionsBuilder::new()
+            .with_target_http2_streams_per_client(21)
+            .build();
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("target_http2_streams_per_client must be at most 20"));
+    }
+
+    #[test]
+    fn target_http2_streams_per_client_cannot_exceed_max() {
+        let result = ConnectionPoolOptionsBuilder::new()
+            .with_max_http2_streams_per_client(8)
+            .with_target_http2_streams_per_client(9)
+            .build();
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("target_http2_streams_per_client must be less than or equal to max_http2_streams_per_client"));
+    }
+
+    #[test]
+    fn target_http2_streams_per_client_equal_to_max_is_accepted() {
+        let options = ConnectionPoolOptionsBuilder::new()
+            .with_max_http2_streams_per_client(8)
+            .with_target_http2_streams_per_client(8)
+            .build()
+            .unwrap();
+
+        assert_eq!(options.target_http2_streams_per_client(), 8);
+        assert_eq!(options.max_http2_streams_per_client(), 8);
+    }
+
+    #[test]
+    fn max_http2_connections_default_has_floor_and_scales_with_parallelism() {
+        assert_eq!(default_max_http2_connections_for_parallelism(1), 32);
+        assert_eq!(default_max_http2_connections_for_parallelism(8), 32);
+        assert_eq!(default_max_http2_connections_for_parallelism(16), 32);
+        assert_eq!(default_max_http2_connections_for_parallelism(32), 64);
+        assert_eq!(default_max_http2_connections_for_parallelism(256), 256);
+    }
+
+    #[test]
     fn min_http2_connections_cannot_exceed_max() {
         let result = ConnectionPoolOptionsBuilder::new()
             .with_min_http2_connections_per_endpoint(4)
@@ -1410,6 +1614,26 @@ mod tests {
 
         // Gateway 2.0 must be reported as disabled when HTTP/2 is not allowed,
         // since HTTP/2 is a hard prerequisite for the transport.
+        assert!(options.gateway_v2_disabled());
+    }
+
+    #[test]
+    fn gateway_v2_disablement_uses_override_builder_env_default_precedence() {
+        assert!(!resolve_gateway_v2_disabled(None, None, None, true).unwrap());
+        assert!(resolve_gateway_v2_disabled(Some(true), Some(false), None, true).unwrap());
+        assert!(!resolve_gateway_v2_disabled(Some(true), Some(true), Some(false), true).unwrap());
+        assert!(resolve_gateway_v2_disabled(Some(false), Some(false), Some(true), true).unwrap());
+        assert!(resolve_gateway_v2_disabled(Some(false), Some(false), Some(false), false).unwrap());
+    }
+
+    #[test]
+    fn gateway_v2_can_be_disabled_without_disabling_http2() {
+        let options = ConnectionPoolOptionsBuilder::new()
+            .with_gateway_v2_disabled(true)
+            .build()
+            .unwrap();
+
+        assert!(options.is_http2_allowed());
         assert!(options.gateway_v2_disabled());
     }
 
