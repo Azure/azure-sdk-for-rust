@@ -56,6 +56,13 @@ pub(crate) fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
     if !rid.len().is_multiple_of(4) {
         return Err(RidParseError::InvalidLength);
     }
+    // Canonical Cosmos RIDs substitute `-` for Base64's `/`, so a literal `/` is
+    // never part of a valid RID. Reject it here: the raw-path protocol embeds the
+    // RID string directly in the request URL, where an unencoded `/` would inject
+    // extra path segments instead of failing fast.
+    if rid.contains('/') {
+        return Err(RidParseError::InvalidBase64);
+    }
     let b64 = rid.replace('-', "/");
     STANDARD
         .decode(&b64)
@@ -507,6 +514,17 @@ mod tests {
     #[test]
     fn decode_rid_invalid_length_returns_error() {
         assert_eq!(decode_rid("abc"), Err(RidParseError::InvalidLength));
+    }
+
+    #[test]
+    fn decode_rid_rejects_literal_slash() {
+        // A standard-Base64 value with a literal `/` is non-canonical for Cosmos
+        // RIDs (which use `-`). It must be rejected so the raw-path protocol never
+        // injects extra URL path segments.
+        assert_eq!(
+            decode_rid("//////////8="),
+            Err(RidParseError::InvalidBase64)
+        );
     }
 
     #[test]
