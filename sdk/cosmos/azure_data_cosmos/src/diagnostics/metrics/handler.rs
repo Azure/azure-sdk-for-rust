@@ -533,7 +533,7 @@ mod tests {
     ///
     /// Asserting on *separation* rather than on the literal boundary list keeps
     /// this a test of the property we care about: the boundaries stay free to be
-    /// retuned, as long as they still resolve these three latencies apart.
+    /// re-tuned, as long as they still resolve these three latencies apart.
     #[test]
     fn duration_histogram_separates_realistic_latencies() {
         let harness = test_meter();
