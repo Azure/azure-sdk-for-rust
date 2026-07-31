@@ -26,6 +26,20 @@ pub enum ErrorKind {
     /// Represents an Azure Core error
     AzureCore(azure_core::Error),
 
+    /// The maximum batch size the caller asked for cannot be used. It is
+    /// either zero, which is too small to hold the batch envelope, or it is
+    /// larger than the maximum the sender link allows.
+    ///
+    /// Mirrors the `ArgumentOutOfRangeException` that .NET raises for the same
+    /// input. Match on the variant to tell it apart from a transport failure:
+    /// `matches!(err.kind, ErrorKind::InvalidBatchSize { .. })`.
+    InvalidBatchSize {
+        /// The maximum size in bytes the caller asked for.
+        requested: u64,
+        /// The largest maximum size in bytes the sender link allows.
+        max_allowed: u64,
+    },
+
     /// Represents the source of the AMQP error.
     /// This is used to wrap an AMQP error in an Even Hubs error.
     ///
@@ -69,6 +83,15 @@ impl std::fmt::Display for EventHubsError {
         match &self.kind {
             ErrorKind::SimpleMessage(msg) => write!(f, "{}", msg),
             ErrorKind::AzureCore(e) => write!(f, "Azure Core Error: {}", e),
+            ErrorKind::InvalidBatchSize {
+                requested,
+                max_allowed,
+            } => write!(
+                f,
+                "Invalid maximum batch size: {} bytes. \
+                 It must be from 1 to {} bytes, which is the maximum the sender link allows.",
+                requested, max_allowed
+            ),
             ErrorKind::SendRejected(e) => write!(f, "Send rejected: {:?}", e),
             ErrorKind::InvalidManagementResponse => f.write_str("Invalid management response"),
             ErrorKind::AmqpError(source) => write!(f, "AMQP Error: {:?}", source),

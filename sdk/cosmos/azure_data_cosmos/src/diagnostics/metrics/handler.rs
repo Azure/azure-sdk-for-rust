@@ -11,7 +11,10 @@ use opentelemetry::{global, Array, KeyValue, StringValue, Value};
 use crate::diagnostics::metrics::attributes;
 use crate::diagnostics::metrics::instruments::Instruments;
 use crate::diagnostics::metrics::MetricsOptions;
-use crate::diagnostics::{CosmosOperationContext, DiagnosticsContext, DiagnosticsHandler};
+use crate::diagnostics::{
+    ClientLifetimeToken, CosmosClientInfo, CosmosOperationContext, DiagnosticsContext,
+    DiagnosticsHandler,
+};
 
 /// Instrumentation scope name used for the Cosmos [`Meter`].
 const METER_NAME: &str = "azure_data_cosmos";
@@ -34,6 +37,15 @@ const METER_NAME: &str = "azure_data_cosmos";
 /// The handler always records the stable `db.client.operation.duration`
 /// histogram. The optional per-signal metrics and the extended attribute set are
 /// opt-in via [`MetricsOptions`] (see [`with_options`](CosmosMetricsHandler::with_options)).
+///
+/// When the active-instance metric is enabled
+/// ([`MetricsOptions::with_active_instance_metric`]), the handler increments the
+/// `azure.cosmosdb.client.active_instance.count` up-down counter each time a
+/// [`CosmosClient`](crate::CosmosClient) is built with it registered, and
+/// decrements it when that client (and every database/container client derived
+/// from it) is dropped. The reported value is therefore the number of live
+/// client instances per account endpoint, independent of how many handler
+/// objects exist.
 ///
 /// The handler captures a [`Meter`] from the globally-registered provider at
 /// construction. Install your meter provider **before** constructing the handler:
@@ -80,6 +92,30 @@ impl CosmosMetricsHandler {
             instruments: Instruments::new(meter),
             options,
         }
+    }
+
+    /// Attribute set for the active-instance up-down counter.
+    ///
+    /// Per the `azure.cosmosdb.client.active_instance.count` semantic
+    /// convention, the counter is keyed on the account endpoint
+    /// (`server.address`, plus `server.port` only when the endpoint uses a
+    /// non-default port), so the value reads as "live clients per account".
+    fn active_instance_attributes(client: &CosmosClientInfo) -> Vec<KeyValue> {
+        let mut attrs = Vec::with_capacity(3);
+        attrs.push(KeyValue::new(
+            attributes::ATTR_DB_SYSTEM_NAME,
+            attributes::DB_SYSTEM_NAME_VALUE,
+        ));
+        if let Some(address) = client.server_address() {
+            attrs.push(KeyValue::new(
+                attributes::ATTR_SERVER_ADDRESS,
+                address.to_string(),
+            ));
+        }
+        if let Some(port) = client.server_port() {
+            attrs.push(KeyValue::new(attributes::ATTR_SERVER_PORT, i64::from(port)));
+        }
+        attrs
     }
 
     /// Resolves `server.address`: the operation-context override if present,
@@ -249,6 +285,23 @@ impl DiagnosticsHandler for CosmosMetricsHandler {
             }
         }
     }
+
+    fn on_client_created(&self, client: &CosmosClientInfo) -> Option<ClientLifetimeToken> {
+        if !self.options.active_instance_metric_enabled() {
+            return None;
+        }
+
+        // Record the +1 half of the up-down counter now, and hand back a token
+        // whose `Drop` records the matching -1. The token rides on the client's
+        // shared state, so the counter tracks live *clients* rather than live
+        // handler objects — a single handler may be registered on many clients.
+        let attributes = Self::active_instance_attributes(client);
+        let counter = self.instruments.active_instance.clone();
+        counter.add(1, &attributes);
+        Some(ClientLifetimeToken::new(move || {
+            counter.add(-1, &attributes);
+        }))
+    }
 }
 
 /// Extracts the host portion of an endpoint URI for `server.address`.
@@ -351,6 +404,40 @@ mod tests {
             }
         }
         None
+    }
+
+    /// Builds a [`CosmosClientInfo`] for `host`, optionally on a non-default
+    /// port, the way `CosmosClientBuilder::build` would from an account
+    /// endpoint.
+    fn test_client_info(host: &str, port: Option<u16>) -> CosmosClientInfo {
+        let url = match port {
+            Some(port) => format!("https://{host}:{port}/"),
+            None => format!("https://{host}/"),
+        };
+        CosmosClientInfo::from_endpoint(&url::Url::parse(&url).expect("valid test endpoint"))
+    }
+
+    /// Returns the summed value of the `active_instance.count` up-down counter
+    /// from the most recent export, or `None` if the metric was never emitted.
+    ///
+    /// The in-memory exporter accumulates one snapshot per `collect()` call, so
+    /// we scan every snapshot and keep the value from the last one — the current
+    /// cumulative count.
+    fn active_instance_value(metrics: &[ResourceMetrics]) -> Option<i64> {
+        let mut latest = None;
+        for rm in metrics {
+            for sm in rm.scope_metrics() {
+                for m in sm.metrics() {
+                    if m.name() != attributes::METRIC_ACTIVE_INSTANCE_COUNT {
+                        continue;
+                    }
+                    if let AggregatedMetrics::I64(MetricData::Sum(sum)) = m.data() {
+                        latest = Some(sum.data_points().map(|point| point.value()).sum());
+                    }
+                }
+            }
+        }
+        latest
     }
 
     #[test]
@@ -606,6 +693,96 @@ mod tests {
         // no-op meter; recording must not panic (the exporter-absent path).
         let handler = CosmosMetricsHandler::new();
         handler.handle(&completed(200), &Context::new());
+    }
+
+    #[test]
+    fn active_instance_metric_off_by_default() {
+        // With default options the active-instance counter is never touched, so
+        // no such series is exported even across a full client lifecycle.
+        let harness = test_meter();
+        let handler = CosmosMetricsHandler::with_meter(harness.meter.clone());
+        let token = handler.on_client_created(&test_client_info("acct.documents.azure.com", None));
+        assert!(token.is_none(), "disabled metric must not take a token");
+        assert_eq!(active_instance_value(&harness.collect()), None);
+        drop(token);
+        assert_eq!(active_instance_value(&harness.collect()), None);
+    }
+
+    #[test]
+    fn active_instance_metric_tracks_client_lifecycle_not_handler_lifecycle() {
+        let harness = test_meter();
+        let options = MetricsOptions::default().with_active_instance_metric(true);
+
+        let handler = CosmosMetricsHandler::with_meter_and_options(harness.meter.clone(), options);
+        // Constructing the handler alone records nothing: a handler is not a
+        // client, and one handler may be registered on many clients or none.
+        assert_eq!(active_instance_value(&harness.collect()), None);
+
+        let info = test_client_info("acct.documents.azure.com", None);
+        let first = handler
+            .on_client_created(&info)
+            .expect("enabled metric must take a lifetime token");
+        assert_eq!(active_instance_value(&harness.collect()), Some(1));
+
+        // The same handler registered on a second client counts twice — the
+        // regression this replaces counted handler objects, so it reported 1.
+        let second = handler
+            .on_client_created(&info)
+            .expect("enabled metric must take a lifetime token");
+        assert_eq!(active_instance_value(&harness.collect()), Some(2));
+
+        drop(first);
+        assert_eq!(active_instance_value(&harness.collect()), Some(1));
+
+        // Dropping the handler while a client token is still alive must not
+        // decrement: the client, not the handler, owns the count.
+        drop(handler);
+        assert_eq!(active_instance_value(&harness.collect()), Some(1));
+
+        drop(second);
+        assert_eq!(active_instance_value(&harness.collect()), Some(0));
+    }
+
+    #[test]
+    fn active_instance_metric_is_keyed_on_account_endpoint() {
+        // Per semconv the counter carries `server.address`, and `server.port`
+        // only when the endpoint uses a non-default port.
+        let default_port = CosmosMetricsHandler::active_instance_attributes(&test_client_info(
+            "acct.documents.azure.com",
+            None,
+        ));
+        let by_key: HashMap<_, _> = default_port
+            .iter()
+            .map(|kv| (kv.key.as_str().to_string(), kv.value.as_str().to_string()))
+            .collect();
+        assert_eq!(
+            by_key
+                .get(attributes::ATTR_DB_SYSTEM_NAME)
+                .map(String::as_str),
+            Some(attributes::DB_SYSTEM_NAME_VALUE)
+        );
+        assert_eq!(
+            by_key
+                .get(attributes::ATTR_SERVER_ADDRESS)
+                .map(String::as_str),
+            Some("acct.documents.azure.com")
+        );
+        assert!(
+            !by_key.contains_key(attributes::ATTR_SERVER_PORT),
+            "default port must be omitted; got {by_key:?}"
+        );
+
+        let custom_port = CosmosMetricsHandler::active_instance_attributes(&test_client_info(
+            "localhost",
+            Some(8081),
+        ));
+        assert!(
+            custom_port
+                .iter()
+                .any(|kv| kv.key.as_str() == attributes::ATTR_SERVER_PORT
+                    && kv.value.as_str() == "8081"),
+            "non-default port must be emitted; got {custom_port:?}"
+        );
     }
 
     #[test]

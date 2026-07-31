@@ -49,6 +49,7 @@ fn generate_rustdoc_json(package: &PackageMetadata) -> Result<PathBuf, String> {
     command
         .arg(format!("+{channel}"))
         .arg("rustdoc")
+        .args(package.rustdoc_selector_args())
         .arg("-Z")
         .arg("unstable-options")
         .arg("--output-format")
@@ -83,6 +84,21 @@ struct CargoPackage {
 struct CargoTarget {
     name: String,
     kind: Vec<String>,
+}
+
+fn is_library_target_kind(kind: &str) -> bool {
+    matches!(
+        kind,
+        "lib" | "rlib" | "dylib" | "cdylib" | "staticlib" | "proc-macro"
+    )
+}
+
+fn crate_target_name(package_name: &str, targets: &[CargoTarget]) -> String {
+    targets
+        .iter()
+        .find(|target| target.kind.iter().any(|kind| is_library_target_kind(kind)))
+        .map(|target| target.name.clone())
+        .unwrap_or_else(|| package_name.replace('-', "_"))
 }
 
 fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, String> {
@@ -120,16 +136,16 @@ fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, Strin
                 package.manifest_path
             )
         })?;
-        let name = package
-            .targets
-            .iter()
-            .find(|target| target.kind.iter().any(|k| k == "lib"))
-            .map(|target| target.name.clone())
-            .unwrap_or_else(|| package.name.replace('-', "_"));
+        let name = crate_target_name(&package.name, &package.targets);
 
         if manifest_path == requested_manifest {
             current_package = Some(name.clone());
         }
+
+        let has_library_target = package
+            .targets
+            .iter()
+            .any(|target| target.kind.iter().any(|kind| is_library_target_kind(kind)));
 
         workspace_packages.insert(
             name.clone(),
@@ -137,6 +153,7 @@ fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, Strin
                 name,
                 version: package.version,
                 manifest_path,
+                has_library_target,
             },
         );
     }
@@ -250,4 +267,83 @@ pub(crate) struct PackageMetadata {
     pub(crate) name: String,
     pub(crate) version: String,
     pub(crate) manifest_path: PathBuf,
+    pub(crate) has_library_target: bool,
+}
+
+impl PackageMetadata {
+    fn rustdoc_selector_args(&self) -> &[&str] {
+        if self.has_library_target {
+            &["--lib"]
+        } else {
+            &[]
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{crate_target_name, CargoTarget};
+    use std::path::PathBuf;
+
+    #[test]
+    fn prefers_library_like_target_names() {
+        assert_eq!(
+            crate_target_name(
+                "azure_data_cosmos_driver_native",
+                &[CargoTarget {
+                    name: "azurecosmosdriver".to_string(),
+                    kind: vec!["cdylib".to_string(), "staticlib".to_string()],
+                }],
+            ),
+            "azurecosmosdriver"
+        );
+        assert_eq!(
+            crate_target_name(
+                "typespec_macros",
+                &[CargoTarget {
+                    name: "typespec_macros".to_string(),
+                    kind: vec!["proc-macro".to_string()],
+                }],
+            ),
+            "typespec_macros"
+        );
+    }
+
+    #[test]
+    fn falls_back_to_package_name_when_no_library_like_target_exists() {
+        assert_eq!(
+            crate_target_name(
+                "azure-data-cosmos-benchmarks",
+                &[CargoTarget {
+                    name: "smoke".to_string(),
+                    kind: vec!["bin".to_string()],
+                }],
+            ),
+            "azure_data_cosmos_benchmarks"
+        );
+    }
+
+    #[test]
+    fn adds_lib_selector_for_library_like_packages() {
+        let package = super::PackageMetadata {
+            name: "azurecosmosdriver".to_string(),
+            version: "0.1.0".to_string(),
+            manifest_path: PathBuf::from("sdk/cosmos/azure_data_cosmos_driver_native/Cargo.toml"),
+            has_library_target: true,
+        };
+
+        assert_eq!(package.rustdoc_selector_args(), ["--lib"]);
+    }
+
+    #[test]
+    fn omits_lib_selector_for_non_library_packages() {
+        let package = super::PackageMetadata {
+            name: "azure_data_cosmos_benchmarks".to_string(),
+            version: "0.1.0".to_string(),
+            manifest_path: PathBuf::from("sdk/cosmos/azure_data_cosmos_benchmarks/Cargo.toml"),
+            has_library_target: false,
+        };
+
+        assert!(package.rustdoc_selector_args().is_empty());
+    }
 }

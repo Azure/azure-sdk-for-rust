@@ -8,7 +8,7 @@
 //! reference-counted). Building them eagerly keeps the per-operation hot path to
 //! just `record`/`add` calls with no allocation of instrument state.
 
-use opentelemetry::metrics::{Histogram, Meter};
+use opentelemetry::metrics::{Histogram, Meter, UpDownCounter};
 
 use crate::diagnostics::metrics::attributes;
 
@@ -17,7 +17,8 @@ use crate::diagnostics::metrics::attributes;
 /// The stable operation-duration histogram is always recorded; the remaining
 /// per-signal instruments are recorded only when the matching
 /// [`MetricsOptions`](super::MetricsOptions) toggle
-/// (`request_charge_metric_enabled` / `returned_rows_metric_enabled`) is set.
+/// (`request_charge_metric_enabled` / `returned_rows_metric_enabled` /
+/// `active_instance_metric_enabled`) is set.
 /// They are still created unconditionally because instrument creation is cheap
 /// and idempotent, and doing so keeps the handler's record path branch-free per
 /// instrument.
@@ -31,6 +32,14 @@ pub(crate) struct Instruments {
 
     /// Development: `db.client.response.returned_rows` (rows).
     pub(crate) returned_rows: Histogram<u64>,
+
+    /// Development: `azure.cosmosdb.client.active_instance.count` (instances).
+    ///
+    /// An up-down counter incremented when a
+    /// [`CosmosClient`](crate::CosmosClient) is created with the handler
+    /// registered, and decremented when that client is dropped, so the reported
+    /// value tracks the number of live client instances per account endpoint.
+    pub(crate) active_instance: UpDownCounter<i64>,
 }
 
 impl Instruments {
@@ -57,10 +66,17 @@ impl Instruments {
             .with_boundaries(attributes::BUCKETS_RETURNED_ROWS.to_vec())
             .build();
 
+        let active_instance = meter
+            .i64_up_down_counter(attributes::METRIC_ACTIVE_INSTANCE_COUNT)
+            .with_unit(attributes::UNIT_INSTANCE)
+            .with_description("Number of active Cosmos DB client instances.")
+            .build();
+
         Self {
             operation_duration,
             request_charge,
             returned_rows,
+            active_instance,
         }
     }
 }
