@@ -595,10 +595,17 @@ impl PipelineNode for StreamingOrderedMerge {
         aggregator.seed_session_token(self.session_token.clone());
 
         // Prime every child up front so the heap sees a head row for each
-        // non-drained child. Nothing has been emitted yet, so a failure here
-        // loses no rows and propagates directly.
-        self.ensure_all_streams_filled(context, &mut aggregator)
-            .await?;
+        // non-drained child. This page has emitted nothing, but a fill commits
+        // its backend continuation before the body is validated, so a failure
+        // can still leave a child advanced past rows an earlier call never
+        // delivered; the snapshot must fall back to the scalar boundary.
+        if let Err(err) = self
+            .ensure_all_streams_filled(context, &mut aggregator)
+            .await
+        {
+            self.continuation_unsafe = true;
+            return Err(err);
+        }
         let mut head_heap = self.build_head_heap();
 
         let cap = self.max_item_count();
@@ -2332,6 +2339,77 @@ mod tests {
                         .boundary
                         .as_ref()
                         .expect("the emitted row advanced the boundary")
+                        .last_rid,
+                    "d1",
+                    "the range must resume from the last row actually delivered"
+                );
+            }
+            other => panic!("expected StreamingOrderedMerge, got {other:?}"),
+        }
+    }
+
+    /// Regression: the same hazard on the *priming* path. With a page size of 1
+    /// the emit loop never reaches the in-loop refill, so the failing fetch
+    /// lands on the next call's priming step — after an earlier call already
+    /// emitted rows. That fetch still commits `ct-2` before validation rejects
+    /// it, so the snapshot must fall back to the boundary here too.
+    #[tokio::test]
+    async fn snapshot_after_failed_priming_validation_drops_server_continuation() {
+        let malformed = serde_json::json!({
+            "_rid": "",
+            "Documents": [{"_rid": "d2", "orderByItems": [{"item": 2}]}],
+            "_count": 1,
+        });
+        let child = ChildStream::fresh(
+            range("", "FF"),
+            Box::new(
+                MockLeaf::with_pages(vec![
+                    envelope_page(&[("d1", 1)], Some("ct-1")),
+                    Ok(PageResult::Page {
+                        response: mocks::response_with_continuation(
+                            &serde_json::to_vec(&malformed).unwrap(),
+                            Some("ct-2"),
+                        ),
+                        is_terminal: false,
+                    }),
+                ])
+                .with_snapshot(PipelineNodeState::Request {
+                    server_continuation: Some("ct-2".to_owned()),
+                }),
+            ),
+        );
+        let mut node = merge(vec![child], vec![SortOrder::Ascending]);
+        node.plain_operation = Arc::new((*node.plain_operation).clone().with_max_item_count(
+            crate::models::MaxItemCountHint::Limit(std::num::NonZeroU32::new(1).unwrap()),
+        ));
+
+        let mut executor = mocks::NoopRequestExecutor;
+        let mut topology = mocks::NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        // Fills the buffer and emits `d1`; the cap is reached before the
+        // in-loop refill, so nothing has been marked unsafe yet.
+        let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
+            panic!("expected a page");
+        };
+        assert_eq!(ids(&response), vec!["d1"]);
+
+        // The malformed page is fetched while priming, with no row emitted on
+        // this call.
+        assert!(node.next_page(&mut context).await.is_err());
+
+        match node.snapshot_state().unwrap() {
+            PipelineNodeState::StreamingOrderedMerge { ranges, .. } => {
+                assert!(
+                    ranges[0].server_continuation.is_none(),
+                    "a continuation committed while priming and then rejected must not be \
+                     snapshotted, or the resumed query skips the page it stands for"
+                );
+                assert_eq!(
+                    ranges[0]
+                        .boundary
+                        .as_ref()
+                        .expect("the earlier page advanced the boundary")
                         .last_rid,
                     "d1",
                     "the range must resume from the last row actually delivered"
