@@ -176,7 +176,12 @@ try {
   # though `cargo publish` has additional checks like publishability.
   $subCommand = @("package")
   if ($Release) {
-    $subCommand = @("publish", "--dry-run")
+    # CI replaces the crates-io source with the azure-sdk-for-rust feed (see
+    # eng/templates/config.toml.template). cargo refuses to publish while crates-io is
+    # replaced unless the target registry is named explicitly. crates.io stays the
+    # publish target; dependencies still resolve through the feed. `cargo package` has
+    # no such restriction, so the non-release path is left alone.
+    $subCommand = @("publish", "--dry-run", "--registry", "crates-io")
   }
 
   LogGroupStart "cargo $($subCommand -join ' ') --locked --allow-dirty $($packageParams -join ' ')"
