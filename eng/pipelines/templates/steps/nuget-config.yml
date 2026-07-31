@@ -1,0 +1,32 @@
+steps:
+  # NuGet only reads package sources from the machine-wide config, the user (global)
+  # config, and NuGet.config files at or above the working directory. The consumer here
+  # (TestAmqpBroker, built by sdk/core/azure_core_amqp/Test-Setup.ps1) restores from a
+  # clone of Azure/azure-amqp outside this repo, so the config has to be installed at the
+  # user level to cover it.
+  - pwsh: |
+      $nugetConfigDir = if ($env:APPDATA) {
+        Join-Path $env:APPDATA 'NuGet'
+      } else {
+        Join-Path (Join-Path $HOME '.nuget') 'NuGet'
+      }
+      New-Item -ItemType Directory -Force -Path $nugetConfigDir | Out-Null
+
+      $configPath = Join-Path $nugetConfigDir 'NuGet.Config'
+      Copy-Item `
+        -Path '$(Build.SourcesDirectory)/eng/templates/NuGet.config.template' `
+        -Destination $configPath `
+        -Force
+
+      Write-Host "Wrote NuGet config to $configPath"
+      Get-Content $configPath
+
+      if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+        dotnet nuget list source
+      }
+    displayName: Configure NuGet to use the azure-sdk-for-net feed
+
+  # Runs after the config is in place so the credential provider is installed for the
+  # feed that is actually configured above.
+  - task: NuGetAuthenticate@1
+    displayName: Authenticate NuGet to Azure Artifacts feeds
