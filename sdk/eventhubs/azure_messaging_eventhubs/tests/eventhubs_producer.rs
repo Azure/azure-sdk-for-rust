@@ -4,7 +4,9 @@
 use azure_core::http::StatusCode;
 use azure_core_amqp::{message::AmqpMessageProperties, AmqpError, AmqpList, AmqpSimpleValue};
 use azure_core_test::{recorded, TestContext};
-use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient, SendEventOptions};
+use azure_messaging_eventhubs::{
+    error::ErrorKind, EventDataBatchOptions, ProducerClient, SendEventOptions,
+};
 use std::{env, error::Error, sync::Arc};
 use tracing::{info, trace};
 
@@ -565,17 +567,18 @@ async fn send_to_every_partition_at_once(ctx: TestContext) -> Result<(), Box<dyn
 /// `attach` used to replace the size the caller asked for with the maximum the
 /// sender link reports, so a small cap had no effect and the batch accepted
 /// events well past it. This test pins the wiring, not just the arithmetic: it
-/// fails if `attach` stops using the size the caller supplied.
+/// fails if `create_batch` stops using the size the caller supplied.
 #[recorded::test(live)]
-async fn create_batch_honors_max_size_in_bytes(_ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn create_batch_honors_max_size_in_bytes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     const MAX_SIZE: u64 = 1024;
 
-    let connection_string = env::var("EVENTHUBS_CONNECTION_STRING")?;
-    let eventhub = env::var("EVENTHUB_NAME").ok();
+    let recording = ctx.recording();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
 
     let client = ProducerClient::builder()
         .with_application_id("create_batch_honors_max_size_in_bytes".to_string())
-        .open_with_connection_string(&connection_string, eventhub.as_deref())
+        .open(host.as_str(), eventhub.as_str(), recording.credential())
         .await?;
 
     let batch = client
@@ -598,6 +601,13 @@ async fn create_batch_honors_max_size_in_bytes(_ctx: TestContext) -> Result<(), 
     }
 
     let refused_at = refused_at.expect("a batch capped at 1024 bytes must refuse an event");
+    // The cap must be the one the caller asked for, not some smaller value the
+    // resolution got wrong. A batch that refuses the first event is as broken
+    // as one that never refuses.
+    assert!(
+        refused_at > 0,
+        "a 1024 byte batch refused the first 128 byte event, so the cap it got was too small"
+    );
     assert!(
         batch.size() <= MAX_SIZE,
         "batch grew to {} bytes, past its {MAX_SIZE} byte cap",
@@ -606,6 +616,11 @@ async fn create_batch_honors_max_size_in_bytes(_ctx: TestContext) -> Result<(), 
     assert!(
         refused_at < 16,
         "a 1024 byte batch accepted {refused_at} events of 128 bytes, so the cap was ignored"
+    );
+    assert_eq!(
+        refused_at,
+        batch.len(),
+        "every event before the refused one must be in the batch"
     );
     info!(
         "Batch refused event {refused_at} at {} bytes.",
@@ -624,17 +639,18 @@ async fn create_batch_honors_max_size_in_bytes(_ctx: TestContext) -> Result<(), 
 /// silently would hide that the requested size was impossible.
 #[recorded::test(live)]
 async fn create_batch_rejects_size_above_link_maximum(
-    _ctx: TestContext,
+    ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
     // Far above any Event Hubs link maximum, which is about 1 MiB.
     const TOO_LARGE: u64 = 512 * 1024 * 1024;
 
-    let connection_string = env::var("EVENTHUBS_CONNECTION_STRING")?;
-    let eventhub = env::var("EVENTHUB_NAME").ok();
+    let recording = ctx.recording();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
 
     let client = ProducerClient::builder()
         .with_application_id("create_batch_rejects_size_above_link_maximum".to_string())
-        .open_with_connection_string(&connection_string, eventhub.as_deref())
+        .open(host.as_str(), eventhub.as_str(), recording.credential())
         .await?;
 
     let result = client
@@ -648,6 +664,17 @@ async fn create_batch_rejects_size_above_link_maximum(
     let error = result
         .err()
         .expect("a size above the link maximum must be rejected");
+    // The caller must be able to branch on this without reading the message.
+    assert!(
+        matches!(
+            error.kind,
+            ErrorKind::InvalidBatchSize {
+                requested: TOO_LARGE,
+                ..
+            }
+        ),
+        "the error must report the batch size kind, got: {error:?}"
+    );
     let message = error.to_string();
     assert!(
         message.contains(&TOO_LARGE.to_string()),
