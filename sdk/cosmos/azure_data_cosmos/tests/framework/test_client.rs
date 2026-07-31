@@ -419,20 +419,6 @@ fn is_azure_pipelines() -> bool {
 }
 
 impl TestClient {
-    pub async fn from_env_with_fault_options(
-        fault_client_application_region: Option<Region>,
-        allow_invalid_certificates: bool,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(
-            None,
-            Vec::new(),
-            fault_client_application_region,
-            allow_invalid_certificates,
-            None,
-        )
-        .await
-    }
-
     pub async fn from_env(
         application_region: Option<Region>,
         allow_invalid_certificates: bool,
@@ -645,51 +631,65 @@ impl TestClient {
         )
         .await?;
 
-        // Create fault injection client if rules or application region were provided.
+        // Decide whether a fault-injection client is needed, and with which rules.
         // Rules should be passed in for emulator tests to ensure the FaultClient
         // wraps the HTTP client with invalid cert acceptance,
         // which is required for emulator connectivity.
         // An explicitly-set empty Vec still provisions the fault client (some
         // tests exercise the "no rules configured" path); `None` means
         // `with_fault_injection_rules` was never called.
-        let fault_client = if let Some(rules) = options.fault_injection_rules {
-            Some(
-                Self::from_env_with_fault_rules(
-                    rules,
-                    options.fault_client_application_region.clone(),
-                    options.allow_invalid_certificates,
-                )
-                .await?,
-            )
-        } else if options.fault_client_application_region.is_some() {
-            Some(
-                Self::from_env_with_fault_options(
-                    options.fault_client_application_region,
-                    options.allow_invalid_certificates,
-                )
-                .await?,
-            )
-        } else {
-            None
+        let fault_rules = match (
+            options.fault_injection_rules,
+            options.fault_client_application_region.is_some(),
+        ) {
+            (Some(rules), _) => Some(rules),
+            (None, true) => Some(Vec::new()),
+            (None, false) => None,
         };
 
         // CosmosClient is designed to be cloned cheaply, so we can clone it here.
         if let Some(key_client) = test_client.cosmos_client.clone() {
-            let fault_cosmos_client = fault_client.and_then(|fc| fc.cosmos_client);
-
             // In AAD mode the primary (data-plane) client authenticates with an
             // Entra ID token, while the key client is retained for database
             // management (create/delete), which is not a data-plane RBAC action.
-            let (primary_client, management_client) = match AuthMode::from_env() {
+            let auth_mode = AuthMode::from_env();
+            let (primary_client, management_client) = match auth_mode {
                 AuthMode::Aad => {
                     let region = options
                         .client_application_region
                         .clone()
                         .unwrap_or(HUB_REGION);
-                    let (aad_client, _recorder) = build_aad_client_from_env(region).await?;
+                    let (aad_client, _recorder) =
+                        build_aad_client_from_env(region, Vec::new()).await?;
                     (aad_client, Some(key_client))
                 }
                 AuthMode::Key => (key_client, None),
+            };
+
+            // The fault client must authenticate the same way as the primary client.
+            // Building it from the connection string unconditionally left the
+            // `aad_auth` legs running every fault-injection test under key auth, and
+            // pointed two differently-credentialed clients at the same account.
+            let fault_cosmos_client = match fault_rules {
+                None => None,
+                Some(rules) => match auth_mode {
+                    AuthMode::Aad => {
+                        let region = options
+                            .fault_client_application_region
+                            .clone()
+                            .unwrap_or(HUB_REGION);
+                        Some(build_aad_client_from_env(region, rules).await?.0)
+                    }
+                    AuthMode::Key => {
+                        Self::from_env_with_fault_rules(
+                            rules,
+                            options.fault_client_application_region.clone(),
+                            options.allow_invalid_certificates,
+                        )
+                        .await?
+                        .cosmos_client
+                    }
+                },
             };
 
             let run = TestRunContext::new(primary_client, fault_cosmos_client, management_client);
@@ -1313,7 +1313,7 @@ impl TestRunContext {
     pub async fn aad_client(
         &self,
     ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
-        build_aad_client_from_env(HUB_REGION).await
+        build_aad_client_from_env(HUB_REGION, Vec::new()).await
     }
 
     /// Cleans up test resources.
@@ -1400,8 +1400,12 @@ pub fn targets_emulator() -> bool {
 ///   resolves to `AzurePipelinesCredential` in CI (matching the principal the
 ///   bicep grants the data-plane RBAC role to) and `DeveloperToolsCredential`
 ///   locally. No recorder is returned in this case.
+///
+/// `fault_rules` may be empty; pass rules to build the fault-injection variant
+/// of the client so AAD legs exercise fault injection under AAD rather than key auth.
 pub async fn build_aad_client_from_env(
     region: Region,
+    fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
 ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
     use super::CosmosEmulatorCredential;
 
@@ -1449,6 +1453,11 @@ pub async fn build_aad_client_from_env(
     } else {
         (azure_core_test::credentials::from_env(None)?, None)
     };
+
+    // Applied after the runtime, mirroring `from_connection_string`.
+    if !fault_rules.is_empty() {
+        builder = builder.with_fault_injection_rules(fault_rules)?;
+    }
 
     let account = azure_data_cosmos::AccountReference::with_credential(endpoint, credential);
     let client = builder.build(account, strategy).await?;
