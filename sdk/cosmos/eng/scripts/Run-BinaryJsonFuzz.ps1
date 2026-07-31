@@ -14,7 +14,8 @@
     This is a byte-level *protocol* fuzzer: it feeds arbitrary/mutated bytes
     straight into the decoder (decode / from_slice / transcode_to_text) plus a
     differential decode->encode->decode idempotence check. It is the complement
-    to the value-space live round-trip fuzzer in azure_data_cosmos_perf.
+    to the value-space live round-trip fuzzer in
+    azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs.
 
     LINUX ONLY. libFuzzer (the -fsanitize=fuzzer backend) is not supported on the
     Windows MSVC target, so this script no-ops with a warning off Linux.

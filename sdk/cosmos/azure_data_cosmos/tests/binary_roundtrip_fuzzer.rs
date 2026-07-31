@@ -18,12 +18,12 @@
 //! AZURE_COSMOS_CONNECTION_STRING='AccountEndpoint=...;AccountKey=...;' \
 //! AZURE_COSMOS_ALLOW_INVALID_CERT=true \
 //! RUSTFLAGS='--cfg test_category="binary_encoding"' \
-//!   cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection -- --nocapture
+//!   cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection,control_plane -- --nocapture
 //!
 //! # Multi-day soak (millions of docs), release build:
 //! AZURE_COSMOS_CONNECTION_STRING='...' AZURE_COSMOS_FUZZ_ITERATIONS=5000000 \
 //! RUSTFLAGS='--cfg test_category="binary_encoding"' \
-//!   cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection --release -- --nocapture
+//!   cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection,control_plane --release -- --nocapture
 //!
 //! # Reproduce a failure exactly:
 //! AZURE_COSMOS_FUZZ_SEED=<seed printed by the failing run> ... cargo test ...
@@ -835,7 +835,14 @@ fn shape_fuzzing_string(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, V
         "\u{feff}",
     ];
     let s = if rng.below(2) == 0 {
-        EDGE[rng.below(EDGE.len() as u64) as usize].to_string()
+        let edge = EDGE[rng.below(EDGE.len() as u64) as usize];
+        if cfg.unicode {
+            edge.to_string()
+        } else {
+            // Honor AZURE_COSMOS_FUZZ_UNICODE=false: drop non-ASCII edge cases
+            // (😀, 中文, BOM) so ASCII-only runs stay ASCII.
+            edge.chars().filter(char::is_ascii).collect()
+        }
     } else {
         gen_unicode_string(rng, cfg, 40)
     };
@@ -1845,14 +1852,47 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
 
             let context = format!("iter={iter} config={label} id={id} seed={}", cfg.seed);
 
-            // CREATE with content response (exercises the response decode path).
-            let created = with_transient_retry("create", &context, || {
-                container.create_item(&pk, &id, &doc, Some(write_options_with_content()))
-            })
-            .await?;
-            let created_doc: Value = created
-                .into_model()
-                .map_err(|e| format!("{context}: create response decode failed: {e}"))?;
+            // CREATE with content response (exercises the response decode
+            // path). Retry transient failures; if a *retried* create sees
+            // 409 Conflict, a prior attempt already committed (the (pk, id) is
+            // unique per iteration+config), so read the stored item back instead
+            // of failing the soak on an ambiguous-but-successful create.
+            let created_doc: Value = {
+                let mut attempt = 0;
+                loop {
+                    attempt += 1;
+                    match container
+                        .create_item(&pk, &id, &doc, Some(write_options_with_content()))
+                        .await
+                    {
+                        Ok(resp) => {
+                            break resp.into_model().map_err(|e| {
+                                format!("{context}: create response decode failed: {e}")
+                            })?;
+                        }
+                        Err(e)
+                            if e.status().status_code() == StatusCode::Conflict && attempt > 1 =>
+                        {
+                            let read = container.read_item(&pk, &id, None).await.map_err(|e| {
+                                format!("{context}: create-conflict read failed: {e}")
+                            })?;
+                            break read.into_model().map_err(|e| {
+                                format!("{context}: create-conflict decode failed: {e}")
+                            })?;
+                        }
+                        Err(e) if is_transient(&e) && attempt < MAX_OP_ATTEMPTS => {
+                            let backoff = std::time::Duration::from_millis(
+                                200u64 * (1u64 << (attempt - 1)).min(16),
+                            );
+                            eprintln!(
+                                "{context}: create transient failure (attempt {attempt}/{MAX_OP_ATTEMPTS}), retrying in {backoff:?}: {e}"
+                            );
+                            tokio::time::sleep(backoff).await;
+                        }
+                        Err(e) => return Err(format!("{context}: create failed: {e}").into()),
+                    }
+                }
+            };
             assert_roundtrip(
                 &doc,
                 &created_doc,
@@ -2616,7 +2656,7 @@ mod tests {
     /// default; run explicitly with `--ignored --nocapture`:
     ///
     /// ```bash
-    /// cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection \
+    /// cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection,control_plane \
     ///   print_sample_documents -- --ignored --nocapture
     /// ```
     ///

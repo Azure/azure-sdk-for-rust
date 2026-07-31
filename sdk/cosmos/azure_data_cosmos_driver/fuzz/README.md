@@ -53,9 +53,9 @@ cargo +nightly fuzz tmin decode fuzz/artifacts/decode/crash-<hash>
 
 ## Thorough manual run on a Linux VM
 
-For deeper, longer fuzzing than the weekly CI budget (Option A caps each target
-at ~1000 s), run it by hand on any Linux box (or WSL2). This is the same thing CI
-does, without a wall-clock cap:
+Weekly CI only replays the committed corpus once (`-runs=0`, no mutation). To
+perform coverage-guided mutation and deeper fuzzing, run it by hand on any Linux
+box (or WSL2), without a wall-clock cap:
 
 ```bash
 # 1. Toolchain (one-time)
@@ -155,21 +155,20 @@ azure_data_cosmos_driver --lib fuzz`.
 
 ## CI
 
-Fuzzing runs as a **non-blocking leg of the existing `sdk/cosmos/ci.yml`** — an
-`AdditionalMatrixConfigs` entry ([`sdk/cosmos/fuzz-matrix.json`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/fuzz-matrix.json))
-that adds one **Linux + nightly** job (cargo-fuzz/libFuzzer is Linux-only). It
-carries `ContinueOnError: "true"`, so a discovered crash reports "succeeded with
-issues" instead of blocking merge. The job's test-setup hook
+Fuzzing runs as a **non-blocking leg of the existing `sdk/cosmos/ci.yml`** — a
+Build-stage `MatrixConfigs` entry ([`sdk/cosmos/fuzz-matrix.json`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/fuzz-matrix.json))
+that adds one **Linux + nightly** job (cargo-fuzz/libFuzzer is Linux-only), gated
+to the **weekly / scheduled** build only (not per-PR). It carries
+`ContinueOnError: "true"`, so a discovered crash reports "succeeded with issues"
+instead of blocking merge. The job's test-setup hook
 ([`Invoke-CosmosTestSetup.ps1`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/eng/scripts/Invoke-CosmosTestSetup.ps1),
 gated on `AZURE_COSMOS_FUZZ=1`) calls
-[`Run-BinaryJsonFuzz.ps1`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/eng/scripts/Run-BinaryJsonFuzz.ps1), which
-installs cargo-fuzz, seeds each corpus from the golden vectors, and runs every
-target under a wall-clock budget that scales by build reason:
+[`Run-BinaryJsonFuzz.ps1`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/eng/scripts/Run-BinaryJsonFuzz.ps1)
+**with `-ValidateOnly`**, which installs cargo-fuzz, seeds each corpus from the
+golden vectors, and **replays the committed vectors once** (libFuzzer `-runs=0`,
+no mutation, no time budget) to prove they still decode without panicking.
 
-- **PR / CI smoke** — ~120 s/target (fast, non-blocking).
-- **Weekly deep run** — ~30 min/target on the scheduled build.
-
-Because it rides the already-registered `cosmos - ci` pipeline, the fuzz job
-shows up automatically as a job on every cosmos PR — no separate pipeline to
-register. Crash inputs are published as the `fuzz-crashes` build artifact so a
-failure can be reproduced and minimized (`cargo fuzz tmin`).
+Coverage-guided mutation soaks (`-max_total_time`) are **manual / local only** —
+CI never runs an unattended time-boxed soak (see the manual-run section above).
+Crash inputs are published as the `fuzz-crashes` build artifact so a failure can
+be reproduced and minimized (`cargo fuzz tmin`).

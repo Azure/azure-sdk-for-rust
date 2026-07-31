@@ -154,7 +154,7 @@ required-features = ["key_auth", "control_plane", "fault_injection"]
 [[test]]
 name = "binary_roundtrip_fuzzer"
 path = "tests/binary_roundtrip_fuzzer.rs"
-required-features = ["key_auth", "fault_injection"]
+required-features = ["key_auth", "control_plane", "fault_injection"]
 
 [[test]]
 name = "gateway_v2"

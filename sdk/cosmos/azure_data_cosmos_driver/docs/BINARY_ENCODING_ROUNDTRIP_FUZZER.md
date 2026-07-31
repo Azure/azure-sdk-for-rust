@@ -246,10 +246,6 @@ The harness therefore uses a **Cosmos-compatible** number canonicalizer, not JCS
 ### 3.2 Generator stays inside the calibrated envelope
 
 To avoid false positives from *un-calibrated* number forms, the generator emits
-
-### 3.2 Generator stays inside the calibrated envelope
-
-To avoid false positives from *un-calibrated* number forms, the generator emits
 numbers in **backend-safe ranges by default** (bounded integers, bounded-precision
 floats). A `--wide-numbers` flag widens the range once the canonicalizer is
 calibrated for those forms — this is how you progressively expand coverage.
@@ -343,14 +339,14 @@ is queued with **Run live tests** enabled.
 AZURE_COSMOS_CONNECTION_STRING='AccountEndpoint=...;AccountKey=...;' \
 AZURE_COSMOS_ALLOW_INVALID_CERT=true \
 RUSTFLAGS='--cfg test_category="binary_encoding"' \
-  cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection -- --nocapture
+  cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection,control_plane -- --nocapture
 
 # Multi-day soak (millions of docs):
 AZURE_COSMOS_CONNECTION_STRING='...' \
 AZURE_COSMOS_FUZZ_ITERATIONS=5000000 \
 AZURE_COSMOS_FUZZ_MAX_DEPTH=6 \
 RUSTFLAGS='--cfg test_category="binary_encoding"' \
-  cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection --release -- --nocapture
+  cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection,control_plane --release -- --nocapture
 
 # Reproduce a failure:
 AZURE_COSMOS_FUZZ_SEED=12345678901234567890 ... cargo test ...
@@ -358,7 +354,7 @@ AZURE_COSMOS_FUZZ_SEED=12345678901234567890 ... cargo test ...
 # Calibrate number canonicalization against the account (prints a table, no assert):
 AZURE_COSMOS_CONNECTION_STRING='...' AZURE_COSMOS_FUZZ_CALIBRATE=true \
 RUSTFLAGS='--cfg test_category="binary_encoding"' \
-  cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection -- --nocapture
+  cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection,control_plane -- --nocapture
 ```
 
 ### Environment knobs
