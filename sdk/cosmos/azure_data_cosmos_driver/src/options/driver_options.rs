@@ -94,11 +94,13 @@ pub struct DriverOptions {
     /// behavior for the lifetime of the driver. They are independent of
     /// per-operation [`OperationOptions`].
     partition_failover_options: PartitionFailoverOptions,
-    /// Driver-level cross-region hedging limits.
+    /// Driver-level limits on simultaneous cross-region attempts.
     ///
-    /// Read once at driver construction time. These bound how much hedging the
-    /// driver may have in flight at once, above whatever the per-operation
-    /// [`AvailabilityStrategy`](crate::options::AvailabilityStrategy) asks for.
+    /// Hedging adds a regional attempt to complete an operation when the first is
+    /// slow. Read once at driver construction time, these options bound how many
+    /// such simultaneous attempts the driver may perform, above whatever the
+    /// per-operation [`AvailabilityStrategy`](crate::options::AvailabilityStrategy)
+    /// asks for.
     hedging_options: HedgingOptions,
 }
 

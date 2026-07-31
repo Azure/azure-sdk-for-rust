@@ -43,7 +43,9 @@ pub(crate) use diagnostics_thresholds::is_point_operation;
 pub use diagnostics_thresholds::DiagnosticsThresholds;
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub(crate) use env_parsing::parse_duration_millis_from_env;
-pub use hedging::{HedgingOptions, HedgingOptionsBuilder, DEFAULT_MAX_CONCURRENT_METADATA_HEDGES};
+pub use hedging::{
+    HedgingOptions, HedgingOptionsBuilder, DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS,
+};
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};
 pub use operation_options::{
     OperationOptions, OperationOptionsBuilder, OperationOptionsView, ThrottlingRetryOptions,

@@ -234,7 +234,7 @@ fn driver_options_with_hedge_budget(
 ) -> DriverOptions {
     let hedging = match metadata_hedge_budget {
         Some(limit) => HedgingOptions::builder()
-            .with_max_concurrent_metadata_hedges(limit)
+            .with_max_concurrent_metadata_attempts(limit)
             .build(),
         None => HedgingOptions::default(),
     };

@@ -285,7 +285,7 @@ pub struct CosmosDriver {
     /// Region pins protecting the change-feed continuations held by
     /// `pk_range_cache`. See [`PkRangeRegionPins`].
     pk_range_region_pins: PkRangeRegionPins,
-    /// Per-client ceiling on concurrent cross-region metadata hedge races.
+    /// Per-client ceiling on metadata operations making simultaneous cross-region attempts.
     /// Bounds the request amplification a hedging client can inflict on an
     /// alternate region during a brownout. See [`HedgeBudget`].
     hedge_budget: HedgeBudget,

@@ -12,7 +12,7 @@
 //! more hedges spawn.
 //!
 //! [`HedgeBudget`] caps how many hedge races a single client may have open at
-//! once, from [`HedgingOptions::max_concurrent_metadata_hedges`]. It is
+//! once, from [`HedgingOptions::max_concurrent_metadata_attempts`]. It is
 //! deliberately **non-blocking**: an operation that cannot get a permit does not
 //! queue for one, it simply skips the hedge upgrade and follows the ordinary
 //! sequential failover path. A hedge that waits in line has already lost the
@@ -40,8 +40,8 @@
 //! skip a healthy region if returned after only the primary was tried.
 //!
 //! [`HedgedRaceResult`]: super::operation_pipeline::HedgedRaceResult
-//! [`HedgingOptions::max_concurrent_metadata_hedges`]:
-//!     crate::options::HedgingOptions::max_concurrent_metadata_hedges
+//! [`HedgingOptions::max_concurrent_metadata_attempts`]:
+//!     crate::options::HedgingOptions::max_concurrent_metadata_attempts
 
 use async_lock::{Semaphore, SemaphoreGuard};
 
@@ -60,7 +60,7 @@ pub(crate) struct HedgeBudget {
 impl HedgeBudget {
     /// Builds a budget from the driver's [`HedgingOptions`].
     pub(crate) fn new(options: &HedgingOptions) -> Self {
-        Self::with_metadata_limit(options.max_concurrent_metadata_hedges())
+        Self::with_metadata_limit(options.max_concurrent_metadata_attempts())
     }
 
     /// Builds a budget with an explicit metadata limit.
@@ -114,7 +114,7 @@ pub(crate) enum HedgePermit<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::options::DEFAULT_MAX_CONCURRENT_METADATA_HEDGES;
+    use crate::options::DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS;
 
     #[test]
     fn permits_are_issued_up_to_the_limit() {
@@ -178,7 +178,7 @@ mod tests {
     #[test]
     fn budget_is_built_from_the_driver_option() {
         let options = HedgingOptions::builder()
-            .with_max_concurrent_metadata_hedges(3)
+            .with_max_concurrent_metadata_attempts(3)
             .build();
         let budget = HedgeBudget::new(&options);
 
@@ -196,7 +196,7 @@ mod tests {
     #[test]
     fn default_budget_admits_the_documented_number_of_races() {
         let budget = HedgeBudget::default();
-        let permits: Vec<_> = (0..DEFAULT_MAX_CONCURRENT_METADATA_HEDGES)
+        let permits: Vec<_> = (0..DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS)
             .map(|_| {
                 budget
                     .try_admit(PipelineType::Metadata)

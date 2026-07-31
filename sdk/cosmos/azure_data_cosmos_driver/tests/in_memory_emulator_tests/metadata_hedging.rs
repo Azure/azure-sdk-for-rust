@@ -315,7 +315,7 @@ async fn metadata_container_read_not_hedged_when_budget_exhausted() {
         &ctx,
         vec![Arc::clone(&rule)],
         HedgingOptions::builder()
-            .with_max_concurrent_metadata_hedges(0)
+            .with_max_concurrent_metadata_attempts(0)
             .build(),
     )
     .await;
@@ -347,7 +347,7 @@ async fn metadata_hedge_budget_slot_is_released_after_each_race() {
         &ctx,
         vec![Arc::clone(&rule)],
         HedgingOptions::builder()
-            .with_max_concurrent_metadata_hedges(1)
+            .with_max_concurrent_metadata_attempts(1)
             .build(),
     )
     .await;
