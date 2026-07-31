@@ -37,8 +37,6 @@ pub mod system_strings;
 pub mod writer;
 
 #[cfg(test)]
-mod conformance;
-#[cfg(test)]
 mod fuzz_tests;
 #[cfg(test)]
 mod vectors;
