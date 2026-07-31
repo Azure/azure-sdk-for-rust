@@ -1155,6 +1155,86 @@ async fn a_fast_terminal_outcome_does_not_wrap_the_buffered_counts() {
     assert_eq!(h.client.buffered_event_count("0"), 0);
 }
 
+// 29. A delivery handler can enqueue again without deadlocking the worker.
+//
+// The handler runs on the worker task, and the worker is the only thing that
+// returns capacity permits. While the worker held the permits of the batch it
+// was reporting, a handler that enqueued to the same partition waited for a
+// permit that only the worker could return, and the worker waited for the
+// handler. The event is already at a terminal outcome when the handler runs, so
+// the permit goes back first.
+#[tokio::test]
+async fn a_failure_handler_can_enqueue_again() {
+    use std::sync::{OnceLock, Weak};
+
+    // One permit for the partition, so the retry can only proceed if the
+    // failing event already gave its permit back.
+    const BUFFER: usize = 1;
+
+    let (mock, _started) = MockSendClient::with_max_message_size(&["0"], 200);
+
+    let slot: Arc<OnceLock<Weak<BufferedProducerClient>>> = Arc::new(OnceLock::new());
+    let retried = Arc::new(AtomicUsize::new(0));
+
+    let for_handler = slot.clone();
+    let counter = retried.clone();
+    let client = BufferedProducerClient::builder()
+        .with_max_wait_time(Duration::seconds(30))
+        .with_max_buffered_event_count_per_partition(BUFFER)
+        .with_on_send_failed(move |_context| {
+            let slot = for_handler.clone();
+            let counter = counter.clone();
+            async move {
+                // Retry once. A second retry would recurse without an end.
+                if counter.fetch_add(1, Ordering::AcqRel) > 0 {
+                    return;
+                }
+                let client = slot
+                    .get()
+                    .expect("the test sets the client before it enqueues")
+                    .upgrade()
+                    .expect("the client is alive while the handler runs");
+                client
+                    .enqueue_event("small", to_partition("0"))
+                    .await
+                    .expect("the retry must not be rejected");
+            }
+        })
+        .open_with_send_client(mock.clone() as Arc<dyn BufferedSendClient>)
+        .await
+        .expect("the client opened");
+
+    let client = Arc::new(client);
+    slot.set(Arc::downgrade(&client)).expect("set once");
+
+    // Too large for the link, so the worker fails it without a send. That is
+    // the path that calls the handler while it still holds the permit.
+    let oversized = "x".repeat(4096);
+    client
+        .enqueue_event(oversized, to_partition("0"))
+        .await
+        .unwrap();
+
+    // The deadlock shows up as a hang, so bound it.
+    tokio::time::timeout(std::time::Duration::from_secs(10), async {
+        while retried.load(Ordering::Acquire) == 0 {
+            tokio::task::yield_now().await;
+        }
+        client.flush().await
+    })
+    .await
+    .expect("the failure handler deadlocked with the worker")
+    .expect("the flush completed");
+
+    assert_eq!(
+        mock.total_events(),
+        1,
+        "the event that the handler enqueued must reach the service"
+    );
+
+    client.close().await.unwrap();
+}
+
 /// Live tests for the buffered producer.
 ///
 /// These tests need a real Event Hub. They live in the crate because
