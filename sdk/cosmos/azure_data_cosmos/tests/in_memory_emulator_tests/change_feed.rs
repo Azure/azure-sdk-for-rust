@@ -135,14 +135,13 @@ async fn latest_version_returns_current_documents() {
     ];
     insert_items(&container, &items).await;
 
-    let mut pages = container
-        .query_change_feed::<TestItem>(
-            FeedScope::partition(PARTITION_KEY),
-            ChangeFeedStartFrom::Beginning,
-            None,
-        )
-        .await
-        .unwrap();
+    let mut pages = Box::pin(container.query_change_feed::<TestItem>(
+        FeedScope::partition(PARTITION_KEY),
+        ChangeFeedStartFrom::Beginning,
+        None,
+    ))
+    .await
+    .unwrap();
 
     let page = pages
         .next()
@@ -173,14 +172,13 @@ async fn all_versions_and_deletes_returns_envelopes() {
     insert_items(&container, &items).await;
 
     let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
-    let mut pages = container
-        .query_change_feed::<TestItem>(
-            FeedScope::partition(PARTITION_KEY),
-            ChangeFeedStartFrom::Now,
-            Some(options),
-        )
-        .await
-        .unwrap();
+    let mut pages = Box::pin(container.query_change_feed::<TestItem>(
+        FeedScope::partition(PARTITION_KEY),
+        ChangeFeedStartFrom::Now,
+        Some(options),
+    ))
+    .await
+    .unwrap();
 
     let page = pages
         .next()
@@ -221,14 +219,13 @@ async fn all_versions_and_deletes_rejects_beginning() {
     let container = setup().await.unwrap();
 
     let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
-    let mut pages = container
-        .query_change_feed::<TestItem>(
-            FeedScope::partition(PARTITION_KEY),
-            ChangeFeedStartFrom::Beginning,
-            Some(options),
-        )
-        .await
-        .unwrap();
+    let mut pages = Box::pin(container.query_change_feed::<TestItem>(
+        FeedScope::partition(PARTITION_KEY),
+        ChangeFeedStartFrom::Beginning,
+        Some(options),
+    ))
+    .await
+    .unwrap();
 
     // A `Beginning` start sends no `If-None-Match`, which the emulator rejects
     // for a full-fidelity read with a 400 BadRequest on the first page poll.
@@ -255,14 +252,13 @@ async fn all_versions_and_deletes_rejects_point_in_time() {
     let container = setup().await.unwrap();
 
     let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
-    let mut pages = container
-        .query_change_feed::<TestItem>(
-            FeedScope::partition(PARTITION_KEY),
-            ChangeFeedStartFrom::PointInTime(OffsetDateTime::now_utc()),
-            Some(options),
-        )
-        .await
-        .unwrap();
+    let mut pages = Box::pin(container.query_change_feed::<TestItem>(
+        FeedScope::partition(PARTITION_KEY),
+        ChangeFeedStartFrom::PointInTime(OffsetDateTime::now_utc()),
+        Some(options),
+    ))
+    .await
+    .unwrap();
 
     // A `PointInTime` start sends `If-Modified-Since`, which the emulator
     // rejects for a full-fidelity read with a 400 BadRequest on the first poll.

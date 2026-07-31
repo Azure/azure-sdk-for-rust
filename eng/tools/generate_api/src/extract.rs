@@ -4,7 +4,8 @@
 use crate::{
     driver::PackageMetadata,
     model::{
-        ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiModel, ApiModule, InherentImplSortKey,
+        ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiMemberKind, ApiModel, ApiModule,
+        ApiNavigationPath, ApiPathReference, InherentImplSortKey,
     },
 };
 use rustdoc_types::{
@@ -20,6 +21,47 @@ pub(crate) trait WorkspaceResolver {
     fn is_workspace_crate(&self, crate_name: &str) -> bool;
     fn load_workspace_model(&mut self, crate_name: &str) -> Result<Option<Arc<ApiModel>>, String>;
     fn load_workspace_crate(&mut self, crate_name: &str) -> Result<Option<Arc<Crate>>, String>;
+}
+
+fn find_item_entry<'a>(
+    module: &'a ApiModule,
+    segments: &[&str],
+) -> Option<(&'a ApiModule, &'a ApiItem)> {
+    let segments = strip_duplicate_leading_module_segments(module, segments);
+    let (head, tail) = segments.split_first()?;
+    if tail.is_empty() {
+        return module
+            .items
+            .iter()
+            .find(|candidate| candidate.name == *head)
+            .map(|item| (module, item));
+    }
+
+    if let Some(child) = module
+        .modules
+        .iter()
+        .find(|candidate| candidate.local_name() == *head)
+    {
+        if let Some(found) = find_item_entry(child, tail) {
+            return Some(found);
+        }
+    }
+
+    if tail.is_empty() {
+        None
+    } else {
+        find_item_entry(module, tail)
+    }
+}
+
+fn strip_duplicate_leading_module_segments<'a>(
+    module: &ApiModule,
+    mut segments: &'a [&'a str],
+) -> &'a [&'a str] {
+    while segments.len() > 1 && segments[0] == module.local_name() {
+        segments = &segments[1..];
+    }
+    segments
 }
 
 pub(crate) fn extract_model(
@@ -53,7 +95,7 @@ fn extract_module(
     let mut result = ApiModule {
         path,
         doc_comments: extract_doc_comments(item),
-        attributes: extract_attributes(item),
+        attributes: extract_module_attributes(item, module.is_crate),
         items: Vec::new(),
         modules: Vec::new(),
     };
@@ -75,12 +117,11 @@ fn extract_module(
                 let module = extract_module(krate, child, child_path, resolver)?;
                 insert_module(&mut result.modules, &mut seen_modules, module);
             }
-            ItemEnum::Impl(impl_block) if include_trait_impl_block(impl_block) => {
-                if let Some(extracted) = extract_trait_impl(krate, child, impl_block) {
+            ItemEnum::Impl(impl_block) => {
+                if let Some(extracted) = extract_unassociated_trait_impl(krate, child, impl_block) {
                     insert_item(&mut result, &mut seen_declarations, extracted);
                 }
             }
-            ItemEnum::Impl(_) => {}
             ItemEnum::Use(use_item) if should_include_item(child) => {
                 if let Some(expanded) =
                     expand_reexport(krate, child, use_item, &result.path, resolver)?
@@ -102,6 +143,9 @@ fn extract_module(
                 for inherent_impl in inherent_impls_for_item(krate, child) {
                     insert_item(&mut result, &mut seen_declarations, inherent_impl);
                 }
+                for trait_impl in trait_impls_for_item(krate, child) {
+                    insert_item(&mut result, &mut seen_declarations, trait_impl);
+                }
             }
             _ => {}
         }
@@ -114,6 +158,33 @@ fn extract_module(
 struct ExpandedUse {
     items: Vec<ApiItem>,
     modules: Vec<ApiModule>,
+}
+
+fn apply_import_navigation_path(expanded: &mut ExpandedUse, path: &str) {
+    for item in expanded
+        .items
+        .iter_mut()
+        .filter(|item| item.owner_name.is_none())
+    {
+        let import_path = if last_path_segment(path) == item.name {
+            path.to_string()
+        } else {
+            format!("{path}::{}", item.name)
+        };
+
+        for path in reexport_navigation_paths(&import_path) {
+            if !item
+                .navigation_paths
+                .iter()
+                .any(|candidate| candidate.path == path)
+            {
+                item.navigation_paths.push(ApiNavigationPath {
+                    path,
+                    source_id: None,
+                });
+            }
+        }
+    }
 }
 
 fn expand_reexport(
@@ -173,11 +244,10 @@ fn expand_reexport(
     let Some(model) = resolver.load_workspace_model(crate_name)? else {
         return Ok(None);
     };
-    let target_segments = summary
-        .path
-        .iter()
+    let normalized_target_path = normalize_use_path(&summary.path);
+    let target_segments = normalized_target_path
+        .split("::")
         .skip(1)
-        .map(String::as_str)
         .collect::<Vec<&str>>();
     Ok(expand_model_reexport(
         &model,
@@ -235,6 +305,7 @@ fn expand_local_reexport(
         _ => return Ok(None),
     };
     apply_import_attributes(&mut expanded, import_attributes);
+    apply_import_navigation_path(&mut expanded, &import.source);
     Ok(Some(expanded))
 }
 
@@ -268,6 +339,7 @@ fn expand_model_reexport(
         expand_model_item_reexport(&model.root_module, target_segments)?
     };
     apply_import_attributes(&mut expanded, import_attributes);
+    apply_import_navigation_path(&mut expanded, &import.source);
     Some(expanded)
 }
 
@@ -292,18 +364,40 @@ fn trait_impls_for_item(krate: &Crate, target: &Item) -> Vec<ApiItem> {
     let Some(impl_ids) = item_impl_ids(target) else {
         return Vec::new();
     };
+    let owner_kind = item_kind(target);
 
     impl_ids
         .iter()
         .filter_map(|impl_id| krate.index.get(impl_id))
         .filter_map(|impl_item| match &impl_item.inner {
             ItemEnum::Impl(impl_block) if include_trait_impl_block(impl_block) => {
-                extract_trait_impl(krate, impl_item, impl_block)
+                extract_trait_impl(krate, impl_item, impl_block, Some(target), Some(owner_kind))
             }
             _ => None,
         })
         .map(rebase_trait_impl_item)
         .collect()
+}
+
+fn extract_unassociated_trait_impl(
+    krate: &Crate,
+    item: &Item,
+    impl_block: &Impl,
+) -> Option<ApiItem> {
+    if !include_trait_impl_block(impl_block) {
+        return None;
+    }
+
+    let owner = local_impl_owner(krate, &impl_block.for_);
+    let owner_kind = owner.map(item_kind);
+    extract_trait_impl(krate, item, impl_block, owner, owner_kind).map(rebase_trait_impl_item)
+}
+
+fn local_impl_owner<'a>(krate: &'a Crate, type_: &Type) -> Option<&'a Item> {
+    match type_ {
+        Type::ResolvedPath(path) => krate.index.get(&path.id),
+        _ => None,
+    }
 }
 
 fn rebase_trait_impl_item(mut item: ApiItem) -> ApiItem {
@@ -317,21 +411,27 @@ fn rebase_trait_impl_item(mut item: ApiItem) -> ApiItem {
 }
 
 fn expand_model_item_reexport(module: &ApiModule, target_segments: &[&str]) -> Option<ExpandedUse> {
-    let target = find_item(module, target_segments)?.clone();
+    let (containing_module, target) = find_item_entry(module, target_segments)?;
+    let target = target.clone();
     let local_name = target_segments.last().copied()?;
-    let items = module
-        .items
-        .iter()
-        .filter(|candidate| {
-            candidate.name == local_name
-                || (candidate.kind == ApiItemKind::TraitImpl
-                    && candidate
-                        .declaration
-                        .contains(&format!(" for {local_name}")))
-        })
-        .cloned()
-        .map(rebase_trait_impl_item)
-        .collect::<Vec<_>>();
+    let target_source_id = target.source_id.clone();
+    let items =
+        containing_module
+            .items
+            .iter()
+            .filter(|candidate| {
+                target_source_id.as_ref().is_some_and(|source_id| {
+                    candidate.source_id.as_deref() == Some(source_id.as_str())
+                }) || target_source_id.as_ref().is_some_and(|source_id| {
+                    candidate.owner_source_id.as_deref() == Some(source_id.as_str())
+                }) || (candidate.owner_name.is_none()
+                    && candidate.kind == target.kind
+                    && candidate.name == local_name)
+                    || candidate.owner_name.as_deref() == Some(local_name)
+            })
+            .cloned()
+            .map(rebase_trait_impl_item)
+            .collect::<Vec<_>>();
 
     if items.is_empty() {
         Some(ExpandedUse {
@@ -504,28 +604,6 @@ fn find_module<'a>(module: &'a ApiModule, segments: &[&str]) -> Option<&'a ApiMo
     }
 }
 
-fn find_item<'a>(module: &'a ApiModule, segments: &[&str]) -> Option<&'a ApiItem> {
-    let (head, tail) = segments.split_first()?;
-    if tail.is_empty() {
-        module
-            .items
-            .iter()
-            .find(|candidate| candidate.name == *head)
-    } else {
-        if let Some(child) = module
-            .modules
-            .iter()
-            .find(|candidate| candidate.local_name() == *head)
-        {
-            if let Some(found) = find_item(child, tail) {
-                return Some(found);
-            }
-        }
-
-        find_item(module, tail)
-    }
-}
-
 fn rebase_module(mut module: ApiModule, new_path: String) -> ApiModule {
     let parent_path = new_path.clone();
     module.path = new_path;
@@ -649,6 +727,9 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
     if let Some(attribute) = synthesize_derive_attribute(krate, item) {
         prepend_attributes(&mut attributes, &[attribute]);
     }
+    if let Some(attribute) = synthesize_pin_project_attribute(krate, item, &attributes) {
+        prepend_attributes(&mut attributes, &[attribute]);
+    }
     if matches!(item.inner, ItemEnum::Trait(_)) && trait_uses_async_trait(krate, item) {
         prepend_attributes(
             &mut attributes,
@@ -659,26 +740,785 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
     }
 
     ApiItem {
-        name: item
-            .name
-            .clone()
-            .unwrap_or_else(|| fallback_item_name(item).to_string()),
+        name: item_name(krate, item),
         kind: item_kind(item),
-        source_id: Some(item.id.0.to_string()),
+        source_id: Some(qualified_source_id(krate, item.id)),
+        navigation_paths: item_navigation_paths(krate, item),
+        owner_name: None,
         owner_kind: None,
+        owner_source_id: None,
         inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
         attributes,
         declaration: render_item_declaration(krate, item),
+        declaration_path_references: collect_item_declaration_path_references(krate, item),
         members: extract_members(krate, item),
+    }
+}
+
+fn item_name(krate: &Crate, item: &Item) -> String {
+    match &item.inner {
+        ItemEnum::Use(use_item) => {
+            if !use_item.name.is_empty() {
+                return use_item.name.clone();
+            }
+
+            let source = use_item
+                .id
+                .as_ref()
+                .and_then(|id| krate.paths.get(id))
+                .map(|summary| normalize_use_path(&summary.path))
+                .unwrap_or_else(|| use_item.source.clone());
+            last_path_segment(&source).to_string()
+        }
+        _ => item
+            .name
+            .clone()
+            .unwrap_or_else(|| fallback_item_name(item).to_string()),
     }
 }
 
 fn extract_members(krate: &Crate, item: &Item) -> Vec<ApiMember> {
     match &item.inner {
+        ItemEnum::Macro(source) => extract_macro_members(source),
+        ItemEnum::ProcMacro(proc_macro) => extract_proc_macro_members(proc_macro),
+        ItemEnum::Struct(struct_item) => extract_struct_members(krate, struct_item),
+        ItemEnum::Enum(enum_item) => extract_enum_members(krate, enum_item),
         ItemEnum::Trait(trait_item) => extract_trait_members(krate, trait_item),
+        ItemEnum::Union(union_item) => extract_union_members(krate, union_item),
         _ => Vec::new(),
     }
+}
+
+fn item_navigation_paths(krate: &Crate, item: &Item) -> Vec<ApiNavigationPath> {
+    match &item.inner {
+        ItemEnum::Use(use_item) => {
+            let source = use_item
+                .id
+                .as_ref()
+                .and_then(|id| krate.paths.get(id))
+                .map(|summary| normalize_use_path(&summary.path))
+                .unwrap_or_else(|| use_item.source.clone());
+            reexport_navigation_paths(&source)
+                .into_iter()
+                .map(|path| ApiNavigationPath {
+                    path,
+                    source_id: use_item
+                        .id
+                        .as_ref()
+                        .map(|id| qualified_source_id(krate, *id)),
+                })
+                .collect()
+        }
+        _ => Vec::new(),
+    }
+}
+
+fn qualified_source_id(krate: &Crate, id: Id) -> String {
+    krate
+        .paths
+        .get(&id)
+        .and_then(|summary| summary.path.first())
+        .map(|crate_name| format!("{crate_name}::{}", id.0))
+        .unwrap_or_else(|| id.0.to_string())
+}
+
+fn reexport_navigation_paths(path: &str) -> Vec<String> {
+    let mut paths = vec![path.to_string()];
+    if let Some(stripped) = path.strip_prefix("crate::") {
+        paths.push(stripped.to_string());
+    }
+    paths
+}
+
+fn collect_item_declaration_path_references(krate: &Crate, item: &Item) -> Vec<ApiPathReference> {
+    let mut references = Vec::new();
+    match &item.inner {
+        ItemEnum::Function(function) => {
+            collect_function_declaration_path_references(krate, function, &mut references);
+        }
+        ItemEnum::Struct(struct_item) => {
+            collect_generic_params_path_references(krate, &struct_item.generics, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &struct_item.generics.where_predicates,
+                &mut references,
+            );
+            if let StructKind::Tuple(fields) = &struct_item.kind {
+                for field_id in fields.iter().flatten() {
+                    let Some(field_item) = krate.index.get(field_id) else {
+                        continue;
+                    };
+                    let ItemEnum::StructField(type_) = &field_item.inner else {
+                        continue;
+                    };
+                    collect_type_path_references(krate, type_, &mut references);
+                }
+            }
+        }
+        ItemEnum::Enum(enum_item) => {
+            collect_generic_params_path_references(krate, &enum_item.generics, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &enum_item.generics.where_predicates,
+                &mut references,
+            );
+        }
+        ItemEnum::Trait(trait_item) => {
+            collect_generic_params_path_references(krate, &trait_item.generics, &mut references);
+            collect_generic_bounds_path_references(krate, &trait_item.bounds, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &trait_item.generics.where_predicates,
+                &mut references,
+            );
+        }
+        ItemEnum::TraitAlias(trait_alias) => {
+            collect_generic_params_path_references(krate, &trait_alias.generics, &mut references);
+            collect_generic_bounds_path_references(krate, &trait_alias.params, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &trait_alias.generics.where_predicates,
+                &mut references,
+            );
+        }
+        ItemEnum::Union(union_item) => {
+            collect_generic_params_path_references(krate, &union_item.generics, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &union_item.generics.where_predicates,
+                &mut references,
+            );
+        }
+        ItemEnum::TypeAlias(type_alias) => {
+            collect_generic_params_path_references(krate, &type_alias.generics, &mut references);
+            collect_type_path_references(krate, &type_alias.type_, &mut references);
+            collect_where_predicates_path_references(
+                krate,
+                &type_alias.generics.where_predicates,
+                &mut references,
+            );
+        }
+        ItemEnum::Constant { type_, .. } => {
+            collect_type_path_references(krate, type_, &mut references);
+        }
+        ItemEnum::Static(static_item) => {
+            collect_type_path_references(krate, &static_item.type_, &mut references);
+        }
+        _ => {}
+    }
+    references
+}
+
+fn collect_function_declaration_path_references(
+    krate: &Crate,
+    function: &Function,
+    references: &mut Vec<ApiPathReference>,
+) {
+    let synthetic_lifetimes = synthetic_async_trait_lifetimes(function);
+    collect_generic_param_path_references_with_elision(
+        krate,
+        &function.generics,
+        &synthetic_lifetimes,
+        references,
+    );
+    for (_, argument_type) in &function.sig.inputs {
+        collect_type_path_references_with_elision(
+            krate,
+            argument_type,
+            &synthetic_lifetimes,
+            references,
+        );
+    }
+    if let Some(output) = &function.sig.output {
+        collect_type_path_references_with_elision(krate, output, &synthetic_lifetimes, references);
+    }
+    collect_where_predicates_path_references_with_elision(
+        krate,
+        &function.generics.where_predicates,
+        &synthetic_lifetimes,
+        references,
+    );
+}
+
+fn collect_generic_params_path_references(
+    krate: &Crate,
+    generics: &rustdoc_types::Generics,
+    references: &mut Vec<ApiPathReference>,
+) {
+    collect_generic_param_path_references_with_elision(
+        krate,
+        generics,
+        &HashSet::new(),
+        references,
+    );
+}
+
+fn collect_generic_param_path_references_with_elision(
+    krate: &Crate,
+    generics: &rustdoc_types::Generics,
+    synthetic_lifetimes: &HashSet<String>,
+    references: &mut Vec<ApiPathReference>,
+) {
+    for parameter in &generics.params {
+        match &parameter.kind {
+            GenericParamDefKind::Type {
+                bounds, default, ..
+            } => {
+                collect_generic_bounds_path_references_with_elision(
+                    krate,
+                    bounds,
+                    synthetic_lifetimes,
+                    references,
+                );
+                if let Some(default) = default {
+                    collect_type_path_references_with_elision(
+                        krate,
+                        default,
+                        synthetic_lifetimes,
+                        references,
+                    );
+                }
+            }
+            GenericParamDefKind::Const { type_, .. } => {
+                collect_type_path_references_with_elision(
+                    krate,
+                    type_,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
+            GenericParamDefKind::Lifetime { .. } => {}
+        }
+    }
+}
+
+fn collect_where_predicates_path_references(
+    krate: &Crate,
+    predicates: &[WherePredicate],
+    references: &mut Vec<ApiPathReference>,
+) {
+    collect_where_predicates_path_references_with_elision(
+        krate,
+        predicates,
+        &HashSet::new(),
+        references,
+    );
+}
+
+fn collect_generic_bounds_path_references(
+    krate: &Crate,
+    bounds: &[GenericBound],
+    references: &mut Vec<ApiPathReference>,
+) {
+    collect_generic_bounds_path_references_with_elision(krate, bounds, &HashSet::new(), references);
+}
+
+fn collect_generic_bounds_path_references_with_elision(
+    krate: &Crate,
+    bounds: &[GenericBound],
+    synthetic_lifetimes: &HashSet<String>,
+    references: &mut Vec<ApiPathReference>,
+) {
+    for bound in bounds {
+        match bound {
+            GenericBound::TraitBound {
+                trait_,
+                generic_params,
+                ..
+            } => {
+                for parameter in generic_params {
+                    if synthetic_lifetimes.contains(&parameter.name) {
+                        continue;
+                    }
+                    match &parameter.kind {
+                        GenericParamDefKind::Type {
+                            bounds, default, ..
+                        } => {
+                            collect_generic_bounds_path_references_with_elision(
+                                krate,
+                                bounds,
+                                synthetic_lifetimes,
+                                references,
+                            );
+                            if let Some(default) = default {
+                                collect_type_path_references_with_elision(
+                                    krate,
+                                    default,
+                                    synthetic_lifetimes,
+                                    references,
+                                );
+                            }
+                        }
+                        GenericParamDefKind::Const { type_, .. } => {
+                            collect_type_path_references_with_elision(
+                                krate,
+                                type_,
+                                synthetic_lifetimes,
+                                references,
+                            );
+                        }
+                        GenericParamDefKind::Lifetime { .. } => {}
+                    }
+                }
+                collect_path_reference(krate, trait_, references);
+            }
+            GenericBound::Use(_) => {}
+            GenericBound::Outlives(_) => {}
+        }
+    }
+}
+
+fn collect_where_predicates_path_references_with_elision(
+    krate: &Crate,
+    predicates: &[WherePredicate],
+    synthetic_lifetimes: &HashSet<String>,
+    references: &mut Vec<ApiPathReference>,
+) {
+    for predicate in predicates {
+        match predicate {
+            WherePredicate::BoundPredicate { type_, bounds, .. } => {
+                collect_type_path_references_with_elision(
+                    krate,
+                    type_,
+                    synthetic_lifetimes,
+                    references,
+                );
+                collect_generic_bounds_path_references_with_elision(
+                    krate,
+                    bounds,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
+            WherePredicate::LifetimePredicate { .. } => {}
+            WherePredicate::EqPredicate { lhs, rhs } => {
+                collect_type_path_references_with_elision(
+                    krate,
+                    lhs,
+                    synthetic_lifetimes,
+                    references,
+                );
+                collect_term_path_references_with_elision(
+                    krate,
+                    rhs,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
+        }
+    }
+}
+
+fn collect_term_path_references_with_elision(
+    krate: &Crate,
+    term: &Term,
+    synthetic_lifetimes: &HashSet<String>,
+    references: &mut Vec<ApiPathReference>,
+) {
+    if let Term::Type(type_) = term {
+        collect_type_path_references_with_elision(krate, type_, synthetic_lifetimes, references);
+    }
+}
+
+fn collect_type_path_references(
+    krate: &Crate,
+    type_: &Type,
+    references: &mut Vec<ApiPathReference>,
+) {
+    collect_type_path_references_with_elision(krate, type_, &HashSet::new(), references);
+}
+
+fn collect_type_path_references_with_elision(
+    krate: &Crate,
+    type_: &Type,
+    synthetic_lifetimes: &HashSet<String>,
+    references: &mut Vec<ApiPathReference>,
+) {
+    match type_ {
+        Type::ResolvedPath(path) => {
+            collect_path_reference(krate, path, references);
+            if let Some(args) = &path.args {
+                collect_generic_args_path_references_with_elision(
+                    krate,
+                    args,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
+        }
+        Type::DynTrait(dyn_trait) => {
+            for trait_ in &dyn_trait.traits {
+                for parameter in &trait_.generic_params {
+                    if synthetic_lifetimes.contains(&parameter.name) {
+                        continue;
+                    }
+                    match &parameter.kind {
+                        GenericParamDefKind::Type {
+                            bounds, default, ..
+                        } => {
+                            collect_generic_bounds_path_references_with_elision(
+                                krate,
+                                bounds,
+                                synthetic_lifetimes,
+                                references,
+                            );
+                            if let Some(default) = default {
+                                collect_type_path_references_with_elision(
+                                    krate,
+                                    default,
+                                    synthetic_lifetimes,
+                                    references,
+                                );
+                            }
+                        }
+                        GenericParamDefKind::Const { type_, .. } => {
+                            collect_type_path_references_with_elision(
+                                krate,
+                                type_,
+                                synthetic_lifetimes,
+                                references,
+                            );
+                        }
+                        GenericParamDefKind::Lifetime { .. } => {}
+                    }
+                }
+                collect_path_reference(krate, &trait_.trait_, references);
+                if let Some(args) = &trait_.trait_.args {
+                    collect_generic_args_path_references_with_elision(
+                        krate,
+                        args,
+                        synthetic_lifetimes,
+                        references,
+                    );
+                }
+            }
+        }
+        Type::FunctionPointer(pointer) => {
+            for parameter in &pointer.generic_params {
+                if synthetic_lifetimes.contains(&parameter.name) {
+                    continue;
+                }
+                match &parameter.kind {
+                    GenericParamDefKind::Type {
+                        bounds, default, ..
+                    } => {
+                        collect_generic_bounds_path_references_with_elision(
+                            krate,
+                            bounds,
+                            synthetic_lifetimes,
+                            references,
+                        );
+                        if let Some(default) = default {
+                            collect_type_path_references_with_elision(
+                                krate,
+                                default,
+                                synthetic_lifetimes,
+                                references,
+                            );
+                        }
+                    }
+                    GenericParamDefKind::Const { type_, .. } => {
+                        collect_type_path_references_with_elision(
+                            krate,
+                            type_,
+                            synthetic_lifetimes,
+                            references,
+                        );
+                    }
+                    GenericParamDefKind::Lifetime { .. } => {}
+                }
+            }
+            for (_, input) in &pointer.sig.inputs {
+                collect_type_path_references_with_elision(
+                    krate,
+                    input,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
+            if let Some(output) = &pointer.sig.output {
+                collect_type_path_references_with_elision(
+                    krate,
+                    output,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
+        }
+        Type::Tuple(types) => {
+            for type_ in types {
+                collect_type_path_references_with_elision(
+                    krate,
+                    type_,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
+        }
+        Type::Slice(type_)
+        | Type::Pat { type_, .. }
+        | Type::RawPointer { type_, .. }
+        | Type::BorrowedRef { type_, .. } => {
+            collect_type_path_references_with_elision(
+                krate,
+                type_,
+                synthetic_lifetimes,
+                references,
+            );
+        }
+        Type::Array { type_, .. } => {
+            collect_type_path_references_with_elision(
+                krate,
+                type_,
+                synthetic_lifetimes,
+                references,
+            );
+        }
+        Type::ImplTrait(bounds) => {
+            collect_generic_bounds_path_references_with_elision(
+                krate,
+                bounds,
+                synthetic_lifetimes,
+                references,
+            );
+        }
+        Type::QualifiedPath {
+            args,
+            self_type,
+            trait_,
+            ..
+        } => {
+            collect_type_path_references_with_elision(
+                krate,
+                self_type,
+                synthetic_lifetimes,
+                references,
+            );
+            if let Some(trait_) = trait_ {
+                collect_path_reference(krate, trait_, references);
+                if let Some(args) = &trait_.args {
+                    collect_generic_args_path_references_with_elision(
+                        krate,
+                        args,
+                        synthetic_lifetimes,
+                        references,
+                    );
+                }
+            }
+            collect_generic_args_path_references_with_elision(
+                krate,
+                args,
+                synthetic_lifetimes,
+                references,
+            );
+        }
+        Type::Generic(_) | Type::Primitive(_) | Type::Infer => {}
+    }
+}
+
+fn collect_generic_args_path_references_with_elision(
+    krate: &Crate,
+    args: &GenericArgs,
+    synthetic_lifetimes: &HashSet<String>,
+    references: &mut Vec<ApiPathReference>,
+) {
+    match args {
+        GenericArgs::AngleBracketed { args, constraints } => {
+            for argument in args {
+                match argument {
+                    GenericArg::Type(type_) => {
+                        collect_type_path_references_with_elision(
+                            krate,
+                            type_,
+                            synthetic_lifetimes,
+                            references,
+                        );
+                    }
+                    GenericArg::Const(_) | GenericArg::Lifetime(_) | GenericArg::Infer => {}
+                }
+            }
+            for constraint in constraints {
+                collect_generic_args_path_references_with_elision(
+                    krate,
+                    &constraint.args,
+                    synthetic_lifetimes,
+                    references,
+                );
+                match &constraint.binding {
+                    rustdoc_types::AssocItemConstraintKind::Equality(term) => {
+                        collect_term_path_references_with_elision(
+                            krate,
+                            term,
+                            synthetic_lifetimes,
+                            references,
+                        );
+                    }
+                    rustdoc_types::AssocItemConstraintKind::Constraint(bounds) => {
+                        collect_generic_bounds_path_references_with_elision(
+                            krate,
+                            bounds,
+                            synthetic_lifetimes,
+                            references,
+                        );
+                    }
+                }
+            }
+        }
+        GenericArgs::Parenthesized { inputs, output } => {
+            for input in inputs {
+                collect_type_path_references_with_elision(
+                    krate,
+                    input,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
+            if let Some(output) = output {
+                collect_type_path_references_with_elision(
+                    krate,
+                    output,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
+        }
+        GenericArgs::ReturnTypeNotation => {}
+    }
+}
+
+fn collect_path_reference(krate: &Crate, path: &Path, references: &mut Vec<ApiPathReference>) {
+    references.push(ApiPathReference {
+        path: path.path.clone(),
+        canonical_path: krate
+            .paths
+            .get(&path.id)
+            .map(|summary| normalize_use_path(&summary.path)),
+        target_source_id: Some(qualified_source_id(krate, path.id)),
+    });
+}
+
+fn collect_trait_impl_declaration_path_references(
+    krate: &Crate,
+    impl_block: &Impl,
+) -> Vec<ApiPathReference> {
+    let mut references = Vec::new();
+    collect_generic_params_path_references(krate, &impl_block.generics, &mut references);
+    if let Some(trait_path) = &impl_block.trait_ {
+        collect_path_reference(krate, trait_path, &mut references);
+        if let Some(args) = &trait_path.args {
+            collect_generic_args_path_references_with_elision(
+                krate,
+                args,
+                &HashSet::new(),
+                &mut references,
+            );
+        }
+    }
+    collect_type_path_references(krate, &impl_block.for_, &mut references);
+    collect_where_predicates_path_references(
+        krate,
+        &impl_block.generics.where_predicates,
+        &mut references,
+    );
+    references
+}
+
+fn collect_inherent_impl_declaration_path_references(
+    krate: &Crate,
+    impl_block: &Impl,
+) -> Vec<ApiPathReference> {
+    let mut references = Vec::new();
+    collect_generic_params_path_references(krate, &impl_block.generics, &mut references);
+    collect_type_path_references(krate, &impl_block.for_, &mut references);
+    collect_where_predicates_path_references(
+        krate,
+        &impl_block.generics.where_predicates,
+        &mut references,
+    );
+    references
+}
+
+fn collect_variant_declaration_path_references(
+    krate: &Crate,
+    variant_item: &Item,
+) -> Vec<ApiPathReference> {
+    let mut references = Vec::new();
+    let ItemEnum::Variant(Variant { kind, .. }) = &variant_item.inner else {
+        return references;
+    };
+    match kind {
+        VariantKind::Plain => {}
+        VariantKind::Tuple(fields) => {
+            for field_id in fields.iter().flatten() {
+                let Some(field_item) = krate.index.get(field_id) else {
+                    continue;
+                };
+                let ItemEnum::StructField(type_) = &field_item.inner else {
+                    continue;
+                };
+                collect_type_path_references(krate, type_, &mut references);
+            }
+        }
+        VariantKind::Struct { fields, .. } => {
+            for field_id in fields {
+                let Some(field_item) = krate.index.get(field_id) else {
+                    continue;
+                };
+                let ItemEnum::StructField(type_) = &field_item.inner else {
+                    continue;
+                };
+                collect_type_path_references(krate, type_, &mut references);
+            }
+        }
+    }
+    references
+}
+
+fn collect_field_declaration_path_references(
+    krate: &Crate,
+    field_item: &Item,
+) -> Vec<ApiPathReference> {
+    let mut references = Vec::new();
+    let ItemEnum::StructField(type_) = &field_item.inner else {
+        return references;
+    };
+    collect_type_path_references(krate, type_, &mut references);
+    references
+}
+
+fn collect_associated_member_declaration_path_references(
+    krate: &Crate,
+    item: &Item,
+) -> Vec<ApiPathReference> {
+    let mut references = Vec::new();
+    match &item.inner {
+        ItemEnum::Function(function) => {
+            collect_function_declaration_path_references(krate, function, &mut references);
+        }
+        ItemEnum::AssocConst { type_, .. } => {
+            collect_type_path_references(krate, type_, &mut references);
+        }
+        ItemEnum::AssocType {
+            generics,
+            bounds,
+            type_,
+            ..
+        } => {
+            collect_generic_params_path_references(krate, generics, &mut references);
+            collect_generic_bounds_path_references(krate, bounds, &mut references);
+            if let Some(type_) = type_ {
+                collect_type_path_references(krate, type_, &mut references);
+            }
+            collect_where_predicates_path_references(
+                krate,
+                &generics.where_predicates,
+                &mut references,
+            );
+        }
+        _ => {}
+    }
+    references
 }
 
 fn synthesize_derive_attribute(krate: &Crate, item: &Item) -> Option<ApiAttribute> {
@@ -718,6 +1558,79 @@ fn synthesize_derive_attribute(krate: &Crate, item: &Item) -> Option<ApiAttribut
     }
 }
 
+fn synthesize_pin_project_attribute(
+    krate: &Crate,
+    item: &Item,
+    existing_attributes: &[ApiAttribute],
+) -> Option<ApiAttribute> {
+    if existing_attributes
+        .iter()
+        .any(|attribute| attribute.text.starts_with("#[pin_project"))
+    {
+        return None;
+    }
+
+    match &item.inner {
+        ItemEnum::Struct(struct_item) if struct_has_pin_fields(krate, struct_item) => {
+            Some(ApiAttribute {
+                text: "#[pin_project]".to_string(),
+            })
+        }
+        ItemEnum::Enum(enum_item) if enum_has_pin_fields(krate, enum_item) => Some(ApiAttribute {
+            text: "#[pin_project]".to_string(),
+        }),
+        _ => None,
+    }
+}
+
+fn struct_has_pin_fields(krate: &Crate, struct_item: &rustdoc_types::Struct) -> bool {
+    match &struct_item.kind {
+        StructKind::Unit => false,
+        StructKind::Tuple(fields) => fields
+            .iter()
+            .filter_map(|field_id| field_id.as_ref())
+            .filter_map(|field_id| krate.index.get(field_id))
+            .any(field_has_pin_attribute),
+        StructKind::Plain { fields, .. } => fields
+            .iter()
+            .filter_map(|field_id| krate.index.get(field_id))
+            .any(field_has_pin_attribute),
+    }
+}
+
+fn enum_has_pin_fields(krate: &Crate, enum_item: &rustdoc_types::Enum) -> bool {
+    enum_item
+        .variants
+        .iter()
+        .filter_map(|variant_id| krate.index.get(variant_id))
+        .any(|variant_item| variant_has_pin_fields(krate, variant_item))
+}
+
+fn variant_has_pin_fields(krate: &Crate, variant_item: &Item) -> bool {
+    let ItemEnum::Variant(Variant { kind, .. }) = &variant_item.inner else {
+        return false;
+    };
+
+    match kind {
+        VariantKind::Plain => false,
+        VariantKind::Tuple(fields) => fields
+            .iter()
+            .filter_map(|field_id| field_id.as_ref())
+            .filter_map(|field_id| krate.index.get(field_id))
+            .any(field_has_pin_attribute),
+        VariantKind::Struct { fields, .. } => fields
+            .iter()
+            .filter_map(|field_id| krate.index.get(field_id))
+            .any(field_has_pin_attribute),
+    }
+}
+
+fn field_has_pin_attribute(field_item: &Item) -> bool {
+    extract_attributes(field_item)
+        .iter()
+        .any(|attribute| attribute.text == "#[pin]")
+}
+
 fn has_automatically_derived(item: &Item) -> bool {
     item.attrs
         .iter()
@@ -747,7 +1660,13 @@ fn known_derive_trait_name(path: &Path) -> Option<&'static str> {
     }
 }
 
-fn extract_trait_impl(krate: &Crate, item: &Item, impl_block: &Impl) -> Option<ApiItem> {
+fn extract_trait_impl(
+    krate: &Crate,
+    item: &Item,
+    impl_block: &Impl,
+    owner: Option<&Item>,
+    owner_kind: Option<ApiItemKind>,
+) -> Option<ApiItem> {
     if has_automatically_derived(item) {
         return None;
     }
@@ -759,12 +1678,23 @@ fn extract_trait_impl(krate: &Crate, item: &Item, impl_block: &Impl) -> Option<A
     Some(ApiItem {
         name: self_type,
         kind: ApiItemKind::TraitImpl,
-        source_id: Some(item.id.0.to_string()),
-        owner_kind: None,
+        source_id: Some(qualified_source_id(krate, item.id)),
+        navigation_paths: Vec::new(),
+        owner_name: owner.map(|owner| {
+            owner
+                .name
+                .clone()
+                .unwrap_or_else(|| fallback_item_name(owner).to_string())
+        }),
+        owner_kind,
+        owner_source_id: owner.map(|owner| qualified_source_id(krate, owner.id)),
         inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
         attributes: extract_attributes(item),
         declaration,
+        declaration_path_references: collect_trait_impl_declaration_path_references(
+            krate, impl_block,
+        ),
         members: extract_impl_items(krate, &impl_block.items),
     })
 }
@@ -806,12 +1736,23 @@ fn extract_inherent_impl(
             .clone()
             .unwrap_or_else(|| fallback_item_name(target).to_string()),
         kind: ApiItemKind::InherentImpl,
-        source_id: Some(item.id.0.to_string()),
+        source_id: Some(qualified_source_id(krate, item.id)),
+        navigation_paths: Vec::new(),
+        owner_name: Some(
+            target
+                .name
+                .clone()
+                .unwrap_or_else(|| fallback_item_name(target).to_string()),
+        ),
         owner_kind: Some(owner_kind),
+        owner_source_id: Some(qualified_source_id(krate, target.id)),
         inherent_impl_sort_key: Some(inherent_impl_sort_key(&impl_block.for_)),
         doc_comments: extract_doc_comments(item),
         attributes: extract_attributes(item),
         declaration: render_inherent_impl_declaration(impl_block, &self_type),
+        declaration_path_references: collect_inherent_impl_declaration_path_references(
+            krate, impl_block,
+        ),
         members,
     })
 }
@@ -850,7 +1791,7 @@ fn extract_impl_items(krate: &Crate, item_ids: &[Id]) -> Vec<ApiMember> {
         .iter()
         .filter_map(|item_id| krate.index.get(item_id))
         .filter(|item| is_visible(item))
-        .filter_map(extract_associated_member)
+        .filter_map(|item| extract_associated_member(krate, item))
         .collect()
 }
 
@@ -859,23 +1800,117 @@ fn extract_trait_members(krate: &Crate, trait_item: &Trait) -> Vec<ApiMember> {
         .items
         .iter()
         .filter_map(|item_id| krate.index.get(item_id))
-        .filter_map(extract_associated_member)
+        .filter_map(|item| extract_associated_member(krate, item))
         .collect()
 }
 
-fn api_member(item: &Item, declaration: String) -> ApiMember {
+fn extract_macro_members(source: &str) -> Vec<ApiMember> {
+    parse_macro_definition(source)
+        .map(|(_, members)| members)
+        .unwrap_or_default()
+}
+
+fn extract_proc_macro_members(proc_macro: &rustdoc_types::ProcMacro) -> Vec<ApiMember> {
+    if !matches!(proc_macro.kind, MacroKind::Derive) || proc_macro.helpers.is_empty() {
+        return Vec::new();
+    }
+
+    let mut members = vec![text_member(
+        "available_attributes",
+        "// Attributes available to this derive:",
+    )];
+    members.extend(proc_macro.helpers.iter().map(|helper| ApiMember {
+        name: helper.clone(),
+        kind: ApiMemberKind::MacroInput,
+        doc_comments: Vec::new(),
+        attributes: Vec::new(),
+        declaration: format!("#[{helper}]"),
+        declaration_path_references: Vec::new(),
+    }));
+    members
+}
+
+fn extract_struct_members(krate: &Crate, struct_item: &rustdoc_types::Struct) -> Vec<ApiMember> {
+    let StructKind::Plain { fields, .. } = &struct_item.kind else {
+        return Vec::new();
+    };
+
+    fields
+        .iter()
+        .filter_map(|field_id| krate.index.get(field_id))
+        .filter_map(|field_item| extract_field_member(krate, field_item))
+        .collect()
+}
+
+fn extract_union_members(krate: &Crate, union_item: &Union) -> Vec<ApiMember> {
+    union_item
+        .fields
+        .iter()
+        .filter_map(|field_id| krate.index.get(field_id))
+        .filter_map(|field_item| extract_field_member(krate, field_item))
+        .collect()
+}
+
+fn extract_enum_members(krate: &Crate, enum_item: &rustdoc_types::Enum) -> Vec<ApiMember> {
+    enum_item
+        .variants
+        .iter()
+        .filter_map(|variant_id| krate.index.get(variant_id))
+        .map(|variant_item| ApiMember {
+            name: variant_item.name.clone().unwrap_or_default(),
+            kind: ApiMemberKind::Variant,
+            doc_comments: extract_doc_comments(variant_item),
+            attributes: extract_attributes(variant_item),
+            declaration: render_variant(krate, variant_item),
+            declaration_path_references: collect_variant_declaration_path_references(
+                krate,
+                variant_item,
+            ),
+        })
+        .collect()
+}
+
+fn extract_field_member(krate: &Crate, field_item: &Item) -> Option<ApiMember> {
+    render_named_field(field_item).map(|declaration| ApiMember {
+        name: field_item.name.clone().unwrap_or_default(),
+        kind: ApiMemberKind::Field,
+        doc_comments: extract_doc_comments(field_item),
+        attributes: extract_attributes(field_item),
+        declaration,
+        declaration_path_references: collect_field_declaration_path_references(krate, field_item),
+    })
+}
+
+fn api_member(krate: &Crate, item: &Item, kind: ApiMemberKind, declaration: String) -> ApiMember {
     ApiMember {
         name: item.name.clone().unwrap_or_default(),
+        kind,
         doc_comments: extract_doc_comments(item),
         attributes: extract_attributes(item),
         declaration,
+        declaration_path_references: collect_associated_member_declaration_path_references(
+            krate, item,
+        ),
     }
 }
 
-fn extract_associated_member(item: &Item) -> Option<ApiMember> {
+fn text_member(name: impl Into<String>, declaration: impl Into<String>) -> ApiMember {
+    ApiMember {
+        name: name.into(),
+        kind: ApiMemberKind::Text,
+        doc_comments: Vec::new(),
+        attributes: Vec::new(),
+        declaration: declaration.into(),
+        declaration_path_references: Vec::new(),
+    }
+}
+
+fn extract_associated_member(krate: &Crate, item: &Item) -> Option<ApiMember> {
     match &item.inner {
         ItemEnum::Function(function) => Some(api_member(
+            krate,
             item,
+            ApiMemberKind::Associated,
             render_function_declaration(
                 item.name.as_deref().unwrap_or("unknown_fn"),
                 function,
@@ -883,7 +1918,9 @@ fn extract_associated_member(item: &Item) -> Option<ApiMember> {
             ),
         )),
         ItemEnum::AssocConst { type_, value } => Some(api_member(
+            krate,
             item,
+            ApiMemberKind::Associated,
             render_assoc_const(
                 item.name.as_deref().unwrap_or("UNKNOWN_CONST"),
                 type_,
@@ -895,7 +1932,9 @@ fn extract_associated_member(item: &Item) -> Option<ApiMember> {
             bounds,
             type_,
         } => Some(api_member(
+            krate,
             item,
+            ApiMemberKind::Associated,
             render_assoc_type(
                 item.name.as_deref().unwrap_or("UnknownType"),
                 generics,
@@ -912,6 +1951,15 @@ fn extract_attributes(item: &Item) -> Vec<ApiAttribute> {
         .iter()
         .map(|text| ApiAttribute {
             text: normalize_attribute(text),
+        })
+        .collect()
+}
+
+fn extract_module_attributes(item: &Item, is_crate_root: bool) -> Vec<ApiAttribute> {
+    item.attrs
+        .iter()
+        .map(|text| ApiAttribute {
+            text: normalize_module_attribute(text, is_crate_root),
         })
         .collect()
 }
@@ -956,6 +2004,33 @@ fn normalize_attribute(text: &str) -> String {
     normalized
 }
 
+fn normalize_module_attribute(text: &str, is_crate_root: bool) -> String {
+    let normalized = normalize_attribute(text);
+    if is_crate_root {
+        if normalized.starts_with("#![") || normalized.starts_with("#[") {
+            rewrite_attribute_prefix(&normalized, "#![")
+        } else {
+            normalized
+        }
+    } else if normalized.starts_with("#![") {
+        rewrite_attribute_prefix(&normalized, "#[")
+    } else {
+        normalized
+    }
+}
+
+fn rewrite_attribute_prefix(attribute: &str, prefix: &str) -> String {
+    let Some(body) = attribute
+        .strip_prefix("#![")
+        .or_else(|| attribute.strip_prefix("#["))
+        .and_then(|body| body.strip_suffix(']'))
+    else {
+        return attribute.to_string();
+    };
+
+    format!("{prefix}{body}]")
+}
+
 fn normalize_pin_attribute(attribute: &str) -> String {
     normalize_pin_attribute_with_prefix(attribute, "#[")
         .or_else(|| normalize_pin_attribute_with_prefix(attribute, "#!["))
@@ -965,6 +2040,13 @@ fn normalize_pin_attribute(attribute: &str) -> String {
 fn normalize_pin_attribute_with_prefix(attribute: &str, prefix: &str) -> Option<String> {
     let body = attribute.strip_prefix(prefix)?;
     let body = body.strip_suffix(']')?;
+    if body == "pin_project::pin_project" {
+        return Some(format!("{prefix}pin_project]"));
+    }
+    if let Some(inner) = body.strip_prefix("pin_project::pin_project(") {
+        let inner = inner.strip_suffix(')')?;
+        return Some(format!("{prefix}pin_project({inner})]"));
+    }
     let inner = body.strip_prefix("pin(__private(")?;
     let inner = inner.strip_suffix("))")?;
     if inner.is_empty() {
@@ -1087,7 +2169,56 @@ fn include_inherent_impl_block(impl_block: &Impl) -> bool {
 }
 
 fn include_trait_impl_block(impl_block: &Impl) -> bool {
-    !impl_block.is_synthetic && impl_block.blanket_impl.is_none() && impl_block.trait_.is_some()
+    !impl_block.is_synthetic
+        && impl_block.blanket_impl.is_none()
+        && impl_block.trait_.is_some()
+        && !is_pin_project_generated_unpin_impl(impl_block)
+}
+
+fn is_pin_project_generated_unpin_impl(impl_block: &Impl) -> bool {
+    impl_block.trait_.as_ref().is_some_and(is_unpin_trait_path)
+        && impl_block
+            .generics
+            .where_predicates
+            .iter()
+            .any(is_pin_project_generated_unpin_predicate)
+}
+
+fn is_unpin_trait_path(path: &Path) -> bool {
+    matches!(
+        path.path.as_str(),
+        "Unpin" | "core::marker::Unpin" | "std::marker::Unpin"
+    )
+}
+
+fn is_pin_project_generated_unpin_predicate(predicate: &WherePredicate) -> bool {
+    match predicate {
+        WherePredicate::BoundPredicate { type_, bounds, .. } => {
+            is_pin_project_pinned_fields_type(type_)
+                && bounds.iter().any(is_pin_project_private_unpin_bound)
+        }
+        _ => false,
+    }
+}
+
+fn is_pin_project_pinned_fields_type(type_: &Type) -> bool {
+    match type_ {
+        Type::ResolvedPath(path) => matches!(
+            path.path.as_str(),
+            "_pin_project::__private::PinnedFieldsOf" | "pin_project::__private::PinnedFieldsOf"
+        ),
+        _ => false,
+    }
+}
+
+fn is_pin_project_private_unpin_bound(bound: &GenericBound) -> bool {
+    match bound {
+        GenericBound::TraitBound { trait_, .. } => matches!(
+            trait_.path.as_str(),
+            "_pin_project::__private::Unpin" | "pin_project::__private::Unpin"
+        ),
+        _ => false,
+    }
 }
 
 fn item_kind(item: &Item) -> ApiItemKind {
@@ -1129,7 +2260,7 @@ fn fallback_item_name(item: &Item) -> &'static str {
 fn render_item_declaration(krate: &Crate, item: &Item) -> String {
     match &item.inner {
         ItemEnum::Use(use_item) => render_use_declaration(krate, use_item),
-        ItemEnum::Macro(source) => source.clone(),
+        ItemEnum::Macro(source) => render_macro_declaration(source),
         ItemEnum::ProcMacro(proc_macro) => render_proc_macro_declaration(
             item.name.as_deref().unwrap_or("unknown_macro"),
             proc_macro,
@@ -1149,6 +2280,12 @@ fn render_item_declaration(krate: &Crate, item: &Item) -> String {
         ItemEnum::Static(static_item) => render_static_declaration(item, static_item),
         _ => format!("// Unsupported item: {}", fallback_item_name(item)),
     }
+}
+
+fn render_macro_declaration(source: &str) -> String {
+    parse_macro_definition(source)
+        .map(|(declaration, _)| declaration)
+        .unwrap_or_else(|| source.to_string())
 }
 
 fn render_use_declaration(krate: &Crate, use_item: &rustdoc_types::Use) -> String {
@@ -1184,18 +2321,156 @@ fn render_proc_macro_declaration(name: &str, proc_macro: &rustdoc_types::ProcMac
             if proc_macro.helpers.is_empty() {
                 format!("#[derive({name})]")
             } else {
-                let mut declaration = format!("#[derive({name})]\n{{\n");
-                declaration.push_str("    // Attributes available to this derive:\n");
-                for helper in &proc_macro.helpers {
-                    declaration.push_str("    #[");
-                    declaration.push_str(helper);
-                    declaration.push_str("]\n");
-                }
-                declaration.push('}');
-                declaration
+                format!("#[derive({name})] {{")
             }
         }
     }
+}
+
+fn parse_macro_definition(source: &str) -> Option<(String, Vec<ApiMember>)> {
+    let source = source.trim();
+    let open_index = source.find('{')?;
+    let close_index = find_matching_delimiter(source, open_index, '{', '}')?;
+    if !source[close_index + 1..].trim().is_empty() {
+        return None;
+    }
+
+    let declaration = source[..=open_index].trim().to_string();
+    let body = &source[open_index + 1..close_index];
+    let members = split_macro_arms(body)
+        .into_iter()
+        .enumerate()
+        .map(|(index, arm)| ApiMember {
+            name: format!("arm_{index}"),
+            kind: ApiMemberKind::MacroInput,
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            declaration: summarize_macro_arm(&arm),
+            declaration_path_references: Vec::new(),
+        })
+        .collect::<Vec<_>>();
+
+    (!members.is_empty()).then_some((declaration, members))
+}
+
+fn split_macro_arms(body: &str) -> Vec<String> {
+    let mut arms = Vec::new();
+    let mut start = None;
+    let mut paren_depth = 0usize;
+    let mut bracket_depth = 0usize;
+    let mut brace_depth = 0usize;
+
+    for (index, character) in body.char_indices() {
+        match character {
+            '(' => {
+                paren_depth += 1;
+                start.get_or_insert(index);
+            }
+            ')' => paren_depth = paren_depth.saturating_sub(1),
+            '[' => {
+                bracket_depth += 1;
+                start.get_or_insert(index);
+            }
+            ']' => bracket_depth = bracket_depth.saturating_sub(1),
+            '{' => {
+                brace_depth += 1;
+                start.get_or_insert(index);
+            }
+            '}' => brace_depth = brace_depth.saturating_sub(1),
+            ';' if paren_depth == 0 && bracket_depth == 0 && brace_depth == 0 => {
+                if let Some(start_index) = start {
+                    let arm = body[start_index..index].trim();
+                    if !arm.is_empty() {
+                        arms.push(arm.to_string());
+                    }
+                }
+                start = None;
+            }
+            character if !character.is_whitespace() => {
+                start.get_or_insert(index);
+            }
+            _ => {}
+        }
+    }
+
+    if let Some(start_index) = start {
+        let arm = body[start_index..].trim();
+        if !arm.is_empty() {
+            arms.push(arm.to_string());
+        }
+    }
+
+    arms
+}
+
+fn summarize_macro_arm(arm: &str) -> String {
+    if let Some(fat_arrow_index) = find_top_level_fat_arrow(arm) {
+        let matcher = arm[..fat_arrow_index].trim();
+        let expansion = arm[fat_arrow_index + 2..].trim();
+        format!("{matcher} => {};", summarize_macro_expansion(expansion))
+    } else {
+        format!("{};", arm.trim())
+    }
+}
+
+fn summarize_macro_expansion(expansion: &str) -> String {
+    let expansion = expansion.trim();
+    match expansion.chars().next() {
+        Some('{') if expansion.ends_with('}') => "{ ... }".to_string(),
+        Some('(') if expansion.ends_with(')') => "( ... )".to_string(),
+        Some('[') if expansion.ends_with(']') => "[ ... ]".to_string(),
+        _ => expansion.to_string(),
+    }
+}
+
+fn find_top_level_fat_arrow(value: &str) -> Option<usize> {
+    let mut paren_depth = 0usize;
+    let mut bracket_depth = 0usize;
+    let mut brace_depth = 0usize;
+    let mut chars = value.char_indices().peekable();
+
+    while let Some((index, character)) = chars.next() {
+        match character {
+            '(' => paren_depth += 1,
+            ')' => paren_depth = paren_depth.saturating_sub(1),
+            '[' => bracket_depth += 1,
+            ']' => bracket_depth = bracket_depth.saturating_sub(1),
+            '{' => brace_depth += 1,
+            '}' => brace_depth = brace_depth.saturating_sub(1),
+            '=' if paren_depth == 0 && bracket_depth == 0 && brace_depth == 0 => {
+                if let Some((_, '>')) = chars.peek() {
+                    return Some(index);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    None
+}
+
+fn find_matching_delimiter(
+    value: &str,
+    open_index: usize,
+    open_delimiter: char,
+    close_delimiter: char,
+) -> Option<usize> {
+    let mut depth = 0usize;
+    for (index, character) in value
+        .char_indices()
+        .skip_while(|(index, _)| *index < open_index)
+    {
+        if character == open_delimiter {
+            depth += 1;
+        } else if character == close_delimiter {
+            depth = depth.checked_sub(1)?;
+            if depth == 0 {
+                return Some(index);
+            }
+        }
+    }
+
+    None
 }
 
 fn render_function_declaration(name: &str, function: &Function, is_public: bool) -> String {
@@ -1336,75 +2611,44 @@ fn render_struct_declaration(
     match &struct_item.kind {
         StructKind::Unit => declaration.push(';'),
         StructKind::Tuple(fields) => {
-            let rendered_fields = fields
+            let tuple_fields = fields
                 .iter()
-                .filter_map(|field_id| field_id.as_ref())
-                .filter_map(|field_id| krate.index.get(field_id))
-                .filter_map(render_tuple_field)
-                .collect::<Vec<String>>()
-                .join(", ");
+                .map(|field_id| match field_id {
+                    Some(field_id) => krate.index.get(field_id).and_then(render_tuple_field),
+                    None => None,
+                })
+                .collect::<Vec<_>>();
             declaration.push('(');
-            declaration.push_str(&rendered_fields);
+            declaration.push_str(&join_rendered_fields(tuple_fields));
             declaration.push_str(");");
         }
-        StructKind::Plain { fields, .. } => {
-            declaration.push_str(" {\n");
-            for field in fields
-                .iter()
-                .filter_map(|field_id| krate.index.get(field_id))
-            {
-                if let Some(field_line) = render_named_field(field) {
-                    declaration.push_str("    ");
-                    declaration.push_str(&field_line);
-                    declaration.push('\n');
-                }
-            }
-            declaration.push('}');
+        StructKind::Plain { fields: _, .. } => {
+            declaration.push_str(" {");
         }
     }
 
     declaration
 }
 
-fn render_union_declaration(krate: &Crate, item: &Item, union_item: &Union) -> String {
+fn render_union_declaration(_krate: &Crate, item: &Item, union_item: &Union) -> String {
     let mut declaration = format!(
         "pub union {}{}",
         item.name.as_deref().unwrap_or("UnknownUnion"),
         render_generics_declaration(&union_item.generics)
     );
     declaration.push_str(&render_where_clause(&union_item.generics.where_predicates));
-    declaration.push_str(" {\n");
-    for field in union_item
-        .fields
-        .iter()
-        .filter_map(|field_id| krate.index.get(field_id))
-    {
-        if let Some(field_line) = render_named_field(field) {
-            declaration.push_str("    ");
-            declaration.push_str(&field_line);
-            declaration.push('\n');
-        }
-    }
-    declaration.push('}');
+    declaration.push_str(" {");
     declaration
 }
 
-fn render_enum_declaration(krate: &Crate, item: &Item, enum_item: &rustdoc_types::Enum) -> String {
+fn render_enum_declaration(_krate: &Crate, item: &Item, enum_item: &rustdoc_types::Enum) -> String {
     let mut declaration = format!(
         "pub enum {}{}",
         item.name.as_deref().unwrap_or("UnknownEnum"),
         render_generics_declaration(&enum_item.generics)
     );
     declaration.push_str(&render_where_clause(&enum_item.generics.where_predicates));
-    declaration.push_str(" {\n");
-    for variant_id in &enum_item.variants {
-        if let Some(variant_item) = krate.index.get(variant_id) {
-            declaration.push_str("    ");
-            declaration.push_str(&render_variant(krate, variant_item));
-            declaration.push('\n');
-        }
-    }
-    declaration.push('}');
+    declaration.push_str(" {");
     declaration
 }
 
@@ -1424,7 +2668,7 @@ fn render_variant(krate: &Crate, variant_item: &Item) -> String {
                     .iter()
                     .filter_map(|field_id| field_id.as_ref())
                     .filter_map(|field_id| krate.index.get(field_id))
-                    .filter_map(render_tuple_field)
+                    .filter_map(render_variant_tuple_field)
                     .collect::<Vec<String>>()
                     .join(", "),
             );
@@ -1436,7 +2680,7 @@ fn render_variant(krate: &Crate, variant_item: &Item) -> String {
                 &fields
                     .iter()
                     .filter_map(|field_id| krate.index.get(field_id))
-                    .filter_map(render_named_field)
+                    .filter_map(render_variant_named_field)
                     .collect::<Vec<String>>()
                     .join(", "),
             );
@@ -1601,11 +2845,23 @@ fn render_tuple_field(field_item: &Item) -> Option<String> {
     };
 
     let mut field = String::new();
+    for attribute in extract_attributes(field_item) {
+        field.push_str(&attribute.text);
+        field.push(' ');
+    }
     if matches!(field_item.visibility, Visibility::Public) {
         field.push_str("pub ");
     }
     field.push_str(&render_type(type_));
     Some(field)
+}
+
+fn join_rendered_fields(fields: Vec<Option<String>>) -> String {
+    fields
+        .into_iter()
+        .map(|field| field.unwrap_or_else(|| "/* private fields */".to_string()))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn render_named_field(field_item: &Item) -> Option<String> {
@@ -1622,6 +2878,26 @@ fn render_named_field(field_item: &Item) -> Option<String> {
     field.push_str(&render_type(type_));
     field.push(',');
     Some(field)
+}
+
+fn render_variant_tuple_field(field_item: &Item) -> Option<String> {
+    let ItemEnum::StructField(type_) = &field_item.inner else {
+        return None;
+    };
+
+    Some(render_type(type_))
+}
+
+fn render_variant_named_field(field_item: &Item) -> Option<String> {
+    let ItemEnum::StructField(type_) = &field_item.inner else {
+        return None;
+    };
+
+    Some(format!(
+        "{}: {}",
+        field_item.name.as_deref().unwrap_or("unknown_field"),
+        render_type(type_)
+    ))
 }
 
 fn render_generics_declaration(generics: &rustdoc_types::Generics) -> String {
