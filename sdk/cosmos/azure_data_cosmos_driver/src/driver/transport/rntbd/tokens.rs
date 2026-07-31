@@ -716,6 +716,10 @@ pub(super) enum RntbdResponseToken {
     TransportRequestId,
     /// Session token.
     SessionToken,
+    /// Serialized query execution metrics.
+    QueryMetrics,
+    /// Serialized index utilization/advice metrics.
+    IndexUtilization,
     /// Query execution metadata.
     QueryExecutionInfo,
     /// Backend request processing duration in milliseconds.
@@ -726,6 +730,47 @@ pub(super) enum RntbdResponseToken {
     PhysicalPartitionId,
     /// Conflict resolution timestamp.
     ConflictResolvedTimestamp,
+}
+
+impl From<RntbdResponseToken> for TokenId {
+    fn from(value: RntbdResponseToken) -> Self {
+        Self(match value {
+            RntbdResponseToken::PayloadPresent => 0x0000,
+            RntbdResponseToken::LastStateChangeDateTime => 0x0002,
+            RntbdResponseToken::ContinuationToken => 0x0003,
+            RntbdResponseToken::ETag => 0x0004,
+            RntbdResponseToken::RetryAfterMilliseconds => 0x000C,
+            RntbdResponseToken::StorageMaxResourceQuota => 0x000E,
+            RntbdResponseToken::StorageResourceQuotaUsage => 0x000F,
+            RntbdResponseToken::SchemaVersion => 0x0010,
+            RntbdResponseToken::Lsn => 0x0013,
+            RntbdResponseToken::ItemCount => 0x0014,
+            RntbdResponseToken::RequestCharge => 0x0015,
+            RntbdResponseToken::OwnerFullName => 0x0017,
+            RntbdResponseToken::OwnerId => 0x0018,
+            RntbdResponseToken::QuorumAckedLsn => 0x001A,
+            RntbdResponseToken::SubStatus => 0x001C,
+            RntbdResponseToken::CurrentWriteQuorum => 0x001E,
+            RntbdResponseToken::CurrentReplicaSetSize => 0x001F,
+            RntbdResponseToken::PartitionKeyRangeId => 0x0021,
+            RntbdResponseToken::XpRole => 0x0026,
+            RntbdResponseToken::QueryMetrics => 0x0028,
+            RntbdResponseToken::GlobalCommittedLsn => 0x0029,
+            RntbdResponseToken::NumberOfReadRegions => 0x0030,
+            RntbdResponseToken::ItemLsn => 0x0032,
+            RntbdResponseToken::TransportRequestId => 0x0035,
+            RntbdResponseToken::LocalLsn => 0x003A,
+            RntbdResponseToken::QuorumAckedLocalLsn => 0x003B,
+            RntbdResponseToken::ItemLocalLsn => 0x003C,
+            RntbdResponseToken::SessionToken => 0x003E,
+            RntbdResponseToken::IndexUtilization => 0x0044,
+            RntbdResponseToken::QueryExecutionInfo => 0x0045,
+            RntbdResponseToken::BackendRequestDurationMilliseconds => 0x0051,
+            RntbdResponseToken::PendingPkDelete => 0x0055,
+            RntbdResponseToken::PhysicalPartitionId => 0x0063,
+            RntbdResponseToken::ConflictResolvedTimestamp => 0x0087,
+        })
+    }
 }
 
 impl TryFrom<u16> for RntbdResponseToken {
@@ -752,6 +797,7 @@ impl TryFrom<u16> for RntbdResponseToken {
             0x001F => Ok(Self::CurrentReplicaSetSize),
             0x0021 => Ok(Self::PartitionKeyRangeId),
             0x0026 => Ok(Self::XpRole),
+            0x0028 => Ok(Self::QueryMetrics),
             0x0029 => Ok(Self::GlobalCommittedLsn),
             0x0030 => Ok(Self::NumberOfReadRegions),
             0x0032 => Ok(Self::ItemLsn),
@@ -760,6 +806,7 @@ impl TryFrom<u16> for RntbdResponseToken {
             0x003B => Ok(Self::QuorumAckedLocalLsn),
             0x003C => Ok(Self::ItemLocalLsn),
             0x003E => Ok(Self::SessionToken),
+            0x0044 => Ok(Self::IndexUtilization),
             0x0045 => Ok(Self::QueryExecutionInfo),
             0x0051 => Ok(Self::BackendRequestDurationMilliseconds),
             0x0055 => Ok(Self::PendingPkDelete),
@@ -894,7 +941,7 @@ impl TryFrom<u16> for RntbdOperationType {
     fn try_from(value: u16) -> azure_core::Result<Self> {
         match value {
             0x0001 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000F | 0x0011
-            | 0x0012 | 0x0013 | 0x0025 => Ok(Self(value)),
+            | 0x0012 | 0x0013 | 0x0025 | 0x0042 => Ok(Self(value)),
             other => Err(data_conversion_error(format!(
                 "unknown RNTBD operation type 0x{other:04X}"
             ))),
@@ -914,6 +961,7 @@ impl TryFrom<RntbdOperationType> for OperationType {
             0x0006 => Ok(Self::Replace),
             0x0008 => Ok(Self::Execute),
             0x0009 => Ok(Self::SqlQuery),
+            0x0042 => Ok(Self::QueryPlan),
             0x000F => Ok(Self::Query),
             0x0011 => Ok(Self::Head),
             0x0012 => Ok(Self::HeadFeed),

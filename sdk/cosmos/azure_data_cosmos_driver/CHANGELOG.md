@@ -16,6 +16,7 @@
 
 ### Bugs Fixed
 
+- Unified `403/3` and `403/1008` topology retries under a 5-second cumulative delay budget so a persistent topology error surfaces promptly instead of hanging. Multi-write `403/3` and all `403/1008` come down from ~120 seconds of fixed 1-second retries; single-write `403/3` moves up from three immediate generic retries onto the same topology policy. The first retry is always immediate; later retries use exponential backoff with jitter. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
 - `DiagnosticsContext::operation_name()` is now populated in production (previously always `None`): the operation pipeline sets it from `CosmosOperation::db_operation_name`, so tail-sampling classification and the tracing span have an operation name even when no SDK-supplied `CosmosOperationContext` is present. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 - PATCH operations now report `patch_item` rather than the underlying Replace, on both the aggregated success path and every error path (including read, deserialize, patch-evaluation, serialize, and non-412 replace failures). The two internal sub-operations report `patch_read_item` and `patch_replace_item` on their own attempt diagnostics, so the read-modify-write decomposition stays visible underneath the caller-facing operation instead of being flattened to a single name. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 

@@ -632,6 +632,13 @@ impl DriverTestRunContext {
     }
 
     /// Creates a database using the driver.
+    ///
+    /// Tolerates a 409 Conflict from the create itself: `create_database` is
+    /// not idempotent, but a client-side timeout (surfaced as a synthetic
+    /// `TransportGenerated503`) doesn't mean the server never processed the
+    /// request — the driver's own region-failover retry can legitimately
+    /// observe the database already exists. Treating that as success avoids
+    /// spurious test failures from slow/flaky network conditions.
     pub async fn create_database(
         &self,
         db_name: &str,
@@ -648,7 +655,16 @@ impl DriverTestRunContext {
 
         let result = driver
             .execute_singleton_operation(operation, OperationOptions::default())
-            .await?;
+            .await;
+        let result = match result {
+            Err(error) if error.status().status_code() == StatusCode::Conflict => {
+                return Ok(DatabaseReference::from_name(
+                    self.client.account.clone(),
+                    db_name.to_string(),
+                ));
+            }
+            other => other?,
+        };
 
         // Check for success status (201 Created)
         let diagnostics = result.diagnostics();
@@ -743,15 +759,27 @@ impl DriverTestRunContext {
         let operation =
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
-        let result = driver
+        let create_result = driver
             .execute_singleton_operation(operation, OperationOptions::default())
-            .await?;
-
-        // Check for success status (201 Created)
-        let diagnostics = result.diagnostics();
-        let status = diagnostics.status();
-        if !status.map(|s| s.is_success()).unwrap_or(false) {
-            return Err(format!("Failed to create container, status: {:?}", status).into());
+            .await;
+        // Tolerate a 409 Conflict from the create itself: a client-side
+        // timeout (surfaced as a synthetic `TransportGenerated503`) doesn't
+        // mean the server never processed the request — the driver's own
+        // region-failover retry can legitimately observe the container
+        // already exists. Fall through to the resolve-retry loop below
+        // exactly as a successful create would, since that's what actually
+        // produces the `ContainerReference` this method returns.
+        match create_result {
+            Err(error) if error.status().status_code() == StatusCode::Conflict => {}
+            other => {
+                let result = other?;
+                // Check for success status (201 Created)
+                let diagnostics = result.diagnostics();
+                let status = diagnostics.status();
+                if !status.map(|s| s.is_success()).unwrap_or(false) {
+                    return Err(format!("Failed to create container, status: {:?}", status).into());
+                }
+            }
         }
         let db_name = database
             .name()
