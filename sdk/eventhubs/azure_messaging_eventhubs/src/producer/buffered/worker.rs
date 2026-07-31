@@ -304,9 +304,13 @@ impl PartitionWorker {
 
     /// Reports one event as failed and returns its capacity permit.
     async fn fail_one(&self, event: EventData, permit: SemaphoreGuardArc, error: EventHubsError) {
-        self.report_failure(vec![event], error).await;
+        // Give the capacity back before the handler runs. The outcome is
+        // already terminal, and the handler runs on this task, so a handler
+        // that enqueues to this partition would otherwise wait for a permit
+        // that only this task can return.
         self.release(1);
         drop(permit);
+        self.report_failure(vec![event], error).await;
     }
 
     /// Sends the active batch and reports exactly one outcome for it.
@@ -353,6 +357,14 @@ impl PartitionWorker {
             .send_client
             .send_envelope(&self.partition_id, envelope)
             .await;
+
+        // The send settled, so every event in the batch is at a terminal
+        // outcome whatever that outcome is. Give the capacity back before the
+        // handlers run. The handlers run on this task, so a handler that
+        // enqueues to this partition would otherwise wait for a permit that
+        // only this task can return.
+        self.release(event_count);
+        drop(permits);
 
         match outcome {
             Ok(AmqpSendOutcome::Accepted) => {
@@ -417,10 +429,6 @@ impl PartitionWorker {
                 self.report_failure(events, error).await;
             }
         }
-
-        self.release(event_count);
-        // The events reached a terminal outcome, so the buffer has space again.
-        drop(permits);
     }
 
     async fn report_success(&self, events: Vec<EventData>) {
