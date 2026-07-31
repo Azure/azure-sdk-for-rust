@@ -35,7 +35,7 @@ Rust-native `HedgeDiagnostics` surface (see §5); the two are complementary.
 | Item | Signature | Notes |
 | --- | --- | --- |
 | `DiagnosticsContext` | re-exported as `azure_data_cosmos::DiagnosticsContext` | The per-operation diagnostics handle. |
-| `DiagnosticsContext::requests` | `-> Arc<Vec<RequestDiagnostics>>` | Retained per-attempt records in dispatch order — **not** a guaranteed-complete append-only history: under a `429`/`410` retry storm the list is bounded/compacted (see `max_request_diagnostics`, which can drop or reorder entries), and a structurally-dropped hedge loser leg is absent. Cloning the `Arc` is a cheap atomic increment. |
+| `DiagnosticsContext::requests` | `-> Arc<Vec<RequestDiagnostics>>` | Retained per-attempt records in dispatch order — **not** a guaranteed-complete append-only history: under a `429`/`410` retry storm the list is bounded/compacted (see `max_request_diagnostics`, which can drop or reorder entries). A structurally-dropped hedge loser leg *is* represented for every attempt it completed (rescued through the hedge journal, §4.3), but an attempt it left in flight is absent. Cloning the `Arc` is a cheap atomic increment. |
 | `DiagnosticsContext::hedge_diagnostics` | `-> Option<&HedgeDiagnostics>` | An **optional retained race outcome**, not a configuration probe. `Some` when a hedge race recorded a terminal outcome (including primary-wins-under-threshold). `None` when hedging was not selected for the operation, when a configured strategy found the operation ineligible, **and** on the both-transient→failover path, where a terminal outcome is deliberately left unset so a later successful retry does not carry a misleading `BothTransient` state. |
 | `DiagnosticsContext::regions_contacted` | `-> Vec<Region>` | Distinct regions **deduplicated in first-contact (failover) order — not sorted**, captured from the full attempt list before compaction. |
 | `RequestDiagnostics::region` | `-> Option<&Region>` | `None` for pre-region-selection failures. |
@@ -147,22 +147,42 @@ list plus a dispatch-time hedge fan-out log, then stored as fields — the same
 pattern `regions_contacted()` already used. Reading them is a field read. This
 matters because the retained `requests()` list is *not* the dispatch history:
 
-- a clean hedge race structurally drops the losing leg's sub-builder before it
-  can be merged (see §5 and `HedgeDiagnostics`);
+- a clean hedge race structurally drops the losing leg's sub-builder, so only the
+  attempts rescued through the hedge journal survive, and any attempt the loser
+  left in flight is genuinely gone (see §5 and `HedgeDiagnostics`);
 - a `429`/`410` retry storm compacts `requests()` down to
   `max_request_diagnostics`, dropping whole buckets;
 - `aggregate_sub_operations` keeps only **one** representative
   `HedgeDiagnostics` for a multi-round-trip operation.
 
-**Hedge fan-out.** Every fan-out is recorded on the *parent* builder at dispatch
-time, before the race runs, so a dropped leg cannot be lost. Both legs therefore
-always appear, spliced in at the point the race was dispatched, primary before
-alternate: the primary leg tagged with the reason it was **actually** dispatched
-under (`Initial` for a first attempt, or the failover/session reason when a
-hedge upgraded a retry), and the alternate leg tagged `Hedging`. A leg that was
-merged back afterwards is absorbed by the fan-out entry it repeats, so the
-winner is listed once; genuine repeat dispatches are never collapsed. A dropped
-leg has **no** `responded_regions()` entry (it never produced a service reply).
+**Hedge journal.** A hedge leg records into its own private sub-builder, and the
+race structurally drops the loser's future — so the loser's records must be
+rescued out-of-band. Every attempt a leg *completes* is mirrored, at the moment
+it reaches a terminal state, into an operation-scoped hedge journal shared by the
+parent and all legs; the winner's copies are discarded when its sub-builder is
+merged, and `complete()` folds the remaining copies back in and stable-sorts the
+union by dispatch instant. The result is exactly one record per attempt in true
+global dispatch order, no matter which leg won. Consequently a dropped leg that
+had already received a reply (a `429` it was backing off from, say) still
+contributes its region, its status and its RU charge to `requested_regions()`,
+`responded_regions()` and the charge totals.
+
+An attempt that was still **in flight** when its leg was cancelled observed no
+reply, so it is deliberately *not* recovered — reporting it would invent a
+response that never arrived.
+
+**Hedge fan-out.** Each fan-out is additionally recorded on the *parent* builder
+at dispatch time, before the race runs. This is a fallback for the one case the
+journal cannot cover: `select` polls the primary first, so a primary that is
+already `Ready` causes the alternate to be dropped **without ever being polled**,
+meaning it never reaches `start_request` and has no attempt of its own to
+mirror. Such a leg is spliced in as a synthetic entry, positioned by its dispatch
+instant, so both legs always appear: the primary leg tagged with the reason it
+was **actually** dispatched under (`Initial` for a first attempt, or the
+failover/session reason when a hedge upgraded a retry), and the alternate leg
+tagged `Hedging`. A leg that did dispatch describes itself through its own
+(surviving) attempts and is never double-counted. A leg that never produced a
+service reply has no `responded_regions()` entry.
 
 For an aggregated operation (e.g. `PATCH`) stitched from multiple
 sub-operations, every sub-operation's fan-out is preserved: the aggregated list
@@ -214,6 +234,16 @@ The elision keeps the **head and tail** of the history and drops the repetitive
 middle, mirroring the "first and last of each run" policy the contract already
 applies to attempt compaction. The head preserves the initial dispatch and any
 early hedge fan-out; the tail preserves where the operation finally landed.
+
+Because the cap is applied both per sub-operation and again to the concatenated
+aggregate, a long enough PATCH conflict loop is bounded **twice** — the aggregate
+keeps the head and tail of a list whose own entries are already head/tail
+extracts. This compounding is deliberate: it costs some middle detail that was
+already elided once, and in exchange it preserves the two properties consumers
+actually assert on — the operation's first dispatch and where it finally landed —
+under a hard bound that holds no matter how many sub-operations run. Raising the
+cap would not remove the compounding, only move the threshold at which it starts,
+while making the worst-case artifact proportionally larger.
 
 Truncation is never silent. `total_requested_regions()` / `total_responded_regions()`
 report the exact pre-truncation counts, so `requested_regions().len() < total_requested_regions()`

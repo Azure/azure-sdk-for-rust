@@ -3109,6 +3109,11 @@ async fn execute_hedged(
     // `Initial` exactly as before.
     let primary_execution_context = compute_execution_context(retry_state_snapshot);
     let primary_diag = parent_diagnostics.clone_for_hedge_attempt();
+    // Describe the primary as a race participant before its builder is moved
+    // into the future. `leg_dispatch` reads the leg's launch instant, so the
+    // fan-out record orders correctly against every attempt in the operation.
+    let primary_dispatch =
+        primary_diag.leg_dispatch(primary_region.clone(), primary_execution_context.into());
     let primary_attempt = Box::pin(async move {
         let mut diag = primary_diag;
         // Primary is launched before Stage 2 elapses, so no shared
@@ -3306,18 +3311,21 @@ async fn execute_hedged(
     )
     .then(|| Arc::new(AtomicBool::new(ctx.hub_region_processing_only_initial)));
     let secondary_shared_latch = shared_hub_region_latch.clone();
-    // Record the fan-out on the *parent* before the race runs. Whichever leg
-    // loses is structurally dropped along with its per-attempt diagnostics, so
-    // this is the only place the full dispatch history can be captured. The
-    // parent builder reaches every exit path (`finalize_hedge_attempt` on
-    // Terminal, `diagnostics: parent_diagnostics` on BothTransient), so the
-    // record always survives to `complete()`.
-    parent_diagnostics.record_hedge_fanout(
-        primary_region.clone(),
-        primary_execution_context.into(),
-        secondary_region.clone(),
-    );
+    // Record the fan-out on the *parent* before the race runs, so the operation
+    // is known to have hedged regardless of which leg won. Each leg's own
+    // attempts survive the race via the diagnostics hedge journal, so this
+    // record only has to reconstruct a leg cancelled before it dispatched
+    // anything — most commonly the alternate, which `select` never polls when
+    // the primary is already resolved. The parent builder reaches every exit
+    // path (`finalize_hedge_attempt` on Terminal, `diagnostics:
+    // parent_diagnostics` on BothTransient), so the record always survives to
+    // `complete()`.
     let secondary_diag = parent_diagnostics.clone_for_hedge_attempt();
+    let secondary_dispatch = secondary_diag.leg_dispatch(
+        secondary_region.clone(),
+        crate::diagnostics::RequestedRegionReason::Hedging,
+    );
+    parent_diagnostics.record_hedge_fanout(primary_dispatch, secondary_dispatch);
     let secondary_attempt = Box::pin(async move {
         let mut diag = secondary_diag;
         let result = perform_single_attempt(
@@ -8608,7 +8616,7 @@ mod tests {
 
     #[test]
     fn diagnostics_clone_for_hedge_attempt_starts_empty() {
-        let parent = test_diagnostics();
+        let mut parent = test_diagnostics();
         let child = parent.clone_for_hedge_attempt();
         // A fresh sub-builder must not carry the parent's request list,
         // status, or accumulated hedge diagnostics.

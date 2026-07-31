@@ -17,7 +17,7 @@ use azure_core::http::StatusCode;
 use serde::Serialize;
 use std::{
     collections::HashMap,
-    sync::{Arc, OnceLock},
+    sync::{Arc, Mutex, OnceLock},
     time::{Duration, Instant},
 };
 
@@ -1433,28 +1433,77 @@ impl SystemUsageSnapshot {
     }
 }
 
+/// Operation-scoped state shared by the parent [`DiagnosticsContextBuilder`] and
+/// every hedge leg cloned from it.
+///
+/// A hedge race resolves by *structurally dropping* the losing future. Without a
+/// shared sink the loser's private builder — including service replies it had
+/// already observed, their RU charge, and their timings — disappears with it, so
+/// `responded_regions()` would omit real replies and the "exact totals"
+/// guarantee would silently not hold. Every leg therefore mirrors each attempt
+/// here the moment that attempt reaches a terminal state, tagged with the leg's
+/// id; [`DiagnosticsContextBuilder::merge_hedge_attempt`] removes the winning
+/// leg's copies (the winner's originals are merged directly), so exactly one
+/// copy of every attempt survives into [`DiagnosticsContextBuilder::complete`].
+#[derive(Debug, Default)]
+struct HedgeJournal {
+    /// Next leg id to hand out. Leg ids start at 1; `0` is reserved for the
+    /// parent builder, which is never a race participant.
+    next_leg_id: u64,
+    /// Legs that reached [`DiagnosticsContextBuilder::start_request`] at least
+    /// once, so materialization can tell "this leg described itself" from "this
+    /// leg was dropped before it dispatched anything".
+    dispatched_legs: Vec<u64>,
+    /// Terminal attempts mirrored by each leg, tagged with the leg id. What
+    /// remains at finalization is exactly the set of attempts that belonged to
+    /// legs the race dropped.
+    orphaned_attempts: Vec<(u64, RequestDiagnostics)>,
+}
+
+/// One leg of a cross-region hedge race, as described to
+/// [`DiagnosticsContextBuilder::record_hedge_fanout`].
+#[derive(Clone, Debug)]
+pub(crate) struct HedgeLegDispatch {
+    /// The region the leg was routed to. `None` when the routed endpoint
+    /// carries no named region (global-endpoint accounts).
+    pub(crate) region: Option<Region>,
+    /// Why the orchestrator dispatched this leg to that region.
+    pub(crate) reason: RequestedRegionReason,
+    /// The leg builder's journal id, used to detect whether the leg ever
+    /// dispatched a request of its own.
+    leg_id: u64,
+    /// When the leg was launched, on the same clock as
+    /// [`RequestDiagnostics::started_at`].
+    dispatched_at: Instant,
+}
+
+impl HedgeLegDispatch {
+    /// Materializes this leg as a requested-region entry, if it was routed to a
+    /// named region. Used only to reconstruct a leg that never dispatched.
+    fn requested_region(&self) -> Option<RequestedRegion> {
+        self.region.clone().map(|region| RequestedRegion {
+            region,
+            reason: self.reason,
+        })
+    }
+}
+
 /// One cross-region hedge fan-out, recorded on the parent builder at the moment
 /// the race is dispatched.
 ///
-/// A hedge race launches two legs concurrently and then structurally drops the
-/// loser's future — and with it the loser's per-attempt [`RequestDiagnostics`] —
-/// so the finalized attempt list alone can never describe the fan-out. Capturing
-/// both legs here, before the race runs, makes the dispatch history authoritative
-/// and independent of which leg won, of retry-storm compaction, and of
-/// sub-operation aggregation.
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// Legs describe themselves through their own [`RequestDiagnostics`], which the
+/// [`HedgeJournal`] keeps alive even for the leg the race drops. This record is
+/// the fallback for the one case that leaves no attempt behind: a leg cancelled
+/// before it dispatched anything at all — most commonly the alternate, which
+/// `select` never polls when the primary is already resolved. It also marks the
+/// operation as having fanned out at all, independently of which leg won, of
+/// retry-storm compaction, and of sub-operation aggregation.
+#[derive(Clone, Debug)]
 pub(crate) struct HedgeFanout {
-    /// Number of attempts already recorded on the parent when the race was
-    /// dispatched. The winning leg's merged attempts start at this index, so
-    /// recovery can splice a dropped leg back in dispatch order.
-    at: usize,
-    /// The primary leg's dispatched region and reason. `None` when the routed
-    /// endpoint carries no named region (global-endpoint accounts).
-    primary: Option<RequestedRegion>,
-    /// The speculative alternate leg's dispatched region, always tagged
-    /// [`RequestedRegionReason::Hedging`]. `None` when the routed endpoint
-    /// carries no named region.
-    alternate: Option<RequestedRegion>,
+    /// The primary leg of the race.
+    primary: HedgeLegDispatch,
+    /// The speculative alternate leg of the race.
+    alternate: HedgeLegDispatch,
 }
 
 /// Internal mutable builder for constructing a [`DiagnosticsContext`].
@@ -1501,10 +1550,23 @@ pub(crate) struct DiagnosticsContextBuilder {
     /// Every hedge fan-out dispatched by this operation, in dispatch order.
     ///
     /// Recorded by the hedging orchestrator on the *parent* builder before the
-    /// race starts, so a structurally-dropped losing leg is still described.
-    /// Empty for the overwhelming majority of operations (no hedging), which
-    /// keeps the common path allocation-free.
+    /// race starts, so a leg dropped before it dispatched anything is still
+    /// described. Empty for the overwhelming majority of operations (no
+    /// hedging), which keeps the common path allocation-free.
     hedge_fanouts: Vec<HedgeFanout>,
+
+    /// Operation-scoped state shared with every hedge leg cloned from this
+    /// builder, or `None` when the operation never hedged.
+    ///
+    /// Allocated lazily by the first
+    /// [`clone_for_hedge_attempt`](Self::clone_for_hedge_attempt), so the
+    /// non-hedged path — the overwhelming majority of operations — never pays
+    /// for the `Arc`/`Mutex`.
+    hedge_journal: Option<Arc<Mutex<HedgeJournal>>>,
+
+    /// This builder's id within [`Self::hedge_journal`]. `0` on the parent
+    /// builder, which never races.
+    hedge_leg_id: u64,
 
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
@@ -1526,6 +1588,8 @@ impl DiagnosticsContextBuilder {
             fault_injection_enabled: false,
             hedge_diagnostics: None,
             hedge_fanouts: Vec::new(),
+            hedge_journal: None,
+            hedge_leg_id: 0,
             #[cfg(test)]
             test_system_usage: None,
         }
@@ -1548,30 +1612,41 @@ impl DiagnosticsContextBuilder {
 
     /// Records a cross-region hedge fan-out at the moment the race is dispatched.
     ///
-    /// Called by the hedging orchestrator on the *parent* builder before the two
-    /// legs are launched, so the dispatch history survives the race dropping the
-    /// loser's builder. Each leg is `None` when its routed endpoint carries no
-    /// named region (global-endpoint accounts), in which case that leg simply
-    /// contributes nothing to
+    /// Called by the hedging orchestrator on the *parent* builder once both leg
+    /// builders exist. Each leg normally describes itself through its own
+    /// attempts — the [`HedgeJournal`] keeps those alive even for the leg the
+    /// race drops — so this record only materializes a
+    /// [`RequestedRegion`](crate::diagnostics::RequestedRegion) for a leg that
+    /// was cancelled before it dispatched anything. Each leg's `region` is
+    /// `None` when its routed endpoint carries no named region (global-endpoint
+    /// accounts), in which case that leg contributes nothing to
     /// [`requested_regions`](DiagnosticsContext::requested_regions) — matching
     /// how a region-less attempt is skipped.
     pub(crate) fn record_hedge_fanout(
         &mut self,
-        primary_region: Option<Region>,
-        primary_reason: RequestedRegionReason,
-        alternate_region: Option<Region>,
+        primary: HedgeLegDispatch,
+        alternate: HedgeLegDispatch,
     ) {
-        self.hedge_fanouts.push(HedgeFanout {
-            at: self.requests.len(),
-            primary: primary_region.map(|region| RequestedRegion {
-                region,
-                reason: primary_reason,
-            }),
-            alternate: alternate_region.map(|region| RequestedRegion {
-                region,
-                reason: RequestedRegionReason::Hedging,
-            }),
-        });
+        self.hedge_fanouts.push(HedgeFanout { primary, alternate });
+    }
+
+    /// Describes this (leg) builder as one side of a hedge race, for
+    /// [`record_hedge_fanout`](Self::record_hedge_fanout).
+    ///
+    /// The leg's `started_at` is its launch instant — `clone_for_hedge_attempt`
+    /// stamps it fresh — so it sits on the same clock as every
+    /// [`RequestDiagnostics::started_at`] and orders correctly against them.
+    pub(crate) fn leg_dispatch(
+        &self,
+        region: Option<Region>,
+        reason: RequestedRegionReason,
+    ) -> HedgeLegDispatch {
+        HedgeLegDispatch {
+            region,
+            reason,
+            leg_id: self.hedge_leg_id,
+            dispatched_at: self.started_at,
+        }
     }
 
     /// Creates a fresh builder for a single hedge attempt.
@@ -1581,8 +1656,18 @@ impl DiagnosticsContextBuilder {
     /// but starts with an empty request list and a fresh `started_at`, so
     /// per-attempt durations measure from launch rather than from
     /// operation start. The winning attempt's requests are merged back
-    /// via [`merge_hedge_attempt`](Self::merge_hedge_attempt).
-    pub(crate) fn clone_for_hedge_attempt(&self) -> Self {
+    /// via [`merge_hedge_attempt`](Self::merge_hedge_attempt); the losing
+    /// attempt's are recovered from the shared [`HedgeJournal`], which is
+    /// allocated here on the first call.
+    pub(crate) fn clone_for_hedge_attempt(&mut self) -> Self {
+        let journal = self
+            .hedge_journal
+            .get_or_insert_with(|| Arc::new(Mutex::new(HedgeJournal::default())));
+        let leg_id = {
+            let mut guard = journal.lock().unwrap_or_else(|e| e.into_inner());
+            guard.next_leg_id += 1;
+            guard.next_leg_id
+        };
         Self {
             activity_id: self.activity_id.clone(),
             started_at: Instant::now(),
@@ -1598,6 +1683,8 @@ impl DiagnosticsContextBuilder {
             // builder is either merged back (winner) or dropped (loser), so
             // recording here would be lost exactly when it matters.
             hedge_fanouts: Vec::new(),
+            hedge_journal: Some(Arc::clone(journal)),
+            hedge_leg_id: leg_id,
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
         }
@@ -1609,7 +1696,17 @@ impl DiagnosticsContextBuilder {
     /// Only the request list is moved; the attempt's `status` and
     /// `hedge_diagnostics` are discarded because those operation-level
     /// fields are written directly on the parent.
+    ///
+    /// The merged leg's mirrored copies are dropped from the shared
+    /// [`HedgeJournal`] at the same time: the originals are now owned by the
+    /// parent, so leaving the mirror in place would double-count the winner.
     pub(crate) fn merge_hedge_attempt(&mut self, attempt: Self) {
+        if let Some(journal) = self.hedge_journal.as_ref() {
+            let mut guard = journal.lock().unwrap_or_else(|e| e.into_inner());
+            guard
+                .orphaned_attempts
+                .retain(|(leg_id, _)| *leg_id != attempt.hedge_leg_id);
+        }
         if self.requests.is_empty() {
             self.requests = attempt.requests;
         } else {
@@ -1681,7 +1778,53 @@ impl DiagnosticsContextBuilder {
         request.with_activity_id(self.activity_id.clone());
         let handle = RequestHandle(self.requests.len());
         self.requests.push(request);
+        self.journal_dispatch();
         handle
+    }
+
+    /// Records that this hedge leg has dispatched at least one request.
+    ///
+    /// Lets materialization tell a leg that described itself through its own
+    /// attempts from one the race cancelled before it dispatched anything —
+    /// only the latter needs a synthetic entry from the fan-out record.
+    fn journal_dispatch(&mut self) {
+        if self.hedge_leg_id == 0 {
+            return;
+        }
+        let Some(journal) = self.hedge_journal.as_ref() else {
+            return;
+        };
+        let mut guard = journal.lock().unwrap_or_else(|e| e.into_inner());
+        if !guard.dispatched_legs.contains(&self.hedge_leg_id) {
+            guard.dispatched_legs.push(self.hedge_leg_id);
+        }
+    }
+
+    /// Mirrors a now-terminal attempt into the shared [`HedgeJournal`].
+    ///
+    /// Attempts are immutable once terminal (`update_request` rejects a
+    /// completed handle), so the mirrored copy is final. If this leg goes on to
+    /// win the race its copies are dropped again by
+    /// [`merge_hedge_attempt`](Self::merge_hedge_attempt); if the race drops
+    /// this leg instead, the copy is the only surviving record of a reply the
+    /// service really sent.
+    ///
+    /// An attempt still in flight when the leg is cancelled is genuinely
+    /// unobserved — no reply arrived — and is intentionally not recovered.
+    fn journal_terminal_attempt(&mut self, handle: RequestHandle) {
+        if self.hedge_leg_id == 0 {
+            return;
+        }
+        let Some(journal) = self.hedge_journal.as_ref() else {
+            return;
+        };
+        let Some(request) = self.requests.get(handle.0) else {
+            return;
+        };
+        let mut guard = journal.lock().unwrap_or_else(|e| e.into_inner());
+        guard
+            .orphaned_attempts
+            .push((self.hedge_leg_id, request.clone()));
     }
 
     /// Records the response headers and completion of a request in one shot.
@@ -1738,6 +1881,7 @@ impl DiagnosticsContextBuilder {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.complete(status_code, sub_status);
         }
+        self.journal_terminal_attempt(handle);
     }
 
     /// Records end-to-end timeout of a request.
@@ -1753,6 +1897,7 @@ impl DiagnosticsContextBuilder {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.timeout();
         }
+        self.journal_terminal_attempt(handle);
     }
 
     /// Records a transport-level failure for a request that received no Cosmos response.
@@ -1766,6 +1911,7 @@ impl DiagnosticsContextBuilder {
         if let Some(request) = self.requests.get_mut(handle.0) {
             request.fail_transport(error, request_sent, status);
         }
+        self.journal_terminal_attempt(handle);
     }
 
     /// Updates a request's diagnostics with additional data.
@@ -1842,8 +1988,37 @@ impl DiagnosticsContextBuilder {
     /// This consumes the builder and creates a finalized diagnostics context
     /// with all data frozen. The `DiagnosticsContext` can then be safely
     /// shared via `Arc` without any locking overhead.
-    pub(crate) fn complete(self) -> DiagnosticsContext {
+    pub(crate) fn complete(mut self) -> DiagnosticsContext {
         let duration = self.started_at.elapsed();
+
+        // Recover the attempts of any hedge leg the race dropped before it
+        // could be merged. Those legs may have observed real service replies
+        // (a 429 answered just before the partner won, say); losing them would
+        // under-report charge, drop a genuine entry from `responded_regions`,
+        // and break the exactness of the `total_*_regions` counters.
+        //
+        // `started_at` is a single operation-wide clock, and every builder
+        // appends in start order, so re-sorting the union restores true global
+        // dispatch order across the parent and both legs — something no
+        // parent-relative index could express while the legs ran concurrently.
+        // Handles are never used after `complete` consumes the builder, so
+        // reordering here cannot invalidate one.
+        let (orphaned, dispatched_legs) = self
+            .hedge_journal
+            .take()
+            .map(|journal| {
+                let mut guard = journal.lock().unwrap_or_else(|e| e.into_inner());
+                (
+                    std::mem::take(&mut guard.orphaned_attempts),
+                    std::mem::take(&mut guard.dispatched_legs),
+                )
+            })
+            .unwrap_or_default();
+        if !orphaned.is_empty() {
+            self.requests
+                .extend(orphaned.into_iter().map(|(_, request)| request));
+            self.requests.sort_by_key(RequestDiagnostics::started_at);
+        }
 
         // Exact operation-level total charge, summed from the FULL attempt list
         // before any compaction so it stays exact even when the retained list is
@@ -1866,7 +2041,8 @@ impl DiagnosticsContextBuilder {
         // limit (DIAGNOSTICS-CONTRACT.md §8). The pre-truncation lengths are
         // retained so the truncation is explicit rather than silent.
         let cap = self.options.max_request_diagnostics();
-        let requested_regions = requested_regions_from(&self.requests, &self.hedge_fanouts);
+        let requested_regions =
+            requested_regions_from(&self.requests, &self.hedge_fanouts, &dispatched_legs);
         let responded_regions = responded_regions_from(&self.requests);
         let total_requested_regions = requested_regions.len();
         let total_responded_regions = responded_regions.len();
@@ -2182,7 +2358,7 @@ impl DiagnosticsContext {
                 .sum::<f64>(),
         );
         let regions_contacted = ordered_unique_regions(&requests);
-        let requested_regions = requested_regions_from(&requests, &[]);
+        let requested_regions = requested_regions_from(&requests, &[], &[]);
         let responded_regions = responded_regions_from(&requests);
         // The helper builds a fixed, hand-supplied attempt list, so the history
         // is never over the cap and the totals are simply its length.
@@ -2245,24 +2421,58 @@ impl DiagnosticsContext {
         let not_sentinel = |region: &Region| {
             (region.as_str() != HedgeDiagnostics::UNKNOWN_REGION_SENTINEL).then(|| region.clone())
         };
+        // Both legs are stamped at (or before) the first supplied attempt, so a
+        // leg that has to be reconstructed lands at the head of the history —
+        // the same position the pipeline would produce for a race dispatched
+        // before any attempt was recorded.
+        let dispatched_at = requests
+            .iter()
+            .map(RequestDiagnostics::started_at)
+            .min()
+            .unwrap_or_else(Instant::now);
+        const PRIMARY_LEG: u64 = 1;
+        const ALTERNATE_LEG: u64 = 2;
         let fanouts: Vec<HedgeFanout> = hedge_diagnostics
             .as_ref()
             .and_then(|hedge| {
                 let alternate = hedge.alternate_region()?;
                 Some(HedgeFanout {
-                    at: 0,
-                    primary: not_sentinel(hedge.primary_region()).map(|region| RequestedRegion {
-                        region,
+                    primary: HedgeLegDispatch {
+                        region: not_sentinel(hedge.primary_region()),
                         reason: RequestedRegionReason::Initial,
-                    }),
-                    alternate: not_sentinel(alternate).map(|region| RequestedRegion {
-                        region,
+                        leg_id: PRIMARY_LEG,
+                        dispatched_at,
+                    },
+                    alternate: HedgeLegDispatch {
+                        region: not_sentinel(alternate),
                         reason: RequestedRegionReason::Hedging,
-                    }),
+                        leg_id: ALTERNATE_LEG,
+                        dispatched_at,
+                    },
                 })
             })
             .into_iter()
             .collect();
+        // A leg "dispatched" when the supplied attempt list already describes
+        // it; only a leg with no attempt of its own needs reconstructing.
+        let dispatched_legs: Vec<u64> = fanouts
+            .first()
+            .map(|fanout| {
+                [&fanout.primary, &fanout.alternate]
+                    .into_iter()
+                    .filter(|leg| {
+                        leg.region.as_ref().is_some_and(|region| {
+                            requests.iter().any(|request| {
+                                request.region() == Some(region)
+                                    && RequestedRegionReason::from(request.execution_context())
+                                        == leg.reason
+                            })
+                        })
+                    })
+                    .map(|leg| leg.leg_id)
+                    .collect()
+            })
+            .unwrap_or_default();
 
         let mut context = Self::for_testing_with_requests(
             activity_id,
@@ -2272,7 +2482,9 @@ impl DiagnosticsContext {
             requests,
         );
         if !fanouts.is_empty() {
-            context.requested_regions = requested_regions_from(&context.requests, &fanouts);
+            context.requested_regions =
+                requested_regions_from(&context.requests, &fanouts, &dispatched_legs);
+            context.total_requested_regions = context.requested_regions.len();
             context.hedging_started = true;
         }
         context.hedge_diagnostics = hedge_diagnostics;
@@ -2395,6 +2607,27 @@ impl DiagnosticsContext {
         // when each source is individually bounded. Re-bound the result under
         // the same cap and carry the summed pre-truncation totals, so the
         // aggregate honours the same guarantee as a single operation.
+        //
+        // Bounding the concatenation of already-bounded sources compresses the
+        // middle twice: a sub-op in the middle can have had its own middle
+        // elided, and then be dropped wholesale here. That is intentional, not
+        // an oversight, and a proportionally larger cap is deliberately *not*
+        // used:
+        //
+        // - The contract is a flat "the finalized artifact holds at most `cap`
+        //   region entries", the same promise a single operation makes. Scaling
+        //   the cap with sub-op count would make an aggregate's size grow with
+        //   the length of a retry loop — exactly the unbounded growth the bound
+        //   exists to prevent.
+        // - Nothing exact is lost to it: `total_requested_regions` and
+        //   `total_responded_regions` are summed from the sources'
+        //   pre-truncation totals, `total_request_charge` and `request_count()`
+        //   stay exact via the compaction marker, and `hedging_started` is a
+        //   disjunction over the sources, so a fan-out elided from the ordered
+        //   view is still reported.
+        // - The interesting entries in a conflict loop are the head (how the
+        //   operation started) and the tail (where it finally landed), which
+        //   head/tail bounding keeps verbatim by construction.
         let total_requested_regions: usize =
             sources.iter().map(|c| c.total_requested_regions).sum();
         let total_responded_regions: usize =
@@ -3101,6 +3334,32 @@ fn ordered_unique_regions(requests: &[RequestDiagnostics]) -> Vec<Region> {
 /// operation finally landed) are kept verbatim, mirroring the "first + last of
 /// each run" policy `compact_requests` already uses.
 ///
+/// # Deliberately atomicity-oblivious
+///
+/// This helper takes no stride or grouping parameter, and none is planned. A
+/// hedge fan-out contributes two adjacent entries that straddle the head/tail
+/// boundary at exactly `cap`; one leg is kept and the other drained, so the
+/// bounded view can show a "half" race. That is accepted, because:
+///
+/// - It only occurs on an operation whose history already exceeds `cap`, i.e.
+///   one that has been failing over or storming long enough that a single race
+///   in the middle is not the interesting signal.
+/// - Nothing exact is lost.
+///   [`total_requested_regions`](DiagnosticsContext::total_requested_regions)
+///   and [`total_responded_regions`](DiagnosticsContext::total_responded_regions)
+///   are computed pre-truncation and stay exact, and
+///   [`hedging_started`](DiagnosticsContext::hedging_started) is derived from
+///   the fan-out records, not from this list — so "did this operation hedge?"
+///   is still answered correctly even if both legs were elided.
+/// - Keeping pairs intact would make the output length depend on where the
+///   boundary falls, breaking the flat `<= cap` bound this exists to provide.
+///
+/// The two histories are also *not* index-paired with each other:
+/// `requested_regions` is dispatch-ordered and `responded_regions` is
+/// arrival-ordered over the subset that actually replied, so they routinely
+/// differ in both length and order. Bounding them independently therefore
+/// cannot break a correspondence that never existed.
+///
 /// Truncation is never silent: the caller records the pre-truncation length,
 /// which [`DiagnosticsContext::total_requested_regions`] and
 /// [`DiagnosticsContext::total_responded_regions`] expose.
@@ -3115,68 +3374,62 @@ fn bound_region_history<T>(mut history: Vec<T>, cap: usize) -> Vec<T> {
 }
 
 /// Builds the dispatch-ordered requested-region history from the **full**
-/// (pre-compaction) attempt list, splicing in each hedge fan-out at the point it
-/// was dispatched.
+/// (pre-compaction) attempt list.
 ///
-/// A fan-out's two legs are recorded on the parent before the race runs, while
-/// each surviving leg's own attempts are merged back afterwards. Splicing at
-/// `HedgeFanout::at` therefore restores true dispatch order.
+/// `requests` is already in global dispatch order — every builder appends in
+/// start order and [`DiagnosticsContextBuilder::complete`] re-sorts the union of
+/// the parent's attempts and any recovered hedge-leg attempts by `started_at` —
+/// so attempts are emitted verbatim in the order given.
 ///
-/// A merged-back leg repeats an attempt the fan-out already described, so each
-/// fan-out entry is held in a small "pending" matcher that absorbs at most one
-/// merged attempt apiece. Genuine repeat dispatches — a retry storm hammering
-/// one region, say — are never collapsed, matching the documented contract that
-/// duplicates are meaningful.
+/// A hedge leg normally describes itself through its own attempts, including
+/// when the race drops it (the [`HedgeJournal`] preserves them). The one leg
+/// that leaves nothing behind is one cancelled before it dispatched anything —
+/// most commonly the alternate, which `select` never polls when the primary is
+/// already resolved. Only such a leg gets a synthetic entry here, positioned by
+/// its dispatch instant, which is why `dispatched_legs` is required: it is the
+/// set of legs that reached `start_request` at least once.
 fn requested_regions_from(
     requests: &[RequestDiagnostics],
     fanouts: &[HedgeFanout],
+    dispatched_legs: &[u64],
 ) -> Vec<RequestedRegion> {
-    let mut regions: Vec<RequestedRegion> = Vec::new();
-    let mut next_fanout = 0usize;
-    // Fan-out legs awaiting the merged attempt that repeats them. Holds at most
-    // two entries (one race's legs) and is reset when the next race is spliced.
-    let mut pending: Vec<RequestedRegion> = Vec::new();
+    // Legs that never dispatched anything, in dispatch order. Nothing to
+    // reconstruct on the overwhelmingly common non-hedged path.
+    let mut silent_legs: Vec<&HedgeLegDispatch> = if fanouts.is_empty() {
+        Vec::new()
+    } else {
+        fanouts
+            .iter()
+            .flat_map(|fanout| [&fanout.primary, &fanout.alternate])
+            .filter(|leg| leg.region.is_some() && !dispatched_legs.contains(&leg.leg_id))
+            .collect()
+    };
+    silent_legs.sort_by_key(|leg| leg.dispatched_at);
 
-    for (index, request) in requests.iter().enumerate() {
-        // Emit every fan-out dispatched at or before this attempt first, so the
-        // race's two legs precede the winner's merged attempts.
-        while let Some(fanout) = fanouts.get(next_fanout) {
-            if fanout.at > index {
+    let mut regions: Vec<RequestedRegion> = Vec::with_capacity(requests.len());
+    let mut next_silent_leg = 0usize;
+
+    for request in requests {
+        // Emit any never-dispatched leg launched at or before this attempt, so
+        // the reconstructed entry lands in true dispatch order.
+        while let Some(leg) = silent_legs.get(next_silent_leg) {
+            if leg.dispatched_at > request.started_at() {
                 break;
             }
-            let legs = fanout.primary.iter().chain(fanout.alternate.iter());
-            pending.clear();
-            pending.extend(legs.clone().cloned());
-            regions.extend(legs.cloned());
-            next_fanout += 1;
+            regions.extend(leg.requested_region());
+            next_silent_leg += 1;
         }
 
         if let Some(region) = request.region() {
-            let candidate = RequestedRegion {
+            regions.push(RequestedRegion {
                 region: region.clone(),
                 reason: RequestedRegionReason::from(request.execution_context()),
-            };
-            // A merged hedge leg repeats the entry its fan-out already recorded;
-            // consume the pending match instead of listing the leg twice.
-            match pending.iter().position(|pending| *pending == candidate) {
-                Some(matched) => {
-                    pending.swap_remove(matched);
-                }
-                None => regions.push(candidate),
-            }
+            });
         }
     }
 
-    // Fan-outs dispatched after the last recorded attempt (e.g. both legs failed
-    // before recording anything) still belong in the history.
-    for fanout in &fanouts[next_fanout.min(fanouts.len())..] {
-        regions.extend(
-            fanout
-                .primary
-                .iter()
-                .chain(fanout.alternate.iter())
-                .cloned(),
-        );
+    for leg in &silent_legs[next_silent_leg.min(silent_legs.len())..] {
+        regions.extend(leg.requested_region());
     }
 
     regions
@@ -4609,24 +4862,61 @@ mod tests {
         )
     }
 
+    /// Mirrors the orchestrator's STAGE 1: spawn the primary leg's builder and
+    /// capture the dispatch record the parent keeps for it.
+    ///
+    /// Returned separately from [`spawn_alternate_leg`] so a test can dispatch
+    /// on the primary *between* the two, exactly as the pipeline does — the
+    /// alternate is only built once the hedge threshold has elapsed.
+    fn spawn_primary_leg(
+        parent: &mut DiagnosticsContextBuilder,
+        region: Option<Region>,
+        reason: RequestedRegionReason,
+    ) -> (DiagnosticsContextBuilder, HedgeLegDispatch) {
+        let leg = parent.clone_for_hedge_attempt();
+        let dispatch = leg.leg_dispatch(region, reason);
+        (leg, dispatch)
+    }
+
+    /// Mirrors the orchestrator's STAGE 3: spawn the alternate leg's builder
+    /// once the threshold has elapsed and record the fan-out on the parent.
+    fn spawn_alternate_leg(
+        parent: &mut DiagnosticsContextBuilder,
+        primary: HedgeLegDispatch,
+        region: Option<Region>,
+    ) -> DiagnosticsContextBuilder {
+        let leg = parent.clone_for_hedge_attempt();
+        let dispatch = leg.leg_dispatch(region, RequestedRegionReason::Hedging);
+        parent.record_hedge_fanout(primary, dispatch);
+        leg
+    }
+
     #[test]
     fn requested_regions_keeps_dropped_hedge_leg_on_primary_win() {
-        // PrimaryWonAfterHedge: the alternate leg is structurally dropped, so
-        // `requests` holds only the primary (Initial) record. Both legs must
+        // PrimaryWonAfterHedge: the alternate leg is cancelled before it
+        // dispatches anything, so it leaves no attempt behind. Both legs must
         // still appear, in dispatch order, from the fan-out the orchestrator
-        // recorded on the parent before the race.
+        // recorded on the parent.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            builder.record_hedge_fanout(
+            let (mut primary, primary_dispatch) = spawn_primary_leg(
+                builder,
                 Some(Region::EAST_US_2),
                 RequestedRegionReason::Initial,
-                Some(Region::WEST_US_2),
             );
-            let h = builder.start_test_request(
+            let h = primary.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::EAST_US_2),
                 "https://test.eastus2.documents.azure.com",
             );
-            builder.complete_request(h, StatusCode::Ok, None);
+            primary.complete_request(h, StatusCode::Ok, None);
+            // Threshold elapsed, so the alternate launched — and was then
+            // dropped, unpolled, when the primary won the race.
+            drop(spawn_alternate_leg(
+                builder,
+                primary_dispatch,
+                Some(Region::WEST_US_2),
+            ));
+            builder.merge_hedge_attempt(primary);
             builder.set_hedge_diagnostics(HedgeDiagnostics::primary_won_after_hedge(
                 hedge_config(),
                 Region::EAST_US_2,
@@ -4655,21 +4945,25 @@ mod tests {
 
     #[test]
     fn requested_regions_keeps_dropped_primary_leg_on_alternate_win() {
-        // AlternateWon: the primary leg is structurally dropped, so `requests`
-        // holds only the alternate (Hedging) record. The Initial primary must
-        // still be listed first (dispatch order).
+        // AlternateWon while the primary was still connecting: the primary leg
+        // is dropped without having dispatched, so the Initial primary must
+        // still be listed first (dispatch order) from the fan-out record.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            builder.record_hedge_fanout(
+            let (primary, primary_dispatch) = spawn_primary_leg(
+                builder,
                 Some(Region::EAST_US_2),
                 RequestedRegionReason::Initial,
-                Some(Region::WEST_US_2),
             );
-            let h = builder.start_test_request(
+            let mut alternate =
+                spawn_alternate_leg(builder, primary_dispatch, Some(Region::WEST_US_2));
+            let h = alternate.start_test_request(
                 ExecutionContext::Hedging,
                 Some(Region::WEST_US_2),
                 "https://test.westus2.documents.azure.com",
             );
-            builder.complete_request(h, StatusCode::Ok, None);
+            alternate.complete_request(h, StatusCode::Ok, None);
+            drop(primary);
+            builder.merge_hedge_attempt(alternate);
             builder.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                 hedge_config(),
                 Region::EAST_US_2,
@@ -4707,17 +5001,23 @@ mod tests {
                 "https://test.eastus2.documents.azure.com",
             );
             builder.complete_request(h, StatusCode::ServiceUnavailable, None);
-            builder.record_hedge_fanout(
+            let (mut primary, primary_dispatch) = spawn_primary_leg(
+                builder,
                 Some(Region::WEST_US_2),
                 RequestedRegionReason::RegionFailover,
-                Some(Region::CENTRAL_US),
             );
-            let h = builder.start_test_request(
+            let h = primary.start_test_request(
                 ExecutionContext::RegionFailover,
                 Some(Region::WEST_US_2),
                 "https://test.westus2.documents.azure.com",
             );
-            builder.complete_request(h, StatusCode::Ok, None);
+            primary.complete_request(h, StatusCode::Ok, None);
+            drop(spawn_alternate_leg(
+                builder,
+                primary_dispatch,
+                Some(Region::CENTRAL_US),
+            ));
+            builder.merge_hedge_attempt(primary);
         });
 
         assert!(ctx.hedging_started());
@@ -4763,17 +5063,21 @@ mod tests {
             );
             builder.complete_request(h, StatusCode::TooManyRequests, None);
         }
-        builder.record_hedge_fanout(
+        let (primary, primary_dispatch) = spawn_primary_leg(
+            &mut builder,
             Some(Region::EAST_US_2),
             RequestedRegionReason::OperationRetry,
-            Some(Region::WEST_US_2),
         );
-        let h = builder.start_test_request(
+        let mut alternate =
+            spawn_alternate_leg(&mut builder, primary_dispatch, Some(Region::WEST_US_2));
+        let h = alternate.start_test_request(
             ExecutionContext::Hedging,
             Some(Region::WEST_US_2),
             "https://test.westus2.documents.azure.com",
         );
-        builder.complete_request(h, StatusCode::Ok, None);
+        alternate.complete_request(h, StatusCode::Ok, None);
+        drop(primary);
+        builder.merge_hedge_attempt(alternate);
         let ctx = builder.complete();
 
         // The retained attempt list really was bounded...
@@ -4781,9 +5085,8 @@ mod tests {
         assert!(ctx.compaction().is_some());
         // ...and so is the dispatch history, independently of attempt count
         // (DIAGNOSTICS-CONTRACT.md §8) — but the elision is explicit, not
-        // silent: the exact count is still reported. 40 retries + both fan-out
-        // legs (the winning alternate's merged attempt is absorbed by the
-        // fan-out entry it repeats).
+        // silent: the exact count is still reported. 40 retries + the hedge's
+        // reconstructed primary leg + the alternate's own attempt.
         assert_eq!(ctx.total_requested_regions(), 42);
         assert_eq!(ctx.requested_regions().len(), cap);
         assert_eq!(ctx.total_responded_regions(), 41);
@@ -4917,9 +5220,9 @@ mod tests {
 
     #[test]
     fn requested_regions_preserves_repeat_dispatches_around_a_fanout() {
-        // Duplicates are meaningful: the fan-out matcher absorbs only the merged
-        // leg that repeats it, never a genuine repeat dispatch to the same
-        // region under the same reason.
+        // Duplicates are meaningful: each leg's own attempts are listed as they
+        // were dispatched, and a genuine repeat dispatch to the same region
+        // under the same reason is never collapsed into a neighbor.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
             for _ in 0..2 {
                 let h = builder.start_test_request(
@@ -4929,25 +5232,29 @@ mod tests {
                 );
                 builder.complete_request(h, StatusCode::TooManyRequests, None);
             }
-            builder.record_hedge_fanout(
+            // Both legs dispatch and are harvested back into the parent, so
+            // both describe themselves and neither is reconstructed...
+            let (mut primary, primary_dispatch) = spawn_primary_leg(
+                builder,
                 Some(Region::EAST_US_2),
                 RequestedRegionReason::OperationRetry,
-                Some(Region::WEST_US_2),
             );
-            // Both legs get harvested back into the parent, so both fan-out
-            // entries are absorbed exactly once...
-            let primary = builder.start_test_request(
+            let h = primary.start_test_request(
                 ExecutionContext::OperationRetry,
                 Some(Region::EAST_US_2),
                 "https://test.eastus2.documents.azure.com",
             );
-            builder.complete_request(primary, StatusCode::Ok, None);
-            let alternate = builder.start_test_request(
+            primary.complete_request(h, StatusCode::Ok, None);
+            let mut alternate =
+                spawn_alternate_leg(builder, primary_dispatch, Some(Region::WEST_US_2));
+            let h = alternate.start_test_request(
                 ExecutionContext::Hedging,
                 Some(Region::WEST_US_2),
                 "https://test.westus2.documents.azure.com",
             );
-            builder.complete_request(alternate, StatusCode::Ok, None);
+            alternate.complete_request(h, StatusCode::Ok, None);
+            builder.merge_hedge_attempt(primary);
+            builder.merge_hedge_attempt(alternate);
             // ...and a later retry to the same region is still its own entry.
             let late = builder.start_test_request(
                 ExecutionContext::OperationRetry,
@@ -4990,7 +5297,10 @@ mod tests {
         // fan-out there contributes no requested-region entries, but still
         // counts as a fan-out.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            builder.record_hedge_fanout(None, RequestedRegionReason::Initial, None);
+            let (primary, primary_dispatch) =
+                spawn_primary_leg(builder, None, RequestedRegionReason::Initial);
+            drop(spawn_alternate_leg(builder, primary_dispatch, None));
+            drop(primary);
         });
 
         assert!(ctx.hedging_started());
@@ -5022,6 +5332,339 @@ mod tests {
                 region: Region::EAST_US_2,
                 reason: RequestedRegionReason::Initial,
             }]
+        );
+    }
+
+    #[test]
+    fn hedge_loser_keeps_the_service_reply_it_already_observed() {
+        // The losing leg is not always empty. A leg that gets a 429, enters the
+        // transport pipeline's throttle-retry backoff, and only then loses the
+        // race has *already observed a real service reply*. Dropping its
+        // builder with the race would erase that reply, under-reporting charge
+        // and omitting a genuine entry from responded_regions.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let (mut primary, primary_dispatch) = spawn_primary_leg(
+                builder,
+                Some(Region::EAST_US_2),
+                RequestedRegionReason::Initial,
+            );
+            // Primary is throttled and sleeps before its next attempt.
+            let throttled = primary.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            primary.update_request(throttled, |req| {
+                req.request_charge = RequestCharge::new(1.5)
+            });
+            primary.complete_request(throttled, StatusCode::TooManyRequests, None);
+
+            let mut alternate =
+                spawn_alternate_leg(builder, primary_dispatch, Some(Region::WEST_US_2));
+            let won = alternate.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            alternate.update_request(won, |req| req.request_charge = RequestCharge::new(2.5));
+            alternate.complete_request(won, StatusCode::Ok, None);
+
+            // The alternate wins; `select` drops the primary mid-backoff.
+            drop(primary);
+            builder.merge_hedge_attempt(alternate);
+            builder.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
+                hedge_config(),
+                Region::EAST_US_2,
+                Region::WEST_US_2,
+            ));
+        });
+
+        // Both attempts survive, in true dispatch order.
+        assert_eq!(ctx.request_count(), 2);
+        assert_eq!(
+            ctx.requested_regions(),
+            vec![
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::Initial,
+                },
+                RequestedRegion {
+                    region: Region::WEST_US_2,
+                    reason: RequestedRegionReason::Hedging,
+                },
+            ]
+        );
+        // The dropped leg's 429 is a real reply from East US 2, so it belongs
+        // in the arrival-ordered responded history — and both totals are exact.
+        assert_eq!(
+            ctx.responded_regions(),
+            vec![&Region::EAST_US_2, &Region::WEST_US_2]
+        );
+        assert_eq!(ctx.total_requested_regions(), 2);
+        assert_eq!(ctx.total_responded_regions(), 2);
+        assert_eq!(
+            ctx.regions_contacted(),
+            vec![Region::EAST_US_2, Region::WEST_US_2]
+        );
+        // The throttled attempt's RU is billed even though its leg lost.
+        assert_eq!(ctx.total_request_charge(), RequestCharge::new(4.0));
+    }
+
+    #[test]
+    fn requested_regions_orders_primary_retry_before_the_alternate() {
+        // A hedge leg can retry *before* the threshold elapses, so the alternate
+        // is dispatched after the primary's second attempt. The history must
+        // report that true order, not group both legs' fan-out ahead of the
+        // primary's own attempts.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let (mut primary, primary_dispatch) = spawn_primary_leg(
+                builder,
+                Some(Region::EAST_US_2),
+                RequestedRegionReason::Initial,
+            );
+            let first = primary.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            primary.complete_request(first, StatusCode::TooManyRequests, None);
+            let retry = primary.start_test_request(
+                ExecutionContext::OperationRetry,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            primary.complete_request(retry, StatusCode::Ok, None);
+
+            // Threshold elapses only now, so the alternate is genuinely last.
+            drop(spawn_alternate_leg(
+                builder,
+                primary_dispatch,
+                Some(Region::WEST_US_2),
+            ));
+            builder.merge_hedge_attempt(primary);
+        });
+
+        assert!(ctx.hedging_started());
+        assert_eq!(
+            ctx.requested_regions(),
+            vec![
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::Initial,
+                },
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::OperationRetry,
+                },
+                RequestedRegion {
+                    region: Region::WEST_US_2,
+                    reason: RequestedRegionReason::Hedging,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn interleaved_leg_retries_report_true_global_dispatch_order() {
+        // Both legs retry concurrently and the loser is dropped. The finalized
+        // list must interleave the two legs by real dispatch time rather than
+        // concatenating one leg after the other.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let (mut primary, primary_dispatch) = spawn_primary_leg(
+                builder,
+                Some(Region::EAST_US_2),
+                RequestedRegionReason::Initial,
+            );
+            let p1 = primary.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            primary.complete_request(p1, StatusCode::TooManyRequests, None);
+
+            let mut alternate =
+                spawn_alternate_leg(builder, primary_dispatch, Some(Region::WEST_US_2));
+            let a1 = alternate.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            alternate.complete_request(a1, StatusCode::TooManyRequests, None);
+
+            let p2 = primary.start_test_request(
+                ExecutionContext::OperationRetry,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            primary.complete_request(p2, StatusCode::TooManyRequests, None);
+
+            let a2 = alternate.start_test_request(
+                ExecutionContext::OperationRetry,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            alternate.complete_request(a2, StatusCode::Ok, None);
+
+            drop(primary);
+            builder.merge_hedge_attempt(alternate);
+        });
+
+        assert_eq!(ctx.request_count(), 4);
+        assert_eq!(
+            ctx.requested_regions(),
+            vec![
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::Initial,
+                },
+                RequestedRegion {
+                    region: Region::WEST_US_2,
+                    reason: RequestedRegionReason::Hedging,
+                },
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::OperationRetry,
+                },
+                RequestedRegion {
+                    region: Region::WEST_US_2,
+                    reason: RequestedRegionReason::OperationRetry,
+                },
+            ]
+        );
+        assert_eq!(ctx.total_responded_regions(), 4);
+    }
+
+    #[test]
+    fn both_transient_legs_keep_every_observed_reply() {
+        // BothTransient: neither leg wins, so neither is merged and the parent
+        // continues into the failover loop. Everything both legs observed must
+        // still reach the finalized context.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let (mut primary, primary_dispatch) = spawn_primary_leg(
+                builder,
+                Some(Region::EAST_US_2),
+                RequestedRegionReason::Initial,
+            );
+            let p = primary.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            primary.complete_request(p, StatusCode::ServiceUnavailable, None);
+
+            let mut alternate =
+                spawn_alternate_leg(builder, primary_dispatch, Some(Region::WEST_US_2));
+            let a = alternate.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            alternate.complete_request(a, StatusCode::ServiceUnavailable, None);
+
+            // Both transient: the race returns to the failover loop and neither
+            // leg builder is merged.
+            drop(primary);
+            drop(alternate);
+
+            let failover = builder.start_test_request(
+                ExecutionContext::RegionFailover,
+                Some(Region::CENTRAL_US),
+                "https://test.centralus.documents.azure.com",
+            );
+            builder.complete_request(failover, StatusCode::Ok, None);
+        });
+
+        assert_eq!(ctx.request_count(), 3);
+        assert_eq!(
+            ctx.requested_regions(),
+            vec![
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::Initial,
+                },
+                RequestedRegion {
+                    region: Region::WEST_US_2,
+                    reason: RequestedRegionReason::Hedging,
+                },
+                RequestedRegion {
+                    region: Region::CENTRAL_US,
+                    reason: RequestedRegionReason::RegionFailover,
+                },
+            ]
+        );
+        assert_eq!(
+            ctx.responded_regions(),
+            vec![&Region::EAST_US_2, &Region::WEST_US_2, &Region::CENTRAL_US]
+        );
+        assert_eq!(ctx.total_responded_regions(), 3);
+    }
+
+    #[test]
+    fn hedge_leg_dropped_before_completing_is_not_recovered() {
+        // Only *observed* completions are recovered. An attempt still in flight
+        // when its leg is cancelled saw no reply, so it is intentionally absent
+        // from both histories — reporting it would invent a response.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let (mut primary, primary_dispatch) = spawn_primary_leg(
+                builder,
+                Some(Region::EAST_US_2),
+                RequestedRegionReason::Initial,
+            );
+            // Dispatched, never completed.
+            let _in_flight = primary.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+
+            let mut alternate =
+                spawn_alternate_leg(builder, primary_dispatch, Some(Region::WEST_US_2));
+            let won = alternate.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            alternate.complete_request(won, StatusCode::Ok, None);
+            drop(primary);
+            builder.merge_hedge_attempt(alternate);
+        });
+
+        assert_eq!(ctx.request_count(), 1);
+        // The primary leg dispatched, so it is not reconstructed from the
+        // fan-out record either — that fallback is only for a leg that never
+        // reached the wire at all.
+        assert_eq!(
+            ctx.requested_regions(),
+            vec![RequestedRegion {
+                region: Region::WEST_US_2,
+                reason: RequestedRegionReason::Hedging,
+            }]
+        );
+        assert_eq!(ctx.responded_regions(), vec![&Region::WEST_US_2]);
+    }
+
+    #[test]
+    fn execution_context_retry_variant_still_serializes_as_retry() {
+        // `Retry` is deprecated but deliberately *not* a serde alias for
+        // `OperationRetry`: any value still constructed as `Retry` must keep
+        // emitting `"retry"` on the wire for the deprecation window. This
+        // guards the documented contract against an accidental
+        // `#[serde(rename)]`/alias edit while the variant lives on.
+        #[allow(deprecated)]
+        let retry = ExecutionContext::Retry;
+        #[allow(deprecated)]
+        {
+            assert_eq!(
+                serde_json::to_string(&retry).expect("ExecutionContext is Serialize"),
+                "\"retry\""
+            );
+            assert_eq!(retry.as_str(), "retry");
+        }
+        // ...and the replacement variant is genuinely distinct on the wire.
+        assert_eq!(
+            serde_json::to_string(&ExecutionContext::OperationRetry)
+                .expect("ExecutionContext is Serialize"),
+            "\"operation_retry\""
         );
     }
 
@@ -5072,17 +5715,21 @@ mod tests {
         // the Hedging Detection API must not depend on it: each sub-op's own
         // materialized dispatch history is concatenated in sub-op order.
         let read = make_context_with(ActivityId::new_uuid(), |builder| {
-            builder.record_hedge_fanout(
+            let (primary, primary_dispatch) = spawn_primary_leg(
+                builder,
                 Some(Region::EAST_US_2),
                 RequestedRegionReason::Initial,
-                Some(Region::WEST_US_2),
             );
-            let h = builder.start_test_request(
+            let mut alternate =
+                spawn_alternate_leg(builder, primary_dispatch, Some(Region::WEST_US_2));
+            let h = alternate.start_test_request(
                 ExecutionContext::Hedging,
                 Some(Region::WEST_US_2),
                 "https://test.westus2.documents.azure.com",
             );
-            builder.complete_request(h, StatusCode::Ok, None);
+            alternate.complete_request(h, StatusCode::Ok, None);
+            drop(primary);
+            builder.merge_hedge_attempt(alternate);
             builder.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                 hedge_config(),
                 Region::EAST_US_2,
@@ -5090,17 +5737,23 @@ mod tests {
             ));
         });
         let replace = make_context_with(ActivityId::new_uuid(), |builder| {
-            builder.record_hedge_fanout(
+            let (mut primary, primary_dispatch) = spawn_primary_leg(
+                builder,
                 Some(Region::EAST_US_2),
                 RequestedRegionReason::Initial,
-                Some(Region::CENTRAL_US),
             );
-            let h = builder.start_test_request(
+            let h = primary.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::EAST_US_2),
                 "https://test.eastus2.documents.azure.com",
             );
-            builder.complete_request(h, StatusCode::Ok, None);
+            primary.complete_request(h, StatusCode::Ok, None);
+            drop(spawn_alternate_leg(
+                builder,
+                primary_dispatch,
+                Some(Region::CENTRAL_US),
+            ));
+            builder.merge_hedge_attempt(primary);
             builder.set_hedge_diagnostics(HedgeDiagnostics::primary_won_after_hedge(
                 hedge_config(),
                 Region::EAST_US_2,

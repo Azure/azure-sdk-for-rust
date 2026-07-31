@@ -22,6 +22,8 @@
 
 ### Bugs Fixed
 
+- Fixed hedged operations under-reporting diagnostics for the leg that lost the race. Cancelling the loser previously discarded every attempt it had already completed, so a leg that received a `429` and was retrying when it lost contributed nothing to the surfaced `DiagnosticsContext` — omitting its region from `regions_contacted()`/`responded_regions()` and under-reporting `total_request_charge()` against RU the account was actually billed. Attempts observed by a cancelled leg are now retained. ([#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
+
 ### Other Changes
 
 - Existing `ResponseHeaders` accessors now return Gateway 2.0 backend duration, quota, item-count, and local-LSN response metadata. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
