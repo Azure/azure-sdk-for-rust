@@ -7,6 +7,7 @@
 - Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosDriver`, including metadata, retry, hedge, probe, and Gateway 2.0 outer HTTP requests. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
 - Added a schema-agnostic Cosmos binary JSON codec (`binary_json`) and driver-side binary encoding via `OperationOptions.binary_encoding` (`BinaryEncodingOptions`). When enabled, the driver transcodes item request/response bodies between text and Cosmos binary JSON and negotiates the wire format; it is honored only for point `Document` item operations. Off by default and inert on the wire when unset. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
 - Added `PlanOptions` (with `DEFAULT_MAX_FAN_OUT`) to `CosmosDriver::plan_operation`, enforcing a maximum fan-out on fresh cross-partition plans. A fresh plan spanning more leaf request nodes than `PlanOptions::max_fan_out` (default 100) is rejected with the new `CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED` (HTTP 400). The limit is enforced only at initial plan time: resuming from a continuation token skips the check, and a partition split that raises the fan-out mid-execution does not abort the operation. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
+- Added configurable HTTP/2 shard fan-out with atomic stream reservation, an 8-stream target distinct from the 16-stream hard cap, and a default maximum connection floor of 32 per endpoint. ([#4927](https://github.com/Azure/azure-sdk-for-rust/pull/4927))
 
 ### Breaking Changes
 
