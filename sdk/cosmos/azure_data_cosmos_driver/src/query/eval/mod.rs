@@ -607,21 +607,23 @@ fn total_cmp_for_sort(a: &CosmosValue, b: &CosmosValue) -> Ordering {
 }
 
 /// Deterministic full-key tie-break for the ORDER BY oracle: orders tied
-/// rows by document `_rid` in the first sort column's direction (numeric
-/// document-ordinal order via
+/// rows by their source document's `_rid` in the first sort column's
+/// direction (numeric document-ordinal order via
 /// [`crate::models::resource_id::compare_document_rids`]), matching the
-/// backend and the production streaming merge. Returns `Ordering::Equal`
-/// (leaving the stable sort untouched) when either row lacks a string
-/// `_rid`, so projections without `_rid` are undisturbed.
+/// backend and the production streaming merge.
+///
+/// Takes the rids directly rather than reading `_rid` off the rows, because
+/// a JOIN/array-iterator row is a binding context (`{"c": <doc>, "t": ...}`)
+/// with no top-level `_rid`. Returns `Ordering::Equal` (leaving the stable
+/// sort untouched) when either row has no rid, so projections without `_rid`
+/// are undisturbed; rows expanded from the same document also compare equal,
+/// preserving array-expansion order within a document.
 fn order_by_rid_tiebreak(
-    a: &serde_json::Value,
-    b: &serde_json::Value,
+    a_rid: Option<&str>,
+    b_rid: Option<&str>,
     order_by: &SqlOrderByClause,
 ) -> Ordering {
-    let (Some(a_rid), Some(b_rid)) = (
-        a.get("_rid").and_then(serde_json::Value::as_str),
-        b.get("_rid").and_then(serde_json::Value::as_str),
-    ) else {
+    let (Some(a_rid), Some(b_rid)) = (a_rid, b_rid) else {
         return Ordering::Equal;
     };
     let ascending = crate::models::resource_id::compare_document_rids(a_rid, b_rid);
@@ -788,8 +790,18 @@ pub fn query_documents(
 
     // ── Step 1: expand JOINs + apply WHERE filter ────────────────────────
     let mut filtered_rows: Vec<serde_json::Value> = Vec::new();
+    // Source document `_rid` per row, captured here because a binding-context
+    // row is a map of aliases (`{"c": <doc>, "t": ...}`) from which the
+    // document is not always recoverable — `FROM c.children` binds the root
+    // alias to the subpath, and a top-level array iterator binds no document
+    // at all.
+    let mut row_rids: Vec<Option<String>> = Vec::new();
 
     for doc in documents {
+        let doc_rid = doc
+            .get("_rid")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned);
         if use_binding_context {
             let from = &query.from.as_ref().unwrap().collection;
             let bindings_list = expand_from(doc, from, &serde_json::Map::new()).map_err(|e| {
@@ -811,6 +823,7 @@ pub fn query_documents(
                         .build()
                 })? {
                     filtered_rows.push(ctx);
+                    row_rids.push(doc_rid.clone());
                 }
             }
         } else if eval_where(doc, &query.where_clause, eval_alias, parameters).map_err(|e| {
@@ -822,6 +835,7 @@ pub fn query_documents(
                 .build()
         })? {
             filtered_rows.push(doc.clone());
+            row_rids.push(doc_rid);
         }
     }
 
@@ -977,11 +991,11 @@ pub fn query_documents(
                     return cmp;
                 }
             }
-            // Full-key tie: order by document `_rid` to match the backend's
-            // deterministic tie order (non-grouped rows only; a group has no
-            // single `_rid`).
+            // Full-key tie: order by the source document's `_rid` to match
+            // the backend's deterministic tie order (non-grouped rows only;
+            // a group has no single `_rid`).
             if groups.is_none() {
-                order_by_rid_tiebreak(&originals[a], &originals[b], order_by)
+                order_by_rid_tiebreak(row_rids[a].as_deref(), row_rids[b].as_deref(), order_by)
             } else {
                 Ordering::Equal
             }
@@ -2663,6 +2677,83 @@ mod tests {
             desc_ids,
             vec!["ccc", "aaa", "bbb"],
             "DESC ties must follow reverse creation (rid-ordinal) order, not input order"
+        );
+    }
+
+    /// Regression: the `_rid` tie-break must also apply to JOIN /
+    /// array-iterator queries. Those rows are binding contexts
+    /// (`{"c": <doc>, "t": <tag>}`) with no top-level `_rid`, so reading
+    /// `_rid` off the row silently disabled the tie-break and let ties fall
+    /// back to storage order.
+    #[test]
+    fn order_by_tie_break_uses_rid_for_join_expanded_rows() {
+        fn real_rid(doc_id: u64) -> String {
+            let mut bytes = [0u8; 16];
+            bytes[0..4].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D]);
+            bytes[4..8].copy_from_slice(&[0x80, 0x01, 0x02, 0x03]);
+            bytes[8..16].copy_from_slice(&doc_id.to_le_bytes());
+            crate::models::resource_id::encode_rid(&bytes)
+        }
+        // Alphabetical-by-id input order (the store's `BTreeMap` order), but
+        // creation order is bbb(1), aaa(2), ccc(3). One tag each, so the JOIN
+        // is 1:1 and rid order alone decides.
+        let docs = vec![
+            serde_json::json!({"id": "aaa", "rank": 5, "tags": ["x"], "_rid": real_rid(2)}),
+            serde_json::json!({"id": "bbb", "rank": 5, "tags": ["x"], "_rid": real_rid(1)}),
+            serde_json::json!({"id": "ccc", "rank": 5, "tags": ["x"], "_rid": real_rid(3)}),
+        ];
+
+        let asc = query_documents(
+            "SELECT c.id FROM c JOIN t IN c.tags ORDER BY c.rank ASC",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        let asc_ids: Vec<&str> = asc.iter().map(|d| d["id"].as_str().unwrap()).collect();
+        assert_eq!(
+            asc_ids,
+            vec!["bbb", "aaa", "ccc"],
+            "JOIN-expanded ties must follow rid-ordinal order, not input order"
+        );
+
+        let desc = query_documents(
+            "SELECT c.id FROM c JOIN t IN c.tags ORDER BY c.rank DESC",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        let desc_ids: Vec<&str> = desc.iter().map(|d| d["id"].as_str().unwrap()).collect();
+        assert_eq!(desc_ids, vec!["ccc", "aaa", "bbb"]);
+    }
+
+    /// Rows expanded from one document share its `_rid`, so they must compare
+    /// equal and keep array-expansion order — matching the backend, which
+    /// emits a document's expanded rows contiguously in array order.
+    #[test]
+    fn order_by_tie_break_preserves_expansion_order_within_a_document() {
+        fn real_rid(doc_id: u64) -> String {
+            let mut bytes = [0u8; 16];
+            bytes[0..4].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D]);
+            bytes[4..8].copy_from_slice(&[0x80, 0x01, 0x02, 0x03]);
+            bytes[8..16].copy_from_slice(&doc_id.to_le_bytes());
+            crate::models::resource_id::encode_rid(&bytes)
+        }
+        let docs = vec![
+            serde_json::json!({"id": "aaa", "rank": 5, "tags": ["a1", "a2"], "_rid": real_rid(2)}),
+            serde_json::json!({"id": "bbb", "rank": 5, "tags": ["b1", "b2"], "_rid": real_rid(1)}),
+        ];
+
+        let rows = query_documents(
+            "SELECT t AS tag FROM c JOIN t IN c.tags ORDER BY c.rank ASC",
+            &[],
+            &docs,
+        )
+        .unwrap();
+        let tags: Vec<&str> = rows.iter().map(|d| d["tag"].as_str().unwrap()).collect();
+        assert_eq!(
+            tags,
+            vec!["b1", "b2", "a1", "a2"],
+            "documents ordered by rid; tags keep array order within each document"
         );
     }
 
