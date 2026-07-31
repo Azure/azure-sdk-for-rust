@@ -4,8 +4,8 @@
 use azure_core::http::StatusCode;
 use azure_core_amqp::{message::AmqpMessageProperties, AmqpError, AmqpList, AmqpSimpleValue};
 use azure_core_test::{recorded, TestContext};
-use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient};
-use std::{env, error::Error};
+use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient, SendEventOptions};
+use std::{env, error::Error, sync::Arc};
 use tracing::{info, trace};
 
 #[recorded::test(live)]
@@ -487,6 +487,75 @@ async fn send_eventdata_with_connection_string(_ctx: TestContext) -> Result<(), 
         .is_ok());
 
     client.close().await?;
+
+    Ok(())
+}
+
+/// Sends to every partition at the same time from one client.
+///
+/// Each send attaches a sender, and each attach needs a claims-based-security
+/// authorization. The service permits one `$cbs` link for each connection, so
+/// the authorizations must run in sequence. Before that fix, the service
+/// answered the overlapping authorizations with `NotAllowed` ("A link to
+/// connection ... $cbs node has already been opened"), which the client
+/// classifies as not retryable, and the sends failed.
+#[recorded::test(live)]
+async fn send_to_every_partition_at_once(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
+
+    let client = Arc::new(
+        ProducerClient::builder()
+            .with_application_id("send_to_every_partition_at_once".to_string())
+            .open(host.as_str(), eventhub.as_str(), recording.credential())
+            .await?,
+    );
+
+    // Read the partitions first, so the connection is open and only the sender
+    // attaches overlap.
+    let partitions = client.get_eventhub_properties().await?.partition_ids;
+    assert!(partitions.len() > 1, "the test needs many partitions");
+    info!("Send to {} partitions at the same time.", partitions.len());
+
+    let mut tasks = Vec::new();
+    for partition in partitions.iter() {
+        let client = client.clone();
+        let partition = partition.clone();
+        tasks.push(tokio::spawn(async move {
+            let result = client
+                .send_event(
+                    format!("Hello, partition {partition}!"),
+                    Some(SendEventOptions {
+                        partition_id: Some(partition.clone()),
+                    }),
+                )
+                .await;
+            (partition, result)
+        }));
+    }
+
+    let mut failures = Vec::new();
+    for task in tasks {
+        let (partition, result) = task.await?;
+        if let Err(e) = result {
+            info!("Partition {partition} failed. {e:?}");
+            failures.push(partition);
+        }
+    }
+
+    Arc::try_unwrap(client)
+        .map_err(|_| "A task still holds the client.")?
+        .close()
+        .await?;
+
+    assert!(
+        failures.is_empty(),
+        "{} of {} sends failed: {failures:?}",
+        failures.len(),
+        partitions.len()
+    );
 
     Ok(())
 }

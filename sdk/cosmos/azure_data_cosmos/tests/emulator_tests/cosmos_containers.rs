@@ -20,12 +20,20 @@ use framework::{TestClient, TestOptions};
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
     ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet support replacing container properties"
 )]
 pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -109,7 +117,9 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
                 updated_indexing_policy.indexing_mode
             );
 
-            let current_throughput = container_client
+            let current_throughput = run_context
+                .management_container_client(db_client, "TheContainer")
+                .await?
                 .read_throughput(None)
                 .await?
                 .expect("throughput should be present");
@@ -117,7 +127,9 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
             assert_eq!(Some(400), current_throughput.throughput());
 
             let new_throughput = ThroughputProperties::manual(500);
-            let throughput_response = container_client
+            let throughput_response = run_context
+                .management_container_client(db_client, "TheContainer")
+                .await?
                 .begin_replace_throughput(new_throughput, None)
                 .await?
                 .await?
@@ -148,8 +160,12 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",

@@ -51,19 +51,22 @@ These are deterministic client errors. No retry will change the outcome.
 
 | Substatus | Meaning | Action | Budget (multi-write) | Budget (single-write) |
 |-----------|---------|--------|----------------------|-----------------------|
-| 3 | `WriteForbidden` — region is not currently a valid write region for this partition (writes only) | Refresh account topology + cross-region failover retry | **120** attempts × **1000 ms** delay (dedicated `backend_failover_retry_count`) | 3 attempts × 0 ms delay (shared generic budget) |
-| 1008 | `DatabaseAccountNotFound` — region no longer owns this account (all op types, including reads, writes, queries, feed-range queries, metadata) | Refresh account topology + cross-region failover retry | **120** attempts × **1000 ms** delay (dedicated `backend_failover_retry_count`) | **120** attempts × **1000 ms** delay (dedicated `backend_failover_retry_count`) |
+| 3 | `WriteForbidden` — region is not currently a valid write region for this partition (writes only) | Refresh account topology + cross-region failover retry | **5s cumulative delay**, immediate first retry then exponential backoff with jitter (dedicated backend-failover state) | **5s cumulative delay**, immediate first retry then exponential backoff with jitter (dedicated backend-failover state) |
+| 1008 | `DatabaseAccountNotFound` — region no longer owns this account (all op types, including reads, writes, queries, feed-range queries, metadata) | Refresh account topology + cross-region failover retry | **5s cumulative delay**, immediate first retry then exponential backoff with jitter (dedicated backend-failover state) | **5s cumulative delay**, immediate first retry then exponential backoff with jitter (dedicated backend-failover state) |
 | Other | Permission denied | Abort | — | — |
 
-Both 403/3 and 403/1008 signal that the cached topology in the SDK has diverged from the backend's current routing — typically during a backend-initiated failover or a customer-initiated topology change. On each retry the driver requests `LocationEffect::RefreshAccountProperties` so the next attempt routes against the freshly learned region set. The metadata refresh itself is rate-limited (at most one network fetch per `refresh_interval`, default 5 s) and is independent of the caller's `excluded_regions` — the GetDatabaseAccount probe iterates the global endpoint and the cached `readable_locations` regardless of the operation-level exclusion list, because excluding a region from data-plane routing should not blind the SDK to topology changes happening in that region.
-
-**Why a dedicated 120-attempt × 1s budget on multi-write?** The 3-attempt generic failover budget is exhausted long before the backend's topology change finishes propagating, turning a recoverable convergence window into a hard application-visible failure. 120 attempts × 1 s ≈ 2 minutes of bounded retries gives the backend time to settle while still guaranteeing eventual bubble-up. Without the delay, the SDK hot-loops 120 cross-region requests in well under a second — faster than the backend convergence window it is reacting to. Exponential backoff was rejected because the bound is already short, the signal is a topology change rather than a load spike, and growth would push worst-case wall time into the 10-minute range.
+Both 403/3 and 403/1008 signal that the cached topology in the SDK has diverged from the backend's current routing — typically during a backend-initiated failover or a customer-initiated topology change. On each retry the driver requests `LocationEffect::RefreshAccountProperties` so the next attempt routes against the freshly learned region set. The metadata refresh itself is throttled by a lease on `refresh_interval` (default 5 s): an event-driven caller stamps the clock *before* fetching, which suppresses other event-driven callers for that interval. This is a throttle, not mutual exclusion — a fetch that outlives the interval (metadata requests are allowed up to 65 s) can be joined by a second refresh, and the background timer refresh bypasses the lease entirely. A failed or cancelled refresh also releases its claim so the next retry can fetch immediately. Metadata traffic is therefore not strictly bounded to one fetch per interval. The refresh is independent of the caller's `excluded_regions` — the GetDatabaseAccount probe iterates the global endpoint and the cached `readable_locations` regardless of the operation-level exclusion list, because excluding a region from data-plane routing should not blind the SDK to topology changes happening in that region.
 
 #### `excluded_regions` interaction
 
-The dedicated backend-failover budget filters out `excluded_regions` on every attempt. If the only remaining valid region is excluded, the operation exhausts its budget and surfaces the original 403/3 or 403/1008 to the caller.
+The dedicated backend-failover policy filters out `excluded_regions` while selecting preferred endpoints. Exclusions are honored as long as at least one preferred endpoint remains eligible.
 
-Honoring `excluded_regions` uniformly is a deliberate choice. Customer policy is sacred — the SDK does not route into a region the caller explicitly opted out of, even under pressure (compliance boundaries, cost controls, latency floors, deliberate manual failover). The trade-off is lower availability when the excluded region is the only healthy one. An earlier prototype carried a per-operation `bypass_excluded_regions` flag on the theory that 1008 means "your view of the topology is stale" and the region list might also be stale, but the customer's `excluded_regions` value is set per-operation at call time — it is a live preference, not derived from cached topology, so conflating those two concerns surprises callers and breaks DR drills.
+Two established availability fallbacks can bypass exclusions:
+
+- If every preferred region is excluded, endpoint resolution makes one last-resort attempt against the first preferred write endpoint (the authoritative hub) rather than failing without sending a request.
+- A PPAF per-partition write override is selected from backend-directed failover state and is not re-filtered through `excluded_regions`; it persists until the backend signals another routing change.
+
+Outside these explicit exceptions, excluded regions remain a hard per-operation routing filter. Callers requiring strict “never contact this region” behavior should avoid excluding every preferred endpoint and should not enable PPAF for the affected write path.
 
 ### 404/1002 — Read Session Not Available
 
@@ -220,10 +223,13 @@ Without PPCB, the driver marks entire endpoints as unavailable when errors occur
 |-------|--------|-------|
 | Transport (429) | 9 attempts or 30s | Per-request, local only |
 | Operation failover (generic — 5xx, 408, 410, transport) | 3 attempts | Per-operation, cross-region |
-| Backend-failover (403/1008) — single-write and multi-write | **120 attempts × 1000 ms** | Per-operation, cross-region |
-| Backend-failover (403/3) — multi-write | **120 attempts × 1000 ms** | Per-operation, cross-region |
-| Backend-failover (403/3) — single-write | 3 attempts × 0 ms (generic) | Per-operation, cross-region |
+| Backend-failover (403/1008) — single-write and multi-write | **5s cumulative delay**, immediate first retry then exponential backoff + jitter | Per-operation, cross-region |
+| Backend-failover (403/3) — single-write and multi-write | **5s cumulative delay**, immediate first retry then exponential backoff + jitter | Per-operation, cross-region |
 | Session retry (404/1002) | 2 (single-write) or `preferred_endpoints.len()` (multi-write) | Per-operation |
+
+The 403/3 hub-region discovery branch is the one exception: a 403/3 on a read
+with the `hub_region_processing_only` latch rotates the cached hub endpoint and
+stays on the generic 3-attempt failover budget with no pacing.
 
 ## Comparison with Other SDKs
 
@@ -239,4 +245,3 @@ Without PPCB, the driver marks entire endpoints as unavailable when errors occur
 | PPCB | Yes | Yes | Yes | **Yes** |
 
 The Rust driver is intentionally more aggressive about retrying writes. This is a deliberate design choice for maximum availability, leveraging Cosmos DB's conflict detection and the use of Etags as the safety net for duplicates and idempotency concerns.
-
