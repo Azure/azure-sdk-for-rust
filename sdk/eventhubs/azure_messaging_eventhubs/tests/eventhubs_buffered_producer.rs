@@ -95,12 +95,16 @@ async fn open_producer(
     Ok((producer, reports))
 }
 
-/// Reads events from one partition and returns the bodies that it saw.
+/// Reads events from one partition and returns the bodies that carry the prefix.
+///
+/// Each test tags its events with its own prefix, so a test that shares a
+/// partition with another test does not count the events of that other test.
 async fn receive_bodies(
     consumer: &ConsumerClient,
     partition_id: &str,
     start_sequence: i64,
     count: usize,
+    prefix: &str,
 ) -> Result<Vec<String>, Box<dyn Error>> {
     let receiver = consumer
         .open_receiver_on_partition(
@@ -120,7 +124,10 @@ async fn receive_bodies(
     while let Some(event) = stream.next().await {
         let event = event?;
         if let Some(body) = event.event_data().body() {
-            bodies.push(String::from_utf8_lossy(body).into_owned());
+            let body = String::from_utf8_lossy(body).into_owned();
+            if body.starts_with(prefix) {
+                bodies.push(body);
+            }
         }
         if bodies.len() >= count {
             break;
@@ -183,7 +190,14 @@ async fn buffered_round_trip(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // The client sent more than one event in each batch.
     info!("Reading the events back from partition {PARTITION}.");
-    let bodies = receive_bodies(&consumer, PARTITION, start_sequence, EVENT_COUNT).await?;
+    let bodies = receive_bodies(
+        &consumer,
+        PARTITION,
+        start_sequence,
+        EVENT_COUNT,
+        "buffered-",
+    )
+    .await?;
     assert_eq!(bodies.len(), EVENT_COUNT);
     for index in 0..EVENT_COUNT {
         assert!(
@@ -243,7 +257,8 @@ async fn buffered_explicit_partition_routing(ctx: TestContext) -> Result<(), Box
     assert_eq!(reports.succeeded(), EVENT_COUNT);
     assert_eq!(reports.failed(), 0, "failures: {:?}", reports.failures());
 
-    let bodies = receive_bodies(&consumer, PARTITION, start_sequence, EVENT_COUNT).await?;
+    let bodies =
+        receive_bodies(&consumer, PARTITION, start_sequence, EVENT_COUNT, "routed-").await?;
     for index in 0..EVENT_COUNT {
         assert!(bodies.contains(&format!("routed-{index}")));
     }
@@ -294,7 +309,7 @@ async fn buffered_partial_batch_timeout(ctx: TestContext) -> Result<(), Box<dyn 
 
     // No flush and no close. The wait time alone must send this event, so the
     // read below returns once the timer fires.
-    let bodies = receive_bodies(&consumer, PARTITION, start_sequence, 1).await?;
+    let bodies = receive_bodies(&consumer, PARTITION, start_sequence, 1, "partial-batch").await?;
     assert_eq!(bodies, vec!["partial-batch".to_string()]);
     assert_eq!(reports.failed(), 0, "failures: {:?}", reports.failures());
 
@@ -353,7 +368,8 @@ async fn buffered_graceful_close_sends_events(ctx: TestContext) -> Result<(), Bo
     assert_eq!(reports.failed(), 0, "failures: {:?}", reports.failures());
     assert_eq!(producer.total_buffered_event_count(), 0);
 
-    let bodies = receive_bodies(&consumer, PARTITION, start_sequence, EVENT_COUNT).await?;
+    let bodies =
+        receive_bodies(&consumer, PARTITION, start_sequence, EVENT_COUNT, "closed-").await?;
     for index in 0..EVENT_COUNT {
         assert!(bodies.contains(&format!("closed-{index}")));
     }
@@ -368,7 +384,6 @@ async fn buffered_round_trip_with_connection_string(
     _ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
     const TEST_NAME: &str = "buffered_round_trip_with_connection_string";
-    const PARTITION: &str = "4";
     const EVENT_COUNT: usize = 5;
 
     // SAS credentials come from the connection string, not the recording.
@@ -379,8 +394,22 @@ async fn buffered_round_trip_with_connection_string(
         .with_application_id(TEST_NAME.to_string())
         .open_with_connection_string(&connection_string, eventhub.as_deref())
         .await?;
+
+    // The Event Hub decides which partitions exist, so the test asks for one
+    // instead of naming it. The standard test resource has four partitions, and
+    // there are more tests than partitions, so this one shares a partition. The
+    // marker below keeps the events apart.
+    let partition = consumer
+        .get_eventhub_properties()
+        .await?
+        .partition_ids
+        .last()
+        .ok_or("the Event Hub reported no partitions")?
+        .clone();
+    info!("Using partition {partition} for the connection-string test.");
+
     let start_sequence = consumer
-        .get_partition_properties(PARTITION)
+        .get_partition_properties(&partition)
         .await?
         .last_enqueued_sequence_number;
 
@@ -413,7 +442,7 @@ async fn buffered_round_trip_with_connection_string(
             .enqueue_event(
                 format!("{marker}-{index}"),
                 Some(EnqueueEventOptions {
-                    partition_id: Some(PARTITION.to_string()),
+                    partition_id: Some(partition.clone()),
                     ..Default::default()
                 }),
             )
@@ -424,7 +453,8 @@ async fn buffered_round_trip_with_connection_string(
     assert_eq!(reports.succeeded(), EVENT_COUNT);
     assert_eq!(reports.failed(), 0, "failures: {:?}", reports.failures());
 
-    let bodies = receive_bodies(&consumer, PARTITION, start_sequence, EVENT_COUNT).await?;
+    let bodies =
+        receive_bodies(&consumer, &partition, start_sequence, EVENT_COUNT, &marker).await?;
     for index in 0..EVENT_COUNT {
         assert!(bodies.contains(&format!("{marker}-{index}")));
     }
