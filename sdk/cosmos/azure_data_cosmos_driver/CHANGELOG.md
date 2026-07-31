@@ -17,10 +17,12 @@
 
 ### Bugs Fixed
 
+- Unified `403/3` and `403/1008` topology retries under a 5-second cumulative delay budget so a persistent topology error surfaces promptly instead of hanging. Multi-write `403/3` and all `403/1008` come down from ~120 seconds of fixed 1-second retries; single-write `403/3` moves up from three immediate generic retries onto the same topology policy. The first retry is always immediate; later retries use exponential backoff with jitter. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
 - Fixed the primary leg of a hedged request being recorded with `ExecutionContext::Initial` even when the hedge was dispatched from a retry. The primary leg now carries the execution context computed from the live retry state, so a hedge that upgraded a session retry or a region failover is no longer misreported as a first attempt in diagnostics. ([#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
 
 ### Other Changes
 
+- Gateway 2.0 responses now preserve backend duration, quota, item-count, quorum, replica, query, and physical-partition RNTBD metadata when converting to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 - Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and bounded to 512 bytes, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. The full payload remains available verbatim via `CosmosError::response`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
 
 ## 0.6.1 (2026-07-23)

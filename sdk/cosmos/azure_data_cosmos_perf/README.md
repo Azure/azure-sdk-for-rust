@@ -1,8 +1,8 @@
 # Azure Cosmos DB Performance Testing Tool
 
 A CLI tool for performance and scale testing the Azure Cosmos DB Rust SDK. It runs
-point reads, single-partition queries, upserts, and creates concurrently and reports
-latency statistics at configurable intervals.
+point reads, single-partition queries, bounded change feed reads, upserts, and creates
+concurrently and reports latency statistics at configurable intervals.
 
 ## Prerequisites
 
@@ -77,12 +77,15 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--application-region` | *required* | Azure region where the application is running (e.g., `"East US 2"`) |
 | `--excluded-regions` | — | Comma-separated excluded regions |
 | `--exclude-regions-for` | `both` | Scope for excluded regions: `reads`, `writes`, or `both` |
-| `--concurrency` | `50` | Number of concurrent operations |
+| `--concurrency` | `50` | Initial seeding concurrency and persistent worker count in closed-loop mode; only the benchmark worker count is ignored when `--target-rate` is set |
+| `--target-rate` | — | Target arrival rate in operations per second; enables open-loop mode when set |
+| `--max-in-flight` | `100000` | Maximum in-flight requests in open-loop mode; excess issuances are skipped |
 | `--duration` | indefinite | Run duration in seconds |
 | `--seed-count` | `1000` | Number of items to pre-seed |
 | `--throughput` | `100000` | Throughput (RU/s) when creating the container |
 | `--default-ttl` | `3600` | Default TTL in seconds for items (0 to disable) |
 | `--report-interval` | `300` | Stats reporting interval in seconds |
+| `--diagnostics-threshold-ms` | — | Emit rate-limited summary diagnostics for failures and operations slower than this threshold; disabled when omitted |
 | `--results-container` | `perfresults` | Container for storing perf results and error documents |
 | `--results-endpoint` | — | Cosmos DB endpoint for results (omit to use same account as `--endpoint`) |
 | `--results-database` | `perfdb` | Database name on the results account |
@@ -95,6 +98,17 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--no-queries` | `false` | Disable query operations |
 | `--no-upserts` | `false` | Disable upsert operations |
 | `--no-creates` | `false` | Disable create operations |
+| `--no-change-feed` | `false` | Disable per-feed-range change feed operations |
+| `--change-feed-max-pages` | `4` | Maximum pages consumed by each change feed operation |
+| `--no-feed-range-queries` | `false` | Disable per-feed-range query operations |
+| `--feed-range-query-max-pages` | `4` | Maximum pages consumed by each per-feed-range query |
+| `--feed-range-refresh-secs` | `60` | Interval between feed-range cache refreshes (0 disables refresh) |
+
+When `--diagnostics-threshold-ms` is set, the workload client registers the
+SDK's `SamplingLogHandler`. The configured latency applies to point and
+non-point operations; failures are always eligible, and output uses the
+handler's default time-window rate limit. When omitted, no diagnostics handler
+is registered.
 
 ### Examples
 
@@ -105,6 +119,7 @@ cargo run -p azure_data_cosmos_perf -- \
   --endpoint https://myaccount.documents.azure.com:443/ \
   --auth key --key "$AZURE_COSMOS_KEY" \
   --no-queries --no-upserts --no-creates \
+  --no-change-feed --no-feed-range-queries \
   --concurrency 100 --duration 60 --report-interval 10
 ```
 
@@ -179,6 +194,14 @@ When enabled (the default), the `CreateItem` operation generates new items with
 unique IDs and partition keys. Successfully created items are added to the
 shared item pool so they become targets for subsequent read, query, and upsert
 operations.
+
+### Change Feed Operation
+
+When enabled (the default), the `ChangeFeed` operation rotates round-robin
+through the container's physical feed ranges and reads each range's
+latest-version change feed from the beginning. Because change feed streams do
+not terminate when caught up, each execution consumes at most
+`--change-feed-max-pages` pages (default `4`).
 
 ### Multi-Process Launcher
 
