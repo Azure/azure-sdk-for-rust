@@ -1714,7 +1714,7 @@ The shard selection algorithm serves two goals simultaneously:
 
 The current active-set calculation is demand-based. For a snapshot of selectable shards, the pool
 computes how many shards are needed to absorb `total_inflight + 1` at the configured
-`max_http2_streams_per_client`, clamps that between the configured min and the number of currently
+`target_http2_streams_per_client`, clamps that between the configured min and the number of currently
 selectable shards, then only considers that prefix of least-cost shards for normal request routing.
 If transport-local retry is replaying after a connectivity failure, the failed shard ID is excluded
 from the selectable set for that one replay.
@@ -1728,20 +1728,20 @@ background sweep once they remain idle longer than `idle_http2_client_timeout`.
 Traffic spike scaling:
 
   Time T1 (spike starts):
-    Shard 1: [||||||||||||||||]  16/16 → at capacity
-    Shard 2: [||||||||||||||||]  16/16 → at capacity
-    → all active shards saturated → create Shard 3
+    Shard 1: [||||||||]           8/16 → at target
+    Shard 2: [||||||||]           8/16 → at target
+    → all active shards reached target → create Shard 3
 
   Time T2 (spike grows):
-    Shard 1: [||||||||||||||||]  16/16
-    Shard 2: [||||||||||||||||]  16/16
-    Shard 3: [||||||||||||||||]  16/16 → all at capacity → create Shard 4
-    Shard 4: [||||||||]           8/16 → absorbing overflow
+    Shard 1: [||||||||]           8/16
+    Shard 2: [||||||||]           8/16
+    Shard 3: [||||||||]           8/16 → all at target → create Shard 4
+    Shard 4: [||||]               4/16 → absorbing overflow
 
   Time T3 (spike subsides):
     demand-based active set drops to 2 shards
-    Shard 1: [||||||||||]        10/16  ← active (receives new requests)
-    Shard 2: [|||||||||]          9/16  ← active (receives new requests)
+    Shard 1: [||||||]             6/16  ← active (receives new requests)
+    Shard 2: [|||||]              5/16  ← active (receives new requests)
     Shard 3: [||]                 2/16  ← draining (no new requests)
     Shard 4: []                   0/16  ← draining, idle timer started
         let fallback = {
