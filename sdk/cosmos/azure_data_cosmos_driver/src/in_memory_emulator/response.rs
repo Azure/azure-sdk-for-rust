@@ -203,6 +203,7 @@ impl ResponseBuilder {
         self
     }
 
+    #[cfg(feature = "preview_dtx")]
     pub fn without_header(mut self, name: HeaderName) -> Self {
         self.headers.remove(name);
         self

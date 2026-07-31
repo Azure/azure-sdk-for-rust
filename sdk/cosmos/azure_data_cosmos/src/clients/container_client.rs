@@ -241,7 +241,7 @@ impl ContainerClient {
             self.container_ref.account(),
             self.container_ref.rid(),
             options.operation,
-            self.operation_context("read_throughput"),
+            self.operation_context("read_container_throughput"),
         )
         .await
     }
@@ -285,7 +285,7 @@ impl ContainerClient {
             self.container_ref.rid(),
             throughput,
             options.operation,
-            self.operation_context("replace_throughput"),
+            self.operation_context("replace_container_throughput"),
         )
         .await
     }

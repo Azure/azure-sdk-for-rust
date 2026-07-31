@@ -775,7 +775,7 @@ pub(crate) async fn execute_operation_pipeline(
                     deferred_effects = retry_state.pending_write_effects.len(),
                     "failover retry triggered",
                 );
-                apply_failover_delay(delay).await;
+                apply_failover_delay(delay, deadline).await;
                 advance_to_next_attempt(
                     &mut retry_state,
                     new_state,
@@ -803,7 +803,7 @@ pub(crate) async fn execute_operation_pipeline(
                     delay = ?delay,
                     "in-region retry triggered",
                 );
-                apply_failover_delay(Some(delay)).await;
+                apply_failover_delay(Some(delay), deadline).await;
                 retry_state = new_state;
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
@@ -833,7 +833,7 @@ pub(crate) async fn execute_operation_pipeline(
                     dtx_infra_retries = new_state.dtx_infra_retry_count,
                     "dtx bodyless retry triggered",
                 );
-                apply_failover_delay(Some(delay)).await;
+                apply_failover_delay(Some(delay), deadline).await;
                 retry_state = new_state;
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
@@ -2049,10 +2049,13 @@ fn apply_optional_request_headers(
 /// to repeat that guard themselves. Conversion to `azure_core::time::Duration`
 /// is performed once; if it fails (e.g., overflow) the sleep is silently
 /// skipped because a too-large delay is no worse than no delay at all.
-async fn apply_failover_delay(delay: Option<Duration>) {
-    let Some(delay) = delay else {
+async fn apply_failover_delay(delay: Option<Duration>, deadline: Option<Instant>) {
+    let Some(mut delay) = delay else {
         return;
     };
+    if let Some(deadline) = deadline {
+        delay = delay.min(deadline.saturating_duration_since(Instant::now()));
+    }
     if delay.is_zero() {
         return;
     }
@@ -2540,6 +2543,11 @@ fn maybe_upgrade_to_hedge(
     // Extract `new_state` from the retry-upgrade-eligible variants;
     // return everything else unchanged.
     let new_state = match &action {
+        // The only producers of `delay: Some(_)` are the 403/3 and 403/1008
+        // handlers, so this preserves the backend-failover backoff instead of
+        // replacing it with an immediate hedge. A zero delay carries no backoff
+        // to preserve, so it stays hedge-eligible like `None`.
+        OperationAction::FailoverRetry { delay: Some(d), .. } if !d.is_zero() => return action,
         OperationAction::FailoverRetry { new_state, .. } => new_state.clone(),
         OperationAction::SessionRetry { new_state } => new_state.clone(),
         _ => return action,
@@ -4556,6 +4564,7 @@ mod tests {
             session_token_retry_count: 1,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -4722,6 +4731,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -4789,6 +4799,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -4868,6 +4879,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -4981,6 +4993,7 @@ mod tests {
             max_failover_retries: 3,
             max_session_retries: 3,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5823,6 +5836,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5889,6 +5903,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5958,6 +5973,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -6040,6 +6056,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -6133,6 +6150,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -8422,7 +8440,7 @@ mod tests {
     #[tokio::test]
     async fn failover_delay_none_returns_immediately() {
         let start = std::time::Instant::now();
-        super::apply_failover_delay(None).await;
+        super::apply_failover_delay(None, None).await;
         // Allow generous slack for CI scheduling jitter; the goal is to
         // confirm that `None` does not invoke the sleep path at all.
         assert!(start.elapsed() < Duration::from_millis(50));
@@ -8431,7 +8449,7 @@ mod tests {
     #[tokio::test]
     async fn failover_delay_zero_returns_immediately() {
         let start = std::time::Instant::now();
-        super::apply_failover_delay(Some(Duration::ZERO)).await;
+        super::apply_failover_delay(Some(Duration::ZERO), None).await;
         assert!(start.elapsed() < Duration::from_millis(50));
     }
 
@@ -8440,8 +8458,33 @@ mod tests {
         // Use tokio's pause-time to verify the sleep path is taken
         // without making the test wall-clock-slow.
         let start = tokio::time::Instant::now();
-        super::apply_failover_delay(Some(Duration::from_secs(5))).await;
+        super::apply_failover_delay(Some(Duration::from_secs(5)), None).await;
         assert!(start.elapsed() >= Duration::from_secs(5));
+    }
+
+    #[tokio::test]
+    async fn failover_delay_returns_immediately_when_deadline_elapsed() {
+        let start = std::time::Instant::now();
+        super::apply_failover_delay(
+            Some(Duration::from_secs(5)),
+            Some(std::time::Instant::now()),
+        )
+        .await;
+        assert!(start.elapsed() < Duration::from_millis(50));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn failover_delay_is_capped_to_future_deadline() {
+        let start = tokio::time::Instant::now();
+        let deadline = std::time::Instant::now() + Duration::from_millis(250);
+
+        super::apply_failover_delay(Some(Duration::from_secs(5)), Some(deadline)).await;
+
+        let elapsed = start.elapsed();
+        assert!(
+            elapsed >= Duration::from_millis(200) && elapsed < Duration::from_secs(1),
+            "sleep should stop near the future deadline, got {elapsed:?}"
+        );
     }
 
     // ── enforce_deadline_or_timeout ───────────────────────────────────
@@ -9037,6 +9080,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -9182,6 +9226,49 @@ mod tests {
         assert_eq!(
             state.failover_retry_count, 2,
             "two slots are always charged regardless of layout",
+        );
+    }
+
+    /// The hedge `BothTransient` boundary must leave the backend-failover
+    /// budget exactly as it found it: the two legs race concurrently and
+    /// incur no backoff, so charging them delay would shorten the topology
+    /// convergence window without any wall-clock time having been spent.
+    /// Resetting the budget would be equally wrong — a hedged operation would
+    /// get a fresh 5s on every race.
+    #[test]
+    fn try_advance_after_both_transient_preserves_backend_failover_budget() {
+        let regions = ["region-a", "region-b", "region-c"];
+        let location = make_advance_test_location(&regions);
+        let mut state = make_advance_test_state(0, regions.len());
+        // Partially-spent backend budget from a prior sequential 403/1008 round.
+        state.backend_failover_retry_count = 3;
+        state.backend_failover_cumulative_delay = Duration::from_millis(3_000);
+
+        let primary = crate::options::Region::new("region-a");
+        let secondary = crate::options::Region::new("region-b");
+
+        let result = super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            true,
+            Some(&primary),
+            Some(&secondary),
+            dummy_last_error(),
+        );
+
+        assert!(result.is_ok(), "budget remains, so the race must continue");
+        assert_eq!(
+            state.failover_retry_count, 2,
+            "the race charges the generic failover budget",
+        );
+        assert_eq!(
+            state.backend_failover_retry_count, 3,
+            "the concurrent legs must neither consume nor reset the backend retry count",
+        );
+        assert_eq!(
+            state.backend_failover_cumulative_delay,
+            Duration::from_millis(3_000),
+            "no backoff elapsed during the race, so no delay budget may be charged",
         );
     }
 
