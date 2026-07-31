@@ -3056,9 +3056,9 @@ impl CosmosDriver {
                 .build()
         })?;
 
-        let query_plan = self
-            .resolve_query_plan(container, &operation, options)
-            .await?;
+        // `Box::pin` keeps `plan_operation`'s future small. Inlined, it grows to
+        // 17,288 bytes and trips `clippy::large_futures` at five caller sites.
+        let query_plan = Box::pin(self.resolve_query_plan(container, &operation, options)).await?;
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();

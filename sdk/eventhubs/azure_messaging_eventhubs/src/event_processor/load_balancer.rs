@@ -661,32 +661,14 @@ pub(crate) mod tests {
         Ok(())
     }
 
-    async fn expire_ownership(
-        checkpoint_store: Arc<dyn CheckpointStore>,
+    fn expire_ownership(
+        checkpoint_store: &InMemoryCheckpointStore,
         ownership: &Ownership,
     ) -> Result<()> {
-        let ownerships = checkpoint_store
-            .list_ownerships(
-                &ownership.fully_qualified_namespace,
-                &ownership.event_hub_name,
-                &ownership.consumer_group,
-            )
-            .await?;
-        let etag = ownerships
-            .iter()
-            .find(|o| {
-                o.partition_id == ownership.partition_id
-                    && o.owner_id == ownership.owner_id
-                    && o.consumer_group == ownership.consumer_group
-            })
-            .unwrap()
-            .etag
-            .clone();
-        let mut ownership = ownership.clone();
-        ownership.last_modified_time = Some(OffsetDateTime::now_utc() - Duration::seconds(3600));
-        ownership.etag = etag;
-        checkpoint_store.claim_ownership(&[ownership]).await?;
-        Ok(())
+        checkpoint_store.set_last_modified_time_for_test(
+            ownership,
+            OffsetDateTime::now_utc() - Duration::seconds(3600),
+        )
     }
 
     async fn relinquish_ownership(
@@ -743,7 +725,7 @@ pub(crate) mod tests {
                 "Expiring ownership for partition {}",
                 middle_ownership.partition_id
             );
-            expire_ownership(checkpoint_store.clone(), &middle_ownership).await?;
+            expire_ownership(checkpoint_store.as_ref(), &middle_ownership)?;
 
             info!("Load balancing with strategy: {:?}", strategy);
             let load_balancer = LoadBalancer::new(

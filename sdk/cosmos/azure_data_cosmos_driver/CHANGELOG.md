@@ -17,6 +17,7 @@
 
 ### Bugs Fixed
 
+- Unified `403/3` and `403/1008` topology retries under a 5-second cumulative delay budget so a persistent topology error surfaces promptly instead of hanging. Multi-write `403/3` and all `403/1008` come down from ~120 seconds of fixed 1-second retries; single-write `403/3` moves up from three immediate generic retries onto the same topology policy. The first retry is always immediate; later retries use exponential backoff with jitter. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
 - Fixed session-token parsing rejecting the unset version marker `-1` (as in `0:-1#42`), which the service returns for a partition key range that has no assigned topology version — most commonly a child range immediately after a split. Merging such a token now succeeds and round-trips `-1` verbatim. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
 
 ### Other Changes

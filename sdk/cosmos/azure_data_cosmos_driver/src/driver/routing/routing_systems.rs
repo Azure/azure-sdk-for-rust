@@ -474,12 +474,15 @@ fn try_move_next_endpoint(
     next_endpoints: &[CosmosEndpoint],
     failed_endpoint: &CosmosEndpoint,
 ) -> bool {
+    // Record the failure regardless of ordering: a stale or concurrent report
+    // for a non-current endpoint must still be retained so it is never
+    // re-selected below.
+    entry.failed_endpoints.insert(failed_endpoint.clone());
+
     // If a concurrent CAS already moved the endpoint, count it as success.
     if *failed_endpoint != entry.current_endpoint {
         return true;
     }
-
-    entry.failed_endpoints.insert(failed_endpoint.clone());
 
     for candidate in next_endpoints {
         if candidate == &entry.current_endpoint {
@@ -2187,6 +2190,100 @@ mod tests {
         let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &eastus);
         let entry = result.failover_overrides.get(&pk("0")).unwrap();
         assert_eq!(entry.current_endpoint, westus);
+    }
+
+    #[test]
+    fn hub_discovery_skips_already_failed_endpoints_across_four_regions() {
+        let endpoints = [
+            regional_endpoint("region-a"),
+            regional_endpoint("region-b"),
+            regional_endpoint("region-c"),
+            regional_endpoint("region-d"),
+        ];
+        let mut account = single_master_account();
+        account.preferred_read_endpoints = endpoints.to_vec().into();
+        let mut state = partition_state_ppaf_enabled();
+        state.failover_overrides.insert(
+            pk("0"),
+            PartitionFailoverEntry {
+                current_endpoint: endpoints[0].clone(),
+                first_failed_endpoint: endpoints[0].clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        // Rotation skips endpoints already in `failed_endpoints`, so each
+        // failure advances to a genuinely untried region.
+        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[0]);
+        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[1]);
+        assert_eq!(
+            state.failover_overrides[&pk("0")].current_endpoint,
+            endpoints[2]
+        );
+
+        // If C also rejects the hub request, the remaining healthy hub D is
+        // still reachable rather than losing a retry to already-failed B.
+        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[2]);
+        let entry = &state.failover_overrides[&pk("0")];
+        assert_eq!(entry.current_endpoint, endpoints[3]);
+        assert!(entry.failed_endpoints.contains(&endpoints[0]));
+        assert!(entry.failed_endpoints.contains(&endpoints[1]));
+        assert!(entry.failed_endpoints.contains(&endpoints[2]));
+    }
+
+    /// Failure reports can arrive out of order relative to `current_endpoint`
+    /// (stale legs, concurrent hedges). Reporting B before A, while A is still
+    /// current, must retain B so the subsequent rotation off A skips it
+    /// instead of re-selecting an endpoint already known to be failed.
+    #[test]
+    fn hub_discovery_retains_failures_reported_out_of_order() {
+        let endpoints = [
+            regional_endpoint("region-a"),
+            regional_endpoint("region-b"),
+            regional_endpoint("region-c"),
+        ];
+        let mut account = single_master_account();
+        account.preferred_read_endpoints = endpoints.to_vec().into();
+        let mut state = partition_state_ppaf_enabled();
+        state.failover_overrides.insert(
+            pk("0"),
+            PartitionFailoverEntry {
+                current_endpoint: endpoints[0].clone(),
+                first_failed_endpoint: endpoints[0].clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        // B fails while A is still current: the report is retained even though
+        // it does not move the endpoint.
+        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[1]);
+        assert_eq!(
+            state.failover_overrides[&pk("0")].current_endpoint,
+            endpoints[0],
+            "a non-current failure must not rotate the endpoint"
+        );
+
+        // A now fails too; rotation must skip the already-failed B.
+        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[0]);
+        let entry = &state.failover_overrides[&pk("0")];
+        assert_eq!(
+            entry.current_endpoint, endpoints[2],
+            "must not re-select the already-failed B"
+        );
+        assert!(entry.failed_endpoints.contains(&endpoints[0]));
+        assert!(entry.failed_endpoints.contains(&endpoints[1]));
     }
 
     #[test]

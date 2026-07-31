@@ -7,6 +7,7 @@
 
 mod common;
 use azure_core::error::ErrorKind as AzureErrorKind;
+use azure_core::time::{Duration, OffsetDateTime};
 use azure_messaging_eventhubs::CheckpointStore;
 use std::sync::Arc;
 
@@ -47,6 +48,57 @@ fn test_update_ownership_invalid() {
     let result = store.update_ownership(&ownership);
     assert!(result.is_err());
     assert_eq!(*result.unwrap_err().kind(), AzureErrorKind::Other);
+}
+
+/// A renewed ownership gets a new ETag and a fresh `last_modified_time`, and the
+/// record it replaces no longer claims the partition.
+#[tokio::test]
+async fn test_claim_ownership_renewal_rotates_etag_and_timestamp() {
+    common::setup();
+    let store = InMemoryCheckpointStore::new();
+    let ownership = Ownership {
+        fully_qualified_namespace: "ns.servicebus.windows.net".to_string(),
+        event_hub_name: "event_hub".to_string(),
+        consumer_group: "consumer_group".to_string(),
+        partition_id: "partition_id".to_string(),
+        owner_id: Some("owner_id".to_string()),
+        ..Default::default()
+    };
+
+    let first = store
+        .claim_ownership(&[ownership])
+        .await
+        .unwrap()
+        .pop()
+        .expect("the first claim returns an ownership");
+    assert!(first.etag.is_some());
+    assert!(first.last_modified_time.is_some());
+
+    // Renew with a deliberately old timestamp. A store that keeps the caller's
+    // value gives the old time back, so the test tells a refresh from a copy
+    // without a dependency on the clock resolution.
+    let stale_time = OffsetDateTime::now_utc() - Duration::seconds(3600);
+    let mut renewal = first.clone();
+    renewal.last_modified_time = Some(stale_time);
+
+    let second = store
+        .claim_ownership(std::slice::from_ref(&renewal))
+        .await
+        .unwrap()
+        .pop()
+        .expect("the renewal returns an ownership");
+
+    // The renewal must rotate the ETag, the same way a fresh claim does.
+    assert!(second.etag.is_some());
+    assert_ne!(first.etag, second.etag);
+
+    // The renewal must stamp the current time, not keep the caller's value.
+    assert!(second.last_modified_time.expect("the renewal sets a time") > stale_time);
+
+    // The first record is stale now, so a claim that carries its ETag fails.
+    let stale = store.update_ownership(&first);
+    assert!(stale.is_err());
+    assert_eq!(*stale.unwrap_err().kind(), AzureErrorKind::Other);
 }
 
 #[tokio::test]
