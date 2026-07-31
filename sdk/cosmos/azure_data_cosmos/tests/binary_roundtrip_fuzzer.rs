@@ -45,7 +45,7 @@ use azure_data_cosmos::options::{
     OperationOptions, Region, ServerCertificateValidation,
 };
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy,
+    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy, SubStatusCode,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
 use serde_json::{Map, Number, Value};
@@ -1508,21 +1508,23 @@ fn canonicalize(value: &Value) -> String {
 ///
 /// Rules (calibrated against a live account, design doc §3.1):
 /// - integers with magnitude `< 2^53` → exact integer (JCS-safe);
-/// - integers with magnitude `>= 2^53` (whether `i64` or `u64`) → **string
-///   token** of the `f64` form. The backend stores *every* JSON number as an
+/// - integers with magnitude `>= 2^53` (whether `i64` or `u64`) → **tagged
+///   wide-number value** ([`cosmos_wide_number_value`]) holding the `f64` token.
+///   The backend stores *every* JSON number as an
 ///   IEEE-754 double, so an integer beyond `2^53` is not preserved exactly (e.g.
 ///   `28423844363879210` is echoed back as `28423844363879208`); tokenizing the
 ///   rounded double makes the sent and returned values compare equal;
 /// - integral-valued floats below `2^53` (e.g. `1.0`) → integer form (the
 ///   backend drops the trailing `.0`);
-/// - integral-valued floats `>= 2^53` → `f64` string token (matches the lossy
-///   double case above);
+/// - integral-valued floats `>= 2^53` → tagged wide-number value (matches the
+///   lossy double case above);
 /// - other finite floats → kept as `f64` (JCS-safe);
 /// - non-finite (`NaN` / `±∞`) → `null`.
 ///
-/// The string tokens are only ever compared for equality (never parsed back), so
-/// representing an out-of-JCS-range number as a token is sound: any two values
-/// Cosmos would round-trip to each other produce the identical token.
+/// The wide-number tokens are only ever compared for equality, so a tagged token
+/// is sound: any two values Cosmos round-trips to each other produce the same
+/// token, and the tag keeps them out of the plain-string domain (see
+/// [`WIDE_NUMBER_TAG`]).
 fn normalize_number(n: &Number) -> Value {
     if let Some(i) = n.as_i64() {
         if (i.unsigned_abs() as f64) < JCS_SAFE_INT_LIMIT {
@@ -1531,11 +1533,11 @@ fn normalize_number(n: &Number) -> Value {
             // i >= 2^53: the backend stores it as a lossy double, so tokenize the
             // rounded f64 (not the exact decimal) — otherwise the returned,
             // double-rounded value would mismatch.
-            Value::String(cosmos_double_token(i as f64))
+            cosmos_wide_number_value(i as f64)
         }
     } else if let Some(u) = n.as_u64() {
         // u > i64::MAX: Cosmos stores it as a lossy double; token from the double.
-        Value::String(cosmos_double_token(u as f64))
+        cosmos_wide_number_value(u as f64)
     } else if let Some(f) = n.as_f64() {
         if !f.is_finite() {
             Value::Null
@@ -1543,7 +1545,7 @@ fn normalize_number(n: &Number) -> Value {
             Value::Number(Number::from(f as i64))
         } else if f.fract() == 0.0 {
             // Integral but out of the JCS-safe range → double token.
-            Value::String(cosmos_double_token(f))
+            cosmos_wide_number_value(f)
         } else {
             // Non-integral finite float is JCS-safe as a number.
             Number::from_f64(f)
@@ -1566,6 +1568,24 @@ const JCS_SAFE_INT_LIMIT: f64 = 9_007_199_254_740_992.0;
 /// same `f64`, so they produce the same token.
 fn cosmos_double_token(f: f64) -> String {
     format!("{f}")
+}
+
+/// The object key that tags a normalized wide-number token. Wide numbers are
+/// canonicalized to `{ WIDE_NUMBER_TAG: "<double token>" }` rather than a bare
+/// [`Value::String`], keeping the token in a distinct type domain so a
+/// number-to-string codec bug cannot canonicalize equal and pass silently.
+const WIDE_NUMBER_TAG: &str = "$__cosmos_wide_number__";
+
+/// Wraps a Cosmos-stored double's decimal token in the [`WIDE_NUMBER_TAG`]
+/// envelope. The inner value stays a `String`, so [`normalize_numbers`] is
+/// idempotent over the result.
+fn cosmos_wide_number_value(f: f64) -> Value {
+    let mut map = serde_json::Map::new();
+    map.insert(
+        WIDE_NUMBER_TAG.to_string(),
+        Value::String(cosmos_double_token(f)),
+    );
+    Value::Object(map)
 }
 
 /// Recursively rewrites every number in `value` to its Cosmos-calibrated form
@@ -1739,12 +1759,17 @@ fn write_options_with_content() -> ItemWriteOptions {
 /// Maximum attempts for a single point operation before the run gives up.
 const MAX_OP_ATTEMPTS: u32 = 6;
 
-/// Transient transport/service status codes worth retrying (429/408/503/... —
-/// includes the transport-generated 503 that carries DNS/connect blips on CI).
-/// Any other status (e.g. a decode failure) is treated as a genuine result.
+/// Transient transport/service status codes worth retrying (429/408/503/...).
+/// A response-body serialization failure (`500 / SERIALIZATION_RESPONSE_BODY_INVALID`)
+/// is excluded: it is the decode corruption this fuzzer exists to catch, so it
+/// must surface immediately rather than be retried into a masking 409.
 fn is_transient(err: &azure_data_cosmos::CosmosError) -> bool {
+    let status = err.status();
+    if status.sub_status() == Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID) {
+        return false;
+    }
     matches!(
-        u16::from(err.status().status_code()),
+        u16::from(status.status_code()),
         408 | 429 | 500 | 502 | 503 | 504
     )
 }
@@ -1880,10 +1905,13 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             let context = format!("iter={iter} config={label} id={id} seed={}", cfg.seed);
 
             // CREATE with content response (exercises the response decode
-            // path). Retry transient failures; if a *retried* create sees
-            // 409 Conflict, a prior attempt already committed (the (pk, id) is
-            // unique per iteration+config), so read the stored item back instead
-            // of failing the soak on an ambiguous-but-successful create.
+            // path). Retry transient failures. A 409 Conflict is recovered on
+            // any attempt: the id is deterministic per (seed, iteration,
+            // config), so a replayed seed lands on an item an earlier run
+            // committed and the first create 409s. Reading it back keeps the
+            // assertion alive. This can't mask a broken create-response decode,
+            // which surfaces as `500 / SERIALIZATION_RESPONSE_BODY_INVALID` and
+            // is excluded from `is_transient`, so it returns immediately.
             let created_doc: Value = {
                 let mut attempt = 0;
                 loop {
@@ -1897,9 +1925,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
                                 format!("{context}: create response decode failed: {e}")
                             })?;
                         }
-                        Err(e)
-                            if e.status().status_code() == StatusCode::Conflict && attempt > 1 =>
-                        {
+                        Err(e) if e.status().status_code() == StatusCode::Conflict => {
                             let read = container.read_item(&pk, &id, None).await.map_err(|e| {
                                 format!("{context}: create-conflict read failed: {e}")
                             })?;
@@ -2270,6 +2296,23 @@ mod tests {
 
         // A JCS-safe integer stays a bare number.
         assert_eq!(canon(&serde_json::json!(1_000_000)), "1000000");
+    }
+
+    #[test]
+    fn wide_number_token_cannot_collide_with_a_plain_string() {
+        // Oracle type-safety: a wide number lives in its own tagged domain, so a
+        // codec bug that turns it into a JSON string with the same decimal text
+        // must NOT canonicalize equal — otherwise the corruption passes silently.
+        let wide_number: Value = serde_json::from_str("18446744073709551614").unwrap();
+        let normalized = normalize_numbers(&wide_number);
+        let token = normalized[WIDE_NUMBER_TAG]
+            .as_str()
+            .expect("wide number normalizes to a tagged token object")
+            .to_string();
+
+        // The bare decimal string the backend would echo for a number→string bug.
+        let corrupted_string = Value::String(token);
+        assert_ne!(canon(&wide_number), canon(&corrupted_string));
     }
 
     #[test]
