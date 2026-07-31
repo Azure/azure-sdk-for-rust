@@ -1020,6 +1020,141 @@ async fn buffered_counts_track_each_partition() {
     assert_eq!(h.client.total_buffered_event_count(), 0);
 }
 
+// 27. A worker that nothing cancels still abandons its active batch.
+//
+// `AbortableTask::abort` cancels a task on a runtime that supports it. On the
+// standard thread runtime it only detaches the thread, so the worker keeps
+// running and reaches the end of its queue, which is the same path as a
+// graceful close. This test drives the worker with no cancellation at all, so
+// only the abandon flag can stop the batch from going to the service.
+#[tokio::test]
+async fn an_abandoning_worker_that_nothing_cancels_does_not_publish() {
+    let (mock, _started) = MockSendClient::with_max_message_size(&["0"], 1024 * 1024);
+
+    let (sender, receiver) = mpsc::unbounded();
+    let buffered = Arc::new(AtomicUsize::new(0));
+    let total_buffered = Arc::new(AtomicUsize::new(0));
+    let abandon = Arc::new(AtomicBool::new(false));
+    let (stopped_tx, stopped_rx) = oneshot::channel();
+
+    let reported = Arc::new(AtomicUsize::new(0));
+    let counter = reported.clone();
+    let handlers = DeliveryHandlers {
+        succeeded: None,
+        failed: Arc::new(move |_context| {
+            let counter = counter.clone();
+            Box::pin(async move {
+                counter.fetch_add(1, Ordering::AcqRel);
+            })
+        }),
+    };
+
+    let worker = PartitionWorker::new(
+        "0".to_string(),
+        receiver,
+        mock.clone() as Arc<dyn BufferedSendClient>,
+        // Long enough that the timer cannot send the batch during the test.
+        Duration::seconds(30),
+        64,
+        handlers,
+        buffered.clone(),
+        total_buffered.clone(),
+        abandon.clone(),
+        stopped_tx,
+    );
+
+    let capacity = Arc::new(Semaphore::new(4));
+    let permit = capacity
+        .try_acquire_arc()
+        .expect("a new semaphore has capacity");
+    let event = EventData::from("abandoned");
+    buffered.fetch_add(1, Ordering::AcqRel);
+    total_buffered.fetch_add(1, Ordering::AcqRel);
+    sender
+        .unbounded_send(Command::Event {
+            message: Box::new(AmqpMessage::from(event.clone())),
+            event,
+            permit,
+        })
+        .expect("the worker holds the receiver");
+
+    let run = worker.run();
+    pin_mut!(run);
+
+    // One poll takes the event into the active batch. The batch is not full and
+    // the wait time is long, so the worker then waits for the next command.
+    assert!(poll!(&mut run).is_pending());
+
+    // Abandon the events and end the queue, exactly as an immediate close does.
+    abandon.store(true, Ordering::Release);
+    drop(sender);
+
+    // Nothing cancels this future, so the worker runs its close path in full.
+    run.await;
+
+    assert_eq!(
+        mock.total_events(),
+        0,
+        "an immediate close promised to drop these events, so none may reach the service"
+    );
+    assert_eq!(
+        reported.load(Ordering::Acquire),
+        0,
+        "an abandoned event has no delivery outcome to report"
+    );
+    assert!(
+        stopped_rx.await.is_ok(),
+        "the worker must tell the client that it stopped"
+    );
+}
+
+// 28. The buffered counts stay sane when every event reaches a terminal outcome
+// as soon as the worker sees it.
+//
+// An oversized event fails inside the worker without a send. The client counts
+// the event before it publishes the command, so that failure can never
+// decrement a count that is still zero and wrap it to `usize::MAX`. The
+// interleaving that this guards against is a race, so this test does not
+// reproduce it on demand; it states the invariant and exercises the path with
+// many events on more than one thread.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn a_fast_terminal_outcome_does_not_wrap_the_buffered_counts() {
+    const EVENT_COUNT: usize = 200;
+
+    let mut h = harness(
+        &["0"],
+        Config {
+            max_message_size: 200,
+            with_success_handler: false,
+            ..Default::default()
+        },
+    )
+    .await;
+
+    let big = "x".repeat(4096);
+    for _ in 0..EVENT_COUNT {
+        h.client
+            .enqueue_event(big.clone(), to_partition("0"))
+            .await
+            .unwrap();
+        // A wrapped count is astronomically large, and the real count can never
+        // pass the number of events that the test enqueued.
+        assert!(
+            h.client.total_buffered_event_count() <= EVENT_COUNT,
+            "the buffered count wrapped: {}",
+            h.client.total_buffered_event_count()
+        );
+    }
+
+    for _ in 0..EVENT_COUNT {
+        assert!(!h.next_report().await.is_success());
+    }
+
+    h.client.close().await.unwrap();
+    assert_eq!(h.client.total_buffered_event_count(), 0);
+    assert_eq!(h.client.buffered_event_count("0"), 0);
+}
+
 /// Live tests for the buffered producer.
 ///
 /// These tests need a real Event Hub. They live in the crate because
