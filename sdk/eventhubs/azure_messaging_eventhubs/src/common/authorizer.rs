@@ -199,7 +199,7 @@ impl Authorizer {
             // second recovery cycle). See #4454.
             let stored = {
                 let mut scopes = self.authorization_scopes.write().await;
-                if connection.generation() != generation {
+                if !connection.generation_is_current(generation) {
                     None
                 } else {
                     // If another task won the race, return its cached token and drop
@@ -599,9 +599,9 @@ impl Authorizer {
             // takes (#4454) before writing anything back.
             if !updated_tokens.is_empty() {
                 let mut scopes = self.authorization_scopes.write().await;
-                if connection.generation() != captured {
+                if !connection.generation_is_current(captured) {
                     debug!(
-                        "Discarding tokens refreshed during recovery (#4454); the recovery generation advanced mid-refresh."
+                        "Discarding tokens refreshed during recovery (#4454); a recovery overlapped the refresh."
                     );
                     // Report the discard to the caller so it applies the backoff
                     // floor. The cache keeps the old tokens, so they are still due
@@ -1239,12 +1239,13 @@ mod tests {
         }
         assert_eq!(connection.generation(), 0);
 
-        // Fire a recovery now, in the lock-free window. This bumps the generation,
-        // exactly the race #4454 describes. We bump the generation directly rather
-        // than running the full `simulate_reconnect`, because clearing the caches is
-        // irrelevant to the token guard and keeps the test focused.
+        // Fire a recovery now, in the lock-free window. This advances the generation
+        // past one whole recovery, exactly the race #4454 describes. We advance the
+        // generation directly rather than running the full `simulate_reconnect`,
+        // because clearing the caches is irrelevant to the token guard and keeps the
+        // test focused.
         connection.bump_generation_for_test();
-        assert_eq!(connection.generation(), 1);
+        assert_eq!(connection.generation(), 2);
 
         // Release the first authorization; its token is now stale and must be
         // discarded, triggering a re-authorization against the new generation.
@@ -1278,7 +1279,7 @@ mod tests {
         assert_eq!(cached.unwrap().token.secret(), token.token.secret());
         assert_eq!(
             connection.generation(),
-            1,
+            2,
             "no second recovery cycle should have been needed"
         );
     }
@@ -1386,7 +1387,7 @@ mod tests {
 
         // Fire a recovery in the lock-free window: the #4454 race, refresh edition.
         connection.bump_generation_for_test();
-        assert_eq!(connection.generation(), 1);
+        assert_eq!(connection.generation(), 2);
 
         // Release the gated refresh; its token is now stale and must be discarded.
         credential.release.store(true, Ordering::SeqCst);
