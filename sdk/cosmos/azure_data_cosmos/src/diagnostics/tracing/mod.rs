@@ -340,7 +340,7 @@ mod tests {
             "the operation the caller invoked is still `patch_item`"
         );
 
-        let mut child_names: Vec<String> = spans
+        let child_names: Vec<String> = spans
             .iter()
             .filter(|s| s.name == "cosmosdb.request")
             .filter_map(|s| {
@@ -350,7 +350,6 @@ mod tests {
                     .map(|kv| kv.value.as_str().to_string())
             })
             .collect();
-        child_names.sort();
         assert_eq!(
             child_names,
             vec!["patch_read_item", "patch_replace_item"],
