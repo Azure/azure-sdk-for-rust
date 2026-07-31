@@ -511,14 +511,17 @@ impl LocationStateStore {
             return;
         }
 
-        // The CAS above stamps the clock *before* the fetch so concurrent
-        // event-driven callers are excluded (the timer-driven forced path
-        // deliberately bypasses this claim, since the timer interval is its
-        // own rate limit), but that stamp must not survive a fetch that
+        // The CAS above stamps the clock *before* the fetch, leasing the
+        // `refresh_interval` against other event-driven callers. This is a
+        // throttle lease, not mutual exclusion: a fetch that outlives the
+        // interval can be joined by a second refresh, and the timer-driven
+        // forced path bypasses the claim entirely (the timer interval is its
+        // own rate limit). That stamp must not survive a fetch that
         // never landed: the event-driven retry paths depend on a fresh
         // snapshot and would otherwise be blinded for a full
         // `refresh_interval`. The guard restores the previous stamp on
-        // failure or cancellation.
+        // failure or cancellation, and no-ops if another refresh has since
+        // re-stamped the clock.
         let mut claim = RefreshClaimGuard {
             clock: &self.last_refresh_epoch_ms,
             claimed: now_ms,
@@ -541,7 +544,7 @@ impl LocationStateStore {
     /// is actually applied — if this timer-driven refresh fails (network
     /// error, service 5xx, ...), the event-driven path is NOT throttled and is
     /// free to retry recovery immediately. The event-driven path claims the
-    /// clock up front for mutual exclusion but rolls the claim back via
+    /// clock up front as a throttle lease but rolls the claim back via
     /// [`RefreshClaimGuard`] when its own fetch fails or is cancelled, so the
     /// same guarantee holds there.
     async fn force_refresh_account_properties(&self) {

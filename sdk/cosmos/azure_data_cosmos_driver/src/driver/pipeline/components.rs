@@ -93,7 +93,7 @@ pub const BACKEND_FAILOVER_BACKOFF_FACTOR: f64 = 2.0;
 /// `15s * (1 + BACKEND_FAILOVER_JITTER_RATIO)` = 18.75s before the
 /// cumulative-budget truncation. Clamping before jitter is deliberate:
 /// jittering first would pile probability mass on exactly 15s and defeat the
-/// decorrelation jitter exists for.
+/// retry spreading jitter exists to provide.
 ///
 /// Unreachable at the current 5s budget (delays truncate to the remaining
 /// budget first); retained so the curve stays sane if the budget is raised.
