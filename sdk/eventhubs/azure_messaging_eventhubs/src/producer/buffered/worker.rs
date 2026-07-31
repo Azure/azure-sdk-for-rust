@@ -65,6 +65,16 @@ pub(crate) struct PartitionWorker {
     buffered: Arc<AtomicUsize>,
     total_buffered: Arc<AtomicUsize>,
     abandon: Arc<AtomicBool>,
+
+    /// Tells the client that this worker stopped.
+    ///
+    /// The worker sends on this channel when it leaves [`Self::run`]. A runtime
+    /// that drops the task instead cancels the channel. Either way the client
+    /// learns that the worker holds nothing more, without depending on what
+    /// [`AbortableTask::abort`] does on the runtime in use.
+    ///
+    /// [`AbortableTask::abort`]: azure_core::async_runtime::AbortableTask
+    stopped: Option<oneshot::Sender<()>>,
 }
 
 impl PartitionWorker {
@@ -79,6 +89,7 @@ impl PartitionWorker {
         buffered: Arc<AtomicUsize>,
         total_buffered: Arc<AtomicUsize>,
         abandon: Arc<AtomicBool>,
+        stopped: oneshot::Sender<()>,
     ) -> Self {
         Self {
             partition_id,
@@ -90,6 +101,7 @@ impl PartitionWorker {
             buffered,
             total_buffered,
             abandon,
+            stopped: Some(stopped),
         }
     }
 
@@ -131,6 +143,8 @@ impl PartitionWorker {
 
             let Some(command) = command else {
                 // The client dropped every sender. Send what is left and stop.
+                // A client that abandons its events takes the same path, so
+                // `send_batch` must see the flag; it returns without a send.
                 debug!(
                     partition_id = %self.partition_id,
                     "Partition queue closed; draining the active batch."
@@ -168,6 +182,13 @@ impl PartitionWorker {
                 Command::Flush(completed) => {
                     self.send_batch(&mut batch, &mut pending).await;
                     timer = None;
+                    if self.abandon.load(Ordering::Acquire) {
+                        // The client abandoned the events during this flush, so
+                        // the barrier cannot report success. Dropping the sender
+                        // cancels the waiter.
+                        drop(completed);
+                        break;
+                    }
                     // A dropped receiver means the caller stopped waiting.
                     let _ = completed.send(());
                 }
@@ -182,6 +203,12 @@ impl PartitionWorker {
             partition_id = %self.partition_id,
             "Buffered producer partition worker stopped."
         );
+
+        // Tell the client that this worker holds nothing more. The client waits
+        // for this, so a close does not return while a worker still runs.
+        if let Some(stopped) = self.stopped.take() {
+            let _ = stopped.send(());
+        }
     }
 
     /// Adds one event to the active batch, and sends the batch when the event
@@ -285,7 +312,10 @@ impl PartitionWorker {
     /// Sends the active batch and reports exactly one outcome for it.
     ///
     /// The method does nothing when the batch holds no events, so the worker
-    /// never sends an empty batch.
+    /// never sends an empty batch. It also does nothing once the client
+    /// abandons its events: every path that ends the worker calls this method,
+    /// and an immediate close must not publish what it promised to drop. The
+    /// events stay in `pending`, and [`Self::discard_remaining`] drops them.
     async fn send_batch(
         &self,
         batch: &mut Option<EventDataBatchInner>,
@@ -295,6 +325,14 @@ impl PartitionWorker {
             return;
         };
         if active.is_empty() {
+            return;
+        }
+        if self.abandon.load(Ordering::Acquire) {
+            debug!(
+                partition_id = %self.partition_id,
+                event_count = pending.len(),
+                "The client abandoned its events; not sending the active batch."
+            );
             return;
         }
 

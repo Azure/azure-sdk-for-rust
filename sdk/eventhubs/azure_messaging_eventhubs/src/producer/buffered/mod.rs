@@ -114,12 +114,16 @@ pub struct SendBatchSucceededContext {
     pub events: Vec<EventData>,
 }
 
-/// Reports that a batch of events did not reach the service.
+/// Reports that the service did not durably accept a batch of events.
 ///
 /// The client passes this to the handler that
 /// [`BufferedProducerClientBuilder::with_on_send_failed`] registers. The client
 /// reports a failure only after the retry policy is exhausted, or when the
 /// error is not retryable.
+///
+/// A failure does not always mean that the batch never reached the service. An
+/// AMQP `Modified` or `Released` outcome settles the transfer without a durable
+/// accept, and neither outcome proves whether the service stored the events.
 ///
 /// The client does not enqueue the events again. Re-enqueueing can change the
 /// order of events, and it can store an event two times. The events are in this
@@ -176,6 +180,16 @@ struct PartitionState {
 
     /// The worker task.
     task: Mutex<Option<SpawnedTask>>,
+
+    /// Resolves once the worker stopped.
+    ///
+    /// The worker completes this channel when it leaves its loop, and a runtime
+    /// that drops the task cancels it. A close waits for it, so the client never
+    /// reports that it closed while a worker still sends, still calls a delivery
+    /// handler, or still holds the connection. `AbortableTask::abort` cannot
+    /// carry that promise: on the standard thread runtime it detaches the thread
+    /// and lets the await return at once.
+    stopped: Mutex<Option<oneshot::Receiver<()>>>,
 }
 
 /// A producer client that buffers events and publishes them in the background.
@@ -277,6 +291,7 @@ impl BufferedProducerClient {
             let buffered = Arc::new(AtomicUsize::new(0));
             let capacity = Arc::new(Semaphore::new(max_buffered_event_count_per_partition));
 
+            let (stopped_sender, stopped) = oneshot::channel();
             let worker = PartitionWorker::new(
                 partition_id.clone(),
                 receiver,
@@ -287,6 +302,7 @@ impl BufferedProducerClient {
                 buffered.clone(),
                 total_buffered.clone(),
                 abandon.clone(),
+                stopped_sender,
             );
 
             let task = get_async_runtime().spawn(Box::pin(worker.run()));
@@ -298,6 +314,7 @@ impl BufferedProducerClient {
                     capacity,
                     buffered,
                     task: Mutex::new(Some(task)),
+                    stopped: Mutex::new(Some(stopped)),
                 },
             );
         }
@@ -481,12 +498,21 @@ impl BufferedProducerClient {
             let guard = state.sender.lock().unwrap();
             guard.as_ref().ok_or_else(Self::closed_error)?.clone()
         };
-        sender
-            .unbounded_send(command)
-            .map_err(|_| Self::closed_error())?;
-
+        // Count the event before the worker can see it. The worker decrements
+        // the counts as soon as the event reaches a terminal outcome, and a
+        // fast terminal path (an oversized event with a handler that returns at
+        // once) can run before this call returns. Counting afterwards lets that
+        // decrement reach zero first and wrap the counts to `usize::MAX`.
         state.buffered.fetch_add(1, Ordering::AcqRel);
         self.total_buffered.fetch_add(1, Ordering::AcqRel);
+
+        if sender.unbounded_send(command).is_err() {
+            // The worker never saw the event, so it never decrements for it.
+            state.buffered.fetch_sub(1, Ordering::AcqRel);
+            self.total_buffered.fetch_sub(1, Ordering::AcqRel);
+            return Err(Self::closed_error());
+        }
+
         trace!(
             partition_id = %partition_id,
             "The client accepted an event into the buffer."
@@ -589,6 +615,13 @@ impl BufferedProducerClient {
     /// number of abandoned events in a warning, and it removes them from the
     /// buffered counts.
     ///
+    /// The call waits for every worker to stop, so it does not return while a
+    /// worker still publishes, still calls a delivery handler, or still holds
+    /// the connection. A worker that is inside a send when the call starts
+    /// finishes that send first on a runtime that cannot cancel a task, so the
+    /// call can take as long as one send. The retry policy bounds that send. No
+    /// batch that the client has not started to send goes to the service.
+    ///
     /// A second call does nothing and returns `Ok`.
     pub async fn abort(&self) -> Result<()> {
         self.shutdown(true).await
@@ -612,20 +645,38 @@ impl BufferedProducerClient {
         self.signal_closing();
 
         // Taking the sender ends each queue. A worker then sends what it still
-        // holds and stops, unless the client abandons the events.
+        // holds and stops, unless the client abandons the events. The abandon
+        // flag is already set above, so a worker that takes this path drops its
+        // events instead of sending them.
         let mut tasks = Vec::with_capacity(self.partitions.len());
+        let mut acknowledgements = Vec::with_capacity(self.partitions.len());
         for state in self.partitions.values() {
             drop(state.sender.lock().unwrap().take());
+            if let Some(stopped) = state.stopped.lock().unwrap().take() {
+                acknowledgements.push(stopped);
+            }
             if let Some(task) = state.task.lock().unwrap().take() {
                 if abandon {
+                    // On a runtime with cancellation this ends an in-flight send
+                    // at once. On the standard thread runtime it only detaches
+                    // the thread, so the acknowledgement below, not this call, is
+                    // what makes the close wait for the worker.
                     task.abort();
                 }
                 tasks.push(task);
             }
         }
+
+        // Wait for every worker to stop. A cancelled task drops its end of the
+        // channel, which resolves the receiver with an error, so this waits for
+        // the worker to finish or to be dropped, and never for both.
+        for acknowledgement in acknowledgements {
+            let _ = acknowledgement.await;
+        }
+
         for task in tasks {
             if let Err(error) = task.await {
-                warn!("A partition worker stopped with an error: {error}");
+                debug!("A partition worker stopped with an error: {error}");
             }
         }
 
@@ -713,7 +764,10 @@ impl Drop for BufferedProducerClient {
         self.signal_closing();
 
         // Stop the workers. Dropping the partition map also drops every sender,
-        // which ends each queue.
+        // which ends each queue. The abandon flag is set above, so a worker that
+        // reaches the end of its queue drops its events instead of sending them,
+        // whatever the runtime does with the abort below. A drop cannot wait for
+        // the workers, so call `close` or `abort` when that matters.
         for state in self.partitions.values_mut() {
             if let Some(task) = state.task.lock().unwrap().take() {
                 task.abort();
