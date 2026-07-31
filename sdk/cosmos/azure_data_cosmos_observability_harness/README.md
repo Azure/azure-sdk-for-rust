@@ -178,7 +178,7 @@ authoritative list.
 | `--exporter` | `stdout` | `stdout`, `otlp` (needs `--features otlp`), or `none`. |
 | `--otlp-endpoint` | `http://localhost:4317` | OTLP/gRPC collector endpoint. |
 | `--metric-export-interval-secs` | `15` | Metric export cadence. |
-| `--extended-metrics` | off | Emit request-charge + returned-rows metrics and the extended attribute set. |
+| `--extended-metrics` | off | Emit request-charge, returned-rows and active-instance metrics, plus the extended attribute set. |
 
 ### Fault injection *(requires the `fault_injection` feature)*
 

@@ -115,7 +115,8 @@ pub struct Config {
     pub metric_export_interval_secs: u64,
 
     /// Emit the optional development-tier metrics (request charge, returned
-    /// rows) and the extended attribute set from the metrics handler.
+    /// rows, active client instance count) and the extended attribute set from
+    /// the metrics handler.
     #[arg(long, default_value_t = false)]
     pub extended_metrics: bool,
 

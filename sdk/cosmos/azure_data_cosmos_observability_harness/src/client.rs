@@ -186,6 +186,7 @@ fn register_handlers(builder: CosmosClientBuilder, config: &Config) -> CosmosCli
             MetricsOptions::default()
                 .with_request_charge_metric(true)
                 .with_returned_rows_metric(true)
+                .with_active_instance_metric(true)
                 .with_extended_attributes(true)
         } else {
             MetricsOptions::default()
