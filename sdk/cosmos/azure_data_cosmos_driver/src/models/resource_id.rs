@@ -85,7 +85,7 @@ const DATABASE_RID_BYTE_LEN: usize = 4;
 
 /// Returns `true` when `rid` is a well-formed **database-level** RID.
 ///
-/// A database RID decodes to exactly [`DATABASE_RID_BYTE_LEN`] bytes; a container
+/// A database RID decodes to exactly `DATABASE_RID_BYTE_LEN` bytes; a container
 /// RID (8 bytes), a document RID (16 bytes), and any string that is not valid RID
 /// Base64 all return `false`.
 ///
