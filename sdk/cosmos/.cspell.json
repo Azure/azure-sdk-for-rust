@@ -405,9 +405,10 @@
       ]
     },
     {
-      "comment": "Cites .NET test names verbatim; `Begining` is a typo in the upstream source.",
+      "comment": "Cites .NET test names verbatim; `Begining` is a typo in the upstream source. This config is listed too, since the allow-list entry below contains the word.",
       "filename": [
-        "**/tests/fixtures/streaming_order_by_scenarios.json"
+        "**/tests/fixtures/streaming_order_by_scenarios.json",
+        "**/sdk/cosmos/.cspell.json"
       ],
       "words": [
         "Begining"

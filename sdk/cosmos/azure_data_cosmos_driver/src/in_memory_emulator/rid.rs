@@ -85,13 +85,18 @@ impl RidGenerator {
     }
 
     /// Generates a new partition key range RID (16 bytes: db_id + coll_id + pkr_id with type nibble 0x5).
+    ///
+    /// The type nibble lives in the *top* nibble of the little-endian
+    /// sub-collection segment — the same byte Java `ResourceId.tryParse` reads
+    /// as `subCollRes[7] >> 4` — so these RIDs are never mistaken for
+    /// documents (whose nibble is `0x0`).
     pub fn next_pkrange_rid(&self, db_id: u32, coll_id: u32, pkrange_id: u32) -> String {
-        let pkr_id = (pkrange_id as u64) << 4 | 0x05; // type nibble 0x5
+        let pkr_id = (pkrange_id as u64) | (0x5 << 60); // type nibble 0x5
         let coll_with_high_bit = coll_id | 0x80000000;
         let mut bytes = [0u8; 16];
         bytes[..4].copy_from_slice(&db_id.to_be_bytes());
         bytes[4..8].copy_from_slice(&coll_with_high_bit.to_be_bytes());
-        bytes[8..16].copy_from_slice(&pkr_id.to_be_bytes());
+        bytes[8..16].copy_from_slice(&pkr_id.to_le_bytes());
         encode_rid(&bytes)
     }
 }
@@ -187,8 +192,10 @@ mod tests {
             .unwrap();
         assert_eq!(bytes.len(), 16);
 
-        let pkr_raw = u64::from_be_bytes(bytes[8..16].try_into().unwrap());
-        assert_eq!(pkr_raw & 0x0F, 0x05);
+        let pkr_raw = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
+        assert_eq!(pkr_raw >> 60, 0x5);
+        // A partition key range must never read back as a document RID.
+        assert_eq!(crate::models::resource_id::document_ordinal(&pkr_rid), None);
     }
 
     #[test]

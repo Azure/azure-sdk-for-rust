@@ -152,20 +152,21 @@ fn real_rid(doc_id: u64) -> String {
 /// a decodable 16-byte Cosmos `_rid` whose document ordinal preserves the
 /// label's lexicographic order, so fixtures exercise
 /// `compare_document_rids`'s real numeric path instead of its raw-string
-/// fallback. Labels must be at most 8 bytes and are packed big-endian into
-/// the ordinal segment. Already-encoded RIDs (e.g. from [`real_rid`]) pass
-/// through unchanged so the two helpers compose.
+/// fallback. Labels must be at most 7 bytes and are packed big-endian into
+/// the ordinal segment below its most significant byte, which real Cosmos
+/// reserves for the child-resource type nibble. Already-encoded RIDs (e.g.
+/// from [`real_rid`]) pass through unchanged so the two helpers compose.
 fn label_rid(label: &str) -> String {
     if crate::models::resource_id::document_ordinal(label).is_some() {
         return label.to_owned();
     }
     let label_bytes = label.as_bytes();
     assert!(
-        label_bytes.len() <= 8,
-        "fixture rid label `{label}` exceeds the 8 bytes that fit in a document ordinal"
+        label_bytes.len() <= 7,
+        "fixture rid label `{label}` exceeds the 7 bytes that fit in a document ordinal"
     );
     let mut ordinal = [0u8; 8];
-    ordinal[..label_bytes.len()].copy_from_slice(label_bytes);
+    ordinal[1..1 + label_bytes.len()].copy_from_slice(label_bytes);
     real_rid(u64::from_be_bytes(ordinal))
 }
 

@@ -465,13 +465,15 @@ fn validate_streaming_order_by_snapshot(
                     directions.len(),
                 )));
             }
-            // A non-empty RID isn't enough: the boundary RID is compared
-            // against real backend `_rid`s by `compare_document_rids`, which
-            // silently degrades to raw-string ordering when either side isn't
-            // a decodable document RID. Base64 string order is not monotonic
-            // in document ordinal, so a corrupt RID would drop or keep the
-            // wrong rows inside the boundary tie group. Reject it here, as
-            // .NET does when `ResourceId.TryParse` fails.
+            // A non-empty RID isn't enough, and neither is a decodable one:
+            // the boundary RID is compared against real backend `_rid`s by
+            // `compare_document_rids`, so it must be a *document* RID. A
+            // sibling 16-byte RID (partition key range, stored procedure, ...)
+            // would yield an arbitrary ordinal, and an undecodable one would
+            // silently degrade to raw-string ordering, which is not monotonic
+            // in document ordinal — either way the discard pass would drop or
+            // keep the wrong rows inside the boundary tie group. Reject it
+            // here, as .NET/Java do when `ResourceId.TryParse` fails.
             if crate::models::resource_id::document_ordinal(&boundary.last_rid).is_none() {
                 return Err(order_by_state_invalid(format!(
                     "continuation token range boundary RID `{}` is not a decodable Cosmos \
@@ -3352,6 +3354,50 @@ mod tests {
         )
         .err()
         .expect("an undecodable boundary RID must be rejected");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "got: {err}"
+        );
+    }
+
+    /// A well-formed 16-byte RID is *not* automatically a document RID: the
+    /// child-resource type nibble distinguishes documents from partition key
+    /// ranges, stored procedures, and so on. Without that check a crafted
+    /// token would pass validation and enter the numeric tie-break with an
+    /// arbitrary ordinal.
+    #[test]
+    fn streaming_order_by_snapshot_rejects_non_document_boundary_rid() {
+        // Same shape as `valid_rid`, but tagged as a partition key range.
+        let mut bytes = [0u8; 16];
+        bytes[0..8].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D, 0x80, 0x01, 0x02, 0x03]);
+        bytes[8..16].copy_from_slice(&7u64.to_le_bytes());
+        bytes[15] = 0x50;
+        let pkrange_rid = crate::models::resource_id::encode_rid(&bytes);
+
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: pkrange_rid,
+                skip_count: 1,
+            }),
+        }];
+        let err = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
+            ranges,
+        )
+        .err()
+        .expect("a non-document boundary RID must be rejected");
         assert_eq!(
             err.status().sub_status(),
             Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
