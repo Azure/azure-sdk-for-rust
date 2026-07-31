@@ -26,7 +26,6 @@ use std::sync::atomic::Ordering;
 
 use super::components::{
     OperationAction, OperationRetryState, RetryWithRetryState, TransportOutcome, TransportResult,
-    BACKEND_FAILOVER_RETRY_INTERVAL,
 };
 #[cfg(feature = "preview_dtx")]
 use super::components::{
@@ -509,7 +508,9 @@ fn dtx_infra_retry_delay(attempt: u32) -> std::time::Duration {
 /// Always retries cross-region when the failover budget allows, and emits
 /// effects to (a) refresh account properties so the new write region is
 /// learned, (b) mark this endpoint unavailable, and (c) mark this partition
-/// unavailable in the current (read) region for write traffic.
+/// unavailable in the current (read) region for write traffic. Both
+/// single-write and multi-write pace retries with exponential backoff bounded
+/// by the 5s budget, with the first retry immediate.
 ///
 /// **Hub-region discovery branch.** When the
 /// `hub_region_processing_only` latch is active on a read with a known
@@ -587,21 +588,12 @@ fn try_handle_write_forbidden(
         ));
     }
 
-    // Multi-write 403/3 gets the larger backend-failover budget; single-write uses the generic budget.
-    let (new_state, delay) = if retry_state.can_use_multiple_write_locations {
-        if !retry_state.can_retry_backend_failover() {
-            return None;
-        }
-        (
-            retry_state.clone().advance_backend_failover(),
-            Some(BACKEND_FAILOVER_RETRY_INTERVAL),
-        )
-    } else {
-        if !retry_state.can_retry_failover() {
-            return None;
-        }
-        (retry_state.clone().advance_failover(), None)
-    };
+    if !retry_state.can_retry_backend_failover() {
+        return None;
+    }
+    let delay = retry_state.backend_failover_delay();
+    let new_state = retry_state.clone().advance_backend_failover(delay);
+    let delay = Some(delay);
 
     let mut effects = vec![
         LocationEffect::RefreshAccountProperties,
@@ -624,7 +616,9 @@ fn try_handle_write_forbidden(
 
 /// Handles 403/1008 DatabaseAccountNotFound for all operation types.
 ///
-/// The region no longer owns the account; refresh topology and fail over with bounded retries.
+/// The region no longer owns the account; refresh topology and fail over with
+/// exponential backoff bounded by the 5s backend-failover budget, with the
+/// first retry immediate.
 fn try_handle_database_account_not_found(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -638,8 +632,9 @@ fn try_handle_database_account_not_found(
     if !retry_state.can_retry_backend_failover() {
         return None;
     }
-    let new_state = retry_state.clone().advance_backend_failover();
-    let delay = Some(BACKEND_FAILOVER_RETRY_INTERVAL);
+    let delay = retry_state.backend_failover_delay();
+    let new_state = retry_state.clone().advance_backend_failover(delay);
+    let delay = Some(delay);
 
     let mut effects = vec![
         LocationEffect::RefreshAccountProperties,
@@ -1001,11 +996,138 @@ fn service_error_message(status: &CosmosStatus) -> String {
     )
 }
 
+/// Upper bound, in bytes, on how much of the service's error text is folded
+/// into the error message. The full payload always remains available verbatim
+/// via [`CosmosError::response`](crate::error::CosmosError::response); this cap
+/// only keeps single-line log records and panic messages bounded.
+const MAX_SERVICE_DETAIL_LEN: usize = 512;
+
+/// Extracts the service's human-readable explanation from an error response
+/// body so it can be folded into the error message.
+///
+/// Cosmos error payloads are shaped like
+/// `{"code":"BadRequest","message":"Message: {\"Errors\":[\"...\"]}\r\nActivityId: ..., Request URI: ..."}`.
+/// Only the `Errors` text carries information the caller can act on — the
+/// activity ID is already exposed as typed state on the error, and the request
+/// URI and SDK banner identify service-internal replicas — so those trailers
+/// are stripped. Bodies that are not JSON (or not shaped as expected) fall back
+/// to the raw text so nothing the service said is lost; the untouched payload
+/// (trailers included) is always retrievable via
+/// [`CosmosError::response`](crate::error::CosmosError::response).
+///
+/// The result is normalized to a single line (see [`normalize_single_line`])
+/// before it is truncated, so a service-controlled body cannot inject line
+/// breaks or control characters into a log record through
+/// [`CosmosError`](crate::error::CosmosError)'s single-line `Display`.
+///
+/// Returns `None` when the body is empty or carries no usable text.
+fn service_body_detail(body: &[u8]) -> Option<String> {
+    let text = std::str::from_utf8(body).ok()?.trim();
+    if text.is_empty() {
+        return None;
+    }
+
+    let detail = match serde_json::from_str::<serde_json::Value>(text) {
+        Ok(value) => match value.get("message").and_then(serde_json::Value::as_str) {
+            Some(message) => condense_service_message(message),
+            // Valid JSON without a `message` field: keep the payload as-is.
+            None => text.to_string(),
+        },
+        Err(_) => text.to_string(),
+    };
+
+    // Normalize before truncating so the byte budget applies to the text that
+    // is actually rendered.
+    let detail = normalize_single_line(&detail);
+    if detail.is_empty() {
+        return None;
+    }
+
+    Some(truncate_detail(&detail))
+}
+
+/// Collapses `text` onto a single line: every control character (CR, LF, TAB,
+/// other C0/C1 codes, and DEL) becomes a space, and runs of whitespace collapse
+/// to one space.
+///
+/// The service controls this text, so this is what keeps it from forging or
+/// mangling log records emitted through
+/// [`CosmosError`](crate::error::CosmosError)'s single-line `Display`.
+fn normalize_single_line(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut pending_space = false;
+
+    for ch in text.chars() {
+        if ch.is_control() || ch.is_whitespace() {
+            // Defer the separator so trailing whitespace never lands in `out`.
+            pending_space = !out.is_empty();
+            continue;
+        }
+        if pending_space {
+            out.push(' ');
+            pending_space = false;
+        }
+        out.push(ch);
+    }
+
+    out
+}
+
+/// Reduces a service `message` field to the actionable text: drops the
+/// `Message: ` prefix and the `ActivityId: ...` trailer, and unwraps the
+/// nested `{"Errors":[...]}` envelope when present.
+fn condense_service_message(message: &str) -> String {
+    let head = match message.find("\r\nActivityId:") {
+        Some(index) => &message[..index],
+        None => match message.find("\nActivityId:") {
+            Some(index) => &message[..index],
+            None => message,
+        },
+    };
+    let head = head.trim().strip_prefix("Message:").unwrap_or(head).trim();
+
+    // The inner envelope is itself JSON, e.g. `{"Errors":["..."]}`.
+    if let Ok(inner) = serde_json::from_str::<serde_json::Value>(head) {
+        if let Some(errors) = inner.get("Errors").and_then(serde_json::Value::as_array) {
+            let joined = errors
+                .iter()
+                .filter_map(serde_json::Value::as_str)
+                .collect::<Vec<_>>()
+                .join("; ");
+            if !joined.is_empty() {
+                return joined;
+            }
+        }
+    }
+
+    head.to_string()
+}
+
+/// Truncates `detail` to [`MAX_SERVICE_DETAIL_LEN`] bytes on a character
+/// boundary, appending an ellipsis when anything was dropped. The ellipsis is
+/// counted against the budget, so the result never exceeds the cap.
+fn truncate_detail(detail: &str) -> String {
+    const ELLIPSIS: &str = "...";
+
+    if detail.len() <= MAX_SERVICE_DETAIL_LEN {
+        return detail.to_string();
+    }
+
+    let mut end = MAX_SERVICE_DETAIL_LEN - ELLIPSIS.len();
+    while end > 0 && !detail.is_char_boundary(end) {
+        end -= 1;
+    }
+    format!("{}{ELLIPSIS}", &detail[..end])
+}
+
 /// Builds a typed [`CosmosError`] for a Cosmos HTTP error response.
 ///
 /// Captures the parsed response headers and the raw response body bytes
 /// (e.g. the JSON error payload returned by the service for a 400 /
-/// BadRequest) on the resulting `CosmosError`. The error propagates through the
+/// BadRequest) on the resulting `CosmosError`. The service's own explanation
+/// is also folded into the error message (see [`service_body_detail`]) so a
+/// bare `{err}` log line says *why* the request was rejected instead of only
+/// `HTTP 400: Unknown`. The error propagates through the
 /// pipeline as `crate::error::CosmosError` end-to-end. Callers inspect the wire
 /// payload directly via [`CosmosError::status`](crate::error::CosmosError::status),
 /// [`CosmosError::cosmos_headers`](crate::error::CosmosError::cosmos_headers), and
@@ -1031,9 +1153,14 @@ pub(crate) fn build_service_error(
     // canonical [`CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE`] so
     // callers get a consistent typed status regardless of gateway version.
     let effective_status = synthesize_cross_partition_query_status(*status, body);
+    let mut message = service_error_message(&effective_status);
+    if let Some(detail) = service_body_detail(body) {
+        message.push_str(". Details: ");
+        message.push_str(&detail);
+    }
     crate::error::CosmosError::builder()
         .with_status(effective_status)
-        .with_message(service_error_message(&effective_status))
+        .with_message(message)
         .with_response_parts(crate::models::CosmosResponsePayload::new(
             body.to_vec(),
             cosmos_headers.clone(),
@@ -1101,6 +1228,10 @@ fn build_transport_error(
 
 #[cfg(test)]
 mod tests {
+    use super::super::components::{
+        BACKEND_FAILOVER_JITTER_RATIO, BACKEND_FAILOVER_MAX_BACKOFF,
+        BACKEND_FAILOVER_MAX_TOTAL_DELAY,
+    };
     use super::*;
     use crate::{
         diagnostics::RequestSentStatus,
@@ -1112,6 +1243,27 @@ mod tests {
     };
     use azure_core::http::StatusCode;
     use std::time::Duration;
+
+    /// Lower/upper bounds of the jittered *second* backend-failover delay. The
+    /// first retry is immediate, so the 1s exponential base applies from the
+    /// second retry onward (base 1s ±25%).
+    fn second_backend_failover_delay_bounds() -> (Duration, Duration) {
+        let base = Duration::from_millis(1000);
+        let lo = base.mul_f64(1.0 - BACKEND_FAILOVER_JITTER_RATIO);
+        let hi = base.mul_f64(1.0 + BACKEND_FAILOVER_JITTER_RATIO);
+        (lo, hi)
+    }
+
+    /// Asserts a delay is a plausible jittered backend-failover backoff: never
+    /// above the per-retry cap plus jitter. The first retry is legitimately
+    /// zero, so only the upper bound is enforced.
+    fn assert_within_backoff_cap(delay: Duration) {
+        let max = BACKEND_FAILOVER_MAX_BACKOFF.mul_f64(1.0 + BACKEND_FAILOVER_JITTER_RATIO);
+        assert!(
+            delay <= max,
+            "backoff delay {delay:?} must stay within capped+jitter {max:?}"
+        );
+    }
 
     #[cfg(feature = "preview_dtx")]
     use super::super::components::{MAX_DTX_COORDINATOR_RETRIES, MAX_DTX_INFRA_RETRIES};
@@ -1634,6 +1786,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: std::time::Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -1903,7 +2056,7 @@ mod tests {
         // backend-failover budget rather than the generic one.
         let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
         // Drive the backend-failover counter directly to the cap rather than
-        // looping 120× through `advance_backend_failover`.
+        // looping through `advance_backend_failover`.
         state.backend_failover_retry_count = state.max_backend_failover_retries;
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
@@ -1961,6 +2114,116 @@ mod tests {
     }
 
     #[test]
+    fn backend_failover_aborts_when_cumulative_delay_budget_exhausted() {
+        // Even with retry-count headroom, a spent cumulative delay budget must
+        // bubble up the original topology status rather than retry forever.
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        state.backend_failover_retry_count = 1;
+        state.backend_failover_cumulative_delay = BACKEND_FAILOVER_MAX_TOTAL_DELAY;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            &state,
+        );
+
+        assert!(
+            matches!(action, OperationAction::Abort { .. }),
+            "spent cumulative delay budget must abort even with retry-count headroom, got {action:?}"
+        );
+    }
+
+    #[test]
+    fn backend_failover_delay_stays_within_cap_across_retries() {
+        // Walk several successive multi-write 403/3 retries through the full
+        // evaluate path; every scheduled delay must stay within the jittered cap.
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        loop {
+            let (action, _effects) = evaluate_transport_result(
+                &op,
+                &endpoint,
+                http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+                &state,
+            );
+            match action {
+                OperationAction::FailoverRetry {
+                    new_state,
+                    delay: Some(delay),
+                } => {
+                    assert_within_backoff_cap(delay);
+                    state = new_state;
+                }
+                OperationAction::Abort { .. } => break,
+                other => panic!("expected paced FailoverRetry or Abort, got {other:?}"),
+            }
+        }
+        assert_eq!(
+            state.backend_failover_cumulative_delay,
+            BACKEND_FAILOVER_MAX_TOTAL_DELAY
+        );
+        assert!(
+            state.backend_failover_retry_count == 4,
+            "5s budget should be exhausted in 4 retries (first is immediate), got {}",
+            state.backend_failover_retry_count
+        );
+    }
+
+    #[test]
+    fn backend_failover_second_retry_uses_exponential_base() {
+        // The first retry is immediate; the 1s exponential base starts at the
+        // second retry so a persistent topology error still backs off.
+        let op = make_create_operation();
+        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (first, _) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+        let OperationAction::FailoverRetry {
+            new_state,
+            delay: Some(first_delay),
+        } = first
+        else {
+            panic!("expected paced FailoverRetry");
+        };
+        assert_eq!(first_delay, Duration::ZERO);
+
+        let (second, _) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &new_state,
+        );
+        let OperationAction::FailoverRetry {
+            delay: Some(second_delay),
+            ..
+        } = second
+        else {
+            panic!("expected paced FailoverRetry");
+        };
+        let (lo, hi) = second_backend_failover_delay_bounds();
+        assert!(
+            second_delay >= lo && second_delay <= hi,
+            "second retry must use the ~1s exponential base (jittered), got {second_delay:?}"
+        );
+    }
+
+    #[test]
     fn database_account_not_found_does_not_consume_generic_failover_budget() {
         // Backend-failover retries must not consume the generic failover budget.
         let op = make_create_operation();
@@ -1980,10 +2243,16 @@ mod tests {
             OperationAction::FailoverRetry { new_state, delay } => {
                 assert_eq!(new_state.failover_retry_count, 0);
                 assert_eq!(new_state.backend_failover_retry_count, 1);
+                let delay = delay.expect("multi-write 1008 must pace retries with a backoff delay");
                 assert_eq!(
                     delay,
-                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
-                    "multi-write 1008 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                    Duration::ZERO,
+                    "multi-write 1008 first retry is immediate; the account refresh already \
+                     supplies the new region"
+                );
+                assert_eq!(
+                    new_state.backend_failover_cumulative_delay, delay,
+                    "scheduled delay must be accumulated toward the budget"
                 );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
@@ -2010,10 +2279,17 @@ mod tests {
             OperationAction::FailoverRetry { new_state, delay } => {
                 assert_eq!(new_state.failover_retry_count, 0);
                 assert_eq!(new_state.backend_failover_retry_count, 1);
+                let delay =
+                    delay.expect("multi-write 403/3 must pace retries with a backoff delay");
                 assert_eq!(
                     delay,
-                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
-                    "multi-write 403/3 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                    Duration::ZERO,
+                    "multi-write 403/3 first retry is immediate; the account refresh already \
+                     supplies the new region"
+                );
+                assert_eq!(
+                    new_state.backend_failover_cumulative_delay, delay,
+                    "scheduled delay must be accumulated toward the budget"
                 );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
@@ -2021,8 +2297,7 @@ mod tests {
     }
 
     #[test]
-    fn write_forbidden_on_single_write_uses_generic_failover_budget() {
-        // Single-write 403/3 uses the generic budget, not the multi-write rotation budget.
+    fn write_forbidden_on_single_write_uses_backend_failover_budget() {
         let op = make_create_operation();
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
@@ -2038,20 +2313,24 @@ mod tests {
 
         match action {
             OperationAction::FailoverRetry { new_state, delay } => {
-                assert_eq!(new_state.failover_retry_count, 1);
-                assert_eq!(new_state.backend_failover_retry_count, 0);
+                assert_eq!(new_state.failover_retry_count, 0);
+                assert_eq!(new_state.backend_failover_retry_count, 1);
+                let delay =
+                    delay.expect("single-write 403/3 must pace retries with a backoff delay");
                 assert_eq!(
-                    delay, None,
-                    "single-write 403/3 uses the generic budget and must not pace retries"
+                    delay,
+                    Duration::ZERO,
+                    "single-write 403/3 first retry is immediate; the account refresh already \
+                     supplies the new region"
                 );
+                assert_eq!(new_state.backend_failover_cumulative_delay, delay);
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
         }
     }
 
     #[test]
-    fn write_forbidden_on_single_write_aborts_when_generic_budget_exhausted() {
-        // Single-write 403/3 must bubble up once the generic budget is exhausted.
+    fn write_forbidden_on_single_write_ignores_exhausted_generic_budget() {
         let op = make_create_operation();
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         state.failover_retry_count = state.max_failover_retries;
@@ -2066,11 +2345,33 @@ mod tests {
             &state,
         );
 
-        assert!(
-            matches!(action, OperationAction::Abort { .. }),
-            "single-write 403/3 must abort once generic failover budget is exhausted, got {:?}",
-            action
+        match action {
+            OperationAction::FailoverRetry { new_state, delay } => {
+                assert_eq!(new_state.failover_retry_count, state.max_failover_retries);
+                assert_eq!(new_state.backend_failover_retry_count, 1);
+                assert!(delay.is_some());
+            }
+            other => panic!("expected backend FailoverRetry, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn write_forbidden_on_single_write_aborts_when_backend_budget_exhausted() {
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.backend_failover_cumulative_delay = BACKEND_FAILOVER_MAX_TOTAL_DELAY;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::Abort { .. }));
     }
 
     #[test]
@@ -2094,10 +2395,17 @@ mod tests {
             OperationAction::FailoverRetry { new_state, delay } => {
                 assert_eq!(new_state.failover_retry_count, 0);
                 assert_eq!(new_state.backend_failover_retry_count, 1);
+                let delay =
+                    delay.expect("single-write 1008 must pace retries with a backoff delay");
                 assert_eq!(
                     delay,
-                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
-                    "single-write 1008 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                    Duration::ZERO,
+                    "single-write 1008 first retry is immediate; the account refresh already \
+                     supplies the new region"
+                );
+                assert_eq!(
+                    new_state.backend_failover_cumulative_delay, delay,
+                    "scheduled delay must be accumulated toward the budget"
                 );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
@@ -2442,6 +2750,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: std::time::Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -3608,6 +3917,110 @@ mod tests {
         assert!(
             eval.effects.is_empty(),
             "409 Conflict has no per-status handler; emits no effects",
+        );
+    }
+
+    /// The service's explanation is folded into the error message so a bare
+    /// `{err}` log line says *why* the request was rejected, not just
+    /// `HTTP 400: Unknown`.
+    #[test]
+    fn service_error_message_includes_service_detail() {
+        let body = br#"{"code":"BadRequest","message":"Message: {\"Errors\":[\"The retention duration in the Change Feed policy should not be set when continuous backup mode is enabled for the database account.\"]}\r\nActivityId: 36327452-0aa6-41fa-8f85-491f9755c870, Request URI: /apps/x/services/y, RequestStats: , SDK: Microsoft.Azure.Documents.Common/2.14.0"}"#;
+        let err = build_service_error(
+            &CosmosStatus::from_parts(StatusCode::BadRequest, None),
+            &CosmosResponseHeaders::default(),
+            body,
+        );
+
+        let rendered = err.to_string();
+        assert!(
+            rendered.contains(
+                "The retention duration in the Change Feed policy should not be set \
+                 when continuous backup mode is enabled for the database account."
+            ),
+            "expected the service explanation in {rendered}"
+        );
+        // The activity ID is already typed state on the error, and the request
+        // URI / SDK banner name service-internal replicas — the trailer stays
+        // in the raw body rather than bloating the message.
+        assert!(
+            !rendered.contains("Request URI"),
+            "expected the request trailer to be stripped from {rendered}"
+        );
+    }
+
+    #[test]
+    fn service_body_detail_falls_back_to_raw_text() {
+        assert_eq!(
+            Some("not json at all".to_string()),
+            service_body_detail(b"not json at all")
+        );
+        assert_eq!(None, service_body_detail(b""));
+        assert_eq!(None, service_body_detail(b"   "));
+    }
+
+    #[test]
+    fn service_body_detail_truncates_long_payloads() {
+        let long = "x".repeat(MAX_SERVICE_DETAIL_LEN * 2);
+        let body = serde_json::json!({ "code": "BadRequest", "message": long }).to_string();
+
+        let detail = service_body_detail(body.as_bytes()).expect("detail");
+        // The ellipsis is counted against the budget, so the cap is never exceeded.
+        assert_eq!(MAX_SERVICE_DETAIL_LEN, detail.len());
+        assert!(detail.ends_with("..."));
+    }
+
+    /// Truncating must not split a multi-byte character, and the result must
+    /// still respect the byte cap.
+    #[test]
+    fn service_body_detail_truncates_on_char_boundary() {
+        // 'é' is two bytes, so the naive cut point lands mid-character.
+        let long = "é".repeat(MAX_SERVICE_DETAIL_LEN);
+        let body = serde_json::json!({ "code": "BadRequest", "message": long }).to_string();
+
+        let detail = service_body_detail(body.as_bytes()).expect("detail");
+        assert!(detail.len() <= MAX_SERVICE_DETAIL_LEN);
+        assert!(detail.ends_with("..."));
+        assert!(detail.trim_end_matches('.').chars().all(|c| c == 'é'));
+    }
+
+    /// The body is service-controlled, so newlines and other control characters
+    /// must not reach `CosmosError`'s single-line `Display` — otherwise a
+    /// crafted payload could forge or mangle log records.
+    #[test]
+    fn service_body_detail_normalizes_control_characters() {
+        let body = serde_json::json!({
+            "code": "BadRequest",
+            "message": "first line\r\nERROR: forged\tentry\u{7f}\u{1}  and   spaces  ",
+        })
+        .to_string();
+
+        let detail = service_body_detail(body.as_bytes()).expect("detail");
+        assert_eq!("first line ERROR: forged entry and spaces", detail);
+        assert!(!detail.chars().any(char::is_control));
+    }
+
+    /// The same normalization applies on the raw-text fallback path, where the
+    /// body never went through JSON parsing.
+    #[test]
+    fn service_body_detail_normalizes_raw_text_fallback() {
+        let detail = service_body_detail(b"not json\nsecond line\r\nthird").expect("detail");
+        assert_eq!("not json second line third", detail);
+    }
+
+    /// A body that is nothing but control characters carries no usable text.
+    #[test]
+    fn service_body_detail_rejects_control_only_body() {
+        assert_eq!(None, service_body_detail(b"\r\n\t  \x01"));
+    }
+
+    /// A body with no `message` field (or an unexpected shape) still surfaces
+    /// verbatim rather than being dropped.
+    #[test]
+    fn service_body_detail_keeps_unrecognized_json() {
+        assert_eq!(
+            Some(r#"{"code":"BadRequest"}"#.to_string()),
+            service_body_detail(br#"{"code":"BadRequest"}"#)
         );
     }
 }

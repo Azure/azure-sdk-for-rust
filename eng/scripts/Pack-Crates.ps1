@@ -16,6 +16,8 @@ param(
   [string] $PackageInfoDirectory,
 
   [switch] $Release,
+  # Temporary testing switch; may be removed in a future version.
+  [switch] $APIReview,
   [switch] $NoVerify,
   [string] $OutBuildOrderFile
 )
@@ -109,15 +111,25 @@ function Get-OutputPackageNames($packages) {
   return $names
 }
 
-function Create-ApiViewFile($package) {
-  $packageName = $package.name
+function New-ApiFile(
+  $package,
+  [string] $Format,
+  [string] $OutputDirectory
+) {
   $manifestPath = $package.manifest_path
-  $command = "cargo run --manifest-path $RepoRoot/eng/tools/generate_api_report/Cargo.toml -- --package $packageName --manifest-path $manifestPath"
+  $command = "cargo run --manifest-path `"$RepoRoot/eng/tools/Cargo.toml`" -p generate_api -- --manifest-path `"$manifestPath`" --format $Format --output `"$OutputDirectory`""
   Invoke-LoggedCommand $command -GroupOutput | Out-Host
 
-  $packagePath = Split-Path -Path $manifestPath -Parent
+  $fileName = switch ($Format) {
+    'markdown' { 'API.md' }
+    'apiview' { 'apiview.json' }
+    default {
+      LogError "Unsupported API output format '$Format'"
+      exit 1
+    }
+  }
 
-  "$packagePath/review/$packageName.rust.json"
+  return [System.IO.Path]::Combine($OutputDirectory, $fileName)
 }
 
 function Get-CratePath(
@@ -184,6 +196,14 @@ try {
     exit $LASTEXITCODE
   }
 
+  if ($APIReview) {
+    foreach ($package in $packages) {
+      $packagePath = Split-Path -Path $package.manifest_path -Parent
+      Write-Host "Creating API review markdown at '$packagePath'"
+      New-ApiFile -package $package -Format 'markdown' -OutputDirectory $packagePath | Out-Null
+    }
+  }
+
   if ($OutputPath) {
     $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
 
@@ -210,11 +230,14 @@ try {
       Write-Host "Copying .crate file for '$($package.name)' to '$targetPath'"
       Copy-Item -Path $cratePath -Destination $targetPath -Force
 
-      Write-Host "Creating API review file"
-      $apiReviewFile = Create-ApiViewFile $package
+      if (-not $APIReview) {
+        Write-Host "Creating API review file"
+        $apiReviewFile = New-ApiFile -package $package -Format 'apiview' -OutputDirectory $targetPath
 
-      Write-Host "Copying API review file to '$targetApiReviewFile'"
-      Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
+        Write-Host "Copying API review file to '$targetApiReviewFile'"
+        Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
+        Remove-Item -Path $apiReviewFile -Force
+      }
     }
   }
 

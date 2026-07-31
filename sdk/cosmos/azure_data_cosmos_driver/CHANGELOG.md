@@ -4,16 +4,35 @@
 
 ### Features Added
 
+- Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosDriver`, including metadata, retry, hedge, probe, and Gateway 2.0 outer HTTP requests. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
+- Added a schema-agnostic Cosmos binary JSON codec (`binary_json`) and driver-side binary encoding via `OperationOptions.binary_encoding` (`BinaryEncodingOptions`). When enabled, the driver transcodes item request/response bodies between text and Cosmos binary JSON and negotiates the wire format; it is honored only for point `Document` item operations. Off by default and inert on the wire when unset. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
+- Added `PlanOptions` (with `DEFAULT_MAX_FAN_OUT`) to `CosmosDriver::plan_operation`, enforcing a maximum fan-out on fresh cross-partition plans. A fresh plan spanning more leaf request nodes than `PlanOptions::max_fan_out` (default 100) is rejected with the new `CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED` (HTTP 400). The limit is enforced only at initial plan time: resuming from a continuation token skips the check, and a partition split that raises the fan-out mid-execution does not abort the operation. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
+
 ### Breaking Changes
+
+- `CosmosDriver::plan_operation` now takes an additional `plan_options: &PlanOptions` argument (after `continuation`). The continuation token remains its own argument. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 
 ### Bugs Fixed
 
+- Unified `403/3` and `403/1008` topology retries under a 5-second cumulative delay budget so a persistent topology error surfaces promptly instead of hanging. Multi-write `403/3` and all `403/1008` come down from ~120 seconds of fixed 1-second retries; single-write `403/3` moves up from three immediate generic retries onto the same topology policy. The first retry is always immediate; later retries use exponential backoff with jitter. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
+
 ### Other Changes
+
+- Gateway 2.0 responses now preserve backend duration, quota, item-count, quorum, replica, query, and physical-partition RNTBD metadata when converting to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
+- Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and bounded to 512 bytes, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. The full payload remains available verbatim via `CosmosError::response`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
+
+## 0.6.1 (2026-07-23)
+
+### Bugs Fixed
+
+- Fixed partition-range discovery for containers whose routing metadata spans more than ten pages, added full-refresh recovery for invalid incremental maps, and prevented empty routing maps from remaining cached. ([#4845](https://github.com/Azure/azure-sdk-for-rust/pull/4845))
 
 ## 0.6.0 (2026-07-20)
 
 ### Features Added
 
+- Added `DiagnosticsOptions::max_request_diagnostics` (default 512, minimum 16), which bounds the finalized per-attempt `RequestDiagnostics` list under a `429`/`410` retry storm by compacting near-identical retry runs at completion; `DiagnosticsContext::request_count()`/`total_request_charge()` stay exact, and `retained_request_count()`/`compaction()` surface every truncation. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
+- Added `DiagnosticsThresholds` (Java-like defaults) and the completed-operation predicates `DiagnosticsContext::is_failure`/`is_completed`/`is_threshold_violated` (plus an `operation_name` accessor) that power the SDK's tail-based sampling handlers. `DiagnosticsContext::threshold_breach_for` and the `ThresholdBreach` enum additionally report *which* bound (point/non-point latency or request charge) an operation crossed. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 - Added runtime diagnostics output configuration via `CosmosDriverRuntimeBuilder::with_diagnostics_options`, including the env-backed `AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY` option. The built-in default is now summary diagnostics JSON. ([#4733](https://github.com/Azure/azure-sdk-for-rust/pull/4733))
 - Added Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2). Gateway 2.0 is used automatically when the account advertises thin-client endpoints, the connectivity probe confirms them, and the runtime has not opted out. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319), [#4803](https://github.com/Azure/azure-sdk-for-rust/pull/4803))
 - Added `ConnectionPoolOptions::gateway_v2_disabled` and `ConnectionPoolOptionsBuilder::with_gateway_v2_disabled`, with `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED` configuration and an environment-only `_OVERRIDE` incident switch. ([#4763](https://github.com/Azure/azure-sdk-for-rust/pull/4763))
@@ -21,6 +40,7 @@
 - Added per-partition hub region caching for read operations on PPAF-enabled single-master accounts. When the `x-ms-cosmos-hub-region-processing-only` latch is set on a retry and a partition key range ID has been resolved, the driver now consults the per-partition failover cache (`PartitionEndpointState::failover_overrides` — the same map already used by per-partition automatic failover for writes) and routes directly to the cached hub endpoint, skipping the `403/3 (WriteForbidden)` discovery chain on subsequent operations for the same partition. ([#4555](https://github.com/Azure/azure-sdk-for-rust/pull/4555))
 - Added preview distributed transaction driver models, request serialization, response parsing/reordering, strict session-token merge, DTX retry handling, diagnostics, and a baseline in-memory emulator `/operations/dtc` path behind the disabled-by-default `preview_dtx` feature. ([#4702](https://github.com/Azure/azure-sdk-for-rust/pull/4702))
 - Added change feed support in the dataflow pipeline: a new `UnorderedMerge` node fans a change feed read out across physical partitions and round-robins their pages, and `CosmosOperation::change_feed` builds incremental-feed operations with the appropriate wire headers. A new public `ChangeFeedStartFrom` enum (`Beginning`, `Now`, `PointInTime`) records the feed's original start position and is persisted in the continuation token so partitions never polled before a checkpoint re-apply it on resume instead of replaying history; set it via `CosmosOperation::with_change_feed_start`. ([#4621](https://github.com/Azure/azure-sdk-for-rust/pull/4621))
+- Added full-fidelity (AllVersionsAndDeletes) change feed support: a new `CosmosOperation::change_feed_all_versions_and_deletes` factory and a `CosmosRequestHeaders::full_fidelity_feed` flag emit `A-IM: Full-Fidelity Feed` (in place of `Incremental Feed`) so the service returns every intermediate version and delete as an envelope with `current`, `previous`, and `metadata`. The continuation token records the feed mode so a resume cannot silently switch between incremental and full-fidelity, and the in-memory emulator rejects the unsupported `Beginning` and `PointInTime` starts for this mode with `400 Bad Request`. ([#4706](https://github.com/Azure/azure-sdk-for-rust/pull/4706))
 - Added `TlsBackend` (currently `TlsBackend::Rustls`, the default) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend` / `ConnectionPoolOptions::tls_backend`), available under the `rustls` feature. The driver asserts the selected backend on the `reqwest` transport, giving a supported way to pin the TLS backend without direct transport access. This is additive and changes no behavior for the default (rustls-only) build, where reqwest already negotiates rustls; it only has an effect in builds that compile in multiple reqwest TLS backends (e.g. `rustls` plus `native_tls`, absent reqwest's `http3` feature), where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
 
 ### Bugs Fixed

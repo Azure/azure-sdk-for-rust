@@ -4,7 +4,7 @@
 // cspell:ignore PRNG
 //! Virtual account configuration for the in-memory emulator.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -25,6 +25,7 @@ use super::ru_model::RuChargingModel;
 /// which is what the driver's background refresh loop polls.
 #[derive(Clone, Debug)]
 pub struct VirtualAccountConfig {
+    account_id: String,
     regions: Vec<VirtualRegion>,
     write_mode: WriteMode,
     consistency: ConsistencyLevel,
@@ -51,17 +52,27 @@ impl VirtualAccountConfig {
                 .with_message("at least one region is required")
                 .build());
         }
-        // Auto-assign monotonically increasing region IDs by position for any
-        // region that did not have one set explicitly via `with_region_id`.
-        // Using `0` as the sentinel means callers that explicitly pass
-        // `with_region_id(0)` to the *first* region get the same effective ID
-        // they would have been auto-assigned anyway.
+        // Auto-assign monotonically increasing region IDs by position only
+        // when the caller did not set one explicitly.
         for (idx, r) in regions.iter_mut().enumerate() {
-            if r.region_id == 0 {
-                r.region_id = idx as u64;
+            r.region_id.get_or_insert(idx as u64);
+        }
+        let mut region_ids = HashSet::with_capacity(regions.len());
+        for region in &regions {
+            let region_id = region.region_id.expect("region IDs were assigned above");
+            if !region_ids.insert(region_id) {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message(format!(
+                        "region ID {region_id} is configured more than once"
+                    ))
+                    .build());
             }
         }
         Ok(Self {
+            account_id: "emulator-account".to_owned(),
             regions,
             write_mode: WriteMode::Single,
             consistency: ConsistencyLevel::Session,
@@ -71,6 +82,19 @@ impl VirtualAccountConfig {
             throttling_enabled: false,
             enable_per_partition_failover: Arc::new(AtomicBool::new(false)),
         })
+    }
+
+    /// Sets the account ID emitted by the hosted account-discovery response.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn with_account_id(mut self, account_id: impl Into<String>) -> Self {
+        self.account_id = account_id.into();
+        self
+    }
+
+    /// Returns the account ID emitted by account discovery.
+    pub(crate) fn account_id(&self) -> &str {
+        &self.account_id
     }
 
     /// Sets the write mode.
@@ -241,19 +265,20 @@ impl VirtualAccountConfig {
         let scheme = url.scheme();
         let port = url.port_or_known_default();
         for r in &self.regions {
-            let Some(rhost) = r.gateway_url.host_str() else {
-                continue;
+            let matches = |candidate: &Url| {
+                candidate
+                    .host_str()
+                    .is_some_and(|candidate_host| candidate_host.eq_ignore_ascii_case(host))
+                    && candidate.scheme() == scheme
+                    && candidate.port_or_known_default() == port
             };
-            if !rhost.eq_ignore_ascii_case(host) {
-                continue;
+            if matches(&r.gateway_url) {
+                return Some(&r.name);
             }
-            if r.gateway_url.scheme() != scheme {
-                continue;
+            #[cfg(feature = "__internal_in_memory_emulator")]
+            if r.gateway_v2_url.as_ref().is_some_and(matches) {
+                return Some(&r.name);
             }
-            if r.gateway_url.port_or_known_default() != port {
-                continue;
-            }
-            return Some(&r.name);
         }
         None
     }
@@ -263,7 +288,7 @@ impl VirtualAccountConfig {
         self.regions
             .iter()
             .find(|r| r.name == region_name)
-            .map(|r| r.region_id)
+            .and_then(|r| r.region_id)
             .unwrap_or(0)
     }
 }
@@ -273,7 +298,9 @@ impl VirtualAccountConfig {
 pub struct VirtualRegion {
     name: String,
     gateway_url: Url,
-    region_id: u64,
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    gateway_v2_url: Option<Url>,
+    region_id: Option<u64>,
 }
 
 impl VirtualRegion {
@@ -285,13 +312,23 @@ impl VirtualRegion {
         Self {
             name: name.to_string(),
             gateway_url,
-            region_id: 0,
+            #[cfg(feature = "__internal_in_memory_emulator")]
+            gateway_v2_url: None,
+            region_id: None,
         }
+    }
+
+    /// Configures the Gateway V2 thin-client endpoint for this region.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn with_gateway_v2_url(mut self, url: Url) -> Self {
+        self.gateway_v2_url = Some(url);
+        self
     }
 
     /// Creates a new region with an explicit region ID.
     pub fn with_region_id(mut self, id: u64) -> Self {
-        self.region_id = id;
+        self.region_id = Some(id);
         self
     }
 
@@ -303,8 +340,16 @@ impl VirtualRegion {
         &self.gateway_url
     }
 
+    /// Returns the Gateway V2 thin-client endpoint when hosted externally.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub(crate) fn gateway_v2_url(&self) -> Option<&Url> {
+        self.gateway_v2_url.as_ref()
+    }
+
     pub fn region_id(&self) -> u64 {
         self.region_id
+            .expect("VirtualAccountConfig assigns every region an ID")
     }
 }
 
@@ -555,6 +600,7 @@ fn rand_fraction() -> f64 {
 #[derive(Clone, Debug)]
 pub struct ContainerConfig {
     partition_count: u32,
+    partition_key_range_page_size: Option<u32>,
     provisioned_throughput_ru: Option<u32>,
 }
 
@@ -577,6 +623,14 @@ impl ContainerConfig {
         self
     }
 
+    /// Sets the number of partition key ranges returned per `/pkranges` page.
+    ///
+    /// When unset, the emulator returns all ranges in one page.
+    pub fn with_partition_key_range_page_size(mut self, page_size: u32) -> Self {
+        self.partition_key_range_page_size = Some(page_size);
+        self
+    }
+
     /// Sets the provisioned throughput in RU/s. Validation is deferred to
     /// [`Self::build`].
     pub fn with_throughput(mut self, ru_per_second: u32) -> Self {
@@ -589,6 +643,7 @@ impl ContainerConfig {
     ///
     /// Validation rules:
     /// - `partition_count` must be in `1..=MAX_PARTITION_COUNT`.
+    /// - `partition_key_range_page_size`, when set, must be greater than zero.
     /// - `provisioned_throughput_ru`, when set, must be `>= 400` RU/s.
     ///
     /// Returns a `Client` error on the first violation.
@@ -609,6 +664,14 @@ impl ContainerConfig {
                 .with_message(format!("partition count must be <= {MAX_PARTITION_COUNT}"))
                 .build());
         }
+        if self.partition_key_range_page_size == Some(0) {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("partition key range page size must be > 0")
+                .build());
+        }
         if let Some(ru) = self.provisioned_throughput_ru {
             if ru < 400 {
                 return Err(crate::error::CosmosError::builder()
@@ -626,20 +689,80 @@ impl ContainerConfig {
         self.partition_count
     }
 
+    pub fn partition_key_range_page_size(&self) -> Option<u32> {
+        self.partition_key_range_page_size
+    }
+
     pub fn provisioned_throughput_ru(&self) -> Option<u32> {
         self.provisioned_throughput_ru
     }
 }
 
 impl Default for ContainerConfig {
-    /// Defaults: **4 physical partitions** and no provisioned throughput
-    /// (throttling disabled even if the account-level `with_throttling_enabled`
-    /// is `true`). Override with [`ContainerConfig::with_partition_count`] and
-    /// [`ContainerConfig::with_throughput`].
+    /// Defaults to 4 physical partitions, unpaged partition metadata, and no
+    /// provisioned throughput.
     fn default() -> Self {
         Self {
             partition_count: 4,
+            partition_key_range_page_size: None,
             provisioned_throughput_ru: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn region(name: &str) -> VirtualRegion {
+        VirtualRegion::new(
+            name,
+            Url::parse(&format!(
+                "https://{}.emulator.local",
+                name.to_ascii_lowercase()
+            ))
+            .unwrap(),
+        )
+    }
+
+    #[test]
+    fn assigns_region_ids_by_position_when_omitted() {
+        let config = VirtualAccountConfig::new(vec![region("East"), region("West")]).unwrap();
+        assert_eq!(config.regions()[0].region_id(), 0);
+        assert_eq!(config.regions()[1].region_id(), 1);
+    }
+
+    #[test]
+    fn preserves_explicit_zero_for_non_first_region() {
+        let config = VirtualAccountConfig::new(vec![
+            region("East").with_region_id(1),
+            region("West").with_region_id(0),
+        ])
+        .unwrap();
+        assert_eq!(config.regions()[0].region_id(), 1);
+        assert_eq!(config.regions()[1].region_id(), 0);
+    }
+
+    #[test]
+    fn rejects_duplicate_effective_region_ids() {
+        let error =
+            VirtualAccountConfig::new(vec![region("East").with_region_id(1), region("West")])
+                .unwrap_err();
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+    }
+
+    #[test]
+    fn partition_key_range_page_size_must_be_positive() {
+        let error = ContainerConfig::new()
+            .with_partition_key_range_page_size(0)
+            .build()
+            .unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("partition key range page size must be > 0"));
     }
 }
