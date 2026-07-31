@@ -18,7 +18,7 @@ use crate::{
     producer::DEFAULT_EVENTHUBS_APPLICATION,
     RetryOptions,
 };
-use async_lock::{Mutex as AsyncMutex, OnceCell, RwLock};
+use async_lock::{Mutex as AsyncMutex, MutexGuard as AsyncMutexGuard, OnceCell, RwLock};
 use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
@@ -93,6 +93,11 @@ pub(crate) struct RecoverableConnection {
     session_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpSession>>>>>,
     receiver_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpReceiver>>>>>,
     pub(super) authorizer: Arc<Authorizer>,
+    // The service permits one `$cbs` link for each connection. Every
+    // authorization attaches a link, uses it, and then drops it, so two
+    // authorizations that overlap make the service reject the second one with
+    // `NotAllowed`. This lock keeps them in sequence. See `lock_claims_based_security`.
+    cbs_lock: AsyncMutex<()>,
     connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
     connection_name: String,
     pub(super) retry_options: RetryOptions,
@@ -207,6 +212,7 @@ impl RecoverableConnection {
                 connection_name,
                 custom_endpoint,
                 retry_options,
+                cbs_lock: AsyncMutex::new(()),
                 connections: AsyncMutex::new(None),
                 session_instances: RwLock::new(HashMap::new()),
                 sender_instances: RwLock::new(HashMap::new()),
@@ -642,6 +648,23 @@ impl RecoverableConnection {
             })
             .await?;
         Ok(management_client.clone())
+    }
+
+    /// Takes the lock that keeps the claims-based-security round trips of this
+    /// connection in sequence.
+    ///
+    /// The service permits one `$cbs` link for each connection, and it rejects a
+    /// second attach with `NotAllowed`. [`Self::ensure_amqp_cbs`] attaches a new
+    /// link for each authorization, so the caller must hold this lock for the
+    /// full round trip.
+    ///
+    /// Without this lock, the authorizations for different paths overlap when a
+    /// client sets up more than one link at once, for example a buffered
+    /// producer that starts one sender for each partition. The lock covers only
+    /// the authorization. The link attach that follows and the session begin
+    /// stay concurrent.
+    pub(super) async fn lock_claims_based_security(&self) -> AsyncMutexGuard<'_, ()> {
+        self.cbs_lock.lock().await
     }
 
     /// Ensures that the AMQP Claims-Based Security (CBS) client is created and attached.
@@ -1701,6 +1724,80 @@ mod tests {
             "Recovery did not complete in 10s: it waited for the in-flight management-client \
              build. On the production path the same wait happens on a single task and hangs \
              forever."
+        );
+    }
+
+    fn cbs_lock_test_connection() -> Arc<RecoverableConnection> {
+        let url = Url::parse("amqps://example.com").unwrap();
+        RecoverableConnection::new(
+            url,
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        )
+    }
+
+    // The service permits one `$cbs` link for each connection, so an
+    // authorization must not start while another one holds the link. A second
+    // caller must wait until the first guard drops. This test needs no network,
+    // because it exercises the lock that `authorize_path` takes.
+    #[tokio::test]
+    async fn cbs_lock_blocks_a_second_caller_until_the_guard_drops() {
+        let connection = cbs_lock_test_connection();
+
+        let guard = connection.lock_claims_based_security().await;
+        assert!(
+            connection.cbs_lock.try_lock().is_none(),
+            "a second caller must not take the lock while the first one holds it"
+        );
+
+        drop(guard);
+        assert!(
+            connection.cbs_lock.try_lock().is_some(),
+            "the lock must be free after the guard drops"
+        );
+    }
+
+    // Regression guard for the `NotAllowed` failure: if a later change moves or
+    // narrows the guard in `authorize_path`, two round trips can overlap again.
+    // Count the callers that hold the lock at the same time, and make sure the
+    // count never goes above one.
+    #[tokio::test]
+    async fn cbs_lock_never_lets_two_callers_overlap() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let connection = cbs_lock_test_connection();
+        let in_flight = Arc::new(AtomicUsize::new(0));
+        let most_seen = Arc::new(AtomicUsize::new(0));
+
+        let mut tasks = Vec::new();
+        for _ in 0..8 {
+            let connection = connection.clone();
+            let in_flight = in_flight.clone();
+            let most_seen = most_seen.clone();
+            tasks.push(tokio::spawn(async move {
+                let _guard = connection.lock_claims_based_security().await;
+                let now = in_flight.fetch_add(1, Ordering::SeqCst) + 1;
+                most_seen.fetch_max(now, Ordering::SeqCst);
+                // Give the other tasks a chance to run while this one holds the
+                // lock, which is what a real round trip does at its await points.
+                for _ in 0..4 {
+                    tokio::task::yield_now().await;
+                }
+                in_flight.fetch_sub(1, Ordering::SeqCst);
+            }));
+        }
+
+        for task in tasks {
+            task.await.unwrap();
+        }
+
+        assert_eq!(
+            most_seen.load(Ordering::SeqCst),
+            1,
+            "the claims-based-security round trips of one connection must not overlap"
         );
     }
 }
