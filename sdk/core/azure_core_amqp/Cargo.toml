@@ -59,29 +59,44 @@ fe2o3_amqp = [
   "azure_core/tokio",
 ]
 # The TLS stack for AMQP framed directly on TCP (`amqps://`, port 5671).
-# `fe2o3_amqp` is the base, and this feature adds the stack, in the same shape as
-# the WebSocket features below. native-tls is the only choice, because the rustls
-# backend of `fe2o3-amqp` 0.14 pulls in `ring`, which `deny.toml` bans (#4189).
+# `fe2o3_amqp` is the base, and this feature adds the stack, in the same shape
+# that `azure_core` uses for HTTP, where `reqwest` is the base and
+# `reqwest_rustls` adds the stack. native-tls is the only stack this crate can
+# name, because the rustls backend of `fe2o3-amqp` 0.14 pulls in `ring`, which
+# `deny.toml` bans (#4189).
 fe2o3_amqp_native_tls = ["fe2o3_amqp", "fe2o3-amqp/native-tls"]
-# AMQP over WebSockets. The base `fe2o3_amqp_ws` feature turns on the transport
-# code and the `fe2o3-amqp-ws` dependency, and it does not select a TLS stack.
-# Add one of the two modifier features to select a stack. This is the shape that
-# `azure_core` uses for HTTP, where `reqwest` is the base and `reqwest_rustls`
-# adds the TLS stack.
-# `fe2o3_amqp_ws_rustls` is the default and matches the TLS stack in `sdk/core`:
-# rustls with the aws-lc-rs provider. The direct `rustls` dependency selects
-# that provider, because `fe2o3-amqp-ws` takes rustls without default features.
-# The features are additive, so both modifiers can be on at the same time.
-# `fe2o3-amqp-ws` then uses native-tls, and the connection logs a warning.
+# AMQP over WebSockets. `fe2o3_amqp_ws` is the base feature: it turns on the
+# transport code and the `fe2o3-amqp-ws` dependency, and it names no TLS stack.
+# `fe2o3_amqp_ws_rustls` adds the stack that the rest of `sdk/core` uses, rustls
+# with the aws-lc-rs provider, and `default` selects it.
+#
+# To build the transport on another TLS stack, turn off the default features,
+# name `fe2o3_amqp_ws`, and take a direct dependency on the backend crate with
+# the stack you want. Cargo unifies the features, so the transport then uses
+# your stack and nothing pulls rustls in:
+#
+#   azure_core_amqp = { version = "...", default-features = false, features = [
+#     "fe2o3_amqp", "fe2o3_amqp_native_tls", "fe2o3_amqp_ws",
+#   ] }
+#   fe2o3-amqp-ws = { version = "0.14", features = ["native-tls"] }
+#
+# `samples/list_blobs_native_tls` shows the same pattern for `reqwest`.
+#
+# One stack must be selected somewhere in the graph. `fe2o3-amqp-ws` puts
+# `connect_tls_with_config` behind its own TLS features, so `fe2o3_amqp_ws` on
+# its own does not build. `reqwest` differs here: it compiles with no TLS
+# feature and fails at run time instead.
 fe2o3_amqp_ws = ["fe2o3_amqp", "dep:fe2o3-amqp-ws"]
+# The direct `rustls` dependency is only here to select the crypto provider.
+# `reqwest/rustls` selects aws-lc-rs itself, so `typespec_client_core` needs no
+# such dependency; the `tokio-tungstenite` chain under `fe2o3-amqp-ws` takes
+# rustls with `default-features = false` and names no provider, so
+# `ClientConfig::builder()` would panic. Default features give aws-lc-rs, std,
+# and tls12. This crate names no `rustls` type.
 fe2o3_amqp_ws_rustls = [
   "fe2o3_amqp_ws",
   "fe2o3-amqp-ws/rustls-tls-native-roots",
   "dep:rustls",
-]
-fe2o3_amqp_ws_native_tls = [
-  "fe2o3_amqp_ws",
-  "fe2o3-amqp-ws/native-tls",
 ]
 
 [lints]

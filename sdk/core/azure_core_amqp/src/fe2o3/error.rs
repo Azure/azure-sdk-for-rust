@@ -46,9 +46,9 @@ impl From<fe2o3_amqp::transport::Error> for Fe2o3TransportError {
     }
 }
 
-#[cfg(any(feature = "fe2o3_amqp_ws_rustls", feature = "fe2o3_amqp_ws_native_tls"))]
+#[cfg(feature = "fe2o3_amqp_ws")]
 pub(crate) struct Fe2o3WebSocketError(pub fe2o3_amqp_ws::Error);
-#[cfg(any(feature = "fe2o3_amqp_ws_rustls", feature = "fe2o3_amqp_ws_native_tls"))]
+#[cfg(feature = "fe2o3_amqp_ws")]
 impl From<fe2o3_amqp_ws::Error> for Fe2o3WebSocketError {
     fn from(e: fe2o3_amqp_ws::Error) -> Self {
         Fe2o3WebSocketError(e)
@@ -166,7 +166,7 @@ impl From<fe2o3_amqp::link::IllegalLinkStateError> for AmqpError {
     }
 }
 
-#[cfg(any(feature = "fe2o3_amqp_ws_rustls", feature = "fe2o3_amqp_ws_native_tls"))]
+#[cfg(feature = "fe2o3_amqp_ws")]
 impl From<Fe2o3WebSocketError> for AmqpError {
     fn from(e: Fe2o3WebSocketError) -> Self {
         // The websocket establishment error wraps the underlying WebSocket and
