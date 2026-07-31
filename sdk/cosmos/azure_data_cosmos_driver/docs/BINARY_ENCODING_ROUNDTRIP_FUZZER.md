@@ -74,7 +74,7 @@ which is what lets a mismatch **localize the broken layer**:
 | Text config passes, **binary** config fails | The **encoder** (`ser.rs` / `writer.rs`) emitted wrong bytes for some value. |
 | Binary write succeeds but the **read decodes wrong** | The **decoder** (`de.rs` / `reader.rs`) mishandles a wire form. |
 | **binary+text-response** fails but plain binary passes | The **driver transcode** (`transcode_to_text`) loses something on binary→text. |
-| **All configs fail identically** | Likely a backend rewrite the canonicalizer doesn't model yet → a calibration gap (tune `canonicalize_number`, §3.1), or a genuine service behavior to escalate. |
+| **All configs fail identically** | Likely a backend rewrite the normalizer doesn't model yet → a calibration gap (tune `normalize_number`, §3.1), or a genuine service behavior to escalate. |
 
 The specific classes of gap it is built to surface — the ones curated tests miss
 because no human authored the triggering input:
@@ -86,7 +86,7 @@ because no human authored the triggering input:
   **backend** produces but the Rust encoder never does, no unit test exercises
   it — only a live round-trip does.
 - **Number precision/representation edges** — exactly what calibration surfaces:
-  non-finite handling, `-0`, integers above `i64::MAX` (backend stores as
+  non-finite handling, `-0`, integers beyond `2^53` (backend stores as
   doubles), high-precision floats.
 - **Unicode / string escaping** — astral code points, control characters,
   characters needing JSON escaping; a mismatch here is an encoder/decoder
@@ -103,7 +103,7 @@ reduce to the minimal triggering value, add it as a golden vector, and fix the
 codec — then the new vector guards against regression.
 
 **Limitations to keep in mind:** the fuzzer is only as good as its calibration
-and its generator's range. Under-calibrated `canonicalize_number` → false
+and its generator's range. Under-calibrated `normalize_number` → false
 positives (noise); a form the generator never emits → false negatives (blind
 spots). Calibrate first (§3.1), then widen coverage progressively with
 `--wide-numbers` / `max_depth` / `unicode`.
@@ -196,7 +196,7 @@ Two JSON texts are "the same value" if they canonicalize identically. Rules:
 | Aspect      | Rule |
 | ----------- | ---- |
 | Whitespace  | removed entirely |
-| Object keys | sorted lexicographically (by UTF-8 code unit) |
+| Object keys | sorted lexicographically (by UTF-16 code unit, per RFC 8785) |
 | Strings     | minimally JSON-escaped (via `serde_json`) |
 | Arrays      | order preserved |
 | **Numbers** | **Cosmos-compatible normalization — see §3.1** |
@@ -211,11 +211,13 @@ round-trip would *falsely* report a mismatch.
 
 The harness therefore uses a **Cosmos-compatible** number canonicalizer, not JCS:
 
-- **Integers up to `i64::MAX`**: emit plain decimal, no decimal point, no
+- **Integers with magnitude `< 2^53`**: emit plain decimal, no decimal point, no
   exponent, no leading zeros. `-0` → `0`.
-- **Integers above `i64::MAX`**: routed through `f64` (see the calibration
-  finding below) — the backend stores them as doubles, so a sent u64 and its
-  returned double must canonicalize identically.
+- **Integers with magnitude `>= 2^53`** (whether `i64` or `u64`): routed through
+  `f64` (see the calibration finding below). The backend stores *every* JSON
+  number as an IEEE-754 double, so integers beyond `2^53` are not preserved
+  exactly; a sent integer and its returned (rounded) double must canonicalize
+  identically.
 - **Integral-valued floats** (e.g. `1.0`, `2.0e1`): normalized to their integer
   form (`1`, `20`) — this mirrors the observed backend rewrite where a trailing
   `.0` is dropped.
@@ -229,16 +231,17 @@ The harness therefore uses a **Cosmos-compatible** number canonicalizer, not JCS
 > repeating/high-precision floats and `0.1 + 0.2` round-trip exactly, and the
 > backend renders large/small exponents in scientific notation (`1e20`,
 > `1e-20`) which reparses to the same `f64`. The **two DIFFs** were integers
-> above `i64::MAX`: the backend stores them as IEEE-754 doubles (lossy) and
+> beyond `2^53`: the backend stores them as IEEE-754 doubles (lossy) and
 > returns scientific notation — `18446744073709551614` → `1.8446744073709552e+19`
-> and `2^63` → `9.223372036854776e+18`. `canonicalize_number` now models this by
-> routing `u64`-above-`i64::MAX` through `f64`, so both sides canonicalize to the
-> same double form. Re-running calibration after this change yields all `MATCH`.
+> and `2^63` → `9.223372036854776e+18`. `normalize_number` now models this by
+> routing every integer beyond `2^53` (both `i64` and `u64`) through `f64`, so
+> both sides canonicalize to the same double form. Re-running calibration after
+> this change yields all `MATCH`.
 >
 > To re-calibrate after any change (or against a different account/config), run
 > calibration mode (`AZURE_COSMOS_FUZZ_CALIBRATE=true`, see §6): it stores each
 > probe in `NUMBER_PROBES` through the binary path, reads it back, and prints a
-> table comparing `canonicalize_number`'s rendering against the backend's
+> table comparing `normalize_number`'s rendering against the backend's
 > returned form. Every `DIFF` is a form to model; calibration is a **diagnostic**
 > (prints the table, does not assert), since a `DIFF` is the signal to tune, not
 > a failure.
@@ -280,7 +283,7 @@ random JSON **object** (Cosmos items are objects) using a **hybrid** strategy:
 ### 4.1 Corpus-shaped documents
 
 Beyond the free-form hybrid documents, a configurable fraction of each run
-(`AZURE_COSMOS_FUZZ_SHAPE_RATIO`, default 50%) generates documents in the
+(`AZURE_COSMOS_FUZZ_SHAPE_RATIO`, default 85%) generates documents in the
 **shape of the real service testdata corpus**. A set of ~24 *shape samplers*
 (`SHAPE_SAMPLERS`) each reproduce the structure of one `testdata/*.json` family
 — GeoJSON features, embedding vectors, blog/telemetry/log records, Cosmos-run
@@ -318,9 +321,9 @@ build time):
 | binary | true | false |
 | binary + text response | true | true |
 
-Extend with two accounts (dictionary encoding on/off) by pointing
-`AZURE_COSMOS_FUZZ_CONNECTION_STRING_2` at a second account — the harness runs
-every generated doc through both.
+> **Not yet implemented:** running each document through a *second* account (to
+> cover dictionary encoding on/off) is a planned extension. The harness reads a
+> single `AZURE_COSMOS_CONNECTION_STRING`; there is no second-account lookup.
 
 ## 6. Running the harness
 
@@ -365,7 +368,7 @@ RUSTFLAGS='--cfg test_category="binary_encoding"' \
 | `AZURE_COSMOS_ALLOW_INVALID_CERT` | false | accept emulator cert |
 | `AZURE_COSMOS_FUZZ_ITERATIONS` | 200 | number of generated docs |
 | `AZURE_COSMOS_FUZZ_SEED` | random | PRNG seed (for reproduction) |
-| `AZURE_COSMOS_FUZZ_MAX_DEPTH` | 5 | max JSON nesting depth |
+| `AZURE_COSMOS_FUZZ_MAX_DEPTH` | 6 | max JSON nesting depth |
 | `AZURE_COSMOS_FUZZ_WIDE_NUMBERS` | false | widen numeric range (post-calibration) |
 | `AZURE_COSMOS_FUZZ_UNICODE` | true | include Unicode strings |
 | `AZURE_COSMOS_FUZZ_CALIBRATE` | false | number-calibration mode (§3.1) |
@@ -378,7 +381,7 @@ A mismatch is one of:
 1. **A real codec bug** — Rust encoded or decoded a value wrong. (The golden
    vectors + in-tree fuzz should also then be extended with the reduced case.)
 2. **A canonicalization gap** — the backend rewrote a number/string in a form the
-   canonicalizer doesn't yet model. Fix `canonicalize_number` (§3.1) and, if the
+   canonicalizer doesn't yet model. Fix `normalize_number` (§3.1) and, if the
    form is legitimately out of scope, narrow the generator.
 3. **A backend rewrite difference** — genuinely different value after store; this
    is the highest-value finding and should be escalated.
@@ -479,12 +482,12 @@ This section captures an agreed enhancement plan for the harness. The current ha
 
 **JCS number formatting is *not* Cosmos number formatting.** This is the whole reason the harness exists (§3.1). RFC 8785 uses ES6 `Number.prototype.toString` (shortest round-trippable), which differs from the backend's observed store-time rewrite:
 
-- the backend stores integers above `i64::MAX` as IEEE-754 **doubles** and returns scientific notation (`18446744073709551614` → `1.8446744073709552e+19`);
+- the backend stores integers beyond `2^53` as IEEE-754 **doubles** and returns scientific notation (`18446744073709551614` → `1.8446744073709552e+19`);
 - integral floats/exponents collapse to integers (`2e1` → `20`).
 
 If we canonicalized numbers with raw JCS, a *faithful* round-trip would report **false-positive** mismatches on exactly the number edges we most want to test. So the plan is a **hybrid**, not a wholesale swap:
 
-> **Normalize numbers with our calibrated `canonicalize_number` first (produce a number-normalized `Value`), then run that `Value` through `json_canon` for the structural pass, then `sha2` the result.**
+> **Normalize numbers with our calibrated `normalize_number` first (produce a number-normalized `Value`), then run that `Value` through `json_canon` for the structural pass, then `sha2` the result.**
 
 `json-canon`'s own docs also note it emits `null` for `NaN`/`Inf` — incidentally aligned with Cosmos, but we do not want to rely on that incidentally, so number handling stays under our control.
 
@@ -508,7 +511,7 @@ Only **step 2** is Cosmos-specific and stays in our code; steps 1, 3, 4 become l
 ### 9.5 Work plan
 
 1. Add `arbitrary`, `arbitrary-json`, `json-canon`, and `sha2` as **dev-dependencies** of the harness crate (test-only; not shipped in the SDK). *(Originally landed in `azure_data_cosmos_perf`; later moved with the harness to `azure_data_cosmos` — see §9.7.)*
-2. Extract the current number logic into a standalone `normalize_numbers(&Value) -> Value` that applies the calibrated `canonicalize_number` rules and leave calibration mode (§6) pointing at it.
+2. Extract the current number logic into a standalone `normalize_numbers(&Value) -> Value` that applies the calibrated `normalize_number` rules and leave calibration mode (§6) pointing at it.
 3. Replace `canonicalize` internals with: `normalize_numbers` → `json_canon::to_string` → `sha2` digest. Keep the `project_to_sent_keys` step (§2) unchanged.
 4. Replace `gen_object`/`gen_value` with an `arbitrary-json`-backed generator seeded from the existing `SplitMix64` byte stream (so runs stay reproducible via `AZURE_COSMOS_FUZZ_SEED`).
 5. Re-run **calibration** (§6) against a live account to confirm `normalize_numbers` still yields all `MATCH` after the refactor; fold any new `DIFF` back in.
@@ -539,10 +542,10 @@ Phases 1–4 of §9.5 are implemented in `binary_roundtrip_fuzzer.rs` across fou
 
 RFC 8785 / `json-canon` refuses to serialize any integer at or beyond the JSON
 "max safe integer" (`2^53`), returning `Error("u64 must be less than JSON max
-safe integer")`. Cosmos, however, **preserves `i64` integers exactly** and stores
-`u64` above `i64::MAX` as lossy IEEE-754 doubles. To bridge this,
-`normalize_number` maps JCS-unsafe numbers to **stable string tokens** (an exact
-decimal for large `i64`, or the `f64` form for the lossy-double case), which are
+safe integer")`. Cosmos stores *every* JSON number as an IEEE-754 double, so no
+integer beyond `2^53` is preserved exactly. To bridge this, `normalize_number`
+maps JCS-unsafe numbers to **stable string tokens** (the `f64` form of the
+rounded double, for both large `i64` and `u64`), which are
 only ever compared for equality — never parsed back. This keeps the sent and
 round-tripped values comparable without tripping the JCS safe-integer guard, and
 is the concrete realization of the §9.2 "keep Cosmos number canonicalization"

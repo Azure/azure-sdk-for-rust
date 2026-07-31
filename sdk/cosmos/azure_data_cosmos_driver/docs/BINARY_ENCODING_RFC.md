@@ -33,7 +33,7 @@ this format byte-for-byte.
 This specification defines:
 
 - the byte-level layout of every value kind (§3–§6),
-- the **canonical** encoding a conforming encoder emits when multiple 
+- the **canonical** encoding a conforming encoder emits when multiple encodings
   are valid (§7),
 - decoder conformance requirements, including bounds and resource limits (§8),
 - security considerations for decoding untrusted input (§9).
@@ -400,29 +400,47 @@ Multiple valid encodings exist for the same value (e.g. the integer `5` can be a
 literal `05`, `NumberUInt8`, `Int8`, `Int16`, …; the string `"id"` can be a
 system string, an encoded-length string, `StrL1`, …). A **decoder MUST accept
 all valid encodings**. An **encoder MUST be deterministic**: for a given value it
-MUST emit exactly one, canonical encoding. The canonical rules are:
+MUST emit exactly one encoding.
 
-1. **Integers in `[0,31]`** → literal small integer (single byte).
-2. **Other integers** → the narrowest fixed-width `Number*` marker that holds the
-   value (`NumberUInt8` → `NumberInt16` → `NumberInt32` → `NumberInt64`; values
-   above `i64::MAX` use `NumberUInt64`). `[CROSS-VERIFY: .NET/C++]` — confirm the
+Determinism does **not** require the *narrowest* encoding. An encoder MAY emit
+any valid form as long as it does so deterministically. The Rust reference
+encoder (`ser.rs` / `writer.rs`, pinned by `conformance.rs`) deliberately emits a
+**valid but non-minimal subset**: integers outside `[0,31]` use `Int64`/`UInt64`
+(never the narrower `NumberUInt8`/`Int16`/`Int32`), strings use the
+encoded-length or `StrL*` forms (never system/user/compressed/reference strings),
+and containers always use `LC*` framing (never `Arr0`/`Arr1`/`Obj0`/`Obj1`). The
+decoder still accepts every compact form the service may emit.
+
+The rules below describe the **widest canonical shape** each SDK is free to
+narrow. Rules 1, 3 and 4 are **required** (they select the value's category);
+rules 2, 5 and 6 describe **encoder-optional narrowing** — an encoder MAY emit a
+wider valid form instead:
+
+1. **Integers in `[0,31]`** → literal small integer (single byte). *(Required.)*
+2. **Other integers** → any fixed-width `Number*` marker that holds the value
+   (narrowest is `NumberUInt8` → `NumberInt16` → `NumberInt32` → `NumberInt64`;
+   values above `i64::MAX` use `NumberUInt64`). *Encoder-optional:* the Rust
+   encoder always uses `Int64`/`UInt64`. `[CROSS-VERIFY: .NET/C++]` — confirm the
    .NET encoder prefers `Number*` over the extended `D7`–`DC` markers.
-3. **Floating-point (non-integer) numbers** → `NumberDouble` (`CC`).
-4. **Non-finite floats** → `null` (§4.3).
+3. **Floating-point (non-integer) numbers** → `NumberDouble` (`CC`). *(Required.)*
+4. **Non-finite floats** → `null` (§4.3). *(Required.)*
 5. **Strings** → system string if the value is in the system dictionary;
    otherwise encoded-length (`< 64` bytes), `StrL1`, `StrL2`, or `StrL4` by
-   length. Compressed/base64/GUID/reference forms are **decoder-accepted but
-   encoder-optional** optimizations; a minimal conforming encoder need not emit
-   them. `[CROSS-VERIFY: .NET/C++]` — enumerate which optimizations the .NET
-   encoder applies by default.
-6. **Containers** → `LC*` (length-and-count) framing at the narrowest width that
-   fits. `[CROSS-VERIFY: .NET/C++]`
+   length. System/compressed/base64/GUID/reference forms are **decoder-accepted
+   but encoder-optional** optimizations; a minimal conforming encoder need not
+   emit them (the Rust encoder never emits system or compressed strings).
+   `[CROSS-VERIFY: .NET/C++]` — enumerate which optimizations the .NET encoder
+   applies by default.
+6. **Containers** → `LC*` (length-and-count) framing. Narrowing to the compact
+   `Arr0`/`Arr1`/`Obj0`/`Obj1` forms is **encoder-optional**; the Rust encoder
+   always emits `LC*`. `[CROSS-VERIFY: .NET/C++]`
 
-> **Why canonical encoding matters.** A snapshot / golden-vector test asserts
-> `encode(value) == expected_bytes`. Without a fixed canonical rule, two
-> conforming encoders could produce different (both valid) buffers and the test
-> would be meaningless. §7 is the contract that makes cross-SDK byte-equality
-> tests possible.
+> **Why deterministic encoding matters.** A snapshot / golden-vector test asserts
+> `encode(value) == expected_bytes`, so each SDK's encoder must be deterministic
+> for its own snapshots to be stable. Cross-SDK **byte-equality** tests are only
+> valid between encoders that made the *same* narrowing choices; because the Rust
+> encoder emits the verbose subset above, a cross-SDK byte-equality test must
+> compare against that subset (or compare *decoded values* rather than bytes).
 
 ---
 
