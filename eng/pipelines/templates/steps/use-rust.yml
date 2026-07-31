@@ -16,8 +16,39 @@ parameters:
     type: boolean
     # When true, Use-Rust.ps1 sets a rustup directory override for WorkingDirectory.
     default: true
+  - name: ConfigureRegistry
+    type: boolean
+    # When true, write $CARGO_HOME/config.toml so cargo resolves crates.io through the
+    # azure-sdk-for-rust feed, and authenticate to it. Set to false on additional
+    # invocations within the same job, which would otherwise redo identical work.
+    default: true
 
 steps:
+- ${{ if parameters.ConfigureRegistry }}:
+  # Cargo only reads config files from $CARGO_HOME or from ancestors of its working
+  # directory, and it ignores environment variables for [source] replacement, so the
+  # config has to be written to disk before cargo runs.
+  - pwsh: |
+      $cargoHome = $env:CARGO_HOME
+      if (-not $cargoHome) { $cargoHome = Join-Path $HOME '.cargo' }
+      New-Item -ItemType Directory -Force -Path $cargoHome | Out-Null
+
+      $configPath = Join-Path $cargoHome 'config.toml'
+      Copy-Item `
+        -Path '$(Build.SourcesDirectory)/eng/templates/config.toml.template' `
+        -Destination $configPath `
+        -Force
+
+      Write-Host "Wrote cargo config to $configPath"
+      Get-Content $configPath
+      Write-Host "##vso[task.setvariable variable=CargoConfigPath]$configPath"
+    displayName: Configure cargo to use the azure-sdk-for-rust feed
+
+  - task: CargoAuthenticate@0
+    displayName: Authenticate cargo to the azure-sdk-for-rust feed
+    inputs:
+      configFile: $(CargoConfigPath)
+
 - task: PowerShell@2
   displayName: "Use Rust ${{ parameters.Toolchain }}"
   inputs:
