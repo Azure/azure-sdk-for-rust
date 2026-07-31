@@ -65,6 +65,7 @@ pub use distributed_transaction::{
     DistributedTransactionResponse, DistributedTransactionResultBody, DistributedTransactionTarget,
     DistributedTransactionType,
 };
+pub use resource_id::is_database_rid;
 // Cosmos status types are owned by `crate::error::cosmos_status` (canonical home,
 // tightly coupled to the typed Cosmos error). Re-exported here for ergonomic access
 // via the historic `crate::models::CosmosStatus` path used throughout the driver

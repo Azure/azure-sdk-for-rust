@@ -26,6 +26,8 @@
 
 ### Bugs Fixed
 
+- `DatabaseClient::read_throughput` and `begin_replace_throughput` now reject a non-database RID (for example a container RID) with `CLIENT_INVALID_RESOURCE_ID` instead of silently reading or replacing that resource's throughput offer. Throughput offers are keyed only by `offerResourceId`, so a `DatabaseClient` addressed by a container RID would otherwise operate on the container's offer. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
+
 ### Other Changes
 
 - Existing `ResponseHeaders` accessors now return Gateway 2.0 backend duration, quota, item-count, and local-LSN response metadata. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))

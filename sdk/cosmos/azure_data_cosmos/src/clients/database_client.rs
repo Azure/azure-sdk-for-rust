@@ -280,6 +280,22 @@ impl DatabaseClient {
     #[cfg(feature = "control_plane")]
     async fn resource_id(&self) -> crate::Result<String> {
         if let Some(rid) = self.rid() {
+            // The client was addressed by a caller-supplied RID. Throughput
+            // offers are keyed only by `offerResourceId`, with no resource-kind
+            // discriminator, so a container RID handed to a `DatabaseClient`
+            // would otherwise silently read or replace that container's offer.
+            // Reject any RID that is not database-level before reusing it.
+            if !azure_data_cosmos_driver::models::is_database_rid(rid.as_str()) {
+                return Err(crate::DriverCosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                    .with_message(format!(
+                        "'{}' is not a database resource id; a DatabaseClient's throughput \
+                         operations require a database-level RID",
+                        rid.as_str()
+                    ))
+                    .build()
+                    .into());
+            }
             return Ok(rid.as_str().to_owned());
         }
         let db = self.read(None).await?.into_model()?;

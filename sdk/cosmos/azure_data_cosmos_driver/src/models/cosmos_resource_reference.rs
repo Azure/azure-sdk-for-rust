@@ -340,17 +340,20 @@ impl CosmosResourceReference {
     /// treated as RID-based and every remaining segment must also be a RID.
     /// There is no "RID parent, name leaf" mode. Mixing therefore fails — a
     /// mixed parent chain (e.g. `/dbs/{name}/colls/{rid}`) signs and routes
-    /// inconsistently and the gateway rejects it with an opaque `401`, while a
-    /// name leaf under a RID-addressed parent (e.g.
+    /// inconsistently and the gateway rejects it with an opaque `401`, a name
+    /// leaf under a RID-addressed parent (e.g.
     /// `/dbs/{rid}/colls/{rid}/docs/{name}`) is rejected with
-    /// `400 Failed to parse the value '{name}' as ResourceId`.
+    /// `400 Failed to parse the value '{name}' as ResourceId`, and a RID leaf
+    /// under a name-addressed parent (e.g. `/dbs/{name}/colls/{name}/docs/{rid}`)
+    /// signs the bare RID against a name-routed URL and is rejected with an
+    /// opaque `401`.
     ///
     /// `leaf_in_path` selects whether the leaf `id` actually appears in the
     /// request path. Feed-style operations (including Create/Upsert, which
     /// carry an item id but POST to the parent collection URL) drop the leaf, so
     /// a name id is legal there even under a RID-addressed parent — only the
     /// parent chain is checked. Point operations put the leaf in the path, so it
-    /// must match the parent chain's addressing mode.
+    /// must match the parent chain's addressing mode in both directions.
     fn addressing_conflict(&self, leaf_in_path: bool) -> Option<String> {
         if let (Some(db), Some(container)) = (self.database.as_ref(), self.container.as_ref()) {
             if db.is_by_rid() != container.is_by_rid() {
@@ -380,17 +383,31 @@ impl CosmosResourceReference {
             }
         }
 
-        // A leaf that appears in the request path under a RID-addressed parent
-        // must itself be a RID: the service has already classified the URI as
-        // RID-based from the `dbs` segment and will try to parse the leaf as a
-        // ResourceId. Addressing such a leaf by RID (e.g. `ItemReference::
-        // from_rid`) is the supported way to reach it.
+        // A leaf that appears in the request path must match its parent chain's
+        // addressing mode in *both* directions. The service classifies the whole
+        // URI from the `dbs` segment, so:
+        //   * a name leaf under a RID-addressed parent (e.g.
+        //     `/dbs/{rid}/colls/{rid}/docs/{name}`) is parsed as a ResourceId and
+        //     rejected with `400 Failed to parse the value '{name}'`, and
+        //   * a RID leaf under a name-addressed parent (e.g.
+        //     `/dbs/{name}/colls/{name}/docs/{rid}`) is routed name-based while
+        //     `rid_signing_override` signs the bare RID, so the signature never
+        //     matches and the gateway returns an opaque `401`.
+        // Addressing the leaf the same way as its parent (`ItemReference::from_rid`
+        // under a RID parent, `from_name` under a name parent) is the supported
+        // way to reach it. The dedicated database/container check above already
+        // covers those leaf kinds; this catches document and other sub-resource
+        // leaves, whose type is not `Database`/`DocumentCollection`.
         if leaf_in_path {
-            if let (Some(id), Some(true)) = (self.id.as_ref(), self.parent_chain_is_rid()) {
-                if id.rid().is_none() {
+            if let (Some(id), Some(parent_is_rid)) = (self.id.as_ref(), self.parent_chain_is_rid())
+            {
+                let leaf_is_rid = id.rid().is_some();
+                if leaf_is_rid != parent_is_rid {
                     return Some(format!(
-                        "{} leaf is addressed by name but its parent chain is RID-addressed",
+                        "{} leaf is addressed by {} but its parent chain is {}-addressed",
                         self.resource_type.as_str(),
+                        if leaf_is_rid { "RID" } else { "name" },
+                        if parent_is_rid { "RID" } else { "name" },
                     ));
                 }
             }
@@ -1272,6 +1289,30 @@ mod tests {
         let err = r
             .validate_addressing(true)
             .expect_err("a name leaf under a RID parent must be rejected");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+        );
+    }
+
+    #[test]
+    fn validate_addressing_rejects_rid_leaf_under_name_parent() {
+        // Mirror of the name-leaf-under-RID-parent case: a RID item leaf under a
+        // name-addressed container routes name-based from the `dbs` segment while
+        // `rid_signing_override` signs the bare item RID, so the signature never
+        // matches and the gateway returns an opaque `401`. Reject it client-side
+        // with the same deterministic error instead. The leaf type is `Document`,
+        // so this is caught by the leaf-in-path rule rather than the
+        // database/container check.
+        let item = ItemReference::from_rid(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "Lx1BALxJyZ8BAAAAAAAAAA==",
+        );
+        let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
+        let err = r
+            .validate_addressing(true)
+            .expect_err("a RID leaf under a name parent must be rejected");
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
