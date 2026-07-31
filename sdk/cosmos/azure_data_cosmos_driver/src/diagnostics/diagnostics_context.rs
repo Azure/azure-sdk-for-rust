@@ -21,7 +21,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::compaction::{compact_requests, CompactedRun, CompactionInfo};
+use super::compaction::{compact_requests, merge_carried_runs, CompactedRun, CompactionInfo};
 
 // =============================================================================
 // Threshold breach classification
@@ -1864,6 +1864,49 @@ pub struct DiagnosticsContext {
     cached_json_summary: OnceLock<String>,
 }
 
+/// The per-run rollup for an aggregate of sub-operations, plus its counters.
+struct AggregatedRollup {
+    runs: Vec<CompactedRun>,
+    collapsed_runs: usize,
+    total_runs: usize,
+    omitted_runs: usize,
+}
+
+/// Builds the per-run rollup for an aggregate of sub-operations.
+///
+/// A source that was itself compacted carries a rollup covering *all* of its
+/// attempts, including the records it retained, so recomputing the rollup from
+/// the concatenated records would count those twice. Instead the verbatim
+/// (uncompacted) sources are rolled up fresh and the compacted sources' rollups
+/// are folded in, which keeps every run's true count exact no matter how many
+/// times an aggregate is re-aggregated.
+fn aggregate_run_rollup(sources: &[Arc<DiagnosticsContext>], cap: usize) -> AggregatedRollup {
+    let verbatim: Vec<RequestDiagnostics> = sources
+        .iter()
+        .filter(|c| c.compaction.is_none())
+        .flat_map(|c| c.requests.iter().cloned())
+        .collect();
+    let fresh = compact_requests(verbatim, cap);
+    let source_infos = || sources.iter().filter_map(|c| c.compaction.as_ref());
+    let merged = merge_carried_runs(
+        fresh.runs,
+        source_infos().flat_map(|info| info.runs.iter().cloned()),
+        cap,
+    );
+    // Runs a source already dropped from its own rollup cannot be carried, so
+    // they count as both detected and omitted here too.
+    let source_omitted_runs: usize = source_infos().map(|info| info.omitted_runs).sum();
+    AggregatedRollup {
+        runs: merged.runs,
+        collapsed_runs: fresh.collapsed_runs
+            + source_infos()
+                .map(|info| info.collapsed_runs)
+                .sum::<usize>(),
+        total_runs: fresh.total_runs + merged.extra_total_runs + source_omitted_runs,
+        omitted_runs: fresh.omitted_runs + merged.extra_omitted_runs + source_omitted_runs,
+    }
+}
+
 impl DiagnosticsContext {
     /// **Internal escape hatch — do not call.**
     ///
@@ -2012,39 +2055,47 @@ impl DiagnosticsContext {
         let (requests, compaction) = if aggregated_requests.len() > cap {
             let compacted = compact_requests(aggregated_requests, cap);
             let retained_request_count = compacted.retained.len();
+            let rollup = if sources.iter().any(|c| c.compaction.is_some()) {
+                aggregate_run_rollup(sources, cap)
+            } else {
+                // Nothing to carry, so the rollup just computed over the whole
+                // concatenation is already exact — skip the second pass.
+                AggregatedRollup {
+                    runs: compacted.runs,
+                    collapsed_runs: compacted.collapsed_runs,
+                    total_runs: compacted.total_runs,
+                    omitted_runs: compacted.omitted_runs,
+                }
+            };
             let info = CompactionInfo {
                 original_request_count,
                 retained_request_count,
-                collapsed_runs: compacted.collapsed_runs,
-                total_runs: compacted.total_runs,
+                collapsed_runs: rollup.collapsed_runs,
+                total_runs: rollup.total_runs,
                 retained_truncated: compacted.retained_truncated,
-                omitted_runs: compacted.omitted_runs,
+                omitted_runs: rollup.omitted_runs,
                 omitted_request_count: original_request_count
                     .saturating_sub(retained_request_count),
-                runs: compacted.runs,
+                runs: rollup.runs,
             };
             (compacted.retained, Some(info))
         } else if original_request_count > aggregated_requests.len() {
             // The concatenation fits the cap, but at least one sub-op was itself
             // compacted, so the retained records under-count the true attempts.
-            // Attach a counts-only marker (carrying the sub-ops' per-run rollup
-            // entries) so `request_count()` stays exact and the storm shape is
-            // preserved.
+            // Attach a counts-only marker carrying the merged per-run rollup so
+            // `request_count()` stays exact and the storm shape is preserved.
             let retained_request_count = aggregated_requests.len();
-            let source_infos = || sources.iter().filter_map(|c| c.compaction.as_ref());
-            let runs: Vec<CompactedRun> = source_infos()
-                .flat_map(|info| info.runs.iter().cloned())
-                .collect();
+            let rollup = aggregate_run_rollup(sources, cap);
             let info = CompactionInfo {
                 original_request_count,
                 retained_request_count,
-                collapsed_runs: source_infos().map(|info| info.collapsed_runs).sum(),
-                total_runs: source_infos().map(|info| info.total_runs).sum(),
+                collapsed_runs: rollup.collapsed_runs,
+                total_runs: rollup.total_runs,
                 retained_truncated: false,
-                omitted_runs: source_infos().map(|info| info.omitted_runs).sum(),
+                omitted_runs: rollup.omitted_runs,
                 omitted_request_count: original_request_count
                     .saturating_sub(retained_request_count),
-                runs,
+                runs: rollup.runs,
             };
             (aggregated_requests, Some(info))
         } else {
@@ -3201,6 +3252,81 @@ mod tests {
         assert_eq!(info.original_request_count, 1000);
     }
 
+    /// The under-cap branch must roll up verbatim sources too. A fold that mixes
+    /// an already-compacted accumulator with fresh uncompacted pages stays under
+    /// the cap, and previously dropped the fresh pages from the rollup entirely.
+    #[test]
+    fn aggregate_sub_operations_rolls_up_verbatim_sources_under_cap() {
+        const STORM: usize = 600;
+        // 2 retained records from the storm + 4 pages x 3 attempts = 14 <= cap,
+        // so the concatenation stays under the cap and takes the counts-only
+        // branch rather than being re-compacted.
+        const FRESH_PAGES: usize = 4;
+        const PER_PAGE: usize = 3;
+        let cap = 16;
+
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("mixed-storm".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut b,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            2.0,
+            STORM,
+        );
+        b.set_operation_status(StatusCode::Ok, None);
+        let compacted_source = Arc::new(b.complete());
+        assert!(compacted_source.compaction().is_some());
+
+        let mut batch = vec![compacted_source];
+        for i in 0..FRESH_PAGES {
+            let mut page = DiagnosticsContextBuilder::new(
+                ActivityId::from_string(format!("mixed-page-{i}")),
+                options_with_cap(cap),
+            );
+            record_run(
+                &mut page,
+                ExecutionContext::Retry,
+                "West US",
+                "https://west/",
+                CosmosStatus::new(StatusCode::Ok),
+                1.0,
+                PER_PAGE,
+            );
+            page.set_operation_status(StatusCode::Ok, None);
+            let page = Arc::new(page.complete());
+            assert!(
+                page.compaction().is_none(),
+                "fresh pages must be verbatim for this test to cover the mixed path"
+            );
+            batch.push(page);
+        }
+
+        let aggregated =
+            DiagnosticsContext::aggregate_sub_operations(&batch).expect("aggregation must succeed");
+        let total = STORM + FRESH_PAGES * PER_PAGE;
+
+        // The concatenation fits the cap, so this exercises the counts-only
+        // branch: every record is retained verbatim.
+        assert_eq!(
+            aggregated.retained_request_count(),
+            2 + FRESH_PAGES * PER_PAGE
+        );
+        assert_eq!(aggregated.request_count(), total);
+        let info = aggregated
+            .compaction()
+            .expect("a compacted source must yield compaction metadata");
+        assert_eq!(
+            info.runs.iter().map(|r| r.count).sum::<usize>(),
+            total,
+            "the verbatim sources' attempts must appear in the rollup"
+        );
+    }
+
     #[test]
     fn aggregate_sub_operations_returns_none_for_empty_input() {
         // Edge case: defensive None for callers that don't pre-check —
@@ -4170,6 +4296,85 @@ mod tests {
             builder.update_request(h, |req| req.with_charge(RequestCharge::new(charge)));
             builder.complete_request(h, status.status_code(), status.sub_status());
         }
+    }
+
+    /// Repeated aggregation (as `PageAggregator` does when folding to bound
+    /// retained sources) must not lose the per-run rollup: a run's `count` is
+    /// exact across any number of folds, never double-counted and never reduced
+    /// to the retained-sample size.
+    #[test]
+    fn aggregate_sub_operations_preserves_run_counts_across_repeated_folds() {
+        const RUN: usize = 600;
+        const PER_FOLD: usize = 9;
+        const FOLDS: usize = 3;
+        let cap = 16;
+        let storm = |id: String| {
+            let mut b =
+                DiagnosticsContextBuilder::new(ActivityId::from_string(id), options_with_cap(cap));
+            record_run(
+                &mut b,
+                ExecutionContext::Retry,
+                "East US",
+                "https://east/",
+                CosmosStatus::new(StatusCode::TooManyRequests),
+                2.0,
+                RUN,
+            );
+            b.set_operation_status(StatusCode::Ok, None);
+            Arc::new(b.complete())
+        };
+
+        let first = storm("fold-seed".to_string());
+        assert_eq!(
+            first
+                .compaction()
+                .expect("source must be compacted")
+                .runs
+                .iter()
+                .map(|r| r.count)
+                .sum::<usize>(),
+            RUN
+        );
+
+        // Fold in batches, feeding each result back in as a source — the shape
+        // `PageAggregator` produces once it starts folding. Each batch retains
+        // more records than the cap, so the over-cap branch is exercised.
+        let mut folded = first;
+        for fold in 0..FOLDS {
+            let mut batch = vec![folded];
+            batch.extend((0..PER_FOLD).map(|i| storm(format!("fold-{fold}-{i}"))));
+            folded = Arc::new(
+                DiagnosticsContext::aggregate_sub_operations(&batch)
+                    .expect("aggregation must succeed"),
+            );
+            assert!(
+                folded
+                    .compaction()
+                    .is_some_and(|i| i.retained_truncated
+                        || i.retained_request_count < i.original_request_count),
+                "each fold must exercise real compaction"
+            );
+        }
+
+        let total = RUN * (1 + PER_FOLD * FOLDS);
+        assert_eq!(folded.request_count(), total);
+        assert!(folded.retained_request_count() <= cap);
+        let info = folded
+            .compaction()
+            .expect("aggregate of compacted sources must carry compaction metadata");
+        assert_eq!(info.original_request_count, total);
+        assert_eq!(
+            info.runs.iter().map(|r| r.count).sum::<usize>(),
+            total,
+            "the run rollup must account for every attempt across folds"
+        );
+        // Exact charge survives in the rollup too (2.0 RU per attempt).
+        let rollup_charge: f64 = info
+            .runs
+            .iter()
+            .map(|r| r.total_request_charge.value())
+            .sum();
+        assert!((rollup_charge - total as f64 * 2.0).abs() < f64::EPSILON);
     }
 
     #[test]

@@ -323,6 +323,39 @@ pub(crate) fn response_with_continuation(
     )
 }
 
+/// Creates a test response whose diagnostics carry `requests` per-attempt
+/// records, so tests can assert on attempt counts surviving aggregation.
+pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosResponse {
+    use crate::diagnostics::{
+        ExecutionContext, PipelineType, TransportHttpVersion, TransportKind, TransportSecurity,
+    };
+
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    let endpoint = crate::driver::routing::CosmosEndpoint::global(
+        url::Url::parse("https://acct.example/").unwrap(),
+    );
+    for _ in 0..requests {
+        let _ = diagnostics.start_request(
+            ExecutionContext::Initial,
+            PipelineType::DataPlane,
+            TransportSecurity::Secure,
+            TransportKind::Gateway,
+            TransportHttpVersion::Http11,
+            &endpoint,
+        );
+    }
+    diagnostics.set_operation_status(StatusCode::Ok, None);
+    CosmosResponse::new(
+        Vec::new(),
+        CosmosResponseHeaders::new(),
+        CosmosStatus::new(StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
 /// Creates a test response with the given body and an `ETag`, mirroring the
 /// change feed contract where every poll (including a start-from-`Now` 304)
 /// carries an ETag continuation.

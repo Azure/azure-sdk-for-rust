@@ -173,6 +173,110 @@ fn bool_is_false(b: &bool) -> bool {
     !*b
 }
 
+/// The result of folding carried-forward rollup entries into a freshly
+/// compacted one; see [`merge_carried_runs`].
+pub(super) struct MergedRuns {
+    pub(super) runs: Vec<CompactedRun>,
+    /// Distinct carried runs whose key was not already present in the fresh
+    /// rollup, whether or not they survived the bound.
+    pub(super) extra_total_runs: usize,
+    /// Carried runs dropped to keep `runs` within the cap.
+    pub(super) extra_omitted_runs: usize,
+}
+
+/// The identity of a rollup entry: the same tuple that defines a run.
+type RunKey = (Option<String>, String, CosmosStatus, ExecutionContext);
+
+fn run_key(run: &CompactedRun) -> RunKey {
+    (
+        run.region.clone(),
+        run.endpoint.clone(),
+        run.status,
+        run.execution_context,
+    )
+}
+
+/// Folds `carried` rollup entries — recovered from sub-operations that were
+/// themselves already compacted — into the `fresh` rollup computed for this
+/// pass, then re-bounds the result to `cap`.
+///
+/// Aggregating sub-operations recomputes the rollup from the concatenated
+/// *retained* records, which under-count any run whose middle was already
+/// elided by a sub-op's own compaction. Merging the sub-ops' rollups back in
+/// keeps each run's true `count` and charge.
+///
+/// `fresh` entries are always kept: they are coherent with the retained records
+/// by construction, so ranking them out would leave records with no rollup row.
+/// Only carried-only keys compete for the remaining slots, ranked by attempt
+/// count (tie-break first-seen), matching [`global_bucket_compact`].
+///
+/// `p50_duration_ms` cannot be combined exactly from two medians, so the merged
+/// value is the count-weighted mean of the inputs' medians; `min`/`max`, `count`
+/// and `total_request_charge` remain exact.
+pub(super) fn merge_carried_runs(
+    fresh: Vec<CompactedRun>,
+    carried: impl IntoIterator<Item = CompactedRun>,
+    cap: usize,
+) -> MergedRuns {
+    let mut runs = fresh;
+    let mut index: HashMap<RunKey, usize> = runs
+        .iter()
+        .enumerate()
+        .map(|(i, run)| (run_key(run), i))
+        .collect();
+    let reserved = runs.len();
+    let mut extra: Vec<CompactedRun> = Vec::new();
+
+    for run in carried {
+        let key = run_key(&run);
+        match index.get(&key) {
+            Some(&i) if i < reserved => combine_runs(&mut runs[i], run),
+            Some(&i) => combine_runs(&mut extra[i - reserved], run),
+            None => {
+                index.insert(key, reserved + extra.len());
+                extra.push(run);
+            }
+        }
+    }
+
+    let extra_total_runs = extra.len();
+    let remaining = cap.saturating_sub(runs.len());
+    let mut extra_omitted_runs = 0;
+    if extra_total_runs > remaining {
+        let mut ranked: Vec<usize> = (0..extra_total_runs).collect();
+        ranked.sort_by(|&a, &b| extra[b].count.cmp(&extra[a].count).then(a.cmp(&b)));
+        let mut keep = vec![false; extra_total_runs];
+        for &i in ranked.iter().take(remaining) {
+            keep[i] = true;
+        }
+        extra_omitted_runs = extra_total_runs - remaining;
+        let mut keep = keep.into_iter();
+        extra.retain(|_| keep.next().unwrap_or(false));
+    }
+    runs.append(&mut extra);
+
+    MergedRuns {
+        runs,
+        extra_total_runs,
+        extra_omitted_runs,
+    }
+}
+
+/// Folds `from` into `into`, keeping counts and charge exact.
+fn combine_runs(into: &mut CompactedRun, from: CompactedRun) {
+    let total = into.count + from.count;
+    if total > 0 {
+        // Count-weighted mean of the two medians; see `merge_carried_runs`.
+        into.p50_duration_ms = ((into.p50_duration_ms as u128 * into.count as u128
+            + from.p50_duration_ms as u128 * from.count as u128)
+            / total as u128) as u64;
+    }
+    into.count = total;
+    into.total_request_charge = into.total_request_charge + from.total_request_charge;
+    into.min_duration_ms = into.min_duration_ms.min(from.min_duration_ms);
+    into.max_duration_ms = into.max_duration_ms.max(from.max_duration_ms);
+}
+
 /// Builds a [`CompactedRun`] rollup from a run/bucket of attempts.
 fn compacted_run(reqs: &[&RequestDiagnostics]) -> CompactedRun {
     let count = reqs.len();

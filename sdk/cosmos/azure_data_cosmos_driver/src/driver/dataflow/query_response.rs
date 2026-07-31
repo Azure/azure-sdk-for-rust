@@ -339,6 +339,12 @@ fn parse_envelope_item(
     })
 }
 
+/// Peak-memory bound on per-page diagnostics contexts retained by a single
+/// [`PageAggregator`]. A selective ORDER BY can follow many empty-but-continuing
+/// backend pages before one output page is emitted, so the retained set is
+/// folded at this size instead of only at `build_page`.
+const MAX_RETAINED_DIAGNOSTICS_SOURCES: usize = 32;
+
 /// Accumulates request charge and diagnostics across every backend page
 /// consumed while assembling one emitted output page, then reconstructs a
 /// single [`CosmosResponse`] carrying only the raw payload items.
@@ -415,7 +421,26 @@ impl PageAggregator {
             self.query_metrics = Some(metrics.clone());
         }
         self.status = response.status();
+        if self.diagnostics_sources.len() >= MAX_RETAINED_DIAGNOSTICS_SOURCES {
+            self.fold_diagnostics();
+        }
         Ok(())
+    }
+
+    /// Collapses the retained per-page contexts into one, bounding peak memory
+    /// while keeping attempt counts exact: a folded context reports its true
+    /// total via `request_count()`, so a later fold sums originals rather than
+    /// retained records.
+    fn fold_diagnostics(&mut self) {
+        if self.diagnostics_sources.len() < 2 {
+            return;
+        }
+        if let Some(folded) =
+            DiagnosticsContext::aggregate_sub_operations(&self.diagnostics_sources)
+        {
+            self.diagnostics_sources.clear();
+            self.diagnostics_sources.push(Arc::new(folded));
+        }
     }
 
     /// Builds the emitted page from the accumulated aggregate plus the
@@ -508,7 +533,7 @@ fn body_error_msg(message: &'static str) -> crate::error::CosmosError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::driver::dataflow::mocks::response;
+    use crate::driver::dataflow::mocks::{self, response};
 
     #[test]
     fn rewrite_query_body_replaces_query_and_preserves_parameters() {
@@ -821,6 +846,63 @@ mod tests {
                 .as_ref()
                 .map(SessionToken::as_str),
             Some("0:1#10,1:1#20")
+        );
+    }
+
+    /// A selective ORDER BY can consume many empty-but-continuing backend pages
+    /// before emitting one output page. Retaining a full context per page would
+    /// grow with page count, so the aggregator folds them periodically.
+    #[test]
+    fn page_aggregator_folds_diagnostics_to_bound_retained_sources() {
+        let mut aggregator = PageAggregator::new();
+        for _ in 0..(MAX_RETAINED_DIAGNOSTICS_SOURCES * 4) {
+            aggregator
+                .absorb(&mocks::response_with_request_diagnostics(1))
+                .unwrap();
+            assert!(
+                aggregator.diagnostics_sources.len() <= MAX_RETAINED_DIAGNOSTICS_SOURCES,
+                "retained contexts must stay bounded regardless of pages consumed, got {}",
+                aggregator.diagnostics_sources.len()
+            );
+        }
+    }
+
+    /// Folding must not lose attempts: a folded context reports its true total
+    /// through `request_count()`, so the counts stay exact across any number of
+    /// folds even once the retained records are capped.
+    #[test]
+    fn page_aggregator_folding_preserves_exact_request_count() {
+        // Enough attempts to exceed the default 512-record cap, so the fold
+        // path is exercised against real compaction rather than a no-op.
+        const PAGES: usize = MAX_RETAINED_DIAGNOSTICS_SOURCES * 8;
+        const REQUESTS_PER_PAGE: usize = 3;
+
+        let mut aggregator = PageAggregator::new();
+        let mut folded_before_build = false;
+        for _ in 0..PAGES {
+            let before = aggregator.diagnostics_sources.len();
+            aggregator
+                .absorb(&mocks::response_with_request_diagnostics(REQUESTS_PER_PAGE))
+                .unwrap();
+            // An absorb normally grows the vec by one, so a shrink means the
+            // fold ran.
+            folded_before_build |= aggregator.diagnostics_sources.len() < before;
+        }
+        let page = aggregator.build_page(&[]).unwrap();
+
+        assert!(
+            folded_before_build,
+            "the fold must engage, or this test would only cover the terminal fold"
+        );
+        let diagnostics = page.diagnostics();
+        assert!(
+            diagnostics.retained_request_count() < PAGES * REQUESTS_PER_PAGE,
+            "the cap must actually engage, or this test would not exercise count preservation"
+        );
+        assert_eq!(
+            diagnostics.request_count(),
+            PAGES * REQUESTS_PER_PAGE,
+            "every attempt must still be counted after incremental folding"
         );
     }
 
