@@ -28,9 +28,8 @@ use crate::{
     },
     models::{
         cosmos_headers::QUERY_CONTENT_TYPE, effective_partition_key::EffectivePartitionKey,
-        encode_path_segments, request_header_names, AccountEndpoint, ActivityId, CosmosOperation,
-        CosmosResponse, Credential, DefaultConsistencyLevel, OperationType, SessionToken,
-        SubStatusCode,
+        request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
+        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
     options::{
         resolve_effective_consistency, HedgeThreshold, OperationOptionsView,
@@ -1595,17 +1594,17 @@ fn build_transport_request(
         } else {
             format!("/{}", request_path)
         };
-        // Name-based paths are percent-encoded so the gateway reconstructs the
-        // same resource link we signed (names may contain reserved characters).
-        // RID-based paths must be sent raw: encoding the `=` padding of a base64
-        // RID makes the gateway treat the segment as a name and reject the
-        // RID-based signature. The authorization signature is derived from
-        // `paths` below (a lowercased RID for RID-addressed requests).
-        if paths.is_rid_based() {
-            base.set_path(&normalized);
-        } else {
-            base.set_path(&encode_path_segments(&normalized));
-        }
+        // Set the path exactly as computed. `Url::set_path` percent-encodes only
+        // the characters that are structurally significant in a URL path (space,
+        // `?`, `#`, `<`, `>`, `{`, `}`, backtick) and leaves everything else —
+        // including base64's `=`/`+` padding and path-legal sub-delimiters like
+        // `@` — byte-for-byte intact. That is exactly what both addressing modes
+        // need: a RID segment reaches the gateway raw so its lowercased-RID
+        // signature is honored, and a name segment matches the raw resource link
+        // we signed (and, on Gateway 2.0, its RNTBD target). Encoding those
+        // path-legal characters ourselves would make a RID look name-based and
+        // break Gateway 2.0's outer-path-vs-RNTBD equality check for names.
+        base.set_path(&normalized);
         base
     };
 
@@ -4212,13 +4211,30 @@ mod tests {
     }
 
     #[test]
-    fn build_transport_request_name_path_is_percent_encoded() {
-        // Name-based paths are percent-encoded so the gateway reconstructs the
-        // same resource link we signed: a space becomes `%20` and `+` becomes
-        // `%2B`.
+    fn build_transport_request_name_path_encodes_only_url_structural_chars() {
+        // Names reach the wire via `Url::set_path`, which encodes only the
+        // characters that are structurally significant in a URL path: a space
+        // becomes `%20`. Path-legal characters such as `+` survive raw so the
+        // outer path still matches the raw resource link we signed (and, on
+        // Gateway 2.0, its RNTBD target).
         let db = DatabaseReference::from_name(test_account(), "my db+x");
         let operation = CosmosOperation::read_database(db);
-        assert_eq!(transport_request_path(&operation), "/dbs/my%20db%2Bx");
+        assert_eq!(transport_request_path(&operation), "/dbs/my%20db+x");
+    }
+
+    #[test]
+    fn build_transport_request_name_with_at_sign_is_sent_raw() {
+        // Regression for the Gateway 2.0 outer-path-vs-RNTBD mismatch: an item id
+        // (or any name) containing `@` must reach the wire raw (`@`, not `%40`),
+        // because the gateway rebuilds its RNTBD target from the raw resource link
+        // and compares the two byte-for-byte.
+        let item =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "Item@1-abc");
+        let operation = CosmosOperation::read_item(item);
+        assert_eq!(
+            transport_request_path(&operation),
+            "/dbs/testdb/colls/testcontainer/docs/Item@1-abc"
+        );
     }
 
     #[test]

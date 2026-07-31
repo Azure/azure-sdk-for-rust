@@ -1144,7 +1144,6 @@ mod tests {
             "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs/Lx1BALxJyZ8BAAAAAAAAAA=="
         );
         assert_eq!(paths.signing_link(), "lx1balxjyz8baaaaaaaaaa==");
-        assert!(paths.is_rid_based());
     }
 
     #[test]

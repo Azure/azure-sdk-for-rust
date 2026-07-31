@@ -47,12 +47,6 @@ pub(crate) struct ResourcePaths {
     /// the master-key signature is computed over the lowercased leaf/parent RID
     /// only, matching `is_name_based = false` semantics in the service).
     signing_override: Option<String>,
-    /// When `true`, the request path is RID-addressed and must be sent to the
-    /// gateway **raw** (no percent-encoding). Encoding the `=` padding of a
-    /// base64 RID makes the gateway treat the segment as a name and reject the
-    /// RID-based signature. Name-addressed paths keep `false` so their segments
-    /// are percent-encoded as usual.
-    rid_based: bool,
 }
 
 impl ResourcePaths {
@@ -61,19 +55,12 @@ impl ResourcePaths {
             buf: String::new(),
             signing_end: 0,
             signing_override: None,
-            rid_based: false,
         }
     }
 
     /// Returns the request path (used to set the URL path).
     pub(crate) fn request_path(&self) -> &str {
         &self.buf
-    }
-
-    /// Returns `true` if the request path is RID-addressed and must be sent raw
-    /// (without percent-encoding the path segments).
-    pub(crate) fn is_rid_based(&self) -> bool {
-        self.rid_based
     }
 
     /// Returns the signing link (path without the leading `/`, used for auth).
@@ -224,7 +211,6 @@ impl CosmosResourceReference {
             buf,
             signing_end,
             signing_override: self.rid_signing_override(true),
-            rid_based: self.is_rid_addressed(),
         }
     }
 
@@ -281,9 +267,6 @@ impl CosmosResourceReference {
                 buf: "/operations/dtc".to_owned(),
                 signing_end: 1,
                 signing_override: Some(String::new()),
-                // Fixed literal endpoint with no RID or reserved characters, so
-                // it is routed like a name-based path (raw == percent-encoded).
-                rid_based: false,
             };
         }
 
@@ -299,13 +282,6 @@ impl CosmosResourceReference {
                 buf,
                 signing_end: 1,
                 signing_override,
-                // Offers are signed over the lowercased RID (`is_name_based =
-                // false`), so the `/offers/{rid}` path must be sent raw — exactly
-                // like any other RID-addressed resource. Percent-encoding a
-                // reserved base64 character in the RID (`+`, `/`, or `=` padding)
-                // makes the gateway treat the segment as a name and reject the
-                // request with an opaque `401`.
-                rid_based: true,
             };
         }
 
@@ -326,7 +302,6 @@ impl CosmosResourceReference {
                 buf,
                 signing_end,
                 signing_override: self.rid_signing_override(true),
-                rid_based: self.is_rid_addressed(),
             }
         } else {
             // Non-feed: request_path == signing_link (modulo the leading '/').
@@ -336,7 +311,6 @@ impl CosmosResourceReference {
                 buf,
                 signing_end,
                 signing_override: self.rid_signing_override(false),
-                rid_based: self.is_rid_addressed(),
             }
         }
     }
@@ -696,47 +670,6 @@ impl CosmosResourceReference {
             id.rid().unwrap_or_default()
         }
     }
-}
-
-/// Returns `true` for bytes that are RFC 3986 *unreserved* characters and may
-/// appear literally in a URL path segment without percent-encoding.
-fn is_unreserved(b: u8) -> bool {
-    b.is_ascii_alphanumeric() || matches!(b, b'-' | b'.' | b'_' | b'~')
-}
-
-/// Percent-encodes the reserved characters in each segment of a **name-based**
-/// resource path so it can be used as a URL path, while leaving `/` separators
-/// intact.
-///
-/// Resource names may contain reserved characters (spaces, `+`, etc.) that must
-/// be percent-encoded for the gateway to reconstruct the same resource link we
-/// signed. RID-addressed paths are the opposite: they must be sent **raw** (see
-/// [`ResourcePaths::is_rid_based`]), because percent-encoding the `=` padding of
-/// a base64 RID makes the gateway treat the segment as a name and reject the
-/// RID-based signature. Callers therefore apply this only to name-based paths.
-///
-/// Leaving `/` separators intact is always safe here: resource names
-/// (ids) cannot contain `/`, and Cosmos RIDs use a base64 variant that maps the
-/// standard `/` to `-`, so a RID never contains a literal `/` either. RIDs *can*
-/// still contain other reserved characters (`+`, and `=` padding), which is
-/// precisely why RID-addressed paths bypass this function and are sent raw.
-/// The returned value borrows the input when no character needs encoding.
-pub(crate) fn encode_path_segments(path: &str) -> Cow<'_, str> {
-    if path.bytes().all(|b| b == b'/' || is_unreserved(b)) {
-        return Cow::Borrowed(path);
-    }
-    let mut out = String::with_capacity(path.len() + 8);
-    for &b in path.as_bytes() {
-        if b == b'/' || is_unreserved(b) {
-            out.push(b as char);
-        } else {
-            const HEX: &[u8; 16] = b"0123456789ABCDEF";
-            out.push('%');
-            out.push(HEX[(b >> 4) as usize] as char);
-            out.push(HEX[(b & 0x0f) as usize] as char);
-        }
-    }
-    Cow::Owned(out)
 }
 
 // =============================================================================
@@ -1197,7 +1130,6 @@ mod tests {
         let paths = r.compute_paths();
         assert_eq!(paths.request_path(), "/dbs/Lx1BAA==");
         assert_eq!(paths.signing_link(), "lx1baa==");
-        assert!(paths.is_rid_based());
         // link_for_signing returns the bare lowercased RID (no leading '/').
         assert_eq!(r.link_for_signing(), "lx1baa==");
     }
@@ -1210,7 +1142,6 @@ mod tests {
         let r: CosmosResourceReference = db.into();
         let paths = r.compute_paths();
         assert_eq!(paths.signing_link(), "dbs/MyDb");
-        assert!(!paths.is_rid_based());
     }
 
     #[test]
@@ -1219,7 +1150,6 @@ mod tests {
         let paths = r.compute_paths();
         assert_eq!(paths.request_path(), "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=");
         assert_eq!(paths.signing_link(), "lx1balxjyz8=");
-        assert!(paths.is_rid_based());
         assert_eq!(r.link_for_signing(), "lx1balxjyz8=");
     }
 
@@ -1235,7 +1165,6 @@ mod tests {
         let paths = r.compute_paths();
         assert_eq!(paths.request_path(), "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=");
         assert_eq!(paths.signing_link(), "lx1balxjyz8=");
-        assert!(paths.is_rid_based());
     }
 
     #[test]
@@ -1329,8 +1258,6 @@ mod tests {
             "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs/Lx1BALxJyZ8BAAAAAAAAAA=="
         );
         assert_eq!(paths.signing_link(), "lx1balxjyz8baaaaaaaaaa==");
-        // Signed as RID-based, so the path must also be sent raw.
-        assert!(paths.is_rid_based());
     }
 
     #[test]
@@ -1369,7 +1296,6 @@ mod tests {
         let r: CosmosResourceReference = test_container().into();
         let paths = r.compute_paths();
         assert_eq!(paths.signing_link(), "dbs/testdb/colls/testcontainer");
-        assert!(!paths.is_rid_based());
     }
 
     #[test]
@@ -1383,7 +1309,6 @@ mod tests {
         let paths = r.compute_paths();
         assert_eq!(paths.request_path(), "/dbs/Lx1BAA==/colls");
         assert_eq!(paths.signing_link(), "lx1baa==");
-        assert!(paths.is_rid_based());
     }
 
     #[test]
@@ -1400,7 +1325,6 @@ mod tests {
             "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs"
         );
         assert_eq!(paths.signing_link(), "lx1balxjyz8=");
-        assert!(paths.is_rid_based());
 
         // Create/Upsert path: an ItemReference on a RID container.
         let item =
@@ -1412,71 +1336,20 @@ mod tests {
             "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs"
         );
         assert_eq!(feed_paths.signing_link(), "lx1balxjyz8=");
-        assert!(feed_paths.is_rid_based());
     }
 
     #[test]
-    fn name_addressed_paths_are_not_rid_based() {
-        // Sanity: every name-addressed reference keeps rid_based == false so the
-        // URL path continues to be percent-encoded.
-        let db = DatabaseReference::from_name(test_account(), "mydb");
-        assert!(!CosmosResourceReference::from(db)
-            .compute_paths()
-            .is_rid_based());
-        assert!(!CosmosResourceReference::from(test_container())
-            .compute_paths()
-            .is_rid_based());
-        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
-        assert!(!CosmosResourceReference::from(item)
-            .compute_paths()
-            .is_rid_based());
-    }
-
-    #[test]
-    fn offer_is_rid_based_and_sent_raw() {
+    fn offer_signs_lowercased_rid_and_sent_raw() {
         // Offers sign the lowercased RID (`is_name_based = false`), so the
         // `/offers/{rid}` path must be routed raw like any other RID-addressed
         // resource. An offer RID can carry reserved base64 characters (`+`, `=`
-        // padding); percent-encoding them would make the gateway reject the
-        // request with a `401`.
+        // padding); `Url::set_path` leaves those raw so the gateway accepts the
+        // RID-based signature.
         let r = CosmosResourceReference::from(test_account())
             .with_resource_type(ResourceType::Offer)
             .with_rid("ABC123XYZ".into());
         let paths = r.compute_paths();
+        assert_eq!(paths.request_path(), "/offers/ABC123XYZ");
         assert_eq!(paths.signing_link(), "abc123xyz");
-        assert!(paths.is_rid_based());
-    }
-
-    #[test]
-    fn encode_path_segments_borrows_when_safe() {
-        let p = "/dbs/mydb/colls/mycoll/docs/item1";
-        assert!(matches!(encode_path_segments(p), Cow::Borrowed(_)));
-        assert_eq!(encode_path_segments(p), p);
-    }
-
-    #[test]
-    fn encode_path_segments_encodes_reserved_padding() {
-        // The helper still percent-encodes base64 padding (`=`) when applied —
-        // it is only invoked for name-based paths now, but the encoding itself
-        // is unchanged.
-        let p = "/dbs/qjQBAA==/colls/qjQBAOWXnF4=";
-        assert_eq!(
-            encode_path_segments(p),
-            "/dbs/qjQBAA%3D%3D/colls/qjQBAOWXnF4%3D"
-        );
-    }
-
-    #[test]
-    fn encode_path_segments_preserves_separators_and_unreserved() {
-        // `/` separators stay literal; unreserved chars (`-` `_` `.` `~`) are kept.
-        let p = "/dbs/Adt-AA==/colls/a_b.c~d";
-        assert_eq!(encode_path_segments(p), "/dbs/Adt-AA%3D%3D/colls/a_b.c~d");
-    }
-
-    #[test]
-    fn encode_path_segments_encodes_other_reserved() {
-        // Reserved characters that could appear in a name are encoded too.
-        let p = "/dbs/a+b c";
-        assert_eq!(encode_path_segments(p), "/dbs/a%2Bb%20c");
     }
 }
