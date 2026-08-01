@@ -3,8 +3,6 @@
 
 //! Types and functions for building HTTP clients.
 
-#[cfg(all(feature = "json", feature = "xml"))]
-pub mod auto_format;
 mod clients;
 mod context;
 mod format;
@@ -18,10 +16,6 @@ pub mod request;
 pub mod response;
 mod sanitizer;
 
-#[cfg(all(feature = "json", feature = "xml"))]
-pub use auto_format::{
-    detect_format_from_headers, AutoFormat, AutoResponse, FormatChoice, SelectFormat,
-};
 pub use clients::*;
 pub use context::*;
 pub use format::*;

@@ -190,7 +190,7 @@ impl<T: DeserializeWith<F>, F: Format> Response<T, F> {
     where
         T: serde::de::DeserializeOwned,
     {
-        F::deserialize_from::<T>(&self.raw)
+        T::deserialize_from(&self.raw)
     }
 }
 
