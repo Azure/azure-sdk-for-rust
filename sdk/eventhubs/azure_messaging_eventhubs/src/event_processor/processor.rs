@@ -26,7 +26,7 @@ use std::{
     },
     {collections::HashMap, sync::Weak},
 };
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 
 // AMQP epoch (owner level) used for every partition receiver opened by
 // `EventProcessor`. Matches `EventProcessorClient` in the .NET and Java
@@ -531,9 +531,15 @@ impl EventProcessor {
                 partition_id = %client.get_partition_id(),
                 "Closing partition client for partition."
             );
-            let client = Arc::try_unwrap(client).map_err(|_| {
-                EventHubsError::with_message("Partition client still has multiple references.")
-            })?;
+            // A partition client that the application still holds cannot be
+            // taken. Report it and continue, so that one such client does not
+            // stop the processor from closing the clients that follow.
+            let Ok(client) = Arc::try_unwrap(client) else {
+                warn!(
+                    "Could not close a partition client, because the application still holds it."
+                );
+                continue;
+            };
             let res = client.close().await;
             if let Err(e) = res {
                 error!(err = ?e, "Failed to close partition client.");

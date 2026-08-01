@@ -109,6 +109,15 @@ pub(crate) struct RecoverableConnection {
     // `NotAllowed`. This lock keeps them in sequence. See `lock_claims_based_security`.
     cbs_lock: AsyncMutex<()>,
     connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
+
+    // Set by `close_connection` and never cleared. The client that owns this
+    // object is not the only holder: a public handle such as `EventReceiver`
+    // keeps a reference and can outlive the client. Without this flag such a
+    // handle reaches `ensure_connection`, finds no connection, and opens a new
+    // one after the application closed the client. Recovery is different and
+    // must still work, so only `close_connection` sets this.
+    closed: std::sync::atomic::AtomicBool,
+
     connection_name: String,
     pub(super) retry_options: RetryOptions,
 
@@ -305,6 +314,7 @@ impl RecoverableConnection {
                 forced_attach_error: Mutex::new(None),
                 #[cfg(test)]
                 peer_supersession_pending: std::sync::atomic::AtomicBool::new(false),
+                closed: std::sync::atomic::AtomicBool::new(false),
             }
         })
     }
@@ -389,12 +399,19 @@ impl RecoverableConnection {
         ),
         err,
     )]
-    pub(crate) async fn close_connection(self) -> Result<()> {
+    pub(crate) async fn close_connection(&self) -> Result<()> {
         debug!(
             connection_id = %self.get_connection_id(),
             url = %self.url,
             "Closing recoverable connection."
         );
+
+        // Record the close before the teardown starts. A handle that outlives
+        // the client, for example an `EventReceiver` that the caller still
+        // holds, shares this object, and `ensure_connection` would otherwise
+        // open a second connection to the service after the application closed
+        // the client.
+        self.closed.store(true, Ordering::Release);
 
         // Swap the cell out under the write lock, then detach without holding
         // it. The guard is a separate binding so the lock scope is visible and
@@ -516,6 +533,11 @@ impl RecoverableConnection {
     /// first operation is performed.
     ///
     pub(crate) async fn ensure_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
+        if self.closed.load(Ordering::Acquire) {
+            return Err(AmqpError::with_message(
+                "The client that owns this connection is closed.",
+            ));
+        }
         let mut connection = self.connections.lock().await;
         if connection.is_none() {
             *connection = Some(self.create_connection().await?);
@@ -1462,6 +1484,44 @@ mod tests {
     use azure_core::http::Url;
     use azure_core_test::credentials::MockCredential;
     use std::sync::Arc;
+
+    // A close does not need exclusive ownership of the connection.
+    //
+    // `close_connection` used to take `self`, so every caller first had to take
+    // the value out of its `Arc`. A handle that the application still held, for
+    // example an `EventReceiver`, made that fail, and the client reported an
+    // error and left the connection open. `Drop` only writes a trace message,
+    // so nothing closed the connection after that.
+    #[tokio::test]
+    async fn close_works_while_another_reference_exists() {
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+
+        // Stand in for a public handle that outlives the client.
+        let handle = connection.clone();
+        assert_eq!(Arc::strong_count(&connection), 2);
+
+        connection
+            .close_connection()
+            .await
+            .expect("a close must not need exclusive ownership");
+
+        // The connection records the close, so the surviving handle cannot open
+        // a second connection to the service.
+        let Err(error) = handle.ensure_connection().await else {
+            panic!("a closed connection must not open a new one");
+        };
+        assert!(
+            error.to_string().contains("closed"),
+            "the error must say that the client is closed, got: {error}"
+        );
+    }
 
     // The RecoverableConnection implementation uses a UUID to identify connections unless an application ID is provided.
     // This test verifies that a new recoverable connection uses a UUID for its connection ID when no application ID is specified.

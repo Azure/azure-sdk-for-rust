@@ -143,20 +143,14 @@ impl ProducerClient {
             url = %self.endpoint,
             "Closing producer client."
         );
-        Arc::try_unwrap(self.connection)
-            .map_err(|_| {
-                warn!(
-                    connection_id = %connection_id,
-                    url = %self.endpoint,
-                    "Could not close producer recoverable connection, multiple references exist."
-                );
-                Error::with_message(
-                    AzureErrorKind::Other,
-                    "Could not close producer recoverable connection, multiple references exist",
-                )
-            })?
-            .close_connection()
-            .await?;
+        // The close does not need exclusive ownership of the connection. See
+        // the note on `ConsumerClient::close`.
+        self.connection.close_connection().await?;
+        trace!(
+            connection_id = %connection_id,
+            url = %self.endpoint,
+            "Closed producer connection."
+        );
         Ok(())
     }
 
