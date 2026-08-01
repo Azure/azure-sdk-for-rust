@@ -12,12 +12,12 @@ use crate::generated::models::{
     BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
     BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
-    BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
-    BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
-    BlobContainerClientSetAccessPolicyOptions, BlobContainerClientSetMetadataOptions,
-    FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse, SignedIdentifiers,
+    BlobContainerClientListBlobsPagerOptions, BlobContainerClientReleaseLeaseOptions,
+    BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
+    BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
+    BlobContainerClientSetMetadataOptions, FilteredBlobResponse, ListBlobsHierarchicalResponse,
+    ListBlobsResponse, SignedIdentifiers,
 };
-use crate::models::AutoFormat;
 use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
@@ -708,20 +708,15 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// Returns a list of the blobs in the specified container.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
+    /// Builds the request URL for listing blobs in the specified container.
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobs")]
-    pub fn list_blobs(
+    pub(crate) fn list_blobs_internal(
         &self,
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
-    ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
+    ) -> Result<BlobContainerClientListBlobsPagerOptions> {
         let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
-        let mut first_url = self.endpoint.clone();
-        let mut query_builder = first_url.query_builder();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
         query_builder
             .append_pair("comp", "list")
             .append_pair("restype", "container");
@@ -751,51 +746,10 @@ impl BlobContainerClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         query_builder.build();
-
-        let version = self.version.clone();
-        Ok(Pager::new(
-            move |marker: PagerState, pager_options| {
-                let mut url = first_url.clone();
-                if let PagerState::More(marker) = marker {
-                    let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", marker.as_ref());
-                    query_builder.build();
-                }
-                let mut request = Request::new(url, Method::Get);
-                request.insert_header(
-                    "accept",
-                    "application/vnd.apache.arrow.stream,application/xml",
-                );
-                request.insert_header("x-ms-version", &version);
-                let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let next_marker =
-                        crate::models::auto_format::decode_next_marker(&headers, &body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match next_marker {
-                        Some(next_marker) => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Token(next_marker),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
-                })
-            },
-            Some(options.method_options),
-        ))
+        Ok(BlobContainerClientListBlobsPagerOptions {
+            url,
+            pager_options: options.method_options,
+        })
     }
 
     /// Returns a list of the blobs in the specified container. A delimiter can be used to traverse a virtual hierarchy of blobs
