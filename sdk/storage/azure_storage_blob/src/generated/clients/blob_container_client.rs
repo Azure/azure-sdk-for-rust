@@ -17,6 +17,7 @@ use crate::generated::models::{
     BlobContainerClientSetAccessPolicyOptions, BlobContainerClientSetMetadataOptions,
     FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse, SignedIdentifiers,
 };
+use crate::models::AutoFormat;
 use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
@@ -716,7 +717,7 @@ impl BlobContainerClient {
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
-    ) -> Result<Pager<ListBlobsResponse, XmlFormat>> {
+    ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -750,11 +751,6 @@ impl BlobContainerClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         query_builder.build();
-        #[derive(serde::Deserialize)]
-        struct BlobContainerClientListBlobsPage {
-            #[serde(rename = "NextMarker")]
-            next_marker: Option<String>,
-        }
 
         let version = self.version.clone();
         Ok(Pager::new(
@@ -766,7 +762,10 @@ impl BlobContainerClient {
                     query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
-                request.insert_header("accept", "application/xml");
+                request.insert_header(
+                    "accept",
+                    "application/vnd.apache.arrow.stream,application/xml",
+                );
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -783,10 +782,11 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: BlobContainerClientListBlobsPage = xml::from_xml(&body)?;
+                    let next_marker =
+                        crate::models::auto_format::decode_next_marker(&headers, &body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_marker {
-                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                    Ok(match next_marker {
+                        Some(next_marker) => PagerResult::More {
                             response: rsp,
                             continuation: PagerContinuation::Token(next_marker),
                         },

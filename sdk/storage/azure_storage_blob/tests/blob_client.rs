@@ -9,7 +9,7 @@ use azure_core::{
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
 };
-use azure_core_test::{recorded, Matcher, TestContext, TestMode, VarOptions};
+use azure_core_test::{recorded, CustomDefaultMatcher, Matcher, TestContext, TestMode, VarOptions};
 use azure_storage_blob::{
     models::{
         AccessTier, AccountKind, BlobClientAcquireLeaseOptions,
@@ -525,6 +525,9 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let mut client_options = ClientOptions::default();
     recording.instrument(&mut client_options);
 

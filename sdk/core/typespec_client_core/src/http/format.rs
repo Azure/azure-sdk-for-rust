@@ -60,6 +60,17 @@ pub trait DeserializeWith<F: Format>: Sized {
     /// # Returns
     /// A `Result` containing the deserialized value of type `Self`, or an error if deserialization fails.
     fn deserialize_with(body: ResponseBody) -> typespec::Result<Self>;
+
+    /// Deserialize a full response into `Self`, with access to both headers and body.
+    ///
+    /// The default implementation delegates to [`Format::deserialize_from`]. Override this
+    /// method to select a deserialization strategy at runtime based on response headers.
+    fn deserialize_from(response: &RawResponse) -> crate::Result<Self>
+    where
+        Self: DeserializeOwned,
+    {
+        F::deserialize_from::<Self>(response)
+    }
 }
 
 /// Implements [`DeserializeWith<JsonFormat>`] for an arbitrary type `D`
