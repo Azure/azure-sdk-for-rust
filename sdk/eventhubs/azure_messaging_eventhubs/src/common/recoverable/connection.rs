@@ -533,12 +533,18 @@ impl RecoverableConnection {
     /// first operation is performed.
     ///
     pub(crate) async fn ensure_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
+        let mut connection = self.connections.lock().await;
+        // Read the flag under the lock. `close_connection` sets it before it
+        // takes this lock, so a caller that gets here first has its connection
+        // closed by the close that waits behind it, and a caller that gets here
+        // after the close sees the flag. A check before the lock would leave a
+        // window where a caller reads the flag, loses its thread for the whole
+        // close, and then opens a connection that nothing closes.
         if self.closed.load(Ordering::Acquire) {
             return Err(AmqpError::with_message(
                 "The client that owns this connection is closed.",
             ));
         }
-        let mut connection = self.connections.lock().await;
         if connection.is_none() {
             *connection = Some(self.create_connection().await?);
         }
