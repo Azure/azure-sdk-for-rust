@@ -23,7 +23,11 @@ async-trait.workspace = true
 azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
 # Unreleased: AmqpTransport for AMQP-over-WebSockets (issue #3601). Path plus
 # version per the dependency policy in AGENTS.md.
-azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.2.0-beta.1" }
+# `default-features = false` so that the `default` feature below is what selects
+# the TLS stack, in the same shape as `azure_core` above. With the default
+# features on here, a consumer that turns them off could not drop the rustls
+# stack to bring their own.
+azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.2.0-beta.1", default-features = false }
 base64.workspace = true
 futures.workspace = true
 hmac.workspace = true
@@ -37,12 +41,14 @@ tracing.workspace = true
 rustc_version.workspace = true
 
 [dev-dependencies]
-azure_core_amqp = { path = "../../core/azure_core_amqp", features = ["test"] }
+azure_core_amqp = { path = "../../core/azure_core_amqp", default-features = false, features = [
+  "test",
+] }
 azure_core_test = { path = "../../core/azure_core_test", features = [
   "tracing",
 ] }
 azure_identity = { path = "../../identity/azure_identity" }
-azure_messaging_eventhubs = { path = ".", features = [
+azure_messaging_eventhubs = { path = ".", default-features = false, features = [
   "in_memory_checkpoint_store",
 ] }
 # Path-only so `cargo package` works: this crate is a dependency of the
@@ -61,24 +67,24 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 in_memory_checkpoint_store = []
 default = ["azure_core_amqp/default"]
 # The AMQP backend and the AMQP-over-WebSockets transport, forwarded from
-# `azure_core_amqp`. The `default` feature selects the backend, the native-tls
-# stack for the TCP transport, and the rustls stack for the WebSocket transport.
+# `azure_core_amqp`. The `default` feature selects the backend and the rustls
+# stack with the aws-lc-rs provider for both the TCP and the WebSocket
+# transport. That is the stack that the rest of `sdk/core` uses.
 #
-# To build the WebSocket transport on another TLS stack, turn off the default
-# features, name `fe2o3_amqp_ws`, and take a direct dependency on the backend
-# crate with the stack you want. Cargo unifies the features:
+# There is no native-tls feature, because `fe2o3-amqp` accepts one TLS stack
+# only. To build on another stack, turn off the default features, name the base
+# features, and take a direct dependency on the backend crates with the stack
+# you want. Cargo unifies the features:
 #
 #   azure_messaging_eventhubs = { version = "...", default-features = false, features = [
-#     "fe2o3_amqp_native_tls", "fe2o3_amqp_ws",
+#     "fe2o3_amqp", "fe2o3_amqp_ws",
 #   ] }
-#   fe2o3-amqp-ws = { version = "0.14", features = ["native-tls"] }
+#   fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
+#   fe2o3-amqp-ws = { version = "0.16", features = ["native-tls"] }
 #
 # `samples/list_blobs_native_tls` shows the same pattern for `reqwest`.
 fe2o3_amqp = ["azure_core_amqp/fe2o3_amqp"]
-fe2o3_amqp_native_tls = [
-  "fe2o3_amqp",
-  "azure_core_amqp/fe2o3_amqp_native_tls",
-]
+fe2o3_amqp_rustls = ["fe2o3_amqp", "azure_core_amqp/fe2o3_amqp_rustls"]
 fe2o3_amqp_ws = ["fe2o3_amqp", "azure_core_amqp/fe2o3_amqp_ws"]
 fe2o3_amqp_ws_rustls = [
   "fe2o3_amqp_ws",

@@ -6,7 +6,7 @@
 
 - Added `AmqpTransport` and an `AmqpConnectionOptions::transport` field to select the connection transport. `AmqpTransport::WebSocket` tunnels AMQP over secure WebSockets (`wss://`, port 443) for networks that block the native AMQP ports.
 - Added the `fe2o3_amqp_ws` and `fe2o3_amqp_ws_rustls` features. `fe2o3_amqp_ws` is the base feature and turns on the WebSocket transport code, and `fe2o3_amqp_ws_rustls` adds the TLS stack that the rest of `sdk/core` uses, rustls with the aws-lc-rs provider. This is the shape that `azure_core` uses for HTTP, where `reqwest` is the base and `reqwest_rustls` adds the stack. The `default` feature selects both. To build the transport on another TLS stack, turn off the default features, name `fe2o3_amqp_ws`, and take a direct dependency on `fe2o3-amqp-ws` with the stack you want; Cargo unifies the features. One stack must be selected somewhere in the graph, because `fe2o3-amqp-ws` puts its connect entry point behind its own TLS features. A build without `fe2o3_amqp_ws` still accepts `AmqpTransport::WebSocket`, and the connection then returns an error when it opens.
-- Added the `fe2o3_amqp_native_tls` feature, which adds the TLS stack for AMQP framed directly on TCP (`amqps://`, port 5671) on top of the `fe2o3_amqp` base feature. The `default` feature selects it. It replaces the `fe2o3-amqp/native-tls` entry that `default` named before, so a consumer that turns off the default features can name the stack. native-tls is the only choice for this transport, because the rustls backend of `fe2o3-amqp` 0.14 pulls in `ring`, which `deny.toml` bans (issue #4189).
+- Added the `fe2o3_amqp_rustls` feature, which adds the TLS stack for AMQP framed directly on TCP (`amqps://`, port 5671) on top of the `fe2o3_amqp` base feature. It is rustls with the aws-lc-rs provider, the stack that the rest of `sdk/core` uses, and `default` selects it. It replaces the `fe2o3-amqp/native-tls` entry that `default` named before, so this transport now runs on rustls where it ran on native-tls. To keep native-tls, turn off the default features, name `fe2o3_amqp`, and take a direct dependency on `fe2o3-amqp` with its `native-tls` feature. There is no native-tls feature on this crate, because `fe2o3-amqp` accepts one TLS stack only, and two features that cannot both be on would break `--all-features`. ([#4189](https://github.com/Azure/azure-sdk-for-rust/issues/4189))
 
 ### Bugs Fixed
 
@@ -14,6 +14,8 @@
 - A failed receive now reports the link-state kind the sender path already reports: `AmqpDescribedError` when the remote closed or detached with an AMQP error, and `LinkClosedByRemote` or `LinkDetachedByRemote` otherwise. All of these previously reported `LinkStateError`.
 
 ### Other Changes
+
+- Updated the `fe2o3-amqp` family of dependencies from 0.14 to 0.16. The rustls backend of 0.16 is built on aws-lc-rs, where 0.14 was built on `ring`, which `deny.toml` bans. This is what makes `fe2o3_amqp_rustls` possible. The update needed no source change.
 
 ## 1.1.0 (2026-07-09)
 

@@ -104,12 +104,12 @@ criterion = { version = "0.8", features = ["async_tokio"] }
 crossbeam = { version = "0.8", default-features = false }
 crossbeam-epoch = { version = "0.9", default-features = false }
 dyn-clone = "1.0"
-fe2o3-amqp = { version = "0.14", features = ["uuid"] }
-fe2o3-amqp-ws = { version = "0.14" }
-fe2o3-amqp-ext = { version = "0.14" }
-fe2o3-amqp-management = { version = "0.14" }
-fe2o3-amqp-cbs = { version = "0.14" }
-fe2o3-amqp-types = { version = "0.14" }
+fe2o3-amqp = { version = "0.16", features = ["uuid"] }
+fe2o3-amqp-ws = { version = "0.16" }
+fe2o3-amqp-ext = { version = "0.16" }
+fe2o3-amqp-management = { version = "0.16" }
+fe2o3-amqp-cbs = { version = "0.16" }
+fe2o3-amqp-types = { version = "0.16" }
 flate2 = "1.1.9"
 futures = "0.3"
 getrandom = { version = "0.4" }
@@ -139,7 +139,7 @@ rust_decimal = "1.40.0"
 rustc_version = "0.4"
 rustls = "0.23"
 serde = { version = "1.0", features = ["derive"] }
-serde_amqp = { version = "0.14", features = ["uuid"] }
+serde_amqp = { version = "0.16", features = ["uuid"] }
 serde_bytes = { version = "0.11" }
 serde_json = "1.0.149"
 serde_test = "1"
