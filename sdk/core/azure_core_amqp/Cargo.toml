@@ -42,7 +42,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 [features]
 default = [
   "fe2o3_amqp",
-  "fe2o3_amqp_native_tls",
+  "fe2o3_amqp_rustls",
   "fe2o3_amqp_ws",
   "fe2o3_amqp_ws_rustls",
 ]
@@ -61,10 +61,28 @@ fe2o3_amqp = [
 # The TLS stack for AMQP framed directly on TCP (`amqps://`, port 5671).
 # `fe2o3_amqp` is the base, and this feature adds the stack, in the same shape
 # that `azure_core` uses for HTTP, where `reqwest` is the base and
-# `reqwest_rustls` adds the stack. native-tls is the only stack this crate can
-# name, because the rustls backend of `fe2o3-amqp` 0.14 pulls in `ring`, which
-# `deny.toml` bans (#4189).
-fe2o3_amqp_native_tls = ["fe2o3_amqp", "fe2o3-amqp/native-tls"]
+# `reqwest_rustls` adds the stack. It is rustls with the aws-lc-rs provider, the
+# stack that the rest of `sdk/core` uses, and `default` selects it. `fe2o3-amqp`
+# selects the provider itself, so this feature needs no direct `rustls`
+# dependency.
+#
+# This feature needs `fe2o3-amqp` 0.16 or later. The rustls backend of 0.14 was
+# built on `ring`, which `deny.toml` bans (#4189).
+#
+# There is no matching native-tls feature, because `fe2o3-amqp` accepts one TLS
+# stack only and reports `TlsConnectorNotFound` at run time when both are on.
+# Two features that cannot both be on would break `--all-features`. To use
+# another stack, turn off the default features, name `fe2o3_amqp`, and take a
+# direct dependency on `fe2o3-amqp` with the stack you want. Cargo unifies the
+# features, and nothing pulls rustls in:
+#
+#   azure_core_amqp = { version = "...", default-features = false, features = [
+#     "fe2o3_amqp",
+#   ] }
+#   fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
+#
+# `samples/list_blobs_native_tls` shows the same pattern for `reqwest`.
+fe2o3_amqp_rustls = ["fe2o3_amqp", "fe2o3-amqp/rustls"]
 # AMQP over WebSockets. `fe2o3_amqp_ws` is the base feature: it turns on the
 # transport code and the `fe2o3-amqp-ws` dependency, and it names no TLS stack.
 # `fe2o3_amqp_ws_rustls` adds the stack that the rest of `sdk/core` uses, rustls
@@ -76,9 +94,10 @@ fe2o3_amqp_native_tls = ["fe2o3_amqp", "fe2o3-amqp/native-tls"]
 # your stack and nothing pulls rustls in:
 #
 #   azure_core_amqp = { version = "...", default-features = false, features = [
-#     "fe2o3_amqp", "fe2o3_amqp_native_tls", "fe2o3_amqp_ws",
+#     "fe2o3_amqp", "fe2o3_amqp_ws",
 #   ] }
-#   fe2o3-amqp-ws = { version = "0.14", features = ["native-tls"] }
+#   fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
+#   fe2o3-amqp-ws = { version = "0.16", features = ["native-tls"] }
 #
 # `samples/list_blobs_native_tls` shows the same pattern for `reqwest`.
 #
@@ -88,11 +107,16 @@ fe2o3_amqp_native_tls = ["fe2o3_amqp", "fe2o3-amqp/native-tls"]
 # feature and fails at run time instead.
 fe2o3_amqp_ws = ["fe2o3_amqp", "dep:fe2o3-amqp-ws"]
 # The direct `rustls` dependency is only here to select the crypto provider.
-# `reqwest/rustls` selects aws-lc-rs itself, so `typespec_client_core` needs no
-# such dependency; the `tokio-tungstenite` chain under `fe2o3-amqp-ws` takes
-# rustls with `default-features = false` and names no provider, so
-# `ClientConfig::builder()` would panic. Default features give aws-lc-rs, std,
-# and tls12. This crate names no `rustls` type.
+# This crate names no `rustls` type. `reqwest/rustls` selects aws-lc-rs itself,
+# so `typespec_client_core` needs no such dependency. The `tokio-tungstenite`
+# chain under `fe2o3-amqp-ws` is different. It takes rustls with
+# `default-features = false` and names no provider, so `ClientConfig::builder()`
+# panics when no process-level default is installed. The default features of
+# `rustls` give aws-lc-rs, std, and tls12.
+#
+# `fe2o3_amqp_rustls` selects the same provider, so the dependency is redundant
+# when `default` is on. This feature has to stand on its own, because a consumer
+# can turn the default features off and name only the WebSocket transport.
 fe2o3_amqp_ws_rustls = [
   "fe2o3_amqp_ws",
   "fe2o3-amqp-ws/rustls-tls-native-roots",
