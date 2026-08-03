@@ -3,7 +3,7 @@
 
 //! Prototype: Apache Arrow IPC decoding for the flat `list_blobs` response.
 //!
-//! This is wired through a custom [`Format`] ([`ArrowXmlFormat`]) so the generated
+//! This is wired through a custom [`Format`] ([`AutoFormat`]) so the generated
 //! pager and [`Response::into_model`](azure_core::http::Response::into_model)
 //! transparently dispatch between the Apache Arrow stream and XML based on the
 //! response `Content-Type` header — no hand-written response wrapper or pager needed.
@@ -53,52 +53,42 @@ enum ListBlobsWireFormat {
 // HANDMADE: custom `Format` that gives `list_blobs` runtime Arrow-or-XML dispatch.
 //
 // This is the entire point of pulling in Core PR: `Response::into_model` now
-// routes through `Format::deserialize_from(&RawResponse)`, which has access to the
-// response headers. That lets a service crate own its own format dispatch without any
-// hand-written response wrapper, and without `azure_core` needing to know about Arrow.
-/// A [`Format`] that decodes the flat `list_blobs` response as an Apache Arrow stream
-/// when the response `Content-Type` advertises Arrow, and falls back to XML otherwise.
+// routes through `DeserializeWith::deserialize_from(&RawResponse)`, which has access to the
+// response headers *and* returns the concrete model. That lets a service crate own its own
+// format dispatch without any hand-written response wrapper, without `azure_core` knowing
+// about Arrow, and without a serde round-trip to satisfy a generic bound.
+/// A [`Format`] for the flat `list_blobs` response.
+///
+/// The header-aware Arrow-or-XML dispatch lives on the [`DeserializeWith::deserialize_from`]
+/// override for [`ListBlobsResponse`] below, which returns the concrete model directly — so
+/// the Arrow decoder's output is used as-is with no intermediate serde round-trip. `AutoFormat`
+/// itself only supplies the plain XML fallback used by [`Format::deserialize`].
 #[derive(Debug, Clone)]
-pub struct ArrowXmlFormat;
+pub struct AutoFormat;
 
-impl Format for ArrowXmlFormat {
-    /// Bytes-only fallback used when no headers are available. Without the
-    /// `Content-Type` header we cannot detect Arrow, so we assume XML.
+impl Format for AutoFormat {
+    /// Bytes-only XML fallback. Header-aware Arrow/XML dispatch is handled by the
+    /// [`DeserializeWith::deserialize_from`] override for [`ListBlobsResponse`].
     fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> Result<T> {
         azure_core::xml::from_xml(body.as_ref())
     }
-
-    /// Header-aware dispatch. Inspects `Content-Type` and decodes the body as Arrow
-    /// or XML accordingly.
-    fn deserialize_from<T: DeserializeOwned>(response: &RawResponse) -> Result<T> {
-        match wire_format(response.headers())? {
-            ListBlobsWireFormat::Xml => azure_core::xml::from_xml(response.body()),
-            ListBlobsWireFormat::Arrow => {
-                // [Core Support]: `Format::deserialize_from<T>` is generic over `T` and
-                // therefore assumes a serde-based format. The Arrow decoder is type-specific
-                // — it hand-maps Arrow columns into a concrete `ListBlobsResponse` and cannot
-                // produce an arbitrary `T`.
-
-                // For this PR to currently work (not ideal, not production-ready):
-                // to satisfy the generic bound we bridge with a serde
-                // round-trip (Arrow -> ListBlobsResponse -> JSON -> T)
-                let model = decode_arrow_list_blobs(response.body())?;
-                let json = azure_core::json::to_json(&model)?;
-                azure_core::json::from_json(json)
-            }
-        }
-    }
 }
 
-// HANDMADE / NEEDS CORE SUPPORT: `Response<T, F>::into_model` is bounded on
-// `T: DeserializeWith<F>`, so `Response<ListBlobsResponse, ArrowXmlFormat>` requires this
-// impl to exist even though `into_model` now dispatches through `Format::deserialize_from`
-// and never calls `deserialize_with`. The bytes-only body here mirrors the XML fallback.
-// Core could drop this redundant requirement once `into_model` no longer depends on the
-// `DeserializeWith` bound for header-aware formats.
-impl DeserializeWith<ArrowXmlFormat> for ListBlobsResponse {
+// The header-aware dispatch: because `deserialize_from` returns the concrete `Self`
+// (`ListBlobsResponse`), the Arrow decoder's output is used directly. No `Format::deserialize_from<T>`
+// generic bridge, no `ListBlobsResponse -> JSON -> T` round-trip.
+impl DeserializeWith<AutoFormat> for ListBlobsResponse {
     fn deserialize_with(body: ResponseBody) -> azure_core::Result<Self> {
         body.xml()
+    }
+
+    /// Inspects `Content-Type` and decodes the body as Arrow or XML directly into
+    /// [`ListBlobsResponse`].
+    fn deserialize_from(response: &RawResponse) -> azure_core::Result<Self> {
+        match wire_format(response.headers())? {
+            ListBlobsWireFormat::Arrow => decode_arrow_list_blobs(response.body()),
+            ListBlobsWireFormat::Xml => azure_core::xml::from_xml(response.body()),
+        }
     }
 }
 
@@ -121,14 +111,11 @@ pub(crate) fn decode_next_marker(headers: &Headers, bytes: &[u8]) -> Result<Opti
 }
 
 fn wire_format(headers: &Headers) -> Result<ListBlobsWireFormat> {
-    let content_type = headers
-        .get_optional_str(&headers::CONTENT_TYPE)
-        .ok_or_else(|| {
-            Error::with_message(
-                ErrorKind::DataConversion,
-                "list blobs response did not include Content-Type",
-            )
-        })?;
+    // Absent Content-Type: assume XML (the historical default). Arrow is only selected when
+    // the service explicitly advertises it.
+    let Some(content_type) = headers.get_optional_str(&headers::CONTENT_TYPE) else {
+        return Ok(ListBlobsWireFormat::Xml);
+    };
     let media_type = content_type.split(';').next().unwrap_or_default().trim();
 
     if media_type.eq_ignore_ascii_case(ARROW_CONTENT_TYPE) {

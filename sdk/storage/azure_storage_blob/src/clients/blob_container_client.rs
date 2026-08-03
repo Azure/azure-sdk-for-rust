@@ -3,13 +3,16 @@
 
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
-use crate::{models::StorageErrorCode, BlobClient};
+use crate::{
+    models::{BlobContainerClientListBlobsOptions, ListBlobsResponse, StorageErrorCode},
+    AutoFormat, BlobClient,
+};
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Pipeline, StatusCode, Url,
+        Pager, Pipeline, StatusCode, Url,
     },
     tracing, Result,
 };
@@ -113,6 +116,23 @@ impl BlobContainerClient {
             },
             Err(e) => Err(e),
         }
+    }
+
+    /// Returns a list of the blobs in the specified container.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// The response is decoded from Apache Arrow or XML depending on the response
+    /// `Content-Type`; see [`AutoFormat`](crate::AutoFormat).
+    pub fn list_blobs(
+        &self,
+        options: Option<BlobContainerClientListBlobsOptions<'_>>,
+    ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
+        // Convenience wrapper: the generated `list_blobs_internal` sets up the request and
+        // pager; content negotiation / format ownership lives here in the handwritten layer.
+        self.list_blobs_internal(options)
     }
 }
 

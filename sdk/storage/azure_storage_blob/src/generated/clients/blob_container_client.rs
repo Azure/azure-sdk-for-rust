@@ -713,12 +713,19 @@ impl BlobContainerClient {
     ///
     /// * `options` - Optional parameters for the request.
 
-    // [Emitter Support]: Would need emitter support to point to crate::<Format>
+    // HAND-EDITED (generated): three deviations from pure code generation, all of which
+    // would be removed by proper emitter support (tracked as an open question / feature request):
+    //   1. Renamed `list_blobs` -> `list_blobs_internal` and made it `pub(crate)` so the
+    //      handwritten convenience wrapper in `clients/blob_container_client.rs` owns the
+    //      public `list_blobs` and the format choice.
+    //   2. Return type uses `crate::AutoFormat` instead of the default `XmlFormat`.
+    //   3. Continuation extraction calls `crate::arrow_decode::decode_next_marker` for
+    //      format-aware (Arrow schema metadata or XML) marker handling.
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobs")]
-    pub fn list_blobs(
+    pub(crate) fn list_blobs_internal(
         &self,
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
-    ) -> Result<Pager<ListBlobsResponse, crate::ArrowXmlFormat>> {
+    ) -> Result<Pager<ListBlobsResponse, crate::AutoFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
