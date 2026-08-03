@@ -156,7 +156,7 @@ fn run_query_collecting_ids<'a>(
 }
 
 /// Asserts `ids` are a duplicate-free subset of `universe`.
-fn assert_subset_no_dups(ids: &[String], universe: &[String]) {
+fn assert_subset_no_duplicates(ids: &[String], universe: &[String]) {
     let mut seen = std::collections::HashSet::new();
     for id in ids {
         assert!(seen.insert(id), "duplicate id in result: {id}");
@@ -199,7 +199,7 @@ async fn cross_partition_offset_limit_returns_correct_count() {
         3,
         "OFFSET 2 LIMIT 3 over 6 docs must return 3 (a double-skip bug would return fewer): {ids:?}"
     );
-    assert_subset_no_dups(&ids, &universe);
+    assert_subset_no_duplicates(&ids, &universe);
 }
 
 /// When every document lands in a single physical partition, the emitted order
@@ -307,7 +307,7 @@ async fn cross_partition_top_returns_correct_count() {
     let ids = run_query_collecting_ids(&driver, &container, "SELECT TOP 4 c.id FROM c").await;
 
     assert_eq!(ids.len(), 4, "TOP 4 over 6 docs must return 4: {ids:?}");
-    assert_subset_no_dups(&ids, &universe);
+    assert_subset_no_duplicates(&ids, &universe);
 }
 
 /// `TOP n` with `n >= total` returns every document exactly once.
@@ -324,7 +324,7 @@ async fn cross_partition_top_larger_than_total_returns_all() {
 
     let mut ids = run_query_collecting_ids(&driver, &container, "SELECT TOP 50 c.id FROM c").await;
 
-    assert_subset_no_dups(&ids, &universe);
+    assert_subset_no_duplicates(&ids, &universe);
     ids.sort();
     universe.sort();
     assert_eq!(ids, universe, "TOP >= total must return all documents once");
@@ -425,7 +425,7 @@ async fn catalog_scenarios_match_expectations() {
                     "scenario {}: expected {expected} results, got {ids:?}",
                     scenario.id
                 );
-                assert_subset_no_dups(&ids, &universe);
+                assert_subset_no_duplicates(&ids, &universe);
             }
             "empty" => assert!(
                 ids.is_empty(),

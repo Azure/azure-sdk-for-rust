@@ -858,7 +858,7 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
 /// B9b: cross-partition `OFFSET/LIMIT` and `TOP` over a hierarchical container
 /// are servable via the #4750 skip/take pipeline.
 ///
-/// The dataset has 10 distinct documents spread across several physical
+/// The dataset has 9 distinct documents spread across several physical
 /// partitions. #4750 deliberately excludes `ORDER BY`, so the global row order
 /// is unspecified; the stable contract is the window cardinality, exact-once
 /// delivery, and membership in the seeded id set.
@@ -877,17 +877,18 @@ pub async fn hpk_query_cross_partition_offset_limit_top_servable() -> Result<(),
             let container = seed_three_level(run_context, db_client).await?;
 
             let universe: Vec<String> = geo_dataset().into_iter().map(|i| i.id).collect();
-            assert_eq!(universe.len(), 10, "seed dataset should have 10 documents");
+            let total = universe.len();
+            assert_eq!(total, 9, "seed dataset should have 9 documents");
 
-            // (query, expected window cardinality) for a 10-document container.
+            // (query, expected window cardinality) for a `total`-document container.
             let cases = [
                 ("SELECT * FROM c OFFSET 1 LIMIT 2", 2),
-                ("SELECT * FROM c OFFSET 8 LIMIT 5", 2),
+                ("SELECT * FROM c OFFSET 8 LIMIT 5", total - 8),
                 ("SELECT * FROM c OFFSET 20 LIMIT 5", 0),
                 ("SELECT * FROM c OFFSET 3 LIMIT 0", 0),
                 ("SELECT TOP 4 * FROM c", 4),
                 ("SELECT TOP 0 * FROM c", 0),
-                ("SELECT TOP 25 * FROM c", 10),
+                ("SELECT TOP 25 * FROM c", total),
             ];
 
             for (query, expected) in cases {
