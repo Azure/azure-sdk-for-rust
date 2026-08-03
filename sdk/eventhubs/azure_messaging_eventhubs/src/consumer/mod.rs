@@ -173,6 +173,40 @@ impl ConsumerClient {
         self.recoverable_connection.force_error(error)
     }
 
+    /// Builds a client that has not opened a connection.
+    ///
+    /// The public builder opens the connection, so a test that only needs a
+    /// client value cannot use it. `RecoverableConnection` connects on demand,
+    /// so this client reaches the service only when the test asks it to.
+    #[cfg(test)]
+    pub(crate) fn new_unconnected(
+        fully_qualified_namespace: &str,
+        eventhub_name: &str,
+        credential: Arc<dyn TokenCredential>,
+    ) -> Result<Self> {
+        Self::new(
+            fully_qualified_namespace,
+            eventhub_name.to_string(),
+            None,
+            credential,
+            ConsumerClientOptions {
+                application_id: None,
+                instance_id: None,
+                retry_options: None,
+                custom_endpoint: None,
+                cbs_token_type: None,
+            },
+        )
+    }
+
+    /// Returns the connection that this client shares with the handles it
+    /// hands out. A test uses it to read the state of the connection after
+    /// `close` consumes the client.
+    #[cfg(test)]
+    pub(crate) fn recoverable_connection(&self) -> Arc<RecoverableConnection> {
+        self.recoverable_connection.clone()
+    }
+
     /// Retrieves the details of the consumer client.
     ///
     /// This function retrieves the details of the consumer client associated with the [`ConsumerClient`].

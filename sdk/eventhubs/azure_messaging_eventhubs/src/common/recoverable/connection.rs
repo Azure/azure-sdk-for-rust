@@ -328,6 +328,12 @@ impl RecoverableConnection {
         Ok(())
     }
 
+    /// Reports whether `close_connection` has run on this object.
+    #[cfg(test)]
+    pub(crate) fn is_closed(&self) -> bool {
+        self.closed.load(Ordering::Acquire)
+    }
+
     #[cfg(test)]
     pub(crate) fn force_error(&self, error: AmqpError) -> Result<()> {
         use crate::EventHubsError;
