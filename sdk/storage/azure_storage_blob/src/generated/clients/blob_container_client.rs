@@ -11,6 +11,10 @@ use crate::generated::models::{
     BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
     BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
+    BlobContainerClientListBlobFlatSegmentApacheArrowOptions,
+    BlobContainerClientListBlobFlatSegmentApacheArrowResult,
+    BlobContainerClientListBlobHierarchySegmentApacheArrowOptions,
+    BlobContainerClientListBlobHierarchySegmentApacheArrowResult,
     BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
     BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
     BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
@@ -22,8 +26,9 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
-        ClientOptions, Method, NoFormat, PageIterator, Pager, Pipeline, PipelineSendOptions,
-        RawResponse, Request, RequestContent, Response, Url, UrlExt, XmlFormat,
+        AsyncResponse, ClientOptions, Method, NoFormat, PageIterator, Pager, Pipeline,
+        PipelineSendOptions, PipelineStreamOptions, RawResponse, Request, RequestContent, Response,
+        Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
@@ -707,6 +712,194 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
+    /// Returns a list of the blobs in Apache Arrow format as raw data, to be deserialized by the client.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`AsyncResponse`](azure_core::http::AsyncResponse) implements the [`BlobContainerClientListBlobFlatSegmentApacheArrowResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::AsyncResponse};
+    /// use azure_storage_blob::models::{BlobContainerClientListBlobFlatSegmentApacheArrowResult, BlobContainerClientListBlobFlatSegmentApacheArrowResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: AsyncResponse<BlobContainerClientListBlobFlatSegmentApacheArrowResult> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_type) = response.content_type()? {
+    ///         println!("content-type: {:?}", content_type);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_type`()](crate::generated::models::BlobContainerClientListBlobFlatSegmentApacheArrowResultHeaders::content_type) - content-type
+    ///
+    /// [`BlobContainerClientListBlobFlatSegmentApacheArrowResultHeaders`]: crate::generated::models::BlobContainerClientListBlobFlatSegmentApacheArrowResultHeaders
+    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobFlatSegmentApacheArrow")]
+    pub async fn list_blob_flat_segment_apache_arrow(
+        &self,
+        options: Option<BlobContainerClientListBlobFlatSegmentApacheArrowOptions<'_>>,
+    ) -> Result<AsyncResponse<BlobContainerClientListBlobFlatSegmentApacheArrowResult>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
+        query_builder
+            .append_pair("comp", "list")
+            .append_pair("restype", "container");
+        if let Some(end_before) = options.end_before.as_ref() {
+            query_builder.set_pair("endBefore", end_before);
+        }
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
+                "include",
+                include
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
+        }
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            query_builder.set_pair("maxresults", maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header(
+            "accept",
+            "application/vnd.apache.arrow.stream,application/xml",
+        );
+        request.insert_header("x-ms-version", &self.version);
+        let rsp = self
+            .pipeline
+            .stream(
+                &ctx,
+                &mut request,
+                Some(PipelineStreamOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
+    /// Returns a list of the blobs in Apache Arrow format as raw data, to be deserialized by the client. A delimiter can be used
+    /// to traverse a virtual hierarchy of blobs as though it were a file system.
+    ///
+    /// # Arguments
+    ///
+    /// * `delimiter` - If specified, the operation returns a BlobPrefix element that acts as a placeholder for all blobs whose
+    ///   names begin with the same substring up to the appearance of the delimiter character. The delimiter may be a single character
+    ///   or a string.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`AsyncResponse`](azure_core::http::AsyncResponse) implements the [`BlobContainerClientListBlobHierarchySegmentApacheArrowResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::AsyncResponse};
+    /// use azure_storage_blob::models::{BlobContainerClientListBlobHierarchySegmentApacheArrowResult, BlobContainerClientListBlobHierarchySegmentApacheArrowResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: AsyncResponse<BlobContainerClientListBlobHierarchySegmentApacheArrowResult> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_type) = response.content_type()? {
+    ///         println!("content-type: {:?}", content_type);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_type`()](crate::generated::models::BlobContainerClientListBlobHierarchySegmentApacheArrowResultHeaders::content_type) - content-type
+    ///
+    /// [`BlobContainerClientListBlobHierarchySegmentApacheArrowResultHeaders`]: crate::generated::models::BlobContainerClientListBlobHierarchySegmentApacheArrowResultHeaders
+    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobHierarchySegmentApacheArrow")]
+    pub async fn list_blob_hierarchy_segment_apache_arrow(
+        &self,
+        delimiter: &str,
+        options: Option<BlobContainerClientListBlobHierarchySegmentApacheArrowOptions<'_>>,
+    ) -> Result<AsyncResponse<BlobContainerClientListBlobHierarchySegmentApacheArrowResult>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
+        query_builder
+            .append_pair("comp", "list")
+            .append_pair("restype", "container");
+        query_builder.set_pair("delimiter", delimiter);
+        if let Some(end_before) = options.end_before.as_ref() {
+            query_builder.set_pair("endBefore", end_before);
+        }
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
+                "include",
+                include
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
+        }
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            query_builder.set_pair("maxresults", maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header(
+            "accept",
+            "application/vnd.apache.arrow.stream,application/xml",
+        );
+        request.insert_header("x-ms-version", &self.version);
+        let rsp = self
+            .pipeline
+            .stream(
+                &ctx,
+                &mut request,
+                Some(PipelineStreamOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
     /// Returns a list of the blobs in the specified container.
     ///
     /// # Arguments
@@ -1158,7 +1351,7 @@ impl BlobContainerClient {
 }
 
 /// Default value for [`BlobContainerClientOptions::version`].
-pub(crate) const DEFAULT_VERSION: &str = "2026-04-06";
+pub(crate) const DEFAULT_VERSION: &str = "2026-12-06";
 
 impl Default for BlobContainerClientOptions {
     fn default() -> Self {

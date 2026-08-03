@@ -116,6 +116,14 @@ pub struct BlobContainerClientGetAccountInfoResult;
 #[derive(SafeDebug)]
 pub struct BlobContainerClientGetPropertiesResult;
 
+/// Contains results for `BlobContainerClient::list_blob_flat_segment_apache_arrow()`
+#[derive(SafeDebug)]
+pub struct BlobContainerClientListBlobFlatSegmentApacheArrowResult;
+
+/// Contains results for `BlobContainerClient::list_blob_hierarchy_segment_apache_arrow()`
+#[derive(SafeDebug)]
+pub struct BlobContainerClientListBlobHierarchySegmentApacheArrowResult;
+
 /// Contains results for `BlobContainerClient::release_lease()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientReleaseLeaseResult;
@@ -440,6 +448,10 @@ pub struct BlobProperties {
     /// Whether the blob is encrypted on the server.
     #[serde(rename = "ServerEncrypted", skip_serializing_if = "Option::is_none")]
     pub server_encrypted: Option<bool>,
+
+    /// The smart access tier of the blob.
+    #[serde(rename = "SmartAccessTier", skip_serializing_if = "Option::is_none")]
+    pub smart_access_tier: Option<AccessTier>,
 
     /// The number of tags for the blob.
     #[serde(rename = "TagCount", skip_serializing_if = "Option::is_none")]

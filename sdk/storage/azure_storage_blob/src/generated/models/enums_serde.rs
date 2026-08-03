@@ -7,9 +7,10 @@ use super::{
     AccessTier, AccountKind, ArchiveStatus, BlobCopySourceTags, BlobDeleteType, BlobType,
     BlockListType, CopyStatus, DeleteSnapshotsOptionType, EncryptionAlgorithmType,
     FileShareTokenIntent, FilterBlobsIncludeItem, GeoReplicationStatusType, ImmutabilityPolicyMode,
-    LeaseDuration, LeaseState, LeaseStatus, ListBlobsIncludeItem, ListContainersIncludeType,
-    PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority, SequenceNumberActionType,
-    SkuName, StorageErrorCode,
+    LeaseDuration, LeaseState, LeaseStatus, ListBlobFlatSegmentApacheArrowResponseContentType,
+    ListBlobHierarchySegmentApacheArrowResponseContentType, ListBlobsIncludeItem,
+    ListContainersIncludeType, PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority,
+    SequenceNumberActionType, SkuName, StorageErrorCode,
 };
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -328,6 +329,44 @@ impl<'de> Deserialize<'de> for LeaseStatus {
 }
 
 impl Serialize for LeaseStatus {
+    fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        s.serialize_str(self.as_ref())
+    }
+}
+
+impl<'de> Deserialize<'de> for ListBlobFlatSegmentApacheArrowResponseContentType {
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for ListBlobFlatSegmentApacheArrowResponseContentType {
+    fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        s.serialize_str(self.as_ref())
+    }
+}
+
+impl<'de> Deserialize<'de> for ListBlobHierarchySegmentApacheArrowResponseContentType {
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for ListBlobHierarchySegmentApacheArrowResponseContentType {
     fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
