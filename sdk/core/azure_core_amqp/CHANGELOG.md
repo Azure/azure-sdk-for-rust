@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added `AmqpReceiverApis::settle_delivery` and the `AmqpDeliveryOutcome` enum. A delivery can now settle with the AMQP `Modified` outcome, which carries `delivery-failed`, `undeliverable-here`, and message annotations, and with a `Rejected` outcome that carries a described error. The method has a default implementation, so it does not break existing implementors of the trait. See [#4935](https://github.com/Azure/azure-sdk-for-rust/issues/4935).
+- Added the `AmqpErrorCondition::DeadLetter` variant for the `com.microsoft:dead-letter` error condition. See [#4935](https://github.com/Azure/azure-sdk-for-rust/issues/4935).
+
 ### Breaking Changes
 
 ### Bugs Fixed
