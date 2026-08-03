@@ -22,16 +22,15 @@ jobs:
       paths:
       - "/*"
 
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: nightly
+
   - ${{ if ne(parameters.Toolchain, 'nightly') }}:
       - template: /eng/pipelines/templates/steps/use-rust.yml@self
         parameters:
-          Toolchain: nightly
-
-  - template: /eng/pipelines/templates/steps/use-rust.yml@self
-    parameters:
-      Toolchain: ${{ parameters.Toolchain }}
-      # The nightly invocation above already configured and authenticated the feed.
-      ConfigureRegistry: ${{ eq(parameters.Toolchain, 'nightly') }}
+          Toolchain: ${{ parameters.Toolchain }}
+          ConfigureRegistry: false
 
   - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
 
