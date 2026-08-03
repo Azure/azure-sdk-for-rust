@@ -170,21 +170,26 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                     // `open_with_stream` does not derive the hostname from a URL,
                     // so it must be set explicitly.
                     //
-                    // The call passes no connector, so `fe2o3-amqp-ws` uses
-                    // whichever TLS stack its own features select. The
+                    // `connect_with_config` takes no connector, so `fe2o3-amqp-ws`
+                    // uses whichever TLS stack its own features select. The
                     // `fe2o3_amqp_ws_rustls` feature of this crate selects rustls,
                     // and a direct dependency on `fe2o3-amqp-ws` in the application
                     // can select another stack instead.
+                    //
+                    // `connect_tls_with_config` does the same thing, but it sits
+                    // behind the TLS features of `fe2o3-amqp-ws`, so a call to it
+                    // would keep `fe2o3_amqp_ws` from building on its own.
+                    // `connect_with_config` carries no such gate, and it reports
+                    // `TlsFeatureNotEnabled` when no stack is selected.
                     #[cfg(feature = "fe2o3_amqp_ws")]
                     {
                         let ws_target = options.custom_endpoint.as_ref().unwrap_or(&url);
                         let ws_address = websocket_address(ws_target)?;
                         debug!("Opening AMQP-over-WebSockets connection to {ws_address}.");
-                        let ws_stream = fe2o3_amqp_ws::WebSocketStream::connect_tls_with_config(
+                        let ws_stream = fe2o3_amqp_ws::WebSocketStream::connect_with_config(
                             &ws_address,
                             None,
                             false,
-                            None,
                         )
                         .await
                         .map_err(|e| AmqpError::from(Fe2o3WebSocketError(e)))?;
