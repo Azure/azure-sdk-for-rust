@@ -120,6 +120,22 @@ impl From<fe2o3_amqp_types::definitions::Error> for AmqpDescribedError {
     }
 }
 
+impl From<AmqpDescribedError> for fe2o3_amqp_types::definitions::Error {
+    fn from(e: AmqpDescribedError) -> Self {
+        // Custom serializes as a bare symbol. That is the same wire encoding the named
+        // condition variants use, so this round-trips through the incoming conversion.
+        let condition = fe2o3_amqp_types::definitions::ErrorCondition::Custom(
+            fe2o3_amqp_types::primitives::Symbol::from(<&str>::from(&e.condition)),
+        );
+        let info = if e.info.is_empty() {
+            None
+        } else {
+            Some(e.info.into())
+        };
+        fe2o3_amqp_types::definitions::Error::new(condition, e.description, info)
+    }
+}
+
 impl From<fe2o3_amqp::link::DetachError> for AmqpError {
     fn from(e: fe2o3_amqp::link::DetachError) -> Self {
         match e {
@@ -197,7 +213,8 @@ impl From<Fe2o3TransportError> for AmqpError {
 
 #[cfg(test)]
 mod tests {
-    use crate::error::AmqpErrorCondition;
+    use crate::error::{AmqpDescribedError, AmqpErrorCondition};
+    use crate::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 
     // Tests to ensure the fidelity of conversion from the fe2o3 AMQP error
     // conditions to the AmqpErrorCondition type.
@@ -319,4 +336,49 @@ mod tests {
     );
     test_amqp_error!(test_link_redirect, LinkError, Redirect, LinkRedirect);
     test_amqp_error!(test_stolen, LinkError, Stolen, LinkStolen);
+
+    #[test]
+    fn described_error_converts_to_fe2o3_with_info_map() {
+        let mut info: AmqpOrderedMap<AmqpSymbol, AmqpValue> = AmqpOrderedMap::new();
+        info.insert(
+            AmqpSymbol::from("DeadLetterReason"),
+            AmqpValue::from("ProcessingFailed"),
+        );
+        info.insert(
+            AmqpSymbol::from("DeadLetterErrorDescription"),
+            AmqpValue::from("the handler returned an error"),
+        );
+
+        let described = AmqpDescribedError::new(
+            AmqpErrorCondition::DeadLetter,
+            Some("rejected".into()),
+            info,
+        );
+
+        let converted: fe2o3_amqp_types::definitions::Error = described.into();
+
+        assert_eq!(
+            converted.condition,
+            fe2o3_amqp_types::definitions::ErrorCondition::Custom(
+                fe2o3_amqp_types::primitives::Symbol::from("com.microsoft:dead-letter")
+            )
+        );
+        assert_eq!(converted.description, Some("rejected".to_string()));
+
+        // The info map carries the dead letter reason and description to the broker.
+        // Dropping it is exactly the data loss this conversion exists to prevent.
+        let converted_info = converted.info.expect("info map should survive conversion");
+        assert_eq!(converted_info.len(), 2);
+    }
+
+    #[test]
+    fn described_error_with_empty_info_converts_to_none() {
+        let described =
+            AmqpDescribedError::new(AmqpErrorCondition::DeadLetter, None, AmqpOrderedMap::new());
+
+        let converted: fe2o3_amqp_types::definitions::Error = described.into();
+
+        assert_eq!(converted.info, None);
+        assert_eq!(converted.description, None);
+    }
 }
