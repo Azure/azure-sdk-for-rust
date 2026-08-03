@@ -36,7 +36,13 @@ pub(crate) fn prefix_range_end_hex(prefix: &[u8]) -> String {
 /// canonical routing string and `x-ms-*-epk` HTTP header value. Using a newtype
 /// ensures callers cannot accidentally pass an arbitrary value where an EPK is
 /// expected.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// Equality, hashing, and ordering are all defined over the *canonical* bytes
+/// (trailing zero padding stripped), because the service and other SDKs may
+/// hand back the same boundary either padded to the partition key definition's
+/// full width or trimmed. Deriving `PartialEq` here would make `Eq` and `Ord`
+/// disagree, violating the `Ord` contract and silently rejecting valid
+/// topologies at the several places that compare range bounds.
+#[derive(Debug, Clone, Eq)]
 pub struct EffectivePartitionKey(Cow<'static, [u8]>);
 
 impl EffectivePartitionKey {
@@ -52,6 +58,20 @@ impl EffectivePartitionKey {
         &self.0
     }
 
+    /// Returns the bytes with trailing zero padding stripped — the form in
+    /// which two EPKs are byte-identical exactly when they compare equal.
+    /// Backs [`PartialEq`], [`Hash`], and
+    /// [`to_canonical_hex`](Self::to_canonical_hex); use
+    /// [`as_bytes`](Self::as_bytes) for the wire encoding.
+    fn canonical_bytes(&self) -> &[u8] {
+        let end = self
+            .0
+            .iter()
+            .rposition(|&byte| byte != 0)
+            .map_or(0, |i| i + 1);
+        &self.0[..end]
+    }
+
     /// Returns the uppercase-hex encoding of the EPK — the canonical routing
     /// string and `x-ms-start-epk`/`x-ms-end-epk` HTTP header value.
     pub fn to_hex(&self) -> String {
@@ -64,12 +84,7 @@ impl EffectivePartitionKey {
     /// identically exactly when they compare equal (e.g. hashing a boundary);
     /// use [`to_hex`](Self::to_hex) for the wire encoding.
     pub(crate) fn to_canonical_hex(&self) -> String {
-        let end = self
-            .0
-            .iter()
-            .rposition(|&byte| byte != 0)
-            .map_or(0, |i| i + 1);
-        bytes_to_hex_upper(&self.0[..end])
+        bytes_to_hex_upper(self.canonical_bytes())
     }
 
     /// Constructs an EPK from its raw bytes.
@@ -87,6 +102,17 @@ impl EffectivePartitionKey {
     /// [`increment_be`](Self::increment_be)). Use
     /// [`normalized_successor`](Self::normalized_successor) when the EPK must
     /// first be zero-extended to the partition key definition's full width.
+    ///
+    /// # Not congruent with equality
+    ///
+    /// This reads the *raw* bytes, so it is deliberately **not** a function on
+    /// the equivalence classes [`PartialEq`] induces: `"80"` and `"8000"` are
+    /// equal keys, but their successors (`"81"` and `"8001"`) are not. Prefer
+    /// [`normalized_successor`](Self::normalized_successor) wherever the
+    /// container's EPK width is known — incrementing a trimmed bound bumps the
+    /// wrong byte position and over-covers. This is only correct for V1 hash
+    /// containers, whose EPKs are not fixed-width and so carry no padding to
+    /// begin with.
     pub(crate) fn successor(&self) -> EffectivePartitionKey {
         self.increment_be(self.as_bytes().to_vec())
     }
@@ -258,15 +284,21 @@ impl fmt::Display for EffectivePartitionKey {
     }
 }
 
+/// Compares against a hex EPK string *semantically*, not by wire form: the
+/// string is parsed and compared canonically, so `"80"` and `"8000"` both match
+/// the same key. Consistent with [`PartialEq<Self>`] and [`Ord`], which likewise
+/// treat trailing zero padding as insignificant. Compare `to_hex()` directly to
+/// assert on the exact wire encoding.
 impl PartialEq<str> for EffectivePartitionKey {
     fn eq(&self, other: &str) -> bool {
-        self.to_hex() == other
+        self.canonical_bytes() == Self::from(other).canonical_bytes()
     }
 }
 
+/// See [`PartialEq<str>`].
 impl PartialEq<&str> for EffectivePartitionKey {
     fn eq(&self, other: &&str) -> bool {
-        self.to_hex() == *other
+        self == *other
     }
 }
 
@@ -352,6 +384,21 @@ impl Ord for EffectivePartitionKey {
             }
             other => other,
         }
+    }
+}
+
+/// See [`Ord`] — equality is defined over the canonical bytes so that
+/// `a == b` holds exactly when `a.cmp(b)` is `Equal`.
+impl PartialEq for EffectivePartitionKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.canonical_bytes() == other.canonical_bytes()
+    }
+}
+
+/// Hashes the canonical bytes, keeping `Hash` consistent with [`PartialEq`].
+impl std::hash::Hash for EffectivePartitionKey {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.canonical_bytes().hash(state);
     }
 }
 
@@ -489,6 +536,98 @@ fn hex_nibble(c: u8) -> Option<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `Ord`'s contract requires `a == b` exactly when `a.cmp(b)` is `Equal`.
+    /// `Ord` ignores trailing zero padding, so equality and hashing must too —
+    /// otherwise every bound comparison in the driver silently disagrees with
+    /// routing.
+    #[test]
+    fn equality_and_hashing_agree_with_ordering() {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
+        fn hash_of(epk: &EffectivePartitionKey) -> u64 {
+            let mut hasher = DefaultHasher::new();
+            epk.hash(&mut hasher);
+            hasher.finish()
+        }
+
+        let cases = [
+            ("80", "8000"),
+            ("80", "800000"),
+            ("", "00"),
+            ("", "0000"),
+            ("4080", "40800000"),
+        ];
+        for (a, b) in cases {
+            let (a, b) = (
+                EffectivePartitionKey::from(a),
+                EffectivePartitionKey::from(b),
+            );
+            assert_eq!(a.cmp(&b), std::cmp::Ordering::Equal, "{a:?} vs {b:?}");
+            assert_eq!(a, b, "equality must follow `Ord`");
+            assert_eq!(hash_of(&a), hash_of(&b), "`Hash` must follow equality");
+        }
+
+        // Padding is only insignificant when it is zero.
+        let a = EffectivePartitionKey::from("80");
+        let b = EffectivePartitionKey::from("8001");
+        assert_ne!(a.cmp(&b), std::cmp::Ordering::Equal);
+        assert_ne!(a, b);
+    }
+
+    /// The `str` comparisons must agree with `PartialEq<Self>`, or a caller
+    /// string-comparing a service-supplied bound gets an answer contradicting
+    /// every `Ord`-based routing decision in the driver.
+    #[test]
+    fn string_equality_agrees_with_self_equality() {
+        let padded = EffectivePartitionKey::from("8000");
+        let trimmed = EffectivePartitionKey::from("80");
+        assert_eq!(padded, trimmed);
+        for probe in ["80", "8000", "800000"] {
+            assert_eq!(padded, probe, "padded vs {probe}");
+            assert_eq!(trimmed, probe, "trimmed vs {probe}");
+        }
+        assert_ne!(padded, "8001");
+        // The wire encoding is still reachable when it is what you want.
+        assert_eq!(padded.to_hex(), "8000");
+    }
+
+    /// Coarsening equality creates an obligation that operations respect the
+    /// equivalence classes. `successor` deliberately does not — it reads raw
+    /// bytes, so a trimmed bound increments a different byte position. Pinned
+    /// so the asymmetry stays a reviewed property rather than a latent trap;
+    /// `normalized_successor` is the congruent form when the width is known.
+    #[test]
+    fn successor_is_deliberately_not_congruent_with_equality() {
+        let padded = EffectivePartitionKey::from("8000");
+        let trimmed = EffectivePartitionKey::from("80");
+        assert_eq!(padded, trimmed, "the inputs are the same key");
+        assert_eq!(padded.successor().to_hex(), "8001");
+        assert_eq!(trimmed.successor().to_hex(), "81");
+        assert_ne!(padded.successor(), trimmed.successor());
+
+        // Normalizing to a common width first restores congruence.
+        assert_eq!(
+            padded.normalized_successor(2),
+            trimmed.normalized_successor(2)
+        );
+    }
+
+    /// The `0xFF` prefix sentinel from `prefix_range_end_bytes` is the one
+    /// non-zero tail that appears in real routing maps, so canonicalization
+    /// must leave it alone — collapsing it would merge an HPK prefix range's
+    /// exclusive end into its own start.
+    #[test]
+    fn prefix_sentinel_is_not_collapsed_by_canonicalization() {
+        let prefix = EffectivePartitionKey::from("1631");
+        let sentinel = EffectivePartitionKey::from_bytes(prefix_range_end_bytes(prefix.as_bytes()));
+        assert_eq!(sentinel.to_hex(), "1631FF");
+        assert!(prefix < sentinel, "the sentinel must order strictly after");
+        assert_ne!(prefix, sentinel);
+        // Zero padding on the same prefix stays equal, unlike the sentinel.
+        assert_eq!(prefix, EffectivePartitionKey::from("16310000"));
+    }
 
     #[test]
     fn successor_increments_last_digit() {

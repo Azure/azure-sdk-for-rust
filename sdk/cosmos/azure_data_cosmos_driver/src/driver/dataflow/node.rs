@@ -378,6 +378,43 @@ mod tests {
         );
     }
 
+    /// The service may report a boundary padded to the partition key
+    /// definition's full width while the scope carries its trimmed equivalent
+    /// (or vice versa). `Ord` treats those as the same boundary, so coverage
+    /// must accept them — comparing raw bytes would reject a valid tiling.
+    #[test]
+    fn validate_exact_coverage_accepts_zero_padded_bounds() {
+        validate_exact_coverage(
+            &range("", "FF"),
+            [range("", "8000"), range("80", "FF")].iter(),
+        )
+        .expect("`8000` and `80` name the same boundary");
+
+        validate_exact_coverage(&range("0000", "FF"), [range("", "FF")].iter())
+            .expect("a padded scope start matches an unpadded range start");
+    }
+
+    /// Mirrors .NET's `isRoutingMapFullySpecified` parameterization
+    /// (azure-cosmos-dotnet-v3#5260): the backend may report a tiling at mixed
+    /// widths or fully padded, and both must resolve identically.
+    #[test]
+    fn validate_exact_coverage_is_width_agnostic() {
+        let scope = range("", "FF");
+        let mixed = [range("", "3F00"), range("3F", "7F"), range("7F0000", "FF")];
+        let padded = [
+            range("", "3F000000"),
+            range("3F000000", "7F00"),
+            range("7F", "FF"),
+        ];
+        validate_exact_coverage(&scope, mixed.iter()).expect("mixed-width tiling covers the scope");
+        validate_exact_coverage(&scope, padded.iter())
+            .expect("the same tiling, padded, must resolve identically");
+
+        // A genuine gap is still caught at either width.
+        validate_exact_coverage(&scope, [range("", "3F"), range("40", "FF")].iter())
+            .expect_err("a real gap between 3F and 40 must still be rejected");
+    }
+
     /// Coverage is unverifiable without a range, so a range-less node is
     /// rejected rather than assumed to fit.
     #[test]
