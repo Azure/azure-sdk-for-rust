@@ -1,0 +1,104 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+name: Analyze
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - .github/workflows/analyze.yml
+  schedule:
+    - cron: '0 12 * * *' # Daily at 12:00 PM UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  # Incremental artifacts are large and never reused across runners.
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
+
+      # Install `cargo install` tools outside CARGO_HOME so they can be cached
+      # independently of the rustup-managed toolchains in ~/.cargo/bin.
+      - name: Configure cargo tool install root
+        run: |
+          echo "CARGO_INSTALL_ROOT=$RUNNER_TEMP/cargo-tools" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/cargo-tools/bin" >> "$GITHUB_PATH"
+
+      # Tool versions are pinned in eng/cgmanifest.json and read by Analyze-Code.ps1,
+      # so a cache hit lets every `cargo install` short-circuit without rebuilding.
+      - name: Cache analysis tools
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/cargo-tools
+          key: ${{ runner.os }}-${{ runner.arch }}-analyze-tools-${{ hashFiles('eng/cgmanifest.json', 'rust-toolchain.toml') }}
+
+      # Downloaded sources are toolchain independent, so an older entry is always safe to reuse.
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-${{ runner.arch }}-analyze-registry-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-analyze-registry-
+
+      # Compiled artifacts are only reusable under the same toolchains, so both the stable
+      # pin (rust-toolchain.toml) and the nightly pin (Language-Settings.ps1) gate the key.
+      - name: Cache cargo build artifacts
+        uses: actions/cache@v4
+        with:
+          path: target/
+          key: ${{ runner.os }}-${{ runner.arch }}-analyze-target-${{ hashFiles('rust-toolchain.toml', 'eng/scripts/Language-Settings.ps1') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-analyze-target-${{ hashFiles('rust-toolchain.toml', 'eng/scripts/Language-Settings.ps1') }}-
+
+      # Analyze-Code.ps1 runs `cargo +nightly docs-rs`, so nightly is installed
+      # alongside stable. Stable is installed last so it remains the active toolchain.
+      - name: Install Rust nightly
+        shell: pwsh
+        run: ./eng/scripts/Use-Rust.ps1 -Toolchain nightly
+
+      - name: Install Rust stable
+        shell: pwsh
+        run: ./eng/scripts/Use-Rust.ps1 -Toolchain stable
+
+      # Omitting -ServiceDirectory writes package properties for every service under sdk/.
+      - name: Save package properties
+        shell: pwsh
+        run: ./eng/common/scripts/Save-Package-Properties.ps1 -OutDirectory '${{ runner.temp }}/PackageInfo'
+
+      - name: Run source analysis
+        shell: pwsh
+        run: |
+          ./eng/scripts/Analyze-Code.ps1 `
+            -PackageInfoDirectory '${{ runner.temp }}/PackageInfo' `
+            -Toolchain 'nightly' `
+            -Audit `
+            -Deny
