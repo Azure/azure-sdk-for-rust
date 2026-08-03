@@ -136,9 +136,13 @@ impl ProducerClient {
     /// This method should be called when the client is no longer needed, it will terminate all outstanding operations on the connection.
     ///
     /// Call this method to close the connection. Dropping the client is not a
-    /// substitute: `Drop` cannot await, so it only asks the AMQP layer to close
-    /// and never waits for the service to answer. A dropped client can leave
-    /// the connection open.
+    /// substitute. The client has no `Drop` of its own, so a drop releases only
+    /// its reference to the connection. When another handle still holds the
+    /// connection, such as a handle that an open operation returned, the drop
+    /// does not reach the connection at all. When the drop releases the last
+    /// reference, the AMQP layer only asks to close, and it neither waits for
+    /// the service to answer nor reports a request that it could not send. A
+    /// dropped client can therefore leave the connection open.
     pub async fn close(self) -> Result<()> {
         let connection_id = self.connection.get_connection_id().to_string();
         trace!(

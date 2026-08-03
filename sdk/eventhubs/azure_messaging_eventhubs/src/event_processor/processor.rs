@@ -532,8 +532,17 @@ impl EventProcessor {
                 "Closing partition client for partition."
             );
             // A partition client that the application still holds cannot be
-            // taken. Report it and continue, so that one such client does not
-            // stop the processor from closing the clients that follow.
+            // taken out of its `Arc`. Report it and continue, so that one such
+            // client does not stop the processor from closing the clients that
+            // follow.
+            //
+            // The connection solved the same problem by taking `&self`, and a
+            // partition client could do the same through
+            // `EventReceiver::request_close`, which detaches the receiver the
+            // way `EventReceiver::close` does. That needs a new signature for
+            // the public `PartitionClient::close`, which is a breaking change.
+            // This fix therefore leaves such a client to the application that
+            // holds it.
             let Ok(client) = Arc::try_unwrap(client) else {
                 warn!(
                     "Could not close a partition client, because the application still holds it."

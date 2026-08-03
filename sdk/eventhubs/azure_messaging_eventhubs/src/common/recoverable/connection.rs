@@ -396,6 +396,11 @@ impl RecoverableConnection {
     /// This method will close the underlying AMQP connection, if it exists. It will also cause all outstanding sends and receives
     /// to complete with an error.
     ///
+    /// The method is idempotent. It takes `&self`, so the compiler no longer
+    /// limits it to one call. A second call finds the flag already set, the
+    /// caches already drained, and the connection slot already empty, and it
+    /// reports success.
+    ///
     #[instrument(
         level = "debug",
         skip_all,
