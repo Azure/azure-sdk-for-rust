@@ -298,7 +298,13 @@ pub(crate) async fn build_streaming_ordered_merge(
     let plain_operation = Arc::new((**operation).clone().with_body(plain_body));
 
     let is_resume = resume.is_some();
-    let query_fingerprint = streaming_ordered_merge::query_fingerprint(operation.body());
+    // The feed scope is folded into the fingerprint (see
+    // `streaming_ordered_merge::query_fingerprint`) because nothing else binds
+    // a token to it: a resumed node treats its saved ranges as authoritative,
+    // and `is_valid_for_operation` checks only the operation kind and RID.
+    let scope_range = operation.target();
+    let query_fingerprint =
+        streaming_ordered_merge::query_fingerprint(operation.body(), scope_range);
     let saved_ranges = match resume {
         None => None,
         Some(PipelineNodeState::Drained) => {
@@ -330,6 +336,28 @@ pub(crate) async fn build_streaming_ordered_merge(
 
     if let Some(saved_ranges) = saved_ranges {
         for saved in saved_ranges {
+            // A matching fingerprint already proves the scope is unchanged, so
+            // this only fires for a token that carries no fingerprint. Reject
+            // rather than clip: `build_children` decides whether a saved server
+            // continuation is safe to replay by comparing the resolved topology
+            // against this range, so narrowing it would make a stale pre-split
+            // continuation look replayable instead of taking the rebuild path.
+            if let Some(scope) = scope_range {
+                if !saved.range.is_subset_of(scope) {
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(
+                            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+                        )
+                        .with_message(format!(
+                            "continuation token covers {}-{}, which is not contained in the requested feed scope {}-{}",
+                            saved.range.min_inclusive().to_hex(),
+                            saved.range.max_exclusive().to_hex(),
+                            scope.min_inclusive().to_hex(),
+                            scope.max_exclusive().to_hex(),
+                        ))
+                        .build());
+                }
+            }
             let resolved = topology_provider
                 .resolve_ranges(&saved.range, PartitionRoutingRefresh::UseCached)
                 .await?;
@@ -345,7 +373,6 @@ pub(crate) async fn build_streaming_ordered_merge(
         }
     } else {
         // See `plan_fresh` for rationale on intersecting with the operation scope.
-        let scope_range = operation.target();
         let normalized_len = operation
             .container()
             .and_then(|c| normalized_epk_len(c.partition_key_definition()));
@@ -423,8 +450,9 @@ fn validate_streaming_order_by_snapshot(
     if let Some(saved_fingerprint) = saved_fingerprint {
         if saved_fingerprint != query_fingerprint {
             return Err(order_by_state_invalid(
-                "continuation token was produced by a different query (query text or parameters \
-                 changed); a streaming ORDER BY token can only resume the query that minted it",
+                "continuation token was produced by a different query (query text, parameters, or \
+                 feed scope changed); a streaming ORDER BY token can only resume the query and \
+                 scope that minted it",
             ));
         }
     }
@@ -3297,6 +3325,133 @@ mod tests {
         )
         .err()
         .expect("a token minted by a different query must be rejected");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "got: {err}"
+        );
+    }
+
+    /// A token minted under one feed scope must not resume under another.
+    /// Nothing else binds the two: the resumed node treats its saved ranges as
+    /// authoritative, and `is_valid_for_operation` checks only the operation
+    /// kind and container RID, so without the scope in the fingerprint the
+    /// query would read outside the caller's scope.
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_token_from_a_different_feed_scope() {
+        let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec();
+        let scoped_op = |min: &str, max: &str| {
+            Arc::new(
+                CosmosOperation::query_items(
+                    test_container(),
+                    Some(
+                        FeedRange::new(
+                            EffectivePartitionKey::from(min),
+                            EffectivePartitionKey::from(max),
+                        )
+                        .unwrap(),
+                    ),
+                )
+                .with_body(body.clone()),
+            )
+        };
+        let plan = order_by_plan(
+            Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"),
+            vec![qr("", "FF")],
+        );
+
+        // Mint a token under the left half of the key space.
+        let minted = {
+            let op = scoped_op("", "80");
+            let mut topology =
+                PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0"), rr("80", "FF", "pk-1")]);
+            build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+                .await
+                .expect("fresh scoped plan must build")
+                .into_root()
+                .snapshot_state()
+                .expect("a fresh merge must snapshot")
+        };
+        assert!(
+            matches!(
+                &minted,
+                PipelineNodeState::StreamingOrderedMerge {
+                    query_fingerprint: Some(_),
+                    ..
+                }
+            ),
+            "the minted token must carry a fingerprint: {minted:?}"
+        );
+
+        // Replay it against the right half — same query text and parameters.
+        // The topology resolves against the requested range, so without the
+        // scope check this would succeed and happily query `..80` (the token's
+        // scope) while the caller asked for `80..`.
+        let op = scoped_op("80", "FF");
+        let mut topology =
+            PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0"), rr("80", "FF", "pk-1")]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(minted))
+            .await
+            .err()
+            .expect("a token minted under a different feed scope must be rejected");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "got: {err}"
+        );
+    }
+
+    /// A legacy token predating `query_fingerprint` carries `None`, so the
+    /// fingerprint check cannot catch a scope mismatch. Each saved range must
+    /// still be contained in the operation's scope, so such a token can never
+    /// read outside it. Rejected rather than clipped: narrowing a saved range
+    /// would make a stale pre-split server continuation look replayable to
+    /// `build_children`.
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_legacy_token_ranges_outside_scope() {
+        let op = Arc::new(
+            CosmosOperation::query_items(
+                test_container(),
+                Some(
+                    FeedRange::new(
+                        EffectivePartitionKey::from(""),
+                        EffectivePartitionKey::from("80"),
+                    )
+                    .unwrap(),
+                ),
+            )
+            .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec()),
+        );
+        // A legacy token spanning the whole key space: one range inside the
+        // operation's scope, one entirely outside it.
+        let resume = PipelineNodeState::StreamingOrderedMerge {
+            directions: vec![SortOrder::Ascending],
+            query_fingerprint: None,
+            ranges: vec![
+                OrderByRangeToken {
+                    min_epk: String::new(),
+                    max_epk: "80".to_owned(),
+                    server_continuation: None,
+                    boundary: None,
+                },
+                OrderByRangeToken {
+                    min_epk: "80".to_owned(),
+                    max_epk: "FF".to_owned(),
+                    server_continuation: None,
+                    boundary: None,
+                },
+            ],
+        };
+        let plan = order_by_plan(
+            Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"),
+            vec![qr("", "FF")],
+        );
+        let mut topology =
+            PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0"), rr("80", "FF", "pk-1")]);
+
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resume))
+            .await
+            .expect_err("the `80..FF` saved range lies outside the operation's scope");
         assert_eq!(
             err.status().sub_status(),
             Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),

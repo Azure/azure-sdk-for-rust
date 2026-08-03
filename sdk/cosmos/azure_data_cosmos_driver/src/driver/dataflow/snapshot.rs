@@ -94,8 +94,8 @@ pub(crate) enum PipelineNodeState {
     /// ascending by `min_epk`; a fully-drained range is omitted.
     StreamingOrderedMerge {
         directions: Vec<SortOrder>,
-        /// Stable hash of the originating query text and parameters (see
-        /// `super::streaming_ordered_merge::query_fingerprint`).
+        /// Stable hash of the originating query text, parameters, and feed
+        /// scope (see `super::streaming_ordered_merge::query_fingerprint`).
         ///
         /// `directions` alone is far too weak a discriminator — every
         /// single-column `ASC` query shares it — and
@@ -103,9 +103,10 @@ pub(crate) enum PipelineNodeState {
         /// operation kind and container RID. Unlike an opaque backend
         /// continuation (which the service itself binds to the query that
         /// minted it), this node's value boundary is turned into a resume
-        /// predicate *client-side*, so nothing downstream would catch a
-        /// token replayed against a different query. Absent on tokens
-        /// minted before this field existed, which skip the check.
+        /// predicate *client-side*, and a resumed node treats its saved
+        /// `ranges` as authoritative, so nothing downstream would catch a
+        /// token replayed against a different query or feed scope. Absent on
+        /// tokens minted before this field existed, which skip the check.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         query_fingerprint: Option<String>,
         ranges: Vec<OrderByRangeToken>,

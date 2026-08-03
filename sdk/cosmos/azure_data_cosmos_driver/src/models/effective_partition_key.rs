@@ -58,6 +58,20 @@ impl EffectivePartitionKey {
         bytes_to_hex_upper(&self.0)
     }
 
+    /// Returns the uppercase-hex encoding with trailing zero bytes stripped —
+    /// the canonical form with respect to [`Ord`], which treats trailing zero
+    /// padding as insignificant. Use this whenever two EPKs must render
+    /// identically exactly when they compare equal (e.g. hashing a boundary);
+    /// use [`to_hex`](Self::to_hex) for the wire encoding.
+    pub(crate) fn to_canonical_hex(&self) -> String {
+        let end = self
+            .0
+            .iter()
+            .rposition(|&byte| byte != 0)
+            .map_or(0, |i| i + 1);
+        bytes_to_hex_upper(&self.0[..end])
+    }
+
     /// Constructs an EPK from its raw bytes.
     pub(crate) fn from_bytes(bytes: impl Into<Cow<'static, [u8]>>) -> Self {
         Self(bytes.into())

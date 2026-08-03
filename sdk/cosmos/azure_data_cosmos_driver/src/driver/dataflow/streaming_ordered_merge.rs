@@ -756,8 +756,18 @@ impl PipelineNode for StreamingOrderedMerge {
 }
 
 /// Stable fingerprint of the originating query body (query text plus
-/// parameters, exactly as the caller supplied it), persisted in a
-/// continuation token so a resume can prove the token belongs to this query.
+/// parameters, exactly as the caller supplied it) *and* the operation's feed
+/// scope, persisted in a continuation token so a resume can prove the token
+/// belongs to this query over this scope.
+///
+/// The scope is part of the fingerprint because nothing else binds it. A
+/// resumed node treats its saved ranges as authoritative, and
+/// `ContinuationToken::is_valid_for_operation` checks only the operation kind
+/// and container RID — so replaying a token under a different
+/// `FeedScope` (a different explicit range, or a different partial
+/// hierarchical partition key prefix) would otherwise read outside the
+/// requested scope, or silently return only the scope the token was minted
+/// for.
 ///
 /// Hashed with the same MurmurHash3-128 used elsewhere in the driver, so the
 /// value is byte-stable across processes and SDK builds (unlike
@@ -770,10 +780,29 @@ impl PipelineNode for StreamingOrderedMerge {
 /// surface: changing it invalidates in-flight tokens with a hard
 /// `CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID` rather than silently
 /// resuming the wrong query.
-pub(super) fn query_fingerprint(body: Option<&[u8]>) -> String {
+pub(super) fn query_fingerprint(body: Option<&[u8]>, scope: Option<&FeedRange>) -> String {
+    // The body hash is rendered fixed-width first so the two components can
+    // never run together; EPK hex is `[0-9A-F]*`, so neither separator can
+    // occur inside a bound. Bounds render canonically (trailing zero bytes
+    // stripped) so two EPKs hash alike exactly when they compare equal — the
+    // backend and other SDKs may hand back a bound with that padding trimmed.
+    // An absent scope hashes as empty, which stays distinct from the
+    // full-container range (`-FF`).
+    let body_hash = crate::models::murmur_hash::murmurhash3_128(body.unwrap_or_default(), 0);
+    let scope = match scope {
+        Some(range) => format!(
+            "{}-{}",
+            range.min_inclusive().to_canonical_hex(),
+            range.max_exclusive().to_canonical_hex()
+        ),
+        None => String::new(),
+    };
     format!(
         "{:032x}",
-        crate::models::murmur_hash::murmurhash3_128(body.unwrap_or_default(), 0)
+        crate::models::murmur_hash::murmurhash3_128(
+            format!("{body_hash:032x}:{scope}").as_bytes(),
+            0
+        )
     )
 }
 
@@ -2799,6 +2828,63 @@ mod tests {
             ran_a_resume_checkpoint,
             "expected at least one value-boundary resume checkpoint scenario \
              (e.g. equal_key_resume_requiring_skip_count) to run in the mock harness"
+        );
+    }
+
+    /// The same query body under two different feed scopes must not share a
+    /// fingerprint. A resumed node treats its saved ranges as authoritative,
+    /// so a token replayed under a narrower or wider scope would otherwise
+    /// read outside the caller's scope (or silently return only the old
+    /// subset).
+    #[test]
+    fn query_fingerprint_distinguishes_feed_scope() {
+        let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#;
+        let full = query_fingerprint(Some(body), Some(&FeedRange::full()));
+        let left = query_fingerprint(Some(body), Some(&range("", "80")));
+        let right = query_fingerprint(Some(body), Some(&range("80", "FF")));
+        let unscoped = query_fingerprint(Some(body), None);
+
+        assert_ne!(full, left);
+        assert_ne!(full, right);
+        assert_ne!(left, right);
+        // An absent scope is its own value, distinct from the full container.
+        assert_ne!(full, unscoped);
+    }
+
+    /// Neither separator can appear inside an EPK hex bound, so no pair of
+    /// distinct (body, scope) inputs can serialize to the same hash preimage.
+    #[test]
+    fn query_fingerprint_separators_cannot_collide() {
+        // Both scopes render as `408080` once the bound separator is dropped.
+        assert_ne!(
+            query_fingerprint(None, Some(&range("40", "8080"))),
+            query_fingerprint(None, Some(&range("4080", "80"))),
+        );
+    }
+
+    /// `EffectivePartitionKey`'s `Ord` treats trailing zero bytes as
+    /// insignificant, and the backend and other SDKs may hand back a bound with
+    /// that padding trimmed. Bounds that compare equal must fingerprint alike,
+    /// or a valid resume fails with a hard token error.
+    #[test]
+    fn query_fingerprint_ignores_trailing_zero_padding_in_scope() {
+        assert_eq!(
+            query_fingerprint(None, Some(&range("", "80"))),
+            query_fingerprint(None, Some(&range("", "8000"))),
+        );
+        assert_eq!(
+            query_fingerprint(None, Some(&range("40", "80"))),
+            query_fingerprint(None, Some(&range("400000", "8000"))),
+        );
+    }
+
+    /// Same body and same scope is stable, so an unchanged query resumes.
+    #[test]
+    fn query_fingerprint_is_stable_for_identical_inputs() {
+        let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#;
+        assert_eq!(
+            query_fingerprint(Some(body), Some(&range("", "80"))),
+            query_fingerprint(Some(body), Some(&range("", "80"))),
         );
     }
 }
