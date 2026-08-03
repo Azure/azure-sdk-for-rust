@@ -128,6 +128,17 @@ impl Authorizer {
         Ok(())
     }
 
+    /// Test hook: read the cached token for `path` without authorizing.
+    ///
+    /// A refresh replaces the map entry in place and only ever advances
+    /// `expires_on`, so a test can watch one path's expiry to tell whether that
+    /// specific path was refreshed. The shared `get_token` call count cannot make
+    /// that distinction.
+    #[cfg(test)]
+    async fn peek_token(&self, path: &Url) -> Option<AccessToken> {
+        self.authorization_scopes.read().await.get(path).cloned()
+    }
+
     #[tracing::instrument(
         level = "debug",
         skip_all,
@@ -731,16 +742,47 @@ mod tests {
     // refresh that is merely a little late). Waiting for the expected count keeps
     // the assertions deterministic without widening the race window: a refresh
     // that never happens still fails fast once the generous timeout expires.
+    //
+    // The deadline uses `tokio::time::Instant` rather than the wall clock, so a
+    // clock correction cannot cut the wait short or stretch it past the bound.
     async fn wait_for_token_count(
         credential: &MockTokenCredential,
         target: usize,
-        timeout: Duration,
+        timeout: std::time::Duration,
     ) -> usize {
-        let deadline = OffsetDateTime::now_utc() + timeout;
+        let deadline = tokio::time::Instant::now() + timeout;
         loop {
             let count = credential.get_token_get_count();
-            if count >= target || OffsetDateTime::now_utc() >= deadline {
+            if count >= target || tokio::time::Instant::now() >= deadline {
                 return count;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+    }
+
+    // Poll the cached token for `path` until its expiry advances past
+    // `previous_expiry` or `timeout` elapses, returning the last observed expiry.
+    //
+    // `wait_for_token_count` watches a counter shared by every path, so it cannot
+    // tell which path a refresh belonged to. Once a wait window is wide enough to
+    // overlap another path's refresh, a count target can be reached by the wrong
+    // path and the assertion passes for the wrong reason. A refresh replaces the
+    // cache entry in place and only ever advances `expires_on` (a credential that
+    // returns the same expiry is marked non-refreshable instead), so watching one
+    // path's expiry ties each assertion to the path it names.
+    async fn wait_for_token_refresh(
+        authorizer: &Arc<Authorizer>,
+        path: &Url,
+        previous_expiry: OffsetDateTime,
+        timeout: std::time::Duration,
+    ) -> Option<OffsetDateTime> {
+        let deadline = tokio::time::Instant::now() + timeout;
+        loop {
+            let expiry = authorizer.peek_token(path).await.map(|t| t.expires_on);
+            if expiry.is_some_and(|e| e > previous_expiry)
+                || tokio::time::Instant::now() >= deadline
+            {
+                return expiry;
             }
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         }
@@ -878,7 +920,8 @@ mod tests {
         // that, so the refresh lands 8 to 12 seconds from now. Wait for the count
         // to reach 2 instead of reading it at a fixed instant, because the exact
         // moment the refresh lands drifts with scheduler latency.
-        let final_count = wait_for_token_count(&mock_credential, 2, Duration::seconds(25)).await;
+        let final_count =
+            wait_for_token_count(&mock_credential, 2, std::time::Duration::from_secs(25)).await;
         trace!("After waiting, token count: {final_count}");
 
         assert!(
@@ -933,10 +976,11 @@ mod tests {
         let path1 = Url::parse("amqps://example.com/test_token_refresh_1").unwrap();
         // Get access to the connection
         //let connection = connection_manager.ensure_connection().await.unwrap();
-        authorizer
+        let path1_expiry = authorizer
             .authorize_path(&recoverable_connection, &path1)
             .await
-            .unwrap();
+            .unwrap()
+            .expires_on;
 
         // Because the token expires in 20 seconds, token_refresh_1 will be refreshed
         // between 14 and 16 seconds from now.
@@ -947,10 +991,11 @@ mod tests {
 
         // Authorize the second path, which will store the token
         let path2 = Url::parse("amqps://example.com/test_token_refresh_2").unwrap();
-        authorizer
+        let path2_expiry = authorizer
             .authorize_path(&recoverable_connection, &path2)
             .await
-            .unwrap();
+            .unwrap()
+            .expires_on;
 
         // Verify initial token retrieval count - it should have been refreshed three times -
         let current_count = mock_credential.get_token_get_count();
@@ -959,11 +1004,26 @@ mod tests {
 
         // Token_refresh_1 will be refreshed between 4 and 6 seconds from now.
         // Token_refresh_2 will be refreshed between 14 and 16 from now.
-        // Wait for token_refresh_1 to be refreshed (count goes 2 -> 3). The
-        // refresh lands ~5s from now; token_refresh_2 does not refresh until
-        // ~15s from now, so the count should reach exactly 3 within this window.
+        //
+        // Wait on path1's own expiry rather than the shared call count. The count
+        // cannot say which path was refreshed, and the second wait below is wide
+        // enough to overlap path1's next refresh, so a count target there could be
+        // reached by path1 even if path2 never refreshed.
         trace!("Waiting for token_refresh_1 to expire and be refreshed. Current token count: {current_count}");
-        let final_count = wait_for_token_count(&mock_credential, 3, Duration::seconds(12)).await;
+        let refreshed1 = wait_for_token_refresh(
+            &authorizer,
+            &path1,
+            path1_expiry,
+            std::time::Duration::from_secs(12),
+        )
+        .await;
+        assert!(
+            refreshed1.is_some_and(|e| e > path1_expiry),
+            "Expected token_refresh_1 to be refreshed (expiry to advance past {path1_expiry}), but got {refreshed1:?}"
+        );
+
+        // Only path1 is due in this window, so exactly one refresh has landed.
+        let final_count = mock_credential.get_token_get_count();
         trace!("After waiting the first time, token count: {final_count}");
         assert!(
             final_count >= 3,
@@ -974,10 +1034,24 @@ mod tests {
         // Token_refresh_1 will be refreshed between 13 and 15 seconds from now.
         // Token_refresh_2 will be refreshed between 7 and 9 seconds from now.
 
-        // Wait for token_refresh_2 to be refreshed (count goes 3 -> 4). It
-        // refreshes ~7-9s from now; the timeout is generous so that scheduler
-        // latency under load delays the test rather than failing it.
-        let final_count = wait_for_token_count(&mock_credential, 4, Duration::seconds(20)).await;
+        // Wait for token_refresh_2 to be refreshed. It refreshes ~7-9s from now;
+        // the timeout is generous so that scheduler latency under load delays the
+        // test rather than failing it. Waiting on path2's own expiry keeps the
+        // assertion honest even though this window also covers path1's next
+        // refresh.
+        let refreshed2 = wait_for_token_refresh(
+            &authorizer,
+            &path2,
+            path2_expiry,
+            std::time::Duration::from_secs(20),
+        )
+        .await;
+        assert!(
+            refreshed2.is_some_and(|e| e > path2_expiry),
+            "Expected token_refresh_2 to be refreshed (expiry to advance past {path2_expiry}), but got {refreshed2:?}"
+        );
+
+        let final_count = mock_credential.get_token_get_count();
         trace!("Getting second token count: {final_count}");
         assert!(
             final_count >= 4,
