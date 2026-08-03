@@ -64,12 +64,7 @@ impl EffectivePartitionKey {
     /// [`to_canonical_hex`](Self::to_canonical_hex); use
     /// [`as_bytes`](Self::as_bytes) for the wire encoding.
     fn canonical_bytes(&self) -> &[u8] {
-        let end = self
-            .0
-            .iter()
-            .rposition(|&byte| byte != 0)
-            .map_or(0, |i| i + 1);
-        &self.0[..end]
+        canonical_slice(&self.0)
     }
 
     /// Returns the uppercase-hex encoding of the EPK — the canonical routing
@@ -291,7 +286,10 @@ impl fmt::Display for EffectivePartitionKey {
 /// assert on the exact wire encoding.
 impl PartialEq<str> for EffectivePartitionKey {
     fn eq(&self, other: &str) -> bool {
-        self.canonical_bytes() == Self::from(other).canonical_bytes()
+        // Parsed strictly, unlike `From<&str>`: that conversion is infallible and
+        // so tolerates a malformed suffix, which would let `MIN == "GG"` hold.
+        try_hex_to_bytes(other)
+            .is_some_and(|bytes| self.canonical_bytes() == canonical_slice(&bytes))
     }
 }
 
@@ -507,11 +505,38 @@ fn bytes_to_hex_upper(bytes: &[u8]) -> String {
     s
 }
 
+/// Strips trailing zero padding: two EPKs are byte-identical in this form
+/// exactly when they compare equal. See
+/// [`canonical_bytes`](EffectivePartitionKey::canonical_bytes).
+fn canonical_slice(bytes: &[u8]) -> &[u8] {
+    let end = bytes
+        .iter()
+        .rposition(|&byte| byte != 0)
+        .map_or(0, |i| i + 1);
+    &bytes[..end]
+}
+
+/// Parses a hex EPK string, returning `None` unless *every* character is a hex
+/// digit and the length is even. [`hex_to_bytes`] is deliberately lenient
+/// because [`From<&str>`](EffectivePartitionKey::from) cannot report an error;
+/// use this wherever accepting a malformed string would be a silent match.
+fn try_hex_to_bytes(s: &str) -> Option<Vec<u8>> {
+    let bytes = s.as_bytes();
+    if !bytes.len().is_multiple_of(2) {
+        return None;
+    }
+    bytes
+        .chunks_exact(2)
+        .map(|pair| Some((hex_nibble(pair[0])? << 4) | hex_nibble(pair[1])?))
+        .collect()
+}
+
 /// Decodes an even-length hex string (upper or lower case) into bytes.
 ///
 /// Returns the bytes decoded so far if the input is malformed. EPK strings are
 /// always well-formed, even-length hex in practice, so this lenient handling
-/// only guards against caller bugs without panicking on the wire path.
+/// only guards against caller bugs without panicking on the wire path. Use
+/// [`try_hex_to_bytes`] where a malformed string must not be accepted.
 fn hex_to_bytes(s: &str) -> Vec<u8> {
     let bytes = s.as_bytes();
     let mut out = Vec::with_capacity(bytes.len() / 2);
@@ -591,6 +616,33 @@ mod tests {
         assert_ne!(padded, "8001");
         // The wire encoding is still reachable when it is what you want.
         assert_eq!(padded.to_hex(), "8000");
+    }
+
+    /// `From<&str>` is infallible and so silently truncates at the first
+    /// non-hex pair. String equality must not inherit that, or a malformed
+    /// boundary would compare equal to a valid one.
+    #[test]
+    fn string_equality_rejects_malformed_hex() {
+        let epk = EffectivePartitionKey::from("80");
+        assert_ne!(epk, *"80ZZ", "a bad suffix must not be truncated away");
+        assert_ne!(epk, *"8", "an odd nibble count is not a valid EPK");
+        assert_ne!(
+            EffectivePartitionKey::MIN,
+            *"GG",
+            "fully invalid hex must not parse to the empty (MIN) key"
+        );
+        assert_ne!(EffectivePartitionKey::MIN, *"00ZZ");
+
+        // Well-formed comparisons are unaffected, in either case.
+        assert_eq!(epk, *"8000");
+        assert_eq!(epk, *"80");
+        assert_eq!(epk, *"8000000000");
+        assert_eq!(EffectivePartitionKey::from("3aab"), *"3AAB");
+        // Probe-side lowercase: the previous `to_hex() == other` impl compared
+        // against uppercase output and would have rejected this.
+        assert_eq!(EffectivePartitionKey::from("3AAB"), *"3aab");
+        assert_eq!(EffectivePartitionKey::MIN, *"");
+        assert_eq!(EffectivePartitionKey::MIN, *"0000");
     }
 
     /// Coarsening equality creates an obligation that operations respect the
