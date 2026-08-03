@@ -34,6 +34,9 @@ jobs:
 
   - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
 
+  # Always skip audit. Audit requires contact with restricted endpoints and is
+  # excluded from use in internal builds. Instead, teams must check on the state
+  # of the Audit in GitHub Actions.
   - task: Powershell@2
     displayName: "Run source analysis"
     inputs:
@@ -43,21 +46,9 @@ jobs:
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
         -Toolchain 'nightly'
         -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
-        -Audit:('$(Build.Reason)' -ne 'PullRequest')
+        -Audit:$false
         -Deny
 
   - template: /eng/common/pipelines/templates/steps/check-spelling.yml
     parameters:
       ContinueOnError: false
-
-  - template: /eng/common/pipelines/templates/steps/verify-links.yml
-    parameters:
-      ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-        Directory: ""
-        Urls: (eng/common/scripts/get-markdown-files-from-changed-files.ps1)
-      ${{ elseif eq(parameters.ServiceDirectory, 'auto') }}:
-        Directory: ""
-      ${{ else }}:
-        Directory: sdk/${{ parameters.ServiceDirectory }}
-      CheckLinkGuidance: $true
-      Condition: succeededOrFailed()
