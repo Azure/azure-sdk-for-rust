@@ -259,13 +259,14 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
     $readmeContent = Get-Content -Raw $readmeContentLoc
   }
 
-  $existingVersions = GetExistingPackageVersions -PackageName $packageName
-
   return @{
     PackageId      = $packageName
     PackageVersion = $packageVersion
     ReleaseTag     = "$packageName@$packageVersion"
-    Deployable     = $existingVersions -notcontains $packageVersion
+    # GetExistingPackageVersions is blocked by CFS so Deployable is always $true
+    # This is a bit of a stopgap because the repo will also be tagged with the
+    # released version.
+    Deployable     = $true
     ReleaseNotes   = $releaseNotes
     ReadmeContent  = $readmeContent
   }
