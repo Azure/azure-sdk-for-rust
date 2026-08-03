@@ -49,18 +49,21 @@ impl Instruments {
             .f64_histogram(attributes::METRIC_OPERATION_DURATION)
             .with_unit(attributes::UNIT_SECONDS)
             .with_description("Total client-observed duration of a Cosmos DB operation.")
+            .with_boundaries(attributes::BUCKETS_OPERATION_DURATION_SECONDS.to_vec())
             .build();
 
         let request_charge = meter
             .f64_histogram(attributes::METRIC_OPERATION_REQUEST_CHARGE)
             .with_unit(attributes::UNIT_REQUEST_UNIT)
             .with_description("Request charge (RU) consumed by a Cosmos DB operation.")
+            .with_boundaries(attributes::BUCKETS_REQUEST_CHARGE_RU.to_vec())
             .build();
 
         let returned_rows = meter
             .u64_histogram(attributes::METRIC_RESPONSE_RETURNED_ROWS)
             .with_unit(attributes::UNIT_ROW)
             .with_description("Number of rows/items returned by a Cosmos DB operation.")
+            .with_boundaries(attributes::BUCKETS_RETURNED_ROWS.to_vec())
             .build();
 
         let active_instance = meter
