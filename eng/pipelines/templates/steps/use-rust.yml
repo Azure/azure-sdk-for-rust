@@ -49,6 +49,21 @@ steps:
     inputs:
       configFile: $(CargoConfigPath)
 
+  # TEMPORARY DIAGNOSTIC - remove before this PR leaves draft.
+  # Establishes which host rustup pulls toolchains from. `rustup check` only fetches
+  # channel manifests, so it is cheap, and RUSTUP_LOG=rustup=debug makes it log the
+  # full URL of every request.
+  - pwsh: |
+      foreach ($name in 'RUSTUP_DIST_SERVER', 'RUSTUP_UPDATE_ROOT', 'RUSTUP_HOME') {
+        $value = [Environment]::GetEnvironmentVariable($name)
+        if ($value) { Write-Host "$name = $value" }
+        else { Write-Host "$name is unset (rustup uses its built-in default)" }
+      }
+      $env:RUSTUP_LOG = 'rustup=debug'
+      rustup check 2>&1 | ForEach-Object { Write-Host $_ }
+    displayName: "TEMP diagnostic: resolve rustup dist server"
+    continueOnError: true
+
 - task: PowerShell@2
   displayName: "Use Rust ${{ parameters.Toolchain }}"
   inputs:
