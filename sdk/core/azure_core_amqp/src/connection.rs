@@ -35,7 +35,8 @@ pub enum AmqpTransport {
     /// `fe2o3_amqp_ws_rustls`, which selects rustls with the aws-lc-rs
     /// provider. To use another stack, turn off the default features, name
     /// `fe2o3_amqp_ws`, and take a direct dependency on `fe2o3-amqp-ws` with
-    /// the stack you want.
+    /// the stack you want. A build that selects no stack also compiles, and
+    /// the connection reports the missing stack when it opens.
     WebSocket,
 }
 

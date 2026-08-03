@@ -101,10 +101,9 @@ fe2o3_amqp_rustls = ["fe2o3_amqp", "fe2o3-amqp/rustls"]
 #
 # `samples/list_blobs_native_tls` shows the same pattern for `reqwest`.
 #
-# One stack must be selected somewhere in the graph. `fe2o3-amqp-ws` puts
-# `connect_tls_with_config` behind its own TLS features, so `fe2o3_amqp_ws` on
-# its own does not build. `reqwest` differs here: it compiles with no TLS
-# feature and fails at run time instead.
+# One stack must be selected somewhere in the graph. `fe2o3_amqp_ws` on its own
+# builds, and the connection reports `TlsFeatureNotEnabled` when it opens.
+# `reqwest` behaves the same way.
 fe2o3_amqp_ws = ["fe2o3_amqp", "dep:fe2o3-amqp-ws"]
 # The direct `rustls` dependency is only here to select the crypto provider.
 # This crate names no `rustls` type. `reqwest/rustls` selects aws-lc-rs itself,
