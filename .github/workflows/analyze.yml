@@ -37,10 +37,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libssl-dev
+      # Both toolchains are required. Analyze-Code.ps1 runs `cargo +nightly docs-rs`
+      # per package, and eng/scripts/verify-*.rs are cargo scripts whose shebangs
+      # pin `cargo +nightly-2026-04-14 -Zscript`. Stable is installed last so it
+      # stays the active toolchain for everything else.
+      - name: Install Rust nightly
+        shell: pwsh
+        run: ./eng/scripts/Use-Rust.ps1 -Toolchain nightly
+
+      - name: Install Rust stable
+        shell: pwsh
+        run: ./eng/scripts/Use-Rust.ps1 -Toolchain stable
 
       # Install `cargo install` tools outside CARGO_HOME so they can be cached
       # independently of the rustup-managed toolchains in ~/.cargo/bin.
@@ -79,17 +86,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-analyze-target-${{ hashFiles('rust-toolchain.toml', 'eng/scripts/Language-Settings.ps1') }}-
 
-      # Analyze-Code.ps1 runs `cargo +nightly docs-rs`, so nightly is installed
-      # alongside stable. Stable is installed last so it remains the active toolchain.
-      - name: Install Rust nightly
-        shell: pwsh
-        run: ./eng/scripts/Use-Rust.ps1 -Toolchain nightly
-
-      - name: Install Rust stable
-        shell: pwsh
-        run: ./eng/scripts/Use-Rust.ps1 -Toolchain stable
-
       # Omitting -ServiceDirectory writes package properties for every service under sdk/.
+      # Analyze-Code.ps1 falls back to a workspace-wide shortcut that skips docs-rs
+      # entirely when this directory is missing, so it is required for full coverage.
       - name: Save package properties
         shell: pwsh
         run: ./eng/common/scripts/Save-Package-Properties.ps1 -OutDirectory '${{ runner.temp }}/PackageInfo'
