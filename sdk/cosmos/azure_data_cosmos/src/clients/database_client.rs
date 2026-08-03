@@ -264,7 +264,7 @@ impl DatabaseClient {
             self.context.driver.account(),
             &resource_id,
             options.operation,
-            self.operation_context("read_throughput"),
+            self.operation_context("read_database_throughput"),
         )
         .await
     }
@@ -311,7 +311,7 @@ impl DatabaseClient {
             &resource_id,
             throughput,
             options.operation,
-            self.operation_context("replace_throughput"),
+            self.operation_context("replace_database_throughput"),
         )
         .await
     }

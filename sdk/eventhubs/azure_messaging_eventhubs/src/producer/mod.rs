@@ -135,7 +135,14 @@ impl ProducerClient {
     ///
     /// This method should be called when the client is no longer needed, it will terminate all outstanding operations on the connection.
     ///
-    /// Note that dropping the ProducerClient will also close the connection.
+    /// Call this method to close the connection. Dropping the client is not a
+    /// substitute. The client has no `Drop` of its own, so a drop releases only
+    /// its reference to the connection. When another handle still holds the
+    /// connection, such as a handle that an open operation returned, the drop
+    /// does not reach the connection at all. When the drop releases the last
+    /// reference, the AMQP layer only asks to close, and it neither waits for
+    /// the service to answer nor reports a request that it could not send. A
+    /// dropped client can therefore leave the connection open.
     pub async fn close(self) -> Result<()> {
         let connection_id = self.connection.get_connection_id().to_string();
         trace!(
@@ -143,20 +150,14 @@ impl ProducerClient {
             url = %self.endpoint,
             "Closing producer client."
         );
-        Arc::try_unwrap(self.connection)
-            .map_err(|_| {
-                warn!(
-                    connection_id = %connection_id,
-                    url = %self.endpoint,
-                    "Could not close producer recoverable connection, multiple references exist."
-                );
-                Error::with_message(
-                    AzureErrorKind::Other,
-                    "Could not close producer recoverable connection, multiple references exist",
-                )
-            })?
-            .close_connection()
-            .await?;
+        // The close does not need exclusive ownership of the connection. See
+        // the note on `ConsumerClient::close`.
+        self.connection.close_connection().await?;
+        trace!(
+            connection_id = %connection_id,
+            url = %self.endpoint,
+            "Closed producer connection."
+        );
         Ok(())
     }
 
@@ -314,14 +315,42 @@ impl ProducerClient {
     /// }
     /// ```
     ///
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            partition_id = batch_options
+                .as_ref()
+                .and_then(|o| o.partition_id.as_deref())
+                .unwrap_or("<auto>"),
+        ),
+        err,
+    )]
     pub async fn create_batch(
         &self,
         batch_options: Option<EventDataBatchOptions>,
     ) -> Result<EventDataBatch<'_>> {
-        let mut batch = EventDataBatch::new(self, batch_options);
+        let path = EventDataBatch::batch_path(
+            self.base_url(),
+            batch_options
+                .as_ref()
+                .and_then(|o| o.partition_id.as_deref()),
+        )?;
+        let sender = self.ensure_sender(path.clone()).await?;
+        let link_max_size = sender.max_message_size().await?.ok_or_else(|| {
+            warn!(
+                path = %path,
+                "The sender link did not report a maximum message size; cannot size the batch."
+            );
+            Error::with_message(
+                AzureErrorKind::Other,
+                "No maximum message size available from the sender link.",
+            )
+        })?;
+        let max_size_in_bytes =
+            EventDataBatch::resolve_max_size_in_bytes(batch_options.as_ref(), link_max_size)?;
 
-        batch.attach().await?;
-        Ok(batch)
+        Ok(EventDataBatch::new(self, batch_options, max_size_in_bytes))
     }
 
     /// Submits a batch of events to the Event Hub.

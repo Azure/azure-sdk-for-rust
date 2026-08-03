@@ -123,13 +123,20 @@ pub struct CompactedRun {
 }
 
 /// The key that defines a "near-identical" run: same region, endpoint, status
-/// (incl. sub-status) and execution context.
+/// (incl. sub-status), execution context, and issuing operation.
+///
+/// The operation is part of the key because a run is meant to be a storm of
+/// retries of *the same* attempt. A PATCH's `patch_read_item` and
+/// `patch_replace_item` attempts can otherwise land on the same endpoint with
+/// the same status and be rolled up together, producing a run whose RU total
+/// and duration percentiles silently mix a read with a write.
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct CompactionKey {
     region: Option<Region>,
     endpoint: String,
     status: CosmosStatus,
     execution_context: ExecutionContext,
+    operation_name: Option<String>,
 }
 
 impl CompactionKey {
@@ -139,6 +146,7 @@ impl CompactionKey {
             endpoint: req.endpoint().to_string(),
             status: *req.status(),
             execution_context: req.execution_context(),
+            operation_name: req.operation_name().map(str::to_string),
         }
     }
 }
