@@ -10,13 +10,12 @@
 //!
 //! - **Packed status code** ([`CosmosStatusCode`] / `cosmos_status_code_t` in
 //!   C). Every fallible C function returns this 32-bit integer. The encoding is
-//!   `(http_status << 16) | sub_status`, with the
-//!   [`COSMOS_STATUS_SUB_STATUS_PRESENT`] flag set in the high bits when a
-//!   sub-status is present (its low 16 bits are meaningful only then) and `0`
-//!   meaning success. Pure-FFI / pre-flight failures (a NULL argument, invalid
-//!   UTF-8, a shut-down completion queue, …) use a real HTTP status paired with
-//!   a driver `CLIENT_FFI_*` (or `CLIENT_*`) sub-status, so they fit the same
-//!   integer as service errors.
+//!   `(http_status << 16) | sub_status`: the high 16 bits carry the HTTP status,
+//!   the low 16 bits carry the driver sub-status (`0` when there is none), and a
+//!   fully-zero code means success. Pure-FFI / pre-flight failures (a NULL
+//!   argument, invalid UTF-8, a shut-down completion queue, …) use a real HTTP
+//!   status paired with a driver `CLIENT_FFI_*` (or `CLIENT_*`) sub-status, so
+//!   they fit the same integer as service errors.
 //! - **Flat rich error** ([`CosmosError`] / `cosmos_error_t` in C). An owned
 //!   `#[repr(C)]` struct that carries the packed status plus the message and
 //!   wire diagnostics inline, mirroring `cosmos_completion_t`. It is produced
@@ -36,11 +35,11 @@ use azure_data_cosmos_driver::error::{
 
 /// 32-bit packed Cosmos status returned by every fallible C function.
 ///
-/// Layout: `(http_status << 16) | sub_status`. `0` is success. The
-/// [`COSMOS_STATUS_SUB_STATUS_PRESENT`] flag is set when a sub-status is
-/// present, and the low 16 bits carry it only then. Decode on the host with
-/// `http = (code >> 16) & 0x3FFF`, `has_sub = code & 0x40000000`, and
-/// `sub = code & 0xFFFF` (valid only when `has_sub` is set).
+/// Layout: `(http_status << 16) | sub_status`. A fully-zero code is success.
+/// The high 16 bits hold the HTTP status; the low 16 bits hold the driver
+/// sub-status, or `0` when the operation had none. Decode on the host with
+/// `http = code >> 16` and `sub = code & 0xFFFF` (a `sub` of `0` means there
+/// was no sub-status).
 ///
 /// This is a `#[repr(transparent)]` newtype over `i32`, so it stays
 /// ABI-identical to a bare `int32_t` in the generated header
@@ -53,28 +52,12 @@ pub struct CosmosStatusCode(pub i32);
 /// Success sentinel returned by fallible C functions.
 pub const COSMOS_STATUS_SUCCESS: CosmosStatusCode = CosmosStatusCode(0);
 
-/// High-bit flag set in a packed [`CosmosStatusCode`] when a sub-status is
-/// present.
-///
-/// The low 16 bits carry a sub-status value only when this flag is set; when it
-/// is clear the operation had no sub-status. Encoding "present" as a dedicated
-/// flag — rather than reserving a low-16 value such as the old `0xFFFF` — keeps
-/// every real `u16` sub-status representable, including `0xFFFF` (the wire value
-/// of `SCRIPT_COMPILE_ERROR`), with no collision against the "absent" case.
-///
-/// Bit 30 is used so the flag never overlaps an HTTP status (all real codes are
-/// well under `0x3FFF`) and the packed status stays non-negative.
-pub const COSMOS_STATUS_SUB_STATUS_PRESENT: i32 = 0x4000_0000;
-
 impl CosmosStatusCode {
     /// Packs a driver [`CosmosStatus`] into the FFI [`CosmosStatusCode`].
     pub(crate) fn from_status(status: CosmosStatus) -> CosmosStatusCode {
         let http = u32::from(u16::from(status.status_code()));
-        let mut code = http << 16;
-        if let Some(sub) = status.sub_status() {
-            code |= (COSMOS_STATUS_SUB_STATUS_PRESENT as u32) | u32::from(sub.value());
-        }
-        CosmosStatusCode(code as i32)
+        let sub = status.sub_status().map_or(0, |s| u32::from(s.value()));
+        CosmosStatusCode(((http << 16) | sub) as i32)
     }
 
     /// Packs the status of a driver [`CosmosError`] into a [`CosmosStatusCode`].
@@ -554,12 +537,12 @@ pub extern "C" fn cosmos_set_backtrace_options(
 mod tests {
     use super::*;
 
-    /// Decodes a packed status back into `(http, Option<sub>)`.
-    fn unpack(code: CosmosStatusCode) -> (u16, Option<u16>) {
+    /// Decodes a packed status back into `(http, sub)`. A `sub` of `0` means the
+    /// operation had no sub-status.
+    fn unpack(code: CosmosStatusCode) -> (u16, u16) {
         let bits = code.0 as u32;
-        let http = ((bits >> 16) & 0x3FFF) as u16;
-        let sub = ((bits & (COSMOS_STATUS_SUB_STATUS_PRESENT as u32)) != 0)
-            .then(|| (bits & 0xFFFF) as u16);
+        let http = (bits >> 16) as u16;
+        let sub = (bits & 0xFFFF) as u16;
         (http, sub)
     }
 
@@ -575,26 +558,26 @@ mod tests {
     fn status_code_round_trips_with_sub_status() {
         let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
         let packed = CosmosStatusCode::from_status(status);
-        assert_eq!(unpack(packed), (429, Some(3200)));
+        assert_eq!(unpack(packed), (429, 3200));
     }
 
     #[test]
     fn status_code_round_trips_without_sub_status() {
         let packed = CosmosStatusCode::from_status(CosmosStatus::new(StatusCode::NotFound));
-        assert_eq!(unpack(packed), (404, None));
+        assert_eq!(unpack(packed), (404, 0));
     }
 
     #[test]
     fn max_sub_status_does_not_collide_with_absent() {
-        // `0xFFFF` is a real Cosmos sub-status (`SCRIPT_COMPILE_ERROR`). The
-        // "present" flag must keep it distinct from the no-sub-status case so a
-        // genuine `0xFFFF` never decodes as "absent".
+        // `0xFFFF` is a real Cosmos sub-status (`SCRIPT_COMPILE_ERROR`). With a
+        // plain `(http << 16) | sub` pack it occupies the low 16 bits like any
+        // other value, staying distinct from the `sub == 0` "absent" encoding.
         let present = CosmosStatusCode::from_status(
             CosmosStatus::new(StatusCode::BadRequest).with_sub_status(0xFFFF),
         );
         let absent = CosmosStatusCode::from_status(CosmosStatus::new(StatusCode::BadRequest));
-        assert_eq!(unpack(present), (400, Some(0xFFFF)));
-        assert_eq!(unpack(absent), (400, None));
+        assert_eq!(unpack(present), (400, 0xFFFF));
+        assert_eq!(unpack(absent), (400, 0));
         assert_ne!(present, absent);
     }
 
@@ -606,12 +589,25 @@ mod tests {
             let packed = CosmosStatusCode::from_status(
                 CosmosStatus::new(StatusCode::Conflict).with_sub_status(sub),
             );
-            assert_eq!(
-                unpack(packed),
-                (409, Some(sub)),
-                "sub {sub:#06x} must round-trip"
-            );
+            assert_eq!(unpack(packed), (409, sub), "sub {sub:#06x} must round-trip");
         }
+    }
+
+    #[test]
+    fn packed_status_matches_documented_host_decode() {
+        // Regression guard for the packed-status ABI contract (PR #4820,
+        // comment r3692140719). A host using the *documented* decode — the exact
+        // `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB` header macros, `code >> 16`
+        // and `code & 0xFFFF`, with no masking or presence flag — must recover
+        // the driver's HTTP status and sub-status. Checked directly (not through
+        // the `unpack` helper) so a future high-bit encoding change that also
+        // "fixed" the helper still trips here.
+        let bits = CosmosStatusCode::from_status(
+            CosmosStatus::new(StatusCode::BadRequest).with_sub_status(20350),
+        )
+        .0 as u32;
+        assert_eq!(bits >> 16, 400, "http must be the plain high 16 bits");
+        assert_eq!(bits & 0xFFFF, 20350, "sub must be the plain low 16 bits");
     }
 
     #[test]
@@ -620,16 +616,13 @@ mod tests {
         let packed = CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
         assert_eq!(
             unpack(packed),
-            (400, Some(SubStatusCode::CLIENT_FFI_NULL_ARGUMENT.value()))
+            (400, SubStatusCode::CLIENT_FFI_NULL_ARGUMENT.value())
         );
 
         let cancelled = CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code();
         assert_eq!(
             unpack(cancelled),
-            (
-                408,
-                Some(SubStatusCode::CLIENT_FFI_OPERATION_CANCELLED.value())
-            )
+            (408, SubStatusCode::CLIENT_FFI_OPERATION_CANCELLED.value())
         );
     }
 
@@ -646,20 +639,17 @@ mod tests {
             unpack(CosmosStatusCode::from_status(
                 CosmosErrorCode::panic_status()
             )),
-            (500, Some(SubStatusCode::CLIENT_FFI_PANIC.value()))
+            (500, SubStatusCode::CLIENT_FFI_PANIC.value())
         );
     }
 
     #[test]
-    fn driver_status_code_packs_wire_status() {
+    fn from_driver_error_packs_wire_status() {
         let err = DriverCosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::Conflict))
             .with_message("conflict")
             .build();
-        assert_eq!(
-            unpack(CosmosStatusCode::from_driver_error(&err)),
-            (409, None)
-        );
+        assert_eq!(unpack(CosmosStatusCode::from_driver_error(&err)), (409, 0));
     }
 
     #[test]
@@ -681,7 +671,7 @@ mod tests {
             i32::from(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value())
         );
         assert_eq!(e.is_from_wire, 0);
-        assert_eq!(unpack(e.status), (408, Some(20008)));
+        assert_eq!(unpack(e.status), (408, 20008));
         assert!(!e.message.is_null());
         let msg = unsafe { std::ffi::CStr::from_ptr(e.message) }
             .to_string_lossy()

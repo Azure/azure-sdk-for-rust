@@ -122,7 +122,7 @@ sdk/cosmos/azure_data_cosmos_driver_native/
 | `OperationHandle` (wrapper) | `cosmos_operation_handle_t` | `cosmos_operation_handle_*` |
 | `Completion` (wrapper) | `cosmos_completion_t` | `cosmos_completion_*` |
 | `CosmosError` | `cosmos_error_t` | `cosmos_error_*` |
-| `CosmosStatusCode` (packed `i32` alias) | `cosmos_status_code_t` | returned by every fallible fn; decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB` |
+| `CosmosStatusCode` (packed `i32` newtype) | `cosmos_status_code_t` | returned by every fallible fn; decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB` |
 | `CosmosSubStatus` | `cosmos_sub_status_t` | enum variants `COSMOS_SUB_STATUS_*` |
 
 All exported symbols start with `cosmos_`. The names in the **C type** column are normative — generated cbindgen output **must** match them exactly.
@@ -585,9 +585,9 @@ A **packed 32-bit status** returned by every fallible C function. It carries the
 
 - `0` (`COSMOS_STATUS_SUCCESS`) — success.
 - The high 16 bits hold the HTTP status (`400`, `404`, `429`, `503`, …).
-- The low 16 bits hold the driver [`SubStatusCode`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs) value, but only when the `COSMOS_STATUS_SUB_STATUS_PRESENT` (`0x40000000`) flag is set; when that flag is clear there is no sub-status.
+- The low 16 bits hold the driver [`SubStatusCode`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs) value, or `0` when the operation had no sub-status.
 
-Hosts decode with the macros emitted in the header: `COSMOS_STATUS_HTTP(code) = (code >> 16) & 0x3FFF`, `COSMOS_STATUS_HAS_SUB(code) = code & 0x40000000`, and `COSMOS_STATUS_SUB(code) = code & 0xFFFF`. When `COSMOS_STATUS_HAS_SUB` is set, the low half is compared against the named `COSMOS_SUB_STATUS_*` constants (§3.5.2). The dedicated present-flag keeps every `SubStatusCode` value representable — including `0xFFFF` (`SCRIPT_COMPILE_ERROR`) — with no collision against the "absent" case.
+Hosts decode with the macros emitted in the header: `COSMOS_STATUS_HTTP(code) = code >> 16` and `COSMOS_STATUS_SUB(code) = code & 0xFFFF`. A non-zero low half is compared against the named `COSMOS_SUB_STATUS_*` constants (§3.5.2); a low half of `0` means there was no sub-status. Because the sub-status occupies the full low 16 bits, every `SubStatusCode` value — including `0xFFFF` (`SCRIPT_COMPILE_ERROR`) — round-trips with no reserved sentinel. The rich `cosmos_error_t.sub_status` field still separates "no sub-status" (`-1`) from an explicit `0`.
 
 **Pure-FFI / pre-flight failures speak the same language.** A failure that never reached the wire (a NULL argument, invalid UTF-8, a shut-down queue) still packs a *real* HTTP status paired with a driver `CLIENT_FFI_*` (or `CLIENT_*`) sub-status, so it fits the identical integer as a service error. The internal condition set that performs this mapping lives in `CosmosErrorCode` in [`src/error.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/src/error.rs); it is `pub(crate)` and is **never** exported to the header. The pre-flight / plumbing conditions and the packed status each maps to are:
 
@@ -1716,7 +1716,7 @@ The driver classifies *every* non-2xx HTTP status that the gateway returns as a 
 
 ### 6.3 Packed status ↔ `cosmos_error_t` mapping
 
-When `execute_operation` returns `Err(CosmosError)`, the wrapper packs the driver error's `(status_code, sub_status)` pair directly into the `cosmos_status_code_t` returned by `cosmos_completion_status` *and* always populates the rich `cosmos_error_t` for full detail. There is **no** coarse lossy re-classification step — the packed status *is* the driver's HTTP status and sub-status, verbatim (`driver_status_code` in [`src/error.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/src/error.rs) is a straight `(http << 16) | sub` pack of `err.status()`).
+When `execute_operation` returns `Err(CosmosError)`, the wrapper packs the driver error's `(status_code, sub_status)` pair directly into the `cosmos_status_code_t` returned by `cosmos_completion_status` *and* always populates the rich `cosmos_error_t` for full detail. There is **no** coarse lossy re-classification step — the packed status *is* the driver's HTTP status and sub-status, verbatim (`CosmosStatusCode::from_driver_error` in [`src/error.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/src/error.rs) is a straight `(http << 16) | sub` pack of `err.status()`, with the low 16 bits `0` when there is no sub-status).
 
 Hosts dispatch by decoding the packed status:
 

@@ -47,25 +47,18 @@ fn generate_c_header() {
          // This should match the version of libazurecosmosdriver you are linking against.\n\
          #define AZURECOSMOSDRIVER_H_VERSION \"{}\"\n\
          \n\
-         // Packed-status sentinels (see cosmos_status_code_t). Emitted as macros so\n\
+         // Packed-status helpers (see cosmos_status_code_t). Emitted as macros so\n\
          // they keep the SCREAMING_SNAKE_CASE spelling shared with the\n\
          // COSMOS_SUB_STATUS_* constants instead of being double-prefixed by the\n\
          // `cosmos_` export prefix (which would yield `cosmos_COSMOS_STATUS_SUCCESS`).\n\
          //\n\
          // COSMOS_STATUS_SUCCESS: value returned by every fallible function on success.\n\
          #define COSMOS_STATUS_SUCCESS 0\n\
-         // COSMOS_STATUS_SUB_STATUS_PRESENT: high-bit flag set when a packed status\n\
-         // carries a sub-status. Using a dedicated flag (instead of reserving a\n\
-         // low-16 value) keeps every real sub-status representable, including\n\
-         // 0xFFFF (ScriptCompileError), with no collision against the absent case.\n\
-         #define COSMOS_STATUS_SUB_STATUS_PRESENT 0x40000000\n\
          \n\
          // Decode helpers for the packed cosmos_status_code_t. COSMOS_STATUS_HTTP\n\
-         // extracts the HTTP status; COSMOS_STATUS_HAS_SUB reports whether a\n\
-         // sub-status is present; COSMOS_STATUS_SUB extracts it (low 16 bits,\n\
-         // valid only when COSMOS_STATUS_HAS_SUB is non-zero).\n\
-         #define COSMOS_STATUS_HTTP(code) ((int)(((uint32_t)(code) >> 16) & 0x3FFFu))\n\
-         #define COSMOS_STATUS_HAS_SUB(code) (((uint32_t)(code) & 0x40000000u) != 0u)\n\
+         // extracts the HTTP status (high 16 bits); COSMOS_STATUS_SUB extracts the\n\
+         // sub-status (low 16 bits, 0 when the operation had no sub-status).\n\
+         #define COSMOS_STATUS_HTTP(code) ((int)((uint32_t)(code) >> 16))\n\
          #define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))",
         env!("CARGO_PKG_VERSION")
     );
@@ -225,13 +218,10 @@ fn generate_c_header() {
                 // bits of a packed cosmos_status_code_t), so force its emission.
                 "CosmosSubStatus".into(),
             ],
-            // The packed-status sentinels are emitted as `#define`s via
+            // The packed-status helpers are emitted as `#define`s via
             // `after_includes` (see above) to avoid the `cosmos_` export prefix
             // double-prefixing them into `cosmos_COSMOS_STATUS_*`.
-            exclude: vec![
-                "COSMOS_STATUS_SUCCESS".into(),
-                "COSMOS_STATUS_SUB_STATUS_PRESENT".into(),
-            ],
+            exclude: vec!["COSMOS_STATUS_SUCCESS".into()],
             rename,
             ..Default::default()
         },

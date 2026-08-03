@@ -13,25 +13,18 @@
 // This should match the version of libazurecosmosdriver you are linking against.
 #define AZURECOSMOSDRIVER_H_VERSION "0.1.0"
 
-// Packed-status sentinels (see cosmos_status_code_t). Emitted as macros so
+// Packed-status helpers (see cosmos_status_code_t). Emitted as macros so
 // they keep the SCREAMING_SNAKE_CASE spelling shared with the
 // COSMOS_SUB_STATUS_* constants instead of being double-prefixed by the
 // `cosmos_` export prefix (which would yield `cosmos_COSMOS_STATUS_SUCCESS`).
 //
 // COSMOS_STATUS_SUCCESS: value returned by every fallible function on success.
 #define COSMOS_STATUS_SUCCESS 0
-// COSMOS_STATUS_SUB_STATUS_PRESENT: high-bit flag set when a packed status
-// carries a sub-status. Using a dedicated flag (instead of reserving a
-// low-16 value) keeps every real sub-status representable, including
-// 0xFFFF (ScriptCompileError), with no collision against the absent case.
-#define COSMOS_STATUS_SUB_STATUS_PRESENT 0x40000000
 
 // Decode helpers for the packed cosmos_status_code_t. COSMOS_STATUS_HTTP
-// extracts the HTTP status; COSMOS_STATUS_HAS_SUB reports whether a
-// sub-status is present; COSMOS_STATUS_SUB extracts it (low 16 bits,
-// valid only when COSMOS_STATUS_HAS_SUB is non-zero).
-#define COSMOS_STATUS_HTTP(code) ((int)(((uint32_t)(code) >> 16) & 0x3FFFu))
-#define COSMOS_STATUS_HAS_SUB(code) (((uint32_t)(code) & 0x40000000u) != 0u)
+// extracts the HTTP status (high 16 bits); COSMOS_STATUS_SUB extracts the
+// sub-status (low 16 bits, 0 when the operation had no sub-status).
+#define COSMOS_STATUS_HTTP(code) ((int)((uint32_t)(code) >> 16))
 #define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))
 
 /**
@@ -914,11 +907,11 @@ typedef struct cosmos_runtime_t cosmos_runtime_t;
 /**
  * 32-bit packed Cosmos status returned by every fallible C function.
  *
- * Layout: `(http_status << 16) | sub_status`. `0` is success. The
- * [`COSMOS_STATUS_SUB_STATUS_PRESENT`] flag is set when a sub-status is
- * present, and the low 16 bits carry it only then. Decode on the host with
- * `http = (code >> 16) & 0x3FFF`, `has_sub = code & 0x40000000`, and
- * `sub = code & 0xFFFF` (valid only when `has_sub` is set).
+ * Layout: `(http_status << 16) | sub_status`. A fully-zero code is success.
+ * The high 16 bits hold the HTTP status; the low 16 bits hold the driver
+ * sub-status, or `0` when the operation had none. Decode on the host with
+ * `http = code >> 16` and `sub = code & 0xFFFF` (a `sub` of `0` means there
+ * was no sub-status).
  *
  * This is a `#[repr(transparent)]` newtype over `i32`, so it stays
  * ABI-identical to a bare `int32_t` in the generated header

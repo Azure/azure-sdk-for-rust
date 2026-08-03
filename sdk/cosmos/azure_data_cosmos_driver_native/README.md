@@ -87,9 +87,8 @@ cosmos_status_code_t = (http_status << 16) | sub_status
 ```
 
 - `COSMOS_STATUS_SUCCESS` (`0`) means success.
-- Decode with `http = (code >> 16) & 0x3FFF` and `sub = code & 0xFFFF`, reading
-  `sub` only when the `COSMOS_STATUS_SUB_STATUS_PRESENT` (`0x40000000`) flag is
-  set (`COSMOS_STATUS_HAS_SUB(code)`); when it is clear there is no sub-status.
+- Decode with `http = code >> 16` and `sub = code & 0xFFFF`; a `sub` of `0`
+  means the operation had no sub-status.
 - Pre-flight / plumbing failures that never hit the wire (a NULL argument,
   invalid UTF-8, a shut-down completion queue, …) still use a real HTTP status
   paired with a synthetic `CLIENT_FFI_*` / `CLIENT_*` sub-status, so they fit
@@ -293,9 +292,9 @@ internal static class Cosmos
     [DllImport(Lib)] public static extern void   cosmos_error_free(IntPtr e);
 
     public static byte[] Cstr(string s) => Encoding.UTF8.GetBytes(s + "\0");
-    public static int PackedHttp(int code) => (int)(((uint)code >> 16) & 0x3fff);
-    public static bool HasSub(int code) => ((uint)code & 0x40000000u) != 0;
+    public static int PackedHttp(int code) => (int)((uint)code >> 16);
     public static int PackedSub(int code) => (int)((uint)code & 0xffff);
+    public static bool HasSub(int code) => PackedSub(code) != 0;
     public static string FormatStatus(int code) => code == 0 ? "success" : HasSub(code) ? $"http={PackedHttp(code)} sub={PackedSub(code)} raw={code}" : $"http={PackedHttp(code)} raw={code}";
 
     public static void CheckStatus(int status, IntPtr err, string what)
@@ -567,9 +566,9 @@ public final class CosmosSample {
 
     record Result(int status, int httpStatus, int subStatus, double requestCharge, byte[] body) {}
 
-    static int packedHttp(int code) { return (code >>> 16) & 0x3fff; }
-    static boolean hasSub(int code) { return (code & 0x40000000) != 0; }
+    static int packedHttp(int code) { return code >>> 16; }
     static int packedSub(int code) { return code & 0xffff; }
+    static boolean hasSub(int code) { return packedSub(code) != 0; }
     static String formatStatus(int code) {
         if (code == 0) return "success";
         return hasSub(code)
@@ -770,15 +769,15 @@ type result struct {
 }
 
 func packedHTTP(code C.cosmos_status_code_t) uint16 {
-    return uint16((uint32(int32(code)) >> 16) & 0x3fff)
-}
-
-func hasSub(code C.cosmos_status_code_t) bool {
-    return uint32(int32(code))&0x40000000 != 0
+    return uint16(uint32(int32(code)) >> 16)
 }
 
 func packedSub(code C.cosmos_status_code_t) uint16 {
     return uint16(uint32(int32(code)) & 0xffff)
+}
+
+func hasSub(code C.cosmos_status_code_t) bool {
+    return packedSub(code) != 0
 }
 
 func formatStatus(code C.cosmos_status_code_t) string {
@@ -978,15 +977,15 @@ ERROR_CODE_SUCCESS = 0
 
 
 def packed_http(code: int) -> int:
-    return (ctypes.c_uint32(code).value >> 16) & 0x3fff
-
-
-def has_sub(code: int) -> bool:
-    return ctypes.c_uint32(code).value & 0x40000000 != 0
+    return ctypes.c_uint32(code).value >> 16
 
 
 def packed_sub(code: int) -> int:
     return ctypes.c_uint32(code).value & 0xffff
+
+
+def has_sub(code: int) -> bool:
+    return packed_sub(code) != 0
 
 
 def format_status(code: int) -> str:
