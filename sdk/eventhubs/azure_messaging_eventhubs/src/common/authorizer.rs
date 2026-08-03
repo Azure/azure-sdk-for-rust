@@ -820,7 +820,6 @@ mod tests {
     // If this feature fails in production, clients would disconnect when their tokens expire,
     // which could lead to data loss, application failures, or service degradation.
     #[recorded::test]
-    #[ignore = "frequent off-by-one issues in dev loop"]
     async fn token_refresh(_ctx: TestContext) -> Result<()> {
         let url = Url::parse("amqps://example.com").unwrap();
         let path = Url::parse("amqps://example.com/test_token_refresh").unwrap();
@@ -873,16 +872,14 @@ mod tests {
         let current_count = mock_credential.get_token_get_count();
         assert_eq!(current_count, 1);
 
-        trace!("Sleeping for 15 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
+        trace!("Waiting for the token to expire and be refreshed. Current token count: {current_count}");
 
-        // Sleep a bit to ensure we will have refreshed the token - since the token expires in 20 seconds,
-        // we will refresh it between 8 and 12 seconds before the expiration time. If we wait for 13 seconds,
-        // we should have refreshed the token.
-        tokio::time::sleep(std::time::Duration::from_secs(13)).await;
-
-        // Verify that the token get count has increased, indicating a refresh was attempted
-        let final_count = mock_credential.get_token_get_count();
-        trace!("After sleeping, token count: {final_count}");
+        // The token expires in 20 seconds and refreshes 8 to 12 seconds before
+        // that, so the refresh lands 8 to 12 seconds from now. Wait for the count
+        // to reach 2 instead of reading it at a fixed instant, because the exact
+        // moment the refresh lands drifts with scheduler latency.
+        let final_count = wait_for_token_count(&mock_credential, 2, Duration::seconds(25)).await;
+        trace!("After waiting, token count: {final_count}");
 
         assert!(
             final_count >= 2,
