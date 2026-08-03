@@ -1752,15 +1752,15 @@ Traffic spike scaling:
             // count from current total inflight demand, then prefers the
             // least-loaded shard in that active prefix that still has room.
             // If none fit and the pool is under its max size, it creates a
-            // new shard; otherwise it falls back to the least-loaded
-            // selectable shard.
+            // new shard; otherwise it prefers the configured max threshold
+            // before falling back to the least-loaded shard unconditionally.
     ///    excluded by a just-failed local connectivity retry.
     /// 3. Compute the active shard count from current total inflight demand.
     /// 4. Atomically reserve the least-loaded shard within that active set
     ///    while it has room under `target_http2_streams_per_client`.
     /// 5. If needed and still under the configured max, create a new shard.
-    /// 6. At the connection limit, reserve under the hard
-    ///    `max_http2_streams_per_client` cap.
+    /// 6. At the connection limit, prefer the configured max threshold, then
+    ///    dispatch unconditionally; downstream HTTP/2 enforces the peer limit.
     fn select_shard(&self, excluded_shard_id: Option<u64>) -> Result<InflightGuard> {
         // 1. Snapshot current shards.
         // 2. Filter out eviction-marked shards and an optionally excluded
@@ -2311,9 +2311,9 @@ pub struct ConnectionPoolOptions {
 
     // --- New fields for HTTP/2 sharding (this spec) ---
 
-    /// Maximum concurrent HTTP/2 streams per `HttpClient` shard per endpoint
-    /// before a new shard is created. Default: 16 (leaves headroom below the
-    /// Cosmos gateway's 20-stream H2 limit).
+    /// Best-effort request occupancy threshold per `HttpClient` shard. This may
+    /// be exceeded at the endpoint connection limit; downstream HTTP/2 enforces
+    /// the peer-advertised stream limit. Default: 16.
     pub max_http2_streams_per_client: Option<u32>,
     /// Desired concurrent streams per shard before the pool fans out to
     /// another connection. Default: 8.
@@ -2344,8 +2344,8 @@ pub struct ConnectionPoolOptions {
 | ------------------------------------ | ------------------ | ----------------------------------------------------------------- | -------------------------------------------- |
 | `idle_timeout`                       | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_TIMEOUT`                                  | *(existing)*                                 |
 | `max_connections`                    | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_CONNECTIONS`                               | *(existing)*                                 |
-| `max_http2_streams_per_client`       | `Option<u32>`      | `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`       | **New.** H2 stream limit per shard.          |
-| `target_http2_streams_per_client`    | `Option<u32>`      | `AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT`    | **New.** Early fan-out target per shard.     |
+| `max_http2_streams_per_client`       | `Option<u32>`      | `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`       | **New.** Best-effort balancing threshold.   |
+| `target_http2_streams_per_client`    | `Option<u32>`      | `AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT`    | **New.** Soft early fan-out target.          |
 | `max_http2_connections_per_endpoint` | `Option<usize>`    | `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT` | **New.** Upper bound on shards per endpoint. |
 | `min_http2_connections_per_endpoint` | `Option<usize>`    | `AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT` | **New.** Lower bound on shards per endpoint. |
 | `idle_http2_client_timeout`          | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS`       | **New.** Request-path idle reclaim.          |

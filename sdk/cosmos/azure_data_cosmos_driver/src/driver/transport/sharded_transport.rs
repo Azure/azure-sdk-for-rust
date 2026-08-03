@@ -341,8 +341,8 @@ impl EndpointShardPool {
             }
 
             // Below the connection cap, normal selection is bounded by the
-            // desired `target_streams` occupancy (not the hard `max_streams`
-            // cap) so load fans out across shards early instead of filling a
+            // desired `target_streams` occupancy (not the higher `max_streams`
+            // threshold) so load fans out across shards early instead of filling a
             // single shard all the way up before another is used.
             if let Some(reservation) =
                 reserve_from_shards(&shards, excluded_shard_id, target_streams, min_connections)
@@ -419,9 +419,8 @@ impl EndpointShardPool {
         max_streams: u32,
     ) -> crate::error::Result<InflightGuard> {
         // Max-connections fallback: no more shards can be created. Prefer an
-        // existing selectable shard with room under the hard `max_streams`
-        // cap — this may push a shard above `target_streams` but must never
-        // exceed `max_streams`.
+        // existing selectable shard below the SDK's `max_streams` threshold.
+        // This may push a shard above the early fan-out target.
         let selectable_count = shards
             .iter()
             .filter(|shard| shard.is_selectable(excluded_shard_id))
@@ -432,10 +431,10 @@ impl EndpointShardPool {
             return Ok(reservation);
         }
 
-        // Every selectable shard is already at the hard cap — total capacity
-        // is genuinely exhausted. As a last-resort safety valve, dispatch
-        // anyway rather than fail the request outright; this uncapped path
-        // is not expected to trigger under normal target/max configurations.
+        // Once every selectable shard reaches the SDK threshold and no more
+        // shards can be created, keep dispatching through the least-loaded
+        // shard. The downstream HTTP/2 transport queues at the peer-advertised
+        // SETTINGS_MAX_CONCURRENT_STREAMS limit.
         let shard = select_least_loaded_shard(shards, excluded_shard_id, selectable_count, None)
             .ok_or_else(|| {
                 crate::error::CosmosError::builder()
@@ -480,7 +479,7 @@ impl EndpointShardPool {
         }
 
         // Max-connections fallback mirrors `select_shard`: prefer a shard
-        // with room under the hard `max_streams` cap before falling back to
+        // below the `max_streams` threshold before falling back to
         // the least-loaded shard unconditionally.
         let shards = self.shards.load();
         let selectable_count = shards
@@ -832,15 +831,42 @@ impl ClientShard {
     }
 
     fn try_reserve(self: &Arc<Self>, max_streams: u32) -> Option<InflightGuard> {
-        let inflight = self.inflight.load(Ordering::Relaxed);
+        self.try_reserve_after_load(max_streams, || {})
+    }
+
+    fn try_reserve_after_load<F>(
+        self: &Arc<Self>,
+        max_streams: u32,
+        before_first_cas: F,
+    ) -> Option<InflightGuard>
+    where
+        F: FnOnce(),
+    {
+        let mut inflight = self.inflight.load(Ordering::Relaxed);
         if inflight >= max_streams {
             return None;
         }
-        self.inflight
-            .compare_exchange(inflight, inflight + 1, Ordering::Relaxed, Ordering::Relaxed)
-            .ok()?;
-        self.record_reservation();
-        Some(InflightGuard::new(Arc::clone(self)))
+        before_first_cas();
+
+        loop {
+            match self.inflight.compare_exchange(
+                inflight,
+                inflight + 1,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ) {
+                Ok(_) => {
+                    self.record_reservation();
+                    return Some(InflightGuard::new(Arc::clone(self)));
+                }
+                Err(current) => {
+                    if current >= max_streams {
+                        return None;
+                    }
+                    inflight = current;
+                }
+            }
+        }
     }
 
     fn reserve_initial(self: &Arc<Self>) -> InflightGuard {
@@ -1191,10 +1217,10 @@ fn reserve_least_loaded_shard(
 ///
 /// Based on current inflight load relative to the `desired_streams` occupancy
 /// target, returns a count between `min_connections` and the number of
-/// selectable shards. Using `desired_streams` (rather than the hard
-/// `max_streams` cap) as the divisor here is what drives early fan-out:
+/// selectable shards. Using `desired_streams` (rather than the higher
+/// `max_streams` threshold) as the divisor here is what drives early fan-out:
 /// the active window grows once shards approach their desired occupancy,
-/// rather than only once they hit the hard cap.
+/// rather than only once they hit the higher threshold.
 fn active_shard_count(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
@@ -1973,7 +1999,7 @@ mod tests {
     }
 
     #[test]
-    fn selection_preserves_over_capacity_fallback_at_max_connections() {
+    fn selection_can_exceed_sdk_threshold_at_max_connections() {
         let connection_pool = ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(1)
             .with_target_http2_streams_per_client(1)
@@ -2002,7 +2028,41 @@ mod tests {
     }
 
     #[test]
-    fn preselection_returns_shard_at_max_connections_and_hard_capacity() {
+    fn bounded_reservation_retries_contention_until_threshold() {
+        const MAX_STREAMS: u32 = 4;
+        const ATTEMPTS: usize = 20;
+
+        let pool = shard_pool_with_target(1, 1, MAX_STREAMS, MAX_STREAMS);
+        let shard = Arc::clone(&pool.shards.load()[0]);
+        let before_first_cas = Arc::new(Barrier::new(ATTEMPTS));
+
+        let reservations = std::thread::scope(|scope| {
+            let (sender, receiver) = mpsc::channel();
+            for _ in 0..ATTEMPTS {
+                let shard = Arc::clone(&shard);
+                let before_first_cas = Arc::clone(&before_first_cas);
+                let sender = sender.clone();
+                scope.spawn(move || {
+                    let reservation = shard.try_reserve_after_load(MAX_STREAMS, || {
+                        before_first_cas.wait();
+                    });
+                    assert!(sender.send(reservation).is_ok());
+                });
+            }
+            drop(sender);
+            receiver.into_iter().flatten().collect::<Vec<_>>()
+        });
+
+        assert_eq!(reservations.len(), MAX_STREAMS as usize);
+        assert_eq!(shard.inflight(), MAX_STREAMS);
+        for reservation in reservations {
+            reservation.finish(&Ok(successful_response()));
+        }
+        assert_eq!(shard.inflight(), 0);
+    }
+
+    #[test]
+    fn preselection_returns_shard_at_max_connections_and_sdk_threshold() {
         let pool = shard_pool_with_target(1, 1, 1, 1);
         let reservation = pool.select_shard(None, None).unwrap();
 
@@ -2259,7 +2319,7 @@ mod tests {
 
     #[test]
     fn fifth_reservation_with_target_four_creates_second_shard() {
-        // target=4 (desired occupancy), max=16 (hard cap), enough max
+        // target=4 (desired occupancy), max=16 (higher threshold), enough max
         // connections to scale up. The first 4 reservations should all land
         // on the initial shard; the 5th should trigger a second shard.
         let pool = shard_pool_with_target(1, 4, 16, 4);
@@ -2328,7 +2388,7 @@ mod tests {
     fn normal_path_does_not_exceed_target_when_scale_up_available() {
         // 9 sequential reservations at target=4 with 3 connections
         // available should fan out to 3 shards (4/4/1) rather than filling
-        // a single shard toward the hard max.
+        // a single shard toward the higher max threshold.
         let pool = shard_pool_with_target(1, 3, 16, 4);
 
         let mut reservations = Vec::new();
@@ -2354,15 +2414,14 @@ mod tests {
     }
 
     #[test]
-    fn max_connections_fallback_permits_exceeding_target_but_not_hard_max() {
+    fn max_connections_fallback_can_exceed_target_and_max_threshold() {
         // A single allowed connection means no new shard can ever be
-        // created, so once the target (4) is reached the bounded
-        // max-connections fallback must let the shard keep growing up to
-        // (but never past) the hard max (16).
+        // created. Selection prefers the shard below max (16), then continues
+        // dispatching while downstream HTTP/2 owns the protocol limit.
         let pool = shard_pool_with_target(1, 1, 16, 4);
 
         let mut reservations = Vec::new();
-        for _ in 0..16 {
+        for _ in 0..17 {
             reservations.push(pool.select_shard(None, None).unwrap());
         }
 
@@ -2374,8 +2433,8 @@ mod tests {
         );
         assert_eq!(
             shards[0].inflight(),
-            16,
-            "single shard should grow beyond target(4) up to hard max(16)"
+            17,
+            "single shard should grow beyond target(4) and max threshold(16)"
         );
     }
 }

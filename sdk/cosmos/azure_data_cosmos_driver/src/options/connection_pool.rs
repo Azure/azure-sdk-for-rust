@@ -149,14 +149,21 @@ impl ConnectionPoolOptions {
         self.idle_connection_timeout
     }
 
-    /// Returns the hard per-shard HTTP/2 concurrent stream limit.
+    /// Returns the preferred maximum request occupancy per HTTP/2 shard client.
+    ///
+    /// This is a best-effort connection-selection threshold, not a hard limit.
+    /// Once an endpoint reaches its connection limit, the SDK may dispatch
+    /// additional requests through a shard above this value. The downstream
+    /// HTTP/2 transport queues at the peer-advertised
+    /// `SETTINGS_MAX_CONCURRENT_STREAMS` limit.
     pub fn max_http2_streams_per_client(&self) -> u32 {
         self.max_http2_streams_per_client
     }
 
-    /// Returns the desired (early fan-out) stream occupancy per HTTP/2 shard
-    /// client, used to prefer spreading load across shards before a single
-    /// shard is filled up to `max_http2_streams_per_client`.
+    /// Returns the soft per-shard occupancy target used for early fan-out.
+    ///
+    /// This controls connection selection only; it does not replace the higher
+    /// SDK balancing threshold or the peer-advertised HTTP/2 protocol limit.
     pub fn target_http2_streams_per_client(&self) -> u32 {
         self.target_http2_streams_per_client
     }
@@ -277,8 +284,8 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_METADATA_REQUEST_TIMEOUT_MS`: Maximum metadata request timeout in milliseconds (default: `65_000`, min: `100`, max: `65_000`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_PER_ENDPOINT`: Maximum idle connections per endpoint (default: `1_000` if HTTP/2 is allowed, `10_000` otherwise, min: `10`, max: `64_000`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_CONNECTION_TIMEOUT_MS`: Idle connection timeout in milliseconds (default: none, min: `300_000` when set)
-/// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`: Maximum concurrent streams per HTTP/2 shard client (default: `16`, min: `1`, max: `20`)
-/// - `AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT`: Desired concurrent stream occupancy per HTTP/2 shard client before fanning out to another shard (default: `8`, min: `1`, max: `20`, must be at most `max_http2_streams_per_client`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`: Best-effort per-shard balancing threshold that may be exceeded at the endpoint connection limit; downstream HTTP/2 queues at the peer-advertised `SETTINGS_MAX_CONCURRENT_STREAMS` (default: `16`, min: `1`, max: `20`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT`: Soft occupancy target for early connection fan-out; not a protocol stream limit (default: `8`, min: `1`, max: `20`, must be at most `max_http2_streams_per_client`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT`: Maximum number of HTTP/2 shard clients per endpoint (default: `max(available_parallelism * 2, 32)`, fallback: `32`, min: `1`, max: `256`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT`: Minimum number of HTTP/2 shard clients per endpoint (default: `1`, min: `1`, max: `256`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS`: Idle timeout for overflow HTTP/2 shard clients in milliseconds (default: `60_000`, min: `1_000`)
@@ -536,7 +543,13 @@ impl ConnectionPoolOptionsBuilder {
         self
     }
 
-    /// Sets the maximum concurrent streams per HTTP/2 shard client.
+    /// Sets the preferred maximum request occupancy per HTTP/2 shard client.
+    ///
+    /// This is a best-effort connection-selection threshold, not a hard
+    /// admission limit. Once the endpoint reaches its connection limit, the SDK
+    /// may dispatch additional requests through the least-loaded shard above
+    /// this value. The downstream HTTP/2 transport queues requests at the
+    /// peer-advertised `SETTINGS_MAX_CONCURRENT_STREAMS` limit.
     ///
     /// Must be between 1 and 20 inclusive, and at least the resolved
     /// `target_http2_streams_per_client`.
@@ -546,13 +559,13 @@ impl ConnectionPoolOptionsBuilder {
         self
     }
 
-    /// Sets the desired (early fan-out) concurrent stream occupancy per
-    /// HTTP/2 shard client.
+    /// Sets the soft per-shard occupancy target used for early fan-out.
     ///
     /// The sharded transport prefers spreading load across shards up to this
     /// target before filling a single shard all the way to
-    /// `max_http2_streams_per_client`. Must be between 1 and 20 inclusive,
-    /// and no greater than the resolved `max_http2_streams_per_client`.
+    /// `max_http2_streams_per_client`. This is a connection-selection target,
+    /// not an HTTP/2 protocol limit. Must be between 1 and 20 inclusive, and no
+    /// greater than the resolved `max_http2_streams_per_client`.
     /// Default: 8.
     pub fn with_target_http2_streams_per_client(mut self, value: u32) -> Self {
         self.target_http2_streams_per_client = Some(value);
