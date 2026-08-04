@@ -126,4 +126,9 @@ fe2o3_amqp_ws_rustls = [
 workspace = true
 
 [package.metadata.docs.rs]
-features = ["fe2o3_amqp", "fe2o3_amqp_ws", "fe2o3_amqp_ws_rustls"]
+features = [
+  "fe2o3_amqp",
+  "fe2o3_amqp_rustls",
+  "fe2o3_amqp_ws",
+  "fe2o3_amqp_ws_rustls",
+]
