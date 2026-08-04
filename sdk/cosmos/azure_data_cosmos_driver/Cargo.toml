@@ -32,7 +32,11 @@ percent-encoding = { workspace = true, optional = true }
 rand.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
-serde_json.workspace = true
+# `raw_value` lets the cross-partition streaming ORDER BY pipeline
+# (`driver::dataflow::query_response`) retain each item's `payload` as its
+# exact original JSON bytes while parsing the rewritten-query envelope,
+# instead of re-serializing (and potentially reformatting numbers).
+serde_json = { workspace = true, features = ["raw_value"] }
 time.workspace = true
 tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 tracing.workspace = true
