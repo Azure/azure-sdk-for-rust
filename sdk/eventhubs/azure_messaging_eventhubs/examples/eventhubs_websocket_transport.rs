@@ -83,7 +83,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // `stream` borrows `receiver`; drop it (end of block) before closing.
     }
 
-    // Detach the receiver link before the connection that carries it closes.
+    // `consumer.close()` detaches the receiver link too, so the order of these
+    // two calls is free (#4931). Close the receiver first to show the intent.
     receiver.close().await?;
     consumer.close().await?;
     producer.close().await?;
