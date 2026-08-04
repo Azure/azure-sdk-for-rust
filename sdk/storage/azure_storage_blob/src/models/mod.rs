@@ -20,9 +20,11 @@ pub use auto_format::AutoFormat;
 pub use download_result::{
     BlobClientDownloadIntoResult, BlobClientDownloadResult, BlobDownloadProperties,
 };
-pub use method_options::BlobClientDownloadOptions;
-pub use method_options::BlockBlobClientUploadOptions;
 pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
+pub use method_options::{
+    BlobClientDownloadOptions, BlobContainerClientListBlobsOptions, BlockBlobClientUploadOptions,
+    StorageResponseFormat,
+};
 pub use upload_result::BlockBlobClientUploadResult;
 pub use upload_result::BlockBlobClientUploadResult as BlobClientUploadResult;
 

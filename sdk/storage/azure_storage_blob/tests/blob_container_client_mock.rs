@@ -8,13 +8,16 @@ use arrow::{
 };
 use azure_core::{
     http::{
-        headers::{Headers, CONTENT_TYPE},
+        headers::{Headers, ACCEPT, CONTENT_TYPE},
         AsyncRawResponse, ClientOptions, StatusCode, Transport, Url,
     },
     Bytes,
 };
 use azure_core_test::http::MockHttpClient;
-use azure_storage_blob::{models::BlobItem, BlobContainerClient, BlobContainerClientOptions};
+use azure_storage_blob::{
+    models::{BlobContainerClientListBlobsOptions, BlobItem, StorageResponseFormat},
+    BlobContainerClient, BlobContainerClientOptions,
+};
 use futures::{FutureExt as _, TryStreamExt as _};
 use std::{collections::HashMap, error::Error, sync::Arc};
 
@@ -33,10 +36,40 @@ async fn test_list_blobs_mock_xml() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+async fn test_list_blobs_mock_explicit_xml() -> Result<(), Box<dyn Error>> {
+    let client = container_client_with(xml_mock_client());
+
+    let options = BlobContainerClientListBlobsOptions {
+        response_format: Some(StorageResponseFormat::Xml),
+        ..Default::default()
+    };
+    let all_blobs: Vec<BlobItem> = client
+        .list_blobs(Some(options))?
+        .into_stream()
+        .try_collect()
+        .await?;
+    let names: Vec<_> = all_blobs.iter().filter_map(|b| b.name.as_deref()).collect();
+
+    assert_eq!(
+        names,
+        ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
+    );
+    Ok(())
+}
+
+#[tokio::test]
 async fn test_list_blobs_mock_arrow() -> Result<(), Box<dyn Error>> {
     let client = container_client_with(arrow_mock_client());
 
-    let all_blobs: Vec<BlobItem> = client.list_blobs(None)?.into_stream().try_collect().await?;
+    let options = BlobContainerClientListBlobsOptions {
+        response_format: Some(StorageResponseFormat::Arrow),
+        ..Default::default()
+    };
+    let all_blobs: Vec<BlobItem> = client
+        .list_blobs(Some(options))?
+        .into_stream()
+        .try_collect()
+        .await?;
     let names: Vec<_> = all_blobs.iter().filter_map(|b| b.name.as_deref()).collect();
 
     assert_eq!(
@@ -65,6 +98,7 @@ fn container_client_with(mock: Arc<dyn azure_core::http::HttpClient>) -> BlobCon
 
 fn xml_mock_client() -> Arc<dyn azure_core::http::HttpClient> {
     Arc::new(MockHttpClient::new(|req| {
+        assert_eq!(req.headers().get_str(&ACCEPT).unwrap(), "application/xml");
         let is_page2 = req
             .url()
             .query_pairs()
@@ -87,6 +121,10 @@ fn arrow_mock_client() -> Arc<dyn azure_core::http::HttpClient> {
     let page1 = build_arrow_list_blobs(&["page1-a.txt", "page1-b.txt"], Some("page2"));
     let page2 = build_arrow_list_blobs(&["page2-a.txt", "page2-b.txt"], None);
     Arc::new(MockHttpClient::new(move |req| {
+        assert_eq!(
+            req.headers().get_str(&ACCEPT).unwrap(),
+            "application/vnd.apache.arrow.stream,application/xml"
+        );
         let is_page2 = req
             .url()
             .query_pairs()

@@ -1008,6 +1008,51 @@ pub struct BlobContainerClientGetPropertiesOptions<'a> {
     pub timeout: Option<i32>,
 }
 
+/// Options to be passed to `BlobContainerClient::list_blobs_arrow()`
+#[derive(Clone, Default, SafeDebug)]
+pub(crate) struct BlobContainerClientListBlobsArrowOptions<'a> {
+    /// Specify to include additional, optional information.
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: PagerOptions<'a>,
+
+    /// Filters the results to return only resources whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
+    /// list, multiple entity levels are supported. (Inclusive)
+    pub start_from: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations>\")
+    pub timeout: Option<i32>,
+}
+
+impl BlobContainerClientListBlobsArrowOptions<'_> {
+    /// Transforms this [`BlobContainerClientListBlobsArrowOptions`] into a new `BlobContainerClientListBlobsArrowOptions` that owns the underlying data, cloning it if necessary.
+    pub(crate) fn into_owned(self) -> BlobContainerClientListBlobsArrowOptions<'static> {
+        BlobContainerClientListBlobsArrowOptions {
+            include: self.include,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+            prefix: self.prefix,
+            start_from: self.start_from,
+            timeout: self.timeout,
+        }
+    }
+}
+
 /// Options to be passed to `BlobContainerClient::list_blobs_hierarchical()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientListBlobsHierarchicalOptions<'a> {
@@ -1053,9 +1098,9 @@ impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
     }
 }
 
-/// Options to be passed to `BlobContainerClient::list_blobs()`
+/// Options to be passed to `BlobContainerClient::list_blobs_xml()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientListBlobsOptions<'a> {
+pub(crate) struct BlobContainerClientListBlobsXmlOptions<'a> {
     /// Specify to include additional, optional information.
     pub include: Option<Vec<ListBlobsIncludeItem>>,
 
@@ -1076,14 +1121,14 @@ pub struct BlobContainerClientListBlobsOptions<'a> {
     /// list, multiple entity levels are supported. (Inclusive)
     pub start_from: Option<String>,
 
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations>\")
     pub timeout: Option<i32>,
 }
 
-impl BlobContainerClientListBlobsOptions<'_> {
-    /// Transforms this [`BlobContainerClientListBlobsOptions`] into a new `BlobContainerClientListBlobsOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
-        BlobContainerClientListBlobsOptions {
+impl BlobContainerClientListBlobsXmlOptions<'_> {
+    /// Transforms this [`BlobContainerClientListBlobsXmlOptions`] into a new `BlobContainerClientListBlobsXmlOptions` that owns the underlying data, cloning it if necessary.
+    pub(crate) fn into_owned(self) -> BlobContainerClientListBlobsXmlOptions<'static> {
+        BlobContainerClientListBlobsXmlOptions {
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,
