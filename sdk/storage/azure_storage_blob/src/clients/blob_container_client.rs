@@ -3,17 +3,17 @@
 
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
-use crate::generated::models::{BlobContainerClientListBlobsOptions, ListBlobsResponse};
-use crate::models::AutoFormat;
-use crate::{models::StorageErrorCode, BlobClient};
+use crate::models::{
+    AutoFormat, BlobContainerClientListBlobsOptions, ListBlobsResponse, StorageErrorCode,
+    StorageResponseFormat,
+};
+use crate::BlobClient;
 use azure_core::{
     credentials::TokenCredential,
-    error::{CheckSuccessOptions, ErrorKind},
+    error::ErrorKind,
     http::{
-        pager::{PagerContinuation, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Method, Pager, Pipeline, PipelineSendOptions, RawResponse, Request, StatusCode, Url,
-        UrlExt,
+        Pager, Pipeline, StatusCode, Url,
     },
     tracing, Result,
 };
@@ -124,57 +124,16 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobs")]
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
     ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
-        let pager_setup = self.list_blobs_internal(options)?;
-        let pipeline = self.pipeline.clone();
-        let version = self.version.clone();
-        let first_url = pager_setup.url;
-        Ok(Pager::new(
-            move |marker: PagerState, pager_options| {
-                let mut url = first_url.clone();
-                if let PagerState::More(marker) = marker {
-                    let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", marker.as_ref());
-                    query_builder.build();
-                }
-                let mut request = Request::new(url, Method::Get);
-                request.insert_header(
-                    "accept",
-                    "application/vnd.apache.arrow.stream,application/xml",
-                );
-                request.insert_header("x-ms-version", &version);
-                let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let next_marker =
-                        crate::models::auto_format::decode_next_marker(&headers, &body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match next_marker {
-                        Some(next_marker) => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Token(next_marker),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
-                })
-            },
-            Some(pager_setup.pager_options),
-        ))
+        let options = options.unwrap_or_default();
+        match options.response_format.unwrap_or_default() {
+            StorageResponseFormat::Arrow => self.list_blobs_arrow(Some(options.into())),
+            StorageResponseFormat::Xml => self.list_blobs_xml(Some(options.into())),
+        }
     }
 }
 

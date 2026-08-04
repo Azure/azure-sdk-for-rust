@@ -14,12 +14,7 @@ use super::{
     RehydratePriority, StorageErrorCode,
 };
 use crate::models::BlobMetadata;
-use azure_core::{
-    base64,
-    fmt::SafeDebug,
-    http::{pager::PagerOptions, Etag, Url},
-    time::OffsetDateTime,
-};
+use azure_core::{base64, fmt::SafeDebug, http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -120,13 +115,6 @@ pub struct BlobContainerClientGetAccountInfoResult;
 /// Contains results for `BlobContainerClient::get_properties()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientGetPropertiesResult;
-
-/// Contains pager setup for `BlobContainerClient::list_blobs()`.
-#[derive(SafeDebug)]
-pub(crate) struct BlobContainerClientListBlobsPagerOptions {
-    pub url: Url,
-    pub pager_options: PagerOptions<'static>,
-}
 
 /// Contains results for `BlobContainerClient::release_lease()`
 #[derive(SafeDebug)]
