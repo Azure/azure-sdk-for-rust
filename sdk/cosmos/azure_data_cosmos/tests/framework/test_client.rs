@@ -14,6 +14,7 @@ use azure_data_cosmos::{
         Region, ServerCertificateValidation,
     },
     CosmosClient, CosmosError, CosmosRuntime, CosmosStatus, PartitionKey, Query, RoutingStrategy,
+    SubStatusCode,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
@@ -1041,7 +1042,7 @@ impl TestRunContext {
             {
                 Ok(response) => {
                     let created = response.into_model()?;
-                    return db_client.container_client(&created.id).await;
+                    return Self::wait_for_container_ready(db_client, &created.id).await;
                 }
                 Err(e) if e.status().status_code() == StatusCode::TooManyRequests => {
                     println!(
@@ -1061,11 +1062,51 @@ impl TestRunContext {
                         .create_container(properties.clone(), options.clone())
                         .await?;
                     let created = response.into_model()?;
-                    return db_client.container_client(&created.id).await;
+                    return Self::wait_for_container_ready(db_client, &created.id).await;
                 }
                 Err(e) => return Err(e),
             }
         }
+    }
+
+    /// Waits until a newly created container is usable through the current
+    /// test client's metadata and data-plane paths.
+    ///
+    /// Cosmos can return `404/1013 CollectionCreateInProgress` after a create
+    /// request succeeds. Only that explicitly transient status is retried;
+    /// authorization, routing, and all other errors fail immediately.
+    async fn wait_for_container_ready(
+        db_client: &DatabaseClient,
+        container_id: &str,
+    ) -> azure_data_cosmos::Result<ContainerClient> {
+        const MAX_ATTEMPTS: u32 = 60;
+        const POLL_INTERVAL: Duration = Duration::from_millis(500);
+
+        for attempt in 0..MAX_ATTEMPTS {
+            let error = match db_client.container_client(container_id).await {
+                Ok(container_client) => match container_client.read(None).await {
+                    Ok(_) => return Ok(container_client),
+                    Err(error) => error,
+                },
+                Err(error) => error,
+            };
+
+            let is_create_in_progress = error.status().status_code() == StatusCode::NotFound
+                && error.status().sub_status()
+                    == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
+            if !is_create_in_progress || attempt + 1 == MAX_ATTEMPTS {
+                return Err(error);
+            }
+
+            println!(
+                "waiting for container '{container_id}' to finish creation \
+                 ({}/{MAX_ATTEMPTS})",
+                attempt + 1
+            );
+            tokio::time::sleep(POLL_INTERVAL).await;
+        }
+
+        unreachable!("the final attempt returns above")
     }
 
     /// Creates a container and waits until both the normal and fault-injection
