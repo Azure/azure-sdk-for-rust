@@ -42,7 +42,7 @@
 
 #[doc(inline)]
 pub use azure_data_cosmos_driver::diagnostics::{
-    DiagnosticsContext, RequestedRegion, RequestedRegionReason, ThresholdBreach, TransportKind,
+    DiagnosticsContext, ThresholdBreach, TransportKind,
 };
 #[doc(inline)]
 pub use azure_data_cosmos_driver::DiagnosticsThresholds;
@@ -52,6 +52,7 @@ pub use handler::{
 pub use logging::{SamplingLogHandler, TracingLogHandler};
 pub use operation_context::CosmosOperationContext;
 pub use rate_limiter::RateLimiterConfig;
+pub use region::{RequestedRegion, RequestedRegionReason};
 #[cfg(feature = "distributed_tracing")]
 pub use tracing::CosmosTracingHandler;
 
@@ -72,6 +73,7 @@ mod handler;
 mod logging;
 mod operation_context;
 mod reason;
+mod region;
 // Count-per-interval rate limiter shared by the sampling handlers (logging and,
 // when enabled, tracing) so they can bound emission under an error storm.
 pub(crate) mod rate_limiter;
