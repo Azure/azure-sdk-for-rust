@@ -5,9 +5,11 @@
 
 use azure_data_cosmos_driver::options::OperationOptions;
 
+#[cfg(feature = "control_plane")]
 use crate::models::ThroughputProperties;
 
 /// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
+#[cfg(feature = "control_plane")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct CreateContainerOptions {
@@ -18,6 +20,7 @@ pub struct CreateContainerOptions {
     pub(crate) throughput: Option<ThroughputProperties>,
 }
 
+#[cfg(feature = "control_plane")]
 impl CreateContainerOptions {
     /// Sets the throughput properties for the new container.
     pub fn with_throughput(mut self, throughput: ThroughputProperties) -> Self {
@@ -33,6 +36,7 @@ impl CreateContainerOptions {
 }
 
 /// Options to be passed to [`ContainerClient::replace()`](crate::clients::ContainerClient::replace()).
+#[cfg(feature = "control_plane")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct ReplaceContainerOptions {
@@ -41,6 +45,7 @@ pub struct ReplaceContainerOptions {
     pub operation: OperationOptions,
 }
 
+#[cfg(feature = "control_plane")]
 impl ReplaceContainerOptions {
     /// Sets the [`OperationOptions`] for this request.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
@@ -50,6 +55,7 @@ impl ReplaceContainerOptions {
 }
 
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
+#[cfg(feature = "control_plane")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct DeleteContainerOptions {
@@ -58,6 +64,7 @@ pub struct DeleteContainerOptions {
     pub operation: OperationOptions,
 }
 
+#[cfg(feature = "control_plane")]
 impl DeleteContainerOptions {
     /// Sets the [`OperationOptions`] for this request.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
@@ -84,6 +91,7 @@ impl ReadContainerOptions {
 }
 
 /// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers()).
+#[cfg(feature = "control_plane")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct QueryContainersOptions {
@@ -92,6 +100,7 @@ pub struct QueryContainersOptions {
     pub operation: OperationOptions,
 }
 
+#[cfg(feature = "control_plane")]
 impl QueryContainersOptions {
     /// Sets the [`OperationOptions`] for this request.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {

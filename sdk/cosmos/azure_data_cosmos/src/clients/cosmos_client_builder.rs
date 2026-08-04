@@ -3,13 +3,13 @@
 
 //! Builder for creating [`CosmosClient`] instances.
 
-#[cfg(feature = "fault_injection")]
 use std::sync::Arc;
 
 use crate::{
-    clients::ClientContext,
+    clients::{resolve_binary_encoding, ClientContext},
+    diagnostics::{CosmosClientInfo, DiagnosticsHandler},
     options::{
-        CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
+        BinaryEncodingOptions, CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
         ThroughputControlGroupOptions, UserAgentSuffix,
     },
     AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
@@ -173,6 +173,38 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Sets the Cosmos binary JSON encoding options for this client.
+    ///
+    /// Binary encoding governs two things together: encoding item write bodies
+    /// as binary and advertising that the client accepts binary responses via
+    /// the response-format negotiation header. The options are resolved once at
+    /// [`build()`](Self::build) time.
+    ///
+    /// When this setter is **not** called, enablement falls back to the
+    /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy
+    /// values `1` / `true` / `yes` / `on`, case-insensitive, trimmed). Passing
+    /// explicit options here takes precedence over that variable.
+    pub fn with_binary_encoding_options(mut self, options: BinaryEncodingOptions) -> Self {
+        self.options.binary_encoding = Some(options);
+        self
+    }
+
+    /// Registers a [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler)
+    /// that is invoked once per operation at completion with the operation's
+    /// completed [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext).
+    ///
+    /// Handlers run in registration order; call this multiple times to build an
+    /// ordered chain. With no handler registered the completion path does
+    /// nothing beyond checking whether a handler is present.
+    ///
+    /// # Arguments
+    ///
+    /// * `handler` - The handler to append to this client's diagnostics chain.
+    pub fn with_diagnostics_handler(mut self, handler: Arc<dyn DiagnosticsHandler>) -> Self {
+        self.options.diagnostics_handlers = self.options.diagnostics_handlers.with_handler(handler);
+        self
+    }
+
     /// Configures fault injection for testing.
     ///
     /// Accepts a vector of [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)
@@ -266,6 +298,10 @@ impl CosmosClientBuilder {
         let (account_endpoint, credential) = account.into_parts();
         let endpoint = account_endpoint.into_url();
 
+        // Capture the account coordinates for client-scoped diagnostics before
+        // the endpoint is moved into the driver account.
+        let client_info = CosmosClientInfo::from_endpoint(&endpoint);
+
         // Clone credential for the driver before the SDK consumes it for auth policy.
         let driver_credential = credential.clone();
 
@@ -289,7 +325,12 @@ impl CosmosClientBuilder {
         let driver = runtime.into_inner().create_driver(driver_options).await?;
 
         Ok(CosmosClient {
-            context: ClientContext { driver },
+            context: ClientContext::new(
+                driver,
+                resolve_binary_encoding(self.options.binary_encoding),
+                self.options.diagnostics_handlers,
+                &client_info,
+            ),
         })
     }
 }

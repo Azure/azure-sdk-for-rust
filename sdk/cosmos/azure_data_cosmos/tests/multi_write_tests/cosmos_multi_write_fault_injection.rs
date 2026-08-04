@@ -104,7 +104,6 @@ async fn verify_read_fails_with_injected_error(
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
-
             let options = read_options_for_expected_status(expected_status);
 
             let result = run_context

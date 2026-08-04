@@ -18,13 +18,15 @@ use crate::{
         effective_partition_key::{normalized_epk_len, EffectivePartitionKey},
         CosmosOperation, FeedRange,
     },
+    options::PlanOptions,
 };
 
 use super::{
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan},
-    DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, RangedToken,
-    Request, RequestTarget, ResolvedRange, SequentialDrain, TopologyProvider, UnorderedMerge,
+    DrainedLeaf, OperationPlan, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState,
+    RangedToken, Request, RequestTarget, ResolvedRange, SequentialDrain, TopologyProvider,
+    UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -102,6 +104,44 @@ pub(crate) fn build_trivial_pipeline(
 
     let root = Request::new(operation, request_target, initial_continuation);
     Ok(Pipeline::new(Box::new(root)))
+}
+
+/// Wraps a built pipeline into an [`OperationPlan`], enforcing the maximum
+/// fan-out on fresh plans.
+///
+/// Every planning branch funnels through here so the fan-out limit is enforced
+/// uniformly regardless of the pipeline's shape. The check counts leaf request
+/// nodes via [`Pipeline::fan_out_width`] — each parent node contributes its own
+/// accounting, so this scales to any future pipeline shape.
+///
+/// The limit is enforced **only at initial plan time**. The check is skipped on
+/// resume (`is_fresh == false`), because a resumed plan already passed it when
+/// it was first created. It is also not a runtime cap: a partition that splits
+/// mid-execution may push the effective fan-out above the limit, and the
+/// operation keeps running rather than aborting.
+///
+/// Returns a [`CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
+/// error when a fresh plan exceeds [`PlanOptions::max_fan_out`].
+pub(crate) fn finalize_plan(
+    pipeline: Pipeline,
+    operation: Arc<CosmosOperation>,
+    is_fresh: bool,
+    plan_options: &PlanOptions,
+) -> crate::error::Result<OperationPlan> {
+    if is_fresh {
+        let width = pipeline.fan_out_width();
+        if width > plan_options.max_fan_out as usize {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
+                .with_message(format!(
+                    "operation fans out to {width} partitions, exceeding the maximum of {}; \
+                     raise max_fan_out (via FeedOptions) to run a broader cross-partition query",
+                    plan_options.max_fan_out
+                ))
+                .build());
+        }
+    }
+    Ok(OperationPlan::new(pipeline, operation))
 }
 
 /// Builds a fan-out [`Pipeline`] from a backend query plan as a sequential drain.
@@ -182,7 +222,9 @@ pub(crate) async fn build_sequential_drain(
         plan_fresh(query_plan, topology_provider, operation).await?
     };
 
-    // TODO: enforce max fan-out (default 100, configurable). See FEED_OPERATIONS_REQS.md §3.
+    // The max fan-out limit is enforced centrally in
+    // `CosmosDriver::plan_operation` via `Pipeline::fan_out_width`, so it
+    // applies uniformly to every pipeline shape and is not duplicated here.
 
     if request_nodes.is_empty() {
         // Resumed past every range that still has work: the pipeline is
@@ -261,6 +303,20 @@ pub(crate) async fn build_unordered_merge(
     } else {
         operation.change_feed_start().cloned()
     };
+
+    // Full-fidelity (AllVersionsAndDeletes) feeds must pin every range to a
+    // concrete starting continuation before the first checkpoint, so a range
+    // that is never polled can't resume from a stale `Now` and drop the
+    // versions/deletes in the gap. Priming is needed whenever no range has yet
+    // recorded a continuation: on a fresh start, and also on resume from a
+    // checkpoint taken *before* the first page was pulled (an empty token set).
+    // A fully drained resume arrives as `PipelineNodeState::Drained` and is
+    // handled earlier, so an empty `UnorderedMerge` token set here only ever
+    // means "nothing has been polled yet". A resume that already carries saved
+    // continuations must NOT prime: those ranges would re-poll from their real
+    // ETags and the discarded primed page would lose real data.
+    let prime_on_first_drain = operation.request_headers().full_fidelity_feed
+        && saved_tokens.as_ref().is_none_or(|tokens| tokens.is_empty());
 
     // On resume the operation rebuilt by the SDK no longer carries the original
     // start headers (the caller only passed the continuation token). Re-derive
@@ -345,7 +401,11 @@ pub(crate) async fn build_unordered_merge(
             .build());
     }
 
-    let root = Box::new(UnorderedMerge::new(request_nodes).with_start_marker(start_marker));
+    let root = Box::new(
+        UnorderedMerge::new(request_nodes)
+            .with_start_marker(start_marker)
+            .with_prime_on_first_drain(prime_on_first_drain),
+    );
     Ok(Pipeline::new(root))
 }
 
@@ -996,6 +1056,18 @@ mod tests {
             .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec())
     }
 
+    /// A cross-partition query scoped to an explicit EPK feed-range target,
+    /// e.g. `FeedScope::range([min, max))`.
+    fn query_operation_with_target(min: &str, max: &str) -> CosmosOperation {
+        let target = FeedRange::new(
+            EffectivePartitionKey::from(min),
+            EffectivePartitionKey::from(max),
+        )
+        .unwrap();
+        CosmosOperation::query_items(test_container(), Some(target))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec())
+    }
+
     // --- build_trivial_pipeline tests ---
 
     #[test]
@@ -1244,6 +1316,61 @@ mod tests {
             pipeline,
             &[("", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
         );
+    }
+
+    // --- fan-out limit / finalize_plan tests ---
+
+    /// Builds a fresh two-partition sequential drain for the fan-out tests.
+    async fn two_partition_drain() -> Pipeline {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "80", "pkrange-left"),
+            rr("80", "FF", "pkrange-right"),
+        ])]);
+        build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn fan_out_width_sums_leaf_nodes() {
+        let pipeline = two_partition_drain().await;
+        assert_eq!(pipeline.fan_out_width(), 2);
+    }
+
+    #[tokio::test]
+    async fn finalize_plan_allows_fresh_plan_within_limit() {
+        let pipeline = two_partition_drain().await;
+        let op = Arc::new(cross_partition_query_operation());
+        let options = PlanOptions::default().with_max_fan_out(2);
+        finalize_plan(pipeline, op, true, &options).expect("plan at the limit should be allowed");
+    }
+
+    #[tokio::test]
+    async fn finalize_plan_rejects_fresh_plan_exceeding_limit() {
+        let pipeline = two_partition_drain().await;
+        let op = Arc::new(cross_partition_query_operation());
+        let options = PlanOptions::default().with_max_fan_out(1);
+        let err = match finalize_plan(pipeline, op, true, &options) {
+            Ok(_) => panic!("plan over the limit should be rejected"),
+            Err(err) => err,
+        };
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
+            "unexpected error: {err}",
+        );
+    }
+
+    #[tokio::test]
+    async fn finalize_plan_skips_limit_on_resume() {
+        let pipeline = two_partition_drain().await;
+        let op = Arc::new(cross_partition_query_operation());
+        // A width of 2 exceeds the limit of 1, but resume (is_fresh = false)
+        // must not re-check the fan-out.
+        let options = PlanOptions::default().with_max_fan_out(1);
+        finalize_plan(pipeline, op, false, &options).expect("resume must skip the fan-out check");
     }
 
     #[tokio::test]
@@ -1549,6 +1676,117 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn restricts_fanout_to_explicit_target_range() {
+        // The reported bug: query plan spans the whole space `[, FF)` but the
+        // caller scoped the query to `[00, 80)` via `FeedScope::range`. Only
+        // the requested slice must be queried, not the neighbouring `[80, FF)`
+        // partition. The physical topology actually contains both partitions,
+        // so a planner that ignores the target would resolve and emit a leaf
+        // for `[80, FF)` as well.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = query_operation_with_target("00", "80");
+        let mut topology = PhysicalTopologyProvider::new(vec![
+            rr("00", "80", "pkrange-left"),
+            rr("80", "FF", "pkrange-right"),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        assert_drain_requests(pipeline, &[("00", "80", "pkrange-left")]);
+    }
+
+    #[tokio::test]
+    async fn drops_query_ranges_outside_target() {
+        // Two disjoint query-plan ranges; the target only overlaps the first.
+        // The second range must contribute no request leaves (and its topology
+        // must never be resolved).
+        let plan = plan_with_ranges(vec![qr("", "40"), qr("80", "FF")]);
+        let op = query_operation_with_target("", "40");
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "40", "pkrange-A")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        assert_drain_requests(pipeline, &[("", "40", "pkrange-A")]);
+    }
+
+    #[tokio::test]
+    async fn clips_query_range_to_partial_target_overlap() {
+        // The target `[20, 60)` partially overlaps a single query-plan range
+        // spanning several partitions. Only partitions within the target,
+        // clipped to its bounds, may be queried.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = query_operation_with_target("20", "60");
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("00", "40", "pkrange-1"),
+            rr("40", "80", "pkrange-2"),
+        ])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions(
+            pipeline,
+            &[
+                ("20", "40", "pkrange-1", "00", "40"),
+                ("40", "60", "pkrange-2", "40", "80"),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn drops_query_range_touching_target_boundary() {
+        // A query-plan range that only *touches* the target's exclusive upper
+        // bound (target `[, 40)`, range `[40, FF)`) shares no EPKs with the
+        // target and must be dropped, not queried. Exercises the exact
+        // boundary case where `intersect_feed_ranges` collapses to empty.
+        let plan = plan_with_ranges(vec![qr("", "40"), qr("40", "FF")]);
+        let op = query_operation_with_target("", "40");
+        let mut topology = PhysicalTopologyProvider::new(vec![
+            rr("", "40", "pkrange-A"),
+            rr("40", "FF", "pkrange-B"),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        assert_drain_requests(pipeline, &[("", "40", "pkrange-A")]);
+    }
+
+    #[tokio::test]
+    async fn resume_restricts_fanout_to_target_range() {
+        // Resuming a target-scoped query must also honour the target: the
+        // `[80, FF)` partition lies outside `[00, 80)` and must not be queried
+        // even though the query plan spans `[, FF)` and that partition exists
+        // in the physical topology. An unclipped resume would emit a second,
+        // fresh-start leaf for `[80, FF)`.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = query_operation_with_target("00", "80");
+        let mut topology = PhysicalTopologyProvider::new(vec![
+            rr("00", "80", "pkrange-left"),
+            rr("80", "FF", "pkrange-right"),
+        ]);
+
+        let resume = saved_drain(vec![("00", "80", saved_request(Some("server-token-xyz")))]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[(
+                "00",
+                "80",
+                "pkrange-left",
+                "00",
+                "80",
+                Some("server-token-xyz"),
+            )],
+        );
+    }
+
+    #[tokio::test]
     async fn rejects_query_plan_with_top() {
         let plan = QueryPlan {
             query_info: Some(QueryInfo {
@@ -1702,6 +1940,27 @@ mod tests {
     async fn rejects_empty_query_ranges() {
         let plan = plan_with_ranges(vec![]);
         let op = cross_partition_query_operation();
+        let mut topology = NoopTopologyProvider;
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap_err();
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("query plan produced no partition ranges to query"),
+            "unexpected: {rendered}"
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_target_disjoint_from_query_ranges() {
+        // A target that shares no EPKs with any query-plan range clips every
+        // range away, leaving zero request leaves. On the fresh path this is
+        // reported as the same hard error as an empty query plan — the clip
+        // does not silently swallow the query. `NoopTopologyProvider` asserts
+        // no partition is ever resolved (the clip skips before resolution).
+        let plan = plan_with_ranges(vec![qr("80", "FF")]);
+        let op = query_operation_with_target("00", "40");
         let mut topology = NoopTopologyProvider;
 
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)

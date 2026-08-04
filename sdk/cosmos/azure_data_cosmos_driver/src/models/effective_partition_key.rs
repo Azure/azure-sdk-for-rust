@@ -16,6 +16,17 @@ use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Write;
 
+pub(crate) fn prefix_range_end_bytes(prefix: &[u8]) -> Vec<u8> {
+    let mut end = Vec::with_capacity(prefix.len() + 1);
+    end.extend_from_slice(prefix);
+    end.push(0xFF);
+    end
+}
+
+pub(crate) fn prefix_range_end_hex(prefix: &[u8]) -> String {
+    bytes_to_hex_upper(&prefix_range_end_bytes(prefix))
+}
+
 /// A newtype wrapping the raw effective partition key bytes.
 ///
 /// An `EffectivePartitionKey` is the result of hashing a [`PartitionKey`](crate::models::PartitionKey)
@@ -219,9 +230,7 @@ impl EffectivePartitionKey {
             // `hash_v2_raw_bytes` masks byte 0 with 0x3F, so every EPK
             // component's first byte is in `[0x00, 0x3F]`. `0xFF` is greater
             // than any valid suffix byte.
-            let mut max_bytes = epk.as_bytes().to_vec();
-            max_bytes.push(0xFF);
-            let max = Self::from_bytes(max_bytes);
+            let max = Self::from_bytes(prefix_range_end_bytes(epk.as_bytes()));
             Ok(epk..max)
         } else {
             Ok(epk.clone()..epk)
