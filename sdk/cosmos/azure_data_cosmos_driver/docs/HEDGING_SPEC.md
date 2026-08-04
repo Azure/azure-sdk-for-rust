@@ -2065,7 +2065,7 @@ ship without metrics, but the spec **reserves** the following surface so
 that later phases (or a separate observability PR) can add them without
 breaking changes.
 
-**Reserved `tracing` event names** (under target `cosmos.hedge`):
+**Reserved `tracing` event names** (hedging lifecycle only, under target `cosmos.hedge`):
 
 | Event | Level | Fields | Emitted when |
 |---|---|---|---|
@@ -2091,6 +2091,11 @@ Phase 1, awaiting an `azure_core` metrics surface):
 
 Notes:
 
+- Hedge terminal outcomes are intentionally logged with human-readable
+  log-line messages (for example, `non-retriable http error in hedging attempt`
+  and `non-retriable transport error in hedging attempt`) instead of
+  event-name-style strings. These messages and their levels are not part of the
+  reserved telemetry contract in this section.
 - RU consumed by losing hedges is **not** reported to the caller. The
   external per-operation RU contract remains the winning response's RU
   charge, while any aggregate hedge cost is surfaced via the separate
@@ -2098,8 +2103,8 @@ Notes:
   resolved external-contract decision.
 - Histogram bucket layout intentionally unspecified — defer to whichever
   metrics provider `azure_core` settles on.
-- Event/metric names follow OpenTelemetry conventions: dot-separated,
-  lower-snake-case, namespaced under `cosmos.hedge`.
+- Reserved event/metric names follow OpenTelemetry conventions:
+  dot-separated, lower-snake-case, namespaced under `cosmos.hedge`.
 
 ---
 
