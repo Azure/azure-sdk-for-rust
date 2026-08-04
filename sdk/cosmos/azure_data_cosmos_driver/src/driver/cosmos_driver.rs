@@ -20,7 +20,8 @@ use crate::{
             ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
             METADATA_MAX_THROTTLE_WAIT,
         },
-        pipeline::operation_pipeline::OperationOverrides,
+        pipeline::hedge_budget::HedgeBudget,
+        pipeline::operation_pipeline::{OperationOverrides, RegionPin},
         routing::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
             CosmosEndpoint, LocationStateStore,
@@ -41,8 +42,9 @@ use crate::{
 };
 use arc_swap::ArcSwap;
 use futures::future::BoxFuture;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 #[cfg(feature = "preview_dtx")]
 use std::time::Instant;
@@ -136,6 +138,20 @@ struct DriverRequestExecutor<'a> {
     options: &'a OperationOptions,
 }
 
+/// Region pins for the PartitionKeyRange change feed, keyed by container.
+///
+/// The `/pkranges` change-feed continuation is an ETag that only the region
+/// which issued it can interpret, and [`PartitionKeyRangeCache`] persists that
+/// continuation in `ContainerRoutingMap::change_feed_next_if_none_match` across
+/// fetch operations — well beyond the lifetime of the closure that produced it.
+/// Pinning per fetcher closure would therefore leak the token into normal
+/// routing on the next refresh, so the pin lives at driver scope alongside the
+/// cache whose entries it protects.
+///
+/// A cold read (no carried continuation) starts a brand new ETag chain, so it
+/// clears any existing pin and installs the region that served it.
+type PkRangeRegionPins = Mutex<HashMap<ContainerReference, CosmosEndpoint>>;
+
 fn request_target_overrides(
     operation_partition_key: Option<&PartitionKey>,
     target: RequestTarget,
@@ -180,6 +196,7 @@ fn request_target_overrides(
             // backend returns every document in the physical partition.
             partition_key: operation_partition_key.cloned(),
             continuation,
+            ..Default::default()
         },
         RequestTarget::NonPartitioned => OperationOverrides {
             continuation,
@@ -265,6 +282,13 @@ pub struct CosmosDriver {
     /// Used to pre-resolve partition key range IDs for PPAF/PPCB
     /// before the first request attempt.
     pk_range_cache: PartitionKeyRangeCache,
+    /// Region pins protecting the change-feed continuations held by
+    /// `pk_range_cache`. See [`PkRangeRegionPins`].
+    pk_range_region_pins: PkRangeRegionPins,
+    /// Per-client ceiling on metadata operations making simultaneous cross-region attempts.
+    /// Bounds the request amplification a hedging client can inflict on an
+    /// alternate region during a brownout. See [`HedgeBudget`].
+    hedge_budget: HedgeBudget,
     /// Session token cache for session consistency.
     session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
@@ -1625,6 +1649,10 @@ impl CosmosDriver {
         // Clone the per-driver registry as-is for the request hot path.
         let throughput_control_groups = options.throughput_control_groups().clone();
 
+        // Read the hedge ceiling once, here: it is fixed for the driver's
+        // lifetime, and `options` is moved into `Self` below.
+        let hedge_budget = HedgeBudget::new(options.hedging_options());
+
         Ok(Self {
             runtime,
             options,
@@ -1636,6 +1664,8 @@ impl CosmosDriver {
             ))]
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
             pk_range_cache: PartitionKeyRangeCache::new(),
+            pk_range_region_pins: Mutex::new(HashMap::new()),
+            hedge_budget,
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
             user_agent,
@@ -2059,7 +2089,8 @@ impl CosmosDriver {
         &self,
         container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
+        region_pin: Option<RegionPin>,
+    ) -> (Option<PkRangeFetchResult>, Option<CosmosEndpoint>) {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
@@ -2076,23 +2107,44 @@ impl CosmosDriver {
         request_headers.max_item_count = Some(crate::models::MaxItemCountHint::ServerDecides);
         operation = operation.with_request_headers(request_headers);
 
+        // Hedging is decided entirely by `region_pin`: absent (a cold read) the
+        // request is hedge-eligible; present it is not. The pin carries that
+        // suppression itself rather than going through
+        // `AvailabilityStrategy::Disabled`, which the
+        // `AZURE_COSMOS_HEDGING_ENABLED` env switch is allowed to override —
+        // a region-affine continuation must never be raced regardless of
+        // configuration. The pin's endpoint additionally routes the request back
+        // to the region that served the cold page, so a failover retry cannot
+        // move the chain either.
         let options = OperationOptions::default();
+        let overrides = OperationOverrides {
+            region_pin: region_pin.map(Box::new),
+            ..Default::default()
+        };
 
         match self
-            .execute_operation_direct(&operation, OperationOverrides::default(), &options)
+            .execute_operation_direct(&operation, overrides, &options)
             .await
         {
             Ok(response) => {
+                // Capture the region that served this page before the response
+                // body is consumed, so the caller can pin subsequent
+                // change-feed pages to it.
+                let serving_endpoint = self.response_endpoint(&response);
+
                 let etag = response.headers().etag.as_ref().map(|e| e.to_string());
 
                 // 304 Not Modified is a success outcome for conditional
                 // changefeed reads: the cached routing map is still current.
                 if response.status().status_code() == azure_core::http::StatusCode::NotModified {
-                    return Some(PkRangeFetchResult {
-                        ranges: vec![],
-                        continuation,
-                        not_modified: true,
-                    });
+                    return (
+                        Some(PkRangeFetchResult {
+                            ranges: vec![],
+                            continuation,
+                            not_modified: true,
+                        }),
+                        serving_endpoint,
+                    );
                 }
 
                 let body_bytes = match response.into_body().single() {
@@ -2102,21 +2154,24 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Partition key ranges response was a feed body, expected single payload"
                         );
-                        return None;
+                        return (None, serving_endpoint);
                     }
                 };
                 match parse_pk_ranges_response(&body_bytes) {
-                    Some(ranges) => Some(PkRangeFetchResult {
-                        ranges,
-                        continuation: etag,
-                        not_modified: false,
-                    }),
+                    Some(ranges) => (
+                        Some(PkRangeFetchResult {
+                            ranges,
+                            continuation: etag,
+                            not_modified: false,
+                        }),
+                        serving_endpoint,
+                    ),
                     None => {
                         tracing::error!(
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        None
+                        (None, serving_endpoint)
                     }
                 }
             }
@@ -2146,7 +2201,7 @@ impl CosmosDriver {
                             error = %e,
                             "Permanent error fetching partition key ranges — check account credentials and container existence"
                         );
-                        return None;
+                        return (None, None);
                     }
                 }
 
@@ -2155,8 +2210,100 @@ impl CosmosDriver {
                     error = %e,
                     "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
                 );
-                None
+                (None, None)
             }
+        }
+    }
+
+    /// Maps the region that produced `response` onto the account endpoint that
+    /// serves it.
+    ///
+    /// Used to pin the pages that follow a change-feed cold read. The ETag a
+    /// page returns is only meaningful to the region that issued it, so **every**
+    /// successful cold page must be recorded — not just the ones an alternate
+    /// region won via hedging. Recording only hedge wins would leave the common
+    /// primary-answered case unpinned, and a `FailoverRetry`/`SessionRetry` on a
+    /// later page would then be free to carry that region-affine ETag into a
+    /// different region.
+    ///
+    /// `None` when the response names no serving region, or when that region is
+    /// absent from the account's preferred read endpoints; the caller then falls
+    /// back to a pin that carries no endpoint but still forbids hedging.
+    fn response_endpoint(
+        &self,
+        response: &crate::models::CosmosResponse,
+    ) -> Option<CosmosEndpoint> {
+        let region = response.serving_region()?;
+        let snapshot = self.location_state_store.snapshot();
+        snapshot
+            .account
+            .preferred_read_endpoints
+            .iter()
+            .find(|ep| ep.region() == Some(&region))
+            .cloned()
+    }
+
+    /// Builds the per-fetch-operation closure that the PartitionKeyRange cache
+    /// drives page-by-page.
+    ///
+    /// Encapsulates the change-feed hedging policy. A **cold** call (no carried
+    /// continuation) starts a fresh ETag chain, so it drops any existing pin for
+    /// the container and is hedge-eligible; whichever region serves it — the
+    /// primary or a hedge-winning alternate — is recorded as the container's
+    /// pin. Every call that carries a continuation is region-pinned instead:
+    /// hedging is suppressed, and the call is routed back to the recorded region
+    /// so neither a hedge nor a mid-page failover can carry the region-affine
+    /// ETag somewhere it means nothing.
+    ///
+    /// The pin is held on the driver rather than in the closure because the
+    /// cache persists the continuation past the closure's lifetime — see
+    /// [`PkRangeRegionPins`].
+    ///
+    /// A pinned chain that fails is not left pinned: the cache discards the
+    /// failed continuation and retries the fetch cold, which routes back through
+    /// the `continuation.is_none()` branch below and clears the pin. Both halves
+    /// of the region-affine state therefore die together, so an unreachable
+    /// pinned region cannot wedge later force-refreshes.
+    fn pk_range_page_fetcher<'a>(
+        &'a self,
+    ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
+           + Send
+           + 'a {
+        move |container, continuation| {
+            Box::pin(async move {
+                let region_pin = {
+                    let mut pins = self
+                        .pk_range_region_pins
+                        .lock()
+                        .expect("pk-range region pin mutex poisoned");
+                    if continuation.is_none() {
+                        // A cold read starts a new ETag chain, so the previous
+                        // chain's pin no longer applies and must not outlive it.
+                        pins.remove(&container);
+                        None
+                    } else {
+                        Some(RegionPin {
+                            endpoint: pins.get(&container).cloned(),
+                        })
+                    }
+                };
+                let is_cold = region_pin.is_none();
+
+                let (result, serving_endpoint) = self
+                    .fetch_pk_ranges_from_service(container.clone(), continuation, region_pin)
+                    .await;
+                // Record the serving region for every successful cold page, so
+                // the continuation pages that follow are pinned to it. Pages
+                // that already carry a pin leave it untouched: the chain must
+                // stay on the region that opened it.
+                if let Some(endpoint) = serving_endpoint.filter(|_| is_cold) {
+                    self.pk_range_region_pins
+                        .lock()
+                        .expect("pk-range region pin mutex poisoned")
+                        .insert(container, endpoint);
+                }
+                result
+            })
         }
     }
 
@@ -2252,9 +2399,12 @@ impl CosmosDriver {
         if let Some(partition_key) = partition_key {
             return self
                 .pk_range_cache
-                .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
-                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-                })
+                .resolve_partition_key_range_id(
+                    container,
+                    partition_key,
+                    false,
+                    self.pk_range_page_fetcher(),
+                )
                 .await
                 .map(PartitionKeyRangeId::from);
         }
@@ -2279,7 +2429,7 @@ impl CosmosDriver {
                 container,
                 target.min_inclusive()..target.max_exclusive(),
                 false,
-                |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+                self.pk_range_page_fetcher(),
             )
             .await
             .map(PartitionKeyRangeId::from)
@@ -2699,9 +2849,7 @@ impl CosmosDriver {
         };
 
         let mut topology = container.map(|c| {
-            CachedTopologyProvider::new(&self.pk_range_cache, c, |container, continuation| {
-                self.fetch_pk_ranges_from_service(container, continuation)
-            })
+            CachedTopologyProvider::new(&self.pk_range_cache, c, self.pk_range_page_fetcher())
         });
 
         let mut context = PipelineContext::new(
@@ -2844,6 +2992,7 @@ impl CosmosDriver {
                 .default_consistency_level,
             effective_throughput_control,
             pre_resolved_pk_range_id,
+            &self.hedge_budget,
         )
         .await
     }
@@ -3055,9 +3204,7 @@ impl CosmosDriver {
             let mut topology = CachedTopologyProvider::new(
                 &self.pk_range_cache,
                 container_ref,
-                |container, continuation| {
-                    self.fetch_pk_ranges_from_service(container, continuation)
-                },
+                self.pk_range_page_fetcher(),
             );
             let pipeline = planner::build_unordered_merge(
                 &feed_range,
@@ -3090,7 +3237,7 @@ impl CosmosDriver {
         let mut topology = CachedTopologyProvider::new(
             &self.pk_range_cache,
             container_ref,
-            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
+            self.pk_range_page_fetcher(),
         );
 
         // Route streaming ORDER BY queries to the k-way merge instead of
@@ -3255,9 +3402,7 @@ impl CosmosDriver {
     ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
         let routing_map = self
             .pk_range_cache
-            .try_lookup(container, force_refresh, |c, cont| {
-                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-            })
+            .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
             .await?;
 
         let ranges = routing_map.ranges();
@@ -3300,9 +3445,7 @@ impl CosmosDriver {
             // Full key — point lookup
             let routing_map = self
                 .pk_range_cache
-                .try_lookup(container, force_refresh, |c, cont| {
-                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-                })
+                .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
                 .await?;
             if routing_map.ranges().is_empty() {
                 return None;
@@ -3320,7 +3463,7 @@ impl CosmosDriver {
                     container,
                     &epk_range.start..&epk_range.end,
                     force_refresh,
-                    |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+                    self.pk_range_page_fetcher(),
                 )
                 .await
         }
