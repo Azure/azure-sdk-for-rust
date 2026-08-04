@@ -217,7 +217,7 @@ try {
 
       $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)
       $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")
-      $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$($package.name)_rust.json")
+      $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$($package.name).rust.json")
 
       if (Test-Path -Path $targetContentsPath) {
         Remove-Item -Path $targetContentsPath -Recurse -Force

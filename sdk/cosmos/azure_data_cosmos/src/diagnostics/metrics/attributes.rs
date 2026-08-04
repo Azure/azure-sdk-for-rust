@@ -32,6 +32,11 @@ pub const METRIC_OPERATION_REQUEST_CHARGE: &str = "azure.cosmosdb.client.operati
 /// Optional histogram (rows): number of rows/items returned by an operation.
 pub const METRIC_RESPONSE_RETURNED_ROWS: &str = "db.client.response.returned_rows";
 
+/// Optional up-down counter (instances): number of live
+/// [`CosmosMetricsHandler`](super::CosmosMetricsHandler) instances (one per
+/// instrumented client, under the intended one-handler-per-client registration).
+pub const METRIC_ACTIVE_INSTANCE_COUNT: &str = "azure.cosmosdb.client.active_instance.count";
+
 // =========================================================================
 // Instrument units
 // =========================================================================
@@ -48,6 +53,62 @@ pub const UNIT_REQUEST_UNIT: &str = "{request_unit}";
 
 /// Unit for [`METRIC_RESPONSE_RETURNED_ROWS`] — rows.
 pub const UNIT_ROW: &str = "{row}";
+
+/// Unit for [`METRIC_ACTIVE_INSTANCE_COUNT`] — client instances.
+pub const UNIT_INSTANCE: &str = "{instance}";
+
+// =========================================================================
+// Explicit histogram bucket boundaries
+// =========================================================================
+//
+// These MUST be set on every histogram we create. OpenTelemetry's default
+// boundaries are `[0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000,
+// 7500, 10000]`, which are scaled for *milliseconds*. `db.client.operation.duration`
+// is recorded in *seconds*, so a typical few-millisecond Cosmos operation
+// (0.003 s) lands in the very first bucket and every observation piles up there.
+// A histogram whose observations all share one bucket carries no information:
+// `histogram_quantile` degenerates to linear interpolation within that bucket
+// and returns a constant that depends only on the requested quantile, not on
+// the data. Latency percentiles then look plausible while being unable to
+// register any change at all — so latency dashboards and alerts silently stop
+// working rather than visibly breaking.
+//
+// The boundaries below come from the OpenTelemetry semantic conventions'
+// per-instrument bucket *advice*, which exists for exactly this reason. Using
+// the advised values (rather than hand-picked ones) also keeps these histograms
+// directly comparable with the other Azure Cosmos DB SDKs.
+
+/// Bucket boundaries for [`METRIC_OPERATION_DURATION`], in seconds.
+///
+/// Semconv advice for `db.client.operation.duration`. Spans sub-millisecond
+/// (cache/emulator) through 10 s (a badly degraded or retried request).
+pub const BUCKETS_OPERATION_DURATION_SECONDS: &[f64] =
+    &[0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0];
+
+/// Bucket boundaries for [`METRIC_OPERATION_REQUEST_CHARGE`], in request units.
+///
+/// Cosmos-specific, so there is no semconv advice to follow. Chosen to give
+/// resolution where Cosmos operations actually sit: a point read is ~1 RU and a
+/// small write ~5-10 RU, so the low end is finely divided, while cross-partition
+/// queries reaching into the thousands still land in a meaningful bucket rather
+/// than overflowing.
+pub const BUCKETS_REQUEST_CHARGE_RU: &[f64] = &[
+    1.0, 2.5, 5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0,
+];
+
+/// Bucket boundaries for [`METRIC_RESPONSE_RETURNED_ROWS`], in rows.
+///
+/// Semconv advice for `db.client.response.returned_rows`.
+pub const BUCKETS_RETURNED_ROWS: &[f64] = &[
+    1.0,
+    10.0,
+    100.0,
+    1000.0,
+    10000.0,
+    100_000.0,
+    1_000_000.0,
+    10_000_000.0,
+];
 
 // =========================================================================
 // Stable attributes (always emitted; operation scope, low cardinality)
@@ -79,6 +140,12 @@ pub const ATTR_ERROR_TYPE: &str = attributes::ERROR_TYPE;
 
 /// `server.address` — host of the contacted endpoint.
 pub const ATTR_SERVER_ADDRESS: &str = attributes::SERVER_ADDRESS;
+
+/// `server.port` — port of the contacted endpoint.
+///
+/// Conditionally required: emitted only when the endpoint uses a non-default
+/// port (i.e. anything other than 443 for HTTPS).
+pub const ATTR_SERVER_PORT: &str = attributes::SERVER_PORT;
 
 /// Fallback value for [`ATTR_ERROR_TYPE`] when the error is otherwise unknown
 /// (per semantic conventions).
