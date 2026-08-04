@@ -6,7 +6,7 @@
 
 Validate that **arbitrary JSON survives a full Cosmos round-trip unchanged**,
 across binary-encoding configurations, at high volume. Where the deterministic
-golden vectors ([`binary_json_vectors.json`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/testdata/binary_json_vectors.json))
+golden vectors (`binary_json_vectors.json`)
 prove specific byte layouts and the in-tree fuzz suite hammers the *decoder* with
 malformed input, this harness exercises the **end-to-end path**:
 
@@ -392,7 +392,7 @@ immediately reproducible and reducible.
 ## 8. Relationship to the other test layers
 
 The normative wire format is defined by
-[`BINARY_ENCODING_RFC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/BINARY_ENCODING_RFC.md); this harness is one of the
+`BINARY_ENCODING_RFC.md`; this harness is one of the
 mechanisms that **validates Rust against that spec** — specifically the RFC's §7
 round-trip invariant, exercised end-to-end at scale (see the RFC's §1.4 diagram
 for how all the artifacts relate).
@@ -580,8 +580,8 @@ first three acceptance items.
 ## 9.8 Offline codec fuzzer (`cargo-fuzz`) — landed
 
 Phase 6 lands as a self-contained `cargo-fuzz` crate at
-[`azure_data_cosmos_driver/fuzz/`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver/fuzz) (see its
-[`README.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/fuzz/README.md)). It closes a gap this live harness structurally
+`azure_data_cosmos_driver/fuzz/` (see its
+`README.md`). It closes a gap this live harness structurally
 cannot: because the round-trip fuzzer generates random *JSON values* and only
 ever feeds the decoder **encoder-produced** (well-formed) bytes, it exercises
 happy-path encode/decode symmetry but never the decoder's defensive paths. The
@@ -615,7 +615,7 @@ that fixed golden vectors don't enumerate.
 ### Corpus seeding
 
 libFuzzer starts from a corpus of **valid** frames so it mutates outward from
-real wire shapes. The [golden vectors](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/testdata/binary_json_vectors.json)
+real wire shapes. The golden vectors
 (every marker family, as hex) seed it directly — the crate README carries the
 one-liner (PowerShell / jq+xxd) that materializes them into `fuzz/corpus/decode`.
 
