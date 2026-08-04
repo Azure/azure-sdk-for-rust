@@ -374,3 +374,41 @@ async fn tied_order_by_key_across_partitions_is_deterministic_and_complete() {
         "cross-partition DESC ties must return every row exactly once: {desc_ids:?}"
     );
 }
+
+/// A fresh cross-partition streaming `ORDER BY` plan is subject to the same
+/// `max_fan_out` ceiling as every other plan shape. The merge holds all of
+/// its children open concurrently, so leaking past the limit here is worse
+/// than on the sequential drain.
+#[tokio::test]
+async fn cross_partition_order_by_enforces_max_fan_out() {
+    let (_emulator, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .expect("container resolves");
+
+    let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+        .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank ASC","parameters":[]}"#.to_vec());
+
+    // The container has two physical partitions, so a ceiling of one must trip.
+    let result = Box::pin(driver.plan_operation(
+        operation,
+        &OperationOptions::default(),
+        None,
+        &PlanOptions::default().with_max_fan_out(1),
+    ))
+    .await;
+
+    let err = match result {
+        Ok(_) => panic!("a two-partition ORDER BY plan must exceed a max_fan_out of 1"),
+        Err(err) => err,
+    };
+
+    assert_eq!(
+        err.status().sub_status(),
+        Some(
+            azure_data_cosmos_driver::error::SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED
+        ),
+        "unexpected error: {err}",
+    );
+}

@@ -3254,7 +3254,7 @@ impl CosmosDriver {
                 resume_state,
             )
             .await?;
-            return Ok(OperationPlan::new(pipeline, operation));
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
         let pipeline =
