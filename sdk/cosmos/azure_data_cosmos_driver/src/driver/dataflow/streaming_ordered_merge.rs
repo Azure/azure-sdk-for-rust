@@ -34,14 +34,17 @@
 //! on by [`super::SequentialDrain`]) is that a parent partition's continuation
 //! stays valid on each post-split child under EPK scoping, so a replacement
 //! resumes *after* every row the split child already emitted.
-//! [`StreamingOrderedMerge::handle_split`] therefore forwards only the split
+//! [`StreamingOrderedMerge::handle_split`] therefore forwards the split
 //! child's `last_emitted` bookkeeping (for `skip_count` accumulation and
-//! future snapshots) and installs *no* client-side discard on the first
-//! replacement page — reapplying one would wrongly drop later JOIN rows that
-//! share the boundary `(key, _rid)`. A **saved-token** resume across a split
-//! instead rebuilds each range through the structured `resumeFilter` (see
-//! [`build_value_boundary_child`]), whose backend seek skips past the
-//! boundary. A replacement that carries no usable
+//! future snapshots) and installs no *fresh* client-side discard on the first
+//! replacement page — rebuilding one from the boundary would wrongly drop
+//! later JOIN rows that share the boundary `(key, _rid)`. An
+//! already-armed discard is a separate matter and does carry over: it means a
+//! resume prefix was only partially consumed, so its remaining (decremented)
+//! skip still applies past the forwarded continuation. A **saved-token**
+//! resume across a split instead rebuilds each range through the structured
+//! `resumeFilter` (see [`build_value_boundary_child`]), whose backend seek
+//! skips past the boundary. A replacement that carries no usable
 //! continuation yet inherits an emitted boundary (a resume-filtered range that
 //! split before its first page, or a generic non-`Request` node) is rebuilt
 //! via that boundary discard when its shape allows, else rejected with a typed
@@ -95,6 +98,7 @@ struct LastEmitted {
 
 /// What a child's next fetched page must discard before its rows become
 /// visible to the merge, right after resuming a value boundary.
+#[derive(Clone)]
 enum PendingDiscard {
     /// Nothing to discard — a fresh start or a plain continuation resume.
     None,
@@ -484,6 +488,10 @@ impl StreamingOrderedMerge {
     ) -> crate::error::Result<()> {
         let prior_boundary = self.children[idx].boundary();
         let query_shape = self.children[idx].query_shape;
+        // Cloned live, not rebuilt from `prior_boundary`: an armed discard has
+        // already been decremented by the pages it consumed, while the boundary
+        // still carries the pre-decrement `skip_count`.
+        let prior_discard = self.children[idx].pending_discard.clone();
 
         let replacements = replacements.into_ranged()?;
         // Wrap each replacement before mutating `self.children`, so a rejected
@@ -494,6 +502,7 @@ impl StreamingOrderedMerge {
                 range,
                 node,
                 prior_boundary.as_ref(),
+                &prior_discard,
                 query_shape,
                 &self.directions,
             )?);
@@ -926,10 +935,13 @@ pub(super) fn build_children(
 /// - `Some` + the leaf reports a `Request` with a forwarded backend
 ///   continuation: trust it. [`Request::split_for_topology_change`] carried the
 ///   split child's continuation into the replacement, so it already resumes
-///   *after* every emitted row. Only `last_emitted` is forwarded (for
-///   `skip_count` accumulation and future snapshots) — installing a discard
-///   here would wrongly drop later JOIN rows sharing the boundary
-///   `(key, _rid)`.
+///   *after* every emitted row. `last_emitted` is forwarded (for `skip_count`
+///   accumulation and future snapshots), and no *fresh* discard is built —
+///   rebuilding one from the boundary would wrongly drop later JOIN rows
+///   sharing the boundary `(key, _rid)`. `prior_discard` still carries over
+///   verbatim: if it is armed, the resume prefix was only partially consumed,
+///   and its remaining (already-decremented) skip applies past the forwarded
+///   continuation.
 /// - `Some` + no forwarded continuation + a resume-filtered range: rebuild the
 ///   [`PendingDiscard::ResumeBoundary`] from the boundary, exactly like a
 ///   saved-token resume. Such a leaf re-runs the structured `resumeFilter`
@@ -947,6 +959,7 @@ fn wrap_split_replacement(
     range: FeedRange,
     node: Box<dyn PipelineNode>,
     prior_boundary: Option<&ValueBoundary>,
+    prior_discard: &PendingDiscard,
     query_shape: ChildQueryShape,
     directions: &[SortOrder],
 ) -> crate::error::Result<ChildStream> {
@@ -965,13 +978,19 @@ fn wrap_split_replacement(
         }
     );
     if forwarded_continuation {
-        // The forwarded continuation positions the replacement past every
-        // emitted row; carry `last_emitted` only (no client discard).
+        // The forwarded continuation positions the replacement past every row
+        // the backend already returned, so no boundary re-seek is needed. A
+        // still-armed discard, though, means the resume prefix was only
+        // partially consumed (its pages were entirely duplicates), so the
+        // remaining skip has to carry over or those rows emit twice. It must be
+        // the live, already-decremented discard: `boundary` still holds the
+        // pre-decrement `skip_count`, since nothing was emitted to advance it.
         child.last_emitted = Some(LastEmitted {
             resume_values: boundary.resume_values.clone(),
             rid: boundary.last_rid.clone(),
             skip_count: boundary.skip_count,
         });
+        child.pending_discard = prior_discard.clone();
         return Ok(child);
     }
 
@@ -1356,6 +1375,68 @@ mod tests {
                 .map(str::to_owned)
                 .collect::<Vec<_>>(),
             "the second split replacement's smaller rows (10, 20) must precede 50"
+        );
+    }
+
+    /// Regression: a split landing mid-skip-run must not resurrect the
+    /// already-emitted rows the run still owes.
+    ///
+    /// A resumed child carries `skip_count = 3` (three JOIN rows sharing
+    /// `(rank=5, _rid="dup")` were emitted before the checkpoint). Its first
+    /// page holds only two of those duplicates, so the discard consumes the
+    /// whole page and stays armed with one skip left and nothing buffered —
+    /// which forces a re-poll, and that is where the split lands. The
+    /// replacement carries the forwarded continuation, so it resumes at the
+    /// third duplicate: without carrying the live discard across, `d-dup3`
+    /// would be emitted a second time.
+    ///
+    /// The remaining skip must be the decremented `1`, not the boundary's
+    /// original `3` — rebuilding from the boundary would also swallow the
+    /// legitimate `d-dup4` and `d9`.
+    #[tokio::test]
+    async fn split_mid_skip_run_carries_remaining_discard_to_replacement() {
+        let mut child = ChildStream::fresh(
+            range("", "80"),
+            Box::new(MockLeaf::with_pages(vec![
+                // Page 1 is entirely already-emitted duplicates: the discard
+                // eats both, leaving skip_count = 1 and an empty buffer.
+                join_envelope_page(
+                    &[("dup", 5, "d-dup1"), ("dup", 5, "d-dup2")],
+                    Some("resumed-ct"),
+                ),
+                split_page(
+                    "",
+                    "80",
+                    vec![positioned_replacement_leaf(
+                        "",
+                        "80",
+                        vec![join_envelope_page(
+                            &[("dup", 5, "d-dup3"), ("dup", 5, "d-dup4"), ("e", 9, "d9")],
+                            None,
+                        )],
+                    )],
+                ),
+            ])),
+        );
+        child.query_shape = ChildQueryShape::ResumeFilterInjected;
+        child.last_emitted = Some(LastEmitted {
+            resume_values: vec![OrderByResumeValue::Number { value: 5.0.into() }],
+            rid: "dup".to_owned(),
+            skip_count: 3,
+        });
+        child.pending_discard = number_boundary_discard(5.0, "dup", 3);
+
+        let mut node = merge(vec![child], vec![SortOrder::Ascending]);
+
+        let emitted = drain_all_ids(&mut node).await;
+        assert_eq!(
+            emitted,
+            vec!["d-dup4", "d9"]
+                .into_iter()
+                .map(str::to_owned)
+                .collect::<Vec<_>>(),
+            "the third duplicate is still owed to the skip run and must not re-emit, \
+             while the fourth duplicate and the next key must survive"
         );
     }
 
