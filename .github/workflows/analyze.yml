@@ -24,6 +24,8 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  # Incremental artifacts are large and never reused across runners.
+  CARGO_INCREMENTAL: 0
 
 jobs:
   analyze:
@@ -73,6 +75,16 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-analyze-registry-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-analyze-registry-
+
+      # Compiled artifacts are only reusable under the same toolchains, so both the stable
+      # pin (rust-toolchain.toml) and the nightly pin (Language-Settings.ps1) gate the key.
+      - name: Cache cargo build artifacts
+        uses: actions/cache@v4
+        with:
+          path: target/
+          key: ${{ runner.os }}-${{ runner.arch }}-analyze-target-${{ hashFiles('rust-toolchain.toml', 'eng/scripts/Language-Settings.ps1') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-analyze-target-${{ hashFiles('rust-toolchain.toml', 'eng/scripts/Language-Settings.ps1') }}-
 
       # Omitting -ServiceDirectory writes package properties for every service under sdk/.
       # Analyze-Code.ps1 falls back to a workspace-wide shortcut that skips docs-rs
