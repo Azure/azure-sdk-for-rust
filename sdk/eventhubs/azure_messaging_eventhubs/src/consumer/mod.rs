@@ -197,6 +197,7 @@ impl ConsumerClient {
                 retry_options: None,
                 custom_endpoint: None,
                 cbs_token_type: None,
+                transport: AmqpTransport::default(),
             },
         )
     }
