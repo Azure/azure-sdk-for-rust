@@ -7,9 +7,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    paths:
-      - .github/workflows/analyze.yml
   schedule:
     - cron: '0 12 * * *' # Daily at 12:00 PM UTC
   workflow_dispatch:
