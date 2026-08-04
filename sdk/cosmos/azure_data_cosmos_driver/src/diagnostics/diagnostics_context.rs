@@ -58,18 +58,6 @@ pub enum ThresholdBreach {
 pub enum ExecutionContext {
     /// Initial request attempt (first try).
     Initial,
-    /// Retry due to transient error (e.g., 429, 503).
-    ///
-    /// **Deprecated:** superseded by [`ExecutionContext::OperationRetry`], which
-    /// aligns with the cross-SDK reason taxonomy and is distinct from the
-    /// transport-level [`ExecutionContext::TransportRetry`]. This is a distinct,
-    /// still-constructible variant — **not** a serde alias: a `Retry` value
-    /// continues to serialize as `"retry"`. The wire-format change to
-    /// `"operation_retry"` comes from the dispatch sites now emitting
-    /// `OperationRetry` instead of `Retry`, not from any change to this variant's
-    /// own serialization. Retained for one release for source compatibility.
-    #[deprecated(since = "0.7.0", note = "use `ExecutionContext::OperationRetry`")]
-    Retry,
     /// An operation-level retry decided by the SDK's client-retry policy.
     ///
     /// Distinguishes user-visible operation retries from transport-layer
@@ -92,57 +80,13 @@ pub enum ExecutionContext {
 impl ExecutionContext {
     /// Returns the string representation of this execution context.
     pub fn as_str(&self) -> &'static str {
-        #[allow(deprecated)]
         match self {
             ExecutionContext::Initial => "initial",
-            ExecutionContext::Retry => "retry",
             ExecutionContext::OperationRetry => "operation_retry",
             ExecutionContext::TransportRetry => "transport_retry",
             ExecutionContext::Hedging => "hedging",
             ExecutionContext::RegionFailover => "region_failover",
             ExecutionContext::CircuitBreakerProbe => "circuit_breaker_probe",
-        }
-    }
-}
-
-/// Reason the SDK chose to dispatch a request to a particular region.
-///
-/// Realizes the cross-SDK Hedging Detection API's `RequestedRegionReason`. Each
-/// entry returned by [`DiagnosticsContext::requested_regions`] carries one of
-/// these, projected from the driver-internal [`ExecutionContext`] via the
-/// [`From<ExecutionContext>`] mapping below.
-///
-/// The enum is `#[non_exhaustive]`; callers that `match` on it MUST include a
-/// wildcard arm.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[non_exhaustive]
-pub enum RequestedRegionReason {
-    /// The first dispatch of the operation.
-    Initial,
-    /// An operation-level retry decided by the SDK's client-retry policy.
-    OperationRetry,
-    /// A transport-level retry inside the per-region transport stack.
-    TransportRetry,
-    /// A speculative cross-region hedge fan-out dispatch.
-    Hedging,
-    /// An endpoint-failure-driven retry to a different region.
-    RegionFailover,
-    /// A probe dispatch to a previously circuit-broken region.
-    CircuitBreakerProbe,
-}
-
-impl From<ExecutionContext> for RequestedRegionReason {
-    fn from(ctx: ExecutionContext) -> Self {
-        #[allow(deprecated)]
-        match ctx {
-            ExecutionContext::Initial => RequestedRegionReason::Initial,
-            ExecutionContext::Retry | ExecutionContext::OperationRetry => {
-                RequestedRegionReason::OperationRetry
-            }
-            ExecutionContext::TransportRetry => RequestedRegionReason::TransportRetry,
-            ExecutionContext::Hedging => RequestedRegionReason::Hedging,
-            ExecutionContext::RegionFailover => RequestedRegionReason::RegionFailover,
-            ExecutionContext::CircuitBreakerProbe => RequestedRegionReason::CircuitBreakerProbe,
         }
     }
 }
@@ -159,7 +103,7 @@ pub struct RequestedRegion {
     /// The region the SDK dispatched to.
     pub region: Region,
     /// The reason the SDK chose this region for this dispatch attempt.
-    pub reason: RequestedRegionReason,
+    pub reason: ExecutionContext,
 }
 
 impl AsRef<str> for ExecutionContext {
@@ -1529,7 +1473,7 @@ pub(crate) struct HedgeLegDispatch {
     /// carries no named region (global-endpoint accounts).
     pub(crate) region: Option<Region>,
     /// Why the orchestrator dispatched this leg to that region.
-    pub(crate) reason: RequestedRegionReason,
+    pub(crate) reason: ExecutionContext,
     /// The leg builder's journal id, used to detect whether the leg ever
     /// dispatched a request of its own.
     leg_id: u64,
@@ -1714,7 +1658,7 @@ impl DiagnosticsContextBuilder {
     pub(crate) fn leg_dispatch(
         &self,
         region: Option<Region>,
-        reason: RequestedRegionReason,
+        reason: ExecutionContext,
     ) -> HedgeLegDispatch {
         HedgeLegDispatch {
             region,
@@ -2515,13 +2459,13 @@ impl DiagnosticsContext {
                 Some(HedgeFanout {
                     primary: HedgeLegDispatch {
                         region: not_sentinel(hedge.primary_region()),
-                        reason: RequestedRegionReason::Initial,
+                        reason: ExecutionContext::Initial,
                         leg_id: PRIMARY_LEG,
                         dispatched_at,
                     },
                     alternate: HedgeLegDispatch {
                         region: not_sentinel(alternate),
-                        reason: RequestedRegionReason::Hedging,
+                        reason: ExecutionContext::Hedging,
                         leg_id: ALTERNATE_LEG,
                         dispatched_at,
                     },
@@ -2540,8 +2484,7 @@ impl DiagnosticsContext {
                         leg.region.as_ref().is_some_and(|region| {
                             requests.iter().any(|request| {
                                 request.region() == Some(region)
-                                    && RequestedRegionReason::from(request.execution_context())
-                                        == leg.reason
+                                    && request.execution_context() == leg.reason
                             })
                         })
                     })
@@ -2891,7 +2834,7 @@ impl DiagnosticsContext {
     /// Duplicates are allowed: the same region may appear more than once if it
     /// was dispatched multiple times (e.g., a retry to the same region, or a
     /// hedge request to a region that was also the primary). The initial attempt
-    /// is included and tagged [`RequestedRegionReason::Initial`].
+    /// is included and tagged [`ExecutionContext::Initial`].
     ///
     /// Entries with no resolved region (pre-region-selection failures, and
     /// global-endpoint accounts that carry no named region) are skipped, so this
@@ -2906,7 +2849,7 @@ impl DiagnosticsContext {
     /// parent at dispatch time, so **both** legs always appear here: the primary
     /// leg tagged with the reason it was actually dispatched under (`Initial` for
     /// a first attempt, or the failover/session reason when the hedge upgraded a
-    /// retry), and the alternate leg tagged [`RequestedRegionReason::Hedging`].
+    /// retry), and the alternate leg tagged [`ExecutionContext::Hedging`].
     /// A dropped leg has no corresponding [`responded_regions`](Self::responded_regions)
     /// entry, since it never produced a service reply.
     ///
@@ -3619,7 +3562,7 @@ fn requested_regions_from(
         if let Some(region) = request.region() {
             regions.push(RequestedRegion {
                 region: region.clone(),
-                reason: RequestedRegionReason::from(request.execution_context()),
+                reason: request.execution_context(),
             });
         }
     }
@@ -4920,10 +4863,6 @@ mod tests {
     #[test]
     fn execution_context_display() {
         assert_eq!(ExecutionContext::Initial.to_string(), "initial");
-        #[allow(deprecated)]
-        {
-            assert_eq!(ExecutionContext::Retry.to_string(), "retry");
-        }
         assert_eq!(
             ExecutionContext::OperationRetry.to_string(),
             "operation_retry"
@@ -4967,11 +4906,11 @@ mod tests {
         assert_eq!(requested.len(), 3);
         // Dispatch order preserved, duplicates kept.
         assert_eq!(requested[0].region, Region::WEST_US_2);
-        assert_eq!(requested[0].reason, RequestedRegionReason::Initial);
+        assert_eq!(requested[0].reason, ExecutionContext::Initial);
         assert_eq!(requested[1].region, Region::WEST_US_2);
-        assert_eq!(requested[1].reason, RequestedRegionReason::OperationRetry);
+        assert_eq!(requested[1].reason, ExecutionContext::OperationRetry);
         assert_eq!(requested[2].region, Region::EAST_US_2);
-        assert_eq!(requested[2].reason, RequestedRegionReason::RegionFailover);
+        assert_eq!(requested[2].reason, ExecutionContext::RegionFailover);
     }
 
     #[test]
@@ -5067,7 +5006,7 @@ mod tests {
     fn spawn_primary_leg(
         parent: &mut DiagnosticsContextBuilder,
         region: Option<Region>,
-        reason: RequestedRegionReason,
+        reason: ExecutionContext,
     ) -> (DiagnosticsContextBuilder, HedgeLegDispatch) {
         let leg = parent.clone_for_hedge_attempt();
         let dispatch = leg.leg_dispatch(region, reason);
@@ -5082,7 +5021,7 @@ mod tests {
         region: Option<Region>,
     ) -> DiagnosticsContextBuilder {
         let leg = parent.clone_for_hedge_attempt();
-        let dispatch = leg.leg_dispatch(region, RequestedRegionReason::Hedging);
+        let dispatch = leg.leg_dispatch(region, ExecutionContext::Hedging);
         parent.record_hedge_fanout(primary, dispatch);
         leg
     }
@@ -5094,11 +5033,8 @@ mod tests {
         // still appear, in dispatch order, from the fan-out the orchestrator
         // recorded on the parent.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            let (mut primary, primary_dispatch) = spawn_primary_leg(
-                builder,
-                Some(Region::EAST_US_2),
-                RequestedRegionReason::Initial,
-            );
+            let (mut primary, primary_dispatch) =
+                spawn_primary_leg(builder, Some(Region::EAST_US_2), ExecutionContext::Initial);
             let h = primary.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::EAST_US_2),
@@ -5126,11 +5062,11 @@ mod tests {
             vec![
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::Initial,
+                    reason: ExecutionContext::Initial,
                 },
                 RequestedRegion {
                     region: Region::WEST_US_2,
-                    reason: RequestedRegionReason::Hedging,
+                    reason: ExecutionContext::Hedging,
                 },
             ]
         );
@@ -5145,11 +5081,8 @@ mod tests {
         // is dropped without having dispatched, so the Initial primary must
         // still be listed first (dispatch order) from the fan-out record.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            let (primary, primary_dispatch) = spawn_primary_leg(
-                builder,
-                Some(Region::EAST_US_2),
-                RequestedRegionReason::Initial,
-            );
+            let (primary, primary_dispatch) =
+                spawn_primary_leg(builder, Some(Region::EAST_US_2), ExecutionContext::Initial);
             let mut alternate =
                 spawn_alternate_leg(builder, primary_dispatch, Some(Region::WEST_US_2));
             let h = alternate.start_test_request(
@@ -5173,11 +5106,11 @@ mod tests {
             vec![
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::Initial,
+                    reason: ExecutionContext::Initial,
                 },
                 RequestedRegion {
                     region: Region::WEST_US_2,
-                    reason: RequestedRegionReason::Hedging,
+                    reason: ExecutionContext::Hedging,
                 },
             ]
         );
@@ -5200,7 +5133,7 @@ mod tests {
             let (mut primary, primary_dispatch) = spawn_primary_leg(
                 builder,
                 Some(Region::WEST_US_2),
-                RequestedRegionReason::RegionFailover,
+                ExecutionContext::RegionFailover,
             );
             let h = primary.start_test_request(
                 ExecutionContext::RegionFailover,
@@ -5222,15 +5155,15 @@ mod tests {
             vec![
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::Initial,
+                    reason: ExecutionContext::Initial,
                 },
                 RequestedRegion {
                     region: Region::WEST_US_2,
-                    reason: RequestedRegionReason::RegionFailover,
+                    reason: ExecutionContext::RegionFailover,
                 },
                 RequestedRegion {
                     region: Region::CENTRAL_US,
-                    reason: RequestedRegionReason::Hedging,
+                    reason: ExecutionContext::Hedging,
                 },
             ]
         );
@@ -5262,7 +5195,7 @@ mod tests {
         let (primary, primary_dispatch) = spawn_primary_leg(
             &mut builder,
             Some(Region::EAST_US_2),
-            RequestedRegionReason::OperationRetry,
+            ExecutionContext::OperationRetry,
         );
         let mut alternate =
             spawn_alternate_leg(&mut builder, primary_dispatch, Some(Region::WEST_US_2));
@@ -5293,10 +5226,10 @@ mod tests {
         // fan-out that ended it are both still visible.
         let requested = ctx.requested_regions();
         assert_eq!(requested[0].region, Region::EAST_US_2);
-        assert_eq!(requested[0].reason, RequestedRegionReason::OperationRetry);
+        assert_eq!(requested[0].reason, ExecutionContext::OperationRetry);
         assert_eq!(
             requested.last().expect("non-empty").reason,
-            RequestedRegionReason::Hedging
+            ExecutionContext::Hedging
         );
         assert_eq!(
             requested.last().expect("non-empty").region,
@@ -5433,7 +5366,7 @@ mod tests {
             let (mut primary, primary_dispatch) = spawn_primary_leg(
                 builder,
                 Some(Region::EAST_US_2),
-                RequestedRegionReason::OperationRetry,
+                ExecutionContext::OperationRetry,
             );
             let h = primary.start_test_request(
                 ExecutionContext::OperationRetry,
@@ -5465,23 +5398,23 @@ mod tests {
             vec![
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::OperationRetry,
+                    reason: ExecutionContext::OperationRetry,
                 },
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::OperationRetry,
+                    reason: ExecutionContext::OperationRetry,
                 },
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::OperationRetry,
+                    reason: ExecutionContext::OperationRetry,
                 },
                 RequestedRegion {
                     region: Region::WEST_US_2,
-                    reason: RequestedRegionReason::Hedging,
+                    reason: ExecutionContext::Hedging,
                 },
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::OperationRetry,
+                    reason: ExecutionContext::OperationRetry,
                 },
             ]
         );
@@ -5494,7 +5427,7 @@ mod tests {
         // counts as a fan-out.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
             let (primary, primary_dispatch) =
-                spawn_primary_leg(builder, None, RequestedRegionReason::Initial);
+                spawn_primary_leg(builder, None, ExecutionContext::Initial);
             drop(spawn_alternate_leg(builder, primary_dispatch, None));
             drop(primary);
         });
@@ -5526,7 +5459,7 @@ mod tests {
             ctx.requested_regions(),
             vec![RequestedRegion {
                 region: Region::EAST_US_2,
-                reason: RequestedRegionReason::Initial,
+                reason: ExecutionContext::Initial,
             }]
         );
     }
@@ -5539,11 +5472,8 @@ mod tests {
         // builder with the race would erase that reply, under-reporting charge
         // and omitting a genuine entry from responded_regions.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            let (mut primary, primary_dispatch) = spawn_primary_leg(
-                builder,
-                Some(Region::EAST_US_2),
-                RequestedRegionReason::Initial,
-            );
+            let (mut primary, primary_dispatch) =
+                spawn_primary_leg(builder, Some(Region::EAST_US_2), ExecutionContext::Initial);
             // Primary is throttled and sleeps before its next attempt.
             let throttled = primary.start_test_request(
                 ExecutionContext::Initial,
@@ -5582,11 +5512,11 @@ mod tests {
             vec![
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::Initial,
+                    reason: ExecutionContext::Initial,
                 },
                 RequestedRegion {
                     region: Region::WEST_US_2,
-                    reason: RequestedRegionReason::Hedging,
+                    reason: ExecutionContext::Hedging,
                 },
             ]
         );
@@ -5613,11 +5543,8 @@ mod tests {
         // report that true order, not group both legs' fan-out ahead of the
         // primary's own attempts.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            let (mut primary, primary_dispatch) = spawn_primary_leg(
-                builder,
-                Some(Region::EAST_US_2),
-                RequestedRegionReason::Initial,
-            );
+            let (mut primary, primary_dispatch) =
+                spawn_primary_leg(builder, Some(Region::EAST_US_2), ExecutionContext::Initial);
             let first = primary.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::EAST_US_2),
@@ -5646,15 +5573,15 @@ mod tests {
             vec![
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::Initial,
+                    reason: ExecutionContext::Initial,
                 },
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::OperationRetry,
+                    reason: ExecutionContext::OperationRetry,
                 },
                 RequestedRegion {
                     region: Region::WEST_US_2,
-                    reason: RequestedRegionReason::Hedging,
+                    reason: ExecutionContext::Hedging,
                 },
             ]
         );
@@ -5666,11 +5593,8 @@ mod tests {
         // list must interleave the two legs by real dispatch time rather than
         // concatenating one leg after the other.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            let (mut primary, primary_dispatch) = spawn_primary_leg(
-                builder,
-                Some(Region::EAST_US_2),
-                RequestedRegionReason::Initial,
-            );
+            let (mut primary, primary_dispatch) =
+                spawn_primary_leg(builder, Some(Region::EAST_US_2), ExecutionContext::Initial);
             let p1 = primary.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::EAST_US_2),
@@ -5711,19 +5635,19 @@ mod tests {
             vec![
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::Initial,
+                    reason: ExecutionContext::Initial,
                 },
                 RequestedRegion {
                     region: Region::WEST_US_2,
-                    reason: RequestedRegionReason::Hedging,
+                    reason: ExecutionContext::Hedging,
                 },
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::OperationRetry,
+                    reason: ExecutionContext::OperationRetry,
                 },
                 RequestedRegion {
                     region: Region::WEST_US_2,
-                    reason: RequestedRegionReason::OperationRetry,
+                    reason: ExecutionContext::OperationRetry,
                 },
             ]
         );
@@ -5736,11 +5660,8 @@ mod tests {
         // continues into the failover loop. Everything both legs observed must
         // still reach the finalized context.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            let (mut primary, primary_dispatch) = spawn_primary_leg(
-                builder,
-                Some(Region::EAST_US_2),
-                RequestedRegionReason::Initial,
-            );
+            let (mut primary, primary_dispatch) =
+                spawn_primary_leg(builder, Some(Region::EAST_US_2), ExecutionContext::Initial);
             let p = primary.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::EAST_US_2),
@@ -5776,15 +5697,15 @@ mod tests {
             vec![
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::Initial,
+                    reason: ExecutionContext::Initial,
                 },
                 RequestedRegion {
                     region: Region::WEST_US_2,
-                    reason: RequestedRegionReason::Hedging,
+                    reason: ExecutionContext::Hedging,
                 },
                 RequestedRegion {
                     region: Region::CENTRAL_US,
-                    reason: RequestedRegionReason::RegionFailover,
+                    reason: ExecutionContext::RegionFailover,
                 },
             ]
         );
@@ -5801,11 +5722,8 @@ mod tests {
         // when its leg is cancelled saw no reply, so it is intentionally absent
         // from both histories — reporting it would invent a response.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            let (mut primary, primary_dispatch) = spawn_primary_leg(
-                builder,
-                Some(Region::EAST_US_2),
-                RequestedRegionReason::Initial,
-            );
+            let (mut primary, primary_dispatch) =
+                spawn_primary_leg(builder, Some(Region::EAST_US_2), ExecutionContext::Initial);
             // Dispatched, never completed.
             let _in_flight = primary.start_test_request(
                 ExecutionContext::Initial,
@@ -5833,35 +5751,10 @@ mod tests {
             ctx.requested_regions(),
             vec![RequestedRegion {
                 region: Region::WEST_US_2,
-                reason: RequestedRegionReason::Hedging,
+                reason: ExecutionContext::Hedging,
             }]
         );
         assert_eq!(ctx.responded_regions(), vec![&Region::WEST_US_2]);
-    }
-
-    #[test]
-    fn execution_context_retry_variant_still_serializes_as_retry() {
-        // `Retry` is deprecated but deliberately *not* a serde alias for
-        // `OperationRetry`: any value still constructed as `Retry` must keep
-        // emitting `"retry"` on the wire for the deprecation window. This
-        // guards the documented contract against an accidental
-        // `#[serde(rename)]`/alias edit while the variant lives on.
-        #[allow(deprecated)]
-        let retry = ExecutionContext::Retry;
-        #[allow(deprecated)]
-        {
-            assert_eq!(
-                serde_json::to_string(&retry).expect("ExecutionContext is Serialize"),
-                "\"retry\""
-            );
-            assert_eq!(retry.as_str(), "retry");
-        }
-        // ...and the replacement variant is genuinely distinct on the wire.
-        assert_eq!(
-            serde_json::to_string(&ExecutionContext::OperationRetry)
-                .expect("ExecutionContext is Serialize"),
-            "\"operation_retry\""
-        );
     }
 
     #[test]
@@ -5911,11 +5804,8 @@ mod tests {
         // the Hedging Detection API must not depend on it: each sub-op's own
         // materialized dispatch history is concatenated in sub-op order.
         let read = make_context_with(ActivityId::new_uuid(), |builder| {
-            let (primary, primary_dispatch) = spawn_primary_leg(
-                builder,
-                Some(Region::EAST_US_2),
-                RequestedRegionReason::Initial,
-            );
+            let (primary, primary_dispatch) =
+                spawn_primary_leg(builder, Some(Region::EAST_US_2), ExecutionContext::Initial);
             let mut alternate =
                 spawn_alternate_leg(builder, primary_dispatch, Some(Region::WEST_US_2));
             let h = alternate.start_test_request(
@@ -5933,11 +5823,8 @@ mod tests {
             ));
         });
         let replace = make_context_with(ActivityId::new_uuid(), |builder| {
-            let (mut primary, primary_dispatch) = spawn_primary_leg(
-                builder,
-                Some(Region::EAST_US_2),
-                RequestedRegionReason::Initial,
-            );
+            let (mut primary, primary_dispatch) =
+                spawn_primary_leg(builder, Some(Region::EAST_US_2), ExecutionContext::Initial);
             let h = primary.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::EAST_US_2),
@@ -5968,19 +5855,19 @@ mod tests {
             vec![
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::Initial,
+                    reason: ExecutionContext::Initial,
                 },
                 RequestedRegion {
                     region: Region::WEST_US_2,
-                    reason: RequestedRegionReason::Hedging,
+                    reason: ExecutionContext::Hedging,
                 },
                 RequestedRegion {
                     region: Region::EAST_US_2,
-                    reason: RequestedRegionReason::Initial,
+                    reason: ExecutionContext::Initial,
                 },
                 RequestedRegion {
                     region: Region::CENTRAL_US,
-                    reason: RequestedRegionReason::Hedging,
+                    reason: ExecutionContext::Hedging,
                 },
             ]
         );
@@ -5988,36 +5875,6 @@ mod tests {
             aggregate.responded_regions(),
             vec![&Region::WEST_US_2, &Region::EAST_US_2]
         );
-    }
-
-    #[test]
-    fn requested_region_reason_mapping_is_total() {
-        // A wildcard-free match forces this to stay total as variants are added.
-        #[allow(deprecated)]
-        let all = [
-            ExecutionContext::Initial,
-            ExecutionContext::Retry,
-            ExecutionContext::OperationRetry,
-            ExecutionContext::TransportRetry,
-            ExecutionContext::Hedging,
-            ExecutionContext::RegionFailover,
-            ExecutionContext::CircuitBreakerProbe,
-        ];
-        for ctx in all {
-            let reason = RequestedRegionReason::from(ctx);
-            #[allow(deprecated)]
-            let expected = match ctx {
-                ExecutionContext::Initial => RequestedRegionReason::Initial,
-                ExecutionContext::Retry | ExecutionContext::OperationRetry => {
-                    RequestedRegionReason::OperationRetry
-                }
-                ExecutionContext::TransportRetry => RequestedRegionReason::TransportRetry,
-                ExecutionContext::Hedging => RequestedRegionReason::Hedging,
-                ExecutionContext::RegionFailover => RequestedRegionReason::RegionFailover,
-                ExecutionContext::CircuitBreakerProbe => RequestedRegionReason::CircuitBreakerProbe,
-            };
-            assert_eq!(reason, expected);
-        }
     }
 
     // =========================================================================

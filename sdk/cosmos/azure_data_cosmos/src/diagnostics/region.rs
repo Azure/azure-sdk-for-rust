@@ -52,27 +52,27 @@ pub enum RequestedRegionReason {
     CircuitBreakerProbe,
 }
 
-impl From<azure_data_cosmos_driver::diagnostics::RequestedRegionReason> for RequestedRegionReason {
+impl From<azure_data_cosmos_driver::diagnostics::ExecutionContext> for RequestedRegionReason {
     fn from(
-        driver: azure_data_cosmos_driver::diagnostics::RequestedRegionReason,
+        driver: azure_data_cosmos_driver::diagnostics::ExecutionContext,
     ) -> RequestedRegionReason {
         match driver {
-            azure_data_cosmos_driver::diagnostics::RequestedRegionReason::Initial => {
+            azure_data_cosmos_driver::diagnostics::ExecutionContext::Initial => {
                 RequestedRegionReason::Initial
             }
-            azure_data_cosmos_driver::diagnostics::RequestedRegionReason::OperationRetry => {
+            azure_data_cosmos_driver::diagnostics::ExecutionContext::OperationRetry => {
                 RequestedRegionReason::OperationRetry
             }
-            azure_data_cosmos_driver::diagnostics::RequestedRegionReason::TransportRetry => {
+            azure_data_cosmos_driver::diagnostics::ExecutionContext::TransportRetry => {
                 RequestedRegionReason::TransportRetry
             }
-            azure_data_cosmos_driver::diagnostics::RequestedRegionReason::Hedging => {
+            azure_data_cosmos_driver::diagnostics::ExecutionContext::Hedging => {
                 RequestedRegionReason::Hedging
             }
-            azure_data_cosmos_driver::diagnostics::RequestedRegionReason::RegionFailover => {
+            azure_data_cosmos_driver::diagnostics::ExecutionContext::RegionFailover => {
                 RequestedRegionReason::RegionFailover
             }
-            azure_data_cosmos_driver::diagnostics::RequestedRegionReason::CircuitBreakerProbe => {
+            azure_data_cosmos_driver::diagnostics::ExecutionContext::CircuitBreakerProbe => {
                 RequestedRegionReason::CircuitBreakerProbe
             }
             // The driver enum is #[non_exhaustive]; map any future variants to
@@ -112,32 +112,32 @@ impl From<azure_data_cosmos_driver::diagnostics::RequestedRegion> for RequestedR
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_data_cosmos_driver::diagnostics::RequestedRegionReason as DriverReason;
+    use azure_data_cosmos_driver::diagnostics::ExecutionContext as DriverCtx;
 
     #[test]
     fn reason_from_driver_all_variants() {
         assert_eq!(
-            RequestedRegionReason::from(DriverReason::Initial),
+            RequestedRegionReason::from(DriverCtx::Initial),
             RequestedRegionReason::Initial
         );
         assert_eq!(
-            RequestedRegionReason::from(DriverReason::OperationRetry),
+            RequestedRegionReason::from(DriverCtx::OperationRetry),
             RequestedRegionReason::OperationRetry
         );
         assert_eq!(
-            RequestedRegionReason::from(DriverReason::TransportRetry),
+            RequestedRegionReason::from(DriverCtx::TransportRetry),
             RequestedRegionReason::TransportRetry
         );
         assert_eq!(
-            RequestedRegionReason::from(DriverReason::Hedging),
+            RequestedRegionReason::from(DriverCtx::Hedging),
             RequestedRegionReason::Hedging
         );
         assert_eq!(
-            RequestedRegionReason::from(DriverReason::RegionFailover),
+            RequestedRegionReason::from(DriverCtx::RegionFailover),
             RequestedRegionReason::RegionFailover
         );
         assert_eq!(
-            RequestedRegionReason::from(DriverReason::CircuitBreakerProbe),
+            RequestedRegionReason::from(DriverCtx::CircuitBreakerProbe),
             RequestedRegionReason::CircuitBreakerProbe
         );
     }

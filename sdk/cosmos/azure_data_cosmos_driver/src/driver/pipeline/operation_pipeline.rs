@@ -3113,7 +3113,7 @@ async fn execute_hedged(
     // into the future. `leg_dispatch` reads the leg's launch instant, so the
     // fan-out record orders correctly against every attempt in the operation.
     let primary_dispatch =
-        primary_diag.leg_dispatch(primary_region.clone(), primary_execution_context.into());
+        primary_diag.leg_dispatch(primary_region.clone(), primary_execution_context);
     let primary_attempt = Box::pin(async move {
         let mut diag = primary_diag;
         // Primary is launched before Stage 2 elapses, so no shared
@@ -3323,7 +3323,7 @@ async fn execute_hedged(
     let secondary_diag = parent_diagnostics.clone_for_hedge_attempt();
     let secondary_dispatch = secondary_diag.leg_dispatch(
         secondary_region.clone(),
-        crate::diagnostics::RequestedRegionReason::Hedging,
+        crate::diagnostics::ExecutionContext::Hedging,
     );
     parent_diagnostics.record_hedge_fanout(primary_dispatch, secondary_dispatch);
     let secondary_attempt = Box::pin(async move {
