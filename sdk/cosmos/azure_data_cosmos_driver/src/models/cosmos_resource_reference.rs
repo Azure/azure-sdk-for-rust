@@ -91,15 +91,28 @@ pub struct CosmosResourceReference {
     resource_type: ResourceType,
     /// The parent account.
     account: AccountReference,
-    /// Optional database reference (present for database-level and below).
-    database: Option<DatabaseReference>,
-    /// Optional container reference (present for container-level and below).
-    container: Option<ContainerReference>,
+    /// The narrowest ancestor scope this reference is anchored to.
+    scope: ResourceScope,
     /// Optional resource identifier (name or RID) for the leaf resource.
     id: Option<ResourceIdentifier>,
     /// When true, this reference targets a feed (collection of resources)
     /// rather than a single resource.
     is_feed: bool,
+}
+
+/// The narrowest ancestor a [`CosmosResourceReference`] is anchored to.
+///
+/// A reference is anchored to exactly one ancestor: a container-or-below
+/// reference carries only the container (which already knows its database),
+/// and a database-level reference carries only the database.
+#[derive(Clone, Debug)]
+enum ResourceScope {
+    /// Account-level reference; no database or container ancestor.
+    Account,
+    /// Database-level reference.
+    Database(DatabaseReference),
+    /// Container-level or below (item, stored procedure, trigger, UDF, pkrange).
+    Container(ContainerReference),
 }
 
 impl std::fmt::Display for CosmosResourceReference {
@@ -122,7 +135,19 @@ impl CosmosResourceReference {
     /// Returns the container reference, if this operation targets a container-level
     /// or child resource.
     pub fn container(&self) -> Option<&ContainerReference> {
-        self.container.as_ref()
+        match &self.scope {
+            ResourceScope::Container(container) => Some(container),
+            ResourceScope::Account | ResourceScope::Database(_) => None,
+        }
+    }
+
+    /// Returns the database reference, if this operation is anchored directly to a
+    /// database (not a container-or-below resource).
+    fn database(&self) -> Option<&DatabaseReference> {
+        match &self.scope {
+            ResourceScope::Database(database) => Some(database),
+            ResourceScope::Account | ResourceScope::Container(_) => None,
+        }
     }
 
     /// Reconstructs an [`ItemReference`] from this resource reference and the
@@ -139,7 +164,7 @@ impl CosmosResourceReference {
         if self.resource_type != ResourceType::Document || self.is_feed {
             return None;
         }
-        let container = self.container.as_ref()?;
+        let container = self.container()?;
         let id = self.id.as_ref()?;
         if let Some(name) = id.name() {
             Some(ItemReference::from_name(
@@ -321,10 +346,10 @@ impl CosmosResourceReference {
     /// RID-addressed (`Some(true)`), name-addressed (`Some(false)`), or has no
     /// parent chain to classify (`None`, e.g. account-level references).
     fn parent_chain_is_rid(&self) -> Option<bool> {
-        if let Some(ref container) = self.container {
+        if let Some(container) = self.container() {
             return Some(container.is_by_rid());
         }
-        if let Some(ref db) = self.database {
+        if let Some(db) = self.database() {
             return Some(db.is_by_rid());
         }
         None
@@ -355,7 +380,7 @@ impl CosmosResourceReference {
     /// parent chain is checked. Point operations put the leaf in the path, so it
     /// must match the parent chain's addressing mode in both directions.
     fn addressing_conflict(&self, leaf_in_path: bool) -> Option<String> {
-        if let (Some(db), Some(container)) = (self.database.as_ref(), self.container.as_ref()) {
+        if let (Some(db), Some(container)) = (self.database(), self.container()) {
             if db.is_by_rid() != container.is_by_rid() {
                 return Some(format!(
                     "database is {} but container is {}",
@@ -477,8 +502,7 @@ impl CosmosResourceReference {
             // or the container, depending on the child resource type.
             match self.resource_type {
                 ResourceType::DocumentCollection => self
-                    .database
-                    .as_ref()
+                    .database()
                     .and_then(|db| db.rid())
                     .map(str::to_lowercase),
                 ResourceType::Document
@@ -486,8 +510,7 @@ impl CosmosResourceReference {
                 | ResourceType::Trigger
                 | ResourceType::UserDefinedFunction
                 | ResourceType::PartitionKeyRange => self
-                    .container
-                    .as_ref()
+                    .container()
                     .filter(|c| c.is_by_rid())
                     .map(|c| c.rid().to_lowercase()),
                 // Database feed (list databases) signs the account: no RID.
@@ -503,13 +526,11 @@ impl CosmosResourceReference {
             }
             match self.resource_type {
                 ResourceType::Database => self
-                    .database
-                    .as_ref()
+                    .database()
                     .and_then(|db| db.rid())
                     .map(str::to_lowercase),
                 ResourceType::DocumentCollection => self
-                    .container
-                    .as_ref()
+                    .container()
                     .filter(|c| c.is_by_rid())
                     .map(|c| c.rid().to_lowercase()),
                 _ => None,
@@ -542,12 +563,12 @@ impl CosmosResourceReference {
     /// to route RID-addressed operations to standard Gateway, since Gateway 2.0
     /// derives its routing tokens by parsing the name-based signing link.
     pub(crate) fn is_rid_addressed(&self) -> bool {
-        if let Some(ref container) = self.container {
+        if let Some(container) = self.container() {
             if container.is_by_rid() {
                 return true;
             }
         }
-        if let Some(ref db) = self.database {
+        if let Some(db) = self.database() {
             if db.is_by_rid() {
                 return true;
             }
@@ -643,7 +664,7 @@ impl CosmosResourceReference {
 
     /// Builds the database portion of the link from the database reference.
     fn db_link(&self) -> String {
-        if let Some(ref db) = self.database {
+        if let ResourceScope::Database(ref db) = self.scope {
             if let Some(name) = db.name() {
                 return format!("/dbs/{}", name);
             }
@@ -662,12 +683,12 @@ impl CosmosResourceReference {
     /// Returns the container path.
     ///
     /// Returns `Cow::Borrowed` when a `ContainerReference` is present so that the
-    /// pre-computed `Arc<str>` path is reused without any allocation. Falls back to
+    /// pre-computed path is reused without any allocation. Falls back to
     /// `Cow::Owned` for the rare cases where no container reference is available.
     fn container_link(&self) -> Cow<'_, str> {
-        if let Some(ref container) = self.container {
-            // Hot path: borrow the pre-computed Arc<str> path for the container's
-            // addressing mode (name-based when named, RID-based otherwise).
+        if let ResourceScope::Container(ref container) = self.scope {
+            // Hot path: borrow the pre-computed path for the container's addressing
+            // mode (name-based when named, RID-based otherwise) — no allocation.
             return Cow::Borrowed(container.base_path());
         }
         // If we have a database but no container, try using the leaf id.
@@ -698,8 +719,7 @@ impl From<AccountReference> for CosmosResourceReference {
         Self {
             resource_type: ResourceType::DatabaseAccount,
             account,
-            database: None,
-            container: None,
+            scope: ResourceScope::Account,
             id: None,
             is_feed: false,
         }
@@ -712,8 +732,7 @@ impl From<DatabaseReference> for CosmosResourceReference {
         Self {
             resource_type: ResourceType::Database,
             account,
-            database: Some(database),
-            container: None,
+            scope: ResourceScope::Database(database),
             id: None,
             is_feed: false,
         }
@@ -726,8 +745,7 @@ impl From<ContainerReference> for CosmosResourceReference {
         Self {
             resource_type: ResourceType::DocumentCollection,
             account,
-            database: None,
-            container: Some(container),
+            scope: ResourceScope::Container(container),
             id: None,
             is_feed: false,
         }
@@ -749,8 +767,7 @@ impl From<ItemReference> for CosmosResourceReference {
         Self {
             resource_type: ResourceType::Document,
             account,
-            database: None,
-            container: Some(container),
+            scope: ResourceScope::Container(container),
             id,
             is_feed: false,
         }
@@ -772,8 +789,7 @@ impl From<StoredProcedureReference> for CosmosResourceReference {
         Self {
             resource_type: ResourceType::StoredProcedure,
             account,
-            database: None,
-            container: Some(container),
+            scope: ResourceScope::Container(container),
             id,
             is_feed: false,
         }
@@ -796,8 +812,7 @@ impl From<TriggerReference> for CosmosResourceReference {
         Self {
             resource_type: ResourceType::Trigger,
             account,
-            database: None,
-            container: Some(container),
+            scope: ResourceScope::Container(container),
             id,
             is_feed: false,
         }
@@ -819,8 +834,7 @@ impl From<UdfReference> for CosmosResourceReference {
         Self {
             resource_type: ResourceType::UserDefinedFunction,
             account,
-            database: None,
-            container: Some(container),
+            scope: ResourceScope::Container(container),
             id,
             is_feed: false,
         }

@@ -26,7 +26,7 @@ use std::{
     },
     {collections::HashMap, sync::Weak},
 };
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 
 // AMQP epoch (owner level) used for every partition receiver opened by
 // `EventProcessor`. Matches `EventProcessorClient` in the .NET and Java
@@ -531,9 +531,24 @@ impl EventProcessor {
                 partition_id = %client.get_partition_id(),
                 "Closing partition client for partition."
             );
-            let client = Arc::try_unwrap(client).map_err(|_| {
-                EventHubsError::with_message("Partition client still has multiple references.")
-            })?;
+            // A partition client that the application still holds cannot be
+            // taken out of its `Arc`. Report it and continue, so that one such
+            // client does not stop the processor from closing the clients that
+            // follow.
+            //
+            // The connection solved the same problem by taking `&self`, and a
+            // partition client could do the same through
+            // `EventReceiver::request_close`, which detaches the receiver the
+            // way `EventReceiver::close` does. That needs a new signature for
+            // the public `PartitionClient::close`, which is a breaking change.
+            // This fix therefore leaves such a client to the application that
+            // holds it.
+            let Ok(client) = Arc::try_unwrap(client) else {
+                warn!(
+                    "Could not close a partition client, because the application still holds it."
+                );
+                continue;
+            };
             let res = client.close().await;
             if let Err(e) = res {
                 error!(err = ?e, "Failed to close partition client.");
@@ -785,7 +800,110 @@ pub mod builders {
 #[cfg(test)]
 mod tests {
     use super::builders::validate_expiration_vs_update_interval;
+    use super::{
+        EventProcessor, EventProcessorOptions, PartitionClient, ProcessorConsumersMap,
+        ProcessorStrategy, StartPositions,
+    };
+    use crate::{ConsumerClient, InMemoryCheckpointStore};
     use azure_core::time::Duration;
+    use azure_core_test::credentials::MockCredential;
+    use futures::SinkExt;
+    use std::sync::Arc;
+
+    /// Builds a processor that holds `partition_ids` queued partition clients,
+    /// with no connection to the service. The returned map is the one that a
+    /// `PartitionClient::close` removes itself from, so a test reads it to
+    /// find out which clients closed.
+    async fn processor_with_queued_clients(
+        partition_ids: &[&str],
+    ) -> (Arc<EventProcessor>, Arc<ProcessorConsumersMap>) {
+        let consumer_client = ConsumerClient::new_unconnected(
+            "example.servicebus.windows.net",
+            "test-eventhub",
+            Arc::new(MockCredential),
+        )
+        .expect("the client must build");
+        let client_details = consumer_client.get_details().expect("details must parse");
+        let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
+
+        let processor = EventProcessor::new(
+            consumer_client,
+            checkpoint_store.clone(),
+            EventProcessorOptions {
+                strategy: ProcessorStrategy::Greedy,
+                partition_expiration_duration: Duration::seconds(60),
+                update_interval: Duration::seconds(30),
+                start_positions: StartPositions::default(),
+                prefetch: 300,
+                partition_ids: partition_ids.iter().map(|id| id.to_string()).collect(),
+            },
+        )
+        .expect("the processor must build");
+
+        let consumers = Arc::new(ProcessorConsumersMap::new());
+        let mut sender = processor.next_partition_client_sender.clone();
+        for partition_id in partition_ids {
+            let client = Arc::new(PartitionClient::new(
+                partition_id.to_string(),
+                checkpoint_store.clone(),
+                client_details.clone(),
+                Arc::downgrade(&consumers),
+            ));
+            consumers
+                .add_partition_client(partition_id, client.clone())
+                .await
+                .expect("the map must accept the client");
+            sender.send(client).await.expect("the queue must accept it");
+        }
+
+        (processor, consumers)
+    }
+
+    /// `close` must not stop at a partition client that the application still
+    /// holds. It used to take each client out of its `Arc` and return an error
+    /// when that failed, which left the clients behind it open and skipped the
+    /// close of the consumer connection.
+    #[tokio::test]
+    async fn close_continues_past_a_retained_partition_client() {
+        let (processor, consumers) = processor_with_queued_clients(&["0", "1"]).await;
+
+        // Stand in for an application that holds the first client it took.
+        let retained = consumers
+            .consumers
+            .lock()
+            .expect("the map must lock")
+            .get("0")
+            .expect("partition 0 must be in the map")
+            .upgrade()
+            .expect("partition 0 must still be alive");
+
+        let connection = {
+            let Ok(processor) = Arc::try_unwrap(processor) else {
+                panic!("the test must be the only holder of the processor");
+            };
+            let connection = processor.consumer_client.recoverable_connection();
+            processor.close().await.expect("close must succeed");
+            connection
+        };
+
+        let active = consumers
+            .get_active_partition_ids()
+            .expect("the map must lock");
+        assert!(
+            active.contains(&"0".to_string()),
+            "the retained client must stay in the map, because it did not close"
+        );
+        assert!(
+            !active.contains(&"1".to_string()),
+            "the client behind the retained one must close, got: {active:?}"
+        );
+        assert!(
+            connection.is_closed(),
+            "the consumer connection must close after the partition clients"
+        );
+
+        drop(retained);
+    }
 
     /// The validation must reject the historical default (expiration=10s,
     /// update_interval=30s). This combination is the root cause of issue
