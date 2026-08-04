@@ -1525,6 +1525,7 @@ mod tests {
             Url::parse("amqps://example.com").unwrap(),
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
