@@ -15,6 +15,7 @@
 
 ### Breaking Changes
 
+- `AccountReference`, `DatabaseReference`, `ContainerReference`, and `ItemReference` are now tuple structs wrapping private shared state, so wildcard struct patterns such as `AccountReference { .. }` no longer compile. All accessors are unchanged. `DatabaseReference::into_account` was removed; use `DatabaseReference::account` and clone. ([#4908](https://github.com/Azure/azure-sdk-for-rust/pull/4908))
 - `CosmosDriver::plan_operation` now takes an additional `plan_options: &PlanOptions` argument (after `continuation`). The continuation token remains its own argument. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 
 ### Bugs Fixed
@@ -28,6 +29,7 @@
 
 - Gateway 2.0 responses now preserve backend duration, quota, item-count, quorum, replica, query, and physical-partition RNTBD metadata when converting to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 - Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and bounded to 512 bytes, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. The full payload remains available verbatim via `CosmosError::response`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
+- Reduced `CosmosOperation` from 968 to 392 bytes by holding `AccountReference`, `DatabaseReference`, and `ContainerReference` behind an internal `Arc`, and by collapsing the mutually-exclusive `database`/`container` fields of `CosmosResourceReference` into a single scope enum. Cloning an operation — which the pipeline does on every retry — is now a few atomic increments rather than a deep copy of a `Url`, a credential, and several strings. `ItemReference` is shared the same way, which makes the per-attempt clones in the `patch_item` read-modify-write loop cheap. All public accessors are unchanged. ([#4908](https://github.com/Azure/azure-sdk-for-rust/pull/4908))
 
 ## 0.6.1 (2026-07-23)
 
