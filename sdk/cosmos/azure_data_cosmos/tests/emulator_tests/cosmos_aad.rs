@@ -48,8 +48,16 @@ struct AadTestItem {
 /// invoked for the Cosmos scope, guarding against silently exercising key auth.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator authentication is deferred to PR3"
 )]
 pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -149,8 +157,16 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
 /// the `readMetadata` data action the SDK requires on its first request.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator authentication is deferred to PR3"
 )]
 pub async fn aad_read_container_metadata() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

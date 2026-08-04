@@ -40,13 +40,16 @@ use std::num::{NonZeroU32, NonZeroU8};
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::Etag;
-use azure_data_cosmos_driver::models::{
-    ActivityId, ContainerReference, ContinuationToken, CosmosOperation, ItemReference,
-    MaxItemCountHint, PartitionKey, Precondition, SessionToken, ThroughputControlGroupName,
-};
 use azure_data_cosmos_driver::options::{
     BinaryEncodingOptions, ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
     OperationOptions, ReadConsistencyStrategy, Region, ThroughputControlOptions,
+};
+use azure_data_cosmos_driver::{
+    models::{
+        ActivityId, ContainerReference, ContinuationToken, CosmosOperation, ItemReference,
+        MaxItemCountHint, PartitionKey, Precondition, SessionToken, ThroughputControlGroupName,
+    },
+    options::PlanOptions,
 };
 
 use crate::account_ref::AccountRefHandle;
@@ -98,6 +101,18 @@ fn decode_opt_u32(v: i32) -> Option<u32> {
         None
     } else {
         Some(v as u32)
+    }
+}
+
+/// Builds [`PlanOptions`] from a C `max_fan_out` value. `0` means "unset" and
+/// yields the driver default; any other value opts into a specific maximum
+/// fan-out. Using `u32` (matching the C surface) avoids any truncation when
+/// mapping onto the driver's `u32` limit.
+fn plan_options_from_max_fan_out(max_fan_out: u32) -> PlanOptions {
+    if max_fan_out > 0 {
+        PlanOptions::default().with_max_fan_out(max_fan_out)
+    } else {
+        PlanOptions::default()
     }
 }
 
@@ -640,6 +655,14 @@ pub struct CosmosOperationRequest {
 
     /// Max item count hint for feeds. `< 0` = unset.
     pub max_item_count: i32,
+    /// Maximum number of physical partitions a fresh cross-partition feed may
+    /// fan out to. `0` = unset (the driver default of 100 applies). Only
+    /// meaningful for feed kinds dispatched through `cosmos_submit_operation`.
+    ///
+    /// The limit is enforced only at initial query setup; if a partition splits
+    /// mid-execution and pushes the fan-out higher, the operation keeps running.
+    /// It is also ignored when resuming from a `continuation_token`.
+    pub max_fan_out: u32,
     /// PATCH read-modify-write attempt budget. `0` = unset.
     pub patch_max_attempts: u8,
     /// Populate index metrics. Tri-state bool (`0` unset / `1` false / `2` true).
@@ -671,6 +694,10 @@ pub(crate) struct BuiltRequest {
     /// [`azure_data_cosmos_driver::driver::CosmosDriver::plan_operation`] by
     /// the feed submit entry point; ignored by the singleton entry point.
     pub(crate) continuation: Option<ContinuationToken>,
+    /// Plan-time options (e.g. maximum fan-out). Threaded into
+    /// [`azure_data_cosmos_driver::driver::CosmosDriver::plan_operation`] by
+    /// the feed submit entry point; ignored by the singleton entry point.
+    pub(crate) plan_options: PlanOptions,
 }
 
 /// Validates `request` and builds the driver `CosmosOperation` +
@@ -706,10 +733,15 @@ pub(crate) unsafe fn build_request(
         Some(ContinuationToken::from_string(token.to_owned()))
     };
 
+    // A `max_fan_out` of 0 means "unset": fall back to the driver default. A
+    // non-zero value opts into a broader (or narrower) fan-out.
+    let plan_options = plan_options_from_max_fan_out(req.max_fan_out);
+
     Ok(BuiltRequest {
         operation,
         options,
         continuation,
+        plan_options,
     })
 }
 
@@ -1013,6 +1045,20 @@ mod tests {
         assert_eq!(decode_opt_u32(0), Some(0));
         assert_eq!(decode_opt_u32(7), Some(7));
         assert_eq!(decode_opt_u32(i32::MAX), Some(i32::MAX as u32));
+    }
+
+    #[test]
+    fn max_fan_out_maps_to_plan_options() {
+        // Zero = unset => driver default.
+        let default = PlanOptions::default().max_fan_out;
+        assert_eq!(plan_options_from_max_fan_out(0).max_fan_out, default);
+        // Non-zero = explicit opt-in.
+        assert_eq!(plan_options_from_max_fan_out(1).max_fan_out, 1);
+        assert_eq!(plan_options_from_max_fan_out(250).max_fan_out, 250);
+        assert_eq!(
+            plan_options_from_max_fan_out(u32::MAX).max_fan_out,
+            u32::MAX
+        );
     }
 
     #[test]

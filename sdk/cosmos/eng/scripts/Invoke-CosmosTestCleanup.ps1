@@ -7,11 +7,25 @@
 
 $ShutdownTimeout = 30
 
-if ($IsWindows) {
+if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
+    if ($env:AZURE_COSMOS_INMEMORY_EMULATOR_PID) {
+        $hostProcess = Get-Process -Id ([int]$env:AZURE_COSMOS_INMEMORY_EMULATOR_PID) -ErrorAction SilentlyContinue
+    }
+    else {
+        $hostProcess = Get-Process azure_data_cosmos_emulator -ErrorAction SilentlyContinue
+    }
+    if ($hostProcess) {
+        $hostProcess | Stop-Process -Force -ErrorAction SilentlyContinue
+        $hostProcess | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
+    }
+}
+
+elseif ($IsWindows) {
     $EmulatorPath = & "$PSScriptRoot\Get-CosmosEmulatorPath.ps1"
     if ($null -eq $EmulatorPath) {
         Write-Host "Unable to confirm Cosmos DB Emulator location, skipping shutdown."
-    } else {
+    }
+    else {
         Write-Host "Shutting down Cosmos DB Emulator at '$EmulatorPath'."
         & $EmulatorPath /shutdown
 
@@ -34,12 +48,14 @@ if ($IsWindows) {
             Write-Warning "Cosmos DB Emulator did not shut down within ${ShutdownTimeout} seconds."
         }
     }
-} elseif (Get-Command docker -ErrorAction SilentlyContinue) {
+}
+elseif (Get-Command docker -ErrorAction SilentlyContinue) {
     $containerName = "cosmosdb-emulator-test"
     $containerStatus = docker ps -a --filter "name=$containerName" --format "{{.Status}}"
     if (-not $containerStatus) {
         Write-Host "No Cosmos DB Emulator container found, skipping cleanup."
-    } else {
+    }
+    else {
         Write-Host "Stopping and removing Cosmos DB Emulator container '$containerName'."
         Invoke-LoggedCommand "docker rm -f $containerName"
 
@@ -62,7 +78,8 @@ if ($IsWindows) {
             Write-Warning "Cosmos DB Emulator did not shut down within ${ShutdownTimeout} seconds."
         }
     }
-} else {
+}
+else {
     Write-Host "No Cosmos DB Emulator found to clean up."
 }
 
@@ -72,11 +89,15 @@ if ($IsWindows) {
 # Test-Setup.ps1. When the pipeline deploys a live Cosmos account, the connection
 # string is injected as a pipeline variable and must survive across packages.
 Write-Host "Clearing emulator environment variables."
-if ($env:AZURE_COSMOS_CONNECTION_STRING -eq "emulator") {
+if ($env:AZURE_COSMOS_CONNECTION_STRING -eq "emulator" -or
+    $env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     $env:AZURE_COSMOS_CONNECTION_STRING = $null
 }
 $env:AZURE_COSMOS_TEST_MODE = $null
 $env:AZURE_COSMOS_EMULATOR_HOST = $null
+$env:AZURE_COSMOS_INMEMORY_EMULATOR_PID = $null
+$env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT = $null
+$env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT = $null
 # Remove any --cfg=test_category="..." flag added by Test-Setup.ps1 or COSMOS_RUSTFLAGS.
 # The next package's setup will re-add the correct flag from COSMOS_RUSTFLAGS
 # (or from AZURE_COSMOS_EMULATOR_FLAVOR=vnext when running the vnext stage).

@@ -9,8 +9,11 @@
         "Pool": "env:LINUXPOOL"
       }
     },
-    "RustToolchainName": ["stable"],
-    "AZURE_COSMOS_EMULATOR_FLAVOR": ["vnext"],
-    "ContinueOnError": ["true"]
+    "RustToolchainName": [
+      "stable"
+    ],
+    "AZURE_COSMOS_EMULATOR_FLAVOR": [
+      "vnext"
+    ]
   }
 }

@@ -1261,6 +1261,16 @@ typedef struct cosmos_operation_request_t {
    */
   int32_t max_item_count;
   /**
+   * Maximum number of physical partitions a fresh cross-partition feed may
+   * fan out to. `0` = unset (the driver default of 100 applies). Only
+   * meaningful for feed kinds dispatched through `cosmos_submit_operation`.
+   *
+   * The limit is enforced only at initial query setup; if a partition splits
+   * mid-execution and pushes the fan-out higher, the operation keeps running.
+   * It is also ignored when resuming from a `continuation_token`.
+   */
+  uint32_t max_fan_out;
+  /**
    * PATCH read-modify-write attempt budget. `0` = unset.
    */
   uint8_t patch_max_attempts;

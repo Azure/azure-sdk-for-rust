@@ -18,6 +18,8 @@ use crate::{
 };
 #[cfg(feature = "control_plane")]
 use azure_data_cosmos_driver::models::CosmosOperation;
+#[cfg(feature = "control_plane")]
+use azure_data_cosmos_driver::options::PlanOptions;
 
 #[cfg(feature = "control_plane")]
 use crate::{clients::ThroughputPoller, diagnostics::CosmosOperationContext};
@@ -161,7 +163,12 @@ impl DatabaseClient {
         let plan = self
             .context
             .driver
-            .plan_operation(initial_operation, &operation_options, None)
+            .plan_operation(
+                initial_operation,
+                &operation_options,
+                None,
+                &PlanOptions::default(),
+            )
             .await?;
 
         Ok(QueryItemIterator::new(
@@ -268,7 +275,7 @@ impl DatabaseClient {
             self.context.driver.account(),
             &resource_id,
             options.operation,
-            self.operation_context("read_throughput"),
+            self.operation_context("read_database_throughput"),
         )
         .await
     }
@@ -315,7 +322,7 @@ impl DatabaseClient {
             &resource_id,
             throughput,
             options.operation,
-            self.operation_context("replace_throughput"),
+            self.operation_context("replace_database_throughput"),
         )
         .await
     }

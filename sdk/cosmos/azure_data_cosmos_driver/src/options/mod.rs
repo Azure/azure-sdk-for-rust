@@ -22,9 +22,11 @@ mod diagnostics_options;
 mod diagnostics_thresholds;
 mod driver_options;
 pub(crate) mod env_parsing;
+mod hedging;
 mod identity;
 mod operation_options;
 mod partition_failover;
+mod plan_options;
 mod policies;
 mod priority;
 mod read_consistency;
@@ -41,6 +43,9 @@ pub(crate) use diagnostics_thresholds::is_point_operation;
 pub use diagnostics_thresholds::DiagnosticsThresholds;
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub(crate) use env_parsing::parse_duration_millis_from_env;
+pub use hedging::{
+    HedgingOptions, HedgingOptionsBuilder, DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS,
+};
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};
 pub use operation_options::{
     OperationOptions, OperationOptionsBuilder, OperationOptionsView, ThrottlingRetryOptions,
@@ -48,6 +53,7 @@ pub use operation_options::{
     ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
 };
 pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
+pub use plan_options::{PlanOptions, DEFAULT_MAX_FAN_OUT};
 pub use policies::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
     ServerCertificateValidation, TlsBackend,

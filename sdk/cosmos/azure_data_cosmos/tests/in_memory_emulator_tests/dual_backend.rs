@@ -200,13 +200,24 @@ impl DualBackend {
     }
 
     /// Creates a database on the real account via the driver.
+    ///
+    /// Tolerates a 409 Conflict from the create itself: `create_database` is
+    /// not idempotent, but a client-side timeout (e.g. `TransportGenerated503`
+    /// after the request timeout elapses) doesn't mean the server never
+    /// processed the request — a retry can legitimately observe the database
+    /// already exists. Treating that as success avoids spurious test failures
+    /// from slow/flaky network conditions against the real account.
     pub async fn create_real_database(&self, db_name: &str) -> Result<(), Box<dyn Error>> {
         if let (Some(driver), Some(account)) = (&self.real_driver, &self.real_account) {
             let body = serde_json::to_vec(&serde_json::json!({"id": db_name}))?;
             let op = CosmosOperation::create_database(account.clone()).with_body(body);
             let result = driver
                 .execute_singleton_operation(op, OperationOptions::default())
-                .await?;
+                .await;
+            let result = match result {
+                Err(error) if error.status().status_code() == StatusCode::Conflict => return Ok(()),
+                other => other?,
+            };
             assert!(
                 result.status().is_success(),
                 "Failed to create real database '{}': {}",
@@ -256,7 +267,15 @@ impl DualBackend {
             let op = CosmosOperation::create_container(db_ref).with_body(body);
             let result = driver
                 .execute_singleton_operation(op, OperationOptions::default())
-                .await?;
+                .await;
+            // See `create_real_database` for why a 409 Conflict here is
+            // tolerated rather than propagated: a client-side timeout on the
+            // initial create attempt doesn't preclude the server having
+            // already processed it.
+            let result = match result {
+                Err(error) if error.status().status_code() == StatusCode::Conflict => return Ok(()),
+                other => other?,
+            };
             assert!(
                 result.status().is_success(),
                 "Failed to create real container '{}/{}': {}",

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Use the shared test framework declared in `tests/emulator/mod.rs`.
+// Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
 use super::framework;
 
 use std::error::Error;
@@ -12,8 +12,12 @@ use framework::{TestClient, TestOptions};
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
@@ -26,7 +30,7 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
 
             let throughput = ThroughputProperties::manual(400);
 
-            let container_client = run_context
+            let _container_client = run_context
                 .create_container(
                     db_client,
                     properties.clone(),
@@ -34,8 +38,16 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
                 )
                 .await?;
 
+            // Throughput/offer operations are control-plane and are not covered
+            // by the data-plane RBAC role used on the AAD live leg, so route them
+            // through the management (key) client. In key mode this is the same
+            // credential as `container_client`.
+            let offer_client = run_context
+                .management_container_client(db_client, "TheContainer")
+                .await?;
+
             // Read throughput
-            let current_throughput = container_client
+            let current_throughput = offer_client
                 .read_throughput(None)
                 .await?
                 .expect("throughput should be present");
@@ -44,7 +56,7 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
 
             // Replace throughput
             let new_throughput = ThroughputProperties::manual(500);
-            let throughput_response = container_client
+            let throughput_response = offer_client
                 .begin_replace_throughput(new_throughput, None)
                 .await?
                 .await?
@@ -60,12 +72,20 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
     ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model autoscale throughput"
 )]
 pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -74,7 +94,7 @@ pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>>
 
             let throughput = ThroughputProperties::autoscale(5000, Some(42));
 
-            let container_client = run_context
+            let _container_client = run_context
                 .create_container(
                     db_client,
                     properties.clone(),
@@ -82,12 +102,18 @@ pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>>
                 )
                 .await?;
 
+            // Throughput/offer operations are control-plane and are not covered
+            // by the data-plane RBAC role used on the AAD live leg, so route them
+            // through the management (key) client.
+            let offer_client = run_context
+                .management_container_client(db_client, "TheContainer")
+                .await?;
+
             // Read throughput
-            let current_throughput = container_client
+            let current_throughput = offer_client
                 .read_throughput(None)
                 .await?
                 .expect("throughput should be present");
-
             assert_eq!(Some(500), current_throughput.throughput());
             assert_eq!(Some(5000), current_throughput.autoscale_maximum());
             assert_eq!(Some(42), current_throughput.autoscale_increment());
