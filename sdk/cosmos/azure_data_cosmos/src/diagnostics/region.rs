@@ -6,7 +6,7 @@
 //! These types mirror the cross-SDK Hedging Detection API's `RequestedRegion`
 //! and `RequestedRegionReason` while remaining wholly owned by
 //! `azure_data_cosmos`. They are projected from the driver equivalents at
-//! diagnostics-context finalisation, which lets the driver evolve its internal
+//! diagnostics-context finalization, which lets the driver evolve its internal
 //! model without forcing an SDK major-version bump.
 
 use crate::options::Region;
