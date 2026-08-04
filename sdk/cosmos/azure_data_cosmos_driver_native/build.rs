@@ -209,11 +209,10 @@ fn generate_c_header() {
                 "CosmosPartitionKeyComponentKind".into(),
                 "CosmosValueKind".into(),
             ],
-            // Test-only C-ABI helpers consumed by files in `c_tests/`. These
-            // are `#[no_mangle] pub extern "C"` so the C tests can link
-            // against them, but they must not appear in the checked-in
-            // public header — binding authors should never see them. The
-            // C test forward-declares each locally instead.
+            // Test-only C-ABI helpers gated behind the `test-abi` feature.
+            // Kept out of the public header even when the feature is on so
+            // production and test builds share the same header shape; each
+            // C test forward-declares them locally.
             exclude: vec!["__test_only_enqueue_ok_completion_with_all_value_kinds".into()],
             rename,
             ..Default::default()

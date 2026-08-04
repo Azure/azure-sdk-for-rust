@@ -1023,6 +1023,24 @@ typedef struct cosmos_completion_t {
    * single source of truth for header-derived metadata such as the
    * request charge, activity id, ETag, session token, sub-status,
    * continuation, and retry-after.
+   *
+   * **Presence / absence contract:** each header id appears **only when
+   * the service (or the driver's synthesis path) actually produced a
+   * value for it** — there are no placeholder entries. Bindings that
+   * previously read the removed inline scalars (`request_charge`,
+   * `sub_status`, `retry_after_ms`) must treat a missing id as absent
+   * and apply their own default. Concretely, the pre-PR inline
+   * sentinels map as follows:
+   *
+   * | Removed inline field | Header id | Missing-id default (per pre-PR contract) |
+   * |----------------------|-----------|------------------------------------------|
+   * | `request_charge: f64` | `CosmosHeaderIdRequestCharge` | `0.0` |
+   * | `sub_status: i32` | `CosmosHeaderIdSubStatus` | `-1` |
+   * | `retry_after_ms: i64` | `CosmosHeaderIdRetryAfterMs` | `-1` |
+   * | `activity_id: *const c_char` | `CosmosHeaderIdActivityId` | `NULL` |
+   * | `session_token: *const c_char` | `CosmosHeaderIdSessionToken` | `NULL` |
+   * | `etag: *const c_char` | `CosmosHeaderIdEtag` | `NULL` |
+   * | `continuation: *const c_char` | `CosmosHeaderIdContinuation` | `NULL` |
    */
   const struct cosmos_response_header_t *headers;
   /**

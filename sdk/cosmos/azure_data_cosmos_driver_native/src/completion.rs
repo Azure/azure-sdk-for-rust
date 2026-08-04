@@ -289,6 +289,24 @@ pub struct CosmosCompletion {
     /// single source of truth for header-derived metadata such as the
     /// request charge, activity id, ETag, session token, sub-status,
     /// continuation, and retry-after.
+    ///
+    /// **Presence / absence contract:** each header id appears **only when
+    /// the service (or the driver's synthesis path) actually produced a
+    /// value for it** — there are no placeholder entries. Bindings that
+    /// previously read the removed inline scalars (`request_charge`,
+    /// `sub_status`, `retry_after_ms`) must treat a missing id as absent
+    /// and apply their own default. Concretely, the pre-PR inline
+    /// sentinels map as follows:
+    ///
+    /// | Removed inline field | Header id | Missing-id default (per pre-PR contract) |
+    /// |----------------------|-----------|------------------------------------------|
+    /// | `request_charge: f64` | `CosmosHeaderIdRequestCharge` | `0.0` |
+    /// | `sub_status: i32` | `CosmosHeaderIdSubStatus` | `-1` |
+    /// | `retry_after_ms: i64` | `CosmosHeaderIdRetryAfterMs` | `-1` |
+    /// | `activity_id: *const c_char` | `CosmosHeaderIdActivityId` | `NULL` |
+    /// | `session_token: *const c_char` | `CosmosHeaderIdSessionToken` | `NULL` |
+    /// | `etag: *const c_char` | `CosmosHeaderIdEtag` | `NULL` |
+    /// | `continuation: *const c_char` | `CosmosHeaderIdContinuation` | `NULL` |
     pub headers: *const CosmosResponseHeader,
     /// Number of entries addressable from `headers`.
     pub headers_len: usize,
@@ -424,7 +442,17 @@ impl PendingCompletion {
         p.next_continuation = next_continuation.and_then(to_cstring);
         if let Some(resp) = response {
             p.http_status_code = u16::from(resp.status().status_code());
-            p.headers = synthesize_response_headers(resp.headers());
+            // Overlay the status-level sub-status onto a clone of the wire
+            // headers before synthesis — mirrors the error path. Keeps the
+            // FFI-observable sub-status symmetric across success and error
+            // (the pre-PR inline `p.sub_status` field read from
+            // `resp.status().sub_status()`, so a 2xx with a sub-status must
+            // still surface it through the header list).
+            let mut effective_headers = resp.headers().clone();
+            if let Some(sub) = resp.status().sub_status() {
+                effective_headers.substatus = Some(sub);
+            }
+            p.headers = synthesize_response_headers(&effective_headers);
             p.response = Some(resp);
         }
         p
@@ -1385,11 +1413,16 @@ pub fn __test_only_enqueue_completion(
 /// leg round-trips through the generated C header. Mints its own operation
 /// handle so a C caller only needs a queue pointer.
 ///
-/// Not part of the public ABI — excluded from the header via `build.rs`'s
-/// `export.exclude`; bindings must not depend on it.
+/// Not part of the public ABI. Gated behind the `test-abi` Cargo feature so
+/// the symbol is only present in the cdylib / staticlib when the C-test
+/// build enables it — production builds (default features) do not export
+/// this symbol at all, and `build.rs`'s `export.exclude` keeps it out of
+/// the checked-in public header even when the feature is on. Bindings must
+/// not depend on it.
 ///
 /// Returns [`CosmosErrorCode::CosmosErrorCodeSuccess`] on success, or an
 /// argument-shape rejection code when `queue` is NULL.
+#[cfg(feature = "test-abi")]
 #[doc(hidden)]
 #[no_mangle]
 pub extern "C" fn __test_only_enqueue_ok_completion_with_all_value_kinds(
