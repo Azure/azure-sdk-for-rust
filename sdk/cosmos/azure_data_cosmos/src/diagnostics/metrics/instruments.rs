@@ -70,6 +70,14 @@ impl Instruments {
             .with_boundaries(attributes::BUCKETS_RETURNED_ROWS.to_vec())
             .build();
 
+        let hedged = meter
+            .u64_counter(attributes::METRIC_OPERATION_HEDGED)
+            .with_unit(attributes::UNIT_OPERATION)
+            .with_description(
+                "Number of Cosmos DB operations that dispatched a cross-region hedge.",
+            )
+            .build();
+
         let active_instance = meter
             .i64_up_down_counter(attributes::METRIC_ACTIVE_INSTANCE_COUNT)
             .with_unit(attributes::UNIT_INSTANCE)
