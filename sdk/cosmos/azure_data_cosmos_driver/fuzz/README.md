@@ -2,7 +2,7 @@
 
 Coverage-guided, **byte-level** fuzzing for the Cosmos binary JSON codec
 (`azure_data_cosmos_driver::binary_json`). Where the live
-[round-trip fuzzer](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs)
+round-trip fuzzer (`azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs`)
 generates random JSON *values* and only ever feeds the decoder **encoder-produced**
 (well-formed) bytes, these targets feed **arbitrary and mutated bytes** straight
 into the decoder — so they exercise the *format*/protocol itself: truncated
