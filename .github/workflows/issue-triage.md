@@ -45,8 +45,7 @@ safe-outputs:
 tools:
     bash: false
     github:
-        # The gateway uses search_repositories to determine repository visibility.
-        toolsets: [issues, pull_requests, repos]
+        toolsets: [issues, pull_requests]
         # If in a public repo, setting `lockdown: false` allows
         # reading issues, pull requests and comments from 3rd-parties.
         # If in a private repo this has no particular effect.
