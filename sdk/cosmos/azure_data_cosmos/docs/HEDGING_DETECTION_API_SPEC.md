@@ -1,7 +1,6 @@
 # Hedging Detection API — Spec
 
 **Status:** Implemented on `main`.
-**Tracking issue:** [Azure/azure-sdk-for-rust#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410)
 **Cross-SDK contract:** The Azure Cosmos DB SDKs are converging on a "Hedging
 Detection" capability exposed on each SDK's per-operation diagnostics surface.
 This document specifies how the Rust SDK satisfies that contract.
@@ -53,11 +52,9 @@ SDK depends on the driver (never the reverse), the diagnostics model is
 driver-owned and re-exported by `azure_data_cosmos`, exactly like
 `DiagnosticsContext` itself.
 
-The hedging orchestrator/dispatch is **landed** on `main`
-([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432)): it emits
+The hedging orchestrator/dispatch is **landed** on `main`: it emits
 `ExecutionContext::Hedging` for alternate legs and populates `HedgeDiagnostics`
-(design: [`HEDGING_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/HEDGING_SPEC.md),
-[PR #4330](https://github.com/Azure/azure-sdk-for-rust/pull/4330)).
+(design: [`HEDGING_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/HEDGING_SPEC.md)).
 
 ---
 
@@ -72,8 +69,6 @@ The hedging orchestrator/dispatch is **landed** on `main`
 #[non_exhaustive]
 pub enum ExecutionContext {
     Initial,
-    #[deprecated(since = "0.7.0", note = "use `ExecutionContext::OperationRetry`")]
-    Retry,
     OperationRetry, // was: Retry
     TransportRetry,
     Hedging,
@@ -82,19 +77,12 @@ pub enum ExecutionContext {
 }
 ```
 
-`Retry` is renamed to `OperationRetry` so the operation-level retry reason is
-clearly distinct from the transport-level `TransportRetry`. The hand-written
-`ExecutionContext::as_str()` and every dispatch site (`operation_pipeline.rs`,
-`transport_pipeline.rs`, `cosmos_driver.rs`) are updated accordingly.
-
-**Compatibility.** The old `Retry` variant is retained for one release as a
-distinct `#[deprecated]` variant (**not** a serde alias) so existing source keeps
-compiling; a `Retry` value still serializes as `"retry"`. The customer-visible
-wire-format change is that the dispatch sites now emit `OperationRetry` for
-driver-generated operation retries, so those attempts serialize as
-`"operation_retry"` instead of `"retry"`; telemetry parsers that match the
-literal `"retry"` execution context must update. (`ExecutionContext` derives
-`Serialize` only, not `Deserialize`, so no `#[serde(alias)]` is needed.)
+`Retry` has been removed and replaced by `OperationRetry` so the operation-level
+retry reason is clearly distinct from the transport-level `TransportRetry`. The
+hand-written `ExecutionContext::as_str()` and every dispatch site
+(`operation_pipeline.rs`, `transport_pipeline.rs`, `cosmos_driver.rs`) are updated
+accordingly. Telemetry parsers that matched the literal `"retry"` execution context
+must update; serialized output now emits `"operation_retry"` instead.
 
 ---
 
@@ -109,7 +97,7 @@ projected from the driver-internal `ExecutionContext` via a **total**
 | `ExecutionContext` | `RequestedRegionReason` |
 | --- | --- |
 | `Initial` | `Initial` |
-| `Retry` (deprecated) / `OperationRetry` | `OperationRetry` |
+| `OperationRetry` | `OperationRetry` |
 | `TransportRetry` | `TransportRetry` |
 | `Hedging` | `Hedging` |
 | `RegionFailover` | `RegionFailover` |
