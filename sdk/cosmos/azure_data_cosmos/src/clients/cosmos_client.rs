@@ -204,16 +204,13 @@ impl CosmosClient {
             CosmosOperation::query_databases(account).with_body(serde_json::to_vec(&query)?);
         let operation_options = options.operation;
 
-        let plan = self
-            .context
-            .driver
-            .plan_operation(
-                initial_operation,
-                &operation_options,
-                None,
-                &PlanOptions::default(),
-            )
-            .await?;
+        let plan = Box::pin(self.context.driver.plan_operation(
+            initial_operation,
+            &operation_options,
+            None,
+            &PlanOptions::default(),
+        ))
+        .await?;
 
         Ok(QueryItemIterator::new(
             self.context.driver.clone(),

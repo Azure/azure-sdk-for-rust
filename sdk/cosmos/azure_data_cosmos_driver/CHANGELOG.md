@@ -14,6 +14,7 @@
 - Extended cross-region hedging to the container and partition-key-range metadata reads, so a slow (but not failed) region no longer stalls a client's first operation against a container. Metadata hedges use a fixed 1.5s threshold and never let a hedged region override a definitive primary result. ([#4896](https://github.com/Azure/azure-sdk-for-rust/pull/4896))
 - Added `HedgingOptions` (via `DriverOptionsBuilder::with_hedging_options`), bounding how many metadata operations may make simultaneous cross-region attempts. Defaults to 32; `0` disables metadata hedging. An operation refused a slot follows the ordinary sequential failover path instead of queueing. Data-plane hedging is not budgeted — tracked by [#4916](https://github.com/Azure/azure-sdk-for-rust/issues/4916). ([#4896](https://github.com/Azure/azure-sdk-for-rust/pull/4896))
 - Added `CosmosResponse::serving_region`, returning the region that produced a response — the hedge winner when the operation raced, otherwise the region of the final attempt. ([#4896](https://github.com/Azure/azure-sdk-for-rust/pull/4896))
+- Added resumable cross-partition streaming `ORDER BY` query support. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
 
 ### Breaking Changes
 
@@ -32,6 +33,7 @@
 - `DiagnosticsContext::operation_name()` is now populated in production (previously always `None`): the operation pipeline sets it from `CosmosOperation::db_operation_name`, so tail-sampling classification and the tracing span have an operation name even when no SDK-supplied `CosmosOperationContext` is present. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 - PATCH operations now report `patch_item` rather than the underlying Replace, on both the aggregated success path and every error path (including read, deserialize, patch-evaluation, serialize, and non-412 replace failures). The two internal sub-operations report `patch_read_item` and `patch_replace_item` on their own attempt diagnostics, so the read-modify-write decomposition stays visible underneath the caller-facing operation instead of being flattened to a single name. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 - Fixed a partition-key-range refresh that could remain permanently pinned to an unreachable region. A refresh resuming a region-affine change-feed continuation is routed back to the region that served it, with hedging suppressed; if that region then became unavailable, every subsequent forced refresh repeated the same failing request forever. Such a refresh now retries once from cold, which clears both the continuation and the region pin together. The same clearing now also applies when an incremental routing-map merge falls back to a full refresh that comes back empty, which previously left the continuation in place after the pin protecting it had already been released. ([#4896](https://github.com/Azure/azure-sdk-for-rust/pull/4896))
+- Fixed session-token parsing rejecting the version sentinel `-1` (as in `0:-1#42`). Merging such a token now succeeds and round-trips `-1` verbatim. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
 
 ### Other Changes
 

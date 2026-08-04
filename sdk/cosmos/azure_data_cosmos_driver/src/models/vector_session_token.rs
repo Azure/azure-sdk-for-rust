@@ -15,9 +15,16 @@ use azure_core::fmt::SafeDebug;
 /// A parsed session-token version vector (the part after the `:`).
 ///
 /// Layout: `<version>#<global_lsn>#<region_id>=<region_lsn>#…`
+///
+/// `version` is signed on the wire: `-1` is the standard value for a
+/// partition with no assigned topology version.
 #[derive(Clone, SafeDebug, PartialEq, Eq)]
 pub(crate) struct VectorSessionToken {
-    version: u64,
+    /// Partition configuration number. Signed because the service emits `-1`
+    /// for a partition with no assigned topology version — the shape returned
+    /// by freshly-created ranges (e.g. immediately after a split). It must
+    /// round-trip verbatim, since merged tokens are sent back on requests.
+    version: i64,
     global_lsn: u64,
     /// Per-region progress. `None` marks a region with no local progress yet
     /// (the wire sentinel `-1`); `Some(lsn)` is a recorded region LSN. Because
@@ -42,7 +49,7 @@ impl VectorSessionToken {
                 .with_message("invalid session token: empty input")
                 .build()
         })?;
-        let version: u64 = version_str.parse().map_err(|_| {
+        let version: i64 = version_str.parse().map_err(|_| {
             crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
                     azure_core::http::StatusCode::BadRequest,
@@ -356,7 +363,7 @@ mod tests {
     /// Helper to build a `VectorSessionToken` for assertions without parsing.
     /// Region LSNs are given as `i64` for terse literals; `-1` (and any
     /// negative) maps to the `None` no-progress marker.
-    fn make_token(version: u64, global_lsn: u64, regions: &[(u64, i64)]) -> VectorSessionToken {
+    fn make_token(version: i64, global_lsn: u64, regions: &[(u64, i64)]) -> VectorSessionToken {
         VectorSessionToken {
             version,
             global_lsn,
@@ -371,6 +378,44 @@ mod tests {
     fn parse_simple_token() {
         let t = VectorSessionToken::parse("1#100#1=20#2=5#3=30").unwrap();
         assert_eq!(t, make_token(1, 100, &[(1, 20), (2, 5), (3, 30)]));
+    }
+
+    // `-1` is the service's standard "no assigned topology version" marker and
+    // is what freshly-created ranges return right after a split. Rejecting it
+    // broke every cross-partition page merge on a post-split topology, because
+    // `PageAggregator::absorb` only parses tokens once it has two to merge.
+    #[test]
+    fn parse_unset_version() {
+        let t = VectorSessionToken::parse("-1#510").unwrap();
+        assert_eq!(t, make_token(-1, 510, &[]));
+        assert_eq!(t.global_lsn(), 510);
+    }
+
+    #[test]
+    fn unset_version_round_trips_verbatim() {
+        // Merged tokens go back on the wire, so `-1` must not be normalized.
+        for raw in ["-1#510", "-1#51#1=20"] {
+            assert_eq!(VectorSessionToken::parse(raw).unwrap().to_string(), raw);
+        }
+    }
+
+    #[test]
+    fn unset_version_merges_as_lower_than_assigned_version() {
+        let mut unset = VectorSessionToken::parse("-1#510").unwrap();
+        let assigned = VectorSessionToken::parse("2#400#1=7").unwrap();
+        // Differing versions: the higher version wins outright, so the older
+        // topology's larger global LSN must not leak through as false progress.
+        assert!(unset.merge(&assigned));
+        assert_eq!(unset, make_token(2, 400, &[(1, 7)]));
+        assert!(assigned.is_as_recent_as(&VectorSessionToken::parse("-1#510").unwrap()));
+    }
+
+    #[test]
+    fn compound_token_with_unset_versions_merges() {
+        let merged = crate::models::SessionToken::new("0:-1#510")
+            .merge(&crate::models::SessionToken::new("1:-1#42"))
+            .unwrap();
+        assert_eq!(merged.as_str(), "0:-1#510,1:-1#42");
     }
 
     #[test]
