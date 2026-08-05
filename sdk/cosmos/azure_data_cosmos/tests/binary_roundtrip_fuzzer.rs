@@ -72,9 +72,14 @@ const PARTITION_KEY_PATH: &str = "/pk";
 
 const DEFAULT_ITERATIONS: u64 = 200;
 const DEFAULT_MAX_DEPTH: u32 = 6;
+/// Upper bound for `max_depth`: the generator recurses per level, so an
+/// unbounded value would stack-overflow. 64 is safe on an ordinary stack.
+const MAX_DEPTH_LIMIT: u32 = 64;
 /// Default maximum number of child fields/elements generated at each container
 /// level (the branching factor). Higher values produce larger, wider documents.
 const DEFAULT_BREADTH: u32 = 6;
+/// Upper bound for `breadth`: each level allocates up to this many children.
+const BREADTH_LIMIT: u32 = 1024;
 /// Default percent (0-100) of generated documents built in the shape of a real
 /// corpus file (see `SHAPE_SAMPLERS`); the rest are free-form hybrid documents.
 const DEFAULT_SHAPE_RATIO: u32 = 85;
@@ -83,6 +88,8 @@ const DEFAULT_SHAPE_RATIO: u32 = 85;
 /// per-item payload (e.g. embedding-vector dimensions, nutrient / member /
 /// keyword / similars arrays) toward corpus-scale sizes.
 const DEFAULT_SIZE_SCALE: u32 = 1;
+/// Upper bound for `size_scale`: multiplies collection sizes.
+const SIZE_SCALE_LIMIT: u32 = 1024;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Seeded PRNG (SplitMix64) — deterministic and dependency-feature-free, matching
@@ -153,16 +160,12 @@ impl FuzzConfig {
                 n
             },
             seed,
-            max_depth: env_u64(MAX_DEPTH_ENV_VAR, DEFAULT_MAX_DEPTH as u64) as u32,
+            max_depth: env_u32(MAX_DEPTH_ENV_VAR, DEFAULT_MAX_DEPTH, 1, MAX_DEPTH_LIMIT),
             wide_numbers: env_bool(WIDE_NUMBERS_ENV_VAR, false),
             unicode: env_bool(UNICODE_ENV_VAR, true),
-            // Clamp into `[1, u32::MAX]` *before* the `as u32` cast: a raw value
-            // that is a multiple of 2^32 (e.g. 4294967296) would otherwise
-            // truncate to 0 and later panic in `rng.below(0)`.
-            breadth: env_u64(BREADTH_ENV_VAR, DEFAULT_BREADTH as u64).clamp(1, u32::MAX as u64)
-                as u32,
+            breadth: env_u32(BREADTH_ENV_VAR, DEFAULT_BREADTH, 1, BREADTH_LIMIT),
             shape_ratio: env_u64(SHAPE_RATIO_ENV_VAR, DEFAULT_SHAPE_RATIO as u64).min(100) as u32,
-            size_scale: env_u64(SIZE_SCALE_ENV_VAR, DEFAULT_SIZE_SCALE as u64).max(1) as u32,
+            size_scale: env_u32(SIZE_SCALE_ENV_VAR, DEFAULT_SIZE_SCALE, 1, SIZE_SCALE_LIMIT),
             calibrate: env_bool(CALIBRATE_ENV_VAR, false),
             print_docs: env_bool(PRINT_ENV_VAR, false),
         }
@@ -178,6 +181,19 @@ fn env_u64(name: &str, default: u64) -> u64 {
         }),
         Err(_) => default,
     }
+}
+
+/// Reads a `u32` knob within `[min, max]`: below `min` is raised to `min`,
+/// above `max` **panics** (a checked conversion, never a silent `as u32` wrap
+/// such as a multiple of `2^32` truncating to `0`). Bounds recursion/allocation
+/// so a typo'd CI value fails fast instead of stack-overflowing or OOMing.
+fn env_u32(name: &str, default: u32, min: u32, max: u32) -> u32 {
+    let raw = env_u64(name, u64::from(default));
+    assert!(
+        raw <= u64::from(max),
+        "{name} must not exceed {max}, got {raw}"
+    );
+    raw.max(u64::from(min)) as u32
 }
 
 /// Reads a boolean knob, accepting `1`/`0`, `yes`/`no`, `on`/`off` alongside
@@ -1654,6 +1670,12 @@ fn cosmos_double_token(f: f64) -> String {
 /// canonicalized to `{ WIDE_NUMBER_TAG: "<double token>" }` rather than a bare
 /// [`Value::String`], keeping the token in a distinct type domain so a
 /// number-to-string codec bug cannot canonicalize equal and pass silently.
+///
+/// Known blind spot: the tag lives in the user JSON domain, so it is not fully
+/// type-injective — a genuine user object with this exact key and a matching
+/// value canonicalizes identically to the wide number. The sentinel is
+/// deliberately obscure to make that astronomically unlikely; a fully injective
+/// fix would tag normalized kinds out-of-band rather than as a user-visible key.
 const WIDE_NUMBER_TAG: &str = "$__cosmos_wide_number__";
 
 /// Wraps a Cosmos-stored double's decimal token in the [`WIDE_NUMBER_TAG`]
@@ -1990,13 +2012,11 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             let context = format!("iter={iter} config={label} id={id} seed={}", cfg.seed);
 
             // CREATE with content response (exercises the response decode
-            // path). Retry transient failures. A 409 Conflict is recovered on
-            // any attempt: the id is deterministic per (seed, iteration,
-            // config), so a replayed seed lands on an item an earlier run
-            // committed and the first create 409s. Reading it back keeps the
-            // assertion alive. This can't mask a broken create-response decode,
-            // which surfaces as `500 / SERIALIZATION_RESPONSE_BODY_INVALID` and
-            // is excluded from `is_transient`, so it returns immediately.
+            // path). Retry transient failures. A 409 Conflict means a replayed
+            // seed collided with an item an earlier run committed — possibly one
+            // whose create-response decode then failed. Reading it back would
+            // validate a read response and silently mask that decode failure on
+            // replay, so instead delete the stale item and retry create.
             let created_doc: Value = {
                 let mut attempt = 0;
                 loop {
@@ -2010,13 +2030,22 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
                                 format!("{context}: create response decode failed: {e}")
                             })?;
                         }
-                        Err(e) if e.status().status_code() == StatusCode::Conflict => {
-                            let read = container.read_item(&pk, &id, None).await.map_err(|e| {
-                                format!("{context}: create-conflict read failed: {e}")
-                            })?;
-                            break read.into_model().map_err(|e| {
-                                format!("{context}: create-conflict decode failed: {e}")
-                            })?;
+                        Err(e)
+                            if e.status().status_code() == StatusCode::Conflict
+                                && attempt < MAX_OP_ATTEMPTS =>
+                        {
+                            // Delete the stale item, then loop to retry create.
+                            // A concurrent delete (404) is fine.
+                            match container.delete_item(&pk, &id, None).await {
+                                Ok(_) => {}
+                                Err(e) if e.status().status_code() == StatusCode::NotFound => {}
+                                Err(e) => {
+                                    return Err(format!(
+                                        "{context}: create-conflict cleanup delete failed: {e}"
+                                    )
+                                    .into())
+                                }
+                            }
                         }
                         Err(e) if is_transient(&e) && attempt < MAX_OP_ATTEMPTS => {
                             let backoff = std::time::Duration::from_millis(
@@ -2628,14 +2657,23 @@ mod tests {
 
     #[test]
     fn breadth_env_clamps_multiple_of_2_pow_32_to_a_nonzero_u32() {
-        // A raw breadth that is a multiple of 2^32 must NOT truncate to 0 (which
-        // would later panic in `rng.below(0)`). Mirror the `from_env` clamp so
-        // the test does not mutate the process environment (racy under the
-        // parallel harness).
-        let clamp = |raw: u64| raw.clamp(1, u32::MAX as u64) as u32;
-        assert_eq!(clamp(4_294_967_296), u32::MAX); // 2^32 → would truncate to 0
-        assert_eq!(clamp(0), 1);
-        assert_eq!(clamp(6), 6);
+        // `env_u32` must reject an out-of-range value (a checked conversion),
+        // never silently `as u32`-wrap it. Mirror the helper's logic here so the
+        // test does not mutate the process environment (racy under the parallel
+        // harness).
+        let checked = |raw: u64, min: u32, max: u32| -> std::result::Result<u32, ()> {
+            if raw > u64::from(max) {
+                return Err(()); // would panic in `env_u32`
+            }
+            Ok(raw.max(u64::from(min)) as u32)
+        };
+        // 2^32 would truncate to 0 under a bare `as u32`; the checked path rejects it.
+        assert!(checked(4_294_967_296, 1, BREADTH_LIMIT).is_err());
+        // Above the sane limit is rejected rather than clamped.
+        assert!(checked(u64::from(BREADTH_LIMIT) + 1, 1, BREADTH_LIMIT).is_err());
+        // Below the minimum is raised to the minimum.
+        assert_eq!(checked(0, 1, BREADTH_LIMIT), Ok(1));
+        assert_eq!(checked(6, 1, BREADTH_LIMIT), Ok(6));
     }
 
     #[test]

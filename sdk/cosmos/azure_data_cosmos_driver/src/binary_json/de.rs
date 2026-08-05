@@ -260,6 +260,11 @@ impl<'de> Deserializer<'de> for &mut BinaryDeserializer<'de> {
         // Enums use serde's externally-tagged shape (unit → name string,
         // others → single-key object). Decode the whole value and let
         // `serde_json::Value`'s enum deserializer apply the matching rule.
+        //
+        // TODO(cosmos/binary-json, #4976): like `deserialize_via_value`, this
+        // `Value`-based path does not apply the integral-`Double`→integer
+        // coercion, so such a value in an enum variant field errors. Same fix as
+        // the uniform-`Float64`-array limitation; tracked in the CHANGELOG.
         let value = self.reader.read_value(self.depth)?;
         value
             .into_deserializer()

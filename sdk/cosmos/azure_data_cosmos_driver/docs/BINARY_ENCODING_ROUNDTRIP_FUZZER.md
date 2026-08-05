@@ -32,7 +32,7 @@ For each generated document `D`:
    - drive every **body-carrying point op** — `create` → `read` → `replace` →
      `upsert` — each returning a document `R` (writes use content-response so the
      response decode path is exercised too);
-   - `Hc = hash(canonicalize(project(R, keys(D))))` for each op's `R`;
+   - `Hc = hash(canonicalize(strip_system(R)))` for each op's `R`;
    - **assert `Hc == H0`** for every op — otherwise dump the seed + both
      canonical forms.
 
@@ -41,8 +41,10 @@ These are exactly the four point operations for which binary encoding is honored
 `patch` / transactional batch / bulk are deferred (see the SPEC/HLD), so they are
 intentionally excluded.
 
-`project(R, keys(D))` strips the service-added system fields (`_rid`, `_etag`,
-`_ts`, `_self`, `_attachments`) so only the fields we control are compared.
+`strip_system(R)` removes only the service-added system fields (`_rid`, `_etag`,
+`_ts`, `_self`, `_attachments`). It deliberately does **not** project down to the
+sent keys: any *extra* field the round-trip introduced (e.g. a codec bug that
+invents a property) survives into the comparison and fails the assertion.
 
 > **Reserved fields are also stripped on the _send_ side.** Cosmos *owns* the
 > `_rid`/`_self`/`_etag`/`_ts`/`_attachments` properties and overwrites any value
