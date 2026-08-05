@@ -469,6 +469,8 @@ point that a value generator alone does not fuzz the *protocol*.
 
 
 
+## 9. Enhancement plan (library-backed generator & canonicalizer)
+
 This section captures an agreed enhancement plan for the harness. The current harness uses a hand-rolled seeded generator (§4) and a hand-rolled canonicalizer (§3). Three well-maintained crates can replace the parts of that machinery that are pure boilerplate, while we **keep** the one part that is genuinely Cosmos-specific.
 
 ### 9.1 The crates and what each replaces
@@ -578,7 +580,7 @@ SHA-256 refactor, and that the request-encode + response-decode paths for
 `replace` and `upsert` round-trip identically to `create`/`read`. Closes §9.6's
 first three acceptance items.
 
-## 9.8 Offline codec fuzzer (`cargo-fuzz`) — landed
+### 9.8 Offline codec fuzzer (`cargo-fuzz`) — landed
 
 Phase 6 lands as a self-contained `cargo-fuzz` crate at
 `azure_data_cosmos_driver/fuzz/` (see its

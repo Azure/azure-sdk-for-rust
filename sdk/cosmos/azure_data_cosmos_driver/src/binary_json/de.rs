@@ -152,6 +152,12 @@ impl<'de> BinaryDeserializer<'de> {
                     // sent (see `wide_u64_sent_exactly_is_read_back_..`). Revisit
                     // if the backend preserves `UInt64` natively.
                     if f.fract() == 0.0 {
+                        // The endpoints are DELIBERATELY inside these inclusive
+                        // ranges: `i64::MAX as f64` / `u64::MAX as f64` round up
+                        // to `2^63` / `2^64` — the very doubles the service stores
+                        // for those maxima — so the saturating cast lands them
+                        // back on the sent value. A double strictly beyond the
+                        // endpoint falls through to `visit_f64` and errors.
                         if signed {
                             if (i64::MIN as f64..=i64::MAX as f64).contains(&f) {
                                 return visitor.visit_i64(f as i64);

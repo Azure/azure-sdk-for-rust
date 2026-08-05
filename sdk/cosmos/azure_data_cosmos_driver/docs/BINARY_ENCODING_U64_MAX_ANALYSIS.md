@@ -93,8 +93,10 @@ Two independent facts combine to cause the failure:
 So the ser/de layer isn't malfunctioning — it correctly reports that a `u64`
 field cannot survive a Cosmos round-trip once the value exceeds 2^53. The
 `binary_encoding` test is asserting an impossible round-trip (`huge: u64::MAX`),
-which is exactly the same limit the round-trip fuzzer oracle now **flags** (via
-`normalize_number` keeping wide integers exact) instead of masking.
+which is exactly the same limit the round-trip fuzzer oracle models: because a
+wide integer *cannot* survive, the oracle's `normalize_number` tokenizes the
+**rounded** double so a lossy round-trip compares **equal** rather than raising a
+false mismatch (see "Related" below).
 
 ## How the .NET SDK behaves (for comparison)
 
@@ -179,8 +181,11 @@ ever preserves `NumberUInt64`, we already send it.
   rejects a `u64` above `i64::MAX`, so routing every non-negative value through
   `visit_u64` would break signed fields (e.g. reading a service-echoed `i64::MAX`,
   stored as the double `2^63`). A **fractional** double is still a genuine type
-  error — it is never silently truncated; a value outside the target's range is
-  also a genuine type error rather than a saturating coercion.
+  error — it is never silently truncated. The inclusive range endpoints are
+  **deliberate**: `i64::MAX as f64` and `u64::MAX as f64` each round *up* (to
+  `2^63` / `2^64`), which is exactly the double the service stores for those
+  maxima, so the saturating cast is what lands the value back on what was sent.
+  A double strictly beyond the endpoint falls through to `visit_f64` and errors.
 
 **The writer is unchanged:** `encode_u64` still emits exact `NumberUInt64` for
 values above `i64::MAX`, so the exact integer reaches the service (max precision
@@ -328,15 +333,17 @@ The writer, conformance snapshots, golden vectors, and `ser` parity tests are
 ### Historical rationale (pre-decision)
 
 "Fixing" the decoder to accept a float into a `u64` masks silent data
-corruption, so the codec was originally kept strict. The team accepted that
-trade-off for .NET interop parity.
+corruption, so the codec was originally kept strict. That strictness was later
+reversed (see the decision above) in favor of the always-on coercion, so a value
+the service cannot store exactly no longer surfaces an error.
 
 ## Related
 
-- Fuzzer oracle change: `normalize_number` in
-  `sdk/cosmos/azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs` now keeps wide
-  integers (`>= 2^53`) as their exact decimal so lossy round-trips are flagged,
-  not masked. Wide-number generation is opt-in
+- Fuzzer oracle: `normalize_number` in
+  `sdk/cosmos/azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs` tokenizes a wide
+  integer (`>= 2^53`) from its **rounded** double, so a lossy round-trip compares
+  **equal** (the service cannot store the exact value, so a strict comparison
+  would raise a false mismatch). Wide-number generation is opt-in
   (`AZURE_COSMOS_FUZZ_WIDE_NUMBERS=true`).
 - Key files:
   - `sdk/cosmos/azure_data_cosmos_driver/src/binary_json/de.rs`
