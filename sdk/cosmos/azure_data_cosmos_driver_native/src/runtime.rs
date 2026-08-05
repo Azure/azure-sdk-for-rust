@@ -77,7 +77,7 @@ impl RuntimeContext {
     /// Errors are split between the wrapper-side Tokio init (returned as
     /// [`RuntimeBuildError::TokioInit`]) and the driver-side build
     /// (returned as [`RuntimeBuildError::Driver`]) so the FFI surface can
-    /// map each to the appropriate coarse code + rich error.
+    /// map each to the appropriate packed status code + rich error.
     pub(crate) fn new_with_builder(
         builder: CosmosDriverRuntimeBuilder,
     ) -> Result<*mut Self, RuntimeBuildError> {

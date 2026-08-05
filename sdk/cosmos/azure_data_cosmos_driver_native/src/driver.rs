@@ -11,12 +11,11 @@
 //! wrapper's generic `tokio::spawn` → `cq_enqueue` plumbing lands once,
 //! with the operation submit pipeline.
 //!
-//! ## Cache-hit advisory (`OPTIONS_IGNORED_ON_CACHE_HIT`)
+//! ## Cache-hit advisory
 //!
-//! Spec section 4.4.1 requires the wrapper to detect when the driver returns a
-//! cached driver for an endpoint that already has an entry, and surface
-//! a `5001` warning. The merged
-//! `CosmosDriverRuntime::get_or_create_driver` API does not expose a
+//! Spec section 4.4.1 describes an optional advisory for when the driver
+//! returns a cached driver for an endpoint that already has an entry. The
+//! merged `CosmosDriverRuntime::get_or_create_driver` API does not expose a
 //! "was cached" signal, so detecting cache hits requires either a
 //! driver-side enhancement (preferred) or wrapper-side cache shadowing
 //! (hacky). The advisory is intentionally **not** implemented today
@@ -34,7 +33,7 @@ use azure_data_cosmos_driver::options::DriverOptions;
 
 use crate::account_ref::AccountRefHandle;
 use crate::driver_options::DriverOptionsHandle;
-use crate::error::{CosmosErrorCode, CosmosErrorHandle};
+use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
 use crate::runtime::RuntimeContext;
 
 /// The C ABI handle for a [`CosmosDriver`] (`cosmos_driver_t`).
@@ -125,9 +124,8 @@ pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
 /// - Cache eviction happens only when the owning `cosmos_runtime_t` is
 ///   freed; freeing a `cosmos_driver_t` does not evict.
 ///
-/// The `5001` `OPTIONS_IGNORED_ON_CACHE_HIT` advisory described in spec
-/// Section 4.4.1 is not emitted today — see the module-level
-/// `Cache-hit advisory` note for the rationale.
+/// The cache-hit advisory described in spec Section 4.4.1 is not emitted
+/// today — see the module-level `Cache-hit advisory` note for the rationale.
 ///
 /// # Parameters
 ///
@@ -143,28 +141,30 @@ pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
 ///
 /// # Returns
 ///
-/// - `SUCCESS` (0) with `*out_driver` populated.
-/// - `INVALID_ARGUMENT` (1) when `runtime`, `account`, or `out_driver`
-///   is NULL.
-/// - One of the `2xxx` / `3xxx` codes derived from the driver-side
-///   error per spec section 3.5.1 when the underlying
-///   `get_or_create_driver` returns an error.
+/// A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+/// decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+///
+/// - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_driver` populated.
+/// - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `runtime`, `account`, or
+///   `out_driver` is NULL.
+/// - The packed HTTP/sub-status derived from the driver-side error when
+///   `create_driver` fails; `*out_error` is populated when non-NULL.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_get_or_create_blocking(
     runtime: *const RuntimeContext,
     account: *const AccountRefHandle,
     options: *const DriverOptionsHandle,
     out_driver: *mut *mut DriverHandle,
-    out_error: *mut *mut CosmosErrorHandle,
-) -> i32 {
+    out_error: *mut *mut CosmosError,
+) -> CosmosStatusCode {
     if out_driver.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
     let Some(runtime_inner) = RuntimeContext::inner_arc(runtime) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
     let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
     // Options is optional — NULL → None.
     let options_owned = if options.is_null() {
@@ -194,18 +194,18 @@ pub extern "C" fn cosmos_driver_get_or_create_blocking(
             unsafe {
                 *out_driver = handle;
             }
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
         }
         Err(driver_err) => {
-            let coarse = CosmosErrorCode::from_driver_error(&driver_err);
+            let status = CosmosStatusCode::from_driver_error(&driver_err);
             if !out_error.is_null() {
                 // SAFETY: caller guarantees `out_error` is writable for
-                // one `*mut CosmosErrorHandle`.
+                // one `*mut CosmosError`.
                 unsafe {
-                    *out_error = CosmosErrorHandle::into_raw(driver_err);
+                    *out_error = CosmosError::into_raw(driver_err);
                 }
             }
-            coarse.as_i32()
+            status
         }
     }
 }
@@ -236,7 +236,7 @@ mod tests {
         let runtime = make_runtime();
         let account = make_account();
         let mut out: *mut DriverHandle = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
         assert_eq!(
             cosmos_driver_get_or_create_blocking(
                 ptr::null(),
@@ -245,7 +245,7 @@ mod tests {
                 &mut out,
                 &mut err,
             ),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
             cosmos_driver_get_or_create_blocking(
@@ -255,7 +255,7 @@ mod tests {
                 &mut out,
                 &mut err,
             ),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
             cosmos_driver_get_or_create_blocking(
@@ -265,7 +265,7 @@ mod tests {
                 ptr::null_mut(),
                 &mut err,
             ),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(out.is_null());
         assert!(err.is_null());
@@ -277,7 +277,7 @@ mod tests {
     /// End-to-end against a non-routable endpoint. We don't have an
     /// emulator wired up in Rust unit tests so this exercises the error
     /// path: bootstrap network metadata fails, the driver returns an
-    /// error, and we surface it through the coarse code + rich error.
+    /// error, and we surface it through the packed status code + rich error.
     ///
     /// Skipped in normal `cargo test` because the actual failure mode
     /// (transport error vs. DNS error vs. timeout) varies between OSes
@@ -297,12 +297,12 @@ mod tests {
             "fake-master-key",
         );
         let mut out: *mut DriverHandle = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
         let rc =
             cosmos_driver_get_or_create_blocking(runtime, account, ptr::null(), &mut out, &mut err);
         assert_ne!(
             rc,
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32(),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code(),
             "unreachable endpoint must fail"
         );
         assert!(out.is_null());
