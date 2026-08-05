@@ -41,22 +41,6 @@ try {
   Write-Host "Cloning repository from $repositoryUrl..."
   Invoke-LoggedCommand $cloneCommand
 
-  # azure-amqp ships its own nuget.config that adds api.nuget.org as a package source.
-  # NuGet merges every config from the restore directory upward, so that source would be
-  # used even when the user-level config written by eng/pipelines/templates/steps/nuget-config.yml
-  # restricts restores to the azure-sdk-for-net feed, and api.nuget.org is blocked under
-  # the CFSClean network isolation policy. Replace the cloned config so the restore below
-  # resolves only through the feed.
-  $nugetConfigTemplate = [System.IO.Path]::Combine($RepoRoot, "eng", "templates", "NuGet.config.template")
-  if (Test-Path $nugetConfigTemplate) {
-    $clonedNuGetConfig = [System.IO.Path]::Combine($repositoryDir, "nuget.config")
-    Write-Host "Overwriting $clonedNuGetConfig with $nugetConfigTemplate"
-    Copy-Item -Path $nugetConfigTemplate -Destination $clonedNuGetConfig -Force
-  }
-  else {
-    Write-Warning "NuGet config template not found at $nugetConfigTemplate; leaving the cloned nuget.config in place."
-  }
-
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
 
   Invoke-LoggedCommand "dotnet build --framework net8.0"

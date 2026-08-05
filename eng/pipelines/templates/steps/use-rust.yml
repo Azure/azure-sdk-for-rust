@@ -30,10 +30,10 @@ steps:
   # config has to be written to disk before cargo runs.
   - pwsh: |
       $cargoHome = $env:CARGO_HOME
-      if (-not $cargoHome) { $cargoHome = Join-Path $HOME '.cargo' }
+      if (-not $cargoHome) { $cargoHome = ([System.IO.Path]::Combine($HOME, '.cargo')) }
       New-Item -ItemType Directory -Force -Path $cargoHome | Out-Null
 
-      $configPath = Join-Path $cargoHome 'config.toml'
+      $configPath = ([System.IO.Path]::Combine($cargoHome, 'config.toml'))
       Copy-Item `
         -Path '$(Build.SourcesDirectory)/eng/templates/config.toml.template' `
         -Destination $configPath `

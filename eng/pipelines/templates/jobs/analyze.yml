@@ -22,14 +22,18 @@ jobs:
       paths:
       - "/*"
 
+  # Install nightly so doc-rs runs correctly in Analyze-Code.ps1
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
       Toolchain: nightly
 
+  # Install the specified version of Rust if invocation is not using 'nightly'
   - ${{ if ne(parameters.Toolchain, 'nightly') }}:
       - template: /eng/pipelines/templates/steps/use-rust.yml@self
         parameters:
           Toolchain: ${{ parameters.Toolchain }}
+          # Since the registry is configured in the previous run, it does not
+          # need to be configured in this run
           ConfigureRegistry: false
 
   - template: /eng/common/pipelines/templates/steps/save-package-properties.yml

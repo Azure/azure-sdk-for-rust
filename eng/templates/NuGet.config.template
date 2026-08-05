@@ -2,29 +2,10 @@
 <!--
   NuGet configuration used by CI builds to route package restores through the
   Centralized Feed Service (CFS) instead of the public internet.
-
-  Under the CFSClean network isolation policy, api.nuget.org is blocked. NuGet resolves
-  its package sources by merging the machine-wide config, the user (global) config, and
-  any NuGet.config found in or above the working directory. The consumer here is
-  sdk/core/azure_core_amqp/Test-Setup.ps1, which clones Azure/azure-amqp into the job's
-  working directory and runs `dotnet build` on TestAmqpBroker from inside that clone, so
-  a config committed to this repo would never be picked up. This file is therefore copied
-  over the user-level config by eng/pipelines/templates/steps/nuget-config.yml.
-
-  <clear /> discards nuget.org and anything else inherited from machine-wide config, and
-  the single <add> below makes the azure-sdk-for-net Azure Artifacts feed the only
-  source. That feed has an upstream to nuget.org, so third-party packages including
-  Microsoft.Azure.Amqp, TestAmqpBroker's dependency, still resolve.
-
-  NuGetAuthenticate@1 does not add package sources - it only installs the Azure Artifacts
-  Credential Provider and binds it to feeds under pkgs.dev.azure.com/azure-sdk. It is
-  required rather than optional: the feed lists upstream package versions anonymously,
-  but downloading a version it has not yet saved locally returns 401 until credentials
-  are supplied. Clearing without adding a replacement would likewise fail every restore
-  with NU1100, so the <add> above is also required.
 -->
 <configuration>
   <packageSources>
+    <!-- Clears all existing package sources (like default nuget.org) -->
     <clear />
     <add key="azure-sdk-for-net" value="https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-net/nuget/v3/index.json" />
   </packageSources>

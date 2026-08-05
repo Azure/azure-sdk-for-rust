@@ -1,18 +1,15 @@
 # Cargo configuration used by CI builds to route crates.io traffic through the
 # Centralized Feed Service (CFS) instead of the public internet.
 #
-# This file is copied to $CARGO_HOME/config.toml (which defaults to ~/.cargo/config.toml
-# when CARGO_HOME is not set) by eng/pipelines/templates/steps/use-rust.yml, before any
-# job invokes cargo.
+# This file should be copied to $CARGO_HOME/config.toml
 #
 # CargoAuthenticate@0 parses the [registries] table below and exports the
 # CARGO_REGISTRIES_AZURE_SDK_FOR_RUST_TOKEN / _CREDENTIAL_PROVIDER variables that cargo
 # needs to authenticate against the feed. The feed sets "auth-required": true, so the
 # token is required even for reads.
 #
-# The [source] replacement is what actually redirects index.crates.io and
-# static.crates.io to the feed. Cargo does not honor environment variables for the
-# [source] table, so an on-disk config file is required.
+# The [source] replacement redirects index.crates.io and static.crates.io to the
+# feed.
 #
 [registries]
 azure-sdk-for-rust = { index = "sparse+https://pkgs.dev.azure.com/azure-sdk/_packaging/azure-sdk-for-rust/Cargo/index/" }
