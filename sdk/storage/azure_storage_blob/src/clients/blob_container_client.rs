@@ -3,6 +3,7 @@
 
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
+use crate::generated::models::BlobContainerClientListBlobsArrowOptions;
 use crate::models::{
     AutoFormat, BlobContainerClientListBlobsOptions, ListBlobsResponse, StorageErrorCode,
     StorageResponseFormat,
@@ -12,6 +13,7 @@ use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
+        pager::{PagerContinuation, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         Pager, Pipeline, StatusCode, Url,
     },
@@ -131,9 +133,48 @@ impl BlobContainerClient {
     ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
         let options = options.unwrap_or_default();
         match options.response_format.unwrap_or_default() {
-            StorageResponseFormat::Arrow => self.list_blobs_arrow(Some(options.into())),
+            StorageResponseFormat::Arrow => self.list_blobs_arrow_pager(options.into()),
             StorageResponseFormat::Xml => self.list_blobs_xml(Some(options.into())),
         }
+    }
+
+    fn list_blobs_arrow_pager(
+        &self,
+        options: BlobContainerClientListBlobsArrowOptions<'_>,
+    ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
+        let client = Arc::new(BlobContainerClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        });
+        let options = options.into_owned();
+        let pager_options = options.method_options.clone();
+        Ok(Pager::new(
+            move |state: PagerState, pager_options| {
+                let client = client.clone();
+                let mut options = options.clone();
+                options.method_options = pager_options;
+                if let PagerState::More(marker) = state {
+                    options.marker = Some(marker.to_string());
+                }
+                Box::pin(async move {
+                    let response = client.list_blobs_arrow(Some(options)).await?;
+                    let next_marker = crate::models::auto_format::decode_next_marker(
+                        response.headers(),
+                        response.body(),
+                    )?;
+                    Ok(match next_marker {
+                        Some(next_marker) => PagerResult::More {
+                            response,
+                            continuation: PagerContinuation::Token(next_marker),
+                        },
+                        None => PagerResult::Done { response },
+                    })
+                })
+            },
+            Some(pager_options),
+        ))
     }
 }
 

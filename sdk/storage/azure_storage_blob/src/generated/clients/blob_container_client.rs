@@ -711,14 +711,14 @@ impl BlobContainerClient {
 
     /// Returns a list of the blobs in the specified container using Arrow when supported.
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobsArrow")]
-    pub(crate) fn list_blobs_arrow(
+    pub(crate) async fn list_blobs_arrow(
         &self,
         options: Option<BlobContainerClientListBlobsArrowOptions<'_>>,
-    ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
-        let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
-        let mut first_url = self.endpoint.clone();
-        let mut query_builder = first_url.query_builder();
+    ) -> Result<Response<ListBlobsResponse, AutoFormat>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
         query_builder
             .append_pair("comp", "list")
             .append_pair("restype", "container");
@@ -748,51 +748,26 @@ impl BlobContainerClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         query_builder.build();
-
-        let version = self.version.clone();
-        Ok(Pager::new(
-            move |marker: PagerState, pager_options| {
-                let mut url = first_url.clone();
-                if let PagerState::More(marker) = marker {
-                    let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", marker.as_ref());
-                    query_builder.build();
-                }
-                let mut request = Request::new(url, Method::Get);
-                request.insert_header(
-                    "accept",
-                    "application/vnd.apache.arrow.stream,application/xml",
-                );
-                request.insert_header("x-ms-version", &version);
-                let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let next_marker =
-                        crate::models::auto_format::decode_next_marker(&headers, &body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match next_marker {
-                        Some(next_marker) => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Token(next_marker),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
-                })
-            },
-            Some(options.method_options),
-        ))
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header(
+            "accept",
+            "application/vnd.apache.arrow.stream,application/xml",
+        );
+        request.insert_header("x-ms-version", &self.version);
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
     }
 
     /// Returns a list of the blobs in the specified container using XML.
