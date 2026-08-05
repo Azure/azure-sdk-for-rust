@@ -199,20 +199,19 @@ The emulator serves `GET /` requests with synthesized account properties from co
 - `enableMultipleWriteLocations` → from config
 - `defaultConsistencyLevel` → from config
 - `id` → derived from the request host's tenant portion, mirroring the real gateway rewriting
-  the account resource per regional endpoint. Verified live: the global endpoint reports
-  `{account}`, the regional endpoint reports `{account}-{region}`.
+  the account resource per regional endpoint: the global endpoint reports `{account}`, the
+  regional endpoint reports `{account}-{region}`.
 - `_rid` → `{account}.sql.cosmos.azure.com`, naming the same account as `id`. The live service
   additionally encodes the **write** region (`{account}-{writeregion}.sql.cosmos.azure.com`,
   regardless of which endpoint served the read); the emulator's synthetic hosts carry no
   `{account}-{region}` structure to recover a base account name from, so that one component is
   deliberately unmodeled rather than letting `_rid` and `id` disagree.
-- **No `_etag`.** Verified against live accounts (two accounts, global and regional endpoints,
-  `x-ms-version` `2018-12-31` and `2020-07-15`): the account read carries no etag in the body and
-  none in the response headers. `AccountProperties::etag` is therefore always empty in production,
-  which makes the unchanged-etag short-circuit in `LocationStateStore::sync_account_properties`
-  inert — it is guarded by `!etag.is_empty()`. Emitting an etag here would make the emulator
-  exercise a path the service can never trigger; the short-circuit is covered by unit tests
-  instead. Captured payloads are in the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
+- **No `_etag`.** The account read carries no etag in the body and none in the response headers,
+  on either the global or a regional endpoint. `AccountProperties::etag` is therefore always empty
+  in production, which makes the unchanged-etag short-circuit in
+  `LocationStateStore::sync_account_properties` inert — it is guarded by `!etag.is_empty()`.
+  Emitting an etag here would make the emulator exercise a path the service can never trigger; the
+  short-circuit is covered by unit tests instead.
 
 ### Dynamic Account Topology
 
@@ -234,24 +233,21 @@ Semantics:
 
 - **Region IDs are allocated once and never reused or renumbered.** Session-token vector clocks
   (`{pkrange}:{ver}#{globalLSN}#{regionId}={localLSN}`) embed them. A re-added region keeps its
-  original ID; a brand-new region gets a fresh one. **Verified live**: a region removed and then
-  re-added received the same ID (2) both times. Note the ID is *not* positional — on a two-region
-  account the added region got ID 2 and the hub was not listed in the vector clock at all — and a
+  original ID; a brand-new region gets a fresh one. The ID is *not* positional — on a two-region
+  account the added region takes ID 2 and the hub is not listed in the vector clock at all — and a
   single-region account emits V1 tokens with no region component whatsoever.
 - **A region membership change bumps the session-token version** on every partition in every
-  region (`EmulatorStore::advance_vector_clock_versions`). Verified live: the version advanced on
-  each topology change (`-1 → 0` add, `2 → 3` remove, `3 → 4` re-add). This is what makes a
-  client's older token safe — a lower-version token is *superseded* rather than compared against a
-  topology that no longer exists, which is why the service accepts (HTTP 200, no substatus) a token
-  naming a region that has since been removed. See
-  the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
+  region (`EmulatorStore::advance_vector_clock_versions`). The version advances on each topology
+  change (`-1 → 0` add, `2 → 3` remove, `3 → 4` re-add). This is what makes a client's older token
+  safe — a lower-version token is *superseded* rather than compared against a topology that no
+  longer exists, which is why the service accepts (HTTP 200, no substatus) a token naming a region
+  that has since been removed.
 - **Removed regions are retired, not forgotten.** A client keeps sending to a removed endpoint
   until its next topology refresh, and the service answers those with `403/1008
-  DatabaseAccountNotFound` rather than failing to route. Verified live: the regional endpoint of a
-  region being removed started returning exactly that ~20 seconds after the ARM request was
-  accepted. The emulator reproduces the status, substatus and body shape (including the empty
-  `readableLocations`/`writableLocations` and the account `id`) — see
-  the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
+  DatabaseAccountNotFound` rather than failing to route. The regional endpoint of a region being
+  removed starts returning that within seconds of the ARM request being accepted. The emulator
+  reproduces the status, substatus and body shape, including the empty
+  `readableLocations`/`writableLocations` and the account `id`.
 - **Removal is two-phase, and the phases overlap.** `begin_region_removal` puts a region into
   [`RegionStatus::Draining`]: its endpoint returns `403/1008` while the account read *still*
   advertises it. That is what the service does — the regional endpoint failed within seconds while
@@ -260,18 +256,15 @@ Semantics:
   completes the transition.
 - **Rejections mirror the service**: adding an already-active region, removing the current write
   region, and removing the last region are all `400`.
-- **`set_write_mode` is symmetric, and so is the service.** Both directions were verified live on a
-  normal (non-migrated) account: single → multi and multi → single each completed successfully.
-  Enabling multi-write also worked on an account with continuous backup, despite
-  `test-resources.bicep` describing the two as incompatible — that constraint appears to apply to
-  account *creation*, not to a later update.
+- **`set_write_mode` is symmetric, and so is the service.** On a normal (non-migrated) account
+  both single → multi and multi → single succeed. Enabling multi-write also succeeds on an account
+  with continuous backup, despite `test-resources.bicep` describing the two as incompatible — that
+  constraint applies to account *creation*, not to a later update.
 - **`set_write_region` models routine behavior.** For single-master accounts the gateway itself can
   report an arbitrary read location as the write location between successive account reads, so
   clients must already tolerate the advertised write region moving.
 
 #### Multi-write vs single-write transitions
-
-Verified live (see the capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>):
 
 | | Single-write account | Multi-write account |
 | --- | --- | --- |
@@ -285,9 +278,9 @@ writes were going to the hub anyway. This is exactly what [`RegionStatus::Draini
 
 #### Known fidelity gaps
 
-Measured against live accounts but **not** currently modeled:
+Service behavior that is **not** currently modeled:
 
-| Gap | Live value | Emulator value |
+| Gap | Service value | Emulator value |
 | --- | --- | --- |
 | `x-ms-number-of-read-regions` | `readLocations - 1` (0 with one region, 1 with two) | hard-coded `0` |
 | `x-ms-last-state-change-utc` | a real, **per-region** timestamp (two regions of one account reported different values) | hard-coded epoch |
@@ -303,9 +296,8 @@ test can never observe that count change.
 
 The live gateway's advertised topology **flaps** while a region is being added or removed, and while
 the write mode is being changed: successive account reads seconds apart disagree, for tens of
-seconds to minutes (see the live capture at
-<https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>). Notably `enableMultipleWriteLocations` — a *routing-mode flag*,
-not just a list — alternated true/false ~25 times over ~4 minutes during a write-mode change.
+seconds to minutes. Notably `enableMultipleWriteLocations` — a *routing-mode flag*, not just a
+list — can alternate true/false dozens of times over several minutes during a write-mode change.
 
 The emulator transitions atomically instead, because a flapping emulator would make every test
 non-deterministic. The driver is unaffected on both counts:
@@ -1493,9 +1485,8 @@ re_added_region_is_usable_for_reads_again,
 collapsing_to_a_single_region_keeps_the_account_usable,
 preference_order_wins_over_advertisement_order_after_growth.
 
-Expectations recorded from live accounts are encoded directly in the tests rather than as
-checked-in payload files. The full observation timelines and the poller used to record them are
-kept out of the repo, at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
+Expected service payloads are encoded directly in the tests rather than as checked-in fixture
+files.
 
 **Control Plane**: create_database, read_database, delete_database_cascades,
 create_container_with_pk, read_container, delete_container_cascades,
