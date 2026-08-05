@@ -713,7 +713,7 @@ async fn draining_the_write_or_last_region_is_rejected() {
 ///
 /// Verified live: on a multi-write account the new region entered both lists in
 /// a single atomic transition (no flapping), unlike the single-write add. See
-/// `tests/fixtures/topology/live_multi_write_timeline.json`.
+/// the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
 #[tokio::test]
 async fn region_added_to_multi_write_account_is_immediately_writable() {
     let recorder = HostRecorder::new();

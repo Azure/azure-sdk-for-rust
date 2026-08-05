@@ -244,7 +244,7 @@ Semantics:
   client's older token safe — a lower-version token is *superseded* rather than compared against a
   topology that no longer exists, which is why the service accepts (HTTP 200, no substatus) a token
   naming a region that has since been removed. See
-  `tests/fixtures/topology/live_session_token_timeline.json`.
+  the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
 - **Removed regions are retired, not forgotten.** A client keeps sending to a removed endpoint
   until its next topology refresh, and the service answers those with `403/1008
   DatabaseAccountNotFound` rather than failing to route. Verified live: the regional endpoint of a
@@ -271,7 +271,7 @@ Semantics:
 
 #### Multi-write vs single-write transitions
 
-Verified live (see `tests/fixtures/topology/live_multi_write_timeline.json`):
+Verified live (see the capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>):
 
 | | Single-write account | Multi-write account |
 | --- | --- | --- |
@@ -303,8 +303,8 @@ test can never observe that count change.
 
 The live gateway's advertised topology **flaps** while a region is being added or removed, and while
 the write mode is being changed: successive account reads seconds apart disagree, for tens of
-seconds to minutes (see `tests/fixtures/topology/live_add_remove_region_timeline.json` and
-`live_multi_write_timeline.json`). Notably `enableMultipleWriteLocations` — a *routing-mode flag*,
+seconds to minutes (see the live capture at
+<https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>). Notably `enableMultipleWriteLocations` — a *routing-mode flag*,
 not just a list — alternated true/false ~25 times over ~4 minutes during a write-mode change.
 
 The emulator transitions atomically instead, because a flapping emulator would make every test
@@ -1494,8 +1494,8 @@ collapsing_to_a_single_region_keeps_the_account_usable,
 preference_order_wins_over_advertisement_order_after_growth.
 
 Golden payloads captured from live accounts live in
-`azure_data_cosmos_driver/tests/fixtures/topology/`, alongside `capture_topology.py` (the poller
-used to record them) and `live_add_remove_region_timeline.json` (the observed add/remove timeline).
+`azure_data_cosmos_driver/tests/fixtures/topology/`. The full observation timelines and the poller
+used to record them are kept out of the repo, at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
 
 **Control Plane**: create_database, read_database, delete_database_cascades,
 create_container_with_pk, read_container, delete_container_cascades,
