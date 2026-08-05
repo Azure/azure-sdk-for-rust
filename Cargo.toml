@@ -90,7 +90,6 @@ version = "1.0.0"
 
 [workspace.dependencies]
 arbitrary = { version = "1.4", features = ["derive"] }
-arbitrary-json = "0.1"
 async-lock = "3.4"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"

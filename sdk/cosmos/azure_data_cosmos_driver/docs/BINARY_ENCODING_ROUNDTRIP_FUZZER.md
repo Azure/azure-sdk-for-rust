@@ -47,8 +47,8 @@ intentionally excluded.
 > **Reserved fields are also stripped on the _send_ side.** Cosmos *owns* the
 > `_rid`/`_self`/`_etag`/`_ts`/`_attachments` properties and overwrites any value
 > a client authors. Because the corpus shapes are modeled on real exported
-> service documents (which carry `_self`), and the free-form `arbitrary-json`
-> generator can emit arbitrary keys, every generated document is passed through
+> service documents (which carry `_self`), and the free-form value generator
+> can emit arbitrary keys, every generated document is passed through
 > `strip_reserved_fields` **before** it is sent. Without this, a randomly
 > generated `_self` would round-trip back as the service's own value and cause a
 > **false** mismatch (this is exactly the failure the guard was added to fix).
@@ -116,7 +116,7 @@ the expected hash `H0`, then stored + read back under each config and compared:
 ```mermaid
 flowchart TD
     SEED["Seed (SplitMix64)\nAZURE_COSMOS_FUZZ_SEED"] --> GEN
-    GEN["arbitrary-json\ngenerate random Value D"] --> BOUND["bound_value\nclamp numbers/strings\nto calibrated envelope"]
+    GEN["value generator\ngenerate random Value D"] --> BOUND["bound_value\nclamp numbers/strings\nto calibrated envelope"]
     BOUND --> NORM0["normalize_numbers(D)\nCosmos number rewrite"]
     NORM0 --> CANON0["json-canon (RFC 8785)\ncanonical string"]
     CANON0 --> HASH0["SHA-256 -> H0\n(expected)"]
@@ -262,16 +262,17 @@ random JSON **object** (Cosmos items are objects) using a **hybrid** strategy:
   depth drawn from `[1, max_depth]`, guaranteeing the document actually reaches
   that depth (each level is randomly an object or an array, with a few irregular
   filler siblings);
-- every **leaf and filler branch** is irregular JSON from
-  [`arbitrary-json`](https://docs.rs/arbitrary-json) — random keys (incl. empty,
-  control-char, and Unicode), mixed-type arrays, nested sub-objects and
+- every **leaf and filler branch** is irregular JSON from a small in-tree
+  `ArbitraryValue` generator (a depth-bounded recursive descent over the JSON
+  kinds, driven by the `arbitrary` crate's byte stream) — random keys (incl.
+  empty, control-char, and Unicode), mixed-type arrays, nested sub-objects and
   arrays-of-objects, occasional homogeneous number arrays, and the scalars
   `null` / `true` / `false`;
 - numbers are clamped to the calibrated envelope (§3.2) unless `--wide-numbers`;
   strings to ASCII unless `unicode`.
 
-> **Why hybrid?** `arbitrary-json`'s `arbitrary_iter` decides whether to recurse
-> from *remaining bytes* and stops almost immediately, so an `arbitrary-json`-only
+> **Why hybrid?** The `arbitrary`-driven value generator decides whether to
+> recurse from *remaining bytes* and stops almost immediately, so a free-form-only
 > generator produced near-flat documents (avg depth ≈ 1.3, unchanged by
 > `max_depth`). The explicit skeleton restores real depth: measured average depth
 > now scales with the knob (≈ 3.9 at `max_depth=3`, ≈ 8.5 at `max_depth=12`, with
@@ -433,7 +434,7 @@ replaces the other.
 | --- | --- | --- |
 | Location | `azure_data_cosmos_driver/fuzz/` | `azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs` |
 | Fuzzes | the **byte/wire format** (the codec) | **value fidelity** (end-to-end pipeline) |
-| Input space | random / mutated **raw bytes** | random **JSON values** (arbitrary-json + corpus shapes) |
+| Input space | random / mutated **raw bytes** | random **JSON values** (in-tree value generator + corpus shapes) |
 | Decoder sees | **mis-encoded** frames the encoder never emits | only **well-formed** encoder output |
 | Question | "does the decoder ever crash / hang / OOM on garbage?" | "does a value survive store → read back unchanged?" |
 | Oracle | robustness (never panic) + `decode∘encode` idempotence | `canonicalize(sent) == canonicalize(returned)` |
@@ -449,7 +450,7 @@ code (a correct encoder never emits truncated buffers, bad length prefixes, or
 unknown markers). The `cargo-fuzz` crate feeds the decoder **arbitrary garbage**,
 so it validates **robustness/hardening** on the malformed path, offline — but
 says nothing about round-trip value fidelity. This is exactly the reviewer's
-point that arbitrary-json alone does not fuzz the *protocol*.
+point that a value generator alone does not fuzz the *protocol*.
 
 **Which to use when:**
 
@@ -474,7 +475,7 @@ This section captures an agreed enhancement plan for the harness. The current ha
 
 | Crate | Role | Replaces |
 | ----- | ---- | -------- |
-| [`arbitrary-json`](https://docs.rs/arbitrary-json) | Turns raw fuzzer/PRNG bytes into a random, structurally-valid `serde_json::Value` (via the `arbitrary` crate). | Our hand-rolled `gen_object` / `gen_value` / `gen_array` generator (§4). |
+| in-tree `ArbitraryValue` (uses [`arbitrary`](https://docs.rs/arbitrary)) | Turns raw fuzzer/PRNG bytes into a random, structurally-valid `serde_json::Value`. | Our hand-rolled `gen_object` / `gen_value` / `gen_array` generator (§4). |
 | [`json-canon`](https://docs.rs/json-canon) | RFC 8785 (JCS) canonical serialization — object-key sort, whitespace removal, string escaping. | The **structural** part of our `canonicalize` (§3): keys, whitespace, strings, array order. |
 | [`sha2`](https://docs.rs/sha2) | SHA-256 over the canonical string, enabling a durable cross-run corpus of `H0` hashes. | Our `DefaultHasher` (SipHash) 64-bit hash. |
 
@@ -494,7 +495,7 @@ If we canonicalized numbers with raw JCS, a *faithful* round-trip would report *
 ### 9.3 Target pipeline
 
 ```
-generate:      bytes ──arbitrary-json──▶ Value
+generate:      bytes ──ArbitraryValue──▶ Value
 normalize:     Value  ──our normalize_numbers (calibrated §3.1)──▶ Value′
 canonicalize:  Value′ ──json_canon (RFC 8785 structural)──▶ canonical String
 hash:          String ──sha2 (SHA-256)──▶ H
@@ -505,15 +506,15 @@ Only **step 2** is Cosmos-specific and stays in our code; steps 1, 3, 4 become l
 
 ### 9.4 Two harness shapes (we will land both, in order)
 
-1. **Live-service round-trip (this harness, evolved).** Keep the `#[tokio::test]` soak driven by a seeded PRNG, but feed the PRNG bytes into `arbitrary-json` for generation and swap the structural canonicalizer to `json_canon` + `sha2`. This is the primary deliverable — it validates the whole pipeline against a real account, which per-doc network I/O makes unsuitable for a coverage-guided engine.
+1. **Live-service round-trip (this harness, evolved).** Keep the `#[tokio::test]` soak driven by a seeded PRNG, but feed the PRNG bytes into an `arbitrary`-driven value generator and swap the structural canonicalizer to `json_canon` + `sha2`. This is the primary deliverable — it validates the whole pipeline against a real account, which per-doc network I/O makes unsuitable for a coverage-guided engine.
 2. **Offline codec fuzzer (new, no account).** A `cargo-fuzz` crate that feeds **raw/mutated bytes** straight into the decoder with **no network**, so libfuzzer's coverage guidance and speed apply. As landed it goes *beyond* the originally-planned round-trip check: it fuzzes the **binary protocol itself** (mis-encoded frames the encoder never produces), not just encoder-produced buffers. See §9.8 for the target set. This complements the decoder-only `fuzz_tests.rs` with coverage-guided, byte-level hardening.
 
 ### 9.5 Work plan
 
-1. Add `arbitrary`, `arbitrary-json`, `json-canon`, and `sha2` as **dev-dependencies** of the harness crate (test-only; not shipped in the SDK). *(Originally landed in `azure_data_cosmos_perf`; later moved with the harness to `azure_data_cosmos` — see §9.7.)*
+1. Add `arbitrary`, `json-canon`, and `sha2` as **dev-dependencies** of the harness crate (test-only; not shipped in the SDK). *(Originally landed in `azure_data_cosmos_perf`; later moved with the harness to `azure_data_cosmos` — see §9.7.)* *(An earlier revision used the third-party `arbitrary-json` crate for generation; it was WTFPL-licensed and was replaced with an in-tree `ArbitraryValue` generator.)*
 2. Extract the current number logic into a standalone `normalize_numbers(&Value) -> Value` that applies the calibrated `normalize_number` rules and leave calibration mode (§6) pointing at it.
 3. Replace `canonicalize` internals with: `normalize_numbers` → `json_canon::to_string` → `sha2` digest. Keep the `project_to_sent_keys` step (§2) unchanged.
-4. Replace `gen_object`/`gen_value` with an `arbitrary-json`-backed generator seeded from the existing `SplitMix64` byte stream (so runs stay reproducible via `AZURE_COSMOS_FUZZ_SEED`).
+4. Replace `gen_object`/`gen_value` with a value generator seeded from the existing `SplitMix64` byte stream (so runs stay reproducible via `AZURE_COSMOS_FUZZ_SEED`).
 5. Re-run **calibration** (§6) against a live account to confirm `normalize_numbers` still yields all `MATCH` after the refactor; fold any new `DIFF` back in.
 6. (Separate change) Add the `cargo-fuzz` offline codec target from §9.4(2). *(Landed — see §9.8; scope broadened to byte-level protocol fuzzing.)*
 7. Update §3, §4, and the layer table (§8) to reference the crates once landed.
@@ -531,10 +532,10 @@ Phases 1–4 of §9.5 are implemented in `binary_roundtrip_fuzzer.rs` across fou
 
 | Phase | Change | Status |
 | ----- | ------ | ------ |
-| 1 | Dev-deps `arbitrary`, `arbitrary-json`, `json-canon`, `sha2` wired into the harness crate (initially `azure_data_cosmos_perf`; later relocated with the harness to `azure_data_cosmos`, so the live leg actually runs it). | ✅ landed |
+| 1 | Dev-deps `arbitrary`, `json-canon`, `sha2` wired into the harness crate (initially `azure_data_cosmos_perf`; later relocated with the harness to `azure_data_cosmos`, so the live leg actually runs it). | ✅ landed |
 | 2 | `normalize_number` / `normalize_numbers` extracted as the sole Cosmos-specific number transform (behavior-preserving). | ✅ landed |
 | 3 | `canonicalize` now = `normalize_numbers` → `json_canon::to_string` (RFC 8785); differential hash switched to SHA-256. | ✅ landed |
-| 4 | Generator replaced with `arbitrary-json`, seeded from `SplitMix64` (deterministic per `AZURE_COSMOS_FUZZ_SEED`); a `bound_value` pass keeps the `wide_numbers`/`unicode` envelope contract. | ✅ landed |
+| 4 | Generator replaced with an in-tree `ArbitraryValue` (uses the `arbitrary` crate), seeded from `SplitMix64` (deterministic per `AZURE_COSMOS_FUZZ_SEED`); a `bound_value` pass keeps the `wide_numbers`/`unicode` envelope contract. | ✅ landed |
 | 5 | Live re-calibration + soak against a real account. | ✅ landed (see below) |
 | 6 | Offline `cargo-fuzz` codec crate (byte-level protocol fuzzing). | ✅ landed (see §9.8) |
 
@@ -572,7 +573,7 @@ Run against a real Cosmos account after the crate refactor:
   (create/read/replace/upsert) = 12,000 round-trips, all canonical-equal**
   (seed `1784944014111583800`), plus the offline unit tests. No mismatches.
 
-This confirms no behavior regression from the `arbitrary-json` + `json-canon` +
+This confirms no behavior regression from the value-generator + `json_canon` +
 SHA-256 refactor, and that the request-encode + response-decode paths for
 `replace` and `upsert` round-trip identically to `create`/`read`. Closes §9.6's
 first three acceptance items.

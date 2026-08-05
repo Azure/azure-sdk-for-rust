@@ -118,16 +118,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "arbitrary-json"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08117a235f4bfba33f065e5f6941838fa9f77436c1823fca9c93c9b4a34a40e0"
-dependencies = [
- "arbitrary",
- "serde_json",
-]
-
-[[package]]
 name = "arc-swap"
 version = "1.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -602,7 +592,6 @@ name = "azure_data_cosmos"
 version = "0.38.0"
 dependencies = [
  "arbitrary",
- "arbitrary-json",
  "async-lock",
  "async-trait",
  "azure_core 1.1.0",

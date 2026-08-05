@@ -56,7 +56,6 @@ clap.workspace = true
 # (tests/binary_roundtrip_fuzzer.rs): it generates arbitrary JSON, canonicalizes
 # it (RFC 8785), and hashes the canonical form for differential comparison.
 arbitrary = { workspace = true }
-arbitrary-json = { workspace = true }
 json-canon = { workspace = true }
 sha2 = { workspace = true }
 # Enabled here (dev-only) so the metrics and tracing handler tests can drive

@@ -37,7 +37,6 @@
 use std::error::Error;
 
 use arbitrary::{Arbitrary, Unstructured};
-use arbitrary_json::ArbitraryValue;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::{
@@ -147,7 +146,13 @@ impl FuzzConfig {
                 .unwrap_or(0x1234_5678_9ABC_DEF0),
         };
         Self {
-            iterations: env_u64(ITERATIONS_ENV_VAR, DEFAULT_ITERATIONS),
+            // A zero iteration count would make the fuzzer pass without
+            // exercising anything, so reject it outright.
+            iterations: {
+                let n = env_u64(ITERATIONS_ENV_VAR, DEFAULT_ITERATIONS);
+                assert!(n > 0, "{ITERATIONS_ENV_VAR} must be greater than 0");
+                n
+            },
             seed,
             max_depth: env_u64(MAX_DEPTH_ENV_VAR, DEFAULT_MAX_DEPTH as u64) as u32,
             wide_numbers: env_bool(WIDE_NUMBERS_ENV_VAR, false),
@@ -165,22 +170,35 @@ impl FuzzConfig {
     }
 }
 
+/// Reads a `u64` knob, **panicking** on a malformed value rather than silently
+/// falling back to the default. A typo in a CI variable must fail the run, not
+/// quietly change what the fuzzer covers.
 fn env_u64(name: &str, default: u64) -> u64 {
-    std::env::var(name)
-        .ok()
-        .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(default)
+    match std::env::var(name) {
+        Ok(raw) => raw.trim().parse::<u64>().unwrap_or_else(|_| {
+            panic!("{name} must be a non-negative integer, got {raw:?}");
+        }),
+        Err(_) => default,
+    }
 }
 
+/// Reads a boolean knob, accepting the shell-friendly spellings CI pipelines
+/// commonly use (`1`/`0`, `yes`/`no`, `on`/`off`) in addition to
+/// `true`/`false`. **Panics** on anything else so a mistyped value cannot
+/// silently disable coverage.
 fn env_bool(name: &str, default: bool) -> bool {
-    std::env::var(name)
-        .ok()
-        .and_then(|v| v.parse::<bool>().ok())
-        .unwrap_or(default)
+    match std::env::var(name) {
+        Ok(raw) => match raw.trim().to_ascii_lowercase().as_str() {
+            "true" | "1" | "yes" | "on" => true,
+            "false" | "0" | "no" | "off" => false,
+            _ => panic!("{name} must be a boolean (true/false/1/0/yes/no/on/off), got {raw:?}"),
+        },
+        Err(_) => default,
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// JSON generator (arbitrary-json, seeded from the PRNG)
+// JSON generator (in-tree ArbitraryValue, seeded from the PRNG)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Generates a random JSON **object** suitable as a Cosmos item body.
@@ -189,9 +207,10 @@ fn env_bool(name: &str, default: bool) -> bool {
 /// document actually reaches a target nesting depth (drawn from `[1, max_depth]`),
 /// while every leaf and filler branch is irregular JSON — a mix of hand-rolled
 /// typed scalars (integers, floats, alphabetic / alphanumeric / free-text /
-/// non-ASCII strings, booleans, nulls, number arrays) and [`arbitrary_json`]
-/// subtrees. This fixes the `arbitrary_iter` shallowness (it stops nesting
-/// almost immediately regardless of byte budget), so `max_depth` now
+/// non-ASCII strings, booleans, nulls, number arrays) and [`ArbitraryValue`]
+/// subtrees. This fixes the shallowness of the raw `arbitrary`-driven descent
+/// (it stops nesting almost immediately regardless of byte budget), so
+/// `max_depth` now
 /// meaningfully scales structure and `breadth` scales width. Everything is
 /// driven by the [`SplitMix64`] seed stream, so the same `AZURE_COSMOS_FUZZ_SEED`
 /// reproduces the same document.
@@ -229,7 +248,7 @@ fn gen_object(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
     // Keyed distinctly from the caller-reserved `id`/`pk` so it is never
     // overwritten.
     map.insert("_sampler".to_string(), gen_sampler(rng, cfg));
-    // A spread of irregular root fields (typed scalars + arbitrary-json subtrees).
+    // A spread of irregular root fields (typed scalars + ArbitraryValue subtrees).
     for _ in 0..rng.below(cfg.breadth as u64 + 1) {
         map.insert(gen_key(rng), gen_filler_value(rng, cfg));
     }
@@ -246,8 +265,8 @@ fn gen_object(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
     map
 }
 
-/// Number of PRNG bytes fed to `arbitrary-json` for one filler subtree. A larger
-/// budget lets `arbitrary-json` build bigger, deeper irregular subtrees.
+/// Number of PRNG bytes fed to the value generator for one filler subtree. A
+/// larger budget lets it build bigger, deeper irregular subtrees.
 const FILLER_BUDGET: usize = 256;
 
 /// Refills `n` bytes deterministically from the PRNG.
@@ -259,11 +278,76 @@ fn fill_bytes(rng: &mut SplitMix64, n: usize) -> Vec<u8> {
     bytes
 }
 
-/// A random object key from `arbitrary-json`'s string generator.
+/// A random object key from an entropy-driven string generator.
 fn gen_key(rng: &mut SplitMix64) -> String {
     let bytes = fill_bytes(rng, 16);
     let mut u = Unstructured::new(&bytes);
     String::arbitrary(&mut u).unwrap_or_default()
+}
+
+/// Builds a `serde_json::Value` from raw entropy.
+///
+/// This replaces the external `arbitrary-json` crate: that crate is WTFPL-
+/// licensed, which is not on the workspace license allow-list and would taint
+/// the dependency graph of a published crate (dev-dependencies are still audited
+/// under `cargo deny`). The generator is a depth-bounded recursive descent over
+/// the JSON value kinds, driven entirely by the [`Unstructured`] byte stream, so
+/// it stays deterministic for a given seed.
+struct ArbitraryValue(Value);
+
+impl From<ArbitraryValue> for Value {
+    fn from(v: ArbitraryValue) -> Self {
+        v.0
+    }
+}
+
+impl<'a> Arbitrary<'a> for ArbitraryValue {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(ArbitraryValue(arbitrary_value(u, 4)))
+    }
+}
+
+/// Maximum children drawn for a single array or object node.
+const ARBITRARY_FANOUT: u8 = 8;
+
+fn arbitrary_value(u: &mut Unstructured<'_>, depth: u32) -> Value {
+    // Once depth or entropy is exhausted, only leaf kinds are produced.
+    let leaf = depth == 0 || u.is_empty();
+    let kinds = if leaf { 4 } else { 6 };
+    match u.arbitrary::<u8>().unwrap_or(0) % kinds {
+        0 => Value::Null,
+        1 => Value::Bool(u.arbitrary().unwrap_or(false)),
+        2 => match u.arbitrary::<u8>().unwrap_or(0) % 3 {
+            0 => Value::from(u.arbitrary::<i64>().unwrap_or(0)),
+            1 => Value::from(u.arbitrary::<u64>().unwrap_or(0)),
+            _ => {
+                let f = u.arbitrary::<f64>().unwrap_or(0.0);
+                serde_json::Number::from_f64(if f.is_finite() { f } else { 0.0 })
+                    .map(Value::Number)
+                    .unwrap_or(Value::Null)
+            }
+        },
+        3 => Value::String(String::arbitrary(u).unwrap_or_default()),
+        4 => {
+            let len = u.arbitrary::<u8>().unwrap_or(0) % ARBITRARY_FANOUT;
+            let mut arr = Vec::with_capacity(len as usize);
+            for _ in 0..len {
+                arr.push(arbitrary_value(u, depth - 1));
+            }
+            Value::Array(arr)
+        }
+        _ => {
+            let len = u.arbitrary::<u8>().unwrap_or(0) % ARBITRARY_FANOUT;
+            let mut map = Map::new();
+            for _ in 0..len {
+                map.insert(
+                    String::arbitrary(u).unwrap_or_default(),
+                    arbitrary_value(u, depth - 1),
+                );
+            }
+            Value::Object(map)
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1338,7 +1422,7 @@ fn gen_shaped_document(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Va
 
 /// A small, irregular filler value. Draws from typed scalars, mixed
 /// arrays/objects of typed scalars, homogeneous number arrays (to exercise the
-/// uniform-number wire forms), and `arbitrary-json` subtrees — so filler is both
+/// uniform-number wire forms), and `ArbitraryValue` subtrees — so filler is both
 /// varied and non-trivial in size. Already respects the `wide_numbers`/`unicode`
 /// knobs.
 fn gen_filler_value(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
@@ -1364,7 +1448,8 @@ fn gen_filler_value(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
             }
             Value::Object(map)
         }
-        // An `arbitrary-json` subtree (bigger byte budget), envelope-bounded.
+        // An irregular entropy-driven subtree (bigger byte budget),
+        // envelope-bounded.
         _ => {
             let bytes = fill_bytes(rng, FILLER_BUDGET);
             let mut u = Unstructured::new(&bytes);
@@ -1433,7 +1518,7 @@ fn bound_value(value: &mut Value, cfg: &FuzzConfig) {
             // When Unicode is disabled, object *keys* must be ASCII-filtered
             // too — property names go through the same binary string-encoding
             // path as values, so leaving non-ASCII keys would not isolate the
-            // ASCII codec path. `arbitrary-json` can emit non-ASCII keys.
+            // ASCII codec path. `ArbitraryValue` can emit non-ASCII keys.
             if !cfg.unicode && map.keys().any(|k| !k.is_ascii()) {
                 let rebuilt: Map<String, Value> = std::mem::take(map)
                     .into_iter()
@@ -1645,7 +1730,7 @@ const RESERVED_SYSTEM_KEYS: &[&str] = &["_rid", "_self", "_etag", "_ts", "_attac
 
 /// Removes any Cosmos-reserved system properties from `doc` in place. Applied to
 /// every generated document before it is sent, so neither the corpus shapes nor
-/// the free-form arbitrary-json generator can emit a reserved key the service
+/// the free-form value generator can emit a reserved key the service
 /// would overwrite.
 fn strip_reserved_fields(doc: &mut Map<String, Value>) {
     for key in RESERVED_SYSTEM_KEYS {
@@ -1653,18 +1738,26 @@ fn strip_reserved_fields(doc: &mut Map<String, Value>) {
     }
 }
 
-/// Projects a returned document to only the keys present in `sent`, so
-/// service-added system fields (`_rid`, `_etag`, `_ts`, ...) don't affect the
-/// comparison.
+/// Strips the service-assigned system properties from a returned document so
+/// they don't affect the comparison.
+///
+/// This deliberately **removes only the reserved keys** rather than projecting
+/// down to the keys we sent. Projecting to `sent` would silently discard any
+/// *extra* key the round-trip introduced — exactly the class of codec bug this
+/// fuzzer exists to catch (a mis-parsed length prefix can invent a field). With
+/// the removal form, an unexpected key survives into the comparison and fails
+/// the assertion.
 fn project_to_sent_keys(sent: &Map<String, Value>, got: &Value) -> Value {
     let got_obj = match got.as_object() {
         Some(o) => o,
         None => return got.clone(),
     };
-    let mut out = Map::new();
-    for key in sent.keys() {
-        if let Some(v) = got_obj.get(key) {
-            out.insert(key.clone(), v.clone());
+    let mut out = got_obj.clone();
+    for key in RESERVED_SYSTEM_KEYS {
+        // Keep a reserved key only if we actually sent it (we normally strip
+        // them before sending, so this is just a safety valve).
+        if !sent.contains_key(*key) {
+            out.remove(*key);
         }
     }
     Value::Object(out)
@@ -1894,7 +1987,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             // `_etag`, `_ts`, `_attachments`): the service **owns** these and
             // overwrites/assigns them, so a random value we send would come
             // back different and cause a false round-trip mismatch. The corpus
-            // shapes (and free-form arbitrary-json) can incidentally emit them.
+            // shapes (and free-form value generation) can incidentally emit them.
             strip_reserved_fields(&mut doc);
 
             // Compute the sent canonical form from a normalized copy so it
@@ -2419,7 +2512,7 @@ mod tests {
     #[test]
     fn generator_depth_scales_with_max_depth() {
         // Guards the hybrid-skeleton generator: the average nesting depth must
-        // grow with `max_depth` (the old arbitrary-json-only generator was flat
+        // grow with `max_depth` (the old free-form-only generator was flat
         // at ~1.3 regardless of the knob). We assert a conservative lower bound
         // on the average and that the deepest doc reaches near the target.
         fn avg_and_max_depth(max_depth: u32) -> (f64, u32) {
