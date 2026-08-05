@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::clients::{ClientContext, ContainerClient};
+use crate::options::ContainerClientOptions;
 #[cfg(feature = "control_plane")]
 use azure_data_cosmos_driver::models::DatabaseReference;
 
@@ -67,11 +68,17 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `name` - The name of the container.
+    /// * `options` - Optional parameters for creating the client.
     ///
     /// # Errors
     ///
     /// Returns an error if the container does not exist or the metadata cannot be resolved.
-    pub async fn container_client(&self, name: &str) -> crate::Result<ContainerClient> {
+    pub async fn container_client(
+        &self,
+        name: &str,
+        options: Option<ContainerClientOptions>,
+    ) -> crate::Result<ContainerClient> {
+        let _ = options;
         ContainerClient::new(self.context.clone(), name, &self.database_id).await
     }
 
@@ -355,7 +362,7 @@ mod tests {
     fn _assert_futures_are_send() {
         fn assert_send<T: Send>(_: T) {}
         let client: &DatabaseClient = todo!();
-        assert_send(client.container_client(todo!()));
+        assert_send(client.container_client(todo!(), None));
         assert_send(client.read(todo!()));
         assert_send(client.query_containers(Query::from("SELECT * FROM c"), todo!()));
         assert_send(client.create_container(todo!(), todo!()));

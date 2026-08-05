@@ -142,7 +142,7 @@ async fn create_container(
             None,
         )
         .await?;
-    let container_client = db_client.container_client(&container_id).await?;
+    let container_client = db_client.container_client(&container_id, None).await?;
 
     Ok(container_client)
 }
@@ -192,7 +192,7 @@ async fn create_v1_container(
         )
         .into());
     }
-    let container_client = db_client.container_client(&container_id).await?;
+    let container_client = db_client.container_client(&container_id, None).await?;
 
     let body = container_client.read(None).await?.into_body().single()?;
     let raw: serde_json::Value = serde_json::from_slice(&body)?;
