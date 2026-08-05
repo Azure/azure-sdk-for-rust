@@ -611,19 +611,49 @@ mod tests {
     }
 
     #[test]
-    fn ffi_conditions_carry_client_ffi_sub_status() {
-        // A NULL-argument pre-flight failure is a real 400 + CLIENT_FFI_*.
-        let packed = CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
-        assert_eq!(
-            unpack(packed),
-            (400, SubStatusCode::CLIENT_FFI_NULL_ARGUMENT.value())
-        );
+    fn every_error_code_maps_to_expected_packed_status() {
+        fn expected_wire(code: CosmosErrorCode) -> (u16, u16) {
+            use CosmosErrorCode as Ec;
+            match code {
+                Ec::CosmosErrorCodeSuccess => (0, 0), // packed COSMOS_STATUS_SUCCESS
+                Ec::CosmosErrorCodeInvalidArgument => (400, 20350), // CLIENT_FFI_NULL_ARGUMENT
+                Ec::CosmosErrorCodeInvalidUtf8 => (400, 20351), // CLIENT_FFI_INVALID_UTF8
+                Ec::CosmosErrorCodeInvalidHeader => (400, 20352), // CLIENT_FFI_INVALID_HEADER
+                Ec::CosmosErrorCodeInvalidOptionValue => (400, 20353), // CLIENT_FFI_INVALID_OPTION_VALUE
+                Ec::CosmosErrorCodeInvalidPartitionKey => (400, 20100), // CLIENT_PARTITION_KEY_EMPTY
+                Ec::CosmosErrorCodeTooManyPartitionKeyComponents => (400, 20101), // CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
+                Ec::CosmosErrorCodeInvalidAccountReference => (400, 20108), // CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+                Ec::CosmosErrorCodeOperationCancelled => (408, 20360), // CLIENT_FFI_OPERATION_CANCELLED
+                Ec::CosmosErrorCodeQueueShutdown => (503, 20358),      // CLIENT_FFI_QUEUE_SHUTDOWN
+                Ec::CosmosErrorCodeQueueFull => (503, 20359),          // CLIENT_FFI_QUEUE_FULL
+                Ec::CosmosErrorCodeRuntimeBuildFailed => (500, 20361), // CLIENT_FFI_RUNTIME_BUILD_FAILED
+                Ec::CosmosErrorCodeInternalError => (500, 20362),      // CLIENT_FFI_PANIC
+            }
+        }
 
-        let cancelled = CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code();
-        assert_eq!(
-            unpack(cancelled),
-            (408, SubStatusCode::CLIENT_FFI_OPERATION_CANCELLED.value())
-        );
+        use CosmosErrorCode as Ec;
+        let all = [
+            Ec::CosmosErrorCodeSuccess,
+            Ec::CosmosErrorCodeInvalidArgument,
+            Ec::CosmosErrorCodeInvalidUtf8,
+            Ec::CosmosErrorCodeInvalidHeader,
+            Ec::CosmosErrorCodeInvalidOptionValue,
+            Ec::CosmosErrorCodeInvalidPartitionKey,
+            Ec::CosmosErrorCodeTooManyPartitionKeyComponents,
+            Ec::CosmosErrorCodeInvalidAccountReference,
+            Ec::CosmosErrorCodeOperationCancelled,
+            Ec::CosmosErrorCodeQueueShutdown,
+            Ec::CosmosErrorCodeQueueFull,
+            Ec::CosmosErrorCodeRuntimeBuildFailed,
+            Ec::CosmosErrorCodeInternalError,
+        ];
+        for code in all {
+            assert_eq!(
+                unpack(code.as_status_code()),
+                expected_wire(code),
+                "{code:?} mapped to the wrong packed (http, sub)"
+            );
+        }
     }
 
     #[test]

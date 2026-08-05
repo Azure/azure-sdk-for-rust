@@ -15,7 +15,7 @@
 //!    take a strong reference to its inner state.
 //! 3. `tokio::spawn` a task that runs the driver-side async work and,
 //!    when it completes, publishes a `Completion` to the queue.
-//! 4. Return the producer-side handle (or NULL + a coarse code in
+//! 4. Return the producer-side handle (or NULL + a packed status code in
 //!    `out_pre_error` on pre-flight failure).
 //!
 //! The common machinery is internal (`SpawnContext` + `spawn_oneshot`);
@@ -93,8 +93,8 @@ enum SuccessKind {
 }
 
 /// Pre-flight: builds a [`SpawnContext`] + a fresh producer-side
-/// `cosmos_operation_handle_t *`. Returns `Err(coarse_code)` on
-/// validation failure so the caller can write the coarse code into
+/// `cosmos_operation_handle_t *`. Returns `Err(status_code)` on
+/// validation failure so the caller can write the packed status code into
 /// `out_pre_error` and return NULL.
 fn pre_flight_spawn(
     queue: *mut CompletionQueue,
@@ -158,7 +158,7 @@ fn panic_payload_message(payload: &(dyn Any + Send)) -> &str {
 /// converts the success value into the [`SuccessKind`] the completion
 /// delivers; on `Err`, the rich `CosmosError` is flattened inline into the
 /// completion (subject to the queue's `include_error_details` option) plus
-/// the coarse code.
+/// the packed status code.
 fn spawn_oneshot<Fut, R>(
     ctx: SpawnContext,
     runtime: Arc<crate::runtime::RuntimeContext>,
@@ -294,7 +294,7 @@ fn spawn_oneshot<Fut, R>(
 /// - **Feed exhausted** (`Ok(None)` from the driver): outcome `OK` with a
 ///   degenerate response — status code `0`, empty body, NULL next token.
 ///   Hosts treat this as end-of-stream.
-/// - **Failure**: outcome `ERROR` with the coarse code (+ rich error when
+/// - **Failure**: outcome `ERROR` with the packed status code (+ rich error when
 ///   the queue opted in).
 ///
 /// # Parameters
@@ -306,7 +306,7 @@ fn spawn_oneshot<Fut, R>(
 /// - `queue` — non-NULL completion queue.
 /// - `user_data` — opaque, pointer-sized integer cookie (`intptr_t`)
 ///   round-tripped verbatim onto the completion; never dereferenced.
-/// - `out_pre_error` — receives the coarse code on pre-flight failure
+/// - `out_pre_error` — receives the packed status code on pre-flight failure
 ///   (returns NULL). NULL is accepted.
 ///
 /// # Returns

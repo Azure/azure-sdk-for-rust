@@ -109,7 +109,7 @@ fn finish_runtime_build(
         }
         Err(RuntimeBuildError::Driver(driver_err)) => {
             // The driver's own build failed with a real `CosmosError`. Return
-            // its status verbatim (no coarse re-classification) so the return
+            // its status verbatim (no re-classification) so the return
             // code equals the rich error's `status` field.
             let rc = CosmosStatusCode::from_driver_error(&driver_err);
             if !out_error.is_null() {

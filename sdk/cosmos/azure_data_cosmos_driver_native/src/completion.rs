@@ -244,7 +244,7 @@ impl OperationHandle {
 pub struct CosmosCompletion {
     /// The completion outcome (`Ok` / `Error` / `Cancelled` / `Unknown`).
     pub outcome: CosmosCompletionOutcome,
-    /// Coarse status code (always populated).
+    /// Packed status code (always populated).
     pub status: CosmosStatusCode,
     /// The host's opaque pointer-sized cookie, round-tripped verbatim from
     /// submit; the wrapper never dereferences it.
@@ -496,7 +496,7 @@ impl PendingCompletion {
 
     /// Error completion. When `include_details` is set the rich error fields
     /// (message, wire status, headers, backtrace) are flattened inline;
-    /// otherwise only the coarse `status` is populated.
+    /// otherwise only the packed `status` is populated.
     pub(crate) fn error(
         user_data: isize,
         op_inner: Arc<OperationInner>,
@@ -1320,7 +1320,7 @@ pub fn __test_only_create_operation_handle() -> *mut OperationHandle {
 /// Test-only: reserve an in-flight slot on `queue`, simulating what the real
 /// submit pre-flight does when it admits an operation. Lets tests exercise the
 /// `in_flight` accounting (which gates the `SHUTDOWN` → `DRAINED` transition)
-/// without standing up the full submit pipeline. Returns the coarse code from
+/// without standing up the full submit pipeline. Returns the packed status code from
 /// [`CompletionQueueInner::reserve_in_flight`].
 #[doc(hidden)]
 #[cfg(test)]
@@ -1651,10 +1651,8 @@ mod tests {
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
         );
         assert_eq!(c.was_cancel_requested, 1);
-        assert_eq!(
-            c.status,
-            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code()
-        );
+        let bits = c.status.0 as u32;
+        assert_eq!((bits >> 16, bits & 0xFFFF), (408, 20360));
         // The operation handle's state should reflect Cancelled.
         assert_eq!(
             cosmos_operation_handle_state(op),
@@ -1859,7 +1857,7 @@ mod tests {
             Some(err),
         );
         let c = wait_one_ffi(q, 100).expect("completion delivered");
-        // Coarse status survives.
+        // Packed status survives.
         assert_eq!(
             c.status,
             crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
@@ -1898,7 +1896,7 @@ mod tests {
         );
 
         let c = wait_one_ffi(q, 100).expect("completion delivered");
-        // Coarse packed status decodes to 500 / CLIENT_FFI_PANIC (20362) ...
+        // Packed status decodes to 500 / CLIENT_FFI_PANIC (20362) ...
         assert_eq!(
             c.status,
             crate::error::CosmosStatusCode::from_status(status)

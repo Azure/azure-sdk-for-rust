@@ -1052,7 +1052,7 @@ typedef struct cosmos_completion_t {
    */
   cosmos_completion_outcome_t outcome;
   /**
-   * Coarse status code (always populated).
+   * Packed status code (always populated).
    */
   cosmos_status_code_t status;
   /**
@@ -2087,7 +2087,7 @@ cosmos_status_code_t cosmos_runtime_build(const struct cosmos_runtime_options_t 
  * - **Feed exhausted** (`Ok(None)` from the driver): outcome `OK` with a
  *   degenerate response — status code `0`, empty body, NULL next token.
  *   Hosts treat this as end-of-stream.
- * - **Failure**: outcome `ERROR` with the coarse code (+ rich error when
+ * - **Failure**: outcome `ERROR` with the packed status code (+ rich error when
  *   the queue opted in).
  *
  * # Parameters
@@ -2099,7 +2099,7 @@ cosmos_status_code_t cosmos_runtime_build(const struct cosmos_runtime_options_t 
  * - `queue` — non-NULL completion queue.
  * - `user_data` — opaque, pointer-sized integer cookie (`intptr_t`)
  *   round-tripped verbatim onto the completion; never dereferenced.
- * - `out_pre_error` — receives the coarse code on pre-flight failure
+ * - `out_pre_error` — receives the packed status code on pre-flight failure
  *   (returns NULL). NULL is accepted.
  *
  * # Returns

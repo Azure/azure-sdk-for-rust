@@ -277,7 +277,7 @@ mod tests {
     /// End-to-end against a non-routable endpoint. We don't have an
     /// emulator wired up in Rust unit tests so this exercises the error
     /// path: bootstrap network metadata fails, the driver returns an
-    /// error, and we surface it through the coarse code + rich error.
+    /// error, and we surface it through the packed status code + rich error.
     ///
     /// Skipped in normal `cargo test` because the actual failure mode
     /// (transport error vs. DNS error vs. timeout) varies between OSes
