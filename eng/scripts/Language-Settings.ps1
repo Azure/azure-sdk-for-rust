@@ -264,8 +264,7 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
     PackageVersion = $packageVersion
     ReleaseTag     = "$packageName@$packageVersion"
     # GetExistingPackageVersions is blocked by CFS so Deployable is always $true
-    # This is a bit of a stopgap because the repo will also be tagged with the
-    # released version.
+    # Checking with crates.io was in addition to the repository tag.
     Deployable     = $true
     ReleaseNotes   = $releaseNotes
     ReadmeContent  = $readmeContent
