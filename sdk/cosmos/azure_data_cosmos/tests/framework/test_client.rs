@@ -941,7 +941,7 @@ impl TestRunContext {
     ) -> azure_data_cosmos::Result<ContainerClient> {
         self.management_client()
             .database_client(db_client.id())
-            .container_client(container_id)
+            .container_client(container_id, None)
             .await
     }
 
@@ -1136,7 +1136,7 @@ impl TestRunContext {
                 Err(e) if e.status().status_code() == StatusCode::Conflict => {
                     // Container already exists, delete and recreate it, then return a client
                     let container_client =
-                        db_client.container_client(properties.id.as_ref()).await?;
+                        db_client.container_client(properties.id.as_ref(), None).await?;
                     container_client.delete(None).await?;
 
                     // recreate
@@ -1227,7 +1227,7 @@ impl TestRunContext {
                     let db_client = original_db_client;
                     let container_id = original_container_id.clone();
                     async move {
-                        let container = db_client.container_client(&*container_id).await?;
+                        let container = db_client.container_client(&*container_id, None).await?;
                         container.read(None).await?;
                         Ok::<_, azure_data_cosmos::CosmosError>(container)
                     }
@@ -1250,7 +1250,7 @@ impl TestRunContext {
                     async move {
                         let container = fault_client
                             .database_client(&db_id)
-                            .container_client(&*container_id)
+                            .container_client(&*container_id, None)
                             .await?;
                         container.read(None).await?;
                         Ok::<_, azure_data_cosmos::CosmosError>(container)
@@ -1316,7 +1316,7 @@ impl TestRunContext {
                     async move {
                         let container = client
                             .database_client(&db_id)
-                            .container_client(&*container_id)
+                            .container_client(&*container_id, None)
                             .await?;
                         container.read(None).await?;
                         Ok::<_, azure_data_cosmos::CosmosError>(container)
@@ -1342,7 +1342,7 @@ impl TestRunContext {
                     async move {
                         let container = client
                             .database_client(&db_id)
-                            .container_client(&*container_id)
+                            .container_client(&*container_id, None)
                             .await?;
                         container.read(None).await?;
                         Ok::<_, azure_data_cosmos::CosmosError>(container)
@@ -1364,7 +1364,7 @@ impl TestRunContext {
                     let db_client = original_db_client;
                     let container_id = original_container_id.clone();
                     async move {
-                        let container = db_client.container_client(&*container_id).await?;
+                        let container = db_client.container_client(&*container_id, None).await?;
                         container.read(None).await?;
                         Ok::<_, azure_data_cosmos::CosmosError>(container)
                     }

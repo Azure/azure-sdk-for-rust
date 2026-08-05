@@ -392,7 +392,7 @@ async fn assert_item_readable_from_region(
     let db_client = client.database_client(db_name);
 
     for attempt in 0..MAX_ATTEMPTS {
-        let container = match db_client.container_client(container_name).await {
+        let container = match db_client.container_client(container_name, None).await {
             Ok(container) => container,
             Err(e)
                 if (e.status().status_code() == StatusCode::NotFound

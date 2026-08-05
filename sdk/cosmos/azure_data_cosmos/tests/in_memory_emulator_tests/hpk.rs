@@ -122,7 +122,7 @@ async fn setup_hpk_container() -> ContainerClient {
 
     let container = client
         .database_client(&db_name)
-        .container_client("geo")
+        .container_client("geo", None)
         .await
         .unwrap();
 
