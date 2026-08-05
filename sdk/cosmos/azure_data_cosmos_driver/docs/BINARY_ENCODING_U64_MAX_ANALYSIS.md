@@ -172,8 +172,15 @@ ever preserves `NumberUInt64`, we already send it.
   types to `deserialize_any`; `deserialize_i*` / `deserialize_u*` now route
   through `deserialize_integer`, which **coerces an integral-valued finite
   `Double` into the integer visitor** (e.g. the service-echoed `2^64` saturates
-  back to `u64::MAX`). A **fractional** double is still a genuine type error — it
-  is never silently truncated.
+  back to `u64::MAX`). The coercion is **routed by the target's signedness** (a
+  `signed` flag threaded from each `deserialize_i*`/`deserialize_u*` entry):
+  signed targets use `visit_i64` and the `i64` range, unsigned targets use
+  `visit_u64` and the `u64` range. This matters because serde's signed visitor
+  rejects a `u64` above `i64::MAX`, so routing every non-negative value through
+  `visit_u64` would break signed fields (e.g. reading a service-echoed `i64::MAX`,
+  stored as the double `2^63`). A **fractional** double is still a genuine type
+  error — it is never silently truncated; a value outside the target's range is
+  also a genuine type error rather than a saturating coercion.
 
 **The writer is unchanged:** `encode_u64` still emits exact `NumberUInt64` for
 values above `i64::MAX`, so the exact integer reaches the service (max precision
@@ -210,12 +217,12 @@ sequenceDiagram
     Enc->>Svc: NumberUInt64 (0xC7) — EXACT (unchanged)
     Note over Svc: stores as Double (2^64)
     Svc-->>Dec: NumberDouble (0xCC) = 1.84e19
-    Note over Dec: u64 -> deserialize_u64 -> deserialize_integer
-    alt integral-valued finite Double
+    Note over Dec: u64 -> deserialize_u64 -> deserialize_integer(signed=false)
+    alt integral-valued finite Double, in target range
         Dec->>Dec: f.fract()==0 -> visit_u64(f as u64)
         Note over Dec: 2^64 saturates -> u64::MAX
         Dec-->>App: OK u64::MAX
-    else fractional Double (e.g. 3.5)
+    else fractional Double (e.g. 3.5) or out of range
         Dec->>Dec: visit_f64(...)
         Dec-->>App: X invalid type (still rejected)
     end
@@ -227,8 +234,10 @@ sequenceDiagram
 |---|---|---|---|---|
 | `42` (≤ i64::MAX) | `Int64` | `Int64` | `42` | ✅ exact |
 | `2^60` (f64-representable) | `UInt64` | `Double` | `2^60` | ✅ exact |
+| `i64::MAX` into `i64` field | `Int64` | `Double (2^63)` | `i64::MAX` (float→int saturates) | ✅ happens to be exact |
 | `u64::MAX` | `UInt64` | `Double (2^64)` | `u64::MAX` (float→int saturates) | ✅ happens to be exact |
 | `u64::MAX − 1` | `UInt64` | `Double (2^64)` | `u64::MAX` | ❌ **silent loss** (asserted) |
+| `2^64` into an `i64` field | — | `Double (2^64)` | error (out of signed range) | — rejected, not saturated |
 | `3.5` into a `u64` field | `Double` | `Double` | error (`invalid type`) | — rejected, not truncated |
 
 ### Tests added (documenting *why* we opted in)
@@ -237,8 +246,31 @@ sequenceDiagram
   "why we did this" test: simulates the **service echo** (a `Double` on the wire,
   since the writer no longer produces one locally) and asserts `u64::MAX`,
   `u64::MAX − 1` (the silent loss), and an exactly-representable wide value.
+- `de::tests::echoed_double_coerces_into_signed_targets_across_the_i64_range` —
+  pins the **signedness routing**: `i64::MAX` (stored as `2^63`) and `i64::MIN`
+  coerce into `i64`, a double beyond the signed range (`2^64`) errors instead of
+  saturating into `i64::MAX`, and a negative double is refused by an unsigned
+  target.
+- `de::tests::wide_u64_sent_exactly_is_read_back_lossily_after_service_double_conversion`
+  — end-to-end: the writer sends the exact `UInt64`, the simulated service echo
+  is a `Double`, and the read-back value **differs** from the sent value
+  (`i64::MAX + 2` → `2^63`), proving the loss is at the service, not the codec.
 - `de::tests::integral_double_coerces_but_fractional_double_is_rejected` — pins
   that integral doubles coerce but fractional doubles still error.
+
+### Known limitation — the `Value` / exotic-form path does not coerce
+
+The coercion applies on the **native scalar** read path. Values decoded through
+the `deserialize_via_value` fallback (exotic wire forms: GUID/base64/compressed
+strings, binary blobs, and service-produced uniform `Float64` number arrays,
+`0xF0..`) are driven by `serde_json::Value`'s own deserializer, which maps a
+`Number(f64)` straight to `visit_f64`. The only form that both lands there **and**
+carries integral doubles is a service-only uniform `Float64` array; this crate's
+encoder never emits one. So deserializing such an array into a typed integer
+sequence (e.g. `Vec<u64>`) errors instead of coercing, whereas the same values as
+individual `Double` scalars would coerce. The untyped `Value` target — the common
+case for these forms — is unaffected (it keeps the `f64` either way). This
+asymmetry is an accepted, documented limitation.
 
 The writer, conformance snapshots, golden vectors, and `ser` parity tests are
 **unchanged** (the exact-`UInt64` encoding is retained).

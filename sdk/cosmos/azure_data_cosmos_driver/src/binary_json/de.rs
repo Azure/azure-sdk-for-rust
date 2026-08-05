@@ -82,6 +82,23 @@ impl<'de> BinaryDeserializer<'de> {
     /// Reads the next value as an owned [`serde_json::Value`] (consuming its
     /// bytes) and forwards it through `Value`'s deserializer. Used for the
     /// exotic wire forms the native fast path does not handle.
+    ///
+    /// # Integral-`Double` coercion does not reach this path
+    ///
+    /// The integral-`Double`→integer coercion applied on the native scalar path
+    /// (see [`deserialize_integer`](Self::deserialize_integer)) is **not** applied
+    /// to values decoded here, because `serde_json::Value`'s own deserializer
+    /// drives the target type and maps a `Number(f64)` straight to `visit_f64`.
+    /// In practice the only wire form that both lands here **and** carries
+    /// integral doubles is a service-produced uniform `Float64` number array
+    /// (`0xF0..`); this crate's encoder never emits one. So deserializing such an
+    /// array into a typed integer sequence (e.g. `Vec<u64>`) errors instead of
+    /// coercing, whereas the same values as individual `Double` scalars would
+    /// coerce. This asymmetry is an accepted limitation: the producing side is
+    /// service-only and rare, and the untyped `Value` target — the common case
+    /// for these forms — is unaffected (it keeps the `f64` either way). Revisit
+    /// by threading target-integer intent through a wrapping deserializer if a
+    /// typed integer sequence from a uniform number array becomes a real need.
     fn deserialize_via_value<V>(&mut self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
@@ -101,7 +118,12 @@ impl<'de> BinaryDeserializer<'de> {
     /// without this coercion an integer field receiving it would fail with
     /// `invalid type: floating point, expected u64`. Non-integral doubles still
     /// fall through to `visit_f64` (a genuine type error for an integer field).
-    fn deserialize_integer<V>(&mut self, visitor: V) -> Result<V::Value>
+    ///
+    /// `signed` reflects the **target** type's signedness so the double is routed
+    /// to the matching visitor. Routing every non-negative value through
+    /// `visit_u64` would break signed targets, because serde's signed visitors
+    /// reject a `u64` above `i64::MAX`.
+    fn deserialize_integer<V>(&mut self, visitor: V, signed: bool) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
@@ -133,23 +155,26 @@ impl<'de> BinaryDeserializer<'de> {
                             detail: "non-finite double (NaN or infinity)",
                         });
                     }
-                    // An integral double coerces to the integer target; the cast
-                    // saturates at the type bounds, so `2^64` maps to `u64::MAX`.
+                    // An integral double coerces to the integer target, routed by
+                    // the target's signedness. The cast saturates at the type
+                    // bounds, so the doubles the service produces for `i64::MAX`
+                    // (`2^63`) and `u64::MAX` (`2^64`) map back to those maxima.
                     //
                     // TODO(cosmos/binary-json): this coercion is intentionally
-                    // lossy. An integer above `i64::MAX` (or any integer >= 2^53)
-                    // is sent exactly but the service can only persist it as a
-                    // double, so the value read back here may DIFFER from the
-                    // value sent (see the `wide_u64_sent_exactly_is_read_back_..`
-                    // test). Revisit if/when the backend preserves `UInt64`
-                    // natively — at that point the exact `UInt64` token would come
-                    // back and this coercion would no longer be exercised.
+                    // lossy. An integer at or beyond `2^53` is sent exactly but
+                    // the service can only persist it as a double, so the value
+                    // read back here may DIFFER from the value sent (see the
+                    // `wide_u64_sent_exactly_is_read_back_..` test). Revisit
+                    // if/when the backend preserves `UInt64` natively — at that
+                    // point the exact token would come back and this coercion
+                    // would no longer be exercised.
                     if f.fract() == 0.0 {
-                        if (0.0..=u64::MAX as f64).contains(&f) {
+                        if signed {
+                            if (i64::MIN as f64..=i64::MAX as f64).contains(&f) {
+                                return visitor.visit_i64(f as i64);
+                            }
+                        } else if (0.0..=u64::MAX as f64).contains(&f) {
                             return visitor.visit_u64(f as u64);
-                        }
-                        if (i64::MIN as f64..=i64::MAX as f64).contains(&f) {
-                            return visitor.visit_i64(f as i64);
                         }
                     }
                     visitor.visit_f64(f)
@@ -253,77 +278,78 @@ impl<'de> Deserializer<'de> for &mut BinaryDeserializer<'de> {
             .map_err(|e| BinaryError::Custom(e.to_string()))
     }
 
-    // Integer targets coerce an integral-valued `Double` into the visitor
-    // (see [`BinaryDeserializer::deserialize_integer`]); all other types use the
+    // Integer targets coerce an integral-valued `Double` into the visitor, routed
+    // by the target's signedness (see
+    // [`BinaryDeserializer::deserialize_integer`]); all other types use the
     // standard `deserialize_any` dispatch below.
     fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_integer(visitor)
+        self.deserialize_integer(visitor, true)
     }
 
     fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_integer(visitor)
+        self.deserialize_integer(visitor, true)
     }
 
     fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_integer(visitor)
+        self.deserialize_integer(visitor, true)
     }
 
     fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_integer(visitor)
+        self.deserialize_integer(visitor, true)
     }
 
     fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_integer(visitor)
+        self.deserialize_integer(visitor, true)
     }
 
     fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_integer(visitor)
+        self.deserialize_integer(visitor, false)
     }
 
     fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_integer(visitor)
+        self.deserialize_integer(visitor, false)
     }
 
     fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_integer(visitor)
+        self.deserialize_integer(visitor, false)
     }
 
     fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_integer(visitor)
+        self.deserialize_integer(visitor, false)
     }
 
     fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_integer(visitor)
+        self.deserialize_integer(visitor, false)
     }
 
     forward_to_deserialize_any! {
@@ -523,6 +549,40 @@ mod tests {
         let echoed_exact = double_buffer(exact as f64);
         let back_exact: u64 = from_slice(&echoed_exact).unwrap();
         assert_eq!(back_exact, exact);
+    }
+
+    /// Signed targets must route through `visit_i64`, not `visit_u64`. Selecting
+    /// the branch on the value's range alone sends every non-negative double to
+    /// `visit_u64`, which a signed visitor rejects for anything above `i64::MAX`.
+    #[test]
+    fn echoed_double_coerces_into_signed_targets_across_the_i64_range() {
+        // `i64::MAX` is stored as the double `2^63`; the cast saturates back.
+        let back: i64 = from_slice(&double_buffer(i64::MAX as f64)).unwrap();
+        assert_eq!(back, i64::MAX);
+
+        // `i64::MIN` is exactly representable, so it survives intact.
+        let back: i64 = from_slice(&double_buffer(i64::MIN as f64)).unwrap();
+        assert_eq!(back, i64::MIN);
+
+        // A wide positive value well inside the signed range round-trips exactly.
+        let exact = 1i64 << 60;
+        let back: i64 = from_slice(&double_buffer(exact as f64)).unwrap();
+        assert_eq!(back, exact);
+
+        // A double beyond the signed range is a genuine type error, not a
+        // saturating coercion into `i64::MAX`.
+        let too_wide: Result<i64> = from_slice(&double_buffer(u64::MAX as f64));
+        assert!(
+            too_wide.is_err(),
+            "2^64 must not coerce into an i64 field, got {too_wide:?}"
+        );
+
+        // A negative double must not coerce into an unsigned field.
+        let negative: Result<u64> = from_slice(&double_buffer(-7.0));
+        assert!(
+            negative.is_err(),
+            "a negative double must not coerce into u64, got {negative:?}"
+        );
     }
 
     /// End-to-end demonstration of the wide-`u64` precision boundary: a value
