@@ -228,6 +228,56 @@ sequenceDiagram
     end
 ```
 
+### Worked examples — why `u64::MAX` "matches" but `u64::MAX − 1` does not
+
+The read-back succeeds via a **saturating** float→int cast (`f as u64` in Rust
+clamps an out-of-range float to the type's nearest bound rather than wrapping or
+panicking). Whether the round-tripped value *equals* the sent value then depends
+entirely on whether the integer was exactly representable as an `f64` — with one
+lucky exception at the very top of the range.
+
+**Example A — `u64::MAX` (`18446744073709551615`, i.e. `2^64 − 1`): matches ✅**
+
+```
+send    18446744073709551615  (2^64 − 1)  → wire: exact NumberUInt64
+store   nearest double        = 2^64      = 18446744073709551616  (low bits lost)
+echo    NumberDouble(2^64)
+read    (2^64) as u64  → SATURATES to u64::MAX = 2^64 − 1
+result  received == sent   ✅  (coincidence: saturation clamps back onto the sent value)
+```
+
+**Example B — `u64::MAX − 1` (`18446744073709551614`): does NOT match ❌**
+
+```
+send    18446744073709551614  (2^64 − 2)  → wire: exact NumberUInt64
+store   nearest double = 2^64             (SAME double as u64::MAX — indistinguishable now)
+echo    NumberDouble(2^64)
+read    (2^64) as u64  → SATURATES to u64::MAX = 2^64 − 1
+result  received (2^64 − 1) != sent (2^64 − 2)   ❌  silent loss
+```
+
+Both values collapse onto the *same* stored double (`2^64`), so once the service
+has stored them they are **indistinguishable**; the reader can only produce
+`u64::MAX` for either.
+
+**Example C — `2^60` (exactly `f64`-representable): matches ✅**
+
+```
+send    1152921504606846976  (2^60)      → wire: exact NumberUInt64
+store   double 2^60          (exact — 2^60 fits the 53-bit mantissa with trailing zeros)
+echo    NumberDouble(2^60)
+read    (2^60) as u64  → 2^60  (in range, no saturation needed)
+result  received == sent   ✅  (genuinely lossless)
+```
+
+**The rule:** any integer `≥ 2^53` that is **not** exactly `f64`-representable
+mismatches — *except* `u64::MAX` itself, which the saturating cast happens to
+recover. `u64::MAX` matching is therefore **not** evidence the value was
+preserved; it is an artifact of saturation landing on the sent value. The de
+layer no longer *errors* on any of these (that was the original bug — a `Double`
+reaching a `u64` visitor); it now *succeeds*, accepting the (possibly lossy)
+value.
+
 ### Net round-trip semantics after the change
 
 | Value | Wire (write) | Service stores / echoes | Read-back into `u64` field | Exact? |

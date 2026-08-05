@@ -146,8 +146,7 @@ impl FuzzConfig {
                 .unwrap_or(0x1234_5678_9ABC_DEF0),
         };
         Self {
-            // A zero iteration count would make the fuzzer pass without
-            // exercising anything, so reject it outright.
+            // A zero count would pass without exercising anything.
             iterations: {
                 let n = env_u64(ITERATIONS_ENV_VAR, DEFAULT_ITERATIONS);
                 assert!(n > 0, "{ITERATIONS_ENV_VAR} must be greater than 0");
@@ -170,9 +169,8 @@ impl FuzzConfig {
     }
 }
 
-/// Reads a `u64` knob, **panicking** on a malformed value rather than silently
-/// falling back to the default. A typo in a CI variable must fail the run, not
-/// quietly change what the fuzzer covers.
+/// Reads a `u64` knob, **panicking** on a malformed value: a typo in a CI
+/// variable must fail the run, not silently change what the fuzzer covers.
 fn env_u64(name: &str, default: u64) -> u64 {
     match std::env::var(name) {
         Ok(raw) => raw.trim().parse::<u64>().unwrap_or_else(|_| {
@@ -182,8 +180,7 @@ fn env_u64(name: &str, default: u64) -> u64 {
     }
 }
 
-/// Reads a boolean knob, accepting the shell-friendly spellings CI pipelines
-/// commonly use (`1`/`0`, `yes`/`no`, `on`/`off`) in addition to
+/// Reads a boolean knob, accepting `1`/`0`, `yes`/`no`, `on`/`off` alongside
 /// `true`/`false`. **Panics** on anything else so a mistyped value cannot
 /// silently disable coverage.
 fn env_bool(name: &str, default: bool) -> bool {
@@ -287,12 +284,10 @@ fn gen_key(rng: &mut SplitMix64) -> String {
 
 /// Builds a `serde_json::Value` from raw entropy.
 ///
-/// This replaces the external `arbitrary-json` crate: that crate is WTFPL-
-/// licensed, which is not on the workspace license allow-list and would taint
-/// the dependency graph of a published crate (dev-dependencies are still audited
-/// under `cargo deny`). The generator is a depth-bounded recursive descent over
-/// the JSON value kinds, driven entirely by the [`Unstructured`] byte stream, so
-/// it stays deterministic for a given seed.
+/// Replaces the WTFPL-licensed `arbitrary-json` crate (not on the workspace
+/// license allow-list, and `cargo deny` audits dev-dependencies of a published
+/// crate). A depth-bounded recursive descent over the JSON kinds, driven by the
+/// [`Unstructured`] byte stream, so it stays deterministic for a given seed.
 struct ArbitraryValue(Value);
 
 impl From<ArbitraryValue> for Value {
@@ -1741,12 +1736,10 @@ fn strip_reserved_fields(doc: &mut Map<String, Value>) {
 /// Strips the service-assigned system properties from a returned document so
 /// they don't affect the comparison.
 ///
-/// This deliberately **removes only the reserved keys** rather than projecting
-/// down to the keys we sent. Projecting to `sent` would silently discard any
-/// *extra* key the round-trip introduced — exactly the class of codec bug this
-/// fuzzer exists to catch (a mis-parsed length prefix can invent a field). With
-/// the removal form, an unexpected key survives into the comparison and fails
-/// the assertion.
+/// Removes **only the reserved keys** rather than projecting down to the sent
+/// keys: projecting would silently discard any *extra* key the round-trip
+/// introduced (a mis-parsed length prefix can invent a field) — exactly the
+/// codec bug this fuzzer exists to catch.
 fn project_to_sent_keys(sent: &Map<String, Value>, got: &Value) -> Value {
     let got_obj = match got.as_object() {
         Some(o) => o,
@@ -1754,8 +1747,7 @@ fn project_to_sent_keys(sent: &Map<String, Value>, got: &Value) -> Value {
     };
     let mut out = got_obj.clone();
     for key in RESERVED_SYSTEM_KEYS {
-        // Keep a reserved key only if we actually sent it (we normally strip
-        // them before sending, so this is just a safety valve).
+        // Keep a reserved key only if we actually sent it (safety valve).
         if !sent.contains_key(*key) {
             out.remove(*key);
         }

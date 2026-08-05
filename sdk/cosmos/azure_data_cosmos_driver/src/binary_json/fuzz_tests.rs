@@ -218,15 +218,11 @@ fn all_two_byte_inputs_terminate() {
 /// `from_slice` is stricter — e.g. exotic forms it defers to `decode` for — so
 /// disagreement is asserted only when both return `Ok`.)
 ///
-/// This contract is at the **`Value`** (untyped) level, where the two parsers
-/// must agree. It does **not** cover typed integer targets: when deserializing a
-/// service-echoed integral `Double` into an integer field, `from_slice`
-/// intentionally coerces it (see [`BinaryDeserializer::deserialize_integer`]),
-/// which is *more* permissive than strict text serde for that one case. That
-/// binary-only permissiveness is a deliberate, ratified behavior (the service's
-/// number model cannot store a wide integer exactly, so it must be read back
-/// from a `Double`); it is out of scope for this `Value`-level agreement check,
-/// which sees the same `f64` on both sides.
+/// The contract is at the **`Value`** (untyped) level. It does not cover typed
+/// integer targets: `from_slice` intentionally coerces a service-echoed integral
+/// `Double` into an integer field (see
+/// [`BinaryDeserializer::deserialize_integer`]), a deliberate binary-only
+/// permissiveness that is out of scope here (both sides see the same `f64`).
 fn assert_decoders_agree(buf: &[u8]) {
     let decoded = decode(buf);
     let streamed = from_slice::<serde_json::Value>(buf);
