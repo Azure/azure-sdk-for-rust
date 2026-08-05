@@ -75,6 +75,12 @@ pub struct AmqpConnectionOptions {
     /// Buffer size for the connection.
     pub buffer_size: Option<usize>,
     /// Custom endpoint for the connection. Used to connect to a local AMQP proxy server.
+    ///
+    /// The host and an explicit port both carry into the address that the
+    /// connection dials. Under [`AmqpTransport::WebSocket`] the port carries into
+    /// the `wss://` address, so name the port that the proxy accepts WebSockets
+    /// on, and leave the port out to dial the default port 443. The .NET Azure SDK
+    /// treats `CustomEndpointAddress` the same way.
     pub custom_endpoint: Option<Url>,
     /// The transport used to carry the AMQP protocol. Defaults to [`AmqpTransport::Tcp`].
     pub transport: Option<AmqpTransport>,

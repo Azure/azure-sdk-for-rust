@@ -709,6 +709,11 @@ pub mod builders {
         /// Note: The custom endpoint option allows a customer to specify an AMQP proxy
         /// which will be used to forward requests to the actual Event Hub instance.
         ///
+        /// An explicit port on the endpoint carries into the address that the client
+        /// dials. Under [`AmqpTransport::WebSocket`] that is the `wss://` address, so
+        /// name the port that the proxy accepts WebSockets on, and leave the port out
+        /// to dial the default port 443.
+        ///
         pub fn with_custom_endpoint(mut self, endpoint: String) -> Self {
             self.custom_endpoint = Some(endpoint);
             self

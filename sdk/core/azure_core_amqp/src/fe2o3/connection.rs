@@ -330,6 +330,19 @@ mod tests {
     }
 
     #[test]
+    fn websocket_address_preserves_an_amqp_port() {
+        // A custom endpoint that names an AMQP port keeps it. The .NET Azure SDK
+        // carries `CustomEndpointAddress` into the WebSocket address the same way,
+        // so a proxy that accepts WebSockets on 5671 stays reachable. A caller who
+        // wants port 443 leaves the port out.
+        let proxy = Url::parse("amqps://proxy.example.com:5671/").unwrap();
+        assert_eq!(
+            websocket_address(&proxy).unwrap(),
+            "wss://proxy.example.com:5671/$servicebus/websocket/"
+        );
+    }
+
+    #[test]
     fn websocket_address_keeps_brackets_around_ipv6_host() {
         // `Url::host_str` keeps the brackets around an IPv6 literal, so the
         // authority stays valid when the host and the port are joined.
