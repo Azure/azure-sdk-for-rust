@@ -11,7 +11,10 @@ use crate::models::ThroughputProperties;
 /// Options to be passed to [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ContainerClientOptions {}
+pub struct ContainerClientOptions {
+    /// General-purpose options used when resolving the container metadata.
+    pub operation: OperationOptions,
+}
 
 /// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
 #[cfg(feature = "control_plane")]

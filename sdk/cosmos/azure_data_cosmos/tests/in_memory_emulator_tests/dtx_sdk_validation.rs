@@ -276,7 +276,13 @@ async fn emulator_point_writes_wait_for_dtx_write_guard() -> Result<(), Box<dyn 
             .build(),
         )
         .await?;
-    let container = driver.resolve_container("db", "coll").await?;
+    let container = driver
+        .resolve_container(
+            "db",
+            "coll",
+            azure_data_cosmos_driver::options::OperationOptions::default(),
+        )
+        .await?;
     let mut write_task = tokio::spawn(async move {
         let body = serde_json::to_vec(&json!({
             "id": "blocked-item",

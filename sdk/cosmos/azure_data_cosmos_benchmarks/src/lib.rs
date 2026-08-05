@@ -370,7 +370,7 @@ pub async fn setup() -> (Arc<CosmosDriver>, ItemReference) {
         .expect("failed to create driver");
 
     let container = driver
-        .resolve_container("benchdb", "benchcontainer")
+        .resolve_container("benchdb", "benchcontainer", OperationOptions::default())
         .await
         .expect("failed to resolve container");
 

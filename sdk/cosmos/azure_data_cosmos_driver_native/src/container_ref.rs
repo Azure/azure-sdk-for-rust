@@ -152,7 +152,7 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
     let driver_arc = Arc::clone(&driver_inner.inner);
     let result = runtime_inner.tokio.block_on(async move {
         driver_arc
-            .resolve_container_by_name(&db_id, &container_id)
+            .resolve_container_by_name(&db_id, &container_id, OperationOptions::default())
             .await
     });
 

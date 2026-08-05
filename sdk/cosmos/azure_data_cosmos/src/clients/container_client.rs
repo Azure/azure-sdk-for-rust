@@ -49,11 +49,12 @@ impl ContainerClient {
         context: ClientContext,
         container_id: &str,
         database_id: &str,
+        options: crate::options::ContainerClientOptions,
     ) -> crate::Result<Self> {
         // Eagerly resolve immutable container metadata from the driver.
         let container_ref = context
             .driver
-            .resolve_container(database_id, container_id)
+            .resolve_container(database_id, container_id, options.operation)
             .await
             .map_err(|e| {
                 azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
