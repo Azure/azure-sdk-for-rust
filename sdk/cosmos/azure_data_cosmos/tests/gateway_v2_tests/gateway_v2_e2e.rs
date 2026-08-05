@@ -228,7 +228,7 @@ async fn wait_for_container_ready(
         db_client: &azure_data_cosmos::clients::DatabaseClient,
         container_name: &str,
     ) -> azure_data_cosmos::Result<azure_data_cosmos::clients::ContainerClient> {
-        let container_client = db_client.container_client(container_name).await?;
+        let container_client = db_client.container_client(container_name, None).await?;
         container_client.read(None).await?;
         let mut pages = container_client
             .query_items::<serde_json::Value>(
