@@ -350,7 +350,10 @@ impl DualBackend {
             let deadline = Instant::now() + setup_timeout;
 
             while Instant::now() < deadline {
-                match driver.resolve_container(db, container).await {
+                match driver
+                    .resolve_container(db, container, OperationOptions::default())
+                    .await
+                {
                     Ok(region_container) => {
                         let probe = driver
                             .execute_singleton_operation(

@@ -78,8 +78,13 @@ impl DatabaseClient {
         name: &str,
         options: Option<ContainerClientOptions>,
     ) -> crate::Result<ContainerClient> {
-        let _ = options;
-        ContainerClient::new(self.context.clone(), name, &self.database_id).await
+        ContainerClient::new(
+            self.context.clone(),
+            name,
+            &self.database_id,
+            options.unwrap_or_default(),
+        )
+        .await
     }
 
     /// Returns the identifier of the Cosmos database.
