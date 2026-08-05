@@ -71,6 +71,26 @@ fn websocket_address(target: &Url) -> Result<String> {
     Ok(format!("wss://{authority}{WEBSOCKET_PATH}"))
 }
 
+/// Builds the TLS connector for AMQP framed directly on TCP.
+///
+/// The default connector of `fe2o3-amqp` fills its root store from
+/// `webpki-roots`, a compiled-in copy of the Mozilla root set, and it ignores
+/// the trust store of the operating system. This connector uses the platform
+/// verifier instead, so the TCP transport trusts the same roots as the HTTP
+/// stack of `azure_core`, and a broker behind a private or an enterprise
+/// certificate authority keeps working.
+#[cfg(feature = "fe2o3_amqp_rustls")]
+fn platform_verifier_connector() -> Result<tokio_rustls::TlsConnector> {
+    use rustls_platform_verifier::ConfigVerifierExt as _;
+
+    let config = rustls::ClientConfig::with_platform_verifier().map_err(|e| {
+        AmqpError::with_message(format!("Could not build the AMQP TLS configuration: {e}"))
+    })?;
+    Ok(tokio_rustls::TlsConnector::from(std::sync::Arc::new(
+        config,
+    )))
+}
+
 #[async_trait::async_trait]
 impl AmqpConnectionApis for Fe2o3AmqpConnection {
     async fn open(
@@ -146,10 +166,29 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                         endpoint = custom_endpoint;
                         builder = builder.hostname(url.host_str());
                     }
-                    builder
-                        .open(endpoint)
-                        .await
-                        .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
+
+                    // Supply the connector so that the handshake uses the trust
+                    // store of the operating system. See
+                    // `platform_verifier_connector`. Without a connector,
+                    // `fe2o3-amqp` falls back to its `webpki-roots` default.
+                    #[cfg(feature = "fe2o3_amqp_rustls")]
+                    {
+                        builder
+                            .rustls_connector(platform_verifier_connector()?)
+                            .open(endpoint)
+                            .await
+                            .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
+                    }
+
+                    // Another TLS stack, selected through a direct dependency on
+                    // `fe2o3-amqp`, keeps the default connector of that stack.
+                    #[cfg(not(feature = "fe2o3_amqp_rustls"))]
+                    {
+                        builder
+                            .open(endpoint)
+                            .await
+                            .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
+                    }
                 }
                 AmqpTransport::WebSocket => {
                     // A build without the transport code still accepts the variant,
@@ -300,6 +339,20 @@ impl From<Fe2o3ConnectionError> for AmqpError {
 
             _ => AmqpErrorKind::TransportImplementationError(Box::new(e.0)).into(),
         }
+    }
+}
+
+#[cfg(all(test, feature = "fe2o3_amqp_rustls"))]
+mod rustls_tests {
+    use super::*;
+
+    #[test]
+    fn platform_verifier_connector_builds() {
+        // `ClientConfig::builder()` panics when the process has no default
+        // crypto provider, and the platform verifier reports an error when it
+        // cannot read the trust store of the operating system. Both faults
+        // would otherwise appear only when a connection opens.
+        assert!(platform_verifier_connector().is_ok());
     }
 }
 
