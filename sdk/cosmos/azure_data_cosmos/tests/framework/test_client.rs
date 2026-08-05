@@ -14,6 +14,7 @@ use azure_data_cosmos::{
         Region, ServerCertificateValidation,
     },
     CosmosClient, CosmosError, CosmosRuntime, CosmosStatus, PartitionKey, Query, RoutingStrategy,
+    SubStatusCode,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
@@ -116,12 +117,13 @@ const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
 const FAULT_INJECTION_READINESS_MAX_ATTEMPTS: usize = 20;
 
-async fn retry_container_readiness<T, E, F, Fut, TimeoutError>(
+async fn retry_container_readiness<T, E, F, Fut, TimeoutError, ShouldRetry>(
     region: &str,
     attempt_timeout: Duration,
     retry_delay: Duration,
     max_attempts: Option<usize>,
     timeout_error: TimeoutError,
+    should_retry: ShouldRetry,
     mut probe: F,
 ) -> Result<T, E>
 where
@@ -129,6 +131,7 @@ where
     F: FnMut() -> Fut,
     Fut: Future<Output = Result<T, E>>,
     TimeoutError: Fn(&str, usize) -> E,
+    ShouldRetry: Fn(&E) -> bool,
 {
     let mut attempts = 0;
     let mut last_error = None;
@@ -137,6 +140,9 @@ where
         match tokio::time::timeout(attempt_timeout, probe()).await {
             Ok(Ok(value)) => return Ok(value),
             Ok(Err(error)) => {
+                if !should_retry(&error) {
+                    return Err(error);
+                }
                 if max_attempts.is_some_and(|limit| attempts >= limit) {
                     return Err(error);
                 }
@@ -152,6 +158,11 @@ where
         }
         tokio::time::sleep(retry_delay).await;
     }
+}
+
+fn collection_create_in_progress(error: &CosmosError) -> bool {
+    error.status().status_code() == StatusCode::NotFound
+        && error.status().sub_status() == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS)
 }
 
 fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosError {
@@ -408,20 +419,6 @@ fn is_azure_pipelines() -> bool {
 }
 
 impl TestClient {
-    pub async fn from_env_with_fault_options(
-        fault_client_application_region: Option<Region>,
-        allow_invalid_certificates: bool,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(
-            None,
-            Vec::new(),
-            fault_client_application_region,
-            allow_invalid_certificates,
-            None,
-        )
-        .await
-    }
-
     pub async fn from_env(
         application_region: Option<Region>,
         allow_invalid_certificates: bool,
@@ -634,51 +631,65 @@ impl TestClient {
         )
         .await?;
 
-        // Create fault injection client if rules or application region were provided.
+        // Decide whether a fault-injection client is needed, and with which rules.
         // Rules should be passed in for emulator tests to ensure the FaultClient
         // wraps the HTTP client with invalid cert acceptance,
         // which is required for emulator connectivity.
         // An explicitly-set empty Vec still provisions the fault client (some
         // tests exercise the "no rules configured" path); `None` means
         // `with_fault_injection_rules` was never called.
-        let fault_client = if let Some(rules) = options.fault_injection_rules {
-            Some(
-                Self::from_env_with_fault_rules(
-                    rules,
-                    options.fault_client_application_region.clone(),
-                    options.allow_invalid_certificates,
-                )
-                .await?,
-            )
-        } else if options.fault_client_application_region.is_some() {
-            Some(
-                Self::from_env_with_fault_options(
-                    options.fault_client_application_region,
-                    options.allow_invalid_certificates,
-                )
-                .await?,
-            )
-        } else {
-            None
+        let fault_rules = match (
+            options.fault_injection_rules,
+            options.fault_client_application_region.is_some(),
+        ) {
+            (Some(rules), _) => Some(rules),
+            (None, true) => Some(Vec::new()),
+            (None, false) => None,
         };
 
         // CosmosClient is designed to be cloned cheaply, so we can clone it here.
         if let Some(key_client) = test_client.cosmos_client.clone() {
-            let fault_cosmos_client = fault_client.and_then(|fc| fc.cosmos_client);
-
             // In AAD mode the primary (data-plane) client authenticates with an
             // Entra ID token, while the key client is retained for database
             // management (create/delete), which is not a data-plane RBAC action.
-            let (primary_client, management_client) = match AuthMode::from_env() {
+            let auth_mode = AuthMode::from_env();
+            let (primary_client, management_client) = match auth_mode {
                 AuthMode::Aad => {
                     let region = options
                         .client_application_region
                         .clone()
                         .unwrap_or(HUB_REGION);
-                    let (aad_client, _recorder) = build_aad_client_from_env(region).await?;
+                    let (aad_client, _recorder) =
+                        build_aad_client_from_env(region, Vec::new()).await?;
                     (aad_client, Some(key_client))
                 }
                 AuthMode::Key => (key_client, None),
+            };
+
+            // The fault client must authenticate the same way as the primary client.
+            // Building it from the connection string unconditionally left the
+            // `aad_auth` legs running every fault-injection test under key auth, and
+            // pointed two differently-credentialed clients at the same account.
+            let fault_cosmos_client = match fault_rules {
+                None => None,
+                Some(rules) => match auth_mode {
+                    AuthMode::Aad => {
+                        let region = options
+                            .fault_client_application_region
+                            .clone()
+                            .unwrap_or(HUB_REGION);
+                        Some(build_aad_client_from_env(region, rules).await?.0)
+                    }
+                    AuthMode::Key => {
+                        Self::from_env_with_fault_rules(
+                            rules,
+                            options.fault_client_application_region.clone(),
+                            options.allow_invalid_certificates,
+                        )
+                        .await?
+                        .cosmos_client
+                    }
+                },
             };
 
             let run = TestRunContext::new(primary_client, fault_cosmos_client, management_client);
@@ -1099,6 +1110,7 @@ impl TestRunContext {
                 CONTAINER_READINESS_RETRY_DELAY,
                 Some(FAULT_INJECTION_READINESS_MAX_ATTEMPTS),
                 container_readiness_timeout_error,
+                collection_create_in_progress,
                 move || {
                     let db_client = original_db_client;
                     let container_id = original_container_id.clone();
@@ -1118,6 +1130,7 @@ impl TestRunContext {
                 CONTAINER_READINESS_RETRY_DELAY,
                 Some(FAULT_INJECTION_READINESS_MAX_ATTEMPTS),
                 container_readiness_timeout_error,
+                collection_create_in_progress,
                 move || {
                     let fault_client = fault_client.clone();
                     let db_id = fault_db_id.clone();
@@ -1181,6 +1194,7 @@ impl TestRunContext {
                 CONTAINER_READINESS_RETRY_DELAY,
                 None,
                 container_readiness_timeout_error,
+                |_| true,
                 move || {
                     let client = hub_probe_client.clone();
                     let db_id = hub_db_id.clone();
@@ -1206,6 +1220,7 @@ impl TestRunContext {
                 CONTAINER_READINESS_RETRY_DELAY,
                 None,
                 container_readiness_timeout_error,
+                |_| true,
                 move || {
                     let client = satellite_probe_client.clone();
                     let db_id = satellite_db_id.clone();
@@ -1230,6 +1245,7 @@ impl TestRunContext {
                 CONTAINER_READINESS_RETRY_DELAY,
                 Some(30),
                 container_readiness_timeout_error,
+                |_| true,
                 move || {
                     let db_client = original_db_client;
                     let container_id = original_container_id.clone();
@@ -1297,7 +1313,7 @@ impl TestRunContext {
     pub async fn aad_client(
         &self,
     ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
-        build_aad_client_from_env(HUB_REGION).await
+        build_aad_client_from_env(HUB_REGION, Vec::new()).await
     }
 
     /// Cleans up test resources.
@@ -1384,8 +1400,12 @@ pub fn targets_emulator() -> bool {
 ///   resolves to `AzurePipelinesCredential` in CI (matching the principal the
 ///   bicep grants the data-plane RBAC role to) and `DeveloperToolsCredential`
 ///   locally. No recorder is returned in this case.
+///
+/// `fault_rules` may be empty; pass rules to build the fault-injection variant
+/// of the client so AAD legs exercise fault injection under AAD rather than key auth.
 pub async fn build_aad_client_from_env(
     region: Region,
+    fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
 ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
     use super::CosmosEmulatorCredential;
 
@@ -1434,6 +1454,11 @@ pub async fn build_aad_client_from_env(
         (azure_core_test::credentials::from_env(None)?, None)
     };
 
+    // Applied after the runtime, mirroring `from_connection_string`.
+    if !fault_rules.is_empty() {
+        builder = builder.with_fault_injection_rules(fault_rules)?;
+    }
+
     let account = azure_data_cosmos::AccountReference::with_credential(endpoint, credential);
     let client = builder.build(account, strategy).await?;
     Ok((client, recorder))
@@ -1462,6 +1487,7 @@ mod tests {
             Duration::ZERO,
             None,
             |_, _| "timed out",
+            |_| true,
             move || {
                 let count = count.clone();
                 async move {
@@ -1491,6 +1517,7 @@ mod tests {
             Duration::ZERO,
             Some(2),
             |_, _| "timed out",
+            |_| true,
             move || {
                 let count = count.clone();
                 async move {
@@ -1520,6 +1547,7 @@ mod tests {
                 2 => "timed out after two attempts",
                 _ => unreachable!(),
             },
+            |_| true,
             move || {
                 let count = count.clone();
                 async move {

@@ -26,7 +26,11 @@ use std::sync::Arc;
 /// is enforced at compile time through internal enums.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub struct DatabaseReference {
+pub struct DatabaseReference(Arc<DatabaseReferenceInner>);
+
+/// Shared state behind [`DatabaseReference`].
+#[derive(Debug, PartialEq, Eq, Hash)]
+struct DatabaseReferenceInner {
     /// Reference to the parent account.
     account: AccountReference,
     /// The database identifier (by name or by RID).
@@ -36,62 +40,57 @@ pub struct DatabaseReference {
 impl DatabaseReference {
     /// Creates a new database reference by name.
     pub fn from_name(account: AccountReference, name: impl Into<Cow<'static, str>>) -> Self {
-        Self {
+        Self(Arc::new(DatabaseReferenceInner {
             account,
             id: ResourceIdentifier::ByName(ResourceName::new(name)),
-        }
+        }))
     }
 
     /// Creates a new database reference by RID.
     pub fn from_rid(account: AccountReference, rid: impl Into<Cow<'static, str>>) -> Self {
-        Self {
+        Self(Arc::new(DatabaseReferenceInner {
             account,
             id: ResourceIdentifier::ByRid(ResourceId::new(rid)),
-        }
+        }))
     }
 
     /// Returns a reference to the parent account.
     pub fn account(&self) -> &AccountReference {
-        &self.account
-    }
-
-    /// Consumes this database reference and returns the parent account.
-    pub fn into_account(self) -> AccountReference {
-        self.account
+        &self.0.account
     }
 
     /// Returns the database name, if this is a name-based reference.
     pub fn name(&self) -> Option<&str> {
-        self.id.name()
+        self.0.id.name()
     }
 
     /// Returns the database RID, if this is a RID-based reference.
     pub fn rid(&self) -> Option<&str> {
-        self.id.rid()
+        self.0.id.rid()
     }
 
     /// Returns `true` if this is a name-based reference.
     pub fn is_by_name(&self) -> bool {
-        matches!(self.id, ResourceIdentifier::ByName(_))
+        matches!(self.0.id, ResourceIdentifier::ByName(_))
     }
 
     /// Returns `true` if this is a RID-based reference.
     pub fn is_by_rid(&self) -> bool {
-        matches!(self.id, ResourceIdentifier::ByRid(_))
+        matches!(self.0.id, ResourceIdentifier::ByRid(_))
     }
 
     /// Returns the name-based relative path: `/dbs/{name}`
     ///
     /// Returns `None` if this is a RID-based reference.
     pub fn name_based_path(&self) -> Option<String> {
-        self.id.name().map(|n| format!("/dbs/{}", n))
+        self.0.id.name().map(|n| format!("/dbs/{}", n))
     }
 
     /// Returns the RID-based relative path: `/dbs/{rid}`
     ///
     /// Returns `None` if this is a name-based reference.
     pub fn rid_based_path(&self) -> Option<String> {
-        self.id.rid().map(|r| format!("/dbs/{}", r))
+        self.0.id.rid().map(|r| format!("/dbs/{}", r))
     }
 }
 
@@ -116,7 +115,11 @@ impl DatabaseReference {
 /// (same name, different RID) and rename scenarios (same RID, different name).
 #[derive(Clone, Debug)]
 #[non_exhaustive]
-pub struct ContainerReference {
+pub struct ContainerReference(Arc<ContainerReferenceInner>);
+
+/// Shared state behind [`ContainerReference`].
+#[derive(Debug)]
+struct ContainerReferenceInner {
     /// Reference to the parent account.
     account: AccountReference,
     /// The database user-provided name.
@@ -130,18 +133,18 @@ pub struct ContainerReference {
     /// Partition key definition for this container.
     partition_key_definition: PartitionKeyDefinition,
     /// Pre-computed name-based path: `/dbs/{db_name}/colls/{container_name}`.
-    ///
-    /// Stored as `Arc<str>` so cloning `ContainerReference` is cheap (atomic refcount).
-    name_based_path: Arc<str>,
+    name_based_path: Box<str>,
     /// Pre-computed RID-based path: `/dbs/{db_rid}/colls/{container_rid}`.
-    rid_based_path: Arc<str>,
+    rid_based_path: Box<str>,
 }
 
 impl PartialEq for ContainerReference {
     fn eq(&self, other: &Self) -> bool {
-        self.account == other.account
-            && self.container_rid == other.container_rid
-            && self.container_name == other.container_name
+        // Fast path: clones of the same resolved container share one allocation.
+        Arc::ptr_eq(&self.0, &other.0)
+            || (self.0.account == other.0.account
+                && self.0.container_rid == other.0.container_rid
+                && self.0.container_name == other.0.container_name)
     }
 }
 
@@ -149,9 +152,9 @@ impl Eq for ContainerReference {}
 
 impl Hash for ContainerReference {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.account.hash(state);
-        self.container_rid.hash(state);
-        self.container_name.hash(state);
+        self.0.account.hash(state);
+        self.0.container_rid.hash(state);
+        self.0.container_name.hash(state);
     }
 }
 
@@ -179,9 +182,9 @@ impl ContainerReference {
         let db_rid: ResourceId = db_rid.into();
         let container_name: ResourceName = container_name.into();
         let container_rid: ResourceId = container_rid.into();
-        let name_based_path: Arc<str> = format!("/dbs/{}/colls/{}", db_name, container_name).into();
-        let rid_based_path: Arc<str> = format!("/dbs/{}/colls/{}", db_rid, container_rid).into();
-        Self {
+        let name_based_path: Box<str> = format!("/dbs/{}/colls/{}", db_name, container_name).into();
+        let rid_based_path: Box<str> = format!("/dbs/{}/colls/{}", db_rid, container_rid).into();
+        Self(Arc::new(ContainerReferenceInner {
             account,
             db_name,
             db_rid,
@@ -190,47 +193,47 @@ impl ContainerReference {
             partition_key_definition: container_properties.partition_key.clone(),
             name_based_path,
             rid_based_path,
-        }
+        }))
     }
 
     /// Returns a reference to the parent account.
     pub fn account(&self) -> &AccountReference {
-        &self.account
+        &self.0.account
     }
 
     /// Returns the container name.
     pub fn name(&self) -> &str {
-        self.container_name.as_str()
+        self.0.container_name.as_str()
     }
 
     /// Returns the container RID.
     pub fn rid(&self) -> &str {
-        self.container_rid.as_str()
+        self.0.container_rid.as_str()
     }
 
     /// Returns the database name.
     pub fn database_name(&self) -> &str {
-        self.db_name.as_str()
+        self.0.db_name.as_str()
     }
 
     /// Returns the database RID.
     pub fn database_rid(&self) -> &str {
-        self.db_rid.as_str()
+        self.0.db_rid.as_str()
     }
 
     /// Returns the partition key definition for this container.
     pub fn partition_key_definition(&self) -> &crate::models::PartitionKeyDefinition {
-        &self.partition_key_definition
+        &self.0.partition_key_definition
     }
 
     /// Returns the name-based relative path: `/dbs/{db_name}/colls/{container_name}`
     pub fn name_based_path(&self) -> &str {
-        &self.name_based_path
+        &self.0.name_based_path
     }
 
     /// Returns the RID-based relative path: `/dbs/{db_rid}/colls/{container_rid}`
     pub fn rid_based_path(&self) -> &str {
-        &self.rid_based_path
+        &self.0.rid_based_path
     }
 }
 
@@ -246,7 +249,11 @@ impl ContainerReference {
 /// The resource link is pre-computed for efficiency.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub struct ItemReference {
+pub struct ItemReference(Arc<ItemReferenceInner>);
+
+/// Shared state behind [`ItemReference`].
+#[derive(Debug, PartialEq, Eq, Hash)]
+struct ItemReferenceInner {
     /// Reference to the parent container.
     container: ContainerReference,
     /// The partition key for the item.
@@ -254,7 +261,7 @@ pub struct ItemReference {
     /// The item identifier (name or RID).
     item_identifier: ResourceIdentifier,
     /// Pre-computed resource link.
-    resource_link: String,
+    resource_link: Box<str>,
 }
 
 impl ItemReference {
@@ -271,13 +278,13 @@ impl ItemReference {
         item_name: impl Into<Cow<'static, str>>,
     ) -> Self {
         let name = ResourceName::new(item_name);
-        let resource_link = format!("{}/docs/{}", container.name_based_path(), name);
-        Self {
+        let resource_link = format!("{}/docs/{}", container.name_based_path(), name).into();
+        Self(Arc::new(ItemReferenceInner {
             container: container.clone(),
             partition_key,
             item_identifier: ResourceIdentifier::by_name(name),
             resource_link,
-        }
+        }))
     }
 
     /// Creates a new item reference by RID.
@@ -293,48 +300,48 @@ impl ItemReference {
         item_rid: impl Into<Cow<'static, str>>,
     ) -> Self {
         let rid = ResourceId::new(item_rid);
-        let resource_link = format!("{}/docs/{}", container.rid_based_path(), rid);
-        Self {
+        let resource_link = format!("{}/docs/{}", container.rid_based_path(), rid).into();
+        Self(Arc::new(ItemReferenceInner {
             container: container.clone(),
             partition_key,
             item_identifier: ResourceIdentifier::by_rid(rid),
             resource_link,
-        }
+        }))
     }
 
     /// Returns a reference to the parent container.
     pub fn container(&self) -> &ContainerReference {
-        &self.container
+        &self.0.container
     }
 
     /// Returns a reference to the parent account.
     pub fn account(&self) -> &AccountReference {
-        self.container.account()
+        self.0.container.account()
     }
 
     /// Returns a reference to the partition key.
     pub fn partition_key(&self) -> &PartitionKey {
-        &self.partition_key
+        &self.0.partition_key
     }
 
     /// Returns the item name (document ID), if this is a name-based reference.
     pub fn name(&self) -> Option<&str> {
-        self.item_identifier.name()
+        self.0.item_identifier.name()
     }
 
     /// Returns the item RID, if this is a RID-based reference.
     pub fn rid(&self) -> Option<&str> {
-        self.item_identifier.rid()
+        self.0.item_identifier.rid()
     }
 
     /// Returns `true` if this is a name-based reference.
     pub fn is_by_name(&self) -> bool {
-        self.item_identifier.is_by_name()
+        self.0.item_identifier.is_by_name()
     }
 
     /// Returns `true` if this is a RID-based reference.
     pub fn is_by_rid(&self) -> bool {
-        self.item_identifier.is_by_rid()
+        self.0.item_identifier.is_by_rid()
     }
 
     /// Returns the pre-computed resource link for this item.
@@ -342,7 +349,7 @@ impl ItemReference {
     /// For name-based references: `/dbs/{db}/colls/{coll}/docs/{item}`
     /// For RID-based references: `/dbs/{db_rid}/colls/{coll_rid}/docs/{item_rid}`
     pub fn resource_link(&self) -> &str {
-        &self.resource_link
+        &self.0.resource_link
     }
 }
 
