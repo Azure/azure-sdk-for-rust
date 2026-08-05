@@ -1,11 +1,11 @@
 # azure_storage_blobs
 
-> Microsoft is developing the official Azure SDK for Rust crates and has no plans to update this unofficial crate.
-> In the future we may release an official version that may have a different package name.
-> If releasing an official version of this crate is important to you [let us know](https://github.com/Azure/azure-sdk-for-rust/issues/new/choose).
+> This is a legacy, community-developed crate that is no longer maintained.
+> It has been superseded by the official [`azure_storage_blob`](https://crates.io/crates/azure_storage_blob) crate.
+> New development should use [`azure_storage_blob`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob) instead.
 >
-> Source for this crate can now be found in <https://github.com/Azure/azure-sdk-for-rust/tree/legacy>.
-> To monitor for an official, supported version of this crate, see <https://aka.ms/azsdk/releases>.
+> Source for this legacy crate can be found in <https://github.com/Azure/azure-sdk-for-rust/tree/legacy>.
+> To monitor for official, supported Azure SDK for Rust releases, see <https://aka.ms/azsdk/releases>.
 
 This crate is from the [Azure SDK for Rust](https://github.com/azure/azure-sdk-for-rust).
 It supports [Azure Blob Storage](https://docs.microsoft.com/azure/storage/blobs/storage-blobs-overview).
