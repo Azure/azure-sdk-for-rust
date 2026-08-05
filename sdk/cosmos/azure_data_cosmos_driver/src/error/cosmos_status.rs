@@ -496,7 +496,8 @@ impl SubStatusCode {
             20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
             20118 => Some("ClientCrossPartitionFanOutExceeded"),
-            20119 => Some("ClientQueryRewriteBodyInvalid"),
+            20119 => Some("ClientOrderByComplexValueUnsupported"),
+            20120 => Some("ClientQueryRewriteBodyInvalid"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -520,12 +521,18 @@ impl SubStatusCode {
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
             20212 => Some("ClientChangeFeedPipelineUnexpectedlyDrained"),
             20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
+            20214 => Some("ClientContinuationTokenOrderByStateInvalid"),
+            20215 => Some("ClientStreamingMergeSplitReplacementInvalid"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
             20303 => Some("ServiceReturnedOfferWithoutId"),
             20304 => Some("ClientThroughputPollerIncomplete"),
             20305 => Some("ClientTopologyResolutionFailed"),
+            20306 => Some("ServiceReturnedObjectWithoutRid"),
+            20307 => Some("ClientQueryPlanRangeNotCoveredByTopology"),
+            20308 => Some("ServiceOrderByEnvelopeInvalid"),
+            20309 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1335,11 +1342,16 @@ impl SubStatusCode {
     /// client-side input-validation rejection of the request.
     pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: SubStatusCode = SubStatusCode(20118);
 
+    /// An `ORDER BY` query sorted on a value that evaluated to an array or
+    /// object (20119). Cross-partition `ORDER BY` on complex values is not
+    /// currently supported.
+    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = SubStatusCode(20119);
+
     /// The query plan's `rewrittenQuery` could not be substituted into the
     /// per-partition request body because that body was not valid JSON
-    /// (20119). Cross-partition `OFFSET` / `LIMIT` / `TOP` requires rewriting
+    /// (20120). Cross-partition `OFFSET` / `LIMIT` / `TOP` requires rewriting
     /// each partition's query text.
-    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: SubStatusCode = SubStatusCode(20119);
+    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: SubStatusCode = SubStatusCode(20120);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -1456,6 +1468,18 @@ impl SubStatusCode {
     /// see also 20200, 20203, 20204, 20205.
     pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: SubStatusCode = SubStatusCode(20213);
 
+    /// A `StreamingOrderedMerge` continuation token is semantically invalid
+    /// (bad column/direction, hash, RID, or skip count) (20214).
+    pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: SubStatusCode =
+        SubStatusCode(20214);
+
+    /// `StreamingOrderedMerge` split replacement nodes are unusable (20215):
+    /// either their ranges do not exactly cover the prior range (a coverage
+    /// gap/overlap), or a replacement carries no continuation to resume a
+    /// mid-group boundary and cannot be safely repositioned.
+    pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode =
+        SubStatusCode(20215);
+
     // ----- 20300-20349: SDK-detected service contract violations -----
 
     /// The supplied session-token feed ranges contain no overlap with
@@ -1500,6 +1524,16 @@ impl SubStatusCode {
     /// has no routing information for the operation. Paired with HTTP
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
+
+    /// A cross-partition streaming `ORDER BY` rewritten-query result item
+    /// did not match the expected envelope shape: missing `payload`,
+    /// missing/empty RID, or a mismatched `orderByItems` length (20308).
+    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: SubStatusCode = SubStatusCode(20308);
+
+    /// The backend query plan reported `ORDER BY` columns but did not
+    /// supply a non-empty `rewrittenQuery` (20309).
+    pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: SubStatusCode =
+        SubStatusCode(20309);
 
     /// A topology range resolved for a query-plan EPK range did not
     /// overlap that range (20307). The query planner intersects each
@@ -2167,7 +2201,14 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
     };
 
-    /// 400 / 20119 — the query plan's `rewrittenQuery` could not be
+    /// 400 / 20119 — a cross-partition `ORDER BY` sorted on an array or
+    /// object value, which is not currently supported.
+    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
+    };
+
+    /// 400 / 20120 — the query plan's `rewrittenQuery` could not be
     /// substituted into a per-partition request body because that body was
     /// not valid JSON.
     pub const CLIENT_QUERY_REWRITE_BODY_INVALID: CosmosStatus = CosmosStatus {
@@ -2329,6 +2370,21 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
     };
 
+    /// 500 / 20214 — a `StreamingOrderedMerge` continuation token is
+    /// semantically invalid (bad column/direction, hash, RID, or count).
+    pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+    };
+
+    /// 500 / 20215 — `StreamingOrderedMerge` split replacement nodes are
+    /// unusable: their ranges do not exactly cover the prior range, or a
+    /// replacement carries no continuation to resume a mid-group boundary.
+    pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+    };
+
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)
 
     /// 410 / 20300 — the supplied session-token feed ranges contain no
@@ -2375,6 +2431,20 @@ impl CosmosStatus {
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::ServiceUnavailable,
         sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
+    };
+
+    /// 500 / 20308 — a rewritten-query result item didn't match the
+    /// expected envelope shape.
+    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_ORDER_BY_ENVELOPE_INVALID),
+    };
+
+    /// 500 / 20309 — the query plan reported `ORDER BY` columns but no
+    /// `rewrittenQuery`.
+    pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY),
     };
 
     /// 500 / 20307 — a topology range resolved for a query-plan EPK

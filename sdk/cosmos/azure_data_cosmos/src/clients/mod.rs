@@ -43,7 +43,10 @@ use std::sync::Arc;
 
 use azure_data_cosmos_driver::CosmosDriver;
 
-use crate::diagnostics::{CosmosOperationContext, DiagnosticsContext, DiagnosticsHandlerChain};
+use crate::diagnostics::{
+    ClientLifetimeToken, CosmosClientInfo, CosmosOperationContext, DiagnosticsContext,
+    DiagnosticsHandlerChain,
+};
 use crate::models::CosmosResponse;
 use crate::options::BinaryEncodingOptions;
 
@@ -62,9 +65,36 @@ pub(crate) struct ClientContext {
     /// Empty by default, in which case the completion path does nothing beyond
     /// checking whether a handler is present.
     pub(crate) diagnostics_handlers: DiagnosticsHandlerChain,
+    /// Lifetime tokens handed back by the handlers when this client was built.
+    ///
+    /// Never read; held solely so the tokens' `Drop` runs when the last client
+    /// derived from this context goes away. Because the context is cloned down
+    /// into every `DatabaseClient`/`ContainerClient`, the shared `Arc` keeps the
+    /// tokens alive for as long as *any* of those clients is reachable, which is
+    /// the lifetime handlers are meant to observe.
+    _client_tokens: Arc<[ClientLifetimeToken]>,
 }
 
 impl ClientContext {
+    /// Builds the shared context for a newly constructed
+    /// [`CosmosClient`](super::CosmosClient), notifying every registered handler
+    /// that a client came online and taking ownership of the lifetime tokens
+    /// they hand back.
+    pub(crate) fn new(
+        driver: Arc<CosmosDriver>,
+        binary_encoding: BinaryEncodingOptions,
+        diagnostics_handlers: DiagnosticsHandlerChain,
+        client_info: &CosmosClientInfo,
+    ) -> Self {
+        let client_tokens = diagnostics_handlers.dispatch_client_created(client_info);
+        Self {
+            driver,
+            binary_encoding,
+            diagnostics_handlers,
+            _client_tokens: client_tokens,
+        }
+    }
+
     /// Converts a completed driver response into the SDK
     /// [`CosmosResponse`](crate::models::CosmosResponse) and invokes the
     /// diagnostics handler chain for the operation.

@@ -82,7 +82,7 @@ impl CosmosValue {
             (Self::Integer(a), Self::Integer(b)) => Some(a.cmp(b)),
             (Self::Number(a), Self::Integer(b)) => float_cmp(*a, *b as f64),
             (Self::Integer(a), Self::Number(b)) => float_cmp(*a as f64, *b),
-            (Self::String(a), Self::String(b)) => Some(a.cmp(b)),
+            (Self::String(a), Self::String(b)) => Some(a.encode_utf16().cmp(b.encode_utf16())),
             _ => {
                 if self.type_order() == other.type_order() {
                     // Same complex type — not comparable by ordering in general
@@ -242,9 +242,14 @@ mod tests {
     }
 
     #[test]
-    fn string_comparison() {
+    fn string_comparison_uses_utf16_ordinal_order() {
         assert_eq!(
             CosmosValue::String("a".into()).cosmos_cmp(&CosmosValue::String("b".into())),
+            Some(Ordering::Less)
+        );
+        assert_eq!(
+            CosmosValue::String("\u{10000}".into())
+                .cosmos_cmp(&CosmosValue::String("\u{e000}".into())),
             Some(Ordering::Less)
         );
     }

@@ -142,7 +142,7 @@ pub(crate) async fn handle_operation(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
-    request_headers: &Headers,
+    _request_headers: &Headers,
     request_body: &[u8],
 ) -> AsyncRawResponse {
     let start = Instant::now();
@@ -275,8 +275,14 @@ pub(crate) async fn handle_operation(
         }
         #[cfg(feature = "preview_dtx")]
         OperationType::DistributedTransaction => {
-            handle_distributed_transaction(store, region_name, request_headers, request_body, start)
-                .await
+            handle_distributed_transaction(
+                store,
+                region_name,
+                _request_headers,
+                request_body,
+                start,
+            )
+            .await
         }
         OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
         OperationType::InvalidInput(desc) => invalid_input_response(desc, start),
@@ -3306,21 +3312,30 @@ fn local_query_info_to_dataflow(
     info: crate::query::plan::LocalQueryInfo,
     original_query: &str,
 ) -> crate::driver::dataflow::query_plan::QueryInfo {
-    // The real Gateway returns a per-partition `rewrittenQuery` for
-    // `OFFSET`/`LIMIT` so that each partition yields `offset + limit`
-    // documents from the top (no per-partition skip); the client then applies
-    // the single *global* skip/take. Without this rewrite a cross-partition
-    // `OFFSET x LIMIT y` would skip `x` in every partition *and* again in the
-    // client's `SkipTake`, dropping rows. `TOP`-only queries need no rewrite:
-    // a per-partition `TOP n` combined with the client's global `TOP n` is
-    // already correct, so they keep the empty (no-op) rewritten query.
-    let rewritten_query = match info.limit {
-        Some(limit) => synthesize_offset_limit_rewritten_query(
+    // Compute the per-partition `rewrittenQuery` the real Gateway returns.
+    //
+    // - `ORDER BY` (with or without `OFFSET`/`LIMIT`): synthesize the order-by
+    //   envelope so each partition streams globally-ordered rows. The client's
+    //   `SkipTake` applies any `OFFSET`/`LIMIT`/`TOP` window *on top of* the
+    //   ordered merge, so the window is not pushed per-partition here.
+    // - `OFFSET`/`LIMIT` without ordering: each partition yields `offset +
+    //   limit` documents from the top (no per-partition skip); the client then
+    //   applies the single *global* skip/take. Without this rewrite a
+    //   cross-partition `OFFSET x LIMIT y` would skip `x` in every partition
+    //   *and* again in the client's `SkipTake`, dropping rows.
+    // - `TOP`-only (and everything else): no rewrite. A per-partition `TOP n`
+    //   combined with the client's global `TOP n` is already correct, so the
+    //   empty (no-op) rewritten query is kept.
+    let rewritten_query = if !info.order_by.is_empty() {
+        synthesize_order_by_rewritten_query(original_query, &info.order_by_expressions)
+    } else if let Some(limit) = info.limit {
+        synthesize_offset_limit_rewritten_query(
             original_query,
             info.offset.unwrap_or(0) as u64,
             limit as u64,
-        ),
-        None => Some(String::new()),
+        )
+    } else {
+        Some(String::new())
     };
     crate::driver::dataflow::query_plan::QueryInfo {
         distinct_type: local_distinct_type_to_dataflow(info.distinct_type),
@@ -3366,10 +3381,11 @@ fn local_query_info_to_dataflow(
 /// select the *last* `OFFSET` token seen at depth zero rather than the first
 /// token anywhere.
 ///
-/// NOTE (convergence): when the streaming `ORDER BY` work lands, an
-/// `ORDER BY ... OFFSET ... LIMIT` query will need both this rewrite and the
-/// order-by envelope; today the driver rejects cross-partition `ORDER BY`
-/// before execution, so the two rewrites do not yet interact here.
+/// This rewrite is only used for cross-partition `OFFSET`/`LIMIT` *without*
+/// `ORDER BY`. When a query also has `ORDER BY`, `local_query_info_to_dataflow`
+/// synthesizes the order-by envelope instead and the client's `SkipTake`
+/// applies the `OFFSET`/`LIMIT` window on top of the ordered merge, so the two
+/// rewrites never combine into a single per-partition query.
 fn synthesize_offset_limit_rewritten_query(
     original_query: &str,
     offset: u64,
@@ -3404,6 +3420,125 @@ fn synthesize_offset_limit_rewritten_query(
     let prefix = original_query[..tokens[offset_idx].span.start].trim_end();
     let combined = offset.saturating_add(limit);
     Some(format!("{prefix} OFFSET 0 LIMIT {combined}"))
+}
+
+/// Synthesizes a single-level rewritten `ORDER BY` envelope query, mirroring
+/// what the real Gateway/native query-plan engine returns in
+/// `rewrittenQuery`:
+///
+/// ```text
+/// SELECT VALUE {"_rid": <alias>._rid, "orderByItems": [{"item": <expr0>}, ...], "payload": <alias>}
+/// <original FROM clause, sliced verbatim>
+/// WHERE [(<original predicate>) AND] {documentdb-formattableorderbyquery-filter}
+/// <original ORDER BY clause, sliced verbatim>
+/// ```
+///
+/// The placeholder is substituted in place by the client with `true`
+/// (fresh start) or a scalar `_rid`-aware resume filter (see
+/// `driver::dataflow::query_response`) — no outer subquery wrapper, so the
+/// result stays flat and directly evaluable.
+///
+/// Supports `SELECT *` and `SELECT VALUE <expression>`. Other projection
+/// shapes return `None` rather than synthesizing the wrong payload.
+fn synthesize_order_by_rewritten_query(
+    original_query: &str,
+    order_by_expressions: &[String],
+) -> Option<String> {
+    use crate::query::lexer::{Lexer, TokenKind};
+
+    // Kept in sync with `driver::dataflow::query_response`'s
+    // `ORDER_BY_FILTER_PLACEHOLDER` (this authors it; that substitutes it).
+    const ORDER_BY_FILTER_PLACEHOLDER: &str = "{documentdb-formattableorderbyquery-filter}";
+
+    let tokens = Lexer::tokenize(original_query);
+    let mut depth = 0_usize;
+    let mut top_level = Vec::new();
+    for (index, token) in tokens.iter().enumerate() {
+        if matches!(
+            token.kind,
+            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace
+        ) {
+            depth = depth.saturating_sub(1);
+        }
+        if depth == 0 {
+            top_level.push(index);
+        }
+        if matches!(
+            token.kind,
+            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace
+        ) {
+            depth += 1;
+        }
+    }
+    let is_clause_keyword = |index: usize| index == 0 || tokens[index - 1].kind != TokenKind::Dot;
+    let select_idx = top_level
+        .iter()
+        .copied()
+        .find(|&i| tokens[i].kind == TokenKind::Select)?;
+    let from_idx = top_level
+        .iter()
+        .copied()
+        .find(|&i| tokens[i].kind == TokenKind::From && is_clause_keyword(i))?;
+    let collection_token = tokens.get(from_idx + 1)?;
+    let alias = match tokens.get(from_idx + 2) {
+        Some(t) if t.kind == TokenKind::As => tokens.get(from_idx + 3)?.text,
+        Some(t) if t.kind == TokenKind::Identifier => t.text,
+        _ => collection_token.text,
+    };
+    let payload = match tokens.get(select_idx + 1)? {
+        token if token.kind == TokenKind::Star => alias.to_owned(),
+        token if token.kind == TokenKind::Value => original_query
+            [token.span.end..tokens[from_idx].span.start]
+            .trim()
+            .to_owned(),
+        _ => return None,
+    };
+
+    let order_idx = top_level.iter().copied().find(|&i| {
+        tokens[i].kind == TokenKind::Order
+            && tokens
+                .get(i + 1)
+                .is_some_and(|token| token.kind == TokenKind::By)
+    });
+    let clause_end = order_idx
+        .map(|i| tokens[i].span.start)
+        .unwrap_or(original_query.len());
+    let order_by_text = order_idx.map(|i| original_query[tokens[i].span.start..].trim())?;
+
+    // FROM is emitted verbatim; the placeholder is ANDed into WHERE
+    // (creating one if absent) — the slot every rewritten query carries.
+    let where_bound = order_idx.unwrap_or(tokens.len());
+    let where_idx = top_level.iter().copied().find(|&i| {
+        i > from_idx
+            && i < where_bound
+            && tokens[i].kind == TokenKind::Where
+            && is_clause_keyword(i)
+    });
+    let from_end = where_idx
+        .map(|i| tokens[i].span.start)
+        .unwrap_or(clause_end);
+    let from_text = original_query[tokens[from_idx].span.start..from_end].trim();
+    let where_clause = match where_idx {
+        Some(i) => {
+            let predicate = original_query[tokens[i].span.end..clause_end].trim();
+            format!("WHERE ({predicate}) AND {ORDER_BY_FILTER_PLACEHOLDER}")
+        }
+        None => format!("WHERE {ORDER_BY_FILTER_PLACEHOLDER}"),
+    };
+
+    let order_by_items: Vec<String> = order_by_expressions
+        .iter()
+        .map(|expr| format!(r#"{{"item": {expr}}}"#))
+        .collect();
+
+    Some(format!(
+        r#"SELECT VALUE {{"_rid": {alias}._rid, "orderByItems": [{items}], "payload": {payload}}} {from_text} {where_clause} {order_by}"#,
+        items = order_by_items.join(", "),
+        payload = payload,
+        from_text = from_text,
+        where_clause = where_clause,
+        order_by = order_by_text,
+    ))
 }
 
 fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
@@ -4776,6 +4911,7 @@ fn handle_read(
                     .ru_model()
                     .compute_read_ru(doc.body_size_bytes);
                 let lsn = partition.current_lsn();
+                let item_lsn = doc.lsn;
                 let body = doc.body.clone();
                 let etag = doc.etag.clone();
                 drop(docs);
@@ -4790,13 +4926,19 @@ fn handle_read(
                         .with_request_charge(charge)
                         .with_session_token(&token)
                         .with_etag(&etag);
-                    return Err(decorate_point_response(builder, headers, Some(lsn)).build());
+                    return Err(decorate_point_response(builder, headers, Some(item_lsn)).build());
                 }
-                return Ok((body, etag, token, charge, lsn, headers));
+                return Ok((body, etag, token, charge, lsn, item_lsn, headers));
             }
         }
 
-        Err(error_response(
+        let lsn = partition.current_lsn();
+        drop(docs);
+        let headers = Some(PointResponseHeaders::from_partition(
+            partition,
+            store.next_transport_request_id(),
+        ));
+        let builder = error_response(
             StatusCode::NotFound,
             None,
             "NotFound",
@@ -4808,11 +4950,12 @@ fn handle_read(
             &token,
             start,
         )
-        .build())
+        .with_lsn(lsn);
+        Err(decorate_point_response(builder, headers, Some(lsn)).build())
     });
 
     match result {
-        Some(Ok((body, etag, token, charge, lsn, headers))) => {
+        Some(Ok((body, etag, token, charge, lsn, item_lsn, headers))) => {
             let builder = success_response_with_format(
                 StatusCode::Ok,
                 &body,
@@ -4823,7 +4966,7 @@ fn handle_read(
             )
             .with_etag(&etag)
             .with_lsn(lsn);
-            decorate_point_response(builder, headers, Some(lsn)).build()
+            decorate_point_response(builder, headers, Some(item_lsn)).build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -5284,6 +5427,23 @@ async fn handle_upsert_locked(
         let (new_doc, status, charge) = {
             let mut docs = partition.documents.write().unwrap();
             let logical = docs.entry(epk.clone()).or_default();
+            if let Some(if_match) = parsed.if_match.as_ref() {
+                if logical
+                    .get(&doc_id)
+                    .is_some_and(|existing| *if_match != existing.etag)
+                {
+                    return Err(error_response(
+                        StatusCode::PreconditionFailed,
+                        None,
+                        "PreconditionFailed",
+                        "One of the specified pre-condition is not met.",
+                        1.0,
+                        "",
+                        start,
+                    )
+                    .build());
+                }
+            }
             let (status, rid, self_link) = match logical.get(&doc_id) {
                 Some(existing) => (
                     StatusCode::Ok,
@@ -5747,6 +5907,63 @@ mod tests {
             Some(1_000)
         );
         assert_eq!(parse_pkrange_page_token(&token, "\"other-etag\""), None);
+    }
+
+    #[test]
+    fn order_by_rewrite_preserves_supported_projection_shapes() {
+        let select_star = synthesize_order_by_rewritten_query(
+            "SELECT * FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(select_star.contains(r#""payload": c"#));
+
+        let select_value = synthesize_order_by_rewritten_query(
+            "SELECT VALUE c.id FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(select_value.contains(r#""payload": c.id"#));
+
+        let join_value = synthesize_order_by_rewritten_query(
+            "SELECT VALUE t FROM c JOIN t IN c.tags ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(join_value.contains(r#""payload": t"#));
+    }
+
+    #[test]
+    fn order_by_rewrite_rejects_unsupported_select_list() {
+        assert!(synthesize_order_by_rewritten_query(
+            "SELECT c.id FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn order_by_rewrite_ignores_order_property_identifier() {
+        let rewritten = synthesize_order_by_rewritten_query(
+            "SELECT * FROM c WHERE c.order > 0 ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+
+        assert!(rewritten
+            .contains("WHERE (c.order > 0) AND {documentdb-formattableorderbyquery-filter}"));
+        assert!(rewritten.ends_with("ORDER BY c.rank"));
+    }
+
+    #[test]
+    fn order_by_rewrite_uses_outer_clauses_around_scalar_subquery() {
+        let rewritten = synthesize_order_by_rewritten_query(
+            "SELECT VALUE (SELECT VALUE t FROM t IN c.tags) FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(rewritten.contains(r#""payload": (SELECT VALUE t FROM t IN c.tags)} FROM c WHERE"#));
+        assert!(rewritten.ends_with("ORDER BY c.rank"));
     }
 
     fn document_item(epk: &str, id: &str) -> DocumentFeedItem {

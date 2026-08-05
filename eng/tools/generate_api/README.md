@@ -39,7 +39,7 @@ From that path:
 
 - `Pack-Crates.ps1` runs `generate_api --format apiview` for each packed crate.
 - The staged package artifact keeps the existing downstream shape by renaming that output to
-  `<package>/<package>_rust.json`.
+  `<package>/<package>.rust.json`.
 - The shared `create-apireview` pipeline step consumes that staged JSON artifact.
 
 For local testing, `Pack-Crates.ps1 -APIReview` temporarily switches to markdown generation and

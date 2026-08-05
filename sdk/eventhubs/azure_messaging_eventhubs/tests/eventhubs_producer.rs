@@ -4,8 +4,10 @@
 use azure_core::http::StatusCode;
 use azure_core_amqp::{message::AmqpMessageProperties, AmqpError, AmqpList, AmqpSimpleValue};
 use azure_core_test::{recorded, TestContext};
-use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient};
-use std::{env, error::Error};
+use azure_messaging_eventhubs::{
+    error::ErrorKind, EventDataBatchOptions, ProducerClient, SendEventOptions,
+};
+use std::{env, error::Error, sync::Arc};
 use tracing::{info, trace};
 
 #[recorded::test(live)]
@@ -485,6 +487,200 @@ async fn send_eventdata_with_connection_string(_ctx: TestContext) -> Result<(), 
         .send_event("Hello from a SAS connection string!", None)
         .await
         .is_ok());
+
+    client.close().await?;
+
+    Ok(())
+}
+
+/// Sends to every partition at the same time from one client.
+///
+/// Each send attaches a sender, and each attach needs a claims-based-security
+/// authorization. The service permits one `$cbs` link for each connection, so
+/// the authorizations must run in sequence. Before that fix, the service
+/// answered the overlapping authorizations with `NotAllowed` ("A link to
+/// connection ... $cbs node has already been opened"), which the client
+/// classifies as not retryable, and the sends failed.
+#[recorded::test(live)]
+async fn send_to_every_partition_at_once(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
+
+    let client = Arc::new(
+        ProducerClient::builder()
+            .with_application_id("send_to_every_partition_at_once".to_string())
+            .open(host.as_str(), eventhub.as_str(), recording.credential())
+            .await?,
+    );
+
+    // Read the partitions first, so the connection is open and only the sender
+    // attaches overlap.
+    let partitions = client.get_eventhub_properties().await?.partition_ids;
+    assert!(partitions.len() > 1, "the test needs many partitions");
+    info!("Send to {} partitions at the same time.", partitions.len());
+
+    let mut tasks = Vec::new();
+    for partition in partitions.iter() {
+        let client = client.clone();
+        let partition = partition.clone();
+        tasks.push(tokio::spawn(async move {
+            let result = client
+                .send_event(
+                    format!("Hello, partition {partition}!"),
+                    Some(SendEventOptions {
+                        partition_id: Some(partition.clone()),
+                    }),
+                )
+                .await;
+            (partition, result)
+        }));
+    }
+
+    let mut failures = Vec::new();
+    for task in tasks {
+        let (partition, result) = task.await?;
+        if let Err(e) = result {
+            info!("Partition {partition} failed. {e:?}");
+            failures.push(partition);
+        }
+    }
+
+    Arc::try_unwrap(client)
+        .map_err(|_| "A task still holds the client.")?
+        .close()
+        .await?;
+
+    assert!(
+        failures.is_empty(),
+        "{} of {} sends failed: {failures:?}",
+        failures.len(),
+        partitions.len()
+    );
+
+    Ok(())
+}
+
+/// A batch created with a maximum size must enforce that size.
+///
+/// `attach` used to replace the size the caller asked for with the maximum the
+/// sender link reports, so a small cap had no effect and the batch accepted
+/// events well past it. This test pins the wiring, not just the arithmetic: it
+/// fails if `create_batch` stops using the size the caller supplied.
+#[recorded::test(live)]
+async fn create_batch_honors_max_size_in_bytes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    const MAX_SIZE: u64 = 1024;
+
+    let recording = ctx.recording();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
+
+    let client = ProducerClient::builder()
+        .with_application_id("create_batch_honors_max_size_in_bytes".to_string())
+        .open(host.as_str(), eventhub.as_str(), recording.credential())
+        .await?;
+
+    let batch = client
+        .create_batch(Some(EventDataBatchOptions {
+            max_size_in_bytes: Some(MAX_SIZE),
+            partition_id: Some("0".to_string()),
+            ..Default::default()
+        }))
+        .await?;
+
+    // Add 128 byte events until one is refused. A 1 KiB cap is reached well
+    // before this bound; the bound only stops the loop if the cap is ignored.
+    let body = "x".repeat(128);
+    let mut refused_at = None;
+    for i in 0..64 {
+        if !batch.try_add_event_data(body.clone(), None)? {
+            refused_at = Some(i);
+            break;
+        }
+    }
+
+    let refused_at = refused_at.expect("a batch capped at 1024 bytes must refuse an event");
+    // The cap must be the one the caller asked for, not some smaller value the
+    // resolution got wrong. A batch that refuses the first event is as broken
+    // as one that never refuses.
+    assert!(
+        refused_at > 0,
+        "a 1024 byte batch refused the first 128 byte event, so the cap it got was too small"
+    );
+    assert!(
+        batch.size() <= MAX_SIZE,
+        "batch grew to {} bytes, past its {MAX_SIZE} byte cap",
+        batch.size()
+    );
+    assert!(
+        refused_at < 16,
+        "a 1024 byte batch accepted {refused_at} events of 128 bytes, so the cap was ignored"
+    );
+    assert_eq!(
+        refused_at,
+        batch.len(),
+        "every event before the refused one must be in the batch"
+    );
+    info!(
+        "Batch refused event {refused_at} at {} bytes.",
+        batch.size()
+    );
+
+    // The batch is never sent, so this costs nothing on the service side.
+    client.close().await?;
+
+    Ok(())
+}
+
+/// A maximum size larger than the link allows must be reported, not reduced.
+///
+/// The .NET, Go, and Java clients all report an error here. Reducing the value
+/// silently would hide that the requested size was impossible.
+#[recorded::test(live)]
+async fn create_batch_rejects_size_above_link_maximum(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Far above any Event Hubs link maximum, which is about 1 MiB.
+    const TOO_LARGE: u64 = 512 * 1024 * 1024;
+
+    let recording = ctx.recording();
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
+
+    let client = ProducerClient::builder()
+        .with_application_id("create_batch_rejects_size_above_link_maximum".to_string())
+        .open(host.as_str(), eventhub.as_str(), recording.credential())
+        .await?;
+
+    let result = client
+        .create_batch(Some(EventDataBatchOptions {
+            max_size_in_bytes: Some(TOO_LARGE),
+            partition_id: Some("0".to_string()),
+            ..Default::default()
+        }))
+        .await;
+
+    let error = result
+        .err()
+        .expect("a size above the link maximum must be rejected");
+    // The caller must be able to branch on this without reading the message.
+    assert!(
+        matches!(
+            error.kind,
+            ErrorKind::InvalidBatchSize {
+                requested: TOO_LARGE,
+                ..
+            }
+        ),
+        "the error must report the batch size kind, got: {error:?}"
+    );
+    let message = error.to_string();
+    assert!(
+        message.contains(&TOO_LARGE.to_string()),
+        "the error must name the requested size, got: {message}"
+    );
+    info!("Rejected as expected: {message}");
 
     client.close().await?;
 

@@ -16,7 +16,7 @@
 //! query plan's `rewrittenQuery` (e.g. `OFFSET 0 LIMIT offset+limit`), so this
 //! node only has to reconcile the streams into the final global window. It does
 //! that by trimming each page's `Documents` array (see
-//! [`super::query_response`]) and stopping early once `take` is satisfied — so a
+//! [`super::skip_take_page`]) and stopping early once `take` is satisfied — so a
 //! `TOP n` query never drains partitions it doesn't need.
 
 use std::sync::Arc;
@@ -27,7 +27,7 @@ use crate::diagnostics::DiagnosticsContext;
 use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
 
 use super::{
-    query_response, PageResult, PipelineContext, PipelineNode, PipelineNodeState, SkipTakeStage,
+    skip_take_page, PageResult, PipelineContext, PipelineNode, PipelineNodeState, SkipTakeStage,
 };
 
 /// Applies a global `OFFSET` (`remaining_skip`) then `LIMIT`/`TOP`
@@ -170,11 +170,11 @@ impl PipelineNode for SkipTake {
                     }
                     return Ok(PageResult::Drained);
                 }
-                PageResult::SplitRequired { replacement_nodes } => {
+                PageResult::SplitRequired { replacements } => {
                     // The wrapped fan-out node absorbs splits internally and
                     // never surfaces `SplitRequired`; forward defensively so a
                     // future child type that does is not silently dropped.
-                    return Ok(PageResult::SplitRequired { replacement_nodes });
+                    return Ok(PageResult::SplitRequired { replacements });
                 }
                 PageResult::Page {
                     response,
@@ -196,7 +196,7 @@ impl PipelineNode for SkipTake {
                         }
                     };
 
-                    let outcome = query_response::skip_take_page(
+                    let outcome = skip_take_page::skip_take_page(
                         bytes,
                         self.remaining_skip,
                         self.remaining_take,

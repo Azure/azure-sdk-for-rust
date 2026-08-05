@@ -10,7 +10,7 @@
 //! and transactional batch. HPK feed-range negative validation lives alongside
 //! the positive feed-range tests in `cosmos_feed_ranges.rs`.
 
-// Use the shared test framework declared in `tests/emulator/mod.rs`.
+// Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
 use super::framework;
 
 use std::error::Error;
@@ -398,6 +398,12 @@ pub async fn hpk_item_patch_full_key() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: 400 BadRequest is returned for a partial-key point \
+              read, but without the x-ms-substatus 1001 PartitionKeyMismatch header (behavioral \
+              divergence)"
 )]
 pub async fn hpk_item_partial_key_point_op_fails() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

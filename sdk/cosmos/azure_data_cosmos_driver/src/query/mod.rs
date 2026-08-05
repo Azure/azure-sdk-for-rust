@@ -27,17 +27,20 @@ pub(crate) use parser::parse;
 /// advertises to the Cosmos DB Gateway via
 /// `x-ms-cosmos-supported-query-features`.
 ///
-/// Advertises `OffsetAndLimit,Top`: the cross-partition pipeline supports
-/// these result-window rewrite shapes through [`driver::dataflow::SkipTake`].
-/// The Gateway can therefore return the per-partition rewritten query required
-/// for one global client-side skip/take.
+/// Advertises `MultipleOrderBy,OffsetAndLimit,OrderBy,Top`. The production
+/// pipeline supports streaming single- and multi-column `ORDER BY` rewrites
+/// (`OrderBy,MultipleOrderBy`) and the result-window rewrite shapes
+/// `OffsetAndLimit,Top` through [`driver::dataflow::SkipTake`]. Advertising
+/// these lets the Gateway return the per-partition rewritten query the
+/// client-side pipeline needs, including for combined `ORDER BY … OFFSET/LIMIT`
+/// and `ORDER BY … TOP` queries.
 ///
-/// Other advanced shapes (Aggregate, CompositeAggregate, CountIf, DCount,
-/// Distinct, GroupBy, HybridSearch, MultipleAggregates, MultipleOrderBy,
-/// NonStreamingOrderBy, NonValueAggregate, OrderBy, WeightedRankFusion) remain
-/// unadvertised because the local pipeline cannot execute them yet. Add a
-/// feature here only after the local pipeline gains support for its
-/// corresponding rewrite shape.
+/// Other advanced rewrite shapes (Aggregate, CompositeAggregate, CountIf,
+/// DCount, Distinct, GroupBy, HybridSearch, MultipleAggregates,
+/// NonStreamingOrderBy, NonValueAggregate, WeightedRankFusion) remain
+/// unadvertised until their corresponding pipeline stages are implemented;
+/// advertising one prematurely would cause the Gateway to return a plan we
+/// cannot execute.
 ///
 /// The value must be non-empty: the Gateway V2 thin-client proxy rejects
 /// QueryPlan requests where the `x-ms-cosmos-supported-query-features` header
@@ -46,7 +49,7 @@ pub(crate) use parser::parse;
 /// Tests use [`__TEST_ONLY_SUPPORTED_QUERY_FEATURES`] (broad, matches what
 /// Java/.NET advertise) so plan-shape parity against the live Gateway is
 /// validated end-to-end across the full feature surface.
-pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "OffsetAndLimit,Top";
+pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "MultipleOrderBy,OffsetAndLimit,OrderBy,Top";
 
 /// Broad supported-features list used by cross-crate gateway-comparison
 /// tests. Matches what the Java and .NET SDKs send today so the Gateway
