@@ -14,11 +14,15 @@ use crate::options::ServerCertificateValidation;
 use crate::options::TlsBackend;
 
 const MIN_DEFAULT_HTTP2_CONNECTIONS_PER_ENDPOINT: usize = 32;
+const MIN_PARALLELISM_FOR_DEFAULT_HTTP2_CONNECTION_FLOOR: usize = 4;
 
 fn default_max_http2_connections_for_parallelism(parallelism: usize) -> usize {
-    parallelism
-        .saturating_mul(2)
-        .clamp(MIN_DEFAULT_HTTP2_CONNECTIONS_PER_ENDPOINT, 256)
+    let scaled = parallelism.saturating_mul(2).clamp(1, 256);
+    if parallelism < MIN_PARALLELISM_FOR_DEFAULT_HTTP2_CONNECTION_FLOOR {
+        scaled
+    } else {
+        scaled.max(MIN_DEFAULT_HTTP2_CONNECTIONS_PER_ENDPOINT)
+    }
 }
 
 /// Configuration for connection pooling behavior.
@@ -286,7 +290,7 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_CONNECTION_TIMEOUT_MS`: Idle connection timeout in milliseconds (default: none, min: `300_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`: Best-effort per-shard balancing threshold that may be exceeded at the endpoint connection limit; downstream HTTP/2 queues at the peer-advertised `SETTINGS_MAX_CONCURRENT_STREAMS` (default: `16`, min: `1`, max: `20`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT`: Soft occupancy target for early connection fan-out; not a protocol stream limit (default: `8`, min: `1`, max: `20`, must be at most `max_http2_streams_per_client`)
-/// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT`: Maximum number of HTTP/2 shard clients per endpoint (default: `max(available_parallelism * 2, 32)`, fallback: `32`, min: `1`, max: `256`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT`: Maximum number of HTTP/2 shard clients per endpoint (default: `available_parallelism * 2` below 4 logical CPUs, otherwise `max(available_parallelism * 2, 32)`; fallback: `32`, min: `1`, max: `256`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT`: Minimum number of HTTP/2 shard clients per endpoint (default: `1`, min: `1`, max: `256`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS`: Idle timeout for overflow HTTP/2 shard clients in milliseconds (default: `60_000`, min: `1_000`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_HEALTH_CHECK_INTERVAL_MS`: Background HTTP/2 health-sweep interval in milliseconds (default: `10_000`, min: `100`)
@@ -574,6 +578,8 @@ impl ConnectionPoolOptionsBuilder {
 
     /// Sets the maximum number of HTTP/2 shard clients per endpoint.
     ///
+    /// The default is twice the available parallelism below four logical CPUs;
+    /// at four or more logical CPUs, the default has a floor of 32.
     /// Must be between 1 and 256 inclusive.
     pub fn with_max_http2_connections_per_endpoint(mut self, value: usize) -> Self {
         self.max_http2_connections_per_endpoint = Some(value);
@@ -844,7 +850,9 @@ impl ConnectionPoolOptionsBuilder {
                 )).build());
         }
 
-        // Default: max(available_parallelism * 2, 32).
+        // Below 4 logical CPUs, avoid the 32-connection floor because the
+        // additional shard management regresses CPU-bound low-core workloads.
+        // At 4+ logical CPUs, retain the latency-optimized floor of 32.
         // NOTE: In containerized environments, `available_parallelism()` may
         // report the container's CPU quota or the host's CPU count depending
         // on the runtime. This is a known limitation of `std`; the env-var
@@ -1112,7 +1120,13 @@ mod tests {
         assert_eq!(options.idle_connection_timeout(), None);
         assert_eq!(options.max_http2_streams_per_client(), 16);
         assert_eq!(options.target_http2_streams_per_client(), 8);
-        assert!(options.max_http2_connections_per_endpoint() >= 32);
+        let expected_max_http2_connections = std::thread::available_parallelism()
+            .map(|count| default_max_http2_connections_for_parallelism(count.get()))
+            .unwrap_or(MIN_DEFAULT_HTTP2_CONNECTIONS_PER_ENDPOINT);
+        assert_eq!(
+            options.max_http2_connections_per_endpoint(),
+            expected_max_http2_connections
+        );
         assert_eq!(options.min_http2_connections_per_endpoint(), 1);
         assert_eq!(options.idle_http2_client_timeout(), Duration::from_secs(60));
         assert_eq!(
@@ -1544,8 +1558,11 @@ mod tests {
     }
 
     #[test]
-    fn max_http2_connections_default_has_floor_and_scales_with_parallelism() {
-        assert_eq!(default_max_http2_connections_for_parallelism(1), 32);
+    fn max_http2_connections_default_scales_low_core_and_has_floor_at_four() {
+        assert_eq!(default_max_http2_connections_for_parallelism(1), 2);
+        assert_eq!(default_max_http2_connections_for_parallelism(2), 4);
+        assert_eq!(default_max_http2_connections_for_parallelism(3), 6);
+        assert_eq!(default_max_http2_connections_for_parallelism(4), 32);
         assert_eq!(default_max_http2_connections_for_parallelism(8), 32);
         assert_eq!(default_max_http2_connections_for_parallelism(16), 32);
         assert_eq!(default_max_http2_connections_for_parallelism(32), 64);
