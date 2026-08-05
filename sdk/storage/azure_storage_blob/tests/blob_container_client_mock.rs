@@ -9,6 +9,7 @@ use arrow::{
 use azure_core::{
     http::{
         headers::{Headers, ACCEPT, CONTENT_TYPE},
+        pager::{PagerContinuation, PagerOptions},
         AsyncRawResponse, ClientOptions, StatusCode, Transport, Url,
     },
     Bytes,
@@ -79,6 +80,53 @@ async fn test_list_blobs_mock_arrow() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[tokio::test]
+async fn test_list_blobs_mock_arrow_from_continuation() -> Result<(), Box<dyn Error>> {
+    let client = container_client_with(arrow_mock_client());
+
+    let options = BlobContainerClientListBlobsOptions {
+        method_options: PagerOptions {
+            continuation: Some(PagerContinuation::Token("page2".into())),
+            ..Default::default()
+        },
+        response_format: Some(StorageResponseFormat::Arrow),
+        ..Default::default()
+    };
+    let all_blobs: Vec<BlobItem> = client
+        .list_blobs(Some(options))?
+        .into_stream()
+        .try_collect()
+        .await?;
+    let names: Vec<_> = all_blobs.iter().filter_map(|b| b.name.as_deref()).collect();
+
+    assert_eq!(names, ["page2-a.txt", "page2-b.txt"]);
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_list_blobs_mock_arrow_with_xml_fallback() -> Result<(), Box<dyn Error>> {
+    let client = container_client_with(xml_mock_client_with_accept(
+        "application/vnd.apache.arrow.stream,application/xml",
+    ));
+
+    let options = BlobContainerClientListBlobsOptions {
+        response_format: Some(StorageResponseFormat::Arrow),
+        ..Default::default()
+    };
+    let all_blobs: Vec<BlobItem> = client
+        .list_blobs(Some(options))?
+        .into_stream()
+        .try_collect()
+        .await?;
+    let names: Vec<_> = all_blobs.iter().filter_map(|b| b.name.as_deref()).collect();
+
+    assert_eq!(
+        names,
+        ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
+    );
+    Ok(())
+}
+
 // --- Setup helpers ---
 
 fn container_client_with(mock: Arc<dyn azure_core::http::HttpClient>) -> BlobContainerClient {
@@ -97,8 +145,12 @@ fn container_client_with(mock: Arc<dyn azure_core::http::HttpClient>) -> BlobCon
 }
 
 fn xml_mock_client() -> Arc<dyn azure_core::http::HttpClient> {
-    Arc::new(MockHttpClient::new(|req| {
-        assert_eq!(req.headers().get_str(&ACCEPT).unwrap(), "application/xml");
+    xml_mock_client_with_accept("application/xml")
+}
+
+fn xml_mock_client_with_accept(accept: &'static str) -> Arc<dyn azure_core::http::HttpClient> {
+    Arc::new(MockHttpClient::new(move |req| {
+        assert_eq!(req.headers().get_str(&ACCEPT).unwrap(), accept);
         let is_page2 = req
             .url()
             .query_pairs()
