@@ -51,13 +51,14 @@ impl ContainerClient {
         context: ClientContext,
         database: &ResourceIdentity,
         container: ResourceIdentity,
+        options: crate::options::ContainerClientOptions,
     ) -> crate::Result<Self> {
         // The container's addressing mode must match the database's: name-with-name
         // or RID-with-RID. Mixing the two is not supported by the service routing.
         let container_ref = match (database, &container) {
             (ResourceIdentity::Name(db_name), ResourceIdentity::Name(container_name)) => context
                 .driver
-                .resolve_container(db_name, container_name)
+                .resolve_container(db_name, container_name, options.operation)
                 .await
                 .map_err(|e| {
                     azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)

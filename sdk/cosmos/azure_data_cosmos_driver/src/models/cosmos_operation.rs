@@ -115,7 +115,7 @@ fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
 /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
 ///
 /// // 2. Resolve the container (reads database + container from service, caches result)
-/// let container = driver.resolve_container("mydb", "mycontainer").await?;
+/// let container = driver.resolve_container("mydb", "mycontainer", OperationOptions::default()).await?;
 ///
 /// // 3. Build and execute item operations
 /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
@@ -795,7 +795,7 @@ impl CosmosOperation {
     ///     "my-key",
     /// );
     /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
-    /// let container = driver.resolve_container("my-database", "my-container").await?;
+    /// let container = driver.resolve_container("my-database", "my-container", OperationOptions::default()).await?;
     ///
     /// let result = driver
     ///     .execute_singleton_operation(
@@ -888,7 +888,7 @@ impl CosmosOperation {
     ///     "my-key",
     /// );
     /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
-    /// let container = driver.resolve_container("my-database", "my-container").await?;
+    /// let container = driver.resolve_container("my-database", "my-container", OperationOptions::default()).await?;
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
@@ -928,7 +928,7 @@ impl CosmosOperation {
     ///     "my-key",
     /// );
     /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
-    /// let container = driver.resolve_container("my-database", "my-container").await?;
+    /// let container = driver.resolve_container("my-database", "my-container", OperationOptions::default()).await?;
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver

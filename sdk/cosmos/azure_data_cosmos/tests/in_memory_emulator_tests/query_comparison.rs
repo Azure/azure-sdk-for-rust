@@ -350,7 +350,7 @@ async fn provision_fixture_with_topology(
     let emulator_driver_container = harness
         .emulator
         .driver
-        .resolve_container(db_name, container_name)
+        .resolve_container(db_name, container_name, OperationOptions::default())
         .await?;
     split_physical_partitions_at_points(harness, db_name, container_name, split_points).await?;
 
@@ -387,7 +387,7 @@ async fn provision_fixture_with_topology(
         Some(
             external
                 .driver
-                .resolve_container(db_name, container_name)
+                .resolve_container(db_name, container_name, OperationOptions::default())
                 .await?,
         )
     } else {

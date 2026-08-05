@@ -92,8 +92,13 @@ impl DatabaseClient {
         container: impl Into<ResourceIdentity>,
         options: Option<ContainerClientOptions>,
     ) -> crate::Result<ContainerClient> {
-        let _ = options;
-        ContainerClient::new(self.context.clone(), &self.identity, container.into()).await
+        ContainerClient::new(
+            self.context.clone(),
+            &self.identity,
+            container.into(),
+            options.unwrap_or_default(),
+        )
+        .await
     }
 
     /// Returns the identity (name or RID) used to construct this client.

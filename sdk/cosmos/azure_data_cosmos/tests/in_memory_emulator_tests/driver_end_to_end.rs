@@ -87,14 +87,14 @@ async fn setup_with_container() -> (
     // Resolve containers
     let emu_container = backend
         .emulator_driver
-        .resolve_container(&db_name, container_name)
+        .resolve_container(&db_name, container_name, OperationOptions::default())
         .await
         .unwrap();
 
     let real_container = if let Some(ref real_driver) = backend.real_driver {
         Some(
             real_driver
-                .resolve_container(&db_name, container_name)
+                .resolve_container(&db_name, container_name, OperationOptions::default())
                 .await
                 .unwrap(),
         )
@@ -296,7 +296,7 @@ async fn create_database_and_container_through_driver() {
     // Verify container is resolvable on emulator
     let _emu_coll = backend
         .emulator_driver
-        .resolve_container(&db_name, container_name)
+        .resolve_container(&db_name, container_name, OperationOptions::default())
         .await
         .unwrap();
 
@@ -882,7 +882,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .unwrap();
 
     let container = driver
-        .resolve_container(&db_name, "hub-testcoll")
+        .resolve_container(&db_name, "hub-testcoll", OperationOptions::default())
         .await
         .unwrap();
 
@@ -1029,7 +1029,7 @@ async fn create_retries_after_429_throttling() {
         .await
         .unwrap();
     let container = driver
-        .resolve_container(&db_name, "throttle_coll")
+        .resolve_container(&db_name, "throttle_coll", OperationOptions::default())
         .await
         .unwrap();
 
@@ -1210,7 +1210,7 @@ async fn read_failover_on_503_via_fault_injection() {
         .unwrap();
 
     let emu_container = emu_driver
-        .resolve_container("fi-testdb", "fi-testcoll")
+        .resolve_container("fi-testdb", "fi-testcoll", OperationOptions::default())
         .await
         .unwrap();
 
@@ -1424,7 +1424,7 @@ async fn try_real_failover_comparison(
         .ok()?;
 
     let container = driver
-        .resolve_container(&db_name, "fi-testcoll")
+        .resolve_container(&db_name, "fi-testcoll", OperationOptions::default())
         .await
         .ok()?;
 
@@ -1498,13 +1498,13 @@ async fn setup_with_v1_container() -> (
 
     let emu_container = backend
         .emulator_driver
-        .resolve_container(&db_name, container_name)
+        .resolve_container(&db_name, container_name, OperationOptions::default())
         .await
         .unwrap();
     let real_container = if let Some(ref real_driver) = backend.real_driver {
         Some(
             real_driver
-                .resolve_container(&db_name, container_name)
+                .resolve_container(&db_name, container_name, OperationOptions::default())
                 .await
                 .unwrap(),
         )
