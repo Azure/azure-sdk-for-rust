@@ -14,7 +14,7 @@
 
 ### Bugs Fixed
 
-- The background endpoint-probe loop no longer probes endpoints the account has stopped advertising. Endpoint failback is owned exclusively by the connectivity-probe loop (there is no time-based expiry), so a mark for a region removed from the account was re-probed on every sweep — forever — against a hostname that is eventually withdrawn from DNS. The mark itself is deliberately retained rather than dropped: it is inert for routing while the region is absent, and keeping it means a region that returns to the account must still pass a probe before it takes live traffic.
+- The background endpoint-probe loop no longer probes endpoints the account has stopped advertising. Endpoint failback is owned exclusively by the connectivity-probe loop (there is no time-based expiry), so a mark for a region removed from the account was re-probed on every sweep — forever — against a hostname that is eventually withdrawn from DNS. The mark itself is deliberately retained rather than dropped: it is inert for routing while the region is absent, and keeping it means a region that returns to the account must still pass a probe before it takes live traffic. ([#15](https://github.com/tvaron3/azure-sdk-for-rust/pull/15))
 
 ### Other Changes
 
