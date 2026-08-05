@@ -1,0 +1,49 @@
+{
+  "_comment": "Observed timeline of live multi-write experiments on tomasvaron-h2sweep (Central US, Session consistency, Continuous backup), polling the account read every 5s. Companion to live_add_remove_region_timeline.json, which covers the same operations on a SINGLE-write account. Key contrast: under multi-write a joining region enters readableLocations and writableLocations in one atomic step, and enableMultipleWriteLocations itself flaps during a write-mode change.",
+  "account": "tomasvaron-h2sweep",
+  "conclusions": [
+    "Continuous backup does NOT block enabling multiple write locations, despite test-resources.bicep describing them as incompatible. That comment appears to apply to account creation, not to a later PATCH.",
+    "BOTH write-mode directions are permitted: single -> multi and multi -> single each completed successfully on a normal (non-migrated) account.",
+    "enableMultipleWriteLocations FLAPS during a write-mode change, alternating true/false across successive account reads for minutes. This is a routing-mode flag, not just a list, so a client refreshing on its own cadence will alternate between multi-write and single-write routing.",
+    "Adding a region to a multi-write account puts it into readableLocations and writableLocations in a SINGLE atomic transition, with no flapping -- unlike the single-write add, which flapped for ~40s before settling.",
+    "Removing a region from a multi-write account flaps far more on the regional endpoint than the single-write case: the endpoint alternated 200 <-> 403/1008 nine times over ~5 minutes.",
+    "During that removal window writableLocations still advertises the region while its endpoint returns 403/1008. Under multi-write this is worse than under single-write, because multi-write clients route writes to their LOCAL region -- so a client colocated with the dying region retries into it, refreshes topology, is told it is still writable, and retries again."
+  ],
+  "enable_multi_write": {
+    "arm_accepted_at": "2026-07-31T00:28:5xZ",
+    "arm_succeeded_at": "2026-07-31T00:29:45Z",
+    "data_plane_first_true_at": "2026-07-31T00:29:20Z",
+    "flap_alternations": 23,
+    "flap_settled_at": "2026-07-31T00:34:19Z",
+    "notes": "The flag reached the data plane within about a minute, then alternated true/false ~23 times over the next 5 minutes before settling on true. readableLocations/writableLocations were unaffected throughout (single-region account).",
+    "permitted": true
+  },
+  "add_region_while_multi_write": {
+    "arm_accepted_at": "2026-07-31T00:29:56Z",
+    "flap_alternations": 0,
+    "gateway_advertised_at": "2026-07-31T01:06:53Z",
+    "notes": "The new region appeared in readableLocations AND writableLocations simultaneously, in one transition, with no flapping at all. Contrast the single-write add, which flapped for ~40s. Total duration ~37 minutes, notably longer than the ~13 minute single-write add.",
+    "region_added": "East US 2",
+    "total_duration_minutes_approx": 37
+  },
+  "disable_multi_write": {
+    "arm_accepted_at": "2026-07-31T05:34:59Z",
+    "arm_succeeded_by": "2026-07-31T05:42:12Z",
+    "data_plane_first_false_at": "2026-07-31T05:37:08Z",
+    "flap_alternations": 25,
+    "flap_settled_at": "2026-07-31T05:41:12Z",
+    "notes": "multi -> single IS permitted here, contradicting the expectation that it is only available to migrated accounts. Flapped even more than the enable direction: ~25 alternations over ~4 minutes.",
+    "permitted": true
+  },
+  "remove_region_while_multi_write": {
+    "arm_accepted_at": "2026-07-31T05:16:59Z",
+    "gateway_first_dropped_at": "2026-07-31T05:23:31Z",
+    "gateway_settled_at": "2026-07-31T05:25:53Z",
+    "notes": "The regional endpoint began failing 31s after the PATCH but then flapped 200 <-> 403/1008 nine times over ~5 minutes before DNS was withdrawn. The global account read kept advertising the region -- in BOTH readableLocations and writableLocations -- for ~6.5 minutes after the endpoint first failed.",
+    "regional_endpoint_dns_nxdomain_at": "2026-07-31T05:23:12Z",
+    "regional_endpoint_first_403_1008_at": "2026-07-31T05:17:30Z",
+    "regional_endpoint_flap_alternations": 9,
+    "region_removed": "East US 2",
+    "total_duration_minutes_approx": 9
+  }
+}

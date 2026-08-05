@@ -1,0 +1,48 @@
+{
+  "captured_at": "2026-07-30T23:32:42.239417+00:00",
+  "endpoint": "https://tomasvaron-h2sweep-centralus.documents.azure.com/",
+  "payload": {
+    "_dbs": "//dbs/",
+    "_rid": "tomasvaron-h2sweep-centralus.sql.cosmos.azure.com",
+    "_self": "",
+    "addresses": "//addresses/",
+    "continuousBackupEnabled": true,
+    "disableCrossRegionalHedging": false,
+    "enableMultipleWriteLocations": false,
+    "enableNRegionSynchronousCommit": false,
+    "enablePerPartitionFailoverBehavior": false,
+    "id": "tomasvaron-h2sweep-centralus",
+    "media": "//media/",
+    "queryEngineConfiguration": "{\"allowNewKeywords\":true,\"maxJoinsPerSqlQuery\":10,\"maxQueryRequestTimeoutFraction\":0.9,\"maxSqlQueryInputLength\":524288,\"maxUdfRefPerSqlQuery\":10,\"queryMaxInMemorySortDocumentCount\":-1000,\"spatialMaxGeometryPointCount\":256,\"sqlAllowNonFiniteNumbers\":false,\"sqlDisableOptimizationFlags\":0,\"sqlQueryILDisableOptimizationFlags\":0,\"clientDisableOptimisticDirectExecution\":false,\"queryEnableFullText\":true,\"queryEnableFullTextPreviewFeatures\":false,\"queryMaxFullTextScoreSearchTerms\":30,\"queryMaxRrfArgumentCount\":100,\"enableSpatialIndexing\":true,\"maxInExpressionItemsCount\":2147483647,\"maxLogicalAndPerSqlQuery\":2147483647,\"maxLogicalOrPerSqlQuery\":2147483647,\"maxSpatialQueryCells\":2147483647,\"sqlAllowAggregateFunctions\":true,\"sqlAllowGroupByClause\":true,\"sqlAllowLike\":true,\"sqlAllowSubQuery\":true,\"sqlAllowScalarSubQuery\":true,\"sqlAllowTop\":true}",
+    "readPolicy": {
+      "primaryReadCoefficient": 1,
+      "secondaryReadCoefficient": 1
+    },
+    "readableLocations": [
+      {
+        "databaseAccountEndpoint": "https://tomasvaron-h2sweep-centralus.documents.azure.com:443/",
+        "name": "Central US"
+      }
+    ],
+    "systemReplicationPolicy": {
+      "maxReplicasetSize": 4,
+      "minReplicaSetSize": 3
+    },
+    "userConsistencyPolicy": {
+      "defaultConsistencyLevel": "Session"
+    },
+    "userReplicationPolicy": {
+      "asyncReplication": false,
+      "maxReplicasetSize": 4,
+      "minReplicaSetSize": 3
+    },
+    "writableLocations": [
+      {
+        "databaseAccountEndpoint": "https://tomasvaron-h2sweep-centralus.documents.azure.com:443/",
+        "name": "Central US"
+      }
+    ]
+  },
+  "response_headers_etag_present": false,
+  "x_ms_version": "2020-07-15"
+}

@@ -147,7 +147,7 @@ pub(crate) async fn handle_operation(
 ) -> AsyncRawResponse {
     let start = Instant::now();
     let response = match &parsed.operation {
-        OperationType::ReadAccount => handle_read_account(store, start),
+        OperationType::ReadAccount => handle_read_account(store, parsed, start),
         OperationType::CreateDatabase => {
             if !store.config().is_write_region(region_name) {
                 return write_forbidden_response(start);
@@ -663,6 +663,7 @@ pub(crate) async fn handle_operation(
             binary_response: false,
             is_upsert: matches!(operation_type, OperationType::Upsert),
             a_im: None,
+            request_host: None,
         };
 
         match operation_type {
@@ -1470,6 +1471,7 @@ pub(crate) async fn handle_operation(
             binary_response: false,
             is_upsert: false,
             a_im: None,
+            request_host: None,
         }
     }
 
@@ -1668,8 +1670,12 @@ pub(crate) async fn handle_operation(
 
 // --- Control-Plane Operations ---
 
-fn handle_read_account(store: &Arc<EmulatorStore>, start: Instant) -> AsyncRawResponse {
-    let body = account_properties_to_json(store.config());
+fn handle_read_account(
+    store: &Arc<EmulatorStore>,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let body = account_properties_to_json(store.config(), parsed.request_host.as_deref());
     success_response(StatusCode::Ok, &body, 0.0, "", start)
         .with_item_count(1)
         .build()
@@ -5558,6 +5564,33 @@ fn write_forbidden_response(start: Instant) -> AsyncRawResponse {
         start,
     )
     .build()
+}
+
+/// Response for a request routed to a region that is no longer part of the
+/// account.
+///
+/// Shape verified against the live service: removing a region makes its regional
+/// endpoint return `403 Forbidden` with `x-ms-substatus: 1008`, a
+/// `"Database Account {id} does not exist"` message, the account id, and
+/// **empty** location lists.
+pub(crate) fn database_account_not_found_response(
+    account_id: &str,
+    start: Instant,
+) -> AsyncRawResponse {
+    let body = serde_json::json!({
+        "code": "Forbidden",
+        "message": format!("Database Account {account_id} does not exist"),
+        "writableLocations": [],
+        "readableLocations": [],
+        "id": account_id,
+    });
+
+    ResponseBuilder::new(StatusCode::Forbidden, start)
+        .with_request_charge(0.0)
+        .with_session_token("")
+        .with_json_body(&body)
+        .with_substatus(1008)
+        .build()
 }
 
 fn bad_request_path_response(path: &str, start: Instant) -> AsyncRawResponse {

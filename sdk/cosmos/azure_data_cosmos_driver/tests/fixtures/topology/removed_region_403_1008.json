@@ -1,0 +1,19 @@
+{
+  "_comment": "Live capture: response from the regional endpoint of a region that was just removed from the account. Captured ~20 seconds after the ARM PATCH removing 'East US 2' from tomasvaron-h2sweep was accepted, and well before ARM reported provisioningState=Succeeded. ActivityId and gateway version elided from the message for stability.",
+  "body": {
+    "code": "Forbidden",
+    "id": "tomasvaron-h2sweep-eastus2",
+    "message": "Database Account tomasvaron-h2sweep-eastus2 does not exist",
+    "readableLocations": [],
+    "writableLocations": []
+  },
+  "captured_at": "2026-07-30T23:58:07Z",
+  "endpoint": "https://tomasvaron-h2sweep-eastus2.documents.azure.com/",
+  "headers": {
+    "content-type": "application/json",
+    "x-ms-gatewayversion": "version=2.14.0",
+    "x-ms-substatus": "1008"
+  },
+  "status": 403,
+  "x_ms_version": "2020-07-15"
+}

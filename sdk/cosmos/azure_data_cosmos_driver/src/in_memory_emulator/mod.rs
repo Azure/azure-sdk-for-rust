@@ -42,8 +42,9 @@ mod system_properties;
 
 pub use client::InMemoryEmulatorHttpClient;
 pub use config::{
-    ConsistencyLevel, ContainerConfig, ReplicationConfig, VirtualAccountConfig, VirtualRegion,
-    WriteMode, DEFAULT_MAX_BUFFERED_REPLICATIONS,
+    ConsistencyLevel, ContainerConfig, RegionStatus, ReplicationConfig, ResolvedRegion,
+    SeedingPolicy, TopologySnapshot, VirtualAccountConfig, VirtualRegion, WriteMode,
+    DEFAULT_MAX_BUFFERED_REPLICATIONS,
 };
 pub use epk::Epk;
 pub use observer::RequestObserver;

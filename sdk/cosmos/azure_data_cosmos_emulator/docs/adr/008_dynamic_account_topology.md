@@ -44,3 +44,11 @@ preserved until the dynamic state is changed.
 ## References
 
 - Plan & summary: `sdk/cosmos/azure_data_cosmos_emulator/docs/plan.md`
+- The in-process implementation of this contract already exists in
+  `azure_data_cosmos_driver`'s in-memory emulator (`EmulatorStore::add_region` /
+  `remove_region` / `set_write_mode` / `set_write_region`, spec section
+  "Dynamic Account Topology"). It resolves the same questions this ADR poses —
+  retired regions answer `403/1008`, region IDs are never reused, and the
+  account `_etag` is content-derived so no topology change can be silently
+  short-circuited by a client's unchanged-etag fast path. The hosted emulator
+  should match that observable behavior.

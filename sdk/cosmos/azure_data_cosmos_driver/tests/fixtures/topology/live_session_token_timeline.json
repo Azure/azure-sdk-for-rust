@@ -1,0 +1,57 @@
+{
+  "_comment": "Live probe of session-token behavior across a region add -> remove -> re-add cycle on tomasvaron-h2sweep (Session consistency). Answers the one invariant the in-memory emulator asserted without evidence: whether a re-added region reuses its original region id. Captured with fixtures/topology/../session_probe.py (see session-state files).",
+  "account": "tomasvaron-h2sweep",
+  "conclusions": [
+    "CONFIRMED: a re-added region REUSES its original region id (2 both times). The emulator's 'region ids are allocated once and never reused; a re-added region keeps its original id' invariant matches the service.",
+    "Single-region accounts emit V1 tokens with NO region component at all. The region component only appears once a second region exists.",
+    "The region id is NOT positional: with Central US (failoverPriority 0) plus East US 2 (priority 1), the added region got id 2, and the hub is not listed in the vector clock at all.",
+    "EVERY region membership change bumps the token version: -1 -> 0 on add, 2 -> 3 on remove, 3 -> 4 on re-add.",
+    "A token carrying a REMOVED region's id is ACCEPTED (HTTP 200), not rejected. The version bump is the mechanism: a lower-version token is superseded rather than compared against a topology that no longer exists.",
+    "x-ms-number-of-read-regions is (readLocations - 1): 0 with one region, 1 with two.",
+    "x-ms-last-state-change-utc is per-region, not account-global (Central US and East US 2 reported different values on the same account), and is a real timestamp rather than a sentinel.",
+    "Concurrent topology operations are rejected with HTTP 412 PreconditionFailed: 'There is already an operation in progress which requires exclusive lock on this service'."
+  ],
+  "emulator_gap_found_and_fixed": "The emulator only bumped vector_clock_version on partition merge, never on a region membership change. Without that bump a stale region entry in a client token would never be superseded. EmulatorStore::advance_vector_clock_versions now runs on add_region and remove_region.",
+  "observations": [
+    {
+      "at": "2026-07-31T16:00:00Z",
+      "note": "Baseline, one region (Central US). V1 token, no region component.",
+      "read_regions_header": 0,
+      "session_token": "0:-1#2",
+      "topology": ["Central US"]
+    },
+    {
+      "at": "2026-07-31T16:05:56Z",
+      "note": "First token after East US 2 became visible. Version bumped -1 -> 0; region id 2 appears with localLSN -1 (not yet caught up).",
+      "session_token": "0:0#11#2=-1",
+      "topology": ["Central US", "East US 2"]
+    },
+    {
+      "at": "2026-07-31T16:14:35Z",
+      "note": "Settled two-region state. read_regions is now 1.",
+      "read_regions_header": 1,
+      "session_token": "0:2#16#2=-1",
+      "topology": ["Central US", "East US 2"]
+    },
+    {
+      "at": "2026-07-31T16:22:41Z",
+      "note": "Region removed. Version bumped 2 -> 3 and the region entry was dropped, back to V1 shape.",
+      "session_token": "0:3#27",
+      "topology": ["Central US"]
+    },
+    {
+      "at": "2026-07-31T16:25:00Z",
+      "note": "STALE TOKEN TEST: sent '0:2#16#2=-1', which names the removed region id 2. Accepted with HTTP 200, no substatus; the service replied with a current token.",
+      "request_session_token": "0:2#16#2=-1",
+      "response_session_token": "0:3#29",
+      "response_status": 200
+    },
+    {
+      "at": "2026-07-31T16:32:42Z",
+      "note": "DECISIVE: East US 2 re-added and got region id 2 again -- the SAME id it had before removal. Version bumped 3 -> 4.",
+      "session_token": "0:4#40#2=-1",
+      "topology": ["Central US", "East US 2"]
+    }
+  ],
+  "token_format": "{pkrange_id}:{version}#{global_lsn}[#{region_id}={local_lsn}]..."
+}

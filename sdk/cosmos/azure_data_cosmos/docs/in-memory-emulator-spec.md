@@ -150,8 +150,10 @@ that verify retry/failover behavior against the in-memory store.
 
 `VirtualAccountConfig` configures the emulated Cosmos DB account:
 
-- **Regions**: Ordered list of `VirtualRegion` (name + gateway URL + region_id). First is hub.
+- **Regions**: Ordered list of `VirtualRegion` (name + gateway URL + region_id). First is the
+  initial hub. Membership is runtime-mutable — see [Dynamic Account Topology](#dynamic-account-topology).
 - **Write mode**: Single-write (one designated write region) or multi-write (all regions).
+  Runtime-mutable.
 - **Consistency**: Default consistency level (Session, Strong, Eventual, etc.).
 - **Replication**: Configurable delay range `[min_lag, max_lag]` (default 20–50ms random).
 - **RU model**: Configurable RU charging rates per size bucket.
@@ -190,10 +192,144 @@ let config = VirtualAccountConfig::new(regions)
 
 The emulator serves `GET /` requests with synthesized account properties from config:
 
-- `readableLocations` → all regions
-- `writableLocations` → all regions (MWR) or just write region (SWR)
+- `readableLocations` → all active regions, in topology order
+- `writableLocations` → all active regions (MWR) or just the current write region (SWR)
 - `enableMultipleWriteLocations` → from config
 - `defaultConsistencyLevel` → from config
+- `id` → derived from the request host's tenant portion, mirroring the real gateway rewriting
+  the account resource per regional endpoint. Verified live: the global endpoint reports
+  `{account}`, the regional endpoint reports `{account}-{region}`.
+- `_rid` → `{account}.sql.cosmos.azure.com`, naming the same account as `id`. The live service
+  additionally encodes the **write** region (`{account}-{writeregion}.sql.cosmos.azure.com`,
+  regardless of which endpoint served the read); the emulator's synthetic hosts carry no
+  `{account}-{region}` structure to recover a base account name from, so that one component is
+  deliberately unmodeled rather than letting `_rid` and `id` disagree.
+- **No `_etag`.** Verified against live accounts (two accounts, global and regional endpoints,
+  `x-ms-version` `2018-12-31` and `2020-07-15`): the account read carries no etag in the body and
+  none in the response headers. `AccountProperties::etag` is therefore always empty in production,
+  which makes the unchanged-etag short-circuit in `LocationStateStore::sync_account_properties`
+  inert — it is guarded by `!etag.is_empty()`. Emitting an etag here would make the emulator
+  exercise a path the service can never trigger; the short-circuit is covered by unit tests
+  instead. Captured payloads live in `azure_data_cosmos_driver/tests/fixtures/topology/`.
+
+### Dynamic Account Topology
+
+Region membership, write mode and the current write region are runtime-mutable, because the real
+service changes them under a running client and the driver is expected to notice through its
+background account refresh (`BACKGROUND_REFRESH_INTERVAL`, 5 minutes) without a restart.
+
+```rust
+let store = emulator.store();
+store.add_region(VirtualRegion::new("West US", url), SeedingPolicy::Immediate)?;
+store.begin_region_removal("West US")?;   // endpoint 403/1008, still advertised
+store.cancel_region_removal("West US")?;  // abort: back to normal service
+store.remove_region("West US")?;          // or complete: dropped from the topology
+store.set_write_mode(WriteMode::Multi);
+store.set_write_region("West US")?;       // failover
+```
+
+Semantics:
+
+- **Region IDs are allocated once and never reused or renumbered.** Session-token vector clocks
+  (`{pkrange}:{ver}#{globalLSN}#{regionId}={localLSN}`) embed them. A re-added region keeps its
+  original ID; a brand-new region gets a fresh one. **Verified live**: a region removed and then
+  re-added received the same ID (2) both times. Note the ID is *not* positional — on a two-region
+  account the added region got ID 2 and the hub was not listed in the vector clock at all — and a
+  single-region account emits V1 tokens with no region component whatsoever.
+- **A region membership change bumps the session-token version** on every partition in every
+  region (`EmulatorStore::advance_vector_clock_versions`). Verified live: the version advanced on
+  each topology change (`-1 → 0` add, `2 → 3` remove, `3 → 4` re-add). This is what makes a
+  client's older token safe — a lower-version token is *superseded* rather than compared against a
+  topology that no longer exists, which is why the service accepts (HTTP 200, no substatus) a token
+  naming a region that has since been removed. See
+  `tests/fixtures/topology/live_session_token_timeline.json`.
+- **Removed regions are retired, not forgotten.** A client keeps sending to a removed endpoint
+  until its next topology refresh, and the service answers those with `403/1008
+  DatabaseAccountNotFound` rather than failing to route. Verified live: the regional endpoint of a
+  region being removed started returning exactly that ~20 seconds after the ARM request was
+  accepted. The emulator reproduces the status, substatus and body shape (including the empty
+  `readableLocations`/`writableLocations` and the account `id`) — see
+  `tests/fixtures/topology/removed_region_403_1008.json`.
+- **Removal is two-phase, and the phases overlap.** `begin_region_removal` puts a region into
+  [`RegionStatus::Draining`]: its endpoint returns `403/1008` while the account read *still*
+  advertises it. That is what the service does — the regional endpoint failed within seconds while
+  the global account read kept listing the region for several more minutes — so a client that
+  refreshes topology in response to the 1008 gets the dead region right back. `remove_region`
+  completes the transition.
+- **Rejections mirror the service**: adding an already-active region, removing the current write
+  region, and removing the last region are all `400`.
+- **`set_write_mode` is symmetric, and so is the service.** Both directions were verified live on a
+  normal (non-migrated) account: single → multi and multi → single each completed successfully.
+  Enabling multi-write also worked on an account with continuous backup, despite
+  `test-resources.bicep` describing the two as incompatible — that constraint appears to apply to
+  account *creation*, not to a later update.
+- **`set_write_region` models routine behavior.** For single-master accounts the gateway itself can
+  report an arbitrary read location as the write location between successive account reads, so
+  clients must already tolerate the advertised write region moving.
+
+#### Multi-write vs single-write transitions
+
+Verified live (see `tests/fixtures/topology/live_multi_write_timeline.json`):
+
+| | Single-write account | Multi-write account |
+| --- | --- | --- |
+| Region **add** | Advertised near the end of provisioning; flaps ~40 s before settling. Enters `readableLocations` only. | Enters `readableLocations` **and** `writableLocations` in one atomic transition, with no flapping. |
+| Region **remove** | Regional endpoint 403/1008 after ~20 s; global read keeps advertising it for ~7 min. | Regional endpoint 403/1008 after ~31 s, then alternates 200 ↔ 403/1008 nine times over ~5 min; global read keeps advertising it — in **both** lists — for ~6.5 min. |
+
+The removal window is worse under multi-write: a multi-write client routes writes to its **local**
+region, so a client colocated with the dying region writes into it, gets 403/1008, refreshes
+topology, is told the region is still writable, and retries into it again. Under single-write those
+writes were going to the hub anyway. This is exactly what [`RegionStatus::Draining`] models.
+
+#### Known fidelity gaps
+
+Measured against live accounts but **not** currently modeled:
+
+| Gap | Live value | Emulator value |
+| --- | --- | --- |
+| `x-ms-number-of-read-regions` | `readLocations - 1` (0 with one region, 1 with two) | hard-coded `0` |
+| `x-ms-last-state-change-utc` | a real, **per-region** timestamp (two regions of one account reported different values) | hard-coded epoch |
+| `failoverPriority` | orders `readableLocations`; reordering it is its own ARM operation and, on a single-write account, constitutes a manual failover | not modeled; ordering is insertion order, and `set_write_region` models only the outcome |
+| Concurrent topology operations | rejected with `412 PreconditionFailed` ("already an operation in progress which requires exclusive lock") | not modeled; mutations always succeed |
+| Consistency-level constraints | Strong restricts which regions may be added and is incompatible with multi-write | not modeled; consistency is static and never validated against a topology change |
+
+Only the RNTBD / Gateway 2.0 transport parses the read-region count today
+(`rntbd/response.rs`), so the first row has a narrow blast radius — but it does mean a Gateway 2.0
+test can never observe that count change.
+
+#### What the emulator deliberately does *not* model
+
+The live gateway's advertised topology **flaps** while a region is being added or removed, and while
+the write mode is being changed: successive account reads seconds apart disagree, for tens of
+seconds to minutes (see `tests/fixtures/topology/live_add_remove_region_timeline.json` and
+`live_multi_write_timeline.json`). Notably `enableMultipleWriteLocations` — a *routing-mode flag*,
+not just a list — alternated true/false ~25 times over ~4 minutes during a write-mode change.
+
+The emulator transitions atomically instead, because a flapping emulator would make every test
+non-deterministic. The driver is unaffected on both counts:
+
+- **Endpoint lists**: `sync_account_properties` carries unavailability marks forward unconditionally,
+  so no payload — transient or not — can clear one. Only a successful connectivity probe can. A mark
+  for a departed region is inert for routing (endpoint selection only consults marks for endpoints in
+  the current preferred lists), and `probe_and_failback_unavailable_endpoints` skips endpoints the
+  account no longer advertises so the mark costs nothing while it lingers.
+- **Write mode**: `multiple_write_locations_enabled` is read per-operation from a single coherent
+  `LocationSnapshot` and only shapes that operation's retry policy, so a flap varies behavior between
+  operations but leaves no stale state.
+
+The emulator does, however, keep each *individual* account payload internally consistent — it builds
+the whole payload from one `topology_snapshot()` — because the real gateway flaps *between* payloads
+and never emits a self-contradictory one.
+
+#### Seeding
+
+A joining region receives the account's data before it serves reads. `SeedingPolicy` controls how
+that is modeled:
+
+| Policy | Behavior |
+| --- | --- |
+| `Immediate` (default) | The region is fully seeded from the current write region — catalog, partition layout (so post-split layouts carry over), documents and LSN high-water marks — before `add_region` returns. |
+| `Delayed(duration)` | The region is advertised immediately but empty **and rewound to LSN 0**, then catches up after `duration`. Emulates the window where a region is in the topology but not yet useful. The LSN rewind matters: session freshness is judged against those counters, so a region holding no data but claiming the source's high-water mark would answer a session read with a bare `404` instead of the `404/1002 ReadSessionNotAvailable` a lagging replica returns. |
 
 ---
 
@@ -821,6 +957,20 @@ RU/s enforcement with 429/3200 responses.
 - **Single-write**: Only the designated write region accepts writes. Others return 403/3
   (WriteForbidden), triggering the driver's failover logic.
 - **Multi-write**: All regions accept writes. Last-writer-wins by `_ts`.
+- **Retired regions**: A region removed from the account returns 403/1008
+  (DatabaseAccountNotFound) for every request, matching the service's `TenantDeleted` mapping.
+  Per `LocationCacheTests.ValidateRetryOnDatabaseAccountNotFoundAsync`, the client retries once
+  against the next preferred endpoint for reads and for writes on multi-write accounts, but
+  surfaces the `Forbidden` for a write on a single-write account.
+
+### Endpoint failback: a deliberate divergence from .NET
+
+The .NET SDK expires endpoint unavailability on a **timer**
+(`UnavailableLocationsExpirationTimeInSeconds`). This driver expires it only via the
+**endpoint-probe loop** — a marked endpoint stays out of rotation until a connectivity probe
+confirms it is reachable. Because there is no TTL fallback, `sync_account_properties` drops marks
+for endpoints that have left the account; otherwise a removed region's mark would be retained and
+re-probed forever, since nothing else could clear it.
 
 ### Replication
 
@@ -1263,6 +1413,18 @@ Differences are classified as:
 - Session-not-available is returned when reading with a session token ahead of
   the target region's LSN.
 
+**Dynamic Topology** (region add/remove, write-mode and write-region changes):
+- Removing the client's top preferred region moves traffic to the next preferred one, and
+  re-adding it restores the original order — the same contract as .NET's
+  `GlobalEndpointManagerTest.ReadLocationRemoveAndAddMockTestAsync`.
+- A request to a removed region returns 403/1008, with the service's body shape.
+- A *draining* region rejects with 403/1008 while still being advertised — the real removal ordering.
+- Enabling multi-write makes satellite regions accept writes; `set_write_region` demotes the
+  previous hub, which then returns 403/3.
+- Region IDs are stable across removal and re-addition.
+- The account read carries no `_etag`; `id` reflects the request host and `_rid` the write region.
+  Both are pinned against captured live payloads in `tests/fixtures/topology/`.
+
 **Control Plane** (database/container CRUD):
 - Create returns 201 with system properties.
 - Duplicate create returns 409.
@@ -1284,6 +1446,48 @@ forced_session_not_available.
 multi_write_any_region, immediate_replication_cross_region,
 delayed_replication_session_not_available, account_properties_reflect_config,
 pause_resume_replication.
+
+**Dynamic Topology**: removing_a_region_moves_traffic_to_next_preferred,
+re_adding_a_region_restores_preference_order, re_added_region_keeps_its_region_id,
+added_region_gets_a_fresh_unused_id, read_to_retired_region_gets_403_1008,
+removed_region_endpoint_still_resolves_as_retired,
+enabling_multi_write_makes_satellite_regions_writable, demoted_write_region_returns_403_3,
+write_region_change_moves_writes_to_new_hub, adding_an_existing_region_is_rejected,
+removing_the_write_region_is_rejected, removing_the_last_region_is_rejected,
+immediately_seeded_region_serves_existing_data, delayed_seeding_region_is_empty_until_catch_up,
+removing_the_write_region_is_rejected_under_multi_write,
+rejected_duplicate_add_preserves_existing_region_data,
+draining_region_rejects_while_still_advertised,
+account_read_has_no_etag_like_the_service,
+account_payload_shape_matches_captured_service_response,
+account_id_reflects_the_request_host, account_rid_and_id_name_the_same_account,
+account_locations_track_topology_changes, delayed_seeding_region_reports_session_not_available,
+draining_the_write_or_last_region_is_rejected,
+region_added_to_multi_write_account_is_immediately_writable,
+draining_region_under_multi_write_still_advertised_as_writable,
+region_membership_change_bumps_session_token_version,
+promoting_a_draining_region_is_rejected, a_draining_region_can_be_returned_to_service.
+
+**SDK behavior under topology change** (`topology_sdk_behavior.rs`, driving the full
+`CosmosDriver` pipeline rather than the emulator's HTTP surface):
+read_recovers_when_its_preferred_region_is_removed,
+single_write_write_refreshes_and_retries_when_its_write_region_is_removed,
+multi_write_write_recovers_when_its_region_is_removed,
+operations_make_progress_while_a_region_is_draining,
+added_region_is_adopted_without_restart,
+unavailability_mark_is_probe_gated_across_remove_and_re_add,
+unavailability_mark_survives_a_topology_flap,
+writes_follow_the_promoted_hub_and_leave_the_demoted_one,
+enabling_multi_write_keeps_writes_local,
+excluded_regions_still_honored_after_a_region_is_added,
+session_reads_keep_working_across_topology_changes,
+re_added_region_is_usable_for_reads_again,
+collapsing_to_a_single_region_keeps_the_account_usable,
+preference_order_wins_over_advertisement_order_after_growth.
+
+Golden payloads captured from live accounts live in
+`azure_data_cosmos_driver/tests/fixtures/topology/`, alongside `capture_topology.py` (the poller
+used to record them) and `live_add_remove_region_timeline.json` (the observed add/remove timeline).
 
 **Control Plane**: create_database, read_database, delete_database_cascades,
 create_container_with_pk, read_container, delete_container_cascades,
