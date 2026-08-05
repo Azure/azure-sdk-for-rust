@@ -18,16 +18,10 @@ parameters:
     default: true
   - name: ConfigureRegistry
     type: boolean
-    # When true, write $CARGO_HOME/config.toml so cargo resolves crates.io through the
-    # azure-sdk-for-rust feed, and authenticate to it. Set to false on additional
-    # invocations within the same job, which would otherwise redo identical work.
     default: true
 
 steps:
 - ${{ if parameters.ConfigureRegistry }}:
-  # Cargo only reads config files from $CARGO_HOME or from ancestors of its working
-  # directory, and it ignores environment variables for [source] replacement, so the
-  # config has to be written to disk before cargo runs.
   - pwsh: |
       $cargoHome = $env:CARGO_HOME
       if (-not $cargoHome) { $cargoHome = ([System.IO.Path]::Combine($HOME, '.cargo')) }
