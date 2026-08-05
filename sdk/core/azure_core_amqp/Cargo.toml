@@ -27,10 +27,12 @@ fe2o3-amqp-ext = { workspace = true, optional = true }
 fe2o3-amqp-management = { workspace = true, optional = true }
 fe2o3-amqp-types = { workspace = true, optional = true }
 rustls = { workspace = true, optional = true }
+rustls-platform-verifier = { workspace = true, optional = true }
 serde.workspace = true
 serde_amqp = { workspace = true, optional = true }
 serde_bytes = { workspace = true, optional = true }
 tokio.workspace = true
+tokio-rustls = { workspace = true, optional = true }
 tracing.workspace = true
 typespec = { path = "../typespec", version = "1.2.0-beta.1" }
 typespec_macros = { path = "../typespec_macros", version = "1.1.0-beta.1" }
@@ -61,10 +63,27 @@ fe2o3_amqp = [
 # The TLS stack for AMQP framed directly on TCP (`amqps://`, port 5671).
 # `fe2o3_amqp` is the base, and this feature adds the stack, in the same shape
 # that `azure_core` uses for HTTP, where `reqwest` is the base and
-# `reqwest_rustls` adds the stack. It is rustls with the aws-lc-rs provider, the
-# stack that the rest of `sdk/core` uses, and `default` selects it. `fe2o3-amqp`
-# selects the provider itself, so this feature needs no direct `rustls`
-# dependency.
+# `reqwest_rustls` adds the stack. It is rustls with the aws-lc-rs provider, and
+# `default` selects it.
+#
+# The connection builds its own TLS connector on `rustls-platform-verifier`.
+# The default connector of `fe2o3-amqp` fills its root store from
+# `webpki-roots`, which holds a compiled-in copy of the Mozilla root set and
+# ignores the trust store of the operating system. The platform verifier reads
+# the trust store of the operating system, so this feature trusts the same roots
+# as `reqwest/rustls` on the HTTP side, and a broker behind a private or an
+# enterprise certificate authority keeps working. `webpki-roots` still arrives
+# as a dependency, because the `rustls` feature of `fe2o3-amqp` always names it,
+# but nothing reads it.
+#
+# The direct `rustls` dependency selects the crypto provider.
+# `ClientConfig::builder()` panics when no process-level default is installed
+# and the crate features name no single provider. The default features of
+# `rustls` give aws-lc-rs, std, and tls12, and `deny.toml` bans `ring`, so this
+# repository cannot reach that panic. An application that unifies a second
+# provider into the graph makes the choice ambiguous again, and it must call
+# `CryptoProvider::install_default()` before it opens a connection. The
+# WebSocket feature below carries the same condition.
 #
 # This feature needs `fe2o3-amqp` 0.16 or later. The rustls backend of 0.14 was
 # built on `ring`, which `deny.toml` bans (#4189).
@@ -82,7 +101,13 @@ fe2o3_amqp = [
 #   fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
 #
 # `samples/list_blobs_native_tls` shows the same pattern for `reqwest`.
-fe2o3_amqp_rustls = ["fe2o3_amqp", "fe2o3-amqp/rustls"]
+fe2o3_amqp_rustls = [
+  "fe2o3_amqp",
+  "fe2o3-amqp/rustls",
+  "dep:rustls",
+  "dep:rustls-platform-verifier",
+  "dep:tokio-rustls",
+]
 # AMQP over WebSockets. `fe2o3_amqp_ws` is the base feature: it turns on the
 # transport code and the `fe2o3-amqp-ws` dependency, and it names no TLS stack.
 # `fe2o3_amqp_ws_rustls` adds the stack that the rest of `sdk/core` uses, rustls
