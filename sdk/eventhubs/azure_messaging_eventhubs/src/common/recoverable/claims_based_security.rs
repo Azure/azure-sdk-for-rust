@@ -106,13 +106,19 @@ impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
                 let secret = secret.clone();
 
                 async move {
-                    let claims_based_security_client = self
+                    let connection = self
                         .recoverable_connection
                         .upgrade()
-                        .ok_or_else(|| AmqpError::with_message("Missing Connection"))?
-                        .ensure_amqp_cbs()
-                        .await
-                        .map_err(|e| {
+                        .ok_or_else(|| AmqpError::with_message("Missing Connection"))?;
+
+                    // The service permits one `$cbs` link for each connection, and
+                    // `ensure_amqp_cbs` attaches a new link for each authorization.
+                    // Hold the lock for the full round trip, so two authorizations
+                    // that start at the same time do not collide with `NotAllowed`.
+                    let _cbs_guard = connection.lock_claims_based_security().await;
+
+                    let claims_based_security_client =
+                        connection.ensure_amqp_cbs().await.map_err(|e| {
                             AmqpError::from(azure_core::Error::with_error(
                                 AzureErrorKind::Other,
                                 e,

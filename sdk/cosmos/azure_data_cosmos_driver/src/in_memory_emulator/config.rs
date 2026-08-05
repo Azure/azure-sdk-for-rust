@@ -124,6 +124,7 @@ pub enum SeedingPolicy {
 #[derive(Clone, Debug)]
 pub struct VirtualAccountConfig {
     topology: Arc<RwLock<AccountTopology>>,
+    account_id: String,
     consistency: ConsistencyLevel,
     replication: ReplicationConfig,
     replication_overrides: HashMap<(String, String), ReplicationConfig>,
@@ -148,18 +149,31 @@ impl VirtualAccountConfig {
                 .with_message("at least one region is required")
                 .build());
         }
-        // Auto-assign monotonically increasing region IDs by position for any
-        // region that did not have one set explicitly via `with_region_id`.
-        // Using `0` as the sentinel means callers that explicitly pass
-        // `with_region_id(0)` to the *first* region get the same effective ID
-        // they would have been auto-assigned anyway.
+        // Auto-assign monotonically increasing region IDs by position only
+        // when the caller did not set one explicitly.
         for (idx, r) in regions.iter_mut().enumerate() {
-            if r.region_id == 0 {
-                r.region_id = idx as u64;
+            r.region_id.get_or_insert(idx as u64);
+        }
+        let mut region_ids = HashSet::with_capacity(regions.len());
+        for region in &regions {
+            let region_id = region.region_id.expect("region IDs were assigned above");
+            if !region_ids.insert(region_id) {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message(format!(
+                        "region ID {region_id} is configured more than once"
+                    ))
+                    .build());
             }
         }
         let write_region = regions[0].name.clone();
-        let next_region_id = regions.iter().map(|r| r.region_id).max().unwrap_or(0) + 1;
+        let next_region_id = regions
+            .iter()
+            .filter_map(|r| r.region_id)
+            .max()
+            .map_or(0, |max| max + 1);
         Ok(Self {
             topology: Arc::new(RwLock::new(AccountTopology {
                 active: regions,
@@ -169,6 +183,7 @@ impl VirtualAccountConfig {
                 write_region,
                 next_region_id,
             })),
+            account_id: "emulator-account".to_owned(),
             consistency: ConsistencyLevel::Session,
             replication: ReplicationConfig::default(),
             replication_overrides: HashMap::new(),
@@ -176,6 +191,19 @@ impl VirtualAccountConfig {
             throttling_enabled: false,
             enable_per_partition_failover: Arc::new(AtomicBool::new(false)),
         })
+    }
+
+    /// Sets the account ID emitted by the hosted account-discovery response.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn with_account_id(mut self, account_id: impl Into<String>) -> Self {
+        self.account_id = account_id.into();
+        self
+    }
+
+    /// Returns the account ID emitted by account discovery.
+    pub(crate) fn account_id(&self) -> &str {
+        &self.account_id
     }
 
     /// Sets the write mode.
@@ -401,12 +429,18 @@ impl VirtualAccountConfig {
         let host = url.host_str()?;
         let scheme = url.scheme();
         let port = url.port_or_known_default();
+        // Matches either the standard gateway URL or the Gateway 2.0 URL, so a
+        // request sent to a region's thin-client endpoint resolves to the same
+        // region.
         let matches = |r: &VirtualRegion| {
-            r.gateway_url
-                .host_str()
-                .is_some_and(|rhost| rhost.eq_ignore_ascii_case(host))
-                && r.gateway_url.scheme() == scheme
-                && r.gateway_url.port_or_known_default() == port
+            let matches_url = |candidate: &Url| {
+                candidate
+                    .host_str()
+                    .is_some_and(|candidate_host| candidate_host.eq_ignore_ascii_case(host))
+                    && candidate.scheme() == scheme
+                    && candidate.port_or_known_default() == port
+            };
+            matches_url(&r.gateway_url) || r.gateway_v2_url.as_ref().is_some_and(matches_url)
         };
 
         let topology = self.topology.read().unwrap();
@@ -442,7 +476,7 @@ impl VirtualAccountConfig {
             .iter()
             .chain(topology.retired.iter())
             .find(|r| r.name == region_name)
-            .map(|r| r.region_id)
+            .and_then(|r| r.region_id)
             .unwrap_or(0)
     }
 
@@ -461,13 +495,25 @@ impl VirtualAccountConfig {
 
         let mut region = region;
         if let Some(idx) = topology.retired.iter().position(|r| r.name == region.name) {
+            // A re-added region keeps its original ID: session-token vector
+            // clocks issued while it was active still reference it.
             let previous = topology.retired.remove(idx);
             region.region_id = previous.region_id;
-        } else if region.region_id == 0 {
-            region.region_id = topology.next_region_id;
-            topology.next_region_id += 1;
+        } else if let Some(explicit) = region.region_id {
+            if topology
+                .active
+                .iter()
+                .chain(topology.retired.iter())
+                .any(|r| r.region_id == Some(explicit))
+            {
+                return Err(bad_request(format!(
+                    "region ID {explicit} is already in use"
+                )));
+            }
+            topology.next_region_id = topology.next_region_id.max(explicit + 1);
         } else {
-            topology.next_region_id = topology.next_region_id.max(region.region_id + 1);
+            region.region_id = Some(topology.next_region_id);
+            topology.next_region_id += 1;
         }
 
         topology.active.push(region.clone());
@@ -623,7 +669,9 @@ pub(crate) fn already_present(region_name: &str) -> crate::error::CosmosError {
 pub struct VirtualRegion {
     name: String,
     gateway_url: Url,
-    region_id: u64,
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    gateway_v2_url: Option<Url>,
+    region_id: Option<u64>,
 }
 
 impl VirtualRegion {
@@ -635,13 +683,23 @@ impl VirtualRegion {
         Self {
             name: name.to_string(),
             gateway_url,
-            region_id: 0,
+            #[cfg(feature = "__internal_in_memory_emulator")]
+            gateway_v2_url: None,
+            region_id: None,
         }
+    }
+
+    /// Configures the Gateway V2 thin-client endpoint for this region.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn with_gateway_v2_url(mut self, url: Url) -> Self {
+        self.gateway_v2_url = Some(url);
+        self
     }
 
     /// Creates a new region with an explicit region ID.
     pub fn with_region_id(mut self, id: u64) -> Self {
-        self.region_id = id;
+        self.region_id = Some(id);
         self
     }
 
@@ -653,8 +711,16 @@ impl VirtualRegion {
         &self.gateway_url
     }
 
+    /// Returns the Gateway V2 thin-client endpoint when hosted externally.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub(crate) fn gateway_v2_url(&self) -> Option<&Url> {
+        self.gateway_v2_url.as_ref()
+    }
+
     pub fn region_id(&self) -> u64 {
         self.region_id
+            .expect("VirtualAccountConfig assigns every region an ID")
     }
 }
 
@@ -1017,7 +1083,47 @@ impl Default for ContainerConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::ContainerConfig;
+    use super::*;
+
+    fn region(name: &str) -> VirtualRegion {
+        VirtualRegion::new(
+            name,
+            Url::parse(&format!(
+                "https://{}.emulator.local",
+                name.to_ascii_lowercase()
+            ))
+            .unwrap(),
+        )
+    }
+
+    #[test]
+    fn assigns_region_ids_by_position_when_omitted() {
+        let config = VirtualAccountConfig::new(vec![region("East"), region("West")]).unwrap();
+        assert_eq!(config.active_regions()[0].region_id(), 0);
+        assert_eq!(config.active_regions()[1].region_id(), 1);
+    }
+
+    #[test]
+    fn preserves_explicit_zero_for_non_first_region() {
+        let config = VirtualAccountConfig::new(vec![
+            region("East").with_region_id(1),
+            region("West").with_region_id(0),
+        ])
+        .unwrap();
+        assert_eq!(config.active_regions()[0].region_id(), 1);
+        assert_eq!(config.active_regions()[1].region_id(), 0);
+    }
+
+    #[test]
+    fn rejects_duplicate_effective_region_ids() {
+        let error =
+            VirtualAccountConfig::new(vec![region("East").with_region_id(1), region("West")])
+                .unwrap_err();
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+    }
 
     #[test]
     fn partition_key_range_page_size_must_be_positive() {

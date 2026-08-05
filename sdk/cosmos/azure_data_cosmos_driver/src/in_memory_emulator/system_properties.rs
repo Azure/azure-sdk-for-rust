@@ -201,10 +201,11 @@ pub(crate) fn account_properties_to_json(
     // request host (everything before the first '.'), so a client that called a
     // regional endpoint sees that regional id echoed back. Verified against a
     // live account: the global endpoint reports `{account}` and the regional
-    // endpoint reports `{account}-{region}`.
+    // endpoint reports `{account}-{region}`. Falls back to the configured
+    // account id when no host is available.
     let account_id = request_host
         .map(|host| host.split('.').next().unwrap_or(host).to_string())
-        .unwrap_or_else(|| "emulator-account".to_string());
+        .unwrap_or_else(|| config.account_id().to_string());
 
     // The live service reports `_rid` as
     // `{account}-{writeregion}.sql.cosmos.azure.com`. The emulator's synthetic
@@ -222,7 +223,7 @@ pub(crate) fn account_properties_to_json(
     // therefore inert in production -- it is guarded by `!etag.is_empty()` -- and
     // emitting one here would make the emulator exercise a path the service can
     // never trigger. That short-circuit is covered by unit tests instead.
-    serde_json::json!({
+    let mut response = serde_json::json!({
         "id": account_id,
         "_rid": rid,
         "_self": "",
@@ -251,5 +252,47 @@ pub(crate) fn account_properties_to_json(
         "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
         "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
         "queryEngineConfiguration": "{}"
-    })
+    });
+
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    {
+        let thin_client_readable: Vec<_> = regions
+            .iter()
+            .filter_map(|region| {
+                region.gateway_v2_url().map(|url| {
+                    serde_json::json!({
+                        "name": region.name(),
+                        "databaseAccountEndpoint": url.as_str()
+                    })
+                })
+            })
+            .collect();
+        let thin_client_writable: Vec<_> = regions
+            .iter()
+            .filter(|region| config.is_write_region(region.name()))
+            .filter_map(|region| {
+                region.gateway_v2_url().map(|url| {
+                    serde_json::json!({
+                        "name": region.name(),
+                        "databaseAccountEndpoint": url.as_str()
+                    })
+                })
+            })
+            .collect();
+        if !thin_client_readable.is_empty() {
+            let object = response
+                .as_object_mut()
+                .expect("account properties response is a JSON object");
+            object.insert(
+                "thinClientReadableLocations".to_owned(),
+                serde_json::Value::Array(thin_client_readable),
+            );
+            object.insert(
+                "thinClientWritableLocations".to_owned(),
+                serde_json::Value::Array(thin_client_writable),
+            );
+        }
+    }
+
+    response
 }

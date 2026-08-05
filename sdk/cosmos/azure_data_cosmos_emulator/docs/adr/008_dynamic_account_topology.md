@@ -43,12 +43,15 @@ preserved until the dynamic state is changed.
 
 ## References
 
-- Plan & summary: `sdk/cosmos/azure_data_cosmos_emulator/docs/plan.md`
+- Plan & summary: `sdk/cosmos/azure_data_cosmos_emulator/AGENTS.md`
 - The in-process implementation of this contract already exists in
   `azure_data_cosmos_driver`'s in-memory emulator (`EmulatorStore::add_region` /
-  `remove_region` / `set_write_mode` / `set_write_region`, spec section
-  "Dynamic Account Topology"). It resolves the same questions this ADR poses —
-  retired regions answer `403/1008`, region IDs are never reused, and the
-  account `_etag` is content-derived so no topology change can be silently
-  short-circuited by a client's unchanged-etag fast path. The hosted emulator
-  should match that observable behavior.
+  `remove_region` / `begin_region_removal` / `set_write_mode` /
+  `set_write_region`, spec section "Dynamic Account Topology"). It answers the
+  questions this ADR poses, validated against live accounts: a removed region's
+  endpoint returns `403/1008` while the account read still advertises it for
+  minutes; region IDs are never reused, and a re-added region keeps its original
+  ID; every membership change bumps the session-token version, which is what
+  supersedes a client's older token. Note the account read carries **no**
+  `_etag` at all, so a client cannot use one to detect topology changes. The
+  hosted emulator should match that observable behavior.

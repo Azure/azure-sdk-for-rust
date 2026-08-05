@@ -44,6 +44,7 @@ use super::{
         DATA_PLANE_MAX_THROTTLE_ATTEMPTS, DATA_PLANE_MAX_THROTTLE_WAIT,
         METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
     },
+    hedge_budget::{HedgeBudget, HedgePermit},
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
     hedging_eligibility::evaluate_hedge_eligibility,
     retry_evaluation::{
@@ -79,12 +80,45 @@ fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration, Durat
     }
 }
 
+/// Internal, non-customer-overridable hedging and routing pin carried on
+/// [`OperationOverrides::region_pin`].
+///
+/// Attached to a read whose continuation token is region-affine — today the
+/// PartitionKeyRange change feed, whose ETag is only meaningful to the region
+/// that issued it. Its presence alone suppresses hedging; the optional
+/// `endpoint` additionally forces the attempt onto a specific region.
+///
+/// This deliberately does **not** reuse [`AvailabilityStrategy::Disabled`]:
+/// that is a customer-facing option, and `resolve_availability_strategy` lets
+/// the `AZURE_COSMOS_HEDGING_ENABLED=true` environment switch override it. A
+/// correctness constraint must not be something configuration can turn off, so
+/// it lives here instead.
+///
+/// [`AvailabilityStrategy::Disabled`]: crate::options::AvailabilityStrategy::Disabled
+#[derive(Debug, Clone, Default)]
+pub(crate) struct RegionPin {
+    /// Region this attempt must be routed to, bypassing the normal region
+    /// selection in [`resolve_endpoint`].
+    ///
+    /// Normally always populated: the region that served the cold page is
+    /// recorded and every later page in the chain is pinned to it, so a
+    /// `FailoverRetry`/`SessionRetry` cannot carry the region-affine
+    /// continuation into a region that never issued it.
+    ///
+    /// `None` is the degraded fallback for the rare case where the serving
+    /// region could not be identified. Normal region selection then applies,
+    /// but hedging stays suppressed — racing a second region would send the
+    /// token somewhere it means nothing.
+    pub endpoint: Option<crate::driver::routing::CosmosEndpoint>,
+}
+
 /// Per-request overrides that take precedence over values from [`CosmosOperation`].
 ///
 /// Used by the dataflow pipeline to inject routing and pagination state that
 /// varies per physical partition or per page, without mutating the shared
-/// `CosmosOperation`. Each field, when `Some`, emits the corresponding request
-/// header in [`OperationOverrides::apply_headers`].
+/// `CosmosOperation`. Most fields, when `Some`, emit the corresponding request
+/// header in [`OperationOverrides::apply_headers`]; `region_pin` instead
+/// constrains hedging and the STAGE 2 routing decision.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct OperationOverrides {
     /// Feed range to constrain the request to (emits `x-ms-start-epk` / `x-ms-end-epk`).
@@ -105,9 +139,41 @@ pub(crate) struct OperationOverrides {
 
     /// Continuation token for pagination (emits `x-ms-continuation`).
     pub continuation: Option<String>,
+
+    /// Constrains this attempt to a single region and forbids hedging.
+    ///
+    /// Unlike the other fields this is NOT a request header — it is consumed by
+    /// STAGE 2 (routing), STAGE 2b (pre-attempt hedge dispatch), and STAGE 5b
+    /// (post-attempt hedge upgrade) of the operation pipeline. It keeps a paged
+    /// read on one region: the PartitionKeyRange change feed carries its
+    /// continuation as an ETag that is only meaningful to the region that
+    /// issued it, so every page after the first must neither race another
+    /// region nor be failed over into one.
+    ///
+    /// See [`RegionPin`] for why this is an internal signal rather than
+    /// `AvailabilityStrategy::Disabled`. Boxed so the field stays pointer-sized
+    /// — this struct is captured by the operation future, which is already
+    /// close to the `clippy::large_futures` budget.
+    pub region_pin: Option<Box<RegionPin>>,
 }
 
 impl OperationOverrides {
+    /// The endpoint this attempt is pinned to, if any.
+    ///
+    /// `None` either because there is no pin at all, or because the pin only
+    /// suppresses hedging and leaves region selection alone.
+    pub fn pinned_endpoint(&self) -> Option<&crate::driver::routing::CosmosEndpoint> {
+        self.region_pin.as_ref().and_then(|p| p.endpoint.as_ref())
+    }
+
+    /// Whether hedging must not fire for this attempt.
+    ///
+    /// Distinct from the customer-facing `AvailabilityStrategy::Disabled`,
+    /// which `AZURE_COSMOS_HEDGING_ENABLED=true` deliberately overrides.
+    pub fn hedging_suppressed(&self) -> bool {
+        self.region_pin.is_some()
+    }
+
     /// Applies the override headers to the given header map.
     ///
     /// Headers set here take precedence over any previously-set values for
@@ -234,6 +300,7 @@ pub(crate) async fn execute_operation_pipeline(
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<ResolvedThroughputControl>,
     pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
+    hedge_budget: &HedgeBudget,
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
@@ -382,14 +449,22 @@ pub(crate) async fn execute_operation_pipeline(
         // parity), falling back to parsing the customer-provided global
         // endpoint hostname when metadata has not synced yet.
         let account_name = location_state_store.global_database_account_name();
-        let routing = resolve_endpoint(
-            operation,
-            &retry_state,
-            &location,
-            pipeline_type.is_data_plane(),
-            account_name.is_some(),
-            location_state_store.endpoint_unavailability_ttl(),
-        );
+        // A pinned attempt (e.g. PartitionKeyRange pages 2..N after a first-page
+        // hedge win) bypasses normal region selection and routes straight to the
+        // pinned region so the change-feed continuation stays region-consistent.
+        let routing = match overrides.pinned_endpoint() {
+            Some(pinned) => {
+                routing_decision_for_pinned_endpoint(pinned, pipeline_type.is_data_plane())
+            }
+            None => resolve_endpoint(
+                operation,
+                &retry_state,
+                &location,
+                pipeline_type.is_data_plane(),
+                account_name.is_some(),
+                location_state_store.endpoint_unavailability_ttl(),
+            ),
+        };
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -421,14 +496,43 @@ pub(crate) async fn execute_operation_pipeline(
         //   applicable read endpoints, env-disabled hedging, or per-op
         //   `AvailabilityStrategy::Disabled`. All gated by
         //   [`evaluate_hedge_eligibility`].
-        if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
-            if let Some(upgrade) = evaluate_hedge_eligibility(
+        // * **Region-pinned attempts** — when `overrides.region_pin` is set the
+        //   attempt carries a region-affine continuation token, so racing a
+        //   second region would send that token somewhere it means nothing.
+        //   This is checked directly rather than through
+        //   `AvailabilityStrategy::Disabled` because the latter is a customer
+        //   option that `AZURE_COSMOS_HEDGING_ENABLED=true` can override; a
+        //   correctness constraint must not be something configuration can
+        //   turn off.
+        // * **An exhausted hedge concurrency budget** — see [`HedgeBudget`].
+        //   The permit is held for the lifetime of the race and released when it
+        //   ends, so a refusal here means the client already has as many hedge
+        //   races open as it is allowed.
+        if retry_state.failover_retry_count == 0
+            && retry_state.session_token_retry_count == 0
+            && !overrides.hedging_suppressed()
+        {
+            let admitted = evaluate_hedge_eligibility(
                 operation,
                 options,
                 &location.account,
                 &routing,
                 configured_request_timeout,
-            ) {
+            )
+            .and_then(|upgrade| match hedge_budget.try_admit(pipeline_type) {
+                Some(permit) => Some((upgrade, permit)),
+                None => {
+                    // Refuse rather than queue: an operation that waits its turn
+                    // to hedge has already lost the latency argument. It falls
+                    // through to the ordinary sequential path instead.
+                    tracing::debug!(
+                        activity_id = %activity_id,
+                        "cosmos.hedge.concurrency_budget_exhausted",
+                    );
+                    None
+                }
+            });
+            if let Some((upgrade, _hedge_permit)) = admitted {
                 let attempt_ctx = AttemptContext {
                     operation,
                     overrides: &overrides,
@@ -692,18 +796,27 @@ pub(crate) async fn execute_operation_pipeline(
         // back-to-back upgrades would compound RU consumption without
         // letting the surrounding failover loop make sequential
         // progress against the remaining regions.
-        let action = if retry_state.hedge_already_fired {
-            action
-        } else {
-            maybe_upgrade_to_hedge(
-                action,
-                operation,
-                options,
-                &location.account,
-                &routing,
-                configured_request_timeout,
-            )
-        };
+        //
+        // A region-pinned attempt (`overrides.region_pin`) is likewise never
+        // upgraded: it carries a region-affine continuation token, so racing
+        // (or failing over) to another region would send that token somewhere
+        // it is not meaningful. This mirrors the STAGE 2b suppression above.
+        let (action, _hedge_permit) =
+            if retry_state.hedge_already_fired || overrides.hedging_suppressed() {
+                (action, None)
+            } else {
+                maybe_upgrade_to_hedge(
+                    action,
+                    operation,
+                    options,
+                    &location.account,
+                    &routing,
+                    configured_request_timeout,
+                    hedge_budget,
+                    pipeline_type,
+                    activity_id,
+                )
+            };
 
         // ── STAGE 6: Apply location effects ────────────────────────────
         // Single-master write effects are deferred into
@@ -775,7 +888,7 @@ pub(crate) async fn execute_operation_pipeline(
                     deferred_effects = retry_state.pending_write_effects.len(),
                     "failover retry triggered",
                 );
-                apply_failover_delay(delay).await;
+                apply_failover_delay(delay, deadline).await;
                 advance_to_next_attempt(
                     &mut retry_state,
                     new_state,
@@ -803,7 +916,7 @@ pub(crate) async fn execute_operation_pipeline(
                     delay = ?delay,
                     "in-region retry triggered",
                 );
-                apply_failover_delay(Some(delay)).await;
+                apply_failover_delay(Some(delay), deadline).await;
                 retry_state = new_state;
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
@@ -833,7 +946,7 @@ pub(crate) async fn execute_operation_pipeline(
                     dtx_infra_retries = new_state.dtx_infra_retry_count,
                     "dtx bodyless retry triggered",
                 );
-                apply_failover_delay(Some(delay)).await;
+                apply_failover_delay(Some(delay), deadline).await;
                 retry_state = new_state;
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
@@ -853,7 +966,7 @@ pub(crate) async fn execute_operation_pipeline(
                     retry_state.pending_write_effects.clear();
                 }
 
-                tracing::error!(
+                tracing::debug!(
                     activity_id = %activity_id,
                     status = ?cosmos_status,
                     error = %error,
@@ -1144,6 +1257,38 @@ fn is_effect_already_applied(effect: &LocationEffect, snapshot: &LocationSnapsho
 ///
 /// Uses `LocationSnapshot` and `AccountEndpointState` to select the best
 /// available endpoint, respecting excluded regions and unavailability TTL.
+/// Builds a [`RoutingDecision`] that routes an attempt to a specific `pinned`
+/// endpoint (see [`OperationOverrides::region_pin`]), bypassing the normal
+/// region selection in [`resolve_endpoint`].
+///
+/// Mirrors the routing construction used for the hedge secondary in
+/// `evaluate_hedge_eligibility`, so a pinned attempt shares the same
+/// gateway-version preference and connection-pool keying.
+fn routing_decision_for_pinned_endpoint(
+    pinned: &crate::driver::routing::CosmosEndpoint,
+    prefer_gateway_v2: bool,
+) -> RoutingDecision {
+    let use_gateway_v2 = pinned.uses_gateway_v2(prefer_gateway_v2);
+    let transport_mode = if use_gateway_v2 {
+        TransportMode::GatewayV2
+    } else {
+        TransportMode::Gateway
+    };
+    let selected_url = pinned.selected_url(use_gateway_v2).clone();
+    let endpoint_key = if use_gateway_v2 {
+        crate::driver::transport::EndpointKey::try_from(&selected_url)
+            .expect("selected URL must have a valid host and port")
+    } else {
+        pinned.endpoint_key()
+    };
+    RoutingDecision {
+        selected_url,
+        transport_mode,
+        endpoint_key,
+        endpoint: pinned.clone(),
+    }
+}
+
 fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,
@@ -2037,10 +2182,13 @@ fn apply_optional_request_headers(
 /// to repeat that guard themselves. Conversion to `azure_core::time::Duration`
 /// is performed once; if it fails (e.g., overflow) the sleep is silently
 /// skipped because a too-large delay is no worse than no delay at all.
-async fn apply_failover_delay(delay: Option<Duration>) {
-    let Some(delay) = delay else {
+async fn apply_failover_delay(delay: Option<Duration>, deadline: Option<Instant>) {
+    let Some(mut delay) = delay else {
         return;
     };
+    if let Some(deadline) = deadline {
+        delay = delay.min(deadline.saturating_duration_since(Instant::now()));
+    }
     if delay.is_zero() {
         return;
     }
@@ -2362,6 +2510,34 @@ fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> Hedge
     }
 }
 
+/// Classifies the SECONDARY (hedge) leg, applying the metadata
+/// primary-authoritative rule.
+///
+/// For the two metadata cache reads the primary region is authoritative: a
+/// hedge may improve latency by winning with a definitive **success**, but it
+/// must never override the primary with a definitive **error** (e.g. a
+/// not-yet-replicated secondary returning `404` for a freshly-created container,
+/// or a `409`/`412`/`429`-final). When `primary_authoritative` is set, a
+/// secondary that produced a `Final` but non-`Success` outcome is therefore
+/// downgraded to [`HedgeClass::Transient`] so the race discards it and awaits
+/// the primary's authoritative outcome. A secondary definitive success still
+/// wins; a secondary transient stays transient. Data-plane hedging passes
+/// `false` and keeps the first-`Final`-wins semantics of
+/// [`classify_hedge_result`].
+fn classify_secondary_hedge_result(
+    result: crate::error::Result<TransportResult>,
+    primary_authoritative: bool,
+) -> HedgeClass {
+    match classify_hedge_result(result) {
+        HedgeClass::Final(tr)
+            if primary_authoritative && !matches!(tr.outcome, TransportOutcome::Success { .. }) =>
+        {
+            HedgeClass::Transient
+        }
+        other => other,
+    }
+}
+
 /// Non-consuming version of [`classify_hedge_result`] for the
 /// pre-threshold primary-completion branch, where the caller still
 /// needs the original `TransportResult` to surface the response via
@@ -2450,12 +2626,12 @@ fn finalize_hedge_attempt(
             body,
             ..
         } => {
-            tracing::warn!(
+            tracing::debug!(
                 activity_id = %diagnostics.activity_id(),
                 request_count = diagnostics.request_count(),
                 http_status = u16::from(status.status_code()),
                 sub_status = ?status.sub_status(),
-                "cosmos.hedge.terminal_http_error",
+                "non-retriable http error in hedging attempt",
             );
             let diagnostics_ctx = Arc::new(diagnostics.complete());
             let base = build_service_error(&status, &cosmos_headers, &body);
@@ -2464,11 +2640,11 @@ fn finalize_hedge_attempt(
                 .build())
         }
         TransportOutcome::TransportError { error, .. } => {
-            tracing::warn!(
+            tracing::debug!(
                 activity_id = %diagnostics.activity_id(),
                 request_count = diagnostics.request_count(),
                 error = %error,
-                "cosmos.hedge.terminal_transport_error",
+                "non-retriable transport error in hedging attempt",
             );
             let diagnostics_ctx = Arc::new(diagnostics.complete());
             Err(crate::error::CosmosErrorBuilder::from_error(error)
@@ -2479,7 +2655,7 @@ fn finalize_hedge_attempt(
             tracing::warn!(
                 activity_id = %diagnostics.activity_id(),
                 request_count = diagnostics.request_count(),
-                "cosmos.hedge.terminal_deadline_exceeded",
+                "deadline exceeded in hedging attempt",
             );
             // Typed status (408 + CLIENT_OPERATION_TIMEOUT) mirrors
             // `enforce_deadline_or_timeout` so retry-evaluation and
@@ -2517,20 +2693,35 @@ fn finalize_hedge_attempt(
 /// `Hedge` variant so STAGE 7 can apply it to the live `retry_state`
 /// before building `AttemptContext` — see
 /// `OperationAction::Hedge::new_state`.
-fn maybe_upgrade_to_hedge(
+///
+/// Returns the (possibly rewritten) action alongside the [`HedgePermit`] that
+/// admitted the race. The caller must hold the permit for as long as the race is
+/// open; dropping it returns the slot to the [`HedgeBudget`].
+#[allow(clippy::too_many_arguments)]
+fn maybe_upgrade_to_hedge<'a>(
     action: OperationAction,
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
     account_state: &AccountEndpointState,
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
-) -> OperationAction {
+    hedge_budget: &'a HedgeBudget,
+    pipeline_type: PipelineType,
+    activity_id: &ActivityId,
+) -> (OperationAction, Option<HedgePermit<'a>>) {
     // Extract `new_state` from the retry-upgrade-eligible variants;
     // return everything else unchanged.
     let new_state = match &action {
+        // The only producers of `delay: Some(_)` are the 403/3 and 403/1008
+        // handlers, so this preserves the backend-failover backoff instead of
+        // replacing it with an immediate hedge. A zero delay carries no backoff
+        // to preserve, so it stays hedge-eligible like `None`.
+        OperationAction::FailoverRetry { delay: Some(d), .. } if !d.is_zero() => {
+            return (action, None)
+        }
         OperationAction::FailoverRetry { new_state, .. } => new_state.clone(),
         OperationAction::SessionRetry { new_state } => new_state.clone(),
-        _ => return action,
+        _ => return (action, None),
     };
 
     match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
@@ -2546,8 +2737,18 @@ fn maybe_upgrade_to_hedge(
                     max_failover_retries = new_state.max_failover_retries,
                     "cosmos.hedge.budget_exhausted_skipping_upgrade",
                 );
-                return action;
+                return (action, None);
             }
+            // Concurrency admission control. Refusing here leaves the operation
+            // on its original sequential retry action rather than queueing it
+            // for a slot — see [`HedgeBudget`].
+            let Some(permit) = hedge_budget.try_admit(pipeline_type) else {
+                tracing::debug!(
+                    activity_id = %activity_id,
+                    "cosmos.hedge.concurrency_budget_exhausted",
+                );
+                return (action, None);
+            };
             // Emit a structured event when an operation is upgraded
             // into the hedge race. Fields mirror the inputs that drove
             // the eligibility decision so operators can correlate
@@ -2559,14 +2760,17 @@ fn maybe_upgrade_to_hedge(
                 hub_region_processing_only = new_state.hub_region_processing_only,
                 "cosmos.hedge.enabled_for_operation",
             );
-            OperationAction::Hedge {
-                secondary_routing: upgrade.secondary_routing,
-                threshold: upgrade.threshold,
-                strategy_config: upgrade.strategy_config,
-                new_state,
-            }
+            (
+                OperationAction::Hedge {
+                    secondary_routing: upgrade.secondary_routing,
+                    threshold: upgrade.threshold,
+                    strategy_config: upgrade.strategy_config,
+                    new_state,
+                },
+                Some(permit),
+            )
         }
-        None => action,
+        None => (action, None),
     }
 }
 
@@ -3081,6 +3285,13 @@ async fn execute_hedged(
         .clone()
         .unwrap_or_else(|| Region::new(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL));
 
+    // Metadata cache reads keep the PRIMARY authoritative: a secondary may win
+    // only with a definitive success, never with a definitive error (guards the
+    // replication-lag race where a not-yet-consistent secondary returns 404/409
+    // before a slow-but-good primary). Data-plane hedging keeps first-Final-wins.
+    // The metadata pipeline is the only place the two metadata read pairs run.
+    let metadata_primary_authoritative = ctx.pipeline_type.is_metadata();
+
     tracing::debug!(
         activity_id = %ctx.activity_id,
         threshold_ms = ?threshold.get().as_millis(),
@@ -3433,7 +3644,10 @@ async fn execute_hedged(
                         &mut race_observed_session_unavailable,
                     )
                     .await;
-                    match classify_hedge_result(secondary_result) {
+                    match classify_secondary_hedge_result(
+                        secondary_result,
+                        metadata_primary_authoritative,
+                    ) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                                 strategy_config,
@@ -3502,7 +3716,8 @@ async fn execute_hedged(
                 &mut race_observed_session_unavailable,
             )
             .await;
-            match classify_hedge_result(secondary_result) {
+            match classify_secondary_hedge_result(secondary_result, metadata_primary_authoritative)
+            {
                 HedgeClass::Final(tr) => {
                     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                         strategy_config,
@@ -4466,6 +4681,7 @@ mod tests {
             session_token_retry_count: 1,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -4632,6 +4848,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -4699,6 +4916,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -4778,6 +4996,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -4891,6 +5110,7 @@ mod tests {
             max_failover_retries: 3,
             max_session_retries: 3,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5672,6 +5892,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5738,6 +5959,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5807,6 +6029,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5889,6 +6112,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5982,6 +6206,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -8271,7 +8496,7 @@ mod tests {
     #[tokio::test]
     async fn failover_delay_none_returns_immediately() {
         let start = std::time::Instant::now();
-        super::apply_failover_delay(None).await;
+        super::apply_failover_delay(None, None).await;
         // Allow generous slack for CI scheduling jitter; the goal is to
         // confirm that `None` does not invoke the sleep path at all.
         assert!(start.elapsed() < Duration::from_millis(50));
@@ -8280,7 +8505,7 @@ mod tests {
     #[tokio::test]
     async fn failover_delay_zero_returns_immediately() {
         let start = std::time::Instant::now();
-        super::apply_failover_delay(Some(Duration::ZERO)).await;
+        super::apply_failover_delay(Some(Duration::ZERO), None).await;
         assert!(start.elapsed() < Duration::from_millis(50));
     }
 
@@ -8289,8 +8514,33 @@ mod tests {
         // Use tokio's pause-time to verify the sleep path is taken
         // without making the test wall-clock-slow.
         let start = tokio::time::Instant::now();
-        super::apply_failover_delay(Some(Duration::from_secs(5))).await;
+        super::apply_failover_delay(Some(Duration::from_secs(5)), None).await;
         assert!(start.elapsed() >= Duration::from_secs(5));
+    }
+
+    #[tokio::test]
+    async fn failover_delay_returns_immediately_when_deadline_elapsed() {
+        let start = std::time::Instant::now();
+        super::apply_failover_delay(
+            Some(Duration::from_secs(5)),
+            Some(std::time::Instant::now()),
+        )
+        .await;
+        assert!(start.elapsed() < Duration::from_millis(50));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn failover_delay_is_capped_to_future_deadline() {
+        let start = tokio::time::Instant::now();
+        let deadline = std::time::Instant::now() + Duration::from_millis(250);
+
+        super::apply_failover_delay(Some(Duration::from_secs(5)), Some(deadline)).await;
+
+        let elapsed = start.elapsed();
+        assert!(
+            elapsed >= Duration::from_millis(200) && elapsed < Duration::from_secs(1),
+            "sleep should stop near the future deadline, got {elapsed:?}"
+        );
     }
 
     // ── enforce_deadline_or_timeout ───────────────────────────────────
@@ -8386,6 +8636,196 @@ mod tests {
             super::classify_hedge_result(Ok(tr)),
             super::HedgeClass::Transient
         ));
+    }
+
+    // ── classify_secondary_hedge_result (metadata primary-authoritative) ──
+
+    #[test]
+    fn secondary_definitive_error_defers_to_primary_when_metadata() {
+        // Metadata primary-authoritative: a secondary 404 (Final, non-success)
+        // must NOT win — downgraded to Transient so the primary is awaited.
+        let tr = http_result(404, None);
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::HedgeClass::Transient
+        ));
+    }
+
+    #[test]
+    fn secondary_definitive_error_wins_when_not_metadata() {
+        // Data-plane (primary_authoritative = false) keeps first-Final-wins.
+        let tr = http_result(404, None);
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(tr), false),
+            super::HedgeClass::Final(_)
+        ));
+    }
+
+    #[test]
+    fn secondary_definitive_success_wins_when_metadata() {
+        // A secondary definitive success still wins under primary-authoritative
+        // (the latency benefit).
+        let tr = http_result(200, None);
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::HedgeClass::Final(_)
+        ));
+    }
+
+    #[test]
+    fn secondary_transient_stays_transient_when_metadata() {
+        let tr = http_result(503, None);
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::HedgeClass::Transient
+        ));
+    }
+
+    // ── OperationOverrides::region_pin ────────────────────────────────
+
+    #[test]
+    fn routing_decision_for_pinned_endpoint_routes_to_the_pinned_endpoint() {
+        use crate::driver::routing::CosmosEndpoint;
+        use crate::options::Region;
+        let url = url::Url::parse("https://acct-westus2.documents.azure.com/").unwrap();
+        let pinned = CosmosEndpoint::regional(Region::WEST_US_2, url.clone());
+
+        let routing = super::routing_decision_for_pinned_endpoint(&pinned, false);
+
+        assert_eq!(routing.endpoint.region(), Some(&Region::WEST_US_2));
+        assert_eq!(routing.selected_url, url);
+        assert!(matches!(
+            routing.transport_mode,
+            super::TransportMode::Gateway
+        ));
+    }
+
+    #[test]
+    fn no_region_pin_allows_hedging_and_normal_routing() {
+        let overrides = super::OperationOverrides::default();
+
+        assert!(!overrides.hedging_suppressed());
+        assert!(overrides.pinned_endpoint().is_none());
+    }
+
+    #[test]
+    fn region_pin_without_endpoint_suppresses_hedging_only() {
+        // The degraded fallback: the serving region could not be identified, so
+        // there is no region to force, but the page still carries a
+        // region-affine ETag and must not be raced.
+        let overrides = super::OperationOverrides {
+            region_pin: Some(Box::new(super::RegionPin::default())),
+            ..Default::default()
+        };
+
+        assert!(overrides.hedging_suppressed());
+        assert!(overrides.pinned_endpoint().is_none());
+    }
+
+    #[test]
+    fn region_pin_with_endpoint_suppresses_hedging_and_pins_routing() {
+        use crate::driver::routing::CosmosEndpoint;
+        use crate::options::Region;
+        let url = url::Url::parse("https://acct-westus2.documents.azure.com/").unwrap();
+        let overrides = super::OperationOverrides {
+            region_pin: Some(Box::new(super::RegionPin {
+                endpoint: Some(CosmosEndpoint::regional(Region::WEST_US_2, url)),
+            })),
+            ..Default::default()
+        };
+
+        assert!(overrides.hedging_suppressed());
+        assert_eq!(
+            overrides.pinned_endpoint().and_then(|e| e.region()),
+            Some(&Region::WEST_US_2)
+        );
+    }
+
+    #[test]
+    fn region_pin_holds_page_two_on_its_region_across_a_failover_retry() {
+        // The failure this guards: a `/pkranges` page 2 whose primary region has
+        // just been marked unavailable by a failover retry. Normal routing would
+        // move that attempt to the next preferred region and send the
+        // region-affine change-feed ETag somewhere that never issued it. The
+        // STAGE 2 pin must win over `resolve_endpoint` in that state.
+        let operation = CosmosOperation::read_all_partition_key_ranges(test_container());
+
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let west = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        // East US — the region that served the cold page and issued the ETag —
+        // has just been marked unavailable, exactly as an in-flight failover
+        // retry would leave it.
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            east.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone(), west.clone()].into(),
+            preferred_write_endpoints: vec![east.clone()].into(),
+            account_write_endpoints: vec![east.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: east.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.failover_retry_count = 1;
+
+        // Baseline: without a pin this attempt leaves East US.
+        let unpinned = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            unpinned.endpoint, west,
+            "sanity check: normal routing must fail over off the unavailable region, \
+             otherwise this test proves nothing",
+        );
+
+        // With the pin, STAGE 2 bypasses `resolve_endpoint` entirely and the
+        // page stays on the region that issued its continuation.
+        let overrides = super::OperationOverrides {
+            region_pin: Some(Box::new(super::RegionPin {
+                endpoint: Some(east.clone()),
+            })),
+            ..Default::default()
+        };
+        let pinned = overrides
+            .pinned_endpoint()
+            .expect("a recorded pin carries its endpoint");
+        let routing = super::routing_decision_for_pinned_endpoint(pinned, false);
+
+        assert_eq!(
+            routing.endpoint, east,
+            "a pinned continuation page must stay on its issuing region even when \
+             that region is unavailable and a failover retry is in flight",
+        );
+        assert!(
+            overrides.hedging_suppressed(),
+            "a pinned continuation page must also never be raced",
+        );
     }
 
     #[test]
@@ -8886,6 +9326,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -9031,6 +9472,49 @@ mod tests {
         assert_eq!(
             state.failover_retry_count, 2,
             "two slots are always charged regardless of layout",
+        );
+    }
+
+    /// The hedge `BothTransient` boundary must leave the backend-failover
+    /// budget exactly as it found it: the two legs race concurrently and
+    /// incur no backoff, so charging them delay would shorten the topology
+    /// convergence window without any wall-clock time having been spent.
+    /// Resetting the budget would be equally wrong — a hedged operation would
+    /// get a fresh 5s on every race.
+    #[test]
+    fn try_advance_after_both_transient_preserves_backend_failover_budget() {
+        let regions = ["region-a", "region-b", "region-c"];
+        let location = make_advance_test_location(&regions);
+        let mut state = make_advance_test_state(0, regions.len());
+        // Partially-spent backend budget from a prior sequential 403/1008 round.
+        state.backend_failover_retry_count = 3;
+        state.backend_failover_cumulative_delay = Duration::from_millis(3_000);
+
+        let primary = crate::options::Region::new("region-a");
+        let secondary = crate::options::Region::new("region-b");
+
+        let result = super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            true,
+            Some(&primary),
+            Some(&secondary),
+            dummy_last_error(),
+        );
+
+        assert!(result.is_ok(), "budget remains, so the race must continue");
+        assert_eq!(
+            state.failover_retry_count, 2,
+            "the race charges the generic failover budget",
+        );
+        assert_eq!(
+            state.backend_failover_retry_count, 3,
+            "the concurrent legs must neither consume nor reset the backend retry count",
+        );
+        assert_eq!(
+            state.backend_failover_cumulative_delay,
+            Duration::from_millis(3_000),
+            "no backoff elapsed during the race, so no delay budget may be charged",
         );
     }
 

@@ -59,7 +59,9 @@ An **in-memory emulator** that intercepts requests at the `HttpClient` transport
 ### Non-Goals (This Phase)
 
 - Bulk / Patch operations (return hard-coded errors).
-- Gateway 2.0 transport mode (skip for now — will come later).
+- Network hosting remains outside the in-process `HttpClient` interception contract described by
+  this document. The separate `azure_data_cosmos_emulator` host supports Gateway V1 and a scoped
+  Gateway 2.0 adapter; see `sdk/cosmos/azure_data_cosmos_emulator/AGENTS.md`.
 - Change feed.
 - Stored procedures / triggers / UDFs.
 - Complete Cosmos SQL service parity beyond the local query evaluator and local query-plan analyzer.
@@ -700,48 +702,48 @@ Each physical partition is independently serialized:
 
 ### URL Path Parsing
 
-| Pattern                            | Resource Type                                                |
-| ---------------------------------- | ------------------------------------------------------------ |
-| `/`                                | Account                                                      |
-| `/dbs`                             | DatabaseFeed (create/read/query)                             |
-| `/dbs/{db}`                        | Database (read/delete)                                       |
-| `/dbs/{db}/colls`                  | ContainerFeed (create/read/query)                            |
-| `/dbs/{db}/colls/{coll}`           | Container (read/delete)                                      |
-| `/dbs/{db}/colls/{coll}/pkranges`  | PartitionKeyRangeFeed (read feed)                            |
-| `/dbs/{db}/colls/{coll}/docs`      | DocumentFeed (create/upsert/read/query/query-plan/batch)     |
-| `/dbs/{db}/colls/{coll}/docs/{id}` | Document (read/replace/delete)                               |
-| `/offers`                          | OfferFeed (read/query)                                       |
-| `/offers/{id}`                     | Offer (read/replace)                                         |
+| Pattern                            | Resource Type                                            |
+| ---------------------------------- | -------------------------------------------------------- |
+| `/`                                | Account                                                  |
+| `/dbs`                             | DatabaseFeed (create/read/query)                         |
+| `/dbs/{db}`                        | Database (read/delete)                                   |
+| `/dbs/{db}/colls`                  | ContainerFeed (create/read/query)                        |
+| `/dbs/{db}/colls/{coll}`           | Container (read/delete)                                  |
+| `/dbs/{db}/colls/{coll}/pkranges`  | PartitionKeyRangeFeed (read feed)                        |
+| `/dbs/{db}/colls/{coll}/docs`      | DocumentFeed (create/upsert/read/query/query-plan/batch) |
+| `/dbs/{db}/colls/{coll}/docs/{id}` | Document (read/replace/delete)                           |
+| `/offers`                          | OfferFeed (read/query)                                   |
+| `/offers/{id}`                     | Offer (read/replace)                                     |
 
 ### Operation Resolution
 
-| HTTP Method | Path                        | Headers                                      | Operation          |
-| ----------- | --------------------------- | -------------------------------------------- | ------------------ |
-| `GET`       | `/`                         | —                                            | ReadAccount        |
-| `POST`      | `/dbs`                      | —                                            | CreateDatabase     |
-| `GET`       | `/dbs`                      | —                                            | ReadFeedDatabases  |
-| `POST`      | `/dbs`                      | `x-ms-documentdb-isquery: True`              | QueryDatabases     |
-| `GET`       | `/dbs/{db}`                 | —                                            | ReadDatabase       |
-| `DELETE`    | `/dbs/{db}`                 | —                                            | DeleteDatabase     |
-| `POST`      | `/dbs/{db}/colls`           | —                                            | CreateContainer    |
-| `GET`       | `/dbs/{db}/colls`           | —                                            | ReadFeedContainers |
-| `POST`      | `/dbs/{db}/colls`           | `x-ms-documentdb-isquery: True`              | QueryContainers    |
-| `GET`       | `/dbs/{db}/colls/{coll}`    | —                                            | ReadContainer      |
-| `DELETE`    | `/dbs/{db}/colls/{coll}`    | —                                            | DeleteContainer    |
-| `GET`       | `.../colls/{coll}/pkranges` | —                                            | ReadPKRanges       |
-| `POST`      | `.../docs`                  | —                                            | Create             |
-| `POST`      | `.../docs`                  | `x-ms-documentdb-is-upsert: True`            | Upsert             |
-| `GET`       | `.../docs`                  | —                                            | ReadFeedItems      |
-| `POST`      | `.../docs`                  | `x-ms-documentdb-isquery: True`              | QueryItems         |
-| `POST`      | `.../docs`                  | `x-ms-cosmos-is-query-plan-request: True`    | QueryPlan          |
-| `POST`      | `.../docs`                  | `x-ms-cosmos-is-batch-request: True`         | Batch              |
-| `GET`       | `.../docs/{id}`             | —                                            | Read               |
-| `PUT`       | `.../docs/{id}`             | —                                            | Replace            |
-| `DELETE`    | `.../docs/{id}`             | —                                            | Delete             |
-| `GET`       | `/offers`                   | —                                            | ReadFeedOffers     |
-| `POST`      | `/offers`                   | `x-ms-documentdb-isquery: True`              | QueryOffers        |
-| `GET`       | `/offers/{id}`              | —                                            | ReadOffer          |
-| `PUT`       | `/offers/{id}`              | —                                            | ReplaceOffer       |
+| HTTP Method | Path                        | Headers                                   | Operation          |
+| ----------- | --------------------------- | ----------------------------------------- | ------------------ |
+| `GET`       | `/`                         | —                                         | ReadAccount        |
+| `POST`      | `/dbs`                      | —                                         | CreateDatabase     |
+| `GET`       | `/dbs`                      | —                                         | ReadFeedDatabases  |
+| `POST`      | `/dbs`                      | `x-ms-documentdb-isquery: True`           | QueryDatabases     |
+| `GET`       | `/dbs/{db}`                 | —                                         | ReadDatabase       |
+| `DELETE`    | `/dbs/{db}`                 | —                                         | DeleteDatabase     |
+| `POST`      | `/dbs/{db}/colls`           | —                                         | CreateContainer    |
+| `GET`       | `/dbs/{db}/colls`           | —                                         | ReadFeedContainers |
+| `POST`      | `/dbs/{db}/colls`           | `x-ms-documentdb-isquery: True`           | QueryContainers    |
+| `GET`       | `/dbs/{db}/colls/{coll}`    | —                                         | ReadContainer      |
+| `DELETE`    | `/dbs/{db}/colls/{coll}`    | —                                         | DeleteContainer    |
+| `GET`       | `.../colls/{coll}/pkranges` | —                                         | ReadPKRanges       |
+| `POST`      | `.../docs`                  | —                                         | Create             |
+| `POST`      | `.../docs`                  | `x-ms-documentdb-is-upsert: True`         | Upsert             |
+| `GET`       | `.../docs`                  | —                                         | ReadFeedItems      |
+| `POST`      | `.../docs`                  | `x-ms-documentdb-isquery: True`           | QueryItems         |
+| `POST`      | `.../docs`                  | `x-ms-cosmos-is-query-plan-request: True` | QueryPlan          |
+| `POST`      | `.../docs`                  | `x-ms-cosmos-is-batch-request: True`      | Batch              |
+| `GET`       | `.../docs/{id}`             | —                                         | Read               |
+| `PUT`       | `.../docs/{id}`             | —                                         | Replace            |
+| `DELETE`    | `.../docs/{id}`             | —                                         | Delete             |
+| `GET`       | `/offers`                   | —                                         | ReadFeedOffers     |
+| `POST`      | `/offers`                   | `x-ms-documentdb-isquery: True`           | QueryOffers        |
+| `GET`       | `/offers/{id}`              | —                                         | ReadOffer          |
+| `PUT`       | `/offers/{id}`              | —                                         | ReplaceOffer       |
 
 ### Region Routing
 
@@ -904,7 +906,10 @@ One-shot: next read to the physical partition containing the given partition key
 ## 10. ETag & Optimistic Concurrency
 
 - New quoted UUID ETag generated on every write.
-- **If-Match**: Compared on Replace/Delete → 412 on mismatch.
+- **If-Match**: Compared on Replace/Delete → 412 on mismatch. Also enforced on Upsert
+  when the target item already exists; an Upsert against a non-existent item ignores
+  `If-Match` and creates the item (mirrors real Cosmos DB — preconditions only apply
+  to items that already exist).
 - **If-None-Match**: Reserved for future use (create-if-not-exists pattern).
 - ETag returned in both `etag` header and `_etag` body property.
 
@@ -1274,7 +1279,10 @@ The `GET /dbs/{db}/colls/{coll}/pkranges` feed reflects the updated topology:
 
 ## 18. Unsupported Operations
 
-Bulk, Patch, ChangeFeed, stored procedures, triggers, UDFs, and Gateway 2.0 transport mode remain unsupported and return **501 Not Implemented** or the closest service-shaped error for that route.
+Bulk, Patch, ChangeFeed, stored procedures, triggers, and UDFs remain unsupported and return
+**501 Not Implemented** or the closest service-shaped error for that route. The in-process client
+does not select a network transport, while the separate hosted emulator supports the documented
+subset of Gateway 2.0 over HTTP/2.
 
 Query support is intentionally scoped to the local SQL evaluator and local query-plan analyzer used by the SDK tests. Transactional batch supports document operations within one logical partition and rolls back the whole batch on failure.
 

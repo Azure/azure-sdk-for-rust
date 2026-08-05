@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Use the shared test framework declared in `tests/emulator/mod.rs`.
+// Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
 use super::framework;
 
 use std::error::Error;
 
 use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
-    clients::DatabaseClient,
+    clients::{ContainerClient, DatabaseClient},
     feed::FeedScope,
-    models::CosmosStatus,
+    models::ThroughputProperties,
     options::{MaxItemCountHint, QueryOptions},
     Query,
 };
@@ -119,10 +119,30 @@ struct ItemProjection {
     merge_order: usize,
 }
 
+/// Drains `select value c.id from c` for the given scope and returns the ids.
+async fn collect_ids_for_scope(
+    container_client: &ContainerClient,
+    scope: FeedScope,
+) -> Result<Vec<String>, Box<dyn Error>> {
+    let mut pages = container_client
+        .query_items::<String>("select value c.id from c", scope, None)
+        .await?
+        .into_pages();
+    let mut ids = Vec::new();
+    while let Some(page) = pages.next().await {
+        ids.extend(page?.into_items());
+    }
+    Ok(ids)
+}
+
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -150,8 +170,12 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -189,8 +213,12 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -224,8 +252,12 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -256,63 +288,38 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
     ignore = "skipped on vnext emulator: behavioral divergence"
 )]
-pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn Error>> {
+pub async fn cross_partition_query_with_order_by() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
             let items = test_data::generate_mock_items(10, 10);
-            let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), None).await?;
+            let mut expected = items.clone();
+            expected.sort_by_key(|item| item.merge_order);
+            let expected_ids = expected.into_iter().map(|item| item.id).collect();
 
-            let Err(err) = container_client
-                .query_items::<String>(
-                    "select value c.id from c order by c.mergeOrder",
-                    FeedScope::full_container(),
-                    None,
-                )
-                .await
-            else {
-                panic!("Expected query to fail due to cross-partition ORDER BY");
-            };
-            assert_eq!(
-                err.status(),
-                CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE,
-                "Expected 400 / 1004 (CrossPartitionQueryNotServable) for cross-partition ORDER BY"
-            );
+            execute_query_test(
+                db_client,
+                items,
+                "select value c.id from c order by c.mergeOrder",
+                FeedScope::full_container(),
+                expected_ids,
+                QueryTestOptions {
+                    max_item_count: Some(7),
+                    use_continuation_token_resume: true,
+                },
+            )
+            .await?;
 
-            let body = err
-                .response()
-                .and_then(|r| match r.body() {
-                    azure_data_cosmos_driver::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
-                    _ => None,
-                })
-                .expect("service error should carry a response body");
-            #[derive(serde::Deserialize)]
-            struct ErrorDetail {
-                code: String,
-                message: String,
-            }
-            let error_detail: ErrorDetail =
-                serde_json::from_slice(body).expect("response body must be JSON");
-            assert_eq!(error_detail.code, "BadRequest");
-
-            // Take only the first two lines of the message for comparison, since the full message may contain additional details that could change over time
-            let clean_message = error_detail
-                .message
-                .lines()
-                .take(2)
-                .collect::<Vec<_>>()
-                .join("\n");
-            assert_eq!(
-                clean_message,
-                "Query contains 1 or more unsupported features. Upgrade your SDK to a version that does support the requested features:\nQuery contained OrderBy, which the calling client does not support."
-            );
             Ok(())
         },
         Some(TestOptions::for_emulator()),
@@ -322,12 +329,20 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
     ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet carry query and index metrics request flags"
 )]
 pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -417,8 +432,12 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -453,8 +472,16 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "unordered cross-partition row order differs in the in-memory emulator"
 )]
 pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -472,6 +499,84 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 },
             )
             .await?;
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            // 10 logical partitions × 2 items. Provision 11000 RU/s so the
+            // container splits into 2 physical partitions — a scoped query then
+            // has a neighbouring range it must NOT touch.
+            let items = test_data::generate_mock_items(10, 2);
+            let throughput = ThroughputProperties::manual(11000);
+            let container_client =
+                test_data::create_container_with_items(db_client, items.clone(), Some(throughput))
+                    .await?;
+
+            let ranges = container_client.read_feed_ranges(None).await?;
+            assert_eq!(
+                ranges.len(),
+                2,
+                "expected exactly 2 physical partitions with 11000 RU/s, got {}",
+                ranges.len()
+            );
+
+            // Query each feed range in isolation — exactly the customer scenario
+            // (`read_feed_ranges()` then query each range) — and collect the ids
+            // each range returns. Pair each result set with its range so we can
+            // order the outer list by the range's lower bound, independent of the
+            // order `read_feed_ranges` happens to return.
+            let mut per_range: Vec<(String, Vec<String>)> = Vec::new();
+            for range in &ranges {
+                let mut ids =
+                    collect_ids_for_scope(&container_client, FeedScope::range(range.clone()))
+                        .await?;
+                ids.sort_by_key(|id| id.parse::<u32>().expect("mock ids are numeric"));
+                per_range.push((range.min_inclusive().to_hex(), ids));
+            }
+            per_range.sort_by(|a, b| a.0.cmp(&b.0));
+            let per_range_ids: Vec<Vec<&str>> = per_range
+                .iter()
+                .map(|(_, ids)| ids.iter().map(String::as_str).collect())
+                .collect();
+
+            // The container deterministically splits into two physical ranges at
+            // EPK `0x1FFF…FF` (`[00, 1FFF…FF)` and `[1FFF…FF, FF)`), so each of the
+            // 10 partition keys maps to exactly one range and a correctly-scoped
+            // query returns only that range's ids. These groupings were captured
+            // from a real Cosmos DB account and are identical on the emulator —
+            // the effective-partition-key hash and the split boundary are
+            // algorithm-driven, not environment-specific. Before the fan-out clip
+            // fix each `FeedScope::range` query fanned out across the whole
+            // container, so every range returned all 20 ids instead of its slice.
+            let expected: Vec<Vec<&str>> = vec![
+                vec![
+                    "0", "1", "20", "21", "30", "31", "40", "41", "50", "51", "70", "71", "90",
+                    "91",
+                ],
+                vec!["10", "11", "60", "61", "80", "81"],
+            ];
+
+            assert_eq!(
+                expected, per_range_ids,
+                "each feed range must return exactly the items whose partition key \
+                 maps into it — no over-scan, no missing items, no empty ranges"
+            );
 
             Ok(())
         },
