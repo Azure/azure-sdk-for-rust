@@ -955,19 +955,7 @@ RU/s enforcement with 429/3200 responses.
   (WriteForbidden), triggering the driver's failover logic.
 - **Multi-write**: All regions accept writes. Last-writer-wins by `_ts`.
 - **Retired regions**: A region removed from the account returns 403/1008
-  (DatabaseAccountNotFound) for every request, matching the service's `TenantDeleted` mapping.
-  Per `LocationCacheTests.ValidateRetryOnDatabaseAccountNotFoundAsync`, the client retries once
-  against the next preferred endpoint for reads and for writes on multi-write accounts, but
-  surfaces the `Forbidden` for a write on a single-write account.
-
-### Endpoint failback: a deliberate divergence from .NET
-
-The .NET SDK expires endpoint unavailability on a **timer**
-(`UnavailableLocationsExpirationTimeInSeconds`). This driver expires it only via the
-**endpoint-probe loop** — a marked endpoint stays out of rotation until a connectivity probe
-confirms it is reachable. Because there is no TTL fallback, `sync_account_properties` drops marks
-for endpoints that have left the account; otherwise a removed region's mark would be retained and
-re-probed forever, since nothing else could clear it.
+  (DatabaseAccountNotFound) for every request.
 
 ### Replication
 
@@ -1415,8 +1403,7 @@ Differences are classified as:
 
 **Dynamic Topology** (region add/remove, write-mode and write-region changes):
 - Removing the client's top preferred region moves traffic to the next preferred one, and
-  re-adding it restores the original order — the same contract as .NET's
-  `GlobalEndpointManagerTest.ReadLocationRemoveAndAddMockTestAsync`.
+  re-adding it restores the original order.
 - A request to a removed region returns 403/1008, with the service's body shape.
 - A *draining* region rejects with 403/1008 while still being advertised — the real removal ordering.
 - Enabling multi-write makes satellite regions accept writes; `set_write_region` demotes the
