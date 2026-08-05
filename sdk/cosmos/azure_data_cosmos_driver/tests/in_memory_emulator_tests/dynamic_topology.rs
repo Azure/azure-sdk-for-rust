@@ -292,7 +292,7 @@ async fn added_region_gets_a_fresh_unused_id() {
 /// The status, substatus and body shape were verified live: removing a region
 /// makes its regional endpoint return this within seconds, well before ARM
 /// reports the update complete. See
-/// `tests/fixtures/topology/removed_region_403_1008.json`.
+/// the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
 #[tokio::test]
 async fn read_to_retired_region_gets_403_1008() {
     let recorder = HostRecorder::new();
@@ -319,20 +319,26 @@ async fn read_to_retired_region_gets_403_1008() {
         "a removed region must report DatabaseAccountNotFound"
     );
 
-    // Body shape, matching the captured live response.
-    let captured: serde_json::Value = serde_json::from_str(include_str!(
-        "../fixtures/topology/removed_region_403_1008.json"
-    ))
-    .expect("fixture should parse");
-    let expected = captured["body"].as_object().unwrap();
-    let actual = body.as_object().unwrap();
-    let missing: Vec<&String> = expected
-        .keys()
-        .filter(|k| !actual.contains_key(*k))
-        .collect();
-    assert!(
-        missing.is_empty(),
-        "403/1008 body is missing fields the service returns: {missing:?}"
+    // Body shape. The live response (from a region removed seconds earlier)
+    // was, with the ActivityId/version suffix on the message elided:
+    //
+    //   { "code": "Forbidden",
+    //     "message": "Database Account {id} does not exist",
+    //     "writableLocations": [], "readableLocations": [],
+    //     "id": "{account}-{region}" }
+    let actual = body.as_object().expect("error body is a JSON object");
+    let mut keys: Vec<&str> = actual.keys().map(String::as_str).collect();
+    keys.sort_unstable();
+    assert_eq!(
+        keys,
+        [
+            "code",
+            "id",
+            "message",
+            "readableLocations",
+            "writableLocations"
+        ],
+        "403/1008 body shape must match the service"
     );
     assert_eq!(actual["code"], "Forbidden");
     assert_eq!(actual["writableLocations"], serde_json::json!([]));
@@ -1119,7 +1125,7 @@ async fn delayed_seeding_region_is_empty_until_catch_up() {
 
 /// The service does **not** send an `_etag` on the account read — verified
 /// against live accounts across global/regional endpoints and two `x-ms-version`
-/// values (see `tests/fixtures/topology/*.json`). The emulator must not invent
+/// values (see the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>). The emulator must not invent
 /// one, or it would exercise the driver's unchanged-etag short-circuit in
 /// `sync_account_properties`, which is inert in production.
 #[tokio::test]
@@ -1141,58 +1147,95 @@ async fn account_read_has_no_etag_like_the_service() {
     );
 }
 
+/// Every top-level field a live Cosmos DB account read returns, recorded from a
+/// real two-region multi-write account.
+///
+/// Captured with `x-ms-version` `2020-07-15`; the raw payload is in the live
+/// capture linked from the module docs. Kept as an explicit list rather than a
+/// checked-in JSON blob so the expectation is readable in the test itself.
+///
+/// Note the absence of `_etag`: the service does not send one, on either the
+/// global or a regional endpoint, for `x-ms-version` `2018-12-31` or
+/// `2020-07-15`.
+const SERVICE_ACCOUNT_FIELDS: &[&str] = &[
+    "_dbs",
+    "_rid",
+    "_self",
+    "addresses",
+    "continuousBackupEnabled",
+    "disableCrossRegionalHedging",
+    "enableMultipleWriteLocations",
+    "enableNRegionSynchronousCommit",
+    "enablePerPartitionFailoverBehavior",
+    "id",
+    "media",
+    "queryEngineConfiguration",
+    "readPolicy",
+    "readableLocations",
+    "systemReplicationPolicy",
+    "userConsistencyPolicy",
+    "userReplicationPolicy",
+    "writableLocations",
+];
+
+/// Account fields the service returns as JSON booleans.
+const SERVICE_ACCOUNT_BOOL_FIELDS: &[&str] = &[
+    "continuousBackupEnabled",
+    "disableCrossRegionalHedging",
+    "enableMultipleWriteLocations",
+    "enableNRegionSynchronousCommit",
+    "enablePerPartitionFailoverBehavior",
+];
+
+/// Keys the service nests under `userReplicationPolicy`.
+const SERVICE_USER_REPLICATION_POLICY_KEYS: &[&str] =
+    &["asyncReplication", "maxReplicasetSize", "minReplicaSetSize"];
+
 /// The emulator's account payload must carry every field the live service
 /// returns, so a driver change that starts consuming one is not silently
-/// unexercised. Compared field-by-field against a captured live payload.
+/// unexercised — and must not invent fields the service never sends.
 #[tokio::test]
-async fn account_payload_shape_matches_captured_service_response() {
-    let captured: serde_json::Value = serde_json::from_str(include_str!(
-        "../fixtures/topology/two_region_multi_write.json"
-    ))
-    .expect("fixture should parse");
-    let expected = captured["payload"].as_object().unwrap();
-
+async fn account_payload_shape_matches_the_service() {
     let recorder = HostRecorder::new();
     let emulator = build_emulator(vec![east(), west()], WriteMode::Multi, recorder);
     let request = Request::new(Url::parse(EAST_URL).unwrap(), Method::Get);
     let (_, _, body) = collect_response(emulator.execute_request(&request).await.unwrap()).await;
-    let actual = body.as_object().unwrap();
+    let actual = body.as_object().expect("account payload is a JSON object");
 
-    let missing: Vec<&String> = expected
-        .keys()
-        .filter(|k| !actual.contains_key(*k))
+    let missing: Vec<&&str> = SERVICE_ACCOUNT_FIELDS
+        .iter()
+        .filter(|field| !actual.contains_key(**field))
         .collect();
     assert!(
         missing.is_empty(),
         "emulator account payload is missing fields the service returns: {missing:?}"
     );
 
-    assert_eq!(
-        actual["enableMultipleWriteLocations"], expected["enableMultipleWriteLocations"],
-        "test setup: fixture and emulator should both be multi-write"
+    let extra: Vec<&String> = actual
+        .keys()
+        .filter(|key| !SERVICE_ACCOUNT_FIELDS.contains(&key.as_str()))
+        .collect();
+    assert!(
+        extra.is_empty(),
+        "emulator account payload invents fields the service does not send: {extra:?} \
+         (if the service really does send these, update SERVICE_ACCOUNT_FIELDS)"
     );
-    for key in [
-        "continuousBackupEnabled",
-        "enableNRegionSynchronousCommit",
-        "enablePerPartitionFailoverBehavior",
-        "disableCrossRegionalHedging",
-    ] {
+
+    for field in SERVICE_ACCOUNT_BOOL_FIELDS {
         assert!(
-            actual[key].is_boolean() && expected[key].is_boolean(),
-            "{key} must keep the service's boolean type"
+            actual[*field].is_boolean(),
+            "{field} must be a JSON boolean, as the service sends it"
         );
     }
+
+    let policy_keys: Vec<&str> = actual["userReplicationPolicy"]
+        .as_object()
+        .expect("userReplicationPolicy is an object")
+        .keys()
+        .map(String::as_str)
+        .collect();
     assert_eq!(
-        actual["userReplicationPolicy"]
-            .as_object()
-            .unwrap()
-            .keys()
-            .collect::<Vec<_>>(),
-        expected["userReplicationPolicy"]
-            .as_object()
-            .unwrap()
-            .keys()
-            .collect::<Vec<_>>(),
+        policy_keys, SERVICE_USER_REPLICATION_POLICY_KEYS,
         "userReplicationPolicy shape must match the service"
     );
 }

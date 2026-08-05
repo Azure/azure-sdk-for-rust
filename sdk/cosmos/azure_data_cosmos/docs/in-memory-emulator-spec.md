@@ -212,7 +212,7 @@ The emulator serves `GET /` requests with synthesized account properties from co
   which makes the unchanged-etag short-circuit in `LocationStateStore::sync_account_properties`
   inert — it is guarded by `!etag.is_empty()`. Emitting an etag here would make the emulator
   exercise a path the service can never trigger; the short-circuit is covered by unit tests
-  instead. Captured payloads live in `azure_data_cosmos_driver/tests/fixtures/topology/`.
+  instead. Captured payloads are in the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
 
 ### Dynamic Account Topology
 
@@ -251,7 +251,7 @@ Semantics:
   region being removed started returning exactly that ~20 seconds after the ARM request was
   accepted. The emulator reproduces the status, substatus and body shape (including the empty
   `readableLocations`/`writableLocations` and the account `id`) — see
-  `tests/fixtures/topology/removed_region_403_1008.json`.
+  the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
 - **Removal is two-phase, and the phases overlap.** `begin_region_removal` puts a region into
   [`RegionStatus::Draining`]: its endpoint returns `403/1008` while the account read *still*
   advertises it. That is what the service does — the regional endpoint failed within seconds while
@@ -1431,7 +1431,7 @@ Differences are classified as:
   previous hub, which then returns 403/3.
 - Region IDs are stable across removal and re-addition.
 - The account read carries no `_etag`; `id` reflects the request host and `_rid` the write region.
-  Both are pinned against captured live payloads in `tests/fixtures/topology/`.
+  Both are pinned by explicit expectations in the tests themselves.
 
 **Control Plane** (database/container CRUD):
 - Create returns 201 with system properties.
@@ -1493,9 +1493,9 @@ re_added_region_is_usable_for_reads_again,
 collapsing_to_a_single_region_keeps_the_account_usable,
 preference_order_wins_over_advertisement_order_after_growth.
 
-Golden payloads captured from live accounts live in
-`azure_data_cosmos_driver/tests/fixtures/topology/`. The full observation timelines and the poller
-used to record them are kept out of the repo, at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
+Expectations recorded from live accounts are encoded directly in the tests rather than as
+checked-in payload files. The full observation timelines and the poller used to record them are
+kept out of the repo, at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
 
 **Control Plane**: create_database, read_database, delete_database_cascades,
 create_container_with_pk, read_container, delete_container_cascades,
