@@ -3485,7 +3485,18 @@ fn synthesize_order_by_rewritten_query(
         Some(t) if t.kind == TokenKind::Identifier => t.text,
         _ => collection_token.text,
     };
-    let payload = match tokens.get(select_idx + 1)? {
+    // Skip a leading `TOP <n>` / `TOP @param`: the global TOP is applied by the
+    // client's `SkipTake` over the merged stream, so the per-partition envelope
+    // must not carry it (a per-partition TOP would drop rows a later partition
+    // needs for the global ordering).
+    let mut payload_idx = select_idx + 1;
+    if tokens
+        .get(payload_idx)
+        .is_some_and(|t| t.kind == TokenKind::Top)
+    {
+        payload_idx += 2;
+    }
+    let payload = match tokens.get(payload_idx)? {
         token if token.kind == TokenKind::Star => alias.to_owned(),
         token if token.kind == TokenKind::Value => original_query
             [token.span.end..tokens[from_idx].span.start]
@@ -3503,7 +3514,20 @@ fn synthesize_order_by_rewritten_query(
     let clause_end = order_idx
         .map(|i| tokens[i].span.start)
         .unwrap_or(original_query.len());
-    let order_by_text = order_idx.map(|i| original_query[tokens[i].span.start..].trim())?;
+    // The per-partition ORDER BY clause stops before any top-level OFFSET/LIMIT:
+    // the window is applied once, globally, by the client's `SkipTake`. Pushing
+    // it per partition would skip/limit locally and again on the client.
+    let order_by_end = order_idx.and_then(|oi| {
+        top_level
+            .iter()
+            .copied()
+            .find(|&i| i > oi && tokens[i].kind == TokenKind::Offset && is_clause_keyword(i))
+            .map(|i| tokens[i].span.start)
+    });
+    let order_by_text = order_idx.map(|i| {
+        let end = order_by_end.unwrap_or(original_query.len());
+        original_query[tokens[i].span.start..end].trim()
+    })?;
 
     // FROM is emitted verbatim; the placeholder is ANDed into WHERE
     // (creating one if absent) — the slot every rewritten query carries.
@@ -5907,6 +5931,42 @@ mod tests {
             Some(1_000)
         );
         assert_eq!(parse_pkrange_page_token(&token, "\"other-etag\""), None);
+    }
+
+    #[test]
+    fn order_by_rewrite_strips_offset_limit_window() {
+        // The per-partition envelope must carry only `ORDER BY <exprs>`; the
+        // OFFSET/LIMIT window is applied globally by the client's SkipTake.
+        let rewritten = synthesize_order_by_rewritten_query(
+            "SELECT * FROM c ORDER BY c.rank ASC OFFSET 2 LIMIT 3",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(
+            !rewritten.to_ascii_uppercase().contains("OFFSET"),
+            "envelope must not push OFFSET/LIMIT per partition: {rewritten}"
+        );
+        assert!(rewritten.ends_with("ORDER BY c.rank ASC"));
+    }
+
+    #[test]
+    fn order_by_rewrite_strips_leading_top() {
+        // `SELECT TOP n` combined with ORDER BY: TOP is applied globally by the
+        // client, so the envelope drops it and keeps the projection.
+        let star = synthesize_order_by_rewritten_query(
+            "SELECT TOP 3 * FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(star.contains(r#""payload": c"#));
+        assert!(!star.to_ascii_uppercase().contains(" TOP "));
+
+        let value = synthesize_order_by_rewritten_query(
+            "SELECT TOP 5 VALUE c.id FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(value.contains(r#""payload": c.id"#));
     }
 
     #[test]

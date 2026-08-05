@@ -6,12 +6,16 @@
 //!
 //! These exercise the real path end to end: planner -> query-plan fetch ->
 //! per-partition rewritten-query execution -> cross-partition merge ->
-//! global `SkipTake`. Because the driver rejects cross-partition `ORDER BY`
-//! today, the merge order across physical partitions is unspecified, so
-//! cross-partition assertions check the deterministic *count* (plus subset and
-//! uniqueness); exact ordered windows are asserted only for single-physical-
+//! global `SkipTake`. These tests cover `OFFSET`/`LIMIT`/`TOP` *without*
+//! `ORDER BY`, where the merge order across physical partitions is unspecified,
+//! so cross-partition assertions check the deterministic *count* (plus subset
+//! and uniqueness); exact ordered windows are asserted only for single-physical-
 //! partition scenarios, where the emulator returns documents in creation
 //! (`_rid`) order.
+//!
+//! Combined `ORDER BY` + `OFFSET`/`LIMIT`/`TOP` (which *does* yield a
+//! deterministic global order) is covered separately in `order_by.rs`, where
+//! the assertions check exact cross-partition ordered windows.
 //!
 //! The count is deterministic regardless of merge order:
 //! `count = max(0, min(limit, total - offset))`. Verifying it end to end

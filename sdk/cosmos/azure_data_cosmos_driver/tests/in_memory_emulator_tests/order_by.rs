@@ -12,6 +12,7 @@
 //! Scoped to *fresh* (non-resumed) scenarios; resume/split behavior is
 //! covered by the mock-pipeline and driver-level integration tests.
 
+use std::num::NonZeroU32;
 use std::sync::Arc;
 
 use azure_core::http::Url;
@@ -410,5 +411,229 @@ async fn cross_partition_order_by_enforces_max_fan_out() {
             azure_data_cosmos_driver::error::SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED
         ),
         "unexpected error: {err}",
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Combined ORDER BY + OFFSET / LIMIT / TOP
+//
+// These exercise the composition added in #4750: the streaming ORDER BY merge
+// wrapped in a global `SkipTake`. Unlike the pure OFFSET/LIMIT/TOP tests
+// (`skip_take.rs`), which can only assert a deterministic *count* across
+// partitions because natural-order fan-out has no defined cross-partition
+// order, ORDER BY makes the merged stream globally sorted — so the window is
+// deterministic *across partitions* and we assert the exact ordered result.
+// ---------------------------------------------------------------------------
+
+/// Seeds `(id, pk, rank)` documents in the given order.
+async fn seed_ranked(
+    driver: &azure_data_cosmos_driver::driver::CosmosDriver,
+    container: &azure_data_cosmos_driver::models::ContainerReference,
+    seeds: &[(&str, &str, i64)],
+) {
+    for (id, pk, rank) in seeds {
+        let item_ref = ItemReference::from_name(
+            container,
+            PartitionKey::from(pk.to_string()),
+            id.to_string(),
+        );
+        let body = serde_json::json!({"id": id, "pk": pk, "rank": rank});
+        driver
+            .execute_singleton_operation(
+                CosmosOperation::create_item(item_ref)
+                    .with_body(serde_json::to_vec(&body).unwrap()),
+                OperationOptions::default(),
+            )
+            .await
+            .expect("seed item created");
+    }
+}
+
+/// Runs `query` to completion and returns every result's `rank`, in emitted
+/// order, honoring an optional `max_item_count` page-size hint.
+async fn run_query_collecting_ranks(
+    driver: &azure_data_cosmos_driver::driver::CosmosDriver,
+    container: &azure_data_cosmos_driver::models::ContainerReference,
+    query: &str,
+    page_size: Option<u32>,
+) -> Vec<i64> {
+    let body = serde_json::to_vec(&serde_json::json!({"query": query, "parameters": []})).unwrap();
+    let mut operation =
+        CosmosOperation::query_items(container.clone(), Some(FeedRange::full())).with_body(body);
+    if let Some(n) = page_size {
+        operation =
+            operation.with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(n).unwrap()));
+    }
+    let mut plan = Box::pin(driver.plan_operation(
+        operation,
+        &OperationOptions::default(),
+        None,
+        &PlanOptions::default(),
+    ))
+    .await
+    .expect("plan builds a combined ORDER BY + window pipeline");
+
+    let mut ranks = Vec::new();
+    while let Some(response) = driver
+        .execute_plan(
+            &mut plan,
+            Some(container.clone()),
+            OperationOptions::default(),
+        )
+        .await
+        .expect("page executes")
+    {
+        let body: serde_json::Value =
+            serde_json::from_slice(&response.into_body().single().unwrap()).unwrap();
+        for item in body["Documents"].as_array().unwrap() {
+            ranks.push(item["rank"].as_i64().unwrap());
+        }
+    }
+    ranks
+}
+
+/// Ranks shuffled across two physical partitions, so a window over the merged
+/// stream is only correct if global ordering is applied *before* the skip/take.
+const SHUFFLED_SIX: &[(&str, &str, i64)] = &[
+    ("d1", "pk-a", 5),
+    ("d2", "pk-b", 1),
+    ("d3", "pk-c", 4),
+    ("d4", "pk-d", 2),
+    ("d5", "pk-e", 3),
+    ("d6", "pk-f", 0),
+];
+
+#[tokio::test]
+async fn cross_partition_order_by_offset_limit_returns_exact_window() {
+    let (_emulator, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .expect("container resolves");
+    seed_ranked(&driver, &container, SHUFFLED_SIX).await;
+
+    let ranks = run_query_collecting_ranks(
+        &driver,
+        &container,
+        "SELECT * FROM c ORDER BY c.rank ASC OFFSET 2 LIMIT 3",
+        None,
+    )
+    .await;
+
+    assert_eq!(
+        ranks,
+        vec![2, 3, 4],
+        "ORDER BY ASC OFFSET 2 LIMIT 3 must return the exact global window across partitions"
+    );
+}
+
+#[tokio::test]
+async fn cross_partition_order_by_top_returns_exact_prefix() {
+    let (_emulator, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .expect("container resolves");
+    seed_ranked(&driver, &container, SHUFFLED_SIX).await;
+
+    let ranks = run_query_collecting_ranks(
+        &driver,
+        &container,
+        "SELECT TOP 3 * FROM c ORDER BY c.rank ASC",
+        None,
+    )
+    .await;
+
+    assert_eq!(
+        ranks,
+        vec![0, 1, 2],
+        "TOP 3 with ORDER BY ASC must return the three globally-smallest ranks"
+    );
+}
+
+#[tokio::test]
+async fn cross_partition_order_by_desc_offset_limit_returns_exact_window() {
+    let (_emulator, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .expect("container resolves");
+    seed_ranked(&driver, &container, SHUFFLED_SIX).await;
+
+    let ranks = run_query_collecting_ranks(
+        &driver,
+        &container,
+        "SELECT * FROM c ORDER BY c.rank DESC OFFSET 1 LIMIT 2",
+        None,
+    )
+    .await;
+
+    assert_eq!(
+        ranks,
+        vec![4, 3],
+        "ORDER BY DESC OFFSET 1 LIMIT 2 must skip the largest then take the next two"
+    );
+}
+
+#[tokio::test]
+async fn cross_partition_order_by_offset_beyond_total_is_empty() {
+    let (_emulator, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .expect("container resolves");
+    seed_ranked(&driver, &container, SHUFFLED_SIX).await;
+
+    let ranks = run_query_collecting_ranks(
+        &driver,
+        &container,
+        "SELECT * FROM c ORDER BY c.rank ASC OFFSET 10 LIMIT 5",
+        None,
+    )
+    .await;
+
+    assert!(
+        ranks.is_empty(),
+        "an OFFSET past the total must be empty even with ORDER BY: {ranks:?}"
+    );
+}
+
+/// The window must be preserved and globally ordered even when the ordered
+/// merge paginates: a small page size forces the `SkipTake` to consume the
+/// `StreamingOrderedMerge` across several pages, round-tripping a nested
+/// `SkipTake { child: StreamingOrderedMerge }` continuation between pages.
+#[tokio::test]
+async fn cross_partition_order_by_offset_limit_paginates_preserving_window() {
+    let (_emulator, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .expect("container resolves");
+
+    // Eight ranks 1..=8, shuffled across partitions.
+    let seeds = [
+        ("d1", "pk-a", 8),
+        ("d2", "pk-b", 3),
+        ("d3", "pk-c", 6),
+        ("d4", "pk-d", 1),
+        ("d5", "pk-e", 5),
+        ("d6", "pk-f", 2),
+        ("d7", "pk-g", 7),
+        ("d8", "pk-h", 4),
+    ];
+    seed_ranked(&driver, &container, &seeds).await;
+
+    let ranks = run_query_collecting_ranks(
+        &driver,
+        &container,
+        "SELECT * FROM c ORDER BY c.rank ASC OFFSET 2 LIMIT 4",
+        Some(2),
+    )
+    .await;
+
+    assert_eq!(
+        ranks,
+        vec![3, 4, 5, 6],
+        "a paginated combined query must yield the exact global window in order"
     );
 }

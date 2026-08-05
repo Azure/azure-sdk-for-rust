@@ -358,6 +358,48 @@ pub(crate) async fn build_streaming_ordered_merge(
         })?;
     let directions = info.order_by.clone();
 
+    // Global OFFSET / LIMIT / TOP window (mirrors `build_sequential_drain`): an
+    // ORDER BY query may also carry a skip/take, which is applied *globally* on
+    // top of the ordered merge by a `SkipTake` root rather than per partition.
+    let mut skip = info.offset.unwrap_or(0);
+    let mut take = combine_take(info);
+    let plan_stage = skip_take_stage(info);
+
+    // A combined ORDER BY + OFFSET/LIMIT/TOP continuation nests the ordered-merge
+    // snapshot inside a `SkipTake`; peel it so the saved remaining window
+    // overrides the plan and the inner snapshot drives the ordered-merge resume
+    // below. Mirrors the peel in `build_sequential_drain`.
+    let resume = match resume {
+        Some(PipelineNodeState::SkipTake {
+            stage: token_stage,
+            remaining_skip,
+            remaining_take,
+            child,
+        }) => {
+            // `TOP` and `OFFSET`/`LIMIT` share counter logic but are distinct
+            // features with distinct continuation contracts; a token minted by
+            // one must not resume the other (including a skip/take token resumed
+            // against a plain ORDER BY query with no window).
+            if plan_stage != Some(token_stage) {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+                    )
+                    .with_message(format!(
+                        "continuation token was produced by a {} query but was resumed against \
+                         a {} query",
+                        skip_take_stage_label(Some(token_stage)),
+                        skip_take_stage_label(plan_stage),
+                    ))
+                    .build());
+            }
+            skip = remaining_skip;
+            take = remaining_take;
+            Some(*child)
+        }
+        other => other,
+    };
+
     let query_from_beginning = query_response::rewritten_query_from_beginning(rewritten_query)?;
     let plain_body = query_response::rewrite_query_body(operation.body(), &query_from_beginning)?;
     let plain_operation = Arc::new((**operation).clone().with_body(plain_body));
@@ -475,12 +517,25 @@ pub(crate) async fn build_streaming_ordered_merge(
             .build());
     }
 
-    let root = Box::new(StreamingOrderedMerge::new(
+    let ordered_root: Box<dyn PipelineNode> = Box::new(StreamingOrderedMerge::new(
         plain_operation,
         directions,
         children,
         query_fingerprint,
     ));
+
+    // Apply the global OFFSET / LIMIT / TOP window over the ordered stream. When
+    // the query carries none, the ordered merge is the pipeline root directly.
+    let needs_skip_take = skip > 0 || take.is_some();
+    let root: Box<dyn PipelineNode> = if needs_skip_take {
+        // `needs_skip_take` is derived from the offset/limit/top that also
+        // determine `plan_stage`, so it is always `Some` here; default
+        // defensively rather than panicking.
+        let stage = plan_stage.unwrap_or(SkipTakeStage::OffsetLimit);
+        Box::new(SkipTake::new(ordered_root, skip, take, stage))
+    } else {
+        ordered_root
+    };
     Ok(Pipeline::new(root))
 }
 
@@ -1435,16 +1490,9 @@ fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error:
             "non-streaming ORDER BY in cross-partition queries",
         ));
     }
-    if info.top.is_some() {
-        return Err(unsupported_feature(
-            "TOP combined with streaming ORDER BY (requires the TOP composition stage)",
-        ));
-    }
-    if info.offset.is_some() || info.limit.is_some() {
-        return Err(unsupported_feature(
-            "OFFSET/LIMIT combined with ORDER BY in cross-partition queries",
-        ));
-    }
+    // `TOP` and `OFFSET`/`LIMIT` are supported combined with streaming ORDER BY:
+    // the ordered merge streams the globally-sorted rows and a `SkipTake` root
+    // (composed in `build_streaming_ordered_merge`) applies the window on top.
     if !info.aggregates.is_empty() {
         return Err(unsupported_feature(
             "aggregates combined with ORDER BY in cross-partition queries",
@@ -3430,21 +3478,24 @@ mod tests {
     }
 
     #[test]
-    fn validate_query_plan_for_streaming_order_by_rejects_top() {
+    fn validate_query_plan_for_streaming_order_by_accepts_top() {
+        // TOP combined with streaming ORDER BY is now supported: the ordered
+        // merge streams sorted rows and a `SkipTake` root applies the window.
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().top = Some(5);
-        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_ok());
     }
 
     #[test]
-    fn validate_query_plan_for_streaming_order_by_rejects_offset_limit() {
+    fn validate_query_plan_for_streaming_order_by_accepts_offset_limit() {
+        // OFFSET/LIMIT combined with streaming ORDER BY is now supported.
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().offset = Some(1);
-        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_ok());
 
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().limit = Some(1);
-        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_ok());
     }
 
     #[test]
@@ -3526,6 +3577,103 @@ mod tests {
             children.len(),
             2,
             "one child per resolved physical partition"
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_wraps_skip_take_for_combined_offset_limit() {
+        // ORDER BY combined with OFFSET/LIMIT must compose a `SkipTake` root
+        // over the ordered merge so the window is applied once, globally.
+        let op = Arc::new(order_by_operation());
+        let mut plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        {
+            let info = plan.query_info.as_mut().unwrap();
+            info.offset = Some(2);
+            info.limit = Some(3);
+        }
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .expect("combined ORDER BY + OFFSET/LIMIT must build");
+        let skip_take = pipeline
+            .into_root()
+            .downcast::<crate::driver::dataflow::SkipTake>()
+            .expect("combined ORDER BY + OFFSET/LIMIT must wrap the ordered merge in a SkipTake");
+        let mut children = skip_take.into_children();
+        assert_eq!(
+            children.len(),
+            1,
+            "a SkipTake wraps exactly one ordered-merge child"
+        );
+        children
+            .pop()
+            .unwrap()
+            .downcast::<crate::driver::dataflow::StreamingOrderedMerge>()
+            .expect("the SkipTake's child must be the StreamingOrderedMerge");
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_wraps_skip_take_for_combined_top() {
+        // ORDER BY combined with TOP must also compose a `SkipTake` root.
+        let op = Arc::new(order_by_operation());
+        let mut plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().top = Some(4);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .expect("combined ORDER BY + TOP must build");
+        assert!(
+            pipeline
+                .into_root()
+                .downcast::<crate::driver::dataflow::SkipTake>()
+                .is_some(),
+            "combined ORDER BY + TOP must wrap the ordered merge in a SkipTake"
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_no_wrap_for_plain_order_by() {
+        // A plain ORDER BY (no window) leaves the ordered merge as the root.
+        let op = Arc::new(order_by_operation());
+        let plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
+        assert!(
+            pipeline
+                .into_root()
+                .downcast::<crate::driver::dataflow::StreamingOrderedMerge>()
+                .is_some(),
+            "a plain ORDER BY must not be wrapped in a SkipTake"
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_skip_take_token_stage_mismatch() {
+        // A `TOP` continuation resumed against an `OFFSET`/`LIMIT` combined
+        // ORDER BY query is a shape mismatch and must be rejected, not silently
+        // resumed with the wrong window contract.
+        let op = Arc::new(order_by_operation());
+        let mut plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        {
+            let info = plan.query_info.as_mut().unwrap();
+            info.offset = Some(1);
+            info.limit = Some(2);
+        }
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let resume = PipelineNodeState::SkipTake {
+            stage: SkipTakeStage::Top,
+            remaining_skip: 0,
+            remaining_take: Some(2),
+            child: Box::new(PipelineNodeState::Drained),
+        };
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resume))
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH
         );
     }
 

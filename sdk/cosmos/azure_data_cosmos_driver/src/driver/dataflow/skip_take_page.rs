@@ -194,4 +194,3 @@ mod tests {
         assert!(out.is_err());
     }
 }
-
