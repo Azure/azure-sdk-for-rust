@@ -1053,9 +1053,12 @@ impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
     }
 }
 
-/// Options to be passed to `BlobContainerClient::list_blobs()`
+/// Options to be passed to `BlobContainerClient::list_blobs_internal()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientListBlobsOptions<'a> {
+pub struct BlobContainerClientListBlobsInternalOptions<'a> {
+    /// Filters the results to return only names that are ordered before this value. Currently only applies to Apache Arrow scenario.
+    pub end_before: Option<String>,
+
     /// Specify to include additional, optional information.
     pub include: Option<Vec<ListBlobsIncludeItem>>,
 
@@ -1067,7 +1070,7 @@ pub struct BlobContainerClientListBlobsOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: ClientMethodOptions<'a>,
 
     /// Filters the results to return only resources whose name begins with the specified prefix.
     pub prefix: Option<String>,
@@ -1078,24 +1081,6 @@ pub struct BlobContainerClientListBlobsOptions<'a> {
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
-}
-
-impl BlobContainerClientListBlobsOptions<'_> {
-    /// Transforms this [`BlobContainerClientListBlobsOptions`] into a new `BlobContainerClientListBlobsOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
-        BlobContainerClientListBlobsOptions {
-            include: self.include,
-            marker: self.marker,
-            maxresults: self.maxresults,
-            method_options: PagerOptions {
-                context: self.method_options.context.into_owned(),
-                ..self.method_options
-            },
-            prefix: self.prefix,
-            start_from: self.start_from,
-            timeout: self.timeout,
-        }
-    }
 }
 
 /// Options to be passed to `BlobContainerClient::release_lease()`

@@ -6,34 +6,8 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use super::{BlobItem, BlobTag, Block, ContainerItem, CorsRule, FilterBlobItem};
+use super::{BlobTag, Block, ContainerItem, CorsRule, FilterBlobItem};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-#[derive(Deserialize, Serialize)]
-#[serde(rename = "Blobs")]
-pub(crate) struct Blob_itemsBlobItem {
-    #[serde(default)]
-    Blob: Vec<BlobItem>,
-}
-
-impl Blob_itemsBlobItem {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<BlobItem>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok(Blob_itemsBlobItem::deserialize(deserializer)?.Blob)
-    }
-
-    pub fn wrap<S>(to_serialize: &Vec<BlobItem>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        Blob_itemsBlobItem {
-            Blob: to_serialize.to_owned(),
-        }
-        .serialize(serializer)
-    }
-}
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename = "Blobs")]

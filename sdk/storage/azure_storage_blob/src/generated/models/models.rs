@@ -6,7 +6,7 @@
 use super::{
     models_serde,
     xml_helpers::{
-        Blob_itemsBlobItem, Blob_itemsFilterBlobItem, Blob_tag_setBlobTag, Committed_blocksBlock,
+        Blob_itemsFilterBlobItem, Blob_tag_setBlobTag, Committed_blocksBlock,
         Container_itemsContainerItem, CorsCorsRule, Uncommitted_blocksBlock,
     },
     AccessTier, ArchiveStatus, BlobType, CopyStatus, GeoReplicationStatusType,
@@ -115,6 +115,10 @@ pub struct BlobContainerClientGetAccountInfoResult;
 /// Contains results for `BlobContainerClient::get_properties()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientGetPropertiesResult;
+
+/// Contains results for `BlobContainerClient::list_blobs_internal()`
+#[derive(SafeDebug)]
+pub struct BlobContainerClientListBlobsInternalResult;
 
 /// Contains results for `BlobContainerClient::release_lease()`
 #[derive(SafeDebug)]
@@ -440,6 +444,10 @@ pub struct BlobProperties {
     /// Whether the blob is encrypted on the server.
     #[serde(rename = "ServerEncrypted", skip_serializing_if = "Option::is_none")]
     pub server_encrypted: Option<bool>,
+
+    /// The smart access tier of the blob.
+    #[serde(rename = "SmartAccessTier", skip_serializing_if = "Option::is_none")]
+    pub smart_access_tier: Option<AccessTier>,
 
     /// The number of tags for the blob.
     #[serde(rename = "TagCount", skip_serializing_if = "Option::is_none")]
@@ -950,46 +958,6 @@ pub struct ListBlobsHierarchicalResponse {
     pub next_marker: Option<String>,
 
     /// The prefix of the blobs.
-    #[serde(rename = "Prefix", skip_serializing_if = "Option::is_none")]
-    pub prefix: Option<String>,
-
-    /// The service endpoint.
-    #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
-    pub service_endpoint: Option<String>,
-}
-
-/// The result of the List Blobs API.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-#[serde(rename = "EnumerationResults")]
-pub struct ListBlobsResponse {
-    /// The list of blobs.
-    #[serde(
-        default,
-        deserialize_with = "Blob_itemsBlobItem::unwrap",
-        rename = "Blobs",
-        serialize_with = "Blob_itemsBlobItem::wrap"
-    )]
-    pub blob_items: Vec<BlobItem>,
-
-    /// The container name.
-    #[serde(rename = "@ContainerName", skip_serializing_if = "Option::is_none")]
-    pub container_name: Option<String>,
-
-    /// An opaque string value that identifies the portion of the result set returned with this operation.
-    #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
-    pub marker: Option<String>,
-
-    /// The maximum number of blobs to be returned with this operation.
-    #[serde(rename = "MaxResults", skip_serializing_if = "Option::is_none")]
-    pub max_results: Option<i32>,
-
-    /// An opaque string value that identifies the portion of the result set to be returned with the next operation. Use this
-    /// value in the next request to continue the listing operation.
-    #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
-    pub next_marker: Option<String>,
-
-    /// The prefix of the list operation.
     #[serde(rename = "Prefix", skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
 
