@@ -129,8 +129,10 @@ extends:
           parameters:
             UsePlatformContainer: false
             OSName: linux
-            Matrix: '{"Linux": {"OSVmImage": "$(LINUXVMIMAGE)","Pool": "$(LINUXPOOL)","RustToolchainName": "stable"}}'
-
+            # ci.tests.yml splices this into `$[ ... ]`, so it must be an expression
+            # fragment (not a JSON literal). `format` builds the single-leg matrix JSON
+            # at runtime with the pool/image variables already resolved.
+            Matrix: format('{{"Linux":{{"OSVmImage":"{0}","Pool":"{1}","RustToolchainName":"stable"}}}}', variables['LINUXVMIMAGE'], variables['LINUXPOOL'])
             DependsOn: ''
             CloudConfig: Public
             ServiceDirectory: ${{ parameters.ServiceDirectory }}
