@@ -131,8 +131,9 @@ extends:
             OSName: linux
             # ci.tests.yml splices this into `$[ ... ]`, so it must be an expression
             # fragment (not a JSON literal). `format` builds the single-leg matrix JSON
-            # at runtime with the pool/image variables already resolved.
-            Matrix: format('{{"Linux-MSRust":{{"OSVmImage":"{0}","Pool":"{1}","RustToolchainName":"stable"}}}}', variables['LINUXVMIMAGE'], variables['LINUXPOOL'])
+            # at runtime with the pool/image variables already resolved. Matrix keys
+            # become job variables, so RUSTUP_EXE points the eng scripts at msrustup.
+            Matrix: format('{{"Linux-MSRust":{{"OSVmImage":"{0}","Pool":"{1}","RustToolchainName":"stable","RUSTUP_EXE":"msrustup"}}}}', variables['LINUXVMIMAGE'], variables['LINUXPOOL'])
             DependsOn: ''
             CloudConfig: Public
             ServiceDirectory: ${{ parameters.ServiceDirectory }}
