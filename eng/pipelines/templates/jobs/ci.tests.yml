@@ -52,7 +52,7 @@ jobs:
       paths:
       - "/*"
 
-  - ${{ if eq(parameters.UsePlatformContainer, true) }}:
+  - ${{ if eq(parameters.InstallMsRust, true) }}:
     - pwsh: |
         Move-Item $(Build.SourcesDirectory)/eng/templates/rust-toolchain.toml.template $(Build.SourcesDirectory)/rust-toolchain.toml
       displayName: 'Configure MS Rust rust-toolchain.toml'
