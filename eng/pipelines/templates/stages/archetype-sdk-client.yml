@@ -124,6 +124,23 @@ extends:
           - ${{ parameters.AdditionalMatrixConfigs }}
           MatrixFilters: ${{ parameters.MatrixFilters }}
           MatrixReplace: ${{ parameters.MatrixReplace }}
+      - ${{ if eq(variables['System.TeamProject'], 'internal') }}:
+        - template: /eng/pipelines/templates/jobs/ci.tests.yml
+          parameters:
+            UsePlatformContainer: false
+            OSName: linux
+            Matrix:
+              # TODO: Maybe do matrix generation here
+              Linux:
+                OSVmImage: $(LINUXVMIMAGE)
+                Pool: $(LINUXPOOL)
+                RustToolchainName: stable
+            DependsOn: ''
+            CloudConfig: Public
+            ServiceDirectory: ${{ parameters.ServiceDirectory }}
+            TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+            TestProxy: ${{ parameters.TestProxy }}
+            InstallMsRust: true
 
     # Run live tests for internal only, not public CI builds. This can be triggered manually via an `/azp run` comment.
     - ${{ if and(not(and(eq(parameters.SkipPrValidation, true), eq(variables['Build.Reason'], 'Manual'))), eq(variables['System.TeamProject'], 'internal'), eq(parameters.RunLiveTests, 'true')) }}:

@@ -17,6 +17,9 @@ parameters:
   type: number
 - name: TestProxy
   type: boolean
+- name: InstallMsRust
+  type: boolean
+  default: false
 
 
 jobs:
@@ -49,9 +52,42 @@ jobs:
       paths:
       - "/*"
 
-  - template: /eng/pipelines/templates/steps/use-rust.yml@self
-    parameters:
-      Toolchain: $(RustToolchainName)
+  - ${{ if eq(parameters.UsePlatformContainer, true) }}:
+    - pwsh: |
+        Move-Item $(Build.SourcesDirectory)/eng/templates/rust-toolchain.toml.template $(Build.SourcesDirectory)/rust-toolchain.toml
+      displayName: 'Configure MS Rust rust-toolchain.toml'
+
+    - task: RustInstaller@1
+      inputs:
+        toolchainFeed: https://pkgs.dev.azure.com/azure-sdk/internal/_packaging/ms-rust-tools/nuget/v3/index.json
+      displayName: Install MS Rust toolchain
+
+    # TODO: Refactor this into a template used in use-rust.yml
+    - pwsh: |
+        $cargoHome = $env:CARGO_HOME
+        if (-not $cargoHome) { $cargoHome = ([System.IO.Path]::Combine($HOME, '.cargo')) }
+        New-Item -ItemType Directory -Force -Path $cargoHome | Out-Null
+
+        $configPath = ([System.IO.Path]::Combine($cargoHome, 'config.toml'))
+        Copy-Item `
+          -Path '$(Build.SourcesDirectory)/eng/templates/config.toml.template' `
+          -Destination $configPath `
+          -Force
+
+        Write-Host "Wrote cargo config to $configPath"
+        Get-Content $configPath
+        Write-Host "##vso[task.setvariable variable=CargoConfigPath]$configPath"
+      displayName: Configure cargo to use the azure-sdk-for-rust feed
+
+    - task: CargoAuthenticate@0
+      displayName: Authenticate cargo to the azure-sdk-for-rust feed
+      inputs:
+        configFile: $(CargoConfigPath)
+
+  - ${{ else }}:
+    - template: /eng/pipelines/templates/steps/use-rust.yml@self
+      parameters:
+        Toolchain: $(RustToolchainName)
 
   - template: /eng/pipelines/templates/steps/nuget-config.yml
 

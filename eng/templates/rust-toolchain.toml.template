@@ -1,0 +1,10 @@
+[toolchain]
+channel = "ms-prod-1.95"
+components = [
+  "rustc",
+  "rustfmt",
+  "rust-std",
+  "cargo",
+  "clippy",
+  "rust-analyzer",
+]
