@@ -1419,6 +1419,7 @@ fn resolve_endpoint(
             operation.resource_type(),
             operation.operation_type(),
             operation.request_headers().full_fidelity_feed,
+            operation.resource_reference().is_rid_addressed(),
         );
     let transport_mode = if use_gateway_v2 {
         TransportMode::GatewayV2
@@ -1448,6 +1449,7 @@ fn resolve_endpoint(
                     operation.resource_type(),
                     operation.operation_type(),
                     operation.request_headers().full_fidelity_feed,
+                    operation.resource_reference().is_rid_addressed(),
                 );
             let ep_url = ep.selected_url(ep_use_gw_v2).clone();
             let ep_endpoint_key = if ep_use_gw_v2 {
@@ -1737,6 +1739,16 @@ fn build_transport_request(
         } else {
             format!("/{}", request_path)
         };
+        // Set the path exactly as computed. `Url::set_path` percent-encodes only
+        // the characters that are structurally significant in a URL path (space,
+        // `?`, `#`, `<`, `>`, `{`, `}`, backtick) and leaves everything else —
+        // including base64's `=`/`+` padding and path-legal sub-delimiters like
+        // `@` — byte-for-byte intact. That is exactly what both addressing modes
+        // need: a RID segment reaches the gateway raw so its lowercased-RID
+        // signature is honored, and a name segment matches the raw resource link
+        // we signed (and, on Gateway 2.0, its RNTBD target). Encoding those
+        // path-legal characters ourselves would make a RID look name-based and
+        // break Gateway 2.0's outer-path-vs-RNTBD equality check for names.
         base.set_path(&normalized);
         base
     };
@@ -4371,6 +4383,84 @@ mod tests {
         assert_eq!(request.url.path(), "/dbs/mydb");
     }
 
+    /// Builds a transport request for `operation` with default routing/context
+    /// and returns the final `Url::path()` after `set_path` has reprocessed it.
+    /// Used to assert the raw-vs-percent-encoded seam in `build_transport_request`.
+    fn transport_request_path(operation: &CosmosOperation) -> String {
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+        };
+        build_transport_request(operation, &OperationOverrides::default(), None, &ctx)
+            .expect("request should build")
+            .url
+            .path()
+            .to_owned()
+    }
+
+    #[test]
+    fn build_transport_request_rid_path_is_sent_raw() {
+        // A RID-addressed path must reach the gateway raw: the base64 `=` padding
+        // survives `set_path` un-encoded (not `%3D`), otherwise the gateway rejects
+        // the RID-based signature with a `401`.
+        let db = DatabaseReference::from_rid(test_account(), "qjQBAA==");
+        let operation = CosmosOperation::read_database(db);
+        assert_eq!(transport_request_path(&operation), "/dbs/qjQBAA==");
+    }
+
+    #[test]
+    fn build_transport_request_rid_path_with_plus_is_sent_raw() {
+        // RIDs use a base64 variant that can contain `+`; it must also survive raw
+        // (not `%2B`) on a RID-addressed path.
+        let db = DatabaseReference::from_rid(test_account(), "ab+cdEAA=");
+        let operation = CosmosOperation::read_database(db);
+        assert_eq!(transport_request_path(&operation), "/dbs/ab+cdEAA=");
+    }
+
+    #[test]
+    fn build_transport_request_name_path_encodes_only_url_structural_chars() {
+        // Names reach the wire via `Url::set_path`, which encodes only the
+        // characters that are structurally significant in a URL path: a space
+        // becomes `%20`. Path-legal characters such as `+` survive raw so the
+        // outer path still matches the raw resource link we signed (and, on
+        // Gateway 2.0, its RNTBD target).
+        let db = DatabaseReference::from_name(test_account(), "my db+x");
+        let operation = CosmosOperation::read_database(db);
+        assert_eq!(transport_request_path(&operation), "/dbs/my%20db+x");
+    }
+
+    #[test]
+    fn build_transport_request_name_with_at_sign_is_sent_raw() {
+        // Regression for the Gateway 2.0 outer-path-vs-RNTBD mismatch: an item id
+        // (or any name) containing `@` must reach the wire raw (`@`, not `%40`),
+        // because the gateway rebuilds its RNTBD target from the raw resource link
+        // and compares the two byte-for-byte.
+        let item =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "Item@1-abc");
+        let operation = CosmosOperation::read_item(item);
+        assert_eq!(
+            transport_request_path(&operation),
+            "/dbs/testdb/colls/testcontainer/docs/Item@1-abc"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_offer_path_is_sent_raw() {
+        // Offers are signed over the lowercased RID, so the `/offers/{rid}` path is
+        // RID-addressed and must be sent raw — reserved base64 characters in the
+        // RID survive un-encoded.
+        let operation = CosmosOperation::read_offer(test_account(), "ab+QBAA==");
+        assert_eq!(transport_request_path(&operation), "/offers/ab+QBAA==");
+    }
+
     #[test]
     fn build_transport_request_uses_operation_activity_id_when_present() {
         let operation = CosmosOperation::read_all_databases(test_account())
@@ -5597,6 +5687,67 @@ mod tests {
         assert_eq!(
             routing.selected_url.as_str(),
             "https://test-westus2-thin.documents.azure.com:444/"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_falls_back_to_gateway_for_rid_addressed_operations() {
+        // Gateway 2.0 derives its DatabaseName/CollectionName routing tokens by
+        // parsing the signing link, but a RID-addressed feed signs over a bare
+        // lowercased RID with no `dbs`/`colls` segments. Routing such an
+        // operation to Gateway 2.0 would fail the wrap locally with
+        // CLIENT_BAD_REQUEST before the request is ever sent, so it must fall
+        // back to standard Gateway (which routes raw RID paths natively).
+        let rid_container = ContainerReference::new_by_rid(
+            test_account(),
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &test_container_props(),
+        );
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &rid_container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        assert!(operation.resource_reference().is_rid_addressed());
+
+        let endpoint = CosmosEndpoint::regional_with_gateway_v2(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
+            account_write_endpoints: vec![endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.transport_mode, TransportMode::Gateway);
+        assert_eq!(
+            routing.selected_url.as_str(),
+            "https://test-westus2.documents.azure.com/"
         );
     }
 
