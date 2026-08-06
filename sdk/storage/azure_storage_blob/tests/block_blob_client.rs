@@ -11,9 +11,10 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
         BlobClientGetPropertiesResultHeaders, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockOptions,
-        BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions, BlockListType,
-        BlockLookupList,
+        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockFromUrlResultHeaders,
+        BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResultHeaders,
+        BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadBlobFromUrlResultHeaders,
+        BlockBlobClientUploadOptions, BlockListType, BlockLookupList,
     },
     BlobContainerClientOptions,
 };
@@ -154,10 +155,39 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     .await?;
 
     // Regular Scenario
-    blob_client
+    let upload_response = blob_client
         .block_blob_client()
         .upload_blob_from_url(source_blob_client.url().as_str().into(), None)
         .await?;
+    assert!(upload_response.content_crc64()?.is_some());
+    assert!(upload_response.content_md5()?.is_none());
+
+    // Combined MD5/CRC64 Scenario
+    let md5_source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(
+        &md5_source_blob_client,
+        Some(RequestContent::from(b"hello".to_vec())),
+        None,
+    )
+    .await?;
+    // MD5("hello") - well-known test vector
+    let source_md5: Vec<u8> = vec![
+        0x5d, 0x41, 0x40, 0x2a, 0xbc, 0x4b, 0x2a, 0x76, 0xb9, 0x71, 0x9d, 0x91, 0x10, 0x17, 0xc5,
+        0x92,
+    ];
+    let md5_dest_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let combined_response = md5_dest_blob_client
+        .block_blob_client()
+        .upload_blob_from_url(
+            md5_source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientUploadBlobFromUrlOptions {
+                source_content_md5: Some(source_md5),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    assert!(combined_response.content_md5()?.is_some());
+    assert!(combined_response.content_crc64()?.is_some());
 
     let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().if_not_exists();
 
@@ -228,7 +258,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     let block_id: Vec<u8> = b"block1".to_vec();
 
     // Regular Scenario
-    block_blob_client
+    let stage_response = block_blob_client
         .stage_block_from_url(
             &block_id,
             u64::try_from(source_content.len())?,
@@ -236,6 +266,40 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
             None,
         )
         .await?;
+    assert!(stage_response.content_crc64()?.is_some());
+    assert!(stage_response.content_md5()?.is_none());
+
+    // Combined MD5/CRC64 Scenario
+    let md5_source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let md5_source_content = b"hello";
+    create_test_blob(
+        &md5_source_blob_client,
+        Some(RequestContent::from(md5_source_content.to_vec())),
+        None,
+    )
+    .await?;
+    // MD5("hello") - well-known test vector
+    let source_md5: Vec<u8> = vec![
+        0x5d, 0x41, 0x40, 0x2a, 0xbc, 0x4b, 0x2a, 0x76, 0xb9, 0x71, 0x9d, 0x91, 0x10, 0x17, 0xc5,
+        0x92,
+    ];
+    let md5_block_id: Vec<u8> = b"md5block".to_vec();
+    let md5_block_blob_client = container_client
+        .blob_client(&get_blob_name(recording))
+        .block_blob_client();
+    let combined_response = md5_block_blob_client
+        .stage_block_from_url(
+            &md5_block_id,
+            u64::try_from(md5_source_content.len())?,
+            md5_source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientStageBlockFromUrlOptions {
+                source_content_md5: Some(source_md5),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    assert!(combined_response.content_md5()?.is_some());
+    assert!(combined_response.content_crc64()?.is_some());
 
     // Staged Block Scenario
     let block_list = block_blob_client
@@ -349,6 +413,25 @@ async fn upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let data: [u8; 1024] = recording.random();
     let bytes: Bytes = data.to_vec().into();
 
+    // MD5("hello") - well-known test vector
+    let content_md5 = vec![
+        0x5d, 0x41, 0x40, 0x2a, 0xbc, 0x4b, 0x2a, 0x76, 0xb9, 0x71, 0x9d, 0x91, 0x10, 0x17, 0xc5,
+        0x92,
+    ];
+    // Combined MD5/CRC64 Single-Shot Scenario
+    let combined_response = block_blob_client
+        .upload(
+            Bytes::from_static(b"hello").into(),
+            Some(BlockBlobClientUploadOptions {
+                blob_content_md5: Some(content_md5),
+                partition_size: Some(NonZero::new(2048).unwrap()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    assert!(combined_response.content_md5.is_some());
+    assert!(combined_response.content_crc64.is_some());
+
     for (parallel, partition_size, expected_stage_block_calls) in [
         (1, 2048, 0), // put blob expected
         (2, 1024, 0), // put blob expected
@@ -364,9 +447,19 @@ async fn upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         };
         {
             let _scope = count_policy.check_request_scope();
-            block_blob_client
+            let upload_result = block_blob_client
                 .upload(bytes.clone().into(), Some(options))
                 .await?;
+            // Note: x-ms-content-crc64 is only returned for single-shot (Put Blob) uploads,
+            // not partitioned uploads committed via Put Block List.
+            if expected_stage_block_calls == 0 {
+                assert!(
+                    upload_result.content_crc64.is_some(),
+                    "Failed parallel={},partition_size={}",
+                    parallel,
+                    partition_size
+                );
+            }
         }
         let body_data = blob_client.download(None).await?.body.collect().await?;
         assert_eq!(
@@ -622,7 +715,7 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
     );
 
     // MD5 Match Scenario
-    block_blob_client
+    let response = block_blob_client
         .stage_block(
             &block_id,
             u64::try_from(content.len())?,
@@ -633,6 +726,8 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
             }),
         )
         .await?;
+    assert!(response.content_md5()?.is_some());
+    assert!(response.content_crc64()?.is_some());
 
     // CRC64 Mismatch Scenario
     let response = block_blob_client
@@ -652,7 +747,7 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
     );
 
     // CRC64 Match Scenario
-    block_blob_client
+    let response = block_blob_client
         .stage_block(
             &block_id,
             u64::try_from(content.len())?,
@@ -663,6 +758,8 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
             }),
         )
         .await?;
+    assert!(response.content_crc64()?.is_some());
+    assert!(response.content_md5()?.is_none());
 
     container_client.delete(None).await?;
     Ok(())

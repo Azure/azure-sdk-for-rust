@@ -6,7 +6,8 @@ mod common;
 use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AppendBlobClientAppendBlockFromUrlOptions, AppendBlobClientAppendBlockOptions,
+    AppendBlobClientAppendBlockFromUrlOptions, AppendBlobClientAppendBlockFromUrlResultHeaders,
+    AppendBlobClientAppendBlockOptions, AppendBlobClientAppendBlockResultHeaders,
     AppendBlobClientCreateOptions, BlobClientGetPropertiesResultHeaders, BlobType,
 };
 use common::{create_test_blob, get_blob_name, get_container_client, StorageAccount};
@@ -87,15 +88,48 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
     append_blob_client.create(None).await?;
 
     // Act
-    append_blob_client
+    let append_response = append_blob_client
         .append_block_from_url(blob_client_2.url().as_str().into(), 17, None)
         .await?;
 
     // Assert
+    assert!(append_response.content_crc64()?.is_some());
+    assert!(append_response.content_md5()?.is_none());
+
     let response = blob_client.download(None).await?;
     assert_eq!(17, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(b"hello rusty world".to_vec(), body_data);
+
+    // Combined MD5/CRC64 Scenario
+    let md5_source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(
+        &md5_source_blob_client,
+        Some(RequestContent::from(b"hello".to_vec())),
+        None,
+    )
+    .await?;
+    // MD5("hello") - well-known test vector
+    let source_md5: Vec<u8> = vec![
+        0x5d, 0x41, 0x40, 0x2a, 0xbc, 0x4b, 0x2a, 0x76, 0xb9, 0x71, 0x9d, 0x91, 0x10, 0x17, 0xc5,
+        0x92,
+    ];
+    let md5_append_blob_client = container_client
+        .blob_client(&get_blob_name(recording))
+        .append_blob_client();
+    md5_append_blob_client.create(None).await?;
+    let combined_response = md5_append_blob_client
+        .append_block_from_url(
+            md5_source_blob_client.url().as_str().into(),
+            5,
+            Some(AppendBlobClientAppendBlockFromUrlOptions {
+                source_content_md5: Some(source_md5),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    assert!(combined_response.content_md5()?.is_some());
+    assert!(combined_response.content_crc64()?.is_some());
 
     container_client.delete(None).await?;
     Ok(())
@@ -301,7 +335,7 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
     );
 
     // MD5 Match Scenario
-    append_blob_client
+    let response = append_blob_client
         .append_block(
             RequestContent::from(content.clone()),
             u64::try_from(content.len())?,
@@ -311,6 +345,8 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
             }),
         )
         .await?;
+    assert!(response.content_md5()?.is_some());
+    assert!(response.content_crc64()?.is_some());
 
     // CRC64 Mismatch Scenario
     let response = append_blob_client
@@ -329,7 +365,7 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
     );
 
     // CRC64 Match Scenario
-    append_blob_client
+    let response = append_blob_client
         .append_block(
             RequestContent::from(content.clone()),
             u64::try_from(content.len())?,
@@ -339,6 +375,8 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
             }),
         )
         .await?;
+    assert!(response.content_crc64()?.is_some());
+    assert!(response.content_md5()?.is_none());
 
     container_client.delete(None).await?;
     Ok(())

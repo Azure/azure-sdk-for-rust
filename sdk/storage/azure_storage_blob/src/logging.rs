@@ -59,6 +59,7 @@ pub static STORAGE_ALLOWED_HEADERS: &[&str] = &[
     "x-ms-access-tier",
     "x-ms-access-tier-change-time",
     "x-ms-access-tier-inferred",
+    "x-ms-smart-access-tier",
     "x-ms-archive-status",
     "x-ms-rehydrate-priority",
     // Blob metadata

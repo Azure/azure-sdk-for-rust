@@ -584,6 +584,9 @@ impl BlobClient {
     /// * [`content_range`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::content_range) - content-range
     /// * [`etag`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::last_modified) - last-modified
+    /// * [`access_tier`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::access_tier) - x-ms-access-tier
+    /// * [`access_tier_change_time`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::access_tier_change_time) - x-ms-access-tier-change-time
+    /// * [`access_tier_inferred`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::access_tier_inferred) - x-ms-access-tier-inferred
     /// * [`blob_committed_block_count`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::blob_committed_block_count) - x-ms-blob-committed-block-count
     /// * [`blob_content_md5`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::blob_content_md5) - x-ms-blob-content-md5
     /// * [`is_sealed`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::is_sealed) - x-ms-blob-sealed
@@ -611,6 +614,7 @@ impl BlobClient {
     /// * [`object_replication_rules`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::object_replication_rules) - x-ms-or
     /// * [`object_replication_policy_id`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::object_replication_policy_id) - x-ms-or-policy-id
     /// * [`is_server_encrypted`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::is_server_encrypted) - x-ms-server-encrypted
+    /// * [`smart_access_tier`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::smart_access_tier) - x-ms-smart-access-tier
     /// * [`tag_count`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::tag_count) - x-ms-tag-count
     /// * [`version_id`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::version_id) - x-ms-version-id
     ///
@@ -845,6 +849,7 @@ impl BlobClient {
     /// * [`object_replication_policy_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::object_replication_policy_id) - x-ms-or-policy-id
     /// * [`rehydrate_priority`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::rehydrate_priority) - x-ms-rehydrate-priority
     /// * [`is_server_encrypted`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::is_server_encrypted) - x-ms-server-encrypted
+    /// * [`smart_access_tier`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::smart_access_tier) - x-ms-smart-access-tier
     /// * [`tag_count`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::tag_count) - x-ms-tag-count
     /// * [`version_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::version_id) - x-ms-version-id
     ///
@@ -1574,7 +1579,7 @@ impl BlobClient {
 }
 
 /// Default value for [`BlobClientOptions::version`].
-pub(crate) const DEFAULT_VERSION: &str = "2026-04-06";
+pub(crate) const DEFAULT_VERSION: &str = "2026-10-06";
 
 impl Default for BlobClientOptions {
     fn default() -> Self {
