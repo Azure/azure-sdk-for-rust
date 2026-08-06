@@ -127,8 +127,8 @@ pub fn assert_region_not_contacted(
 pub enum AccountNotReady {
     /// A satellite (secondary) region rejected a correctly-signed KEY request
     /// with `401 The MAC signature ... is not the same as the computed
-    /// signature`. The region validated against stale/unconverged account
-    /// master-key metadata for a freshly-provisioned account. Tracked by #4997.
+    /// signature`. The region validated against stale or not-yet-converged
+    /// account master-key metadata for a freshly-provisioned account. Tracked by #4997.
     SatelliteKeyNotConverged,
     /// A satellite region rejected a globally-scoped AAD token with
     /// `401/5007 AadTokenInvalidIssuer` — the region's tenant/issuer trust does
