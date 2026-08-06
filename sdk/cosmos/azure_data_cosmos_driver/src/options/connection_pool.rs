@@ -15,6 +15,13 @@ use crate::options::TlsBackend;
 
 const MIN_DEFAULT_HTTP2_CONNECTIONS_PER_ENDPOINT: usize = 32;
 const MIN_PARALLELISM_FOR_DEFAULT_HTTP2_CONNECTION_FLOOR: usize = 4;
+const DEFAULT_HTTP2_FAN_OUT_THRESHOLD_PERCENT: u8 = 50;
+
+fn http2_fan_out_target_streams(max_streams: u32, threshold_percent: u8) -> u32 {
+    (max_streams * u32::from(threshold_percent))
+        .div_ceil(100)
+        .max(1)
+}
 
 fn default_max_http2_connections_for_parallelism(parallelism: usize) -> usize {
     let scaled = parallelism.saturating_mul(2).clamp(1, 256);
@@ -65,6 +72,7 @@ pub struct ConnectionPoolOptions {
     idle_connection_timeout: Option<Duration>,
 
     max_http2_streams_per_client: u32,
+    http2_fan_out_threshold_percent: u8,
     target_http2_streams_per_client: u32,
     max_http2_connections_per_endpoint: usize,
     min_http2_connections_per_endpoint: usize,
@@ -164,11 +172,16 @@ impl ConnectionPoolOptions {
         self.max_http2_streams_per_client
     }
 
-    /// Returns the soft per-shard occupancy target used for early fan-out.
+    /// Returns the percentage of the per-shard balancing threshold used to
+    /// trigger early fan-out.
     ///
-    /// This controls connection selection only; it does not replace the higher
-    /// SDK balancing threshold or the peer-advertised HTTP/2 protocol limit.
-    pub fn target_http2_streams_per_client(&self) -> u32 {
+    /// Must be between 1 and 100 inclusive. Default: 50.
+    pub fn http2_fan_out_threshold_percent(&self) -> u8 {
+        self.http2_fan_out_threshold_percent
+    }
+
+    /// Returns the computed absolute stream target used internally for fan-out.
+    pub(crate) fn target_http2_streams_per_client(&self) -> u32 {
         self.target_http2_streams_per_client
     }
 
@@ -289,7 +302,7 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_PER_ENDPOINT`: Maximum idle connections per endpoint (default: `1_000` if HTTP/2 is allowed, `10_000` otherwise, min: `10`, max: `64_000`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_CONNECTION_TIMEOUT_MS`: Idle connection timeout in milliseconds (default: none, min: `300_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`: Best-effort per-shard balancing threshold that may be exceeded at the endpoint connection limit; downstream HTTP/2 queues at the peer-advertised `SETTINGS_MAX_CONCURRENT_STREAMS` (default: `16`, min: `1`, max: `20`)
-/// - `AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT`: Soft occupancy target for early connection fan-out; not a protocol stream limit (default: `8`, min: `1`, max: `20`, must be at most `max_http2_streams_per_client`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_HTTP2_FAN_OUT_THRESHOLD_PERCENT`: Percentage of `max_http2_streams_per_client` at which another shard is preferred (default: `50`, min: `1`, max: `100`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT`: Maximum number of HTTP/2 shard clients per endpoint (default: `available_parallelism * 2` below 4 logical CPUs, otherwise `max(available_parallelism * 2, 32)`; fallback: `32`, min: `1`, max: `256`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT`: Minimum number of HTTP/2 shard clients per endpoint (default: `1`, min: `1`, max: `256`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS`: Idle timeout for overflow HTTP/2 shard clients in milliseconds (default: `60_000`, min: `1_000`)
@@ -401,8 +414,8 @@ pub struct ConnectionPoolOptionsBuilder {
     idle_connection_timeout: Option<Duration>,
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT")]
     max_http2_streams_per_client: Option<u32>,
-    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT")]
-    target_http2_streams_per_client: Option<u32>,
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_HTTP2_FAN_OUT_THRESHOLD_PERCENT")]
+    http2_fan_out_threshold_percent: Option<u8>,
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT")]
     max_http2_connections_per_endpoint: Option<usize>,
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT")]
@@ -555,24 +568,22 @@ impl ConnectionPoolOptionsBuilder {
     /// this value. The downstream HTTP/2 transport queues requests at the
     /// peer-advertised `SETTINGS_MAX_CONCURRENT_STREAMS` limit.
     ///
-    /// Must be between 1 and 20 inclusive, and at least the resolved
-    /// `target_http2_streams_per_client`.
+    /// Must be between 1 and 20 inclusive.
     /// Default: 16.
     pub fn with_max_http2_streams_per_client(mut self, value: u32) -> Self {
         self.max_http2_streams_per_client = Some(value);
         self
     }
 
-    /// Sets the soft per-shard occupancy target used for early fan-out.
+    /// Sets the percentage of the per-shard balancing threshold used to
+    /// trigger early fan-out.
     ///
-    /// The sharded transport prefers spreading load across shards up to this
-    /// target before filling a single shard all the way to
-    /// `max_http2_streams_per_client`. This is a connection-selection target,
-    /// not an HTTP/2 protocol limit. Must be between 1 and 20 inclusive, and no
-    /// greater than the resolved `max_http2_streams_per_client`.
-    /// Default: 8.
-    pub fn with_target_http2_streams_per_client(mut self, value: u32) -> Self {
-        self.target_http2_streams_per_client = Some(value);
+    /// The absolute target is computed as
+    /// `ceil(max_http2_streams_per_client * percent / 100)`. This controls
+    /// connection selection only; it is not an HTTP/2 protocol limit.
+    /// Must be between 1 and 100 inclusive. Default: 50.
+    pub fn with_http2_fan_out_threshold_percent(mut self, value: u8) -> Self {
+        self.http2_fan_out_threshold_percent = Some(value);
         self
     }
 
@@ -834,21 +845,17 @@ impl ConnectionPoolOptionsBuilder {
             ValidationBounds::range(1, 20),
         )?;
 
-        let target_http2_streams_per_client = resolve_from_env(
-            self.target_http2_streams_per_client,
-            env.target_http2_streams_per_client,
-            "AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT",
-            8_u32.min(max_http2_streams_per_client),
-            ValidationBounds::range(1, 20),
+        let http2_fan_out_threshold_percent = resolve_from_env(
+            self.http2_fan_out_threshold_percent,
+            env.http2_fan_out_threshold_percent,
+            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_FAN_OUT_THRESHOLD_PERCENT",
+            DEFAULT_HTTP2_FAN_OUT_THRESHOLD_PERCENT,
+            ValidationBounds::range(1, 100),
         )?;
-
-        if target_http2_streams_per_client > max_http2_streams_per_client {
-            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message(format!(
-                    "target_http2_streams_per_client must be less than or equal to max_http2_streams_per_client, got {} > {}",
-                    target_http2_streams_per_client,
-                    max_http2_streams_per_client
-                )).build());
-        }
+        let target_http2_streams_per_client = http2_fan_out_target_streams(
+            max_http2_streams_per_client,
+            http2_fan_out_threshold_percent,
+        );
 
         // Below 4 logical CPUs, avoid the 32-connection floor because the
         // additional shard management regresses CPU-bound low-core workloads.
@@ -991,6 +998,7 @@ impl ConnectionPoolOptionsBuilder {
             max_idle_connections_per_endpoint,
             idle_connection_timeout,
             max_http2_streams_per_client,
+            http2_fan_out_threshold_percent,
             target_http2_streams_per_client,
             max_http2_connections_per_endpoint,
             min_http2_connections_per_endpoint,
@@ -1119,6 +1127,7 @@ mod tests {
         );
         assert_eq!(options.idle_connection_timeout(), None);
         assert_eq!(options.max_http2_streams_per_client(), 16);
+        assert_eq!(options.http2_fan_out_threshold_percent(), 50);
         assert_eq!(options.target_http2_streams_per_client(), 8);
         let expected_max_http2_connections = std::thread::available_parallelism()
             .map(|count| default_max_http2_connections_for_parallelism(count.get()))
@@ -1164,7 +1173,7 @@ mod tests {
             .with_max_idle_connections_per_endpoint(5_000)
             .with_idle_connection_timeout(Duration::from_millis(600_000))
             .with_max_http2_streams_per_client(12)
-            .with_target_http2_streams_per_client(6)
+            .with_http2_fan_out_threshold_percent(50)
             .with_max_http2_connections_per_endpoint(24)
             .with_min_http2_connections_per_endpoint(3)
             .with_idle_http2_client_timeout(Duration::from_millis(90_000))
@@ -1206,6 +1215,7 @@ mod tests {
             Some(Duration::from_millis(600_000))
         );
         assert_eq!(options.max_http2_streams_per_client(), 12);
+        assert_eq!(options.http2_fan_out_threshold_percent(), 50);
         assert_eq!(options.target_http2_streams_per_client(), 6);
         assert_eq!(options.max_http2_connections_per_endpoint(), 24);
         assert_eq!(options.min_http2_connections_per_endpoint(), 3);
@@ -1459,102 +1469,102 @@ mod tests {
     }
 
     #[test]
-    fn target_http2_streams_per_client_defaults_to_eight() {
+    fn http2_fan_out_threshold_defaults_to_fifty_percent() {
         let options = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        assert_eq!(options.http2_fan_out_threshold_percent(), 50);
         assert_eq!(options.target_http2_streams_per_client(), 8);
     }
 
     #[test]
-    fn target_http2_streams_per_client_default_is_capped_by_max() {
+    fn http2_fan_out_target_scales_with_max_streams() {
         let options = ConnectionPoolOptionsBuilder::new()
-            .with_max_http2_streams_per_client(4)
+            .with_max_http2_streams_per_client(12)
             .build()
             .unwrap();
 
-        assert_eq!(options.target_http2_streams_per_client(), 4);
-        assert_eq!(options.max_http2_streams_per_client(), 4);
+        assert_eq!(options.http2_fan_out_threshold_percent(), 50);
+        assert_eq!(options.target_http2_streams_per_client(), 6);
     }
 
     #[test]
-    fn target_http2_streams_per_client_builder_overrides_env() {
+    fn http2_fan_out_target_uses_ceiling_division() {
+        let options = ConnectionPoolOptionsBuilder::new()
+            .with_max_http2_streams_per_client(3)
+            .with_http2_fan_out_threshold_percent(50)
+            .build()
+            .unwrap();
+
+        assert_eq!(options.target_http2_streams_per_client(), 2);
+    }
+
+    #[test]
+    fn http2_fan_out_threshold_builder_overrides_env() {
         // Builder value must win over the env-sourced value.
         let cfg = ConnectionPoolOptionsBuilder::from_env_vars(|key| match key {
-            "AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT" => Ok("10".to_string()),
+            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_FAN_OUT_THRESHOLD_PERCENT" => Ok("75".to_string()),
             _ => Err(std::env::VarError::NotPresent),
         });
         let mut builder = ConnectionPoolOptionsBuilder::new();
-        builder.target_http2_streams_per_client = cfg.target_http2_streams_per_client;
+        builder.http2_fan_out_threshold_percent = cfg.http2_fan_out_threshold_percent;
         let options = builder
-            .with_target_http2_streams_per_client(7)
+            .with_http2_fan_out_threshold_percent(25)
             .build()
             .unwrap();
-        assert_eq!(options.target_http2_streams_per_client(), 7);
+        assert_eq!(options.http2_fan_out_threshold_percent(), 25);
+        assert_eq!(options.target_http2_streams_per_client(), 4);
     }
 
     #[test]
-    fn target_http2_streams_per_client_env_used_when_unset() {
+    fn http2_fan_out_threshold_env_used_when_unset() {
         let cfg = ConnectionPoolOptionsBuilder::from_env_vars(|key| match key {
-            "AZURE_COSMOS_CONNECTION_POOL_TARGET_HTTP2_STREAMS_PER_CLIENT" => Ok("10".to_string()),
+            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_FAN_OUT_THRESHOLD_PERCENT" => Ok("75".to_string()),
             _ => Err(std::env::VarError::NotPresent),
         });
-        assert_eq!(cfg.target_http2_streams_per_client, Some(10));
+        assert_eq!(cfg.http2_fan_out_threshold_percent, Some(75));
 
         let mut builder = ConnectionPoolOptionsBuilder::new();
-        builder.target_http2_streams_per_client = cfg.target_http2_streams_per_client;
+        builder.http2_fan_out_threshold_percent = cfg.http2_fan_out_threshold_percent;
         let options = builder.build().unwrap();
-        assert_eq!(options.target_http2_streams_per_client(), 10);
+        assert_eq!(options.http2_fan_out_threshold_percent(), 75);
+        assert_eq!(options.target_http2_streams_per_client(), 12);
     }
 
     #[test]
-    fn target_http2_streams_per_client_too_small() {
+    fn http2_fan_out_threshold_too_small() {
         let result = ConnectionPoolOptionsBuilder::new()
-            .with_target_http2_streams_per_client(0)
+            .with_http2_fan_out_threshold_percent(0)
             .build();
 
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("target_http2_streams_per_client must be at least 1"));
+            .contains("http2_fan_out_threshold_percent must be at least 1"));
     }
 
     #[test]
-    fn target_http2_streams_per_client_too_large() {
+    fn http2_fan_out_threshold_too_large() {
         let result = ConnectionPoolOptionsBuilder::new()
-            .with_target_http2_streams_per_client(21)
+            .with_http2_fan_out_threshold_percent(101)
             .build();
 
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("target_http2_streams_per_client must be at most 20"));
+            .contains("http2_fan_out_threshold_percent must be at most 100"));
     }
 
     #[test]
-    fn target_http2_streams_per_client_cannot_exceed_max() {
-        let result = ConnectionPoolOptionsBuilder::new()
-            .with_max_http2_streams_per_client(8)
-            .with_target_http2_streams_per_client(9)
-            .build();
-
-        assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("target_http2_streams_per_client must be less than or equal to max_http2_streams_per_client"));
-    }
-
-    #[test]
-    fn target_http2_streams_per_client_equal_to_max_is_accepted() {
+    fn full_http2_fan_out_threshold_equals_max_streams() {
         let options = ConnectionPoolOptionsBuilder::new()
             .with_max_http2_streams_per_client(8)
-            .with_target_http2_streams_per_client(8)
+            .with_http2_fan_out_threshold_percent(100)
             .build()
             .unwrap();
 
+        assert_eq!(options.http2_fan_out_threshold_percent(), 100);
         assert_eq!(options.target_http2_streams_per_client(), 8);
-        assert_eq!(options.max_http2_streams_per_client(), 8);
     }
 
     #[test]

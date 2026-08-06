@@ -1819,7 +1819,7 @@ mod tests {
     ) -> AdaptiveTransport {
         let pool = crate::options::ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(1)
-            .with_target_http2_streams_per_client(1)
+            .with_http2_fan_out_threshold_percent(100)
             .with_min_http2_connections_per_endpoint(2)
             .with_max_http2_connections_per_endpoint(2)
             .build()

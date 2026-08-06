@@ -215,8 +215,8 @@ impl fmt::Debug for ShardedHttpTransport {
                 &self.connection_pool.max_http2_streams_per_client(),
             )
             .field(
-                "target_streams_per_client",
-                &self.connection_pool.target_http2_streams_per_client(),
+                "fan_out_threshold_percent",
+                &self.connection_pool.http2_fan_out_threshold_percent(),
             )
             .field(
                 "max_connections_per_endpoint",
@@ -1453,7 +1453,7 @@ mod tests {
     fn connection_pool() -> ConnectionPoolOptions {
         ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(2)
-            .with_target_http2_streams_per_client(2)
+            .with_http2_fan_out_threshold_percent(100)
             .with_min_http2_connections_per_endpoint(1)
             .with_max_http2_connections_per_endpoint(4)
             .with_http2_consecutive_failure_threshold(2)
@@ -1499,9 +1499,10 @@ mod tests {
         max_streams: u32,
         target_streams: u32,
     ) -> EndpointShardPool {
+        let threshold_percent = (((target_streams - 1) * 100) / max_streams + 1) as u8;
         let connection_pool = ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(max_streams)
-            .with_target_http2_streams_per_client(target_streams)
+            .with_http2_fan_out_threshold_percent(threshold_percent)
             .with_min_http2_connections_per_endpoint(min_shard_count)
             .with_max_http2_connections_per_endpoint(max_shard_count)
             .build()
@@ -1556,7 +1557,7 @@ mod tests {
 
         let connection_pool = ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(MAX_STREAMS)
-            .with_target_http2_streams_per_client(MAX_STREAMS)
+            .with_http2_fan_out_threshold_percent(100)
             .with_min_http2_connections_per_endpoint(1)
             .with_max_http2_connections_per_endpoint(REQUEST_COUNT / MAX_STREAMS as usize)
             .build()
@@ -1854,7 +1855,7 @@ mod tests {
     fn shard_build_failure_uses_existing_hard_cap_headroom() {
         let connection_pool = ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(4)
-            .with_target_http2_streams_per_client(1)
+            .with_http2_fan_out_threshold_percent(1)
             .with_min_http2_connections_per_endpoint(1)
             .with_max_http2_connections_per_endpoint(2)
             .build()
@@ -1891,7 +1892,7 @@ mod tests {
     fn shard_build_failure_without_fallback_preserves_original_error() {
         let connection_pool = ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(4)
-            .with_target_http2_streams_per_client(1)
+            .with_http2_fan_out_threshold_percent(1)
             .with_min_http2_connections_per_endpoint(1)
             .with_max_http2_connections_per_endpoint(2)
             .build()
@@ -2002,7 +2003,7 @@ mod tests {
     fn selection_can_exceed_sdk_threshold_at_max_connections() {
         let connection_pool = ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(1)
-            .with_target_http2_streams_per_client(1)
+            .with_http2_fan_out_threshold_percent(100)
             .with_min_http2_connections_per_endpoint(1)
             .with_max_http2_connections_per_endpoint(1)
             .build()
@@ -2254,7 +2255,7 @@ mod tests {
         let health_interval = Duration::from_millis(100);
         let pool_opts = ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(2)
-            .with_target_http2_streams_per_client(2)
+            .with_http2_fan_out_threshold_percent(100)
             .with_min_http2_connections_per_endpoint(1)
             .with_max_http2_connections_per_endpoint(4)
             .with_http2_consecutive_failure_threshold(2)
