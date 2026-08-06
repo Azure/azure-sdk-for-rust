@@ -14,6 +14,8 @@
 - Added `DiagnosticsHandler::on_client_created`, a defaulted hook that lets a handler observe client construction (`CosmosClientInfo`) and return a `ClientLifetimeToken` dropped with the client, for handlers that need to track client lifetime. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 - Added composable tail-sampled emission handlers — a `TracingLogHandler` leaf that writes a compact `tracing` line and a `SamplingLogHandler` wrapper (holding an `Arc<dyn DiagnosticsHandler>`) that applies the sampling gate plus a shared per-window rate limit, defaulting to wrap a `TracingLogHandler` — and the `distributed_tracing`-gated `CosmosTracingHandler` (backdated span tree), also rate-limited so an error storm can't overwhelm exporters. All emit only for operations which fail or breach a configurable `DiagnosticsThresholds`, and stamp *why* they were sampled (a failure, or which threshold) on the emitted line and span. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 - Added the non-default `control_plane` feature that gates the control-plane APIs (database and container CRUD, and throughput/offer management). It is intentionally independent of `key_auth` so these APIs are not tied to key-based authentication. ([#4854](https://github.com/Azure/azure-sdk-for-rust/pull/4854))
+- Added full text search policy support: the `FullTextPolicy` and `FullTextPath` models, `ContainerProperties::full_text_policy` (with `with_full_text_policy`), the `FullTextIndex` model, and `IndexingPolicy::full_text_indexes` (with `with_full_text_index`). Containers configured for full text search can now be created and read with this SDK instead of only through another SDK or the portal.
+- Added the vector index tuning options the service accepts: `VectorIndex::quantizer_type` (the new `QuantizerType` enum), `quantization_byte_size`, `indexing_search_list_size`, and `vector_index_shard_key`, each with a matching `with_*` setter.
 
 ### Breaking Changes
 
@@ -22,6 +24,7 @@
 
 ### Bugs Fixed
 
+- `ContainerProperties`, `IndexingPolicy`, `VectorEmbeddingPolicy`, and `VectorEmbedding` now preserve container configuration this SDK version does not model. `ContainerClient::replace` serializes these types verbatim, so a read-modify-replace previously stripped anything unrecognized — including `fullTextPolicy`, `geospatialConfig`, `clientEncryptionPolicy`, and vector index tuning — from containers created by another SDK or the portal. Unknown fields are now captured on read and written back on replace.
 - The Cosmos tracing span's operation label now prefers the caller-facing `CosmosOperationContext` identity over the driver-recorded name, matching how the `db.operation.name` metric attribute is resolved. Previously an aggregate whose surfaced sub-operation differed from the caller's operation — such as a PATCH that fails during its internal read — could label the span `read_item` while the metric reported `patch_item`. Attempt spans now carry the operation that issued them, so a PATCH's attempts report `db.operation.name` of `patch_read_item` / `patch_replace_item` while its operation span and metric stay `patch_item`; attempts of every other operation continue to inherit the operation's own name. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 
 ### Other Changes

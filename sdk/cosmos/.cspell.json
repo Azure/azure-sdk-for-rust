@@ -259,6 +259,7 @@
     "pyroscope",
     "qname",
     "qself",
+    "quantizer",
     "RAII",
     "readfeed",
     "recompiles",

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::collections::BTreeMap;
+
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 
@@ -45,6 +47,22 @@ pub struct IndexingPolicy {
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub vector_indexes: Vec<VectorIndex>,
+
+    /// A list of full text indexes in the container.
+    ///
+    /// Every path indexed here must also appear in the container's
+    /// [`FullTextPolicy`](crate::models::FullTextPolicy).
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub full_text_indexes: Vec<FullTextIndex>,
+
+    /// Properties returned by the service that this version of the SDK does not model.
+    ///
+    /// Captured on deserialization and written back on serialization so a
+    /// read-modify-replace round trip does not silently drop server-side
+    /// configuration the SDK doesn't know about yet.
+    #[serde(flatten)]
+    extra: BTreeMap<String, serde_json::Value>,
 }
 
 impl IndexingPolicy {
@@ -75,6 +93,12 @@ impl IndexingPolicy {
 
     pub fn with_vector_index(mut self, vector_index: VectorIndex) -> Self {
         self.vector_indexes.push(vector_index);
+        self
+    }
+
+    /// Appends `full_text_index` to the policy's list of full text indexes.
+    pub fn with_full_text_index(mut self, full_text_index: impl Into<FullTextIndex>) -> Self {
+        self.full_text_indexes.push(full_text_index.into());
         self
     }
 }
@@ -234,6 +258,53 @@ pub struct VectorIndex {
     /// The type of the vector index.
     #[serde(rename = "type")] // "type" is a reserved word in Rust.
     pub index_type: VectorIndexType,
+
+    /// The quantization technique used to compress vectors in this index.
+    ///
+    /// Only applies to the [`QuantizedFlat`](VectorIndexType::QuantizedFlat) and
+    /// [`DiskANN`](VectorIndexType::DiskANN) index types. When unset, the service
+    /// chooses a default.
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quantizer_type: Option<QuantizerType>,
+
+    /// The number of bytes each vector is compressed to.
+    ///
+    /// Only applies to the [`QuantizedFlat`](VectorIndexType::QuantizedFlat) and
+    /// [`DiskANN`](VectorIndexType::DiskANN) index types. The service constrains
+    /// this to the range `1..=min(dimensions, 512)`; this type does not enforce
+    /// that range, leaving the service as the source of truth.
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quantization_byte_size: Option<u32>,
+
+    /// The size of the candidate list used while building the index.
+    ///
+    /// Only applies to the [`DiskANN`](VectorIndexType::DiskANN) index type.
+    /// Larger values improve recall at the cost of a slower build. The service
+    /// constrains this to the range `25..=500`; this type does not enforce that
+    /// range, leaving the service as the source of truth.
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub indexing_search_list_size: Option<u32>,
+
+    /// The paths used to shard the vector index.
+    ///
+    /// Only applies to the [`QuantizedFlat`](VectorIndexType::QuantizedFlat) and
+    /// [`DiskANN`](VectorIndexType::DiskANN) index types. Sharding restricts a
+    /// vector search to the documents sharing the same shard key values, which
+    /// improves latency for queries that always filter on those paths.
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub vector_index_shard_key: Vec<String>,
+
+    /// Properties returned by the service that this version of the SDK does not model.
+    ///
+    /// Captured on deserialization and written back on serialization so a
+    /// read-modify-replace round trip does not silently drop server-side
+    /// configuration the SDK doesn't know about yet.
+    #[serde(flatten)]
+    extra: BTreeMap<String, serde_json::Value>,
 }
 
 impl VectorIndex {
@@ -242,6 +313,11 @@ impl VectorIndex {
         Self {
             path: path.into(),
             index_type,
+            quantizer_type: None,
+            quantization_byte_size: None,
+            indexing_search_list_size: None,
+            vector_index_shard_key: Vec::new(),
+            extra: BTreeMap::new(),
         }
     }
 
@@ -254,6 +330,30 @@ impl VectorIndex {
     /// Sets the type of this vector index.
     pub fn with_index_type(mut self, index_type: VectorIndexType) -> Self {
         self.index_type = index_type;
+        self
+    }
+
+    /// Sets the quantization technique used to compress vectors in this index.
+    pub fn with_quantizer_type(mut self, quantizer_type: QuantizerType) -> Self {
+        self.quantizer_type = Some(quantizer_type);
+        self
+    }
+
+    /// Sets the number of bytes each vector is compressed to.
+    pub fn with_quantization_byte_size(mut self, quantization_byte_size: u32) -> Self {
+        self.quantization_byte_size = Some(quantization_byte_size);
+        self
+    }
+
+    /// Sets the size of the candidate list used while building the index.
+    pub fn with_indexing_search_list_size(mut self, indexing_search_list_size: u32) -> Self {
+        self.indexing_search_list_size = Some(indexing_search_list_size);
+        self
+    }
+
+    /// Appends `path` to the index's list of shard key paths.
+    pub fn with_shard_key_path(mut self, path: impl Into<String>) -> Self {
+        self.vector_index_shard_key.push(path.into());
         self
     }
 }
@@ -274,11 +374,74 @@ pub enum VectorIndexType {
     DiskANN,
 }
 
+/// Quantization techniques available for compressing vectors in a [`VectorIndex`].
+///
+/// For more information, see <https://learn.microsoft.com/azure/cosmos-db/index-policy#vector-indexes>
+#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub enum QuantizerType {
+    /// Represents the `product` quantization technique.
+    Product,
+
+    /// Represents the `spherical` quantization technique.
+    Spherical,
+}
+
+/// Represents a full text index.
+///
+/// Every path indexed here must also be declared in the container's
+/// [`FullTextPolicy`](crate::models::FullTextPolicy), which controls how the
+/// text at that path is analyzed.
+///
+/// For more information, see <https://learn.microsoft.com/azure/cosmos-db/gen-ai/full-text-search>
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct FullTextIndex {
+    /// The path to the property referenced in this index.
+    pub path: String,
+
+    /// Properties returned by the service that this version of the SDK does not model.
+    ///
+    /// Captured on deserialization and written back on serialization so a
+    /// read-modify-replace round trip does not silently drop server-side
+    /// configuration the SDK doesn't know about yet.
+    #[serde(flatten)]
+    extra: BTreeMap<String, serde_json::Value>,
+}
+
+impl FullTextIndex {
+    /// Creates a new [`FullTextIndex`] over the given path.
+    pub fn new(path: impl Into<String>) -> Self {
+        Self {
+            path: path.into(),
+            extra: BTreeMap::new(),
+        }
+    }
+
+    /// Sets the path of this full text index.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
+}
+
+impl<T: Into<String>> From<T> for FullTextIndex {
+    fn from(value: T) -> Self {
+        FullTextIndex::new(value)
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use crate::models::{
-        CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, IndexingMode, IndexingPolicy,
-        PropertyPath, SpatialIndex, SpatialType, VectorIndex, VectorIndexType,
+        CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, FullTextIndex, IndexingMode,
+        IndexingPolicy, QuantizerType, SpatialIndex, SpatialType, VectorIndex, VectorIndexType,
     };
 
     #[test]
@@ -321,6 +484,11 @@ mod tests {
                         "type": "diskANN"
                     }
                 ],
+                "fullTextIndexes": [
+                    {
+                        "path": "/abstract"
+                    }
+                ],
                 "compositeIndexes":[
                     [
                         {
@@ -342,142 +510,197 @@ mod tests {
                             "order":"ascending"
                         }
                     ]
-                ],
-                "extraValueNotCurrentlyPresentInModel": {
-                    "this": "should not fail"
-                }
+                ]
             }
         "#;
 
         let policy: IndexingPolicy = serde_json::from_str(policy).unwrap();
 
-        assert_eq!(
-            IndexingPolicy {
-                automatic: false,
-                indexing_mode: Some(IndexingMode::Consistent),
-                included_paths: vec![PropertyPath {
-                    path: "/*".to_string(),
-                }],
-                excluded_paths: vec![
-                    PropertyPath {
-                        path: "/path/to/single/excluded/property/?".to_string()
-                    },
-                    PropertyPath {
-                        path: "/path/to/root/of/multiple/excluded/properties/*".to_string()
-                    },
-                ],
-                spatial_indexes: vec![SpatialIndex {
-                    path: "/path/to/geojson/property/?".to_string(),
-                    types: vec![
-                        SpatialType::Point,
-                        SpatialType::Polygon,
-                        SpatialType::MultiPolygon,
-                        SpatialType::LineString,
-                    ]
-                }],
-                composite_indexes: vec![
-                    CompositeIndex {
-                        properties: vec![
-                            CompositeIndexProperty {
-                                path: "/name".to_string(),
-                                order: CompositeIndexOrder::Ascending,
-                            },
-                            CompositeIndexProperty {
-                                path: "/age".to_string(),
-                                order: CompositeIndexOrder::Descending,
-                            },
-                        ]
-                    },
-                    CompositeIndex {
-                        properties: vec![
-                            CompositeIndexProperty {
-                                path: "/name2".to_string(),
-                                order: CompositeIndexOrder::Descending,
-                            },
-                            CompositeIndexProperty {
-                                path: "/age2".to_string(),
-                                order: CompositeIndexOrder::Ascending,
-                            },
-                        ]
-                    },
-                ],
-                vector_indexes: vec![
-                    VectorIndex {
-                        path: "/vector1".to_string(),
-                        index_type: VectorIndexType::QuantizedFlat,
-                    },
-                    VectorIndex {
-                        path: "/vector2".to_string(),
-                        index_type: VectorIndexType::DiskANN,
-                    }
-                ]
-            },
-            policy
-        );
+        let expected = IndexingPolicy::default()
+            .with_indexing_mode(IndexingMode::Consistent)
+            .with_included_path("/*")
+            .with_excluded_path("/path/to/single/excluded/property/?")
+            .with_excluded_path("/path/to/root/of/multiple/excluded/properties/*")
+            .with_spatial_index(
+                SpatialIndex::new("/path/to/geojson/property/?")
+                    .with_type(SpatialType::Point)
+                    .with_type(SpatialType::Polygon)
+                    .with_type(SpatialType::MultiPolygon)
+                    .with_type(SpatialType::LineString),
+            )
+            .with_composite_index(
+                CompositeIndex::default()
+                    .with_property(CompositeIndexProperty::new(
+                        "/name",
+                        CompositeIndexOrder::Ascending,
+                    ))
+                    .with_property(CompositeIndexProperty::new(
+                        "/age",
+                        CompositeIndexOrder::Descending,
+                    )),
+            )
+            .with_composite_index(
+                CompositeIndex::default()
+                    .with_property(CompositeIndexProperty::new(
+                        "/name2",
+                        CompositeIndexOrder::Descending,
+                    ))
+                    .with_property(CompositeIndexProperty::new(
+                        "/age2",
+                        CompositeIndexOrder::Ascending,
+                    )),
+            )
+            .with_vector_index(VectorIndex::new("/vector1", VectorIndexType::QuantizedFlat))
+            .with_vector_index(VectorIndex::new("/vector2", VectorIndexType::DiskANN))
+            .with_full_text_index("/abstract");
+
+        assert_eq!(expected, policy);
     }
 
     #[test]
     pub fn serialize_indexing_policy() {
-        let policy = IndexingPolicy {
-            automatic: true,
-            indexing_mode: None,
-            included_paths: vec![PropertyPath {
-                path: "/*".to_string(),
-            }],
-            excluded_paths: vec![
-                PropertyPath {
-                    path: "/path/to/single/excluded/property/?".to_string(),
-                },
-                PropertyPath {
-                    path: "/path/to/root/of/multiple/excluded/properties/*".to_string(),
-                },
-            ],
-            spatial_indexes: vec![
-                SpatialIndex {
-                    path: "/path/to/geojson/property/?".to_string(),
-                    types: vec![
-                        SpatialType::Point,
-                        SpatialType::Polygon,
-                        SpatialType::MultiPolygon,
-                        SpatialType::LineString,
-                    ],
-                },
-                SpatialIndex {
-                    path: "/path/to/geojson/property2/?".to_string(),
-                    types: vec![],
-                },
-            ],
-            composite_indexes: vec![
-                CompositeIndex {
-                    properties: vec![
-                        CompositeIndexProperty {
-                            path: "/name".to_string(),
-                            order: CompositeIndexOrder::Ascending,
-                        },
-                        CompositeIndexProperty {
-                            path: "/age".to_string(),
-                            order: CompositeIndexOrder::Descending,
-                        },
-                    ],
-                },
-                CompositeIndex { properties: vec![] },
-            ],
-            vector_indexes: vec![
-                VectorIndex {
-                    path: "/vector1".to_string(),
-                    index_type: VectorIndexType::QuantizedFlat,
-                },
-                VectorIndex {
-                    path: "/vector2".to_string(),
-                    index_type: VectorIndexType::DiskANN,
-                },
-            ],
-        };
+        let mut policy = IndexingPolicy::default()
+            .with_included_path("/*")
+            .with_excluded_path("/path/to/single/excluded/property/?")
+            .with_excluded_path("/path/to/root/of/multiple/excluded/properties/*")
+            .with_spatial_index(
+                SpatialIndex::new("/path/to/geojson/property/?")
+                    .with_type(SpatialType::Point)
+                    .with_type(SpatialType::Polygon)
+                    .with_type(SpatialType::MultiPolygon)
+                    .with_type(SpatialType::LineString),
+            )
+            .with_spatial_index(SpatialIndex::new("/path/to/geojson/property2/?"))
+            .with_composite_index(
+                CompositeIndex::default()
+                    .with_property(CompositeIndexProperty::new(
+                        "/name",
+                        CompositeIndexOrder::Ascending,
+                    ))
+                    .with_property(CompositeIndexProperty::new(
+                        "/age",
+                        CompositeIndexOrder::Descending,
+                    )),
+            )
+            .with_composite_index(CompositeIndex::default())
+            .with_vector_index(VectorIndex::new("/vector1", VectorIndexType::QuantizedFlat))
+            .with_vector_index(VectorIndex::new("/vector2", VectorIndexType::DiskANN));
+        policy.automatic = true;
+
         let json = serde_json::to_string(&policy).unwrap();
 
         assert_eq!(
             "{\"automatic\":true,\"includedPaths\":[{\"path\":\"/*\"}],\"excludedPaths\":[{\"path\":\"/path/to/single/excluded/property/?\"},{\"path\":\"/path/to/root/of/multiple/excluded/properties/*\"}],\"spatialIndexes\":[{\"path\":\"/path/to/geojson/property/?\",\"types\":[\"Point\",\"Polygon\",\"MultiPolygon\",\"LineString\"]},{\"path\":\"/path/to/geojson/property2/?\",\"types\":[]}],\"compositeIndexes\":[[{\"path\":\"/name\",\"order\":\"ascending\"},{\"path\":\"/age\",\"order\":\"descending\"}],[]],\"vectorIndexes\":[{\"path\":\"/vector1\",\"type\":\"quantizedFlat\"},{\"path\":\"/vector2\",\"type\":\"diskANN\"}]}",
             json
         );
+    }
+
+    #[test]
+    fn round_trips_vector_index_tuning_options() {
+        let json = r#"
+            {
+                "vectorIndexes": [
+                    {
+                        "path": "/vector",
+                        "type": "diskANN",
+                        "quantizerType": "product",
+                        "quantizationByteSize": 8,
+                        "indexingSearchListSize": 50,
+                        "vectorIndexShardKey": ["/city", "/country"]
+                    }
+                ]
+            }
+        "#;
+
+        let policy: IndexingPolicy = serde_json::from_str(json).unwrap();
+
+        assert_eq!(
+            vec![VectorIndex::new("/vector", VectorIndexType::DiskANN)
+                .with_quantizer_type(QuantizerType::Product)
+                .with_quantization_byte_size(8)
+                .with_indexing_search_list_size(50)
+                .with_shard_key_path("/city")
+                .with_shard_key_path("/country")],
+            policy.vector_indexes
+        );
+
+        assert_eq!(
+            r#"{"automatic":false,"vectorIndexes":[{"path":"/vector","type":"diskANN","quantizerType":"product","quantizationByteSize":8,"indexingSearchListSize":50,"vectorIndexShardKey":["/city","/country"]}]}"#,
+            serde_json::to_string(&policy).unwrap()
+        );
+    }
+
+    #[test]
+    fn omits_unset_vector_index_tuning_options() {
+        let index = VectorIndex::new("/vector", VectorIndexType::Flat);
+
+        assert_eq!(
+            r#"{"path":"/vector","type":"flat"}"#,
+            serde_json::to_string(&index).unwrap()
+        );
+    }
+
+    #[test]
+    fn round_trips_full_text_indexes() {
+        let policy = IndexingPolicy::default()
+            .with_full_text_index("/abstract")
+            .with_full_text_index(FullTextIndex::new("/title"));
+
+        let json = serde_json::to_string(&policy).unwrap();
+
+        assert_eq!(
+            r#"{"automatic":false,"fullTextIndexes":[{"path":"/abstract"},{"path":"/title"}]}"#,
+            json
+        );
+        assert_eq!(policy, serde_json::from_str(&json).unwrap());
+    }
+
+    #[test]
+    fn preserves_unknown_fields_through_round_trip() {
+        // A policy configured by a newer SDK (or the portal) must survive a
+        // read-modify-replace round trip through this SDK untouched.
+        let json = r#"
+            {
+                "indexingMode": "consistent",
+                "vectorIndexes": [
+                    {
+                        "path": "/vector",
+                        "type": "diskANN",
+                        "someFutureVectorKnob": 7
+                    }
+                ],
+                "fullTextIndexes": [
+                    {
+                        "path": "/abstract",
+                        "someFutureTextKnob": "on"
+                    }
+                ],
+                "someFuturePolicyKnob": {
+                    "nested": [1, 2, 3]
+                }
+            }
+        "#;
+
+        let policy: IndexingPolicy = serde_json::from_str(json).unwrap();
+        let round_tripped: serde_json::Value =
+            serde_json::from_str(&serde_json::to_string(&policy).unwrap()).unwrap();
+
+        assert_eq!(
+            json!({"nested": [1, 2, 3]}),
+            round_tripped["someFuturePolicyKnob"]
+        );
+        assert_eq!(
+            json!(7),
+            round_tripped["vectorIndexes"][0]["someFutureVectorKnob"]
+        );
+        assert_eq!(
+            json!("on"),
+            round_tripped["fullTextIndexes"][0]["someFutureTextKnob"]
+        );
+
+        // The modelled fields must still be readable alongside the unknown ones.
+        assert_eq!(Some(IndexingMode::Consistent), policy.indexing_mode);
+        assert_eq!("/vector", policy.vector_indexes[0].path);
+        assert_eq!("/abstract", policy.full_text_indexes[0].path);
     }
 }

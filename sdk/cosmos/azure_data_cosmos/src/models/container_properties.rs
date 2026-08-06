@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::borrow::Cow;
-use std::time::Duration;
+use std::{borrow::Cow, collections::BTreeMap, time::Duration};
 
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -122,6 +121,15 @@ pub struct ContainerProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub vector_embedding_policy: Option<VectorEmbeddingPolicy>,
 
+    /// The full text policy for the container.
+    ///
+    /// Declares which paths hold full text content and how that text is
+    /// analyzed. Paths listed in
+    /// [`IndexingPolicy::full_text_indexes`](crate::models::IndexingPolicy::full_text_indexes)
+    /// must also appear here.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub full_text_policy: Option<FullTextPolicy>,
+
     /// The change feed policy for the container.
     ///
     /// Configure a retention duration here to enable the
@@ -149,6 +157,14 @@ pub struct ContainerProperties {
     /// A [`SystemProperties`] object containing common system properties for the container.
     #[serde(flatten)]
     pub system_properties: SystemProperties,
+
+    /// Properties returned by the service that this version of the SDK does not model.
+    ///
+    /// Captured on deserialization and written back on serialization so a
+    /// read-modify-replace round trip does not silently drop server-side
+    /// configuration the SDK doesn't know about yet.
+    #[serde(flatten)]
+    extra: BTreeMap<String, serde_json::Value>,
 }
 
 impl ContainerProperties {
@@ -160,10 +176,12 @@ impl ContainerProperties {
             unique_key_policy: None,
             conflict_resolution_policy: None,
             vector_embedding_policy: None,
+            full_text_policy: None,
             change_feed_policy: None,
             default_ttl: TimeToLive::Forever,
             analytical_storage_ttl: TimeToLive::Forever,
             system_properties: SystemProperties::default(),
+            extra: BTreeMap::new(),
         }
     }
 
@@ -190,6 +208,12 @@ impl ContainerProperties {
         vector_embedding_policy: VectorEmbeddingPolicy,
     ) -> Self {
         self.vector_embedding_policy = Some(vector_embedding_policy);
+        self
+    }
+
+    /// Sets the full text policy for the container.
+    pub fn with_full_text_policy(mut self, full_text_policy: FullTextPolicy) -> Self {
+        self.full_text_policy = Some(full_text_policy);
         self
     }
 
@@ -226,6 +250,14 @@ pub struct VectorEmbeddingPolicy {
     /// The [`VectorEmbedding`]s that describe the vector embeddings of items in the container.
     #[serde(rename = "vectorEmbeddings")]
     pub embeddings: Vec<VectorEmbedding>,
+
+    /// Properties returned by the service that this version of the SDK does not model.
+    ///
+    /// Captured on deserialization and written back on serialization so a
+    /// read-modify-replace round trip does not silently drop server-side
+    /// configuration the SDK doesn't know about yet.
+    #[serde(flatten)]
+    extra: BTreeMap<String, serde_json::Value>,
 }
 
 impl VectorEmbeddingPolicy {
@@ -253,6 +285,14 @@ pub struct VectorEmbedding {
 
     /// The [`VectorDistanceFunction`] used to calculate the distance between vectors.
     pub distance_function: VectorDistanceFunction,
+
+    /// Properties returned by the service that this version of the SDK does not model.
+    ///
+    /// Captured on deserialization and written back on serialization so a
+    /// read-modify-replace round trip does not silently drop server-side
+    /// configuration the SDK doesn't know about yet.
+    #[serde(flatten)]
+    extra: BTreeMap<String, serde_json::Value>,
 }
 
 impl VectorEmbedding {
@@ -268,6 +308,7 @@ impl VectorEmbedding {
             data_type,
             dimensions,
             distance_function,
+            extra: BTreeMap::new(),
         }
     }
 
@@ -330,6 +371,119 @@ pub enum VectorDistanceFunction {
     /// Represents the `dotproduct` distance function.
     #[serde(rename = "dotproduct")]
     DotProduct,
+}
+
+/// Represents the full text policy for a container.
+///
+/// Declares which paths hold full text content and which language each one is
+/// analyzed as. A path must be declared here before it can be indexed via
+/// [`IndexingPolicy::full_text_indexes`](crate::models::IndexingPolicy::full_text_indexes)
+/// or queried with the full text system functions.
+///
+/// For more information, see <https://learn.microsoft.com/azure/cosmos-db/gen-ai/full-text-search>
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct FullTextPolicy {
+    /// The language used to analyze any [`FullTextPath`] that does not specify its own.
+    ///
+    /// This is a language tag such as `en-US`. The service validates the value
+    /// and rejects unsupported languages; this type does not enforce the
+    /// supported set, leaving the service as the source of truth.
+    #[serde(default)]
+    pub default_language: String,
+
+    /// The paths holding full text content in items in the container.
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub full_text_paths: Vec<FullTextPath>,
+
+    /// Properties returned by the service that this version of the SDK does not model.
+    ///
+    /// Captured on deserialization and written back on serialization so a
+    /// read-modify-replace round trip does not silently drop server-side
+    /// configuration the SDK doesn't know about yet.
+    #[serde(flatten)]
+    extra: BTreeMap<String, serde_json::Value>,
+}
+
+impl FullTextPolicy {
+    /// Creates a new [`FullTextPolicy`] with the given default language and no paths.
+    pub fn new(default_language: impl Into<String>) -> Self {
+        Self {
+            default_language: default_language.into(),
+            full_text_paths: Vec::new(),
+            extra: BTreeMap::new(),
+        }
+    }
+
+    /// Sets the language used to analyze any [`FullTextPath`] that does not specify its own.
+    pub fn with_default_language(mut self, default_language: impl Into<String>) -> Self {
+        self.default_language = default_language.into();
+        self
+    }
+
+    /// Appends `full_text_path` to the policy's list of full text paths.
+    pub fn with_full_text_path(mut self, full_text_path: impl Into<FullTextPath>) -> Self {
+        self.full_text_paths.push(full_text_path.into());
+        self
+    }
+}
+
+/// Describes a single path holding full text content.
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct FullTextPath {
+    /// The path to the property containing the text.
+    pub path: String,
+
+    /// The language this path is analyzed as.
+    ///
+    /// When unset, the containing policy's
+    /// [`default_language`](FullTextPolicy::default_language) is used.
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
+
+    /// Properties returned by the service that this version of the SDK does not model.
+    ///
+    /// Captured on deserialization and written back on serialization so a
+    /// read-modify-replace round trip does not silently drop server-side
+    /// configuration the SDK doesn't know about yet.
+    #[serde(flatten)]
+    extra: BTreeMap<String, serde_json::Value>,
+}
+
+impl FullTextPath {
+    /// Creates a new [`FullTextPath`] over the given path, inheriting the policy's default language.
+    pub fn new(path: impl Into<String>) -> Self {
+        Self {
+            path: path.into(),
+            language: None,
+            extra: BTreeMap::new(),
+        }
+    }
+
+    /// Sets the path of this full text path.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
+
+    /// Sets the language this path is analyzed as, overriding the policy's default.
+    pub fn with_language(mut self, language: impl Into<String>) -> Self {
+        self.language = Some(language.into());
+        self
+    }
+}
+
+impl<T: Into<String>> From<T> for FullTextPath {
+    fn from(value: T) -> Self {
+        FullTextPath::new(value)
+    }
 }
 
 /// Represents a unique key policy for a container.
@@ -536,10 +690,11 @@ impl ChangeFeedPolicy {
 #[cfg(test)]
 mod tests {
     use serde::{Deserialize, Serialize};
+    use serde_json::json;
     use std::time::Duration;
 
     use super::{ChangeFeedPolicy, TimeToLive};
-    use crate::models::ContainerProperties;
+    use crate::models::{ContainerProperties, FullTextPath, FullTextPolicy};
 
     #[derive(Debug, Deserialize, Serialize)]
     struct TtlHolder {
@@ -767,6 +922,123 @@ mod tests {
             properties
                 .change_feed_policy
                 .and_then(|policy| policy.retention_duration())
+        );
+    }
+
+    #[test]
+    fn container_properties_serializes_full_text_policy() {
+        let properties = ContainerProperties::new("MyContainer", "/partitionKey".into())
+            .with_full_text_policy(
+                FullTextPolicy::new("en-US")
+                    .with_full_text_path("/title")
+                    .with_full_text_path(FullTextPath::new("/abstract").with_language("fr-FR")),
+            );
+
+        assert_eq!(
+            "{\"id\":\"MyContainer\",\"partitionKey\":{\"paths\":[\"/partitionKey\"],\"kind\":\"Hash\",\"version\":2},\"fullTextPolicy\":{\"defaultLanguage\":\"en-US\",\"fullTextPaths\":[{\"path\":\"/title\"},{\"path\":\"/abstract\",\"language\":\"fr-FR\"}]}}",
+            serde_json::to_string(&properties).unwrap()
+        );
+    }
+
+    #[test]
+    fn container_properties_deserializes_full_text_policy() {
+        let json = r#"{
+            "id": "MyContainer",
+            "partitionKey": {"paths": ["/partitionKey"], "kind": "Hash", "version": 2},
+            "fullTextPolicy": {
+                "defaultLanguage": "en-US",
+                "fullTextPaths": [
+                    {"path": "/title"},
+                    {"path": "/abstract", "language": "fr-FR"}
+                ]
+            }
+        }"#;
+
+        let properties: ContainerProperties = serde_json::from_str(json).unwrap();
+
+        assert_eq!(
+            Some(
+                FullTextPolicy::new("en-US")
+                    .with_full_text_path("/title")
+                    .with_full_text_path(FullTextPath::new("/abstract").with_language("fr-FR"))
+            ),
+            properties.full_text_policy
+        );
+    }
+
+    #[test]
+    fn container_properties_preserves_unknown_fields_through_round_trip() {
+        // A container configured by a newer SDK, another language SDK, or the
+        // portal must survive a read-modify-replace round trip through this SDK
+        // without losing server-side configuration this version doesn't model.
+        let json = r#"{
+            "id": "MyContainer",
+            "partitionKey": {"paths": ["/partitionKey"], "kind": "Hash", "version": 2},
+            "_rid": "rid-value",
+            "_etag": "\"etag-value\"",
+            "_ts": 1729036800,
+            "geospatialConfig": {"type": "Geography"},
+            "clientEncryptionPolicy": {"policyFormatVersion": 2},
+            "vectorEmbeddingPolicy": {
+                "vectorEmbeddings": [
+                    {
+                        "path": "/vector",
+                        "dataType": "float32",
+                        "dimensions": 8,
+                        "distanceFunction": "cosine",
+                        "embeddingSource": {"modelName": "text-embedding-3-small"}
+                    }
+                ]
+            },
+            "fullTextPolicy": {
+                "defaultLanguage": "en-US",
+                "fullTextPaths": [{"path": "/abstract", "tokenizer": "word"}],
+                "package": "standard"
+            }
+        }"#;
+
+        let properties: ContainerProperties = serde_json::from_str(json).unwrap();
+        let round_tripped: serde_json::Value =
+            serde_json::from_str(&serde_json::to_string(&properties).unwrap()).unwrap();
+
+        // Whole policies the SDK does not model at all.
+        assert_eq!(
+            json!({"type": "Geography"}),
+            round_tripped["geospatialConfig"]
+        );
+        assert_eq!(
+            json!({"policyFormatVersion": 2}),
+            round_tripped["clientEncryptionPolicy"]
+        );
+
+        // Fields nested inside policies the SDK *does* model.
+        assert_eq!(
+            json!({"modelName": "text-embedding-3-small"}),
+            round_tripped["vectorEmbeddingPolicy"]["vectorEmbeddings"][0]["embeddingSource"]
+        );
+        assert_eq!(
+            json!("standard"),
+            round_tripped["fullTextPolicy"]["package"]
+        );
+        assert_eq!(
+            json!("word"),
+            round_tripped["fullTextPolicy"]["fullTextPaths"][0]["tokenizer"]
+        );
+
+        // System properties must keep their existing treatment: `_rid` round
+        // trips, while `_etag` and `_ts` stay read-only and are not sent back.
+        assert_eq!(json!("rid-value"), round_tripped["_rid"]);
+        assert!(round_tripped.get("_etag").is_none());
+        assert!(round_tripped.get("_ts").is_none());
+
+        // Modelled fields remain readable alongside the unknown ones.
+        assert_eq!("MyContainer", properties.id);
+        assert_eq!(
+            Some("en-US"),
+            properties
+                .full_text_policy
+                .as_ref()
+                .map(|policy| policy.default_language.as_str())
         );
     }
 }
