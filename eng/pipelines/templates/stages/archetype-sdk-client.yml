@@ -129,12 +129,8 @@ extends:
           parameters:
             UsePlatformContainer: false
             OSName: linux
-            Matrix:
-              # TODO: Maybe do matrix generation here
-              Linux:
-                OSVmImage: $(LINUXVMIMAGE)
-                Pool: $(LINUXPOOL)
-                RustToolchainName: stable
+            Matrix: '{"Linux": {"OSVmImage": "$(LINUXVMIMAGE)","Pool": "$(LINUXPOOL)","RustToolchainName": "stable"}}'
+
             DependsOn: ''
             CloudConfig: Public
             ServiceDirectory: ${{ parameters.ServiceDirectory }}
