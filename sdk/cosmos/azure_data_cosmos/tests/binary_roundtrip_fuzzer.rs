@@ -38,6 +38,7 @@ use std::error::Error;
 
 use arbitrary::{Arbitrary, Unstructured};
 use azure_core::http::StatusCode;
+use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::{
     BinaryEncodingOptions, ConnectionPoolOptions, ContentResponseOnWrite, ItemWriteOptions,
@@ -47,6 +48,7 @@ use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy, SubStatusCode,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Number, Value};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -1863,6 +1865,61 @@ fn write_options_with_content() -> ItemWriteOptions {
     ItemWriteOptions::default().with_operation_options(operation)
 }
 
+/// A typed document with integer fields, used to exercise the native binary
+/// deserializer's integer path live (the `Value`-based round-trips only reach
+/// `deserialize_any`).
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+struct IntProbe {
+    id: String,
+    pk: String,
+    normal: u64,
+    signed: i64,
+    /// Wide value the service stores as a lossy double; reading it back drives
+    /// the integral-`Double`→integer coercion. `u64::MAX` saturates back to
+    /// `u64::MAX`, so the comparison stays exact.
+    wide: u64,
+}
+
+/// Round-trips an [`IntProbe`] so `deserialize_integer` (the production change)
+/// is exercised live, then asserts the typed values survived. Only meaningful on
+/// the pure-binary config (see the call site).
+async fn assert_typed_integer_probe(
+    container: &ContainerClient,
+    pk: &str,
+    iter: u64,
+    seed: u64,
+    context: &str,
+) -> Result<(), Box<dyn Error>> {
+    let id = format!("int-probe-{seed:016x}-{iter}");
+    // Own `pk` locally so the operation futures don't borrow the `&str` param.
+    let pk = pk.to_string();
+    let sent = IntProbe {
+        id: id.clone(),
+        pk: pk.clone(),
+        normal: 42,
+        signed: -7,
+        wide: u64::MAX,
+    };
+    with_transient_retry("int-probe-upsert", context, || {
+        container.upsert_item(&pk, &id, &sent, Some(write_options_with_content()))
+    })
+    .await?;
+    let read = with_transient_retry("int-probe-read", context, || {
+        container.read_item(&pk, &id, None)
+    })
+    .await?;
+    // The decode is the coverage: a regressed `deserialize_integer` would fail
+    // here with `invalid type: floating point, expected u64`.
+    let got: IntProbe = read
+        .into_model()
+        .map_err(|e| format!("{context}: typed integer probe decode failed: {e}"))?;
+    assert_eq!(
+        got, sent,
+        "{context}: typed integer probe round-trip changed"
+    );
+    Ok(())
+}
+
 /// Maximum attempts for a single point operation before the run gives up.
 const MAX_OP_ATTEMPTS: u32 = 6;
 
@@ -2118,6 +2175,17 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
 
             // Four point-op round-trips this config: create, read, replace, upsert.
             checked += 4;
+
+            // The four ops above decode into `serde_json::Value` (→
+            // `deserialize_any`), so they do NOT cover the native typed-integer
+            // path (`deserialize_integer`) this PR ships. A typed probe covers it
+            // live on the pure-binary config — the only mode that returns binary
+            // for an integer field (text modes return text, which `serde_json`
+            // rejects into an integer).
+            if *label == "binary" {
+                assert_typed_integer_probe(&container, &pk, iter, cfg.seed, &context).await?;
+                checked += 1;
+            }
         }
 
         if (iter + 1) % 100 == 0 {
