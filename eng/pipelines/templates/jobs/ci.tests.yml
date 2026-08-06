@@ -54,7 +54,7 @@ jobs:
 
   - ${{ if eq(parameters.InstallMsRust, true) }}:
     - pwsh: |
-        Move-Item $(Build.SourcesDirectory)/eng/templates/rust-toolchain.toml.template $(Build.SourcesDirectory)/rust-toolchain.toml
+        Move-Item $(Build.SourcesDirectory)/eng/templates/rust-toolchain.toml.template $(Build.SourcesDirectory)/rust-toolchain.toml -Force
       displayName: 'Configure MS Rust rust-toolchain.toml'
 
     - task: RustInstaller@1
