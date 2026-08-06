@@ -91,7 +91,7 @@ jobs:
 
   - task: PublishTestResults@2
     displayName: Publish Test Results
-    condition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'))
+    condition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'), eq(variables['HasJUnitTestResults'], 'true'))
     inputs:
       testResultsFormat: JUnit
       testResultsFiles: '**/test-results/junit/*.xml'

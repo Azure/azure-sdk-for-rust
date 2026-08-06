@@ -18,6 +18,11 @@ pub(crate) struct AccountEndpointState {
     pub preferred_read_endpoints: Arc<[CosmosEndpoint]>,
     /// Ordered preferred write endpoints.
     pub preferred_write_endpoints: Arc<[CosmosEndpoint]>,
+    /// Write endpoints in the order returned by account metadata.
+    ///
+    /// Distributed Transactions route through the DTC in the account's
+    /// current write region and must ignore caller regional preferences.
+    pub account_write_endpoints: Arc<[CosmosEndpoint]>,
     /// Endpoints marked temporarily unavailable, keyed by their primary URL.
     pub unavailable_endpoints: HashMap<Url, (Instant, UnavailableReason)>,
     /// Whether account supports multiple write locations.
@@ -33,6 +38,7 @@ impl AccountEndpointState {
             generation: 0,
             preferred_read_endpoints: vec![default_endpoint.clone()].into(),
             preferred_write_endpoints: vec![default_endpoint.clone()].into(),
+            account_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: HashMap::new(),
             multiple_write_locations_enabled: false,
             default_endpoint,

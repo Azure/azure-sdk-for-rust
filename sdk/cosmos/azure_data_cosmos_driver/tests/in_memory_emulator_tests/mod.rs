@@ -4,17 +4,35 @@
 //! Shared test helpers for the in-memory emulator integration tests.
 
 pub mod account_metadata_refresh;
+pub mod batch;
+pub mod binary_response_format;
 pub mod control_plane;
+#[cfg(feature = "preview_dtx")]
+pub mod distributed_transaction;
+#[cfg(feature = "fault_injection")]
+pub mod endpoint_probe_failback;
 pub mod error_cases;
 pub mod error_diagnostics;
 pub mod excluded_regions_fallback;
 #[cfg(feature = "fault_injection")]
 pub mod hedging;
+pub mod host_recorder;
+pub mod metadata_hedging;
+#[cfg(feature = "fault_injection")]
+pub mod metadata_hedging_stress;
 pub mod multi_region;
+pub mod offers;
+pub mod order_by;
 pub mod point_operations;
 pub mod ppaf_dynamic_enablement;
+pub mod query;
+pub mod read_feed;
+#[cfg(feature = "fault_injection")]
+pub mod regional_gateway_unreachable;
 pub mod split_merge;
 pub mod throttling;
+#[cfg(feature = "fault_injection")]
+pub mod topology_refresh_on_substatus;
 
 use azure_core::http::{
     headers::{HeaderName, HeaderValue, Headers},
@@ -111,7 +129,7 @@ pub struct MultiRegionTestContext {
 // Reuse the response-builder header constants from the emulator itself so
 // tests cannot drift from production strings.
 pub use azure_data_cosmos_driver::in_memory_emulator::test_headers::{
-    ACTIVITY_ID, ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS,
+    ACTIVITY_ID, ETAG, ITEM_LSN, LSN, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS,
 };
 
 // Request-side headers are only set by tests, so they live here.
@@ -120,6 +138,12 @@ pub static IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-u
 pub static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
 pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
+pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
+/// The client's response-format negotiation header. When it contains a
+/// `CosmosBinary` token the emulator replies with a binary body; otherwise it
+/// replies with text.
+pub static SUPPORTED_SERIALIZATION_FORMATS: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-supported-serialization-formats");
 
 /// Helper to create a POST request to create a document.
 pub fn create_item_request(
@@ -265,4 +289,15 @@ pub async fn collect_response(
         serde_json::from_slice(body_bytes).unwrap_or(serde_json::Value::Null)
     };
     (status, headers, body)
+}
+
+/// Fully buffers a response and returns status, headers, and the **raw** body
+/// bytes (undecoded), so tests can inspect the on-the-wire serialization format
+/// (e.g. the `0x80` binary preamble vs text JSON).
+pub async fn collect_raw_response(response: AsyncRawResponse) -> (StatusCode, Headers, Vec<u8>) {
+    let raw = response.try_into_raw_response().await.unwrap();
+    let status = raw.status();
+    let headers = raw.headers().clone();
+    let body_bytes = raw.body().as_ref().to_vec();
+    (status, headers, body_bytes)
 }

@@ -12,7 +12,7 @@ use azure_core_amqp::{
     AmqpSessionApis, AmqpSimpleValue, AmqpValue,
 };
 use std::sync::{Arc, Weak};
-use tracing::trace;
+use tracing::{debug, instrument, trace};
 
 pub(crate) struct RecoverableManagementClient {
     recoverable_connection: Weak<RecoverableConnection>,
@@ -33,13 +33,19 @@ impl RecoverableManagementClient {
         RecoverableConnection::should_retry_amqp_error(e)
     }
 
+    #[instrument(
+        level = "debug",
+        skip_all,
+        fields(connection_id = %connection.get_connection_id()),
+        err,
+    )]
     pub(super) async fn create_management_client(
         connection: Arc<RecoverableConnection>,
         retry_options: &RetryOptions,
     ) -> Result<Arc<AmqpManagement>> {
         // Clients must call ensure_connection before calling ensure_management_client.
 
-        trace!("Create management session.");
+        debug!("Creating management session.");
         recover_azure_operation(
             || async {
                 let amqp_connection = connection.ensure_connection().await.map_err(|e| {
@@ -52,7 +58,7 @@ impl RecoverableManagementClient {
 
                 let session = AmqpSession::new();
                 session.begin(amqp_connection.as_ref(), None).await?;
-                trace!("Session created.");
+                debug!("Management session created.");
 
                 let management_path = connection.url.to_string() + "/$management";
                 let management_path =
@@ -65,11 +71,11 @@ impl RecoverableManagementClient {
                         AmqpError::from(azure_core::Error::with_error(
                             AzureErrorKind::Other,
                             e,
-                            "Error ensuring connection",
+                            "Error authorizing management path",
                         ))
                     })?;
 
-                trace!("Create management client.");
+                debug!("Creating management client.");
                 let management = Arc::new(AmqpManagement::new(
                     session,
                     "eventhubs_management".to_string(),

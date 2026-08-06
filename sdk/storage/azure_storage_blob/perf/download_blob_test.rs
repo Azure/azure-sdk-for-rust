@@ -7,18 +7,45 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-use azure_core::{error::ErrorKind, http::Url, Bytes};
+use azure_core::{http::Url, Bytes};
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
+    perf::{CreatePerfTestReturn, PerfTest},
     TestContext,
 };
-
-use super::options;
 use azure_storage_blob::{models::BlobClientDownloadOptions, BlobClient, BlobContainerClient};
-use azure_storage_blob_test::get_test_credential;
 use bytes::BytesMut;
-use futures::{FutureExt, StreamExt, TryStreamExt};
+use clap::{Args, ValueEnum};
+use futures::{FutureExt, StreamExt};
 
+use crate::{
+    clap_parsers::non_zero_usize,
+    extensions::{OnceLockExt, RecordingExt},
+};
+
+const BLOB_NAME: &str = "perf-blob";
+
+#[derive(Args, Clone, Debug)]
+pub struct DownloadBlobTestOptions {
+    // The size of each blob in bytes.
+    #[arg(long)]
+    pub size: usize,
+
+    #[arg(long, default_value_t = CollectOptions::Stream, value_enum)]
+    collect: CollectOptions,
+
+    // Number of concurrent network transfers.
+    #[arg(long, value_parser = non_zero_usize)]
+    concurrency: Option<NonZero<usize>>,
+
+    // Size in bytes to partition data into for each transfer.
+    #[arg(long, value_parser = non_zero_usize)]
+    partition_size: Option<NonZero<usize>>,
+
+    #[arg(long)]
+    endpoint: Option<Url>,
+}
+
+#[derive(ValueEnum, Clone, Debug)]
 enum CollectOptions {
     Stream,
     Core,
@@ -28,70 +55,27 @@ enum CollectOptions {
 }
 
 pub struct DownloadBlobTest {
-    count: u32,
     size: usize,
     collect: CollectOptions,
     concurrency: Option<NonZero<usize>>,
     partition_size: Option<NonZero<usize>>,
-    endpoint: Option<String>,
+    endpoint: Option<Url>,
     client: OnceLock<BlobContainerClient>,
 }
 
 impl DownloadBlobTest {
-    fn create_download_blob_test(runner: PerfRunner) -> CreatePerfTestReturn {
+    pub fn new(args: DownloadBlobTestOptions) -> CreatePerfTestReturn {
         async move {
-            let endpoint: Option<String> = runner.try_get_test_arg("endpoint")?;
-
-            let collect = runner.try_get_test_arg("collect")?.unwrap_or(String::new());
-
-            let collect_options = match collect.as_str() {
-                "stream" => CollectOptions::Stream,
-                "core" => CollectOptions::Core,
-                "vec_bytes" => CollectOptions::VecBytes,
-                "simple" => CollectOptions::Simple,
-                "into" => CollectOptions::Into,
-                "" => CollectOptions::Stream, // Default to streaming if no option is provided
-                _ => {
-                    return Err(azure_core::Error::with_message(
-                        ErrorKind::Other,
-                        format!("Invalid collect option '{}'", collect),
-                    ))
-                }
-            };
-
             Ok(Box::new(DownloadBlobTest {
-                count: runner.try_get_test_arg("count")?.unwrap_or(5),
-                size: runner
-                    .try_get_test_arg("size")?
-                    .expect("size argument is mandatory"),
-                collect: collect_options,
-                concurrency: runner
-                    .try_get_test_arg::<usize>("concurrency")?
-                    .and_then(NonZero::new),
-                partition_size: runner
-                    .try_get_test_arg::<usize>("partition-size")?
-                    .and_then(NonZero::new),
-                endpoint,
+                size: args.size,
+                collect: args.collect,
+                concurrency: args.concurrency,
+                partition_size: args.partition_size,
+                endpoint: args.endpoint,
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
         .boxed()
-    }
-
-    pub fn test_metadata() -> PerfTestMetadata {
-        PerfTestMetadata {
-            name: "download_blob",
-            description: "Download blobs from a container",
-            options: vec![
-                options::count(),
-                options::collect(),
-                options::size(),
-                options::concurrency(),
-                options::partition_size(),
-                options::endpoint(),
-            ],
-            create_test: Self::create_download_blob_test,
-        }
     }
 
     fn download_options(&self) -> BlobClientDownloadOptions<'_> {
@@ -177,40 +161,19 @@ impl DownloadBlobTest {
 #[async_trait::async_trait]
 impl PerfTest for DownloadBlobTest {
     async fn setup(&self, context: Arc<TestContext>) -> azure_core::Result<()> {
-        // Setup code before running the test
-
-        let recording = context.recording();
-        let credential = get_test_credential(recording);
-        let container_name = format!("perf-container-{}", azure_core::Uuid::new_v4());
-        let endpoint = match &self.endpoint {
-            Some(e) => e.clone(),
-            None => format!(
-                "https://{}.blob.core.windows.net",
-                recording.var("AZURE_STORAGE_ACCOUNT_NAME", None)
-            ),
-        };
-        println!("Using endpoint: {}", endpoint);
-        let mut container_url = Url::parse(&endpoint)?;
-        container_url
-            .path_segments_mut()
-            .expect("endpoint must be a valid base URL")
-            .push(&container_name);
-        let client = BlobContainerClient::new(container_url, Some(credential), None)?;
-        self.client.get_or_init(|| client);
-
-        // Retrieve the blob container client we just set (it's safe to unwrap here because we *just* set it above).
-        let container_client = self.client.get().unwrap();
+        let container_client = self.client.try_get_or_init(|| {
+            context
+                .recording()
+                .get_container_client(self.endpoint.clone())
+        })?;
         let _result = container_client.create(None).await?;
 
-        // Create the blobs for the test.
-        for i in 0..self.count {
-            let blob_name = format!("blob-{}", i);
-            let blob_client = container_client.blob_client(&blob_name);
-            let body = vec![0u8; self.size]; // Blob size specified by the test option
-            let body_bytes = Bytes::from(body);
+        // Create the blob for the test.
+        let blob_client = container_client.blob_client(BLOB_NAME);
+        let body = vec![0u8; self.size]; // Blob size specified by the test option
+        let body_bytes = Bytes::from(body);
 
-            let _result = blob_client.upload(body_bytes.into(), None).await?;
-        }
+        let _result = blob_client.upload(body_bytes.into(), None).await?;
 
         Ok(())
     }
@@ -218,29 +181,22 @@ impl PerfTest for DownloadBlobTest {
     async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // The actual performance test code
 
-        let mut iterator = self.client.get().unwrap().list_blobs(None)?;
-        while let Some(blob) = iterator.try_next().await? {
-            let blob_client = self
-                .client
-                .get()
-                .unwrap()
-                .blob_client(blob.name.unwrap().as_ref());
-            match self.collect {
-                CollectOptions::Stream => {
-                    self.collect_stream(blob_client).await?;
-                }
-                CollectOptions::Core => {
-                    self.collect_blob(blob_client).await?;
-                }
-                CollectOptions::Simple => {
-                    self.collect_blob_simple(blob_client).await?;
-                }
-                CollectOptions::VecBytes => {
-                    self.collect_blob_vec_bytes(blob_client).await?;
-                }
-                CollectOptions::Into => {
-                    self.collect_into(blob_client).await?;
-                }
+        let blob_client = self.client.get().unwrap().blob_client(BLOB_NAME);
+        match self.collect {
+            CollectOptions::Stream => {
+                self.collect_stream(blob_client).await?;
+            }
+            CollectOptions::Core => {
+                self.collect_blob(blob_client).await?;
+            }
+            CollectOptions::Simple => {
+                self.collect_blob_simple(blob_client).await?;
+            }
+            CollectOptions::VecBytes => {
+                self.collect_blob_vec_bytes(blob_client).await?;
+            }
+            CollectOptions::Into => {
+                self.collect_into(blob_client).await?;
             }
         }
 
@@ -248,7 +204,9 @@ impl PerfTest for DownloadBlobTest {
     }
 
     async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
-        self.client.get().unwrap().delete(None).await?;
+        if let Some(container_client) = self.client.get() {
+            container_client.delete(None).await?;
+        }
         Ok(())
     }
 }

@@ -907,20 +907,16 @@ pub(crate) mod tests {
             let s1 = bt1.rendered().expect("first render succeeds");
             assert!(!s1.is_empty());
             assert!(frame_cache_len_for_tests() > 0);
-            // Budget is now exhausted, but a second backtrace whose frames
-            // are already cached should still render. (Same call site as
-            // the first capture, so frames overlap heavily.)
-            let bt2 = Backtrace::capture().expect("capture");
-            // If every frame is a cache hit, rendered() returns Some.
-            // If any frame is new (inlining variance), rendered() returns
-            // None because budget is exhausted — we never produce a
-            // partially-resolved render.
-            if let Some(s2) = bt2.rendered() {
-                assert!(
-                    !s2.contains("<unknown>"),
-                    "successful render must not contain placeholders: {s2}"
-                );
-            }
+            // Exhaust the limiter completely, then resolve the same captured
+            // IPs again. Every frame should be a cache hit, so no fresh budget
+            // is required. Do not assert on rendered text: some platforms can
+            // legitimately symbolize Rust frames while leaving native tail
+            // frames as `<unknown> @ ...`.
+            global_resolution_limiter().set_capacity(0);
+            global_resolution_limiter().reset_for_tests();
+            let frames = try_resolve_frames(&bt1.inner.ips)
+                .expect("cached frames must resolve even with zero fresh-resolution budget");
+            assert_eq!(frames.len(), bt1.inner.ips.len());
         });
     }
 

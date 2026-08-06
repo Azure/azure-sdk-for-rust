@@ -80,3 +80,62 @@ impl SecretClient {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::{
+        http::{headers::Headers, AsyncRawResponse, ClientOptions, StatusCode, Transport},
+        Bytes,
+    };
+    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use futures::{FutureExt as _, TryStreamExt as _};
+
+    // cspell:ignore skiptoken
+    const LIST_SECRET_PROPERTIES_RESPONSE: &[u8] =
+        br#"{"nextLink":"/secrets?api-version=2025-07-01&skiptoken=page-2","value":[]}"#;
+
+    #[tokio::test]
+    async fn list_secret_properties_keeps_body_for_into_model() -> Result<()> {
+        let mock_client = Arc::new(MockHttpClient::new(|req| {
+            assert_eq!(req.url().path(), "/secrets");
+            async move {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    Bytes::from_static(LIST_SECRET_PROPERTIES_RESPONSE),
+                ))
+            }
+            .boxed()
+        }));
+        let credential = MockCredential::new()?;
+        let client = SecretClient::new(
+            "https://example.vault.azure.net",
+            credential,
+            Some(SecretClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(mock_client)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+
+        let mut pager = client.list_secret_properties(None)?.into_pages();
+        let page = pager.try_next().await?.expect("expected a page");
+
+        assert_eq!(
+            pager.continuation().map(AsRef::as_ref),
+            Some("https://example.vault.azure.net/secrets?api-version=2025-07-01&skiptoken=page-2")
+        );
+
+        let page = page.into_model()?;
+        assert_eq!(
+            page.next_link.as_deref(),
+            Some("/secrets?api-version=2025-07-01&skiptoken=page-2")
+        );
+        assert!(page.value.is_empty());
+
+        Ok(())
+    }
+}

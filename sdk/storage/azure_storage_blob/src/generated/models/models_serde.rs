@@ -59,6 +59,27 @@ impl Serialize for ObjectReplicationMetadata {
     }
 }
 
+pub mod option_offset_date_time_rfc3339 {
+    #![allow(clippy::type_complexity)]
+    use azure_core::time::{parse_rfc3339, OffsetDateTime};
+    use serde::{Deserialize, Deserializer};
+    use std::result::Result;
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let to_deserialize = <Option<String>>::deserialize(deserializer)?;
+        match to_deserialize {
+            Some(to_deserialize) => {
+                let decoded0 = parse_rfc3339(&to_deserialize).map_err(serde::de::Error::custom)?;
+                Ok(Some(decoded0))
+            }
+            None => Ok(None),
+        }
+    }
+}
+
 pub mod option_offset_date_time_rfc3339_fixed_width {
     #![allow(clippy::type_complexity)]
     use azure_core::time::{parse_rfc3339, OffsetDateTime};

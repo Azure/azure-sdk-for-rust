@@ -41,9 +41,14 @@ impl HttpClientFactory for FaultInjectingHttpClientFactory {
         connection_pool: &ConnectionPoolOptions,
         config: HttpClientConfig,
     ) -> crate::error::Result<Arc<dyn TransportClient>> {
+        let transport_kind = config.transport_kind;
         let real_client = self.inner.build(connection_pool, config)?;
         let rules = (*self.rules).clone();
-        Ok(Arc::new(FaultClient::new(real_client, rules)))
+        Ok(Arc::new(FaultClient::new(
+            real_client,
+            rules,
+            transport_kind,
+        )))
     }
 }
 

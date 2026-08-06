@@ -163,7 +163,8 @@ pub async fn ppcb_enabled_503_on_create_fails_over_after_threshold() -> Result<(
 /// - `partition_unavailability_duration` = 5s (default) — entry must be at least
 ///   this old before the sweep transitions it to `ProbeCandidate`.
 /// - `failback_sweep_interval` is overridden to 5s for this test (default 300s)
-///   via `with_ppcb_stale_partition_unavailability_refresh_interval_in_seconds`.
+///   via `with_failback_sweep_interval` (equivalently the
+///   `AZURE_COSMOS_PPCB_FAILBACK_SWEEP_INTERVAL_MS` environment variable).
 /// - After the rule is disabled we wait `partition_unavailability_duration +
 ///   failback_sweep_interval + buffer` to guarantee the sweep has had a chance
 ///   to run after the entry's age threshold has been met.

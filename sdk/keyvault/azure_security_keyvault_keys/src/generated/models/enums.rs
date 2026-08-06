@@ -134,6 +134,41 @@ pub enum EncryptionAlgorithm {
     UnknownValue(String),
 }
 
+/// An algorithm used for key wrapping and unwrapping.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum JsonWebKeyWrapAlgorithm {
+    /// 128-bit AES key wrap.
+    A128Kw,
+
+    /// 128-bit AES key wrap with padding.
+    A128Kwpad,
+
+    /// 192-bit AES key wrap.
+    A192Kw,
+
+    /// 192-bit AES key wrap with padding.
+    A192Kwpad,
+
+    /// 256-bit AES key wrap.
+    A256Kw,
+
+    /// 256-bit AES key wrap with padding.
+    A256Kwpad,
+
+    /// CKM AES key wrap.
+    CkmAesKeyWrap,
+
+    /// CKM AES key wrap with padding.
+    CkmAesKeyWrapPad,
+
+    /// RSAES using Optimal Asymmetric Encryption Padding with a hash function of SHA-256 and a mask generation function of MGF1
+    /// with SHA-256.
+    RsaOaep256,
+
+    /// Any other value not defined in `JsonWebKeyWrapAlgorithm`.
+    UnknownValue(String),
+}
+
 /// The encryption algorithm to use to protected the exported key material
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum KeyEncryptionAlgorithm {

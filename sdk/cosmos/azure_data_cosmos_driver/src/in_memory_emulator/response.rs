@@ -19,6 +19,7 @@ pub mod headers {
     pub static REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
     pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
     pub static ETAG: HeaderName = HeaderName::from_static("etag");
+    pub static CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
     pub static CONTENT_TYPE: HeaderName = HeaderName::from_static("content-type");
     pub static DATE: HeaderName = HeaderName::from_static("date");
     pub static VERSION: HeaderName = HeaderName::from_static("x-ms-version");
@@ -202,6 +203,12 @@ impl ResponseBuilder {
         self
     }
 
+    #[cfg(feature = "preview_dtx")]
+    pub fn without_header(mut self, name: HeaderName) -> Self {
+        self.headers.remove(name);
+        self
+    }
+
     /// Adds the Retry-After header (in milliseconds) for throttling responses.
     pub fn with_retry_after_ms(mut self, ms: u64) -> Self {
         self.headers
@@ -209,8 +216,25 @@ impl ResponseBuilder {
         self
     }
 
-    pub fn with_json_body(mut self, body: &serde_json::Value) -> Self {
-        self.body = serde_json::to_vec(body).unwrap_or_default();
+    pub fn with_json_body(self, body: &serde_json::Value) -> Self {
+        self.with_value_body(body, false)
+    }
+
+    /// Sets the body from a JSON value, encoded as Cosmos binary JSON when
+    /// `binary` is set (the client negotiated it) or UTF-8 text JSON otherwise.
+    ///
+    /// The binary form begins with the `0x80` preamble, which the SDK
+    /// auto-detects from the first byte, so the `Content-Type` stays
+    /// `application/json` either way (mirroring the real service).
+    pub fn with_value_body(mut self, body: &serde_json::Value, binary: bool) -> Self {
+        self.body = if binary {
+            crate::binary_json::encode(body)
+        } else {
+            // The emulator owns these `Value`s, so a serialization failure is a
+            // bug in the emulator — fail loudly rather than emit an empty body
+            // that would mask the defect downstream.
+            serde_json::to_vec(body).expect("emulator response body must serialize to JSON")
+        };
         self
     }
 
@@ -233,10 +257,24 @@ pub(crate) fn success_response(
     session_token: &str,
     start: Instant,
 ) -> ResponseBuilder {
+    success_response_with_format(status, body, false, charge, session_token, start)
+}
+
+/// Like [`success_response`], but encodes the body as Cosmos binary JSON when
+/// `binary` is set. Used by the item read/write handlers to honor a client that
+/// negotiated binary responses via `x-ms-cosmos-supported-serialization-formats`.
+pub(crate) fn success_response_with_format(
+    status: StatusCode,
+    body: &serde_json::Value,
+    binary: bool,
+    charge: f64,
+    session_token: &str,
+    start: Instant,
+) -> ResponseBuilder {
     ResponseBuilder::new(status, start)
         .with_request_charge(charge)
         .with_session_token(session_token)
-        .with_json_body(body)
+        .with_value_body(body, binary)
 }
 
 /// Creates an error response.

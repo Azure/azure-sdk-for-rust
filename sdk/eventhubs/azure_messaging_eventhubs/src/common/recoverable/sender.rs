@@ -11,7 +11,7 @@ use azure_core_amqp::{
     AmqpSenderApis, AmqpSenderOptions, AmqpSession, AmqpTarget,
 };
 use std::sync::{Arc, Weak};
-use tracing::warn;
+use tracing::{instrument, warn};
 
 /// Thin wrapper around the [`AmqpSenderApis`] trait that implements the retry functionality.
 ///
@@ -44,6 +44,9 @@ impl RecoverableSender {
 
 #[async_trait::async_trait]
 impl AmqpSenderApis for RecoverableSender {
+    // Hot per-message path: trace level, skip the message body (never log payloads),
+    // and no `err` attribute to avoid per-message error spam.
+    #[instrument(level = "trace", skip_all, fields(path = %self.path))]
     async fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome>
     where
         M: Into<AmqpMessage> + std::fmt::Debug + Send,
@@ -81,12 +84,20 @@ impl AmqpSenderApis for RecoverableSender {
                             // If the error is described, return it as an AmqpDescribedError to let the retry logic
                             // handle it appropriately.
                             if let Some(described) = error {
-                                warn!("Send rejected: {:?}", described);
+                                warn!(
+                                    path = %path,
+                                    condition = ?described.condition,
+                                    "Send rejected by remote."
+                                );
                                 Err(AmqpError::from(AmqpErrorKind::AmqpDescribedError(
                                     described,
                                 )))
                             } else {
                                 // The server rejected the error but didn't provide a specific error.
+                                warn!(
+                                    path = %path,
+                                    "Send rejected by remote with no described error."
+                                );
                                 Err(AmqpError::from(AmqpErrorKind::SendRejected))
                             }
                         }

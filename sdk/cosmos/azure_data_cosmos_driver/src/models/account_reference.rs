@@ -34,6 +34,33 @@ impl AccountEndpoint {
         self.0.host_str().unwrap_or("")
     }
 
+    /// Returns the global database account name parsed from the endpoint hostname's first label.
+    ///
+    /// Returns `None` for emulator, IP literal, and custom-domain hosts. The parsed value is used
+    /// as the RNTBD `GlobalDatabaseAccountName` metadata token on Gateway 2.0 requests; when it
+    /// cannot be parsed, Gateway 2.0 requests fall back to standard Gateway for that account.
+    pub(crate) fn global_database_account_name(&self) -> Option<String> {
+        let host = self.host();
+        if host.is_empty() {
+            return None;
+        }
+
+        if host.starts_with(|c: char| c.is_ascii_digit()) || host.contains(':') {
+            return None;
+        }
+
+        let (label, suffix) = host.split_once('.')?;
+        if label.is_empty() || suffix.is_empty() {
+            return None;
+        }
+
+        if !suffix.starts_with("documents.") {
+            return None;
+        }
+
+        Some(label.to_owned())
+    }
+
     /// Joins a resource path to this endpoint to create a full request URL.
     ///
     /// The path should be the resource path (e.g., "/dbs/mydb/colls/mycoll").
@@ -89,7 +116,7 @@ impl TryFrom<&str> for AccountEndpoint {
 
 impl From<&AccountReference> for AccountEndpoint {
     fn from(account: &AccountReference) -> Self {
-        account.endpoint.clone()
+        account.0.endpoint.clone()
     }
 }
 
@@ -162,7 +189,11 @@ impl From<Arc<dyn TokenCredential>> for Credential {
 /// ```
 #[derive(Clone, Debug)]
 #[non_exhaustive]
-pub struct AccountReference {
+pub struct AccountReference(Arc<AccountReferenceInner>);
+
+/// Shared state behind [`AccountReference`].
+#[derive(Debug)]
+struct AccountReferenceInner {
     /// The service endpoint URL (required).
     endpoint: AccountEndpoint,
     /// Authentication credentials (required).
@@ -178,7 +209,8 @@ pub struct AccountReference {
 // its driver regardless of how it was bootstrapped.
 impl PartialEq for AccountReference {
     fn eq(&self, other: &Self) -> bool {
-        self.endpoint == other.endpoint
+        // Fast path: clones of the same account share one allocation.
+        Arc::ptr_eq(&self.0, &other.0) || self.0.endpoint == other.0.endpoint
     }
 }
 
@@ -187,7 +219,7 @@ impl Eq for AccountReference {}
 // Manual Hash implementation to match PartialEq (compares by endpoint only).
 impl std::hash::Hash for AccountReference {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.endpoint.hash(state);
+        self.0.endpoint.hash(state);
     }
 }
 
@@ -203,41 +235,41 @@ impl AccountReference {
     ///
     /// This is a convenience method for the common case of key-based auth.
     pub fn with_master_key(endpoint: Url, key: impl Into<Secret>) -> Self {
-        Self {
+        Self(Arc::new(AccountReferenceInner {
             endpoint: AccountEndpoint::from(endpoint),
             credential: Credential::MasterKey(key.into()),
             backup_endpoints: Vec::new(),
-        }
+        }))
     }
 
     /// Creates a new account reference with token credential authentication.
     ///
     /// This is a convenience method for token-based auth (e.g., managed identity).
     pub fn with_credential(endpoint: Url, credential: Arc<dyn TokenCredential>) -> Self {
-        Self {
+        Self(Arc::new(AccountReferenceInner {
             endpoint: AccountEndpoint::from(endpoint),
             credential: Credential::TokenCredential(credential),
             backup_endpoints: Vec::new(),
-        }
+        }))
     }
 
     /// Returns the service endpoint URL.
     pub fn endpoint(&self) -> &Url {
-        self.endpoint.url()
+        self.0.endpoint.url()
     }
 
     /// Returns the authentication options.
     ///
     /// Authentication is always present - it's required during construction.
     pub fn auth(&self) -> &Credential {
-        &self.credential
+        &self.0.credential
     }
 
     /// Returns the backup endpoints.
     ///
     /// These are fallback endpoints tried when the primary endpoint is unavailable.
     pub fn backup_endpoints(&self) -> &[Url] {
-        &self.backup_endpoints
+        &self.0.backup_endpoints
     }
 
     /// Returns a new `AccountReference` with the given backup endpoints.
@@ -246,8 +278,22 @@ impl AccountReference {
     /// was created via a convenience constructor (`with_master_key`,
     /// `with_credential`) and backup endpoints need to be attached without
     /// going through the full builder.
+    ///
+    /// Existing clones of this account are unaffected.
     pub fn with_backup_endpoints(mut self, endpoints: Vec<Url>) -> Self {
-        self.backup_endpoints = endpoints;
+        match Arc::get_mut(&mut self.0) {
+            // Sole owner (the common case: an account built by a convenience
+            // constructor and immediately given backup endpoints) — update in place.
+            Some(inner) => inner.backup_endpoints = endpoints,
+            // Shared with other handles — copy-on-write so they keep their state.
+            None => {
+                self.0 = Arc::new(AccountReferenceInner {
+                    endpoint: self.0.endpoint.clone(),
+                    credential: self.0.credential.clone(),
+                    backup_endpoints: endpoints,
+                })
+            }
+        }
         self
     }
 }
@@ -327,11 +373,11 @@ impl AccountReferenceBuilder {
             crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("Authentication is required. Use master_key() or credential() to set credentials.").build()
         })?;
 
-        Ok(AccountReference {
+        Ok(AccountReference(Arc::new(AccountReferenceInner {
             endpoint: self.endpoint,
             credential,
             backup_endpoints: self.backup_endpoints,
-        })
+        })))
     }
 }
 
@@ -370,6 +416,33 @@ mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
         assert_eq!(endpoint.host(), "myaccount.documents.azure.com");
+    }
+
+    #[test]
+    fn global_database_account_name_extracts_only_cosmos_hosts() {
+        let cases = [
+            ("https://myaccount.documents.azure.com/", Some("myaccount")),
+            (
+                "https://my-account-123.documents.azure.com/",
+                Some("my-account-123"),
+            ),
+            ("https://myacct.documents.azure.us/", Some("myacct")),
+            ("https://myacct.documents.azure.cn:443/", Some("myacct")),
+            ("https://localhost:8081/", None),
+            ("https://127.0.0.1:8081/", None),
+            ("https://[::1]:8081/", None),
+            ("https://my.custom.domain/", None),
+            ("https://example.com/", None),
+        ];
+
+        for (url, expected) in cases {
+            let endpoint = AccountEndpoint::try_from(url).unwrap();
+            assert_eq!(
+                endpoint.global_database_account_name().as_deref(),
+                expected,
+                "unexpected account name for {url}"
+            );
+        }
     }
 
     #[test]
@@ -488,5 +561,36 @@ mod tests {
                 .unwrap();
 
         assert!(account.backup_endpoints().is_empty());
+    }
+
+    #[test]
+    fn with_backup_endpoints_updates_sole_owner_in_place() {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "key",
+        );
+        let backup = vec![Url::parse("https://backup.documents.azure.com:443/").unwrap()];
+
+        let updated = account.with_backup_endpoints(backup.clone());
+
+        assert_eq!(updated.backup_endpoints(), &backup);
+    }
+
+    #[test]
+    fn with_backup_endpoints_does_not_affect_existing_clones() {
+        let original = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "key",
+        );
+        let backup = vec![Url::parse("https://backup.documents.azure.com:443/").unwrap()];
+
+        // `original` is still alive, so the state is shared and this must copy-on-write.
+        let updated = original.clone().with_backup_endpoints(backup.clone());
+
+        assert_eq!(updated.backup_endpoints(), &backup);
+        assert!(
+            original.backup_endpoints().is_empty(),
+            "the shared path must not mutate state observed by existing clones"
+        );
     }
 }

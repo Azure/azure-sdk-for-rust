@@ -117,6 +117,9 @@ relative to the original request.
 - The 403/3 (`NotWriteRegion`) **skip-set rotation** flow described in the issue text. The
   .NET PR did not implement it; mirroring .NET is the explicit constraint of this work item.
   See [§6 Alternatives Considered](#6-alternatives-considered) for why this is intentional.
+  **Update:** this was a non-goal for the header-latch work item only; it has since been
+  implemented in the driver as the anticipated follow-up (the §4.2 latch is the hook point)
+  — see [azure-sdk-for-rust#4555](https://github.com/Azure/azure-sdk-for-rust/pull/4555).
 - A user-facing toggle to disable the header. The feature mirrors .NET's "always on for
   single-master" contract.
 - Backend rollout coordination. The header is forward-compatible; older backends ignore it.
@@ -136,6 +139,8 @@ relative to the original request.
   telemetry shows misrouting on PPAD accounts, file a follow-up to plumb partition-scoped
   hub-region resolution through `PartitionKeyRangeCache` and emit a partition-aware
   variant of the header.
+  **Update:** per-partition hub-region caching has since been implemented in the driver —
+  see [azure-sdk-for-rust#4555](https://github.com/Azure/azure-sdk-for-rust/pull/4555).
 
 ### 1.5 Two-crate landscape (SDK vs Driver) — previews architecture
 
@@ -847,7 +852,7 @@ out-of-scope for this spec PR but must all hold before code review can be reques
 
 ## 8. Open Questions & Future Work
 
-### OQ-1 — Skip-set rotation parity *(resolved: Day 1 = .NET parity, no broader rotation)*
+### OQ-1 — Skip-set rotation parity *(resolved for Day 1 = .NET parity; rotation since implemented in the driver — see [azure-sdk-for-rust#4555](https://github.com/Azure/azure-sdk-for-rust/pull/4555))*
 
 Issue [#4303](https://github.com/Azure/azure-sdk-for-rust/issues/4303) gestures at a broader
 region-rotation flow (skip-set rotation on 403/3 NotWriteRegion) that .NET PR
@@ -901,7 +906,7 @@ opening the PR; if the block has been cut to a release in the interim, create a 
   rather than retrying via write locations, and the latch's trigger would then move from
   `== 1` back to `>= 2`. File a follow-up if post-rollout telemetry shows the single retry
   is insufficient, or if maintainers decide retry-count parity is required up front.
-- **Dedicated 403/3 skip-set rotation.** Day 1 explicitly ships .NET parity only. If
+- **Dedicated 403/3 skip-set rotation.** *Implemented in the driver — see [azure-sdk-for-rust#4555](https://github.com/Azure/azure-sdk-for-rust/pull/4555); original deferral note retained below for history.* Day 1 explicitly ships .NET parity only. If
   post-rollout telemetry shows the header alone is insufficient — i.e. failback storms
   persist after the latched hub-targeted retry — file a follow-up to add an explicit
   skip-set in `should_retry_on_endpoint_failure`. The latch added in §4.2 is the intended

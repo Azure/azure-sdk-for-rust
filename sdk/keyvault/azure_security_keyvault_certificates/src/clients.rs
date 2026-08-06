@@ -274,3 +274,61 @@ impl CertificateClient {
         ))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::{
+        http::{headers::Headers, AsyncRawResponse, ClientOptions, StatusCode, Transport},
+        Bytes,
+    };
+    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use futures::{FutureExt as _, StreamExt as _};
+
+    const BEGIN_CREATE_CERTIFICATE_OPERATION: &[u8] =
+        br#"{"status":"completed","target":"https://example.vault.azure.net/certificates/test/123"}"#;
+
+    #[tokio::test]
+    async fn begin_create_certificate_keeps_status_body_for_into_model() -> Result<()> {
+        let mock_client = std::sync::Arc::new(MockHttpClient::new(|req| {
+            assert_eq!(req.method(), Method::Post);
+            assert_eq!(req.url().path(), "/certificates/test/create");
+            async move {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    Bytes::from_static(BEGIN_CREATE_CERTIFICATE_OPERATION),
+                ))
+            }
+            .boxed()
+        }));
+        let credential = MockCredential::new()?;
+        let client = CertificateClient::new(
+            "https://example.vault.azure.net",
+            credential,
+            Some(CertificateClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(mock_client)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+
+        let mut poller = client.begin_create_certificate(
+            "test",
+            CreateCertificateParameters::default().try_into()?,
+            None,
+        )?;
+        let response = poller.next().await.expect("expected status page")?;
+        let operation = response.into_model()?;
+
+        assert_eq!(operation.status.as_deref(), Some("completed"));
+        assert_eq!(
+            operation.target.as_deref(),
+            Some("https://example.vault.azure.net/certificates/test/123")
+        );
+
+        Ok(())
+    }
+}

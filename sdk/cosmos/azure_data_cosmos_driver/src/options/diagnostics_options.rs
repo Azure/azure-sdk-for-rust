@@ -3,13 +3,25 @@
 
 //! Configuration options for diagnostics and telemetry.
 
-use super::env_parsing::{parse_from_env, ValidationBounds};
+use azure_data_cosmos_macros::CosmosOptions;
+
+use super::env_parsing::{resolve_from_env, ValidationBounds};
 
 /// Default maximum size for diagnostic summary output (8 KB).
 const DEFAULT_MAX_SUMMARY_SIZE_BYTES: usize = 8 * 1024;
 
 /// Minimum allowed size for diagnostic summary output (4 KB).
 const MIN_MAX_SUMMARY_SIZE_BYTES: usize = 4 * 1024;
+
+/// Default maximum number of per-attempt `RequestDiagnostics` records retained
+/// on a finalized `DiagnosticsContext` before the list is compacted.
+const DEFAULT_MAX_REQUEST_DIAGNOSTICS: usize = 512;
+
+/// Minimum allowed value for `max_request_diagnostics`.
+///
+/// A cap this low still leaves room for the first and last record of several
+/// distinct runs while keeping a retry storm's artifact bounded.
+const MIN_MAX_REQUEST_DIAGNOSTICS: usize = 16;
 
 /// Controls the verbosity level of diagnostic output.
 ///
@@ -93,6 +105,16 @@ pub struct DiagnosticsOptions {
     /// will be truncated to fit within this limit. Default is 8 KB.
     pub(crate) max_summary_size_bytes: usize,
 
+    /// Maximum number of per-attempt `RequestDiagnostics` records retained on a
+    /// finalized `DiagnosticsContext`.
+    ///
+    /// When an operation makes more attempts than this (a retry storm), the
+    /// finalized per-attempt list is compacted — runs of near-identical
+    /// consecutive retries are collapsed to their first and last record plus an
+    /// exact per-run rollup (count, request charge, min/max/P50 duration), and
+    /// the compaction is marked explicitly. Default is 512, minimum 16.
+    pub(crate) max_request_diagnostics: usize,
+
     /// Default verbosity level when none is specified.
     ///
     /// Used when `to_json_string` is called with `None` for verbosity.
@@ -118,6 +140,12 @@ impl DiagnosticsOptions {
         self.max_summary_size_bytes
     }
 
+    /// Returns the maximum number of per-attempt `RequestDiagnostics` records
+    /// retained before the finalized list is compacted under a retry storm.
+    pub fn max_request_diagnostics(&self) -> usize {
+        self.max_request_diagnostics
+    }
+
     /// Returns the default verbosity level.
     pub fn default_verbosity(&self) -> DiagnosticsVerbosity {
         self.default_verbosity
@@ -126,6 +154,13 @@ impl DiagnosticsOptions {
 
 /// Builder for [`DiagnosticsOptions`].
 ///
+/// The builder doubles as its own environment-variable source: it derives
+/// `CosmosOptions` in `#[options(env_only)]` mode, which generates a
+/// `from_env()` that reads each `#[option(env = "...")]` field from its
+/// `AZURE_COSMOS_*` variable (lenient — a malformed value is logged and
+/// ignored). [`DiagnosticsOptionsBuilder::build`] then resolves
+/// `builder value → env value → default` and applies validation.
+///
 /// Default values are read from environment variables when available,
 /// and can be overridden using builder methods.
 ///
@@ -133,8 +168,11 @@ impl DiagnosticsOptions {
 ///
 /// - `AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES`: Maximum size in bytes for
 ///   summary mode output (default: `8192`, min: `4096`)
+/// - `AZURE_COSMOS_DIAGNOSTICS_MAX_REQUEST_DIAGNOSTICS`: Maximum number of per-attempt
+///   request records retained before the finalized list is compacted under a retry
+///   storm (default: `512`, min: `16`)
 /// - `AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY`: Default verbosity level.
-///   Valid values: `default`, `summary`, `detailed` (default: `detailed`)
+///   Valid values: `default`, `summary`, `detailed` (default: `summary`)
 ///
 /// # Example
 ///
@@ -148,9 +186,14 @@ impl DiagnosticsOptions {
 ///     .expect("valid options");
 /// ```
 #[non_exhaustive]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, CosmosOptions)]
+#[options(env_only)]
 pub struct DiagnosticsOptionsBuilder {
+    #[option(env = "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES")]
     max_summary_size_bytes: Option<usize>,
+    #[option(env = "AZURE_COSMOS_DIAGNOSTICS_MAX_REQUEST_DIAGNOSTICS")]
+    max_request_diagnostics: Option<usize>,
+    #[option(env = "AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY")]
     default_verbosity: Option<DiagnosticsVerbosity>,
 }
 
@@ -169,9 +212,18 @@ impl DiagnosticsOptionsBuilder {
         self
     }
 
+    /// Sets the maximum number of per-attempt request records retained before
+    /// the finalized diagnostics list is compacted under a retry storm.
+    ///
+    /// Must be at least 16. Default: 512.
+    pub fn with_max_request_diagnostics(mut self, max: usize) -> Self {
+        self.max_request_diagnostics = Some(max);
+        self
+    }
+
     /// Sets the default verbosity level.
     ///
-    /// Default: `DiagnosticsVerbosity::Detailed`.
+    /// Default: `DiagnosticsVerbosity::Summary`.
     pub fn with_default_verbosity(mut self, verbosity: DiagnosticsVerbosity) -> Self {
         self.default_verbosity = Some(verbosity);
         self
@@ -185,34 +237,39 @@ impl DiagnosticsOptionsBuilder {
     ///
     /// Returns an error if:
     /// - `max_summary_size_bytes` is less than 4096
-    /// - Environment variable parsing fails
+    /// - `max_request_diagnostics` is less than 16
     pub fn build(self) -> crate::error::Result<DiagnosticsOptions> {
-        let max_summary_size_bytes = parse_from_env(
+        // The builder doubles as the env source: `Self::from_env()` reads each
+        // `#[option(env = ...)]` field from its `AZURE_COSMOS_*` variable
+        // (lenient — malformed values are logged and ignored). Resolution is
+        // `builder value → env value → default`, with bounds validation applied
+        // via the shared resolve helper.
+        let env = Self::from_env();
+
+        let max_summary_size_bytes = resolve_from_env(
             self.max_summary_size_bytes,
+            env.max_summary_size_bytes,
             "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES",
             DEFAULT_MAX_SUMMARY_SIZE_BYTES,
             ValidationBounds::min(MIN_MAX_SUMMARY_SIZE_BYTES),
         )?;
 
-        let default_verbosity = match self.default_verbosity {
-            Some(v) => v,
-            None => match std::env::var("AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY") {
-                Ok(v) => v.parse().map_err(|e: String| {
-                    crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::new(
-                            azure_core::http::StatusCode::BadRequest,
-                        ))
-                        .with_message(format!(
-                            "Failed to parse AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY: {e}"
-                        ))
-                        .build()
-                })?,
-                Err(_) => DiagnosticsVerbosity::Detailed,
-            },
+        let max_request_diagnostics = resolve_from_env(
+            self.max_request_diagnostics,
+            env.max_request_diagnostics,
+            "AZURE_COSMOS_DIAGNOSTICS_MAX_REQUEST_DIAGNOSTICS",
+            DEFAULT_MAX_REQUEST_DIAGNOSTICS,
+            ValidationBounds::min(MIN_MAX_REQUEST_DIAGNOSTICS),
+        )?;
+
+        let default_verbosity = match self.default_verbosity.or(env.default_verbosity) {
+            Some(DiagnosticsVerbosity::Default) | None => DiagnosticsVerbosity::Summary,
+            Some(verbosity) => verbosity,
         };
 
         Ok(DiagnosticsOptions {
             max_summary_size_bytes,
+            max_request_diagnostics,
             default_verbosity,
         })
     }
@@ -226,18 +283,63 @@ mod tests {
     fn defaults() {
         let options = DiagnosticsOptions::default();
         assert_eq!(options.max_summary_size_bytes, 8 * 1024);
-        assert_eq!(options.default_verbosity, DiagnosticsVerbosity::Detailed);
+        assert_eq!(options.max_request_diagnostics, 512);
+        assert_eq!(options.default_verbosity, DiagnosticsVerbosity::Summary);
+    }
+
+    #[test]
+    fn env_config_from_env_vars_maps_names_to_fields() {
+        // Guards against env-var-name typos: the builder doubles as the env
+        // source via `#[options(env_only)]`, so its `from_env_vars` must map
+        // each `#[option(env = ...)]` string to the right field.
+        let cfg = DiagnosticsOptionsBuilder::from_env_vars(|key| match key {
+            "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES" => Ok("16384".to_string()),
+            "AZURE_COSMOS_DIAGNOSTICS_MAX_REQUEST_DIAGNOSTICS" => Ok("128".to_string()),
+            "AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY" => Ok("summary".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+
+        assert_eq!(cfg.max_summary_size_bytes, Some(16384));
+        assert_eq!(cfg.max_request_diagnostics, Some(128));
+        assert_eq!(cfg.default_verbosity, Some(DiagnosticsVerbosity::Summary));
+    }
+
+    #[test]
+    fn env_config_from_env_vars_is_lenient_on_malformed_value() {
+        // A malformed env value is ignored (None), so the builder falls back
+        // to the default instead of erroring.
+        let cfg = DiagnosticsOptionsBuilder::from_env_vars(|key| match key {
+            "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES" => Ok("huge".to_string()),
+            "AZURE_COSMOS_DIAGNOSTICS_MAX_REQUEST_DIAGNOSTICS" => Ok("lots".to_string()),
+            "AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY" => Ok("nonsense".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+        assert!(cfg.max_summary_size_bytes.is_none());
+        assert!(cfg.max_request_diagnostics.is_none());
+        assert!(cfg.default_verbosity.is_none());
     }
 
     #[test]
     fn custom_values() {
         let options = DiagnosticsOptionsBuilder::new()
             .with_max_summary_size_bytes(16 * 1024)
-            .with_default_verbosity(DiagnosticsVerbosity::Summary)
+            .with_max_request_diagnostics(64)
+            .with_default_verbosity(DiagnosticsVerbosity::Detailed)
             .build()
             .unwrap();
 
         assert_eq!(options.max_summary_size_bytes, 16 * 1024);
+        assert_eq!(options.max_request_diagnostics, 64);
+        assert_eq!(options.default_verbosity, DiagnosticsVerbosity::Detailed);
+    }
+
+    #[test]
+    fn explicit_default_verbosity_resolves_to_summary() {
+        let options = DiagnosticsOptionsBuilder::new()
+            .with_default_verbosity(DiagnosticsVerbosity::Default)
+            .build()
+            .unwrap();
+
         assert_eq!(options.default_verbosity, DiagnosticsVerbosity::Summary);
     }
 
@@ -252,6 +354,28 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("must be at least 4096"));
+    }
+
+    #[test]
+    fn max_request_diagnostics_too_small() {
+        let result = DiagnosticsOptionsBuilder::new()
+            .with_max_request_diagnostics(8) // below minimum of 16
+            .build();
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("must be at least 16"));
+    }
+
+    #[test]
+    fn max_request_diagnostics_at_minimum_is_accepted() {
+        let options = DiagnosticsOptionsBuilder::new()
+            .with_max_request_diagnostics(16)
+            .build()
+            .unwrap();
+        assert_eq!(options.max_request_diagnostics, 16);
     }
 
     #[test]

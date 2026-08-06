@@ -5,7 +5,7 @@
 
 use std::{collections::VecDeque, sync::Arc};
 
-use azure_core::http::StatusCode;
+use azure_core::http::{Etag, StatusCode};
 use futures::future::BoxFuture;
 
 use super::{
@@ -83,6 +83,11 @@ impl PipelineNode for MockLeaf {
         // A MockLeaf is just a test stub and doesn't represent a real request, so it can't be the target of a topology change error that requires splitting or merging.
         false
     }
+
+    fn fan_out_width(&self) -> usize {
+        // A MockLeaf stands in for a single request leaf.
+        1
+    }
 }
 
 // ── Request executors ───────────────────────────────────────────────────────
@@ -114,6 +119,10 @@ pub(crate) struct MockRequestExecutor {
     pub responses: VecDeque<crate::error::Result<CosmosResponse>>,
     pub refresh_calls: Vec<PartitionRoutingRefresh>,
     pub continuation_calls: Vec<Option<String>>,
+    pub target_calls: Vec<RequestTarget>,
+    /// Request body of every executed operation, in call order — lets
+    /// tests assert which query text was sent with which continuation.
+    pub query_bodies: Vec<Option<Vec<u8>>>,
 }
 
 impl MockRequestExecutor {
@@ -122,20 +131,35 @@ impl MockRequestExecutor {
             responses: responses.into(),
             refresh_calls: Vec::new(),
             continuation_calls: Vec::new(),
+            target_calls: Vec::new(),
+            query_bodies: Vec::new(),
         }
+    }
+
+    /// Returns the recorded request body at `index` as UTF-8 (lossy).
+    pub fn body_text(&self, index: usize) -> String {
+        let body = self
+            .query_bodies
+            .get(index)
+            .unwrap_or_else(|| panic!("no recorded request at index {index}"))
+            .as_deref()
+            .unwrap_or_default();
+        String::from_utf8_lossy(body).into_owned()
     }
 }
 
 impl RequestExecutor for MockRequestExecutor {
     fn execute_request<'a>(
         &'a mut self,
-        _operation: &'a CosmosOperation,
-        _target: RequestTarget,
+        operation: &'a CosmosOperation,
+        target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
     ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         self.refresh_calls.push(partition_routing_refresh);
         self.continuation_calls.push(continuation);
+        self.target_calls.push(target);
+        self.query_bodies.push(operation.body().map(<[u8]>::to_vec));
         let response = self.responses.pop_front().expect("mock request response");
         Box::pin(async move { response })
     }
@@ -187,6 +211,45 @@ impl TopologyProvider for MockTopologyProvider {
             .pop_front()
             .expect("MockTopologyProvider: no more results");
         Box::pin(async move { result })
+    }
+}
+
+/// A range-aware topology provider backed by a fixed physical partition layout.
+///
+/// Unlike [`MockTopologyProvider`] (which ignores the requested range and
+/// replays a queue), this resolves *against* the requested range:
+/// `resolve_ranges(range)` returns exactly the configured physical partitions
+/// whose EPK span overlaps `range`, mirroring real routing. This lets fan-out
+/// tests observe when the planner resolves partitions outside the requested
+/// scope — a plain replay mock cannot, because it returns the same partitions
+/// regardless of the range it is asked about.
+pub(crate) struct PhysicalTopologyProvider {
+    partitions: Vec<ResolvedRange>,
+}
+
+impl PhysicalTopologyProvider {
+    pub fn new(partitions: Vec<ResolvedRange>) -> Self {
+        Self { partitions }
+    }
+}
+
+impl TopologyProvider for PhysicalTopologyProvider {
+    fn resolve_ranges<'a>(
+        &'a mut self,
+        range: &'a FeedRange,
+        _refresh: PartitionRoutingRefresh,
+    ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
+        let resolved: Vec<ResolvedRange> = self
+            .partitions
+            .iter()
+            .filter(|p| {
+                // Half-open overlap: [a, b) intersects [c, d) iff a < d && c < b.
+                p.range.min_inclusive() < range.max_exclusive()
+                    && range.min_inclusive() < p.range.max_exclusive()
+            })
+            .cloned()
+            .collect();
+        Box::pin(async move { Ok(resolved) })
     }
 }
 
@@ -252,6 +315,58 @@ pub(crate) fn response_with_continuation(
     diagnostics.set_operation_status(StatusCode::Ok, None);
     let mut headers = CosmosResponseHeaders::new();
     headers.continuation = continuation.map(str::to_owned);
+    CosmosResponse::new(
+        body.to_vec(),
+        headers,
+        CosmosStatus::new(StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
+/// Creates a test response whose diagnostics carry `requests` per-attempt
+/// records, so tests can assert on attempt counts surviving aggregation.
+pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosResponse {
+    use crate::diagnostics::{
+        ExecutionContext, PipelineType, TransportHttpVersion, TransportKind, TransportSecurity,
+    };
+
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    let endpoint = crate::driver::routing::CosmosEndpoint::global(
+        url::Url::parse("https://acct.example/").unwrap(),
+    );
+    for _ in 0..requests {
+        let _ = diagnostics.start_request(
+            ExecutionContext::Initial,
+            PipelineType::DataPlane,
+            TransportSecurity::Secure,
+            TransportKind::Gateway,
+            TransportHttpVersion::Http11,
+            &endpoint,
+        );
+    }
+    diagnostics.set_operation_status(StatusCode::Ok, None);
+    CosmosResponse::new(
+        Vec::new(),
+        CosmosResponseHeaders::new(),
+        CosmosStatus::new(StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
+/// Creates a test response with the given body and an `ETag`, mirroring the
+/// change feed contract where every poll (including a start-from-`Now` 304)
+/// carries an ETag continuation.
+pub(crate) fn response_with_etag(body: &[u8], etag: &str) -> CosmosResponse {
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    diagnostics.set_operation_status(StatusCode::Ok, None);
+    let mut headers = CosmosResponseHeaders::new();
+    headers.etag = Some(Etag::from(etag.to_owned()));
     CosmosResponse::new(
         body.to_vec(),
         headers,

@@ -14,6 +14,143 @@ if ($env:COSMOS_RUSTFLAGS) {
     Write-Host "RUSTFLAGS appended with COSMOS_RUSTFLAGS: $env:RUSTFLAGS"
 }
 
+# Hosted in-memory emulator path. The additional CI matrix sets one of the two
+# flavors below so the existing emulator suites run against both Gateway V1
+# and Gateway 2.0 over cleartext HTTP/2.
+if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
+    $repoRoot = (Resolve-Path ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', '..'))).Path
+    $configuration = if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'inmemory-v2') {
+        [System.IO.Path]::Combine($repoRoot, 'sdk', 'cosmos', 'azure_data_cosmos_emulator', 'config', 'ci-gateway-v2.json')
+    }
+    else {
+        [System.IO.Path]::Combine($repoRoot, 'sdk', 'cosmos', 'azure_data_cosmos_emulator', 'config', 'ci-gateway-v1.json')
+    }
+    $ready = $false
+    $expectedGateway20 = $env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'inmemory-v2'
+    $managementEndpoint = $env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT
+    $accountEndpoint = $env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT
+    if ($managementEndpoint -and $accountEndpoint) {
+        $healthUrl = ([System.Uri]::new([System.Uri]$managementEndpoint, 'health')).AbsoluteUri
+        try {
+            $response = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+            $health = $response.Content | ConvertFrom-Json
+            $ready = $response.StatusCode -eq 200 -and $health.gateway20Enabled -eq $expectedGateway20
+        }
+        catch {
+            $ready = $false
+        }
+    }
+
+    if (-not $ready) {
+        Get-Process azure_data_cosmos_emulator -ErrorAction SilentlyContinue | Stop-Process -Force
+    }
+
+    if (-not $ready) {
+        LogGroupStart "Testing and building hosted Cosmos DB in-memory emulator"
+        Push-Location $repoRoot
+        try {
+            Invoke-LoggedCommand 'cargo test -p azure_data_cosmos_emulator --all-features'
+            Invoke-LoggedCommand 'cargo build -p azure_data_cosmos_emulator'
+        }
+        finally {
+            Pop-Location
+        }
+        LogGroupEnd
+
+        $executableName = if ($IsWindows) {
+            'azure_data_cosmos_emulator.exe'
+        }
+        else {
+            'azure_data_cosmos_emulator'
+        }
+        $executable = [System.IO.Path]::Combine($repoRoot, 'target', 'debug', $executableName)
+        $stdout = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'azure-data-cosmos-emulator.out.log')
+        $stderr = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'azure-data-cosmos-emulator.err.log')
+        Remove-Item $stdout, $stderr -Force -ErrorAction SilentlyContinue
+
+        LogGroupStart "Starting hosted Cosmos DB in-memory emulator"
+        $process = Start-Process `
+            -FilePath $executable `
+            -ArgumentList @('--config', $configuration) `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr `
+            -PassThru
+        $env:AZURE_COSMOS_INMEMORY_EMULATOR_PID = $process.Id.ToString()
+        Write-Host "Started hosted emulator process $($process.Id) using '$configuration'."
+
+        $deadline = (Get-Date).AddSeconds(60)
+        $readyRecord = $null
+        while ((Get-Date) -lt $deadline) {
+            if ($process.HasExited) {
+                break
+            }
+            if (-not $readyRecord -and (Test-Path $stdout)) {
+                $readyLine = Get-Content $stdout -ErrorAction SilentlyContinue | Select-Object -Last 1
+                if ($readyLine) {
+                    try {
+                        $candidate = $readyLine | ConvertFrom-Json -ErrorAction Stop
+                        if ($candidate.event -eq 'ready') {
+                            $readyRecord = $candidate
+                            $managementEndpoint = [string]$readyRecord.managementEndpoint
+                            $accountEndpoint = [string]$readyRecord.accountEndpoint
+                            # V1 omits this optional property; direct access throws under strict mode.
+                            $hasGateway20 = @($readyRecord.regions | Where-Object {
+                                    $gateway20Endpoint = $_.PSObject.Properties['gateway20Endpoint']
+                                    $null -ne $gateway20Endpoint -and
+                                    -not [string]::IsNullOrWhiteSpace([string]$gateway20Endpoint.Value)
+                                }).Count -gt 0
+                            if (-not $managementEndpoint -or -not $accountEndpoint -or $hasGateway20 -ne $expectedGateway20) {
+                                throw 'Hosted emulator ready record does not match the requested gateway mode.'
+                            }
+                            $healthUrl = ([System.Uri]::new([System.Uri]$managementEndpoint, 'health')).AbsoluteUri
+                        }
+                    }
+                    catch {
+                        $readyRecord = $null
+                        Write-Host "Waiting for a valid hosted emulator ready record: $($_.Exception.Message)"
+                    }
+                }
+            }
+            if ($readyRecord) {
+                try {
+                    $response = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+                    $health = $response.Content | ConvertFrom-Json
+                    if ($response.StatusCode -eq 200 -and $health.gateway20Enabled -eq $expectedGateway20) {
+                        $ready = $true
+                        break
+                    }
+                }
+                catch {
+                    Write-Host "Waiting for hosted in-memory emulator readiness: $($_.Exception.Message)"
+                }
+            }
+            Start-Sleep -Seconds 1
+        }
+        if (-not $ready) {
+            Get-Content $stdout, $stderr -ErrorAction SilentlyContinue | Write-Host
+            if (-not $process.HasExited) {
+                $process | Stop-Process -Force -ErrorAction SilentlyContinue
+            }
+            throw 'Hosted Cosmos DB in-memory emulator did not become ready within 60 seconds.'
+        }
+        LogGroupEnd
+    }
+
+    $env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT = $managementEndpoint
+    $env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT = $accountEndpoint
+    $emulatorKey = 'C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=='
+    $env:AZURE_COSMOS_CONNECTION_STRING = "AccountEndpoint=$accountEndpoint;AccountKey=$emulatorKey;"
+    $env:AZURE_COSMOS_TEST_MODE = 'required'
+    $env:RUSTFLAGS = $env:RUSTFLAGS -replace '\s*--cfg=test_category="[^"]*"', ''
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_inmemory`""
+    if ($expectedGateway20) {
+        $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_inmemory_gateway_v2`""
+    }
+    $env:RUST_TEST_THREADS = '1'
+    Write-Host "Hosted emulator is ready; RUSTFLAGS set to: $env:RUSTFLAGS"
+    return
+}
+
 # Vnext (Linux) emulator path. Triggered by AZURE_COSMOS_EMULATOR_FLAVOR=vnext
 # (set as a matrix variable on the cosmos vnext leg in
 # sdk/cosmos/vnext-emulator-matrix.json). Manages the Docker container
@@ -38,7 +175,8 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
     $existing = docker ps --filter "name=$vnextContainerName" --format "{{.Names}}" 2>$null
     if ($existing -eq $vnextContainerName) {
         Write-Host "Cosmos DB vnext emulator container '$vnextContainerName' is already running."
-    } else {
+    }
+    else {
         LogGroupStart "Starting Cosmos DB vnext emulator (Docker)"
         Invoke-LoggedCommand "docker pull $vnextImage"
         Invoke-LoggedCommand "docker run -d --name $vnextContainerName --publish 8081:8081 --publish 8080:8080 -e ENABLE_EXPLORER=false $vnextImage"
@@ -56,7 +194,8 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
                     $ready = $true
                     break
                 }
-            } catch {
+            }
+            catch {
                 Write-Host "Waiting for vnext emulator readiness: $($_.Exception.Message)"
             }
             Start-Sleep -Seconds 5
@@ -89,7 +228,8 @@ if ($IsAzDo) {
     # We only run Cosmos DB tests on Windows agents in Azure DevOps
     if ($IsWindows) {
         $env:AZURE_COSMOS_TEST_MODE = "required"
-    } else {
+    }
+    else {
         $env:AZURE_COSMOS_TEST_MODE = "skipped"
         Write-Host "Skipping Cosmos DB Emulator setup on non-Windows Azure DevOps agents."
         return
@@ -102,17 +242,18 @@ if ($IsWindows) {
     $EmulatorPath = & "$PSScriptRoot\Get-CosmosEmulatorPath.ps1"
     if ($null -ne $EmulatorPath) {
         Write-Host "Found Cosmos DB Emulator at '$EmulatorPath'. Skipping Cosmos DB Emulator install."
-    } else {
+    }
+    else {
         LogGroupStart "Installing Cosmos DB Emulator"
         & "$PSScriptRoot\..\..\..\..\eng\common\scripts\Cosmos-Emulator.ps1" `
-            -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong" `
+            -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong /enableaadauthentication" `
             -Stage "Install"
         LogGroupEnd
     }
 
     LogGroupStart "Launching Cosmos DB Emulator"
     & "$PSScriptRoot\..\..\..\..\eng\common\scripts\Cosmos-Emulator.ps1" `
-        -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong" `
+        -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong /enableaadauthentication" `
         -Emulator:$EmulatorPath `
         -Stage "Launch"
     LogGroupEnd
@@ -128,25 +269,26 @@ if ($IsWindows) {
             $response = Invoke-WebRequest -Uri $emulatorUrl -SkipCertificateCheck -UseBasicParsing -ErrorAction Stop
             Write-Host "Emulator responded with status $($response.StatusCode)."
             $emulatorReady = $true
-        } catch {
-             # Some exceptions (e.g. connection refused) have no Response property.
-             $response = $null
-             if ($_.Exception.PSObject.Properties['Response']) {
-                 $response = $_.Exception.Response
-             }
-             if ($null -ne $response -and $null -ne $response.StatusCode) {
-                 $statusCode = $response.StatusCode.value__
-                 if ($statusCode -ge 400 -and $statusCode -lt 500) {
-                     # 4xx means the emulator is up but rejecting unauthenticated requests
-                     Write-Host "Emulator responded with status $statusCode (expected auth failure). Emulator is ready."
-                     $emulatorReady = $true
-                     continue
-                 }
-             }
-             # No HTTP response or non-4xx status: treat as retryable failure
-             $probeRetry++
-             Write-Host "[Retry: $probeRetry/$maxProbeRetries] Emulator not yet responding. Exception: $($_.Exception.Message)"
-             Start-Sleep -Seconds 5
+        }
+        catch {
+            # Some exceptions (e.g. connection refused) have no Response property.
+            $response = $null
+            if ($_.Exception.PSObject.Properties['Response']) {
+                $response = $_.Exception.Response
+            }
+            if ($null -ne $response -and $null -ne $response.StatusCode) {
+                $statusCode = $response.StatusCode.value__
+                if ($statusCode -ge 400 -and $statusCode -lt 500) {
+                    # 4xx means the emulator is up but rejecting unauthenticated requests
+                    Write-Host "Emulator responded with status $statusCode (expected auth failure). Emulator is ready."
+                    $emulatorReady = $true
+                    continue
+                }
+            }
+            # No HTTP response or non-4xx status: treat as retryable failure
+            $probeRetry++
+            Write-Host "[Retry: $probeRetry/$maxProbeRetries] Emulator not yet responding. Exception: $($_.Exception.Message)"
+            Start-Sleep -Seconds 5
         }
     }
     if (-not $emulatorReady) {
@@ -162,14 +304,16 @@ if ($IsWindows) {
 
     # Run tests single-threaded to avoid env var contamination from proxy tests.
     $env:RUST_TEST_THREADS = "1"
-} elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
+}
+elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
     Write-Host "Docker detected. Using Cosmos DB Emulator in Docker."
 
     # Check if the emulator is already running
     $existingContainer = docker ps --filter "name=cosmosdb-emulator-test" --format "{{.Names}}"
     if ($existingContainer -eq "cosmosdb-emulator-test") {
         Write-Host "Cosmos DB Emulator container is already running."
-    } else {
+    }
+    else {
         LogGroupStart "Starting Cosmos DB Emulator in Docker"
         # Start Cosmos DB Emulator in Docker
         $containerName = "cosmosdb-emulator-test"
@@ -187,10 +331,12 @@ if ($IsWindows) {
                 $emulatorStarted = $true
                 Write-Host "Cosmos DB Emulator started successfully."
                 break
-            } elseif ($lastLine -match "^\s*Started (\d+/\d+) partitions\s*$") {
+            }
+            elseif ($lastLine -match "^\s*Started (\d+/\d+) partitions\s*$") {
                 $partitionsStarted = $matches[1]
                 Write-Host "[Retry: $retryCount/$maxRetries] Emulator still starting, $partitionsStarted partitions started."
-            } else {
+            }
+            else {
                 Write-Host "[Retry: $retryCount/$maxRetries] Emulator still starting"
             }
             $retryCount++
@@ -213,7 +359,8 @@ if ($IsWindows) {
     $env:RUST_TEST_THREADS = "1"
 
     Write-Host "Cosmos DB Emulator is running in Docker."
-} else {
+}
+else {
     # We're running a local build or we're on a macOS agent.
     # We can't run the emulator on the macOS agent, and we don't want to fail local builds because the emulator isn't installed.
     Write-Host "Cosmos DB Emulator is not available on this platform. Skipping test setup."

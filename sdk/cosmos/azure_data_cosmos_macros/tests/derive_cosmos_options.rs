@@ -358,3 +358,130 @@ fn nested_with_none_nested_field() {
     assert_eq!(pool_view.max_connections(), None);
     assert_eq!(pool_view.idle_timeout(), None);
 }
+
+// --- `#[options(env_only)]`: a type doubles as its own env-var source ---
+
+// Deriving `Default` here alongside `CosmosOptions` is itself the assertion
+// that `env_only` does NOT generate a `Default` impl — a generated one would
+// collide with this derive and fail to compile.
+#[derive(CosmosOptions, Clone, Debug, Default, PartialEq)]
+#[options(env_only)]
+pub struct EnvOnlyOptions {
+    #[option(env = "AZURE_COSMOS_TEST_ENV_ONLY_SIZE")]
+    pub size: Option<usize>,
+    #[option(env = "AZURE_COSMOS_TEST_ENV_ONLY_NAME")]
+    pub name: Option<String>,
+}
+
+#[test]
+fn env_only_reads_fields_from_env() {
+    let opts = EnvOnlyOptions::from_env_vars(|key| match key {
+        "AZURE_COSMOS_TEST_ENV_ONLY_SIZE" => Ok("4096".to_string()),
+        "AZURE_COSMOS_TEST_ENV_ONLY_NAME" => Ok("hello".to_string()),
+        _ => Err(std::env::VarError::NotPresent),
+    });
+    assert_eq!(opts.size, Some(4096));
+    assert_eq!(opts.name.as_deref(), Some("hello"));
+}
+
+#[test]
+fn env_only_unset_falls_back_to_default() {
+    let opts = EnvOnlyOptions::from_env_vars(|_| Err(std::env::VarError::NotPresent));
+    assert_eq!(opts, EnvOnlyOptions::default());
+}
+
+// --- `#[option(env = "...", parser = ...)]`: custom parsing into a field type
+// that has no suitable `FromStr` (here, a `Duration` read from a millisecond
+// count). ---
+
+fn parse_millis(raw: &str) -> Option<std::time::Duration> {
+    raw.trim()
+        .parse::<u64>()
+        .ok()
+        .map(std::time::Duration::from_millis)
+}
+
+#[derive(CosmosOptions, Clone, Debug, Default, PartialEq)]
+#[options(env_only)]
+pub struct ParserOptions {
+    #[option(env = "AZURE_COSMOS_TEST_PARSER_TIMEOUT_MS", parser = parse_millis)]
+    pub timeout: Option<std::time::Duration>,
+}
+
+#[test]
+fn parser_converts_env_value_into_field_type() {
+    let opts = ParserOptions::from_env_vars(|key| match key {
+        "AZURE_COSMOS_TEST_PARSER_TIMEOUT_MS" => Ok("1500".to_string()),
+        _ => Err(std::env::VarError::NotPresent),
+    });
+    assert_eq!(opts.timeout, Some(std::time::Duration::from_millis(1500)));
+}
+
+#[test]
+fn parser_none_result_is_ignored() {
+    // A value the parser rejects is treated as unset (None), matching the
+    // lenient semantics of the built-in parsers.
+    let opts = ParserOptions::from_env_vars(|key| match key {
+        "AZURE_COSMOS_TEST_PARSER_TIMEOUT_MS" => Ok("not-a-number".to_string()),
+        _ => Err(std::env::VarError::NotPresent),
+    });
+    assert_eq!(opts.timeout, None);
+}
+
+// --- Lenient boolean parsing for operator-facing kill switches ---
+
+#[derive(CosmosOptions, Clone)]
+#[options(layers(runtime, account, operation))]
+pub struct SwitchOptions {
+    #[option(env = "AZURE_COSMOS_TEST_SWITCH", overridable)]
+    pub enabled: Option<bool>,
+}
+
+#[test]
+fn bool_env_parsing_is_lenient_on_common_spellings() {
+    // A kill switch must not silently fail open when an operator types a
+    // common boolean spelling that `bool::from_str` would reject.
+    for (raw, expected) in [
+        ("true", true),
+        ("TRUE", true),
+        ("True", true),
+        ("1", true),
+        ("yes", true),
+        ("on", true),
+        (" On ", true),
+        ("false", false),
+        ("FALSE", false),
+        ("False", false),
+        ("0", false),
+        ("no", false),
+        ("off", false),
+        (" OFF ", false),
+    ] {
+        let opts = SwitchOptions::from_env_vars(|key| match key {
+            "AZURE_COSMOS_TEST_SWITCH" => Ok(raw.to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+        assert_eq!(opts.enabled, Some(expected), "raw value: {raw:?}");
+    }
+}
+
+#[test]
+fn bool_env_parsing_ignores_truly_unparseable_value() {
+    // Genuinely meaningless values are still ignored (None → falls back).
+    let opts = SwitchOptions::from_env_vars(|key| match key {
+        "AZURE_COSMOS_TEST_SWITCH" => Ok("maybe".to_string()),
+        _ => Err(std::env::VarError::NotPresent),
+    });
+    assert!(opts.enabled.is_none());
+}
+
+#[test]
+fn bool_override_env_parsing_is_lenient() {
+    // The same leniency applies to the `_OVERRIDE` kill-switch variant so an
+    // operator flipping the switch mid-incident with `=FALSE`/`=0` is honored.
+    let opts = SwitchOptions::from_env_override_vars(|key| match key {
+        "AZURE_COSMOS_TEST_SWITCH_OVERRIDE" => Ok("FALSE".to_string()),
+        _ => Err(std::env::VarError::NotPresent),
+    });
+    assert_eq!(opts.enabled, Some(false));
+}

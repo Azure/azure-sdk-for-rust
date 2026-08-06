@@ -1,5 +1,8 @@
 #!/usr/bin/env pwsh
 
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 #Requires -Version 7.0
 param(
   [string]$PackageInfoDirectory
@@ -7,32 +10,43 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
-. "$PSScriptRoot/../common/scripts/common.ps1"
+. ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
-$resolvedToolchain = [Channels]::Nightly()
+$activeToolchain = Get-ResolvedRustToolchain
+$usesJsonTestOutput = Test-IsNightlyRustToolchain
 
-# Helper function to run cargo test with JSON output
-function Invoke-CargoTestWithJsonOutput (
+# Helper function to run cargo test, capturing JSON output only when the active
+# toolchain supports `--format json -Z unstable-options`.
+function Invoke-CargoTest (
   [string]$TestParams,
   [string]$PackageName,
   [string]$ManifestPath,
   [string]$OutputFile
 ) {
   Write-Host "Running tests for $PackageName"
-  # Use nightly toolchain to enable JSON output format which can be converted
-  # and uploaded to DevOps for display in the Tests tab
-  # (requires -Z unstable-options)
-  $result = Invoke-LoggedCommand `
-    "cargo +$resolvedToolchain test $TestParams --manifest-path $ManifestPath --all-features --no-fail-fast -- --format json -Z unstable-options" `
-    -GroupOutput `
-    -DoNotExitOnFailedExitCode
+  $command = "cargo test $TestParams --manifest-path $ManifestPath --all-features --no-fail-fast"
 
-  LogGroupStart 'Test result JSON'
-  $result | Tee-Object -FilePath $OutputFile
-  LogGroupEnd
+  if ($usesJsonTestOutput) {
+    $result = Invoke-LoggedCommand `
+      "$command -- --format json -Z unstable-options" `
+      -GroupOutput `
+      -DoNotExitOnFailedExitCode
+
+    LogGroupStart 'Test result JSON'
+    $result | Tee-Object -FilePath $OutputFile
+    LogGroupEnd
+  }
+  else {
+    Invoke-LoggedCommand $command -GroupOutput -DoNotExitOnFailedExitCode
+  }
 
   if ($LASTEXITCODE) {
-    LogError "Tests failed for $PackageName. For more information see the pipeline Tests tab."
+    $message = "Tests failed for $PackageName."
+    if ($usesJsonTestOutput) {
+      $message += " For more information see the pipeline Tests tab."
+    }
+    LogError $message
     exit $LASTEXITCODE
   }
 }
@@ -46,13 +60,19 @@ Testing packages with
     AZURE_TEST_MODE: '$env:AZURE_TEST_MODE'
     SYSTEM_ACCESSTOKEN: $($env:SYSTEM_ACCESSTOKEN ? 'present' : 'not present')
     ARM_OIDC_TOKEN: $($env:ARM_OIDC_TOKEN ? 'present' : 'not present')
+    Active Rust toolchain: '$activeToolchain'
 "@
 
 $testResultsDir = ([System.IO.Path]::Combine($RepoRoot, 'test-results'))
-if (!(Test-Path $testResultsDir)) {
-  New-Item -ItemType Directory -Path $testResultsDir | Out-Null
+if ($usesJsonTestOutput) {
+  if (!(Test-Path $testResultsDir)) {
+    New-Item -ItemType Directory -Path $testResultsDir | Out-Null
+  }
+  Write-Host "JSON test results will be saved to: $testResultsDir"
 }
-Write-Host "Test results will be saved to: $testResultsDir"
+else {
+  Write-Host "Skipping JSON test result capture because the active Rust toolchain is not nightly."
+}
 
 if ($PackageInfoDirectory) {
   if (!(Test-Path $PackageInfoDirectory)) {
@@ -95,14 +115,14 @@ foreach ($package in $packagesToTest) {
   $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 
   $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-doctest-$timestamp.json"))
-  Invoke-CargoTestWithJsonOutput `
+  Invoke-CargoTest `
     -TestParams "--doc" `
     -PackageName $package.Name `
     -ManifestPath $manifestPath `
     -OutputFile $docTestOutput
 
   $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-alltargets-$timestamp.json"))
-  Invoke-CargoTestWithJsonOutput `
+  Invoke-CargoTest `
     -TestParams "--lib --bins --tests --examples" `
     -PackageName $package.Name `
     -ManifestPath $manifestPath `

@@ -8,7 +8,78 @@ use crate::models::{
     DatabaseReference, FeedRange, ItemReference, OperationType, PartitionKey, Precondition,
     ResourceType,
 };
+use azure_core::http::Etag;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+use time::OffsetDateTime;
+
+/// Which change feed mode a factory should configure.
+///
+/// Private helper shared by [`CosmosOperation::change_feed`] and
+/// [`CosmosOperation::change_feed_all_versions_and_deletes`]; the only
+/// difference between the two is the `A-IM` header value they emit.
+#[derive(Clone, Copy)]
+enum ChangeFeedFactoryMode {
+    /// LatestVersion: `A-IM: Incremental Feed`.
+    Incremental,
+    /// AllVersionsAndDeletes: `A-IM: Full-Fidelity Feed`.
+    FullFidelity,
+}
+
+/// The position a change feed is started from.
+///
+/// Passed explicitly when starting a change feed read and persisted inside the
+/// continuation token, so that on resume partitions that were never polled
+/// before the checkpoint re-apply the feed's original start position instead of
+/// silently reading from the beginning. Partitions that already have a saved
+/// per-partition continuation resume from it and ignore this value.
+///
+/// This enum owns the mapping from a start position to its wire header (see
+/// [`CosmosOperation::with_change_feed_start`]), so both the initial request
+/// and a resume reconstructed from a continuation token stay in sync.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum ChangeFeedStartFrom {
+    /// Start from the beginning of the change feed (all retained changes).
+    ///
+    /// No start header is sent; the server treats the absence of a start header
+    /// as "from the beginning".
+    Beginning,
+
+    /// Start from the current point in time (wire header `If-None-Match: *`).
+    ///
+    /// "Now" is evaluated when the request is sent, so on resume a never-polled
+    /// partition starts from resume time rather than the original start time.
+    /// This is acceptable for LatestVersion (it still converges to the latest
+    /// state under at-least-once delivery). For AllVersionsAndDeletes it is a
+    /// documented limitation: a range that is never polled before a checkpoint
+    /// can drop the intermediate versions and deletes that occurred between the
+    /// original start and the resume. "Now" is deliberately not pinned to a
+    /// concrete start position before persisting, because that would change its
+    /// semantics; lossless per-range "Now" resolution is a future improvement.
+    Now,
+
+    /// Start from a specific point in time (wire header `If-Modified-Since`).
+    ///
+    /// The timestamp is persisted in the continuation token as RFC 3339 so
+    /// resume is exact, and formatted as RFC 1123 for the wire header.
+    PointInTime(#[serde(with = "time::serde::rfc3339")] OffsetDateTime),
+}
+
+/// Formats an [`OffsetDateTime`] as an RFC 1123 timestamp (the IMF fixed-date
+/// production in RFC 7231) for the `If-Modified-Since` change feed header.
+fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
+    use time::format_description::FormatItem;
+    use time::macros::format_description;
+    const RFC1123: &[FormatItem<'_>] = format_description!(
+        "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
+    );
+    timestamp
+        .to_offset(time::UtcOffset::UTC)
+        .format(RFC1123)
+        .expect("RFC 1123 formatting of a valid OffsetDateTime cannot fail")
+}
 
 /// Represents a Cosmos DB operation with its routing and execution context.
 ///
@@ -73,6 +144,21 @@ pub struct CosmosOperation {
     /// make. Only consulted when `operation_type == OperationType::Patch`;
     /// ignored for every other op. `None` selects the handler default (5).
     patch_max_attempts: Option<std::num::NonZeroU8>,
+    /// `true` when this operation is a change feed read. Set explicitly by
+    /// [`change_feed`](Self::change_feed) rather than inferred from a header,
+    /// so future change feed modes can be added without ambiguity.
+    is_change_feed: bool,
+    /// The original change feed start position, persisted into the continuation
+    /// token so never-polled partitions can re-apply it on resume. `None` for
+    /// non-change-feed operations.
+    change_feed_start: Option<ChangeFeedStartFrom>,
+    /// `true` when this operation is one of the internal sub-operations the
+    /// PATCH handler's Read-Modify-Write loop dispatches, rather than an
+    /// operation the caller requested directly. Set by
+    /// [`as_patch_sub_operation`](Self::as_patch_sub_operation); it only
+    /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
+    /// is dispatched exactly like the standalone Read/Replace it is.
+    is_patch_sub_operation: bool,
 }
 
 impl CosmosOperation {
@@ -84,6 +170,113 @@ impl CosmosOperation {
     /// Returns the resource type.
     pub fn resource_type(&self) -> ResourceType {
         self.resource_type
+    }
+
+    /// Returns the canonical OpenTelemetry `db.operation.name` for this
+    /// operation, when it maps to a well-known Cosmos DB operation.
+    ///
+    /// The returned value uses the semantic-convention names the SDK surfaces
+    /// (`read_item`, `create_item`, `query_items`, `query_change_feed`,
+    /// `execute_batch`, `read_container`, …). It feeds
+    /// [`DiagnosticsContext::operation_name`](crate::diagnostics::DiagnosticsContext::operation_name)
+    /// so the emission layer can label spans/logs and
+    /// [`is_threshold_violated`](crate::diagnostics::DiagnosticsContext::is_threshold_violated)
+    /// can distinguish point from non-point operations for tail-based sampling.
+    ///
+    /// Operations without a canonical name (query plans, partition-key-range
+    /// reads, HEAD probes, stored procedures, triggers, UDFs, distributed
+    /// transactions) return `None`, which leaves the diagnostics
+    /// `operation_name` unset — identical to the pre-population behavior.
+    /// Throughput (offer) operations are also unmapped: the canonical names are
+    /// scope-specific (`read_container_throughput` vs. `read_database_throughput`)
+    /// but an offer operation carries only the account and the offer ID, so the
+    /// scope is not recoverable here. The SDK, which knows whether the caller
+    /// addressed a container or a database, supplies those names instead.
+    ///
+    /// # PATCH sub-operations
+    ///
+    /// PATCH is a single caller-facing operation that this driver implements as
+    /// a Read followed by an ETag-guarded Replace. The two sub-operations report
+    /// `patch_read_item` and `patch_replace_item` rather than the bare
+    /// `read_item` / `replace_item`, so telemetry encodes *both* facts: that the
+    /// work belongs to a PATCH, and which half of the read-modify-write it is.
+    /// Naming them `read_item`/`replace_item` would make them indistinguishable
+    /// from standalone point operations the caller never issued; naming them
+    /// `patch_item` would hide the decomposition entirely. The operation the
+    /// caller actually invoked keeps reporting `patch_item` on the root span and
+    /// the operation metric.
+    pub fn db_operation_name(&self) -> Option<&'static str> {
+        let name = match (self.operation_type, self.resource_type) {
+            // Data-plane item operations.
+            (OperationType::Create, ResourceType::Document) => "create_item",
+            (OperationType::Read, ResourceType::Document) if self.is_patch_sub_operation => {
+                "patch_read_item"
+            }
+            (OperationType::Read, ResourceType::Document) => "read_item",
+            (OperationType::Replace, ResourceType::Document) if self.is_patch_sub_operation => {
+                "patch_replace_item"
+            }
+            (OperationType::Replace, ResourceType::Document) => "replace_item",
+            (OperationType::Delete, ResourceType::Document) => "delete_item",
+            (OperationType::Upsert, ResourceType::Document) => "upsert_item",
+            (OperationType::Patch, ResourceType::Document) => "patch_item",
+            (OperationType::Batch, ResourceType::Document) => "execute_batch",
+            (OperationType::Query, ResourceType::Document)
+            | (OperationType::SqlQuery, ResourceType::Document) => "query_items",
+            // NOTE: `read_all_items` (and, below, `read_all_containers` /
+            // `read_all_databases` / the granular `query_containers` /
+            // `query_databases`) are this SDK's canonical values. They
+            // intentionally diverge from the .NET SDK, which emits
+            // `read_feed_ranges` for feed reads and funnels container/database
+            // queries through the generic `query_items`. Keep them aligned with
+            // this crate's own `read_all_*` / `query_*` public API, not with
+            // .NET. See DIAGNOSTICS-CONTRACT.md.
+            (OperationType::ReadFeed, ResourceType::Document) => {
+                if self.is_change_feed {
+                    "query_change_feed"
+                } else if self.targets_logical_partition() {
+                    // `read_all_items(container, partition_key)` narrows the
+                    // feed to one logical partition, which semconv names
+                    // distinctly from the cross-partition read.
+                    "read_all_items_of_logical_partition"
+                } else {
+                    "read_all_items"
+                }
+            }
+            // Container (collection) management.
+            (OperationType::Create, ResourceType::DocumentCollection) => "create_container",
+            (OperationType::Read, ResourceType::DocumentCollection) => "read_container",
+            (OperationType::Replace, ResourceType::DocumentCollection) => "replace_container",
+            (OperationType::Delete, ResourceType::DocumentCollection) => "delete_container",
+            (OperationType::Query, ResourceType::DocumentCollection)
+            | (OperationType::SqlQuery, ResourceType::DocumentCollection) => "query_containers",
+            (OperationType::ReadFeed, ResourceType::DocumentCollection) => "read_all_containers",
+            // Database management.
+            (OperationType::Create, ResourceType::Database) => "create_database",
+            (OperationType::Read, ResourceType::Database) => "read_database",
+            (OperationType::Delete, ResourceType::Database) => "delete_database",
+            (OperationType::Query, ResourceType::Database)
+            | (OperationType::SqlQuery, ResourceType::Database) => "query_databases",
+            (OperationType::ReadFeed, ResourceType::Database) => "read_all_databases",
+            // Throughput (offer) management has no driver-layer mapping: the
+            // canonical names are scope-specific (`read_container_throughput` /
+            // `read_database_throughput` and their `replace_` variants), but an
+            // offer operation is addressed by account + offer ID only, so this
+            // layer cannot tell a container offer from a database offer. The
+            // SDK stamps the scoped name via `CosmosOperationContext`.
+            // Everything else has no canonical semconv name.
+            _ => return None,
+        };
+        Some(name)
+    }
+
+    /// Returns `true` when this operation targets exactly one logical partition
+    /// (or a hierarchical-partition-key prefix), as opposed to an EPK range or
+    /// the whole container.
+    fn targets_logical_partition(&self) -> bool {
+        self.target
+            .as_ref()
+            .is_some_and(FeedRange::is_logical_partition)
     }
 
     /// Returns a reference to the resource being operated on.
@@ -124,6 +317,14 @@ impl CosmosOperation {
     /// Returns the partition key for this operation, if applicable.
     pub fn partition_key(&self) -> Option<&PartitionKey> {
         self.target.as_ref().and_then(|t| t.partition_key())
+    }
+
+    /// Returns `true` if this is a change feed request.
+    ///
+    /// Set explicitly by [`change_feed`](Self::change_feed); not inferred from
+    /// request headers.
+    pub fn is_change_feed(&self) -> bool {
+        self.is_change_feed
     }
 
     /// Returns the request headers.
@@ -171,6 +372,20 @@ impl CosmosOperation {
         self
     }
 
+    /// Advertises which serialization formats the client accepts in the response
+    /// (the `x-ms-cosmos-supported-serialization-formats` request header), e.g.
+    /// `JsonText,CosmosBinary`.
+    ///
+    /// When set, the service may reply with Cosmos binary JSON, which the SDK
+    /// auto-detects and decodes; when unset, the response stays text JSON.
+    pub fn with_supported_serialization_formats(
+        mut self,
+        formats: impl Into<Cow<'static, str>>,
+    ) -> Self {
+        self.request_headers.supported_serialization_formats = Some(formats.into());
+        self
+    }
+
     /// Sets the maximum number of items the server should return per page
     /// (the `x-ms-max-item-count` request header).
     ///
@@ -184,6 +399,43 @@ impl CosmosOperation {
     pub fn with_precondition(mut self, precondition: Precondition) -> Self {
         self.request_headers.precondition = Some(precondition);
         self
+    }
+
+    /// Sets the `If-Modified-Since` header (pre-formatted RFC 1123 string).
+    ///
+    /// Used by change feed to start from a specific point in time.
+    pub fn with_if_modified_since(mut self, value: String) -> Self {
+        self.request_headers.if_modified_since = Some(value);
+        self
+    }
+
+    /// Records the change feed start position and emits its wire header.
+    ///
+    /// This is the single source of truth for translating a start position into
+    /// the appropriate header, so both the initial request and a resume that
+    /// reconstructs the position from a continuation token stay in sync:
+    ///
+    /// - [`ChangeFeedStartFrom::Beginning`] → no header
+    /// - [`ChangeFeedStartFrom::Now`] → `If-None-Match: *`
+    /// - [`ChangeFeedStartFrom::PointInTime`] → `If-Modified-Since: <RFC 1123>`
+    pub fn with_change_feed_start(mut self, start_from: ChangeFeedStartFrom) -> Self {
+        match &start_from {
+            ChangeFeedStartFrom::Beginning => {}
+            ChangeFeedStartFrom::Now => {
+                self.request_headers.precondition =
+                    Some(Precondition::if_none_match(Etag::from("*")));
+            }
+            ChangeFeedStartFrom::PointInTime(timestamp) => {
+                self.request_headers.if_modified_since = Some(format_rfc1123(timestamp));
+            }
+        }
+        self.change_feed_start = Some(start_from);
+        self
+    }
+
+    /// Returns the change feed start position, if one was set.
+    pub fn change_feed_start(&self) -> Option<&ChangeFeedStartFrom> {
+        self.change_feed_start.as_ref()
     }
 
     /// Returns the precondition, if set.
@@ -212,6 +464,24 @@ impl CosmosOperation {
         self.patch_max_attempts
     }
 
+    /// Marks this operation as an internal sub-operation of a PATCH's
+    /// Read-Modify-Write loop.
+    ///
+    /// The only effect is on [`db_operation_name`](Self::db_operation_name),
+    /// which then reports `patch_read_item` / `patch_replace_item` instead of
+    /// `read_item` / `replace_item`. Routing, retries, and the wire request are
+    /// unchanged — a PATCH sub-op *is* an ordinary point Read or Replace.
+    pub(crate) fn as_patch_sub_operation(mut self) -> Self {
+        self.is_patch_sub_operation = true;
+        self
+    }
+
+    /// Returns `true` when this operation is an internal sub-operation of a
+    /// PATCH's Read-Modify-Write loop.
+    pub fn is_patch_sub_operation(&self) -> bool {
+        self.is_patch_sub_operation
+    }
+
     // ===== Factory Methods =====
 
     /// Creates a new operation with the specified type, resource reference, and target.
@@ -236,6 +506,9 @@ impl CosmosOperation {
             request_headers: CosmosRequestHeaders::new(),
             body: None,
             patch_max_attempts: None,
+            is_change_feed: false,
+            change_feed_start: None,
+            is_patch_sub_operation: false,
         }
     }
 
@@ -577,6 +850,26 @@ impl CosmosOperation {
         Self::for_item(OperationType::Patch, item)
     }
 
+    /// Builds a distributed transaction coordinator operation.
+    #[cfg(feature = "preview_dtx")]
+    pub fn distributed_transaction(
+        account: AccountReference,
+        transaction_type: crate::models::DistributedTransactionType,
+    ) -> Self {
+        let operation_type = match transaction_type {
+            crate::models::DistributedTransactionType::Write => {
+                OperationType::CommitDistributedTransaction
+            }
+            crate::models::DistributedTransactionType::Read => {
+                OperationType::ReadDistributedTransaction
+            }
+        };
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::DistributedTransactionBatch)
+            .with_name(Cow::Borrowed("dtc"));
+        Self::new(operation_type, resource_ref, None)
+    }
+
     /// Reads (lists) all items within a single partition.
     ///
     /// Returns a feed of document resources from the specified partition.
@@ -606,6 +899,77 @@ impl CosmosOperation {
             resource_ref,
             Some(crate::models::FeedRange::full()),
         )
+    }
+
+    /// Creates a change feed read operation for a container.
+    ///
+    /// Sets the `A-IM` header to `Incremental Feed` (LatestVersion mode) and
+    /// marks the operation as a change feed read. The caller sets the start
+    /// position via [`with_change_feed_start`](Self::with_change_feed_start),
+    /// which both records the marker and emits the matching header.
+    ///
+    /// Also sets the `x-ms-cosmos-changefeed-wire-format-version` header so the
+    /// service returns the structured change feed envelope (`{ current, ... }`)
+    /// for every mode. Sending it on LatestVersion (not just
+    /// AllVersionsAndDeletes) keeps the response shape consistent across modes:
+    /// LatestVersion has no pre-image, but the envelope still carries `current`
+    /// plus any per-item metadata, so callers don't have to special-case the
+    /// payload per mode. The SDK iterator unwraps `current` back into the
+    /// caller's document type.
+    ///
+    /// `target` scopes the change feed to a specific partition or EPK range.
+    /// Pass `None` or `Some(FeedRange::full())` to read the entire container.
+    pub fn change_feed(container: ContainerReference, target: Option<FeedRange>) -> Self {
+        Self::change_feed_with_mode(container, target, ChangeFeedFactoryMode::Incremental)
+    }
+
+    /// Creates a full-fidelity (AllVersionsAndDeletes) change feed read
+    /// operation for a container.
+    ///
+    /// Identical to [`change_feed`](Self::change_feed) except it sets the
+    /// `A-IM` header to `Full-Fidelity Feed` instead of `Incremental Feed`.
+    /// This selects the AllVersionsAndDeletes mode, in which every intermediate
+    /// version and delete is returned inside an envelope carrying `current`
+    /// (post-image), `previous` (pre-image, when enabled), and `metadata`
+    /// (operation type, LSN, timestamps). The SDK does **not** unwrap
+    /// `current`; the caller deserializes each item into a `ChangeFeedItem<T>`.
+    ///
+    /// Like [`change_feed`](Self::change_feed) this also sets the
+    /// `x-ms-cosmos-changefeed-wire-format-version` header and marks the
+    /// operation as a change feed read. The start position is set via
+    /// [`with_change_feed_start`](Self::with_change_feed_start).
+    ///
+    /// `target` scopes the change feed to a specific partition or EPK range.
+    /// Pass `None` or `Some(FeedRange::full())` to read the entire container.
+    pub fn change_feed_all_versions_and_deletes(
+        container: ContainerReference,
+        target: Option<FeedRange>,
+    ) -> Self {
+        Self::change_feed_with_mode(container, target, ChangeFeedFactoryMode::FullFidelity)
+    }
+
+    /// Shared constructor for the change feed factories. The only difference
+    /// between LatestVersion and AllVersionsAndDeletes is which `A-IM` value is
+    /// emitted; everything else (resource shape, wire-format-version header,
+    /// change-feed marking) is identical.
+    fn change_feed_with_mode(
+        container: ContainerReference,
+        target: Option<FeedRange>,
+        mode: ChangeFeedFactoryMode,
+    ) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        let mut headers = CosmosRequestHeaders::new();
+        match mode {
+            ChangeFeedFactoryMode::Incremental => headers.incremental_feed = true,
+            ChangeFeedFactoryMode::FullFidelity => headers.full_fidelity_feed = true,
+        }
+        headers.changefeed_wire_format_version = true;
+        let mut operation =
+            Self::new(OperationType::ReadFeed, resource_ref, target).with_request_headers(headers);
+        operation.is_change_feed = true;
+        operation
     }
 
     /// Queries items in a container.
@@ -688,7 +1052,12 @@ impl CosmosOperation {
     /// fan-out strategy.
     pub fn is_trivial(&self) -> bool {
         if self.operation_type != OperationType::Query {
-            // For now, at least, all non-query operations are trivial.
+            // Change feed is trivial only when targeting a specific logical partition key.
+            // Full-container (target=None) and EPK range targets require fan-out.
+            if self.is_change_feed() {
+                return self.target().and_then(|t| t.partition_key()).is_some();
+            }
+            // For now, at least, all other non-query operations are trivial.
             return true;
         }
 
@@ -856,6 +1225,59 @@ mod tests {
         assert!(!op.is_idempotent());
     }
 
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn distributed_write_transaction_is_idempotent() {
+        let op = CosmosOperation::distributed_transaction(
+            test_account(),
+            crate::models::DistributedTransactionType::Write,
+        );
+
+        assert!(!op.is_read_only());
+        assert!(op.is_idempotent());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn distributed_read_transaction_is_read_only_and_idempotent() {
+        let op = CosmosOperation::distributed_transaction(
+            test_account(),
+            crate::models::DistributedTransactionType::Read,
+        );
+
+        assert!(op.is_read_only());
+        assert!(op.is_idempotent());
+    }
+
+    /// The change feed factory sets both the incremental-feed indicator and the
+    /// wire-format-version header so LatestVersion responses use the structured
+    /// envelope wire format consistent with AllVersionsAndDeletes.
+    #[test]
+    fn change_feed_sets_wire_format_header() {
+        let op = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()));
+
+        assert!(op.is_change_feed());
+        assert!(op.request_headers().incremental_feed);
+        assert!(!op.request_headers().full_fidelity_feed);
+        assert!(op.request_headers().changefeed_wire_format_version);
+    }
+
+    /// The full-fidelity (AllVersionsAndDeletes) factory sets the
+    /// full-fidelity indicator instead of the incremental one, while keeping
+    /// the wire-format-version header and change-feed marking.
+    #[test]
+    fn change_feed_all_versions_and_deletes_sets_full_fidelity_header() {
+        let op = CosmosOperation::change_feed_all_versions_and_deletes(
+            test_container(),
+            Some(FeedRange::full()),
+        );
+
+        assert!(op.is_change_feed());
+        assert!(op.request_headers().full_fidelity_feed);
+        assert!(!op.request_headers().incremental_feed);
+        assert!(op.request_headers().changefeed_wire_format_version);
+    }
+
     /// Creating a partitioned operation without a partition target panics in
     /// debug builds and silently proceeds in release builds.
     #[test]
@@ -865,5 +1287,212 @@ mod tests {
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
         let _op = CosmosOperation::new(OperationType::Create, resource_ref, None);
+    }
+
+    #[test]
+    fn db_operation_name_maps_item_operations() {
+        let item =
+            || ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+
+        assert_eq!(
+            CosmosOperation::create_item(item()).db_operation_name(),
+            Some("create_item")
+        );
+        assert_eq!(
+            CosmosOperation::read_item(item()).db_operation_name(),
+            Some("read_item")
+        );
+        assert_eq!(
+            CosmosOperation::replace_item(item()).db_operation_name(),
+            Some("replace_item")
+        );
+        assert_eq!(
+            CosmosOperation::upsert_item(item()).db_operation_name(),
+            Some("upsert_item")
+        );
+        assert_eq!(
+            CosmosOperation::delete_item(item()).db_operation_name(),
+            Some("delete_item")
+        );
+        assert_eq!(
+            CosmosOperation::patch_item(item()).db_operation_name(),
+            Some("patch_item")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_distinguishes_patch_sub_operations() {
+        let item =
+            || ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+
+        // A PATCH is one caller-facing operation implemented as a Read plus an
+        // ETag-guarded Replace. The sub-ops report names that encode both the
+        // owning PATCH and which half of the read-modify-write they are, so
+        // telemetry neither hides the decomposition nor makes the sub-ops look
+        // like standalone point operations the caller never issued.
+        assert_eq!(
+            CosmosOperation::read_item(item())
+                .as_patch_sub_operation()
+                .db_operation_name(),
+            Some("patch_read_item")
+        );
+        assert_eq!(
+            CosmosOperation::replace_item(item())
+                .as_patch_sub_operation()
+                .db_operation_name(),
+            Some("patch_replace_item")
+        );
+
+        // The operation the caller actually invoked is unaffected.
+        assert_eq!(
+            CosmosOperation::patch_item(item()).db_operation_name(),
+            Some("patch_item")
+        );
+        assert!(!CosmosOperation::patch_item(item()).is_patch_sub_operation());
+    }
+
+    #[test]
+    fn patch_sub_operation_marker_is_off_by_default() {
+        let item =
+            || ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+
+        assert!(!CosmosOperation::read_item(item()).is_patch_sub_operation());
+        assert!(!CosmosOperation::replace_item(item()).is_patch_sub_operation());
+        assert!(CosmosOperation::read_item(item())
+            .as_patch_sub_operation()
+            .is_patch_sub_operation());
+    }
+
+    #[test]
+    fn patch_sub_operation_marker_only_renames_read_and_replace() {
+        let item =
+            || ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+
+        // The marker is only ever set on the two sub-ops the PATCH handler
+        // dispatches. Guard the mapping anyway so a stray marker on any other
+        // operation cannot silently invent a name.
+        assert_eq!(
+            CosmosOperation::create_item(item())
+                .as_patch_sub_operation()
+                .db_operation_name(),
+            Some("create_item")
+        );
+        assert_eq!(
+            CosmosOperation::upsert_item(item())
+                .as_patch_sub_operation()
+                .db_operation_name(),
+            Some("upsert_item")
+        );
+        assert_eq!(
+            CosmosOperation::delete_item(item())
+                .as_patch_sub_operation()
+                .db_operation_name(),
+            Some("delete_item")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_maps_feed_and_query_operations() {
+        assert_eq!(
+            CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+                .db_operation_name(),
+            Some("query_items")
+        );
+        assert_eq!(
+            CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+                .db_operation_name(),
+            Some("query_change_feed")
+        );
+        assert_eq!(
+            CosmosOperation::read_all_items_cross_partition(test_container()).db_operation_name(),
+            Some("read_all_items")
+        );
+        assert_eq!(
+            CosmosOperation::read_all_items(test_container(), PartitionKey::from("pk1"))
+                .db_operation_name(),
+            Some("read_all_items_of_logical_partition")
+        );
+        assert_eq!(
+            CosmosOperation::batch(test_container(), PartitionKey::from("pk1")).db_operation_name(),
+            Some("execute_batch")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_change_feed_ignores_logical_partition_scope() {
+        // A change feed scoped to one logical partition is still
+        // `query_change_feed`; semconv has no partition-scoped variant for it.
+        let container = test_container();
+        let range = FeedRange::for_partition(
+            PartitionKey::from("pk1"),
+            container.partition_key_definition(),
+        );
+        assert_eq!(
+            CosmosOperation::change_feed(container, Some(range)).db_operation_name(),
+            Some("query_change_feed")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_maps_metadata_operations() {
+        let db = DatabaseReference::from_name(test_account(), "testdb");
+
+        assert_eq!(
+            CosmosOperation::read_container(test_container()).db_operation_name(),
+            Some("read_container")
+        );
+        assert_eq!(
+            CosmosOperation::create_container(db.clone()).db_operation_name(),
+            Some("create_container")
+        );
+        assert_eq!(
+            CosmosOperation::read_database(db.clone()).db_operation_name(),
+            Some("read_database")
+        );
+        assert_eq!(
+            CosmosOperation::query_databases(test_account()).db_operation_name(),
+            Some("query_databases")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_none_for_throughput_operations() {
+        // Offer operations carry no database/container scope, and semconv only
+        // defines scoped throughput names, so the driver leaves them unmapped
+        // and the SDK supplies `read_container_throughput` /
+        // `read_database_throughput` (and their `replace_` variants).
+        assert_eq!(
+            CosmosOperation::query_offers(test_account()).db_operation_name(),
+            None
+        );
+        assert_eq!(
+            CosmosOperation::read_offer(test_account(), "offer-rid").db_operation_name(),
+            None
+        );
+        assert_eq!(
+            CosmosOperation::replace_offer(test_account(), "offer-rid").db_operation_name(),
+            None
+        );
+    }
+
+    #[test]
+    fn db_operation_name_none_for_unmapped_operations() {
+        // Query plans have no canonical semconv operation name.
+        let op = CosmosOperation::query_plan(test_container(), std::borrow::Cow::Borrowed(""));
+        assert_eq!(op.db_operation_name(), None);
+    }
+
+    #[test]
+    fn with_supported_serialization_formats_sets_header_field() {
+        let item_ref =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let op = CosmosOperation::create_item(item_ref)
+            .with_supported_serialization_formats("JsonText,CosmosBinary");
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("JsonText,CosmosBinary"),
+        );
     }
 }

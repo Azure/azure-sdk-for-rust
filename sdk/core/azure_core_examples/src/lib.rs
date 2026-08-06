@@ -11,4 +11,4 @@ pub mod client;
 pub mod identity;
 pub mod secrets;
 
-pub use azure_core::credentials;
+pub use azure_core::{credentials, error, http, Error, Result};

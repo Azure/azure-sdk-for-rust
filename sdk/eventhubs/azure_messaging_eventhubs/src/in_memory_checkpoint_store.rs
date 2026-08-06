@@ -7,7 +7,7 @@ use azure_core::{
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tracing::{trace, warn};
+use tracing::{error, trace};
 
 /// An in-memory checkpoint store for Event Hubs.
 /// This store is used to manage checkpoints and ownerships in memory.
@@ -46,6 +46,11 @@ impl InMemoryCheckpointStore {
     }
 
     /// Updates the ownership for a specific partition.
+    ///
+    /// Every successful call returns a record with a new ETag and a fresh
+    /// `last_modified_time`, for a renewal and for a first claim. A renewal
+    /// makes the caller's ETag stale, so the caller must keep the returned
+    /// record for its next claim.
     pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership> {
         trace!("Update ownership for partition {}", ownership.partition_id);
 
@@ -62,26 +67,75 @@ impl InMemoryCheckpointStore {
             &ownership.partition_id,
         )?;
         trace!("Update ownership for key {}", key);
-        if store.contains_key(&key) {
-            if ownership.etag != store.get(&key).unwrap().etag {
-                warn!("ETag mismatch {}", key);
-                return Err(Error::with_message(
-                    AzureErrorKind::Other,
-                    format!("ETag mismatch for partition {key}"),
-                ));
+
+        // A renewal must present the ETag the store holds. A first claim has
+        // no record to match against.
+        let is_renewal = match store.get(&key) {
+            Some(existing) => {
+                let actual_etag = existing.etag.clone();
+                if ownership.etag != actual_etag {
+                    // The call returns `Err` from here, so this logs at the
+                    // error level, the same as the other failure path in this
+                    // file.
+                    error!(
+                        partition_id = %ownership.partition_id,
+                        expected_etag = ?ownership.etag,
+                        actual_etag = ?actual_etag,
+                        "ETag mismatch claiming ownership for key {}",
+                        key
+                    );
+                    return Err(Error::with_message(
+                        AzureErrorKind::Other,
+                        format!("ETag mismatch for partition {key}"),
+                    ));
+                }
+                true
             }
-            store.insert(key.clone(), ownership.clone());
+            None => false,
+        };
+
+        // A renewal and a first claim share one path, so the two cannot drift
+        // apart again. Both rotate the ETag and stamp the current time, the
+        // way the blob store does with the values the service returns.
+        let mut updated_ownership = ownership.clone();
+        updated_ownership.etag = Some(Etag::from(Uuid::new_v4().to_string()));
+        updated_ownership.last_modified_time = Some(OffsetDateTime::now_utc());
+        store.insert(key.clone(), updated_ownership.clone());
+
+        if is_renewal {
             trace!("Updated ownership for key {}", key);
-            Ok(ownership.clone())
         } else {
-            trace!("Insert new ownership for key {}", key);
-            let mut new_ownership = ownership.clone();
-            new_ownership.etag = Some(Etag::from(Uuid::new_v4().to_string()));
-            new_ownership.last_modified_time = Some(OffsetDateTime::now_utc());
-            store.insert(key.clone(), new_ownership.clone());
             trace!("Inserted new ownership for key {}", key);
-            Ok(new_ownership.clone())
         }
+        Ok(updated_ownership)
+    }
+}
+
+#[cfg(test)]
+impl InMemoryCheckpointStore {
+    /// Test-only seam: force an ownership's `last_modified_time` directly,
+    /// so tests can simulate an expired partition without depending on
+    /// `claim_ownership` preserving a stale timestamp.
+    pub(crate) fn set_last_modified_time_for_test(
+        &self,
+        ownership: &Ownership,
+        last_modified_time: OffsetDateTime,
+    ) -> Result<()> {
+        let key = Ownership::get_ownership_name(
+            &ownership.fully_qualified_namespace,
+            &ownership.event_hub_name,
+            &ownership.consumer_group,
+            &ownership.partition_id,
+        )?;
+        let mut store = self.ownerships.lock().unwrap();
+        let entry = store.get_mut(&key).ok_or_else(|| {
+            Error::with_message(
+                AzureErrorKind::Other,
+                format!("No ownership found for key {key}"),
+            )
+        })?;
+        entry.last_modified_time = Some(last_modified_time);
+        Ok(())
     }
 }
 
@@ -149,6 +203,11 @@ impl CheckpointStore for InMemoryCheckpointStore {
             checkpoint.partition_id
         );
         let mut checkpoints = self.checkpoints.lock().map_err(|e| {
+            error!(
+                partition_id = %checkpoint.partition_id,
+                error = %e,
+                "Checkpoint store lock is poisoned; cannot update checkpoint"
+            );
             Error::with_message(
                 AzureErrorKind::Other,
                 format!("Failed to lock checkpoint store: {}", e),

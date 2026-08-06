@@ -42,8 +42,12 @@ use std::error::Error;
 /// response body and the subsequent read.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -64,7 +68,7 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
             let initial_bytes = serde_json::to_vec(&initial)?;
 
             context
-                .create_item(&container, item_id, pk, &initial_bytes)
+                .create_seed_item(&container, item_id, pk, &initial_bytes)
                 .await?;
 
             let spec = PatchInstructions::from(vec![PatchOperation::set("/deleted", json!(true))]);
@@ -103,8 +107,12 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
 /// guard with no network call.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -118,7 +126,7 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
             let pk = "tenant-a";
             let initial = json!({ "id": item_id, "pk": pk, "name": "n" });
             context
-                .create_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
+                .create_seed_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
                 .await?;
 
             // Each op below targets the PK path directly.
@@ -178,8 +186,12 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
 /// rejected. Exercises the `MultiHash` branch of `validate_partition_key_paths`.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -204,7 +216,7 @@ pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> 
             });
             let pk: PartitionKey = (tenant, user).into();
             context
-                .create_item(
+                .create_seed_item(
                     &container,
                     item_id,
                     pk.clone(),
@@ -799,8 +811,12 @@ fn assert_post_image_props(actual: &Value, expected_props: &Value, case_id: &str
 /// error surfacing) against the live emulator.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -830,19 +846,17 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
                 let pk = format!("pk-{idx:03}");
                 let initial = seed_document(case, &item_id, &pk);
 
+                let initial_body = serde_json::to_vec(&initial)?;
                 context
-                    .create_item(
-                        &container,
-                        &item_id,
-                        pk.clone(),
-                        &serde_json::to_vec(&initial)?,
-                    )
+                    .create_seed_item(&container, &item_id, pk.clone(), &initial_body)
                     .await
                     .unwrap_or_else(|e| panic!("[{}] seed failed: {e}", case.id));
 
                 let spec = PatchInstructions::from(case.ops.clone());
                 let result = context
-                    .patch_item(&container, &item_id, pk.clone(), &spec, None)
+                    .retry_transient_transport(&format!("[{}] patch", case.id), || {
+                        context.patch_item(&container, &item_id, pk.clone(), &spec, None)
+                    })
                     .await;
 
                 match (&case.expected, result) {
@@ -892,8 +906,12 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
 /// covers the same branch with a scripted dispatcher).
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_read_missing_item_returns_not_found() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -949,8 +967,12 @@ use std::sync::Arc;
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
     let custom_412 = CustomResponseBuilder::new(azure_core::http::StatusCode::PreconditionFailed)
@@ -982,7 +1004,7 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
             let pk = "p1";
             let initial = json!({ "id": item_id, "pk": pk, "value": 0 });
             context
-                .create_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
+                .create_seed_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
                 .await?;
 
             let spec = PatchInstructions::from(vec![PatchOperation::increment("/value", 1i64)]);
@@ -1022,8 +1044,12 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
     let custom_412 = CustomResponseBuilder::new(azure_core::http::StatusCode::PreconditionFailed)
@@ -1054,7 +1080,7 @@ pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
             let pk = "p1";
             let initial = json!({ "id": item_id, "pk": pk, "value": 0 });
             context
-                .create_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
+                .create_seed_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
                 .await?;
 
             let max_attempts = std::num::NonZeroU8::new(2).unwrap();

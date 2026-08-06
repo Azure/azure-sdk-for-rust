@@ -1,0 +1,55 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use azure_core::{base64, fmt::SafeDebug, time::OffsetDateTime};
+use serde::{Deserialize, Serialize};
+
+/// A user delegation key.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct UserDelegationKey {
+    /// The delegated user tenant ID in Entra ID. Returned if DelegatedUserTid is specified.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signed_delegated_user_tid: Option<String>,
+
+    /// The date-time the key expires.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "crate::rfc3339::option"
+    )]
+    pub signed_expiry: Option<OffsetDateTime>,
+
+    /// The Entra ID object ID in GUID format.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signed_oid: Option<String>,
+
+    /// Abbreviation of the Azure Storage service that accepts the key.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signed_service: Option<String>,
+
+    /// The date-time the key is active.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "crate::rfc3339::option"
+    )]
+    pub signed_start: Option<OffsetDateTime>,
+
+    /// The Entra ID tenant ID in GUID format.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signed_tid: Option<String>,
+
+    /// The service version that created the key.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signed_version: Option<String>,
+
+    /// The base64 encoded key value.
+    #[serde(
+        default,
+        deserialize_with = "base64::option::deserialize",
+        serialize_with = "base64::option::serialize",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub value: Option<Vec<u8>>,
+}

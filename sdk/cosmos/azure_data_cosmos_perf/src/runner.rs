@@ -3,7 +3,7 @@
 
 //! Concurrent operation execution engine.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -13,7 +13,9 @@ use azure_data_cosmos_driver::DiagnosticsVerbosity;
 use rand::RngExt;
 use serde::Serialize;
 use sysinfo::System;
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use tokio::task::JoinSet;
+use tokio::time::MissedTickBehavior;
 use uuid::Uuid;
 
 use crate::operations::{FeedRangeRefresher, Operation};
@@ -88,6 +90,14 @@ struct PerfResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     config_concurrency: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    config_target_rate: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_max_in_flight: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_skipped_issuances: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_skipped_postprocessing: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     config_application_region: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     config_excluded_regions: Option<String>,
@@ -96,7 +106,9 @@ struct PerfResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     config_ppcb_enabled: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    config_gateway20_allowed: Option<bool>,
+    config_gateway_v2_disabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_diagnostics_threshold_ms: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     config_pyroscope_enabled: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -157,6 +169,13 @@ pub struct RunConfig {
     pub feed_range_refresher: Option<FeedRangeRefresher>,
     pub stats: Arc<Stats>,
     pub concurrency: usize,
+    /// Target arrival rate (ops/sec) for open-loop mode. When `Some`, the
+    /// runner issues requests at this fixed rate instead of using the
+    /// closed-loop `concurrency` worker pool.
+    pub target_rate: Option<u64>,
+    /// Maximum in-flight requests in open-loop mode. Ignored when
+    /// `target_rate` is `None`.
+    pub max_in_flight: usize,
     pub duration: Option<Duration>,
     pub report_interval: Duration,
     pub results_container: ContainerClient,
@@ -169,24 +188,101 @@ pub struct RunConfig {
 /// Snapshot of runtime configuration emitted with each PerfResult document.
 #[derive(Clone)]
 pub struct ConfigSnapshot {
-    pub concurrency: u64,
+    pub concurrency: Option<u64>,
+    pub target_rate: Option<u64>,
+    pub max_in_flight: Option<u64>,
+    pub skipped_issuances: Option<Arc<AtomicU64>>,
+    pub skipped_postprocessing: Option<Arc<AtomicU64>>,
     pub application_region: String,
     pub excluded_regions: String,
     pub tokio_threads: u64,
     pub ppcb_enabled: bool,
-    pub gateway20_allowed: bool,
+    pub gateway_v2_disabled: bool,
+    pub diagnostics_threshold_ms: Option<u64>,
     pub pyroscope_enabled: bool,
     pub tokio_console_enabled: bool,
     pub tokio_metrics_enabled: bool,
     pub valgrind_tool: String,
 }
 
-/// Runs operations concurrently until cancelled or duration expires.
+/// Shared metadata and reporting dependencies for one operation execution.
+struct OperationRunContext<'a> {
+    stats: &'a Stats,
+    results_container: &'a ContainerClient,
+    workload_id: &'a str,
+    commit_sha: &'a str,
+    hostname: &'a str,
+    postprocessing_slots: Option<Arc<Semaphore>>,
+    postprocessing_skipped: Option<Arc<AtomicU64>>,
+}
+
+/// Executes a single operation against `container`, recording its latency on
+/// success or its error (and an error document) on failure. Shared by both the
+/// closed-loop worker pool and the open-loop rate scheduler.
+async fn run_one(
+    op: &Arc<dyn Operation>,
+    container: &ContainerClient,
+    context: OperationRunContext<'_>,
+    permit: Option<OwnedSemaphorePermit>,
+) {
+    let op_start = Instant::now();
+    let result = op.execute(container).await;
+    drop(permit);
+
+    match result {
+        Ok(result) => {
+            let elapsed = op_start.elapsed();
+            context
+                .stats
+                .record_latency(op.name(), elapsed, result.backend_duration);
+        }
+        Err(e) => {
+            context.stats.record_error(op.name());
+            if let Some(_postprocessing_permit) =
+                try_acquire_postprocessing_slot(&context.postprocessing_slots)
+            {
+                upsert_error(
+                    context.results_container,
+                    op.name(),
+                    &e,
+                    context.workload_id,
+                    context.commit_sha,
+                    context.hostname,
+                )
+                .await;
+            } else {
+                record_skipped_postprocessing(&context.postprocessing_skipped);
+            }
+        }
+    }
+}
+
+fn record_skipped_postprocessing(skipped: &Option<Arc<AtomicU64>>) {
+    if let Some(skipped) = skipped {
+        skipped.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+fn try_acquire_postprocessing_slot(
+    slots: &Option<Arc<Semaphore>>,
+) -> Option<Option<OwnedSemaphorePermit>> {
+    match slots {
+        Some(slots) => Arc::clone(slots).try_acquire_owned().ok().map(Some),
+        None => Some(None),
+    }
+}
+
+/// Runs operations until cancelled or duration expires.
 ///
-/// Spawns `concurrency` tasks, each continuously picking a random operation
-/// from `operations` and executing it against `container`. Latency and errors
-/// are recorded in `stats`. A background reporter prints summaries at the
-/// given `report_interval` and upserts results into `results_container`.
+/// In the default closed-loop mode, spawns `concurrency` worker tasks, each
+/// continuously picking a random operation and executing it serially. When
+/// `target_rate` is set, switches to open-loop mode: operations are issued at
+/// a fixed arrival rate (bounded by `max_in_flight` concurrent requests),
+/// decoupling issuance from completion to reduce coordinated-omission bias.
+///
+/// Latency and errors are recorded in `stats`. A background reporter prints
+/// summaries at the given `report_interval` and upserts results into
+/// `results_container`.
 pub async fn run(config: RunConfig) {
     let RunConfig {
         container,
@@ -194,15 +290,21 @@ pub async fn run(config: RunConfig) {
         feed_range_refresher,
         stats,
         concurrency,
+        target_rate,
+        max_in_flight,
         duration,
         report_interval,
         results_container,
         workload_id,
         commit_sha,
         hostname,
-        config_snapshot,
+        mut config_snapshot,
     } = config;
     let cancelled = Arc::new(AtomicBool::new(false));
+    let skipped = target_rate.map(|_| Arc::new(AtomicU64::new(0)));
+    let postprocessing_skipped = target_rate.map(|_| Arc::new(AtomicU64::new(0)));
+    config_snapshot.skipped_issuances = skipped.clone();
+    config_snapshot.skipped_postprocessing = postprocessing_skipped.clone();
 
     // Spawn the optional feed-range refresher BEFORE workers so its
     // first refresh has a head start on warming the cache.
@@ -308,49 +410,164 @@ pub async fn run(config: RunConfig) {
         }
     });
 
-    // Spawn fixed worker pool — each worker loops until cancelled
+    // Issue operations until cancelled — open-loop (fixed rate) or
+    // closed-loop (fixed worker pool), depending on `target_rate`.
     let start = Instant::now();
-    let mut workers = JoinSet::new();
 
-    for _ in 0..concurrency {
-        let ops = operations.clone();
-        let container = container.clone();
-        let stats = stats.clone();
-        let cancelled = cancelled.clone();
-        let err_container = results_container.clone();
-        let err_workload_id = workload_id.clone();
-        let err_commit_sha = commit_sha.clone();
-        let err_hostname = hostname.clone();
+    if let Some(rate) = target_rate {
+        // Open-loop: issue at a fixed arrival rate, decoupled from request
+        // completion. Borrow the id Strings as `Arc<str>` (clone, not move)
+        // so the final report below can still use the originals.
+        let workload_id: Arc<str> = Arc::from(workload_id.as_str());
+        let commit_sha: Arc<str> = Arc::from(commit_sha.as_str());
+        let hostname: Arc<str> = Arc::from(hostname.as_str());
+        let semaphore = Arc::new(Semaphore::new(max_in_flight));
+        let postprocessing_slots = Arc::new(Semaphore::new(max_in_flight));
+        let postprocessing_skipped =
+            postprocessing_skipped.expect("open-loop postprocessing counter exists");
+        let skipped = skipped.expect("open-loop skipped-issuance counter exists");
+        let mut issued_tasks = JoinSet::new();
 
-        workers.spawn(async move {
-            while !cancelled.load(Ordering::Relaxed) {
-                let op_idx = rand::rng().random_range(0..ops.len());
-                let op = &ops[op_idx];
+        println!("Open-loop mode: target_rate={rate} ops/s, max_in_flight={max_in_flight}");
 
-                let op_start = Instant::now();
-                match op.execute(&container).await {
-                    Ok(backend_duration) => {
-                        stats.record_latency(op.name(), op_start.elapsed(), backend_duration);
+        // 1ms ticker; each tick issues up to `elapsed * rate` so issuance
+        // self-corrects against wall-clock drift. Burst on missed ticks.
+        let mut ticker = tokio::time::interval(Duration::from_millis(1));
+        ticker.set_missed_tick_behavior(MissedTickBehavior::Burst);
+        let mut issued: u128 = 0;
+
+        while !cancelled.load(Ordering::Relaxed) {
+            ticker.tick().await;
+            while let Some(result) = issued_tasks.try_join_next() {
+                if let Err(error) = result {
+                    eprintln!("Warning: open-loop operation task failed: {error}");
+                }
+            }
+            let target =
+                start.elapsed().as_nanos().saturating_mul(u128::from(rate)) / 1_000_000_000;
+            while issued < target {
+                if cancelled.load(Ordering::Relaxed) {
+                    break;
+                }
+                // Count every scheduled issuance against `issued` (even
+                // skips) so saturation doesn't trigger a catch-up burst once
+                // the backend recovers.
+                issued += 1;
+                match Arc::clone(&semaphore).try_acquire_owned() {
+                    Ok(permit) => {
+                        let op = operations[rand::rng().random_range(0..operations.len())].clone();
+                        let container = container.clone();
+                        let stats = stats.clone();
+                        let err_container = results_container.clone();
+                        let workload_id = workload_id.clone();
+                        let commit_sha = commit_sha.clone();
+                        let hostname = hostname.clone();
+                        let postprocessing_slots = postprocessing_slots.clone();
+                        let postprocessing_skipped = postprocessing_skipped.clone();
+                        issued_tasks.spawn(async move {
+                            run_one(
+                                &op,
+                                &container,
+                                OperationRunContext {
+                                    stats: &stats,
+                                    results_container: &err_container,
+                                    workload_id: &workload_id,
+                                    commit_sha: &commit_sha,
+                                    hostname: &hostname,
+                                    postprocessing_slots: Some(postprocessing_slots),
+                                    postprocessing_skipped: Some(postprocessing_skipped),
+                                },
+                                Some(permit),
+                            )
+                            .await;
+                        });
                     }
-                    Err(e) => {
-                        stats.record_error(op.name());
-                        upsert_error(
-                            &err_container,
-                            op.name(),
-                            &e,
-                            &err_workload_id,
-                            &err_commit_sha,
-                            &err_hostname,
-                        )
-                        .await;
+                    Err(_) => {
+                        let skipped_now = saturated_skip_count(issued, target);
+                        issued = target;
+                        let (previous, total) = add_skipped_saturating(&skipped, skipped_now);
+                        if previous / 10_000 != total / 10_000 {
+                            println!(
+                                "WARN: max_in_flight={max_in_flight} saturated, skipped {total} \
+                                 issuance(s) (requests completing slower than target_rate)"
+                            );
+                        }
+                        break;
                     }
                 }
             }
-        });
-    }
+        }
 
-    // Wait for all workers to finish
-    workers.join_all().await;
+        // Best-effort drain: permits track only the tested requests, while task
+        // completion also includes stats, diagnostics, and error persistence.
+        let drain_deadline = Instant::now() + Duration::from_secs(30);
+        while !issued_tasks.is_empty() && Instant::now() < drain_deadline {
+            match tokio::time::timeout(Duration::from_millis(50), issued_tasks.join_next()).await {
+                Ok(Some(Err(error))) => {
+                    eprintln!("Warning: open-loop operation task failed: {error}");
+                }
+                Ok(Some(Ok(()))) | Err(_) => {}
+                Ok(None) => break,
+            }
+        }
+        if !issued_tasks.is_empty() {
+            issued_tasks.abort_all();
+            issued_tasks.join_all().await;
+        }
+
+        let total_skipped = skipped.load(Ordering::Relaxed);
+        if total_skipped > 0 {
+            println!(
+                "Open-loop summary: skipped {total_skipped} issuance(s) due to \
+                 max_in_flight saturation"
+            );
+        }
+        let total_postprocessing_skipped = postprocessing_skipped.load(Ordering::Relaxed);
+        if total_postprocessing_skipped > 0 {
+            eprintln!(
+                "Open-loop summary: skipped {total_postprocessing_skipped} diagnostics/error \
+                 persistence operation(s) due to postprocessing saturation"
+            );
+        }
+    } else {
+        // Closed-loop: fixed worker pool — each worker loops until cancelled.
+        let mut workers = JoinSet::new();
+
+        for _ in 0..concurrency {
+            let ops = operations.clone();
+            let container = container.clone();
+            let stats = stats.clone();
+            let cancelled = cancelled.clone();
+            let err_container = results_container.clone();
+            let err_workload_id = workload_id.clone();
+            let err_commit_sha = commit_sha.clone();
+            let err_hostname = hostname.clone();
+
+            workers.spawn(async move {
+                while !cancelled.load(Ordering::Relaxed) {
+                    let op_idx = rand::rng().random_range(0..ops.len());
+                    run_one(
+                        &ops[op_idx],
+                        &container,
+                        OperationRunContext {
+                            stats: &stats,
+                            results_container: &err_container,
+                            workload_id: &err_workload_id,
+                            commit_sha: &err_commit_sha,
+                            hostname: &err_hostname,
+                            postprocessing_slots: None,
+                            postprocessing_skipped: None,
+                        },
+                        None,
+                    )
+                    .await;
+                }
+            });
+        }
+
+        // Wait for all workers to finish
+        workers.join_all().await;
+    }
 
     // Print final report
     let total_elapsed = start.elapsed();
@@ -441,7 +658,17 @@ async fn upsert_results(
             tokio_busy_pct: tokio_fields.map(|t| t.busy_pct),
             tokio_park_count: tokio_fields.map(|t| t.park_count),
             tokio_queue_depth: tokio_fields.map(|t| t.queue_depth),
-            config_concurrency: Some(config.concurrency),
+            config_concurrency: config.concurrency,
+            config_target_rate: config.target_rate,
+            config_max_in_flight: config.max_in_flight,
+            config_skipped_issuances: config
+                .skipped_issuances
+                .as_ref()
+                .map(|value| value.load(Ordering::Relaxed)),
+            config_skipped_postprocessing: config
+                .skipped_postprocessing
+                .as_ref()
+                .map(|value| value.load(Ordering::Relaxed)),
             config_application_region: Some(config.application_region.clone()),
             config_excluded_regions: if config.excluded_regions.is_empty() {
                 None
@@ -450,7 +677,8 @@ async fn upsert_results(
             },
             config_tokio_threads: Some(config.tokio_threads),
             config_ppcb_enabled: Some(config.ppcb_enabled),
-            config_gateway20_allowed: Some(config.gateway20_allowed),
+            config_gateway_v2_disabled: Some(config.gateway_v2_disabled),
+            config_diagnostics_threshold_ms: config.diagnostics_threshold_ms,
             config_pyroscope_enabled: Some(config.pyroscope_enabled),
             config_tokio_console_enabled: Some(config.tokio_console_enabled),
             config_tokio_metrics_enabled: Some(config.tokio_metrics_enabled),
@@ -513,13 +741,46 @@ async fn upsert_error(
     }
 }
 
-/// Serializes a finalized [`DiagnosticsContext`] to a `serde_json::Value` so it
-/// can be embedded as a `dynamic` column in the upserted document (rather than
-/// a quoted JSON string). Panics if the roundtrip fails — `to_json_string`
-/// always produces valid JSON, so a failure here is a serialization bug we
-/// want surfaced immediately in the perf harness.
 fn diagnostics_to_json(diagnostics: &DiagnosticsContext) -> serde_json::Value {
-    let json_str = diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed));
-    serde_json::from_str(json_str)
+    serde_json::from_str(diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
         .expect("DiagnosticsContext::to_json_string should always produce valid JSON")
+}
+
+fn saturated_skip_count(issued_after_increment: u128, target: u128) -> u128 {
+    debug_assert!(issued_after_increment <= target);
+    target - issued_after_increment + 1
+}
+
+fn add_skipped_saturating(counter: &AtomicU64, amount: u128) -> (u64, u64) {
+    let amount = u64::try_from(amount).unwrap_or(u64::MAX);
+    let previous = counter
+        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+            Some(current.saturating_add(amount))
+        })
+        .expect("saturating skipped-issuance update always succeeds");
+    (previous, previous.saturating_add(amount))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    use super::{add_skipped_saturating, saturated_skip_count};
+
+    #[test]
+    fn saturation_batches_current_and_remaining_arrivals() {
+        assert_eq!(saturated_skip_count(10, 10), 1);
+        assert_eq!(saturated_skip_count(10, 1_000_000), 999_991);
+    }
+
+    #[test]
+    fn skipped_counter_saturates_without_wrapping() {
+        let counter = AtomicU64::new(u64::MAX - 1);
+
+        assert_eq!(
+            add_skipped_saturating(&counter, u128::from(u64::MAX)),
+            (u64::MAX - 1, u64::MAX)
+        );
+        assert_eq!(counter.load(Ordering::Relaxed), u64::MAX);
+    }
 }

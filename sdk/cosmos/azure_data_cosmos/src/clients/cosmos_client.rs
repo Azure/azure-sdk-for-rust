@@ -1,16 +1,24 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::clients::{ClientContext, DatabaseClient};
+use azure_core::http::Url;
+
+#[cfg(feature = "control_plane")]
 use crate::{
-    clients::{ClientContext, DatabaseClient},
+    diagnostics::CosmosOperationContext,
     feed::QueryItemIterator,
-    models::DatabaseProperties,
-    models::ResourceResponse,
+    models::{DatabaseProperties, ResourceResponse},
     options::{CreateDatabaseOptions, QueryDatabasesOptions},
     Query,
 };
-use azure_core::http::Url;
+#[cfg(feature = "control_plane")]
 use azure_data_cosmos_driver::models::CosmosOperation;
+
+#[cfg(feature = "control_plane")]
+use azure_data_cosmos_driver::options::PlanOptions;
+
+#[cfg(feature = "control_plane")]
 use serde::Serialize;
 
 pub use super::cosmos_client_builder::CosmosClientBuilder;
@@ -103,6 +111,40 @@ impl CosmosClient {
         DatabaseClient::new(self.context.clone(), id)
     }
 
+    /// Commits a preview distributed write transaction.
+    ///
+    /// **Preview / work in progress.** Requires the disabled-by-default
+    /// `preview_dtx` feature and a service account with the DTX feature enabled.
+    /// Not supported for production use; the API may change without notice.
+    #[cfg(feature = "preview_dtx")]
+    pub async fn commit_distributed_write(
+        &self,
+        transaction: crate::clients::DistributedWriteTransaction,
+    ) -> crate::Result<crate::clients::DistributedTransactionResponse> {
+        crate::clients::distributed_transaction::commit_distributed_write(
+            &self.context,
+            transaction,
+        )
+        .await
+    }
+
+    /// Executes a preview distributed read transaction.
+    ///
+    /// **Preview / work in progress.** Requires the disabled-by-default
+    /// `preview_dtx` feature and a service account with the DTX feature enabled.
+    /// Not supported for production use; the API may change without notice.
+    #[cfg(feature = "preview_dtx")]
+    pub async fn execute_distributed_read(
+        &self,
+        transaction: crate::clients::DistributedReadTransaction,
+    ) -> crate::Result<crate::clients::DistributedTransactionResponse> {
+        crate::clients::distributed_transaction::execute_distributed_read(
+            &self.context,
+            transaction,
+        )
+        .await
+    }
+
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
         self.context.driver.account().endpoint()
@@ -131,6 +173,7 @@ impl CosmosClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
+    #[cfg(feature = "control_plane")]
     pub async fn query_databases(
         &self,
         query: impl Into<Query>,
@@ -143,17 +186,21 @@ impl CosmosClient {
             CosmosOperation::query_databases(account).with_body(serde_json::to_vec(&query)?);
         let operation_options = options.operation;
 
-        let plan = self
-            .context
-            .driver
-            .plan_operation(initial_operation, &operation_options, None)
-            .await?;
+        let plan = Box::pin(self.context.driver.plan_operation(
+            initial_operation,
+            &operation_options,
+            None,
+            &PlanOptions::default(),
+        ))
+        .await?;
 
         Ok(QueryItemIterator::new(
             self.context.driver.clone(),
             None,
             plan,
             operation_options,
+            self.context.diagnostics_handlers.clone(),
+            CosmosOperationContext::new().with_operation_name("query_databases"),
         ))
     }
 
@@ -166,6 +213,7 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the new database.
     /// * `options` - Optional parameters for the request.
+    #[cfg(feature = "control_plane")]
     pub async fn create_database(
         &self,
         id: &str,
@@ -187,19 +235,24 @@ impl CosmosClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, operation_options)
-            .await?;
+            .await;
 
-        Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
-        ))
+        Ok(ResourceResponse::new(self.context.complete_result(
+            driver_result,
+            || {
+                CosmosOperationContext::new()
+                    .with_operation_name("create_database")
+                    .with_database_name(id.to_string())
+            },
+        )?))
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "control_plane"))]
 mod tests {
     use super::*;
 

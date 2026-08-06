@@ -1,16 +1,23 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.2.0-beta.1 (Unreleased)
 
 ### Features Added
-
-- `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
 
 ### Breaking Changes
 
 ### Bugs Fixed
 
+<!-- cspell:disable-next-line -->
+- Added `azure-deprecating` to the default allowed HTTP header list so shared debug and logging paths stop redacting it.
+
 ### Other Changes
+
+## 1.1.0 (2026-07-09)
+
+### Features Added
+
+- `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
 
 ## 1.0.0 (2026-05-11)
 

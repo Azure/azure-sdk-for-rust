@@ -26,7 +26,7 @@ use std::{
     },
     {collections::HashMap, sync::Weak},
 };
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 
 // AMQP epoch (owner level) used for every partition receiver opened by
 // `EventProcessor`. Matches `EventProcessorClient` in the .NET and Java
@@ -109,31 +109,31 @@ impl ProcessorConsumersMap {
         partition_id: &str,
         partition_client: Arc<PartitionClient>,
     ) -> Result<bool> {
-        info!("Adding partition client for partition: {}", partition_id);
+        debug!(partition_id = %partition_id, "Adding partition client for partition.");
         let mut consumers = self
             .consumers
             .lock()
             .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
         if consumers.contains_key(partition_id) {
-            info!(
-                "Partition client already exists for partition: {}",
-                partition_id
+            debug!(
+                partition_id = %partition_id,
+                "Partition client already exists for partition."
             );
             return Ok(false);
         }
         consumers.insert(partition_id.to_string(), Arc::downgrade(&partition_client));
-        info!("Consumers for partition: {:?}", consumers.keys());
+        debug!(partitions = ?consumers.keys(), "Consumers for partition.");
         Ok(true)
     }
 
     pub fn remove_partition_client(&self, partition_id: &str) -> Result<()> {
-        info!("Removing partition client for partition: {}", partition_id);
+        debug!(partition_id = %partition_id, "Removing partition client for partition.");
         let mut consumers = self
             .consumers
             .lock()
             .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
         consumers.remove(partition_id);
-        info!("Consumers for partition now: {:?}", consumers.keys());
+        debug!(partitions = ?consumers.keys(), "Consumers for partition now.");
         Ok(())
     }
 
@@ -284,7 +284,7 @@ impl EventProcessor {
                     debug!("Event processor dispatched successfully.");
                 }
                 Err(e) => {
-                    info!("Error dispatching event processor: {:?}", e);
+                    error!(err = ?e, "Error dispatching event processor.");
                     return Err(e);
                 }
             }
@@ -323,6 +323,17 @@ impl EventProcessor {
         }
     }
 
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            eventhub = %self.client_details.eventhub_name,
+            consumer_group = %self.client_details.consumer_group,
+            fully_qualified_namespace = %self.client_details.fully_qualified_namespace,
+            owner_id = %self.client_details.client_id,
+        ),
+        err,
+    )]
     async fn dispatch(
         &self,
         partition_ids: &[&str],
@@ -333,7 +344,7 @@ impl EventProcessor {
 
         let ownerships = load_balancer.load_balance(partition_ids).await;
         let ownerships = ownerships.map_err(|e| {
-            error!("Error in load balancing: {:?}", e);
+            error!(err = ?e, "Error in load balancing.");
             e
         })?;
 
@@ -347,15 +358,15 @@ impl EventProcessor {
             .collect();
         if !stolen.is_empty() {
             info!(
-                "Partitions no longer owned, revoking: {}",
-                stolen.join(", ")
+                partitions = %stolen.join(", "),
+                "Partitions no longer owned, revoking."
             );
             consumers.revoke_partition_clients(&stolen).await?;
         }
 
         let checkpoints = self.get_checkpoint_map().await;
         let checkpoints = checkpoints.map_err(|e| {
-            error!("Error in getting checkpoint map: {:?}", e);
+            error!(err = ?e, "Error in getting checkpoint map.");
             e
         })?;
 
@@ -372,7 +383,7 @@ impl EventProcessor {
                 )
                 .await;
             if let Err(e) = err {
-                error!("Error adding partition client: {:?}", e);
+                error!(err = ?e, "Error adding partition client.");
                 return Err(e);
             }
         }
@@ -380,13 +391,19 @@ impl EventProcessor {
         Ok(())
     }
 
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(partition_id = %partition_id),
+        err,
+    )]
     async fn add_partition_client(
         &self,
         partition_id: String,
         checkpoints: &HashMap<String, Checkpoint>,
         consumers: Weak<ProcessorConsumersMap>,
     ) -> Result<()> {
-        info!("Add partition client for partition ID: {:?}", partition_id);
+        debug!(partition_id = %partition_id, "Add partition client for partition.");
 
         let partition_client = Arc::new(PartitionClient::new(
             partition_id.clone(),
@@ -401,8 +418,8 @@ impl EventProcessor {
                 .await?
             {
                 debug!(
-                    "Partition client already exists for partition: {}, ignoring.",
-                    partition_id
+                    partition_id = %partition_id,
+                    "Partition client already exists for partition, ignoring."
                 );
                 return Ok(());
             }
@@ -416,8 +433,9 @@ impl EventProcessor {
         // Since we can only have a single EventReceiver on a partition, we don't actually attempt to create the receiver until
         let start_position = self.get_start_position(&partition_id, checkpoints);
         debug!(
-            "Start position for partition {}: {:?}",
-            partition_id, start_position
+            partition_id = %partition_id,
+            start_position = ?start_position,
+            "Start position for partition."
         );
         let receiver = self
             .consumer_client
@@ -437,18 +455,23 @@ impl EventProcessor {
         let receiver = match receiver {
             Ok(r) => r,
             Err(e) => {
-                error!("Error opening receiver for partition client: {:?}", e);
+                error!(
+                    partition_id = %partition_id,
+                    err = ?e,
+                    "Error opening receiver for partition client."
+                );
                 if let Some(strong_consumers) = consumers.upgrade() {
                     let _ = strong_consumers.remove_partition_client(&partition_id);
                 }
                 return Err(e);
             }
         };
-        info!("Receiver opened for partition client: {:?}", &partition_id);
+        info!(partition_id = %partition_id, "Receiver opened for partition client.");
         if let Err(e) = partition_client.set_event_receiver(receiver) {
             error!(
-                "Error setting event receiver for partition {}: {:?}",
-                partition_id, e
+                partition_id = %partition_id,
+                err = ?e,
+                "Error setting event receiver for partition."
             );
             if let Some(strong_consumers) = consumers.upgrade() {
                 let _ = strong_consumers.remove_partition_client(&partition_id);
@@ -456,7 +479,7 @@ impl EventProcessor {
             return Err(e);
         }
 
-        info!("Adding partition client to queue.");
+        debug!(partition_id = %partition_id, "Adding partition client to queue.");
 
         // Send the partition client to the next partition client receiver
         {
@@ -468,9 +491,9 @@ impl EventProcessor {
                 ))
             })?;
         }
-        info!(
-            "add_partition_client: Partition client added for partition: {:?}",
-            partition_id
+        debug!(
+            partition_id = %partition_id,
+            "add_partition_client: Partition client added for partition."
         );
 
         Ok(())
@@ -481,7 +504,7 @@ impl EventProcessor {
     /// This method returns the next available partition client.
     pub async fn next_partition_client(&self) -> Result<Arc<PartitionClient>> {
         // Implement the function or remove it if not needed
-        info!("next_partition_client: Waiting to receive the next partition client.",);
+        debug!("next_partition_client: Waiting to receive the next partition client.");
 
         {
             // Wait for the next partition client to be available
@@ -490,9 +513,9 @@ impl EventProcessor {
                 EventHubsError::with_message("No next partition client available: ")
             })?;
 
-            info!(
-                "next_partition_client: Returning partition client for partition {:?}.",
-                next_client.get_partition_id()
+            debug!(
+                partition_id = %next_client.get_partition_id(),
+                "next_partition_client: Returning partition client for partition."
             );
             Ok(next_client)
         }
@@ -505,17 +528,32 @@ impl EventProcessor {
         let mut clients = self.next_partition_clients.lock().await;
         while let Ok(client) = clients.try_recv() {
             info!(
-                "Closing partition client for partition: {}",
-                client.get_partition_id()
+                partition_id = %client.get_partition_id(),
+                "Closing partition client for partition."
             );
-            let client = Arc::try_unwrap(client).map_err(|_| {
-                EventHubsError::with_message("Partition client still has multiple references.")
-            })?;
+            // A partition client that the application still holds cannot be
+            // taken out of its `Arc`. Report it and continue, so that one such
+            // client does not stop the processor from closing the clients that
+            // follow.
+            //
+            // The connection solved the same problem by taking `&self`, and a
+            // partition client could do the same through
+            // `EventReceiver::request_close`, which detaches the receiver the
+            // way `EventReceiver::close` does. That needs a new signature for
+            // the public `PartitionClient::close`, which is a breaking change.
+            // This fix therefore leaves such a client to the application that
+            // holds it.
+            let Ok(client) = Arc::try_unwrap(client) else {
+                warn!(
+                    "Could not close a partition client, because the application still holds it."
+                );
+                continue;
+            };
             let res = client.close().await;
             if let Err(e) = res {
-                error!("Failed to close partition client: {:?}", e);
+                error!(err = ?e, "Failed to close partition client.");
             } else {
-                info!("Partition client closed successfully");
+                info!("Partition client closed successfully.");
             }
         }
 
@@ -523,9 +561,9 @@ impl EventProcessor {
         info!("Closing consumer client.");
         let res = self.consumer_client.close().await;
         if let Err(e) = res {
-            error!("Failed to close consumer client: {:?}", e);
+            error!(err = ?e, "Failed to close consumer client.");
         } else {
-            info!("Consumer client closed successfully");
+            info!("Consumer client closed successfully.");
         }
         Ok(())
     }
@@ -762,7 +800,110 @@ pub mod builders {
 #[cfg(test)]
 mod tests {
     use super::builders::validate_expiration_vs_update_interval;
+    use super::{
+        EventProcessor, EventProcessorOptions, PartitionClient, ProcessorConsumersMap,
+        ProcessorStrategy, StartPositions,
+    };
+    use crate::{ConsumerClient, InMemoryCheckpointStore};
     use azure_core::time::Duration;
+    use azure_core_test::credentials::MockCredential;
+    use futures::SinkExt;
+    use std::sync::Arc;
+
+    /// Builds a processor that holds `partition_ids` queued partition clients,
+    /// with no connection to the service. The returned map is the one that a
+    /// `PartitionClient::close` removes itself from, so a test reads it to
+    /// find out which clients closed.
+    async fn processor_with_queued_clients(
+        partition_ids: &[&str],
+    ) -> (Arc<EventProcessor>, Arc<ProcessorConsumersMap>) {
+        let consumer_client = ConsumerClient::new_unconnected(
+            "example.servicebus.windows.net",
+            "test-eventhub",
+            Arc::new(MockCredential),
+        )
+        .expect("the client must build");
+        let client_details = consumer_client.get_details().expect("details must parse");
+        let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
+
+        let processor = EventProcessor::new(
+            consumer_client,
+            checkpoint_store.clone(),
+            EventProcessorOptions {
+                strategy: ProcessorStrategy::Greedy,
+                partition_expiration_duration: Duration::seconds(60),
+                update_interval: Duration::seconds(30),
+                start_positions: StartPositions::default(),
+                prefetch: 300,
+                partition_ids: partition_ids.iter().map(|id| id.to_string()).collect(),
+            },
+        )
+        .expect("the processor must build");
+
+        let consumers = Arc::new(ProcessorConsumersMap::new());
+        let mut sender = processor.next_partition_client_sender.clone();
+        for partition_id in partition_ids {
+            let client = Arc::new(PartitionClient::new(
+                partition_id.to_string(),
+                checkpoint_store.clone(),
+                client_details.clone(),
+                Arc::downgrade(&consumers),
+            ));
+            consumers
+                .add_partition_client(partition_id, client.clone())
+                .await
+                .expect("the map must accept the client");
+            sender.send(client).await.expect("the queue must accept it");
+        }
+
+        (processor, consumers)
+    }
+
+    /// `close` must not stop at a partition client that the application still
+    /// holds. It used to take each client out of its `Arc` and return an error
+    /// when that failed, which left the clients behind it open and skipped the
+    /// close of the consumer connection.
+    #[tokio::test]
+    async fn close_continues_past_a_retained_partition_client() {
+        let (processor, consumers) = processor_with_queued_clients(&["0", "1"]).await;
+
+        // Stand in for an application that holds the first client it took.
+        let retained = consumers
+            .consumers
+            .lock()
+            .expect("the map must lock")
+            .get("0")
+            .expect("partition 0 must be in the map")
+            .upgrade()
+            .expect("partition 0 must still be alive");
+
+        let connection = {
+            let Ok(processor) = Arc::try_unwrap(processor) else {
+                panic!("the test must be the only holder of the processor");
+            };
+            let connection = processor.consumer_client.recoverable_connection();
+            processor.close().await.expect("close must succeed");
+            connection
+        };
+
+        let active = consumers
+            .get_active_partition_ids()
+            .expect("the map must lock");
+        assert!(
+            active.contains(&"0".to_string()),
+            "the retained client must stay in the map, because it did not close"
+        );
+        assert!(
+            !active.contains(&"1".to_string()),
+            "the client behind the retained one must close, got: {active:?}"
+        );
+        assert!(
+            connection.is_closed(),
+            "the consumer connection must close after the partition clients"
+        );
+
+        drop(retained);
+    }
 
     /// The validation must reject the historical default (expiration=10s,
     /// update_interval=30s). This combination is the root cause of issue

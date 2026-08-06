@@ -40,6 +40,54 @@ impl ControlPlaneTaskKey {
     }
 }
 
+enum ControlPlaneProgression {
+    Automatic(Duration),
+    Manual(futures::channel::oneshot::Receiver<()>),
+}
+
+impl ControlPlaneProgression {
+    async fn wait(self) -> bool {
+        match self {
+            Self::Automatic(duration) => {
+                if !duration.is_zero() {
+                    tokio::time::sleep(duration).await;
+                }
+                true
+            }
+            Self::Manual(release) => release.await.is_ok(),
+        }
+    }
+}
+
+/// Handle for a manually progressed split or merge operation.
+#[doc(hidden)]
+pub struct ManualControlPlaneOperation {
+    release: Option<futures::channel::oneshot::Sender<()>>,
+    completed: futures::channel::oneshot::Receiver<bool>,
+}
+
+impl ManualControlPlaneOperation {
+    /// Releases the operation's partition lock and waits for topology replacement.
+    pub async fn complete(mut self) -> crate::error::Result<()> {
+        self.release
+            .take()
+            .ok_or_else(|| host_control_plane_error("manual operation was already released"))?
+            .send(())
+            .map_err(|_| host_control_plane_error("manual operation task ended before release"))?;
+        if self
+            .completed
+            .await
+            .map_err(|_| host_control_plane_error("manual operation ended without a result"))?
+        {
+            Ok(())
+        } else {
+            Err(host_control_plane_error(
+                "manual operation could not update the requested partitions",
+            ))
+        }
+    }
+}
+
 /// Applies a single document mutation to a partition under LWW
 /// (Last-Writer-Wins) on `(_ts, lsn)`.
 ///
@@ -159,6 +207,26 @@ pub struct EmulatorStore {
     /// per-id locks is preferable to a remove-on-drop dance that races
     /// fresh acquisitions.
     control_plane_locks: std::sync::Mutex<HashMap<String, Arc<async_lock::Mutex<()>>>>,
+    /// Serializes emulator document writes while preview distributed
+    /// transactions are enabled.
+    ///
+    /// DTX rollback restores pre-images. Without a transaction-wide write
+    /// guard, a concurrent point write can commit between preimage capture and
+    /// rollback, then be overwritten by the restore path.
+    #[cfg(feature = "preview_dtx")]
+    document_write_lock: Arc<async_lock::Mutex<()>>,
+    /// Buffers replication issued while a distributed transaction is applying so
+    /// a rollback can discard replicas that were never durably committed.
+    ///
+    /// `Some(buffer)` means a DTX write transaction is capturing replication.
+    /// The DTX write path holds `document_write_lock` for the whole
+    /// transaction, which serializes every emulator write, so no unrelated
+    /// write's replication can be captured here. `None` is the normal
+    /// immediate-replication path. On commit the buffer is drained and
+    /// replayed; on abort it is dropped so rolled-back writes never reach
+    /// secondary regions.
+    #[cfg(feature = "preview_dtx")]
+    dtx_replication_capture: std::sync::Mutex<Option<Vec<CapturedReplication>>>,
     /// Tracks spawned replication tasks so tests can drain them.
     replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
     /// Tracks spawned split/merge tasks separately from replication so a
@@ -200,6 +268,17 @@ pub struct EmulatorStore {
     captured_panics: std::sync::Mutex<Vec<Box<dyn std::any::Any + Send + 'static>>>,
 }
 
+/// A replication operation buffered during a distributed transaction so it can
+/// be replayed on commit or dropped on rollback.
+#[cfg(feature = "preview_dtx")]
+struct CapturedReplication {
+    source_region: String,
+    db_id: String,
+    coll_id: String,
+    doc: StoredDocument,
+    is_delete: bool,
+}
+
 impl EmulatorStore {
     /// Creates a new store from the given account configuration.
     pub(crate) fn new(config: VirtualAccountConfig) -> Arc<Self> {
@@ -215,6 +294,10 @@ impl EmulatorStore {
 
             split_merge_locks: std::sync::Mutex::new(HashMap::new()),
             control_plane_locks: std::sync::Mutex::new(HashMap::new()),
+            #[cfg(feature = "preview_dtx")]
+            document_write_lock: Arc::new(async_lock::Mutex::new(())),
+            #[cfg(feature = "preview_dtx")]
+            dtx_replication_capture: std::sync::Mutex::new(None),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
             control_plane_tasks: std::sync::Mutex::new(Vec::new()),
             transport_request_counter: AtomicU32::new(0),
@@ -390,6 +473,19 @@ impl EmulatorStore {
         self.control_plane_lock(&format!("{}::{}", db, coll))
     }
 
+    /// Returns the preview-DTX document write lock.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn document_write_lock(&self) -> Arc<async_lock::Mutex<()>> {
+        self.document_write_lock.clone()
+    }
+
+    /// Returns the preview-DTX document write lock for internal emulator tests.
+    #[cfg(feature = "preview_dtx")]
+    #[doc(hidden)]
+    pub fn document_write_lock_for_tests(&self) -> Arc<async_lock::Mutex<()>> {
+        self.document_write_lock.clone()
+    }
+
     /// Awaits all pending in-flight replication tasks and surfaces any
     /// previously-captured background panics. Test-only.
     ///
@@ -532,12 +628,28 @@ impl EmulatorStore {
             etag: new_etag(),
             partition_key: pk_def,
             partition_count: config.partition_count(),
+            partition_key_range_page_size: config.partition_key_range_page_size(),
             provisioned_throughput_ru: config.provisioned_throughput_ru(),
             // Shared counter — first id allocated by split/merge will be
             // `partition_count` (one past the last initial partition id).
             next_partition_id: Arc::new(AtomicU32::new(config.partition_count())),
             pkrange_rids: Arc::new(RwLock::new(HashMap::new())),
         };
+
+        let offer = meta
+            .provisioned_throughput_ru
+            .map(|throughput| OfferMetadata {
+                id: format!("offer_{}_{}", meta.numeric_db_id, meta.numeric_coll_id),
+                offer_resource_id: meta.rid.clone(),
+                throughput,
+                rid: format!("offer_{}_{}", meta.numeric_db_id, meta.numeric_coll_id),
+                ts,
+                self_link: format!(
+                    "offers/offer_{}_{}/",
+                    meta.numeric_db_id, meta.numeric_coll_id
+                ),
+                etag: new_etag(),
+            });
 
         // Each region gets its own ContainerState (own LSNs, own document
         // store) but they all share the same `ContainerMetadata`, so pkrange
@@ -549,9 +661,37 @@ impl EmulatorStore {
                 (db_id.to_string(), coll_id.to_string()),
                 ContainerState::new(&meta, &self.rid_generator, self.config.throttling_enabled()),
             );
+            if let Some(offer) = &offer {
+                region
+                    .offers
+                    .write()
+                    .unwrap()
+                    .insert(offer.id.clone(), offer.clone());
+            }
         }
 
         meta
+    }
+
+    pub(crate) fn replace_offer_internal(
+        &self,
+        offer_id: &str,
+        throughput: u32,
+    ) -> Option<OfferMetadata> {
+        let regions = self.regions.read().unwrap();
+        let ts = current_timestamp();
+        let etag = new_etag();
+        let mut updated = None;
+        for region in regions.values() {
+            let mut offers = region.offers.write().unwrap();
+            if let Some(offer) = offers.get_mut(offer_id) {
+                offer.throughput = throughput;
+                offer.ts = ts;
+                offer.etag = etag.clone();
+                updated = Some(offer.clone());
+            }
+        }
+        updated
     }
 
     /// Cascade-deletes a database from every region. Also purges any buffered
@@ -583,11 +723,30 @@ impl EmulatorStore {
             // Then remove databases + cascade containers.
             let removed_db = region.databases.write().unwrap().remove(db_id).is_some();
             if removed_db {
+                // Collect offer IDs for all containers in this database before
+                // removing them so we can purge the associated offer entries.
+                let offer_ids: Vec<String> = region
+                    .containers
+                    .read()
+                    .unwrap()
+                    .iter()
+                    .filter(|((db, _), _)| db == db_id)
+                    .map(|(_, state)| {
+                        format!(
+                            "offer_{}_{}",
+                            state.metadata.numeric_db_id, state.metadata.numeric_coll_id
+                        )
+                    })
+                    .collect();
                 region
                     .containers
                     .write()
                     .unwrap()
                     .retain(|(db, _), _| db != db_id);
+                let mut offers = region.offers.write().unwrap();
+                for offer_id in offer_ids {
+                    offers.remove(&offer_id);
+                }
             }
         }
         if let Some(id) = numeric_db_id {
@@ -608,13 +767,17 @@ impl EmulatorStore {
             let mut buf = region.replication_buffer.write().unwrap();
             buf.retain(|e| !(e.db_id == db_id && e.coll_id == coll_id));
             drop(buf);
-            if region
+            let removed = region
                 .containers
                 .write()
                 .unwrap()
-                .remove(&(db_id.to_string(), coll_id.to_string()))
-                .is_some()
-            {
+                .remove(&(db_id.to_string(), coll_id.to_string()));
+            if let Some(state) = removed {
+                let offer_id = format!(
+                    "offer_{}_{}",
+                    state.metadata.numeric_db_id, state.metadata.numeric_coll_id
+                );
+                region.offers.write().unwrap().remove(&offer_id);
                 existed = true;
             }
         }
@@ -684,7 +847,7 @@ impl EmulatorStore {
                 ))
                 .with_message(format!(
                     "no physical partition found for EPK {} in container '{}/{}'",
-                    epk.as_str(),
+                    epk.to_hex(),
                     db_id,
                     coll_id
                 ))
@@ -692,7 +855,7 @@ impl EmulatorStore {
         })?;
         partition
             .session_state
-            .set_force_unavailable_for(epk.as_str());
+            .set_force_unavailable_for(&epk.to_hex());
         Ok(())
     }
 
@@ -778,6 +941,26 @@ impl EmulatorStore {
         doc: &StoredDocument,
         is_delete: bool,
     ) {
+        // While a distributed transaction is applying, buffer replication so a
+        // rollback can discard replicas that were never durably committed. The
+        // DTX write path holds `document_write_lock` for the whole transaction,
+        // which serializes all emulator writes, so this cannot capture an
+        // unrelated concurrent write's replication.
+        #[cfg(feature = "preview_dtx")]
+        {
+            let mut capture = self.dtx_replication_capture.lock().unwrap();
+            if let Some(buffer) = capture.as_mut() {
+                buffer.push(CapturedReplication {
+                    source_region: source_region.to_string(),
+                    db_id: db_id.to_string(),
+                    coll_id: coll_id.to_string(),
+                    doc: doc.clone(),
+                    is_delete,
+                });
+                return;
+            }
+        }
+
         // Reap any replication tasks that have already finished so the
         // JoinSet does not grow unboundedly across long-running tests with
         // delayed replication. `try_join_next` is non-blocking and returns
@@ -850,6 +1033,44 @@ impl EmulatorStore {
         }
     }
 
+    /// Begins buffering replication for a distributed transaction. Must be
+    /// paired with [`Self::commit_dtx_replication_capture`] (replay) or
+    /// [`Self::abort_dtx_replication_capture`] (discard). Called under
+    /// `document_write_lock`, which serializes all emulator writes.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn begin_dtx_replication_capture(&self) {
+        *self.dtx_replication_capture.lock().unwrap() = Some(Vec::new());
+    }
+
+    /// Replays every replication buffered since
+    /// [`Self::begin_dtx_replication_capture`], then returns to immediate
+    /// replication. Called after a distributed transaction commits.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn commit_dtx_replication_capture(self: &Arc<Self>) {
+        let captured = self.dtx_replication_capture.lock().unwrap().take();
+        let Some(captured) = captured else {
+            return;
+        };
+        for entry in captured {
+            self.replicate(
+                &entry.source_region,
+                &entry.db_id,
+                &entry.coll_id,
+                &entry.doc,
+                entry.is_delete,
+            );
+        }
+    }
+
+    /// Discards every replication buffered since
+    /// [`Self::begin_dtx_replication_capture`], then returns to immediate
+    /// replication. Called after a distributed transaction rolls back so
+    /// rolled-back writes never reach secondary regions.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn abort_dtx_replication_capture(&self) {
+        *self.dtx_replication_capture.lock().unwrap() = None;
+    }
+
     /// Applies a replicated document to a target region.
     fn apply_replication(
         self: &Arc<Self>,
@@ -912,89 +1133,20 @@ impl EmulatorStore {
             if let Some(state) = containers.get(&key) {
                 if let Some(partition) = state.find_partition(&doc.epk) {
                     if partition.is_locked() {
-                        // Drop the read guards before scheduling the retry so
-                        // the spawned task can re-acquire them.
-                        drop(containers);
-                        drop(regions);
-                        self.defer_replication_during_lock(
-                            target_region,
-                            source_region,
-                            db_id,
-                            coll_id,
-                            doc,
-                            is_delete,
-                        );
-                        return;
+                        let mut deferred = partition.deferred_replications.write().unwrap();
+                        // The abort path serializes with this queue before it
+                        // clears `locked`. Rechecking under the queue lock
+                        // ensures a replication either joins the topology
+                        // operation or applies to the unchanged parent.
+                        if partition.is_locked() {
+                            deferred.push((doc.clone(), is_delete));
+                            return;
+                        }
                     }
                     apply_doc_to_partition(partition, doc, is_delete);
                 }
             }
         }
-    }
-
-    /// Schedules a bounded retry of `apply_replication` while the EPK's
-    /// target partition is locked for split/merge. After the lock clears
-    /// `find_partition` returns the new child partition (split) or the
-    /// merged successor (merge), and the doc lands in the correct place.
-    /// Without this hop, late-arriving replicated writes during a split
-    /// land in the BTreeMap of the parent partition that is about to be
-    /// replaced — the doc snapshot taken inside `execute_split` misses it
-    /// and the document is silently lost.
-    fn defer_replication_during_lock(
-        self: &Arc<Self>,
-        target_region: &str,
-        source_region: &str,
-        db_id: &str,
-        coll_id: &str,
-        doc: &StoredDocument,
-        is_delete: bool,
-    ) {
-        const MAX_ATTEMPTS: u32 = 50;
-        const RETRY_DELAY: Duration = Duration::from_millis(20);
-
-        let store = Arc::clone(self);
-        let target = target_region.to_string();
-        let source = source_region.to_string();
-        let db = db_id.to_string();
-        let coll = coll_id.to_string();
-        let document = doc.clone();
-        let semaphore = Arc::clone(&self.replication_semaphore);
-        self.replication_tasks.lock().unwrap().spawn(async move {
-            let _permit = semaphore.acquire_owned().await.ok();
-            for attempt in 0..MAX_ATTEMPTS {
-                tokio::time::sleep(RETRY_DELAY).await;
-                let still_locked = {
-                    let regions = store.regions.read().unwrap();
-                    let Some(region_store) = regions.get(&target) else {
-                        return;
-                    };
-                    let containers = region_store.containers.read().unwrap();
-                    let key = (db.clone(), coll.clone());
-                    let Some(state) = containers.get(&key) else {
-                        return;
-                    };
-                    state
-                        .find_partition(&document.epk)
-                        .map(|p| p.is_locked())
-                        .unwrap_or(false)
-                };
-                if !still_locked {
-                    store.apply_replication(&target, &source, &db, &coll, &document, is_delete);
-                    return;
-                }
-                if attempt + 1 == MAX_ATTEMPTS {
-                    store.dropped_replications.fetch_add(1, Ordering::SeqCst);
-                    tracing::warn!(
-                        target_region = %target,
-                        source_region = %source,
-                        db_id = %db,
-                        coll_id = %coll,
-                        epk = %document.epk,
-                        "in-memory emulator: dropping replicated write after extended split/merge lock",
-                    );
-                }
-            }
-        });
     }
 }
 
@@ -1021,6 +1173,20 @@ impl RegionStoreRef {
         self.region.databases.read().unwrap().get(db_id).cloned()
     }
 
+    /// Lists all databases in deterministic id order.
+    pub fn list_databases(&self) -> Vec<DatabaseMetadata> {
+        let mut databases: Vec<_> = self
+            .region
+            .databases
+            .read()
+            .unwrap()
+            .values()
+            .cloned()
+            .collect();
+        databases.sort_by(|a, b| a.id.cmp(&b.id));
+        databases
+    }
+
     /// Reads a container state.
     pub fn get_container(&self, db_id: &str, coll_id: &str) -> Option<ContainerStateSnapshot> {
         let containers = self.region.containers.read().unwrap();
@@ -1028,6 +1194,38 @@ impl RegionStoreRef {
         containers.get(&key).map(|s| ContainerStateSnapshot {
             metadata: s.metadata.clone(),
         })
+    }
+
+    /// Lists all containers for a database in deterministic id order.
+    pub fn list_containers(&self, db_id: &str) -> Vec<ContainerMetadata> {
+        let mut containers: Vec<_> = self
+            .region
+            .containers
+            .read()
+            .unwrap()
+            .iter()
+            .filter(|((db, _), _)| db == db_id)
+            .map(|(_, state)| state.metadata.clone())
+            .collect();
+        containers.sort_by(|a, b| a.id.cmp(&b.id));
+        containers
+    }
+
+    pub fn list_offers(&self) -> Vec<OfferMetadata> {
+        let mut offers: Vec<_> = self
+            .region
+            .offers
+            .read()
+            .unwrap()
+            .values()
+            .cloned()
+            .collect();
+        offers.sort_by(|a, b| a.id.cmp(&b.id));
+        offers
+    }
+
+    pub fn get_offer(&self, offer_id: &str) -> Option<OfferMetadata> {
+        self.region.offers.read().unwrap().get(offer_id).cloned()
     }
 
     /// Executes a closure against the container's physical partitions.
@@ -1061,6 +1259,7 @@ impl RegionStoreRef {
 pub(crate) struct RegionStore {
     pub databases: RwLock<HashMap<String, DatabaseMetadata>>,
     pub containers: RwLock<HashMap<(String, String), ContainerState>>,
+    pub offers: RwLock<HashMap<String, OfferMetadata>>,
     pub paused: AtomicBool,
     pub replication_buffer: RwLock<VecDeque<PendingReplication>>,
     /// Per-region master-partition LSN counter for control-plane operations
@@ -1074,6 +1273,7 @@ impl RegionStore {
         Self {
             databases: RwLock::new(HashMap::new()),
             containers: RwLock::new(HashMap::new()),
+            offers: RwLock::new(HashMap::new()),
             paused: AtomicBool::new(false),
             replication_buffer: RwLock::new(VecDeque::new()),
             master_partition_lsn: AtomicU64::new(0),
@@ -1119,6 +1319,7 @@ pub(crate) struct ContainerMetadata {
     pub etag: String,
     pub partition_key: PartitionKeyDefinition,
     pub partition_count: u32,
+    pub partition_key_range_page_size: Option<u32>,
     pub provisioned_throughput_ru: Option<u32>,
     /// Shared atomic counter for allocating new partition IDs (split/merge).
     /// Authoritative across *all* regions so partition IDs cannot diverge —
@@ -1132,6 +1333,17 @@ pub(crate) struct ContainerMetadata {
     /// region replicas (and split-child seeding paths) reuse it instead of
     /// drawing a fresh value from the per-account `RidGenerator`.
     pub pkrange_rids: Arc<RwLock<HashMap<u32, String>>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct OfferMetadata {
+    pub id: String,
+    pub rid: String,
+    pub offer_resource_id: String,
+    pub throughput: u32,
+    pub ts: u64,
+    pub self_link: String,
+    pub etag: String,
 }
 
 /// A container's state including metadata and physical partitions.
@@ -1237,6 +1449,20 @@ impl PhysicalPartition {
     /// Returns whether this partition is currently locked (split/merge in progress).
     pub fn is_locked(&self) -> bool {
         self.locked.load(Ordering::SeqCst)
+    }
+
+    /// Restores the partition's LSN counters to previously captured values.
+    ///
+    /// Used by the in-memory DTX handler to roll back a partially-applied
+    /// distributed transaction: applied point operations advance the LSN, so an
+    /// abort must reset the counters (in addition to the document map) to leave
+    /// no trace of the rolled-back writes.
+    #[cfg(feature = "preview_dtx")]
+    pub fn restore_counters(&self, lsn: u64, local_lsn: u64, vector_clock_version: u64) {
+        self.lsn.store(lsn, Ordering::SeqCst);
+        self.local_lsn.store(local_lsn, Ordering::SeqCst);
+        self.vector_clock_version
+            .store(vector_clock_version, Ordering::SeqCst);
     }
 }
 
@@ -1460,7 +1686,7 @@ fn bytes_to_hex_upper(bytes: &[u8]) -> String {
 /// open bound" from "real all-zeros hash" everywhere boundaries flow, which
 /// has no observable upside.
 fn is_epk_min(epk: &Epk) -> bool {
-    epk.as_str().is_empty() || epk.as_str().chars().all(|c| c == '0')
+    epk.as_bytes().is_empty() || epk.as_bytes().iter().all(|&b| b == 0)
 }
 
 /// Returns true if `epk` represents the open upper bound of the EPK space.
@@ -1468,7 +1694,7 @@ fn is_epk_min(epk: &Epk) -> bool {
 /// Mirrors `is_epk_min`: accepts both the canonical `"FF"` sentinel and the
 /// fully-expanded 32-char "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" form.
 fn is_epk_max(epk: &Epk) -> bool {
-    let s = epk.as_str();
+    let s = epk.to_hex();
     s == "FF" || s.eq_ignore_ascii_case("ffffffffffffffffffffffffffffffff")
 }
 
@@ -1538,6 +1764,244 @@ impl ThroughputTracker {
 // --- Split / Merge ---
 
 impl EmulatorStore {
+    /// Validates that an explicit split EPK lies strictly inside an existing partition.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn validate_split_epk(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: &Epk,
+    ) -> crate::error::Result<()> {
+        let region = self
+            .region(self.config.write_region_name())
+            .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
+        region
+            .with_container(db_id, coll_id, |state| {
+                let partition = state
+                    .physical_partitions
+                    .iter()
+                    .find(|partition| partition.id == partition_id)
+                    .ok_or_else(|| {
+                        host_control_plane_error(format!(
+                            "partition {partition_id} does not exist in {db_id}/{coll_id}"
+                        ))
+                    })?;
+                if *split_epk <= partition.epk_min || *split_epk >= partition.epk_max {
+                    return Err(host_control_plane_error(format!(
+                        "split EPK must lie strictly inside partition {partition_id}"
+                    )));
+                }
+                Ok(())
+            })
+            .ok_or_else(|| {
+                host_control_plane_error(format!("container {db_id}/{coll_id} does not exist"))
+            })?
+    }
+
+    /// Returns the EPK boundary a midpoint split would use for a physical partition.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn midpoint_split_epk(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+    ) -> crate::error::Result<Epk> {
+        let region = self
+            .region(self.config.write_region_name())
+            .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
+        region
+            .with_container(db_id, coll_id, |state| {
+                let partition = state
+                    .physical_partitions
+                    .iter()
+                    .find(|partition| partition.id == partition_id)
+                    .ok_or_else(|| {
+                        host_control_plane_error(format!(
+                            "partition {partition_id} does not exist in {db_id}/{coll_id}"
+                        ))
+                    })?;
+                compute_epk_midpoint(
+                    &partition.epk_min,
+                    &partition.epk_max,
+                    state.metadata.partition_key.kind(),
+                    state.metadata.partition_key.version(),
+                )
+                .map_err(host_control_plane_error)
+            })
+            .ok_or_else(|| {
+                host_control_plane_error(format!("container {db_id}/{coll_id} does not exist"))
+            })?
+    }
+
+    /// Returns a split EPK that most closely balances serialized document bytes.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn storage_split_epk(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+    ) -> crate::error::Result<Epk> {
+        let region = self
+            .region(self.config.write_region_name())
+            .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
+        region
+            .with_container(db_id, coll_id, |state| {
+                let partition = state
+                    .physical_partitions
+                    .iter()
+                    .find(|partition| partition.id == partition_id)
+                    .ok_or_else(|| {
+                        host_control_plane_error(format!(
+                            "partition {partition_id} does not exist in {db_id}/{coll_id}"
+                        ))
+                    })?;
+                let documents = partition.documents.read().unwrap();
+                let groups: Vec<(Epk, u64)> = documents
+                    .iter()
+                    .map(|(epk, documents)| {
+                        let bytes = documents
+                            .values()
+                            .map(|document| document.body_size_bytes.max(1) as u64)
+                            .sum();
+                        (epk.clone(), bytes)
+                    })
+                    .collect();
+                if groups.len() < 2 {
+                    return Err(host_control_plane_error(
+                        "storage split requires documents in at least two distinct EPK groups",
+                    ));
+                }
+
+                let total_bytes: u64 = groups.iter().map(|(_, bytes)| bytes).sum();
+                let mut left_bytes = groups[0].1;
+                let mut best = (total_bytes.abs_diff(left_bytes.saturating_mul(2)), 1usize);
+                for (index, (_, bytes)) in groups.iter().enumerate().skip(1).take(groups.len() - 2)
+                {
+                    left_bytes = left_bytes.saturating_add(*bytes);
+                    let score = total_bytes.abs_diff(left_bytes.saturating_mul(2));
+                    if score < best.0 {
+                        best = (score, index + 1);
+                    }
+                }
+                Ok(groups[best.1].0.clone())
+            })
+            .ok_or_else(|| {
+                host_control_plane_error(format!("container {db_id}/{coll_id} does not exist"))
+            })?
+    }
+
+    /// Starts a storage-balanced split and returns the selected EPK boundary.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn split_partition_by_storage(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        min_lock_duration: Duration,
+    ) -> crate::error::Result<Epk> {
+        let split_epk = self.storage_split_epk(db_id, coll_id, partition_id)?;
+        self.split_partition_at_epk(
+            db_id,
+            coll_id,
+            partition_id,
+            split_epk.clone(),
+            min_lock_duration,
+        );
+        Ok(split_epk)
+    }
+
+    /// Returns the IDs of partitions whose parent list contains all supplied IDs.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn child_partition_ids(&self, db_id: &str, coll_id: &str, parent_ids: &[u32]) -> Vec<u32> {
+        let Some(region) = self.region(self.config.write_region_name()) else {
+            return Vec::new();
+        };
+        let mut children = region
+            .with_container(db_id, coll_id, |state| {
+                state
+                    .physical_partitions
+                    .iter()
+                    .filter(|partition| {
+                        parent_ids
+                            .iter()
+                            .all(|parent_id| partition.parents.contains(parent_id))
+                    })
+                    .map(|partition| partition.id)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        children.sort_unstable();
+        children
+    }
+
+    /// Splits at an explicit EPK and awaits this specific control-plane operation.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub async fn split_partition_and_wait(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Epk,
+        min_lock_duration: Duration,
+    ) -> crate::error::Result<Vec<u32>> {
+        let (completion, completed) = futures::channel::oneshot::channel();
+        self.split_partition_internal(
+            db_id,
+            coll_id,
+            partition_id,
+            Some(split_epk),
+            ControlPlaneProgression::Automatic(min_lock_duration),
+            Some(completion),
+        );
+        if !completed
+            .await
+            .map_err(|_| host_control_plane_error("split task ended before reporting a result"))?
+        {
+            return Err(host_control_plane_error(
+                "split did not complete; verify the partition and EPK boundary",
+            ));
+        }
+        let children = self.child_partition_ids(db_id, coll_id, &[partition_id]);
+        if children.len() != 2 {
+            return Err(host_control_plane_error(
+                "split completed without producing exactly two child partitions",
+            ));
+        }
+        Ok(children)
+    }
+
+    /// Locks a partition for a split that completes only when its handle is released.
+    #[doc(hidden)]
+    pub fn begin_manual_split_partition(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Epk,
+    ) -> ManualControlPlaneOperation {
+        let (release, released) = futures::channel::oneshot::channel();
+        let (completion, completed) = futures::channel::oneshot::channel();
+        self.split_partition_internal(
+            db_id,
+            coll_id,
+            partition_id,
+            Some(split_epk),
+            ControlPlaneProgression::Manual(released),
+            Some(completion),
+        );
+        ManualControlPlaneOperation {
+            release: Some(release),
+            completed,
+        }
+    }
+
     /// Splits a physical partition into two child partitions.
     ///
     /// During `min_lock_duration` (plus doc redistribution time), operations on the
@@ -1551,6 +2015,45 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id: u32,
         min_lock_duration: Duration,
+    ) {
+        self.split_partition_internal(
+            db_id,
+            coll_id,
+            partition_id,
+            None,
+            ControlPlaneProgression::Automatic(min_lock_duration),
+            None,
+        );
+    }
+
+    /// Splits a physical partition at an explicit EPK boundary. Test-only.
+    #[doc(hidden)]
+    pub fn split_partition_at_epk(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Epk,
+        min_lock_duration: Duration,
+    ) {
+        self.split_partition_internal(
+            db_id,
+            coll_id,
+            partition_id,
+            Some(split_epk),
+            ControlPlaneProgression::Automatic(min_lock_duration),
+            None,
+        );
+    }
+
+    fn split_partition_internal(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Option<Epk>,
+        progression: ControlPlaneProgression,
+        completion: Option<futures::channel::oneshot::Sender<bool>>,
     ) {
         // Lock the partition in all regions
         {
@@ -1580,20 +2083,36 @@ impl EmulatorStore {
             coll: coll_id.to_string(),
             partitions: vec![partition_id],
         };
+        let track_in_test_registry = completion.is_none();
         let handle = tokio::spawn(async move {
             let _guard = lock.lock().await;
-            if !min_lock_duration.is_zero() {
-                tokio::time::sleep(min_lock_duration).await;
+            if !progression.wait().await {
+                store.unlock_partitions(&(db.clone(), coll.clone()), &[partition_id]);
+                if let Some(completion) = completion {
+                    let _ = completion.send(false);
+                }
+                return;
             }
             // execute_split does the actual doc redistribution under the lock,
             // then unlocks partitions when done
-            store.execute_split(&db, &coll, partition_id);
+            let succeeded = store.execute_split(&db, &coll, partition_id, split_epk);
+            if let Some(completion) = completion {
+                let _ = completion.send(succeeded);
+            }
         });
-        self.control_plane_tasks.lock().unwrap().push((key, handle));
+        if track_in_test_registry {
+            self.control_plane_tasks.lock().unwrap().push((key, handle));
+        }
     }
 
     /// Performs the actual split after the lock period.
-    fn execute_split(&self, db_id: &str, coll_id: &str, partition_id: u32) {
+    fn execute_split(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Option<Epk>,
+    ) -> bool {
         // Local-only enum used to ferry preview state out of a regions read
         // guard so we can drop the guard before re-acquiring it on the abort
         // path. Avoids recursive same-thread RwLock::read (unspecified in std).
@@ -1635,8 +2154,27 @@ impl EmulatorStore {
                     let parent_max = parent.epk_max.clone();
                     let pk_kind = state.metadata.partition_key.kind();
                     let pk_version = state.metadata.partition_key.version();
-                    let midpoint =
-                        match compute_epk_midpoint(&parent_min, &parent_max, pk_kind, pk_version) {
+                    let midpoint = match split_epk.as_ref() {
+                        Some(epk) if *epk > parent_min && *epk < parent_max => epk.clone(),
+                        Some(epk) => {
+                            tracing::error!(
+                                db_id = db_id,
+                                coll_id = coll_id,
+                                partition_id = partition_id,
+                                split_epk = %epk,
+                                parent_min = %parent_min,
+                                parent_max = %parent_max,
+                                "in-memory emulator: aborting split — explicit split EPK is outside parent range",
+                            );
+                            found = Some(SplitPreview::AbortUnlock);
+                            break;
+                        }
+                        None => match compute_epk_midpoint(
+                            &parent_min,
+                            &parent_max,
+                            pk_kind,
+                            pk_version,
+                        ) {
                             Ok(m) => m,
                             Err(err) => {
                                 tracing::error!(
@@ -1654,7 +2192,8 @@ impl EmulatorStore {
                                 found = Some(SplitPreview::AbortUnlock);
                                 break;
                             }
-                        };
+                        },
+                    };
                     // Both child IDs come from the shared per-container
                     // counter on `ContainerMetadata`, so they are identical
                     // across regions. Likewise RIDs go through the shared
@@ -1698,28 +2237,19 @@ impl EmulatorStore {
         } = (match preview {
             Some(SplitPreview::Found { .. }) => preview.unwrap(),
             Some(SplitPreview::AbortUnlock) => {
-                // Outer `regions` read guard has been dropped here.
-                let regions = self.regions.read().unwrap();
-                for region in regions.values() {
-                    let containers = region.containers.read().unwrap();
-                    if let Some(state) = containers.get(&key) {
-                        if let Some(p) = state
-                            .physical_partitions
-                            .iter()
-                            .find(|p| p.id == partition_id)
-                        {
-                            p.locked.store(false, Ordering::SeqCst);
-                        }
-                    }
-                }
-                return;
+                self.unlock_partitions(&key, &[partition_id]);
+                return false;
             }
-            None => return,
+            None => return false,
         })
         else {
             unreachable!()
         };
         let child_lsn = parent_lsn + 1;
+        // One ETag for the whole split, applied to every region's container
+        // metadata below so the pkrange routing map's change-feed observes the
+        // topology change consistently across regions.
+        let new_container_etag = new_etag();
 
         let regions = self.regions.read().unwrap();
         for region in regions.values() {
@@ -1829,11 +2359,19 @@ impl EmulatorStore {
                 state.physical_partitions.remove(parent_idx);
                 state.physical_partitions.push(child1);
                 state.physical_partitions.push(child2);
+                // Bump the container ETag so the pkrange routing-map change-feed
+                // reflects the new topology. The driver refreshes its pkrange
+                // cache incrementally via `If-None-Match`; without a new ETag the
+                // emulator answers `304 Not Modified` and the driver keeps
+                // resolving to the now-gone parent range, looping until it
+                // exhausts split retries on a continuation issued before the split.
+                state.metadata.etag = new_container_etag.clone();
                 // No per-region counter to reconcile any more — the shared
                 // counter on `ContainerMetadata` was already advanced when the
                 // child IDs were allocated.
             }
         }
+        true
     }
 
     /// Merges two adjacent physical partitions into one child partition.
@@ -1850,6 +2388,87 @@ impl EmulatorStore {
         partition_id_a: u32,
         partition_id_b: u32,
         min_lock_duration: Duration,
+    ) {
+        self.merge_partitions_internal(
+            db_id,
+            coll_id,
+            partition_id_a,
+            partition_id_b,
+            ControlPlaneProgression::Automatic(min_lock_duration),
+            None,
+        );
+    }
+
+    /// Merges two adjacent partitions and awaits this specific operation.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub async fn merge_partitions_and_wait(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id_a: u32,
+        partition_id_b: u32,
+        min_lock_duration: Duration,
+    ) -> crate::error::Result<u32> {
+        let (completion, completed) = futures::channel::oneshot::channel();
+        self.merge_partitions_internal(
+            db_id,
+            coll_id,
+            partition_id_a,
+            partition_id_b,
+            ControlPlaneProgression::Automatic(min_lock_duration),
+            Some(completion),
+        );
+        if !completed
+            .await
+            .map_err(|_| host_control_plane_error("merge task ended before reporting a result"))?
+        {
+            return Err(host_control_plane_error(
+                "merge did not complete; verify that both partitions exist and are adjacent",
+            ));
+        }
+        let children = self.child_partition_ids(db_id, coll_id, &[partition_id_a, partition_id_b]);
+        match children.as_slice() {
+            [child] => Ok(*child),
+            _ => Err(host_control_plane_error(
+                "merge completed without producing exactly one child partition",
+            )),
+        }
+    }
+
+    /// Locks two partitions for a merge that completes only when its handle is released.
+    #[doc(hidden)]
+    pub fn begin_manual_merge_partitions(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id_a: u32,
+        partition_id_b: u32,
+    ) -> ManualControlPlaneOperation {
+        let (release, released) = futures::channel::oneshot::channel();
+        let (completion, completed) = futures::channel::oneshot::channel();
+        self.merge_partitions_internal(
+            db_id,
+            coll_id,
+            partition_id_a,
+            partition_id_b,
+            ControlPlaneProgression::Manual(released),
+            Some(completion),
+        );
+        ManualControlPlaneOperation {
+            release: Some(release),
+            completed,
+        }
+    }
+
+    fn merge_partitions_internal(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id_a: u32,
+        partition_id_b: u32,
+        progression: ControlPlaneProgression,
+        completion: Option<futures::channel::oneshot::Sender<bool>>,
     ) {
         // Lock both partitions in all regions
         {
@@ -1877,14 +2496,27 @@ impl EmulatorStore {
             coll: coll_id.to_string(),
             partitions: vec![partition_id_a, partition_id_b],
         };
+        let track_in_test_registry = completion.is_none();
         let handle = tokio::spawn(async move {
             let _guard = lock.lock().await;
-            if !min_lock_duration.is_zero() {
-                tokio::time::sleep(min_lock_duration).await;
+            if !progression.wait().await {
+                store.unlock_partitions(
+                    &(db.clone(), coll.clone()),
+                    &[partition_id_a, partition_id_b],
+                );
+                if let Some(completion) = completion {
+                    let _ = completion.send(false);
+                }
+                return;
             }
-            store.execute_merge(&db, &coll, partition_id_a, partition_id_b);
+            let succeeded = store.execute_merge(&db, &coll, partition_id_a, partition_id_b);
+            if let Some(completion) = completion {
+                let _ = completion.send(succeeded);
+            }
         });
-        self.control_plane_tasks.lock().unwrap().push((key, handle));
+        if track_in_test_registry {
+            self.control_plane_tasks.lock().unwrap().push((key, handle));
+        }
     }
 
     fn unlock_partitions(&self, key: &(String, String), partition_ids: &[u32]) {
@@ -1894,7 +2526,15 @@ impl EmulatorStore {
             if let Some(state) = containers.get(key) {
                 for partition in &state.physical_partitions {
                     if partition_ids.contains(&partition.id) {
-                        partition.locked.store(false, Ordering::SeqCst);
+                        let deferred = {
+                            let mut deferred = partition.deferred_replications.write().unwrap();
+                            let entries = std::mem::take(&mut *deferred);
+                            partition.locked.store(false, Ordering::SeqCst);
+                            entries
+                        };
+                        for (doc, is_delete) in deferred {
+                            apply_doc_to_partition(partition, &doc, is_delete);
+                        }
                     }
                 }
             }
@@ -1902,7 +2542,13 @@ impl EmulatorStore {
     }
 
     /// Performs the actual merge after the lock period.
-    fn execute_merge(&self, db_id: &str, coll_id: &str, partition_id_a: u32, partition_id_b: u32) {
+    fn execute_merge(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        partition_id_a: u32,
+        partition_id_b: u32,
+    ) -> bool {
         enum MergePreview {
             Ready((Epk, Epk, u64, u32, String, Option<u32>)),
             NonAdjacent(Epk, Epk),
@@ -1975,13 +2621,14 @@ impl EmulatorStore {
                         "in-memory emulator: rejecting merge for non-adjacent partitions",
                     );
                     self.unlock_partitions(&key, &[partition_id_a, partition_id_b]);
-                    return;
+                    return false;
                 }
                 None => {
                     self.unlock_partitions(&key, &[partition_id_a, partition_id_b]);
-                    return;
+                    return false;
                 }
             };
+        let new_container_etag = new_etag();
 
         let regions = self.regions.read().unwrap();
         for region in regions.values() {
@@ -2143,9 +2790,21 @@ impl EmulatorStore {
                 state.physical_partitions.remove(first_remove);
                 state.physical_partitions.remove(second_remove);
                 state.physical_partitions.push(child);
+                state.metadata.etag = new_container_etag.clone();
             }
         }
+        true
     }
+}
+
+#[cfg(feature = "__internal_in_memory_emulator")]
+fn host_control_plane_error(message: impl Into<String>) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::BadRequest,
+        ))
+        .with_message(message.into())
+        .build()
 }
 
 /// Computes the EPK midpoint between two EPK bounds (hex strings).
@@ -2204,7 +2863,7 @@ fn compute_epk_midpoint_v2(min: &Epk, max: &Epk) -> Result<Epk, String> {
         if is_epk_max(epk) {
             return Ok(1u128 << 126);
         }
-        u128::from_str_radix(epk.as_str(), 16)
+        u128::from_str_radix(&epk.to_hex(), 16)
             .map_err(|e| format!("corrupted EPK partition bound {}={:?}: {e}", label, epk))
     };
     let min_val = parse(min, "min")?;
@@ -2252,7 +2911,7 @@ fn compute_epk_midpoint_v1(min: &Epk, max: &Epk) -> Result<Epk, String> {
         if is_epk_max(epk) {
             return Ok(u32::MAX);
         }
-        decode_v1_number_hex_to_u32(epk.as_str())
+        decode_v1_number_hex_to_u32(&epk.to_hex())
             .map_err(|e| format!("corrupted V1 EPK partition bound {}={:?}: {e}", label, epk))
     };
     let min_val = parse(min, "min")?;
@@ -2342,6 +3001,55 @@ fn decode_v1_number_hex_to_u32(hex: &str) -> Result<u32, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn manual_split_waits_for_explicit_completion() {
+        use crate::models::PartitionKeyDefinition;
+
+        let config = super::super::config::VirtualAccountConfig::new(vec![
+            super::super::config::VirtualRegion::new(
+                "r1",
+                url::Url::parse("https://r1.local").unwrap(),
+            ),
+        ])
+        .unwrap();
+        let store = EmulatorStore::new(config);
+        store.create_database("db");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        store.create_container_with_config(
+            "db",
+            "c",
+            partition_key,
+            super::super::config::ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+
+        let split_epk = store.midpoint_split_epk("db", "c", 0).unwrap();
+        let operation = store.begin_manual_split_partition("db", "c", 0, split_epk);
+        let locked = store
+            .region("r1")
+            .unwrap()
+            .with_container("db", "c", |state| {
+                state
+                    .physical_partitions
+                    .iter()
+                    .find(|partition| partition.id == 0)
+                    .unwrap()
+                    .is_locked()
+            })
+            .unwrap();
+        assert!(locked);
+        assert!(store.child_partition_ids("db", "c", &[0]).is_empty());
+
+        operation.complete().await.unwrap();
+
+        assert_eq!(store.child_partition_ids("db", "c", &[0]).len(), 2);
+    }
 
     #[test]
     fn partitions_distribute_across_full_v2_epk_space() {
@@ -2649,7 +3357,7 @@ mod tests {
             PartitionKeyVersion::V1,
         )
         .expect("full-range V1 midpoint");
-        let mid_full_u32 = super::decode_v1_number_hex_to_u32(mid_full.as_str()).unwrap();
+        let mid_full_u32 = super::decode_v1_number_hex_to_u32(&mid_full.to_hex()).unwrap();
         assert_eq!(mid_full_u32, u32::MAX / 2);
 
         // Narrow range: encode two u32 hashes as boundaries and verify the
@@ -2668,7 +3376,7 @@ mod tests {
             PartitionKeyVersion::V1,
         )
         .expect("narrow V1 midpoint");
-        let mid_narrow_u32 = super::decode_v1_number_hex_to_u32(mid_narrow.as_str()).unwrap();
+        let mid_narrow_u32 = super::decode_v1_number_hex_to_u32(&mid_narrow.to_hex()).unwrap();
         assert_eq!(mid_narrow_u32, ((lo_u32 as u64 + hi_u32 as u64) / 2) as u32);
 
         // Lex-order check: the encoded midpoint must sit strictly between
@@ -2678,11 +3386,11 @@ mod tests {
         let lo_hex = encode(lo_u32);
         let hi_hex = encode(hi_u32);
         assert!(
-            lo_hex.as_str() < mid_narrow.as_str() && mid_narrow.as_str() < hi_hex.as_str(),
+            lo_hex.to_hex() < mid_narrow.to_hex() && mid_narrow.to_hex() < hi_hex.to_hex(),
             "V1 midpoint not strictly between bounds: lo={} mid={} hi={}",
-            lo_hex.as_str(),
-            mid_narrow.as_str(),
-            hi_hex.as_str(),
+            lo_hex.to_hex(),
+            mid_narrow.to_hex(),
+            hi_hex.to_hex(),
         );
     }
 

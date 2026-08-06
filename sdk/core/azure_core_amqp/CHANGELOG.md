@@ -1,16 +1,23 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.2.0-beta.1 (Unreleased)
 
 ### Features Added
-
-- Added `AmqpSessionOptions::with_unbounded_windows()`, a shared constructor that sets both session flow-control windows to `u32::MAX` for messaging crates that rely on per-link credit for flow control.
 
 ### Breaking Changes
 
 ### Bugs Fixed
 
+- Link properties set through `AmqpReceiverOptions::properties` and `AmqpSenderOptions::properties` now reach the Attach frame. They were discarded before the link attached.
+- A failed receive now reports the link-state kind the sender path already reports: `AmqpDescribedError` when the remote closed or detached with an AMQP error, and `LinkClosedByRemote` or `LinkDetachedByRemote` otherwise. All of these previously reported `LinkStateError`.
+
 ### Other Changes
+
+## 1.1.0 (2026-07-09)
+
+### Features Added
+
+- Added `AmqpSessionOptions::with_unbounded_windows()`, a shared constructor that sets both session flow-control windows to `u32::MAX` for messaging crates that rely on per-link credit for flow control.
 
 ## 1.0.0 (2026-05-11)
 

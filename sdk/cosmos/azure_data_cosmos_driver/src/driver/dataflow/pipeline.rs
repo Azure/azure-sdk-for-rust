@@ -72,6 +72,13 @@ impl Pipeline {
     pub(crate) fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
         self.root.snapshot_state()
     }
+
+    /// Returns the number of leaf request nodes the root fans out to.
+    ///
+    /// Used by the planner to enforce a maximum fan-out on fresh plans.
+    pub(crate) fn fan_out_width(&self) -> usize {
+        self.root.fan_out_width()
+    }
 }
 
 /// A plan for executing a Cosmos DB operation.

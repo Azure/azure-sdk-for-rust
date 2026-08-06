@@ -17,7 +17,7 @@ exit 0
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
-$resolvedToolchain = [Channels]::Resolve($Toolchain)
+$resolvedToolchain = Get-ResolvedRustToolchain -Toolchain $Toolchain
 
 function Get-OutputPackages($workspacePackages) {
   $packages = @()

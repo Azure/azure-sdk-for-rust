@@ -38,15 +38,32 @@ pub(crate) mod request_header_names {
     pub const SESSION_TOKEN: &str = "x-ms-session-token";
     pub const IF_MATCH: &str = "if-match";
     pub const IF_NONE_MATCH: &str = "if-none-match";
+    pub const IF_MODIFIED_SINCE: &str = "if-modified-since";
     pub const PREFER: &str = "prefer";
     pub const IS_QUERY: &str = "x-ms-documentdb-isquery";
     pub const IS_QUERY_PLAN_REQUEST: &str = "x-ms-cosmos-is-query-plan-request";
     pub const SUPPORTED_QUERY_FEATURES: &str = "x-ms-cosmos-supported-query-features";
+    /// Advertises which serialization formats the client accepts in responses
+    /// (e.g. `JsonText,CosmosBinary`). The service uses it to decide whether to
+    /// reply with Cosmos binary JSON instead of text.
+    pub const SUPPORTED_SERIALIZATION_FORMATS: &str = "x-ms-cosmos-supported-serialization-formats";
+    pub const QUERY_VERSION: &str = "x-ms-cosmos-query-version";
     pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
     pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
-    /// Change-feed indicator ("Incremental feed"). HTTP standard name `a-im`.
+    /// Change-feed indicator ("Incremental Feed"). HTTP standard name `a-im`.
     pub const A_IM: &str = "a-im";
-    pub const INCREMENTAL_FEED: &str = "Incremental feed";
+    pub const INCREMENTAL_FEED: &str = "Incremental Feed";
+    /// Full-fidelity change-feed indicator ("Full-Fidelity Feed").
+    ///
+    /// Selects the AllVersionsAndDeletes change feed, which returns every
+    /// intermediate version and delete as an envelope with `current`,
+    /// `previous`, and `metadata`. Sent as the `a-im` value in place of
+    /// [`INCREMENTAL_FEED`].
+    pub const FULL_FIDELITY_FEED: &str = "Full-Fidelity Feed";
+    /// Wire format version for change feed responses.
+    pub const CHANGEFEED_WIRE_FORMAT_VERSION: &str = "x-ms-cosmos-changefeed-wire-format-version";
+    /// The wire format version value used by this SDK.
+    pub const CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15: &str = "2021-09-15";
     pub const POPULATE_INDEX_METRICS: &str = "x-ms-cosmos-populateindexmetrics";
     pub const POPULATE_QUERY_METRICS: &str = "x-ms-documentdb-populatequerymetrics";
     pub const ENABLE_CROSS_PARTITION_QUERY: &str = "x-ms-documentdb-query-enablecrosspartition";
@@ -61,6 +78,21 @@ pub(crate) mod request_header_names {
     pub const START_EPK: &str = "x-ms-start-epk";
     pub const END_EPK: &str = "x-ms-end-epk";
     pub const READ_FEED_KEY_TYPE: &str = "x-ms-read-key-type";
+    /// The [`READ_FEED_KEY_TYPE`] value for an effective-partition-key *range*
+    /// (`x-ms-start-epk`/`x-ms-end-epk`)-scoped request. The point value
+    /// `EffectivePartitionKey` is rejected by the gateway with `400 "One of the
+    /// input values is invalid"` for range-scoped requests (issues #4680, #4681).
+    pub const READ_FEED_KEY_TYPE_EPK_RANGE: &str = "EffectivePartitionKeyRange";
+    /// Internal-only headers carrying the physical pkrange's full EPK bounds
+    /// to the GW_V2 dispatcher. The thin-client (Gateway 2.0) proxy requires
+    /// `StartEpkHash`/`EndEpkHash` RNTBD body tokens on every Query frame; in
+    /// the full-pkrange XPK case we don't emit the public `x-ms-start-epk`/
+    /// `x-ms-end-epk` headers (the legacy gateway rejects an empty-string min
+    /// paired with `partitionkeyrangeid` with HTTP 400/500). These internal
+    /// headers carry the pkrange bounds so the dispatcher can derive the
+    /// tokens. Legacy gateway ignores unknown headers, so they're inert there.
+    pub const THINCLIENT_PKRANGE_MIN: &str = "x-ms-thinclient-pkrange-min";
+    pub const THINCLIENT_PKRANGE_MAX: &str = "x-ms-thinclient-pkrange-max";
     #[allow(dead_code)] // Reserved for future direct partition-key header writes.
     pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
@@ -80,7 +112,49 @@ pub(crate) mod request_header_names {
     /// region. The same wire name appears under
     /// [`response_header_names::HAS_TENTATIVE_WRITES`] on responses.
     pub const ALLOW_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
+
+    pub const DATE: &str = "x-ms-date";
+    pub const CLIENT_ID: &str = "x-ms-client-id";
+    pub const VERSION: &str = "x-ms-version";
+    pub const CACHE_CONTROL: &str = "cache-control";
+    pub const COLLECTION_RID: &str = "x-ms-documentdb-collection-rid";
+
+    /// Account name the Gateway 2.0 proxy uses to route an outer HTTP/2
+    /// request to the correct backend.
+    pub const GLOBAL_DATABASE_ACCOUNT_NAME: &str = "globaldatabaseaccountname";
+
+    // Gateway 2.0 (thin-client) outer HTTP/2 header names. The wire strings
+    // keep the historical `x-ms-thinclient-*` form because the proxy is
+    // server-defined; only the Rust identifiers follow this module's
+    // convention. These are consumed solely by the Gateway 2.0 dispatch path.
+
+    /// Numeric proxy operation type, sent on every Gateway 2.0 request.
+    pub const THINCLIENT_PROXY_OPERATION_TYPE: &str = "x-ms-thinclient-proxy-operation-type";
+    /// Numeric proxy resource type, sent on every Gateway 2.0 request.
+    pub const THINCLIENT_PROXY_RESOURCE_TYPE: &str = "x-ms-thinclient-proxy-resource-type";
+    /// Lower bound of the EPK range; sent for feed/cross-partition operations only.
+    pub const THINCLIENT_RANGE_MIN: &str = "x-ms-thinclient-range-min";
+    /// Upper bound of the EPK range; sent for feed/cross-partition operations only.
+    pub const THINCLIENT_RANGE_MAX: &str = "x-ms-thinclient-range-max";
+    /// Gateway 2.0 endpoint-discovery opt-in, sent on every `getDatabaseAccount`
+    /// request so the server emits `thinClientWritableLocations` /
+    /// `thinClientReadableLocations`. Without it the server suppresses those
+    /// fields even when the federation has thin-client enabled, silently
+    /// disabling Gateway 2.0 routing for the client.
+    pub const USE_THINCLIENT: &str = "x-ms-cosmos-use-thinclient";
+    /// DTX idempotency token (`Uuid`) generated once per distributed transaction.
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
+    /// DTX coordinator operation type (`CommitDistributedTransaction` or `Read`).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_OPERATION_TYPE: &str = "x-ms-cosmos-operation-type";
+    /// DTX coordinator resource type (`DistributedTransactionBatch`).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_RESOURCE_TYPE: &str = "x-ms-cosmos-resource-type";
 }
+
+#[cfg(feature = "preview_dtx")]
+pub(crate) const DTX_RESOURCE_TYPE_HEADER_VALUE: &str = "DistributedTransactionBatch";
 
 /// Standard Cosmos DB response header names.
 // cspell:ignore activityid acked llsn gatewayversion serviceversion
@@ -96,6 +170,9 @@ pub(crate) mod response_header_names {
     pub const QUERY_METRICS: &str = "x-ms-documentdb-query-metrics";
     pub const SERVER_DURATION_MS: &str = "x-ms-request-duration-ms";
     pub const LSN: &str = "lsn";
+    /// `x-ms-`-prefixed mirror of [`LSN`], emitted on Gateway 2.0 responses
+    /// alongside the bare `lsn` header.
+    pub const MS_LSN: &str = "x-ms-lsn";
     pub const ITEM_LSN: &str = "x-ms-item-lsn";
     pub const OWNER_FULL_NAME: &str = "x-ms-alt-content-path";
     pub const OWNER_ID: &str = "x-ms-content-path";
@@ -114,6 +191,16 @@ pub(crate) mod response_header_names {
     pub const SERVICE_VERSION: &str = "x-ms-serviceversion";
     pub const RESOURCE_QUOTA: &str = "x-ms-resource-quota";
     pub const RESOURCE_USAGE: &str = "x-ms-resource-usage";
+    pub const SCHEMA_VERSION: &str = "x-ms-schemaversion";
+    pub const CURRENT_WRITE_QUORUM: &str = "x-ms-current-write-quorum";
+    pub const CURRENT_REPLICA_SET_SIZE: &str = "x-ms-current-replica-set-size";
+    pub const XP_ROLE: &str = "x-ms-xp-role";
+    pub const QUERY_EXECUTION_INFO: &str = "x-ms-cosmos-query-execution-info";
+    pub const PENDING_PK_DELETE: &str = "x-ms-cosmos-is-partition-key-delete-pending";
+    pub const PHYSICAL_PARTITION_ID: &str = "x-ms-cosmos-physical-partition-id";
+    /// Synthetic header matching .NET Direct's `WFConstants.BackendHeaders`
+    /// name for the RNTBD-only conflict resolution timestamp.
+    pub const CONFLICT_RESOLVED_TIMESTAMP: &str = "x-ms-cosmos-conflict-resolved-timestamp";
     pub const HAS_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
     pub const INTERNAL_PARTITION_ID: &str = "x-ms-cosmos-internal-partition-id";
@@ -122,6 +209,9 @@ pub(crate) mod response_header_names {
         "x-ms-documentdb-collection-index-transformation-progress";
     pub const COLLECTION_LAZY_INDEXING_PROGRESS: &str =
         "x-ms-documentdb-collection-lazy-indexing-progress";
+    /// DTX idempotency token echoed by the coordinator.
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
 }
 
 pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
@@ -163,12 +253,43 @@ pub struct CosmosRequestHeaders {
     /// represented by [`MaxItemCountHint::ServerDecides`].
     pub max_item_count: Option<MaxItemCountHint>,
 
-    /// Requests an incremental change feed read (`a-im: Incremental feed`).
+    /// Requests an incremental change feed read (`a-im: Incremental Feed`).
     ///
     /// When `true`, the driver emits the standard change-feed indicator
     /// header. Combine with [`Precondition::if_none_match`] to pass a
     /// continuation token.
+    ///
+    /// Mutually exclusive with [`full_fidelity_feed`](Self::full_fidelity_feed);
+    /// if both are set, full-fidelity takes precedence when emitting `a-im`.
     pub incremental_feed: bool,
+
+    /// Requests a full-fidelity change feed read (`a-im: Full-Fidelity Feed`).
+    ///
+    /// When `true`, the driver emits the full-fidelity change-feed indicator,
+    /// selecting the AllVersionsAndDeletes mode where every intermediate
+    /// version and delete is returned inside an envelope
+    /// (`{ current, previous, metadata }`).
+    ///
+    /// Mutually exclusive with [`incremental_feed`](Self::incremental_feed);
+    /// full-fidelity takes precedence when emitting `a-im`.
+    pub full_fidelity_feed: bool,
+
+    /// When `true`, emits the change-feed wire format version header
+    /// (`x-ms-cosmos-changefeed-wire-format-version: 2021-09-15`).
+    ///
+    /// This selects the structured change feed wire format, where each item is
+    /// returned inside an envelope (`{ current, ... }`). It is sent for both
+    /// LatestVersion and AllVersionsAndDeletes so the response shape stays
+    /// consistent across modes; for LatestVersion the envelope simply omits the
+    /// pre-image. The SDK iterator unwraps `current` back into the caller's
+    /// document type.
+    pub changefeed_wire_format_version: bool,
+
+    /// If-Modified-Since timestamp for change feed point-in-time start.
+    ///
+    /// When set, the driver emits `If-Modified-Since: <value>`. The caller
+    /// is responsible for formatting the timestamp in RFC 1123 format.
+    pub if_modified_since: Option<String>,
 
     /// Request index-utilization metrics on the response
     /// (`x-ms-cosmos-populateindexmetrics`). Only meaningful for query
@@ -196,6 +317,15 @@ pub struct CosmosRequestHeaders {
     /// Sent on query plan requests to indicate which query capabilities the
     /// client supports. The backend uses this to shape its response.
     pub supported_query_features: Option<Cow<'static, str>>,
+
+    /// Serialization formats the client accepts in responses
+    /// (`x-ms-cosmos-supported-serialization-formats`).
+    ///
+    /// When set (e.g. `JsonText,CosmosBinary`), the service may reply with
+    /// Cosmos binary JSON, which the SDK auto-detects and decodes. `None` omits
+    /// the header, so the service replies with text JSON as before. The driver
+    /// is a passthrough here — the SDK decides the value per its enablement.
+    pub supported_serialization_formats: Option<Cow<'static, str>>,
 }
 
 impl CosmosRequestHeaders {
@@ -254,10 +384,33 @@ impl CosmosRequestHeaders {
                 HeaderValue::from(wire),
             );
         }
-        if self.incremental_feed {
+        // `a-im` selects the change feed mode. Full-fidelity
+        // (AllVersionsAndDeletes) takes precedence over incremental
+        // (LatestVersion); the two are mutually exclusive, but guard the
+        // invariant and emit exactly one value.
+        if self.full_fidelity_feed {
+            headers.insert(
+                request_header_names::A_IM,
+                HeaderValue::from_static(request_header_names::FULL_FIDELITY_FEED),
+            );
+        } else if self.incremental_feed {
             headers.insert(
                 request_header_names::A_IM,
                 HeaderValue::from_static(request_header_names::INCREMENTAL_FEED),
+            );
+        }
+        if self.changefeed_wire_format_version {
+            headers.insert(
+                request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION,
+                HeaderValue::from_static(
+                    request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15,
+                ),
+            );
+        }
+        if let Some(ref ts) = self.if_modified_since {
+            headers.insert(
+                request_header_names::IF_MODIFIED_SINCE,
+                HeaderValue::from(ts.clone()),
             );
         }
         if let Some(v) = self.populate_index_metrics {
@@ -281,12 +434,27 @@ impl CosmosRequestHeaders {
         if let Some(features) = self.supported_query_features.as_ref() {
             headers.insert(
                 request_header_names::SUPPORTED_QUERY_FEATURES,
-                match features {
-                    Cow::Borrowed(s) => HeaderValue::from(*s),
-                    Cow::Owned(s) => HeaderValue::from(s.clone()),
-                },
+                header_value_from_cow(features),
             );
         }
+        if let Some(formats) = self.supported_serialization_formats.as_ref() {
+            headers.insert(
+                request_header_names::SUPPORTED_SERIALIZATION_FORMATS,
+                header_value_from_cow(formats),
+            );
+        }
+    }
+}
+
+/// Converts a `Cow<'static, str>` header value into a [`HeaderValue`].
+///
+/// A `Cow::Borrowed` holds a `&'static str`, so it wraps into a `HeaderValue`
+/// with no allocation; a `Cow::Owned` must clone once because `HeaderValue`
+/// owns a `Cow<'static, str>` and this borrows `&self`.
+fn header_value_from_cow(value: &Cow<'static, str>) -> HeaderValue {
+    match value {
+        Cow::Borrowed(s) => HeaderValue::from(*s),
+        Cow::Owned(s) => HeaderValue::from(s),
     }
 }
 
@@ -460,6 +628,30 @@ pub struct CosmosResponseHeaders {
     /// Resource usage information (`x-ms-resource-usage`).
     pub resource_usage: Option<String>,
 
+    /// Resource schema version (`x-ms-schemaversion`).
+    pub(crate) schema_version: Option<String>,
+
+    /// Current write quorum (`x-ms-current-write-quorum`).
+    pub(crate) current_write_quorum: Option<u32>,
+
+    /// Current replica set size (`x-ms-current-replica-set-size`).
+    pub(crate) current_replica_set_size: Option<u32>,
+
+    /// Cross-partition role (`x-ms-xp-role`).
+    pub(crate) xp_role: Option<u32>,
+
+    /// Query execution metadata (`x-ms-cosmos-query-execution-info`).
+    pub(crate) query_execution_info: Option<String>,
+
+    /// Whether partition-key deletion is pending (`x-ms-cosmos-is-partition-key-delete-pending`).
+    pub(crate) pending_pk_delete: Option<bool>,
+
+    /// Physical partition identifier (`x-ms-cosmos-physical-partition-id`).
+    pub(crate) physical_partition_id: Option<String>,
+
+    /// Conflict resolution timestamp (`x-ms-cosmos-conflict-resolved-timestamp`).
+    pub(crate) conflict_resolved_timestamp: Option<u64>,
+
     /// Whether the region has tentative (not yet committed) writes (`x-ms-cosmos-allow-tentative-writes`).
     pub has_tentative_writes: Option<bool>,
 
@@ -486,6 +678,11 @@ pub struct CosmosResponseHeaders {
 
     /// Collection lazy indexing progress percentage (`x-ms-documentdb-collection-lazy-indexing-progress`).
     pub collection_lazy_indexing_progress: Option<i64>,
+
+    /// Distributed transaction idempotency token returned by the coordinator
+    /// (`x-ms-cosmos-idempotency-token`).
+    #[cfg(feature = "preview_dtx")]
+    pub distributed_transaction_idempotency_token: Option<uuid::Uuid>,
 }
 
 impl CosmosResponseHeaders {
@@ -616,6 +813,30 @@ impl CosmosResponseHeaders {
                 response_header_names::RESOURCE_USAGE => {
                     result.resource_usage = Some(value.as_str().to_owned());
                 }
+                response_header_names::SCHEMA_VERSION => {
+                    result.schema_version = Some(value.as_str().to_owned());
+                }
+                response_header_names::CURRENT_WRITE_QUORUM => {
+                    result.current_write_quorum = value.as_str().parse().ok();
+                }
+                response_header_names::CURRENT_REPLICA_SET_SIZE => {
+                    result.current_replica_set_size = value.as_str().parse().ok();
+                }
+                response_header_names::XP_ROLE => {
+                    result.xp_role = value.as_str().parse().ok();
+                }
+                response_header_names::QUERY_EXECUTION_INFO => {
+                    result.query_execution_info = Some(value.as_str().to_owned());
+                }
+                response_header_names::PENDING_PK_DELETE => {
+                    result.pending_pk_delete = parse_bool_ci(value.as_str());
+                }
+                response_header_names::PHYSICAL_PARTITION_ID => {
+                    result.physical_partition_id = Some(value.as_str().to_owned());
+                }
+                response_header_names::CONFLICT_RESOLVED_TIMESTAMP => {
+                    result.conflict_resolved_timestamp = value.as_str().parse().ok();
+                }
                 response_header_names::HAS_TENTATIVE_WRITES => {
                     result.has_tentative_writes = parse_bool_ci(value.as_str());
                 }
@@ -633,6 +854,11 @@ impl CosmosResponseHeaders {
                 }
                 response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS => {
                     result.collection_lazy_indexing_progress = value.as_str().parse().ok();
+                }
+                #[cfg(feature = "preview_dtx")]
+                response_header_names::DTX_IDEMPOTENCY_TOKEN => {
+                    result.distributed_transaction_idempotency_token =
+                        uuid::Uuid::parse_str(value.as_str()).ok();
                 }
                 _ => {}
             }
@@ -790,6 +1016,38 @@ impl CosmosResponseHeaders {
             self.resource_usage.clone(),
         );
         put_str(
+            response_header_names::SCHEMA_VERSION,
+            self.schema_version.clone(),
+        );
+        put_str(
+            response_header_names::CURRENT_WRITE_QUORUM,
+            self.current_write_quorum.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::CURRENT_REPLICA_SET_SIZE,
+            self.current_replica_set_size.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::XP_ROLE,
+            self.xp_role.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::QUERY_EXECUTION_INFO,
+            self.query_execution_info.clone(),
+        );
+        put_str(
+            response_header_names::PENDING_PK_DELETE,
+            self.pending_pk_delete.map(|b| bool_to_wire(b).to_owned()),
+        );
+        put_str(
+            response_header_names::PHYSICAL_PARTITION_ID,
+            self.physical_partition_id.clone(),
+        );
+        put_str(
+            response_header_names::CONFLICT_RESOLVED_TIMESTAMP,
+            self.conflict_resolved_timestamp.map(|v| v.to_string()),
+        );
+        put_str(
             response_header_names::HAS_TENTATIVE_WRITES,
             self.has_tentative_writes
                 .map(|b| bool_to_wire(b).to_owned()),
@@ -812,6 +1070,12 @@ impl CosmosResponseHeaders {
             response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS,
             self.collection_lazy_indexing_progress
                 .map(|v| v.to_string()),
+        );
+        #[cfg(feature = "preview_dtx")]
+        put_str(
+            response_header_names::DTX_IDEMPOTENCY_TOKEN,
+            self.distributed_transaction_idempotency_token
+                .map(|value| value.to_string()),
         );
         h
     }
@@ -974,6 +1238,16 @@ mod tests {
                 "Expected None for '{value}'"
             );
         }
+    }
+
+    #[test]
+    fn parses_canonical_schema_version_header() {
+        let mut headers = Headers::new();
+        headers.insert("x-ms-schemaversion", "1.0");
+
+        let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
+
+        assert_eq!(cosmos_headers.schema_version.as_deref(), Some("1.0"));
     }
 
     #[test]
@@ -1242,6 +1516,74 @@ mod tests {
         );
     }
 
+    #[test]
+    fn write_to_headers_emits_incremental_a_im() {
+        let cosmos_headers = CosmosRequestHeaders {
+            incremental_feed: true,
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("a-im")),
+            Some("Incremental Feed")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_emits_supported_serialization_formats() {
+        let cosmos_headers = CosmosRequestHeaders {
+            supported_serialization_formats: Some("JsonText,CosmosBinary".into()),
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-supported-serialization-formats"
+            )),
+            Some("JsonText,CosmosBinary")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_emits_full_fidelity_a_im() {
+        let cosmos_headers = CosmosRequestHeaders {
+            full_fidelity_feed: true,
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("a-im")),
+            Some("Full-Fidelity Feed")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_omits_a_im_when_no_feed_mode() {
+        let cosmos_headers = CosmosRequestHeaders::default();
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("a-im")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_omits_supported_serialization_formats_when_none() {
+        let cosmos_headers = CosmosRequestHeaders::default();
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-supported-serialization-formats"
+            )),
+            None
+        );
+    }
+
     /// Round-trips a fully-populated [`CosmosResponseHeaders`] through
     /// [`to_raw_headers`](CosmosResponseHeaders::to_raw_headers) followed
     /// by [`from_headers`](CosmosResponseHeaders::from_headers) and
@@ -1286,12 +1628,22 @@ mod tests {
             service_version: Some("version 2.18.0".into()),
             resource_quota: Some("documentSize=10240;".into()),
             resource_usage: Some("documentSize=0;".into()),
+            schema_version: Some("1.0".into()),
+            current_write_quorum: Some(3),
+            current_replica_set_size: Some(4),
+            xp_role: Some(1),
+            query_execution_info: Some("{\"reverseRidEnabled\":false}".into()),
+            pending_pk_delete: Some(false),
+            physical_partition_id: Some("physical-0".into()),
+            conflict_resolved_timestamp: Some(1_234_567),
             has_tentative_writes: Some(false),
             partition_key_range_id: Some("0".into()),
             internal_partition_id: Some("internal-xyz".into()),
             log_results: Some("ok".into()),
             collection_index_transformation_progress: Some(100),
             collection_lazy_indexing_progress: Some(75),
+            #[cfg(feature = "preview_dtx")]
+            distributed_transaction_idempotency_token: Some(uuid::Uuid::new_v4()),
         };
 
         let raw = original.to_raw_headers();
@@ -1306,6 +1658,12 @@ mod tests {
         assert_eq!(
             raw.get_optional_str(&HeaderName::from_static(
                 response_header_names::HAS_TENTATIVE_WRITES
+            )),
+            Some("False")
+        );
+        assert_eq!(
+            raw.get_optional_str(&HeaderName::from_static(
+                response_header_names::PENDING_PK_DELETE
             )),
             Some("False")
         );
@@ -1393,6 +1751,29 @@ mod tests {
         assert_eq!(round_tripped.service_version, original.service_version);
         assert_eq!(round_tripped.resource_quota, original.resource_quota);
         assert_eq!(round_tripped.resource_usage, original.resource_usage);
+        assert_eq!(round_tripped.schema_version, original.schema_version);
+        assert_eq!(
+            round_tripped.current_write_quorum,
+            original.current_write_quorum
+        );
+        assert_eq!(
+            round_tripped.current_replica_set_size,
+            original.current_replica_set_size
+        );
+        assert_eq!(round_tripped.xp_role, original.xp_role);
+        assert_eq!(
+            round_tripped.query_execution_info,
+            original.query_execution_info
+        );
+        assert_eq!(round_tripped.pending_pk_delete, original.pending_pk_delete);
+        assert_eq!(
+            round_tripped.physical_partition_id,
+            original.physical_partition_id
+        );
+        assert_eq!(
+            round_tripped.conflict_resolved_timestamp,
+            original.conflict_resolved_timestamp
+        );
         assert_eq!(
             round_tripped.has_tentative_writes,
             original.has_tentative_writes
@@ -1414,6 +1795,11 @@ mod tests {
             round_tripped.collection_lazy_indexing_progress,
             original.collection_lazy_indexing_progress
         );
+        #[cfg(feature = "preview_dtx")]
+        assert_eq!(
+            round_tripped.distributed_transaction_idempotency_token,
+            original.distributed_transaction_idempotency_token
+        );
     }
 
     /// `to_raw_headers` on a defaulted (empty) value must produce an
@@ -1423,5 +1809,35 @@ mod tests {
     fn to_raw_headers_empty_when_all_fields_none() {
         let raw = CosmosResponseHeaders::default().to_raw_headers();
         assert_eq!(raw.iter().count(), 0);
+    }
+
+    #[test]
+    fn gateway_v2_proxy_header_wire_strings() {
+        use request_header_names as r;
+        let cases = [
+            (
+                r::THINCLIENT_PROXY_OPERATION_TYPE,
+                "x-ms-thinclient-proxy-operation-type",
+            ),
+            (
+                r::THINCLIENT_PROXY_RESOURCE_TYPE,
+                "x-ms-thinclient-proxy-resource-type",
+            ),
+            (r::THINCLIENT_RANGE_MIN, "x-ms-thinclient-range-min"),
+            (r::THINCLIENT_RANGE_MAX, "x-ms-thinclient-range-max"),
+            (r::USE_THINCLIENT, "x-ms-cosmos-use-thinclient"),
+        ];
+
+        for (actual, expected) in cases {
+            assert_eq!(actual, expected);
+            // Must be a valid static header name (lowercased, no panic).
+            let _ = HeaderName::from_static(actual);
+        }
+
+        for (index, (left, _)) in cases.iter().enumerate() {
+            for (right, _) in cases.iter().skip(index + 1) {
+                assert_ne!(left, right, "Gateway 2.0 headers must be distinct");
+            }
+        }
     }
 }

@@ -1234,6 +1234,16 @@ pub struct BlobServiceClientGetStatisticsOptions<'a> {
     pub timeout: Option<i32>,
 }
 
+/// Options to be passed to `BlobServiceClient::get_user_delegation_key()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobServiceClientGetUserDelegationKeyOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+}
+
 /// Options to be passed to `BlobServiceClient::list_containers()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobServiceClientListContainersOptions<'a> {

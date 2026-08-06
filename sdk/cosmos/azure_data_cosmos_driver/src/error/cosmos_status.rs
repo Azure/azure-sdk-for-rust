@@ -326,6 +326,7 @@ impl SubStatusCode {
             // 449: Retry With
             5350 => Some("RbacAadGroupUnavailable"),
             5351 => Some("AzureRbacAccessDecisionUnavailable"),
+            5352 => Some("DtcCoordinatorRaceConflict"),
 
             // 500: Internal Server Error
             3001 => Some("ConfigurationNameNotEmpty"),
@@ -337,6 +338,10 @@ impl SubStatusCode {
             3042 => Some("OperationCancelledWithNoRollback"),
             3043 => Some("SplitTimedOut"),
             5360 => Some("RbacDisabledDueToArmPath"),
+            5411 => Some("DtcLedgerFailure"),
+            5412 => Some("DtcAccountConfigFailure"),
+            5413 => Some("DtcDispatchFailure"),
+            5415 => Some("DtcOperationRolledBack"),
 
             // 503: Service Unavailable
             1337 => Some("GoneException"),
@@ -451,6 +456,8 @@ impl SubStatusCode {
             20006 => Some("ChannelClosed"),
             20007 => Some("MalformedContinuationToken"),
             20008 => Some("ClientOperationTimeout"),
+            20020 => Some("SerializationResponseBodyInvalid"),
+            20021 => Some("SerializationRequestBodyInvalid"),
             20401 => Some("ClientGenerated401"),
             20901 => Some("NegativeTimeoutProvided"),
             20902 => Some("MissingPartitionKeyRangeIdInContext"),
@@ -488,6 +495,8 @@ impl SubStatusCode {
             20115 => Some("ClientQueryPlanComplexProjectionUnsupported"),
             20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
+            20118 => Some("ClientCrossPartitionFanOutExceeded"),
+            20119 => Some("ClientOrderByComplexValueUnsupported"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -509,13 +518,35 @@ impl SubStatusCode {
             20209 => Some("ClientCrossPartitionQueryRequiresContainerRef"),
             20210 => Some("ClientSingletonOperationReturnedEmptyPage"),
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
+            20212 => Some("ClientChangeFeedPipelineUnexpectedlyDrained"),
             20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
+            20214 => Some("ClientContinuationTokenOrderByStateInvalid"),
+            20215 => Some("ClientStreamingMergeSplitReplacementInvalid"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
             20303 => Some("ServiceReturnedOfferWithoutId"),
             20304 => Some("ClientThroughputPollerIncomplete"),
             20305 => Some("ClientTopologyResolutionFailed"),
+            20306 => Some("ServiceReturnedObjectWithoutRid"),
+            20307 => Some("ClientQueryPlanRangeNotCoveredByTopology"),
+            20308 => Some("ServiceOrderByEnvelopeInvalid"),
+            20309 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
+
+            // Native FFI wrapper pre-flight / plumbing codes (20350-20399)
+            20350 => Some("ClientFfiNullArgument"),
+            20351 => Some("ClientFfiInvalidUtf8"),
+            20352 => Some("ClientFfiInvalidHeader"),
+            20353 => Some("ClientFfiInvalidOptionValue"),
+            20354 => Some("ClientFfiOperationConsumed"),
+            20355 => Some("ClientFfiPreconditionAlreadySet"),
+            20356 => Some("ClientFfiUnsupportedOperationForMutator"),
+            20357 => Some("ClientFfiFeedExhausted"),
+            20358 => Some("ClientFfiQueueShutdown"),
+            20359 => Some("ClientFfiQueueFull"),
+            20360 => Some("ClientFfiOperationCancelled"),
+            20361 => Some("ClientFfiRuntimeBuildFailed"),
+            20362 => Some("ClientFfiPanic"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -836,6 +867,26 @@ impl SubStatusCode {
     /// RU budget exceeded (3200).
     pub const RU_BUDGET_EXCEEDED: SubStatusCode = SubStatusCode(3200);
 
+    /// DTX coordinator race conflict (5352).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_COORDINATOR_RACE_CONFLICT: SubStatusCode = SubStatusCode(5352);
+
+    /// DTX ledger failure (5411).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_LEDGER_FAILURE: SubStatusCode = SubStatusCode(5411);
+
+    /// DTX account configuration failure (5412).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_ACCOUNT_CONFIG_FAILURE: SubStatusCode = SubStatusCode(5412);
+
+    /// DTX backend dispatch infrastructure failure (5413).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_DISPATCH_FAILURE: SubStatusCode = SubStatusCode(5413);
+
+    /// DTX prepared operation rolled back on abort (5415, DtcOperationRolledBack).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_OPERATION_ROLLED_BACK: SubStatusCode = SubStatusCode(5415);
+
     /// Gateway throttled (3201).
     pub const GATEWAY_THROTTLED: SubStatusCode = SubStatusCode(3201);
 
@@ -1009,6 +1060,15 @@ impl SubStatusCode {
     pub const TOO_MANY_TENTATIVE_WRITES_TO_SATELLITE_REGION: SubStatusCode = SubStatusCode(1339);
 
     // ----- SDK Client-side codes (10xxx, 2xxxx) -----
+    //
+    // Provenance: the `10001`-`10004` gateway codes and `CLIENT_OPERATION_TIMEOUT`
+    // (20008) match Java's `HttpConstants.SubStatusCodes` exactly. The remaining
+    // `2000x` / `20401` codes are sourced from .NET's client-side `SubStatusCodes`;
+    // Java only ported a subset of that range, so they have no Java equivalent.
+    // Note: Java models the HTTP/2-ping channel-closed case as
+    // `GATEWAY_HTTP2_PING_TIMEOUT_CHANNEL_CLOSED` (10006) — a local transport
+    // failure that skips endpoint mark-down — which is a narrower semantic than
+    // the generic `CHANNEL_CLOSED` (20006, aligned with .NET) defined below.
 
     /// Gateway endpoint unavailable (10001).
     pub const GATEWAY_ENDPOINT_UNAVAILABLE: SubStatusCode = SubStatusCode(10001);
@@ -1024,6 +1084,18 @@ impl SubStatusCode {
 
     /// Transport generated 503 (20003).
     pub const TRANSPORT_GENERATED_503: SubStatusCode = SubStatusCode(20003);
+
+    /// Client CPU overload (20004).
+    pub const CLIENT_CPU_OVERLOAD: SubStatusCode = SubStatusCode(20004);
+
+    /// Client thread starvation (20005).
+    pub const CLIENT_THREAD_STARVATION: SubStatusCode = SubStatusCode(20005);
+
+    /// Channel closed (20006).
+    pub const CHANNEL_CLOSED: SubStatusCode = SubStatusCode(20006);
+
+    /// Malformed continuation token (20007).
+    pub const MALFORMED_CONTINUATION_TOKEN: SubStatusCode = SubStatusCode(20007);
 
     /// Client generated 401 — authorization/signing failure (20401).
     pub const CLIENT_GENERATED_401: SubStatusCode = SubStatusCode(20401);
@@ -1069,6 +1141,9 @@ impl SubStatusCode {
     /// Response body failed to deserialize (20020). Used by
     /// `crate::error::Error::serialization`.
     pub const SERIALIZATION_RESPONSE_BODY_INVALID: SubStatusCode = SubStatusCode(20020);
+
+    /// Request body failed to serialize (20021).
+    pub const SERIALIZATION_REQUEST_BODY_INVALID: SubStatusCode = SubStatusCode(20021);
 
     // ----- Authentication boundary mapping code (20402) -----
 
@@ -1274,6 +1349,18 @@ impl SubStatusCode {
     /// operations.
     pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: SubStatusCode = SubStatusCode(20117);
 
+    /// A fresh cross-partition operation fanned out to more leaf request
+    /// nodes than the configured maximum (20118). The pipeline refuses to
+    /// plan an over-broad fan-out; the caller must raise `max_fan_out`
+    /// (via `FeedOptions`) to opt in. Paired with HTTP 400 because it is a
+    /// client-side input-validation rejection of the request.
+    pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: SubStatusCode = SubStatusCode(20118);
+
+    /// An `ORDER BY` query sorted on a value that evaluated to an array or
+    /// object (20119). Cross-partition `ORDER BY` on complex values is not
+    /// currently supported.
+    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = SubStatusCode(20119);
+
     // ----- 20150-20199: SDK configuration / setup errors -----
 
     /// Two fault-injection rules registered with the same id (20150).
@@ -1373,12 +1460,33 @@ impl SubStatusCode {
     pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: SubStatusCode =
         SubStatusCode(20211);
 
+    /// A change feed pipeline reported that it was fully drained (20212).
+    /// The change feed is a conceptually infinite stream — "no changes" is
+    /// surfaced as an empty (304) page, never as a drained pipeline — so a
+    /// drained result indicates an internal invariant violation rather than
+    /// a clean end of stream. Surfacing it as an error keeps the failure
+    /// loud instead of silently terminating the caller's polling loop.
+    pub const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: SubStatusCode =
+        SubStatusCode(20212);
+
     /// A continuation token's saved range could not be honored on resume
     /// because the topology no longer covers it (20213). Surfacing this as
     /// an error rather than silently dropping the range prevents duplicate
     /// emission or data loss. Member of the continuation-token family —
     /// see also 20200, 20203, 20204, 20205.
     pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: SubStatusCode = SubStatusCode(20213);
+
+    /// A `StreamingOrderedMerge` continuation token is semantically invalid
+    /// (bad column/direction, hash, RID, or skip count) (20214).
+    pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: SubStatusCode =
+        SubStatusCode(20214);
+
+    /// `StreamingOrderedMerge` split replacement nodes are unusable (20215):
+    /// either their ranges do not exactly cover the prior range (a coverage
+    /// gap/overlap), or a replacement carries no continuation to resume a
+    /// mid-group boundary and cannot be safely repositioned.
+    pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode =
+        SubStatusCode(20215);
 
     // ----- 20300-20349: SDK-detected service contract violations -----
 
@@ -1424,6 +1532,89 @@ impl SubStatusCode {
     /// has no routing information for the operation. Paired with HTTP
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
+
+    /// A cross-partition streaming `ORDER BY` rewritten-query result item
+    /// did not match the expected envelope shape: missing `payload`,
+    /// missing/empty RID, or a mismatched `orderByItems` length (20308).
+    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: SubStatusCode = SubStatusCode(20308);
+
+    /// The backend query plan reported `ORDER BY` columns but did not
+    /// supply a non-empty `rewrittenQuery` (20309).
+    pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: SubStatusCode =
+        SubStatusCode(20309);
+
+    /// A topology range resolved for a query-plan EPK range did not
+    /// overlap that range (20307). The query planner intersects each
+    /// resolved partition with the query-plan range it was resolved
+    /// for; an empty intersection means `resolve_ranges` violated its
+    /// contract of returning only overlapping ranges. Surfaced as an
+    /// error (paired with HTTP 500) instead of panicking the worker
+    /// thread, which would deadlock the caller. See issue #4574.
+    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: SubStatusCode = SubStatusCode(20307);
+
+    // ----- 20350-20399: native FFI wrapper pre-flight / plumbing codes -----
+    //
+    // These are surfaced exclusively by the `azure_data_cosmos_driver_native`
+    // C ABI wrapper for failures that arise at the FFI boundary itself (bad
+    // pointer / encoding arguments, operation-lifecycle misuse, completion-queue
+    // back-pressure). They live here so the wrapper has a single canonical
+    // `(status, sub-status)` taxonomy shared with the driver instead of a
+    // parallel bespoke one. They are never produced by the driver's own
+    // request pipeline.
+
+    /// A required pointer argument to a wrapper C function was `NULL` (20350).
+    /// Paired with HTTP 400.
+    pub const CLIENT_FFI_NULL_ARGUMENT: SubStatusCode = SubStatusCode(20350);
+
+    /// A `*const c_char` argument to a wrapper C function was not valid
+    /// UTF-8 (20351). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_UTF8: SubStatusCode = SubStatusCode(20351);
+
+    /// A request header supplied to the wrapper had a non-ASCII / control
+    /// character name or value (20352). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_HEADER: SubStatusCode = SubStatusCode(20352);
+
+    /// A wrapper builder setter received a value outside its documented
+    /// range (20353). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_OPTION_VALUE: SubStatusCode = SubStatusCode(20353);
+
+    /// A mutator or second submit was attempted on a wrapper operation handle
+    /// already consumed by an earlier successful submit (20354). Paired with
+    /// HTTP 400.
+    pub const CLIENT_FFI_OPERATION_CONSUMED: SubStatusCode = SubStatusCode(20354);
+
+    /// A second precondition setter was called on a wrapper operation that
+    /// already had one (20355). Paired with HTTP 400.
+    pub const CLIENT_FFI_PRECONDITION_ALREADY_SET: SubStatusCode = SubStatusCode(20355);
+
+    /// A wrapper mutator only meaningful for a specific operation kind was
+    /// applied to an incompatible operation (20356). Paired with HTTP 400.
+    pub const CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR: SubStatusCode = SubStatusCode(20356);
+
+    /// A single-shot wrapper submit of a feed-style operation yielded no
+    /// further page (20357). Paired with HTTP 404.
+    pub const CLIENT_FFI_FEED_EXHAUSTED: SubStatusCode = SubStatusCode(20357);
+
+    /// A wrapper submit targeted a completion queue that had already been
+    /// shut down (20358). Paired with HTTP 503.
+    pub const CLIENT_FFI_QUEUE_SHUTDOWN: SubStatusCode = SubStatusCode(20358);
+
+    /// A wrapper submit targeted a completion queue already at its hard
+    /// capacity (20359). Paired with HTTP 503.
+    pub const CLIENT_FFI_QUEUE_FULL: SubStatusCode = SubStatusCode(20359);
+
+    /// A wrapper operation was cancelled before it completed, via an explicit
+    /// cancel or a queue shutdown (20360). Paired with HTTP 408.
+    pub const CLIENT_FFI_OPERATION_CANCELLED: SubStatusCode = SubStatusCode(20360);
+
+    /// The wrapper could not construct the underlying driver runtime (20361).
+    /// Paired with HTTP 500.
+    pub const CLIENT_FFI_RUNTIME_BUILD_FAILED: SubStatusCode = SubStatusCode(20361);
+
+    /// A driver future spawned by the wrapper panicked; the wrapper's panic
+    /// firewall synthesized a failure so the host continuation is released
+    /// rather than leaked (20362). Paired with HTTP 500.
+    pub const CLIENT_FFI_PANIC: SubStatusCode = SubStatusCode(20362);
 }
 
 impl Default for SubStatusCode {
@@ -1549,6 +1740,19 @@ impl CosmosStatus {
         u16::from(self.status_code) == 429
     }
 
+    /// Returns `true` if this is an HTTP 449 RetryWith response.
+    ///
+    /// 449 RetryWith is returned by Cosmos backends for transient
+    /// concurrency conflicts (e.g. concurrent writes racing through the
+    /// store, RBAC info momentarily unavailable). The client is expected
+    /// to retry in the same region after a short delay. See
+    /// `try_handle_retry_with` in
+    /// `driver::pipeline::retry_evaluation` and the cross-SDK
+    /// `RetryWithRetryPolicy` for the policy.
+    pub fn is_retry_with(&self) -> bool {
+        u16::from(self.status_code) == 449
+    }
+
     /// Returns `true` if this is an HTTP 410 Gone response.
     pub fn is_gone(&self) -> bool {
         u16::from(self.status_code) == 410
@@ -1632,6 +1836,14 @@ impl CosmosStatus {
             && self.sub_status == Some(SubStatusCode::WRITE_FORBIDDEN)
     }
 
+    /// Returns `true` for HTTP 403/sub-status 1008, where the region no longer owns the account.
+    ///
+    /// Note: sub-status 1008 is overloaded on HTTP 410 for partition migration.
+    pub fn is_database_account_not_found(&self) -> bool {
+        u16::from(self.status_code) == 403
+            && self.sub_status == Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND)
+    }
+
     /// Returns `true` if this is a read-session-not-available error (HTTP 404, sub-status 1002).
     pub fn is_read_session_not_available(&self) -> bool {
         u16::from(self.status_code) == 404
@@ -1697,6 +1909,8 @@ impl CosmosStatus {
     ///   `403` *can* be retried (e.g., write-forbidden on single-master
     ///   PPAF), the dedicated retry path handles it via the normal retry
     ///   loop rather than via a parallel hedge race.
+    ///   * **Exception — `403 / 1008` (`DatabaseAccountNotFound`):** topology
+    ///     ownership changed, so the outer retry pipeline must refresh and fail over.
     /// * `422`, `451`, `501`, `505` are payload/policy/protocol issues that
     ///   another region cannot resolve. Racing a hedge against them only
     ///   wastes RU and request budget.
@@ -1707,6 +1921,10 @@ impl CosmosStatus {
         }
 
         let sub = self.sub_status.map(|s| s.value()).unwrap_or(0);
+        if code == 403 && sub == 1008 {
+            // DatabaseAccountNotFound — see exception in the doc comment above.
+            return false;
+        }
         matches!(
             code,
             400 | 401 | 403 | 405 | 409 | 412 | 413 | 422 | 451 | 501 | 505
@@ -1762,10 +1980,27 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::TRANSPORT_GENERATED_503),
     };
 
+    /// Client-generated 400 Bad Request, **no sub-status**.
+    ///
+    /// Generated by the SDK when a request could not be constructed for the
+    /// wire — most commonly when Gateway 2.0 request wrapping fails before
+    /// the request is sent. The HTTP status is set to 400 to mirror what
+    /// the service would return for malformed input, but no sub-status code
+    /// is attached: the failure originates in the client, and no entry in
+    /// the canonical [`SubStatusCode`] table (sourced from the C++ backend
+    /// `SubstatusCodeType` enum) covers client-side construction failures.
+    /// This matches the .NET SDK's `BadRequestException`, which carries
+    /// `HttpStatusCode.BadRequest` with the default (zero) sub-status.
+    pub const CLIENT_BAD_REQUEST: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: None,
+    };
+
     /// Client-generated 401 Unauthorized (sub-status 20401).
     ///
     /// Generated by the SDK when request signing/authorization fails before
-    /// the request is sent (e.g., credential error, token acquisition failure).
+    /// the request is sent (e.g., credential error, token acquisition
+    /// failure).
     pub const CLIENT_GENERATED_401: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Unauthorized,
         sub_status: Some(SubStatusCode::CLIENT_GENERATED_401),
@@ -1806,6 +2041,13 @@ impl CosmosStatus {
     pub const SERIALIZATION_RESPONSE_BODY_INVALID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID),
+    };
+
+    /// Request body failed to serialize (HTTP 400, sub-status 20021). The
+    /// caller supplied an item that could not be encoded.
+    pub const SERIALIZATION_REQUEST_BODY_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
     };
 
     /// AAD / credential provider token acquisition failed
@@ -1850,6 +2092,14 @@ impl CosmosStatus {
     pub const WRITE_FORBIDDEN: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Forbidden,
         sub_status: Some(SubStatusCode::WRITE_FORBIDDEN),
+    };
+
+    /// Database account not found (HTTP 403, sub-status 1008).
+    ///
+    /// Region ownership changed; sub-status `1008` is overloaded on 410.
+    pub const DATABASE_ACCOUNT_NOT_FOUND: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::Forbidden,
+        sub_status: Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
     };
 
     // ----- 410: Gone -----
@@ -2015,6 +2265,21 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION),
     };
 
+    /// 400 / 20118 — a fresh cross-partition operation fanned out to more
+    /// leaf request nodes than the configured `max_fan_out`. The caller
+    /// must explicitly raise the limit to run a broader query.
+    pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
+    };
+
+    /// 400 / 20119 — a cross-partition `ORDER BY` sorted on an array or
+    /// object value, which is not currently supported.
+    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
+    };
+
     // Configuration / setup (HTTP 400, sub-status 20150-20199)
 
     /// 400 / 20150 — duplicate fault-injection rule id.
@@ -2155,11 +2420,33 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY),
     };
 
+    /// 500 / 20212 — a change feed pipeline reported that it was fully
+    /// drained, which violates the infinite-stream invariant.
+    pub const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED),
+    };
+
     /// 500 / 20213 — continuation token's saved range could not be
     /// honored on resume because the topology no longer covers it.
     pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
+    };
+
+    /// 500 / 20214 — a `StreamingOrderedMerge` continuation token is
+    /// semantically invalid (bad column/direction, hash, RID, or count).
+    pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+    };
+
+    /// 500 / 20215 — `StreamingOrderedMerge` split replacement nodes are
+    /// unusable: their ranges do not exactly cover the prior range, or a
+    /// replacement carries no continuation to resume a mid-group boundary.
+    pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
     };
 
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)
@@ -2208,6 +2495,29 @@ impl CosmosStatus {
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::ServiceUnavailable,
         sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
+    };
+
+    /// 500 / 20308 — a rewritten-query result item didn't match the
+    /// expected envelope shape.
+    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_ORDER_BY_ENVELOPE_INVALID),
+    };
+
+    /// 500 / 20309 — the query plan reported `ORDER BY` columns but no
+    /// `rewrittenQuery`.
+    pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY),
+    };
+
+    /// 500 / 20307 — a topology range resolved for a query-plan EPK
+    /// range did not overlap that range, a `resolve_ranges` contract
+    /// violation. Returned instead of panicking the query worker (see
+    /// issue #4574).
+    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY),
     };
 
     /// 500 / 20306 — the service returned a resource read response
@@ -2515,8 +2825,34 @@ mod tests {
     }
 
     #[test]
+    fn name_returns_client_generated_401() {
+        // Regression guard: the 20401 name mapping must stay in lockstep with
+        // the `CLIENT_GENERATED_401` constant so diagnostics keep rendering a
+        // name instead of `None`.
+        assert_eq!(
+            SubStatusCode::CLIENT_GENERATED_401.name(None),
+            Some("ClientGenerated401")
+        );
+    }
+
+    #[test]
     fn name_returns_none_for_unknown() {
         assert_eq!(SubStatusCode::new(65000).name(None), None);
+    }
+
+    #[test]
+    fn name_returns_serialization_boundary_codes() {
+        // Regression guard: the 20020/20021 name mappings must stay in lockstep
+        // with the `SERIALIZATION_*_BODY_INVALID` constants so diagnostics render
+        // a symbolic name instead of a bare number.
+        assert_eq!(
+            SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID.name(None),
+            Some("SerializationResponseBodyInvalid")
+        );
+        assert_eq!(
+            SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID.name(None),
+            Some("SerializationRequestBodyInvalid")
+        );
     }
 
     #[test]

@@ -167,12 +167,12 @@ println!(
 use azure_security_keyvault_keys::models::KeyClientGetKeyOptions;
 
 // Retrieve a public key as a JWK using the key client.
-let key_options = KeyClientGetKeyOptions {
+let get_options = KeyClientGetKeyOptions {
     key_version: Some("key-version".to_string()),
     ..Default::default()
 };
 let key = client
-    .get_key("key-name", None)
+    .get_key("key-name", Some(get_options))
     .await?
     .into_model()?;
 

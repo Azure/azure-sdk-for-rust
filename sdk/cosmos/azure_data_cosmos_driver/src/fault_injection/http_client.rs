@@ -10,7 +10,7 @@ use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
 use super::FaultInjectionEvaluation;
 use super::FaultOperationType;
-use crate::diagnostics::RequestSentStatus;
+use crate::diagnostics::{RequestSentStatus, TransportKind};
 use crate::driver::transport::cosmos_transport_client::{
     HttpRequest, HttpResponse, TransportClient, TransportError,
 };
@@ -35,11 +35,16 @@ enum ApplyResult {
 
 /// Custom implementation of a transport client that injects faults for testing purposes.
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct FaultClient {
     /// The inner transport client to which requests are delegated.
     inner: Arc<dyn TransportClient>,
     /// The fault injection rules to apply.
     rules: Arc<Vec<Arc<FaultInjectionRule>>>,
+    /// The transport kind this client serves, when bound to a dataplane
+    /// transport. `None` for metadata clients (account discovery and
+    /// similar) where the gateway-vs-Gateway-2.0 distinction does not apply.
+    transport_kind: Option<TransportKind>,
 }
 
 impl FaultClient {
@@ -47,10 +52,12 @@ impl FaultClient {
     pub(crate) fn new(
         inner: Arc<dyn TransportClient>,
         rules: Vec<Arc<FaultInjectionRule>>,
+        transport_kind: Option<TransportKind>,
     ) -> Self {
         Self {
             inner,
             rules: Arc::new(rules),
+            transport_kind,
         }
     }
 
@@ -120,7 +127,7 @@ impl FaultClient {
         }
 
         if let Some(region) = condition.region() {
-            if !request.url.as_str().contains(region.as_str()) {
+            if !host_matches_region(&request.url, region.as_str()) {
                 return Some(FaultInjectionEvaluation::RegionMismatch {
                     rule_id: rule.id().to_owned(),
                 });
@@ -130,6 +137,18 @@ impl FaultClient {
         if let Some(container_id) = condition.container_id() {
             if !request.url.as_str().contains(container_id) {
                 return Some(FaultInjectionEvaluation::ContainerMismatch {
+                    rule_id: rule.id().to_owned(),
+                });
+            }
+        }
+
+        if let Some(expected_kind) = condition.transport_kind() {
+            // The rule restricts itself to a specific transport. If this
+            // FaultClient is bound to a different transport (or to a
+            // metadata client with no transport kind at all), the rule
+            // does not apply.
+            if self.transport_kind != Some(expected_kind) {
+                return Some(FaultInjectionEvaluation::TransportKindMismatch {
                     rule_id: rule.id().to_owned(),
                 });
             }
@@ -231,6 +250,11 @@ impl FaultClient {
                 StatusCode::TooManyRequests,
                 None,
                 "Too Many Requests - Injected fault",
+            ),
+            FaultInjectionErrorType::RetryWith => (
+                StatusCode::from(449u16),
+                None,
+                "Retry With - Injected fault",
             ),
             FaultInjectionErrorType::ReadSessionNotAvailable => (
                 StatusCode::NotFound,
@@ -371,9 +395,36 @@ impl TransportClient for FaultClient {
     }
 }
 
+/// Returns true when `url`'s host's first DNS label corresponds to the given
+/// Cosmos region slug.
+///
+/// Matches the regional-endpoint conventions used by both the in-memory
+/// emulator and real accounts:
+///
+/// - emulator: `<region>.emulator.local`            (first label equals the region slug)
+/// - real:     `<account>-<region>.documents.azure.com`  (first label ends with `-<region>`)
+///
+/// Plain substring matching on the full URL produces false positives between
+/// adjacent regions whose slugs share a prefix (e.g. `eastus` and `eastus2`).
+/// Anchoring on the first DNS label avoids that.
+///
+/// Returns `false` when the URL has no host.
+fn host_matches_region(url: &url::Url, region: &str) -> bool {
+    let Some(host) = url.host_str() else {
+        return false;
+    };
+    let first_label = host.split('.').next().unwrap_or("");
+    if first_label == region {
+        return true;
+    }
+    let suffix = format!("-{region}");
+    first_label.ends_with(&suffix)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::FaultClient;
+    use super::{host_matches_region, FaultClient};
+    use crate::diagnostics::TransportKind;
     use crate::driver::transport::cosmos_transport_client::{
         HttpRequest, HttpResponse, TransportClient, TransportError,
     };
@@ -451,7 +502,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
 
         // Request without operation type header shouldn't match
         let (request, _collector) = create_test_request();
@@ -464,7 +515,7 @@ mod tests {
     #[tokio::test]
     async fn execute_request_empty_rules() {
         let mock_client = Arc::new(MockTransportClient::new());
-        let fault_client = FaultClient::new(mock_client.clone(), vec![]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![], None);
 
         let (request, _collector) = create_test_request();
         let result = fault_client.send(&request).await;
@@ -484,7 +535,7 @@ mod tests {
             .with_hit_limit(2)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
         let (request, _collector) = create_test_request();
 
         // First two requests should hit the fault
@@ -521,7 +572,7 @@ mod tests {
             .with_start_time(Instant::now() + Duration::from_secs(60))
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
         let (request, _collector) = create_test_request();
 
         // Request should pass through because start_time is in the future
@@ -539,7 +590,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("error-rule", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
         let (request, _collector) = create_test_request();
 
         let result = fault_client.send(&request).await;
@@ -567,7 +618,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("throttle-rule", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
         let (request, _collector) = create_test_request();
 
         let result = fault_client.send(&request).await;
@@ -590,7 +641,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("response-delay-rule", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
         let (request, _collector) = create_test_request();
 
         // Delay-only should pass through to actual request after delay
@@ -623,7 +674,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
 
         // Request URL doesn't contain "westus", should pass through
         let (request, _collector) = create_test_request();
@@ -647,7 +698,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
 
         // Request URL doesn't contain "my-container", should pass through
         let (request, _collector) = create_test_request();
@@ -669,7 +720,7 @@ mod tests {
             .with_hit_limit(2)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
         let (request, _collector) = create_test_request();
 
         // First request should hit the fault
@@ -724,7 +775,7 @@ mod tests {
                 .build();
             let rule = FaultInjectionRuleBuilder::new("substatus-rule", error).build();
 
-            let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+            let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)], None);
             let (request, _collector) = create_test_request();
 
             let result = fault_client.send(&request).await;
@@ -770,7 +821,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("conn-error", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
         let (request, _collector) = create_test_request();
 
         let result = fault_client.send(&request).await;
@@ -796,7 +847,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("timeout-error", error).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
         let (request, _collector) = create_test_request();
 
         let result = fault_client.send(&request).await;
@@ -827,7 +878,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("custom-response-rule", result).build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
         let (request, _collector) = create_test_request();
 
         let response = fault_client.send(&request).await;
@@ -853,7 +904,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
 
         let (mut request, _collector) = create_test_request();
         request
@@ -879,7 +930,7 @@ mod tests {
             .build();
         let rule = FaultInjectionRuleBuilder::new("header-test-rule", result).build();
 
-        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)], None);
         let (request, collector) = create_test_request();
 
         let response = fault_client.send(&request).await;
@@ -900,7 +951,7 @@ mod tests {
         let rule = Arc::new(FaultInjectionRuleBuilder::new("disabled-rule", error).build());
         rule.disable();
 
-        let fault_client = FaultClient::new(mock_client, vec![rule]);
+        let fault_client = FaultClient::new(mock_client, vec![rule], None);
         let (request, collector) = create_test_request();
         let result = fault_client.send(&request).await;
         assert!(result.is_ok(), "Request should succeed with disabled rule");
@@ -926,7 +977,7 @@ mod tests {
             .with_error(FaultInjectionErrorType::ServiceUnavailable)
             .build();
         let rule = FaultInjectionRuleBuilder::new("test-rule", error).build();
-        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)], None);
 
         let (request, collector) = create_test_request();
         let _ = fault_client.send(&request).await;
@@ -944,7 +995,7 @@ mod tests {
             .with_error(FaultInjectionErrorType::ConnectionError)
             .build();
         let rule = FaultInjectionRuleBuilder::new("conn-rule", error).build();
-        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)], None);
 
         let (request, collector) = create_test_request();
         let _ = fault_client.send(&request).await;
@@ -962,7 +1013,7 @@ mod tests {
             .with_error(FaultInjectionErrorType::ResponseTimeout)
             .build();
         let rule = FaultInjectionRuleBuilder::new("timeout-rule", error).build();
-        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)], None);
 
         let (request, collector) = create_test_request();
         let _ = fault_client.send(&request).await;
@@ -992,7 +1043,7 @@ mod tests {
         let rule2 = Arc::new(FaultInjectionRuleBuilder::new("active-rule", error2).build());
         let rule3 = Arc::new(FaultInjectionRuleBuilder::new("superseded-rule", error3).build());
 
-        let fault_client = FaultClient::new(mock_client, vec![rule1, rule2, rule3]);
+        let fault_client = FaultClient::new(mock_client, vec![rule1, rule2, rule3], None);
         let (request, collector) = create_test_request();
         let _ = fault_client.send(&request).await;
 
@@ -1028,7 +1079,7 @@ mod tests {
             .with_condition(condition)
             .build();
 
-        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)]);
+        let fault_client = FaultClient::new(mock_client, vec![Arc::new(rule)], None);
 
         // Request without matching operation header
         let (request, collector) = create_test_request();
@@ -1039,6 +1090,168 @@ mod tests {
         assert!(matches!(
             &evals[0],
             super::FaultInjectionEvaluation::OperationMismatch { rule_id } if rule_id == "no-match-rule"
+        ));
+    }
+
+    #[tokio::test]
+    async fn transport_kind_filter_skips_when_kind_does_not_match() {
+        let mock_client = Arc::new(MockTransportClient::new());
+
+        // Rule scoped to Gateway 2.0 only.
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_transport_kind(TransportKind::GatewayV2)
+            .build();
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("gw_v2-only", error)
+            .with_condition(condition)
+            .build();
+
+        // Bind the FaultClient to a non-Gateway-2.0 transport — the rule
+        // must be skipped and the request must reach the inner client.
+        let fault_client = FaultClient::new(
+            mock_client.clone(),
+            vec![Arc::new(rule)],
+            Some(TransportKind::Gateway),
+        );
+
+        let (request, collector) = create_test_request();
+        let result = fault_client.send(&request).await;
+
+        assert!(result.is_ok());
+        assert_eq!(mock_client.call_count(), 1);
+
+        let evals = collector.take();
+        assert_eq!(evals.len(), 1);
+        assert!(matches!(
+            &evals[0],
+            super::FaultInjectionEvaluation::TransportKindMismatch { rule_id } if rule_id == "gw_v2-only"
+        ));
+    }
+
+    #[tokio::test]
+    async fn transport_kind_filter_applies_when_kind_matches() {
+        let mock_client = Arc::new(MockTransportClient::new());
+
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_transport_kind(TransportKind::GatewayV2)
+            .build();
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("gw_v2-only", error)
+            .with_condition(condition)
+            .build();
+
+        // Bind to a Gateway 2.0 transport — the rule must apply and the
+        // injected error must surface to the caller.
+        let fault_client = FaultClient::new(
+            mock_client.clone(),
+            vec![Arc::new(rule)],
+            Some(TransportKind::GatewayV2),
+        );
+
+        let (request, _collector) = create_test_request();
+        let result = fault_client.send(&request).await;
+
+        let response = result.expect("rule should inject HTTP-status fault");
+        assert_eq!(response.status, u16::from(StatusCode::ServiceUnavailable));
+        // Inner client must NOT have been called when a fault is injected.
+        assert_eq!(mock_client.call_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn transport_kind_filter_skips_metadata_clients() {
+        let mock_client = Arc::new(MockTransportClient::new());
+
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_transport_kind(TransportKind::GatewayV2)
+            .build();
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("gw_v2-only", error)
+            .with_condition(condition)
+            .build();
+
+        // Metadata clients have transport_kind = None. A rule that
+        // requires a specific transport must never apply to metadata.
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
+
+        let (request, collector) = create_test_request();
+        let result = fault_client.send(&request).await;
+
+        assert!(result.is_ok());
+        assert_eq!(mock_client.call_count(), 1);
+
+        let evals = collector.take();
+        assert!(matches!(
+            evals.as_slice(),
+            [super::FaultInjectionEvaluation::TransportKindMismatch { rule_id }] if rule_id == "gw_v2-only"
+        ));
+    }
+
+    fn url(s: &str) -> Url {
+        Url::parse(s).unwrap()
+    }
+
+    #[test]
+    fn region_matches_emulator_host() {
+        // Emulator regional endpoint: first label is exactly the region slug.
+        assert!(host_matches_region(
+            &url("https://eastus.emulator.local/dbs"),
+            "eastus"
+        ));
+        assert!(host_matches_region(
+            &url("https://westus.emulator.local/"),
+            "westus"
+        ));
+    }
+
+    #[test]
+    fn region_matches_real_account_host() {
+        // Real regional endpoint: first label is `<account>-<region>`.
+        assert!(host_matches_region(
+            &url("https://myacct-eastus.documents.azure.com/dbs"),
+            "eastus"
+        ));
+        assert!(host_matches_region(
+            &url("https://myacct-eastus2.documents.azure.com/"),
+            "eastus2"
+        ));
+        assert!(host_matches_region(
+            &url("https://myacct-westus3.documents.azure.com/"),
+            "westus3"
+        ));
+    }
+
+    #[test]
+    fn region_no_false_positive_between_adjacent_slugs() {
+        // The whole point of label-anchored matching: `eastus` must NOT match
+        // a `<account>-eastus2` host, even though "eastus" is a substring of
+        // it. This is the bug the test rewrite fixes.
+        assert!(!host_matches_region(
+            &url("https://myacct-eastus2.documents.azure.com/"),
+            "eastus"
+        ));
+        assert!(!host_matches_region(
+            &url("https://eastus2.emulator.local/"),
+            "eastus"
+        ));
+        assert!(!host_matches_region(
+            &url("https://myacct-westus3.documents.azure.com/"),
+            "westus"
+        ));
+    }
+
+    #[test]
+    fn region_no_false_positive_when_region_appears_in_path() {
+        // The region slug must come from the host, not from the URL path or
+        // query string.
+        assert!(!host_matches_region(
+            &url("https://myacct-westus3.documents.azure.com/dbs/eastus"),
+            "eastus"
         ));
     }
 }

@@ -16,6 +16,7 @@ use crate::{
             hedging_diagnostics::HedgingStrategyConfig,
         },
         routing::AccountEndpointState,
+        transport::EndpointKey,
     },
     models::{CosmosOperation, OperationType, ResourceType},
     options::{
@@ -30,17 +31,42 @@ use crate::{
 /// this constant is the upper bound.
 const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
 
-/// Resource types eligible for cross-region hedging in the current phase.
+/// Fixed cross-region hedge threshold for the two metadata cache reads
+/// (`Collection` `Read` and `PartitionKeyRange` `ReadFeed`).
 ///
-/// Subsequent phases widen this single constant — no other change to
-/// [`should_hedge`] is required.
-const HEDGEABLE_RESOURCE_TYPES: &[ResourceType] = &[ResourceType::Document];
+/// Unlike the data-plane default (`min(1000ms, request_timeout / 2)`), metadata
+/// reads use a fixed threshold chosen to sit between the control-plane
+/// first-attempt (~1s) and second-attempt (~5s) HTTP timeouts — matching the
+/// .NET metadata hedging threshold (first-attempt timeout + 500ms = 1.5s).
+/// Metadata reads run with `OperationOptions::default()` (no configured
+/// end-to-end latency), so deriving from `request_timeout` is not meaningful;
+/// the value is fixed and not customer-configurable. See `docs/HEDGING_SPEC.md`.
+const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 
-/// Operation types eligible for cross-region hedging in the current phase.
+/// `(ResourceType, OperationType)` pairs eligible for cross-region hedging.
 ///
-/// Future phases will append feed-style operations
-/// (`Query` / `ReadFeed` / `QueryPlan`) and metadata reads.
-const HEDGEABLE_OPERATION_TYPES: &[OperationType] = &[OperationType::Read];
+/// This is the **single source of truth** for hedge eligibility, expressed as
+/// exact pairs rather than an independent resource set AND operation set. Pair
+/// gating is deliberate: a cartesian `resource ∈ SET_A && op ∈ SET_B` gate would
+/// let widening one dimension silently enable an unintended combination — most
+/// dangerously `(Document, ReadFeed)` (document change feed), a data-plane feed
+/// whose continuation is region-affine and which has no hedge pinning. Listing
+/// pairs makes writes and stray feed combinations non-eligible structurally.
+///
+/// Current members:
+/// * `(Document, Read)` — data-plane point reads (Phase 1).
+/// * `(DocumentCollection, Read)` — `Collection` `Read` metadata cache read.
+/// * `(PartitionKeyRange, ReadFeed)` — `PartitionKeyRange` `ReadFeed` metadata
+///   cache read. Only the cold first change-feed page is hedged; if the hedge
+///   wins, later pages are pinned to the winning region (the continuation ETag
+///   is region-affine) via `OperationOverrides::region_pin`.
+///
+/// See `docs/HEDGING_SPEC.md`.
+const HEDGEABLE_PAIRS: &[(ResourceType, OperationType)] = &[
+    (ResourceType::Document, OperationType::Read),
+    (ResourceType::DocumentCollection, OperationType::Read),
+    (ResourceType::PartitionKeyRange, OperationType::ReadFeed),
+];
 
 /// Returns `true` when the operation is eligible for cross-region hedging.
 ///
@@ -66,20 +92,8 @@ pub(crate) fn should_hedge(
         return false;
     }
 
-    if !HEDGEABLE_RESOURCE_TYPES.contains(&operation.resource_type()) {
-        return false;
-    }
-
-    // Writes are never hedged. The phase also restricts OperationType to
-    // `Read`, which is a superset of "not a write", but the explicit
-    // `is_read_only()` guard documents the intent and protects against
-    // future phase widenings that add non-read OperationTypes (e.g. feed
-    // reads) without revisiting this predicate.
-    let op = operation.operation_type();
-    if !op.is_read_only() {
-        return false;
-    }
-    if !HEDGEABLE_OPERATION_TYPES.contains(&op) {
+    let pair = (operation.resource_type(), operation.operation_type());
+    if !HEDGEABLE_PAIRS.contains(&pair) {
         return false;
     }
 
@@ -102,18 +116,50 @@ pub(crate) fn should_hedge(
 ///
 /// Priority order (highest first):
 ///
-/// 1. Operation / account / runtime `availability_strategy` (resolved by
-///    [`OperationOptionsView`] before we are called).
+/// 0. Environment-driven master switch — `hedging_enabled` (typically set via
+///    `AZURE_COSMOS_HEDGING_ENABLED`). When set, it is the **source of truth**
+///    and takes precedence over the programmatic `availability_strategy` in
+///    both directions:
+///    - `Some(false)` → hedging is disabled (returns `None`) even when an
+///      explicit `AvailabilityStrategy::Hedging(..)` is configured.
+///    - `Some(true)` → hedging is enabled even when an explicit
+///      `AvailabilityStrategy::Disabled` is configured. A programmatic
+///      `AvailabilityStrategy::Hedging(..)` still supplies its custom
+///      threshold; otherwise the driver default threshold applies.
+/// 1. Programmatic operation / account / runtime `availability_strategy`
+///    (resolved by [`OperationOptionsView`] before we are called).
 /// 2. Driver default — `min(1000ms, request_timeout / 2)`.
 ///
-/// Returns `None` only when an explicit `AvailabilityStrategy::Disabled`
-/// at layer 1 turns hedging off; otherwise always returns `Some(_)`.
-/// The "single-region account / insufficient regions" case is enforced
-/// separately in [`should_hedge`].
+/// Returns `None` when hedging is disabled — either through the
+/// `hedging_enabled` switch resolving to `Some(false)` (layer 0) or an explicit
+/// `AvailabilityStrategy::Disabled` with no overriding env switch (layer 1);
+/// otherwise returns `Some(_)`. The "single-region account / insufficient
+/// regions" case is enforced separately in [`should_hedge`].
 pub(crate) fn resolve_availability_strategy(
     view: &OperationOptionsView<'_>,
     request_timeout: Option<Duration>,
 ) -> Option<HedgingStrategy> {
+    // Priority 0 — environment-driven master switch (source of truth). When
+    // set, the env switch wins over the programmatic `availability_strategy`
+    // in both directions, keeping the two enablement hooks in parity.
+    match view.hedging_enabled() {
+        // Explicitly disabled — no hedging even if the caller passed an
+        // explicit `AvailabilityStrategy::Hedging(..)` at any layer.
+        Some(&false) => return None,
+        // Explicitly enabled — hedge even if the caller passed an explicit
+        // `AvailabilityStrategy::Disabled`. Honor a programmatic
+        // `Hedging(..)` strategy's custom threshold when one is present,
+        // otherwise fall back to the driver default threshold.
+        Some(&true) => {
+            return match view.availability_strategy() {
+                Some(AvailabilityStrategy::Hedging(s)) => Some(*s),
+                _ => Some(HedgingStrategy::new(default_threshold(request_timeout))),
+            };
+        }
+        // Unset — defer to the programmatic strategy below.
+        None => {}
+    }
+
     // Priority 1 — code-level strategy.
     match view.availability_strategy() {
         Some(AvailabilityStrategy::Disabled) => return None,
@@ -222,26 +268,64 @@ pub(crate) fn evaluate_hedge_eligibility(
         .find(|ep| ep.region() != primary_region.as_ref() && ep.endpoint_key() != primary_key)?
         .clone();
 
-    // Match the primary's gateway-version preference so a Gateway20-capable
-    // account uses Gateway20 for both legs (and downgrades cleanly for legacy).
-    let prefer_gateway20 = matches!(primary.transport_mode, TransportMode::Gateway20);
-    let use_gateway20 = secondary_ep.uses_gateway20(prefer_gateway20);
-    let transport_mode = if use_gateway20 {
-        TransportMode::Gateway20
+    // Match the primary's gateway-version preference so a GatewayV2-capable
+    // account uses GatewayV2 for both legs (and downgrades cleanly for legacy).
+    let prefer_gateway_v2 = matches!(primary.transport_mode, TransportMode::GatewayV2);
+    let use_gateway_v2 = secondary_ep.uses_gateway_v2(prefer_gateway_v2);
+    let transport_mode = if use_gateway_v2 {
+        TransportMode::GatewayV2
     } else {
         TransportMode::Gateway
     };
+    let selected_url = secondary_ep.selected_url(use_gateway_v2).clone();
+    // Key the connection pool by the URL we will actually dial. For a
+    // GatewayV2 leg that is the thin-client proxy authority (host:proxy-port),
+    // which differs from the logical G1 endpoint authority — mirror
+    // `resolve_endpoint` so the hedge leg shares the main path's G2 pool
+    // instead of opening a duplicate one keyed by the G1 host.
+    let secondary_endpoint_key = if use_gateway_v2 {
+        EndpointKey::try_from(&selected_url).expect("selected URL must have a valid host and port")
+    } else {
+        secondary_ep.endpoint_key()
+    };
     let secondary_routing = RoutingDecision {
-        selected_url: secondary_ep.selected_url(use_gateway20).clone(),
+        selected_url,
         transport_mode,
+        endpoint_key: secondary_endpoint_key,
         endpoint: secondary_ep,
+    };
+
+    // Metadata cache reads use a fixed threshold (see METADATA_HEDGE_THRESHOLD),
+    // not the data-plane `min(1000ms, request_timeout / 2)` default. The
+    // enablement decision (Disabled / env-disabled) still comes from
+    // `resolve_availability_strategy` above; only the threshold is overridden.
+    let threshold = if is_metadata_hedge_read(operation) {
+        HedgeThreshold::new(METADATA_HEDGE_THRESHOLD)
+            .expect("METADATA_HEDGE_THRESHOLD is statically non-zero")
+    } else {
+        strategy.threshold()
     };
 
     Some(HedgeUpgrade {
         secondary_routing,
-        threshold: strategy.threshold(),
-        strategy_config: HedgingStrategyConfig::new(strategy.threshold()),
+        threshold,
+        strategy_config: HedgingStrategyConfig::new(threshold),
     })
+}
+
+/// True when the operation is a metadata cache read that hedges with the fixed
+/// [`METADATA_HEDGE_THRESHOLD`] rather than the data-plane default.
+///
+/// This mirrors the metadata entries of [`HEDGEABLE_PAIRS`]: `(DocumentCollection,
+/// Read)` and `(PartitionKeyRange, ReadFeed)`. Eligibility itself is always
+/// decided by `should_hedge` / [`HEDGEABLE_PAIRS`]; this predicate only selects
+/// which threshold an already-eligible operation uses.
+fn is_metadata_hedge_read(operation: &CosmosOperation) -> bool {
+    matches!(
+        (operation.resource_type(), operation.operation_type()),
+        (ResourceType::DocumentCollection, OperationType::Read)
+            | (ResourceType::PartitionKeyRange, OperationType::ReadFeed)
+    )
 }
 
 #[cfg(test)]
@@ -283,7 +367,8 @@ mod tests {
         AccountEndpointState {
             generation: 0,
             preferred_read_endpoints: endpoints.clone().into(),
-            preferred_write_endpoints: endpoints.into(),
+            preferred_write_endpoints: endpoints.clone().into(),
+            account_write_endpoints: endpoints.into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default,
@@ -322,6 +407,19 @@ mod tests {
         );
         let db = DatabaseReference::from_name(account, "db");
         CosmosOperation::read_database(db)
+    }
+
+    fn read_container_operation() -> CosmosOperation {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://acct.documents.azure.com/").unwrap(),
+            "k",
+        );
+        let db = DatabaseReference::from_name(account, "db");
+        CosmosOperation::read_container_by_name(db, "c".to_owned())
+    }
+
+    fn read_pk_ranges_operation() -> CosmosOperation {
+        CosmosOperation::read_all_partition_key_ranges(fake_container_reference())
     }
 
     fn enabled_strategy() -> HedgingStrategy {
@@ -381,10 +479,93 @@ mod tests {
 
     #[test]
     fn should_hedge_non_document() {
-        // Reads against non-Document resource types are excluded in Phase 1.
+        // A Database read is a metadata read that is intentionally NOT in scope
+        // (this phase matches .NET #5999: only Collection Read and
+        // PartitionKeyRange ReadFeed are hedged). `(Database, Read)` is not a
+        // HEDGEABLE_PAIRS member, so it must not hedge.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_database_operation();
         assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_collection_read() {
+        // Metadata Collection Read `(DocumentCollection, Read)` IS hedged.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_container_operation();
+        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_pkrange_readfeed() {
+        // Metadata PartitionKeyRange ReadFeed `(PartitionKeyRange, ReadFeed)` IS
+        // hedged; the cache hedges only the cold first change-feed page and pins
+        // later pages to the winner via OperationOverrides::region_pin.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_pk_ranges_operation();
+        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn hedgeable_pairs_includes_both_metadata_reads() {
+        assert!(HEDGEABLE_PAIRS.contains(&(ResourceType::DocumentCollection, OperationType::Read)));
+        assert!(
+            HEDGEABLE_PAIRS.contains(&(ResourceType::PartitionKeyRange, OperationType::ReadFeed))
+        );
+    }
+
+    #[test]
+    fn hedgeable_pairs_excludes_stray_and_write_pairs() {
+        // Pair gating (not a cartesian resource×op gate) must keep these OUT even
+        // though each element appears in some in-scope pair. `(Document, ReadFeed)`
+        // is the dangerous one: a data-plane change feed with a region-affine
+        // continuation and no hedge pinning.
+        for stray in [
+            (ResourceType::Document, OperationType::ReadFeed),
+            (ResourceType::DocumentCollection, OperationType::ReadFeed),
+            (ResourceType::PartitionKeyRange, OperationType::Read),
+            (ResourceType::Database, OperationType::Read),
+            (ResourceType::Offer, OperationType::Read),
+            (ResourceType::Document, OperationType::Create),
+        ] {
+            assert!(
+                !HEDGEABLE_PAIRS.contains(&stray),
+                "{stray:?} must not be hedge-eligible"
+            );
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn should_hedge_distributed_transaction_never() {
+        // DTX operations carry `ResourceType::DistributedTransactionBatch`, which
+        // is not in any HEDGEABLE_PAIRS entry, so neither the write commit nor the
+        // read snapshot is hedge-eligible — even though the read reports
+        // `is_read_only() == true`. This is the real guard: hedging can fire at
+        // the pre-attempt STAGE 2b before the DTX classifier ever runs, so the
+        // pair-gating exclusion (not the classifier short-circuit) is what
+        // keeps DTX out of hedging. Pin it directly.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let account = AccountReference::with_master_key(
+            Url::parse("https://acct.documents.azure.com/").unwrap(),
+            "k",
+        );
+        let write = CosmosOperation::distributed_transaction(
+            account.clone(),
+            crate::models::DistributedTransactionType::Write,
+        );
+        let read = CosmosOperation::distributed_transaction(
+            account,
+            crate::models::DistributedTransactionType::Read,
+        );
+        assert!(!should_hedge(
+            Some(&enabled_strategy()),
+            &write,
+            &state,
+            &[]
+        ));
+        assert!(read.is_read_only());
+        assert!(!should_hedge(Some(&enabled_strategy()), &read, &state, &[]));
     }
 
     #[test]
@@ -445,14 +626,10 @@ mod tests {
 
     #[test]
     fn is_final_result_403_is_final_regardless_of_sub_status() {
-        // 403 is authorization/ownership (RBAC, write-forbidden, account
-        // ownership) — racing another region either duplicates the denial
-        // or doubles a security-sensitive signal. Dedicated retry paths
-        // (e.g., PPAF write-forbidden) handle the retriable sub-statuses
-        // through the normal retry loop rather than via a hedge race.
+        // Most 403s are final for hedging; 403/1008 is topology ownership and must reach retry.
         assert!(status(403, None).is_final_result());
         assert!(status(403, Some(3)).is_final_result()); // WRITE_FORBIDDEN
-        assert!(status(403, Some(1008)).is_final_result()); // DATABASE_ACCOUNT_NOT_FOUND
+        assert!(!status(403, Some(1008)).is_final_result()); // DATABASE_ACCOUNT_NOT_FOUND
         assert!(status(403, Some(5)).is_final_result()); // arbitrary unknown sub-status
     }
 
@@ -548,6 +725,141 @@ mod tests {
         assert_eq!(strategy.threshold().get(), Duration::from_millis(200));
     }
 
+    #[test]
+    fn resolve_hedging_enabled_flag_false_returns_none() {
+        // `hedging_enabled = Some(false)` at the env layer disables hedging
+        // even when the operation has no explicit availability strategy.
+        let env = OperationOptionsBuilder::new()
+            .with_hedging_enabled(false)
+            .build();
+        let op = OperationOptions::default();
+        let view = OperationOptionsView::new(Some(std::sync::Arc::new(env)), None, None, Some(&op));
+
+        assert!(resolve_availability_strategy(&view, None).is_none());
+    }
+
+    #[test]
+    fn resolve_hedging_enabled_flag_false_overrides_explicit_strategy() {
+        // The env-resolved kill-switch is the source of truth: it disables
+        // hedging even when the caller passes an explicit
+        // `AvailabilityStrategy::Hedging(..)` at the operation layer.
+        let op_strategy =
+            HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(200)).unwrap());
+        let env = OperationOptionsBuilder::new()
+            .with_hedging_enabled(false)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Hedging(op_strategy))
+            .build();
+        let view = OperationOptionsView::new(Some(std::sync::Arc::new(env)), None, None, Some(&op));
+
+        assert!(resolve_availability_strategy(&view, None).is_none());
+    }
+
+    #[test]
+    fn resolve_hedging_enabled_flag_true_keeps_default_threshold() {
+        // Explicitly enabling hedging (without an explicit strategy) keeps the
+        // unchanged driver-default threshold of `min(1000ms, timeout / 2)`.
+        let env = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .build();
+        let op = OperationOptions::default();
+        let view = OperationOptionsView::new(Some(std::sync::Arc::new(env)), None, None, Some(&op));
+
+        let strategy = resolve_availability_strategy(&view, None).expect("Some");
+        assert_eq!(strategy.threshold().get(), Duration::from_millis(1000));
+    }
+
+    #[test]
+    fn resolve_hedging_enabled_flag_true_overrides_explicit_disabled() {
+        // Parity: the env switch is the source of truth in both directions.
+        // `hedging_enabled = Some(true)` enables hedging even when the caller
+        // passed an explicit `AvailabilityStrategy::Disabled`.
+        let env = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+        let view = OperationOptionsView::new(Some(std::sync::Arc::new(env)), None, None, Some(&op));
+
+        let strategy =
+            resolve_availability_strategy(&view, None).expect("env=true enables hedging");
+        assert_eq!(strategy.threshold().get(), Duration::from_millis(1000));
+    }
+
+    #[test]
+    fn resolve_hedging_enabled_flag_true_honors_programmatic_custom_threshold() {
+        // When the env switch enables hedging and the caller also configured a
+        // programmatic `Hedging(..)` strategy, the custom threshold is honored
+        // (env=true means "on", it does not reset an explicit threshold).
+        let op_strategy =
+            HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(200)).unwrap());
+        let env = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Hedging(op_strategy))
+            .build();
+        let view = OperationOptionsView::new(Some(std::sync::Arc::new(env)), None, None, Some(&op));
+
+        let strategy = resolve_availability_strategy(&view, None).expect("Some");
+        assert_eq!(strategy.threshold().get(), Duration::from_millis(200));
+    }
+
+    #[test]
+    fn resolve_env_override_layer_disables_hedging_over_operation() {
+        // End-to-end: the top-priority `env_override` kill-switch layer
+        // (sourced from `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE`) must reach the
+        // live `resolve_availability_strategy` and beat a per-operation
+        // `hedging_enabled = Some(true)` *and* an explicit `Hedging(..)`.
+        let op_strategy =
+            HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(200)).unwrap());
+        let env_override = OperationOptionsBuilder::new()
+            .with_hedging_enabled(false)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .with_availability_strategy(AvailabilityStrategy::Hedging(op_strategy))
+            .build();
+        let view = OperationOptionsView::new_with_override(
+            Some(std::sync::Arc::new(env_override)),
+            None,
+            None,
+            None,
+            Some(&op),
+        );
+
+        assert!(
+            resolve_availability_strategy(&view, None).is_none(),
+            "env_override hedging=false must disable hedging through the pipeline resolver",
+        );
+    }
+
+    #[test]
+    fn resolve_env_override_layer_enables_hedging_over_disabled_operation() {
+        // Parity in the other direction through the pipeline resolver: an
+        // override of `true` enables hedging even when the operation layer
+        // explicitly set `Disabled`.
+        let env_override = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+        let view = OperationOptionsView::new_with_override(
+            Some(std::sync::Arc::new(env_override)),
+            None,
+            None,
+            None,
+            Some(&op),
+        );
+
+        let strategy = resolve_availability_strategy(&view, None)
+            .expect("env_override hedging=true must enable hedging through the pipeline resolver");
+        assert_eq!(strategy.threshold().get(), Duration::from_millis(1000));
+    }
+
     // ───────────────────────── ExcludedRegions integration ─────────────────────────
 
     #[test]
@@ -577,9 +889,11 @@ mod tests {
             .cloned()
             .unwrap_or_else(|| account.default_endpoint.clone());
         let url = ep.selected_url(false).clone();
+        let endpoint_key = ep.endpoint_key();
         RoutingDecision {
             selected_url: url,
             transport_mode: TransportMode::Gateway,
+            endpoint_key,
             endpoint: ep,
         }
     }
@@ -595,9 +909,11 @@ mod tests {
             .cloned()
             .expect("test fixture must supply enough preferred read endpoints");
         let url = ep.selected_url(false).clone();
+        let endpoint_key = ep.endpoint_key();
         RoutingDecision {
             selected_url: url,
             transport_mode: TransportMode::Gateway,
+            endpoint_key,
             endpoint: ep,
         }
     }
@@ -625,6 +941,39 @@ mod tests {
             upgrade.strategy_config,
             HedgingStrategyConfig::new(upgrade.threshold)
         );
+    }
+
+    #[test]
+    fn evaluate_uses_fixed_1500ms_threshold_for_metadata_reads() {
+        // Both hedged metadata reads (Collection Read, PartitionKeyRange ReadFeed)
+        // use a fixed 1.5s threshold (match .NET), independent of request_timeout
+        // and not the data-plane min(1000ms, timeout/2) default.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let primary = primary_routing_for(&state);
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        for op in [read_container_operation(), read_pk_ranges_operation()] {
+            let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+                .expect("eligible metadata read");
+            assert_eq!(
+                upgrade.threshold.get(),
+                Duration::from_millis(1500),
+                "metadata reads use the fixed 1.5s threshold"
+            );
+            assert_eq!(
+                upgrade.strategy_config,
+                HedgingStrategyConfig::new(upgrade.threshold)
+            );
+        }
+
+        // A data-plane point read still gets the driver default (1000ms), even
+        // with a request_timeout supplied, so the metadata override is scoped.
+        let dp = read_item_operation();
+        let dp_upgrade =
+            evaluate_hedge_eligibility(&dp, &view, &state, &primary, Some(Duration::from_secs(10)))
+                .expect("eligible data-plane read");
+        assert_eq!(dp_upgrade.threshold.get(), Duration::from_millis(1000));
     }
 
     #[test]
@@ -700,10 +1049,81 @@ mod tests {
             "secondary URL {} did not contain westus2 region tag",
             url_str
         );
-        // Gateway20 not enabled on the test endpoints — falls back to Gateway.
+        // GatewayV2 not enabled on the test endpoints — falls back to Gateway.
         assert_eq!(
             upgrade.secondary_routing.transport_mode,
             TransportMode::Gateway
+        );
+    }
+
+    /// A GatewayV2-capable secondary hedge leg must key the connection pool by
+    /// the thin-client proxy authority (`host:proxy-port`) it actually dials,
+    /// NOT the logical G1 endpoint authority. Mirrors `resolve_endpoint` so the
+    /// hedge leg shares the main path's G2 connection pool instead of opening a
+    /// duplicate one keyed by the G1 host.
+    #[test]
+    fn evaluate_secondary_routing_keys_gateway_v2_leg_by_proxy_authority() {
+        fn g2_endpoint_for(region: Region) -> CosmosEndpoint {
+            let gateway_url = Url::parse(&format!(
+                "https://acct-{}.documents.azure.com/",
+                region.as_str()
+            ))
+            .expect("valid url");
+            let gateway_v2_url = Url::parse(&format!(
+                "https://proxy-{}.documents.azure.com:10250/",
+                region.as_str()
+            ))
+            .expect("valid url");
+            CosmosEndpoint::regional_with_gateway_v2(region, gateway_url, gateway_v2_url)
+        }
+
+        let endpoints: Vec<CosmosEndpoint> = [Region::EAST_US, Region::WEST_US_2]
+            .into_iter()
+            .map(g2_endpoint_for)
+            .collect();
+        let state = AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: endpoints.clone().into(),
+            preferred_write_endpoints: endpoints.clone().into(),
+            account_write_endpoints: endpoints.clone().into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoints[0].clone(),
+        };
+
+        // Primary on EAST_US over GatewayV2 so `prefer_gateway_v2` propagates
+        // to the secondary-leg selection.
+        let primary_ep = endpoints[0].clone();
+        let primary = RoutingDecision {
+            selected_url: primary_ep.selected_url(true).clone(),
+            transport_mode: TransportMode::GatewayV2,
+            endpoint_key: EndpointKey::try_from(primary_ep.selected_url(true))
+                .expect("valid proxy url"),
+            endpoint: primary_ep,
+        };
+
+        let op = read_item_operation();
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+            .expect("eligible multi-region GatewayV2 read");
+        let secondary = &upgrade.secondary_routing;
+
+        assert_eq!(secondary.transport_mode, TransportMode::GatewayV2);
+
+        // The dialed URL is the WEST_US_2 proxy on port 10250.
+        let proxy_url = secondary.endpoint.selected_url(true);
+        assert_eq!(secondary.selected_url.as_str(), proxy_url.as_str());
+        assert!(secondary.selected_url.as_str().contains(":10250"));
+
+        // The pool key must be derived from that proxy URL, NOT the G1 authority.
+        let expected_key = EndpointKey::try_from(proxy_url).expect("valid proxy url");
+        assert_eq!(secondary.endpoint_key, expected_key);
+        assert_ne!(
+            secondary.endpoint_key,
+            secondary.endpoint.endpoint_key(),
+            "G2 hedge leg must not key by the logical G1 endpoint authority",
         );
     }
 

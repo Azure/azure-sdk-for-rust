@@ -3,6 +3,20 @@
 
 //! System property generation and JSON injection.
 
+/// Returns a feed response body with the given service envelope name.
+pub(crate) fn feed_to_json(
+    envelope_name: &str,
+    items: Vec<serde_json::Value>,
+    rid: impl Into<String>,
+) -> serde_json::Value {
+    let count = items.len();
+    serde_json::json!({
+        envelope_name: items,
+        "_rid": rid.into(),
+        "_count": count
+    })
+}
+
 /// Injects system properties (`_rid`, `_self`, `_etag`, `_ts`, `_attachments`)
 /// into a document's JSON body.
 ///
@@ -90,10 +104,34 @@ pub(crate) fn container_to_json(meta: &super::store::ContainerMetadata) -> serde
     })
 }
 
-/// Returns a JSON representation of partition key ranges for a container.
-pub(crate) fn pkranges_to_json(container: &super::store::ContainerState) -> serde_json::Value {
+/// Returns a JSON representation of throughput offer metadata.
+pub(crate) fn offer_to_json(meta: &super::store::OfferMetadata) -> serde_json::Value {
+    serde_json::json!({
+        "id": meta.id,
+        "_rid": meta.rid,
+        "_self": meta.self_link,
+        "_etag": meta.etag,
+        "_ts": meta.ts,
+        "resource": meta.offer_resource_id,
+        "offerResourceId": meta.offer_resource_id,
+        "offerType": "Invalid",
+        "offerVersion": "V2",
+        "content": {
+            "offerThroughput": meta.throughput
+        }
+    })
+}
+
+/// Returns a JSON representation of a page of partition key ranges.
+pub(crate) fn pkranges_to_json(
+    container: &super::store::ContainerState,
+    start: usize,
+    end: usize,
+) -> serde_json::Value {
     let ranges: Vec<serde_json::Value> = container
         .physical_partitions
+        .get(start..end)
+        .unwrap_or_default()
         .iter()
         .map(|p| {
             let parents: Vec<String> = p.parents.iter().map(|id| id.to_string()).collect();
@@ -104,8 +142,8 @@ pub(crate) fn pkranges_to_json(container: &super::store::ContainerState) -> serd
                 "_etag": container.metadata.etag,
                 "_ts": container.metadata.ts,
                 "_lsn": p.current_lsn(),
-                "minInclusive": p.epk_min.as_str(),
-                "maxExclusive": p.epk_max.as_str(),
+                "minInclusive": p.epk_min.to_hex(),
+                "maxExclusive": p.epk_max.to_hex(),
                 "ridPrefix": p.rid_prefix,
                 "throughputFraction": p.throughput_fraction,
                 "status": "online",
@@ -157,8 +195,8 @@ pub(crate) fn account_properties_to_json(
         }
     };
 
-    serde_json::json!({
-        "id": "emulator-account",
+    let mut response = serde_json::json!({
+        "id": config.account_id(),
         "_rid": "emulator.documents.azure.com",
         "_self": "",
         "media": "//media/",
@@ -179,5 +217,49 @@ pub(crate) fn account_properties_to_json(
         "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
         "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
         "queryEngineConfiguration": "{}"
-    })
+    });
+
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    {
+        let thin_client_readable: Vec<_> = config
+            .regions()
+            .iter()
+            .filter_map(|region| {
+                region.gateway_v2_url().map(|url| {
+                    serde_json::json!({
+                        "name": region.name(),
+                        "databaseAccountEndpoint": url.as_str()
+                    })
+                })
+            })
+            .collect();
+        let thin_client_writable: Vec<_> = config
+            .regions()
+            .iter()
+            .filter(|region| config.is_write_region(region.name()))
+            .filter_map(|region| {
+                region.gateway_v2_url().map(|url| {
+                    serde_json::json!({
+                        "name": region.name(),
+                        "databaseAccountEndpoint": url.as_str()
+                    })
+                })
+            })
+            .collect();
+        if !thin_client_readable.is_empty() {
+            let object = response
+                .as_object_mut()
+                .expect("account properties response is a JSON object");
+            object.insert(
+                "thinClientReadableLocations".to_owned(),
+                serde_json::Value::Array(thin_client_readable),
+            );
+            object.insert(
+                "thinClientWritableLocations".to_owned(),
+                serde_json::Value::Array(thin_client_writable),
+            );
+        }
+    }
+
+    response
 }

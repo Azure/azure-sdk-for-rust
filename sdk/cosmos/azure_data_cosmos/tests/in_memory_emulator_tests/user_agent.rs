@@ -20,7 +20,10 @@
 
 use std::sync::{Arc, Mutex};
 
-use azure_core::http::{headers::USER_AGENT, Method, Request, Url};
+use azure_core::http::{
+    headers::{HeaderName, USER_AGENT},
+    Method, Request, Url,
+};
 use azure_data_cosmos::{
     options::{Region, UserAgentSuffix},
     AccountEndpoint, AccountReference, CosmosClientBuilder, CosmosRuntimeBuilder, RoutingStrategy,
@@ -30,9 +33,11 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     VirtualRegion,
 };
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 const EMULATOR_KEY: &str = "dGVzdGtleQ==";
+const CLIENT_ID: HeaderName = HeaderName::from_static("x-ms-client-id");
 
 #[derive(Debug, Serialize, Deserialize)]
 struct TestItem {
@@ -42,13 +47,14 @@ struct TestItem {
 }
 
 /// Snapshot of a single request observed by the in-memory emulator. Captures
-/// only what these tests assert on (method, URL, `User-Agent`) to keep the
-/// helper minimal.
+/// only what these tests assert on (method, URL, `User-Agent`, and
+/// `x-ms-client-id`) to keep the helper minimal.
 #[derive(Clone, Debug)]
 struct RequestSnapshot {
     method: Method,
     url: Url,
     user_agent: Option<String>,
+    client_id: Option<String>,
 }
 
 /// Minimal [`RequestObserver`] that records every request the emulator sees,
@@ -80,6 +86,10 @@ impl RequestObserver for RecordingObserver {
                 .headers()
                 .get_optional_str(&USER_AGENT)
                 .map(|s| s.to_owned()),
+            client_id: request
+                .headers()
+                .get_optional_str(&CLIENT_ID)
+                .map(str::to_owned),
         };
         self.snapshots
             .lock()
@@ -241,6 +251,67 @@ fn is_metadata_read_request(snap: &RequestSnapshot) -> bool {
     };
     let segments: Vec<&str> = segments.filter(|s| !s.is_empty()).collect();
     matches!(segments.as_slice(), ["dbs", _] | ["dbs", _, "colls", _])
+}
+
+fn is_account_properties_request(snap: &RequestSnapshot) -> bool {
+    snap.method == Method::Get && snap.url.path() == "/"
+}
+
+#[tokio::test]
+async fn client_id_is_stable_across_observed_request_paths() {
+    let observer = RecordingObserver::new();
+    let emulator = build_emulator(observer.clone());
+
+    perform_create_and_read(emulator, None).await;
+
+    let snapshots = observer.snapshots();
+    let bootstrap: Vec<_> = snapshots
+        .iter()
+        .filter(|snapshot| is_account_properties_request(snapshot))
+        .collect();
+    let metadata: Vec<_> = snapshots
+        .iter()
+        .filter(|snapshot| is_metadata_read_request(snapshot))
+        .collect();
+    let data_plane: Vec<_> = snapshots
+        .iter()
+        .filter(|snapshot| is_item_data_plane_request(snapshot))
+        .collect();
+    assert!(
+        !bootstrap.is_empty(),
+        "expected an account-properties bootstrap request; captured: {snapshots:?}"
+    );
+    assert!(
+        !metadata.is_empty(),
+        "expected a metadata request; captured: {snapshots:?}"
+    );
+    assert!(
+        data_plane.len() >= 2,
+        "expected create and read item requests; captured: {snapshots:?}"
+    );
+
+    let client_id = bootstrap[0]
+        .client_id
+        .as_deref()
+        .expect("bootstrap request must carry x-ms-client-id");
+    let parsed = Uuid::parse_str(client_id).expect("x-ms-client-id must be a UUID");
+    assert_eq!(parsed.get_version(), Some(uuid::Version::Random));
+
+    let mismatched: Vec<_> = snapshots
+        .iter()
+        .filter(|snapshot| snapshot.client_id.as_deref() != Some(client_id))
+        .map(|snapshot| {
+            (
+                snapshot.method,
+                snapshot.url.as_str(),
+                snapshot.client_id.as_deref(),
+            )
+        })
+        .collect();
+    assert!(
+        mismatched.is_empty(),
+        "every request from one CosmosClient must carry the same client ID; mismatched: {mismatched:?}"
+    );
 }
 
 /// Verifies that a configured [`UserAgentSuffix`] actually appears in the
@@ -445,5 +516,138 @@ async fn wrapping_sdk_identifier_appears_on_all_requests() {
             "expected every captured request (suffix={suffix:?}) to start with {expected_prefix:?}; \
              requests missing the prefix: {missing:?}",
         );
+    }
+}
+
+/// Expected cross-SDK feature-flag token on the wire for the emulator's
+/// default client configuration: per-partition circuit breaker (PPCB, bit
+/// `0x2`, enabled by default) OR HTTP/2 (bit `0x10`, the connection-pool
+/// default) == `0x12`, encoded as `|F12`.
+///
+/// This is the Rust side of the cross-SDK `User-Agent` feature-flag contract
+/// (see `UserAgentFeatureFlags` in `azure_data_cosmos_driver`).
+const EXPECTED_FEATURE_TOKEN: &str = "|F12";
+
+/// Verifies that the cross-SDK feature-flag token (`|F<HEX>`) is advertised in
+/// the `User-Agent` header on data-plane requests, so backend telemetry can
+/// bucket Rust traffic by enabled client feature.
+#[tokio::test]
+async fn user_agent_advertises_feature_flags_on_the_wire() {
+    let observer = RecordingObserver::new();
+    let emulator = build_emulator(observer.clone());
+
+    perform_create_and_read(emulator, None).await;
+
+    let snapshots = observer.snapshots();
+    let data_plane: Vec<&RequestSnapshot> = snapshots
+        .iter()
+        .filter(|s| is_item_data_plane_request(s))
+        .collect();
+
+    // Sanity-check that the data plane was actually exercised; otherwise the
+    // assertion below would be vacuously satisfied.
+    assert!(
+        data_plane.len() >= 2,
+        "expected at least one create_item POST and one read_item GET to reach the emulator; \
+         captured requests: {:?}",
+        snapshots
+            .iter()
+            .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
+            .collect::<Vec<_>>(),
+    );
+
+    let missing: Vec<_> = data_plane
+        .iter()
+        .filter(|s| {
+            !s.user_agent
+                .as_deref()
+                .is_some_and(|ua| ua.ends_with(EXPECTED_FEATURE_TOKEN))
+        })
+        .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "expected every data-plane request to end with feature-flag token {EXPECTED_FEATURE_TOKEN:?}; \
+         requests missing the token: {missing:?}",
+    );
+}
+
+/// Verifies that when a [`UserAgentSuffix`] is configured, the feature-flag
+/// token is appended *after* the suffix with no separating space — matching
+/// the .NET/Java `userAgent + "|F" + hex` encoding — so both the operator
+/// suffix and the feature bitmask survive on the wire.
+#[tokio::test]
+async fn user_agent_appends_feature_token_after_suffix_on_the_wire() {
+    const SUFFIX: &str = "myapp-westus2";
+
+    let observer = RecordingObserver::new();
+    let emulator = build_emulator(observer.clone());
+
+    perform_create_and_read(emulator, Some(UserAgentSuffix::new(SUFFIX))).await;
+
+    let snapshots = observer.snapshots();
+    let data_plane: Vec<&RequestSnapshot> = snapshots
+        .iter()
+        .filter(|s| is_item_data_plane_request(s))
+        .collect();
+
+    assert!(
+        data_plane.len() >= 2,
+        "expected at least one create_item POST and one read_item GET to reach the emulator; \
+         captured requests: {:?}",
+        snapshots
+            .iter()
+            .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
+            .collect::<Vec<_>>(),
+    );
+
+    let expected_tail = format!("{SUFFIX}{EXPECTED_FEATURE_TOKEN}");
+    let missing: Vec<_> = data_plane
+        .iter()
+        .filter(|s| {
+            !s.user_agent
+                .as_deref()
+                .is_some_and(|ua| ua.ends_with(&expected_tail))
+        })
+        .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "expected every data-plane request to end with {expected_tail:?}; \
+         requests missing it: {missing:?}",
+    );
+}
+
+/// Negative control: the feature-flag token must be a genuine, separately
+/// computed artifact — assert that the default `User-Agent` (no suffix) ends
+/// with exactly one `|F` token and nothing trails it.
+#[tokio::test]
+async fn feature_flag_token_is_the_trailing_user_agent_segment() {
+    let observer = RecordingObserver::new();
+    let emulator = build_emulator(observer.clone());
+
+    perform_create_and_read(emulator, None).await;
+
+    let snapshots = observer.snapshots();
+    let data_plane: Vec<&RequestSnapshot> = snapshots
+        .iter()
+        .filter(|s| is_item_data_plane_request(s))
+        .collect();
+
+    assert!(data_plane.len() >= 2, "data plane not exercised");
+
+    for snap in &data_plane {
+        let ua = snap
+            .user_agent
+            .as_deref()
+            .expect("data-plane request carried a User-Agent");
+        // Exactly one feature token, and it is the final segment.
+        assert_eq!(
+            ua.matches("|F").count(),
+            1,
+            "expected exactly one feature-flag token in {ua:?}",
+        );
+        let token = &ua[ua.rfind("|F").unwrap()..];
+        assert_eq!(token, EXPECTED_FEATURE_TOKEN, "unexpected token in {ua:?}");
     }
 }

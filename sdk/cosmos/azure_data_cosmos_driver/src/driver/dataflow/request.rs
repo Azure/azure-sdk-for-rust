@@ -211,10 +211,19 @@ impl PipelineNode for Request {
             RequestTarget::EffectivePartitionKeyRange { .. }
         )
     }
+
+    fn fan_out_width(&self) -> usize {
+        // A Request is a single leaf targeting one partition.
+        1
+    }
 }
 
 impl Request {
     fn handle_response(&mut self, response: CosmosResponse) -> PageResult {
+        if self.operation.is_change_feed() {
+            return self.handle_change_feed_response(response);
+        }
+
         let continuation = response.headers().continuation.clone();
         tracing::trace!(
             target = ?self.target,
@@ -234,6 +243,38 @@ impl Request {
         PageResult::Page {
             response,
             is_terminal,
+        }
+    }
+
+    /// Handles a change feed response.
+    ///
+    /// Change feed is an unbounded stream: the consumer polls indefinitely and
+    /// the service signals "no new changes" with `304 Not Modified` rather than
+    /// ending the feed. Two behaviors differ from a normal feed read:
+    ///
+    /// 1. The continuation token is carried by the **ETag** header (re-sent as
+    ///    `If-None-Match` on the next poll), not `x-ms-continuation`.
+    /// 2. The request must **never** transition to `Drained`. Even a `304` with
+    ///    no body advances the ETag, and the next poll resumes from there.
+    fn handle_change_feed_response(&mut self, response: CosmosResponse) -> PageResult {
+        let etag = response.headers().etag.as_ref().map(|e| e.to_string());
+        tracing::trace!(
+            target = ?self.target,
+            status = ?response.status(),
+            output_etag = ?etag,
+            "change feed request completed"
+        );
+        if let Some(token) = etag {
+            self.state = RequestState::Continuing {
+                continuation: token,
+            };
+        }
+        // If the response carried no ETag (unexpected for a change feed read),
+        // keep the prior state so the next poll can retry rather than ending
+        // the stream prematurely. The change feed is never terminal.
+        PageResult::Page {
+            response,
+            is_terminal: false,
         }
     }
 
@@ -339,9 +380,18 @@ impl Request {
                     partition_key_range_id,
                     range: resolved_range,
                 } = resolved_range;
-                let owned_range = intersect_feed_ranges(&resolved_range, range).expect(
-                    "topology provider must return ranges that overlap the request's owned EPK range",
-                );
+                // A non-overlapping range means the topology provider broke its
+                // contract; surface it as the same typed error the tiling check
+                // below raises rather than panicking.
+                let owned_range = intersect_feed_ranges(&resolved_range, range).ok_or_else(|| {
+                    super::node::split_replacement_invalid(format!(
+                        "topology provider returned range [{}, {}) which does not overlap the request's owned range [{}, {})",
+                        resolved_range.min_inclusive().to_hex(),
+                        resolved_range.max_exclusive().to_hex(),
+                        range.min_inclusive().to_hex(),
+                        range.max_exclusive().to_hex(),
+                    ))
+                })?;
 
                 let target = RequestTarget::effective_partition_key_range(
                     owned_range,
@@ -349,16 +399,17 @@ impl Request {
                     resolved_range,
                 );
 
-                Box::new(Request::new(
+                Ok(Box::new(Request::new(
                     self.operation.clone(),
                     target,
                     continuation.clone(),
-                ))
-                    as Box<dyn PipelineNode>
+                )) as Box<dyn PipelineNode>)
             })
-            .collect();
+            .collect::<crate::error::Result<Vec<_>>>()?;
 
-        Ok(PageResult::SplitRequired { replacement_nodes })
+        Ok(PageResult::SplitRequired {
+            replacements: super::node::SplitReplacements::try_tiling(range, replacement_nodes)?,
+        })
     }
 }
 
@@ -525,8 +576,8 @@ mod tests {
         for mut request in requests {
             let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
             match request.next_page(&mut context).await.unwrap() {
-                PageResult::SplitRequired { replacement_nodes } => {
-                    rewritten.extend(replacement_nodes.into_iter().map(|node| {
+                PageResult::SplitRequired { replacements } => {
+                    rewritten.extend(replacements.into_nodes().into_iter().map(|node| {
                         *node
                             .downcast::<Request>()
                             .expect("scenario helper should only produce request nodes")

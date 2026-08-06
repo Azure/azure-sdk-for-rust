@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "check_api_superset",
+  "generate_api",
   "generate_api_report",
 ]
 
@@ -13,6 +14,7 @@ repository = "https://github.com/Azure/azure-sdk-for-rust"
 rust-version = "1.85"
 
 [workspace.dependencies]
+clap = { version = "4.5.58", features = ["derive"] }
 rustdoc-types = "0.41.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

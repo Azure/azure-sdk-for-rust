@@ -1,0 +1,25 @@
+[package]
+name = "azure_storage_common"
+version = "0.2.0"
+description = "Common types shared across Azure Storage client libraries."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_storage_common"
+keywords = ["sdk", "cloud"]
+categories = ["api-bindings"]
+
+[dependencies]
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", features = ["xml"] }
+serde = { workspace = true }
+time = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

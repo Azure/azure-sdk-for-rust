@@ -25,7 +25,7 @@ use std::{
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
-use tracing::{debug, trace};
+use tracing::{info, trace};
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
@@ -146,18 +146,24 @@ impl ConsumerClient {
     /// }
     /// ```
     pub async fn close(self) -> Result<()> {
-        trace!("Closing consumer client for {}.", self.endpoint);
-        let recoverable_connection =
-            Arc::try_unwrap(self.recoverable_connection).map_err(|_| {
-                EventHubsError::with_message(
-                    "Could not close consumer recoverable connection, multiple references exist",
-                )
-            })?;
+        let connection_id = self.recoverable_connection.get_connection_id().to_string();
         trace!(
-            "No references to connection, closing connection for {}.",
-            self.endpoint
+            connection_id = %connection_id,
+            source_url = %self.endpoint,
+            "Closing consumer client."
         );
-        recoverable_connection.close_connection().await?;
+        // The close does not need exclusive ownership of the connection. A
+        // handle that the caller still holds, such as an `EventReceiver`, used
+        // to make this method report an error and leave the connection open
+        // with no owner, because `Drop` does not close it. The connection now
+        // records the close, so such a handle fails on its next call instead of
+        // opening a second connection.
+        self.recoverable_connection.close_connection().await?;
+        trace!(
+            connection_id = %connection_id,
+            source_url = %self.endpoint,
+            "Closed consumer connection."
+        );
         Ok(())
     }
 
@@ -165,6 +171,40 @@ impl ConsumerClient {
     #[cfg(test)]
     pub fn force_error(&self, error: AmqpError) -> Result<()> {
         self.recoverable_connection.force_error(error)
+    }
+
+    /// Builds a client that has not opened a connection.
+    ///
+    /// The public builder opens the connection, so a test that only needs a
+    /// client value cannot use it. `RecoverableConnection` connects on demand,
+    /// so this client reaches the service only when the test asks it to.
+    #[cfg(test)]
+    pub(crate) fn new_unconnected(
+        fully_qualified_namespace: &str,
+        eventhub_name: &str,
+        credential: Arc<dyn TokenCredential>,
+    ) -> Result<Self> {
+        Self::new(
+            fully_qualified_namespace,
+            eventhub_name.to_string(),
+            None,
+            credential,
+            ConsumerClientOptions {
+                application_id: None,
+                instance_id: None,
+                retry_options: None,
+                custom_endpoint: None,
+                cbs_token_type: None,
+            },
+        )
+    }
+
+    /// Returns the connection that this client shares with the handles it
+    /// hands out. A test uses it to read the state of the connection after
+    /// `close` consumes the client.
+    #[cfg(test)]
+    pub(crate) fn recoverable_connection(&self) -> Arc<RecoverableConnection> {
+        self.recoverable_connection.clone()
     }
 
     /// Retrieves the details of the consumer client.
@@ -235,6 +275,17 @@ impl ConsumerClient {
     ///     Ok(())
     /// }
     /// ```
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.recoverable_connection.get_connection_id(),
+            partition_id = %partition_id,
+            consumer_group = %self.consumer_group,
+            eventhub = %self.eventhub,
+        ),
+        err,
+    )]
     pub async fn open_receiver_on_partition(
         &self,
         partition_id: String,
@@ -249,8 +300,9 @@ impl ConsumerClient {
         let start_expression = StartPosition::start_expression(&options.start_position);
 
         trace!(
-            "Opening receiver on url {} partition {partition_id}.",
-            self.endpoint
+            partition_id = %partition_id,
+            source_url = %self.endpoint,
+            "Opening receiver on partition."
         );
 
         let source_url = format!("{}/Partitions/{}", self.endpoint, partition_id);
@@ -284,7 +336,13 @@ impl ConsumerClient {
             ..Default::default()
         };
 
-        debug!("Receiver attached on partition {partition_id}.");
+        info!(
+            partition_id = %partition_id,
+            consumer_group = %self.consumer_group,
+            eventhub = %self.eventhub,
+            source_url = %source_url,
+            "Receiver attached on partition."
+        );
         Ok(EventReceiver::new(
             self.recoverable_connection.clone(),
             receiver_options,

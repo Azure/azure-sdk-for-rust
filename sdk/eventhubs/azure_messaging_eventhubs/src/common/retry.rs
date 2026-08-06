@@ -6,7 +6,7 @@
 use azure_core::{sleep, time::Duration};
 use rand::random;
 use std::{fmt::Debug, pin::Pin};
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 /// Type alias for recovery operation function to reduce complexity
 pub(crate) type RecoveryOperation<C, E> = fn(
@@ -104,14 +104,20 @@ where
             }
             Err(err) => {
                 let time_since_start = start_time.elapsed();
-                info!("Operation failed with error: {}, checking for retry.", err);
+                debug!(
+                    err = %err,
+                    current_retry,
+                    "Operation failed, checking for retry."
+                );
                 // Check if we've exhausted our retries
                 if current_retry >= options.max_retries
                     || time_since_start >= options.max_total_elapsed
                 {
                     warn!(
-                        "Maximum retries ({}) reached or time elapsed ({:?}), returning error: {:?}",
-                        options.max_retries, time_since_start, err
+                        err = ?err,
+                        max_retries = options.max_retries,
+                        elapsed = ?time_since_start,
+                        "Maximum retries reached or time elapsed, returning error."
                     );
                     return Err(err);
                 }
@@ -131,12 +137,12 @@ where
                         );
                         let sleep_duration = Duration::milliseconds(sleep_ms as i64);
 
-                        info!(
-                            "Operation failed with error: {:?}. Retrying after {:?} (retry {}/{})",
-                            err,
-                            sleep_duration,
-                            current_retry + 1,
-                            options.max_retries
+                        debug!(
+                            err = ?err,
+                            backoff = ?sleep_duration,
+                            retry = current_retry + 1,
+                            max_retries = options.max_retries,
+                            "Operation failed, retrying after backoff."
                         );
 
                         // Wait for the backoff duration
@@ -148,17 +154,36 @@ where
                         // Continue to retry
                     }
                     ErrorRecoveryAction::ReturnError => {
-                        warn!("Error is not retryable, returning: {:?}", err);
+                        warn!(err = ?err, "Error is not retryable, returning.");
                         return Err(err);
                     }
                     _ => {
-                        warn!("Error requires special handling: {:?}", err);
-                        // Handle special error cases (e.g., reconnecting). If no recovery action is provided,
-                        // return the error.
+                        warn!(
+                            error_category = ?error_category,
+                            err = ?err,
+                            "Error requires recovery, attempting recovery action."
+                        );
+                        // Handle recoverable error cases (reconnecting connection, session, or
+                        // link). If no recovery action is provided, return the error.
                         if let (Some(recover_operation), Some(context)) =
                             (recover_operation, context.clone())
                         {
-                            recover_operation(context, error_category).await?;
+                            match recover_operation(context, error_category.clone()).await {
+                                Ok(()) => {
+                                    info!(
+                                        error_category = ?error_category,
+                                        "Recovery action succeeded."
+                                    );
+                                }
+                                Err(recovery_err) => {
+                                    warn!(
+                                        error_category = ?error_category,
+                                        err = ?recovery_err,
+                                        "Recovery action failed."
+                                    );
+                                    return Err(recovery_err);
+                                }
+                            }
                         } else {
                             return Err(err);
                         }

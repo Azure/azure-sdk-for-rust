@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[allow(unused_imports)]
 mod generated;

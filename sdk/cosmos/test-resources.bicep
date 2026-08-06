@@ -6,6 +6,9 @@ param enableAutomaticFailover bool = false
 @description('Flag to enable or disable multiple write locations on CosmosDB Account')
 param enableMultipleWriteLocations bool = false
 
+@description('Enable continuous backup mode. This is a prerequisite for the AllVersionsAndDeletes (full-fidelity) change feed, but is not sufficient on its own: the account also needs the enableFullFidelityChangeFeed property, which cannot be set at account creation and is rejected on subscriptions that are not allowlisted for it. With continuous backup on, the change feed retention window is derived from the backup retention, so containers must not also set changeFeedPolicy.retentionDuration. Incompatible with multiple write locations.')
+param enableContinuousBackup bool = false
+
 @description('Dictates which tests run for this resource')
 param testCategory string = 'emulator'
 
@@ -50,6 +53,19 @@ var multiRegionConfiguration = [
   }
 ]
 var locationsConfiguration = (enableMultipleRegions ? multiRegionConfiguration : singleRegionConfiguration)
+var backupPolicy = (enableContinuousBackup ? {
+  type: 'Continuous'
+  continuousModeProperties: {
+    tier: 'Continuous7Days'
+  }
+} : {
+  type: 'Periodic'
+  periodicModeProperties: {
+    backupIntervalInMinutes: 240
+    backupRetentionIntervalInHours: 8
+    backupStorageRedundancy: 'Geo'
+  }
+})
 var roleDefinitionId = guid(baseName, 'roleDefinitionId')
 var roleAssignmentId = guid(baseName, 'roleAssignmentId')
 var roleDefinitionName = 'ExpandedRbacActions'
@@ -74,6 +90,7 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
         {name: 'EnableNoSQLVectorSearch'}, {name: 'EnableNoSQLFullTextSearch'}
     ]
     locations: locationsConfiguration
+    backupPolicy: backupPolicy
   }
 }
 
@@ -119,7 +136,7 @@ resource accountName_roleAssignmentId 'Microsoft.DocumentDB/databaseAccounts/sql
 }
 
 output COSMOS_RUSTFLAGS string = '--cfg=test_category="${testCategory}"'
-output RUST_TEST_THREADS string = '1'
 output DATABASE_NAME string = databaseName
 output AZURE_COSMOS_CONNECTION_STRING string = 'AccountEndpoint=${reference(resourceId, apiVersion).documentEndpoint};AccountKey=${listKeys(resourceId, apiVersion).primaryMasterKey};'
 output ACCOUNT_HOST string = reference(resourceId, apiVersion).documentEndpoint
+output AZURE_COSMOS_DEFAULT_CONSISTENCY string = defaultConsistencyLevel

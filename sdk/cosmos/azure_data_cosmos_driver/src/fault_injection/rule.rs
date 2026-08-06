@@ -82,6 +82,7 @@ impl FaultInjectionRule {
 }
 
 /// Builder for creating a fault injection rule.
+#[non_exhaustive]
 pub struct FaultInjectionRuleBuilder {
     condition: FaultInjectionCondition,
     result: FaultInjectionResult,

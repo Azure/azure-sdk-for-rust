@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod common;
+
 use azure_core::{
     http::{RequestContent, StatusCode},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
@@ -17,7 +19,7 @@ use azure_storage_blob::models::{
     ListBlobsIncludeItem, SignedIdentifiers, StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
-use azure_storage_blob_test::{
+use common::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
     get_container_name, poll_until, StorageAccount,
 };
