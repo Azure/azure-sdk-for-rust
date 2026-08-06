@@ -45,7 +45,28 @@ fn generate_c_header() {
     let after_includes = format!(
         "\n// Specifies the version of azurecosmosdriver this header file was generated from.\n\
          // This should match the version of libazurecosmosdriver you are linking against.\n\
-         #define AZURECOSMOSDRIVER_H_VERSION \"{}\"",
+         #define AZURECOSMOSDRIVER_H_VERSION \"{}\"\n\
+         \n\
+         // Discriminants for `cosmos_partition_key_component_t.kind`.\n\
+         // Emitted here (rather than as `pub const` in Rust) so cbindgen's\n\
+         // `export.prefix = \"cosmos_\"` does not double-prefix them into\n\
+         // `cosmos_COSMOS_*`. Values must stay in sync with the associated\n\
+         // consts on `CosmosPartitionKeyComponentKind` in\n\
+         // `src/partition_key.rs`.\n\
+         #define COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING    0\n\
+         #define COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER    1\n\
+         #define COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL      2\n\
+         #define COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL      3\n\
+         #define COSMOS_PARTITION_KEY_COMPONENT_KIND_UNDEFINED 4\n\
+         \n\
+         // Discriminants for `cosmos_value_t.kind`. Values must stay in\n\
+         // sync with the associated consts on `CosmosValueKind` in\n\
+         // `src/response_header.rs`.\n\
+         #define COSMOS_VALUE_KIND_STRING 0\n\
+         #define COSMOS_VALUE_KIND_I64    1\n\
+         #define COSMOS_VALUE_KIND_F64    2\n\
+         #define COSMOS_VALUE_KIND_BOOL   3\n\
+         #define COSMOS_VALUE_KIND_U64    4",
         env!("CARGO_PKG_VERSION")
     );
 
@@ -201,13 +222,17 @@ fn generate_c_header() {
             // on an out-of-range host value), so cbindgen no longer sees them
             // referenced by any exported item — but hosts still need the
             // generated `COSMOS_*` named constants to populate those fields.
+            //
+            // `CosmosValueKind` / `CosmosPartitionKeyComponentKind` are
+            // newtype-around-`u8` structs whose typed constants are surfaced
+            // to C via top-level `pub const COSMOS_*_KIND_*: u8` items in the
+            // Rust sources; cbindgen picks those up as `Constants` without a
+            // force-include here, so those two are intentionally omitted.
             include: vec![
                 "CosmosOperationKind".into(),
                 "CosmosPreconditionKind".into(),
                 "CosmosReadConsistencyStrategy".into(),
                 "CosmosContentResponseOnWriteOpt".into(),
-                "CosmosPartitionKeyComponentKind".into(),
-                "CosmosValueKind".into(),
             ],
             // Test-only C-ABI helpers gated behind the `test-abi` feature.
             // Kept out of the public header even when the feature is on so

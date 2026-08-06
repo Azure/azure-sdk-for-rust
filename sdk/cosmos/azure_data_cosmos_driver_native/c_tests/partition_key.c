@@ -27,8 +27,9 @@
 #include "test_common.h"
 
 // Convenience: a component of a given kind with default value fields.
-static cosmos_partition_key_component_t pk_component(
-    cosmos_partition_key_component_kind_t kind)
+// `kind` is a `uint8_t` matching a `COSMOS_PARTITION_KEY_COMPONENT_KIND_*`
+// discriminant defined in azurecosmosdriver.h.
+static cosmos_partition_key_component_t pk_component(uint8_t kind)
 {
     cosmos_partition_key_component_t c = {0};
     c.kind = kind;
@@ -99,7 +100,9 @@ static int test_hierarchical_all_value_kinds(void)
     comps[1] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER);
     comps[1].value.number_value = 42.0;
     comps[2] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL);
-    comps[2].value.bool_value = true;
+    // `bool_value` is `uint8_t`: 0 encodes false, any non-zero byte
+    // encodes true. Using `1` here for the canonical `true` encoding.
+    comps[2].value.bool_value = 1;
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 3, &pk);

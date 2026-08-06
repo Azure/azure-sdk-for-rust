@@ -292,14 +292,14 @@ pub struct CosmosCompletion {
     ///
     /// **Presence / absence contract:** each header id appears **only when
     /// the service (or the driver's synthesis path) actually produced a
-    /// value for it** — there are no placeholder entries. Bindings that
-    /// previously read the removed inline scalars (`request_charge`,
-    /// `sub_status`, `retry_after_ms`) must treat a missing id as absent
-    /// and apply their own default. Concretely, the pre-PR inline
-    /// sentinels map as follows:
+    /// value for it** — there are no placeholder entries. Bindings must
+    /// treat a missing id as absent and apply their own default. Earlier
+    /// revisions of this struct exposed a handful of scalars inline with
+    /// fixed sentinels; the equivalent missing-id defaults callers should
+    /// substitute are:
     ///
-    /// | Removed inline field | Header id | Missing-id default (per pre-PR contract) |
-    /// |----------------------|-----------|------------------------------------------|
+    /// | Former inline field | Header id | Missing-id default |
+    /// |---------------------|-----------|--------------------|
     /// | `request_charge: f64` | `CosmosHeaderIdRequestCharge` | `0.0` |
     /// | `sub_status: i32` | `CosmosHeaderIdSubStatus` | `-1` |
     /// | `retry_after_ms: i64` | `CosmosHeaderIdRetryAfterMs` | `-1` |
@@ -445,7 +445,7 @@ impl PendingCompletion {
             // Overlay the status-level sub-status onto a clone of the wire
             // headers before synthesis — mirrors the error path. Keeps the
             // FFI-observable sub-status symmetric across success and error
-            // (the pre-PR inline `p.sub_status` field read from
+            // (the earlier inline `p.sub_status` field read from
             // `resp.status().sub_status()`, so a 2xx with a sub-status must
             // still surface it through the header list).
             let mut effective_headers = resp.headers().clone();
@@ -1983,10 +1983,7 @@ mod tests {
         // by the completion.
         let entries = unsafe { std::slice::from_raw_parts(c.headers, c.headers_len) };
         assert_eq!(entries[0].id, CosmosHeaderId::CosmosHeaderIdSubStatus);
-        assert_eq!(
-            entries[0].value.kind,
-            CosmosValueKind::CosmosValueKindI64 as u8
-        );
+        assert_eq!(entries[0].value.kind, CosmosValueKind::I64.0);
         // SAFETY: `kind == I64` selects `i64_value` per the tagged-union contract.
         let sub = unsafe { entries[0].value.payload.i64_value };
         assert_eq!(

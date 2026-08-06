@@ -13,6 +13,27 @@
 // This should match the version of libazurecosmosdriver you are linking against.
 #define AZURECOSMOSDRIVER_H_VERSION "0.1.0"
 
+// Discriminants for `cosmos_partition_key_component_t.kind`.
+// Emitted here (rather than as `pub const` in Rust) so cbindgen's
+// `export.prefix = "cosmos_"` does not double-prefix them into
+// `cosmos_COSMOS_*`. Values must stay in sync with the associated
+// consts on `CosmosPartitionKeyComponentKind` in
+// `src/partition_key.rs`.
+#define COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING    0
+#define COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER    1
+#define COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL      2
+#define COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL      3
+#define COSMOS_PARTITION_KEY_COMPONENT_KIND_UNDEFINED 4
+
+// Discriminants for `cosmos_value_t.kind`. Values must stay in
+// sync with the associated consts on `CosmosValueKind` in
+// `src/response_header.rs`.
+#define COSMOS_VALUE_KIND_STRING 0
+#define COSMOS_VALUE_KIND_I64    1
+#define COSMOS_VALUE_KIND_F64    2
+#define COSMOS_VALUE_KIND_BOOL   3
+#define COSMOS_VALUE_KIND_U64    4
+
 /**
  * Per spec section 3.6.1, every completion has exactly one of these outcomes.
  *
@@ -625,94 +646,6 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
 #endif // __cplusplus
 
 /**
- * Discriminant for a [`CosmosPartitionKeyComponent`].
- *
- * Stored on the component as a raw `u8` (validated, never transmuted), so an
- * out-of-range host value yields `INVALID_OPTION_VALUE` instead of undefined
- * behavior. The `u8` backing keeps the tagged-union struct compact — the
- * discriminant plus its padding fit inside the alignment slot the union's
- * f64 leg already requires.
- */
-enum cosmos_partition_key_component_kind_t
-#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
-  : uint8_t
-#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
- {
-  /**
-   * String component — read from `value.string_value`.
-   */
-  COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING = 0,
-  /**
-   * Numeric component — read from `value.number_value` (must be finite).
-   */
-  COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER = 1,
-  /**
-   * Boolean component — read from `value.bool_value`.
-   */
-  COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL = 2,
-  /**
-   * Explicit JSON `null` component — no value field is read.
-   */
-  COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL = 3,
-  /**
-   * `undefined` (missing-value) component — no value field is read.
-   */
-  COSMOS_PARTITION_KEY_COMPONENT_KIND_UNDEFINED = 4,
-};
-#ifndef __cplusplus
-#if __STDC_VERSION__ >= 202311L
-typedef enum cosmos_partition_key_component_kind_t cosmos_partition_key_component_kind_t;
-#else
-typedef uint8_t cosmos_partition_key_component_kind_t;
-#endif // __STDC_VERSION__ >= 202311L
-#endif // __cplusplus
-
-/**
- * Discriminant for a [`CosmosValue`].
- *
- * Stored on the value as a raw `u8` (validated, never transmuted), so hosts
- * that see an out-of-range discriminant from a newer runtime version route
- * it through their default branch rather than triggering undefined behavior.
- */
-enum cosmos_value_kind_t
-#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
-  : uint8_t
-#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
- {
-  /**
-   * String payload — read from `payload.string_value` (borrowed
-   * NUL-terminated UTF-8, valid until the completion is freed).
-   */
-  COSMOS_VALUE_KIND_STRING = 0,
-  /**
-   * Signed 64-bit integer payload — read from `payload.i64_value`.
-   */
-  COSMOS_VALUE_KIND_I64 = 1,
-  /**
-   * 64-bit floating-point payload — read from `payload.f64_value`.
-   */
-  COSMOS_VALUE_KIND_F64 = 2,
-  /**
-   * Boolean payload — read from `payload.bool_value`.
-   */
-  COSMOS_VALUE_KIND_BOOL = 3,
-  /**
-   * Unsigned 64-bit integer payload — read from `payload.u64_value`.
-   * Used for headers whose driver type is `u64` (LSNs, `retry-after-ms`)
-   * so the full range is preserved instead of being saturated to
-   * [`i64::MAX`].
-   */
-  COSMOS_VALUE_KIND_U64 = 4,
-};
-#ifndef __cplusplus
-#if __STDC_VERSION__ >= 202311L
-typedef enum cosmos_value_kind_t cosmos_value_kind_t;
-#else
-typedef uint8_t cosmos_value_kind_t;
-#endif // __STDC_VERSION__ >= 202311L
-#endif // __cplusplus
-
-/**
  * The C ABI handle for an account reference (`cosmos_account_ref_t`).
  *
  * Wraps the driver's account reference; the C side holds it as an opaque
@@ -878,23 +811,23 @@ typedef struct cosmos_completion_queue_options_t {
 typedef union cosmos_value_payload_t {
   /**
    * Borrowed NUL-terminated UTF-8 string, valid until the owning
-   * completion is freed. Read iff `kind == CosmosValueKindString`.
+   * completion is freed. Read iff `kind == CosmosValueKind::STRING`.
    */
   const char *string_value;
   /**
-   * Signed 64-bit integer. Read iff `kind == CosmosValueKindI64`.
+   * Signed 64-bit integer. Read iff `kind == CosmosValueKind::I64`.
    */
   int64_t i64_value;
   /**
-   * 64-bit floating-point value. Read iff `kind == CosmosValueKindF64`.
+   * 64-bit floating-point value. Read iff `kind == CosmosValueKind::F64`.
    */
   double f64_value;
   /**
-   * Boolean value. Read iff `kind == CosmosValueKindBool`.
+   * Boolean value. Read iff `kind == CosmosValueKind::BOOL`.
    */
   bool bool_value;
   /**
-   * Unsigned 64-bit integer. Read iff `kind == CosmosValueKindU64`.
+   * Unsigned 64-bit integer. Read iff `kind == CosmosValueKind::U64`.
    */
   uint64_t u64_value;
 } cosmos_value_payload_t;
@@ -905,7 +838,7 @@ typedef union cosmos_value_payload_t {
  * boolean. Numeric headers avoid the stringify-on-emit / parse-on-read round
  * trip the earlier `*const c_char`-only surface required.
  *
- * The `kind` field is a raw `u8` matching a [`CosmosValueKind`] discriminant.
+ * The `kind` field is a `u8` matching a [`CosmosValueKind`] discriminant.
  * The wrapper is the sole producer of these values so hosts never observe
  * an out-of-range kind in practice; forward-compat readers should still
  * treat an unrecognized discriminant as "unknown / skip".
@@ -1026,14 +959,14 @@ typedef struct cosmos_completion_t {
    *
    * **Presence / absence contract:** each header id appears **only when
    * the service (or the driver's synthesis path) actually produced a
-   * value for it** — there are no placeholder entries. Bindings that
-   * previously read the removed inline scalars (`request_charge`,
-   * `sub_status`, `retry_after_ms`) must treat a missing id as absent
-   * and apply their own default. Concretely, the pre-PR inline
-   * sentinels map as follows:
+   * value for it** — there are no placeholder entries. Bindings must
+   * treat a missing id as absent and apply their own default. Earlier
+   * revisions of this struct exposed a handful of scalars inline with
+   * fixed sentinels; the equivalent missing-id defaults callers should
+   * substitute are:
    *
-   * | Removed inline field | Header id | Missing-id default (per pre-PR contract) |
-   * |----------------------|-----------|------------------------------------------|
+   * | Former inline field | Header id | Missing-id default |
+   * |---------------------|-----------|--------------------|
    * | `request_charge: f64` | `CosmosHeaderIdRequestCharge` | `0.0` |
    * | `sub_status: i32` | `CosmosHeaderIdSubStatus` | `-1` |
    * | `retry_after_ms: i64` | `CosmosHeaderIdRetryAfterMs` | `-1` |
@@ -1226,11 +1159,11 @@ typedef struct cosmos_driver_options_config_t {
  * field selected by `kind` may be read; the others are ignored (the
  * `Null` / `Undefined` kinds do not read any payload field at all).
  *
- * The wrapper reads the boolean payload via a raw byte read at the union's
- * address rather than through the `bool_value` field directly, so an
- * arbitrary host-written byte cannot construct an invalid `bool` value
- * (which would be undefined behavior). See
- * `partition_key_from_components` for the read-side implementation.
+ * The boolean payload is exposed as a plain `u8` (rather than a Rust
+ * `bool`) so any host-written byte is a defined value: zero encodes
+ * `false`, any non-zero byte encodes `true`. This avoids the undefined
+ * behavior that would arise if a caller wrote a byte other than `0x00`
+ * or `0x01` into a `bool`-typed field.
  */
 typedef union cosmos_partition_key_component_value_t {
   /**
@@ -1242,11 +1175,12 @@ typedef union cosmos_partition_key_component_value_t {
    */
   double number_value;
   /**
-   * Boolean payload. Read iff `kind` is `Bool`. The wrapper reads the
-   * underlying byte via a raw pointer to preserve the "no undefined
-   * behavior on an arbitrary host-written byte" invariant.
+   * Boolean payload as `u8`: `0` encodes `false`, any non-zero byte
+   * encodes `true`. Read iff `kind` is `Bool`. Typed as `u8` rather
+   * than a Rust `bool` so an arbitrary host-written byte is always a
+   * defined value.
    */
-  bool bool_value;
+  uint8_t bool_value;
 } cosmos_partition_key_component_value_t;
 
 /**
@@ -1262,8 +1196,10 @@ typedef union cosmos_partition_key_component_value_t {
 typedef struct cosmos_partition_key_component_t {
   /**
    * Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
-   * discriminant. Stored as `u8` so an out-of-range host value is caught
-   * and rejected rather than triggering undefined behavior.
+   * discriminant. Stored as `u8` so every host-written byte is a
+   * defined value — an out-of-range kind falls through to the wildcard
+   * branch of the reader's match and is rejected with
+   * `INVALID_OPTION_VALUE`.
    */
   uint8_t kind;
   /**

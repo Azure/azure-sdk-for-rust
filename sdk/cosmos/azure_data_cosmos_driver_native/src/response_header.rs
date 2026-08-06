@@ -134,26 +134,34 @@ pub extern "C" fn cosmos_header_name(id: CosmosHeaderId) -> *const c_char {
 
 /// Discriminant for a [`CosmosValue`].
 ///
-/// Stored on the value as a raw `u8` (validated, never transmuted), so hosts
-/// that see an out-of-range discriminant from a newer runtime version route
-/// it through their default branch rather than triggering undefined behavior.
-#[repr(u8)]
+/// A newtype around `u8` — every bit pattern is a valid `CosmosValueKind`,
+/// so hosts that see an out-of-range discriminant from a newer runtime
+/// version route it through their default branch rather than triggering
+/// undefined behavior. The wrapper is the sole producer of these values
+/// so hosts never observe an out-of-range kind in practice.
+///
+/// The named C-side constants (`COSMOS_VALUE_KIND_STRING` etc.) are
+/// emitted by `build.rs` — the numeric values below must stay in sync
+/// with that list.
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum CosmosValueKind {
+pub struct CosmosValueKind(pub u8);
+
+impl CosmosValueKind {
     /// String payload — read from `payload.string_value` (borrowed
     /// NUL-terminated UTF-8, valid until the completion is freed).
-    CosmosValueKindString = 0,
+    pub const STRING: Self = Self(0);
     /// Signed 64-bit integer payload — read from `payload.i64_value`.
-    CosmosValueKindI64 = 1,
+    pub const I64: Self = Self(1);
     /// 64-bit floating-point payload — read from `payload.f64_value`.
-    CosmosValueKindF64 = 2,
+    pub const F64: Self = Self(2);
     /// Boolean payload — read from `payload.bool_value`.
-    CosmosValueKindBool = 3,
+    pub const BOOL: Self = Self(3);
     /// Unsigned 64-bit integer payload — read from `payload.u64_value`.
     /// Used for headers whose driver type is `u64` (LSNs, `retry-after-ms`)
     /// so the full range is preserved instead of being saturated to
     /// [`i64::MAX`].
-    CosmosValueKindU64 = 4,
+    pub const U64: Self = Self(4);
 }
 
 /// Payload half of the [`CosmosValue`] tagged union. Only the field selected
@@ -167,15 +175,15 @@ pub enum CosmosValueKind {
 #[derive(Clone, Copy)]
 pub union CosmosValuePayload {
     /// Borrowed NUL-terminated UTF-8 string, valid until the owning
-    /// completion is freed. Read iff `kind == CosmosValueKindString`.
+    /// completion is freed. Read iff `kind == CosmosValueKind::STRING`.
     pub string_value: *const c_char,
-    /// Signed 64-bit integer. Read iff `kind == CosmosValueKindI64`.
+    /// Signed 64-bit integer. Read iff `kind == CosmosValueKind::I64`.
     pub i64_value: i64,
-    /// 64-bit floating-point value. Read iff `kind == CosmosValueKindF64`.
+    /// 64-bit floating-point value. Read iff `kind == CosmosValueKind::F64`.
     pub f64_value: f64,
-    /// Boolean value. Read iff `kind == CosmosValueKindBool`.
+    /// Boolean value. Read iff `kind == CosmosValueKind::BOOL`.
     pub bool_value: bool,
-    /// Unsigned 64-bit integer. Read iff `kind == CosmosValueKindU64`.
+    /// Unsigned 64-bit integer. Read iff `kind == CosmosValueKind::U64`.
     pub u64_value: u64,
 }
 
@@ -184,7 +192,7 @@ pub union CosmosValuePayload {
 /// boolean. Numeric headers avoid the stringify-on-emit / parse-on-read round
 /// trip the earlier `*const c_char`-only surface required.
 ///
-/// The `kind` field is a raw `u8` matching a [`CosmosValueKind`] discriminant.
+/// The `kind` field is a `u8` matching a [`CosmosValueKind`] discriminant.
 /// The wrapper is the sole producer of these values so hosts never observe
 /// an out-of-range kind in practice; forward-compat readers should still
 /// treat an unrecognized discriminant as "unknown / skip".
@@ -201,7 +209,7 @@ impl CosmosValue {
     /// Builds a value carrying a borrowed C-string pointer.
     fn string(ptr: *const c_char) -> Self {
         Self {
-            kind: CosmosValueKind::CosmosValueKindString as u8,
+            kind: CosmosValueKind::STRING.0,
             payload: CosmosValuePayload { string_value: ptr },
         }
     }
@@ -209,7 +217,7 @@ impl CosmosValue {
     /// Builds a value carrying a signed 64-bit integer.
     fn i64(v: i64) -> Self {
         Self {
-            kind: CosmosValueKind::CosmosValueKindI64 as u8,
+            kind: CosmosValueKind::I64.0,
             payload: CosmosValuePayload { i64_value: v },
         }
     }
@@ -217,7 +225,7 @@ impl CosmosValue {
     /// Builds a value carrying an f64.
     fn f64(v: f64) -> Self {
         Self {
-            kind: CosmosValueKind::CosmosValueKindF64 as u8,
+            kind: CosmosValueKind::F64.0,
             payload: CosmosValuePayload { f64_value: v },
         }
     }
@@ -225,7 +233,7 @@ impl CosmosValue {
     /// Builds a value carrying a boolean.
     fn bool(v: bool) -> Self {
         Self {
-            kind: CosmosValueKind::CosmosValueKindBool as u8,
+            kind: CosmosValueKind::BOOL.0,
             payload: CosmosValuePayload { bool_value: v },
         }
     }
@@ -233,7 +241,7 @@ impl CosmosValue {
     /// Builds a value carrying an unsigned 64-bit integer.
     fn u64(v: u64) -> Self {
         Self {
-            kind: CosmosValueKind::CosmosValueKindU64 as u8,
+            kind: CosmosValueKind::U64.0,
             payload: CosmosValuePayload { u64_value: v },
         }
     }
@@ -554,16 +562,9 @@ mod tests {
         let decoded: Vec<(CosmosHeaderId, CosmosValueKind, String)> = entries
             .iter()
             .map(|e| {
-                let kind = match e.value.kind {
-                    0 => CosmosValueKind::CosmosValueKindString,
-                    1 => CosmosValueKind::CosmosValueKindI64,
-                    2 => CosmosValueKind::CosmosValueKindF64,
-                    3 => CosmosValueKind::CosmosValueKindBool,
-                    4 => CosmosValueKind::CosmosValueKindU64,
-                    other => panic!("unexpected kind {other}"),
-                };
+                let kind = CosmosValueKind(e.value.kind);
                 let rendered = match kind {
-                    CosmosValueKind::CosmosValueKindString => {
+                    CosmosValueKind::STRING => {
                         // SAFETY: kind == String → payload is a valid
                         // NUL-terminated string owned by `owned`.
                         unsafe { CStr::from_ptr(e.value.payload.string_value) }
@@ -571,22 +572,17 @@ mod tests {
                             .into_owned()
                     }
                     // SAFETY: kind matches the union field being read below.
-                    CosmosValueKind::CosmosValueKindI64 => {
-                        unsafe { e.value.payload.i64_value }.to_string()
-                    }
-                    CosmosValueKind::CosmosValueKindF64 => {
-                        unsafe { e.value.payload.f64_value }.to_string()
-                    }
-                    CosmosValueKind::CosmosValueKindBool => {
+                    CosmosValueKind::I64 => unsafe { e.value.payload.i64_value }.to_string(),
+                    CosmosValueKind::F64 => unsafe { e.value.payload.f64_value }.to_string(),
+                    CosmosValueKind::BOOL => {
                         if unsafe { e.value.payload.bool_value } {
                             "true".to_owned()
                         } else {
                             "false".to_owned()
                         }
                     }
-                    CosmosValueKind::CosmosValueKindU64 => {
-                        unsafe { e.value.payload.u64_value }.to_string()
-                    }
+                    CosmosValueKind::U64 => unsafe { e.value.payload.u64_value }.to_string(),
+                    other => panic!("unexpected kind {}", other.0),
                 };
                 (e.id, kind, rendered)
             })
@@ -597,37 +593,37 @@ mod tests {
             vec![
                 (
                     CosmosHeaderId::CosmosHeaderIdContinuation,
-                    CosmosValueKind::CosmosValueKindString,
+                    CosmosValueKind::STRING,
                     "next-page".to_owned()
                 ),
                 (
                     CosmosHeaderId::CosmosHeaderIdItemCount,
-                    CosmosValueKind::CosmosValueKindI64,
+                    CosmosValueKind::I64,
                     "42".to_owned()
                 ),
                 (
                     CosmosHeaderId::CosmosHeaderIdServerDurationMs,
-                    CosmosValueKind::CosmosValueKindF64,
+                    CosmosValueKind::F64,
                     12.5f64.to_string()
                 ),
                 (
                     CosmosHeaderId::CosmosHeaderIdLsn,
-                    CosmosValueKind::CosmosValueKindU64,
+                    CosmosValueKind::U64,
                     (u64::MAX - 1).to_string()
                 ),
                 (
                     CosmosHeaderId::CosmosHeaderIdOfferReplacePending,
-                    CosmosValueKind::CosmosValueKindBool,
+                    CosmosValueKind::BOOL,
                     "true".to_owned()
                 ),
                 (
                     CosmosHeaderId::CosmosHeaderIdRetryAfterMs,
-                    CosmosValueKind::CosmosValueKindU64,
+                    CosmosValueKind::U64,
                     "500".to_owned()
                 ),
                 (
                     CosmosHeaderId::CosmosHeaderIdGatewayVersion,
-                    CosmosValueKind::CosmosValueKindString,
+                    CosmosValueKind::STRING,
                     "2.0.0".to_owned()
                 ),
             ]
