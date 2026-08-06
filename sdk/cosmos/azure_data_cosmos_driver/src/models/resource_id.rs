@@ -56,6 +56,13 @@ pub(crate) fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
     if !rid.len().is_multiple_of(4) {
         return Err(RidParseError::InvalidLength);
     }
+    // Canonical Cosmos RIDs substitute `-` for Base64's `/`, so a literal `/` is
+    // never part of a valid RID. Reject it here: the raw-path protocol embeds the
+    // RID string directly in the request URL, where an unencoded `/` would inject
+    // extra path segments instead of failing fast.
+    if rid.contains('/') {
+        return Err(RidParseError::InvalidBase64);
+    }
     let b64 = rid.replace('-', "/");
     STANDARD
         .decode(&b64)
@@ -67,6 +74,30 @@ pub(crate) fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
 /// Uses standard Base64 with `/` replaced by `-`.
 pub(crate) fn encode_rid(bytes: &[u8]) -> String {
     STANDARD.encode(bytes).replace('/', "-")
+}
+
+/// The decoded byte length of a database-level RID.
+///
+/// Cosmos RIDs encode the resource hierarchy in 4-byte segments: `[0..4)` is the
+/// database, `[4..8)` the container, and `[8..16)` a document/sub-resource. A
+/// database RID is therefore exactly the 4-byte prefix.
+const DATABASE_RID_BYTE_LEN: usize = 4;
+
+/// Returns `true` when `rid` is a well-formed **database-level** RID.
+///
+/// A database RID decodes to exactly `DATABASE_RID_BYTE_LEN` bytes; a container
+/// RID (8 bytes), a document RID (16 bytes), and any string that is not valid RID
+/// Base64 all return `false`.
+///
+/// Throughput offers are keyed only by `offerResourceId`, with no resource-kind
+/// discriminator, so a caller that reuses a supplied RID as a *database* identity
+/// (for example [`DatabaseClient::read_throughput`]) can pass this container RID
+/// and silently read or replace that container's offer. Callers use this to
+/// reject a wrong-hierarchy RID before it addresses the wrong resource.
+///
+/// [`DatabaseClient::read_throughput`]: https://docs.rs/azure_data_cosmos
+pub fn is_database_rid(rid: &str) -> bool {
+    matches!(decode_rid(rid), Ok(bytes) if bytes.len() == DATABASE_RID_BYTE_LEN)
 }
 
 /// Extracts a document `_rid`'s document ordinal for `ORDER BY` tie-breaks:
@@ -563,6 +594,41 @@ mod tests {
     #[test]
     fn decode_rid_invalid_length_returns_error() {
         assert_eq!(decode_rid("abc"), Err(RidParseError::InvalidLength));
+    }
+
+    #[test]
+    fn decode_rid_rejects_literal_slash() {
+        // A standard-Base64 value with a literal `/` is non-canonical for Cosmos
+        // RIDs (which use `-`). It must be rejected so the raw-path protocol never
+        // injects extra URL path segments.
+        assert_eq!(
+            decode_rid("//////////8="),
+            Err(RidParseError::InvalidBase64)
+        );
+    }
+
+    #[test]
+    fn is_database_rid_accepts_4_byte_rid() {
+        // A database RID decodes to exactly 4 bytes.
+        let db_rid = encode_rid(&[0x0A, 0x0B, 0x0C, 0x0D]);
+        assert!(is_database_rid(&db_rid));
+    }
+
+    #[test]
+    fn is_database_rid_rejects_container_and_document_rids() {
+        // Container (8 bytes) and document (16 bytes) RIDs are not database-level.
+        let container_rid = encode_rid(&[0u8; 8]);
+        assert!(!is_database_rid(&container_rid));
+        let document_rid = encode_rid(&[0u8; 16]);
+        assert!(!is_database_rid(&document_rid));
+    }
+
+    #[test]
+    fn is_database_rid_rejects_malformed_rid() {
+        // A string that is not valid RID Base64 is not a database RID.
+        assert!(!is_database_rid("not base64!"));
+        assert!(!is_database_rid("//////////8="));
+        assert!(!is_database_rid(""));
     }
 
     #[test]

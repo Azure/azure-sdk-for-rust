@@ -1414,6 +1414,89 @@ impl CosmosDriver {
         ))
     }
 
+    /// Fetches a container's metadata from the service addressing it purely by RID.
+    ///
+    /// The parent database RID is derived from the container RID's encoded byte
+    /// layout (the first 4 decoded bytes), so no `read_database` round-trip is
+    /// needed. The read response supplies the container's name and partition key.
+    /// The resulting [`ContainerReference`] is RID-addressed (it carries no
+    /// database name).
+    async fn fetch_container_by_rid(
+        &self,
+        container_rid: &str,
+    ) -> crate::error::Result<ContainerReference> {
+        // A container RID decodes to exactly 8 bytes: the first 4 identify the
+        // parent database, the next 4 the container. A shorter value (e.g. a
+        // bare 4-byte database RID) or a longer one (e.g. a 16-byte document
+        // RID) is not a container RID — fail fast rather than issuing a request
+        // that the service would reject, or misrouting a document RID into the
+        // `colls` segment.
+        let decoded = crate::models::resource_id::decode_rid(container_rid).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                .with_message(format!("invalid container RID '{container_rid}'"))
+                .with_source(e)
+                .build()
+        })?;
+        if decoded.len() != 8 {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                .with_message(format!(
+                    "'{container_rid}' is not a container RID (decodes to {} bytes; a container RID must be exactly 8)",
+                    decoded.len()
+                ))
+                .with_source(std::io::Error::other("container RID has non-container byte length"))
+                .build());
+        }
+        let db_rid = crate::models::resource_id::ResourceId::new(
+            crate::models::resource_id::encode_rid(&decoded[0..4]),
+        );
+
+        let options = OperationOptions::default();
+
+        let container_result = self
+            .execute_singleton_operation(
+                CosmosOperation::read_container_by_rid(
+                    self.account().clone(),
+                    db_rid.as_str().to_owned(),
+                    container_rid.to_owned(),
+                ),
+                options,
+            )
+            .await?;
+        let container_headers = container_result.headers().clone();
+        let container_diagnostics = container_result.diagnostics();
+        let container_props: ContainerProperties =
+            container_result.into_body().into_single().map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("failed to deserialize container response")
+                    .with_response_parts(crate::models::CosmosResponsePayload::new(
+                        crate::models::ResponseBody::NoPayload,
+                        container_headers.clone(),
+                    ))
+                    .with_diagnostics(container_diagnostics.clone())
+                    .with_source(e)
+                    .build()
+            })?;
+
+        // Prefer the authoritative RID echoed back by the service; fall back to
+        // the caller-supplied RID if the response omits it.
+        let resolved_rid = container_props
+            .system_properties
+            .rid
+            .clone()
+            .unwrap_or_else(|| container_rid.to_owned());
+
+        Ok(ContainerReference::new_by_rid(
+            self.account().clone(),
+            db_rid.as_str().to_owned(),
+            container_props.id.clone().into_owned(),
+            resolved_rid,
+            &container_props,
+        ))
+    }
+
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::create_driver()`] instead.
@@ -3086,6 +3169,38 @@ impl CosmosDriver {
         Ok(resolved.as_ref().clone())
     }
 
+    /// Resolves a container by its RID.
+    ///
+    /// Attempts to resolve from `ContainerCache` (by-RID index) first. On a cache
+    /// miss, fetches metadata from the service addressing the container by RID and
+    /// populates the cache. The returned [`ContainerReference`] is RID-addressed
+    /// (it carries no database name).
+    pub async fn resolve_container_by_rid(
+        &self,
+        container_rid: &str,
+    ) -> crate::error::Result<ContainerReference> {
+        let endpoint = self.account().endpoint().as_str().to_owned();
+        let container_rid_owned = container_rid.to_owned();
+
+        let resolved = self
+            .runtime
+            .container_cache()
+            .get_or_fetch_by_rid(&endpoint, container_rid, || async move {
+                self.fetch_container_by_rid(&container_rid_owned)
+                    .await
+                    .map_err(|err| {
+                        crate::error::CosmosErrorBuilder::from_error(err)
+                            .with_context(format!(
+                                "resolve container by rid (container_rid='{container_rid_owned}')"
+                            ))
+                            .build()
+                    })
+            })
+            .await?;
+
+        Ok(resolved.as_ref().clone())
+    }
+
     /// Plans the execution of a Cosmos DB operation.
     ///
     /// For trivial operations (non-query or single-partition), returns a
@@ -3114,6 +3229,22 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        // Reject mixed name/RID addressing before any IO work is done. The
+        // service classifies a request as name-based or RID-based from its `dbs`
+        // segment alone, so a reference that mixes a name-addressed parent with
+        // a RID-addressed child (or vice versa) signs and routes inconsistently
+        // and the gateway rejects it with an opaque 401, while a name leaf under
+        // a RID-addressed parent is rejected with a 400 the caller cannot act
+        // on. Validating here — the single choke point every externally
+        // executable operation passes through on its way to a plan — turns both
+        // into deterministic client-side errors for references built through any
+        // path (including direct `plan_operation` + `execute_plan` callers and
+        // multi-page queries), not just `execute_operation`. The check is a cheap
+        // in-memory field comparison and a no-op for every consistently-addressed
+        // reference, so it issues no additional network calls and does not change
+        // the request flow.
+        operation.validate_addressing()?;
+
         // Planning holds the whole pipeline-builder state across several await
         // points, which makes it one of the largest futures in the driver —
         // large enough to trip `clippy::large_futures` in callers. Box it once
@@ -3874,6 +4005,68 @@ mod tests {
             None,
         )
         .is_some());
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_mixed_addressing() {
+        // The mixed name/RID guard lives in plan_operation, the single choke
+        // point every externally executable operation passes through. Calling
+        // plan_operation directly (the path queries and direct callers use,
+        // bypassing execute_operation) must still reject a mixed reference with
+        // the deterministic CLIENT_MIXED_NAME_RID_ADDRESSING error before any
+        // plan is built or signed.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        // Name-addressed database parent with a RID-addressed collection leaf.
+        let db = DatabaseReference::from_name(test_account(), "testdb");
+        let mixed = crate::models::CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid("Lx1BALxJyZ8=".into());
+        let operation = CosmosOperation::new(crate::models::OperationType::Read, mixed, None);
+
+        let err = match Box::pin(driver.plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        ))
+        .await
+        {
+            Ok(_) => panic!("mixed addressing must be rejected before planning"),
+            Err(e) => e,
+        };
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+        );
+    }
+
+    #[tokio::test]
+    async fn resolve_container_by_rid_rejects_non_container_byte_length() {
+        // A container RID decodes to exactly 8 bytes. A 4-byte database RID and a
+        // 16-byte document RID must both be rejected up front with
+        // CLIENT_INVALID_RESOURCE_ID rather than being misrouted into the
+        // `colls` segment of a service request.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        for byte_len in [4usize, 16] {
+            let rid = crate::models::resource_id::encode_rid(&vec![0u8; byte_len]);
+            let err = match driver.resolve_container_by_rid(&rid).await {
+                Ok(_) => panic!("a {byte_len}-byte RID must not resolve as a container"),
+                Err(e) => e,
+            };
+            assert_eq!(
+                err.status(),
+                crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID,
+                "{byte_len}-byte RID should be rejected as invalid"
+            );
+        }
     }
 
     #[tokio::test]

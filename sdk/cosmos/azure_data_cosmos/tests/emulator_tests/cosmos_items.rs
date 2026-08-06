@@ -175,7 +175,13 @@ async fn create_v1_container(
     let driver = runtime
         .create_driver(DriverOptions::builder(account.clone()).build())
         .await?;
-    let database = DatabaseReference::from_name(account, db_client.id().to_string());
+    let database = DatabaseReference::from_name(
+        account,
+        db_client
+            .name()
+            .expect("emulator database is name-addressed")
+            .to_string(),
+    );
     let body = format!(
         r#"{{"id":"{container_id}","partitionKey":{{"paths":["/partition_key"],"kind":"Hash"}}}}"#
     );

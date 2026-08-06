@@ -19,7 +19,7 @@
 use azure_data_cosmos_driver::models::FeedRange as DriverFeedRange;
 
 use crate::container_ref::ContainerRefHandle;
-use crate::error::CosmosErrorCode;
+use crate::error::{CosmosErrorCode, CosmosStatusCode};
 use crate::partition_key::PartitionKeyHandle;
 
 /// The C ABI handle for a feed range (`cosmos_feed_range_t`).
@@ -62,19 +62,22 @@ impl FeedRangeHandle {
 ///
 /// # Returns
 ///
-/// - `SUCCESS` (0) with `*out_fr` populated.
-/// - `INVALID_ARGUMENT` (1) when `out_fr` is NULL.
+/// A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+/// decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+///
+/// - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_fr` populated.
+/// - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `out_fr` is NULL.
 #[no_mangle]
-pub extern "C" fn cosmos_feed_range_full(out_fr: *mut *mut FeedRangeHandle) -> i32 {
+pub extern "C" fn cosmos_feed_range_full(out_fr: *mut *mut FeedRangeHandle) -> CosmosStatusCode {
     if out_fr.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
     let handle = FeedRangeHandle::into_raw(DriverFeedRange::full());
     // SAFETY: caller guarantees `out_fr` is writable.
     unsafe {
         *out_fr = handle;
     }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+    CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
 }
 
 /// Constructs a feed range that targets a single logical partition
@@ -85,22 +88,25 @@ pub extern "C" fn cosmos_feed_range_full(out_fr: *mut *mut FeedRangeHandle) -> i
 ///
 /// # Returns
 ///
-/// - `SUCCESS` (0) with `*out_fr` populated.
-/// - `INVALID_ARGUMENT` (1) when any pointer is NULL.
+/// A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+/// decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+///
+/// - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_fr` populated.
+/// - `400` / `CLIENT_FFI_NULL_ARGUMENT` when any pointer is NULL.
 #[no_mangle]
 pub extern "C" fn cosmos_feed_range_for_partition_key(
     container: *const ContainerRefHandle,
     pk: *const PartitionKeyHandle,
     out_fr: *mut *mut FeedRangeHandle,
-) -> i32 {
+) -> CosmosStatusCode {
     if out_fr.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
     let Some(container_inner) = ContainerRefHandle::from_ptr(container) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
     let Some(pk_inner) = PartitionKeyHandle::from_ptr(pk) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
     let fr = DriverFeedRange::for_partition(
         pk_inner.inner.clone(),
@@ -111,7 +117,7 @@ pub extern "C" fn cosmos_feed_range_for_partition_key(
     unsafe {
         *out_fr = handle;
     }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+    CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
 }
 
 /// Frees a feed-range handle. NULL is a no-op.
@@ -139,7 +145,7 @@ mod tests {
         let mut fr: *mut FeedRangeHandle = ptr::null_mut();
         assert_eq!(
             cosmos_feed_range_full(&mut fr),
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
         );
         assert!(!fr.is_null());
         cosmos_feed_range_free(fr);
@@ -149,7 +155,7 @@ mod tests {
     fn full_rejects_null_out() {
         assert_eq!(
             cosmos_feed_range_full(ptr::null_mut()),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
     }
 
@@ -158,11 +164,11 @@ mod tests {
         let mut fr: *mut FeedRangeHandle = ptr::null_mut();
         assert_eq!(
             cosmos_feed_range_for_partition_key(ptr::null(), ptr::null(), &mut fr),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
             cosmos_feed_range_for_partition_key(ptr::null(), ptr::null(), ptr::null_mut()),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
     }
 }
