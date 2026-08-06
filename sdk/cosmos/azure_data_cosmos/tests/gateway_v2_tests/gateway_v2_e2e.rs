@@ -176,40 +176,47 @@ async fn build_client_ppcb_disabled(
     Ok(client)
 }
 
-/// Resolves a container client, retrying past the
-/// `404 / 1013 CollectionCreateInProgress` window that follows a fresh
-/// `create_container` on multi-region thin-client accounts. Both the
-/// metadata resolution in [`DatabaseClient::container_client`] and the
-/// subsequent first data-plane request can race the gateway's
-/// container-create completion; this helper keeps retrying the metadata
-/// resolution *and* a follow-up `read` until both succeed or until a
-/// non-1013 error surfaces.
+/// Resolves a container client, retrying past the two transient windows that
+/// follow a fresh `create_container` on thin-client (Gateway 2.0) accounts:
+///
+/// - `404 / 1013 CollectionCreateInProgress` while the service finishes
+///   provisioning the collection, and
+/// - `404 / 1003 OwnerResourceNotFound` while the thin-client proxy's routing
+///   table catches up so the freshly-created collection becomes routable.
+///
+/// Both the metadata resolution in [`DatabaseClient::container_client`] and the
+/// subsequent first data-plane request can race these windows; this helper
+/// keeps retrying the metadata resolution *and* a follow-up `read` until both
+/// succeed or until an error outside those two transient conditions surfaces
+/// (or the bounded poll budget is exhausted).
 async fn wait_for_container_ready(
     db_client: &azure_data_cosmos::clients::DatabaseClient,
     container_name: &str,
 ) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
-    const MAX_ATTEMPTS: u32 = 60;
+    const MAX_ATTEMPTS: u32 = 120;
     const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
+
+    // A freshly-created collection is still "becoming ready" when the service
+    // reports `404 / 1013 CollectionCreateInProgress` (create not finished) or
+    // the thin-client proxy reports `404 / 1003 OwnerResourceNotFound` (routing
+    // table not yet propagated). Both are transient; anything else is fatal.
+    fn is_transient_not_ready(status: &azure_data_cosmos::CosmosStatus) -> bool {
+        matches!(
+            status.sub_status(),
+            Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS)
+        ) || (status.status_code() == StatusCode::NotFound
+            && status.sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND))
+    }
 
     for attempt in 0..MAX_ATTEMPTS {
         let last_err: Box<dyn std::error::Error> =
             match db_client.container_client(container_name).await {
                 Ok(container_client) => match container_client.read(None).await {
                     Ok(_) => return Ok(container_client),
-                    Err(e)
-                        if e.status().sub_status()
-                            == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS) =>
-                    {
-                        Box::new(e)
-                    }
+                    Err(e) if is_transient_not_ready(&e.status()) => Box::new(e),
                     Err(e) => return Err(Box::new(e)),
                 },
-                Err(e)
-                    if e.status().sub_status()
-                        == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS) =>
-                {
-                    Box::new(e)
-                }
+                Err(e) if is_transient_not_ready(&e.status()) => Box::new(e),
                 Err(e) => return Err(Box::new(e)),
             };
 
