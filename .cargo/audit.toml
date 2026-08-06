@@ -1,5 +1,6 @@
 [advisories]
 ignore = [
   "RUSTSEC-2026-0097", # https://github.com/Azure/azure-sdk-for-rust/issues/4183
+  "RUSTSEC-2026-0235", # https://github.com/Azure/azure-sdk-for-rust/issues/4984
 ]
 severity_threshold = "critical"

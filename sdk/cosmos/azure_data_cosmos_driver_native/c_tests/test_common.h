@@ -15,6 +15,11 @@
 
 #include "../include/azurecosmosdriver.h"
 
+// The packed `cosmos_status_code_t` decode helpers COSMOS_STATUS_HTTP /
+// COSMOS_STATUS_SUB are emitted by the generated header above. Tests assert on
+// the sub-status (via COSMOS_SUB_STATUS_* constants) since it uniquely
+// identifies the pre-flight / plumbing condition.
+
 #define TEST_PASS 0
 #define TEST_FAIL 1
 #define TEST_SKIP 2
