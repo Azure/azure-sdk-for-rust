@@ -340,6 +340,7 @@ pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosRespon
     for _ in 0..requests {
         let _ = diagnostics.start_request(
             ExecutionContext::Initial,
+            azure_core::http::Method::Get,
             PipelineType::DataPlane,
             TransportSecurity::Secure,
             TransportKind::Gateway,
