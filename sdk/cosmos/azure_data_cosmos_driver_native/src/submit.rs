@@ -15,13 +15,14 @@
 //!    take a strong reference to its inner state.
 //! 3. `tokio::spawn` a task that runs the driver-side async work and,
 //!    when it completes, publishes a `Completion` to the queue.
-//! 4. Return the producer-side handle (or NULL + a coarse code in
+//! 4. Return the producer-side handle (or NULL + a packed status code in
 //!    `out_pre_error` on pre-flight failure).
 //!
 //! The common machinery is internal (`SpawnContext` + `spawn_oneshot`);
 //! the per-API entry points are thin wrappers that provide the
 //! driver-side future.
 
+use std::any::Any;
 use std::future::Future;
 use std::sync::Arc;
 
@@ -35,7 +36,7 @@ use crate::completion::{
 };
 use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
-use crate::error::CosmosErrorCode;
+use crate::error::{CosmosErrorCode, CosmosStatusCode};
 use crate::op_request::{build_request, CosmosOperationRequest};
 use crate::runtime::RuntimeContext;
 
@@ -92,8 +93,8 @@ enum SuccessKind {
 }
 
 /// Pre-flight: builds a [`SpawnContext`] + a fresh producer-side
-/// `cosmos_operation_handle_t *`. Returns `Err(coarse_code)` on
-/// validation failure so the caller can write the coarse code into
+/// `cosmos_operation_handle_t *`. Returns `Err(status_code)` on
+/// validation failure so the caller can write the packed status code into
 /// `out_pre_error` and return NULL.
 fn pre_flight_spawn(
     queue: *mut CompletionQueue,
@@ -136,12 +137,28 @@ fn pre_flight_spawn(
     ))
 }
 
+/// Extracts a human-readable message from a caught panic payload.
+///
+/// `std`/`catch_unwind` boxes the panic argument as `Box<dyn Any + Send>`:
+/// string-literal panics land as `&'static str`, `format!`-style panics as
+/// `String`. Anything else (a non-string payload) has no recoverable text, so
+/// we fall back to a static label.
+fn panic_payload_message(payload: &(dyn Any + Send)) -> &str {
+    if let Some(s) = payload.downcast_ref::<&'static str>() {
+        s
+    } else if let Some(s) = payload.downcast_ref::<String>() {
+        s.as_str()
+    } else {
+        "unknown panic payload"
+    }
+}
+
 /// Routes one driver-side `Future<Output = Result<R, CosmosError>>`
 /// through the standard submit-and-publish pipeline. `to_success`
 /// converts the success value into the [`SuccessKind`] the completion
 /// delivers; on `Err`, the rich `CosmosError` is flattened inline into the
 /// completion (subject to the queue's `include_error_details` option) plus
-/// the coarse code.
+/// the packed status code.
 fn spawn_oneshot<Fut, R>(
     ctx: SpawnContext,
     runtime: Arc<crate::runtime::RuntimeContext>,
@@ -199,25 +216,35 @@ fn spawn_oneshot<Fut, R>(
                     PendingCompletion::ok_container(user_data, ctx.op_inner.clone(), *container)
                 }
             },
-            Some(Ok(Err(err))) => {
-                let coarse = CosmosErrorCode::from_driver_error(&err);
+            Some(Ok(Err(err))) => PendingCompletion::error(
+                user_data,
+                ctx.op_inner.clone(),
+                err,
+                ctx.include_error_details,
+            ),
+            Some(Err(panic_payload)) => {
+                // The driver future (or success conversion) panicked. Synthesize
+                // a driver error carrying the CLIENT_FFI_PANIC status and route
+                // it through the normal rich-error path so the completion's
+                // inline fields (http_status_code / sub_status / message) stay
+                // consistent with every other ERROR completion and honor
+                // `include_error_details`.
+                let panic_msg = panic_payload_message(&*panic_payload);
+                tracing::error!(
+                    panic = %panic_msg,
+                    "submit: driver future panicked; synthesizing ERROR completion"
+                );
+                let panic_err = azure_data_cosmos_driver::error::CosmosError::builder()
+                    .with_status(CosmosErrorCode::panic_status())
+                    .with_message(format!(
+                        "driver future panicked inside the wrapper (panic firewall): {panic_msg}"
+                    ))
+                    .build();
                 PendingCompletion::error(
                     user_data,
                     ctx.op_inner.clone(),
-                    err,
-                    coarse,
+                    panic_err,
                     ctx.include_error_details,
-                )
-            }
-            Some(Err(_panic)) => {
-                // The driver future (or success conversion) panicked. Surface it
-                // as a coarse client-side error so the host's continuation is
-                // released with a definitive failure instead of hanging.
-                tracing::error!("submit: driver future panicked; synthesizing ERROR completion",);
-                PendingCompletion::error_coarse(
-                    user_data,
-                    ctx.op_inner.clone(),
-                    CosmosErrorCode::CosmosErrorCodeClientError,
                 )
             }
         };
@@ -267,7 +294,7 @@ fn spawn_oneshot<Fut, R>(
 /// - **Feed exhausted** (`Ok(None)` from the driver): outcome `OK` with a
 ///   degenerate response — status code `0`, empty body, NULL next token.
 ///   Hosts treat this as end-of-stream.
-/// - **Failure**: outcome `ERROR` with the coarse code (+ rich error when
+/// - **Failure**: outcome `ERROR` with the packed status code (+ rich error when
 ///   the queue opted in).
 ///
 /// # Parameters
@@ -279,29 +306,29 @@ fn spawn_oneshot<Fut, R>(
 /// - `queue` — non-NULL completion queue.
 /// - `user_data` — opaque, pointer-sized integer cookie (`intptr_t`)
 ///   round-tripped verbatim onto the completion; never dereferenced.
-/// - `out_pre_error` — receives the coarse code on pre-flight failure
+/// - `out_pre_error` — receives the packed status code on pre-flight failure
 ///   (returns NULL). NULL is accepted.
 ///
 /// # Returns
 ///
 /// A fresh `cosmos_operation_handle_t *` on success, or NULL on pre-flight
 /// failure (with `*out_pre_error` populated when non-NULL). Pre-flight
-/// failures include malformed requests (`INVALID_ARGUMENT`), invalid option
-/// values (`INVALID_OPTION_VALUE`), and the queue states
-/// (`QUEUE_SHUTDOWN` / `QUEUE_FULL`).
+/// failures carry a packed HTTP/sub-status: `400` for malformed requests or
+/// out-of-range option values, and `503` (`CLIENT_FFI_QUEUE_SHUTDOWN` /
+/// `CLIENT_FFI_QUEUE_FULL`) for the queue states.
 #[no_mangle]
 pub extern "C" fn cosmos_submit_operation(
     driver: *const DriverHandle,
     request: *const CosmosOperationRequest,
     queue: *mut CompletionQueue,
     user_data: isize,
-    out_pre_error: *mut CosmosErrorCode,
+    out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code;
+                *out_pre_error = code.as_status_code();
             }
         }
     };
@@ -405,13 +432,13 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     request: *const CosmosOperationRequest,
     queue: *mut CompletionQueue,
     user_data: isize,
-    out_pre_error: *mut CosmosErrorCode,
+    out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code;
+                *out_pre_error = code.as_status_code();
             }
         }
     };
@@ -478,13 +505,13 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
     options: *const DriverOptionsHandle,
     queue: *mut CompletionQueue,
     user_data: isize,
-    out_pre_error: *mut CosmosErrorCode,
+    out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code;
+                *out_pre_error = code.as_status_code();
             }
         }
     };
@@ -555,13 +582,13 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
     container_id: *const std::os::raw::c_char,
     queue: *mut CompletionQueue,
     user_data: isize,
-    out_pre_error: *mut CosmosErrorCode,
+    out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code;
+                *out_pre_error = code.as_status_code();
             }
         }
     };
@@ -629,19 +656,36 @@ fn try_cstr_to_string(p: *const std::os::raw::c_char) -> Result<String, CosmosEr
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::COSMOS_STATUS_SUCCESS;
     use std::ptr;
 
     #[test]
     fn execute_operation_submit_rejects_null_driver() {
-        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_submit_operation(ptr::null(), ptr::null(), ptr::null_mut(), 0, &mut err);
         assert!(h.is_null());
-        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        assert_eq!(
+            err,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+    }
+
+    #[test]
+    fn panic_payload_message_extracts_str_string_and_falls_back() {
+        // `&'static str` payload (string-literal panic).
+        let p: Box<dyn Any + Send> = Box::new("boom");
+        assert_eq!(panic_payload_message(&*p), "boom");
+        // `String` payload (`format!`-style panic).
+        let p: Box<dyn Any + Send> = Box::new(String::from("kaboom"));
+        assert_eq!(panic_payload_message(&*p), "kaboom");
+        // Non-string payload has no recoverable text.
+        let p: Box<dyn Any + Send> = Box::new(42_i32);
+        assert_eq!(panic_payload_message(&*p), "unknown panic payload");
     }
 
     #[test]
     fn execute_singleton_operation_submit_rejects_null_driver() {
-        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_submit_singleton_operation(
             ptr::null(),
             ptr::null(),
@@ -650,12 +694,15 @@ mod tests {
             &mut err,
         );
         assert!(h.is_null());
-        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        assert_eq!(
+            err,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
     }
 
     #[test]
     fn get_or_create_submit_rejects_null_runtime() {
-        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_driver_get_or_create_submit(
             ptr::null(),
             ptr::null(),
@@ -665,12 +712,15 @@ mod tests {
             &mut err,
         );
         assert!(h.is_null());
-        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        assert_eq!(
+            err,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
     }
 
     #[test]
     fn resolve_container_submit_rejects_null_driver() {
-        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_driver_resolve_container_submit(
             ptr::null(),
             ptr::null(),
@@ -680,7 +730,10 @@ mod tests {
             &mut err,
         );
         assert!(h.is_null());
-        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        assert_eq!(
+            err,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
     }
 
     #[test]
