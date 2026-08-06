@@ -1037,7 +1037,10 @@ async fn assert_tenant_a_level2_spans_multiple_physical_partitions(
 ) -> Result<(), Box<dyn Error>> {
     let physical_ranges = read_emulator_physical_partition_ranges(
         harness,
-        fixture.emulator_driver_container.database_name(),
+        fixture
+            .emulator_driver_container
+            .database_name()
+            .expect("emulator container is name-addressed"),
         fixture.emulator_driver_container.name(),
     )
     .await?;
@@ -1124,7 +1127,10 @@ async fn expected_touched_partition_ids(
     let scope_bounds = EpkRangeBounds::from_feed_range(&scope_range);
     let physical_ranges = read_emulator_physical_partition_ranges(
         harness,
-        fixture.emulator_driver_container.database_name(),
+        fixture
+            .emulator_driver_container
+            .database_name()
+            .expect("emulator container is name-addressed"),
         fixture.emulator_driver_container.name(),
     )
     .await?;

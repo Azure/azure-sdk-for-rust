@@ -497,6 +497,8 @@ impl SubStatusCode {
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
             20118 => Some("ClientCrossPartitionFanOutExceeded"),
             20119 => Some("ClientOrderByComplexValueUnsupported"),
+            20120 => Some("ClientInvalidResourceId"),
+            20121 => Some("ClientMixedNameRidAddressing"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1360,6 +1362,17 @@ impl SubStatusCode {
     /// object (20119). Cross-partition `ORDER BY` on complex values is not
     /// currently supported.
     pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = SubStatusCode(20119);
+
+    /// A caller-supplied resource RID could not be parsed as a valid Cosmos DB
+    /// RID (20120). RIDs are Base64-encoded byte sequences; this is raised when
+    /// the bytes cannot be decoded or are too short to extract the expected
+    /// resource hierarchy.
+    pub const CLIENT_INVALID_RESOURCE_ID: SubStatusCode = SubStatusCode(20120);
+
+    /// Name-based and RID-based addressing were mixed across the
+    /// database/container hierarchy (20121). A RID-addressed database requires a
+    /// RID-addressed container and vice versa.
+    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = SubStatusCode(20121);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -2280,6 +2293,19 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
     };
 
+    /// 400 / 20120 — caller-supplied resource RID could not be parsed.
+    pub const CLIENT_INVALID_RESOURCE_ID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_INVALID_RESOURCE_ID),
+    };
+
+    /// 400 / 20121 — name-based and RID-based addressing were mixed across the
+    /// database/container hierarchy.
+    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_MIXED_NAME_RID_ADDRESSING),
+    };
+
     // Configuration / setup (HTTP 400, sub-status 20150-20199)
 
     /// 400 / 20150 — duplicate fault-injection rule id.
@@ -2603,6 +2629,20 @@ mod tests {
         assert!(status.sub_status().is_none());
         assert!(status.is_success());
         assert!(status.name().is_none());
+    }
+
+    #[test]
+    fn client_rid_addressing_status_names() {
+        // The 20120/20121 client statuses must resolve to searchable names so the
+        // deterministic client-side errors are useful in diagnostics and logs.
+        assert_eq!(
+            CosmosStatus::CLIENT_INVALID_RESOURCE_ID.name(),
+            Some("ClientInvalidResourceId")
+        );
+        assert_eq!(
+            CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING.name(),
+            Some("ClientMixedNameRidAddressing")
+        );
     }
 
     #[test]

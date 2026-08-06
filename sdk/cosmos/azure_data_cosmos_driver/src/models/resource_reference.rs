@@ -100,10 +100,12 @@ impl DatabaseReference {
 
 /// A resolved reference to a Cosmos DB container.
 ///
-/// Always carries both the name-based and RID-based identifiers for the container
-/// and its parent database, along with immutable container properties (partition key
-/// definition and unique key policy). This guarantees that both addressing modes
-/// are available without additional I/O.
+/// Always carries the RID-based identifiers for the container and its parent
+/// database, along with immutable container properties (partition key definition
+/// and unique key policy). When the container was resolved by name, the name-based
+/// identifiers (parent database name and name-based path) are carried too; when it
+/// was resolved purely by RID they are absent, since the parent database name is
+/// not available in that mode.
 ///
 /// Instances are created via async factory methods that resolve the container
 /// metadata from the Cosmos DB service or cache.
@@ -111,40 +113,60 @@ impl DatabaseReference {
 /// ## Equality and Hashing
 ///
 /// Two `ContainerReference` values are considered equal if they refer to the same
-/// account, container RID, and container name. This detects both delete + recreate
-/// (same name, different RID) and rename scenarios (same RID, different name).
+/// account and container RID. The container name and addressing mode are
+/// deliberately excluded so that a name-resolved reference and a RID-resolved
+/// reference for the same physical container compare equal — they collapse to a
+/// single cache or throughput-registry key.
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct ContainerReference(Arc<ContainerReferenceInner>);
 
 /// Shared state behind [`ContainerReference`].
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct ContainerReferenceInner {
     /// Reference to the parent account.
     account: AccountReference,
-    /// The database user-provided name.
-    db_name: ResourceName,
     /// The database internal RID.
     db_rid: ResourceId,
     /// The container user-provided name.
+    ///
+    /// Always available, even for RID-addressed references, because the service
+    /// returns the container's `id` in the container read response.
     container_name: ResourceName,
     /// The container internal RID.
     container_rid: ResourceId,
     /// Partition key definition for this container.
     partition_key_definition: PartitionKeyDefinition,
-    /// Pre-computed name-based path: `/dbs/{db_name}/colls/{container_name}`.
-    name_based_path: Box<str>,
     /// Pre-computed RID-based path: `/dbs/{db_rid}/colls/{container_rid}`.
     rid_based_path: Box<str>,
+    /// Name-based addressing data. `Some` when the container was resolved by name,
+    /// `None` when resolved purely by RID — the parent database name is unavailable
+    /// in that mode, so no name-based path can be constructed.
+    name_addressing: Option<NameAddressing>,
+}
+
+/// Name-based addressing data for a [`ContainerReference`].
+///
+/// Grouped so the database name and the pre-computed name path are either both
+/// present (name mode) or both absent (RID mode) — never a mix.
+#[derive(Clone, Debug)]
+struct NameAddressing {
+    /// The database user-provided name.
+    db_name: ResourceName,
+    /// Pre-computed name-based path: `/dbs/{db_name}/colls/{container_name}`.
+    name_based_path: Box<str>,
 }
 
 impl PartialEq for ContainerReference {
     fn eq(&self, other: &Self) -> bool {
         // Fast path: clones of the same resolved container share one allocation.
+        //
+        // An account + container RID uniquely identifies a physical container,
+        // independent of how it was addressed (name or RID). Keeping the name out
+        // of equality ensures name-resolved and RID-resolved references for the
+        // same container compare equal and collapse to one cache/registry key.
         Arc::ptr_eq(&self.0, &other.0)
-            || (self.0.account == other.0.account
-                && self.0.container_rid == other.0.container_rid
-                && self.0.container_name == other.0.container_name)
+            || (self.0.account == other.0.account && self.0.container_rid == other.0.container_rid)
     }
 }
 
@@ -154,7 +176,6 @@ impl Hash for ContainerReference {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.0.account.hash(state);
         self.0.container_rid.hash(state);
-        self.0.container_name.hash(state);
     }
 }
 
@@ -186,13 +207,49 @@ impl ContainerReference {
         let rid_based_path: Box<str> = format!("/dbs/{}/colls/{}", db_rid, container_rid).into();
         Self(Arc::new(ContainerReferenceInner {
             account,
-            db_name,
             db_rid,
             container_name,
             container_rid,
             partition_key_definition: container_properties.partition_key.clone(),
-            name_based_path,
             rid_based_path,
+            name_addressing: Some(NameAddressing {
+                db_name,
+                name_based_path,
+            }),
+        }))
+    }
+
+    /// Creates a container reference addressed purely by RID.
+    ///
+    /// Used when a container is resolved from a RID, where the parent database
+    /// *name* is not available. Only the RID-based path is constructed; the
+    /// name-based accessors ([`database_name`](Self::database_name),
+    /// [`name_based_path`](Self::name_based_path)) return `None`. The container's
+    /// own name is still recorded because the service returns it in the container
+    /// read response.
+    ///
+    /// Not exposed publicly — use
+    /// [`CosmosDriver::resolve_container_by_rid()`](crate::driver::CosmosDriver::resolve_container_by_rid)
+    /// to obtain a RID-addressed container reference.
+    pub(crate) fn new_by_rid(
+        account: AccountReference,
+        db_rid: impl Into<ResourceId>,
+        container_name: impl Into<ResourceName>,
+        container_rid: impl Into<ResourceId>,
+        container_properties: &crate::models::ContainerProperties,
+    ) -> Self {
+        let db_rid: ResourceId = db_rid.into();
+        let container_name: ResourceName = container_name.into();
+        let container_rid: ResourceId = container_rid.into();
+        let rid_based_path: Box<str> = format!("/dbs/{}/colls/{}", db_rid, container_rid).into();
+        Self(Arc::new(ContainerReferenceInner {
+            account,
+            db_rid,
+            container_name,
+            container_rid,
+            partition_key_definition: container_properties.partition_key.clone(),
+            rid_based_path,
+            name_addressing: None,
         }))
     }
 
@@ -211,9 +268,9 @@ impl ContainerReference {
         self.0.container_rid.as_str()
     }
 
-    /// Returns the database name.
-    pub fn database_name(&self) -> &str {
-        self.0.db_name.as_str()
+    /// Returns the database name, or `None` if this container was addressed by RID.
+    pub fn database_name(&self) -> Option<&str> {
+        self.0.name_addressing.as_ref().map(|n| n.db_name.as_str())
     }
 
     /// Returns the database RID.
@@ -226,14 +283,49 @@ impl ContainerReference {
         &self.0.partition_key_definition
     }
 
-    /// Returns the name-based relative path: `/dbs/{db_name}/colls/{container_name}`
-    pub fn name_based_path(&self) -> &str {
-        &self.0.name_based_path
+    /// Returns the name-based relative path `/dbs/{db_name}/colls/{container_name}`,
+    /// or `None` if this container was addressed by RID.
+    pub fn name_based_path(&self) -> Option<&str> {
+        self.0
+            .name_addressing
+            .as_ref()
+            .map(|n| n.name_based_path.as_ref())
     }
 
     /// Returns the RID-based relative path: `/dbs/{db_rid}/colls/{container_rid}`
     pub fn rid_based_path(&self) -> &str {
         &self.0.rid_based_path
+    }
+
+    /// Returns the effective relative path for operations against this container:
+    /// the name-based path when addressed by name, otherwise the RID-based path.
+    ///
+    /// Item and sub-resource links are built on top of this base, so item `id`s
+    /// remain name-based while the container/database portion follows the
+    /// container's addressing mode.
+    pub fn base_path(&self) -> &str {
+        match &self.0.name_addressing {
+            Some(n) => &n.name_based_path,
+            None => &self.0.rid_based_path,
+        }
+    }
+
+    /// Returns `true` if this container was addressed purely by RID.
+    pub fn is_by_rid(&self) -> bool {
+        self.0.name_addressing.is_none()
+    }
+
+    /// Returns this reference re-addressed purely by RID, dropping the
+    /// name-based path and parent database name.
+    ///
+    /// The name- and RID-addressed forms of a container describe the same
+    /// physical container and differ only in how requests are routed and
+    /// signed, so a reference resolved by name can be converted without
+    /// re-reading the container. Used by the container cache to keep the
+    /// by-RID index addressing-correct. A no-op when already RID-addressed.
+    pub(crate) fn into_rid_addressed(mut self) -> Self {
+        Arc::make_mut(&mut self.0).name_addressing = None;
+        self
     }
 }
 
@@ -278,7 +370,7 @@ impl ItemReference {
         item_name: impl Into<Cow<'static, str>>,
     ) -> Self {
         let name = ResourceName::new(item_name);
-        let resource_link = format!("{}/docs/{}", container.name_based_path(), name).into();
+        let resource_link = format!("{}/docs/{}", container.base_path(), name).into();
         Self(Arc::new(ItemReferenceInner {
             container: container.clone(),
             partition_key,
@@ -378,11 +470,7 @@ impl StoredProcedureReference {
         stored_procedure_name: impl Into<Cow<'static, str>>,
     ) -> Self {
         let stored_procedure_name = ResourceName::new(stored_procedure_name);
-        let resource_link = format!(
-            "{}/sprocs/{}",
-            container.name_based_path(),
-            stored_procedure_name
-        );
+        let resource_link = format!("{}/sprocs/{}", container.base_path(), stored_procedure_name);
         Self {
             container: container.clone(),
             stored_procedure_identifier: ResourceIdentifier::by_name(stored_procedure_name),
@@ -473,7 +561,7 @@ impl TriggerReference {
         trigger_name: impl Into<Cow<'static, str>>,
     ) -> Self {
         let trigger_name = ResourceName::new(trigger_name);
-        let resource_link = format!("{}/triggers/{}", container.name_based_path(), trigger_name);
+        let resource_link = format!("{}/triggers/{}", container.base_path(), trigger_name);
         Self {
             container: container.clone(),
             trigger_identifier: ResourceIdentifier::by_name(trigger_name),
@@ -556,7 +644,7 @@ impl UdfReference {
         udf_name: impl Into<Cow<'static, str>>,
     ) -> Self {
         let udf_name = ResourceName::new(udf_name);
-        let resource_link = format!("{}/udfs/{}", container.name_based_path(), udf_name);
+        let resource_link = format!("{}/udfs/{}", container.base_path(), udf_name);
         Self {
             container: container.clone(),
             udf_identifier: ResourceIdentifier::by_name(udf_name),
@@ -683,6 +771,28 @@ mod tests {
         )
     }
 
+    fn make_container_reference_by_rid() -> ContainerReference {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://example.documents.azure.com:443/").unwrap(),
+            "test-key",
+        );
+        let partition_key: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/tenantId"]}"#).unwrap();
+        let container_properties = ContainerProperties {
+            id: "my-container".into(),
+            partition_key,
+            system_properties: Default::default(),
+        };
+
+        ContainerReference::new_by_rid(
+            account,
+            "db-rid",
+            "my-container",
+            "container-rid",
+            &container_properties,
+        )
+    }
+
     #[test]
     fn container_partition_key_definition_is_available() {
         let container = make_container_reference();
@@ -690,5 +800,57 @@ mod tests {
 
         assert_eq!(partition_key_definition.paths().len(), 1);
         assert_eq!(partition_key_definition.paths()[0].as_ref(), "/tenantId");
+    }
+
+    #[test]
+    fn named_container_exposes_name_addressing() {
+        let container = make_container_reference();
+
+        assert!(!container.is_by_rid());
+        assert_eq!(container.name(), "my-container");
+        assert_eq!(container.database_name(), Some("my-db"));
+        assert_eq!(
+            container.name_based_path(),
+            Some("/dbs/my-db/colls/my-container")
+        );
+        assert_eq!(
+            container.rid_based_path(),
+            "/dbs/db-rid/colls/container-rid"
+        );
+        // Base path follows the name-based path in name mode.
+        assert_eq!(container.base_path(), "/dbs/my-db/colls/my-container");
+    }
+
+    #[test]
+    fn rid_container_has_no_name_addressing() {
+        let container = make_container_reference_by_rid();
+
+        assert!(container.is_by_rid());
+        // The container's own name is still available from the read response.
+        assert_eq!(container.name(), "my-container");
+        // But the parent database name and name-based path are not.
+        assert_eq!(container.database_name(), None);
+        assert_eq!(container.name_based_path(), None);
+        assert_eq!(container.database_rid(), "db-rid");
+        // Base path falls back to the RID-based path in RID mode.
+        assert_eq!(container.base_path(), "/dbs/db-rid/colls/container-rid");
+    }
+
+    #[test]
+    fn name_and_rid_references_to_same_container_are_equal() {
+        // Equality keys on account + container RID only, so a name-resolved and a
+        // RID-resolved reference to the same physical container must be equal and
+        // hash identically (they share one cache/registry slot).
+        let by_name = make_container_reference();
+        let by_rid = make_container_reference_by_rid();
+
+        assert_eq!(by_name, by_rid);
+
+        let hash = |c: &ContainerReference| {
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            c.hash(&mut hasher);
+            hasher.finish()
+        };
+        assert_eq!(hash(&by_name), hash(&by_rid));
     }
 }
