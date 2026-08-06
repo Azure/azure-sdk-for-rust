@@ -4313,7 +4313,7 @@ mod tests {
         );
         record_run(
             &mut b,
-            ExecutionContext::Retry,
+            ExecutionContext::OperationRetry,
             "East US",
             "https://east/",
             CosmosStatus::new(StatusCode::TooManyRequests),
@@ -4332,7 +4332,7 @@ mod tests {
             );
             record_run(
                 &mut page,
-                ExecutionContext::Retry,
+                ExecutionContext::OperationRetry,
                 "West US",
                 "https://west/",
                 CosmosStatus::new(StatusCode::Ok),
@@ -6353,7 +6353,7 @@ mod tests {
                 DiagnosticsContextBuilder::new(ActivityId::from_string(id), options_with_cap(cap));
             record_run(
                 &mut b,
-                ExecutionContext::Retry,
+                ExecutionContext::OperationRetry,
                 "East US",
                 "https://east/",
                 CosmosStatus::new(StatusCode::TooManyRequests),
