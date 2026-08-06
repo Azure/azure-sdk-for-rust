@@ -1,9 +1,11 @@
 [toolchain]
 channel = "ms-prod-1.95"
+# msrustup resolves `components` as host components only. The host `rust-std` ships
+# with the toolchain, and additional target std libs go in `targets`, so listing
+# "rust-std" here fails with US.host_component_not_found.
 components = [
   "rustc",
   "rustfmt",
-  "rust-std",
   "cargo",
   "clippy",
   "rust-analyzer",
