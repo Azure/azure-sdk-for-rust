@@ -72,13 +72,7 @@ impl DatabaseClient {
     /// Gets a [`ContainerClient`] that can be used to access the container with the
     /// specified identity.
     ///
-    /// This method eagerly resolves immutable container metadata (resource ID and partition key
-    /// definition) from the service, so the returned client is ready for immediate use without
-    /// per-operation cache lookups.
-    ///
-    /// The container's addressing mode must match this database's: a name-addressed
-    /// database accepts only name-addressed containers, and a RID-addressed database
-    /// accepts only [`ResourceId`](crate::ResourceId)-addressed containers.
+    /// This method eagerly resolves immutable container metadata before returning the client.
     ///
     /// # Arguments
     /// * `container` - The name or RID of the container.
@@ -87,6 +81,7 @@ impl DatabaseClient {
     ///
     /// Returns an error if the container does not exist, the metadata cannot be
     /// resolved, or the addressing mode does not match this database's.
+    /// * `options` - Optional parameters for creating the client.
     pub async fn container_client(
         &self,
         container: impl Into<ResourceIdentity>,
@@ -100,7 +95,6 @@ impl DatabaseClient {
         )
         .await
     }
-
     /// Returns the identity (name or RID) used to construct this client.
     pub fn id(&self) -> &ResourceIdentity {
         &self.identity

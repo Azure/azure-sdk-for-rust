@@ -80,38 +80,20 @@ impl ContainerClient {
                             ))
                             .build()
                     })?;
-
-                // The parent database RID is derived from the container RID, not
-                // taken from this `DatabaseClient`. Reject a container whose parent
-                // database does not match the addressed database so callers can't
-                // accidentally reach into a different database.
                 if resolved.database_rid() != db_rid.as_str() {
                     return Err(azure_data_cosmos_driver::error::CosmosError::builder()
-                        .with_status(
-                            azure_data_cosmos_driver::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID,
-                        )
-                        .with_message(format!(
-                            "container RID '{}' belongs to database '{}', not the addressed database '{}'",
-                            container_rid.as_str(),
-                            resolved.database_rid(),
-                            db_rid.as_str()
-                        ))
+                        .with_status(azure_data_cosmos_driver::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                        .with_message(format!("container RID '{}' belongs to database '{}', not the addressed database '{}'", container_rid.as_str(), resolved.database_rid(), db_rid.as_str()))
                         .build()
                         .into());
                 }
-
                 resolved
             }
             (ResourceIdentity::Name(_), ResourceIdentity::Rid(_))
             | (ResourceIdentity::Rid(_), ResourceIdentity::Name(_)) => {
                 return Err(azure_data_cosmos_driver::error::CosmosError::builder()
-                    .with_status(
-                        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING,
-                    )
-                    .with_message(
-                        "database and container must use the same addressing mode: \
-                         address both by name or both by RID",
-                    )
+                    .with_status(azure_data_cosmos_driver::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING)
+                    .with_message("database and container must use the same addressing mode: address both by name or both by RID")
                     .build()
                     .into());
             }
@@ -122,7 +104,6 @@ impl ContainerClient {
             context,
         })
     }
-
     /// Builds the SDK-side [`CosmosOperationContext`] for this container's
     /// operations, carrying the operation name plus the database and container
     /// identity the driver context does not know.
