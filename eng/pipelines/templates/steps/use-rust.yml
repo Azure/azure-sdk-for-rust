@@ -16,8 +16,33 @@ parameters:
     type: boolean
     # When true, Use-Rust.ps1 sets a rustup directory override for WorkingDirectory.
     default: true
+  - name: ConfigureRegistry
+    type: boolean
+    default: true
 
 steps:
+- ${{ if parameters.ConfigureRegistry }}:
+  - pwsh: |
+      $cargoHome = $env:CARGO_HOME
+      if (-not $cargoHome) { $cargoHome = ([System.IO.Path]::Combine($HOME, '.cargo')) }
+      New-Item -ItemType Directory -Force -Path $cargoHome | Out-Null
+
+      $configPath = ([System.IO.Path]::Combine($cargoHome, 'config.toml'))
+      Copy-Item `
+        -Path '$(Build.SourcesDirectory)/eng/templates/config.toml.template' `
+        -Destination $configPath `
+        -Force
+
+      Write-Host "Wrote cargo config to $configPath"
+      Get-Content $configPath
+      Write-Host "##vso[task.setvariable variable=CargoConfigPath]$configPath"
+    displayName: Configure cargo to use the azure-sdk-for-rust feed
+
+  - task: CargoAuthenticate@0
+    displayName: Authenticate cargo to the azure-sdk-for-rust feed
+    inputs:
+      configFile: $(CargoConfigPath)
+
 - task: PowerShell@2
   displayName: "Use Rust ${{ parameters.Toolchain }}"
   inputs:
