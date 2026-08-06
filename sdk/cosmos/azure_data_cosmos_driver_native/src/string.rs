@@ -77,8 +77,9 @@ macro_rules! c_str {
 ///
 /// This ships as a simple boolean-fail helper; an error-aware variant that
 /// threads the rich `cosmos_error_t` payload through builders / submits can be
-/// added later. For now the convention is "null or invalid
-/// UTF-8 → reject the call with `COSMOS_ERROR_CODE_INVALID_ARGUMENT`."
+/// added later. For now the convention is "null → reject the call with a
+/// packed `400 + CLIENT_FFI_NULL_ARGUMENT` status; invalid UTF-8 → reject with
+/// `400 + CLIENT_FFI_INVALID_UTF8`" (see [`crate::error`]).
 #[allow(
     dead_code,
     reason = "first callers arrive with the builder / submit surface"

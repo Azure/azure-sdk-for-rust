@@ -5,6 +5,7 @@
 
 use crate::diagnostics::DiagnosticsContext;
 use crate::models::{CosmosResponseHeaders, CosmosStatus, ResponseBody};
+use crate::options::Region;
 use std::sync::Arc;
 
 /// Wire-level payload of a Cosmos DB response — the response body plus the
@@ -176,6 +177,32 @@ impl CosmosResponse {
     /// Returns a borrow of the diagnostics [`Arc`] without cloning it.
     pub fn diagnostics_ref(&self) -> &Arc<DiagnosticsContext> {
         &self.diagnostics
+    }
+
+    /// Returns the region that actually produced this response, if known.
+    ///
+    /// When the operation raced two regions, this is the region whose leg won —
+    /// [`HedgeDiagnostics::response_region`]. Otherwise it is the region of the
+    /// final recorded attempt, which on a success path is by construction the
+    /// attempt that produced the response.
+    ///
+    /// `None` when the response carries no attempt diagnostics, or when the
+    /// final attempt recorded no region (for example a request sent to the
+    /// region-less global account endpoint).
+    ///
+    /// This is the region a region-affine continuation token belongs to, so it
+    /// is what callers pin subsequent pages of a change-feed chain to.
+    ///
+    /// [`HedgeDiagnostics::response_region`]: crate::diagnostics::HedgeDiagnostics::response_region
+    pub fn serving_region(&self) -> Option<Region> {
+        let diagnostics = self.diagnostics_ref();
+        match diagnostics
+            .hedge_diagnostics()
+            .and_then(|hedge| hedge.response_region())
+        {
+            Some(region) => Some(region.clone()),
+            None => diagnostics.requests().last()?.region().cloned(),
+        }
     }
 
     /// Prepends the per-request diagnostics from one or more prior

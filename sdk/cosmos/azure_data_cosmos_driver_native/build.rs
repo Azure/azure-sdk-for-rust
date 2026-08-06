@@ -47,6 +47,20 @@ fn generate_c_header() {
          // This should match the version of libazurecosmosdriver you are linking against.\n\
          #define AZURECOSMOSDRIVER_H_VERSION \"{}\"\n\
          \n\
+         // Packed-status helpers (see cosmos_status_code_t). Emitted as macros so\n\
+         // they keep the SCREAMING_SNAKE_CASE spelling shared with the\n\
+         // COSMOS_SUB_STATUS_* constants instead of being double-prefixed by the\n\
+         // `cosmos_` export prefix (which would yield `cosmos_COSMOS_STATUS_SUCCESS`).\n\
+         //\n\
+         // COSMOS_STATUS_SUCCESS: value returned by every fallible function on success.\n\
+         #define COSMOS_STATUS_SUCCESS 0\n\
+         \n\
+         // Decode helpers for the packed cosmos_status_code_t. COSMOS_STATUS_HTTP\n\
+         // extracts the HTTP status (high 16 bits); COSMOS_STATUS_SUB extracts the\n\
+         // sub-status (low 16 bits, 0 when the operation had no sub-status).\n\
+         #define COSMOS_STATUS_HTTP(code) ((int)((uint32_t)(code) >> 16))\n\
+         #define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))\n\
+         \n\
          // Discriminants for `cosmos_partition_key_component_t.kind`.\n\
          // Emitted here (rather than as `pub const` in Rust) so cbindgen's\n\
          // `export.prefix = \"cosmos_\"` does not double-prefix them into\n\
@@ -121,7 +135,8 @@ fn generate_c_header() {
             "completion_backing_t".into(),
         ),
         ("CosmosError".into(), "error_t".into()),
-        ("CosmosErrorHandle".into(), "error_t".into()),
+        ("CosmosStatusCode".into(), "status_code_t".into()),
+        ("CosmosSubStatus".into(), "sub_status_t".into()),
         // Wrapper-defined types whose Rust names don't follow the spec's C name.
         ("CosmosBytes".into(), "bytes_t".into()),
         ("CosmosHeaderKv".into(), "header_kv_t".into()),
@@ -174,7 +189,6 @@ fn generate_c_header() {
             "CosmosOperationHandleState".into(),
             "operation_handle_state_t".into(),
         ),
-        ("CosmosErrorCode".into(), "error_code_t".into()),
         ("CosmosHeaderId".into(), "header_id_t".into()),
         ("CosmosReadConsistency".into(), "read_consistency_t".into()),
         (
@@ -224,21 +238,32 @@ fn generate_c_header() {
             // generated `COSMOS_*` named constants to populate those fields.
             //
             // `CosmosValueKind` / `CosmosPartitionKeyComponentKind` are
-            // newtype-around-`u8` structs whose typed constants are surfaced
-            // to C via top-level `pub const COSMOS_*_KIND_*: u8` items in the
-            // Rust sources; cbindgen picks those up as `Constants` without a
-            // force-include here, so those two are intentionally omitted.
+            // newtype-around-`u8` structs whose C-side `#define` constants
+            // are surfaced through `after_includes` (see above); cbindgen does
+            // not need to force-include them, so they are intentionally
+            // omitted from this list.
             include: vec![
                 "CosmosOperationKind".into(),
                 "CosmosPreconditionKind".into(),
                 "CosmosReadConsistencyStrategy".into(),
                 "CosmosContentResponseOnWriteOpt".into(),
+                // Named mirror of the driver's synthetic sub-status codes. Not
+                // referenced by any exported struct field (hosts read the low 16
+                // bits of a packed cosmos_status_code_t), so force its emission.
+                "CosmosSubStatus".into(),
             ],
             // Test-only C-ABI helpers gated behind the `test-abi` feature.
             // Kept out of the public header even when the feature is on so
             // production and test builds share the same header shape; each
             // C test forward-declares them locally.
-            exclude: vec!["__test_only_enqueue_ok_completion_with_all_value_kinds".into()],
+            //
+            // `COSMOS_STATUS_SUCCESS` is emitted as a `#define` via
+            // `after_includes` (see above) to avoid the `cosmos_` export prefix
+            // double-prefixing it into `cosmos_COSMOS_STATUS_SUCCESS`.
+            exclude: vec![
+                "__test_only_enqueue_ok_completion_with_all_value_kinds".into(),
+                "COSMOS_STATUS_SUCCESS".into(),
+            ],
             rename,
             ..Default::default()
         },
@@ -261,6 +286,23 @@ fn generate_c_header() {
     let mut buf = Vec::new();
     bindings.write(&mut buf);
     let output = String::from_utf8(buf).expect("cbindgen output should be valid UTF-8");
+
+    // cbindgen's `ScreamingSnakeCase` rule (heck) does not insert a word
+    // boundary between letters and a trailing digit run, so the two synthetic
+    // sub-status codes whose driver `SubStatusCode` constant ends in `_<NNN>`
+    // come out as `..._GENERATED503` / `..._GENERATED401`. Re-insert the
+    // underscore so every `COSMOS_SUB_STATUS_*` constant is an exact,
+    // mechanical uppercase mirror of the driver constant name. These tokens are
+    // unique, so a full-token replacement is unambiguous.
+    let output = output
+        .replace(
+            "COSMOS_SUB_STATUS_TRANSPORT_GENERATED503",
+            "COSMOS_SUB_STATUS_TRANSPORT_GENERATED_503",
+        )
+        .replace(
+            "COSMOS_SUB_STATUS_CLIENT_GENERATED401",
+            "COSMOS_SUB_STATUS_CLIENT_GENERATED_401",
+        );
 
     let mut collapsed = String::with_capacity(output.len());
     let mut consecutive_blank = 0u32;

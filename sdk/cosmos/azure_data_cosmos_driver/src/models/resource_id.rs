@@ -69,6 +69,62 @@ pub(crate) fn encode_rid(bytes: &[u8]) -> String {
     STANDARD.encode(bytes).replace('/', "-")
 }
 
+/// Extracts a document `_rid`'s document ordinal for `ORDER BY` tie-breaks:
+/// the little-endian `u64` in the document segment (bytes `[8..16)` of the
+/// decoded RID). Mirrors .NET `ResourceId.Document` (`BitConverter.ToUInt64`)
+/// and Java `ResourceId.getDocument()` (`Long.reverseBytes`), both of which
+/// read this segment as little-endian.
+///
+/// Returns `None` unless `rid` decodes to a *document* RID specifically,
+/// applying Java `ResourceId.tryParse`'s shape checks — the collection bit in
+/// byte 4, and a `Document` child-resource type nibble — plus a stricter
+/// length rule: exactly 16 bytes, so a 20-byte RID (an attachment *under* a
+/// document, which `tryParse` still resolves to its parent document) is
+/// rejected rather than silently treated as that document. Sibling 16-byte
+/// RIDs — partition key ranges, stored procedures, triggers, UDFs, conflicts,
+/// permissions — and synthetic test fixtures like `"a"` all return `None`;
+/// callers then fall back to raw-string ordering.
+pub(crate) fn document_ordinal(rid: &str) -> Option<u64> {
+    /// `CollectionChildResourceType.Document` in .NET/Java `ResourceId`: the
+    /// high nibble of the document segment's most significant byte tags which
+    /// collection child a 16-byte RID addresses (`0x5` is a partition key
+    /// range, `0x8` a stored procedure, and so on).
+    const DOCUMENT_CHILD_TYPE: u8 = 0x0;
+
+    let bytes = decode_rid(rid).ok()?;
+    // Exactly 16: a 20-byte RID addresses an *attachment* under a document,
+    // not the document itself, and anything longer is not a RID at all.
+    if bytes.len() != 16 {
+        return None;
+    }
+    // Byte 4's high bit separates collection children from user children, so
+    // a permission RID cannot be read as a document.
+    if bytes[4] & 0x80 == 0 {
+        return None;
+    }
+    let segment: [u8; 8] = bytes.get(8..16)?.try_into().ok()?;
+    if segment[7] >> 4 != DOCUMENT_CHILD_TYPE {
+        return None;
+    }
+    Some(u64::from_le_bytes(segment))
+}
+
+/// Compares two document `_rid`s in ascending Cosmos document order — the
+/// order the backend uses to break `ORDER BY` key ties within a partition.
+///
+/// When both decode as Cosmos RIDs, compares their document ordinals
+/// numerically (see [`document_ordinal`]); a base64 `_rid` *string*
+/// comparison would disagree with this (wrong byte order and a
+/// non-monotonic alphabet), so it is never used. Values that aren't
+/// decodable RIDs (test fixtures) fall back to raw-string comparison,
+/// which is self-consistent within a single query.
+pub(crate) fn compare_document_rids(a: &str, b: &str) -> std::cmp::Ordering {
+    match (document_ordinal(a), document_ordinal(b)) {
+        (Some(a_ord), Some(b_ord)) => a_ord.cmp(&b_ord),
+        _ => a.cmp(b),
+    }
+}
+
 /// A resource name (user-provided identifier).
 ///
 /// Used for human-readable identifiers like database names, container names, etc.
@@ -591,5 +647,129 @@ mod tests {
         assert!(parsed.database_rid().is_some());
         assert!(parsed.container_rid().is_some());
         assert!(parsed.document_rid().is_some());
+    }
+
+    // ===== Document-ordinal tie-break tests =====
+
+    /// Builds a document RID (16 bytes) with a fixed db/collection prefix and
+    /// `doc_id` as the little-endian document segment.
+    fn document_rid(doc_id: u64) -> String {
+        let mut bytes = [0u8; 16];
+        bytes[0..4].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D]);
+        bytes[4..8].copy_from_slice(&[0x80, 0x01, 0x02, 0x03]);
+        bytes[8..16].copy_from_slice(&doc_id.to_le_bytes());
+        encode_rid(&bytes)
+    }
+
+    /// Builds a 16-byte collection-child RID whose child-resource type nibble
+    /// is `child_type` (`0x0` document, `0x5` partition key range, `0x8`
+    /// stored procedure, ...), as Java `ResourceId.tryParse` reads it.
+    fn collection_child_rid(child_type: u8, ordinal: u64) -> String {
+        let mut bytes = [0u8; 16];
+        bytes[0..4].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D]);
+        bytes[4..8].copy_from_slice(&[0x80, 0x01, 0x02, 0x03]);
+        bytes[8..16].copy_from_slice(&ordinal.to_le_bytes());
+        bytes[15] = (bytes[15] & 0x0F) | (child_type << 4);
+        encode_rid(&bytes)
+    }
+
+    #[test]
+    fn document_ordinal_reads_little_endian_document_segment() {
+        assert_eq!(document_ordinal(&document_rid(0)), Some(0));
+        assert_eq!(document_ordinal(&document_rid(1)), Some(1));
+        // The top nibble is the child-resource type, so the largest ordinal a
+        // document RID can carry is `0x0FFF_...`, not `u64::MAX`.
+        assert_eq!(
+            document_ordinal(&document_rid(0x0FFF_FFFF_FFFF_FFFF)),
+            Some(0x0FFF_FFFF_FFFF_FFFF)
+        );
+        assert_eq!(
+            document_ordinal(&document_rid(0x0102_0304_0506_0708)),
+            Some(0x0102_0304_0506_0708)
+        );
+        // Not a decodable 16-byte RID: falls back to `None`.
+        assert_eq!(document_ordinal("a"), None);
+        assert_eq!(
+            document_ordinal(&encode_rid(&[0x01, 0x02, 0x03, 0x04])),
+            None
+        );
+    }
+
+    /// A base64 blob of the right length is not proof of a document RID.
+    /// Mirrors Java `ResourceId.tryParse`, which rejects every non-document
+    /// shape rather than reading bytes `[8..16)` unconditionally — otherwise a
+    /// crafted continuation boundary would enter the numeric tie-break with an
+    /// arbitrary ordinal and discard the wrong rows.
+    #[test]
+    fn document_ordinal_rejects_non_document_rids() {
+        // Sibling collection children: partition key range, stored procedure,
+        // trigger, UDF, conflict.
+        for child_type in [0x5u8, 0x8, 0x7, 0x6, 0x4] {
+            assert_eq!(
+                document_ordinal(&collection_child_rid(child_type, 7)),
+                None,
+                "child resource type {child_type:#x} must not read as a document"
+            );
+        }
+
+        // Byte 4's high bit clear: a user child (permission), not a document.
+        let mut permission = [0u8; 16];
+        permission[0..4].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D]);
+        permission[4..8].copy_from_slice(&[0x01, 0x02, 0x03, 0x04]);
+        permission[8..16].copy_from_slice(&7u64.to_le_bytes());
+        assert_eq!(document_ordinal(&encode_rid(&permission)), None);
+
+        // 20 bytes: an attachment *under* a document, not the document.
+        let mut attachment = [0u8; 20];
+        attachment[0..16].copy_from_slice(&{
+            let mut doc = [0u8; 16];
+            doc[0..4].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D]);
+            doc[4..8].copy_from_slice(&[0x80, 0x01, 0x02, 0x03]);
+            doc[8..16].copy_from_slice(&7u64.to_le_bytes());
+            doc
+        });
+        attachment[16..20].copy_from_slice(&1u32.to_be_bytes());
+        assert_eq!(document_ordinal(&encode_rid(&attachment)), None);
+
+        // Over-long arbitrary bytes.
+        assert_eq!(document_ordinal(&encode_rid(&[0xFFu8; 24])), None);
+    }
+
+    #[test]
+    fn compare_document_rids_is_numeric_not_base64_string_order() {
+        use std::cmp::Ordering;
+        // Two document ids whose base64 RID strings sort opposite to their
+        // numeric order — proves we compare numerically, not by string.
+        let mut disagreement = None;
+        for hi in 0..64u64 {
+            let low = document_rid(hi);
+            let high = document_rid(hi + 1);
+            if low.cmp(&high) != Ordering::Less {
+                disagreement = Some((hi, low, high));
+                break;
+            }
+        }
+        let (doc_id, low_rid, high_rid) =
+            disagreement.expect("some adjacent doc ids must disagree between string and numeric");
+        // String order disagrees, but the numeric comparator is always correct.
+        assert_eq!(
+            compare_document_rids(&low_rid, &high_rid),
+            Ordering::Less,
+            "doc id {doc_id} < {} must compare Less numerically",
+            doc_id + 1
+        );
+        assert_eq!(
+            compare_document_rids(&high_rid, &low_rid),
+            Ordering::Greater
+        );
+        assert_eq!(compare_document_rids(&low_rid, &low_rid), Ordering::Equal);
+    }
+
+    #[test]
+    fn compare_document_rids_falls_back_to_string_for_non_rids() {
+        use std::cmp::Ordering;
+        // Synthetic test fixtures (not decodable RIDs) compare as raw strings.
+        assert_eq!(compare_document_rids("a", "b"), Ordering::Less);
+        assert_eq!(compare_document_rids("tied-1", "tied-2"), Ordering::Less);
     }
 }

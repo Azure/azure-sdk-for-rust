@@ -17,7 +17,7 @@
 //! calling from two threads simultaneously is undefined behavior. See section 9 Q12.
 //!
 //! The crate ships the full FFI surface plus internal test-only helpers
-//! ([`__test_only_enqueue_completion`]) so the receive-loop contract can be
+//! (`__test_only_enqueue_completion`) so the receive-loop contract can be
 //! validated end-to-end independently of the real submit pipeline.
 
 use std::collections::VecDeque;
@@ -34,7 +34,7 @@ use azure_data_cosmos_driver::models::{
 
 use crate::container_ref::ContainerRefHandle;
 use crate::driver::DriverHandle;
-use crate::error::CosmosErrorCode;
+use crate::error::{CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS};
 use crate::response_header::{
     synthesize_response_headers, CosmosResponseHeader, OwnedResponseHeaders,
 };
@@ -260,8 +260,8 @@ impl OperationHandle {
 pub struct CosmosCompletion {
     /// The completion outcome (`Ok` / `Error` / `Cancelled` / `Unknown`).
     pub outcome: CosmosCompletionOutcome,
-    /// Coarse status code (always populated).
-    pub status: CosmosErrorCode,
+    /// Packed status code (always populated).
+    pub status: CosmosStatusCode,
     /// The host's opaque pointer-sized cookie, round-tripped verbatim from
     /// submit; the wrapper never dereferences it.
     pub user_data: isize,
@@ -348,7 +348,7 @@ pub struct CosmosCompletionBacking {
 /// by [`PendingCompletion::into_ffi`].
 pub(crate) struct PendingCompletion {
     outcome: CosmosCompletionOutcome,
-    status: CosmosErrorCode,
+    status: CosmosStatusCode,
     user_data: isize,
     was_cancel_requested: bool,
     http_status_code: u16,
@@ -396,7 +396,7 @@ fn body_view(response: &CosmosResponse) -> (*const u8, usize) {
 impl PendingCompletion {
     fn base(
         outcome: CosmosCompletionOutcome,
-        status: CosmosErrorCode,
+        status: CosmosStatusCode,
         user_data: isize,
         op_inner: Arc<OperationInner>,
     ) -> Self {
@@ -435,7 +435,7 @@ impl PendingCompletion {
     ) -> Self {
         let mut p = Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             user_data,
             op_inner,
         );
@@ -466,7 +466,7 @@ impl PendingCompletion {
     ) -> Self {
         let mut p = Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             user_data,
             op_inner,
         );
@@ -482,7 +482,7 @@ impl PendingCompletion {
     ) -> Self {
         let mut p = Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             user_data,
             op_inner,
         );
@@ -492,17 +492,16 @@ impl PendingCompletion {
 
     /// Error completion. When `include_details` is set the rich error fields
     /// (message, wire status, headers, backtrace) are flattened inline;
-    /// otherwise only the coarse `status` is populated.
+    /// otherwise only the packed `status` is populated.
     pub(crate) fn error(
         user_data: isize,
         op_inner: Arc<OperationInner>,
         err: DriverCosmosError,
-        coarse: CosmosErrorCode,
         include_details: bool,
     ) -> Self {
         let mut p = Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            coarse,
+            CosmosStatusCode::from_driver_error(&err),
             user_data,
             op_inner,
         );
@@ -543,26 +542,11 @@ impl PendingCompletion {
         p
     }
 
-    /// Error completion carrying only a coarse code (no rich detail) — used for
-    /// the submit panic firewall.
-    pub(crate) fn error_coarse(
-        user_data: isize,
-        op_inner: Arc<OperationInner>,
-        coarse: CosmosErrorCode,
-    ) -> Self {
-        Self::base(
-            CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            coarse,
-            user_data,
-            op_inner,
-        )
-    }
-
     /// Cancelled completion.
     pub(crate) fn cancelled(user_data: isize, op_inner: Arc<OperationInner>) -> Self {
         Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
-            CosmosErrorCode::CosmosErrorCodeOperationCancelled,
+            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code(),
             user_data,
             op_inner,
         )
@@ -855,6 +839,7 @@ impl CompletionQueue {
 
     /// Internal: pushes a completion onto the queue identified by the
     /// raw pointer.
+    #[cfg(any(test, feature = "test-abi"))]
     pub(crate) fn enqueue(p: *const CompletionQueue, c: PendingCompletion) -> CosmosErrorCode {
         let Some(handle) = Self::from_ptr(p) else {
             return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
@@ -1342,10 +1327,11 @@ pub fn __test_only_create_operation_handle() -> *mut OperationHandle {
 /// Test-only: reserve an in-flight slot on `queue`, simulating what the real
 /// submit pre-flight does when it admits an operation. Lets tests exercise the
 /// `in_flight` accounting (which gates the `SHUTDOWN` → `DRAINED` transition)
-/// without standing up the full submit pipeline. Returns the coarse code from
+/// without standing up the full submit pipeline. Returns the packed status code from
 /// [`CompletionQueueInner::reserve_in_flight`].
 #[doc(hidden)]
-pub fn __test_only_reserve_in_flight(queue: *mut CompletionQueue) -> CosmosErrorCode {
+#[cfg(test)]
+pub(crate) fn __test_only_reserve_in_flight(queue: *mut CompletionQueue) -> CosmosErrorCode {
     let Some(inner_arc) = CompletionQueue::inner_arc(queue) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
     };
@@ -1362,11 +1348,12 @@ pub fn __test_only_reserve_in_flight(queue: *mut CompletionQueue) -> CosmosError
 /// An `Error` outcome flattens `error` (or a synthetic placeholder) inline,
 /// honoring the queue's `include_error_details`.
 #[doc(hidden)]
-pub fn __test_only_enqueue_completion(
+#[cfg(test)]
+pub(crate) fn __test_only_enqueue_completion(
     queue: *mut CompletionQueue,
     op_handle: *mut OperationHandle,
     outcome: CosmosCompletionOutcome,
-    status: CosmosErrorCode,
+    status: CosmosStatusCode,
     // Test ergonomics: callers pass a pointer-cast cookie; we store it as the
     // `isize` the real submit path uses. This helper is `#[doc(hidden)]` and
     // never crosses the (now `intptr_t`) C ABI.
@@ -1389,7 +1376,7 @@ pub fn __test_only_enqueue_completion(
                     .with_message("synthetic test error")
                     .build()
             });
-            PendingCompletion::error(ud, op_inner, err, status, include_error)
+            PendingCompletion::error(ud, op_inner, err, include_error)
         }
         CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled => {
             let mut p = PendingCompletion::cancelled(ud, op_inner);
@@ -1420,18 +1407,18 @@ pub fn __test_only_enqueue_completion(
 /// the checked-in public header even when the feature is on. Bindings must
 /// not depend on it.
 ///
-/// Returns [`CosmosErrorCode::CosmosErrorCodeSuccess`] on success, or an
-/// argument-shape rejection code when `queue` is NULL.
+/// Returns [`CosmosStatusCode`] with `COSMOS_STATUS_SUCCESS` on success, or a
+/// packed argument-shape rejection code when `queue` is NULL.
 #[cfg(feature = "test-abi")]
 #[doc(hidden)]
 #[no_mangle]
 pub extern "C" fn __test_only_enqueue_ok_completion_with_all_value_kinds(
     queue: *mut CompletionQueue,
-) -> CosmosErrorCode {
+) -> CosmosStatusCode {
     use azure_data_cosmos_driver::models::ActivityId;
 
     if CompletionQueue::from_ptr(queue).is_none() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
 
     // Mint and immediately drop an ephemeral operation handle; only its
@@ -1460,13 +1447,13 @@ pub extern "C" fn __test_only_enqueue_ok_completion_with_all_value_kinds(
 
     let mut p = PendingCompletion::base(
         CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-        CosmosErrorCode::CosmosErrorCodeSuccess,
+        CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code(),
         0,
         op_inner,
     );
     p.http_status_code = 200;
     p.headers = synthesize_response_headers(&headers);
-    CompletionQueue::enqueue(queue, p)
+    CompletionQueue::enqueue(queue, p).as_status_code()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1562,7 +1549,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             token as *mut c_void,
             None,
         );
@@ -1580,7 +1567,7 @@ mod tests {
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk
         );
         assert_eq!(c.user_data, token as isize);
-        assert_eq!(c.status, CosmosErrorCode::CosmosErrorCodeSuccess);
+        assert_eq!(c.status, COSMOS_STATUS_SUCCESS);
         assert_eq!(c.was_cancel_requested, 0);
 
         free_one(c);
@@ -1608,7 +1595,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );
@@ -1654,7 +1641,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             0x42 as *mut c_void,
             None,
         );
@@ -1688,7 +1675,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );
@@ -1724,7 +1711,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
-            CosmosErrorCode::CosmosErrorCodeOperationCancelled,
+            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code(),
             std::ptr::null_mut(),
             None,
         );
@@ -1734,7 +1721,8 @@ mod tests {
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
         );
         assert_eq!(c.was_cancel_requested, 1);
-        assert_eq!(c.status, CosmosErrorCode::CosmosErrorCodeOperationCancelled);
+        let bits = c.status.0 as u32;
+        assert_eq!((bits >> 16, bits & 0xFFFF), (408, 20360));
         // The operation handle's state should reflect Cancelled.
         assert_eq!(
             cosmos_operation_handle_state(op),
@@ -1759,7 +1747,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );
@@ -1783,7 +1771,7 @@ mod tests {
                 q,
                 op,
                 CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-                CosmosErrorCode::CosmosErrorCodeSuccess,
+                COSMOS_STATUS_SUCCESS,
                 std::ptr::null_mut(),
                 None,
             );
@@ -1796,7 +1784,7 @@ mod tests {
             q,
             op3,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );
@@ -1835,7 +1823,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );
@@ -1859,7 +1847,7 @@ mod tests {
                 q,
                 op,
                 CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-                CosmosErrorCode::CosmosErrorCodeSuccess,
+                COSMOS_STATUS_SUCCESS,
                 i as *mut c_void,
                 None,
             );
@@ -1892,13 +1880,20 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            CosmosErrorCode::CosmosErrorCodeNotFound,
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::NotFound,
+            )),
             std::ptr::null_mut(),
             Some(err),
         );
 
         let c = wait_one_ffi(q, 100).expect("completion delivered");
-        assert_eq!(c.status, CosmosErrorCode::CosmosErrorCodeNotFound);
+        assert_eq!(
+            c.status,
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::NotFound
+            ))
+        );
         assert_eq!(c.http_status_code, 404);
         assert!(!c.message.is_null());
         // SAFETY: `message` is a NUL-terminated string owned by the completion.
@@ -1925,13 +1920,20 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            CosmosErrorCode::CosmosErrorCodeConflict,
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::Conflict,
+            )),
             std::ptr::null_mut(),
             Some(err),
         );
         let c = wait_one_ffi(q, 100).expect("completion delivered");
-        // Coarse status survives.
-        assert_eq!(c.status, CosmosErrorCode::CosmosErrorCodeConflict);
+        // Packed status survives.
+        assert_eq!(
+            c.status,
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::Conflict
+            ))
+        );
         // Rich detail suppressed.
         assert!(c.message.is_null());
         assert_eq!(c.http_status_code, 0);
@@ -1958,18 +1960,17 @@ mod tests {
         use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus, SubStatusCode};
         let q = fresh_queue(0, true);
         let op = __test_only_create_operation_handle();
+        let status = CosmosStatus::new(azure_core::http::StatusCode::RequestTimeout)
+            .with_sub_status(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value());
         let err = CosmosError::builder()
-            .with_status(
-                CosmosStatus::new(azure_core::http::StatusCode::RequestTimeout)
-                    .with_sub_status(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value()),
-            )
+            .with_status(status)
             .with_message("client-side timeout")
             .build();
         __test_only_enqueue_completion(
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            CosmosErrorCode::CosmosErrorCodeTimeout,
+            crate::error::CosmosStatusCode::from_status(status),
             std::ptr::null_mut(),
             Some(err),
         );
@@ -2030,7 +2031,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );

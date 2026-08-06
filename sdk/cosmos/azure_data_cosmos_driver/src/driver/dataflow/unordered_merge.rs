@@ -130,7 +130,7 @@ impl UnorderedMerge {
                         self.children.remove(idx);
                         break;
                     }
-                    PageResult::SplitRequired { replacement_nodes } => {
+                    PageResult::SplitRequired { replacements } => {
                         split_retries += 1;
                         if split_retries > MAX_SPLIT_RETRIES {
                             return Err(crate::error::CosmosError::builder()
@@ -146,7 +146,7 @@ impl UnorderedMerge {
                         // Splice the replacement ranges in place and re-prime
                         // from the first replacement (same index).
                         self.children.remove(idx);
-                        for (i, node) in replacement_nodes.into_iter().enumerate() {
+                        for (i, node) in replacements.into_nodes().into_iter().enumerate() {
                             self.children.insert(idx + i, node);
                         }
                     }
@@ -235,7 +235,7 @@ impl PipelineNode for UnorderedMerge {
                         return Ok(PageResult::Drained);
                     }
                 }
-                PageResult::SplitRequired { replacement_nodes } => {
+                PageResult::SplitRequired { replacements } => {
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
                         return Err(crate::error::CosmosError::builder()
@@ -249,7 +249,7 @@ impl PipelineNode for UnorderedMerge {
 
                     // Remove the split child and splice in replacements.
                     self.children.remove(idx);
-                    for (i, node) in replacement_nodes.into_iter().enumerate() {
+                    for (i, node) in replacements.into_nodes().into_iter().enumerate() {
                         self.children.insert(idx + i, node);
                     }
                     // Retry from the same position (first replacement).
@@ -324,6 +324,7 @@ impl PipelineNode for UnorderedMerge {
 #[cfg(test)]
 mod tests {
     use super::super::mocks::*;
+    use super::super::SplitReplacements;
     use super::*;
 
     #[test]
@@ -413,7 +414,7 @@ mod tests {
     #[tokio::test]
     async fn handles_split_required() {
         let split_child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
-            replacement_nodes: vec![
+            replacements: SplitReplacements::untiled(vec![
                 Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
                     response: response(b"split-a"),
                     is_terminal: false,
@@ -422,7 +423,7 @@ mod tests {
                     response: response(b"split-b"),
                     is_terminal: false,
                 })])),
-            ],
+            ]),
         })]);
 
         let mut merge = UnorderedMerge::new(vec![Box::new(split_child)]);
@@ -518,7 +519,7 @@ mod tests {
         // its replacements: priming polls each replacement once before the
         // round-robin serves a page.
         let split_child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
-            replacement_nodes: vec![
+            replacements: SplitReplacements::untiled(vec![
                 Box::new(MockLeaf::with_pages(vec![
                     Ok(PageResult::Page {
                         response: response_with_etag(b"ra1", "etag-ra1"),
@@ -533,7 +534,7 @@ mod tests {
                     response: response_with_etag(b"rb1", "etag-rb1"),
                     is_terminal: true,
                 })])),
-            ],
+            ]),
         })]);
 
         let mut merge =

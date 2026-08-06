@@ -76,6 +76,42 @@ at the build output (`LD_LIBRARY_PATH=…`, `[DllImport]` resolver, etc.).
 
 ---
 
+## Error & status model
+
+Every fallible C function returns a **packed 32-bit status**
+(`cosmos_status_code_t`) instead of a bespoke error enum, so hosts learn one
+taxonomy that is shared with wire responses:
+
+```text
+cosmos_status_code_t = (http_status << 16) | sub_status
+```
+
+- `COSMOS_STATUS_SUCCESS` (`0`) means success.
+- Decode with `http = code >> 16` and `sub = code & 0xFFFF`; a `sub` of `0`
+  means the operation had no sub-status.
+- Pre-flight / plumbing failures that never hit the wire (a NULL argument,
+  invalid UTF-8, a shut-down completion queue, …) still use a real HTTP status
+  paired with a synthetic `CLIENT_FFI_*` / `CLIENT_*` sub-status, so they fit
+  the same integer as service errors.
+
+The synthetic sub-status codes the driver can produce are re-exported as
+`cosmos_sub_status_t` / `COSMOS_SUB_STATUS_*` constants in the generated header.
+These are a **named mirror of the driver's canonical
+`azure_data_cosmos_driver::error::SubStatusCode` constants** — the
+`CosmosSubStatus` enum in `src/error.rs` re-exports each value so C hosts get
+stable, documented constant names. A host can therefore switch on
+`sub == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT`, etc.
+
+Synchronous entry points also hand back an owned, flat **rich error**
+(`cosmos_error_t`) through their `out_error` slot — it carries the same packed
+status plus the message and wire diagnostics inline, and is freed with
+`cosmos_error_free`. Asynchronous failures surface the same information as
+inline fields on `cosmos_completion_t` (`status`, `http_status_code`,
+`sub_status`, `message`, `activity_id`, and the other diagnostic fields), so no
+separate error object needs to be taken or freed.
+
+---
+
 ## Usage examples — binding-language quick-starts
 
 All four examples below run the same workflow against the local Cosmos DB
@@ -159,33 +195,40 @@ internal static class Cosmos
 {
     const string Lib = "azurecosmosdriver";
 
-    [DllImport(Lib)] public static extern IntPtr cosmos_runtime_builder_new();
-    [DllImport(Lib)] public static extern int    cosmos_runtime_builder_with_user_agent_suffix(IntPtr b, byte[] suffix);
-    [DllImport(Lib)] public static extern int    cosmos_runtime_builder_build(IntPtr b, out IntPtr runtime, out IntPtr err);
-    [DllImport(Lib)] public static extern void   cosmos_runtime_free(IntPtr runtime);
+    [DllImport(Lib)] public static extern int  cosmos_runtime_build(IntPtr options, out IntPtr runtime, out IntPtr err);
+    [DllImport(Lib)] public static extern void cosmos_runtime_free(IntPtr runtime);
 
-    [DllImport(Lib)] public static extern IntPtr cosmos_cq_create(IntPtr runtime, IntPtr options);
-    [DllImport(Lib)] public static extern IntPtr cosmos_cq_wait(IntPtr q, uint timeoutMs);
-    [DllImport(Lib)] public static extern void   cosmos_cq_free(IntPtr q);
+    [DllImport(Lib)] public static extern IntPtr  cosmos_completion_queue_create(IntPtr runtime, IntPtr options);
+    [DllImport(Lib)] public static extern UIntPtr cosmos_completion_queue_wait(IntPtr q, out Completion outComp, UIntPtr max, uint timeoutMs);
+    [DllImport(Lib)] public static extern void    cosmos_completion_queue_free(IntPtr q);
+    [DllImport(Lib)] public static extern void    cosmos_completion_queue_free_completions(ref Completion completions, UIntPtr count);
 
-    [DllImport(Lib)] public static extern int    cosmos_account_ref_with_master_key(byte[] endpoint, byte[] key, out IntPtr acct, out IntPtr err);
-    [DllImport(Lib)] public static extern void   cosmos_account_ref_free(IntPtr a);
-    [DllImport(Lib)] public static extern int    cosmos_driver_get_or_create_blocking(IntPtr rt, IntPtr acct, IntPtr opts, out IntPtr drv, out IntPtr err);
-    [DllImport(Lib)] public static extern void   cosmos_driver_free(IntPtr d);
-    [DllImport(Lib)] public static extern int    cosmos_driver_resolve_container_blocking(IntPtr rt, IntPtr drv, byte[] db, byte[] coll, out IntPtr c, out IntPtr err);
-    [DllImport(Lib)] public static extern void   cosmos_container_ref_free(IntPtr c);
+    [DllImport(Lib)] public static extern int  cosmos_account_ref_with_master_key(byte[] endpoint, byte[] key, out IntPtr acct, out IntPtr err);
+    [DllImport(Lib)] public static extern void cosmos_account_ref_free(IntPtr a);
+    [DllImport(Lib)] public static extern int  cosmos_driver_get_or_create_blocking(IntPtr rt, IntPtr acct, IntPtr opts, out IntPtr drv, out IntPtr err);
+    [DllImport(Lib)] public static extern void cosmos_driver_free(IntPtr d);
+    [DllImport(Lib)] public static extern int  cosmos_driver_resolve_container_blocking(IntPtr rt, IntPtr drv, byte[] db, byte[] coll, out IntPtr c, out IntPtr err);
+    [DllImport(Lib)] public static extern void cosmos_container_ref_free(IntPtr c);
 
-    [DllImport(Lib)] public static extern IntPtr cosmos_partition_key_builder_new();
-    [DllImport(Lib)] public static extern int    cosmos_partition_key_builder_add_string(IntPtr b, byte[] v);
-    [DllImport(Lib)] public static extern int    cosmos_partition_key_builder_build(IntPtr b, out IntPtr pk);
-    [DllImport(Lib)] public static extern void   cosmos_partition_key_free(IntPtr pk);
+    [DllImport(Lib)] public static extern int  cosmos_partition_key_create(ref PartitionKeyComponent components, UIntPtr len, out IntPtr pk);
+    [DllImport(Lib)] public static extern void cosmos_partition_key_free(IntPtr pk);
 
     // Operation kinds (subset — see `cosmos_CosmosOperationKind` in the header).
     public const int KIND_CREATE_ITEM = 19;
     public const int KIND_READ_ITEM   = 20;
     public const int KIND_DELETE_ITEM = 23;
+    public const int OUTCOME_OK       = 0;
 
-    // Flat, self-describing request (mirrors `cosmos_CosmosOperationRequest`).
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PartitionKeyComponent
+    {
+        public int    kind;          // 0 = STRING
+        public IntPtr string_value;  // char*
+        public double number_value;
+        public byte   bool_value;
+    }
+
+    // Flat, self-describing request (mirrors `cosmos_operation_request_t`).
     // Fill only the fields the `kind` needs; leave the rest NULL / sentinel.
     [StructLayout(LayoutKind.Sequential)]
     public struct OpRequest
@@ -194,72 +237,146 @@ internal static class Cosmos
         public IntPtr    account;
         public IntPtr    database;
         public IntPtr    container;
-        public IntPtr    item_id;             // char*
-        public IntPtr    resource_link;       // char*
+        public IntPtr    item_id;                  // char*
+        public IntPtr    resource_link;            // char*
         public IntPtr    partition_key;
+        public IntPtr    partition_key_components; // borrowed component array
+        public UIntPtr   partition_key_len;
         public IntPtr    feed_range;
-        public IntPtr    body;                // const uint8_t* — NULL iff body_len == 0
-        public UIntPtr   body_len;            // 0 = no body
-        public IntPtr    session_token;       // char*
-        public IntPtr    activity_id;         // char*
-        public IntPtr    continuation_token;  // char*
-        public int       max_item_count;      // < 0 = unset
-        public byte      patch_max_attempts;  // 0 = unset
-        public sbyte     populate_index_metrics; // tri-state bool (0/1/2)
-        public sbyte     populate_query_metrics; // tri-state bool (0/1/2)
-        public int       precondition_kind;   // 0 = none
-        public IntPtr    precondition_etag;   // char*
-        public IntPtr    options;             // cosmos_CosmosOperationOptions*
+        public IntPtr    body;                     // const uint8_t* — NULL iff body_len == 0
+        public UIntPtr   body_len;                 // 0 = no body
+        public IntPtr    session_token;            // char*
+        public IntPtr    activity_id;              // char*
+        public IntPtr    continuation_token;       // char*
+        public int       max_item_count;           // < 0 = unset
+        public byte      patch_max_attempts;       // 0 = unset
+        public sbyte     populate_index_metrics;   // tri-state bool (0/1/2)
+        public sbyte     populate_query_metrics;   // tri-state bool (0/1/2)
+        public int       precondition_kind;        // 0 = none
+        public IntPtr    precondition_etag;        // char*
+        public IntPtr    options;                  // cosmos_operation_options_t*
+    }
+
+    // A drained completion. All pointers are borrowed until free_completions.
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Completion
+    {
+        public int     outcome;
+        public int     status;
+        public IntPtr  user_data;
+        public byte    was_cancel_requested;
+        public ushort  http_status_code;
+        public int     sub_status;
+        public double  request_charge;
+        public long    retry_after_ms;
+        public byte    is_from_wire;
+        public IntPtr  message;
+        public IntPtr  activity_id;
+        public IntPtr  session_token;
+        public IntPtr  etag;
+        public IntPtr  continuation;
+        public IntPtr  next_continuation;
+        public IntPtr  backtrace;
+        public IntPtr  headers;
+        public UIntPtr headers_len;
+        public IntPtr  body;
+        public UIntPtr body_len;
+        public IntPtr  diagnostics;
+        public IntPtr  driver;
+        public IntPtr  container;
+        public IntPtr  backing;
     }
 
     // The two — and only two — execution entry points.
     [DllImport(Lib)] public static extern IntPtr cosmos_submit_singleton_operation(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
     [DllImport(Lib)] public static extern IntPtr cosmos_submit_operation(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
     [DllImport(Lib)] public static extern void   cosmos_operation_handle_free(IntPtr h);
-
-    [DllImport(Lib)] public static extern int    cosmos_completion_outcome(IntPtr c);
-    [DllImport(Lib)] public static extern IntPtr cosmos_completion_take_response(IntPtr c);
-    [DllImport(Lib)] public static extern IntPtr cosmos_completion_take_error(IntPtr c);
-    [DllImport(Lib)] public static extern void   cosmos_completion_free(IntPtr c);
-    [DllImport(Lib)] public static extern ushort cosmos_response_status_code(IntPtr r);
-    [DllImport(Lib)] public static extern double cosmos_response_request_charge(IntPtr r);
-    [DllImport(Lib)] public static extern int    cosmos_response_body(IntPtr r, out IntPtr data, out UIntPtr len);
-    [DllImport(Lib)] public static extern void   cosmos_response_free(IntPtr r);
+    [DllImport(Lib)] public static extern void   cosmos_error_free(IntPtr e);
 
     public static byte[] Cstr(string s) => Encoding.UTF8.GetBytes(s + "\0");
+    public static int PackedHttp(int code) => (int)((uint)code >> 16);
+    public static int PackedSub(int code) => (int)((uint)code & 0xffff);
+    public static bool HasSub(int code) => PackedSub(code) != 0;
+    public static string FormatStatus(int code) => code == 0 ? "success" : HasSub(code) ? $"http={PackedHttp(code)} sub={PackedSub(code)} raw={code}" : $"http={PackedHttp(code)} raw={code}";
+
+    public static void CheckStatus(int status, IntPtr err, string what)
+    {
+        try
+        {
+            if (status != 0) throw new InvalidOperationException($"{what} failed: {FormatStatus(status)}");
+        }
+        finally
+        {
+            if (err != IntPtr.Zero) cosmos_error_free(err);
+        }
+    }
 }
+
+internal sealed record OperationResult(int Status, int HttpStatusCode, int SubStatus, double RequestCharge, byte[] Body, string? Message);
 
 internal static class Program
 {
-    static IntPtr SubmitAndWait(IntPtr drv, ref Cosmos.OpRequest req, IntPtr q)
+    static OperationResult SubmitAndWait(IntPtr drv, ref Cosmos.OpRequest req, IntPtr q)
     {
         var h = Cosmos.cosmos_submit_singleton_operation(drv, ref req, q, IntPtr.Zero, out int pre);
-        if (h == IntPtr.Zero) throw new InvalidOperationException($"submit pre-flight failed: {pre}");
-        var c = Cosmos.cosmos_cq_wait(q, 30_000);
-        Cosmos.cosmos_operation_handle_free(h);
-        return c;
+        if (h == IntPtr.Zero) throw new InvalidOperationException($"submit pre-flight failed: {Cosmos.FormatStatus(pre)}");
+
+        var comp = new Cosmos.Completion();
+        UIntPtr n = UIntPtr.Zero;
+        try
+        {
+            n = Cosmos.cosmos_completion_queue_wait(q, out comp, (UIntPtr)1, 30_000);
+            if (n == UIntPtr.Zero) throw new InvalidOperationException("queue drained or shut down before a completion arrived");
+
+            var message = comp.message == IntPtr.Zero ? null : Marshal.PtrToStringUTF8(comp.message);
+            var body = Array.Empty<byte>();
+            if (comp.body != IntPtr.Zero && comp.body_len != UIntPtr.Zero)
+            {
+                var len = checked((int)comp.body_len.ToUInt64());
+                body = new byte[len];
+                Marshal.Copy(comp.body, body, 0, len);
+            }
+
+            var result = new OperationResult(comp.status, comp.http_status_code, comp.sub_status, comp.request_charge, body, message);
+            if (comp.outcome != Cosmos.OUTCOME_OK)
+            {
+                throw new InvalidOperationException($"operation failed ({Cosmos.FormatStatus(result.Status)}): {result.Message}");
+            }
+            return result;
+        }
+        finally
+        {
+            if (n != UIntPtr.Zero) Cosmos.cosmos_completion_queue_free_completions(ref comp, n);
+            Cosmos.cosmos_operation_handle_free(h);
+        }
     }
 
     static void Main()
     {
-        // 1. Runtime + queue
-        var rb = Cosmos.cosmos_runtime_builder_new();
-        Cosmos.cosmos_runtime_builder_with_user_agent_suffix(rb, Cosmos.Cstr("dotnet-sample"));
-        Cosmos.cosmos_runtime_builder_build(rb, out var rt, out _);
-        var q = Cosmos.cosmos_cq_create(rt, IntPtr.Zero);
+        // 1. Runtime + queue. Pass NULL for driver defaults. To add a user-agent
+        //    suffix, call cosmos_runtime_options_default(), set .user_agent_suffix,
+        //    and pass the options pointer to cosmos_runtime_build.
+        Cosmos.CheckStatus(Cosmos.cosmos_runtime_build(IntPtr.Zero, out var rt, out var err), err, "runtime build");
+        var q = Cosmos.cosmos_completion_queue_create(rt, IntPtr.Zero);
 
         // 2. Account → driver → container
-        Cosmos.cosmos_account_ref_with_master_key(
+        Cosmos.CheckStatus(Cosmos.cosmos_account_ref_with_master_key(
             Cosmos.Cstr("https://localhost:8081/"),
             Cosmos.Cstr("C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="),
-            out var acct, out _);
-        Cosmos.cosmos_driver_get_or_create_blocking(rt, acct, IntPtr.Zero, out var drv, out _);
-        Cosmos.cosmos_driver_resolve_container_blocking(rt, drv, Cosmos.Cstr("sample-db"), Cosmos.Cstr("sample-coll"), out var coll, out _);
+            out var acct, out err), err, "account ref");
+        Cosmos.CheckStatus(Cosmos.cosmos_driver_get_or_create_blocking(rt, acct, IntPtr.Zero, out var drv, out err), err, "driver create");
+        Cosmos.CheckStatus(Cosmos.cosmos_driver_resolve_container_blocking(rt, drv, Cosmos.Cstr("sample-db"), Cosmos.Cstr("sample-coll"), out var coll, out err), err, "resolve container");
 
         // 3. Partition key
-        var pkb = Cosmos.cosmos_partition_key_builder_new();
-        Cosmos.cosmos_partition_key_builder_add_string(pkb, Cosmos.Cstr("tenant-42"));
-        Cosmos.cosmos_partition_key_builder_build(pkb, out var pk);
+        var pkBytes = Cosmos.Cstr("tenant-42");
+        var pkPin = GCHandle.Alloc(pkBytes, GCHandleType.Pinned);
+        IntPtr pk;
+        try
+        {
+            var component = new Cosmos.PartitionKeyComponent { kind = 0, string_value = pkPin.AddrOfPinnedObject() };
+            Cosmos.CheckStatus(Cosmos.cosmos_partition_key_create(ref component, (UIntPtr)1, out pk), IntPtr.Zero, "partition key create");
+        }
+        finally { pkPin.Free(); }
 
         // 4. CREATE — fill a flat request and submit it through the singleton path.
         var body = JsonSerializer.SerializeToUtf8Bytes(new { id = "doc1", pk = "tenant-42", name = "hello" });
@@ -275,10 +392,8 @@ internal static class Program
                 body_len       = (UIntPtr)body.Length,
                 max_item_count = -1,
             };
-            var comp = SubmitAndWait(drv, ref req, q);
-            var resp = Cosmos.cosmos_completion_take_response(comp);
-            Console.WriteLine($"CREATE status={Cosmos.cosmos_response_status_code(resp)} ru={Cosmos.cosmos_response_request_charge(resp):F2}");
-            Cosmos.cosmos_response_free(resp); Cosmos.cosmos_completion_free(comp);
+            var create = SubmitAndWait(drv, ref req, q);
+            Console.WriteLine($"CREATE status={create.HttpStatusCode} ru={create.RequestCharge:F2}");
         }
         finally { bodyPin.Free(); }
 
@@ -295,11 +410,8 @@ internal static class Program
                 item_id        = idPin.AddrOfPinnedObject(),
                 max_item_count = -1,
             };
-            var comp = SubmitAndWait(drv, ref req, q);
-            var resp = Cosmos.cosmos_completion_take_response(comp);
-            Cosmos.cosmos_response_body(resp, out var dataPtr, out var dataLen);
-            Console.WriteLine($"READ status={Cosmos.cosmos_response_status_code(resp)} body={Marshal.PtrToStringUTF8(dataPtr, (int)dataLen)}");
-            Cosmos.cosmos_response_free(resp); Cosmos.cosmos_completion_free(comp);
+            var read = SubmitAndWait(drv, ref req, q);
+            Console.WriteLine($"READ status={read.HttpStatusCode} body={Encoding.UTF8.GetString(read.Body)}");
 
             // 6. DELETE — same shape as READ, different kind.
             var del = new Cosmos.OpRequest
@@ -310,10 +422,8 @@ internal static class Program
                 item_id        = idPin.AddrOfPinnedObject(),
                 max_item_count = -1,
             };
-            comp = SubmitAndWait(drv, ref del, q);
-            resp = Cosmos.cosmos_completion_take_response(comp);
-            Console.WriteLine($"DELETE status={Cosmos.cosmos_response_status_code(resp)}");
-            Cosmos.cosmos_response_free(resp); Cosmos.cosmos_completion_free(comp);
+            var delete = SubmitAndWait(drv, ref del, q);
+            Console.WriteLine($"DELETE status={delete.HttpStatusCode}");
         }
         finally { idPin.Free(); }
 
@@ -322,7 +432,7 @@ internal static class Program
         Cosmos.cosmos_container_ref_free(coll);
         Cosmos.cosmos_driver_free(drv);
         Cosmos.cosmos_account_ref_free(acct);
-        Cosmos.cosmos_cq_free(q);
+        Cosmos.cosmos_completion_queue_free(q);
         Cosmos.cosmos_runtime_free(rt);
     }
 }
@@ -347,39 +457,38 @@ public final class CosmosSample {
     }
     static MemorySegment cstr(Arena a, String s) { return a.allocateUtf8String(s); }
 
-    static final MethodHandle RT_BUILDER_NEW    = h("cosmos_runtime_builder_new",   FunctionDescriptor.of(ADDRESS));
-    static final MethodHandle RT_BUILDER_UA     = h("cosmos_runtime_builder_with_user_agent_suffix", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
-    static final MethodHandle RT_BUILDER_BUILD  = h("cosmos_runtime_builder_build", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS));
-    static final MethodHandle RT_FREE           = h("cosmos_runtime_free",          FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle CQ_CREATE         = h("cosmos_cq_create",             FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS));
-    static final MethodHandle CQ_WAIT           = h("cosmos_cq_wait",               FunctionDescriptor.of(ADDRESS, ADDRESS, JAVA_INT));
-    static final MethodHandle CQ_FREE           = h("cosmos_cq_free",               FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle ACCT_WITH_KEY     = h("cosmos_account_ref_with_master_key", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
-    static final MethodHandle ACCT_FREE         = h("cosmos_account_ref_free",      FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle DRV_GOC_BLK       = h("cosmos_driver_get_or_create_blocking", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
-    static final MethodHandle DRV_FREE          = h("cosmos_driver_free",           FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle RESOLVE_BLK       = h("cosmos_driver_resolve_container_blocking", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
-    static final MethodHandle CONTAINER_FREE    = h("cosmos_container_ref_free",    FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle PKB_NEW           = h("cosmos_partition_key_builder_new",        FunctionDescriptor.of(ADDRESS));
-    static final MethodHandle PKB_ADD_S         = h("cosmos_partition_key_builder_add_string", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
-    static final MethodHandle PKB_BUILD         = h("cosmos_partition_key_builder_build",      FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
-    static final MethodHandle PK_FREE           = h("cosmos_partition_key_free",               FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle SUBMIT_SINGLETON  = h("cosmos_submit_singleton_operation", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
-    static final MethodHandle OP_HND_FREE       = h("cosmos_operation_handle_free", FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle COMP_OUTCOME      = h("cosmos_completion_outcome",    FunctionDescriptor.of(JAVA_INT, ADDRESS));
-    static final MethodHandle COMP_STATUS       = h("cosmos_completion_status",     FunctionDescriptor.of(JAVA_INT, ADDRESS));
-    static final MethodHandle COMP_TAKE_R       = h("cosmos_completion_take_response", FunctionDescriptor.of(ADDRESS, ADDRESS));
-    static final MethodHandle COMP_TAKE_E       = h("cosmos_completion_take_error",  FunctionDescriptor.of(ADDRESS, ADDRESS));
-    static final MethodHandle COMP_FREE         = h("cosmos_completion_free",       FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle ERR_MESSAGE       = h("cosmos_error_message",         FunctionDescriptor.of(ADDRESS, ADDRESS));
-    static final MethodHandle ERR_FREE          = h("cosmos_error_free",            FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle RESP_STATUS       = h("cosmos_response_status_code",  FunctionDescriptor.of(JAVA_SHORT, ADDRESS));
-    static final MethodHandle RESP_RU           = h("cosmos_response_request_charge", FunctionDescriptor.of(JAVA_DOUBLE, ADDRESS));
-    static final MethodHandle RESP_FREE         = h("cosmos_response_free",         FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle RT_BUILD         = h("cosmos_runtime_build", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle RT_FREE          = h("cosmos_runtime_free", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle CQ_CREATE        = h("cosmos_completion_queue_create", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle CQ_WAIT          = h("cosmos_completion_queue_wait", FunctionDescriptor.of(JAVA_LONG, ADDRESS, ADDRESS, JAVA_LONG, JAVA_INT));
+    static final MethodHandle CQ_FREE          = h("cosmos_completion_queue_free", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle CQ_FREE_COMPS    = h("cosmos_completion_queue_free_completions", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG));
+    static final MethodHandle ACCT_WITH_KEY    = h("cosmos_account_ref_with_master_key", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle ACCT_FREE        = h("cosmos_account_ref_free", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle DRV_GOC_BLK      = h("cosmos_driver_get_or_create_blocking", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle DRV_FREE         = h("cosmos_driver_free", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle RESOLVE_BLK      = h("cosmos_driver_resolve_container_blocking", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle CONTAINER_FREE   = h("cosmos_container_ref_free", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle PK_CREATE        = h("cosmos_partition_key_create", FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_LONG, ADDRESS));
+    static final MethodHandle PK_FREE          = h("cosmos_partition_key_free", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle SUBMIT_SINGLETON = h("cosmos_submit_singleton_operation", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS, JAVA_LONG, ADDRESS));
+    static final MethodHandle OP_HND_FREE      = h("cosmos_operation_handle_free", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle ERR_FREE         = h("cosmos_error_free", FunctionDescriptor.ofVoid(ADDRESS));
 
-    // Operation kind (cosmos_operation_kind_t) and outcome (cosmos_completion_outcome_t).
+    // Operation kind values (cosmos_CosmosOperationKind) and completion outcome values.
     static final int KIND_CREATE_ITEM = 19;
+    static final int KIND_READ_ITEM = 20;
+    static final int KIND_DELETE_ITEM = 23;
     static final int OUTCOME_OK = 0;
+
+    // Layout of cosmos_partition_key_component_t on LP64/LLP64.
+    static final GroupLayout PK_COMPONENT = MemoryLayout.structLayout(
+        JAVA_INT.withName("kind"),
+        MemoryLayout.paddingLayout(4),
+        ADDRESS.withName("string_value"),
+        JAVA_DOUBLE.withName("number_value"),
+        JAVA_BYTE.withName("bool_value"),
+        MemoryLayout.paddingLayout(7));
 
     // Layout of the flat cosmos_operation_request_t. Field order MUST match the
     // header; cbindgen emits the C struct in declaration order.
@@ -392,6 +501,8 @@ public final class CosmosSample {
         ADDRESS.withName("item_id"),
         ADDRESS.withName("resource_link"),
         ADDRESS.withName("partition_key"),
+        ADDRESS.withName("partition_key_components"),
+        JAVA_LONG.withName("partition_key_len"),
         ADDRESS.withName("feed_range"),
         ADDRESS.withName("body"),
         JAVA_LONG.withName("body_len"),
@@ -408,95 +519,210 @@ public final class CosmosSample {
         ADDRESS.withName("precondition_etag"),
         ADDRESS.withName("options"));
 
-    public static void main(String[] args) throws Throwable {
-        try (Arena arena = Arena.ofConfined()) {
-            // 1. Runtime + queue
-            MemorySegment rb = (MemorySegment) RT_BUILDER_NEW.invokeExact();
-            RT_BUILDER_UA.invokeExact(rb, cstr(arena, "java-sample"));
-            MemorySegment outRt = arena.allocate(ADDRESS);
-            RT_BUILDER_BUILD.invokeExact(rb, outRt, MemorySegment.NULL);
-            MemorySegment rt = outRt.get(ADDRESS, 0);
-            MemorySegment q  = (MemorySegment) CQ_CREATE.invokeExact(rt, MemorySegment.NULL);
+    // Layout of cosmos_completion_t. Pointers and intptr_t/uintptr_t are 8 bytes.
+    static final GroupLayout COMPLETION = MemoryLayout.structLayout(
+        JAVA_INT.withName("outcome"),
+        JAVA_INT.withName("status"),
+        JAVA_LONG.withName("user_data"),
+        JAVA_BYTE.withName("was_cancel_requested"),
+        MemoryLayout.paddingLayout(1),
+        JAVA_SHORT.withName("http_status_code"),
+        JAVA_INT.withName("sub_status"),
+        JAVA_DOUBLE.withName("request_charge"),
+        JAVA_LONG.withName("retry_after_ms"),
+        JAVA_BYTE.withName("is_from_wire"),
+        MemoryLayout.paddingLayout(7),
+        ADDRESS.withName("message"),
+        ADDRESS.withName("activity_id"),
+        ADDRESS.withName("session_token"),
+        ADDRESS.withName("etag"),
+        ADDRESS.withName("continuation"),
+        ADDRESS.withName("next_continuation"),
+        ADDRESS.withName("backtrace"),
+        ADDRESS.withName("headers"),
+        JAVA_LONG.withName("headers_len"),
+        ADDRESS.withName("body"),
+        JAVA_LONG.withName("body_len"),
+        ADDRESS.withName("diagnostics"),
+        ADDRESS.withName("driver"),
+        ADDRESS.withName("container"),
+        ADDRESS.withName("backing"));
 
-            // 2. Account -> driver -> container
-            MemorySegment outAcct = arena.allocate(ADDRESS);
-            ACCT_WITH_KEY.invokeExact(
-                cstr(arena, "https://localhost:8081/"),
-                cstr(arena, "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="),
-                outAcct, MemorySegment.NULL);
-            MemorySegment acct = outAcct.get(ADDRESS, 0);
-            MemorySegment outDrv = arena.allocate(ADDRESS);
-            DRV_GOC_BLK.invokeExact(rt, acct, MemorySegment.NULL, outDrv, MemorySegment.NULL);
-            MemorySegment drv = outDrv.get(ADDRESS, 0);
-            MemorySegment outColl = arena.allocate(ADDRESS);
-            RESOLVE_BLK.invokeExact(rt, drv, cstr(arena, "sample-db"), cstr(arena, "sample-coll"), outColl, MemorySegment.NULL);
-            MemorySegment coll = outColl.get(ADDRESS, 0);
+    static final long PK_KIND = PK_COMPONENT.byteOffset(MemoryLayout.PathElement.groupElement("kind"));
+    static final long PK_STRING = PK_COMPONENT.byteOffset(MemoryLayout.PathElement.groupElement("string_value"));
+    static final long REQ_KIND = REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("kind"));
+    static final long REQ_CONTAINER = REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("container"));
+    static final long REQ_ITEM_ID = REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("item_id"));
+    static final long REQ_PARTITION_KEY = REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("partition_key"));
+    static final long REQ_BODY = REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("body"));
+    static final long REQ_BODY_LEN = REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("body_len"));
+    static final long REQ_MAX_ITEM_COUNT = REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("max_item_count"));
+    static final long C_OUTCOME = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("outcome"));
+    static final long C_STATUS = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("status"));
+    static final long C_HTTP_STATUS = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("http_status_code"));
+    static final long C_SUB_STATUS = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("sub_status"));
+    static final long C_RU = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("request_charge"));
+    static final long C_MESSAGE = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("message"));
+    static final long C_BODY = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("body"));
+    static final long C_BODY_LEN = COMPLETION.byteOffset(MemoryLayout.PathElement.groupElement("body_len"));
 
-            // 3. Partition key
-            MemorySegment pkb = (MemorySegment) PKB_NEW.invokeExact();
-            PKB_ADD_S.invokeExact(pkb, cstr(arena, "tenant-42"));
-            MemorySegment outPk = arena.allocate(ADDRESS);
-            PKB_BUILD.invokeExact(pkb, outPk);
-            MemorySegment pk = outPk.get(ADDRESS, 0);
+    record Result(int status, int httpStatus, int subStatus, double requestCharge, byte[] body) {}
 
-            // 4. CREATE — host SDK serializes its own JSON (Jackson, Gson, ...).
-            byte[] body = "{\"id\":\"doc1\",\"pk\":\"tenant-42\",\"name\":\"hello\"}".getBytes(StandardCharsets.UTF_8);
+    static int packedHttp(int code) { return code >>> 16; }
+    static int packedSub(int code) { return code & 0xffff; }
+    static boolean hasSub(int code) { return packedSub(code) != 0; }
+    static String formatStatus(int code) {
+        if (code == 0) return "success";
+        return hasSub(code)
+            ? "http=" + packedHttp(code) + " sub=" + packedSub(code) + " raw=" + code
+            : "http=" + packedHttp(code) + " raw=" + code;
+    }
+
+    static MemorySegment outAddress(Arena arena) {
+        MemorySegment out = arena.allocate(ADDRESS);
+        out.set(ADDRESS, 0, MemorySegment.NULL);
+        return out;
+    }
+
+    static void checkStatus(int status, MemorySegment outErr, String what) throws Throwable {
+        MemorySegment err = outErr.equals(MemorySegment.NULL) ? MemorySegment.NULL : outErr.get(ADDRESS, 0);
+        try {
+            if (status != 0) {
+                throw new RuntimeException(what + " failed: " + formatStatus(status));
+            }
+        } finally {
+            if (!err.equals(MemorySegment.NULL)) {
+                ERR_FREE.invokeExact(err);
+            }
+        }
+    }
+
+    static MemorySegment itemRequest(Arena arena, int kind, MemorySegment coll, MemorySegment pk, MemorySegment itemId, byte[] body) {
+        MemorySegment req = arena.allocate(REQUEST);
+        req.set(JAVA_INT, REQ_KIND, kind);
+        req.set(ADDRESS, REQ_CONTAINER, coll);
+        req.set(ADDRESS, REQ_PARTITION_KEY, pk);
+        if (itemId != null && !itemId.equals(MemorySegment.NULL)) {
+            req.set(ADDRESS, REQ_ITEM_ID, itemId);
+        }
+        if (body != null && body.length > 0) {
             MemorySegment bodySeg = arena.allocate(body.length);
             MemorySegment.copy(body, 0, bodySeg, JAVA_BYTE, 0, body.length);
+            req.set(ADDRESS, REQ_BODY, bodySeg);
+            req.set(JAVA_LONG, REQ_BODY_LEN, (long) body.length);
+        }
+        req.set(JAVA_INT, REQ_MAX_ITEM_COUNT, -1);
+        return req;
+    }
 
-            // Fill the flat request. Only the fields CREATE needs are set; the
-            // rest stay zero/NULL (max_item_count = -1 means "unset"). The
-            // request and every segment it points at are borrowed only for the
-            // submit call — the confined arena keeps them alive across it.
-            MemorySegment req = arena.allocate(REQUEST);
-            req.set(JAVA_INT, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("kind")), KIND_CREATE_ITEM);
-            req.set(ADDRESS, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("container")), coll);
-            req.set(ADDRESS, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("partition_key")), pk);
-            req.set(ADDRESS, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("item_id")), cstr(arena, "doc1"));
-            req.set(ADDRESS, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("body")), bodySeg);
-            req.set(JAVA_LONG, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("body_len")), (long) body.length);
-            req.set(JAVA_INT, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("max_item_count")), -1);
+    static Result submit(Arena arena, MemorySegment drv, MemorySegment q, MemorySegment req, String name) throws Throwable {
+        MemorySegment preErr = arena.allocate(JAVA_INT);
+        MemorySegment hdl = (MemorySegment) SUBMIT_SINGLETON.invokeExact(drv, req, q, 0L, preErr);
+        if (hdl.equals(MemorySegment.NULL)) {
+            throw new RuntimeException("submit pre-flight failed: " + formatStatus(preErr.get(JAVA_INT, 0)));
+        }
 
-            MemorySegment preErr = arena.allocate(JAVA_INT);
-            MemorySegment hdl = (MemorySegment) SUBMIT_SINGLETON.invokeExact(drv, req, q, MemorySegment.NULL, preErr);
-            if (hdl.equals(MemorySegment.NULL)) {
-                throw new RuntimeException("submit pre-flight failed: " + preErr.get(JAVA_INT, 0));
-            }
-            MemorySegment comp = (MemorySegment) CQ_WAIT.invokeExact(q, 30_000);
+        MemorySegment comp = arena.allocate(COMPLETION);
+        long n;
+        try {
+            n = (long) CQ_WAIT.invokeExact(q, comp, 1L, 30_000);
+        } finally {
             OP_HND_FREE.invokeExact(hdl);
+        }
+        if (n == 0) {
+            throw new RuntimeException("queue drained or shut down before a completion arrived");
+        }
 
-            int outcome = (int) COMP_OUTCOME.invokeExact(comp);
+        try {
+            int outcome = comp.get(JAVA_INT, C_OUTCOME);
+            int status = comp.get(JAVA_INT, C_STATUS);
+            int http = Short.toUnsignedInt(comp.get(JAVA_SHORT, C_HTTP_STATUS));
+            int sub = comp.get(JAVA_INT, C_SUB_STATUS);
+            double ru = comp.get(JAVA_DOUBLE, C_RU);
+            MemorySegment msgPtr = comp.get(ADDRESS, C_MESSAGE);
+            String message = msgPtr.equals(MemorySegment.NULL) ? "" : msgPtr.reinterpret(Long.MAX_VALUE).getUtf8String(0);
+            MemorySegment bodyPtr = comp.get(ADDRESS, C_BODY);
+            long bodyLen = comp.get(JAVA_LONG, C_BODY_LEN);
+            byte[] body = bodyPtr.equals(MemorySegment.NULL) || bodyLen == 0
+                ? new byte[0]
+                : bodyPtr.reinterpret(bodyLen).toArray(JAVA_BYTE);
+
             if (outcome != OUTCOME_OK) {
-                MemorySegment err = (MemorySegment) COMP_TAKE_E.invokeExact(comp);
-                String detail = "";
-                if (!err.equals(MemorySegment.NULL)) {
-                    MemorySegment msg = (MemorySegment) ERR_MESSAGE.invokeExact(err);
-                    if (!msg.equals(MemorySegment.NULL)) {
-                        detail = msg.reinterpret(Long.MAX_VALUE).getUtf8String(0);
-                    }
-                    ERR_FREE.invokeExact(err);
-                }
-                int status = (int) COMP_STATUS.invokeExact(comp);
-                COMP_FREE.invokeExact(comp);
-                throw new RuntimeException("CREATE failed (status=" + status + "): " + detail);
+                throw new RuntimeException(name + " failed (" + formatStatus(status) + "): " + message);
             }
-            MemorySegment resp = (MemorySegment) COMP_TAKE_R.invokeExact(comp);
-            System.out.printf("CREATE status=%d ru=%.2f%n",
-                (short) RESP_STATUS.invokeExact(resp),
-                (double) RESP_RU.invokeExact(resp));
-            RESP_FREE.invokeExact(resp);
-            COMP_FREE.invokeExact(comp);
+            return new Result(status, http, sub, ru, body);
+        } finally {
+            CQ_FREE_COMPS.invokeExact(comp, n);
+        }
+    }
 
-            // 5/6. READ + DELETE — same shape (new request with kind = READ/DELETE
-            // and no body); omitted for brevity.
+    public static void main(String[] args) throws Throwable {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment rt = MemorySegment.NULL;
+            MemorySegment q = MemorySegment.NULL;
+            MemorySegment acct = MemorySegment.NULL;
+            MemorySegment drv = MemorySegment.NULL;
+            MemorySegment coll = MemorySegment.NULL;
+            MemorySegment pk = MemorySegment.NULL;
+            try {
+                // 1. Runtime + queue. Pass NULL for driver defaults. To add a
+                //    user-agent suffix, call cosmos_runtime_options_default(), set
+                //    .user_agent_suffix, and pass the options pointer to build.
+                MemorySegment outRt = outAddress(arena);
+                MemorySegment outErr = outAddress(arena);
+                checkStatus((int) RT_BUILD.invokeExact(MemorySegment.NULL, outRt, outErr), outErr, "runtime build");
+                rt = outRt.get(ADDRESS, 0);
+                q = (MemorySegment) CQ_CREATE.invokeExact(rt, MemorySegment.NULL);
 
-            // 7. Tear-down (LIFO)
-            PK_FREE.invokeExact(pk);
-            CONTAINER_FREE.invokeExact(coll);
-            DRV_FREE.invokeExact(drv);
-            ACCT_FREE.invokeExact(acct);
-            CQ_FREE.invokeExact(q);
-            RT_FREE.invokeExact(rt);
+                // 2. Account -> driver -> container
+                MemorySegment outAcct = outAddress(arena);
+                outErr = outAddress(arena);
+                checkStatus((int) ACCT_WITH_KEY.invokeExact(
+                    cstr(arena, "https://localhost:8081/"),
+                    cstr(arena, "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="),
+                    outAcct, outErr), outErr, "account ref");
+                acct = outAcct.get(ADDRESS, 0);
+
+                MemorySegment outDrv = outAddress(arena);
+                outErr = outAddress(arena);
+                checkStatus((int) DRV_GOC_BLK.invokeExact(rt, acct, MemorySegment.NULL, outDrv, outErr), outErr, "driver create");
+                drv = outDrv.get(ADDRESS, 0);
+
+                MemorySegment outColl = outAddress(arena);
+                outErr = outAddress(arena);
+                checkStatus((int) RESOLVE_BLK.invokeExact(rt, drv, cstr(arena, "sample-db"), cstr(arena, "sample-coll"), outColl, outErr), outErr, "resolve container");
+                coll = outColl.get(ADDRESS, 0);
+
+                // 3. Partition key
+                MemorySegment component = arena.allocate(PK_COMPONENT);
+                component.set(JAVA_INT, PK_KIND, 0);
+                component.set(ADDRESS, PK_STRING, cstr(arena, "tenant-42"));
+                MemorySegment outPk = outAddress(arena);
+                checkStatus((int) PK_CREATE.invokeExact(component, 1L, outPk), MemorySegment.NULL, "partition key create");
+                pk = outPk.get(ADDRESS, 0);
+
+                byte[] body = "{\"id\":\"doc1\",\"pk\":\"tenant-42\",\"name\":\"hello\"}".getBytes(StandardCharsets.UTF_8);
+
+                // 4. CREATE — host SDK serializes its own JSON (Jackson, Gson, ...).
+                Result create = submit(arena, drv, q, itemRequest(arena, KIND_CREATE_ITEM, coll, pk, MemorySegment.NULL, body), "CREATE");
+                System.out.printf("CREATE status=%d ru=%.2f%n", create.httpStatus(), create.requestCharge());
+
+                // 5. READ.
+                Result read = submit(arena, drv, q, itemRequest(arena, KIND_READ_ITEM, coll, pk, cstr(arena, "doc1"), null), "READ");
+                System.out.printf("READ status=%d body=%s%n", read.httpStatus(), new String(read.body(), StandardCharsets.UTF_8));
+
+                // 6. DELETE.
+                Result delete = submit(arena, drv, q, itemRequest(arena, KIND_DELETE_ITEM, coll, pk, cstr(arena, "doc1"), null), "DELETE");
+                System.out.printf("DELETE status=%d%n", delete.httpStatus());
+            } finally {
+                // 7. Tear-down (LIFO)
+                if (!pk.equals(MemorySegment.NULL)) PK_FREE.invokeExact(pk);
+                if (!coll.equals(MemorySegment.NULL)) CONTAINER_FREE.invokeExact(coll);
+                if (!drv.equals(MemorySegment.NULL)) DRV_FREE.invokeExact(drv);
+                if (!acct.equals(MemorySegment.NULL)) ACCT_FREE.invokeExact(acct);
+                if (!q.equals(MemorySegment.NULL)) CQ_FREE.invokeExact(q);
+                if (!rt.equals(MemorySegment.NULL)) RT_FREE.invokeExact(rt);
+            }
         }
     }
 }
@@ -529,38 +755,94 @@ type Doc struct {
     Name string `json:"name"`
 }
 
+const (
+    kindCreateItem = 19
+    kindReadItem   = 20
+    kindDeleteItem = 23
+    outcomeOK      = 0
+)
+
+type result struct {
+    status        C.cosmos_status_code_t
+    httpStatus    uint16
+    subStatus     int32
+    requestCharge float64
+    body          []byte
+}
+
+func packedHTTP(code C.cosmos_status_code_t) uint16 {
+    return uint16(uint32(int32(code)) >> 16)
+}
+
+func packedSub(code C.cosmos_status_code_t) uint16 {
+    return uint16(uint32(int32(code)) & 0xffff)
+}
+
+func hasSub(code C.cosmos_status_code_t) bool {
+    return packedSub(code) != 0
+}
+
+func formatStatus(code C.cosmos_status_code_t) string {
+    if code == 0 {
+        return "success"
+    }
+    if hasSub(code) {
+        return fmt.Sprintf("http=%d sub=%d raw=%d", packedHTTP(code), packedSub(code), int32(code))
+    }
+    return fmt.Sprintf("http=%d raw=%d", packedHTTP(code), int32(code))
+}
+
+func checkStatus(rc C.cosmos_status_code_t, err *C.cosmos_error_t, what string) {
+    if rc != 0 {
+        if err != nil {
+            C.cosmos_error_free(err)
+        }
+        log.Fatalf("%s failed: %s", what, formatStatus(rc))
+    }
+    if err != nil {
+        C.cosmos_error_free(err)
+    }
+}
+
 // submit issues one request through the singleton entry point and blocks for
-// its single completion. The caller owns the returned completion and must free
-// it with C.cosmos_completion_free.
+// its single completion. The drained completion owns borrowed allocations until
+// C.cosmos_completion_queue_free_completions releases them.
 //
 // The request struct (and every pointer it carries) is only borrowed for the
-// duration of the submit call, so all the C strings allocated here are freed
-// on return via defer — no ownership crosses the boundary.
-func submit(drv *C.cosmos_driver_t, q *C.cosmos_cq_t, req *C.cosmos_operation_request_t) (*C.cosmos_completion_t, error) {
-    var pre C.cosmos_error_code_t
-    h := C.cosmos_submit_singleton_operation(drv, req, q, nil, &pre)
+// duration of the submit call, so all the C strings allocated by callers can be
+// freed after submit returns — no ownership crosses the boundary.
+func submit(drv *C.cosmos_driver_t, q *C.cosmos_completion_queue_t, req *C.cosmos_operation_request_t) (result, error) {
+    var pre C.cosmos_status_code_t
+    h := C.cosmos_submit_singleton_operation(drv, req, q, C.intptr_t(0), &pre)
     if h == nil {
-        return nil, fmt.Errorf("submit pre-flight failed: %d", int32(pre))
+        return result{}, fmt.Errorf("submit pre-flight failed: %s", formatStatus(pre))
     }
-    // The operation handle is the in-flight identity; we don't need it for a
-    // blocking call, so release it as soon as the completion arrives.
-    defer C.cosmos_operation_handle_free(h)
 
-    comp := C.cosmos_cq_wait(q, 30000)
-    if comp == nil {
-        return nil, fmt.Errorf("queue drained or shut down before a completion arrived")
+    var comp C.cosmos_completion_t
+    n := C.cosmos_completion_queue_wait(q, &comp, C.uintptr_t(1), C.uint32_t(30000))
+    C.cosmos_operation_handle_free(h)
+    if n == 0 {
+        return result{}, fmt.Errorf("queue drained or shut down before a completion arrived")
     }
-    if outcome := C.cosmos_completion_outcome(comp); outcome != C.COSMOS_COMPLETION_OUTCOME_OK {
-        // Pull the rich error off the completion, surface it, and free both.
-        defer C.cosmos_completion_free(comp)
-        if err := C.cosmos_completion_take_error(comp); err != nil {
-            defer C.cosmos_error_free(err)
-            msg := C.GoString(C.cosmos_error_message(err))
-            return nil, fmt.Errorf("operation failed (status=%d): %s", int32(C.cosmos_completion_status(comp)), msg)
+    defer C.cosmos_completion_queue_free_completions(&comp, n)
+
+    r := result{
+        status:        C.cosmos_status_code_t(comp.status),
+        httpStatus:    uint16(comp.http_status_code),
+        subStatus:     int32(comp.sub_status),
+        requestCharge: float64(comp.request_charge),
+    }
+    if comp.body != nil && comp.body_len > 0 {
+        r.body = C.GoBytes(unsafe.Pointer(comp.body), C.int(comp.body_len))
+    }
+    if comp.outcome != outcomeOK {
+        message := ""
+        if comp.message != nil {
+            message = C.GoString(comp.message)
         }
-        return nil, fmt.Errorf("operation failed (status=%d)", int32(C.cosmos_completion_status(comp)))
+        return result{}, fmt.Errorf("operation failed (%s): %s", formatStatus(r.status), message)
     }
-    return comp, nil
+    return r, nil
 }
 
 // itemRequest builds a flat request for an item operation. partition_key,
@@ -583,57 +865,50 @@ func itemRequest(kind C.int32_t, container *C.cosmos_container_ref_t, pk *C.cosm
 }
 
 func main() {
-    // 1. Runtime + queue. Each owned handle is freed in reverse order via defer
-    //    immediately after it is created, so an early return never leaks.
-    rb := C.cosmos_runtime_builder_new()
-    ua := C.CString("go-sample")
-    C.cosmos_runtime_builder_with_user_agent_suffix(rb, ua)
-    C.free(unsafe.Pointer(ua))
+    // 1. Runtime + queue. Pass nil for driver defaults. To add a user-agent
+    //    suffix, call cosmos_runtime_options_default(), set .user_agent_suffix,
+    //    and pass &options to cosmos_runtime_build.
     var rt *C.cosmos_runtime_t
-    if rc := C.cosmos_runtime_builder_build(rb, &rt, nil); rc != C.COSMOS_ERROR_CODE_SUCCESS {
-        log.Fatalf("runtime build failed: %d", int32(rc))
-    }
+    var err *C.cosmos_error_t
+    checkStatus(C.cosmos_runtime_build(nil, &rt, &err), err, "runtime build")
     defer C.cosmos_runtime_free(rt)
-    q := C.cosmos_cq_create(rt, nil)
-    defer C.cosmos_cq_free(q)
+    q := C.cosmos_completion_queue_create(rt, nil)
+    defer C.cosmos_completion_queue_free(q)
 
     // 2. Account -> driver -> container.
     endp := C.CString("https://localhost:8081/")
     key := C.CString("C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==")
     var acct *C.cosmos_account_ref_t
-    rc := C.cosmos_account_ref_with_master_key(endp, key, &acct, nil)
+    err = nil
+    rc := C.cosmos_account_ref_with_master_key(endp, key, &acct, &err)
     C.free(unsafe.Pointer(endp))
     C.free(unsafe.Pointer(key))
-    if rc != C.COSMOS_ERROR_CODE_SUCCESS {
-        log.Fatalf("account ref failed: %d", int32(rc))
-    }
+    checkStatus(rc, err, "account ref")
     defer C.cosmos_account_ref_free(acct)
 
     var drv *C.cosmos_driver_t
-    if rc := C.cosmos_driver_get_or_create_blocking(rt, acct, nil, &drv, nil); rc != C.COSMOS_ERROR_CODE_SUCCESS {
-        log.Fatalf("driver create failed: %d", int32(rc))
-    }
+    err = nil
+    checkStatus(C.cosmos_driver_get_or_create_blocking(rt, acct, nil, &drv, &err), err, "driver create")
     defer C.cosmos_driver_free(drv)
 
     db := C.CString("sample-db")
-    coll := C.CString("sample-coll")
+    collName := C.CString("sample-coll")
     var container *C.cosmos_container_ref_t
-    rc = C.cosmos_driver_resolve_container_blocking(rt, drv, db, coll, &container, nil)
+    err = nil
+    rc = C.cosmos_driver_resolve_container_blocking(rt, drv, db, collName, &container, &err)
     C.free(unsafe.Pointer(db))
-    C.free(unsafe.Pointer(coll))
-    if rc != C.COSMOS_ERROR_CODE_SUCCESS {
-        log.Fatalf("resolve container failed: %d", int32(rc))
-    }
+    C.free(unsafe.Pointer(collName))
+    checkStatus(rc, err, "resolve container")
     defer C.cosmos_container_ref_free(container)
 
     // 3. Partition key.
-    pkb := C.cosmos_partition_key_builder_new()
     pkVal := C.CString("tenant-42")
-    C.cosmos_partition_key_builder_add_string(pkb, pkVal)
-    C.free(unsafe.Pointer(pkVal))
+    component := C.cosmos_partition_key_component_t{kind: 0, string_value: pkVal}
     var pk *C.cosmos_partition_key_t
-    if rc := C.cosmos_partition_key_builder_build(pkb, &pk); rc != C.COSMOS_ERROR_CODE_SUCCESS {
-        log.Fatalf("partition key build failed: %d", int32(rc))
+    rc = C.cosmos_partition_key_create(&component, C.uintptr_t(1), &pk)
+    C.free(unsafe.Pointer(pkVal))
+    if rc != 0 {
+        log.Fatalf("partition key create failed: %s", formatStatus(rc))
     }
     defer C.cosmos_partition_key_free(pk)
 
@@ -642,41 +917,28 @@ func main() {
 
     // 4. CREATE.
     body, _ := json.Marshal(Doc{ID: "doc1", Pk: "tenant-42", Name: "hello"})
-    createReq := itemRequest(C.COSMOS_OPERATION_KIND_CREATE_ITEM, container, pk, docID, body)
-    comp, err := submit(drv, q, &createReq)
-    if err != nil {
-        log.Fatalf("CREATE: %v", err)
+    createReq := itemRequest(C.int32_t(kindCreateItem), container, pk, nil, body)
+    create, errGo := submit(drv, q, &createReq)
+    if errGo != nil {
+        log.Fatalf("CREATE: %v", errGo)
     }
-    resp := C.cosmos_completion_take_response(comp)
-    fmt.Printf("CREATE status=%d ru=%.2f\n", C.cosmos_response_status_code(resp), C.cosmos_response_request_charge(resp))
-    C.cosmos_response_free(resp)
-    C.cosmos_completion_free(comp)
+    fmt.Printf("CREATE status=%d ru=%.2f\n", create.httpStatus, create.requestCharge)
 
     // 5. READ.
-    readReq := itemRequest(C.COSMOS_OPERATION_KIND_READ_ITEM, container, pk, docID, nil)
-    comp, err = submit(drv, q, &readReq)
-    if err != nil {
-        log.Fatalf("READ: %v", err)
+    readReq := itemRequest(C.int32_t(kindReadItem), container, pk, docID, nil)
+    read, errGo := submit(drv, q, &readReq)
+    if errGo != nil {
+        log.Fatalf("READ: %v", errGo)
     }
-    resp = C.cosmos_completion_take_response(comp)
-    var dataPtr *C.uint8_t
-    var dataLen C.uintptr_t
-    C.cosmos_response_body(resp, &dataPtr, &dataLen)
-    read := C.GoBytes(unsafe.Pointer(dataPtr), C.int(dataLen))
-    fmt.Printf("READ status=%d body=%s\n", C.cosmos_response_status_code(resp), read)
-    C.cosmos_response_free(resp)
-    C.cosmos_completion_free(comp)
+    fmt.Printf("READ status=%d body=%s\n", read.httpStatus, read.body)
 
     // 6. DELETE.
-    deleteReq := itemRequest(C.COSMOS_OPERATION_KIND_DELETE_ITEM, container, pk, docID, nil)
-    comp, err = submit(drv, q, &deleteReq)
-    if err != nil {
-        log.Fatalf("DELETE: %v", err)
+    deleteReq := itemRequest(C.int32_t(kindDeleteItem), container, pk, docID, nil)
+    deleteResult, errGo := submit(drv, q, &deleteReq)
+    if errGo != nil {
+        log.Fatalf("DELETE: %v", errGo)
     }
-    resp = C.cosmos_completion_take_response(comp)
-    fmt.Printf("DELETE status=%d\n", C.cosmos_response_status_code(resp))
-    C.cosmos_response_free(resp)
-    C.cosmos_completion_free(comp)
+    fmt.Printf("DELETE status=%d\n", deleteResult.httpStatus)
 
     // All owned handles are released by the deferred frees above, in reverse
     // order of creation.
@@ -704,15 +966,46 @@ def _decl(name, argtypes, restype):
 
 void_p = ctypes.c_void_p
 size_t = ctypes.c_size_t
-u8_p   = ctypes.POINTER(ctypes.c_uint8)
+intptr_t = ctypes.c_ssize_t
+u8_p = ctypes.POINTER(ctypes.c_uint8)
 c_char_p = ctypes.c_char_p
 
-# Operation kinds (cosmos_operation_kind_t) and outcome (cosmos_completion_outcome_t).
+# Operation kind values (cosmos_CosmosOperationKind) and completion outcome values.
 KIND_CREATE_ITEM = 19
 KIND_READ_ITEM   = 20
 KIND_DELETE_ITEM = 23
 OUTCOME_OK = 0
 ERROR_CODE_SUCCESS = 0
+
+
+def packed_http(code: int) -> int:
+    return ctypes.c_uint32(code).value >> 16
+
+
+def packed_sub(code: int) -> int:
+    return ctypes.c_uint32(code).value & 0xffff
+
+
+def has_sub(code: int) -> bool:
+    return packed_sub(code) != 0
+
+
+def format_status(code: int) -> str:
+    if code == 0:
+        return "success"
+    if has_sub(code):
+        return f"http={packed_http(code)} sub={packed_sub(code)} raw={code}"
+    return f"http={packed_http(code)} raw={code}"
+
+
+class CosmosPartitionKeyComponent(ctypes.Structure):
+    _fields_ = [
+        ("kind", ctypes.c_int32),
+        ("string_value", c_char_p),
+        ("number_value", ctypes.c_double),
+        ("bool_value", ctypes.c_uint8),
+    ]
+
 
 # Flat #[repr(C)] request struct. Only the fields used by item operations are
 # populated; everything else stays NULL / sentinel.
@@ -725,6 +1018,8 @@ class CosmosOperationRequest(ctypes.Structure):
         ("item_id", c_char_p),
         ("resource_link", c_char_p),
         ("partition_key", void_p),
+        ("partition_key_components", ctypes.POINTER(CosmosPartitionKeyComponent)),
+        ("partition_key_len", size_t),
         ("feed_range", void_p),
         ("body", u8_p),
         ("body_len", size_t),
@@ -740,78 +1035,106 @@ class CosmosOperationRequest(ctypes.Structure):
         ("options", void_p),
     ]
 
-req_p = ctypes.POINTER(CosmosOperationRequest)
 
-_runtime_builder_new   = _decl("cosmos_runtime_builder_new", [], void_p)
-_runtime_builder_ua    = _decl("cosmos_runtime_builder_with_user_agent_suffix", [void_p, c_char_p], ctypes.c_int32)
-_runtime_builder_build = _decl("cosmos_runtime_builder_build", [void_p, ctypes.POINTER(void_p), ctypes.POINTER(void_p)], ctypes.c_int32)
+# A drained completion. All pointers are borrowed until free_completions.
+class CosmosCompletion(ctypes.Structure):
+    _fields_ = [
+        ("outcome", ctypes.c_int32),
+        ("status", ctypes.c_int32),
+        ("user_data", intptr_t),
+        ("was_cancel_requested", ctypes.c_uint8),
+        ("http_status_code", ctypes.c_uint16),
+        ("sub_status", ctypes.c_int32),
+        ("request_charge", ctypes.c_double),
+        ("retry_after_ms", ctypes.c_int64),
+        ("is_from_wire", ctypes.c_uint8),
+        ("message", c_char_p),
+        ("activity_id", c_char_p),
+        ("session_token", c_char_p),
+        ("etag", c_char_p),
+        ("continuation", c_char_p),
+        ("next_continuation", c_char_p),
+        ("backtrace", c_char_p),
+        ("headers", void_p),
+        ("headers_len", size_t),
+        ("body", u8_p),
+        ("body_len", size_t),
+        ("diagnostics", void_p),
+        ("driver", void_p),
+        ("container", void_p),
+        ("backing", void_p),
+    ]
+
+
+req_p = ctypes.POINTER(CosmosOperationRequest)
+comp_p = ctypes.POINTER(CosmosCompletion)
+component_p = ctypes.POINTER(CosmosPartitionKeyComponent)
+
+_runtime_build         = _decl("cosmos_runtime_build", [void_p, ctypes.POINTER(void_p), ctypes.POINTER(void_p)], ctypes.c_int32)
 _runtime_free          = _decl("cosmos_runtime_free", [void_p], None)
-_cq_create             = _decl("cosmos_cq_create", [void_p, void_p], void_p)
-_cq_wait               = _decl("cosmos_cq_wait", [void_p, ctypes.c_uint32], void_p)
-_cq_free               = _decl("cosmos_cq_free", [void_p], None)
+_cq_create             = _decl("cosmos_completion_queue_create", [void_p, void_p], void_p)
+_cq_wait               = _decl("cosmos_completion_queue_wait", [void_p, comp_p, size_t, ctypes.c_uint32], size_t)
+_cq_free               = _decl("cosmos_completion_queue_free", [void_p], None)
+_cq_free_completions   = _decl("cosmos_completion_queue_free_completions", [comp_p, size_t], None)
 _acct_with_key         = _decl("cosmos_account_ref_with_master_key", [c_char_p, c_char_p, ctypes.POINTER(void_p), ctypes.POINTER(void_p)], ctypes.c_int32)
 _acct_free             = _decl("cosmos_account_ref_free", [void_p], None)
 _driver_goc_blk        = _decl("cosmos_driver_get_or_create_blocking", [void_p, void_p, void_p, ctypes.POINTER(void_p), ctypes.POINTER(void_p)], ctypes.c_int32)
 _driver_free           = _decl("cosmos_driver_free", [void_p], None)
 _resolve_container_blk = _decl("cosmos_driver_resolve_container_blocking", [void_p, void_p, c_char_p, c_char_p, ctypes.POINTER(void_p), ctypes.POINTER(void_p)], ctypes.c_int32)
 _container_free        = _decl("cosmos_container_ref_free", [void_p], None)
-_pkb_new               = _decl("cosmos_partition_key_builder_new", [], void_p)
-_pkb_add_s             = _decl("cosmos_partition_key_builder_add_string", [void_p, c_char_p], ctypes.c_int32)
-_pkb_build             = _decl("cosmos_partition_key_builder_build", [void_p, ctypes.POINTER(void_p)], ctypes.c_int32)
+_pk_create             = _decl("cosmos_partition_key_create", [component_p, size_t, ctypes.POINTER(void_p)], ctypes.c_int32)
 _pk_free               = _decl("cosmos_partition_key_free", [void_p], None)
-_submit_singleton      = _decl("cosmos_submit_singleton_operation", [void_p, req_p, void_p, void_p, ctypes.POINTER(ctypes.c_int32)], void_p)
+_submit_singleton      = _decl("cosmos_submit_singleton_operation", [void_p, req_p, void_p, intptr_t, ctypes.POINTER(ctypes.c_int32)], void_p)
 _op_hnd_free           = _decl("cosmos_operation_handle_free", [void_p], None)
-_comp_outcome          = _decl("cosmos_completion_outcome", [void_p], ctypes.c_int32)
-_comp_status           = _decl("cosmos_completion_status", [void_p], ctypes.c_int32)
-_comp_take_resp        = _decl("cosmos_completion_take_response", [void_p], void_p)
-_comp_take_error       = _decl("cosmos_completion_take_error", [void_p], void_p)
-_comp_free             = _decl("cosmos_completion_free", [void_p], None)
-_error_message         = _decl("cosmos_error_message", [void_p], c_char_p)
 _error_free            = _decl("cosmos_error_free", [void_p], None)
-_resp_status           = _decl("cosmos_response_status_code", [void_p], ctypes.c_uint16)
-_resp_ru               = _decl("cosmos_response_request_charge", [void_p], ctypes.c_double)
-_resp_body             = _decl("cosmos_response_body", [void_p, ctypes.POINTER(u8_p), ctypes.POINTER(size_t)], ctypes.c_int32)
-_resp_free             = _decl("cosmos_response_free", [void_p], None)
+
+
+def check_status(code: int, err: void_p, what: str) -> None:
+    try:
+        if code != ERROR_CODE_SUCCESS:
+            raise RuntimeError(f"{what} failed: {format_status(code)}")
+    finally:
+        if err:
+            _error_free(err)
 
 
 def submit(drv, q, req):
     """Issue one request and block for its single completion.
 
-    Returns the owned completion pointer on success; the caller must free it
-    with _comp_free. Raises on pre-flight rejection or a non-OK outcome,
-    freeing any completion / error it allocated so nothing leaks on the error
-    path. The request struct is only borrowed for the call, so the caller's
-    buffers stay valid here and can be released afterward.
+    Returns copied completion data on success. The request struct is only
+    borrowed for the call, so the caller's buffers stay valid here and can be
+    released afterward.
     """
     pre = ctypes.c_int32(0)
-    h = _submit_singleton(drv, ctypes.byref(req), q, None, ctypes.byref(pre))
+    h = _submit_singleton(drv, ctypes.byref(req), q, intptr_t(0), ctypes.byref(pre))
     if not h:
-        raise RuntimeError(f"submit pre-flight failed: {pre.value}")
+        raise RuntimeError(f"submit pre-flight failed: {format_status(pre.value)}")
+    comp = CosmosCompletion()
+    n = 0
     try:
-        comp = _cq_wait(q, 30_000)
+        n = _cq_wait(q, ctypes.byref(comp), 1, 30_000)
     finally:
-        # The op handle is the in-flight identity; release it once the
-        # completion has been delivered (or the wait gave up).
         _op_hnd_free(h)
-    if not comp:
+    if n == 0:
         raise RuntimeError("queue drained or shut down before a completion arrived")
-    if _comp_outcome(comp) != OUTCOME_OK:
-        try:
-            err = _comp_take_error(comp)
-            if err:
-                try:
-                    msg = _error_message(err)
-                    detail = msg.decode("utf-8") if msg else ""
-                finally:
-                    _error_free(err)
-                raise RuntimeError(f"operation failed (status={_comp_status(comp)}): {detail}")
-            raise RuntimeError(f"operation failed (status={_comp_status(comp)})")
-        finally:
-            _comp_free(comp)
-    return comp
+
+    try:
+        message = comp.message.decode("utf-8") if comp.message else ""
+        body = ctypes.string_at(comp.body, comp.body_len) if comp.body and comp.body_len else b""
+        if comp.outcome != OUTCOME_OK:
+            raise RuntimeError(f"operation failed ({format_status(comp.status)}): {message}")
+        return {
+            "status": comp.status,
+            "http_status": comp.http_status_code,
+            "sub_status": comp.sub_status,
+            "request_charge": comp.request_charge,
+            "body": body,
+        }
+    finally:
+        _cq_free_completions(ctypes.byref(comp), n)
 
 
-def item_request(kind, container, pk, item_id, body=b""):
+def item_request(kind, container, pk, item_id=None, body=b""):
     """Build a flat request for an item operation. `container`, `pk`, `item_id`,
     and `body` are borrowed by the submit call; the caller keeps ownership."""
     req = CosmosOperationRequest()
@@ -836,62 +1159,41 @@ def main() -> int:
     container = void_p()
     pk = void_p()
     try:
-        # 1. Runtime + queue.
-        rb = _runtime_builder_new()
-        _runtime_builder_ua(rb, b"python-sample")
-        if _runtime_builder_build(rb, ctypes.byref(rt), None) != ERROR_CODE_SUCCESS:
-            raise RuntimeError("runtime build failed")
+        # 1. Runtime + queue. Pass None for driver defaults. To add a user-agent
+        #    suffix, call cosmos_runtime_options_default(), set .user_agent_suffix,
+        #    and pass byref(options) to cosmos_runtime_build.
+        err = void_p()
+        check_status(_runtime_build(None, ctypes.byref(rt), ctypes.byref(err)), err, "runtime build")
         q = _cq_create(rt, None)
 
         # 2. Account -> driver -> container.
-        if _acct_with_key(
+        err = void_p()
+        check_status(_acct_with_key(
             b"https://localhost:8081/",
             b"C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
-            ctypes.byref(acct), None,
-        ) != ERROR_CODE_SUCCESS:
-            raise RuntimeError("account ref failed")
-        if _driver_goc_blk(rt, acct, None, ctypes.byref(drv), None) != ERROR_CODE_SUCCESS:
-            raise RuntimeError("driver create failed")
-        if _resolve_container_blk(rt, drv, b"sample-db", b"sample-coll", ctypes.byref(container), None) != ERROR_CODE_SUCCESS:
-            raise RuntimeError("resolve container failed")
+            ctypes.byref(acct), ctypes.byref(err),
+        ), err, "account ref")
+        err = void_p()
+        check_status(_driver_goc_blk(rt, acct, None, ctypes.byref(drv), ctypes.byref(err)), err, "driver create")
+        err = void_p()
+        check_status(_resolve_container_blk(rt, drv, b"sample-db", b"sample-coll", ctypes.byref(container), ctypes.byref(err)), err, "resolve container")
 
         # 3. Partition key.
-        pkb = _pkb_new()
-        _pkb_add_s(pkb, b"tenant-42")
-        if _pkb_build(pkb, ctypes.byref(pk)) != ERROR_CODE_SUCCESS:
-            raise RuntimeError("partition key build failed")
+        component = CosmosPartitionKeyComponent(kind=0, string_value=b"tenant-42")
+        check_status(_pk_create(ctypes.byref(component), 1, ctypes.byref(pk)), None, "partition key create")
 
         # 4. CREATE.
         body = json.dumps({"id": "doc1", "pk": "tenant-42", "name": "hello"}).encode("utf-8")
-        comp = submit(drv, q, item_request(KIND_CREATE_ITEM, container, pk, b"doc1", body))
-        try:
-            resp = _comp_take_resp(comp)
-            print(f"CREATE status={_resp_status(resp)} ru={_resp_ru(resp):.2f}")
-            _resp_free(resp)
-        finally:
-            _comp_free(comp)
+        create = submit(drv, q, item_request(KIND_CREATE_ITEM, container, pk, body=body))
+        print(f"CREATE status={create['http_status']} ru={create['request_charge']:.2f}")
 
         # 5. READ.
-        comp = submit(drv, q, item_request(KIND_READ_ITEM, container, pk, b"doc1"))
-        try:
-            resp = _comp_take_resp(comp)
-            data_ptr = u8_p()
-            data_len = size_t()
-            _resp_body(resp, ctypes.byref(data_ptr), ctypes.byref(data_len))
-            body_bytes = ctypes.string_at(data_ptr, data_len.value) if data_ptr else b""
-            print(f"READ status={_resp_status(resp)} body={body_bytes.decode('utf-8')}")
-            _resp_free(resp)
-        finally:
-            _comp_free(comp)
+        read = submit(drv, q, item_request(KIND_READ_ITEM, container, pk, b"doc1"))
+        print(f"READ status={read['http_status']} body={read['body'].decode('utf-8')}")
 
         # 6. DELETE.
-        comp = submit(drv, q, item_request(KIND_DELETE_ITEM, container, pk, b"doc1"))
-        try:
-            resp = _comp_take_resp(comp)
-            print(f"DELETE status={_resp_status(resp)}")
-            _resp_free(resp)
-        finally:
-            _comp_free(comp)
+        delete = submit(drv, q, item_request(KIND_DELETE_ITEM, container, pk, b"doc1"))
+        print(f"DELETE status={delete['http_status']}")
         return 0
     finally:
         # Tear down every owned handle that was successfully created, in
@@ -920,7 +1222,7 @@ if __name__ == "__main__":
 ## Notes that apply to all four bindings
 
 1. **Handle every return code and outcome.** The Go and Python samples above
-   show the pattern end-to-end: check the pre-flight `cosmos_error_code_t`,
+   show the pattern end-to-end: check the pre-flight `cosmos_status_code_t`,
    check `cosmos_completion_outcome` against `OK`, and on a non-OK outcome pull
    `cosmos_completion_take_error` to read the rich `cosmos_error_t` (then free
    it) before deciding whether to retry / surface / log. The C# and Java

@@ -81,7 +81,7 @@ fidelity application of the already-merged template:
   `CosmosResponseView` exactly: `status_code`, `sub_status`, `is_from_wire`,
   `message`, `activity_id`, `session_token`, `etag`, `retry_after_ms`,
   `backtrace`. All string pointers borrowed, valid until `cosmos_error_free`.
-- Add `cosmos_error_view(e, *mut CosmosErrorView) -> cosmos_error_code_t`,
+- Add `cosmos_error_view(e, *mut CosmosErrorView) -> cosmos_status_code_t`,
   the single-call alternative to the 9 field accessors. It reuses the existing
   accessors (which lazily cache their `CString`s) so pointer lifetimes are
   unchanged.
