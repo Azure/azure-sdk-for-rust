@@ -4250,6 +4250,18 @@ mod tests {
         }
     }
 
+    /// A `RoutingDecision` pinned to a specific regional endpoint, used to model
+    /// a cross-region failover/hedge attempt (hub vs satellite).
+    fn regional_routing(region: crate::options::Region, url: &str) -> RoutingDecision {
+        let endpoint = CosmosEndpoint::regional(region, Url::parse(url).unwrap());
+        RoutingDecision {
+            selected_url: endpoint.url().clone(),
+            endpoint_key: endpoint.endpoint_key(),
+            endpoint,
+            transport_mode: TransportMode::Gateway,
+        }
+    }
+
     #[test]
     fn apply_headers_pk_range_only_omits_read_key_type() {
         let overrides = OperationOverrides {
@@ -4369,6 +4381,184 @@ mod tests {
                 .expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs/mydb");
+    }
+
+    /// Regression guard for the multi-write satellite failover/hedge signing
+    /// path (the `SessionMultiWrite` weekly leg). A cross-region failover swaps
+    /// only the endpoint HOST; the Cosmos string-to-sign is
+    /// `verb\nresource_type\nresource_link\ndate` and never includes the host,
+    /// so the second (satellite-bound) attempt must sign over byte-identical
+    /// content and produce the identical signature for a given date. This pins
+    /// that `build_transport_request` derives the URL path and the signed
+    /// resource link from the same operation `paths`, independent of the routed
+    /// endpoint — closing the door on a future regression where an endpoint swap
+    /// silently diverges the signed link from the URL-derived resource id.
+    #[tokio::test]
+    async fn failover_to_satellite_signs_over_identical_content_and_binds_date() {
+        use crate::driver::transport::generate_authorization;
+        use crate::models::Credential;
+        use crate::options::Region;
+        use azure_core::credentials::Secret;
+
+        // Point read: request_path == signing_link, so the URL-derived resource
+        // id and the signed resource link are the same string.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+
+        let build = |routing: &RoutingDecision| {
+            let activity_id = ActivityId::from_string("guard-activity".to_string());
+            let ctx = TransportRequestContext {
+                routing,
+                activity_id: &activity_id,
+                execution_context: ExecutionContext::Initial,
+                deadline: None,
+                effective_consistency: DefaultConsistencyLevel::Session,
+                read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+                resolved_session_token: None,
+                throughput_control: None,
+            };
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build")
+        };
+
+        let hub = build(&regional_routing(
+            Region::EAST_US_2,
+            "https://acct-eastus2.documents.azure.com:443/",
+        ));
+        let satellite = build(&regional_routing(
+            Region::WEST_US_3,
+            "https://acct-westus3.documents.azure.com:443/",
+        ));
+
+        // The failover swaps ONLY the endpoint host; nothing that is signed moves.
+        assert_ne!(
+            hub.url.host_str(),
+            satellite.url.host_str(),
+            "the two attempts must target different regional endpoints"
+        );
+        assert_eq!(
+            hub.url.path(),
+            satellite.url.path(),
+            "the resource path is endpoint-independent"
+        );
+        assert_eq!(hub.auth_context.method, satellite.auth_context.method);
+        assert_eq!(
+            hub.auth_context.resource_type,
+            satellite.auth_context.resource_type
+        );
+        assert_eq!(
+            hub.auth_context.resource_link.as_str(),
+            satellite.auth_context.resource_link.as_str(),
+            "the signed resource link must not change when failing over to the satellite"
+        );
+
+        // The satellite attempt signs the same resource id its URL addresses.
+        assert_eq!(
+            satellite.url.path().trim_start_matches('/'),
+            satellite.auth_context.resource_link.as_str(),
+        );
+
+        // The signature is a pure function of the signed content and the date:
+        // identical across the endpoint swap, and it BINDS the date, so a reused
+        // Authorization under a re-stamped x-ms-date would not verify.
+        let credential = Credential::MasterKey(Secret::new(
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned(),
+        ));
+        let date = "Mon, 01 Jan 2024 00:00:00 GMT";
+        let hub_sig = generate_authorization(&credential, &hub.auth_context, date)
+            .await
+            .unwrap();
+        let satellite_sig = generate_authorization(&credential, &satellite.auth_context, date)
+            .await
+            .unwrap();
+        assert_eq!(
+            hub_sig, satellite_sig,
+            "failing over to the satellite must not change the computed signature"
+        );
+
+        let later = "Tue, 02 Jan 2024 00:00:00 GMT";
+        let satellite_sig_later =
+            generate_authorization(&credential, &satellite.auth_context, later)
+                .await
+                .unwrap();
+        assert_ne!(
+            satellite_sig, satellite_sig_later,
+            "the signature must bind x-ms-date so a re-stamped date needs a fresh Authorization"
+        );
+    }
+
+    /// End-to-end companion to the guard above: drive the real `sign_request`
+    /// used by every transport attempt on a satellite-bound request and confirm
+    /// the emitted `Authorization` is exactly the signature over the request's
+    /// signed content and its OWN `x-ms-date`. If a failover attempt ever reused
+    /// a pre-computed `Authorization` while re-stamping `x-ms-date`, this
+    /// server-style recomputation would no longer match.
+    #[tokio::test]
+    async fn satellite_attempt_authorization_matches_its_own_x_ms_date() {
+        use crate::driver::transport::{
+            cosmos_transport_client::HttpRequest, generate_authorization,
+            request_signing::sign_request,
+        };
+        use crate::models::Credential;
+        use crate::options::Region;
+        use azure_core::credentials::Secret;
+        use azure_core::http::headers::AUTHORIZATION;
+
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+        let activity_id = ActivityId::from_string("guard-activity".to_string());
+        let routing = regional_routing(
+            Region::WEST_US_3,
+            "https://acct-westus3.documents.azure.com:443/",
+        );
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Retry,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
+
+        let mut http = HttpRequest {
+            url: request.url.clone(),
+            method: request.method,
+            headers: request.headers.clone(),
+            body: request.body.clone(),
+            timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
+        };
+        let credential = Credential::MasterKey(Secret::new(
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned(),
+        ));
+        sign_request(&mut http, &credential, &request.auth_context)
+            .await
+            .expect("sign should succeed");
+
+        let x_ms_date = http
+            .headers
+            .get_optional_str(&HeaderName::from_static("x-ms-date"))
+            .expect("x-ms-date present")
+            .to_string();
+        let authorization = http
+            .headers
+            .get_optional_str(&AUTHORIZATION)
+            .expect("authorization present")
+            .to_string();
+
+        let expected = generate_authorization(&credential, &request.auth_context, &x_ms_date)
+            .await
+            .unwrap();
+        assert_eq!(
+            authorization, expected,
+            "satellite attempt Authorization must correspond to its own x-ms-date"
+        );
     }
 
     #[test]
