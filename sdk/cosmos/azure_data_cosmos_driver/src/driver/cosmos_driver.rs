@@ -3240,6 +3240,23 @@ impl CosmosDriver {
             self.pk_range_page_fetcher(),
         );
 
+        // Route streaming ORDER BY queries to the k-way merge instead of
+        // the natural-order sequential drain.
+        if query_plan
+            .query_info
+            .as_ref()
+            .is_some_and(planner::is_streaming_order_by)
+        {
+            let pipeline = planner::build_streaming_ordered_merge(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
+
         let pipeline =
             planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
                 .await?;
@@ -3253,10 +3270,9 @@ impl CosmosDriver {
         operation: &CosmosOperation,
         options: &OperationOptions,
     ) -> crate::error::Result<QueryPlan> {
-        // Advertise the SDK's supported query-rewrite features. The default
-        // (`SUPPORTED_QUERY_FEATURES`) is `"None"` until the cross-partition
-        // pipeline gains rewrite support, but the value must be non-empty so
-        // the Gateway V2 thin-client proxy accepts the QueryPlan request.
+        // Advertise exactly the query-rewrite features implemented by the
+        // production dataflow pipeline (`OrderBy,MultipleOrderBy`). The value
+        // must remain non-empty so Gateway V2 accepts the QueryPlan request.
         let query_plan_operation = CosmosOperation::query_plan(
             container.clone(),
             std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
