@@ -62,6 +62,20 @@ pub struct CosmosOperationContext {
     parent_context: OtelContext,
 }
 
+impl PartialEq for CosmosOperationContext {
+    fn eq(&self, other: &Self) -> bool {
+        self.operation_name == other.operation_name
+            && self.database_name == other.database_name
+            && self.container_name == other.container_name
+            && self.server_address == other.server_address
+            && self.consistency_level == other.consistency_level
+            && self.connection_mode == other.connection_mode
+            && self.returned_item_count == other.returned_item_count
+    }
+}
+
+impl Eq for CosmosOperationContext {}
+
 impl CosmosOperationContext {
     /// Creates an empty operation context.
     pub fn new() -> Self {
