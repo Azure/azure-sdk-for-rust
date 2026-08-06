@@ -14,7 +14,8 @@ use azure_data_cosmos::options::{
 };
 use framework::{
     assert_local_retry_attempted_on_region, assert_region_contacted_with_retry,
-    assert_region_not_contacted, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
+    assert_region_not_contacted, ensure_satellite_region_ready, expect_account_ready, TestClient,
+    TestOptions, HUB_REGION, SATELLITE_REGION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -305,6 +306,11 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
     ignore = "requires test_category 'multi_write'"
 )]
 pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error>> {
+    // Pre-flight: wait for the satellite region's credentials to converge so an
+    // account/region-not-ready failure is one loud signal, not a look-alike
+    // product bug. No-op off the live SessionMultiWrite leg.
+    ensure_satellite_region_ready().await;
+
     // Create a fault injection rule that returns 503 for reads targeting the primary region
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -394,6 +400,8 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
 )]
 pub async fn fault_injection_transport_generated_503_write_retries_via_failover(
 ) -> Result<(), Box<dyn Error>> {
+    ensure_satellite_region_ready().await;
+
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
         .build();
@@ -444,10 +452,12 @@ pub async fn fault_injection_transport_generated_503_write_retries_via_failover(
             // via cross-region failover — the driver prefers availability over
             // idempotency concerns, and Cosmos DB's conflict detection catches
             // actual duplicates.
-            let response = fault_container_client
-                .upsert_item(&pk, &item_id, &item, None)
-                .await
-                .expect("write should succeed after failover to satellite");
+            let response = expect_account_ready(
+                fault_container_client
+                    .upsert_item(&pk, &item_id, &item, None)
+                    .await,
+                "write should succeed after failover to satellite",
+            );
 
             // After the transport 503 on hub, the driver fails over to the
             // satellite region. Assert satellite was contacted.
@@ -569,6 +579,8 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
     ignore = "requires test_category 'multi_write'"
 )]
 pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box<dyn Error>> {
+    ensure_satellite_region_ready().await;
+
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ConnectionError)
         .build();
@@ -615,10 +627,12 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            let _response = fault_container_client
-                .create_item(&pk, &item_id, &item, None)
-                .await
-                .expect("write should succeed after connection-error failover");
+            let _response = expect_account_ready(
+                fault_container_client
+                    .create_item(&pk, &item_id, &item, None)
+                    .await,
+                "write should succeed after connection-error failover",
+            );
             // After local retries exhaust on hub, the driver fails over to
             // the satellite. Recovery may either land on satellite or retry
             // back on hub once the transient fault clears — both are valid.
@@ -704,10 +718,12 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
                 .read_item(&container_client, &pk, &item_id, Some(options))
                 .await;
 
-            let _response = run_context
-                .read_item(&fault_container_client, &pk, &item_id, None)
-                .await
-                .expect("read should succeed via failover to satellite");
+            let _response = expect_account_ready(
+                run_context
+                    .read_item(&fault_container_client, &pk, &item_id, None)
+                    .await,
+                "read should succeed via failover to satellite",
+            );
             // After connection error on hub, the driver fails over; recovery
             // may either land on satellite or retry back on hub. Assert
             // satellite was contacted at least once.
@@ -981,6 +997,8 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
     ignore = "requires test_category 'multi_write'"
 )]
 pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(), Box<dyn Error>> {
+    ensure_satellite_region_ready().await;
+
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ConnectionError)
         .build();
@@ -1144,4 +1162,132 @@ pub async fn fault_injection_excluded_region_not_used_when_hub_fails() -> Result
         ),
     )
     .await
+}
+
+/// Pure unit tests for the environmental-failure classifier that backs the
+/// loud "account/region not ready" signal on the weekly live legs. These do NOT
+/// touch the network and are NOT `#[ignore]`d, so they run in normal PR CI as a
+/// permanent guard that the known infra signatures stay distinguishable from
+/// product failures.
+mod account_readiness_classifier_tests {
+    use super::framework::{classify_account_not_ready, expect_account_ready, AccountNotReady};
+    use azure_core::http::StatusCode;
+    use azure_data_cosmos::{CosmosError, CosmosStatus};
+    use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
+
+    fn error_with(status: CosmosStatus, message: &str) -> CosmosError {
+        DriverCosmosError::builder()
+            .with_status(status)
+            .with_message(message.to_string())
+            .build()
+            .into()
+    }
+
+    #[test]
+    fn maps_satellite_mac_mismatch_by_message() {
+        let err = error_with(
+            CosmosStatus::new(StatusCode::Unauthorized),
+            "The MAC signature found in the HTTP request is not the same as the computed signature.",
+        );
+        assert_eq!(
+            classify_account_not_ready(&err),
+            Some(AccountNotReady::SatelliteKeyNotConverged)
+        );
+    }
+
+    #[test]
+    fn maps_aad_invalid_issuer_by_substatus() {
+        let err = error_with(
+            CosmosStatus::new(StatusCode::Unauthorized).with_sub_status(5007),
+            "Provided AAD token was issued by the authority [https://sts.windows.net/...]",
+        );
+        assert_eq!(
+            classify_account_not_ready(&err),
+            Some(AccountNotReady::SatelliteAadIssuerRejected)
+        );
+    }
+
+    #[test]
+    fn maps_aad_invalid_issuer_by_message() {
+        let err = error_with(
+            CosmosStatus::new(StatusCode::Unauthorized),
+            "AadTokenInvalidIssuer: token issued by an untrusted authority",
+        );
+        assert_eq!(
+            classify_account_not_ready(&err),
+            Some(AccountNotReady::SatelliteAadIssuerRejected)
+        );
+    }
+
+    #[test]
+    fn maps_gw2_owner_resource_not_found() {
+        let err = error_with(
+            CosmosStatus::new(StatusCode::NotFound).with_sub_status(1003),
+            "OwnerResourceNotFound: An error occurred while routing the request",
+        );
+        assert_eq!(
+            classify_account_not_ready(&err),
+            Some(AccountNotReady::Gw2CrossPartitionRoutingNotReady)
+        );
+    }
+
+    #[test]
+    fn ignores_genuine_product_failures() {
+        // A clean 404 (no sub-status) is a real "not found", not infra drift.
+        let clean_not_found = error_with(
+            CosmosStatus::new(StatusCode::NotFound),
+            "Resource with specified id does not exist",
+        );
+        assert_eq!(classify_account_not_ready(&clean_not_found), None);
+
+        // A 409 conflict is a product-level outcome.
+        let conflict = error_with(
+            CosmosStatus::new(StatusCode::Conflict),
+            "Entity with the specified id already exists",
+        );
+        assert_eq!(classify_account_not_ready(&conflict), None);
+
+        // A 400 bad request is a product-level outcome.
+        let bad_request = error_with(
+            CosmosStatus::new(StatusCode::BadRequest),
+            "One of the input values is invalid",
+        );
+        assert_eq!(classify_account_not_ready(&bad_request), None);
+
+        // A 401 whose message is NOT a known infra signature must not be
+        // misclassified as an account-readiness failure.
+        let unrelated_401 = error_with(
+            CosmosStatus::new(StatusCode::Unauthorized),
+            "Required Header authorization is missing in the request",
+        );
+        assert_eq!(classify_account_not_ready(&unrelated_401), None);
+    }
+
+    #[test]
+    fn expect_account_ready_returns_ok_value() {
+        let ok: azure_data_cosmos::Result<u32> = Ok(42);
+        assert_eq!(expect_account_ready(ok, "should pass through"), 42);
+    }
+
+    #[test]
+    fn expect_account_ready_panics_loud_on_environmental_failure() {
+        let err = error_with(
+            CosmosStatus::new(StatusCode::Unauthorized),
+            "The MAC signature found in the HTTP request is not the same as the computed signature.",
+        );
+        let result: azure_data_cosmos::Result<u32> = Err(err);
+        let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            expect_account_ready(result, "write should succeed after failover to satellite")
+        }))
+        .expect_err("environmental failure must panic loud");
+        let message = panic
+            .downcast_ref::<String>()
+            .map(String::as_str)
+            .or_else(|| panic.downcast_ref::<&str>().copied())
+            .unwrap_or_default();
+        assert!(
+            message.contains("ACCOUNT/REGION NOT READY") && message.contains("#4997"),
+            "panic must name the readiness banner and tracking issue, got: {message}"
+        );
+    }
 }

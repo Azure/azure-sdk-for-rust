@@ -22,10 +22,11 @@ pub mod test_data;
 pub use emulator_credential::{CosmosEmulatorCredential, CredentialRecorder};
 pub use test_client::{
     assert_local_retry_attempted_on_region, assert_region_contacted_with_retry,
-    assert_region_not_contacted, get_effective_hub_endpoint, get_global_endpoint,
-    resolve_connection_string, targets_emulator, TestClient, TestOptions, TestRunContext,
-    AUTH_MODE_ENV_VAR, CONNECTION_STRING_ENV_VAR, DEFAULT_TEST_TIMEOUT, EMULATOR_CONNECTION_STRING,
-    HUB_REGION, SATELLITE_REGION,
+    assert_region_not_contacted, classify_account_not_ready, ensure_satellite_region_ready,
+    expect_account_ready, get_effective_hub_endpoint, get_global_endpoint,
+    resolve_connection_string, targets_emulator, AccountNotReady, TestClient, TestOptions,
+    TestRunContext, AUTH_MODE_ENV_VAR, CONNECTION_STRING_ENV_VAR, DEFAULT_TEST_TIMEOUT,
+    EMULATOR_CONNECTION_STRING, HUB_REGION, SATELLITE_REGION,
 };
 
 use serde::{Deserialize, Serialize};

@@ -20,7 +20,8 @@ use azure_data_cosmos::fault_injection::{
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::Query;
 use framework::{
-    assert_region_contacted_with_retry, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
+    assert_region_contacted_with_retry, ensure_satellite_region_ready, expect_account_ready,
+    TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -51,6 +52,8 @@ struct TestItem {
     ignore = "requires test_category 'multi_write'"
 )]
 pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
+    ensure_satellite_region_ready().await;
+
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::Timeout)
         .build();
@@ -103,17 +106,12 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed via cross-region retry after hub returns 408
-            let result = run_context
-                .read_item(&fault_container_client, &pk, &item_id, None)
-                .await;
-
-            assert!(
-                result.is_ok(),
-                "Read should succeed via cross-region retry on 408, but got error: {:?}",
-                result.err()
+            let response = expect_account_ready(
+                run_context
+                    .read_item(&fault_container_client, &pk, &item_id, None)
+                    .await,
+                "Read should succeed via cross-region retry on 408",
             );
-
-            let response = result.unwrap();
             // After 408 on hub, the driver fails over; recovery may either
             // land on satellite or retry back on hub. Assert satellite was
             // contacted at least once, proving the failover path was hit.
@@ -297,6 +295,8 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
     ignore = "requires test_category 'multi_write'"
 )]
 pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
+    ensure_satellite_region_ready().await;
+
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::Timeout)
         .build();
@@ -350,9 +350,12 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             let query = Query::from(format!("SELECT * FROM c WHERE c.partition_key = '{}'", pk));
 
             // Query should succeed via cross-region retry after hub returns 408
-            let items: Vec<TestItem> = run_context
-                .query_items(&fault_container_client, query, &pk)
-                .await?;
+            let items: Vec<TestItem> = expect_account_ready(
+                run_context
+                    .query_items(&fault_container_client, query, &pk)
+                    .await,
+                "query should succeed via cross-region retry on 408",
+            );
 
             assert!(
                 !items.is_empty(),
@@ -382,6 +385,8 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
     ignore = "requires test_category 'multi_write'"
 )]
 pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
+    ensure_satellite_region_ready().await;
+
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::InternalServerError)
         .build();
@@ -433,17 +438,12 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed via cross-region retry after hub returns 500
-            let result = run_context
-                .read_item(&fault_container_client, &pk, &item_id, None)
-                .await;
-
-            assert!(
-                result.is_ok(),
-                "Read should succeed via cross-region retry on 500, but got error: {:?}",
-                result.err()
+            let response = expect_account_ready(
+                run_context
+                    .read_item(&fault_container_client, &pk, &item_id, None)
+                    .await,
+                "Read should succeed via cross-region retry on 500",
             );
-
-            let response = result.unwrap();
             // After 500 on hub, the driver fails over; recovery may either
             // land on satellite or retry back on hub. Assert satellite was
             // contacted at least once, proving the failover path was hit.
