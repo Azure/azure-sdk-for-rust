@@ -64,11 +64,11 @@ static int test_singleton_submit_rejects_null_driver(void)
     req.max_item_count = -1; // unset
     req.options = &opts;
 
-    cosmos_error_code_t err = COSMOS_ERROR_CODE_SUCCESS;
+    cosmos_status_code_t err = COSMOS_STATUS_SUCCESS;
     cosmos_operation_handle_t *h =
         cosmos_submit_singleton_operation(NULL, &req, NULL, 0, &err);
     ASSERT(h == NULL, "singleton submit returns NULL on NULL driver");
-    ASSERT(err == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(err) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "sets INVALID_ARGUMENT (err=%d)", err);
     return result;
 }
@@ -81,11 +81,11 @@ static int test_feed_submit_rejects_null_driver(void)
     req.max_item_count = -1; // unset
     req.options = NULL;      // NULL options = inherit driver/runtime defaults
 
-    cosmos_error_code_t err = COSMOS_ERROR_CODE_SUCCESS;
+    cosmos_status_code_t err = COSMOS_STATUS_SUCCESS;
     cosmos_operation_handle_t *h =
         cosmos_submit_operation(NULL, &req, NULL, 0, &err);
     ASSERT(h == NULL, "feed submit returns NULL on NULL driver");
-    ASSERT(err == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(err) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "sets INVALID_ARGUMENT (err=%d)", err);
     return result;
 }
