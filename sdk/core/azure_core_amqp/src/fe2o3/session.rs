@@ -14,9 +14,18 @@ use std::{
 use tokio::sync::Mutex;
 use tracing::{debug, trace};
 
+#[cfg(feature = "transaction")]
+use crate::TransactionId;
+#[cfg(feature = "transaction")]
+use fe2o3_amqp::transaction::OwnedTransaction;
+#[cfg(feature = "transaction")]
+use std::collections::HashMap;
+
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Fe2o3AmqpSession {
     session: OnceLock<Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>>>,
+    #[cfg(feature = "transaction")]
+    transactions: Arc<Mutex<HashMap<TransactionId, OwnedTransaction>>>,
 }
 
 impl Drop for Fe2o3AmqpSession {
@@ -29,6 +38,8 @@ impl Fe2o3AmqpSession {
     pub fn new() -> Self {
         Self {
             session: OnceLock::new(),
+            #[cfg(feature = "transaction")]
+            transactions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -39,6 +50,11 @@ impl Fe2o3AmqpSession {
             .get()
             .ok_or_else(Self::session_not_set)?
             .clone())
+    }
+
+    #[cfg(feature = "transaction")]
+    pub fn transactions(&self) -> Arc<Mutex<HashMap<TransactionId, OwnedTransaction>>> {
+        self.transactions.clone()
     }
 
     fn session_already_attached() -> AmqpError {
@@ -156,6 +172,10 @@ impl From<fe2o3_amqp::session::Error> for AmqpError {
             | fe2o3_amqp::session::Error::IllegalState
             | fe2o3_amqp::session::Error::IllegalConnectionState
             | fe2o3_amqp::session::Error::TransferFrameToSender => {
+                AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
+            }
+            #[cfg(feature = "transaction")]
+            fe2o3_amqp::session::Error::UnknownTxnId => {
                 AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
             }
             fe2o3_amqp::session::Error::RemoteEnded => {

@@ -34,6 +34,7 @@ typespec = { path = "../typespec", version = "1.2.0-beta.1" }
 typespec_macros = { path = "../typespec_macros", version = "1.1.0-beta.1" }
 
 [dev-dependencies]
+fe2o3-amqp = { workspace = true, features = ["acceptor"] }
 serde_json.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 

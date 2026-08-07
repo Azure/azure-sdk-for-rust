@@ -9,22 +9,26 @@ use fe2o3_amqp::transaction::{OwnedTransaction, TransactionDischarge, Transactio
 use std::{
     borrow::BorrowMut,
     collections::HashMap,
-    sync::atomic::{AtomicBool, Ordering},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
 };
 use tokio::sync::Mutex;
 use tracing::debug;
 
 pub(crate) struct Fe2o3TransactionCoordinator {
     attached: AtomicBool,
-    active_transactions: Mutex<HashMap<TransactionId, OwnedTransaction>>,
+    transactions: Arc<Mutex<HashMap<TransactionId, OwnedTransaction>>>,
     session: AmqpSession,
 }
 
 impl Fe2o3TransactionCoordinator {
     pub fn new(session: AmqpSession) -> Result<Self> {
+        let transactions = session.implementation.transactions();
         Ok(Self {
             attached: AtomicBool::new(false),
-            active_transactions: Mutex::new(HashMap::new()),
+            transactions,
             session,
         })
     }
@@ -49,9 +53,10 @@ impl AmqpTransactionCoordinatorApis for Fe2o3TransactionCoordinator {
         Ok(())
     }
 
+    // Detaching the coordinator clears and rolls back all active transactions associated with the session.
     async fn detach(mut self) -> Result<()> {
         self.attached.store(false, Ordering::SeqCst);
-        let mut transactions = self.active_transactions.lock().await;
+        let mut transactions = self.transactions.lock().await;
         for (txn_id, mut txn) in transactions.drain() {
             if let Err(e) = txn.discharge(true).await {
                 tracing::warn!(?txn_id, error = ?e, "failed to roll back transaction during detach");
@@ -73,10 +78,7 @@ impl AmqpTransactionCoordinatorApis for Fe2o3TransactionCoordinator {
             .map_err(AmqpError::from)?;
 
         let txn_id = txn.txn_id().as_slice().to_vec();
-        self.active_transactions
-            .lock()
-            .await
-            .insert(txn_id.clone(), txn);
+        self.transactions.lock().await.insert(txn_id.clone(), txn);
 
         Ok(txn_id)
     }
@@ -87,7 +89,7 @@ impl AmqpTransactionCoordinatorApis for Fe2o3TransactionCoordinator {
         }
 
         let mut txn = self
-            .active_transactions
+            .transactions
             .lock()
             .await
             .remove(&txn_id)
