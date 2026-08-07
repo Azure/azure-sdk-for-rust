@@ -159,6 +159,9 @@ pub enum AmqpSendOutcome {
     /// not and will not be acted upon, and that the message SHOULD be modified in the
     /// specified ways at the node.
     Modified(SendModification),
+    /// The transaction was declared.
+    #[cfg(feature = "transaction")]
+    Declared(crate::TransactionId),
 }
 
 /// If the message was modified in transit, this struct contains the details of the modification.
