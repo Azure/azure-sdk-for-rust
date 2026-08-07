@@ -18,6 +18,9 @@ use std::borrow::Cow;
 
 use azure_core::fmt::SafeDebug;
 
+#[cfg(feature = "distributed_tracing")]
+use opentelemetry::Context as OtelContext;
+
 /// SDK-supplied, operation-scope identity for a single Cosmos operation.
 ///
 /// The driver's [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
@@ -46,7 +49,7 @@ use azure_core::fmt::SafeDebug;
 /// that are set. All setters accept anything convertible into a
 /// `Cow<'static, str>`, so canonical static operation names (e.g. `"read_item"`)
 /// are stored without allocating.
-#[derive(Clone, Default, SafeDebug, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug)]
 pub struct CosmosOperationContext {
     operation_name: Option<Cow<'static, str>>,
     database_name: Option<Cow<'static, str>>,
@@ -55,12 +58,18 @@ pub struct CosmosOperationContext {
     consistency_level: Option<Cow<'static, str>>,
     connection_mode: Option<Cow<'static, str>>,
     returned_item_count: Option<u64>,
+    #[cfg(feature = "distributed_tracing")]
+    parent_context: OtelContext,
 }
 
 impl CosmosOperationContext {
     /// Creates an empty operation context.
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            #[cfg(feature = "distributed_tracing")]
+            parent_context: OtelContext::current(),
+            ..Self::default()
+        }
     }
 
     /// Sets the canonical operation name (`db.operation.name`), e.g. `read_item`.
@@ -146,5 +155,11 @@ impl CosmosOperationContext {
     /// The number of items returned, if set.
     pub fn returned_item_count(&self) -> Option<u64> {
         self.returned_item_count
+    }
+
+    /// Returns the caller context captured when this operation was created.
+    #[cfg(feature = "distributed_tracing")]
+    pub(crate) fn parent_context(&self) -> &OtelContext {
+        &self.parent_context
     }
 }

@@ -136,6 +136,21 @@ pub(crate) fn emit_backdated_span_tree<T>(
             collection.to_string(),
         ));
     }
+    if let Some(consistency) = op.and_then(CosmosOperationContext::consistency_level) {
+        root_attrs.push(KeyValue::new(
+            attributes::CONSISTENCY_LEVEL,
+            consistency.to_string(),
+        ));
+    }
+    if let Some(mode) = op.and_then(CosmosOperationContext::connection_mode) {
+        root_attrs.push(KeyValue::new(attributes::CONNECTION_MODE, mode.to_string()));
+    }
+    if let Some(rows) = op.and_then(CosmosOperationContext::returned_item_count) {
+        root_attrs.push(KeyValue::new(
+            attributes::RETURNED_ROWS,
+            i64::try_from(rows).unwrap_or(i64::MAX),
+        ));
+    }
     if let Some(status) = diagnostics.effective_status() {
         root_attrs.push(KeyValue::new(
             attributes::DB_RESPONSE_STATUS_CODE,
@@ -173,6 +188,11 @@ pub(crate) fn emit_backdated_span_tree<T>(
         .map(str::to_string)
         .or_else(|| requests.first().and_then(server_address));
     if let Some(addr) = server_addr {
+        if let Ok(url) = url::Url::parse(&addr) {
+            if let Some(port) = url.port() {
+                root_attrs.push(KeyValue::new(attributes::SERVER_PORT, i64::from(port)));
+            }
+        }
         root_attrs.push(KeyValue::new(attributes::SERVER_ADDRESS, addr));
     }
     if let Some(machine_id) = diagnostics.machine_id() {
@@ -210,7 +230,11 @@ pub(crate) fn emit_backdated_span_tree<T>(
         .with_kind(SpanKind::Client)
         .with_start_time(op_start)
         .with_attributes(root_attrs);
-    let mut root = tracer.build_with_context(root_builder, &Context::current());
+    let parent_context = op
+        .map(CosmosOperationContext::parent_context)
+        .cloned()
+        .unwrap_or_default();
+    let mut root = tracer.build_with_context(root_builder, &parent_context);
     if op_failed {
         root.set_status(Status::error("operation failed"));
     }

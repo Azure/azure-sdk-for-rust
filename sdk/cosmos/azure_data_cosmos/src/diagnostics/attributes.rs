@@ -79,3 +79,4 @@ pub(crate) const URL_SCHEME: &str = "url.scheme";
 pub(crate) const URL_FULL: &str = "url.full";
 pub(crate) const HTTP_RESPONSE_STATUS_CODE: &str = "http.response.status_code";
 pub(crate) const NETWORK_PROTOCOL_VERSION: &str = "network.protocol.version";
+pub(crate) const RETURNED_ROWS: &str = "db.client.response.returned_rows";
