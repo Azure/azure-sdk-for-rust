@@ -8,4 +8,6 @@ pub(crate) mod messaging;
 pub(crate) mod receiver;
 pub(crate) mod sender;
 pub(crate) mod session;
+#[cfg(feature = "transaction")]
+pub(crate) mod transaction;
 pub(crate) mod value;
