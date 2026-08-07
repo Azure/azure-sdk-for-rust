@@ -9,6 +9,11 @@ if ($IsMacOS) {
   exit 0
 }
 
+if ($true) {
+  Write-Host "AMQP Test Broker tests disabled until test broker is updated."
+  exit 0
+}
+
 
 Write-Host "Test Broker output:"
 Receive-Job -Id $env:TEST_BROKER_JOBID

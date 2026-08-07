@@ -226,6 +226,13 @@ impl DistributedTransactionRequest {
 
     fn validate(&self) -> crate::error::Result<()> {
         for operation in &self.operations {
+            if operation.target.container.database_name().is_none() {
+                return Err(invalid_dtx_request(
+                    "distributed transactions require a name-addressed target container; \
+                     the container was addressed by RID and has no database name, which \
+                     the transaction target's required databaseName field cannot represent",
+                ));
+            }
             match (self.transaction_type, operation.kind) {
                 (DistributedTransactionType::Read, DistributedTransactionOperationKind::Read) => {}
                 (DistributedTransactionType::Read, other) => {
@@ -278,7 +285,13 @@ fn serialize_operation(
 
     object.insert(
         "databaseName".to_owned(),
-        serde_json::Value::String(target.container.database_name().to_owned()),
+        serde_json::Value::String(
+            target
+                .container
+                .database_name()
+                .unwrap_or_default()
+                .to_owned(),
+        ),
     );
     object.insert(
         "collectionName".to_owned(),
@@ -950,6 +963,20 @@ mod tests {
         ContainerReference::new(account, "db", "db_rid", "coll", "coll_rid", &properties)
     }
 
+    fn rid_container() -> ContainerReference {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://example.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let properties = ContainerProperties {
+            id: "coll".into(),
+            partition_key: pk_def,
+            system_properties: SystemProperties::default(),
+        };
+        ContainerReference::new_by_rid(account, "db_rid", "coll", "coll_rid", &properties)
+    }
+
     fn target(id: &str) -> DistributedTransactionTarget {
         DistributedTransactionTarget::new(container(), PartitionKey::from("pk1"), id.to_owned())
     }
@@ -1323,6 +1350,42 @@ mod tests {
             assert!(
                 error.to_string().contains("require resourceBody"),
                 "{kind:?} produced unexpected error: {error}"
+            );
+        }
+    }
+
+    #[test]
+    fn serialize_rejects_rid_addressed_target_container() {
+        for transaction_type in [
+            DistributedTransactionType::Read,
+            DistributedTransactionType::Write,
+        ] {
+            let kind = match transaction_type {
+                DistributedTransactionType::Read => DistributedTransactionOperationKind::Read,
+                DistributedTransactionType::Write => DistributedTransactionOperationKind::Create,
+            };
+            let mut operation = DistributedTransactionOperation::new(
+                kind,
+                DistributedTransactionTarget::new(
+                    rid_container(),
+                    PartitionKey::from("pk1"),
+                    "item1".to_owned(),
+                ),
+            );
+            if kind.requires_resource_body() {
+                operation = operation
+                    .with_resource_body(Bytes::from_static(br#"{"id":"item1","pk":"pk1"}"#));
+            }
+            let request = DistributedTransactionRequest::new(transaction_type, vec![operation]);
+            let error = request.serialize_body().unwrap_err();
+            assert_eq!(
+                error.status().status_code(),
+                azure_core::http::StatusCode::BadRequest,
+                "{transaction_type:?} should reject a RID-addressed target container"
+            );
+            assert!(
+                error.to_string().contains("name-addressed"),
+                "unexpected error: {error}"
             );
         }
     }

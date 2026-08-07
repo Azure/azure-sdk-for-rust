@@ -50,6 +50,7 @@ jobs:
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
       Toolchain: $(PackToolchain)
+      ConfigureRegistry: false
 
   - ${{ if eq(parameters.TestPipeline, 'true') }}:
     - template: /eng/common/pipelines/templates/steps/set-test-pipeline-version.yml
