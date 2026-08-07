@@ -49,6 +49,13 @@ extends:
     EnvVars:
       RUST_TEST_THREADS: '1'
       RUST_BACKTRACE: '1'
+      # Live budget for the binary-encoding round-trip fuzzer
+      # (azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs). Only consumed on
+      # the `binary_encoding` live leg (live-platform-matrix.json); a no-op
+      # elsewhere. Each iteration exercises 3 encoding configs x 4 point ops, so
+      # 200 => ~2400 round-trips — bounded to fit the live-test time cap. Bump it
+      # for a deeper soak.
+      AZURE_COSMOS_FUZZ_ITERATIONS: '200'
       AZURE_COSMOS_GW_V2_ENDPOINT: $(thinclient-test-endpoint)
       AZURE_COSMOS_GW_V2_KEY: $(thinclient-test-key)
       AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT: $(thin-client-canary-multi-region-session-endpoint)
@@ -61,6 +68,31 @@ extends:
         Selection: sparse
         NonSparseParameters: RustToolchainName
         GenerateVMJobs: true
+      # Non-blocking, byte-level codec fuzzing (cargo-fuzz). Adds a single
+      # Linux + nightly job to the **Build stage** (MatrixConfigs is consumed
+      # only by the Build stage, unlike AdditionalMatrixConfigs which the
+      # archetype also appends to the Live Test stage). Its test-setup hook
+      # (Invoke-CosmosTestSetup.ps1, gated on AZURE_COSMOS_FUZZ=1) seeds each
+      # fuzz target's corpus from the golden vectors and replays it once
+      # (libFuzzer -runs=0) to prove the committed vectors still decode without
+      # panicking. cargo-fuzz/libFuzzer only works on Linux + nightly, so it
+      # cannot ride the cross-platform matrix. The entry carries
+      # `ContinueOnError: "true"`, so a discovered crash surfaces as "succeeded
+      # with issues" rather than blocking merge; crash inputs are published as
+      # build artifacts. Runner: eng/scripts/Run-BinaryJsonFuzz.ps1.
+      #
+      # WEEKLY ONLY: gated to the scheduled/weekly run so it does not run on the
+      # default PR gate (the golden vectors are already covered on every PR by
+      # the offline `decodes_golden_corpus` / `encode_round_trips_golden_corpus`
+      # unit tests in the normal cross-platform matrix). This mirrors the
+      # `RunLiveTests` condition above. Net: the byte-level codec validation
+      # runs in the weekly **Build** stage, while the value-space round-trip
+      # fuzzer runs in the weekly **Live Test** stage (live-platform-matrix.json).
+      - ${{ if or(eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}:
+        - Name: Cosmos_binary_codec_golden_vector_validation
+          Path: sdk/cosmos/fuzz-matrix.json
+          Selection: all
+          GenerateVMJobs: true
       # Emulator jobs run only in Build. `MatrixConfigs` (unlike
       # `AdditionalMatrixConfigs`) is never consumed by the live-test stage in
       # archetype-sdk-client.yml, so these entries don't enter live stages,

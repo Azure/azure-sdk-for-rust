@@ -1,3 +1,6 @@
+arbitrary
+arbitrary_json
+arbitrary-json
 arc_swap
 arc-swap
 async_lock
@@ -71,8 +74,12 @@ hostname
 http
 include_file
 include-file
+json_canon
+json-canon
 json_patch
 json-patch
+libfuzzer_sys
+libfuzzer-sys
 litemap
 openssl
 opentelemetry
