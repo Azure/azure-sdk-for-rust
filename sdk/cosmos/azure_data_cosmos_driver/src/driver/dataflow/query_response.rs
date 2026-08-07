@@ -497,6 +497,55 @@ impl PageAggregator {
     }
 }
 
+/// Rebuilds a `Documents`-array feed body from `documents`, keeping only the
+/// items at the given indices, in order. Used by [`super::distinct`] to drop
+/// deduplicated rows without re-serializing the survivors (their exact backend
+/// bytes are preserved, matching [`PageAggregator::build_page`]).
+///
+/// Takes the already-parsed items rather than the raw body so the caller's
+/// `keep` indices are, by construction, indices into *these* documents — the
+/// page is parsed once per emitted page, not twice.
+///
+/// Returns the body together with the number of documents actually written, so
+/// a caller setting `x-ms-item-count` cannot disagree with the body's `_count`.
+pub(crate) fn retain_documents(documents: &[Box<RawValue>], keep: &[usize]) -> (Vec<u8>, usize) {
+    let mut out =
+        Vec::with_capacity(64 + documents.iter().map(|d| d.get().len() + 1).sum::<usize>());
+    out.extend_from_slice(br#"{"_rid":"","Documents":["#);
+    let mut written = 0usize;
+    for index in keep {
+        // Unreachable for a caller that derived `keep` from `documents`; skip
+        // rather than panic so a future caller bug cannot take down the worker.
+        let Some(document) = documents.get(*index) else {
+            continue;
+        };
+        if written > 0 {
+            out.push(b',');
+        }
+        out.extend_from_slice(document.get().as_bytes());
+        written += 1;
+    }
+    out.extend_from_slice(br#"],"_count":"#);
+    out.extend_from_slice(written.to_string().as_bytes());
+    out.push(b'}');
+    (out, written)
+}
+
+/// Parses a `Documents`-array feed body into its raw item payloads, preserving
+/// each item's exact backend bytes.
+pub(crate) fn parse_document_page(body: &ResponseBody) -> crate::error::Result<Vec<Box<RawValue>>> {
+    match body {
+        ResponseBody::NoPayload => Ok(Vec::new()),
+        ResponseBody::Bytes(bytes) => serde_json::from_slice::<RawFeedBody>(bytes)
+            .map(|feed| feed.documents)
+            .map_err(|e| body_error("failed to parse backend page as a feed body", e)),
+        ResponseBody::Items(_) => Err(envelope_error(
+            "backend page returned an already-split `Items` body; expected a raw \
+             `Documents`-array feed body",
+        )),
+    }
+}
+
 /// A fresh, empty [`DiagnosticsContext`] for a page needing no new backend
 /// fetch. Uses a new activity ID since it corresponds to no real request.
 fn empty_diagnostics() -> Arc<DiagnosticsContext> {

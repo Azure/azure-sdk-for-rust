@@ -7,6 +7,7 @@ pub mod account_metadata_refresh;
 pub mod batch;
 pub mod binary_response_format;
 pub mod control_plane;
+pub mod distinct;
 #[cfg(feature = "preview_dtx")]
 pub mod distributed_transaction;
 #[cfg(feature = "fault_injection")]

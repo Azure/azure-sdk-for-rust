@@ -3405,7 +3405,15 @@ fn synthesize_order_by_rewritten_query(
         Some(t) if t.kind == TokenKind::Identifier => t.text,
         _ => collection_token.text,
     };
-    let payload = match tokens.get(select_idx + 1)? {
+    // `SELECT DISTINCT …` — the envelope wraps each row with its `_rid`, so a
+    // per-partition `DISTINCT` on the envelope could never collapse anything.
+    // Drop it from the rewritten query and let the client-side ordered
+    // `Distinct` stage deduplicate the globally sorted stream instead.
+    let projection_idx = match tokens.get(select_idx + 1) {
+        Some(token) if token.kind == TokenKind::Distinct => select_idx + 2,
+        _ => select_idx + 1,
+    };
+    let payload = match tokens.get(projection_idx)? {
         token if token.kind == TokenKind::Star => alias.to_owned(),
         token if token.kind == TokenKind::Value => original_query
             [token.span.end..tokens[from_idx].span.start]
