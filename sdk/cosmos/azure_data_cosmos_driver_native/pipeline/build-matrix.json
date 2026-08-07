@@ -1,0 +1,121 @@
+{
+  "$schema": "./build-matrix.schema.json",
+  "_comment": "Single source of truth for the native-driver cross-build (Deliverable 1) and the Go-module generator (Deliverable 2). Package versions are derived from Cargo metadata, not duplicated here. Do not hand-edit syslibs: they are captured programmatically by Build-NativeMatrix.ps1 via 'rustc --print native-static-libs' and written to each target metadata file. The one entry under reference_syslibs is the known-good windows/amd64 line from the Azure/azure-cosmos-driver PR #5 bootstrap, used only for parity checks and offline generation.",
+  "native_interface_crate": "azure_data_cosmos_driver_native",
+  "rust_driver_crate": "azure_data_cosmos_driver",
+  "lib_basename": "azurecosmosdriver",
+  "static_lib_filename": "libazurecosmosdriver.a",
+  "header_filename": "azurecosmosdriver.h",
+  "rust_driver_features": ["tokio", "rustls"],
+  "go_version": "1.25.0",
+  "module_root": "github.com/Azure/azure-cosmos-driver",
+  "go_package": "driver",
+  "musl_build_tag": "cosmos_musl",
+  "targets": [
+    {
+      "id": "windows-amd64",
+      "goos": "windows",
+      "goarch": "amd64",
+      "libc": null,
+      "triple": "x86_64-pc-windows-gnu",
+      "module_path": "windows/amd64",
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "risk": null
+    },
+    {
+      "id": "windows-arm64",
+      "goos": "windows",
+      "goarch": "arm64",
+      "libc": null,
+      "triple": "aarch64-pc-windows-gnu",
+      "module_path": "windows/arm64",
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "risk": "gnu arm64-windows toolchain is immature; investigate an msvc-built .a fallback before committing to this triple."
+    },
+    {
+      "id": "linux-amd64-glibc",
+      "goos": "linux",
+      "goarch": "amd64",
+      "libc": "glibc",
+      "triple": "x86_64-unknown-linux-gnu",
+      "module_path": "linux/amd64",
+      "native_subdir": "glibc",
+      "build_tag_extra": "!cosmos_musl",
+      "risk": null
+    },
+    {
+      "id": "linux-arm64-glibc",
+      "goos": "linux",
+      "goarch": "arm64",
+      "libc": "glibc",
+      "triple": "aarch64-unknown-linux-gnu",
+      "module_path": "linux/arm64",
+      "native_subdir": "glibc",
+      "build_tag_extra": "!cosmos_musl",
+      "risk": null
+    },
+    {
+      "id": "darwin-arm64",
+      "goos": "darwin",
+      "goarch": "arm64",
+      "libc": null,
+      "triple": "aarch64-apple-darwin",
+      "module_path": "darwin/arm64",
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "risk": null
+    },
+    {
+      "id": "linux-amd64-musl",
+      "goos": "linux",
+      "goarch": "amd64",
+      "libc": "musl",
+      "triple": "x86_64-unknown-linux-musl",
+      "module_path": "linux/amd64",
+      "native_subdir": "musl",
+      "build_tag_extra": "cosmos_musl",
+      "risk": null
+    },
+    {
+      "id": "linux-arm64-musl",
+      "goos": "linux",
+      "goarch": "arm64",
+      "libc": "musl",
+      "triple": "aarch64-unknown-linux-musl",
+      "module_path": "linux/arm64",
+      "native_subdir": "musl",
+      "build_tag_extra": "cosmos_musl",
+      "risk": null
+    }
+  ],
+  "optional_targets": [
+    {
+      "id": "darwin-amd64",
+      "goos": "darwin",
+      "goarch": "amd64",
+      "libc": null,
+      "triple": "x86_64-apple-darwin",
+      "module_path": "darwin/amd64",
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "risk": "long-tail; enable only if a customer needs Intel macOS."
+    }
+  ],
+  "reference_syslibs": {
+    "x86_64-pc-windows-gnu": [
+      "-lws2_32",
+      "-luserenv",
+      "-lntdll",
+      "-lbcrypt",
+      "-lncrypt",
+      "-lsecur32",
+      "-lcrypt32",
+      "-ladvapi32",
+      "-lkernel32",
+      "-luser32",
+      "-lpsapi"
+    ]
+  }
+}
