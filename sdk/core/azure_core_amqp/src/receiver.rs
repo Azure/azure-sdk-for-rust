@@ -9,6 +9,9 @@ use crate::{
     ReceiverSettleMode,
 };
 
+#[cfg(feature = "transaction")]
+use crate::TransactionId;
+
 #[cfg(feature = "fe2o3_amqp")]
 type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;
 
@@ -108,6 +111,15 @@ pub trait AmqpReceiverApis {
 
     /// Releases a delivery from the AMQP receiver.
     async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+
+    /// Settles a delivery as part of a transaction.
+    #[cfg(feature = "transaction")]
+    async fn settle_with_transaction(
+        &self,
+        delivery: &AmqpDelivery,
+        outcome: crate::messaging::AmqpOutcome,
+        txn_id: TransactionId,
+    ) -> Result<()>;
 }
 
 /// Struct representing the AMQP receiver functionality.
@@ -159,6 +171,18 @@ impl AmqpReceiverApis for AmqpReceiver {
 
     async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         self.implementation.release_delivery(delivery).await
+    }
+
+    #[cfg(feature = "transaction")]
+    async fn settle_with_transaction(
+        &self,
+        delivery: &AmqpDelivery,
+        outcome: crate::messaging::AmqpOutcome,
+        txn_id: TransactionId,
+    ) -> Result<()> {
+        self.implementation
+            .settle_with_transaction(delivery, outcome, txn_id)
+            .await
     }
 }
 
