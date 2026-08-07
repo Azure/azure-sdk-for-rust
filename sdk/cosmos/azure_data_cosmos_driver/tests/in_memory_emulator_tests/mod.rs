@@ -9,6 +9,7 @@ pub mod binary_response_format;
 pub mod control_plane;
 #[cfg(feature = "preview_dtx")]
 pub mod distributed_transaction;
+pub mod dynamic_topology;
 #[cfg(feature = "fault_injection")]
 pub mod endpoint_probe_failback;
 pub mod error_cases;
@@ -33,6 +34,7 @@ pub mod split_merge;
 pub mod throttling;
 #[cfg(feature = "fault_injection")]
 pub mod topology_refresh_on_substatus;
+pub mod topology_sdk_behavior;
 
 use azure_core::http::{
     headers::{HeaderName, HeaderValue, Headers},

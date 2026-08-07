@@ -6,28 +6,125 @@
 
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use url::Url;
 
 use super::ru_model::RuChargingModel;
 
+/// Runtime-mutable account topology.
+///
+/// Region membership, write mode and the current write region all change over
+/// the life of a real account (ARM add/remove region, enabling multi-master,
+/// failover), and the driver only ever learns about it through the account-read
+/// payload. Keeping them here behind a single lock lets test code mutate the
+/// topology through the shared `&self` handle it already has.
+#[derive(Debug)]
+struct AccountTopology {
+    /// Regions advertised in `readableLocations`, in order.
+    active: Vec<VirtualRegion>,
+    /// Regions removed from the account. Not advertised, but still resolvable
+    /// by URL so requests the client sends before its next topology refresh get
+    /// the same `403/1008 DatabaseAccountNotFound` the real service returns.
+    retired: Vec<VirtualRegion>,
+    /// Active regions whose endpoint has already begun rejecting requests with
+    /// `403/1008` even though the account still advertises them. See
+    /// [`RegionStatus::Draining`].
+    draining: HashSet<String>,
+    write_mode: WriteMode,
+    /// Name of the region in `writableLocations[0]` under single-write.
+    write_region: String,
+    /// Monotonic region-ID allocator. IDs are never reused: session-token
+    /// vector clocks embed them, so renumbering would corrupt live tokens.
+    next_region_id: u64,
+}
+
+/// A point-in-time view of the mutable account topology, taken under a single
+/// read guard so every field is mutually consistent.
+#[derive(Clone, Debug)]
+pub struct TopologySnapshot {
+    /// Regions currently part of the account, in advertisement order.
+    pub active: Vec<VirtualRegion>,
+    /// Whether all active regions accept writes.
+    pub write_mode: WriteMode,
+    /// Name of the region in `writableLocations[0]` under single-write.
+    pub write_region: String,
+}
+
+/// Outcome of resolving a request URL against the account topology.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ResolvedRegion {
+    /// Region name.
+    pub name: String,
+    /// Whether the region is still part of the account.
+    pub status: RegionStatus,
+}
+
+/// Whether a resolved region is still part of the account.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RegionStatus {
+    /// Advertised in the account topology and serving requests.
+    Active,
+    /// Still advertised in the account topology, but its endpoint already
+    /// rejects requests with `403/1008`.
+    ///
+    /// This is a real window, not a synthetic one: removing a region makes its
+    /// regional endpoint start returning `403/1008` within seconds, while the
+    /// account read keeps listing it for several more minutes. A client in that
+    /// window refreshes topology in response to the 1008 and gets back a payload
+    /// that still contains the dead region.
+    Draining,
+    /// Removed from the account. Requests must fail with 403/1008.
+    Retired,
+}
+
+impl RegionStatus {
+    /// Whether a request routed here must be rejected with `403/1008`.
+    pub fn is_unavailable(&self) -> bool {
+        matches!(self, RegionStatus::Draining | RegionStatus::Retired)
+    }
+}
+
+/// Controls how quickly a newly added region starts serving reads.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SeedingPolicy {
+    /// The region is fully seeded and advertised before `add_region` returns.
+    #[default]
+    Immediate,
+    /// The region is advertised immediately but stays empty for the given
+    /// duration, emulating the window where the service has accepted the region
+    /// but replication has not caught up.
+    Delayed(Duration),
+}
+
 /// Configures the emulated Cosmos DB account.
+///
+/// # Cloning shares mutable topology
+///
+/// `Clone` is shallow for the runtime-mutable state: region membership, write
+/// mode, write region and the PPAF flag all live behind `Arc`s that clones
+/// share. That is deliberate — [`super::EmulatorStore`] holds one config and
+/// tests mutate it through `&self` — but it means a clone is **not** an
+/// independent account. Build separate accounts with [`Self::new`].
 ///
 /// # Runtime-mutable fields
 ///
-/// Most fields are set at construction time and never change. The
-/// per-partition-failover flag (PPAF, exposed in the synthesized account
-/// JSON as `enablePerPartitionFailoverBehavior`) is intentionally backed by
-/// an `Arc<AtomicBool>` so tests can flip it at runtime through a
-/// shared-reference handle. Flipping it through `set_per_partition_failover`
-/// changes what the emulator returns on the *next* account-read response,
-/// which is what the driver's background refresh loop polls.
+/// Static fields (consistency, replication, RU model) are set at construction
+/// time and never change. Two groups are deliberately mutable through a shared
+/// `&self` handle, because the real service changes them under a running client
+/// and the driver is expected to notice via its background account refresh:
+///
+/// - the per-partition-failover flag (PPAF, `enablePerPartitionFailoverBehavior`),
+///   flipped with [`Self::set_per_partition_failover`];
+/// - the account topology -- region membership, write mode and current write
+///   region -- mutated through [`super::EmulatorStore`], which owns the
+///   corresponding per-region data stores.
+///
+/// Cloning a config shares both, so a clone observes the same topology.
 #[derive(Clone, Debug)]
 pub struct VirtualAccountConfig {
+    topology: Arc<RwLock<AccountTopology>>,
     account_id: String,
-    regions: Vec<VirtualRegion>,
-    write_mode: WriteMode,
     consistency: ConsistencyLevel,
     replication: ReplicationConfig,
     replication_overrides: HashMap<(String, String), ReplicationConfig>,
@@ -71,10 +168,22 @@ impl VirtualAccountConfig {
                     .build());
             }
         }
+        let write_region = regions[0].name.clone();
+        let next_region_id = regions
+            .iter()
+            .filter_map(|r| r.region_id)
+            .max()
+            .map_or(0, |max| max + 1);
         Ok(Self {
+            topology: Arc::new(RwLock::new(AccountTopology {
+                active: regions,
+                retired: Vec::new(),
+                draining: HashSet::new(),
+                write_mode: WriteMode::Single,
+                write_region,
+                next_region_id,
+            })),
             account_id: "emulator-account".to_owned(),
-            regions,
-            write_mode: WriteMode::Single,
             consistency: ConsistencyLevel::Session,
             replication: ReplicationConfig::default(),
             replication_overrides: HashMap::new(),
@@ -98,8 +207,25 @@ impl VirtualAccountConfig {
     }
 
     /// Sets the write mode.
-    pub fn with_write_mode(mut self, mode: WriteMode) -> Self {
-        self.write_mode = mode;
+    ///
+    /// # Aliasing
+    ///
+    /// Unlike the other `with_*` builders, this mutates state shared with every
+    /// clone of this config: the topology lives behind an `Arc<RwLock<_>>` so
+    /// that [`super::EmulatorStore`] can change it at runtime. Building two
+    /// configs from one clone therefore does **not** give them independent
+    /// write modes — both observe the last value set:
+    ///
+    /// ```ignore
+    /// let base = VirtualAccountConfig::new(regions)?;
+    /// let single = base.clone().with_write_mode(WriteMode::Single);
+    /// let multi = base.clone().with_write_mode(WriteMode::Multi);
+    /// // `single` is Multi too — same underlying topology.
+    /// ```
+    ///
+    /// Construct each config with [`Self::new`] instead of cloning a base.
+    pub fn with_write_mode(self, mode: WriteMode) -> Self {
+        self.topology.write().unwrap().write_mode = mode;
         self
     }
 
@@ -127,8 +253,8 @@ impl VirtualAccountConfig {
         target: &str,
         config: ReplicationConfig,
     ) -> crate::error::Result<Self> {
-        let known: Vec<&str> = self.regions.iter().map(|r| r.name.as_str()).collect();
-        if !known.contains(&source) {
+        let known: Vec<String> = self.active_region_names();
+        if !known.iter().any(|r| r == source) {
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
                     azure_core::http::StatusCode::BadRequest,
@@ -139,7 +265,7 @@ impl VirtualAccountConfig {
                 ))
                 .build());
         }
-        if !known.contains(&target) {
+        if !known.iter().any(|r| r == target) {
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
                     azure_core::http::StatusCode::BadRequest,
@@ -213,12 +339,41 @@ impl VirtualAccountConfig {
             .store(enabled, Ordering::SeqCst);
     }
 
-    pub fn regions(&self) -> &[VirtualRegion] {
-        &self.regions
+    /// Returns a single consistent snapshot of the topology.
+    ///
+    /// Callers that need more than one topology field **must** use this rather
+    /// than several accessors: reading `write_mode` twice under two different
+    /// guards can straddle a concurrent `set_write_mode` and produce a payload
+    /// the real service never emits (for instance `enableMultipleWriteLocations:
+    /// true` alongside a single writable location).
+    pub fn topology_snapshot(&self) -> TopologySnapshot {
+        let topology = self.topology.read().unwrap();
+        TopologySnapshot {
+            active: topology.active.clone(),
+            write_mode: topology.write_mode,
+            write_region: topology.write_region.clone(),
+        }
+    }
+
+    /// Returns the regions currently part of the account, in advertisement
+    /// order. Retired regions are excluded.
+    pub fn active_regions(&self) -> Vec<VirtualRegion> {
+        self.topology.read().unwrap().active.clone()
+    }
+
+    /// Returns the names of the regions currently part of the account.
+    pub fn active_region_names(&self) -> Vec<String> {
+        self.topology
+            .read()
+            .unwrap()
+            .active
+            .iter()
+            .map(|r| r.name.clone())
+            .collect()
     }
 
     pub fn write_mode(&self) -> WriteMode {
-        self.write_mode
+        self.topology.read().unwrap().write_mode
     }
 
     pub fn consistency(&self) -> ConsistencyLevel {
@@ -241,56 +396,272 @@ impl VirtualAccountConfig {
             .unwrap_or(&self.replication)
     }
 
-    /// Returns the write region name (first region in single-write mode).
-    pub fn write_region_name(&self) -> &str {
-        &self.regions[0].name
+    /// Returns the current write region name (`writableLocations[0]` under
+    /// single-write mode).
+    pub fn write_region_name(&self) -> String {
+        self.topology.read().unwrap().write_region.clone()
     }
 
     /// Returns whether a region is allowed to accept writes.
     pub fn is_write_region(&self, region_name: &str) -> bool {
-        match self.write_mode {
-            WriteMode::Multi => true,
-            WriteMode::Single => self.regions[0].name == region_name,
+        let topology = self.topology.read().unwrap();
+        match topology.write_mode {
+            // Only regions still in the account count as writable, so a retired
+            // region never silently accepts writes on a multi-write account.
+            WriteMode::Multi => topology.active.iter().any(|r| r.name == region_name),
+            WriteMode::Single => topology.write_region == region_name,
         }
     }
 
-    /// Finds the region name for a given gateway URL.
+    /// Resolves a request URL to a region, including regions that have been
+    /// removed from the account.
+    ///
+    /// Retired regions stay resolvable because a client keeps sending to a
+    /// removed endpoint until its next topology refresh, and the real service
+    /// answers those with `403/1008 DatabaseAccountNotFound` rather than
+    /// failing to route at all.
     ///
     /// Matches on (scheme, host, port) — not host alone — so two regions
     /// that share a hostname but differ in port (or scheme) route correctly.
     /// Useful when adding e.g. `https://localhost:8081` and
     /// `https://localhost:8082` regions for parity tests.
-    pub fn region_for_url(&self, url: &Url) -> Option<&str> {
+    pub fn region_for_url(&self, url: &Url) -> Option<ResolvedRegion> {
         let host = url.host_str()?;
         let scheme = url.scheme();
         let port = url.port_or_known_default();
-        for r in &self.regions {
-            let matches = |candidate: &Url| {
+        // Matches either the standard gateway URL or the Gateway 2.0 URL, so a
+        // request sent to a region's thin-client endpoint resolves to the same
+        // region.
+        let matches = |r: &VirtualRegion| {
+            let matches_url = |candidate: &Url| {
                 candidate
                     .host_str()
                     .is_some_and(|candidate_host| candidate_host.eq_ignore_ascii_case(host))
                     && candidate.scheme() == scheme
                     && candidate.port_or_known_default() == port
             };
-            if matches(&r.gateway_url) {
-                return Some(&r.name);
-            }
-            #[cfg(feature = "__internal_in_memory_emulator")]
-            if r.gateway_v2_url.as_ref().is_some_and(matches) {
-                return Some(&r.name);
-            }
+            matches_url(&r.gateway_url) || r.gateway_v2_url.as_ref().is_some_and(matches_url)
+        };
+
+        let topology = self.topology.read().unwrap();
+        if let Some(r) = topology.active.iter().find(|r| matches(r)) {
+            let status = if topology.draining.contains(&r.name) {
+                RegionStatus::Draining
+            } else {
+                RegionStatus::Active
+            };
+            return Some(ResolvedRegion {
+                name: r.name.clone(),
+                status,
+            });
         }
-        None
+        topology
+            .retired
+            .iter()
+            .find(|r| matches(r))
+            .map(|r| ResolvedRegion {
+                name: r.name.clone(),
+                status: RegionStatus::Retired,
+            })
     }
 
     /// Finds the region ID for a given region name.
+    ///
+    /// Retired regions are included: their IDs are still referenced by session
+    /// tokens issued while they were active.
     pub fn region_id_for(&self, region_name: &str) -> u64 {
-        self.regions
+        let topology = self.topology.read().unwrap();
+        topology
+            .active
             .iter()
+            .chain(topology.retired.iter())
             .find(|r| r.name == region_name)
             .and_then(|r| r.region_id)
             .unwrap_or(0)
     }
+
+    /// Adds a region to the account, allocating a fresh region ID unless the
+    /// region is being re-added (in which case it keeps its original ID so
+    /// session tokens issued before its removal stay meaningful).
+    ///
+    /// Returns the region as it was added. Errors with `400` if the region is
+    /// already part of the account, matching the service's rejection of an
+    /// add-read-region request for an existing region.
+    pub(crate) fn add_region(&self, region: VirtualRegion) -> crate::error::Result<VirtualRegion> {
+        let mut topology = self.topology.write().unwrap();
+        if topology.active.iter().any(|r| r.name == region.name) {
+            return Err(already_present(&region.name));
+        }
+
+        let mut region = region;
+        if let Some(idx) = topology.retired.iter().position(|r| r.name == region.name) {
+            // A re-added region keeps its original ID: session-token vector
+            // clocks issued while it was active still reference it.
+            let previous = topology.retired.remove(idx);
+            region.region_id = previous.region_id;
+        } else if let Some(explicit) = region.region_id {
+            if topology
+                .active
+                .iter()
+                .chain(topology.retired.iter())
+                .any(|r| r.region_id == Some(explicit))
+            {
+                return Err(bad_request(format!(
+                    "region ID {explicit} is already in use"
+                )));
+            }
+            topology.next_region_id = topology.next_region_id.max(explicit + 1);
+        } else {
+            region.region_id = Some(topology.next_region_id);
+            topology.next_region_id += 1;
+        }
+
+        topology.active.push(region.clone());
+        Ok(region)
+    }
+
+    /// Removes a region from the account, retaining it as retired so its
+    /// endpoint keeps resolving.
+    ///
+    /// Errors with `400` if the region is unknown, if it is the last region, or
+    /// if it currently owns writes. The write-region guard applies in **both**
+    /// write modes: under multi-write every active region accepts writes, but
+    /// `write_region` still designates the hub that a later `set_write_mode`
+    /// back to single-write would restore, and it is the region new regions are
+    /// seeded from. Letting it dangle would silently produce an account with an
+    /// empty `writableLocations` and unseeded new regions.
+    pub(crate) fn remove_region(&self, region_name: &str) -> crate::error::Result<()> {
+        let mut topology = self.topology.write().unwrap();
+        let Some(idx) = topology.active.iter().position(|r| r.name == region_name) else {
+            return Err(bad_request(format!(
+                "region '{region_name}' is not part of the account"
+            )));
+        };
+        if topology.active.len() == 1 {
+            return Err(bad_request(
+                "cannot remove the last region from the account".to_string(),
+            ));
+        }
+        if topology.write_region == region_name {
+            return Err(bad_request(format!(
+                "cannot remove '{region_name}': it is the account's write region; \
+                 promote another region with set_write_region first"
+            )));
+        }
+
+        let removed = topology.active.remove(idx);
+        topology.draining.remove(region_name);
+        topology.retired.push(removed);
+        Ok(())
+    }
+
+    /// Starts draining a region: its endpoint begins rejecting requests with
+    /// `403/1008` while the account still advertises it.
+    ///
+    /// Reproduces the ordering the real service exhibits during a region
+    /// removal -- the regional endpoint starts failing within seconds, but the
+    /// account read keeps listing the region for minutes afterwards, so a client
+    /// that refreshes topology in response to the 1008 gets a payload that still
+    /// contains the dead region.
+    ///
+    /// Carries the same guards as [`Self::remove_region`], of which this is the
+    /// first phase: draining the write region or the last region would leave an
+    /// account that is advertised but cannot serve anything, and that no public
+    /// call could repair.
+    pub(crate) fn begin_region_removal(&self, region_name: &str) -> crate::error::Result<()> {
+        let mut topology = self.topology.write().unwrap();
+        if !topology.active.iter().any(|r| r.name == region_name) {
+            return Err(bad_request(format!(
+                "region '{region_name}' is not part of the account"
+            )));
+        }
+        if topology.active.len() == 1 {
+            return Err(bad_request(
+                "cannot drain the last region in the account".to_string(),
+            ));
+        }
+        if topology.write_region == region_name {
+            return Err(bad_request(format!(
+                "cannot drain '{region_name}': it is the account's write region; \
+                 promote another region with set_write_region first"
+            )));
+        }
+        topology.draining.insert(region_name.to_string());
+        Ok(())
+    }
+
+    /// Switches the account between single- and multi-write.
+    ///
+    /// Note the asymmetry with the real service: enabling multi-write is a
+    /// gated, effectively one-way migration there, while multi → single is not
+    /// a normal transition. Both directions are allowed here so tests can set
+    /// up either state cheaply.
+    pub(crate) fn set_write_mode(&self, mode: WriteMode) {
+        let mut topology = self.topology.write().unwrap();
+        topology.write_mode = mode;
+    }
+
+    /// Moves write ownership to another region, as a failover would.
+    ///
+    /// This is not an exotic scenario: for single-master accounts the gateway
+    /// itself can report an arbitrary read location as the write location
+    /// between successive account reads, so clients must tolerate the advertised
+    /// write region moving at any time.
+    pub(crate) fn set_write_region(&self, region_name: &str) -> crate::error::Result<()> {
+        let mut topology = self.topology.write().unwrap();
+        if !topology.active.iter().any(|r| r.name == region_name) {
+            return Err(bad_request(format!(
+                "region '{region_name}' is not part of the account"
+            )));
+        }
+        // Mirror of the guards on `begin_region_removal` / `remove_region`.
+        // Promoting a draining region would make the account advertise a write
+        // region whose endpoint already rejects every request with 403/1008,
+        // and once it is the write region neither removal path can retire it --
+        // an unrecoverable state reachable purely through public calls.
+        if topology.draining.contains(region_name) {
+            return Err(bad_request(format!(
+                "cannot promote '{region_name}': it is draining and its endpoint \
+                 already rejects requests with 403/1008"
+            )));
+        }
+        topology.write_region = region_name.to_string();
+        Ok(())
+    }
+
+    /// Aborts an in-flight region removal, returning a draining region to
+    /// normal service.
+    ///
+    /// The real service can abort a region removal, and without this `draining`
+    /// would be a one-way door: `remove_region` is the only other exit, and it
+    /// is refused for the write region and the last region.
+    pub(crate) fn cancel_region_removal(&self, region_name: &str) -> crate::error::Result<()> {
+        let mut topology = self.topology.write().unwrap();
+        if !topology.active.iter().any(|r| r.name == region_name) {
+            return Err(bad_request(format!(
+                "region '{region_name}' is not part of the account"
+            )));
+        }
+        topology.draining.remove(region_name);
+        Ok(())
+    }
+}
+
+fn bad_request(message: String) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::BadRequest,
+        ))
+        .with_message(message)
+        .build()
+}
+
+/// Rejection for adding a region the account already has, matching the
+/// service's rejection of a redundant add-read-region request.
+pub(crate) fn already_present(region_name: &str) -> crate::error::CosmosError {
+    bad_request(format!(
+        "region '{region_name}' is already part of the account"
+    ))
 }
 
 /// A virtual region with a name and gateway URL.
@@ -728,8 +1099,8 @@ mod tests {
     #[test]
     fn assigns_region_ids_by_position_when_omitted() {
         let config = VirtualAccountConfig::new(vec![region("East"), region("West")]).unwrap();
-        assert_eq!(config.regions()[0].region_id(), 0);
-        assert_eq!(config.regions()[1].region_id(), 1);
+        assert_eq!(config.active_regions()[0].region_id(), 0);
+        assert_eq!(config.active_regions()[1].region_id(), 1);
     }
 
     #[test]
@@ -739,8 +1110,8 @@ mod tests {
             region("West").with_region_id(0),
         ])
         .unwrap();
-        assert_eq!(config.regions()[0].region_id(), 1);
-        assert_eq!(config.regions()[1].region_id(), 0);
+        assert_eq!(config.active_regions()[0].region_id(), 1);
+        assert_eq!(config.active_regions()[1].region_id(), 0);
     }
 
     #[test]

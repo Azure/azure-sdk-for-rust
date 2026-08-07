@@ -161,56 +161,92 @@ pub(crate) fn pkranges_to_json(
 }
 
 /// Returns a JSON representation of account properties synthesized from config.
+///
+/// `request_host` is the host the account read arrived on; the real gateway
+/// derives the account `id` from it rather than reporting a fixed name.
 pub(crate) fn account_properties_to_json(
     config: &super::config::VirtualAccountConfig,
+    request_host: Option<&str>,
 ) -> serde_json::Value {
-    let readable: Vec<serde_json::Value> = config
-        .regions()
-        .iter()
-        .map(|r| {
-            serde_json::json!({
-                "name": r.name(),
-                "databaseAccountEndpoint": r.gateway_url().as_str()
-            })
+    let location_json = |r: &super::config::VirtualRegion| {
+        serde_json::json!({
+            "name": r.name(),
+            "databaseAccountEndpoint": r.gateway_url().as_str()
         })
-        .collect();
-
-    let writable: Vec<serde_json::Value> = match config.write_mode() {
-        super::config::WriteMode::Multi => config
-            .regions()
-            .iter()
-            .map(|r| {
-                serde_json::json!({
-                    "name": r.name(),
-                    "databaseAccountEndpoint": r.gateway_url().as_str()
-                })
-            })
-            .collect(),
-        super::config::WriteMode::Single => {
-            let r = &config.regions()[0];
-            vec![serde_json::json!({
-                "name": r.name(),
-                "databaseAccountEndpoint": r.gateway_url().as_str()
-            })]
-        }
     };
 
+    // One consistent view of the topology: reading `write_mode` under one guard
+    // for `writableLocations` and again under another for
+    // `enableMultipleWriteLocations` could straddle a concurrent
+    // `set_write_mode` and emit a payload the real gateway never produces (the
+    // service flaps *between* payloads, but each individual payload is
+    // internally consistent).
+    let topology = config.topology_snapshot();
+    let regions = &topology.active;
+    let readable: Vec<serde_json::Value> = regions.iter().map(location_json).collect();
+
+    let is_multi_write = topology.write_mode == super::config::WriteMode::Multi;
+    let writable: Vec<serde_json::Value> = if is_multi_write {
+        regions.iter().map(location_json).collect()
+    } else {
+        regions
+            .iter()
+            .find(|r| r.name() == topology.write_region)
+            .map(location_json)
+            .into_iter()
+            .collect()
+    };
+
+    // The real gateway sets the account id from the tenant portion of the
+    // request host (everything before the first '.'), so a client that called a
+    // regional endpoint sees that regional id echoed back. Verified against a
+    // live account: the global endpoint reports `{account}` and the regional
+    // endpoint reports `{account}-{region}`. Falls back to the configured
+    // account id when no host is available.
+    let account_id = request_host
+        .map(|host| host.split('.').next().unwrap_or(host).to_string())
+        .unwrap_or_else(|| config.account_id().to_string());
+
+    // The live service reports `_rid` as
+    // `{account}-{write-region}.sql.cosmos.azure.com`. The emulator's synthetic
+    // hosts carry no `{account}-{region}` structure to recover a base account
+    // name from, so encoding the write region here would make `_rid` name a
+    // different account than `id` on the same payload -- something the service
+    // never does. Reporting the same account keeps the payload self-consistent;
+    // the write-region component is the one part of `_rid` the emulator does not
+    // reproduce.
+    let rid = format!("{account_id}.sql.cosmos.azure.com");
+
+    // NOTE: no `_etag`. Verified against live accounts (two accounts, global and
+    // regional endpoints, `x-ms-version` 2018-12-31 and 2020-07-15): the account
+    // read carries no etag in the body and none in the response headers. The
+    // driver's unchanged-etag short-circuit in `sync_account_properties` is
+    // therefore inert in production -- it is guarded by `!etag.is_empty()` -- and
+    // emitting one here would make the emulator exercise a path the service can
+    // never trigger. That short-circuit is covered by unit tests instead.
     let mut response = serde_json::json!({
-        "id": config.account_id(),
-        "_rid": "emulator.documents.azure.com",
+        "id": account_id,
+        "_rid": rid,
         "_self": "",
         "media": "//media/",
         "addresses": "//addresses/",
         "_dbs": "//dbs/",
         "readableLocations": readable,
         "writableLocations": writable,
-        "enableMultipleWriteLocations": config.write_mode() == super::config::WriteMode::Multi,
+        "enableMultipleWriteLocations": is_multi_write,
+        "continuousBackupEnabled": false,
+        "enableNRegionSynchronousCommit": false,
         // Mirrors the real service contract for PPAF dynamic enablement. The
         // driver's background account-refresh loop polls this field; tests
         // that flip `VirtualAccountConfig::set_per_partition_failover(...)`
         // observe the change here on the next refresh tick.
         "enablePerPartitionFailoverBehavior": config.per_partition_failover_enabled(),
-        "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+        "disableCrossRegionalHedging": false,
+        "userReplicationPolicy": {
+            "asyncReplication": false,
+            "minReplicaSetSize": 3,
+            "maxReplicasetSize": 4
+        },
         "userConsistencyPolicy": {
             "defaultConsistencyLevel": config.consistency().as_str()
         },
@@ -221,8 +257,7 @@ pub(crate) fn account_properties_to_json(
 
     #[cfg(feature = "__internal_in_memory_emulator")]
     {
-        let thin_client_readable: Vec<_> = config
-            .regions()
+        let thin_client_readable: Vec<_> = regions
             .iter()
             .filter_map(|region| {
                 region.gateway_v2_url().map(|url| {
@@ -233,8 +268,7 @@ pub(crate) fn account_properties_to_json(
                 })
             })
             .collect();
-        let thin_client_writable: Vec<_> = config
-            .regions()
+        let thin_client_writable: Vec<_> = regions
             .iter()
             .filter(|region| config.is_write_region(region.name()))
             .filter_map(|region| {
