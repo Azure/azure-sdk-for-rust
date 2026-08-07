@@ -12,11 +12,12 @@ use super::{
     BlobClientRenewLeaseResult, BlobContainerClientAcquireLeaseResult,
     BlobContainerClientBreakLeaseResult, BlobContainerClientChangeLeaseResult,
     BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
-    BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
-    BlobServiceClientGetAccountInfoResult, BlobType, BlockBlobClientCommitBlockListResult,
-    BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
-    BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadInternalResult, BlockList,
-    CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus,
+    BlobContainerClientListBlobsRawResult, BlobContainerClientReleaseLeaseResult,
+    BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult, BlobType,
+    BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+    BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+    BlockBlobClientUploadInternalResult, BlockList, CopyStatus, ImmutabilityPolicyMode,
+    LeaseDuration, LeaseState, LeaseStatus, ListBlobsRawResponseContentType,
     PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
     PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
     PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
@@ -100,6 +101,7 @@ const REQUEST_SERVER_ENCRYPTED: HeaderName =
     HeaderName::from_static("x-ms-request-server-encrypted");
 const SERVER_ENCRYPTED: HeaderName = HeaderName::from_static("x-ms-server-encrypted");
 const SKU_NAME: HeaderName = HeaderName::from_static("x-ms-sku-name");
+const SMART_ACCESS_TIER: HeaderName = HeaderName::from_static("x-ms-smart-access-tier");
 const SNAPSHOT: HeaderName = HeaderName::from_static("x-ms-snapshot");
 const TAG_COUNT: HeaderName = HeaderName::from_static("x-ms-tag-count");
 const VERSION_ID: HeaderName = HeaderName::from_static("x-ms-version-id");
@@ -628,6 +630,9 @@ pub(crate) trait BlobClientDownloadInternalResultHeaders: private::Sealed {
     fn content_range(&self) -> Result<Option<String>>;
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn access_tier(&self) -> Result<Option<String>>;
+    fn access_tier_change_time(&self) -> Result<Option<OffsetDateTime>>;
+    fn access_tier_inferred(&self) -> Result<Option<bool>>;
     fn blob_committed_block_count(&self) -> Result<Option<i32>>;
     fn blob_content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn is_sealed(&self) -> Result<Option<bool>>;
@@ -655,6 +660,7 @@ pub(crate) trait BlobClientDownloadInternalResultHeaders: private::Sealed {
     fn object_replication_rules(&self) -> Result<HashMap<String, String>>;
     fn object_replication_policy_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
+    fn smart_access_tier(&self) -> Result<Option<String>>;
     fn tag_count(&self) -> Result<Option<i64>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
@@ -705,6 +711,23 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
+    }
+
+    /// The access tier of the blob.
+    fn access_tier(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ACCESS_TIER)
+    }
+
+    /// The time the tier was changed on the blob. This is only returned if the tier on the blob was ever set.
+    fn access_tier_change_time(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &ACCESS_TIER_CHANGE_TIME, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// Included if the access tier is inferred.
+    fn access_tier_inferred(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &ACCESS_TIER_INFERRED)
     }
 
     /// The number of committed blocks present in the blob.
@@ -869,6 +892,11 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Headers::get_optional_as(self.headers(), &SERVER_ENCRYPTED)
     }
 
+    /// The underlying tier of a smart tier blob. Only returned if the blob is in Smart tier.
+    fn smart_access_tier(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &SMART_ACCESS_TIER)
+    }
+
     /// The number of tags associated with the blob.
     fn tag_count(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &TAG_COUNT)
@@ -990,6 +1018,7 @@ pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
     fn object_replication_policy_id(&self) -> Result<Option<String>>;
     fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
+    fn smart_access_tier(&self) -> Result<Option<String>>;
     fn tag_count(&self) -> Result<Option<i64>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
@@ -1229,6 +1258,11 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
     /// Indicates whether the contents of the request are successfully encrypted.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &SERVER_ENCRYPTED)
+    }
+
+    /// The underlying tier of a smart tier blob. Only returned if the blob is in Smart tier.
+    fn smart_access_tier(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &SMART_ACCESS_TIER)
     }
 
     /// The number of tags associated with the blob.
@@ -1631,6 +1665,35 @@ impl BlobContainerClientGetPropertiesResultHeaders
     }
 }
 
+/// Provides access to typed response headers for `BlobContainerClient::list_blobs_raw()`
+///
+/// # Examples
+///
+/// ```ignore
+/// use azure_core::{Result, http::AsyncResponse};
+/// use azure_storage_blob::models::{BlobContainerClientListBlobsRawResult, BlobContainerClientListBlobsRawResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: AsyncResponse<BlobContainerClientListBlobsRawResult> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_type) = response.content_type()? {
+///         println!("content-type: {:?}", content_type);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub(crate) trait BlobContainerClientListBlobsRawResultHeaders: private::Sealed {
+    fn content_type(&self) -> Result<Option<ListBlobsRawResponseContentType>>;
+}
+
+impl BlobContainerClientListBlobsRawResultHeaders
+    for AsyncResponse<BlobContainerClientListBlobsRawResult>
+{
+    /// Content-Type header
+    fn content_type(&self) -> Result<Option<ListBlobsRawResponseContentType>> {
+        Headers::get_optional_as(self.headers(), &CONTENT_TYPE)
+    }
+}
+
 /// Provides access to typed response headers for `BlobContainerClient::release_lease()`
 ///
 /// # Examples
@@ -1996,6 +2059,7 @@ pub trait BlockBlobClientUploadBlobFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
@@ -2019,6 +2083,13 @@ impl BlockBlobClientUploadBlobFromUrlResultHeaders
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// The CRC64 hash of the content.
+    fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
+        Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
+            base64::decode(h.as_str())
         })
     }
 
@@ -2664,12 +2735,12 @@ mod private {
         BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
         BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
         BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
-        BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
-        BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
-        BlockBlobClientUploadInternalResult, BlockList, PageBlobClientClearPagesResult,
-        PageBlobClientCreateResult, PageBlobClientResizeResult,
+        BlobContainerClientGetPropertiesResult, BlobContainerClientListBlobsRawResult,
+        BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
+        BlobServiceClientGetAccountInfoResult, BlockBlobClientCommitBlockListResult,
+        BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadInternalResult, BlockList,
+        PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
         PageBlobClientUploadPagesResult, PageList, SignedIdentifiers,
     };
@@ -2678,6 +2749,7 @@ mod private {
     pub trait Sealed {}
 
     impl Sealed for AsyncResponse<BlobClientDownloadInternalResult> {}
+    impl Sealed for AsyncResponse<BlobContainerClientListBlobsRawResult> {}
     impl Sealed for Response<AppendBlobClientAppendBlockFromUrlResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientAppendBlockResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientCreateResult, NoFormat> {}

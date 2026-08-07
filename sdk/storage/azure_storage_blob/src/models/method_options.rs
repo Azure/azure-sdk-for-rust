@@ -9,13 +9,12 @@ use azure_core::{
 };
 use time::OffsetDateTime;
 
-use crate::generated::models::{
-    BlobContainerClientListBlobsArrowOptions, BlobContainerClientListBlobsXmlOptions,
-    ListBlobsIncludeItem,
-};
 use crate::models::{
     AccessTier, BlobClientDownloadInternalOptions, EncryptionAlgorithmType, HttpRange,
     ImmutabilityPolicyMode,
+};
+use crate::{
+    generated::models::ListBlobsIncludeItem, models::BlobContainerClientListBlobsRawOptions,
 };
 
 /// Options to be passed to `BlobClient::download()`
@@ -142,7 +141,7 @@ pub struct BlobContainerClientListBlobsOptions<'a> {
 }
 
 impl<'a> From<BlobContainerClientListBlobsOptions<'a>>
-    for BlobContainerClientListBlobsArrowOptions<'a>
+    for BlobContainerClientListBlobsRawOptions<'a>
 {
     fn from(value: BlobContainerClientListBlobsOptions<'a>) -> Self {
         let BlobContainerClientListBlobsOptions {
@@ -159,33 +158,9 @@ impl<'a> From<BlobContainerClientListBlobsOptions<'a>>
             include,
             marker,
             maxresults,
-            method_options,
-            prefix,
-            start_from,
-            timeout,
-        }
-    }
-}
-
-impl<'a> From<BlobContainerClientListBlobsOptions<'a>>
-    for BlobContainerClientListBlobsXmlOptions<'a>
-{
-    fn from(value: BlobContainerClientListBlobsOptions<'a>) -> Self {
-        let BlobContainerClientListBlobsOptions {
-            include,
-            marker,
-            maxresults,
-            method_options,
-            prefix,
-            response_format: _,
-            start_from,
-            timeout,
-        } = value;
-        Self {
-            include,
-            marker,
-            maxresults,
-            method_options,
+            method_options: ClientMethodOptions {
+                context: method_options.context,
+            },
             prefix,
             start_from,
             timeout,

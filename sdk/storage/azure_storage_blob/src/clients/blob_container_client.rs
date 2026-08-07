@@ -3,7 +3,6 @@
 
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
-use crate::generated::models::BlobContainerClientListBlobsArrowOptions;
 use crate::models::{
     AutoFormat, BlobContainerClientListBlobsOptions, ListBlobsResponse, StorageErrorCode,
     StorageResponseFormat,
@@ -11,11 +10,11 @@ use crate::models::{
 use crate::BlobClient;
 use azure_core::{
     credentials::TokenCredential,
-    error::ErrorKind,
+    error::{CheckSuccessOptions, ErrorKind},
     http::{
-        pager::{PagerContinuation, PagerResult, PagerState},
+        pager::{PagerContinuation, PagerOptions, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Pager, Pipeline, StatusCode, Url,
+        Method, Pager, Pipeline, PipelineStreamOptions, Request, StatusCode, Url, UrlExt,
     },
     tracing, Result,
 };
@@ -132,34 +131,76 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
     ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
         let options = options.unwrap_or_default();
-        match options.response_format.unwrap_or_default() {
-            StorageResponseFormat::Arrow => self.list_blobs_arrow_pager(options.into()),
-            StorageResponseFormat::Xml => self.list_blobs_xml(Some(options.into())),
+        let accept = match options.response_format.unwrap_or_default() {
+            StorageResponseFormat::Arrow => "application/vnd.apache.arrow.stream,application/xml",
+            StorageResponseFormat::Xml => "application/xml",
+        };
+        let pager_options = PagerOptions {
+            context: options.method_options.context.clone().into_owned(),
+            continuation: options.method_options.continuation.clone(),
+        };
+        let pipeline = self.pipeline.clone();
+        let mut first_url = self.endpoint.clone();
+        let mut query_builder = first_url.query_builder();
+        query_builder
+            .append_pair("comp", "list")
+            .append_pair("restype", "container");
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
+                "include",
+                include
+                    .iter()
+                    .map(|item| item.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
         }
-    }
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            query_builder.set_pair("maxresults", maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let version = self.version.clone();
 
-    fn list_blobs_arrow_pager(
-        &self,
-        options: BlobContainerClientListBlobsArrowOptions<'_>,
-    ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
-        let client = Arc::new(BlobContainerClient {
-            endpoint: self.endpoint.clone(),
-            pipeline: self.pipeline.clone(),
-            version: self.version.clone(),
-            tracer: self.tracer.clone(),
-        });
-        let options = options.into_owned();
-        let pager_options = options.method_options.clone();
         Ok(Pager::new(
             move |state: PagerState, pager_options| {
-                let client = client.clone();
-                let mut options = options.clone();
-                options.method_options = pager_options;
+                let mut url = first_url.clone();
                 if let PagerState::More(marker) = state {
-                    options.marker = Some(marker.to_string());
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", marker.as_ref());
+                    query_builder.build();
                 }
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", accept);
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
                 Box::pin(async move {
-                    let response = client.list_blobs_arrow(Some(options)).await?;
+                    let response = pipeline
+                        .stream(
+                            &pager_options.context,
+                            &mut request,
+                            Some(PipelineStreamOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    let response = response.try_into_raw_response().await?;
+                    let response: azure_core::http::Response<ListBlobsResponse, AutoFormat> =
+                        response.into();
                     let next_marker = crate::models::auto_format::decode_next_marker(
                         response.headers(),
                         response.body(),
@@ -183,8 +224,9 @@ mod tests {
     use super::*;
     use azure_core::{
         http::{
-            headers::Headers, pager::PagerContinuation, AsyncRawResponse, ClientOptions,
-            StatusCode, Transport,
+            headers::{Headers, ACCEPT},
+            pager::PagerContinuation,
+            AsyncRawResponse, ClientOptions, StatusCode, Transport,
         },
         Bytes,
     };
@@ -232,6 +274,10 @@ mod tests {
     async fn list_blobs_page_keeps_body_for_into_model() -> Result<()> {
         let mock_client = Arc::new(MockHttpClient::new(|req| {
             assert_eq!(req.url().path(), "/container");
+            assert_eq!(
+                req.headers().get_optional_str(&ACCEPT),
+                Some("application/xml")
+            );
             assert!(req
                 .url()
                 .query()
@@ -270,6 +316,52 @@ mod tests {
         assert_eq!(page.blob_items.len(), 1);
         assert_eq!(page.blob_items[0].name.as_deref(), Some("blob1"));
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn list_blobs_arrow_accepts_xml_fallback() -> Result<()> {
+        let mock_client = Arc::new(MockHttpClient::new(|req| {
+            assert_eq!(
+                req.headers().get_optional_str(&ACCEPT),
+                Some("application/vnd.apache.arrow.stream,application/xml")
+            );
+            async move {
+                let mut headers = Headers::new();
+                headers.insert("content-type", "application/xml");
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    headers,
+                    Bytes::from_static(LIST_BLOBS_PAGE),
+                ))
+            }
+            .boxed()
+        }));
+        let client = BlobContainerClient::new(
+            Url::parse("https://example.blob.core.windows.net/container").unwrap(),
+            None,
+            Some(BlobContainerClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(mock_client)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+        let options = BlobContainerClientListBlobsOptions {
+            response_format: Some(StorageResponseFormat::Arrow),
+            ..Default::default()
+        };
+
+        let page = client
+            .list_blobs(Some(options))?
+            .into_pages()
+            .try_next()
+            .await?
+            .expect("expected a page")
+            .into_model()?;
+
+        assert_eq!(page.blob_items.len(), 1);
         Ok(())
     }
 }
