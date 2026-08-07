@@ -11,6 +11,9 @@ mod fe2o3;
 #[cfg(not(feature = "fe2o3_amqp"))]
 mod noop;
 
+#[cfg(feature = "transaction")]
+mod transaction;
+
 mod cbs;
 mod connection;
 /// AMQP error types.
@@ -35,6 +38,8 @@ pub use sender::{AmqpSendOptions, AmqpSendOutcome, AmqpSender, AmqpSenderApis, A
 pub use session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions};
 pub use simple_value::AmqpSimpleValue;
 use std::fmt::Debug;
+#[cfg(feature = "transaction")]
+pub use transaction::{AmqpTransactionCoordinator, AmqpTransactionCoordinatorApis};
 pub use value::{AmqpDescribed, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 
 /// Builders for AMQP types.
