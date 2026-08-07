@@ -184,11 +184,18 @@ async fn build_client_ppcb_disabled(
 /// - `404 / 1003 OwnerResourceNotFound` while the thin-client proxy's routing
 ///   table catches up so the freshly-created collection becomes routable.
 ///
-/// Both the metadata resolution in [`DatabaseClient::container_client`] and the
-/// subsequent first data-plane request can race these windows; this helper
-/// keeps retrying the metadata resolution *and* a follow-up `read` until both
-/// succeed or until an error outside those two transient conditions surfaces
-/// (or the bounded poll budget is exhausted).
+/// Crucially, a freshly-created collection can resolve at the metadata gateway
+/// (so `container_client(..)` and a container `read` both succeed) while the
+/// thin-client *data plane* still routes to nothing — meaning the caller's very
+/// first item write/query is the request that races the `404 / 1003` window and
+/// fails. Gating on metadata alone is therefore not enough: this helper also
+/// drives one page of a read-only full-container query so a data-plane
+/// `404 / 1003` surfaces *here* (and is retried) rather than in the caller.
+///
+/// It keeps retrying container resolution, the metadata `read`, and the
+/// data-plane query probe until all succeed, until an error outside those two
+/// transient conditions surfaces, or until the bounded poll budget is
+/// exhausted.
 async fn wait_for_container_ready(
     db_client: &azure_data_cosmos::clients::DatabaseClient,
     container_name: &str,
@@ -208,17 +215,38 @@ async fn wait_for_container_ready(
             && status.sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND))
     }
 
+    // A single end-to-end readiness attempt: resolve the container, read its
+    // metadata, and drive one page of a read-only full-container query so the
+    // thin-client proxy's collection routing is proven resolvable on the data
+    // plane before the caller issues its first item operation. The query scope
+    // is partition-key-shape agnostic (works for flat and hierarchical keys)
+    // and read-only, so it is safe on the just-created empty collection.
+    async fn probe_ready(
+        db_client: &azure_data_cosmos::clients::DatabaseClient,
+        container_name: &str,
+    ) -> azure_data_cosmos::Result<azure_data_cosmos::clients::ContainerClient> {
+        let container_client = db_client.container_client(container_name).await?;
+        container_client.read(None).await?;
+        let mut pages = container_client
+            .query_items::<serde_json::Value>(
+                Query::from("SELECT * FROM c"),
+                FeedScope::full_container(),
+                None,
+            )
+            .await?
+            .into_pages();
+        if let Some(page) = pages.next().await {
+            page?;
+        }
+        Ok(container_client)
+    }
+
     for attempt in 0..MAX_ATTEMPTS {
-        let last_err: Box<dyn std::error::Error> =
-            match db_client.container_client(container_name).await {
-                Ok(container_client) => match container_client.read(None).await {
-                    Ok(_) => return Ok(container_client),
-                    Err(e) if is_transient_not_ready(&e.status()) => Box::new(e),
-                    Err(e) => return Err(Box::new(e)),
-                },
-                Err(e) if is_transient_not_ready(&e.status()) => Box::new(e),
-                Err(e) => return Err(Box::new(e)),
-            };
+        let last_err = match probe_ready(db_client, container_name).await {
+            Ok(container_client) => return Ok(container_client),
+            Err(e) if is_transient_not_ready(&e.status()) => e,
+            Err(e) => return Err(Box::new(e)),
+        };
 
         if attempt + 1 == MAX_ATTEMPTS {
             return Err(format!(
