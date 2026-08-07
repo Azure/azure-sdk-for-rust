@@ -2,15 +2,34 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+function Get-RustupExecutable() {
+  # msrustup manages MS Rust toolchains outside of rustup's registry, so rustup
+  # cannot resolve a custom channel like 'ms-prod-1.95' from rust-toolchain.toml.
+  # Jobs using MS Rust set RUSTUP_EXE to 'msrustup' to route toolchain queries there.
+  if ($env:RUSTUP_EXE) {
+    return $env:RUSTUP_EXE
+  }
+
+  return 'rustup'
+}
+
 function Get-ActiveRustToolchain(
   [string]$ExecutePath
 ) {
-  $activeToolchain = (Invoke-LoggedCommand "rustup show active-toolchain" -ExecutePath $ExecutePath | Select-Object -First 1).Trim()
+  $rustup = Get-RustupExecutable
+  $output = Invoke-LoggedCommand "$rustup show active-toolchain" -ExecutePath $ExecutePath
+
+  # msrustup prefixes its output with INFO lines, so take the first line that
+  # actually names a toolchain.
+  $activeToolchain = $output
+  | Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*(INFO|WARN)\b' }
+  | Select-Object -First 1
+
   if (!$activeToolchain) {
     throw "Failed to determine the active Rust toolchain."
   }
 
-  return ($activeToolchain -split '\s+')[0]
+  return ($activeToolchain.Trim() -split '\s+')[0]
 }
 
 function Get-ResolvedRustToolchain(
