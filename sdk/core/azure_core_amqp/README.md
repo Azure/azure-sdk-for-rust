@@ -14,61 +14,66 @@ The AMQP package is tested using the standard `cargo test` command line:
 cargo test --package azure_core_amqp --all-features
 ```
 
-Certain AMQP tests requires that there be a running AMQP broker on the machine at the time of the test (the tests will run without the broker, the relevant tests will just be skipped).
+Certain AMQP tests require a running AMQP broker. The tests without a broker still run, and the broker-dependent tests are skipped.
 
 One existing AMQP broker is the "TestAMQPBroker" from the azure-amqp GitHub repository.
 
-To launch the TestAMQPBroker, there are two ways of installing and running the TestAmqpBroker, Scripted and Manual.
+The broker can be installed and run through the setup script or through the manual steps below.
 
-### Scripted Broker Install
+### Scripted broker install
 
-Running the broker from a script requires that you first [install Powershell](https://learn.microsoft.com/powershell/scripting/install/installing-powershell?view=powershell-7.4).
-From a running powershell instance,  run the powershell script in the sdk/core/azure_core_amqp directory:
+Install [PowerShell](https://learn.microsoft.com/powershell/scripting/install/installing-powershell) and the [.NET 10 SDK](https://dot.net/download). Run the setup script from the repository root.
 
 ```pwsh
 ./sdk/core/azure_core_amqp/Test-Setup.ps1
 ```
 
-This will download the TestAmqpBroker, build it and launch the executable in the background.
+The script clones Azure/azure-amqp at commit [`239aff0d87b2c19e1fa91636e0fc0f6ee6e9999a`](https://github.com/Azure/azure-amqp/commit/239aff0d87b2c19e1fa91636e0fc0f6ee6e9999a), restores through the broker repository's `nuget.cfsclean.config`, builds `TestAmqpBroker` for .NET 10, and launches it in the background. The config was added in [Azure/azure-amqp#318](https://github.com/Azure/azure-amqp/pull/318).
 
-Note that this requires that you have the [.NET SDK](https://dot.net/download) installed on your machine.
+Run the package tests in the same PowerShell process so `TEST_BROKER_ADDRESS` remains available.
 
-You can then run the azure_core_amqp package tests.
+```pwsh
+cargo test --package azure_core_amqp --all-features
+```
 
-Once you have finished running your tests, you run:
+Stop the broker after the tests finish.
 
 ```pwsh
 ./sdk/core/azure_core_amqp/Test-Cleanup.ps1
 ```
 
-which will terminate the test broker.
+#### Updating the broker pin
 
-### Manual Broker Install
+Update the pin only to an azure-amqp commit that contains `nuget.cfsclean.config` and builds `TestAmqpBroker` for `net10.0`. Change `$repositoryHash` in `Test-Setup.ps1`, run the setup and cleanup scripts, and confirm that setup reports a clean azure-amqp clone.
 
-For Manual testing, first clone the azure-amqp repository to a local directory:
+### Manual broker install
+
+Clone the pinned azure-amqp commit to a local directory.
 
 ```pwsh
 cd <Test Working Directory>
-git clone https://github.com/Azure/azure-amqp
+git clone https://github.com/Azure/azure-amqp --revision 239aff0d87b2c19e1fa91636e0fc0f6ee6e9999a
 ```
 
-Alternately, you can clone to a specific release in the azure-amqp repository:
+Normal external developer builds use the repository's standard NuGet configuration.
 
 ```pwsh
-git clone https://github.com/Azure/azure-amqp.git --branch hotfix
+cd azure-amqp
+dotnet build .\test\TestAmqpBroker\TestAmqpBroker.csproj --configuration Debug --framework net10.0
 ```
 
-Set an environment variable the test AMQP broker should listen on:
+CFSClean builds must authenticate to the `azure-sdk-for-net` Azure Artifacts feed, then run this restore and build sequence from the clone root.
+
+```pwsh
+dotnet restore .\test\TestAmqpBroker\TestAmqpBroker.csproj --configfile .\nuget.cfsclean.config
+dotnet build .\test\TestAmqpBroker\TestAmqpBroker.csproj --configuration Debug --framework net10.0 --no-restore
+```
+
+Set the broker address and launch the built assembly.
 
 ```pwsh
 $env:TEST_BROKER_ADDRESS = 'amqp://127.0.0.1:25672'
-```
-
-And launch the test broker:
-
-```pwsh
-cd azure-amqp/test/TestAmqpBroker
-dotnet run -- $env:TEST_BROKER_ADDRESS
+dotnet exec .\bin\Debug\TestAmqpBroker\net10.0\TestAmqpBroker.dll $env:TEST_BROKER_ADDRESS /headless
 ```
 
 Now, when you run the cargo tests, the networking functionality of the AMQP APIs will be executed.
