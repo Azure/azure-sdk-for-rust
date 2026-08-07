@@ -82,6 +82,7 @@ Load these files from `github/gh-aw` (they are not available locally).
 - `.github/aw/workflow-constraints.md`
 - `.github/aw/workflow-editing.md`
 - `.github/aw/workflow-patterns.md`
+- `.github/skills/otel-queries/SKILL.md`
 
 After loading the matching workflow prompt or skill, follow it directly:
 - Design workflows from scratch via interview: `.github/aw/designer.md`
@@ -100,4 +101,4 @@ After loading the matching workflow prompt or skill, follow it directly:
 - Optimize token usage and cost: `.github/aw/token-optimization.md`
 - Design long-running multi-agent research workflows: `.github/aw/multi-agent-research.md`
 
-When the task involves OTEL, OTLP, traces, observability backends, or telemetry-driven analysis, also read and follow `skills/otel-queries/SKILL.md` after loading the matching workflow prompt or skill.
+When the task involves OTEL, OTLP, traces, observability backends, or telemetry-driven analysis, also read and follow `.github/skills/otel-queries/SKILL.md` from `github/gh-aw` after loading the matching workflow prompt or skill.
