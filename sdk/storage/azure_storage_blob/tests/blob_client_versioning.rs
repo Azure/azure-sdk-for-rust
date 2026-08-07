@@ -7,7 +7,7 @@ use azure_core::{
     http::{RequestContent, StatusCode},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
 };
-use azure_core_test::{recorded, TestContext, VarOptions};
+use azure_core_test::{recorded, CustomDefaultMatcher, TestContext, VarOptions};
 use azure_storage_blob::models::{
     AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientDeleteOptions,
     BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
@@ -225,6 +225,9 @@ async fn test_blob_version_tier_operations(ctx: TestContext) -> Result<(), Box<d
 async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let container_client =
         get_container_client(recording, true, StorageAccount::Versioned, None).await?;
 

@@ -4,7 +4,7 @@
 mod common;
 
 use azure_core::http::{RequestContent, StatusCode};
-use azure_core_test::{recorded, TestContext};
+use azure_core_test::{recorded, CustomDefaultMatcher, TestContext};
 use azure_storage_blob::models::{
     BlobClientAcquireLeaseResultHeaders, BlobClientCreateSnapshotOptions,
     BlobClientCreateSnapshotResultHeaders, BlobClientDeleteOptions, BlobClientDownloadOptions,
@@ -148,6 +148,9 @@ async fn test_blob_snapshot_metadata_operations(ctx: TestContext) -> Result<(), 
 async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 

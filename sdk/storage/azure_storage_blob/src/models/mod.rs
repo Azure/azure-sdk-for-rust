@@ -3,6 +3,7 @@
 
 //! Model types for Azure Blob Storage.
 
+pub(crate) mod auto_format;
 mod download_result;
 pub(crate) mod drains;
 pub(crate) mod error;
@@ -15,12 +16,15 @@ pub(crate) mod response_ext;
 mod upload_result;
 
 pub use crate::generated::models::*;
+pub use auto_format::AutoFormat;
 pub use download_result::{
     BlobClientDownloadIntoResult, BlobClientDownloadResult, BlobDownloadProperties,
 };
-pub use method_options::BlobClientDownloadOptions;
-pub use method_options::BlockBlobClientUploadOptions;
 pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
+pub use method_options::{
+    BlobClientDownloadOptions, BlobContainerClientListBlobsOptions, BlockBlobClientUploadOptions,
+    StorageResponseFormat,
+};
 pub use upload_result::BlockBlobClientUploadResult;
 pub use upload_result::BlockBlobClientUploadResult as BlobClientUploadResult;
 

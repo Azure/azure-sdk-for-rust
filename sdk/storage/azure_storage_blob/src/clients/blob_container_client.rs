@@ -3,13 +3,18 @@
 
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
-use crate::{models::StorageErrorCode, BlobClient};
+use crate::models::{
+    AutoFormat, BlobContainerClientListBlobsOptions, ListBlobsResponse, StorageErrorCode,
+    StorageResponseFormat,
+};
+use crate::BlobClient;
 use azure_core::{
     credentials::TokenCredential,
-    error::ErrorKind,
+    error::{CheckSuccessOptions, ErrorKind},
     http::{
+        pager::{PagerContinuation, PagerOptions, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Pipeline, StatusCode, Url,
+        Method, Pager, Pipeline, PipelineStreamOptions, Request, StatusCode, Url, UrlExt,
     },
     tracing, Result,
 };
@@ -114,6 +119,104 @@ impl BlobContainerClient {
             Err(e) => Err(e),
         }
     }
+
+    /// Returns a list of the blobs in the specified container.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobs")]
+    pub fn list_blobs(
+        &self,
+        options: Option<BlobContainerClientListBlobsOptions<'_>>,
+    ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
+        let options = options.unwrap_or_default();
+        let accept = match options.response_format.unwrap_or_default() {
+            StorageResponseFormat::Arrow => "application/vnd.apache.arrow.stream,application/xml",
+            StorageResponseFormat::Xml => "application/xml",
+        };
+        let pager_options = PagerOptions {
+            context: options.method_options.context.clone().into_owned(),
+            continuation: options.method_options.continuation.clone(),
+        };
+        let pipeline = self.pipeline.clone();
+        let mut first_url = self.endpoint.clone();
+        let mut query_builder = first_url.query_builder();
+        query_builder
+            .append_pair("comp", "list")
+            .append_pair("restype", "container");
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
+                "include",
+                include
+                    .iter()
+                    .map(|item| item.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
+        }
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            query_builder.set_pair("maxresults", maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let version = self.version.clone();
+
+        Ok(Pager::new(
+            move |state: PagerState, pager_options| {
+                let mut url = first_url.clone();
+                if let PagerState::More(marker) = state {
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", marker.as_ref());
+                    query_builder.build();
+                }
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", accept);
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
+                Box::pin(async move {
+                    let response = pipeline
+                        .stream(
+                            &pager_options.context,
+                            &mut request,
+                            Some(PipelineStreamOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    let response = response.try_into_raw_response().await?;
+                    let response: azure_core::http::Response<ListBlobsResponse, AutoFormat> =
+                        response.into();
+                    let next_marker = crate::models::auto_format::decode_next_marker(
+                        response.headers(),
+                        response.body(),
+                    )?;
+                    Ok(match next_marker {
+                        Some(next_marker) => PagerResult::More {
+                            response,
+                            continuation: PagerContinuation::Token(next_marker),
+                        },
+                        None => PagerResult::Done { response },
+                    })
+                })
+            },
+            Some(pager_options),
+        ))
+    }
 }
 
 #[cfg(test)]
@@ -121,8 +224,9 @@ mod tests {
     use super::*;
     use azure_core::{
         http::{
-            headers::Headers, pager::PagerContinuation, AsyncRawResponse, ClientOptions,
-            StatusCode, Transport,
+            headers::{Headers, ACCEPT},
+            pager::PagerContinuation,
+            AsyncRawResponse, ClientOptions, StatusCode, Transport,
         },
         Bytes,
     };
@@ -170,6 +274,10 @@ mod tests {
     async fn list_blobs_page_keeps_body_for_into_model() -> Result<()> {
         let mock_client = Arc::new(MockHttpClient::new(|req| {
             assert_eq!(req.url().path(), "/container");
+            assert_eq!(
+                req.headers().get_optional_str(&ACCEPT),
+                Some("application/xml")
+            );
             assert!(req
                 .url()
                 .query()
@@ -208,6 +316,52 @@ mod tests {
         assert_eq!(page.blob_items.len(), 1);
         assert_eq!(page.blob_items[0].name.as_deref(), Some("blob1"));
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn list_blobs_arrow_accepts_xml_fallback() -> Result<()> {
+        let mock_client = Arc::new(MockHttpClient::new(|req| {
+            assert_eq!(
+                req.headers().get_optional_str(&ACCEPT),
+                Some("application/vnd.apache.arrow.stream,application/xml")
+            );
+            async move {
+                let mut headers = Headers::new();
+                headers.insert("content-type", "application/xml");
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    headers,
+                    Bytes::from_static(LIST_BLOBS_PAGE),
+                ))
+            }
+            .boxed()
+        }));
+        let client = BlobContainerClient::new(
+            Url::parse("https://example.blob.core.windows.net/container").unwrap(),
+            None,
+            Some(BlobContainerClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(mock_client)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+        let options = BlobContainerClientListBlobsOptions {
+            response_format: Some(StorageResponseFormat::Arrow),
+            ..Default::default()
+        };
+
+        let page = client
+            .list_blobs(Some(options))?
+            .into_pages()
+            .try_next()
+            .await?
+            .expect("expected a page")
+            .into_model()?;
+
+        assert_eq!(page.blob_items.len(), 1);
         Ok(())
     }
 }

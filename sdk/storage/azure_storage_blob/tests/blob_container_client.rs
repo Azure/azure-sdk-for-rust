@@ -7,7 +7,7 @@ use azure_core::{
     http::{RequestContent, StatusCode},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
 };
-use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
+use azure_core_test::{recorded, CustomDefaultMatcher, Matcher, TestContext, VarOptions};
 use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
@@ -105,6 +105,9 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
 async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
     let blob_names = ["testblob1".to_string(), "testblob2".to_string()];
@@ -146,6 +149,9 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
     let blob_names = [
@@ -264,6 +270,9 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
 async fn test_list_blobs_decodes_xml_invalid_names(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
 
@@ -608,6 +617,9 @@ async fn test_create_container_with_metadata(ctx: TestContext) -> Result<(), Box
 async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
     container_client.create(None).await?;
@@ -681,6 +693,9 @@ async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Bo
 async fn test_list_blobs_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
     container_client.create(None).await?;
@@ -717,6 +732,9 @@ async fn test_list_blobs_with_uncommitted_blobs_include(
 ) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
     container_client.create(None).await?;
@@ -775,6 +793,9 @@ async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Bo
 
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
     container_client.create(None).await?;
@@ -831,6 +852,9 @@ async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Bo
 async fn test_list_blobs_with_copy_include(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    let mut matcher = CustomDefaultMatcher::default();
+    matcher.ignored_headers.push("accept");
+    recording.set_matcher(matcher.into()).await?;
     let container_client =
         get_container_client(recording, false, StorageAccount::Standard, None).await?;
     container_client.create(None).await?;
