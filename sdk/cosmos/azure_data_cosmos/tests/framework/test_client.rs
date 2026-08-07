@@ -41,7 +41,7 @@ pub const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 pub const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
 pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://127.0.0.1:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 pub const HUB_REGION: Region = Region::EAST_US_2;
-pub const SATELLITE_REGION: Region = Region::WEST_US_3;
+pub const SATELLITE_REGION: Region = Region::CENTRAL_US;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 pub const EMULATOR_HOST: &str = "127.0.0.1";
 /// Asserts that the operation contacted `expected_region` at least once and
