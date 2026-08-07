@@ -507,12 +507,16 @@ typedef int32_t cosmos_partition_key_component_kind_t;
  * This enum is the **single source of truth** for those names on the C side.
  * Each discriminant is a literal copy of the corresponding
  * [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
- * literals to emit `= N`). Each discriminant must exactly match the driver
- * constant it copies.
+ * literals to emit `= N`). A compile-time guard immediately after the enum
+ * verifies every discriminant against the driver constant it mirrors, so a
+ * value that drifts from the driver — or a driver constant that is renamed or
+ * removed — fails the build instead of silently diverging.
  *
  * [`SubStatusCode`] is a set of associated `pub const`s, not an enumerable
- * type, so keeping this enum in sync when the driver adds a new synthetic
- * `2xxxx` sub-status is a **manual** step: add the matching variant here.
+ * type, so exposing a *new* synthetic `2xxxx` sub-status on the C surface is
+ * still a manual step: add the variant here and pin it in the guard below.
+ * Because the guard maps variants with an exhaustive match, a variant left
+ * unpinned fails to compile — the enum and the driver cannot silently diverge.
  *
  * The values are *not* exhaustive of the `2xxxx` range: the driver leaves gaps
  * (e.g. `20009`, `20013`, `20103`) for future use. Do not invent variants for
