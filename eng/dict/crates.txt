@@ -73,6 +73,8 @@ include_file
 include-file
 json_patch
 json-patch
+libfuzzer_sys
+libfuzzer-sys
 litemap
 openssl
 opentelemetry
