@@ -75,6 +75,10 @@ impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpOutcome {
             fe2o3_amqp_types::messaging::Outcome::Released(_) => AmqpOutcome::Released,
             fe2o3_amqp_types::messaging::Outcome::Rejected(_) => AmqpOutcome::Rejected,
             fe2o3_amqp_types::messaging::Outcome::Modified(_) => AmqpOutcome::Modified,
+            // Unreachable: fe2o3's Declared outcome is only produced by transaction coordinator links,
+            // which are introduced in a later commit. Dedicated outcome variants land in a later commit.
+            #[cfg(feature = "transaction")]
+            fe2o3_amqp_types::messaging::Outcome::Declared(_) => AmqpOutcome::Accepted,
         }
     }
 }
