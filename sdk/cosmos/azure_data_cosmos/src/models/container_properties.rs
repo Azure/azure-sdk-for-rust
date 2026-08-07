@@ -980,6 +980,7 @@ mod tests {
             "geospatialConfig": {"type": "Geography"},
             "clientEncryptionPolicy": {"policyFormatVersion": 2},
             "vectorEmbeddingPolicy": {
+                "someFutureVectorPolicyKnob": true,
                 "vectorEmbeddings": [
                     {
                         "path": "/vector",
@@ -1015,6 +1016,10 @@ mod tests {
         assert_eq!(
             json!({"modelName": "text-embedding-3-small"}),
             round_tripped["vectorEmbeddingPolicy"]["vectorEmbeddings"][0]["embeddingSource"]
+        );
+        assert_eq!(
+            json!(true),
+            round_tripped["vectorEmbeddingPolicy"]["someFutureVectorPolicyKnob"]
         );
         assert_eq!(
             json!("standard"),

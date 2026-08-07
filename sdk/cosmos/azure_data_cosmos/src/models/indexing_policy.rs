@@ -641,6 +641,17 @@ mod tests {
     }
 
     #[test]
+    fn serializes_spherical_quantizer_type() {
+        let index = VectorIndex::new("/vector", VectorIndexType::DiskANN)
+            .with_quantizer_type(QuantizerType::Spherical);
+
+        assert_eq!(
+            r#"{"path":"/vector","type":"diskANN","quantizerType":"spherical"}"#,
+            serde_json::to_string(&index).unwrap()
+        );
+    }
+
+    #[test]
     fn round_trips_full_text_indexes() {
         let policy = IndexingPolicy::default()
             .with_full_text_index("/abstract")

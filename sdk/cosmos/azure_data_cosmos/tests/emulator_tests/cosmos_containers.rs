@@ -11,7 +11,7 @@ use azure_data_cosmos::{
     models::PartitionKeyKind,
     models::{
         ContainerProperties, FullTextPath, FullTextPolicy, IndexingMode, IndexingPolicy,
-        PropertyPath, ThroughputProperties, VectorDataType, VectorDistanceFunction,
+        PropertyPath, QuantizerType, ThroughputProperties, VectorDataType, VectorDistanceFunction,
         VectorEmbedding, VectorEmbeddingPolicy, VectorIndex, VectorIndexType,
     },
     Query,
@@ -275,6 +275,12 @@ pub async fn container_vector_and_full_text_policies_round_trip() -> Result<(), 
                             VectorDataType::Float32,
                             16,
                             VectorDistanceFunction::DotProduct,
+                        ))
+                        .with_embedding(VectorEmbedding::new(
+                            "/diskAnnVector",
+                            VectorDataType::Float32,
+                            32,
+                            VectorDistanceFunction::Cosine,
                         )),
                 )
                 .with_full_text_policy(
@@ -288,11 +294,20 @@ pub async fn container_vector_and_full_text_policies_round_trip() -> Result<(), 
                         // Vector paths should not be covered by the regular index.
                         .with_excluded_path("/flatVector/*")
                         .with_excluded_path("/quantizedVector/*")
+                        .with_excluded_path("/diskAnnVector/*")
                         .with_indexing_mode(IndexingMode::Consistent)
                         .with_vector_index(VectorIndex::new("/flatVector", VectorIndexType::Flat))
                         .with_vector_index(
                             VectorIndex::new("/quantizedVector", VectorIndexType::QuantizedFlat)
+                                .with_quantizer_type(QuantizerType::Product)
                                 .with_quantization_byte_size(4),
+                        )
+                        .with_vector_index(
+                            VectorIndex::new("/diskAnnVector", VectorIndexType::DiskANN)
+                                .with_quantizer_type(QuantizerType::Product)
+                                .with_quantization_byte_size(8)
+                                .with_indexing_search_list_size(50)
+                                .with_shard_key_path("/country/city"),
                         )
                         .with_full_text_index("/title")
                         .with_full_text_index("/body"),
@@ -338,23 +353,34 @@ fn assert_vector_and_full_text_policies(properties: &ContainerProperties, stage:
         .vector_embedding_policy
         .as_ref()
         .unwrap_or_else(|| panic!("{stage}: vector embedding policy should be present"));
-    let embedding_paths: Vec<&str> = vector_policy
+    let mut embedding_paths: Vec<&str> = vector_policy
         .embeddings
         .iter()
         .map(|e| e.path.as_str())
         .collect();
+    embedding_paths.sort_unstable();
     assert_eq!(
-        vec!["/flatVector", "/quantizedVector"],
+        vec!["/diskAnnVector", "/flatVector", "/quantizedVector"],
         embedding_paths,
         "{stage}: vector embedding paths"
     );
+    let flat_embedding = vector_policy
+        .embeddings
+        .iter()
+        .find(|embedding| embedding.path == "/flatVector")
+        .unwrap_or_else(|| panic!("{stage}: flat vector embedding should be present"));
     assert_eq!(
-        8, vector_policy.embeddings[0].dimensions,
+        8, flat_embedding.dimensions,
         "{stage}: flat vector dimensions"
     );
+    let quantized_embedding = vector_policy
+        .embeddings
+        .iter()
+        .find(|embedding| embedding.path == "/quantizedVector")
+        .unwrap_or_else(|| panic!("{stage}: quantized vector embedding should be present"));
     assert_eq!(
         VectorDistanceFunction::DotProduct,
-        vector_policy.embeddings[1].distance_function,
+        quantized_embedding.distance_function,
         "{stage}: quantized vector distance function"
     );
 
@@ -366,13 +392,14 @@ fn assert_vector_and_full_text_policies(properties: &ContainerProperties, stage:
         "en-US", full_text_policy.default_language,
         "{stage}: full text default language"
     );
-    let full_text_paths: Vec<&str> = full_text_policy
+    let mut full_text_paths: Vec<&str> = full_text_policy
         .full_text_paths
         .iter()
         .map(|p| p.path.as_str())
         .collect();
+    full_text_paths.sort_unstable();
     assert_eq!(
-        vec!["/title", "/body"],
+        vec!["/body", "/title"],
         full_text_paths,
         "{stage}: full text paths"
     );
@@ -381,39 +408,86 @@ fn assert_vector_and_full_text_policies(properties: &ContainerProperties, stage:
         .indexing_policy
         .as_ref()
         .unwrap_or_else(|| panic!("{stage}: indexing policy should be present"));
-    let vector_index_paths: Vec<&str> = indexing_policy
+    let mut vector_index_paths: Vec<&str> = indexing_policy
         .vector_indexes
         .iter()
         .map(|i| i.path.as_str())
         .collect();
+    vector_index_paths.sort_unstable();
     assert_eq!(
-        vec!["/flatVector", "/quantizedVector"],
+        vec!["/diskAnnVector", "/flatVector", "/quantizedVector"],
         vector_index_paths,
         "{stage}: vector index paths"
     );
+    let flat_index = indexing_policy
+        .vector_indexes
+        .iter()
+        .find(|index| index.path == "/flatVector")
+        .unwrap_or_else(|| panic!("{stage}: flat vector index should be present"));
     assert_eq!(
         VectorIndexType::Flat,
-        indexing_policy.vector_indexes[0].index_type,
+        flat_index.index_type,
         "{stage}: flat vector index type"
     );
+    let quantized_index = indexing_policy
+        .vector_indexes
+        .iter()
+        .find(|index| index.path == "/quantizedVector")
+        .unwrap_or_else(|| panic!("{stage}: quantized vector index should be present"));
     assert_eq!(
         VectorIndexType::QuantizedFlat,
-        indexing_policy.vector_indexes[1].index_type,
+        quantized_index.index_type,
         "{stage}: quantized vector index type"
     );
     assert_eq!(
+        Some(QuantizerType::Product),
+        quantized_index.quantizer_type,
+        "{stage}: quantized vector quantizer type"
+    );
+    assert_eq!(
         Some(4),
-        indexing_policy.vector_indexes[1].quantization_byte_size,
-        "{stage}: quantization byte size"
+        quantized_index.quantization_byte_size,
+        "{stage}: quantized vector byte size"
+    );
+    let disk_ann_index = indexing_policy
+        .vector_indexes
+        .iter()
+        .find(|index| index.path == "/diskAnnVector")
+        .unwrap_or_else(|| panic!("{stage}: DiskANN vector index should be present"));
+    assert_eq!(
+        VectorIndexType::DiskANN,
+        disk_ann_index.index_type,
+        "{stage}: DiskANN vector index type"
+    );
+    assert_eq!(
+        Some(QuantizerType::Product),
+        disk_ann_index.quantizer_type,
+        "{stage}: DiskANN quantizer type"
+    );
+    assert_eq!(
+        Some(8),
+        disk_ann_index.quantization_byte_size,
+        "{stage}: DiskANN quantization byte size"
+    );
+    assert_eq!(
+        Some(50),
+        disk_ann_index.indexing_search_list_size,
+        "{stage}: DiskANN indexing search list size"
+    );
+    assert_eq!(
+        vec!["/country/city"],
+        disk_ann_index.vector_index_shard_key,
+        "{stage}: DiskANN shard key"
     );
 
-    let full_text_index_paths: Vec<&str> = indexing_policy
+    let mut full_text_index_paths: Vec<&str> = indexing_policy
         .full_text_indexes
         .iter()
         .map(|i| i.path.as_str())
         .collect();
+    full_text_index_paths.sort_unstable();
     assert_eq!(
-        vec!["/title", "/body"],
+        vec!["/body", "/title"],
         full_text_index_paths,
         "{stage}: full text index paths"
     );
