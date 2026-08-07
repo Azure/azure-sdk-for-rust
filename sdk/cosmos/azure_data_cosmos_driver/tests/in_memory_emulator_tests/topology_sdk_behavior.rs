@@ -421,7 +421,7 @@ async fn unavailability_mark_is_probe_gated_across_remove_and_re_add() {
 
     assert!(
         driver.mark_region_endpoint_unavailable_for_testing(&Region::WEST_US),
-        "test setup: West US should be markable"
+        "test setup: West US should have an endpoint that can be marked"
     );
 
     // With West marked, reads avoid it even though it is the top preference.

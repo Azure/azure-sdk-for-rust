@@ -12,7 +12,7 @@
 //! restart.
 //!
 //! The assertions are deliberately modeled on the .NET SDK's own coverage so
-//! the two SDKs agree on observable behaviour:
+//! the two SDKs agree on observable behavior:
 //!
 //! | .NET test | mirrored here |
 //! | --- | --- |
@@ -289,10 +289,9 @@ async fn added_region_gets_a_fresh_unused_id() {
 /// A request sent to a removed region gets `403 Forbidden` with substatus
 /// `1008 DatabaseAccountNotFound` — **not** a routing failure.
 ///
-/// The status, substatus and body shape were verified live: removing a region
-/// makes its regional endpoint return this within seconds, well before ARM
-/// reports the update complete. See
-/// the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
+/// Removing a region makes its regional endpoint return this within seconds,
+/// well before ARM reports the update complete. The status, substatus and body
+/// shape all match what the service sends.
 #[tokio::test]
 async fn read_to_retired_region_gets_403_1008() {
     let recorder = HostRecorder::new();
@@ -554,9 +553,9 @@ async fn removing_the_write_region_is_rejected() {
 /// advertises the region, so a client that refreshes topology in response to the
 /// 1008 gets the dead region right back.
 ///
-/// Observed live on `tomasvaron-h2sweep`: the East US 2 regional endpoint began
-/// returning 403/1008 ~20 s after the ARM removal was accepted, while the global
-/// account read kept listing East US 2 for several more minutes.
+/// The service exhibits this: a removed region's regional endpoint begins
+/// returning 403/1008 within seconds of the removal being accepted, while the
+/// global account read keeps listing that region for several more minutes.
 #[tokio::test]
 async fn draining_region_rejects_while_still_advertised() {
     let recorder = HostRecorder::new();
@@ -717,9 +716,8 @@ async fn draining_the_write_or_last_region_is_rejected() {
 /// A region added to a **multi-write** account joins `readableLocations` and
 /// `writableLocations` together, and accepts writes immediately.
 ///
-/// Verified live: on a multi-write account the new region entered both lists in
-/// a single atomic transition (no flapping), unlike the single-write add. See
-/// the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>.
+/// On a multi-write account the new region enters both lists in a single atomic
+/// transition, with none of the flapping a single-write add exhibits.
 #[tokio::test]
 async fn region_added_to_multi_write_account_is_immediately_writable() {
     let recorder = HostRecorder::new();
@@ -1123,10 +1121,9 @@ async fn delayed_seeding_region_is_empty_until_catch_up() {
 
 // --- Account payload --------------------------------------------------------
 
-/// The service does **not** send an `_etag` on the account read — verified
-/// against live accounts across global/regional endpoints and two `x-ms-version`
-/// values (see the live capture at <https://gist.github.com/tvaron3/dc202301d4905b152433bc6fcff42c8f>). The emulator must not invent
-/// one, or it would exercise the driver's unchanged-etag short-circuit in
+/// The service does **not** send an `_etag` on the account read, on either the
+/// global or a regional endpoint. The emulator must not invent one, or it would
+/// exercise the driver's unchanged-etag short-circuit in
 /// `sync_account_properties`, which is inert in production.
 #[tokio::test]
 async fn account_read_has_no_etag_like_the_service() {
@@ -1244,7 +1241,7 @@ async fn account_payload_shape_matches_the_service() {
 /// service never disagrees with itself there.
 ///
 /// The service additionally encodes the **write** region into `_rid`
-/// (`{account}-{writeregion}.sql.cosmos.azure.com`, regardless of which endpoint
+/// (`{account}-{write-region}.sql.cosmos.azure.com`, regardless of which endpoint
 /// served the read). The emulator's synthetic hosts carry no
 /// `{account}-{region}` structure to recover a base account name from, so that
 /// component is deliberately not modeled.

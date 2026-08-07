@@ -202,10 +202,10 @@ The emulator serves `GET /` requests with synthesized account properties from co
   the account resource per regional endpoint: the global endpoint reports `{account}`, the
   regional endpoint reports `{account}-{region}`.
 - `_rid` → `{account}.sql.cosmos.azure.com`, naming the same account as `id`. The live service
-  additionally encodes the **write** region (`{account}-{writeregion}.sql.cosmos.azure.com`,
+  additionally encodes the **write** region (`{account}-{write-region}.sql.cosmos.azure.com`,
   regardless of which endpoint served the read); the emulator's synthetic hosts carry no
   `{account}-{region}` structure to recover a base account name from, so that one component is
-  deliberately unmodeled rather than letting `_rid` and `id` disagree.
+  deliberately left out rather than letting `_rid` and `id` disagree.
 - **No `_etag`.** The account read carries no etag in the body and none in the response headers,
   on either the global or a regional endpoint. `AccountProperties::etag` is therefore always empty
   in production, which makes the unchanged-etag short-circuit in

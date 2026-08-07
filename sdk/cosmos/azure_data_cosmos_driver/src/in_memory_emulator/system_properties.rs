@@ -208,12 +208,13 @@ pub(crate) fn account_properties_to_json(
         .unwrap_or_else(|| config.account_id().to_string());
 
     // The live service reports `_rid` as
-    // `{account}-{writeregion}.sql.cosmos.azure.com`. The emulator's synthetic
+    // `{account}-{write-region}.sql.cosmos.azure.com`. The emulator's synthetic
     // hosts carry no `{account}-{region}` structure to recover a base account
     // name from, so encoding the write region here would make `_rid` name a
     // different account than `id` on the same payload -- something the service
     // never does. Reporting the same account keeps the payload self-consistent;
-    // the write-region component is the one part of `_rid` left unmodeled.
+    // the write-region component is the one part of `_rid` the emulator does not
+    // reproduce.
     let rid = format!("{account_id}.sql.cosmos.azure.com");
 
     // NOTE: no `_etag`. Verified against live accounts (two accounts, global and
