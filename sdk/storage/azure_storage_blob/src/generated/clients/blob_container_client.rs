@@ -12,11 +12,11 @@ use crate::generated::models::{
     BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
     BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsInternalOptions,
-    BlobContainerClientListBlobsInternalResult, BlobContainerClientReleaseLeaseOptions,
-    BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
-    BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetMetadataOptions, FilteredBlobResponse, ListBlobsHierarchicalResponse,
-    SignedIdentifiers,
+    BlobContainerClientListBlobsInternalResult, BlobContainerClientListBlobsXmlOptions,
+    BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
+    BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
+    BlobContainerClientSetAccessPolicyOptions, BlobContainerClientSetMetadataOptions,
+    FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse, SignedIdentifiers,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -894,6 +894,97 @@ impl BlobContainerClient {
             )
             .await?;
         Ok(rsp.into())
+    }
+
+    /// Returns a list of the blobs in the specified container.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobs")]
+    pub(crate) fn list_blobs_xml(
+        &self,
+        options: Option<BlobContainerClientListBlobsXmlOptions<'_>>,
+    ) -> Result<Pager<ListBlobsResponse, XmlFormat>> {
+        let options = options.unwrap_or_default().into_owned();
+        let pipeline = self.pipeline.clone();
+        let mut first_url = self.endpoint.clone();
+        let mut query_builder = first_url.query_builder();
+        query_builder
+            .append_pair("comp", "list")
+            .append_pair("restype", "container");
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
+                "include",
+                include
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
+        }
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            query_builder.set_pair("maxresults", maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct BlobContainerClientListBlobsXmlPage {
+            #[serde(rename = "NextMarker")]
+            next_marker: Option<String>,
+        }
+
+        let version = self.version.clone();
+        Ok(Pager::new(
+            move |marker: PagerState, pager_options| {
+                let mut url = first_url.clone();
+                if let PagerState::More(marker) = marker {
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", marker.as_ref());
+                    query_builder.build();
+                }
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", "application/xml");
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
+                Box::pin(async move {
+                    let rsp = pipeline
+                        .send(
+                            &pager_options.context,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    let (status, headers, body) = rsp.deconstruct();
+                    let res: BlobContainerClientListBlobsXmlPage = xml::from_xml(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
+                    Ok(match res.next_marker {
+                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                            response: rsp,
+                            continuation: PagerContinuation::Token(next_marker),
+                        },
+                        _ => PagerResult::Done { response: rsp },
+                    })
+                })
+            },
+            Some(options.method_options),
+        ))
     }
 
     /// Frees the lease if it's no longer needed, so that another client can immediately acquire a lease against the container.
