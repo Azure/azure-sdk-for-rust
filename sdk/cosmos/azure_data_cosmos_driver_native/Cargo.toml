@@ -49,5 +49,13 @@ tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macr
 [build-dependencies]
 cbindgen = "0.29.2"
 
+[features]
+# Compiles the `__test_only_*` C-ABI helpers that back the `c_tests/`
+# end-to-end suite. Off by default — production `cdylib` / `staticlib`
+# builds do not expose these symbols. Enabled by the CMake C-test build
+# (`corrosion_import_crate(FEATURES test-abi)`); Rust integration tests
+# and normal consumer builds must not enable it.
+test-abi = []
+
 [lints]
 workspace = true
