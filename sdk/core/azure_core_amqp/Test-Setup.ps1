@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-# cspell: ignore JOBID depsfile
+# cspell: ignore JOBID cfsclean configfile depsfile
 
 
 # Load common ES scripts
