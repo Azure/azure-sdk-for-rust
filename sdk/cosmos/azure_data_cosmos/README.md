@@ -104,6 +104,20 @@ container metadata read the SDK already performs internally.
 
 ### CRUD operation on Items
 
+### Diagnostics and tracing emulator tests
+
+The diagnostics integration tests use the Cosmos DB Emulator and an in-memory
+OpenTelemetry exporter. Start the emulator, set `AZURE_TEST_MODE=live`, and run:
+
+```sh
+cargo test -p azure_data_cosmos --test in_memory_emulator --all-features
+```
+
+Tracing is opt-in: register `CosmosTracingHandler` with the client diagnostics
+builder and enable the `distributed_tracing` feature. The test suite verifies
+that sampled operations contain the Cosmos operation span and its outbound HTTP
+client spans.
+
 ```rust
 use serde::{Serialize, Deserialize};
 use azure_data_cosmos::CosmosClient;
