@@ -1346,6 +1346,17 @@ impl SubStatusCode {
     /// currently supported.
     pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = SubStatusCode(20119);
 
+    /// A `DISTINCT` value nested deeper than the structural hasher's depth
+    /// limit (20120). Cosmos caps document nesting well below that limit, so
+    /// this indicates a hand-crafted or corrupt payload.
+    pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: SubStatusCode = SubStatusCode(20120);
+
+    /// A continuation token was requested for an unordered `DISTINCT` query
+    /// (20121). Resuming would require carrying the entire set of seen values,
+    /// so the token is refused rather than silently re-emitting duplicates.
+    /// Adding a matching `ORDER BY` makes the query resumable.
+    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = SubStatusCode(20121);
+
     // ----- 20150-20199: SDK configuration / setup errors -----
 
     /// Two fault-injection rules registered with the same id (20150).
@@ -2199,6 +2210,20 @@ impl CosmosStatus {
     pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
+    };
+
+    /// 400 / 20120 — a `DISTINCT` value nested past the structural hasher's
+    /// depth limit.
+    pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED),
+    };
+
+    /// 400 / 20121 — a continuation token was requested for an unordered
+    /// `DISTINCT` query, which cannot be resumed safely.
+    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED),
     };
 
     // Configuration / setup (HTTP 400, sub-status 20150-20199)

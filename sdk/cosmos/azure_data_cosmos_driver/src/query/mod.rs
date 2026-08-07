@@ -39,7 +39,7 @@ pub(crate) use parser::parse;
 /// Tests use [`__TEST_ONLY_SUPPORTED_QUERY_FEATURES`] (broad, matches what
 /// Java/.NET advertise) so plan-shape parity against the live Gateway is
 /// validated end-to-end across the full feature surface.
-pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "OrderBy,MultipleOrderBy";
+pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "Distinct,OrderBy,MultipleOrderBy";
 
 /// Broad supported-features list used by cross-crate gateway-comparison
 /// tests. Matches what the Java and .NET SDKs send today so the Gateway
