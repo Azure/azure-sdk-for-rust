@@ -753,6 +753,7 @@ impl CosmosDriver {
         let (response, cosmos_headers, status_code, sub_status, cosmos_status) = loop {
             let request_handle = diagnostics.start_request(
                 execution_context,
+                azure_core::http::Method::Get,
                 PipelineType::Metadata,
                 transport_security,
                 transport.diagnostics_kind(),

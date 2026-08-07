@@ -180,7 +180,7 @@ mod tests {
 
         let children: Vec<_> = spans
             .iter()
-            .filter(|s| s.name == "cosmosdb.request")
+            .filter(|s| s.name.starts_with("HTTP "))
             .collect();
         assert_eq!(children.len(), 2);
         for child in &children {
@@ -342,7 +342,7 @@ mod tests {
 
         let child_names: Vec<String> = spans
             .iter()
-            .filter(|s| s.name == "cosmosdb.request")
+            .filter(|s| s.name.starts_with("HTTP "))
             .filter_map(|s| {
                 s.attributes
                     .iter()
@@ -384,7 +384,7 @@ mod tests {
         let spans = exporter.get_finished_spans().unwrap();
         let children: Vec<_> = spans
             .iter()
-            .filter(|s| s.name == "cosmosdb.request")
+            .filter(|s| s.name.starts_with("HTTP "))
             .collect();
         assert_eq!(children.len(), 2);
         for child in children {
@@ -483,7 +483,7 @@ mod tests {
             .expect("root span present");
         let earliest_child = spans
             .iter()
-            .filter(|s| s.name == "cosmosdb.request")
+            .filter(|s| s.name.starts_with("HTTP "))
             .map(|s| s.start_time)
             .min()
             .expect("attempt children present");

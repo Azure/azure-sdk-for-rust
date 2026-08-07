@@ -1161,6 +1161,7 @@ mod tests {
                 );
                 let handle = builder.start_request(
                     crate::diagnostics::ExecutionContext::Initial,
+                    azure_core::http::Method::Get,
                     crate::diagnostics::PipelineType::DataPlane,
                     crate::diagnostics::TransportSecurity::Secure,
                     crate::diagnostics::TransportKind::Gateway,

@@ -73,3 +73,9 @@ pub(crate) const MACHINE_ID: &str = "azure.cosmosdb.machine_id";
 /// `azure.cosmosdb.sampling.reason` — why the operation was tail-sampled for
 /// emission (a failure, or which threshold it crossed).
 pub(crate) const SAMPLING_REASON: &str = "azure.cosmosdb.sampling.reason";
+
+pub(crate) const HTTP_REQUEST_METHOD: &str = "http.request.method";
+pub(crate) const URL_SCHEME: &str = "url.scheme";
+pub(crate) const URL_FULL: &str = "url.full";
+pub(crate) const HTTP_RESPONSE_STATUS_CODE: &str = "http.response.status_code";
+pub(crate) const NETWORK_PROTOCOL_VERSION: &str = "network.protocol.version";

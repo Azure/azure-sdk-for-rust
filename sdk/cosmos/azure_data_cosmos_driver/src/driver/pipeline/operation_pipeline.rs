@@ -9308,6 +9308,7 @@ mod tests {
         );
         let _ = child.start_request(
             super::ExecutionContext::Hedging,
+            azure_core::http::Method::Get,
             super::PipelineType::DataPlane,
             super::TransportSecurity::Secure,
             TransportKind::Gateway,
@@ -9424,6 +9425,7 @@ mod tests {
         );
         let _ = child.start_request(
             super::ExecutionContext::Hedging,
+            azure_core::http::Method::Get,
             super::PipelineType::DataPlane,
             super::TransportSecurity::Secure,
             TransportKind::Gateway,
@@ -9460,6 +9462,7 @@ mod tests {
         );
         let _ = child.start_request(
             super::ExecutionContext::Hedging,
+            azure_core::http::Method::Get,
             super::PipelineType::DataPlane,
             super::TransportSecurity::Secure,
             TransportKind::Gateway,

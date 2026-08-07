@@ -13,7 +13,7 @@ use crate::{
     options::{DiagnosticsOptions, DiagnosticsThresholds, DiagnosticsVerbosity, Region},
     system::CpuMemoryMonitor,
 };
-use azure_core::http::StatusCode;
+use azure_core::http::{Method, StatusCode};
 use serde::Serialize;
 use std::{
     collections::HashMap,
@@ -411,6 +411,9 @@ pub struct RequestDiagnostics {
     )]
     operation_name: Option<Arc<str>>,
 
+    /// HTTP method used for this request.
+    http_method: Method,
+
     /// The pipeline type used for this request.
     pipeline_type: PipelineType,
 
@@ -499,6 +502,7 @@ impl RequestDiagnostics {
     /// Creates a new request diagnostics entry for a request being started.
     pub(crate) fn new(
         execution_context: ExecutionContext,
+        http_method: Method,
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
         transport_kind: TransportKind,
@@ -508,6 +512,7 @@ impl RequestDiagnostics {
         Self {
             execution_context,
             operation_name: None,
+            http_method,
             pipeline_type,
             transport_security,
             transport_kind,
@@ -558,6 +563,7 @@ impl RequestDiagnostics {
         Self {
             execution_context: ExecutionContext::Initial,
             operation_name: None,
+            http_method: Method::Get,
             pipeline_type: PipelineType::DataPlane,
             transport_security: TransportSecurity::Secure,
             transport_kind: TransportKind::Gateway,
@@ -734,6 +740,11 @@ impl RequestDiagnostics {
     /// context's [`operation_name`](DiagnosticsContext::operation_name).
     pub fn operation_name(&self) -> Option<&str> {
         self.operation_name.as_deref()
+    }
+
+    /// Returns the HTTP method used for this request.
+    pub fn http_method(&self) -> Method {
+        self.http_method
     }
 
     /// Returns the pipeline type used for this request.
@@ -1568,6 +1579,7 @@ impl DiagnosticsContextBuilder {
     pub(crate) fn start_request(
         &mut self,
         execution_context: ExecutionContext,
+        http_method: Method,
         pipeline_type: PipelineType,
         transport_security: TransportSecurity,
         transport_kind: TransportKind,
@@ -1576,6 +1588,7 @@ impl DiagnosticsContextBuilder {
     ) -> RequestHandle {
         let mut request = RequestDiagnostics::new(
             execution_context,
+            http_method,
             pipeline_type,
             transport_security,
             transport_kind,
@@ -2937,6 +2950,7 @@ mod tests {
             };
             self.start_request(
                 execution_context,
+                Method::Get,
                 PipelineType::DataPlane,
                 TransportSecurity::Secure,
                 TransportKind::Gateway,

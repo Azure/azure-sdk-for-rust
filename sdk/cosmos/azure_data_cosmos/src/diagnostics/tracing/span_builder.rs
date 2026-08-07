@@ -30,9 +30,6 @@ use crate::diagnostics::CosmosOperationContext;
 /// Span name for the operation ("root") span when the operation name is unknown.
 const DEFAULT_OPERATION_SPAN_NAME: &str = "cosmosdb.operation";
 
-/// Span name for each per-attempt ("child") span.
-const REQUEST_SPAN_NAME: &str = "cosmosdb.request";
-
 /// Emits a backdated operation span with one child span per retained attempt.
 ///
 /// * `tracer` — the OpenTelemetry tracer to build spans on. Generic so tests can
@@ -235,14 +232,40 @@ pub(crate) fn emit_backdated_span_tree<T>(
         let req_status = req.status();
         let req_failed = !req_status.is_success();
 
+        let endpoint = url::Url::parse(req.endpoint()).ok();
         let mut child_attrs = vec![
             KeyValue::new(attributes::DB_SYSTEM_NAME, attributes::DB_SYSTEM_NAME_VALUE),
+            KeyValue::new(
+                attributes::HTTP_REQUEST_METHOD,
+                req.http_method().as_str().to_string(),
+            ),
+            KeyValue::new(
+                attributes::HTTP_RESPONSE_STATUS_CODE,
+                i64::from(u16::from(req_status.status_code())),
+            ),
             KeyValue::new(
                 attributes::DB_RESPONSE_STATUS_CODE,
                 u16::from(req_status.status_code()).to_string(),
             ),
             KeyValue::new(attributes::REQUEST_CHARGE, req.request_charge().value()),
         ];
+        if let Some(endpoint) = endpoint.as_ref() {
+            child_attrs.push(KeyValue::new(
+                attributes::URL_SCHEME,
+                endpoint.scheme().to_string(),
+            ));
+            child_attrs.push(KeyValue::new(
+                attributes::URL_FULL,
+                endpoint.as_str().to_string(),
+            ));
+            if let Some(port) = endpoint.port() {
+                child_attrs.push(KeyValue::new(attributes::SERVER_PORT, i64::from(port)));
+            }
+        }
+        child_attrs.push(KeyValue::new(
+            attributes::NETWORK_PROTOCOL_VERSION,
+            req.transport_http_version().to_string(),
+        ));
         if let Some(name) = req.operation_name().or(op_name_ref) {
             child_attrs.push(KeyValue::new(
                 attributes::DB_OPERATION_NAME,
@@ -280,7 +303,7 @@ pub(crate) fn emit_backdated_span_tree<T>(
         }
 
         let child_builder = tracer
-            .span_builder(REQUEST_SPAN_NAME)
+            .span_builder(format!("HTTP {}", req.http_method().as_str()))
             .with_kind(SpanKind::Client)
             .with_start_time(child_start)
             .with_attributes(child_attrs);

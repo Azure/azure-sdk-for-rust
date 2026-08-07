@@ -237,6 +237,7 @@ pub(crate) async fn execute_transport_pipeline(
 
         let request_handle = diagnostics.start_request(
             execution_context,
+            request.method,
             ctx.pipeline_type,
             ctx.transport_security,
             ctx.transport.diagnostics_kind(),
@@ -1908,6 +1909,7 @@ mod tests {
         );
         let request_handle = diagnostics.start_request(
             ExecutionContext::Initial,
+            azure_core::http::Method::Get,
             PipelineType::DataPlane,
             TransportSecurity::Secure,
             crate::diagnostics::TransportKind::GatewayV2,
