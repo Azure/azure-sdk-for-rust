@@ -94,7 +94,7 @@ async fn build_container(db_name: &str, binary: bool) -> ContainerClient {
 
     client
         .database_client(db_name)
-        .container_client("items")
+        .container_client("items", None)
         .await
         .unwrap()
 }
@@ -303,7 +303,7 @@ async fn request_text_response_keeps_wire_binary_and_returns_data() {
         .unwrap();
     let container = client
         .database_client("bin-transcode")
-        .container_client("items")
+        .container_client("items", None)
         .await
         .unwrap();
 
