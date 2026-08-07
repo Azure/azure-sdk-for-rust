@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{error::ErrorKind, http::response::ResponseBody};
+use crate::{
+    error::ErrorKind,
+    http::response::{RawResponse, ResponseBody},
+};
 use serde::de::DeserializeOwned;
 
 /// A trait used to indicate the serialization format used for a response body.
@@ -17,6 +20,13 @@ pub trait Format: std::fmt::Debug {
     /// # Returns
     /// * A `Result` containing the deserialized model `T`.
     fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> crate::Result<T>;
+
+    /// Deserialize a full response into model `T`, with access to both headers and body.
+    ///
+    /// The default implementation ignores the headers and delegates to [`Format::deserialize`].
+    fn deserialize_from<T: DeserializeOwned>(response: &RawResponse) -> crate::Result<T> {
+        Self::deserialize(response.body())
+    }
 }
 
 /// A trait used to describe a type that can be deserialized using the specified [`Format`].
@@ -39,6 +49,16 @@ pub trait DeserializeWith<F: Format>: Sized {
     /// # Returns
     /// A `Result` containing the deserialized value of type `Self`, or an error if deserialization fails.
     fn deserialize_with(body: ResponseBody) -> typespec::Result<Self>;
+
+    /// Deserialize a full response into `Self`, with access to both headers and body.
+    ///
+    /// The default implementation delegates to [`Format::deserialize_from`].
+    fn deserialize_from(response: &RawResponse) -> crate::Result<Self>
+    where
+        Self: DeserializeOwned,
+    {
+        F::deserialize_from::<Self>(response)
+    }
 }
 
 /// Implements [`DeserializeWith<JsonFormat>`] for an arbitrary type `D`
