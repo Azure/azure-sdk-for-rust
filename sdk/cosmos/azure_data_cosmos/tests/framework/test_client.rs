@@ -20,7 +20,7 @@ use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
 use std::future::Future;
 use std::pin::Pin;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::{str::FromStr, sync::OnceLock};
 use tracing_subscriber::EnvFilter;
 
@@ -109,6 +109,353 @@ pub fn assert_region_not_contacted(
         diagnostics.request_count(),
         diagnostics.regions_contacted()
     );
+}
+
+/// Classification of a live Cosmos **test-account / region readiness** failure,
+/// as distinct from a product (driver/SDK) bug.
+///
+/// The weekly `SessionMultiWrite` and `GatewayV2` legs run against live
+/// accounts whose per-region credentials and routing metadata can drift or lag
+/// behind a fresh provisioning (tracked by #4996, #4997). When that
+/// happens the whole leg fails with opaque assertion panics that look identical
+/// to a real regression, so infra drift silently rots the weekly signal.
+/// [`classify_account_not_ready`] recognizes the known environmental signatures
+/// so [`expect_account_ready`] can fail LOUD with an unmistakable
+/// "account/region not ready" banner — keeping infra drift visibly separate
+/// from product bugs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccountNotReady {
+    /// A satellite (secondary) region rejected a correctly-signed KEY request
+    /// with `401 The MAC signature ... is not the same as the computed
+    /// signature`. The region validated against stale or not-yet-converged
+    /// account master-key metadata for a freshly-provisioned account. Tracked by #4997.
+    SatelliteKeyNotConverged,
+    /// A satellite region rejected a globally-scoped AAD token with
+    /// `401/5007 AadTokenInvalidIssuer` — the region's tenant/issuer trust does
+    /// not match the CI credential's authority. Tracked by #4997.
+    SatelliteAadIssuerRejected,
+    /// The Gateway 2.0 thin-client account returned `404/1003
+    /// OwnerResourceNotFound` while routing a cross-partition / pkrange query
+    /// (server-side routing metadata is not ready). Tracked by #4996.
+    Gw2CrossPartitionRoutingNotReady,
+}
+
+impl AccountNotReady {
+    /// The GitHub tracking issue number for this environmental failure mode.
+    fn tracking_issue(self) -> u32 {
+        match self {
+            AccountNotReady::SatelliteKeyNotConverged => 4997,
+            AccountNotReady::SatelliteAadIssuerRejected => 4997,
+            AccountNotReady::Gw2CrossPartitionRoutingNotReady => 4996,
+        }
+    }
+
+    /// A human-readable description of the drifted resource / credential.
+    fn reason(self) -> &'static str {
+        match self {
+            AccountNotReady::SatelliteKeyNotConverged => {
+                "satellite region rejected a correctly-signed KEY request (401 MAC signature mismatch) — account master-key metadata has not converged for the freshly-provisioned account"
+            }
+            AccountNotReady::SatelliteAadIssuerRejected => {
+                "satellite region rejected the globally-scoped AAD token (401/5007 AadTokenInvalidIssuer) — the region's tenant/issuer trust does not match the CI credential"
+            }
+            AccountNotReady::Gw2CrossPartitionRoutingNotReady => {
+                "Gateway 2.0 account returned 404/1003 OwnerResourceNotFound routing a cross-partition query — server-side routing/pkrange metadata is not ready"
+            }
+        }
+    }
+}
+
+/// Classifies a failed live Cosmos operation as a known **account/region
+/// readiness** (environmental) failure, or `None` when it looks like a genuine
+/// product failure that should surface as itself.
+///
+/// The signatures matched here are the ones observed on the weekly live legs.
+/// A real signing regression that produced a 401 MAC mismatch would be caught
+/// first by the driver-crate unit guard
+/// `failover_to_satellite_signs_over_identical_content_and_binds_date`, so
+/// matching that signature here does not mask a product bug in PR CI.
+pub fn classify_account_not_ready(err: &CosmosError) -> Option<AccountNotReady> {
+    let status = err.status();
+    let http = status.status_code();
+    let sub = status.sub_status().map(|s| s.value());
+    // The rendered error carries the service message (e.g. the MAC-mismatch
+    // text) that some signatures key off.
+    let message = err.to_string();
+
+    match (http, sub) {
+        (StatusCode::NotFound, Some(1003)) => {
+            Some(AccountNotReady::Gw2CrossPartitionRoutingNotReady)
+        }
+        (StatusCode::Unauthorized, Some(5007)) => Some(AccountNotReady::SatelliteAadIssuerRejected),
+        (StatusCode::Unauthorized, _) if message.contains("AadTokenInvalidIssuer") => {
+            Some(AccountNotReady::SatelliteAadIssuerRejected)
+        }
+        (StatusCode::Unauthorized, _) if message.contains("MAC signature") => {
+            Some(AccountNotReady::SatelliteKeyNotConverged)
+        }
+        _ => None,
+    }
+}
+
+/// Unwraps a live-operation result, converting a known environmental
+/// account/region-readiness failure into a LOUD, unmistakable panic that names
+/// the tracking issue and states it is NOT a product bug. Genuine product
+/// failures still panic with `context` + the error so they surface as
+/// themselves. Used at the cross-region failover assertion sites on the weekly
+/// `SessionMultiWrite` / `GatewayV2` legs so infra drift fails loud instead of
+/// masquerading as a driver regression.
+#[track_caller]
+pub fn expect_account_ready<T>(result: azure_data_cosmos::Result<T>, context: &str) -> T {
+    match result {
+        Ok(value) => value,
+        Err(err) => match classify_account_not_ready(&err) {
+            Some(not_ready) => {
+                panic!(
+                    "{}",
+                    account_not_ready_banner(not_ready, context, &format!("{err:?}"))
+                )
+            }
+            None => panic!("{context}: {err:?}"),
+        },
+    }
+}
+
+/// Builds the unmistakable "account/region not ready" banner shared by
+/// [`expect_account_ready`] and the satellite pre-flight warmup, so both fail
+/// with the same infra-vs-product-bug framing that names the tracking issue.
+fn account_not_ready_banner(not_ready: AccountNotReady, context: &str, underlying: &str) -> String {
+    format!(
+        "\n\
+=================================================================\n\
+COSMOS LIVE ACCOUNT/REGION NOT READY — infrastructure, NOT a product bug\n\
+-----------------------------------------------------------------\n\
+Tracking issue: #{issue}\n\
+Reason: {reason}\n\
+Failed operation: {context}\n\
+Underlying error: {underlying}\n\
+=================================================================\n",
+        issue = not_ready.tracking_issue(),
+        reason = not_ready.reason(),
+    )
+}
+
+/// Minimum number of authenticated data-plane round-trips that must reach the
+/// satellite region before the `SessionMultiWrite` failover matrix is allowed
+/// to run. Fewer than this (because the satellite keeps rejecting credentials)
+/// means the account/region is not ready, and the whole leg fails loud instead
+/// of every individual failover test panicking with an opaque assertion.
+const MIN_SATELLITE_PROBES: usize = 2;
+
+/// Total time to keep re-probing the satellite region while it rejects
+/// correctly-credentialed requests (401 MAC / 401 AAD issuer / 404-1003),
+/// absorbing the post-provisioning key/issuer convergence window described by
+/// #4996/#4997.
+const SATELLITE_WARMUP_TOTAL_BUDGET: Duration = Duration::from_secs(90);
+const SATELLITE_WARMUP_INITIAL_BACKOFF: Duration = Duration::from_secs(2);
+const SATELLITE_WARMUP_MAX_BACKOFF: Duration = Duration::from_secs(10);
+
+/// Caches the one-shot satellite warmup outcome for the whole test binary:
+/// `Ok(())` when the region is ready (or the warmup was skipped because there is
+/// no live multi-region account), `Err(banner)` when it never converged.
+static SATELLITE_WARMUP: OnceLock<futures::lock::Mutex<Option<Result<(), String>>>> =
+    OnceLock::new();
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct SatelliteWarmupItem {
+    id: String,
+    partition_key: String,
+    value: usize,
+}
+
+/// Outcome of a single satellite probe battery.
+enum SatelliteProbe {
+    /// At least [`MIN_SATELLITE_PROBES`] requests authenticated against the
+    /// satellite region.
+    Ready(usize),
+    /// The satellite rejected a correctly-credentialed request with a known
+    /// environmental signature — retry until the budget is exhausted.
+    NotReady(AccountNotReady, String),
+    /// A non-environmental error (setup hiccup, transport, etc.). Do not block
+    /// the matrix on this — let the individual tests surface it as themselves.
+    Inconclusive(String),
+}
+
+/// Pre-flight gate for the `SessionMultiWrite` cross-region failover tests.
+///
+/// The failover tests assert a *successful* write/read/query on the **West US
+/// 3 satellite** after failing over from the East US 2 hub. On a freshly
+/// provisioned account the satellite's per-region KEY master-key and AAD issuer
+/// trust can lag behind the account for a few minutes (#4996/#4997),
+/// during which every failover test panics with an opaque assertion that is
+/// indistinguishable from a driver regression.
+///
+/// This gate runs **once per test binary**: it drives a small battery of
+/// authenticated data-plane requests against a satellite-preferred client and
+/// retries the known environmental rejections until the region converges (or a
+/// budget elapses). If the region never becomes ready it fails **loud** with
+/// the same "account/region not ready" banner used by [`expect_account_ready`],
+/// so infra drift is a single distinct signal rather than a scatter of
+/// look-alike product-bug failures.
+///
+/// It is a no-op when there is no live, non-emulator connection string (e.g.
+/// normal PR CI), so gating a test on it is free there.
+pub async fn ensure_satellite_region_ready() {
+    let cell = SATELLITE_WARMUP.get_or_init(|| futures::lock::Mutex::new(None));
+    let mut guard = cell.lock().await;
+    if guard.is_none() {
+        *guard = Some(run_satellite_warmup().await);
+    }
+    if let Some(Err(banner)) = guard.as_ref() {
+        panic!("{banner}");
+    }
+}
+
+/// Runs the satellite warmup exactly once, returning `Ok(())` when ready or
+/// skipped and `Err(banner)` when the region never converged within the budget.
+async fn run_satellite_warmup() -> Result<(), String> {
+    // Skip unless a live, non-emulator, multi-region account is configured.
+    // The emulator is single-region, so there is no satellite to warm up.
+    let skipped = std::env::var(TEST_MODE_ENV_VAR)
+        .ok()
+        .and_then(|s| CosmosTestMode::from_str(&s).ok())
+        == Some(CosmosTestMode::Skipped);
+    if skipped || resolve_connection_string().is_none() || targets_emulator() {
+        return Ok(());
+    }
+
+    let options = TestOptions::new()
+        .with_client_application_region(SATELLITE_REGION)
+        .with_timeout(SATELLITE_WARMUP_TOTAL_BUDGET + Duration::from_secs(30));
+
+    // `run_with_options` builds the primary client for the satellite region
+    // (respecting KEY vs AAD auth), and skips calling the closure entirely when
+    // no live client could be built — so this stays a no-op off live legs.
+    match TestClient::run_with_options(async |run| satellite_warmup_probe(run).await, options).await
+    {
+        Ok(()) => Ok(()),
+        // The closure only returns an error carrying the ready-banner text; any
+        // other failure (e.g. the outer timeout) is surfaced as-is.
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+/// The warmup body: set up a throwaway container, then re-probe the satellite
+/// until it converges or the budget is exhausted.
+async fn satellite_warmup_probe(run: &TestRunContext) -> Result<(), Box<dyn std::error::Error>> {
+    let db = match run.create_db().await {
+        Ok(db) => db,
+        Err(e) => {
+            // Setup failures are not the satellite-credential concern; don't
+            // block the matrix on them.
+            eprintln!("satellite warmup: could not create warmup database ({e}); skipping warmup");
+            return Ok(());
+        }
+    };
+
+    let container_id = format!("satellite-warmup-{}", Uuid::new_v4());
+    let container = match run
+        .create_container(
+            &db,
+            azure_data_cosmos::models::ContainerProperties::new(
+                container_id,
+                "/partition_key".into(),
+            ),
+            Some(
+                CreateContainerOptions::default()
+                    .with_throughput(ThroughputProperties::manual(400)),
+            ),
+        )
+        .await
+    {
+        Ok(container) => container,
+        Err(e) => {
+            eprintln!("satellite warmup: could not create warmup container ({e}); skipping warmup");
+            return Ok(());
+        }
+    };
+
+    let deadline = Instant::now() + SATELLITE_WARMUP_TOTAL_BUDGET;
+    let mut backoff = SATELLITE_WARMUP_INITIAL_BACKOFF;
+
+    loop {
+        match run_one_satellite_battery(&container).await {
+            SatelliteProbe::Ready(passed) => {
+                println!(
+                    "satellite warmup: {SATELLITE_REGION:?} region ready ({passed} authenticated probes)"
+                );
+                return Ok(());
+            }
+            SatelliteProbe::Inconclusive(detail) => {
+                eprintln!(
+                    "satellite warmup: non-environmental error, not blocking the matrix: {detail}"
+                );
+                return Ok(());
+            }
+            SatelliteProbe::NotReady(kind, detail) => {
+                if Instant::now() >= deadline {
+                    return Err(account_not_ready_banner(
+                        kind,
+                        "satellite region credential warmup (pre-flight for the SessionMultiWrite failover matrix)",
+                        &detail,
+                    )
+                    .into());
+                }
+                eprintln!(
+                    "satellite warmup: {SATELLITE_REGION:?} not ready yet ({detail}); retrying in {backoff:?}"
+                );
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(SATELLITE_WARMUP_MAX_BACKOFF);
+            }
+        }
+    }
+}
+
+/// Issues one round of authenticated data-plane requests routed to the
+/// satellite region and reports whether the region authenticated them.
+async fn run_one_satellite_battery(container: &ContainerClient) -> SatelliteProbe {
+    let unique = Uuid::new_v4().to_string();
+    let pk = format!("warmup-pk-{unique}");
+    let item_id = format!("warmup-item-{unique}");
+    let item = SatelliteWarmupItem {
+        id: item_id.clone(),
+        partition_key: pk.clone(),
+        value: 1,
+    };
+
+    let mut passed = 0usize;
+
+    // Probe 1: an authenticated write routed to the satellite write region.
+    match container
+        .create_item(&pk, item_id.as_str(), &item, None)
+        .await
+    {
+        Ok(_) => passed += 1,
+        Err(e) => match classify_account_not_ready(&e) {
+            Some(kind) => return SatelliteProbe::NotReady(kind, format!("write probe: {e}")),
+            None => return SatelliteProbe::Inconclusive(format!("write probe: {e:?}")),
+        },
+    }
+
+    // Probe 2: an authenticated read routed to the satellite region. A
+    // NotFound here (eventual replication) still proves the credential works;
+    // only a classified rejection means the region is not ready.
+    match container.read_item(&pk, item_id.as_str(), None).await {
+        Ok(_) => passed += 1,
+        Err(e) => match classify_account_not_ready(&e) {
+            Some(kind) => return SatelliteProbe::NotReady(kind, format!("read probe: {e}")),
+            None if e.status().status_code() == StatusCode::NotFound => passed += 1,
+            None => return SatelliteProbe::Inconclusive(format!("read probe: {e:?}")),
+        },
+    }
+
+    if passed >= MIN_SATELLITE_PROBES {
+        SatelliteProbe::Ready(passed)
+    } else {
+        SatelliteProbe::Inconclusive(format!(
+            "only {passed}/{MIN_SATELLITE_PROBES} satellite probes authenticated"
+        ))
+    }
 }
 
 /// Default timeout for tests (80 seconds).
