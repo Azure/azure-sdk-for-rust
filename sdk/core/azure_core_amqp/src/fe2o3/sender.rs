@@ -195,10 +195,10 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             fe2o3_amqp_types::messaging::Outcome::Modified(ref m) => {
                 AmqpSendOutcome::Modified(m.into())
             }
-            // Unreachable: fe2o3's Declared outcome is only produced by transaction coordinator links,
-            // which are introduced in a later commit. Dedicated outcome variants land in a later commit.
             #[cfg(feature = "transaction")]
-            fe2o3_amqp_types::messaging::Outcome::Declared(_) => AmqpSendOutcome::Accepted,
+            fe2o3_amqp_types::messaging::Outcome::Declared(declared) => {
+                AmqpSendOutcome::Declared(declared.txn_id.into_vec())
+            }
         })
     }
 }

@@ -180,6 +180,9 @@ pub enum AmqpOutcome {
     Released,
     /// The message was modified before forwarding.
     Modified,
+    /// The transaction was declared.
+    #[cfg(feature = "transaction")]
+    Declared(TransactionId),
 }
 
 impl From<AmqpOutcome> for AmqpSymbol {
@@ -189,6 +192,8 @@ impl From<AmqpOutcome> for AmqpSymbol {
             AmqpOutcome::Rejected => AmqpSymbol::from("amqp:rejected:list"),
             AmqpOutcome::Released => AmqpSymbol::from("amqp:released:list"),
             AmqpOutcome::Modified => AmqpSymbol::from("amqp:modified:list"),
+            #[cfg(feature = "transaction")]
+            AmqpOutcome::Declared(_) => AmqpSymbol::from("amqp:declared:list"),
         }
     }
 }
