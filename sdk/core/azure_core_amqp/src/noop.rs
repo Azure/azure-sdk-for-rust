@@ -231,6 +231,16 @@ impl AmqpReceiverApis for NoopAmqpReceiver {
     async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         unimplemented!();
     }
+
+    #[cfg(feature = "transaction")]
+    async fn settle_with_transaction(
+        &self,
+        _delivery: &AmqpDelivery,
+        _outcome: crate::messaging::AmqpOutcome,
+        _txn_id: crate::TransactionId,
+    ) -> Result<()> {
+        unimplemented!();
+    }
 }
 
 impl AmqpDeliveryApis for NoopAmqpDelivery {
