@@ -27,6 +27,8 @@ pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
 pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions};
 pub use error::*;
 pub use management::{AmqpManagement, AmqpManagementApis};
+#[cfg(feature = "transaction")]
+pub use messaging::TransactionId;
 pub use messaging::{AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpSource, AmqpTarget};
 pub use receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
 pub use sender::{AmqpSendOptions, AmqpSendOutcome, AmqpSender, AmqpSenderApis, AmqpSenderOptions};

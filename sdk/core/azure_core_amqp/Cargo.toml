@@ -51,6 +51,10 @@ fe2o3_amqp = [
   "serde_bytes",
   "azure_core/tokio",
 ]
+transaction = [
+  "fe2o3-amqp?/transaction",
+  "fe2o3-amqp-types?/transaction",
+]
 
 [lints]
 workspace = true
