@@ -53,6 +53,8 @@ jobs:
     parameters:
       Toolchain: $(RustToolchainName)
 
+  - template: /eng/pipelines/templates/steps/nuget-config.yml
+
   - template: /eng/pipelines/templates/steps/vcpkg.yml
 
   - template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self

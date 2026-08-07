@@ -1528,6 +1528,127 @@ mod tests {
         );
     }
 
+    /// Exercises the account endpoint-unavailability LIFECYCLE as one ordered
+    /// state machine: mark-unavailable -> (still present, not removed) ->
+    /// cooldown gate -> expiry via backdated `marked_at` -> successful probe ->
+    /// restore.
+    ///
+    /// Deterministic in-memory unit test: no network, no sleeps. It drives
+    /// `probe_and_failback_unavailable_endpoints` directly and backdates
+    /// `marked_at` to simulate an elapsed cooldown, because the background probe
+    /// loop's cadence (`ENDPOINT_PROBE_INTERVAL`) is a fixed 60s const and is not
+    /// test-injectable.
+    ///
+    /// Coverage split: this module owns the *membership* half of the lifecycle
+    /// (a mark living in / leaving `unavailable_endpoints`, and never mutating
+    /// the preferred order). The *routing* consequences of a mark —
+    /// demote-to-tail (the marked endpoint is skipped during selection but kept
+    /// as a last resort, never removed) and the read/write/both distinction
+    /// (`WriteForbidden` demotes writes only) — are enforced by the resolver and
+    /// are covered by the `resolve_endpoint` tests in
+    /// `driver::pipeline::operation_pipeline`.
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn endpoint_unavailability_lifecycle_mark_cooldown_probe_restore() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        // Non-zero cooldown so the "not yet due" gate is observable.
+        let cooldown = Duration::from_secs(60);
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            cooldown,
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        let endpoint_url = default_endpoint.url().clone();
+        // The preferred read order that the mark/restore must never mutate.
+        let preferred_before = store.snapshot().account.preferred_read_endpoints.clone();
+        assert!(
+            preferred_before.iter().any(|e| e.url() == &endpoint_url),
+            "precondition: the endpoint under test is in the preferred read order",
+        );
+
+        // 1. MARK UNAVAILABLE (a both-affecting reason, not WriteForbidden).
+        store
+            .apply(&[LocationEffect::MarkEndpointUnavailable {
+                endpoint: default_endpoint.clone(),
+                reason: UnavailableReason::TransportError,
+            }])
+            .await;
+        let marked = store.snapshot();
+        assert!(
+            marked
+                .account
+                .unavailable_endpoints
+                .contains_key(&endpoint_url),
+            "mark must record the endpoint as unavailable",
+        );
+        // NOT REMOVAL: marking leaves the preferred read order untouched, so the
+        // endpoint is only ever demoted (by the resolver), never dropped.
+        assert_eq!(
+            marked.account.preferred_read_endpoints.as_ref(),
+            preferred_before.as_ref(),
+            "marking unavailable must not remove or reorder the preferred read endpoints",
+        );
+
+        // 2. COOLDOWN GATE: before the TTL elapses, even a reachable probe is a
+        //    no-op — nothing is due, so the mark survives.
+        let reachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { true }) as BoxFuture<'static, bool>);
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert!(
+            store
+                .snapshot()
+                .account
+                .unavailable_endpoints
+                .contains_key(&endpoint_url),
+            "an endpoint still within its cooldown must not be probed or failed back",
+        );
+
+        // 3. EXPIRY: backdate `marked_at` past the TTL so the endpoint is due.
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(&endpoint_url) {
+                *marked_at = Instant::now() - (cooldown + Duration::from_secs(1));
+            }
+            next
+        });
+
+        // 4. PROBE + RESTORE: a reachable probe on the due endpoint clears the
+        //    mark, returning the endpoint to rotation.
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        let restored = store.snapshot();
+        assert!(
+            !restored
+                .account
+                .unavailable_endpoints
+                .contains_key(&endpoint_url),
+            "a due endpoint must fail back after a successful probe",
+        );
+        // The preferred order was never mutated across the whole lifecycle.
+        assert_eq!(
+            restored.account.preferred_read_endpoints.as_ref(),
+            preferred_before.as_ref(),
+            "restore must leave the preferred read endpoints unchanged",
+        );
+    }
+
     #[test]
     fn account_sync_preserves_unavailable_marks_for_probe_loop() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());

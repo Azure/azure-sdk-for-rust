@@ -1,0 +1,37 @@
+# Cargo configuration used by CI builds to route crates.io traffic through the
+# Centralized Feed Service (CFS) instead of the public internet.
+#
+# This file should be copied to $CARGO_HOME/config.toml
+#
+# CargoAuthenticate@0 parses the [registries] table below and exports the
+# CARGO_REGISTRIES_AZURE_SDK_FOR_RUST_TOKEN / _CREDENTIAL_PROVIDER variables that cargo
+# needs to authenticate against the feed. The feed sets "auth-required": true, so the
+# token is required even for reads.
+#
+# The [source] replacement redirects index.crates.io and static.crates.io to the
+# feed.
+#
+[registries]
+azure-sdk-for-rust = { index = "sparse+https://pkgs.dev.azure.com/azure-sdk/_packaging/azure-sdk-for-rust/Cargo/index/" }
+
+[source.crates-io]
+replace-with = "azure-sdk-for-rust"
+
+# Both `cargo package` and `cargo publish` refuse to run while crates-io is replaced
+# unless the target registry is named, failing with:
+#
+#   error: crates-io is replaced with remote registry azure-sdk-for-rust;
+#   include `--registry azure-sdk-for-rust` or `--registry crates-io`
+#
+# The target registry must be the replacement, not crates-io. When packaging several
+# workspace members at once, cargo satisfies their unpublished inter-member versions
+# (for example typespec_client_core depending on typespec ^1.2.0-beta.1) from the crates
+# it just packaged. That overlay is only consulted when the target registry matches the
+# source deps resolve through, so `--registry crates-io` still fails to find them.
+#
+# Setting the default here keeps eng/scripts/Pack-Crates.ps1 free of CI-only flags, so
+# it behaves identically for local developers. Nothing publishes for real from cargo:
+# the only `cargo publish` in the repo is Pack-Crates.ps1's `--dry-run` validation, and
+# releases ship through ESRP.
+[registry]
+default = "azure-sdk-for-rust"
