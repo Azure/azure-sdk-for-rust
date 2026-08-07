@@ -1,3 +1,5 @@
+<!-- cspell:ignore cfsclean configfile -->
+
 # Azure AMQP library for Rust
 
 Azure AMQP crate for consumption of AMQP based packages in the Azure SDK for Rust and C++.
