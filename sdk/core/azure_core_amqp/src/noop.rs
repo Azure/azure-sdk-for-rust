@@ -231,6 +231,16 @@ impl AmqpReceiverApis for NoopAmqpReceiver {
     async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
         unimplemented!();
     }
+
+    #[cfg(feature = "transaction")]
+    async fn settle_with_transaction(
+        &self,
+        _delivery: &AmqpDelivery,
+        _outcome: crate::messaging::AmqpOutcome,
+        _txn_id: crate::TransactionId,
+    ) -> Result<()> {
+        unimplemented!();
+    }
 }
 
 impl AmqpDeliveryApis for NoopAmqpDelivery {
@@ -248,6 +258,37 @@ impl AmqpDeliveryApis for NoopAmqpDelivery {
         unimplemented!();
     }
     fn into_message(self) -> AmqpMessage {
+        unimplemented!();
+    }
+}
+
+#[cfg(feature = "transaction")]
+#[derive(Default)]
+pub(crate) struct NoopAmqpTransactionCoordinator {}
+
+#[cfg(feature = "transaction")]
+impl NoopAmqpTransactionCoordinator {
+    pub fn new(_session: AmqpSession) -> Result<Self> {
+        Ok(Self {})
+    }
+}
+
+#[cfg(feature = "transaction")]
+#[async_trait::async_trait]
+impl crate::transaction::AmqpTransactionCoordinatorApis for NoopAmqpTransactionCoordinator {
+    async fn attach(&self) -> Result<()> {
+        unimplemented!();
+    }
+
+    async fn detach(self) -> Result<()> {
+        unimplemented!();
+    }
+
+    async fn declare(&self) -> Result<crate::TransactionId> {
+        unimplemented!();
+    }
+
+    async fn discharge(&self, _txn_id: crate::TransactionId, _fail: bool) -> Result<()> {
         unimplemented!();
     }
 }

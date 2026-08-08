@@ -122,6 +122,10 @@ impl AmqpDelivery {
 pub type DeliveryNumber = u32;
 pub type DeliveryTag = Vec<u8>;
 
+/// An AMQP transaction ID.
+#[cfg(feature = "transaction")]
+pub type TransactionId = Vec<u8>;
+
 /// Trait defining the APIs for interacting with an AMQP delivery.
 pub trait AmqpDeliveryApis {
     /// Get the message
@@ -176,6 +180,9 @@ pub enum AmqpOutcome {
     Released,
     /// The message was modified before forwarding.
     Modified,
+    /// The transaction was declared.
+    #[cfg(feature = "transaction")]
+    Declared(TransactionId),
 }
 
 impl From<AmqpOutcome> for AmqpSymbol {
@@ -185,6 +192,8 @@ impl From<AmqpOutcome> for AmqpSymbol {
             AmqpOutcome::Rejected => AmqpSymbol::from("amqp:rejected:list"),
             AmqpOutcome::Released => AmqpSymbol::from("amqp:released:list"),
             AmqpOutcome::Modified => AmqpSymbol::from("amqp:modified:list"),
+            #[cfg(feature = "transaction")]
+            AmqpOutcome::Declared(_) => AmqpSymbol::from("amqp:declared:list"),
         }
     }
 }
@@ -2193,5 +2202,12 @@ mod tests {
             let deserialized = AmqpMessage::decode(&serialized).unwrap();
             assert_eq!(deserialized, message);
         }
+    }
+
+    #[test]
+    #[cfg(feature = "transaction")]
+    fn test_transaction_id() {
+        let txn_id: super::TransactionId = vec![1, 2, 3, 4];
+        assert_eq!(txn_id.len(), 4);
     }
 }

@@ -66,6 +66,10 @@ pub enum AmqpErrorKind {
     /// Transport Implementation Error
     TransportImplementationError(Box<dyn std::error::Error + Send + Sync>),
 
+    #[cfg(feature = "transaction")]
+    /// Transactions are not supported by the remote peer.
+    TransactionsNotSupported(Box<dyn std::error::Error + Send + Sync>),
+
     /// A send was rejected.
     SendRejected,
 }
@@ -193,6 +197,9 @@ impl std::error::Error for AmqpError {
             | AmqpErrorKind::FramingError(e)
             | AmqpErrorKind::IdleTimeoutElapsed(e) => Some(e.as_ref()),
 
+            #[cfg(feature = "transaction")]
+            AmqpErrorKind::TransactionsNotSupported(e) => Some(e.as_ref()),
+
             AmqpErrorKind::ManagementStatusCode(_, _)
             | AmqpErrorKind::NonTerminalDeliveryState
             | AmqpErrorKind::SimpleMessage(_)
@@ -247,6 +254,10 @@ impl std::fmt::Display for AmqpError {
             }
             AmqpErrorKind::TransportImplementationError(s) => {
                 write!(f, "Transport Implementation Error: {}", s)
+            }
+            #[cfg(feature = "transaction")]
+            AmqpErrorKind::TransactionsNotSupported(s) => {
+                write!(f, "Transactions not supported by the remote peer: {}", s)
             }
             AmqpErrorKind::ConnectionDropped(s) => {
                 write!(f, "Connection dropped: {}", s)
