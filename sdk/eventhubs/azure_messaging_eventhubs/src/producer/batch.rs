@@ -392,6 +392,7 @@ pub struct EventDataBatchOptions {
 mod tests {
     use super::*;
     use crate::RetryOptions;
+    use azure_core_amqp::AmqpTransport;
     use azure_core_test::credentials::MockCredential;
     use std::sync::Arc;
 
@@ -428,6 +429,7 @@ mod tests {
             RetryOptions::default(),
             None,
             None,
+            AmqpTransport::default(),
         )
     }
 
