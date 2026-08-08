@@ -255,8 +255,15 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
             | fe2o3_amqp::link::SenderAttachError::IllegalState => {
                 AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
-            fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented
-            | fe2o3_amqp::link::SenderAttachError::DuplicatedLinkName
+            #[cfg(feature = "transaction")]
+            fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented => {
+                AmqpErrorKind::TransactionsNotSupported(Box::new(e)).into()
+            }
+            #[cfg(not(feature = "transaction"))]
+            fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented => {
+                AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
+            }
+            fe2o3_amqp::link::SenderAttachError::DuplicatedLinkName
             | fe2o3_amqp::link::SenderAttachError::NonAttachFrameReceived
             | fe2o3_amqp::link::SenderAttachError::ExpectImmediateDetach
             | fe2o3_amqp::link::SenderAttachError::IncomingTargetIsNone
@@ -330,5 +337,27 @@ mod tests {
             capabilities.as_slice(),
             &[fe2o3_amqp_types::primitives::Symbol::from("capability")]
         );
+    }
+
+    #[test]
+    #[cfg(feature = "transaction")]
+    fn test_coordinator_is_not_implemented_maps_to_transactions_not_supported() {
+        let fe2o3_err = fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented;
+        let err: AmqpError = fe2o3_err.into();
+        assert!(matches!(
+            err.kind(),
+            AmqpErrorKind::TransactionsNotSupported(_)
+        ));
+    }
+
+    #[test]
+    #[cfg(not(feature = "transaction"))]
+    fn test_coordinator_is_not_implemented_maps_to_transport_implementation_error() {
+        let fe2o3_err = fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented;
+        let err: AmqpError = fe2o3_err.into();
+        assert!(matches!(
+            err.kind(),
+            AmqpErrorKind::TransportImplementationError(_)
+        ));
     }
 }
