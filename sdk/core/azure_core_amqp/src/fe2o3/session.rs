@@ -174,16 +174,21 @@ impl From<fe2o3_amqp::session::Error> for AmqpError {
             | fe2o3_amqp::session::Error::TransferFrameToSender => {
                 AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
             }
-            #[cfg(feature = "transaction")]
-            fe2o3_amqp::session::Error::UnknownTxnId => {
-                AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
-            }
+
             fe2o3_amqp::session::Error::RemoteEnded => {
                 AmqpErrorKind::SessionClosedByRemote(Box::new(e)).into()
             }
             fe2o3_amqp::session::Error::RemoteEndedWithError(error) => {
                 AmqpErrorKind::AmqpDescribedError(error.into()).into()
             }
+            // fe2o3-amqp's session::Error may gain variants (e.g. UnknownTxnId) when
+            // dependent crates unify features we don't control from our own Cargo.toml
+            // (e.g. dev-dependency `acceptor` enabling extra fe2o3 variants during
+            // `cargo test`). We can't `cfg`-detect a dependency's own feature state,
+            // so a narrow wildcard is required here — every variant we CAN see by
+            // name above stays explicitly matched.
+            #[allow(unreachable_patterns)]
+            _ => AmqpErrorKind::TransportImplementationError(Box::new(e)).into(),
         }
     }
 }
