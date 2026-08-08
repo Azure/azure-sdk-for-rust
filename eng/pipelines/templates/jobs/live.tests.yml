@@ -128,7 +128,22 @@ jobs:
         inline: |
           $account = (Get-AzContext).Account;
           $env:AZURESUBSCRIPTION_CLIENT_ID = $account.Id;
-          $env:AZURESUBSCRIPTION_TENANT_ID = $account.Tenants;
+          # $account.Tenants is an array; assigning it directly space-joins multiple
+          # entries into a value that downstream tenant-ID validation rejects. Take the
+          # first (home) tenant so the minted token has a well-formed issuer tenant.
+          $env:AZURESUBSCRIPTION_TENANT_ID = $account.Tenants | Select-Object -First 1;
+
+          # Diagnostics (tenant/app IDs are not secrets): the token issuer tenant must
+          # match the resource's home tenant. A mismatch causes data-plane AAD failures
+          # such as Cosmos 401/5007 AadTokenInvalidIssuer. Print both to compare.
+          $ctx = Get-AzContext;
+          Write-Host "Federated auth context:";
+          Write-Host "  Client (app) ID: $($account.Id)";
+          Write-Host "  Account.Tenants count: $(@($account.Tenants).Count)";
+          Write-Host "  Account.Tenants: $($account.Tenants -join ', ')";
+          Write-Host "  Issuer tenant (AZURESUBSCRIPTION_TENANT_ID): $($env:AZURESUBSCRIPTION_TENANT_ID)";
+          Write-Host "  Context tenant (Tenant.Id): $($ctx.Tenant.Id)";
+          Write-Host "  Subscription tenant: $($ctx.Subscription.TenantId)";
 
           Write-Host "./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'"
           ./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
