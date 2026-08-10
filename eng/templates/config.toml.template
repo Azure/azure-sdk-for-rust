@@ -20,8 +20,8 @@ replace-with = "azure-sdk-for-rust-public"
 # Both `cargo package` and `cargo publish` refuse to run while crates-io is replaced
 # unless the target registry is named, failing with:
 #
-#   error: crates-io is replaced with remote registry azure-sdk-for-rust;
-#   include `--registry azure-sdk-for-rust` or `--registry crates-io`
+#   error: crates-io is replaced with remote registry azure-sdk-for-rust-public;
+#   include `--registry azure-sdk-for-rust-public` or `--registry crates-io`
 #
 # The target registry must be the replacement, not crates-io. When packaging several
 # workspace members at once, cargo satisfies their unpublished inter-member versions
