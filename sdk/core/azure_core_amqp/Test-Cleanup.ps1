@@ -9,6 +9,13 @@ if ($IsMacOS) {
   exit 0
 }
 
+# Test-Setup.ps1 clears TEST_BROKER_JOBID when it stops the broker itself, so
+# there is nothing to clean up.
+if ([string]::IsNullOrWhiteSpace($env:TEST_BROKER_JOBID)) {
+  Write-Host "TEST_BROKER_JOBID is not set. The test broker is not running."
+  exit 0
+}
+
 Write-Host "Test Broker output:"
 Receive-Job -Id $env:TEST_BROKER_JOBID
 

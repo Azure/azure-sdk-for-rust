@@ -78,6 +78,12 @@ jobs:
     timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
     env:
       CIBW_BUILD_VERBOSITY: 3
+      # The azure_core_amqp broker tests skip when TEST_BROKER_ADDRESS is absent.
+      # In CI they must fail instead, so a broker that stops running turns the
+      # build red. Test-Setup.ps1 exits early on macOS and never starts the
+      # broker, so macOS keeps the skip behavior.
+      ${{ if ne(parameters.OSName, 'macOS') }}:
+        TEST_BROKER_REQUIRED: 'true'
     inputs:
       pwsh: true
       filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
