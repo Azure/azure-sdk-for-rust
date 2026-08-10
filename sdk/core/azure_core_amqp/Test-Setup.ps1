@@ -271,29 +271,6 @@ try {
     exit 1
   }
 
-  # TEMPORARY DIAGNOSTIC. REMOVE BEFORE MERGE. Tracking: Azure/azure-amqp#318.
-  #
-  # Report the package sources that this agent resolves from inside the clone. The build does
-  # not use this information, and this block cannot fail the run. It answers three questions
-  # that no local test can answer: whether the agent turns off the source named nuget.org,
-  # which feeds the agent allows, and whether the explicit config narrows the list as expected.
-  $diagnosticPreference = $ErrorActionPreference
-  $ErrorActionPreference = "Continue"
-  try {
-    Push-Location -Path $repositoryDir
-    try {
-      Write-Host "DIAG| ---- sources with no --configfile (agent policy plus root nuget.config) ----"
-      (& dotnet nuget list source) 2>&1 | ForEach-Object { Write-Host "DIAG| $_" }
-      Write-Host "DIAG| ---- sources with --configfile nuget.cfsclean.config ----"
-      (& dotnet nuget list source --configfile ./nuget.cfsclean.config) 2>&1 | ForEach-Object { Write-Host "DIAG| $_" }
-      Write-Host "DIAG| ---- root nuget.config of the pinned clone ----"
-      (Get-Content ./nuget.config) | ForEach-Object { Write-Host "DIAG| $_" }
-    }
-    finally { Pop-Location }
-  }
-  catch { Write-Host "DIAG| the diagnostic did not run: $_" }
-  $ErrorActionPreference = $diagnosticPreference
-
   # Run the restore and the build from the clone root. This Push-Location is
   # load-bearing: the dotnet command reads global.json from the current
   # directory and not from the project directory, and the arguments above are
