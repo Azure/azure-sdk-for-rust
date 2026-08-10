@@ -259,15 +259,18 @@ try {
   # The dotnet arguments below are relative to the clone root. Keep the
   # absolute forms only for the checks.
   $brokerProjectRelative = [System.IO.Path]::Combine("test", "TestAmqpBroker", "TestAmqpBroker.csproj")
-  $nugetConfigRelative = "nuget.cfsclean.config"
   $brokerProject = [System.IO.Path]::Combine($repositoryDir, $brokerProjectRelative)
-  $nugetConfig = [System.IO.Path]::Combine($repositoryDir, $nugetConfigRelative)
   if (!(Test-Path $brokerProject)) {
     LogError "The pinned azure-amqp commit does not contain $brokerProject."
     exit 1
   }
+
+  # The restore config belongs to this repository, and not to the broker clone. The restricted
+  # feed policy is this pipeline's requirement, so the file that satisfies it sits next to this
+  # script. Pass an absolute path, because the dotnet calls run from the clone root.
+  $nugetConfig = [System.IO.Path]::Combine($PSScriptRoot, "nuget.cfsclean.config")
   if (!(Test-Path $nugetConfig)) {
-    LogError "The pinned azure-amqp commit does not contain $nugetConfig."
+    LogError "This repository does not contain $nugetConfig."
     exit 1
   }
 
@@ -279,7 +282,7 @@ try {
   Push-Location -Path $repositoryDir
   try {
     Invoke-LoggedCommand `
-      "dotnet restore `"$brokerProjectRelative`" --configfile `"$nugetConfigRelative`"" `
+      "dotnet restore `"$brokerProjectRelative`" --configfile `"$nugetConfig`"" `
       -GroupOutput
     Invoke-LoggedCommand `
       "dotnet build `"$brokerProjectRelative`" --configuration Debug --framework net10.0 --no-restore" `
