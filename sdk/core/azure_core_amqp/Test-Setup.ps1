@@ -106,7 +106,17 @@ function Test-BrokerPinReachable {
     return $null
   }
 
-  return [bool]($comparison.ahead_by -eq 0)
+  # Coerce after the absence test, never instead of it. `$null -as [int]` gives 0, so a
+  # coercion on its own would turn a missing field into 0 and read as reachable. A
+  # non-numeric ahead_by counts as "the check did not run", because a build that sets
+  # TEST_BROKER_REQUIRE_MERGED must not fail on a malformed answer.
+  $aheadBy = $comparison.ahead_by -as [int]
+  if ($null -eq $aheadBy) {
+    LogWarning "The response from $compareUri holds a non-numeric ahead_by field."
+    return $null
+  }
+
+  return [bool]($aheadBy -eq 0)
 }
 
 function Stop-TestBrokerJob {
@@ -176,9 +186,10 @@ try {
   # azure-amqp uses lightweight tags and has no tag ruleset, so a maintainer
   # can move a tag to a different commit without a trace.
   #
-  # This SHA comes from refs/pull/318/head of Azure/azure-amqp, the branch
-  # that adds nuget.cfsclean.config. It is not on master, so the reachability
-  # check below writes a warning and continues.
+  # This SHA is the commit of Azure/azure-amqp pull request 318 that adds
+  # nuget.cfsclean.config. That pull request has moved on since, so the SHA is
+  # now an ancestor of refs/pull/318/head and not the head itself. It is not on
+  # master, so the reachability check below writes a warning and continues.
   #
   # To update the pin:
   #   1. Pick an azure-amqp commit that contains nuget.cfsclean.config and
