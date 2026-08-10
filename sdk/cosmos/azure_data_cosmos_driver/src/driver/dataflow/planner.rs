@@ -30,8 +30,7 @@ use super::{
     snapshot::{OrderByRangeToken, ValueBoundary},
     streaming_ordered_merge, DrainedLeaf, OperationPlan, PartitionRoutingRefresh, Pipeline,
     PipelineNode, PipelineNodeState, RangedToken, Request, RequestTarget, ResolvedRange,
-    SequentialDrain, SkipTake, SkipTakeStage, StreamingOrderedMerge, TopologyProvider,
-    UnorderedMerge,
+    SequentialDrain, SkipTake, StreamingOrderedMerge, TopologyProvider, UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -202,36 +201,34 @@ pub(crate) async fn build_sequential_drain(
     let query_info = query_plan.query_info.as_ref();
     let mut skip = query_info.and_then(|info| info.offset).unwrap_or(0);
     let mut take = query_info.and_then(combine_take);
-    // Which SQL construct the *query plan* produced (`TOP` vs `OFFSET`/`LIMIT`),
-    // used to validate a resumed continuation's shape below.
-    let plan_stage = query_info.and_then(skip_take_stage);
+    // Whether the *query plan* itself carries a skip/take window, i.e. whether
+    // the resumed pipeline will contain a `SkipTake` node. Used to validate a
+    // resumed continuation's pipeline shape below.
+    let plan_has_window = skip > 0 || take.is_some();
 
     // A `SkipTake` continuation wraps the fan-out snapshot; peel it so the saved
     // remaining window overrides the plan and the inner child drives the
     // fan-out resume below.
     let inner_resume = match resume {
         Some(PipelineNodeState::SkipTake {
-            stage: token_stage,
             remaining_skip,
             remaining_take,
             child,
         }) => {
-            // `TOP` and `OFFSET`/`LIMIT` share counter logic but are distinct
-            // query features (#4750) with distinct continuation contracts. A
-            // token produced by one must not resume the other, so reject a
-            // stage mismatch (including a skip/take token resumed against a
-            // query that has no skip/take) instead of returning wrong results.
-            if plan_stage != Some(token_stage) {
+            // Resume validates the *pipeline* shape, not the query shape: `TOP n`
+            // and `OFFSET x LIMIT y` build an identical global skip/take
+            // pipeline, so a token minted by one legitimately resumes the other.
+            // We only reject when the resumed query has no skip/take window at
+            // all — then the pipeline has no `SkipTake` node to resume into.
+            if !plan_has_window {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
                         crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
                     )
-                    .with_message(format!(
-                        "continuation token was produced by a {} query but was resumed against \
-                         a {} query",
-                        skip_take_stage_label(Some(token_stage)),
-                        skip_take_stage_label(plan_stage),
-                    ))
+                    .with_message(
+                        "continuation token carries a skip/take (OFFSET/LIMIT/TOP) window but \
+                         the resumed query has no such window",
+                    )
                     .build());
             }
             skip = remaining_skip;
@@ -304,11 +301,7 @@ pub(crate) async fn build_sequential_drain(
     // fan-out's EPK-ordered stream. When none is present the fan-out is the
     // pipeline root directly.
     let root: Box<dyn PipelineNode> = if needs_skip_take {
-        // `needs_skip_take` is derived from the offset/limit/top that also
-        // determine `plan_stage`, so it is always `Some` here; default
-        // defensively rather than panicking.
-        let stage = plan_stage.unwrap_or(SkipTakeStage::OffsetLimit);
-        Box::new(SkipTake::new(fanout, skip, take, stage))
+        Box::new(SkipTake::new(fanout, skip, take))
     } else {
         fanout
     };
@@ -363,7 +356,7 @@ pub(crate) async fn build_streaming_ordered_merge(
     // top of the ordered merge by a `SkipTake` root rather than per partition.
     let mut skip = info.offset.unwrap_or(0);
     let mut take = combine_take(info);
-    let plan_stage = skip_take_stage(info);
+    let plan_has_window = skip > 0 || take.is_some();
 
     // A combined ORDER BY + OFFSET/LIMIT/TOP continuation nests the ordered-merge
     // snapshot inside a `SkipTake`; peel it so the saved remaining window
@@ -371,26 +364,23 @@ pub(crate) async fn build_streaming_ordered_merge(
     // below. Mirrors the peel in `build_sequential_drain`.
     let resume = match resume {
         Some(PipelineNodeState::SkipTake {
-            stage: token_stage,
             remaining_skip,
             remaining_take,
             child,
         }) => {
-            // `TOP` and `OFFSET`/`LIMIT` share counter logic but are distinct
-            // features with distinct continuation contracts; a token minted by
-            // one must not resume the other (including a skip/take token resumed
-            // against a plain ORDER BY query with no window).
-            if plan_stage != Some(token_stage) {
+            // Resume validates pipeline shape, not query shape (see
+            // `build_sequential_drain`): `TOP` and `OFFSET`/`LIMIT` build the
+            // same skip/take node, so either token resumes the other. Only a
+            // token whose query has lost its window entirely is rejected.
+            if !plan_has_window {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
                         crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
                     )
-                    .with_message(format!(
-                        "continuation token was produced by a {} query but was resumed against \
-                         a {} query",
-                        skip_take_stage_label(Some(token_stage)),
-                        skip_take_stage_label(plan_stage),
-                    ))
+                    .with_message(
+                        "continuation token carries a skip/take (OFFSET/LIMIT/TOP) window but \
+                         the resumed query has no such window",
+                    )
                     .build());
             }
             skip = remaining_skip;
@@ -528,11 +518,7 @@ pub(crate) async fn build_streaming_ordered_merge(
     // the query carries none, the ordered merge is the pipeline root directly.
     let needs_skip_take = skip > 0 || take.is_some();
     let root: Box<dyn PipelineNode> = if needs_skip_take {
-        // `needs_skip_take` is derived from the offset/limit/top that also
-        // determine `plan_stage`, so it is always `Some` here; default
-        // defensively rather than panicking.
-        let stage = plan_stage.unwrap_or(SkipTakeStage::OffsetLimit);
-        Box::new(SkipTake::new(ordered_root, skip, take, stage))
+        Box::new(SkipTake::new(ordered_root, skip, take))
     } else {
         ordered_root
     };
@@ -1377,32 +1363,6 @@ fn combine_take(info: &QueryInfo) -> Option<u64> {
         (Some(top), None) => Some(top),
         (None, Some(limit)) => Some(limit),
         (None, None) => None,
-    }
-}
-
-/// Classifies which SQL construct produced a query plan's skip/take window, or
-/// `None` if the plan has no `OFFSET`/`LIMIT`/`TOP`.
-///
-/// `OFFSET`/`LIMIT` takes precedence over `TOP`: the two are mutually exclusive
-/// in the Cosmos SQL grammar, and the presence of an offset or limit
-/// unambiguously identifies the `OFFSET`/`LIMIT` continuation shape.
-fn skip_take_stage(info: &QueryInfo) -> Option<SkipTakeStage> {
-    if info.offset.is_some() || info.limit.is_some() {
-        Some(SkipTakeStage::OffsetLimit)
-    } else if info.top.is_some() {
-        Some(SkipTakeStage::Top)
-    } else {
-        None
-    }
-}
-
-/// Human-readable label for a [`SkipTakeStage`] used in continuation-token
-/// mismatch errors.
-fn skip_take_stage_label(stage: Option<SkipTakeStage>) -> &'static str {
-    match stage {
-        Some(SkipTakeStage::Top) => "TOP",
-        Some(SkipTakeStage::OffsetLimit) => "OFFSET/LIMIT",
-        None => "non-skip/take",
     }
 }
 
@@ -2423,10 +2383,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn skip_take_continuation_rejects_stage_mismatch() {
-        // Plan is an OFFSET/LIMIT query, but the continuation token was produced
-        // by a TOP query. Resuming it must be rejected rather than silently
-        // producing wrong results.
+    async fn skip_take_continuation_accepts_cross_construct_window() {
+        // The plan is an OFFSET/LIMIT query but the continuation token was minted
+        // by a TOP query. Both build the identical global skip/take pipeline, so
+        // resume validates the pipeline shape (a SkipTake node exists), not which
+        // SQL construct minted the token — this must resume, not reject.
         let plan = QueryPlan {
             query_info: Some(QueryInfo {
                 offset: Some(2),
@@ -2439,24 +2400,52 @@ mod tests {
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")])]);
 
         let resume = PipelineNodeState::SkipTake {
-            stage: SkipTakeStage::Top,
+            remaining_skip: 0,
+            remaining_take: Some(3),
+            child: Box::new(PipelineNodeState::Drained),
+        };
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect("a TOP-shaped window token should resume an OFFSET/LIMIT query");
+        // The saved child was `Drained`, so the resumed pipeline is drained.
+        let mut root = pipeline.into_root();
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        assert!(matches!(
+            root.next_page(&mut context).await.unwrap(),
+            PageResult::Drained
+        ));
+    }
+
+    #[tokio::test]
+    async fn skip_take_continuation_rejects_window_token_against_windowless_query() {
+        // The token carries a skip/take window, but the resumed query has no
+        // OFFSET/LIMIT/TOP — so the pipeline it resumes into has no SkipTake node
+        // to receive it. This is a genuine pipeline-shape mismatch and is
+        // rejected rather than silently applying a phantom window.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")])]);
+
+        let resume = PipelineNodeState::SkipTake {
             remaining_skip: 0,
             remaining_take: Some(3),
             child: Box::new(PipelineNodeState::Drained),
         };
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
-            .expect_err("resuming a TOP token against an OFFSET/LIMIT query must fail");
+            .expect_err("a skip/take token must not resume a query with no skip/take window");
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
-            "expected SHAPE_MISMATCH for TOP-vs-OFFSET/LIMIT continuation; got {err:?}",
+            "expected SHAPE_MISMATCH for a window token against a windowless query; got {err:?}",
         );
     }
 
     #[tokio::test]
     async fn skip_take_continuation_accepts_matching_stage() {
-        // A matching-stage continuation (OFFSET/LIMIT token, OFFSET/LIMIT query)
+        // A matching-window continuation (OFFSET/LIMIT token, OFFSET/LIMIT query)
         // resumes without error. The `Drained` child yields a drained pipeline.
         let plan = QueryPlan {
             query_info: Some(QueryInfo {
@@ -2470,7 +2459,6 @@ mod tests {
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")])]);
 
         let resume = PipelineNodeState::SkipTake {
-            stage: SkipTakeStage::OffsetLimit,
             remaining_skip: 1,
             remaining_take: Some(3),
             child: Box::new(PipelineNodeState::Drained),
@@ -3650,10 +3638,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn build_streaming_ordered_merge_rejects_skip_take_token_stage_mismatch() {
-        // A `TOP` continuation resumed against an `OFFSET`/`LIMIT` combined
-        // ORDER BY query is a shape mismatch and must be rejected, not silently
-        // resumed with the wrong window contract.
+    async fn build_streaming_ordered_merge_accepts_cross_construct_window_token() {
+        // A `TOP`-shaped window token resumed against an `OFFSET`/`LIMIT` combined
+        // ORDER BY query builds the identical SkipTake-over-merge pipeline, so it
+        // resumes (resume validates pipeline shape, not the SQL construct).
         let op = Arc::new(order_by_operation());
         let mut plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
         {
@@ -3663,7 +3651,33 @@ mod tests {
         }
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
         let resume = PipelineNodeState::SkipTake {
-            stage: SkipTakeStage::Top,
+            remaining_skip: 0,
+            remaining_take: Some(2),
+            child: Box::new(PipelineNodeState::Drained),
+        };
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resume))
+            .await
+            .expect("a window token should resume a combined ORDER BY window query");
+        // The saved child was `Drained`, so the resumed pipeline is drained.
+        let mut root = pipeline.into_root();
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        assert!(matches!(
+            root.next_page(&mut context).await.unwrap(),
+            PageResult::Drained
+        ));
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_window_token_against_plain_order_by() {
+        // A skip/take window token resumed against a *plain* ORDER BY (no
+        // OFFSET/LIMIT/TOP) is a pipeline-shape mismatch: the resumed pipeline
+        // has no SkipTake node to receive the window. Must be rejected.
+        let op = Arc::new(order_by_operation());
+        let plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let resume = PipelineNodeState::SkipTake {
             remaining_skip: 0,
             remaining_take: Some(2),
             child: Box::new(PipelineNodeState::Drained),

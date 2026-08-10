@@ -27,6 +27,13 @@ impl ResponseBody {
         self.0.is_empty()
     }
 
+    /// Returns `true` if the body is an already-split feed body (an item list
+    /// or an empty page) rather than a single raw payload that still needs its
+    /// `{"Documents":[...]}` envelope parsed.
+    pub(crate) fn is_pre_split_feed(&self) -> bool {
+        self.0.is_pre_split_feed()
+    }
+
     /// Returns the single payload, or an error if the body is a feed response.
     pub fn single(self) -> crate::Result<Bytes> {
         self.0.single().map_err(Into::into)

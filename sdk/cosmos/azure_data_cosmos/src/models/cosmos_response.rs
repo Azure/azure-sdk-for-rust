@@ -76,6 +76,13 @@ impl CosmosResponse {
         self.body
     }
 
+    /// Returns `true` if the body is an already-split feed body (item list or
+    /// empty page) rather than a raw `{"Documents":[...]}` envelope in a single
+    /// `Bytes` payload. Feed consumers use this to pick the decode path.
+    pub(crate) fn body_is_pre_split_feed(&self) -> bool {
+        self.body.is_pre_split_feed()
+    }
+
     /// Returns a cloned [`Arc`] handle to the diagnostics for this operation.
     pub(crate) fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         Arc::clone(&self.diagnostics)

@@ -97,14 +97,21 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
         let index_metrics = cosmos_headers.index_metrics.clone();
         let query_metrics = cosmos_headers.query_metrics.clone();
         let diagnostics = response.diagnostics();
-        let body: FeedBody<T> = response.into_model()?;
+
+        // The cross-partition pipeline (skip/take, streaming ORDER BY merge)
+        // hands us a pre-split `Items` body, which we decode item-by-item
+        // without re-parsing an envelope. A single-partition page that never
+        // went through those nodes arrives as a raw `{"Documents":[...]}`
+        // envelope in `Bytes`, which we parse via [`FeedBody`].
+        let items: Vec<T> = if response.body_is_pre_split_feed() {
+            response.into_body().into_items()?
+        } else {
+            let body: FeedBody<T> = response.into_model()?;
+            body.items
+        };
 
         Ok(Self {
-            page: FeedPage::new(
-                body.items,
-                ResponseHeaders::from(cosmos_headers),
-                diagnostics,
-            ),
+            page: FeedPage::new(items, ResponseHeaders::from(cosmos_headers), diagnostics),
             index_metrics,
             query_metrics,
         })

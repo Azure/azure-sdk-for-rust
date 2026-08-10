@@ -67,7 +67,7 @@ pub use pipeline::OperationPlan;
 pub(crate) use pipeline::Pipeline;
 pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};
 pub(crate) use skip_take::SkipTake;
-pub(crate) use snapshot::{PipelineNodeState, RangedToken, SkipTakeStage};
+pub(crate) use snapshot::{PipelineNodeState, RangedToken};
 pub(crate) use streaming_ordered_merge::StreamingOrderedMerge;
 pub(crate) use topology::CachedTopologyProvider;
 pub(crate) use unordered_merge::UnorderedMerge;
