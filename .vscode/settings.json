@@ -20,12 +20,6 @@
   "rust-analyzer.check.command": "clippy",
   "rust-analyzer.linkedProjects": [
     "Cargo.toml",
-    // "eng/tools/Cargo.toml",
-    // "eng/scripts/update-cratenames.rs",
-    // "eng/scripts/update-pathversions.rs",
-    // "eng/scripts/update-samples.rs",
-    // "eng/scripts/verify-dependencies.rs",
-    // "eng/scripts/verify-keywords.rs",
   ],
   "yaml.format.printWidth": 240,
   "[powershell]": {

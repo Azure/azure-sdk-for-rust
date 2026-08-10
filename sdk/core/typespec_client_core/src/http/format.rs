@@ -20,24 +20,6 @@ pub trait Format: std::fmt::Debug {
     /// # Returns
     /// * A `Result` containing the deserialized model `T`.
     fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> crate::Result<T>;
-
-    /// Deserialize a full response into model `T`, with access to both headers and body.
-    ///
-    /// The default implementation ignores the headers and delegates to [`Format::deserialize`]
-    /// using the response body. Override this method when the deserialization format should
-    /// be chosen at runtime based on the response headers (e.g., inspecting `content-type`).
-    ///
-    /// Service crates that need header-aware dispatch define their own format type and
-    /// override this method — neither `azure_core` nor the caller need any extra boilerplate.
-    ///
-    /// # Arguments
-    /// * `response` - The full response including headers and body.
-    ///
-    /// # Returns
-    /// * A `Result` containing the deserialized model `T`.
-    fn deserialize_from<T: DeserializeOwned>(response: &RawResponse) -> crate::Result<T> {
-        Self::deserialize(response.body())
-    }
 }
 
 /// A trait used to describe a type that can be deserialized using the specified [`Format`].
@@ -63,13 +45,11 @@ pub trait DeserializeWith<F: Format>: Sized {
 
     /// Deserialize a full response into `Self`, with access to both headers and body.
     ///
-    /// The default implementation delegates to [`Format::deserialize_from`]. Override this
-    /// method to select a deserialization strategy at runtime based on response headers.
-    fn deserialize_from(response: &RawResponse) -> crate::Result<Self>
-    where
-        Self: DeserializeOwned,
-    {
-        F::deserialize_from::<Self>(response)
+    /// The default implementation ignores the headers and delegates to
+    /// [`DeserializeWith::deserialize_with`]. Override this method to select a deserialization
+    /// strategy at runtime based on response headers.
+    fn deserialize_from(response: RawResponse) -> crate::Result<Self> {
+        Self::deserialize_with(response.into_body())
     }
 }
 

@@ -186,11 +186,8 @@ impl<T: DeserializeWith<F>, F: Format> Response<T, F> {
     /// assert_eq!(model.value, "hunter2");
     /// # }
     /// ```
-    pub fn into_model(self) -> crate::Result<T>
-    where
-        T: serde::de::DeserializeOwned,
-    {
-        T::deserialize_from(&self.raw)
+    pub fn into_model(self) -> crate::Result<T> {
+        T::deserialize_from(self.raw)
     }
 }
 
@@ -402,8 +399,66 @@ impl fmt::Debug for AsyncResponseBody {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http::{headers::Headers, AsyncRawResponse, RawResponse, Response, StatusCode};
+    use crate::http::{
+        headers::{HeaderName, Headers},
+        AsyncRawResponse, DeserializeWith, Format, RawResponse, Response, StatusCode,
+    };
     use futures::{stream, StreamExt};
+    use serde::de::DeserializeOwned;
+
+    #[derive(Debug)]
+    struct ManualFormat;
+
+    impl Format for ManualFormat {
+        fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(_body: S) -> crate::Result<T> {
+            Err(crate::Error::new(
+                crate::error::ErrorKind::DataConversion,
+                "not supported",
+            ))
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq)]
+    struct ManualModel {
+        format: String,
+        body: String,
+    }
+
+    impl DeserializeWith<ManualFormat> for ManualModel {
+        fn deserialize_with(body: ResponseBody) -> crate::Result<Self> {
+            Ok(Self {
+                format: "default".into(),
+                body: body.into_string()?,
+            })
+        }
+
+        fn deserialize_from(response: RawResponse) -> crate::Result<Self> {
+            let format = response
+                .headers()
+                .get_optional_string(&HeaderName::from_static("x-format"))
+                .unwrap_or_else(|| "default".into());
+            Ok(Self {
+                format,
+                body: response.into_body().into_string()?,
+            })
+        }
+    }
+
+    #[test]
+    fn into_model_supports_non_serde_custom_deserialization() {
+        let mut headers = Headers::new();
+        headers.insert("x-format", "custom");
+        let response: Response<ManualModel, ManualFormat> =
+            RawResponse::from_bytes(StatusCode::Ok, headers, "manually decoded").into();
+
+        assert_eq!(
+            response.into_model().unwrap(),
+            ManualModel {
+                format: "custom".into(),
+                body: "manually decoded".into(),
+            }
+        );
+    }
 
     #[test]
     fn can_extract_raw_body() -> Result<(), Box<dyn std::error::Error>> {

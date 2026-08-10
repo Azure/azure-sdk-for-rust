@@ -27,7 +27,7 @@ impl DeserializeWith<AutoFormat> for ListBlobsResponse {
         body.xml()
     }
 
-    fn deserialize_from(response: &RawResponse) -> azure_core::Result<Self> {
+    fn deserialize_from(response: RawResponse) -> azure_core::Result<Self> {
         let ct = response
             .headers()
             .get_optional_str(&CONTENT_TYPE)
