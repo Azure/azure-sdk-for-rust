@@ -14,6 +14,10 @@ use std::sync::Arc;
 /// Persistent 503 on GET / must surface as upstream HTTP status — never relabeled as
 /// `SERIALIZATION_RESPONSE_BODY_INVALID` ("missing field `_self`").
 #[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
 pub async fn account_metadata_503_surfaces_as_status_error() -> Result<(), Box<dyn Error>> {
     // Persistent 503 on every MetadataReadDatabaseAccount so the first lazy fetch
     // (via create_driver) hits the fault.

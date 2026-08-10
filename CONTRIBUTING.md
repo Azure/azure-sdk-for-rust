@@ -177,6 +177,10 @@ which is important if it shows an example running against live resources that li
 
 More guidance for writing documentation tests can be found in our [Rust Guidelines].
 
+### Fuzzing
+
+Some crates fuzz-test parsing and codec paths that consume untrusted input (for example, the Cosmos binary-JSON codec). When adding a fuzzer or a test that needs randomized inputs, prefer the [`arbitrary`](https://docs.rs/arbitrary) crate to turn a raw byte stream into structured values, rather than adding a new random-data dependency. Keeping to `arbitrary` lets fuzz targets share one well-maintained generator, works with both `cargo-fuzz` (libFuzzer) targets and seeded in-tree fuzz tests, and avoids a proliferation of similar-but-disparate dependencies. Seed any generator from a reproducible source (e.g. a logged random seed) so a failure can be replayed deterministically.
+
 ### Debugging with Visual Studio Code
 
 [Visual Studio Code] with recommended extensions installed can be used to run and debug tests for a module or individual tests.
