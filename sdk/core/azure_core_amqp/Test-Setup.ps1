@@ -186,10 +186,8 @@ try {
   # azure-amqp uses lightweight tags and has no tag ruleset, so a maintainer
   # can move a tag to a different commit without a trace.
   #
-  # This SHA is the commit of Azure/azure-amqp pull request 318 that adds
-  # nuget.cfsclean.config. That pull request has moved on since, so the SHA is
-  # now an ancestor of refs/pull/318/head and not the head itself. It is not on
-  # master, so the reachability check below writes a warning and continues.
+  # This SHA is the head of master in Azure/azure-amqp. The reachability check
+  # below stays quiet while the pin sits on master.
   #
   # To update the pin:
   #   1. Pick an azure-amqp commit that contains nuget.cfsclean.config and
@@ -203,7 +201,7 @@ try {
   #
   # Set TEST_BROKER_COMMIT to point the broker at a different commit without a
   # code change.
-  $repositoryHash = "239aff0d87b2c19e1fa91636e0fc0f6ee6e9999a"
+  $repositoryHash = "111de654e170de3ab6cefe150043458c67b6660d"
   if (-not [string]::IsNullOrWhiteSpace($env:TEST_BROKER_COMMIT)) {
     $repositoryHash = $env:TEST_BROKER_COMMIT.Trim()
     Write-Host "TEST_BROKER_COMMIT overrides the pinned azure-amqp commit: $repositoryHash"
