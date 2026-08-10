@@ -7,24 +7,9 @@
 # CARGO_REGISTRIES_AZURE_SDK_FOR_RUST_PUBLIC_TOKEN / _CREDENTIAL_PROVIDER variables that
 # cargo needs to authenticate against the feed.
 #
-# The `~force-auth` suffix on the feed name is required. The feed lives in the public
-# `azure-sdk` project, so Azure Artifacts answers the anonymous probe cargo makes for
-# `Cargo/index/config.json` with "auth-required": false. Cargo caches that answer and
-# only re-requests with credentials for config.json itself, so every crate lookup goes
-# out anonymously and the token is never used. Anonymous callers may read crates already
-# saved in the feed, but saving a new crate from the crates.io upstream requires an
-# identity with at least the Feed and Upstream Reader role, so the first crate not yet
-# cached fails with HTTP 401 and "No local versions of package '<crate>'". `~force-auth`
-# makes the feed 401 the anonymous config.json probe instead, which is the one case
-# cargo retries with credentials, so the whole session is authenticated and upstream
-# saves succeed. See https://learn.microsoft.com/azure/devops/artifacts/cargo/cargo-upstream-source.
-#
-# The `~force-auth` suffix belongs only in the index URL. The registry is still named
-# `azure-sdk-for-rust-public` everywhere else, including the environment variables above.
-#
-# The [source] replacement redirects index.crates.io and static.crates.io to the
-# feed.
-#
+# The `~force-auth` suffix on the feed name is required. See
+# https://learn.microsoft.com/azure/devops/artifacts/cargo/cargo-upstream-source.
+
 [registries]
 azure-sdk-for-rust-public = { index = "sparse+https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-rust-public~force-auth/Cargo/index/" }
 
