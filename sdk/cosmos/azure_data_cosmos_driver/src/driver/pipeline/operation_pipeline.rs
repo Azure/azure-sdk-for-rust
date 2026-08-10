@@ -6701,6 +6701,158 @@ mod tests {
         assert_eq!(routing.endpoint, available_endpoint);
     }
 
+    /// The endpoint-unavailability lifecycle has two halves. The *membership*
+    /// half (mark -> cooldown -> probe -> restore) is a deterministic in-memory
+    /// unit test in `driver::routing::location_state_store`. This test pins the
+    /// *routing* half — how a mark is consumed by `resolve_endpoint` — in one
+    /// `[r1, r2]` multi-write topology, deterministically and in-memory (no
+    /// network, no sleeps). It asserts, as one ordered sequence, both the
+    /// demote-to-tail-not-removal behavior and the read/write/both distinction
+    /// that the single-purpose tests above each cover only one facet of:
+    ///   * a both-affecting reason (`ServiceUnavailable`) demotes r1 for BOTH
+    ///     reads and writes (r2 chosen);
+    ///   * a write-only reason (`WriteForbidden`) demotes r1 for writes only —
+    ///     reads still route to r1;
+    ///   * when every candidate is marked, the marked head is still returned
+    ///     (`first_unavailable`), never dropped — demotion is to the tail, not
+    ///     removal;
+    ///   * once a mark ages past the TTL the endpoint is available again.
+    #[test]
+    fn resolve_endpoint_unavailability_demotes_to_tail_by_reason_for_reads_and_writes() {
+        let r1 = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let r2 = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let ttl = Duration::from_secs(60);
+
+        let make_location = |unavailable: std::collections::HashMap<
+            Url,
+            (
+                std::time::Instant,
+                crate::driver::routing::UnavailableReason,
+            ),
+        >| {
+            LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+                generation: 0,
+                preferred_read_endpoints: vec![r1.clone(), r2.clone()].into(),
+                preferred_write_endpoints: vec![r1.clone(), r2.clone()].into(),
+                account_write_endpoints: vec![r1.clone(), r2.clone()].into(),
+                unavailable_endpoints: unavailable,
+                multiple_write_locations_enabled: true,
+                default_endpoint: r1.clone(),
+            }))
+        };
+
+        let read_op = CosmosOperation::read_all_databases(test_account());
+        let write_item =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let write_op = CosmosOperation::create_item(write_item).with_body(b"{}".to_vec());
+
+        // Multi-write retry state so reads use the read list and writes use the
+        // write list, both `[r1, r2]`.
+        let state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            true,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let resolve = |op: &CosmosOperation, loc: &LocationSnapshot| {
+            super::resolve_endpoint(op, &state, loc, false, true, ttl).endpoint
+        };
+
+        // Case A — both-affecting reason (ServiceUnavailable) demotes r1 for
+        // reads AND writes.
+        let mut both = std::collections::HashMap::new();
+        both.insert(
+            r1.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+        let loc = make_location(both);
+        assert_eq!(
+            resolve(&read_op, &loc),
+            r2,
+            "a both-affecting mark on r1 must demote it for reads",
+        );
+        assert_eq!(
+            resolve(&write_op, &loc),
+            r2,
+            "a both-affecting mark on r1 must demote it for writes",
+        );
+
+        // Case B — write-only reason (WriteForbidden): reads keep r1, writes
+        // demote to r2.
+        let mut write_forbidden = std::collections::HashMap::new();
+        write_forbidden.insert(
+            r1.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::WriteForbidden,
+            ),
+        );
+        let loc = make_location(write_forbidden);
+        assert_eq!(
+            resolve(&read_op, &loc),
+            r1,
+            "WriteForbidden must not demote r1 for reads",
+        );
+        assert_eq!(
+            resolve(&write_op, &loc),
+            r2,
+            "WriteForbidden must demote r1 for writes",
+        );
+
+        // Case C — every candidate marked: the head is still returned (present,
+        // tail-of-rotation), never removed.
+        let mut all_marked = std::collections::HashMap::new();
+        all_marked.insert(
+            r1.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+        all_marked.insert(
+            r2.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+        let loc = make_location(all_marked);
+        assert_eq!(
+            resolve(&read_op, &loc),
+            r1,
+            "when all candidates are marked, the marked head must still be \
+             returned rather than dropped from rotation",
+        );
+
+        // Case D — an aged mark (older than the TTL) makes r1 available again.
+        let mut expired = std::collections::HashMap::new();
+        expired.insert(
+            r1.url().clone(),
+            (
+                std::time::Instant::now() - (ttl + Duration::from_secs(1)),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+        let loc = make_location(expired);
+        assert_eq!(
+            resolve(&read_op, &loc),
+            r1,
+            "a mark older than the TTL must no longer demote r1",
+        );
+    }
+
     // ── PPAF write-retry cross-region fallback ─────────────────────────
 
     fn make_pending_partition_mark_for_region(
