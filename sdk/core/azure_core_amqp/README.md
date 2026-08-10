@@ -32,9 +32,7 @@ Install [PowerShell](https://learn.microsoft.com/powershell/scripting/install/in
 ./sdk/core/azure_core_amqp/Test-Setup.ps1
 ```
 
-The script clones Azure/azure-amqp at commit [`239aff0d87b2c19e1fa91636e0fc0f6ee6e9999a`](https://github.com/Azure/azure-amqp/commit/239aff0d87b2c19e1fa91636e0fc0f6ee6e9999a), restores through the broker repository's `nuget.cfsclean.config`, builds `TestAmqpBroker` for .NET 10, and launches it in the background. The config was added in [Azure/azure-amqp#318](https://github.com/Azure/azure-amqp/pull/318).
-
-Run the package tests in the same PowerShell process so `TEST_BROKER_ADDRESS` remains available.
+The script clones Azure/azure-amqp at commit [`111de654e170de3ab6cefe150043458c67b6660d`](https://github.com/Azure/azure-amqp/commit/111de654e170de3ab6cefe150043458c67b6660d), restores through the `nuget.cfsclean.config` in this package, builds `TestAmqpBroker` for .NET 10, and launches it in the background. Run the package tests in the same PowerShell process so `TEST_BROKER_ADDRESS` remains available.
 
 ```pwsh
 cargo test --package azure_core_amqp --all-features
@@ -58,7 +56,7 @@ $env:TEST_BROKER_COMMIT = '<full 40-character SHA>'
 
 Setup also asks the GitHub compare API whether the pinned commit is reachable from azure-amqp `master`. A reachable pin says nothing. An unreachable pin writes a warning, and `TEST_BROKER_REQUIRE_MERGED` turns that warning into an error. A check that could not run writes a warning and always continues, because the unauthenticated rate limit is 60 requests each hour for each IP address.
 
-The current pin is the head of the pull request [Azure/azure-amqp#318](https://github.com/Azure/azure-amqp/pull/318), so the warning appears today. It will still appear after that pull request merges. azure-amqp squash-merges, so the head commit of a pull request never lands on `master`. To clear the warning, move the pin to the squash commit on `master`, which is the `merge_commit_sha` of the merged pull request. Do not use the `merge_commit_sha` of an open pull request, because that is a throwaway test-merge commit that disappears.
+The current pin is `111de654e170de3ab6cefe150043458c67b6660d`, the head of `master` in Azure/azure-amqp, so no warning appears. Azure/azure-amqp squash-merges its pull requests, so the commit that lands on `master` is the `merge_commit_sha` of a merged pull request and never the head commit of that pull request.
 
 ### Manual broker install
 
@@ -66,7 +64,7 @@ Clone the pinned azure-amqp commit to a local directory.
 
 ```pwsh
 cd <Test Working Directory>
-git clone https://github.com/Azure/azure-amqp --revision 239aff0d87b2c19e1fa91636e0fc0f6ee6e9999a
+git clone https://github.com/Azure/azure-amqp --revision 111de654e170de3ab6cefe150043458c67b6660d
 ```
 
 Normal external developer builds use the repository's standard NuGet configuration.
