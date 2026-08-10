@@ -14,8 +14,9 @@
 //! (`_rid`) order.
 //!
 //! Combined `ORDER BY` + `OFFSET`/`LIMIT`/`TOP` (which *does* yield a
-//! deterministic global order) is covered separately in `order_by.rs`, where
-//! the assertions check exact cross-partition ordered windows.
+//! deterministic global order) is covered by exact cross-partition ordered
+//! window assertions in `order_by.rs`, and by the `ORDER BY` scenarios in the
+//! catalog-driven runner below (`assertion: exactOrdered` across partitions).
 //!
 //! The count is deterministic regardless of merge order:
 //! `count = max(0, min(limit, total - offset))`. Verifying it end to end
@@ -149,9 +150,7 @@ fn run_query_collecting_ids<'a>(
             .await
             .expect("page executes")
         {
-            let body: serde_json::Value =
-                serde_json::from_slice(&response.into_body().single().unwrap()).unwrap();
-            for item in body["Documents"].as_array().unwrap() {
+            for item in &super::page_document_values(response) {
                 ids.push(item["id"].as_str().unwrap().to_owned());
             }
         }
@@ -377,13 +376,17 @@ struct CatalogQuery {
 struct CatalogDocument {
     id: String,
     pk: String,
+    #[serde(default)]
+    rank: Option<i64>,
 }
 
 /// Runs every `inMemoryEmulator`-tagged catalog scenario end to end against a
 /// freshly built emulator, asserting the outcome according to its declared
 /// `assertion` mode:
-/// - `exactOrdered`: the emitted ids equal `expectedIds` (single logical
-///   partition => deterministic creation order).
+/// - `exactOrdered`: the emitted ids equal `expectedIds`. Without `ORDER BY`
+///   this is only deterministic within a single logical partition (creation
+///   order); with `ORDER BY` the merged stream is globally sorted, so the
+///   window is deterministic across partitions too.
 /// - `unorderedSubsetCount`: the emitted ids are a duplicate-free subset of the
 ///   seeds with cardinality `expectedCount` (cross-partition order is
 ///   unspecified without `ORDER BY`).
@@ -404,12 +407,30 @@ async fn catalog_scenarios_match_expectations() {
             .await
             .expect("container resolves");
 
-        let docs: Vec<(&str, &str)> = scenario
-            .documents
-            .iter()
-            .map(|d| (d.id.as_str(), d.pk.as_str()))
-            .collect();
-        let universe = seed(&driver, &container, &docs).await;
+        // Seed each document with an incrementing `seq` and, when the scenario
+        // declares one, a `rank` field so `ORDER BY c.rank` has a shuffled key
+        // distinct from creation order.
+        let mut universe = Vec::with_capacity(scenario.documents.len());
+        for (seq, doc) in scenario.documents.iter().enumerate() {
+            let item_ref = ItemReference::from_name(
+                &container,
+                PartitionKey::from(doc.pk.clone()),
+                doc.id.clone(),
+            );
+            let mut body = serde_json::json!({ "id": doc.id, "pk": doc.pk, "seq": seq });
+            if let Some(rank) = doc.rank {
+                body["rank"] = serde_json::json!(rank);
+            }
+            driver
+                .execute_singleton_operation(
+                    CosmosOperation::create_item(item_ref)
+                        .with_body(serde_json::to_vec(&body).unwrap()),
+                    OperationOptions::default(),
+                )
+                .await
+                .expect("seed catalog document");
+            universe.push(doc.id.clone());
+        }
 
         let ids = run_query_collecting_ids(&driver, &container, &scenario.query.text).await;
 

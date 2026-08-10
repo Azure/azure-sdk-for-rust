@@ -9,11 +9,14 @@
 //! parsing → merge path against the in-memory emulator's actual query
 //! evaluator.
 //!
-//! Scoped to *fresh* (non-resumed) scenarios; resume/split behavior is
-//! covered by the mock-pipeline and driver-level integration tests.
+//! Fresh (non-resumed) scenarios exercise the pure streaming ORDER BY merge;
+//! the combined ORDER BY + `OFFSET`/`LIMIT`/`TOP` section additionally covers
+//! pagination-resume and a mid-stream partition split for the composed
+//! `SkipTake { child: StreamingOrderedMerge }` pipeline.
 
 use std::num::NonZeroU32;
 use std::sync::Arc;
+use std::time::Duration;
 
 use azure_core::http::Url;
 
@@ -124,9 +127,7 @@ async fn cross_partition_order_by_returns_globally_sorted_results() {
         .await
         .expect("page executes")
     {
-        let body: serde_json::Value =
-            serde_json::from_slice(&response.into_body().single().unwrap()).unwrap();
-        for item in body["Documents"].as_array().unwrap() {
+        for item in &super::page_document_values(response) {
             ranks.push(item["rank"].as_i64().unwrap());
         }
     }
@@ -186,11 +187,9 @@ async fn cross_partition_order_by_paginates_with_small_page_size() {
         .await
         .unwrap()
     {
-        let body: serde_json::Value =
-            serde_json::from_slice(&response.into_body().single().unwrap()).unwrap();
-        let documents = body["Documents"].as_array().unwrap();
+        let documents = super::page_document_values(response);
         page_sizes.push(documents.len());
-        for item in documents {
+        for item in &documents {
             ranks.push(item["rank"].as_i64().unwrap());
         }
     }
@@ -235,9 +234,7 @@ async fn run_query_collecting_ids(
         .await
         .expect("page executes")
     {
-        let body: serde_json::Value =
-            serde_json::from_slice(&response.into_body().single().unwrap()).unwrap();
-        for item in body["Documents"].as_array().unwrap() {
+        for item in &super::page_document_values(response) {
             ids.push(item["id"].as_str().unwrap().to_owned());
         }
     }
@@ -483,9 +480,7 @@ async fn run_query_collecting_ranks(
         .await
         .expect("page executes")
     {
-        let body: serde_json::Value =
-            serde_json::from_slice(&response.into_body().single().unwrap()).unwrap();
-        for item in body["Documents"].as_array().unwrap() {
+        for item in &super::page_document_values(response) {
             ranks.push(item["rank"].as_i64().unwrap());
         }
     }
@@ -635,5 +630,92 @@ async fn cross_partition_order_by_offset_limit_paginates_preserving_window() {
         ranks,
         vec![3, 4, 5, 6],
         "a paginated combined query must yield the exact global window in order"
+    );
+}
+
+/// A physical partition split *mid-query* must not corrupt a combined
+/// ORDER BY + window result. The streaming merge absorbs the split internally
+/// (re-fanning to the child ranges via `split_for_topology_change`), and the
+/// wrapping `SkipTake` keeps applying the single global window over the
+/// re-merged stream. With a page size of 1 the split lands after the first
+/// emitted document, so the resume path crosses the topology change.
+#[tokio::test]
+async fn cross_partition_order_by_offset_limit_survives_split_mid_stream() {
+    let (emulator, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .expect("container resolves");
+
+    // Eight ranks 1..=8, shuffled across partitions.
+    let seeds = [
+        ("d1", "pk-a", 8),
+        ("d2", "pk-b", 3),
+        ("d3", "pk-c", 6),
+        ("d4", "pk-d", 1),
+        ("d5", "pk-e", 5),
+        ("d6", "pk-f", 2),
+        ("d7", "pk-g", 7),
+        ("d8", "pk-h", 4),
+    ];
+    seed_ranked(&driver, &container, &seeds).await;
+
+    let body = serde_json::to_vec(&serde_json::json!({
+        "query": "SELECT * FROM c ORDER BY c.rank ASC OFFSET 2 LIMIT 4",
+        "parameters": [],
+    }))
+    .unwrap();
+    let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+        .with_body(body)
+        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
+
+    let mut plan = Box::pin(driver.plan_operation(
+        operation,
+        &OperationOptions::default(),
+        None,
+        &PlanOptions::default(),
+    ))
+    .await
+    .expect("plan builds a combined ORDER BY + window pipeline");
+
+    let mut ranks = Vec::new();
+    let mut split_injected = false;
+    while let Some(response) = driver
+        .execute_plan(
+            &mut plan,
+            Some(container.clone()),
+            OperationOptions::default(),
+        )
+        .await
+        .expect("page executes")
+    {
+        for item in &super::page_document_values(response) {
+            ranks.push(item["rank"].as_i64().unwrap());
+        }
+
+        // After the very first emitted page, split a physical partition so the
+        // remaining pages must resume across the topology change.
+        if !split_injected {
+            let store = emulator.store();
+            store.split_partition("testdb", "testcoll", 0, Duration::ZERO);
+            store.drain_pending_control_plane().await;
+            assert_eq!(
+                store.child_partition_ids("testdb", "testcoll", &[0]).len(),
+                2,
+                "the split must materialize two child partitions before we resume"
+            );
+            split_injected = true;
+        }
+    }
+
+    assert!(
+        split_injected,
+        "the query must page at least once so the split lands mid-stream"
+    );
+    assert_eq!(
+        ranks,
+        vec![3, 4, 5, 6],
+        "a combined ORDER BY + window query must preserve the exact global window \
+         across a mid-stream partition split"
     );
 }

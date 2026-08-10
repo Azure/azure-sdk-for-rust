@@ -296,6 +296,113 @@
       "partitionCount": 2,
       "assertion": "exactOrdered",
       "expectedIds": ["d0"]
+    },
+    {
+      "id": "order_by_offset_limit_cross_partition",
+      "description": "ORDER BY c.rank ASC OFFSET 2 LIMIT 3 over six documents spread across two physical partitions. Because the streaming ordered merge yields a deterministic global ascending order, the exact cross-partition window can be asserted: skip the two smallest ranks, take the next three. This is the load-bearing regression for composing SkipTake over StreamingOrderedMerge for #4750.",
+      "sources": [
+        {
+          "sdk": "rust",
+          "path": "sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/planner.rs",
+          "test": "validate_query_plan_for_streaming_order_by_accepts_offset_limit"
+        },
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
+          "test": "TestQueryCrossPartitionWithContinuationsAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
+          "test": "queryOrderBy"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC OFFSET 2 LIMIT 3",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d1", "pk": "pk-a", "rank": 5 },
+        { "id": "d2", "pk": "pk-b", "rank": 1 },
+        { "id": "d3", "pk": "pk-c", "rank": 4 },
+        { "id": "d4", "pk": "pk-d", "rank": 2 },
+        { "id": "d5", "pk": "pk-e", "rank": 3 },
+        { "id": "d6", "pk": "pk-f", "rank": 0 }
+      ],
+      "partitionCount": 2,
+      "assertion": "exactOrdered",
+      "expectedIds": ["d4", "d5", "d3"]
+    },
+    {
+      "id": "order_by_top_cross_partition",
+      "description": "SELECT TOP 3 ... ORDER BY c.rank ASC over six documents across two physical partitions returns the three smallest ranks in ascending order. Guards that TOP composed over the streaming ordered merge clamps the take-bound once globally rather than per partition.",
+      "sources": [
+        {
+          "sdk": "rust",
+          "path": "sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/planner.rs",
+          "test": "validate_query_plan_for_streaming_order_by_accepts_top"
+        },
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
+          "test": "TestQueryCrossPartitionWithContinuationsAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT TOP 3 * FROM c ORDER BY c.rank ASC",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d1", "pk": "pk-a", "rank": 5 },
+        { "id": "d2", "pk": "pk-b", "rank": 1 },
+        { "id": "d3", "pk": "pk-c", "rank": 4 },
+        { "id": "d4", "pk": "pk-d", "rank": 2 },
+        { "id": "d5", "pk": "pk-e", "rank": 3 },
+        { "id": "d6", "pk": "pk-f", "rank": 0 }
+      ],
+      "partitionCount": 2,
+      "assertion": "exactOrdered",
+      "expectedIds": ["d6", "d2", "d4"]
+    },
+    {
+      "id": "order_by_desc_offset_limit_cross_partition",
+      "description": "ORDER BY c.rank DESC OFFSET 1 LIMIT 2 over six documents across two physical partitions. Verifies the descending comparator direction composes with the global skip/take window: skip the single largest rank, take the next two in descending order.",
+      "sources": [
+        {
+          "sdk": "rust",
+          "path": "sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/planner.rs",
+          "test": "validate_query_plan_for_streaming_order_by_accepts_offset_limit"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
+          "test": "queryOrderByInt"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank DESC OFFSET 1 LIMIT 2",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d1", "pk": "pk-a", "rank": 5 },
+        { "id": "d2", "pk": "pk-b", "rank": 1 },
+        { "id": "d3", "pk": "pk-c", "rank": 4 },
+        { "id": "d4", "pk": "pk-d", "rank": 2 },
+        { "id": "d5", "pk": "pk-e", "rank": 3 },
+        { "id": "d6", "pk": "pk-f", "rank": 0 }
+      ],
+      "partitionCount": 2,
+      "assertion": "exactOrdered",
+      "expectedIds": ["d3", "d5"]
     }
   ]
 }

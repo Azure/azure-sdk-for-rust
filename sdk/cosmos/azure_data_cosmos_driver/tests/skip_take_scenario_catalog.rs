@@ -23,9 +23,12 @@ use std::collections::BTreeSet;
 
 use serde::Deserialize;
 
-const CATALOG_JSON: &str = include_str!("fixtures/skip_take_scenarios.json");
+mod scenario_catalog_common;
+use scenario_catalog_common::{
+    assert_scenario_has_source, assert_scenario_layers_known, assert_unique_scenario_ids, Source,
+};
 
-const KNOWN_LAYERS: &[&str] = &["comparator", "mockPipeline", "inMemoryEmulator", "recorded"];
+const CATALOG_JSON: &str = include_str!("fixtures/skip_take_scenarios.json");
 
 const KNOWN_ASSERTIONS: &[&str] = &["exactOrdered", "unorderedSubsetCount", "empty"];
 
@@ -56,16 +59,6 @@ struct Scenario {
 }
 
 #[derive(Deserialize)]
-struct Source {
-    #[allow(dead_code)]
-    sdk: String,
-    #[allow(dead_code)]
-    path: String,
-    #[allow(dead_code)]
-    test: String,
-}
-
-#[derive(Deserialize)]
 struct QuerySpec {
     #[allow(dead_code)]
     text: String,
@@ -78,6 +71,8 @@ struct QuerySpec {
 struct Document {
     id: String,
     pk: String,
+    #[serde(default)]
+    rank: Option<i64>,
 }
 
 fn load_catalog() -> Catalog {
@@ -103,32 +98,14 @@ fn catalog_is_non_empty() {
 #[test]
 fn no_duplicate_scenario_ids() {
     let catalog = load_catalog();
-    let mut seen = BTreeSet::new();
-    for scenario in &catalog.scenarios {
-        assert!(
-            seen.insert(scenario.id.clone()),
-            "duplicate scenario id: {}",
-            scenario.id
-        );
-    }
+    assert_unique_scenario_ids(catalog.scenarios.iter().map(|s| s.id.as_str()));
 }
 
 #[test]
 fn every_scenario_declares_at_least_one_known_layer() {
     let catalog = load_catalog();
     for scenario in &catalog.scenarios {
-        assert!(
-            !scenario.layers.is_empty(),
-            "scenario {} declares no layers",
-            scenario.id
-        );
-        for layer in &scenario.layers {
-            assert!(
-                KNOWN_LAYERS.contains(&layer.as_str()),
-                "scenario {} declares unknown layer {layer:?}",
-                scenario.id
-            );
-        }
+        assert_scenario_layers_known(&scenario.id, &scenario.layers);
     }
 }
 
@@ -136,11 +113,7 @@ fn every_scenario_declares_at_least_one_known_layer() {
 fn every_scenario_has_at_least_one_source() {
     let catalog = load_catalog();
     for scenario in &catalog.scenarios {
-        assert!(
-            !scenario.sources.is_empty(),
-            "scenario {} has no cross-SDK source attribution",
-            scenario.id
-        );
+        assert_scenario_has_source(&scenario.id, &scenario.sources);
     }
 }
 
@@ -182,17 +155,35 @@ fn every_scenario_uses_a_known_and_consistent_assertion() {
                     "scenario {} is exactOrdered but names no expectedIds",
                     scenario.id
                 );
-                // Exact ordering is only deterministic within a single logical
-                // partition, so every document must share one partition key.
+                // Exact ordering across partitions is only deterministic when
+                // the query carries an `ORDER BY`, which drives a globally
+                // ordered streaming merge. Without it, the emitted order is
+                // only stable within a single logical partition.
                 let distinct_pks: BTreeSet<&str> =
                     scenario.documents.iter().map(|d| d.pk.as_str()).collect();
-                assert_eq!(
-                    distinct_pks.len(),
-                    1,
-                    "scenario {} is exactOrdered but spans multiple partition keys {distinct_pks:?}; \
-                     cross-partition order is unspecified",
-                    scenario.id
-                );
+                let has_order_by = scenario
+                    .query
+                    .text
+                    .to_ascii_uppercase()
+                    .contains("ORDER BY");
+                if has_order_by {
+                    // Every document must carry the sort key so the global
+                    // order (and therefore the window) is well defined.
+                    assert!(
+                        scenario.documents.iter().all(|d| d.rank.is_some()),
+                        "scenario {} is an ORDER BY exactOrdered scenario but some documents \
+                         lack a `rank` sort key",
+                        scenario.id
+                    );
+                } else {
+                    assert_eq!(
+                        distinct_pks.len(),
+                        1,
+                        "scenario {} is exactOrdered without ORDER BY but spans multiple \
+                         partition keys {distinct_pks:?}; cross-partition order is unspecified",
+                        scenario.id
+                    );
+                }
                 for id in &scenario.expected_ids {
                     assert!(
                         doc_ids.contains(id.as_str()),
@@ -249,6 +240,8 @@ fn required_scenario_inventory_categories_are_represented() {
         "offset_limit_single_partition",
         "offset_limit_cross_partition",
         "boundary_spanning",
+        "order_by_offset_limit_cross_partition",
+        "order_by_top_cross_partition",
     ];
     for marker in required_markers {
         assert!(

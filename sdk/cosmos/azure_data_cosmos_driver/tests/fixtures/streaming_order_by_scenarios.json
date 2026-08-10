@@ -1899,20 +1899,25 @@
       "expectedError": null
     },
     {
-      "id": "unsupported_combination_top_with_streaming_order_by",
-      "description": "TOP combined with streaming ORDER BY remains precisely unsupported until the TOP composition stage (#4750) lands.",
+      "id": "top_with_streaming_order_by_cross_partition",
+      "description": "TOP combined with streaming ORDER BY is supported as of #4750: the streaming ordered merge produces a global ascending order and the SkipTake take-bound clamps it to the first n. Executed by the in-memory oracle to lock the exact ordered window.",
       "sources": [
         {
           "sdk": "rust",
           "path": "sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/planner.rs",
-          "test": "validate_query_plan_for_streaming_order_by_rejects_top"
+          "test": "validate_query_plan_for_streaming_order_by_accepts_top"
+        },
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
+          "test": "TestQueryCrossPartitionWithContinuationsAsync"
         }
       ],
       "layers": [
-        "comparator"
+        "inMemoryEmulator"
       ],
       "query": {
-        "text": "SELECT TOP 5 * FROM c ORDER BY c.rank ASC",
+        "text": "SELECT TOP 3 * FROM c ORDER BY c.rank ASC",
         "parameters": [],
         "columns": [
           {
@@ -1921,18 +1926,19 @@
           }
         ]
       },
-      "documents": [],
+      "documents": [
+        { "id": "d1", "pk": "pk-a", "rank": 5 },
+        { "id": "d2", "pk": "pk-b", "rank": 1 },
+        { "id": "d3", "pk": "pk-c", "rank": 4 },
+        { "id": "d4", "pk": "pk-d", "rank": 2 },
+        { "id": "d5", "pk": "pk-e", "rank": 3 }
+      ],
       "mock": null,
       "pageSizes": [],
-      "expectedIds": [],
-      "checkpoint": {
-        "top": 5
-      },
+      "expectedIds": ["d2", "d4", "d5"],
+      "checkpoint": null,
       "expectedContinuation": null,
-      "expectedError": {
-        "category": "client_unsupported_query_feature",
-        "messageFragment": "TOP combined with streaming ORDER BY"
-      }
+      "expectedError": null
     },
     {
       "id": "unsupported_combination_non_streaming_order_by",

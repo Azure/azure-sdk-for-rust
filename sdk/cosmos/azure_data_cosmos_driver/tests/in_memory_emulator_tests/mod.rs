@@ -265,6 +265,27 @@ pub fn upsert_item_request(
     req
 }
 
+/// Decodes a query page's documents into JSON values, accepting either a
+/// pre-split `Items` body (as the cross-partition skip/take and streaming
+/// ORDER BY nodes now emit) or a raw `{"Documents":[...]}` envelope in a single
+/// `Bytes` payload (as a single-partition passthrough returns).
+pub fn page_document_values(
+    response: azure_data_cosmos_driver::models::CosmosResponse,
+) -> Vec<serde_json::Value> {
+    use azure_data_cosmos_driver::models::ResponseBody;
+    match response.into_body() {
+        ResponseBody::NoPayload => Vec::new(),
+        ResponseBody::Items(items) => items
+            .iter()
+            .map(|b| serde_json::from_slice(b).unwrap())
+            .collect(),
+        ResponseBody::Bytes(b) => {
+            let value: serde_json::Value = serde_json::from_slice(&b).unwrap();
+            value["Documents"].as_array().cloned().unwrap_or_default()
+        }
+    }
+}
+
 /// Reads the response body as JSON. Consumes the response.
 pub async fn read_response_body(response: AsyncRawResponse) -> serde_json::Value {
     let raw = response.try_into_raw_response().await.unwrap();
