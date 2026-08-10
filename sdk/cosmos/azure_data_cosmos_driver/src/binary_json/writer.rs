@@ -119,6 +119,11 @@ pub(super) fn encode_i64(i: i64, out: &mut Vec<u8>) {
 /// Encodes an unsigned integer as a literal int (`0`–`31`), `Int64` (when it
 /// still fits `i64`), or `UInt64`.
 ///
+/// Values above `i64::MAX` are emitted as the full-precision `UInt64` form so the
+/// exact integer reaches the service. The service's number model stores it as a
+/// double; the read side coerces that returned double back into an integer field
+/// (see `de::deserialize_integer`).
+///
 /// Shared by the [`Value`]-based [`encode`] path and the native serde
 /// serializer.
 pub(super) fn encode_u64(u: u64, out: &mut Vec<u8>) {
@@ -260,7 +265,7 @@ mod tests {
                 0x7F
             ],
         );
-        // Values beyond i64::MAX use the UInt64 form.
+        // Values beyond i64::MAX use the UInt64 form (exact on the wire).
         assert_eq!(
             encode(&json!(u64::MAX)),
             vec![

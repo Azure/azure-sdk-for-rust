@@ -497,7 +497,9 @@ impl SubStatusCode {
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
             20118 => Some("ClientCrossPartitionFanOutExceeded"),
             20119 => Some("ClientOrderByComplexValueUnsupported"),
-            20120 => Some("ClientQueryRewriteBodyInvalid"),
+            20120 => Some("ClientInvalidResourceId"),
+            20121 => Some("ClientMixedNameRidAddressing"),
+            20122 => Some("ClientQueryRewriteBodyInvalid"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -533,6 +535,21 @@ impl SubStatusCode {
             20307 => Some("ClientQueryPlanRangeNotCoveredByTopology"),
             20308 => Some("ServiceOrderByEnvelopeInvalid"),
             20309 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
+
+            // Native FFI wrapper pre-flight / plumbing codes (20350-20399)
+            20350 => Some("ClientFfiNullArgument"),
+            20351 => Some("ClientFfiInvalidUtf8"),
+            20352 => Some("ClientFfiInvalidHeader"),
+            20353 => Some("ClientFfiInvalidOptionValue"),
+            20354 => Some("ClientFfiOperationConsumed"),
+            20355 => Some("ClientFfiPreconditionAlreadySet"),
+            20356 => Some("ClientFfiUnsupportedOperationForMutator"),
+            20357 => Some("ClientFfiFeedExhausted"),
+            20358 => Some("ClientFfiQueueShutdown"),
+            20359 => Some("ClientFfiQueueFull"),
+            20360 => Some("ClientFfiOperationCancelled"),
+            20361 => Some("ClientFfiRuntimeBuildFailed"),
+            20362 => Some("ClientFfiPanic"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1347,11 +1364,22 @@ impl SubStatusCode {
     /// currently supported.
     pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = SubStatusCode(20119);
 
+    /// A caller-supplied resource RID could not be parsed as a valid Cosmos DB
+    /// RID (20120). RIDs are Base64-encoded byte sequences; this is raised when
+    /// the bytes cannot be decoded or are too short to extract the expected
+    /// resource hierarchy.
+    pub const CLIENT_INVALID_RESOURCE_ID: SubStatusCode = SubStatusCode(20120);
+
+    /// Name-based and RID-based addressing were mixed across the
+    /// database/container hierarchy (20121). A RID-addressed database requires a
+    /// RID-addressed container and vice versa.
+    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = SubStatusCode(20121);
+
     /// The query plan's `rewrittenQuery` could not be substituted into the
     /// per-partition request body because that body was not valid JSON
-    /// (20120). Cross-partition `OFFSET` / `LIMIT` / `TOP` requires rewriting
+    /// (20122). Cross-partition `OFFSET` / `LIMIT` / `TOP` requires rewriting
     /// each partition's query text.
-    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: SubStatusCode = SubStatusCode(20120);
+    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: SubStatusCode = SubStatusCode(20122);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -1543,6 +1571,70 @@ impl SubStatusCode {
     /// error (paired with HTTP 500) instead of panicking the worker
     /// thread, which would deadlock the caller. See issue #4574.
     pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: SubStatusCode = SubStatusCode(20307);
+
+    // ----- 20350-20399: native FFI wrapper pre-flight / plumbing codes -----
+    //
+    // These are surfaced exclusively by the `azure_data_cosmos_driver_native`
+    // C ABI wrapper for failures that arise at the FFI boundary itself (bad
+    // pointer / encoding arguments, operation-lifecycle misuse, completion-queue
+    // back-pressure). They live here so the wrapper has a single canonical
+    // `(status, sub-status)` taxonomy shared with the driver instead of a
+    // parallel bespoke one. They are never produced by the driver's own
+    // request pipeline.
+
+    /// A required pointer argument to a wrapper C function was `NULL` (20350).
+    /// Paired with HTTP 400.
+    pub const CLIENT_FFI_NULL_ARGUMENT: SubStatusCode = SubStatusCode(20350);
+
+    /// A `*const c_char` argument to a wrapper C function was not valid
+    /// UTF-8 (20351). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_UTF8: SubStatusCode = SubStatusCode(20351);
+
+    /// A request header supplied to the wrapper had a non-ASCII / control
+    /// character name or value (20352). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_HEADER: SubStatusCode = SubStatusCode(20352);
+
+    /// A wrapper builder setter received a value outside its documented
+    /// range (20353). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_OPTION_VALUE: SubStatusCode = SubStatusCode(20353);
+
+    /// A mutator or second submit was attempted on a wrapper operation handle
+    /// already consumed by an earlier successful submit (20354). Paired with
+    /// HTTP 400.
+    pub const CLIENT_FFI_OPERATION_CONSUMED: SubStatusCode = SubStatusCode(20354);
+
+    /// A second precondition setter was called on a wrapper operation that
+    /// already had one (20355). Paired with HTTP 400.
+    pub const CLIENT_FFI_PRECONDITION_ALREADY_SET: SubStatusCode = SubStatusCode(20355);
+
+    /// A wrapper mutator only meaningful for a specific operation kind was
+    /// applied to an incompatible operation (20356). Paired with HTTP 400.
+    pub const CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR: SubStatusCode = SubStatusCode(20356);
+
+    /// A single-shot wrapper submit of a feed-style operation yielded no
+    /// further page (20357). Paired with HTTP 404.
+    pub const CLIENT_FFI_FEED_EXHAUSTED: SubStatusCode = SubStatusCode(20357);
+
+    /// A wrapper submit targeted a completion queue that had already been
+    /// shut down (20358). Paired with HTTP 503.
+    pub const CLIENT_FFI_QUEUE_SHUTDOWN: SubStatusCode = SubStatusCode(20358);
+
+    /// A wrapper submit targeted a completion queue already at its hard
+    /// capacity (20359). Paired with HTTP 503.
+    pub const CLIENT_FFI_QUEUE_FULL: SubStatusCode = SubStatusCode(20359);
+
+    /// A wrapper operation was cancelled before it completed, via an explicit
+    /// cancel or a queue shutdown (20360). Paired with HTTP 408.
+    pub const CLIENT_FFI_OPERATION_CANCELLED: SubStatusCode = SubStatusCode(20360);
+
+    /// The wrapper could not construct the underlying driver runtime (20361).
+    /// Paired with HTTP 500.
+    pub const CLIENT_FFI_RUNTIME_BUILD_FAILED: SubStatusCode = SubStatusCode(20361);
+
+    /// A driver future spawned by the wrapper panicked; the wrapper's panic
+    /// firewall synthesized a failure so the host continuation is released
+    /// rather than leaked (20362). Paired with HTTP 500.
+    pub const CLIENT_FFI_PANIC: SubStatusCode = SubStatusCode(20362);
 }
 
 impl Default for SubStatusCode {
@@ -2208,7 +2300,20 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
     };
 
-    /// 400 / 20120 — the query plan's `rewrittenQuery` could not be
+    /// 400 / 20120 — caller-supplied resource RID could not be parsed.
+    pub const CLIENT_INVALID_RESOURCE_ID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_INVALID_RESOURCE_ID),
+    };
+
+    /// 400 / 20121 — name-based and RID-based addressing were mixed across the
+    /// database/container hierarchy.
+    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_MIXED_NAME_RID_ADDRESSING),
+    };
+
+    /// 400 / 20122 — the query plan's `rewrittenQuery` could not be
     /// substituted into a per-partition request body because that body was
     /// not valid JSON.
     pub const CLIENT_QUERY_REWRITE_BODY_INVALID: CosmosStatus = CosmosStatus {
@@ -2539,6 +2644,20 @@ mod tests {
         assert!(status.sub_status().is_none());
         assert!(status.is_success());
         assert!(status.name().is_none());
+    }
+
+    #[test]
+    fn client_rid_addressing_status_names() {
+        // The 20120/20121 client statuses must resolve to searchable names so the
+        // deterministic client-side errors are useful in diagnostics and logs.
+        assert_eq!(
+            CosmosStatus::CLIENT_INVALID_RESOURCE_ID.name(),
+            Some("ClientInvalidResourceId")
+        );
+        assert_eq!(
+            CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING.name(),
+            Some("ClientMixedNameRidAddressing")
+        );
     }
 
     #[test]
