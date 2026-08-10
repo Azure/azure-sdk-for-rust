@@ -117,11 +117,11 @@ const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
 const FAULT_INJECTION_READINESS_MAX_ATTEMPTS: usize = 20;
 #[cfg(test_category = "multi_write")]
-const AAD_READINESS_MAX_ATTEMPTS: usize = 8;
+const SATELLITE_READINESS_MAX_ATTEMPTS: usize = 8;
 #[cfg(test_category = "multi_write")]
-const AAD_READINESS_INITIAL_BACKOFF: Duration = Duration::from_millis(500);
+const SATELLITE_READINESS_INITIAL_BACKOFF: Duration = Duration::from_millis(500);
 #[cfg(test_category = "multi_write")]
-const AAD_READINESS_MAX_BACKOFF: Duration = Duration::from_secs(5);
+const SATELLITE_READINESS_MAX_BACKOFF: Duration = Duration::from_secs(5);
 
 async fn retry_container_readiness<T, E, F, Fut, TimeoutError, ShouldRetry>(
     region: &str,
@@ -171,9 +171,20 @@ fn collection_create_in_progress(error: &CosmosError) -> bool {
         && error.status().sub_status() == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS)
 }
 
+fn owner_resource_not_found(error: &CosmosError) -> bool {
+    error.status().status_code() == StatusCode::NotFound
+        && error.status().sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND)
+}
+
 fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::Unauthorized
         && error.status().sub_status() == Some(SubStatusCode::new(5007))
+}
+
+fn transient_satellite_readiness_error(error: &CosmosError, auth_mode: AuthMode) -> bool {
+    collection_create_in_progress(error)
+        || owner_resource_not_found(error)
+        || (auth_mode == AuthMode::Aad && aad_token_invalid_issuer(error))
 }
 
 #[cfg(test_category = "multi_write")]
@@ -1183,8 +1194,8 @@ impl TestRunContext {
     /// 1. Creates the container with the specified properties and throughput
     /// 2. Creates two clients with preferred regions (hub and satellite)
     /// 3. Polls until both clients can successfully read the container
-    /// 4. In live multi-write AAD tests, polls until the primary AAD client can
-    ///    read the container from the satellite
+    /// 4. In live multi-write tests, polls until the primary data-plane client
+    ///    can read the container from the satellite
     /// 5. Returns a [`ContainerClient`] for the created container
     ///
     /// This is useful for tests that need to ensure the container is fully available
@@ -1287,7 +1298,7 @@ impl TestRunContext {
             .await?;
 
             #[cfg(test_category = "multi_write")]
-            self.wait_for_satellite_aad_readiness(&db_id, &container_id)
+            self.wait_for_satellite_data_plane_readiness(&db_id, &container_id)
                 .await?;
 
             Ok(container)
@@ -1295,15 +1306,16 @@ impl TestRunContext {
     }
 
     #[cfg(test_category = "multi_write")]
-    async fn wait_for_satellite_aad_readiness(
+    async fn wait_for_satellite_data_plane_readiness(
         &self,
         db_id: &azure_data_cosmos::ResourceIdentity,
         container_id: &str,
     ) -> azure_data_cosmos::Result<()> {
-        if AuthMode::from_env() != AuthMode::Aad || targets_emulator() {
+        if targets_emulator() {
             return Ok(());
         }
 
+        let auth_mode = AuthMode::from_env();
         let probe_client = self.client();
         let mut operation = azure_data_cosmos::options::OperationOptions::default();
         operation.excluded_regions =
@@ -1313,9 +1325,9 @@ impl TestRunContext {
         let options = azure_data_cosmos::options::ReadContainerOptions::default()
             .with_operation_options(operation);
         let started = std::time::Instant::now();
-        let mut backoff = AAD_READINESS_INITIAL_BACKOFF;
+        let mut backoff = SATELLITE_READINESS_INITIAL_BACKOFF;
 
-        for attempt in 1..=AAD_READINESS_MAX_ATTEMPTS {
+        for attempt in 1..=SATELLITE_READINESS_MAX_ATTEMPTS {
             let probe = async {
                 let container = probe_client
                     .database_client(db_id.clone())
@@ -1332,47 +1344,56 @@ impl TestRunContext {
                         return Err(azure_data_cosmos_driver::error::CosmosError::builder()
                             .with_status(CosmosStatus::new(StatusCode::InternalServerError))
                             .with_message(format!(
-                                "satellite AAD readiness probe must contact only {SATELLITE_REGION}; contacted {regions:?}"
+                                "satellite data-plane readiness probe must contact {SATELLITE_REGION} without contacting {HUB_REGION}; contacted {regions:?}"
                             ))
                             .build()
                             .into());
                     }
                     let endpoint = latest_request_endpoint(Some(diagnostics));
                     println!(
-                        "satellite AAD readiness probe succeeded on attempt {attempt} after {:?}: endpoint={endpoint}",
-                        started.elapsed()
+                        "satellite data-plane readiness probe succeeded with {auth_mode:?} auth on attempt {attempt} after {:?}: endpoint={endpoint}",
+                        started.elapsed(),
                     );
                     return Ok(());
                 }
-                Ok(Err(error)) if aad_token_invalid_issuer(&error) => {
+                Ok(Err(error)) if transient_satellite_readiness_error(&error, auth_mode) => {
                     let endpoint = latest_request_endpoint(error.diagnostics());
-                    if attempt == AAD_READINESS_MAX_ATTEMPTS {
+                    if attempt == SATELLITE_READINESS_MAX_ATTEMPTS {
                         println!(
-                            "satellite AAD readiness probe still returned 401/5007 after {attempt} attempts and {:?}: endpoint={endpoint}",
-                            started.elapsed()
+                            "satellite data-plane readiness probe still returned a transient error with {auth_mode:?} auth after {attempt} attempts and {:?}: endpoint={endpoint}; error={error}",
+                            started.elapsed(),
                         );
                         return Err(error);
                     }
 
                     println!(
-                        "satellite AAD readiness probe returned 401/5007 on attempt {attempt} after {:?}: endpoint={endpoint}; retrying in {backoff:?}",
-                        started.elapsed()
+                        "satellite data-plane readiness probe returned a transient error with {auth_mode:?} auth on attempt {attempt} after {:?}: endpoint={endpoint}; error={error}; retrying in {backoff:?}",
+                        started.elapsed(),
                     );
                     tokio::time::sleep(backoff).await;
-                    backoff = (backoff * 2).min(AAD_READINESS_MAX_BACKOFF);
+                    backoff = (backoff * 2).min(SATELLITE_READINESS_MAX_BACKOFF);
                 }
                 Ok(Err(error)) => {
                     let endpoint = latest_request_endpoint(error.diagnostics());
                     println!(
-                        "satellite AAD readiness probe failed without retry on attempt {attempt} after {:?}: endpoint={endpoint}; error={error}",
-                        started.elapsed()
+                        "satellite data-plane readiness probe failed without retry with {auth_mode:?} auth on attempt {attempt} after {:?}: endpoint={endpoint}; error={error}",
+                        started.elapsed(),
                     );
                     return Err(error);
                 }
                 Err(_) => {
+                    if attempt < SATELLITE_READINESS_MAX_ATTEMPTS {
+                        println!(
+                            "satellite data-plane readiness probe timed out with {auth_mode:?} auth on attempt {attempt} after {:?}; retrying in {backoff:?}",
+                            started.elapsed(),
+                        );
+                        tokio::time::sleep(backoff).await;
+                        backoff = (backoff * 2).min(SATELLITE_READINESS_MAX_BACKOFF);
+                        continue;
+                    }
                     println!(
-                        "satellite AAD readiness probe timed out on attempt {attempt} after {:?}",
-                        started.elapsed()
+                        "satellite data-plane readiness probe timed out with {auth_mode:?} auth after {attempt} attempts and {:?}",
+                        started.elapsed(),
                     );
                     return Err(container_readiness_timeout_error(
                         SATELLITE_REGION.as_str(),
@@ -1591,7 +1612,10 @@ pub async fn build_aad_client_from_env(
 
 #[cfg(test)]
 mod tests {
-    use super::{aad_token_invalid_issuer, retry_container_readiness};
+    use super::{
+        aad_token_invalid_issuer, retry_container_readiness, transient_satellite_readiness_error,
+        AuthMode,
+    };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{CosmosError, CosmosStatus, SubStatusCode};
     use std::{
@@ -1625,6 +1649,48 @@ mod tests {
             StatusCode::NotFound,
             SubStatusCode::new(5007),
         )));
+    }
+
+    #[test]
+    fn satellite_readiness_retries_only_expected_transient_errors() {
+        let create_in_progress = error_with_status(
+            StatusCode::NotFound,
+            SubStatusCode::COLLECTION_CREATE_IN_PROGRESS,
+        );
+        let owner_not_found = error_with_status(
+            StatusCode::NotFound,
+            SubStatusCode::OWNER_RESOURCE_NOT_FOUND,
+        );
+        let aad_invalid_issuer =
+            error_with_status(StatusCode::Unauthorized, SubStatusCode::new(5007));
+        let read_session_not_available = error_with_status(
+            StatusCode::NotFound,
+            SubStatusCode::READ_SESSION_NOT_AVAILABLE,
+        );
+
+        for auth_mode in [AuthMode::Key, AuthMode::Aad] {
+            assert!(transient_satellite_readiness_error(
+                &create_in_progress,
+                auth_mode
+            ));
+            assert!(transient_satellite_readiness_error(
+                &owner_not_found,
+                auth_mode
+            ));
+            assert!(!transient_satellite_readiness_error(
+                &read_session_not_available,
+                auth_mode
+            ));
+        }
+
+        assert!(transient_satellite_readiness_error(
+            &aad_invalid_issuer,
+            AuthMode::Aad
+        ));
+        assert!(!transient_satellite_readiness_error(
+            &aad_invalid_issuer,
+            AuthMode::Key
+        ));
     }
 
     #[tokio::test]
