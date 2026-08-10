@@ -116,6 +116,12 @@ pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
 const FAULT_INJECTION_READINESS_MAX_ATTEMPTS: usize = 20;
+#[cfg(test_category = "multi_write")]
+const AAD_READINESS_MAX_ATTEMPTS: usize = 8;
+#[cfg(test_category = "multi_write")]
+const AAD_READINESS_INITIAL_BACKOFF: Duration = Duration::from_millis(500);
+#[cfg(test_category = "multi_write")]
+const AAD_READINESS_MAX_BACKOFF: Duration = Duration::from_secs(5);
 
 async fn retry_container_readiness<T, E, F, Fut, TimeoutError, ShouldRetry>(
     region: &str,
@@ -163,6 +169,25 @@ where
 fn collection_create_in_progress(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::NotFound
         && error.status().sub_status() == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS)
+}
+
+fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
+    error.status().status_code() == StatusCode::Unauthorized
+        && error.status().sub_status() == Some(SubStatusCode::new(5007))
+}
+
+#[cfg(test_category = "multi_write")]
+fn latest_request_endpoint(
+    diagnostics: Option<std::sync::Arc<azure_data_cosmos::diagnostics::DiagnosticsContext>>,
+) -> String {
+    diagnostics
+        .and_then(|diagnostics| {
+            diagnostics
+                .requests()
+                .last()
+                .map(|request| request.endpoint().to_owned())
+        })
+        .unwrap_or_else(|| "<unknown>".to_string())
 }
 
 fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosError {
@@ -1158,7 +1183,9 @@ impl TestRunContext {
     /// 1. Creates the container with the specified properties and throughput
     /// 2. Creates two clients with preferred regions (hub and satellite)
     /// 3. Polls until both clients can successfully read the container
-    /// 4. Returns a [`ContainerClient`] for the created container
+    /// 4. In live multi-write AAD tests, polls until the primary AAD client can
+    ///    read the container from the satellite
+    /// 5. Returns a [`ContainerClient`] for the created container
     ///
     /// This is useful for tests that need to ensure the container is fully available
     /// in multiple regions before performing operations on it.
@@ -1240,7 +1267,7 @@ impl TestRunContext {
 
             let original_db_client = db_client;
             let original_container_id = container_id.clone();
-            retry_container_readiness(
+            let container = retry_container_readiness(
                 "original client",
                 CONTAINER_READINESS_ATTEMPT_TIMEOUT,
                 CONTAINER_READINESS_RETRY_DELAY,
@@ -1257,8 +1284,105 @@ impl TestRunContext {
                     }
                 },
             )
-            .await
+            .await?;
+
+            #[cfg(test_category = "multi_write")]
+            self.wait_for_satellite_aad_readiness(&db_id, &container_id)
+                .await?;
+
+            Ok(container)
         })
+    }
+
+    #[cfg(test_category = "multi_write")]
+    async fn wait_for_satellite_aad_readiness(
+        &self,
+        db_id: &azure_data_cosmos::ResourceIdentity,
+        container_id: &str,
+    ) -> azure_data_cosmos::Result<()> {
+        if AuthMode::from_env() != AuthMode::Aad || targets_emulator() {
+            return Ok(());
+        }
+
+        let probe_client = self.client();
+        let mut operation = azure_data_cosmos::options::OperationOptions::default();
+        operation.excluded_regions =
+            Some(azure_data_cosmos::options::ExcludedRegions::from_iter([
+                HUB_REGION,
+            ]));
+        let options = azure_data_cosmos::options::ReadContainerOptions::default()
+            .with_operation_options(operation);
+        let started = std::time::Instant::now();
+        let mut backoff = AAD_READINESS_INITIAL_BACKOFF;
+
+        for attempt in 1..=AAD_READINESS_MAX_ATTEMPTS {
+            let probe = async {
+                let container = probe_client
+                    .database_client(db_id.clone())
+                    .container_client(container_id)
+                    .await?;
+                container.read(Some(options.clone())).await
+            };
+
+            match tokio::time::timeout(CONTAINER_READINESS_ATTEMPT_TIMEOUT, probe).await {
+                Ok(Ok(response)) => {
+                    let diagnostics = response.diagnostics();
+                    let regions = diagnostics.regions_contacted();
+                    if !regions.contains(&SATELLITE_REGION) || regions.contains(&HUB_REGION) {
+                        return Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                            .with_status(CosmosStatus::new(StatusCode::InternalServerError))
+                            .with_message(format!(
+                                "satellite AAD readiness probe must contact only {SATELLITE_REGION}; contacted {regions:?}"
+                            ))
+                            .build()
+                            .into());
+                    }
+                    let endpoint = latest_request_endpoint(Some(diagnostics));
+                    println!(
+                        "satellite AAD readiness probe succeeded on attempt {attempt} after {:?}: endpoint={endpoint}",
+                        started.elapsed()
+                    );
+                    return Ok(());
+                }
+                Ok(Err(error)) if aad_token_invalid_issuer(&error) => {
+                    let endpoint = latest_request_endpoint(error.diagnostics());
+                    if attempt == AAD_READINESS_MAX_ATTEMPTS {
+                        println!(
+                            "satellite AAD readiness probe still returned 401/5007 after {attempt} attempts and {:?}: endpoint={endpoint}",
+                            started.elapsed()
+                        );
+                        return Err(error);
+                    }
+
+                    println!(
+                        "satellite AAD readiness probe returned 401/5007 on attempt {attempt} after {:?}: endpoint={endpoint}; retrying in {backoff:?}",
+                        started.elapsed()
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(AAD_READINESS_MAX_BACKOFF);
+                }
+                Ok(Err(error)) => {
+                    let endpoint = latest_request_endpoint(error.diagnostics());
+                    println!(
+                        "satellite AAD readiness probe failed without retry on attempt {attempt} after {:?}: endpoint={endpoint}; error={error}",
+                        started.elapsed()
+                    );
+                    return Err(error);
+                }
+                Err(_) => {
+                    println!(
+                        "satellite AAD readiness probe timed out on attempt {attempt} after {:?}",
+                        started.elapsed()
+                    );
+                    return Err(container_readiness_timeout_error(
+                        SATELLITE_REGION.as_str(),
+                        attempt,
+                    ));
+                }
+            }
+        }
+
+        unreachable!("satellite AAD readiness attempts are non-zero")
     }
 
     /// Creates a CosmosClient with a specific preferred region.
@@ -1467,7 +1591,9 @@ pub async fn build_aad_client_from_env(
 
 #[cfg(test)]
 mod tests {
-    use super::retry_container_readiness;
+    use super::{aad_token_invalid_issuer, retry_container_readiness};
+    use azure_core::http::StatusCode;
+    use azure_data_cosmos::{CosmosError, CosmosStatus, SubStatusCode};
     use std::{
         future::pending,
         sync::{
@@ -1476,6 +1602,30 @@ mod tests {
         },
         time::Duration,
     };
+
+    fn error_with_status(status: StatusCode, sub_status: SubStatusCode) -> CosmosError {
+        azure_data_cosmos_driver::error::CosmosError::builder()
+            .with_status(CosmosStatus::new(status).with_sub_status(sub_status.value()))
+            .with_message("test error")
+            .build()
+            .into()
+    }
+
+    #[test]
+    fn aad_invalid_issuer_requires_401_5007() {
+        assert!(aad_token_invalid_issuer(&error_with_status(
+            StatusCode::Unauthorized,
+            SubStatusCode::new(5007),
+        )));
+        assert!(!aad_token_invalid_issuer(&error_with_status(
+            StatusCode::Unauthorized,
+            SubStatusCode::AAD_TOKEN_EXPIRED,
+        )));
+        assert!(!aad_token_invalid_issuer(&error_with_status(
+            StatusCode::NotFound,
+            SubStatusCode::new(5007),
+        )));
+    }
 
     #[tokio::test]
     async fn container_readiness_retries_timeout_and_error() {
