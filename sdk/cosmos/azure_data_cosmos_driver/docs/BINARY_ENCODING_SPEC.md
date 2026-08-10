@@ -68,13 +68,16 @@ text-equivalent results.
 | ------------------------------------------- | :----------: | :-----------: | --------- |
 | `read_item`                                 |      —       |    decode     | ✅ done |
 | `create_item` / `upsert_item` / `replace_item` |   encode  |    decode     | ✅ done |
-| `query_items`                               |   deferred   |    decode     | response done; request-encode deferred |
+| `query_items`                               |  — (text spec) |    decode     | ✅ done (response negotiated) |
 | `delete_item`                               |      —       |      —        | n/a |
 | `patch_item`                                |   deferred   |   deferred    | deferred |
 | transactional batch / bulk                  |   deferred   |   deferred    | deferred |
 
 The response-decode boundary is shared, so `query_items` already decodes binary
-response envelopes; only its *request-body* encoding + negotiation header remain.
+response envelopes. A query now also **advertises** a binary response via the
+`x-ms-cosmos-supported-serialization-formats` header; its request body is a
+`application/query+json` query spec (not a document) and intentionally stays
+text — there is no query request-body encoding to do.
 
 ## 3. Background: the .NET reference
 
@@ -438,11 +441,16 @@ it through. It sets the option via a `with_binary_encoding` helper on
 **Option resolution + operation-type guard.** `execute_operation` resolves
 `binary_encoding` through the same runtime → account → operation layered view
 (`operation_options_view`) as every other option, so a default set at the
-runtime/account layer is honored. Binary encoding is honored **only for point
-item operations** (`OperationType::supports_binary_encoding`: create, read,
-replace, upsert, delete); query, feed, batch, and stored-procedure operations
-are ignored even if a caller (e.g. an FFI host) sets the flag, since those paths
-remain deferred. Patch is dispatched to its own handler before this check and is
+runtime/account layer is honored. Two independent gates apply. Request-body
+transcoding is honored **only for point item operations**
+(`OperationType::supports_binary_encoding`: create, read, replace, upsert,
+delete). Response negotiation (the `x-ms-cosmos-supported-serialization-formats`
+header) covers the same point item ops **plus query**
+(`OperationType::supports_binary_response`) — a query advertises a binary
+response while keeping its `application/query+json` request body text. Feed
+(`ReadFeed` / change feed), batch, and stored-procedure operations are ignored
+even if a caller (e.g. an FFI host) sets the flag, since those paths remain
+deferred. Patch is dispatched to its own handler before this check and is
 likewise excluded.
 
 This matches the guidance that the **driver** (not the backend) performs the

@@ -636,10 +636,17 @@ impl OperationType {
         )
     }
 
-    /// True for the point item ops (create/read/replace/upsert) eligible for
-    /// binary encoding. Necessary but not sufficient: the full gate also
-    /// requires [`ResourceType::Document`] (see
-    /// `CosmosDriver::binary_encoding_applies`).
+    /// True for the point item ops (create/read/replace/upsert) whose **request
+    /// body** is eligible for Cosmos binary encoding. Necessary but not
+    /// sufficient: the full gate also requires [`ResourceType::Document`] (see
+    /// `CosmosDriver::binary_encodes_request_body`).
+    ///
+    /// Query is intentionally excluded: a query request body is a
+    /// `{"query":..., "parameters":[...]}` spec sent as `application/query+json`,
+    /// not a document, so it must not be transcoded to binary. Query still
+    /// negotiates a binary *response* — see [`supports_binary_response`].
+    ///
+    /// [`supports_binary_response`]: OperationType::supports_binary_response
     pub(crate) fn supports_binary_encoding(self) -> bool {
         matches!(
             self,
@@ -648,6 +655,20 @@ impl OperationType {
                 | OperationType::Replace
                 | OperationType::Upsert
         )
+    }
+
+    /// True for the ops that may negotiate a binary **response** via the
+    /// `x-ms-cosmos-supported-serialization-formats` header. This is a superset
+    /// of [`supports_binary_encoding`](OperationType::supports_binary_encoding):
+    /// the point item ops plus `Query` / `SqlQuery`.
+    ///
+    /// `ReadFeed` / change feed is intentionally excluded: the backend only
+    /// honors the negotiation header for `Query`, and returns a binary response
+    /// for a `ReadFeed`-with-partition-key request as a known bug — so change
+    /// feed must never advertise binary.
+    pub(crate) fn supports_binary_response(self) -> bool {
+        self.supports_binary_encoding()
+            || matches!(self, OperationType::Query | OperationType::SqlQuery)
     }
 
     /// Returns the HTTP method for this operation type.

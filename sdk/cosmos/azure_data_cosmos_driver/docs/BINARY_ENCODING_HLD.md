@@ -22,7 +22,7 @@ Because the option lives on the driver and is schema-agnostic, the driver perfor
 
 A self-contained, in-tree **end-to-end validation loop** is included via the in-memory emulator (no Docker, no live account, no external test vectors).
 
-> **Scope:** item operations (`create` / `replace` / `upsert` / `read`). Query, patch, transactional batch, and bulk are intentionally deferred (see [Deferred work](#deferred-work)).
+> **Scope:** item operations (`create` / `replace` / `upsert` / `read`) encode request bodies and decode responses; `query` negotiates a binary response (its `application/query+json` request body stays text). Patch, transactional batch, and bulk are intentionally deferred (see [Deferred work](#deferred-work)).
 
 ---
 
@@ -394,8 +394,9 @@ opts.binary_encoding_request_text_response = 2;    /* 2 = true  */
 
 ## Deferred work
 
-* **Query binary negotiation** — the request-body encoding + negotiation for query pages is still deferred. Binary encoding now lives on `OperationOptions.binary_encoding`, so a driver-minted page operation *can* carry it; what remains is confirming query-body semantics (`application/query+json`) and the native cross-partition query engine's handling of binary item bytes. The query *response* decode already works via the shared choke point.
-* **Binary feed responses** — the feed splitter scans **text** JSON, so binary `Documents` envelopes cannot be sliced yet; making it binary-aware is a prerequisite for any feed/query binary negotiation.
+* **Query response negotiation** — **done.** A `query_items` call now advertises a binary response via `x-ms-cosmos-supported-serialization-formats` (set once at the `plan_operation` choke point that every per-page request flows through). The query request body is a `application/query+json` spec, not a document, so it intentionally stays text — there is no query request-body encoding. The query *response* decodes via the shared choke point.
+* **Cross-partition / ORDER BY merge on binary bytes** — the SDK's `parse_envelope_page` merge path parses page envelopes with text-only `serde_json` + `RawValue`, so cross-partition ordering over *binary* item bytes is not yet covered. Single-partition and `into_single` query drains already round-trip binary end to end.
+* **Binary feed responses** — the `into_items` feed splitter scans **text** JSON, so binary `Documents` envelopes cannot be sliced by that splitter yet. (The SDK query path uses `into_single`, which is unaffected.) `ReadFeed` / change feed is excluded from binary negotiation: the backend does not honor the header for it.
 * **`patch`** — excluded from binary encoding for now (the driver's request-side encode intentionally skips patch); transactional `batch` / `bulk` are deferred by spec.
 * **Cross-implementation vectors** — validate against captured real .NET / Java binary output.
 

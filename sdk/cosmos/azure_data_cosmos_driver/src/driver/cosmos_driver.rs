@@ -2369,21 +2369,30 @@ impl CosmosDriver {
         }
 
         // Resolve binary encoding through the same layered view as every other
-        // option, and only honor it for point **item** operations (the resource
-        // must be a `Document`; query/feed/batch and every control-plane
-        // resource are deferred per the binary-encoding spec).
-        let binary =
-            if Self::binary_encoding_applies(operation.resource_type(), operation.operation_type())
-            {
-                self.operation_options_view(&options)
-                    .binary_encoding()
-                    .cloned()
-                    .unwrap_or_default()
-            } else {
-                crate::options::BinaryEncodingOptions::default()
-            };
+        // option. Two independent gates apply:
+        //   * request-body transcoding — only point **item** operations whose
+        //     body is a document (create/read/replace/upsert on a `Document`);
+        //   * response negotiation — the same point item ops **plus** query,
+        //     which advertises a binary response but keeps a text request body.
+        // The options are resolved whenever either gate could fire.
+        let resource_type = operation.resource_type();
+        let operation_type = operation.operation_type();
+        let encodes_request_body = Self::binary_encodes_request_body(resource_type, operation_type);
+        let negotiates_response = Self::binary_negotiates_response(resource_type, operation_type);
+        let binary = if encodes_request_body || negotiates_response {
+            self.operation_options_view(&options)
+                .binary_encoding()
+                .cloned()
+                .unwrap_or_default()
+        } else {
+            crate::options::BinaryEncodingOptions::default()
+        };
         let operation = if binary.enabled {
-            Self::apply_request_binary_encoding(operation)?
+            Self::apply_request_binary_encoding(
+                operation,
+                encodes_request_body,
+                negotiates_response,
+            )?
         } else {
             operation
         };
@@ -2412,13 +2421,15 @@ impl CosmosDriver {
         Ok(response)
     }
 
-    /// Whether binary encoding applies to an operation.
+    /// Whether an operation's **request body** should be transcoded to Cosmos
+    /// binary JSON.
     ///
     /// Honored only for point item operations: the resource must be a
     /// [`ResourceType::Document`] and the operation one of create/read/replace/
     /// upsert. Control-plane resources share those operation types but must
-    /// never be binary encoded (some carry JSON bodies).
-    fn binary_encoding_applies(
+    /// never be binary encoded (some carry JSON bodies). Query is excluded — a
+    /// query body is a `application/query+json` spec, not a document.
+    fn binary_encodes_request_body(
         resource_type: crate::models::ResourceType,
         operation_type: crate::models::OperationType,
     ) -> bool {
@@ -2426,39 +2437,101 @@ impl CosmosDriver {
             && operation_type.supports_binary_encoding()
     }
 
-    /// Applies request-side binary encoding to an operation: transcodes a text
-    /// request body to Cosmos binary JSON (an already-binary or empty body is
-    /// passed through) and advertises binary responses via the
+    /// Whether an operation may advertise a binary **response** via the
     /// `x-ms-cosmos-supported-serialization-formats` header.
+    ///
+    /// This is a superset of [`binary_encodes_request_body`]: the point item
+    /// ops plus `Query` / `SqlQuery`. Change feed (`ReadFeed`) is excluded — the
+    /// backend does not honor the negotiation header for it.
+    ///
+    /// [`binary_encodes_request_body`]: CosmosDriver::binary_encodes_request_body
+    fn binary_negotiates_response(
+        resource_type: crate::models::ResourceType,
+        operation_type: crate::models::OperationType,
+    ) -> bool {
+        resource_type == crate::models::ResourceType::Document
+            && operation_type.supports_binary_response()
+    }
+
+    /// Advertises a binary response via the
+    /// `x-ms-cosmos-supported-serialization-formats` header when the operation
+    /// negotiates one ([`binary_negotiates_response`]) and binary encoding is
+    /// enabled. The request body is untouched — this is response negotiation
+    /// only, so it is safe for query (whose text `application/query+json` body
+    /// must never be transcoded).
+    ///
+    /// [`binary_negotiates_response`]: CosmosDriver::binary_negotiates_response
+    fn apply_response_negotiation(
+        &self,
+        operation: CosmosOperation,
+        options: &OperationOptions,
+    ) -> CosmosOperation {
+        if !Self::binary_negotiates_response(operation.resource_type(), operation.operation_type())
+        {
+            return operation;
+        }
+        let binary = self
+            .operation_options_view(options)
+            .binary_encoding()
+            .cloned()
+            .unwrap_or_default();
+        if binary.enabled {
+            operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS)
+        } else {
+            operation
+        }
+    }
+
+    /// Applies request-side binary encoding to an operation as two independent
+    /// steps:
+    ///   * when `encodes_request_body`, transcodes a text request body to
+    ///     Cosmos binary JSON (an already-binary or empty body is passed
+    ///     through);
+    ///   * when `negotiates_response`, advertises binary responses via the
+    ///     `x-ms-cosmos-supported-serialization-formats` header.
+    ///
+    /// A query op negotiates a binary response without transcoding its body.
     ///
     /// This is schema-agnostic — it operates on the raw body bytes — so a
     /// caller that deals only in text JSON gets a binary wire without encoding
     /// anything itself.
     fn apply_request_binary_encoding(
         operation: CosmosOperation,
+        encodes_request_body: bool,
+        negotiates_response: bool,
     ) -> crate::error::Result<CosmosOperation> {
         // Transcode a non-empty *text* body to binary. A body that is already
         // binary (the SDK's typed fast path) or empty is left in place — no
         // clone — so only genuinely text bodies pay the conversion.
-        let transcoded = match operation.body() {
-            Some(body) if !body.is_empty() && !crate::binary_json::is_binary(body) => {
-                Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
-                    crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
-                        .with_message(format!(
-                            "failed to transcode text request body to Cosmos binary JSON: {e}"
-                        ))
-                        .with_source(e)
-                        .build()
-                })?)
+        let transcoded = if encodes_request_body {
+            match operation.body() {
+                Some(body) if !body.is_empty() && !crate::binary_json::is_binary(body) => {
+                    Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
+                        crate::error::CosmosError::builder()
+                            .with_status(
+                                crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID,
+                            )
+                            .with_message(format!(
+                                "failed to transcode text request body to Cosmos binary JSON: {e}"
+                            ))
+                            .with_source(e)
+                            .build()
+                    })?)
+                }
+                _ => None,
             }
-            _ => None,
+        } else {
+            None
         };
         let operation = match transcoded {
             Some(bytes) => operation.with_body(bytes),
             None => operation,
         };
-        Ok(operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS))
+        if negotiates_response {
+            Ok(operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS))
+        } else {
+            Ok(operation)
+        }
     }
 
     /// Executes a singleton operation (operations which return only a single result).
@@ -2962,6 +3035,13 @@ impl CosmosDriver {
         }
 
         tracing::debug!(operation_type = ?operation.operation_type(), resource_type = ?operation.resource_type(), resource_reference = ?operation.resource_reference(), "planning operation");
+
+        // Advertise a binary response when negotiation applies (point item ops
+        // and query). Point ops also set this in `execute_operation`, but query
+        // reaches the driver through `plan_operation` directly, so this is the
+        // single choke point that covers every per-page request built from the
+        // resulting plan. The header set is idempotent.
+        let operation = self.apply_response_negotiation(operation, options);
 
         // Share the operation across every Request node in the resulting plan.
         // Per-Request differences are layered on at execution time via
@@ -5894,7 +5974,8 @@ mod tests {
     fn binary_encoding_applies_only_to_document_item_ops() {
         use crate::models::{OperationType, ResourceType};
 
-        // Point item ops on `Document` are the only combinations that qualify.
+        // Point item ops on `Document` are the only combinations whose request
+        // body qualifies for binary encoding.
         for op in [
             OperationType::Create,
             OperationType::Read,
@@ -5902,12 +5983,13 @@ mod tests {
             OperationType::Upsert,
         ] {
             assert!(
-                CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                CosmosDriver::binary_encodes_request_body(ResourceType::Document, op),
                 "Document + {op:?} should be binary-encodable",
             );
         }
 
-        // Non-item operation types on `Document` are excluded (query/feed/delete/patch).
+        // Non-item operation types on `Document` are excluded from body
+        // encoding (query/feed/delete/patch).
         for op in [
             OperationType::Delete,
             OperationType::Query,
@@ -5915,8 +5997,8 @@ mod tests {
             OperationType::Patch,
         ] {
             assert!(
-                !CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
-                "Document + {op:?} must not be binary-encoded",
+                !CosmosDriver::binary_encodes_request_body(ResourceType::Document, op),
+                "Document + {op:?} must not have its body binary-encoded",
             );
         }
 
@@ -5937,10 +6019,52 @@ mod tests {
                 OperationType::Upsert,
             ] {
                 assert!(
-                    !CosmosDriver::binary_encoding_applies(rt, op),
+                    !CosmosDriver::binary_encodes_request_body(rt, op),
                     "{rt:?} + {op:?} must not be binary-encoded (control plane)",
                 );
             }
+        }
+    }
+
+    #[test]
+    fn binary_negotiates_response_covers_item_ops_and_query() {
+        use crate::models::{OperationType, ResourceType};
+
+        // Point item ops plus query/sql-query on `Document` advertise a binary
+        // response.
+        for op in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::Replace,
+            OperationType::Upsert,
+            OperationType::Query,
+            OperationType::SqlQuery,
+        ] {
+            assert!(
+                CosmosDriver::binary_negotiates_response(ResourceType::Document, op),
+                "Document + {op:?} should negotiate a binary response",
+            );
+        }
+
+        // Change feed (`ReadFeed`) is excluded — the backend does not honor the
+        // negotiation header for it.
+        for op in [
+            OperationType::ReadFeed,
+            OperationType::Delete,
+            OperationType::Patch,
+        ] {
+            assert!(
+                !CosmosDriver::binary_negotiates_response(ResourceType::Document, op),
+                "Document + {op:?} must not negotiate a binary response",
+            );
+        }
+
+        // Control-plane resources never negotiate binary responses.
+        for op in [OperationType::Query, OperationType::Read] {
+            assert!(
+                !CosmosDriver::binary_negotiates_response(ResourceType::Database, op),
+                "Database + {op:?} must not negotiate a binary response (control plane)",
+            );
         }
     }
 
@@ -5960,7 +6084,7 @@ mod tests {
         assert!(!crate::binary_json::is_binary(&text));
 
         let op = binary_encoding_test_operation(text);
-        let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
+        let op = CosmosDriver::apply_request_binary_encoding(op, true, true).unwrap();
 
         let body = op.body().expect("body present");
         assert!(
@@ -5988,7 +6112,7 @@ mod tests {
         // through unchanged.
         let binary = crate::binary_json::encode(&serde_json::json!({ "id": "doc1", "n": 7 }));
         let op = binary_encoding_test_operation(binary.clone());
-        let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
+        let op = CosmosDriver::apply_request_binary_encoding(op, true, true).unwrap();
 
         assert_eq!(op.body().unwrap(), binary.as_slice());
         assert_eq!(
@@ -6004,10 +6128,39 @@ mod tests {
         // A body that is neither binary nor valid JSON surfaces as a
         // request-body serialization error.
         let op = binary_encoding_test_operation(b"{not json".to_vec());
-        let err = CosmosDriver::apply_request_binary_encoding(op).unwrap_err();
+        let err = CosmosDriver::apply_request_binary_encoding(op, true, true).unwrap_err();
         assert_eq!(
             err.status().sub_status(),
             Some(crate::error::SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
+        );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_query_negotiates_response_without_transcoding_body() {
+        // A query op negotiates a binary *response* but must leave its
+        // `application/query+json` body untouched (text), because the body is a
+        // query spec, not a document.
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let query_body =
+            serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap();
+        let op = CosmosOperation::query_items(container, Some(FeedRange::full()))
+            .with_body(query_body.clone());
+
+        // encodes_request_body = false (query), negotiates_response = true.
+        let op = CosmosDriver::apply_request_binary_encoding(op, false, true).unwrap();
+
+        // Body is unchanged text — never transcoded to binary.
+        assert_eq!(op.body().unwrap(), query_body.as_slice());
+        assert!(
+            !crate::binary_json::is_binary(op.body().unwrap()),
+            "query body must remain text on the wire",
+        );
+        // Still advertises a binary response.
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
         );
     }
 }

@@ -19,11 +19,13 @@ use azure_data_cosmos::{
         RoutingStrategy,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClientBuilder, CosmosRuntimeBuilder,
+    FeedScope, Query,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver,
     VirtualAccountConfig, VirtualRegion,
 };
+use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -342,6 +344,169 @@ async fn request_text_response_keeps_wire_binary_and_returns_data() {
             value.as_deref(),
             Some("CosmosBinary"),
             "wire must stay binary (CosmosBinary advertised) even with request_text_response",
+        );
+    }
+}
+
+/// A [`RequestObserver`] that records, for each query request (`Content-Type:
+/// application/query+json`), the advertised negotiation header and whether the
+/// request body was Cosmos binary JSON (first byte `0x80`). Lets a test assert
+/// that a query advertises a binary *response* while keeping its request body
+/// text.
+#[derive(Debug, Default)]
+struct QueryRequestRecorder {
+    negotiation_formats: Mutex<Vec<Option<String>>>,
+    body_is_binary: Mutex<Vec<bool>>,
+}
+
+impl RequestObserver for QueryRequestRecorder {
+    fn on_request(&self, request: &azure_core::http::Request) {
+        let content_type = request
+            .headers()
+            .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
+                "content-type",
+            ))
+            .map(|s| s.to_string());
+        if content_type.as_deref() != Some("application/query+json") {
+            return;
+        }
+        // The query-plan request shares the `application/query+json` content type
+        // but is metadata (no data negotiation); skip it so only the data query
+        // is asserted on.
+        if request
+            .headers()
+            .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
+                "x-ms-cosmos-is-query-plan-request",
+            ))
+            .is_some()
+        {
+            return;
+        }
+        let formats = request
+            .headers()
+            .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
+                "x-ms-cosmos-supported-serialization-formats",
+            ))
+            .map(|s| s.to_string());
+        self.negotiation_formats.lock().unwrap().push(formats);
+
+        let is_binary = match request.body() {
+            azure_core::http::request::Body::Bytes(bytes) => bytes.first() == Some(&0x80),
+            _ => false,
+        };
+        self.body_is_binary.lock().unwrap().push(is_binary);
+    }
+}
+
+/// With binary enabled, a `query_items` call advertises a binary **response**
+/// (`x-ms-cosmos-supported-serialization-formats: CosmosBinary`) while keeping
+/// its `application/query+json` request body as text; the emulator honors the
+/// negotiation and replies with a binary feed body, which the SDK auto-detects
+/// and decodes — so the queried documents round-trip intact.
+#[tokio::test]
+async fn binary_query_negotiates_response_and_round_trips() {
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        azure_core::http::Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session);
+
+    let recorder = Arc::new(QueryRequestRecorder::default());
+    let emulator = Arc::new(
+        InMemoryEmulatorHttpClient::new(config)
+            .with_request_observer(Arc::clone(&recorder) as Arc<dyn RequestObserver>),
+    );
+    let store = emulator.store();
+    store.create_database("bin-query");
+    store.create_container_with_config(
+        "bin-query",
+        "items",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+        ContainerConfig::new()
+            .with_partition_count(1)
+            .with_throughput(400)
+            .build()
+            .unwrap(),
+    );
+
+    let account = AccountReference::with_authentication_key(
+        EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
+        azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+    );
+    let client = CosmosClientBuilder::new()
+        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(true))
+        .with_runtime(
+            CosmosRuntimeBuilder::from(emulator.runtime_builder())
+                .build()
+                .await
+                .unwrap(),
+        )
+        .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await
+        .unwrap();
+    let container = client
+        .database_client("bin-query")
+        .container_client("items")
+        .await
+        .unwrap();
+
+    let items = vec![
+        TestItem {
+            id: "q-1".into(),
+            pk: "pk1".into(),
+            value: 10,
+            note: "café ☃".into(),
+        },
+        TestItem {
+            id: "q-2".into(),
+            pk: "pk1".into(),
+            value: 20,
+            note: "second".into(),
+        },
+    ];
+    for item in &items {
+        container
+            .create_item("pk1", &item.id, item, Some(write_options_with_content()))
+            .await
+            .unwrap();
+    }
+
+    let iter = Box::pin(container.query_items(
+        Query::from("SELECT * FROM c ORDER BY c.value"),
+        FeedScope::partition("pk1"),
+        None,
+    ))
+    .await
+    .unwrap();
+    let mut results: Vec<TestItem> = Box::pin(iter.try_collect()).await.unwrap();
+    results.sort_by_key(|d| d.value);
+
+    assert_eq!(
+        results, items,
+        "query results must round-trip through binary"
+    );
+
+    // The query advertised a binary response but kept its body text.
+    let formats = recorder.negotiation_formats.lock().unwrap();
+    assert!(!formats.is_empty(), "expected at least one query request");
+    for value in formats.iter() {
+        assert_eq!(
+            value.as_deref(),
+            Some("CosmosBinary"),
+            "query must advertise a binary response",
+        );
+    }
+    let body_is_binary = recorder.body_is_binary.lock().unwrap();
+    for is_binary in body_is_binary.iter() {
+        assert!(
+            !is_binary,
+            "query request body must stay text (application/query+json is a spec, not a document)",
         );
     }
 }
