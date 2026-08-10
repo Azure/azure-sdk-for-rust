@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 -->
-<!-- cSpell:ignore Authenticode codesign notarize notarization cyclonedx auditable staple stapled dylib cdylib staticlib rustls mingw musl syft osxcross esrp SLSA -->
+<!-- cSpell:ignore Authenticode codesign notarize notarization cyclonedx auditable staple stapled dylib cdylib staticlib rustls mingw musl syft osxcross esrp SLSA SPDX BSI COSE PURL interop -->
 
 # Native driver supply chain: signing, SBOM, and provenance (M2)
 
@@ -37,6 +37,19 @@ These paths have **different trust stories**, which is the crux of this design:
   at runtime, so it **can and should** be OS-code-signed by us.
 
 Everything below is written against this split.
+
+### 0.1 Source distribution — build from a pinned commit (settled)
+
+The native interface is **built from a pinned source commit inside 1ES and
+shipped as binaries**; it is *not* published as a crate to crates.io.
+
+Downstream SDKs consume the **compiled binaries + the C ABI**, not the Rust API,
+so publishing the wrapper as a crate would add an extra public package,
+dependency-publishing constraints, and a semver/support commitment with no
+consumer benefit. Building straight from an immutable commit also gives cleaner
+provenance (§3) than a registry release would. `Cargo.toml` therefore sets
+`publish = false`, and `azure_data_cosmos_driver` stays a path dependency in
+this workspace.
 
 ## 1. Per-OS code signing
 
@@ -96,17 +109,28 @@ unsigned Microsoft binary is loaded at runtime; the `.a` never runs on its own.
 
 ## 2. SBOM
 
-Generate a CycloneDX SBOM **per native-interface release**, using Cargo
-metadata and `Cargo.lock`.
+**Two SBOMs are emitted per native-interface release, with an explicit authority
+order** (Option B — settled):
 
-- **Primary tool:** [`cargo-cyclonedx`](https://github.com/CycloneDX/cyclonedx-rust-cargo)
-  — reads `Cargo.lock`, native to the Rust build, emits CycloneDX JSON.
-- **1ES manifest:** the internal 1ES `publish-1es-artifact.yml` template also
-  auto-injects an SBOM manifest (`sbomEnabled`, default on for internal builds)
-  when artifacts are published. We keep **both**: the `cargo-cyclonedx` SBOM is
-  Rust-dependency-accurate and travels *with* each artifact; the 1ES manifest
-  satisfies the org publishing requirement. (`syft` is a viable cross-ecosystem
-  alternative if we later want one tool across Rust + Go outputs.)
+- **Authoritative — 1ES SPDX (signed).** The internal 1ES
+  `publish-1es-artifact.yml` template auto-injects an SPDX 2.2 manifest
+  (`sbomEnabled`, default on for internal builds) with per-file hashes, plus a
+  **COSE signature** (`manifest.spdx.cose`) and a build-scope attestation
+  (`bsi.json`/`bsi.cose`). This is the org-authoritative evidence — Microsoft can
+  sign it, and we cannot easily reproduce that signing ourselves. It is the
+  document a release/audit ultimately trusts.
+- **Companion — CycloneDX (`cargo-cyclonedx`).** [`cargo-cyclonedx`](https://github.com/CycloneDX/cyclonedx-rust-cargo)
+  reads `Cargo.lock`, is native to the Rust build, and emits CycloneDX JSON. It
+  is **Rust-dependency-accurate** (PURLs straight from the resolved graph),
+  travels *with* each artifact, and is the format some downstream SCA tools
+  (e.g. Dependency-Track) ingest natively. It is **not** signed — its value is
+  Cargo accuracy + interop, not trust. We keep it *in addition to* SPDX, not
+  instead of it. (`syft` remains a viable cross-ecosystem alternative if we later
+  want one tool across Rust + Go outputs.)
+
+The two are cross-checkable: the same crate/version set should appear in both,
+and (once binaries are staged into the SBOM scan folder — see below) the same
+per-file SHA256 should appear in the SPDX manifest and in `SHA256SUMS`.
 
 **Where published:** attached to each per-target artifact in the `build` stage,
 next to `rust-driver-native-interface-metadata.json`, and included in the
@@ -170,6 +194,30 @@ what source, and how do I know it wasn't modified?*
 Publishing the SHA256 **out of the trusted build** (not recomputed later on an
 untrusted box) is what makes the hash meaningful.
 
+### 3.1 OPEN decision for reviewers — what the attestation's *subject* should be (P1 vs P2)
+
+This is the one supply-chain fork we are **not** silently defaulting. Both
+options below are Microsoft-signed; the difference is the **subject** — the thing
+the signature actually makes a claim about.
+
+- **P1 — reuse the 1ES BSI (subject = the build).** The signed statement says
+  *"build `20260810.3` ran from commit `X` in `Azure/azure-sdk-for-rust`."* It is
+  **already emitted and signed today** — zero new tooling. What it does **not**
+  say: *which exact file (which SHA256)* that build produced. A consumer trusts
+  the binary transitively ("it came from a build that came from commit `X`").
+- **P2 — add SLSA/in-toto (subject = the artifact hash `H`).** A second signed
+  statement says *"this exact file, SHA256 = `H`, was produced by build
+  `20260810.3` from commit `X`."* It names the **shipped bytes** directly. For a
+  binary published *outside* this repo and consumed detached (Go/.NET download the
+  `.a`/`.dll`), this is the stronger, industry-standard claim — a consumer
+  verifies "the bytes I hold ↔ this source" in a single step. **Cost:** not
+  emitted by 1ES by default, so we add tooling + a signing step.
+
+**What the reviewer is asked to decide:** is *"signed build → commit"* (P1: free,
+indirect) sufficient for our externally-published binaries, or do we want
+*"signed artifact-hash → commit"* (P2: added cost, direct)? Recommendation is
+pending Eng-Systems; flagged here so it is **ratified, not silently defaulted**.
+
 ## 4. cargo-auditable
 
 [`cargo-auditable`](https://github.com/rust-secure-code/cargo-auditable) embeds
@@ -193,7 +241,7 @@ recover it even without `Cargo.lock`.
 | Control | Static `.a` (Go / cgo) | Dynamic lib (.NET / Java / Python) |
 | ------- | ---------------------- | ---------------------------------- |
 | OS code signing | **N/A** — cannot sign a `.a`; consumer signs their Go binary | **Yes** — Authenticode (Win) / codesign+notarize (macOS); Linux none |
-| SBOM (cargo-cyclonedx + 1ES) | Yes, per artifact | Yes, per artifact |
+| SBOM (SPDX authoritative + CycloneDX companion) | Yes, per artifact | Yes, per artifact |
 | Provenance (1ES build + commit pin + attestation) | Yes | Yes |
 | Published SHA256 (out of trusted build) | **Primary** integrity control | Secondary (backs up the signature) |
 | cargo-auditable embedded manifest | Validate after linking into the Go executable; direct `.a` read-back is unsupported | Yes; verified directly from the dynamic library |
@@ -209,3 +257,6 @@ recover it even without `Cargo.lock`.
    SBOM + provenance + SHA256, not a signature on the `.a`.
 4. **driver path-dep not published** — provenance pins a repo commit, not a
    registry version (§3).
+5. **provenance binding — P1 vs P2** — OPEN Eng-Systems decision on whether the
+   signed attestation's subject is the *build* (P1, reuse 1ES BSI, free) or the
+   *artifact hash `H`* (P2, add SLSA/in-toto, direct but added cost). See §3.1.

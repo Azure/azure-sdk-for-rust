@@ -91,9 +91,12 @@ stages:
       # Linux: no artifact-signing standard. Trust = SBOM + provenance + SHA256.
 
   # ---------------------------------------------------------------------------
-  # 3. Fail closed until Cargo-aware SBOM and trusted provenance are wired.
+  # 3. Fail closed until BOTH SBOMs and trusted provenance are wired.
   #    The local rehearsal proves the formats, but production must replace its
   #    unsigned statement with a 1ES-attested builder identity.
+  #    SBOM (settled): 1ES SPDX authoritative (signed) + CycloneDX companion.
+  #    Provenance (OPEN): P1 reuse 1ES BSI (subject=build) vs P2 add SLSA/in-toto
+  #    (subject=artifact hash H). See ../docs/NATIVE_SUPPLY_CHAIN.md §3.1.
   # ---------------------------------------------------------------------------
   - stage: security_evidence
     displayName: Generate SBOM + trusted provenance
@@ -106,9 +109,10 @@ stages:
           - pwsh: |
               throw @"
               UNWIRED SECURITY GATE:
-              - generate the Cargo-aware CycloneDX SBOM per native target;
-              - generate a signed 1ES/SLSA provenance attestation;
-              - verify both before the Go publication stage.
+              - confirm the 1ES SPDX manifest (authoritative, signed) is emitted;
+              - generate the Cargo-aware CycloneDX SBOM (companion) per native target;
+              - generate a signed 1ES/SLSA provenance attestation (resolve P1 vs P2);
+              - verify all three before the Go publication stage.
               "@
             displayName: Block until trusted evidence is configured
 
