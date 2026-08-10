@@ -190,8 +190,9 @@ try {
   # below stays quiet while the pin sits on master.
   #
   # To update the pin:
-  #   1. Pick an azure-amqp commit that contains nuget.cfsclean.config and
-  #      builds TestAmqpBroker for net10.0.
+  #   1. Pick an azure-amqp commit that builds TestAmqpBroker for net10.0.
+  #      The commit does not need to carry a restore configuration. This
+  #      package owns that file, and the restore names it by absolute path.
   #   2. Put the full 40-character SHA of that commit below, and update the
   #      comment above with the ref that the SHA comes from. For a merged
   #      pull request, use the merge_commit_sha, not the head SHA.
