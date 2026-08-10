@@ -46,7 +46,7 @@ Stop the broker after the tests finish.
 
 #### Updating the broker pin
 
-Update the pin only to an azure-amqp commit that contains `nuget.cfsclean.config` and builds `TestAmqpBroker` for `net10.0`. Change `$repositoryHash` in `Test-Setup.ps1` to the full 40-character SHA, update the same SHA in this file, run the setup and cleanup scripts, and make sure that setup reports a clean azure-amqp clone. The pin stays a bare SHA. A tag is not safe here, because azure-amqp uses lightweight tags and has no tag ruleset, so a maintainer can move a tag to a different commit without a trace.
+Update the pin to any azure-amqp commit that builds `TestAmqpBroker` for `net10.0`. The commit does not need to carry a restore configuration, because this package owns that file. Change `$repositoryHash` in `Test-Setup.ps1` to the full 40-character SHA, update the same SHA in this file, run the setup and cleanup scripts, and make sure that setup reports a clean azure-amqp clone. The pin stays a bare SHA. A tag is not safe here, because azure-amqp uses lightweight tags and has no tag ruleset, so a maintainer can move a tag to a different commit without a trace.
 
 Set `TEST_BROKER_COMMIT` to try a different commit without a code change.
 
@@ -77,7 +77,7 @@ dotnet build .\test\TestAmqpBroker\TestAmqpBroker.csproj --configuration Debug -
 CFSClean builds restore from the `azure-sdk-for-net` Azure Artifacts feed. The feed is public and answers anonymous reads, so an external developer needs no credentials to restore a package that the feed has already cached. The CFSClean environment supplies credentials because a cache miss makes the feed fetch the package from upstream, and that fetch needs an authenticated caller. Run this restore and build sequence from the clone root.
 
 ```pwsh
-dotnet restore .\test\TestAmqpBroker\TestAmqpBroker.csproj --configfile .\nuget.cfsclean.config
+dotnet restore .\test\TestAmqpBroker\TestAmqpBroker.csproj --configfile <this directory>\nuget.cfsclean.config
 dotnet build .\test\TestAmqpBroker\TestAmqpBroker.csproj --configuration Debug --framework net10.0 --no-restore
 ```
 
