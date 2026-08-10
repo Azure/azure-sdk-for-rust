@@ -219,9 +219,14 @@ try {
   Write-Host "Cloning repository from $repositoryUrl..."
   Invoke-LoggedCommand $cloneCommand
 
-  # Take the last line only. Invoke-LoggedCommand returns every output line,
-  # and an array here would turn the comparison below into a filter.
-  $repositoryHead = "$(Invoke-LoggedCommand "git -C `"$repositoryDir`" rev-parse HEAD" | Select-Object -Last 1)"
+  # Take the last line only. Invoke-LoggedCommand returns every output line, and an array
+  # here would turn the comparison below into a filter.
+  #
+  # Keep this as two statements. Wrapping the call in "$( ... )" breaks the argument, because
+  # the outer double-quoted string consumes the escaped quotes first. The command then splits
+  # into three arguments, the second one binds to -ExecutePath, and git runs with a bare -C.
+  $repositoryHeadLines = Invoke-LoggedCommand "git -C `"$repositoryDir`" rev-parse HEAD"
+  $repositoryHead = [string]($repositoryHeadLines | Select-Object -Last 1)
   if ($repositoryHead.Trim() -ne $repositoryHash) {
     LogError "Expected azure-amqp commit $repositoryHash, but cloned $repositoryHead."
     exit 1
