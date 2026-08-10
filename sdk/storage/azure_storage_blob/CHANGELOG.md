@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `BlobClient::start_copy_from_url()` and `BlobClient::abort_copy_from_url()` for asynchronous blob copy operations.
+- Added `BlobClient::start_copy_from_url()` and `BlobClient::abort_copy()` for asynchronous blob copy operations.
 
 ### Breaking Changes
 
