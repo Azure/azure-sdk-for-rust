@@ -318,7 +318,7 @@ async fn test_start_copy_from_url_across_accounts(ctx: TestContext) -> Result<()
 }
 
 #[tokio::test]
-async fn test_abort_copy_from_url() -> Result<(), Box<dyn Error>> {
+async fn test_abort_copy() -> Result<(), Box<dyn Error>> {
     const COPY_ID: &str = "9f967724-b60d-4edb-8087-21f18b3b6f42";
     const COPY_SOURCE: &str = "https://example.com/ferris.txt";
 
@@ -400,7 +400,7 @@ async fn test_abort_copy_from_url() -> Result<(), Box<dyn Error>> {
     let copy_id = response.copy_id()?.expect("copy ID should be present");
 
     // Abort Copy Scenario
-    let response = blob_client.abort_copy_from_url(&copy_id, None).await?;
+    let response = blob_client.abort_copy(&copy_id, None).await?;
 
     // Assert
     assert_eq!(StatusCode::NoContent, response.status());

@@ -261,9 +261,9 @@ pub struct AppendBlobClientSealOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobClient::abort_copy_from_url()`
+/// Options to be passed to `BlobClient::abort_copy()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobClientAbortCopyFromUrlOptions<'a> {
+pub struct BlobClientAbortCopyOptions<'a> {
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
     pub lease_id: Option<String>,
 
