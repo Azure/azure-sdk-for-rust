@@ -45,7 +45,21 @@ fn generate_c_header() {
     let after_includes = format!(
         "\n// Specifies the version of azurecosmosdriver this header file was generated from.\n\
          // This should match the version of libazurecosmosdriver you are linking against.\n\
-         #define AZURECOSMOSDRIVER_H_VERSION \"{}\"",
+         #define AZURECOSMOSDRIVER_H_VERSION \"{}\"\n\
+         \n\
+         // Packed-status helpers (see cosmos_status_code_t). Emitted as macros so\n\
+         // they keep the SCREAMING_SNAKE_CASE spelling shared with the\n\
+         // COSMOS_SUB_STATUS_* constants instead of being double-prefixed by the\n\
+         // `cosmos_` export prefix (which would yield `cosmos_COSMOS_STATUS_SUCCESS`).\n\
+         //\n\
+         // COSMOS_STATUS_SUCCESS: value returned by every fallible function on success.\n\
+         #define COSMOS_STATUS_SUCCESS 0\n\
+         \n\
+         // Decode helpers for the packed cosmos_status_code_t. COSMOS_STATUS_HTTP\n\
+         // extracts the HTTP status (high 16 bits); COSMOS_STATUS_SUB extracts the\n\
+         // sub-status (low 16 bits, 0 when the operation had no sub-status).\n\
+         #define COSMOS_STATUS_HTTP(code) ((int)((uint32_t)(code) >> 16))\n\
+         #define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))",
         env!("CARGO_PKG_VERSION")
     );
 
@@ -100,7 +114,8 @@ fn generate_c_header() {
             "completion_backing_t".into(),
         ),
         ("CosmosError".into(), "error_t".into()),
-        ("CosmosErrorHandle".into(), "error_t".into()),
+        ("CosmosStatusCode".into(), "status_code_t".into()),
+        ("CosmosSubStatus".into(), "sub_status_t".into()),
         // Wrapper-defined types whose Rust names don't follow the spec's C name.
         ("CosmosBytes".into(), "bytes_t".into()),
         ("CosmosHeaderKv".into(), "header_kv_t".into()),
@@ -146,7 +161,6 @@ fn generate_c_header() {
             "CosmosOperationHandleState".into(),
             "operation_handle_state_t".into(),
         ),
-        ("CosmosErrorCode".into(), "error_code_t".into()),
         ("CosmosHeaderId".into(), "header_id_t".into()),
         ("CosmosReadConsistency".into(), "read_consistency_t".into()),
         (
@@ -199,7 +213,15 @@ fn generate_c_header() {
                 "CosmosReadConsistencyStrategy".into(),
                 "CosmosContentResponseOnWriteOpt".into(),
                 "CosmosPartitionKeyComponentKind".into(),
+                // Named mirror of the driver's synthetic sub-status codes. Not
+                // referenced by any exported struct field (hosts read the low 16
+                // bits of a packed cosmos_status_code_t), so force its emission.
+                "CosmosSubStatus".into(),
             ],
+            // The packed-status helpers are emitted as `#define`s via
+            // `after_includes` (see above) to avoid the `cosmos_` export prefix
+            // double-prefixing them into `cosmos_COSMOS_STATUS_*`.
+            exclude: vec!["COSMOS_STATUS_SUCCESS".into()],
             rename,
             ..Default::default()
         },
@@ -222,6 +244,23 @@ fn generate_c_header() {
     let mut buf = Vec::new();
     bindings.write(&mut buf);
     let output = String::from_utf8(buf).expect("cbindgen output should be valid UTF-8");
+
+    // cbindgen's `ScreamingSnakeCase` rule (heck) does not insert a word
+    // boundary between letters and a trailing digit run, so the two synthetic
+    // sub-status codes whose driver `SubStatusCode` constant ends in `_<NNN>`
+    // come out as `..._GENERATED503` / `..._GENERATED401`. Re-insert the
+    // underscore so every `COSMOS_SUB_STATUS_*` constant is an exact,
+    // mechanical uppercase mirror of the driver constant name. These tokens are
+    // unique, so a full-token replacement is unambiguous.
+    let output = output
+        .replace(
+            "COSMOS_SUB_STATUS_TRANSPORT_GENERATED503",
+            "COSMOS_SUB_STATUS_TRANSPORT_GENERATED_503",
+        )
+        .replace(
+            "COSMOS_SUB_STATUS_CLIENT_GENERATED401",
+            "COSMOS_SUB_STATUS_CLIENT_GENERATED_401",
+        );
 
     let mut collapsed = String::with_capacity(output.len());
     let mut consecutive_blank = 0u32;
