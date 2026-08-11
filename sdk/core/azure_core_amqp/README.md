@@ -45,7 +45,7 @@ Stop the broker after the tests finish.
 
 #### Updating the broker pin
 
-Update the pin to any azure-amqp commit that builds `TestAmqpBroker` for `net10.0`. The commit does not need to carry a restore configuration. Change `$repositoryHash` in `Test-Setup.ps1` to the full 40-character SHA, update the same SHA in this file, run the setup and cleanup scripts, and make sure that setup reports a clean azure-amqp clone. The pin stays a bare SHA. A tag is not safe here, because azure-amqp uses lightweight tags and has no tag ruleset, so a maintainer can move a tag to a different commit without a trace.
+Update the pin to any azure-amqp commit that builds `TestAmqpBroker` for `net10.0`. The commit does not need to carry a restore configuration. Change `$repositoryHash` in `Test-Setup.ps1` to the full 40-character SHA, run the setup and cleanup scripts, and make sure that setup reports a clean azure-amqp clone. The pin stays a bare SHA. A tag is not safe here, because azure-amqp uses lightweight tags and has no tag ruleset, so a maintainer can move a tag to a different commit without a trace.
 
 Set `TEST_BROKER_COMMIT` to try a different commit without a code change.
 
