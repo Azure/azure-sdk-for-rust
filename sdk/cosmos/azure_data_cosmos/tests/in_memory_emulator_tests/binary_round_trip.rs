@@ -101,6 +101,59 @@ async fn build_container(db_name: &str, binary: bool) -> ContainerClient {
         .unwrap()
 }
 
+/// Like [`build_container`], but provisions `partition_count` physical
+/// partitions so a full-container query fans out across ranges (the passthrough
+/// cross-partition path). Binary encoding is enabled.
+async fn build_multi_partition_container(db_name: &str, partition_count: u32) -> ContainerClient {
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        azure_core::http::Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session);
+
+    let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let store = emulator.store();
+    store.create_database(db_name);
+    store.create_container_with_config(
+        db_name,
+        "items",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+        ContainerConfig::new()
+            .with_partition_count(partition_count)
+            .with_throughput(400)
+            .build()
+            .unwrap(),
+    );
+
+    let account = AccountReference::with_authentication_key(
+        EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
+        azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+    );
+    let client = CosmosClientBuilder::new()
+        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(true))
+        .with_runtime(
+            CosmosRuntimeBuilder::from(emulator.runtime_builder())
+                .build()
+                .await
+                .unwrap(),
+        )
+        .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await
+        .unwrap();
+
+    client
+        .database_client(db_name)
+        .container_client("items")
+        .await
+        .unwrap()
+}
+
 /// With binary enabled, an item written through the SDK is binary-encoded on the
 /// wire, decoded + stored by the emulator, returned as binary, and decoded back
 /// — and the value survives every hop unchanged.
@@ -509,4 +562,47 @@ async fn binary_query_negotiates_response_and_round_trips() {
             "query request body must stay text (application/query+json is a spec, not a document)",
         );
     }
+}
+
+/// Passthrough **cross-partition** binary query: a full-container `SELECT *`
+/// fans out across multiple physical partitions. Each partition's page is
+/// returned as an independent binary `Documents` envelope, decoded per page
+/// through the shared choke point — so every item round-trips regardless of
+/// which partition served it.
+#[tokio::test]
+async fn binary_cross_partition_query_round_trips() {
+    let container = build_multi_partition_container("bin-xpart-query", 3).await;
+
+    // Spread items across several partition keys so the fan-out spans ranges.
+    let items: Vec<TestItem> = (0..12)
+        .map(|i| TestItem {
+            id: format!("x-{i}"),
+            pk: format!("pk{}", i % 4),
+            value: i,
+            note: format!("café ☃ {i}"),
+        })
+        .collect();
+    for item in &items {
+        container
+            .create_item(&item.pk, &item.id, item, Some(write_options_with_content()))
+            .await
+            .unwrap();
+    }
+
+    let iter = Box::pin(container.query_items(
+        Query::from("SELECT * FROM c"),
+        FeedScope::full_container(),
+        None,
+    ))
+    .await
+    .unwrap();
+    let mut results: Vec<TestItem> = Box::pin(iter.try_collect()).await.unwrap();
+    results.sort_by_key(|d| d.value);
+
+    let mut expected = items;
+    expected.sort_by_key(|d| d.value);
+    assert_eq!(
+        results, expected,
+        "cross-partition query results must round-trip through binary",
+    );
 }
