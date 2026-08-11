@@ -31,13 +31,17 @@ missing, and endpoint/keys are always re-read so the emitted JSON is current.
 
 ## Updating the secret
 
-The script does **not** write to any ADO variable group itself - copy the
-JSON it prints (or the contents of `-OutputPath`) into the
-`rust-ci` secret variable in the
-`Test Secrets for Cosmos Live Tests - user administered` variable group (or
-whichever group `sdk/cosmos/pipeline/resolve-test-account-steps.yml` is
-pointed at). Treat the JSON as a secret at every step - it contains account
-keys.
+The script does **not** write to any secret store itself - copy the JSON it
+prints (or the contents of `-OutputPath`) into the `rust-ci` **Key Vault
+secret** that backs the `Test Secrets for Cosmos Live Tests - user
+administered` variable group.
+
+The ADO variable group only *links* to the Key Vault secret (read-through
+mapping): editing the value in the variable-group UI has no effect. Set a new
+version on the KV secret itself (portal, `az keyvault secret set`, or the KV
+REST API) - the next pipeline run picks it up automatically.
+
+Treat the JSON as a secret at every step - it contains account keys.
 
 ## Adding a new account / rotating a key
 
@@ -46,13 +50,15 @@ keys.
    The `name` becomes the `AccountSelector` that
    `sdk/cosmos/live-platform-matrix.json` must reference.
 2. Re-run the script (see Usage above).
-3. Update the ADO secret with the new JSON.
+3. Update the `rust-ci` Key Vault secret with the new JSON (see "Updating the
+   secret" above).
 4. If you added a new selector, add a matching `AccountSelector` entry to the
    relevant leg in `sdk/cosmos/live-platform-matrix.json`.
 
 To rotate a compromised or expiring key, use the Azure Portal or
 `New-AzCosmosDBAccountKey` to regenerate it, then re-run this script (which
-re-reads the current keys) and update the secret.
+re-reads the current keys) and set a new version on the `rust-ci` Key Vault
+secret.
 
 ## Why this script exists
 

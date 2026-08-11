@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 <#
 .SYNOPSIS
     (Re)creates the fixed Cosmos DB accounts used by the azure-sdk-for-rust Cosmos live
@@ -181,6 +184,7 @@ foreach ($acct in $definition.accounts) {
                 EnableAutomaticFailover      = $autoFailover
                 EnableMultipleWriteLocations = $multiWrite
                 ApiKind                      = 'GlobalDocumentDB'
+                Capabilities                 = @('EnableNoSQLVectorSearch', 'EnableNoSQLFullTextSearch')
             }
             if ($acct.PSObject.Properties.Name -contains 'enableContinuousBackup' -and $acct.enableContinuousBackup) {
                 $params['BackupPolicyType'] = 'Continuous'

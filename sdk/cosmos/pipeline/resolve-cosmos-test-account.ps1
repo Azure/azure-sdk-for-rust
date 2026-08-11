@@ -46,8 +46,10 @@ catch {
     Fail "COSMOS_TEST_ACCOUNTS_JSON is not valid JSON: $($_.Exception.Message)"
 }
 
-if (-not ($config.PSObject.Properties.Name -contains 'version') -or $config.version -ne 1) {
-    Fail "Unsupported or missing schema version '$($config.version)' (parser supports: 1)."
+$schemaVersion = if ($config.PSObject.Properties.Name -contains 'version') { $config.version } else { $null }
+if ($null -eq $schemaVersion -or $schemaVersion -ne 1) {
+    $displayVersion = if ($null -eq $schemaVersion) { '<missing>' } else { [string]$schemaVersion }
+    Fail "Unsupported or missing schema version '$displayVersion' (parser supports: 1)."
 }
 
 if (-not ($config.PSObject.Properties.Name -contains 'accounts') -or
@@ -60,12 +62,20 @@ if (-not ($config.PSObject.Properties.Name -contains 'accounts') -or
 
 $account = $config.accounts.$AccountSelector
 
-$endpoint = [string]$account.endpoint
-$key = [string]$account.key
-$secondaryKey = if ($account.PSObject.Properties.Name -contains 'secondaryKey') { [string]$account.secondaryKey } else { '' }
-$database = if ($account.PSObject.Properties.Name -contains 'database' -and $account.database) { [string]$account.database } else { 'shared-test-db' }
-$consistency = [string]$account.consistency
-$testCategory = [string]$account.testCategory
+# Under Set-StrictMode -Version Latest, reading a missing property throws before
+# we can emit the targeted 'missing required ...' diagnostic below. Read each
+# field conditionally so malformed secrets receive the actionable error message.
+function Get-OptionalString($obj, [string]$name) {
+    if ($obj.PSObject.Properties.Name -contains $name) { [string]$obj.$name } else { '' }
+}
+
+$endpoint = Get-OptionalString $account 'endpoint'
+$key = Get-OptionalString $account 'key'
+$secondaryKey = Get-OptionalString $account 'secondaryKey'
+$databaseRaw = Get-OptionalString $account 'database'
+$database = if ([string]::IsNullOrWhiteSpace($databaseRaw)) { 'shared-test-db' } else { $databaseRaw }
+$consistency = Get-OptionalString $account 'consistency'
+$testCategory = Get-OptionalString $account 'testCategory'
 
 if ([string]::IsNullOrWhiteSpace($endpoint)) { Fail "Account '$AccountSelector' is missing required 'endpoint'." }
 if ([string]::IsNullOrWhiteSpace($key)) { Fail "Account '$AccountSelector' is missing required 'key'." }

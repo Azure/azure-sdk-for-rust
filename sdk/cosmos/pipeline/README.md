@@ -42,9 +42,12 @@ before. Thin-client/GatewayV2 legs are also unaffected/out of scope.
    per-rotation script (`New-CosmosLiveTestAccounts.ps1`) that creates the
    accounts in the `sdk-ci` resource group and prints the JSON to store in
    the ADO secret. See its README for the full runbook.
-4. That JSON is stored as the `rust-ci` secret
-   variable in the `Test Secrets for Cosmos Live Tests - user administered`
-   ADO variable group (already wired into `sdk/cosmos/ci.yml`).
+4. That JSON is stored as the `rust-ci` **Key Vault secret**, which is linked
+   (read-through) into the `Test Secrets for Cosmos Live Tests - user
+   administered` ADO variable group (already wired into `sdk/cosmos/ci.yml`).
+   Because the variable group is a KV-backed mapping, rotation happens on the
+   Key Vault secret itself - editing the variable-group value in ADO has no
+   effect.
 5. [`resolve-cosmos-test-account.ps1`](resolve-cosmos-test-account.ps1) is a
    cross-platform (pwsh) script that, given a selector and the JSON secret,
    resolves and exports (via Azure DevOps `##vso[task.setvariable]` logging
