@@ -372,8 +372,8 @@ stateDiagram-v2
 ```
 
 Submits against a queue at hard capacity
-(`cosmos_cq_options.max_capacity > 0`) fail pre-flight with
-`COSMOS_ERROR_CODE_QUEUE_FULL`. Use `cosmos_cq_wait_writable(queue, ms)` to
+(`cosmos_cq_options.max_capacity > 0`) fail pre-flight with a
+`503 + COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_FULL` packed status. Use `cosmos_cq_wait_writable(queue, ms)` to
 block until space is available. The default queue is unbounded — only
 opt into capacity caps for bulk-import / fan-out workloads where a stuck
 consumer would otherwise grow memory without bound.
@@ -445,7 +445,7 @@ of the spec for whether MPMC will land in a future revision.
 ## 8. Where to look next
 
 - [`NATIVE_WRAPPER_SPEC.md` section 3.1](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#31-invocation-model--completion-queues) — full invocation model + per-language call sites.
-- [`NATIVE_WRAPPER_SPEC.md` section 3.5](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#35-error-model) — error model (`cosmos_error_code_t` + `cosmos_error_t`).
+- [`NATIVE_WRAPPER_SPEC.md` section 3.5](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#35-error-model) — error model (packed `cosmos_status_code_t` + `cosmos_error_t`).
 - [`NATIVE_WRAPPER_SPEC.md` section 3.6](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#36-completion-records--operation-handles) — completion record / operation handle accessors.
 - [`NATIVE_WRAPPER_SPEC.md` section 8](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#8-phased-implementation-plan) — phased rollout (Phase 0 scaffolding through Phase 10 advanced surface).
-- [`NATIVE_WRAPPER_SPEC.md` section 6](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#6-error-semantics) — how the merged driver's `CosmosError` maps onto the coarse `cosmos_error_code_t`.
+- [`NATIVE_WRAPPER_SPEC.md` section 6](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#6-error-semantics) — how the merged driver's `CosmosError` packs into the `cosmos_status_code_t`.

@@ -66,6 +66,8 @@ jobs:
     parameters:
       Toolchain: $(RustToolchainName)
 
+  - template: /eng/pipelines/templates/steps/nuget-config.yml
+
   - template: /eng/pipelines/templates/steps/vcpkg.yml
 
   - ${{ parameters.PreSteps }}

@@ -1,6 +1,6 @@
 # Hosted In-Memory Cosmos DB Emulator — Plan & Summary
 
-**Status:** Draft / Plan (not yet implemented)
+**Status:** PR1 implementation in progress
 **Date:** 2026-07-14
 **Crates:** `azure_data_cosmos_emulator` (new binary host), `azure_data_cosmos_driver` (emulator core, behind a feature)
 **Feature gate:** `__internal_in_memory_emulator` (non-SemVer emulator surface)
@@ -124,9 +124,9 @@ flowchart LR
 ```text
 sdk/cosmos/azure_data_cosmos_emulator/
 ├── Cargo.toml            # publish = false; deps: clap, axum, tokio, serde, serde_json, tracing
+├── AGENTS.md             # this document (plan & summary; auto-discovered by agents)
 ├── README.md
 ├── docs/
-│   ├── plan.md           # this document
 │   └── adr/              # architecture decision records
 └── src/
     ├── main.rs           # CLI (clap), startup, listener wiring
@@ -151,7 +151,7 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-006.
   "account": {
     "id": "emulator-account",
     "writeMode": "single",
-    "consistency": "Session",
+    "consistency": "session",
     "perPartitionFailover": false,
     "throttling": false,
     "regions": [
@@ -189,7 +189,7 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-006.
 | Path                                      | Type                  | Notes                                                                                              |
 | ----------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------- |
 | `account.writeMode`                       | `"single" \| "multi"` | Maps to `WriteMode`. In `single`, the first region is the hub/write region.                        |
-| `account.consistency`                     | enum                  | `Strong \| BoundedStaleness \| Session \| ConsistentPrefix \| Eventual`.                           |
+| `account.consistency`                     | enum                  | `strong \| boundedStaleness \| session \| consistentPrefix \| eventual` (camelCase, matching `writeMode`). |
 | `account.perPartitionFailover`            | bool                  | Initial `enablePerPartitionFailoverBehavior`; can be toggled at runtime.                           |
 | `account.throttling`                      | bool                  | Enables per-partition RU/s enforcement (429/3200).                                                 |
 | `account.regions[].gatewayPort`           | u16, optional         | Standard gateway port. Missing or `0` requests an OS-assigned port.                                |
@@ -203,9 +203,14 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-006.
 | `databases[].containers[].throughput`     | u32                   | Provisioned RU/s (drives throttling when enabled).                                                 |
 | `databases[].containers[].seedItems[]`    | array                 | Documents created on startup; each carries its `partitionKey` value array and the `document` body. |
 
+Region names and effective region IDs must be unique; region-name references are case-sensitive.
+Every explicit nonzero listener port must also be unique. Database IDs must be unique, container
+IDs must be unique within a database, and resource IDs may not be empty or contain `/`, `\`, `?`,
+or `#`. The host validates the complete configuration before provisioning any resource.
+
 Seed items are created through the same request path as real writes (a synthesized create-item
 request per item), so EPK routing, RU accounting, and replication behave identically to
-client-issued writes.
+client-issued writes. The host waits for all scheduled seed replication before publishing ready.
 
 After binding all listeners, the host writes one JSON `ready` record to stdout. It contains the
 resolved management endpoint, hub account endpoint, and all regional standard-gateway and
@@ -248,6 +253,10 @@ Enabled per region by setting `gateway20Port`. When enabled:
 3. Data-plane requests arrive as RNTBD frames wrapped in HTTP/2 POSTs. The listener **decodes**
    the RNTBD request frame + literal `thinclient` headers, reconstructs the logical operation, dispatches
    it through the same store, and **encodes** the result as an RNTBD response frame.
+
+PR1 validates Gateway 2.0 with the Rust SDK and generic clients that support cleartext HTTP/2
+(`h2c`). Stock Java Gateway 2.0 compatibility requires the deferred TLS/H2 listener; peer-SDK
+interoperability is a validation target, not a compatibility guarantee of this phase.
 
 The driver already owns the client-side RNTBD codec (`RntbdRequestFrame::write`,
 `RntbdResponse::read`). This work promotes the currently test-only inverse halves
@@ -295,7 +304,7 @@ POST /databases/{db}/containers/{coll}/partitions/{partitionId}/split
       "mode": "midpoint" | "epk" | "storage",   // default: "midpoint"
       "epk": "<hex EPK>",                        // required when mode = "epk"; ignored otherwise
       "progressionMode": "automatic" | "manual", // default: "automatic"
-      "lockDurationMs": 500                     // automatic only; default: 0
+      "lockDurationMs": 500                     // automatic only; default: 0; maximum: 60000
     }
     → 202 { "operationId": "op-split-123", "status": "Running", "phase": "Preparing" }
 
@@ -515,13 +524,9 @@ store.set_write_region("West US")?;             // runtime single-write failover
 ### 7.4 Gateway 2.0 server codec (behind host feature)
 
 ```rust
-// Server-side codec methods extracted and completed from the existing test parsing/building logic.
-use azure_data_cosmos_driver::driver::transport::rntbd::{RntbdRequestFrame, RntbdResponse};
-
-let frame = RntbdRequestFrame::read(&request_bytes)?;   // decode inbound (server side)
-// ... dispatch through the store ...
-let mut out = Vec::new();
-response.write(&mut out)?;                               // encode outbound (server side)
+// The inverse codec remains co-located with the client codec inside the driver.
+// The host consumes one high-level API instead of public token/frame internals.
+let response = emulator.execute_gateway_v2_request(&request).await?;
 ```
 
 ---

@@ -259,20 +259,20 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
     $readmeContent = Get-Content -Raw $readmeContentLoc
   }
 
-  $existingVersions = GetExistingPackageVersions -PackageName $packageName
-
   return @{
     PackageId      = $packageName
     PackageVersion = $packageVersion
     ReleaseTag     = "$packageName@$packageVersion"
-    Deployable     = $existingVersions -notcontains $packageVersion
+    # GetExistingPackageVersions is blocked by CFS so Deployable is always $true
+    # Checking with crates.io was in addition to the repository tag.
+    Deployable     = $true
     ReleaseNotes   = $releaseNotes
     ReadmeContent  = $readmeContent
   }
 }
 
 function Find-rust-Artifacts-For-Apireview([string]$ArtifactPath, [string]$packageName) {
-  [array]$files = Get-ChildItem -Path $ArtifactPath -Recurse -Filter "$packageName`_rust.json"
+  [array]$files = Get-ChildItem -Path $ArtifactPath -Recurse -Filter "$packageName.rust.json"
 
   if (!$files) {
     Write-Host "$($packageName) does not have api review json"

@@ -175,6 +175,37 @@ impl Drop for LocationStateStore {
     }
 }
 
+/// Restores a pre-claimed `last_refresh_epoch_ms` stamp when the guarded
+/// refresh fails or is cancelled. Rollback CASes on the exact claimed value,
+/// so it no-ops if another refresh already re-stamped the clock.
+struct RefreshClaimGuard<'a> {
+    clock: &'a AtomicU64,
+    claimed: u64,
+    previous: u64,
+    committed: bool,
+}
+
+impl RefreshClaimGuard<'_> {
+    /// Marks the claim as legitimately spent; suppresses the rollback.
+    fn commit(&mut self) {
+        self.committed = true;
+    }
+}
+
+impl Drop for RefreshClaimGuard<'_> {
+    fn drop(&mut self) {
+        if self.committed {
+            return;
+        }
+        let _ = self.clock.compare_exchange(
+            self.claimed,
+            self.previous,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        );
+    }
+}
+
 impl LocationStateStore {
     /// Creates a new location store with a single-endpoint account snapshot.
     #[allow(clippy::too_many_arguments)]
@@ -480,7 +511,27 @@ impl LocationStateStore {
             return;
         }
 
-        self.refresh_account_properties_inner().await;
+        // The CAS above stamps the clock *before* the fetch, leasing the
+        // `refresh_interval` against other event-driven callers. This is a
+        // throttle lease, not mutual exclusion: a fetch that outlives the
+        // interval can be joined by a second refresh, and the timer-driven
+        // forced path bypasses the claim entirely (the timer interval is its
+        // own rate limit). That stamp must not survive a fetch that
+        // never landed: the event-driven retry paths depend on a fresh
+        // snapshot and would otherwise be blinded for a full
+        // `refresh_interval`. The guard restores the previous stamp on
+        // failure or cancellation, and no-ops if another refresh has since
+        // re-stamped the clock.
+        let mut claim = RefreshClaimGuard {
+            clock: &self.last_refresh_epoch_ms,
+            claimed: now_ms,
+            previous: last,
+            committed: false,
+        };
+
+        if self.refresh_account_properties_inner().await {
+            claim.commit();
+        }
     }
 
     /// Force-refresh account properties without consulting the
@@ -489,13 +540,15 @@ impl LocationStateStore {
     /// path from retry policies must continue to use
     /// [`refresh_account_properties_if_due`] to throttle bursts.
     ///
-    /// The `last_refresh_epoch_ms` clock is updated by
-    /// [`refresh_account_properties_inner`] only on a successful fetch — if
-    /// this timer-driven refresh fails (network error, service 5xx, ...), the
-    /// event-driven path is NOT throttled and is free to retry recovery
-    /// immediately.
+    /// The `last_refresh_epoch_ms` clock advances only when a fresh snapshot
+    /// is actually applied — if this timer-driven refresh fails (network
+    /// error, service 5xx, ...), the event-driven path is NOT throttled and is
+    /// free to retry recovery immediately. The event-driven path claims the
+    /// clock up front as a throttle lease but rolls the claim back via
+    /// [`RefreshClaimGuard`] when its own fetch fails or is cancelled, so the
+    /// same guarantee holds there.
     async fn force_refresh_account_properties(&self) {
-        self.refresh_account_properties_inner().await;
+        let _ = self.refresh_account_properties_inner().await;
     }
 
     /// Shared implementation of both `refresh_account_properties_if_due`
@@ -512,7 +565,10 @@ impl LocationStateStore {
     /// rate-limit clock advances; on failure the previous snapshot and
     /// rate-limit timestamp are left intact so the event-driven path can
     /// retry recovery immediately.
-    async fn refresh_account_properties_inner(&self) {
+    ///
+    /// Returns `true` only when a fresh snapshot was actually applied, so
+    /// callers that pre-claimed the rate-limit clock can roll it back.
+    async fn refresh_account_properties_inner(&self) -> bool {
         // Capture the previous properties so the refresh callback can use
         // them for regional fallback if the primary endpoint fails. We
         // intentionally do NOT invalidate the cache here — concurrent
@@ -535,7 +591,7 @@ impl LocationStateStore {
                     error = %e,
                     "LocationStateStore: account metadata refresh failed; routing snapshot not updated",
                 );
-                return;
+                return false;
             }
         };
 
@@ -560,11 +616,8 @@ impl LocationStateStore {
                 endpoint = %self.account_endpoint,
                 "LocationStateStore: account metadata cache produced no value after refresh; routing snapshot not updated",
             );
-            return;
+            return false;
         };
-
-        self.last_refresh_epoch_ms
-            .store(epoch_millis(), Ordering::Release);
 
         // Probe Gateway 2.0 proxy endpoints BEFORE syncing into the routing
         // snapshot, so the subsequent rebuild reflects the probe outcome
@@ -575,6 +628,14 @@ impl LocationStateStore {
 
         let default_endpoint = self.default_endpoint.clone();
         self.sync_account_properties(properties, &default_endpoint);
+
+        // Arm the throttle only after the snapshot is published. Stamping it
+        // earlier would leave the clock advanced past the guard's claimed
+        // value if the probe await were cancelled, blinding the event-driven
+        // path for a full `refresh_interval` against unsynced routing.
+        self.last_refresh_epoch_ms
+            .store(epoch_millis(), Ordering::Release);
+        true
     }
 
     /// Runs the Gateway 2.0 connectivity probe, then syncs the routing
@@ -1436,6 +1497,127 @@ mod tests {
         );
     }
 
+    /// Exercises the account endpoint-unavailability LIFECYCLE as one ordered
+    /// state machine: mark-unavailable -> (still present, not removed) ->
+    /// cooldown gate -> expiry via backdated `marked_at` -> successful probe ->
+    /// restore.
+    ///
+    /// Deterministic in-memory unit test: no network, no sleeps. It drives
+    /// `probe_and_failback_unavailable_endpoints` directly and backdates
+    /// `marked_at` to simulate an elapsed cooldown, because the background probe
+    /// loop's cadence (`ENDPOINT_PROBE_INTERVAL`) is a fixed 60s const and is not
+    /// test-injectable.
+    ///
+    /// Coverage split: this module owns the *membership* half of the lifecycle
+    /// (a mark living in / leaving `unavailable_endpoints`, and never mutating
+    /// the preferred order). The *routing* consequences of a mark —
+    /// demote-to-tail (the marked endpoint is skipped during selection but kept
+    /// as a last resort, never removed) and the read/write/both distinction
+    /// (`WriteForbidden` demotes writes only) — are enforced by the resolver and
+    /// are covered by the `resolve_endpoint` tests in
+    /// `driver::pipeline::operation_pipeline`.
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn endpoint_unavailability_lifecycle_mark_cooldown_probe_restore() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        // Non-zero cooldown so the "not yet due" gate is observable.
+        let cooldown = Duration::from_secs(60);
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            cooldown,
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        let endpoint_url = default_endpoint.url().clone();
+        // The preferred read order that the mark/restore must never mutate.
+        let preferred_before = store.snapshot().account.preferred_read_endpoints.clone();
+        assert!(
+            preferred_before.iter().any(|e| e.url() == &endpoint_url),
+            "precondition: the endpoint under test is in the preferred read order",
+        );
+
+        // 1. MARK UNAVAILABLE (a both-affecting reason, not WriteForbidden).
+        store
+            .apply(&[LocationEffect::MarkEndpointUnavailable {
+                endpoint: default_endpoint.clone(),
+                reason: UnavailableReason::TransportError,
+            }])
+            .await;
+        let marked = store.snapshot();
+        assert!(
+            marked
+                .account
+                .unavailable_endpoints
+                .contains_key(&endpoint_url),
+            "mark must record the endpoint as unavailable",
+        );
+        // NOT REMOVAL: marking leaves the preferred read order untouched, so the
+        // endpoint is only ever demoted (by the resolver), never dropped.
+        assert_eq!(
+            marked.account.preferred_read_endpoints.as_ref(),
+            preferred_before.as_ref(),
+            "marking unavailable must not remove or reorder the preferred read endpoints",
+        );
+
+        // 2. COOLDOWN GATE: before the TTL elapses, even a reachable probe is a
+        //    no-op — nothing is due, so the mark survives.
+        let reachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { true }) as BoxFuture<'static, bool>);
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert!(
+            store
+                .snapshot()
+                .account
+                .unavailable_endpoints
+                .contains_key(&endpoint_url),
+            "an endpoint still within its cooldown must not be probed or failed back",
+        );
+
+        // 3. EXPIRY: backdate `marked_at` past the TTL so the endpoint is due.
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(&endpoint_url) {
+                *marked_at = Instant::now() - (cooldown + Duration::from_secs(1));
+            }
+            next
+        });
+
+        // 4. PROBE + RESTORE: a reachable probe on the due endpoint clears the
+        //    mark, returning the endpoint to rotation.
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        let restored = store.snapshot();
+        assert!(
+            !restored
+                .account
+                .unavailable_endpoints
+                .contains_key(&endpoint_url),
+            "a due endpoint must fail back after a successful probe",
+        );
+        // The preferred order was never mutated across the whole lifecycle.
+        assert_eq!(
+            restored.account.preferred_read_endpoints.as_ref(),
+            preferred_before.as_ref(),
+            "restore must leave the preferred read endpoints unchanged",
+        );
+    }
+
     #[test]
     fn account_sync_preserves_unavailable_marks_for_probe_loop() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
@@ -1594,6 +1776,163 @@ mod tests {
             "event-driven refresh was incorrectly throttled by a previously-failed timer-driven refresh"
         );
         assert_eq!(success_refreshes.load(Ordering::SeqCst), 1);
+    }
+
+    /// Companion to the test above, for the event-driven path. That path
+    /// stamps the rate-limit clock *before* awaiting the fetch so concurrent
+    /// callers are excluded; a failed fetch must roll that stamp back.
+    /// Otherwise a single failure blinds every subsequent retry for a full
+    /// `refresh_interval` — which is exactly as long as the 403 retry budget,
+    /// so the operation would exhaust its retries against stale routing.
+    #[tokio::test]
+    async fn failed_event_driven_refresh_does_not_throttle_itself() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let success_refreshes = Arc::new(AtomicUsize::new(0));
+        let total_refreshes = Arc::new(AtomicUsize::new(0));
+        let success_refreshes_clone = Arc::clone(&success_refreshes);
+        let total_refreshes_clone = Arc::clone(&total_refreshes);
+        // First call fails; subsequent calls succeed.
+        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
+            let total = Arc::clone(&total_refreshes_clone);
+            let success = Arc::clone(&success_refreshes_clone);
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move {
+                    let n = total.fetch_add(1, Ordering::SeqCst);
+                    if n == 0 {
+                        Err(crate::error::CosmosError::builder()
+                            .with_status(crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::BadRequest,
+                            ))
+                            .with_message("simulated network failure")
+                            .build())
+                    } else {
+                        success.fetch_add(1, Ordering::SeqCst);
+                        Ok(payload)
+                    }
+                });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        // First event-driven refresh: claims the clock, then fails.
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
+        assert_eq!(total_refreshes.load(Ordering::SeqCst), 1);
+        assert_eq!(success_refreshes.load(Ordering::SeqCst), 0);
+
+        // A retry arriving within the refresh interval must still be allowed
+        // through, because the failed attempt released its claim.
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
+        assert_eq!(
+            total_refreshes.load(Ordering::SeqCst),
+            2,
+            "a failed event-driven refresh must not throttle the next one"
+        );
+        assert_eq!(success_refreshes.load(Ordering::SeqCst), 1);
+
+        // The now-successful refresh legitimately spends the claim, so the
+        // throttle applies again.
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
+        assert_eq!(
+            total_refreshes.load(Ordering::SeqCst),
+            2,
+            "a successful refresh must still arm the rate limit"
+        );
+    }
+
+    /// A probe that parks forever on its first call so the test can cancel
+    /// the refresh future while it is suspended inside the probe await.
+    #[derive(Debug, Default)]
+    struct BlockingProbe {
+        calls: AtomicUsize,
+    }
+
+    #[async_trait::async_trait]
+    impl ConnectivityProbe for BlockingProbe {
+        async fn probe_endpoints(&self, _: Vec<(Region, ProbeRole, Url)>) -> ProbeOutcome {
+            if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                std::future::pending::<()>().await;
+            }
+            ProbeOutcome::AllHealthy
+        }
+    }
+
+    /// Cancelling an event-driven refresh while it is suspended inside the
+    /// Gateway 2.0 connectivity probe must leave the throttle unarmed: the
+    /// routing snapshot was never synced, so the next refresh has to be
+    /// allowed through immediately rather than waiting out the interval.
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn cancelled_refresh_during_probe_does_not_throttle_next_refresh() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refreshes = Arc::new(AtomicUsize::new(0));
+        let refreshes_clone = Arc::clone(&refreshes);
+        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
+            let count = Arc::clone(&refreshes_clone);
+            let payload = refresh_payload_with_g2();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move {
+                    count.fetch_add(1, Ordering::SeqCst);
+                    Ok(payload)
+                });
+            fut
+        });
+
+        let probe = Arc::new(BlockingProbe::default());
+        let store = Arc::new(LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            true,
+            // Long interval: only a rolled-back claim can permit refresh #2.
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            Some(Arc::clone(&probe) as Arc<dyn ConnectivityProbe>),
+        ));
+
+        let store_clone = Arc::clone(&store);
+        let handle = tokio::spawn(async move {
+            store_clone
+                .apply(&[LocationEffect::RefreshAccountProperties])
+                .await;
+        });
+
+        while probe.calls.load(Ordering::SeqCst) == 0 {
+            tokio::task::yield_now().await;
+        }
+
+        // Cancel while parked in the probe: the metadata fetch already
+        // landed, but the routing snapshot was never synced.
+        handle.abort();
+        let _ = handle.await;
+
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
+        assert_eq!(
+            refreshes.load(Ordering::SeqCst),
+            2,
+            "a refresh cancelled inside the probe must not throttle the next one"
+        );
     }
 
     #[tokio::test]

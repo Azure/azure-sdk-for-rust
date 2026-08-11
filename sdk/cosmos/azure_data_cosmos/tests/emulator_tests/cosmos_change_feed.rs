@@ -135,8 +135,16 @@ fn currents(envelopes: Vec<ChangeFeedItem<MockItem>>) -> Vec<MockItem> {
 /// (single-request) change feed path.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_from_beginning_single_partition() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -176,8 +184,16 @@ pub async fn change_feed_from_beginning_single_partition() -> Result<(), Box<dyn
 /// partitions so the cross-partition merge path is genuinely exercised.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_from_beginning_full_container() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -218,8 +234,16 @@ pub async fn change_feed_from_beginning_full_container() -> Result<(), Box<dyn E
 /// position and surfaces only changes made afterwards.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_start_from_now_returns_only_new_changes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -281,8 +305,12 @@ pub async fn change_feed_start_from_now_returns_only_new_changes() -> Result<(),
 /// without erroring or terminating the stream.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn change_feed_no_changes_returns_empty_page() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -325,8 +353,16 @@ pub async fn change_feed_no_changes_returns_empty_page() -> Result<(), Box<dyn E
 /// position.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -497,8 +533,16 @@ pub async fn change_feed_now_resume_does_not_replay_history() -> Result<(), Box<
 /// to keep the boundary unambiguous.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_point_in_time_excludes_earlier_changes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -558,8 +602,16 @@ pub async fn change_feed_point_in_time_excludes_earlier_changes() -> Result<(), 
 /// still surfacing every item exactly once.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_max_item_count_pages_backlog() -> Result<(), Box<dyn Error>> {
     const PAGE_LIMIT: u32 = 10;
