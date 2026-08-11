@@ -979,11 +979,11 @@ version = "1.1.0-beta.2"
 dependencies = [
  "async-stream",
  "async-trait",
- "azure_core 1.2.0-beta.1",
- "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
- "azure_storage_common",
- "azure_storage_sas",
+ "azure_core 1.1.0",
+ "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "azure_identity 1.0.0",
+ "azure_storage_common 0.1.0",
+ "azure_storage_sas 0.1.0",
  "bytes",
  "clap",
  "flate2",
@@ -997,6 +997,17 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "azure_storage_common"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f8d86465df4adce8ab1246205be0b99165683808701cd6f0f84e382ad7cd504"
+dependencies = [
+ "azure_core 1.1.0",
+ "serde",
+ "time",
 ]
 
 [[package]]
@@ -1017,8 +1028,8 @@ dependencies = [
  "azure_core 1.2.0-beta.1",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
- "azure_storage_common",
- "azure_storage_sas",
+ "azure_storage_common 0.2.0",
+ "azure_storage_sas 0.2.0",
  "futures",
  "rand 0.10.2",
  "serde",
@@ -1028,10 +1039,25 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_sas"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ab4d6a4713e35009e11b63ca8d19f39fe33552f7b129d469d15367757fa6e35"
+dependencies = [
+ "azure_core 1.1.0",
+ "azure_storage_common 0.1.0",
+ "base64",
+ "hmac",
+ "percent-encoding",
+ "sha2",
+ "time",
+]
+
+[[package]]
+name = "azure_storage_sas"
 version = "0.2.0"
 dependencies = [
  "azure_core 1.2.0-beta.1",
- "azure_storage_common",
+ "azure_storage_common 0.2.0",
  "base64",
  "hmac",
  "include-file",
@@ -3967,7 +3993,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",

@@ -5,24 +5,16 @@ use std::sync::{Arc, OnceLock};
 
 use azure_core::{http::Url, Bytes};
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfTest},
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
     TestContext,
 };
 use azure_storage_blob::BlobContainerClient;
-use clap::Args;
 use futures::{FutureExt, StreamExt, TryStreamExt};
 
-use crate::extensions::{OnceLockExt, RecordingExt};
-
-#[derive(Args, Clone, Debug)]
-pub struct ListBlobTestOptions {
-    // The number of blobs to download.
-    #[arg(long)]
-    count: usize,
-
-    #[arg(long)]
-    endpoint: Option<Url>,
-}
+use crate::{
+    extensions::{OnceLockExt, RecordingExt},
+    options,
+};
 
 pub struct ListBlobTest {
     count: usize,
@@ -31,15 +23,31 @@ pub struct ListBlobTest {
 }
 
 impl ListBlobTest {
-    pub fn new(args: ListBlobTestOptions) -> CreatePerfTestReturn {
+    fn create_test(runner: PerfRunner) -> CreatePerfTestReturn {
         async move {
+            let endpoint = runner
+                .try_get_test_arg::<String>("endpoint")?
+                .map(|endpoint| Url::parse(&endpoint))
+                .transpose()?;
+
             Ok(Box::new(ListBlobTest {
-                count: args.count,
-                endpoint: args.endpoint,
+                count: runner
+                    .try_get_test_arg::<u32>("count")?
+                    .expect("count argument is mandatory") as usize,
+                endpoint,
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
         .boxed()
+    }
+
+    pub fn test_metadata() -> PerfTestMetadata {
+        PerfTestMetadata {
+            name: "list_blob",
+            description: "List blobs in a container",
+            options: vec![options::count(), options::endpoint()],
+            create_test: Self::create_test,
+        }
     }
 }
 
