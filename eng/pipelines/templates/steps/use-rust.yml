@@ -38,8 +38,11 @@ steps:
       # the config.json probe. Anonymous callers only see crates already saved in the feed,
       # so a fork that adds a brand new dependency needs the feed populated first.
       if ($env:IS_FORK -eq 'true') {
-        Write-Host "Fork build: reading the feed anonymously without '~force-auth'."
+        Write-Host "Fork build (System.PullRequest.IsFork='$env:IS_FORK'): reading the feed anonymously without '~force-auth'."
         $config = $config.Replace('azure-sdk-for-rust-public~force-auth', 'azure-sdk-for-rust-public')
+      }
+      else {
+        Write-Host "Not a fork build (System.PullRequest.IsFork='$env:IS_FORK'): authenticating to the feed."
       }
 
       Set-Content -Path $configPath -Value $config -NoNewline
