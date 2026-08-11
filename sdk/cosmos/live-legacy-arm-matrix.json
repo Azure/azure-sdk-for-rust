@@ -14,6 +14,9 @@
       },
       "Session MultiRegion GatewayV2": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleRegions = $true; testCategory = 'gateway_v2_multi_region' }"
+      },
+      "Session SingleWrite BinaryEncodingRoundtripFuzz": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'binary_encoding' }"
       }
     }
   }

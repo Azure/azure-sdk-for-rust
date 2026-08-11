@@ -16,8 +16,50 @@ parameters:
     type: boolean
     # When true, Use-Rust.ps1 sets a rustup directory override for WorkingDirectory.
     default: true
+  - name: ConfigureRegistry
+    type: boolean
+    default: true
 
 steps:
+- ${{ if parameters.ConfigureRegistry }}:
+  - pwsh: |
+      $cargoHome = $env:CARGO_HOME
+      if (-not $cargoHome) { $cargoHome = ([System.IO.Path]::Combine($HOME, '.cargo')) }
+      New-Item -ItemType Directory -Force -Path $cargoHome | Out-Null
+
+      $configPath = ([System.IO.Path]::Combine($cargoHome, 'config.toml'))
+      Copy-Item `
+        -Path '$(Build.SourcesDirectory)/eng/templates/config.toml.template' `
+        -Destination $configPath `
+        -Force
+
+      Write-Host "Wrote cargo config to $configPath"
+      Get-Content $configPath
+      Write-Host "##vso[task.setvariable variable=CargoConfigPath]$configPath"
+    displayName: Configure cargo to use the azure-sdk-for-rust feed
+
+  # Workaround issue in public pipelines. Revert when root cause issue is fixed:
+  # https://github.com/microsoft/azure-pipelines-tasks/issues/22421
+  # NuGetAuthenticate@1 uses the SYSTEMVSSCONNECTION endpoint token, which Azure
+  # DevOps does deliver to fork builds, and publishes it as VSS_NUGET_ACCESSTOKEN
+  # for later steps. It runs as `public Build Service (azure-sdk)`, which holds
+  # Feed and Upstream Reader on the cargo feed.
+  - task: NuGetAuthenticate@1
+    displayName: Acquire an Azure Artifacts token that fork builds can use
+
+  - task: CargoAuthenticate@0
+    displayName: Authenticate cargo to the azure-sdk-for-rust feed
+    inputs:
+      configFile: $(CargoConfigPath)
+    # Workaround issue in public pipelines. Revert when root cause is fixed:
+    # https://github.com/microsoft/azure-pipelines-tasks/issues/22421
+    #
+    # NuGetAuthenticate@1 above publishes the endpoint token as
+    # VSS_NUGET_ACCESSTOKEN, which is populated in fork builds and useful as
+    # SYSTEM_ACCESSTOKEN for CargoAuthenticate.
+    env:
+      SYSTEM_ACCESSTOKEN: $(VSS_NUGET_ACCESSTOKEN)
+
 - task: PowerShell@2
   displayName: "Use Rust ${{ parameters.Toolchain }}"
   inputs:
