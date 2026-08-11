@@ -28,18 +28,33 @@ steps:
       New-Item -ItemType Directory -Force -Path $cargoHome | Out-Null
 
       $configPath = ([System.IO.Path]::Combine($cargoHome, 'config.toml'))
-      Copy-Item `
+      $config = Get-Content `
         -Path '$(Build.SourcesDirectory)/eng/templates/config.toml.template' `
-        -Destination $configPath `
-        -Force
+        -Raw
+
+      # Pull requests from forks run with a restricted System.AccessToken that cannot
+      # authenticate to the feed, so CargoAuthenticate has nothing useful to hand cargo.
+      # Drop `~force-auth` so those builds read the feed anonymously instead of failing on
+      # the config.json probe. Anonymous callers only see crates already saved in the feed,
+      # so a fork that adds a brand new dependency needs the feed populated first.
+      if ($env:IS_FORK -eq 'true') {
+        Write-Host "Fork build: reading the feed anonymously without '~force-auth'."
+        $config = $config.Replace('azure-sdk-for-rust-public~force-auth', 'azure-sdk-for-rust-public')
+      }
+
+      Set-Content -Path $configPath -Value $config -NoNewline
 
       Write-Host "Wrote cargo config to $configPath"
       Get-Content $configPath
       Write-Host "##vso[task.setvariable variable=CargoConfigPath]$configPath"
     displayName: Configure cargo to use the azure-sdk-for-rust feed
+    env:
+      IS_FORK: $(System.PullRequest.IsFork)
 
+  # Skipped for forks, where the restricted token would be rejected by the feed anyway.
   - task: CargoAuthenticate@0
     displayName: Authenticate cargo to the azure-sdk-for-rust feed
+    condition: and(succeeded(), ne(variables['System.PullRequest.IsFork'], 'True'))
     inputs:
       configFile: $(CargoConfigPath)
 
