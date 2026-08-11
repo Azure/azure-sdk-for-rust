@@ -1,4 +1,3 @@
-<!-- cspell:ignore cfsclean configfile -->
 
 # Azure AMQP library for Rust
 
