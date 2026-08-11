@@ -20,7 +20,7 @@ tokio = ["dep:tokio", "azure_core/tokio"]
 [dependencies]
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { version = "1.1.0", features = ["xml"] }
+azure_core = { workspace = true, features = ["xml"] }
 azure_storage_common = "0.1.0"
 bytes.workspace = true
 futures.workspace = true
@@ -39,8 +39,8 @@ tokio = { workspace = true, optional = true, features = [
 workspace = true
 
 [dev-dependencies]
-azure_core_test = { version = "0.2.0", features = ["tracing"] }
-azure_identity = "1.0.0"
+azure_core_test = { workspace = true, features = ["tracing"] }
+azure_identity.workspace = true
 azure_storage_sas = "0.1.0"
 clap = { workspace = true, features = ["env"] }
 flate2.workspace = true
