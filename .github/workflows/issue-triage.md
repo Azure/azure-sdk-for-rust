@@ -14,7 +14,6 @@ on:
 
 permissions:
     issues: read
-    pull-requests: read
     contents: read
     copilot-requests: write
 
@@ -26,35 +25,27 @@ network:
         - registry.npmjs.org
 
 safe-outputs:
-    report-failure-as-issue: true
+    report-failure-as-issue: false
     add-labels:
         max: 7
-        target: "*"
+        target: triggering
     remove-labels:
         max: 7
-        target: "*"
+        target: triggering
     add-comment:
         max: 2
-        target: "*"
+        target: triggering
     assign-to-user:
         max: 1
-        target: "*"
+        target: triggering
     noop:
         report-as-issue: false
 
 tools:
-    bash: false
+    bash: [gh]
     github:
-        # The gateway uses search_repositories to determine repository visibility.
-        toolsets: [issues, pull_requests, repos]
-        # If in a public repo, setting `lockdown: false` allows
-        # reading issues, pull requests and comments from 3rd-parties.
-        # If in a private repo this has no particular effect.
-        lockdown: false
-        # Allow the agent to read issue content from any author,
-        # including external users with no repo affiliation.
-        allowed-repos: [azure/azure-sdk-for-rust]
-        min-integrity: none
+        mode: gh-proxy
+        toolsets: [issues]
 
 timeout-minutes: 10
 source: githubnext/agentics/workflows/issue-triage.md@8e6d7c86bba37371d2d0eee1a23563db3e561eb5
@@ -70,6 +61,14 @@ You are a triage assistant for GitHub issues in the Azure SDK for Rust repositor
 Your task is to analyze issue #${{ github.event.issue.number }} and perform initial triage following the decision flow below.
 
 **Important — every code path below MUST emit at least one safe-output item.** If a step says "exit", that means call `noop` (with `report-as-issue: false` it is silent) and stop. Never finish without producing at least one safe output, otherwise the workflow will be reported as failed.
+
+## Tool Contract
+
+- Use authenticated `gh` commands only for GitHub reads. Request only the fields needed by the current step and bound all list or search results.
+- Use the configured safe-output tools only for labels, assignments, comments, and completion. Do not invoke `safeoutputs` through shell or probe safe-output availability.
+- Do not use `gh` for writes, request direct GitHub MCP tools, or request any shell command other than `gh`.
+- Read checked-out repository files such as `.github/CODEOWNERS` directly instead of fetching them through GitHub.
+- If a required read fails after one reasonable retry, call `missing_data` with the failed command and stop. Do not switch transports or attempt authentication workarounds.
 
 ## Security: Prompt Injection Defense
 
@@ -90,7 +89,10 @@ Note: The gh-aw runtime provides additional baseline defenses including the XPIA
 
 The issue number is `${{ github.event.issue.number }}`. Pass it as `item_number` to `add_labels`, `remove_labels`, and `add_comment`, and as `issue_number` to `assign_to_user`.
 
-Retrieve the issue using `get_issue`.
+Retrieve the issue with bounded `gh` reads:
+
+1. Use `gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}` with `--jq` to select only `number`, `title`, `body`, `user.login`, `author_association`, and label names and colors.
+2. Use `gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json parent --jq '.parent'` to determine whether it has a parent issue.
 
 **Precondition checks** — if any are true, call `noop` and stop:
 
@@ -116,7 +118,7 @@ If the author matches the bot allowlist, add the `bot` label and continue to Ste
 
 ### Author Association Check
 
-If the author is not on the bot allowlist, use the `author_association` field from the issue data returned by `get_issue` to classify the author:
+If the author is not on the bot allowlist, use the `author_association` field from the issue data returned by the Step 1 `gh api` call to classify the author:
 
 - `OWNER`, `MEMBER`, `COLLABORATOR` → team member (Azure org member or direct repo collaborator).
 - `CONTRIBUTOR`, `FIRST_TIME_CONTRIBUTOR`, `FIRST_TIMER`, `NONE` → external customer.
@@ -145,7 +147,7 @@ All issues reaching this step proceed through label prediction and ownership rou
 
 ### Label Identification
 
-Labels are distinguished by color. Actively inspect label colors when examining repository labels and previous issues:
+Labels are distinguished by color. Only after an issue reaches this step, use `gh label list --repo ${{ github.repository }} --limit 500 --json name,color` to inspect available repository labels:
 
 - **Category label** (color #ffeb77): exactly one of `Client`, `Mgmt`, or `Service`.
   - `Client` — crates that do NOT start with `azure_resourcemanager_` (e.g., `azure_core`, `azure_identity`, `azure_security_keyvault_secrets`, `azure_storage_blob`).
@@ -170,9 +172,9 @@ If `Service` would be the most-confident category prediction, treat the predicti
 
 ### Using Previous Issues as Reference
 
-When selecting labels, use repository context and previously seen issues for guidance. Do not run shell commands like `gh label list`; only use labels that already exist in this repository.
+When selecting labels, use repository context and previously seen issues for guidance. Only use labels confirmed by the bounded repository-label query.
 
-You may use `search_issues` or `list_issues` to find similar issues for reference. If you find a very close match to an OPEN issue, also consider adding the `duplicate` label.
+You may use `gh issue list --repo ${{ github.repository }} --state all --search "<specific terms>" --limit 10 --json number,title,state,labels,url` to find similar issues for reference. If you find a very close match to an OPEN issue, also consider adding the `duplicate` label.
 
 For a previous issue to be a quality reference, it should have exactly one #ffeb77 category label and exactly one #e99695 service label.
 
