@@ -4,10 +4,10 @@
 # =============================================================================
 # native-driver.yml  --  Cosmos Go native-driver cross-build + supply-chain evidence
 #
-#   STATUS: SKELETON / UNWIRED. This pipeline is intentionally NOT referenced by
-#   sdk/cosmos/ci*.yml or any pr.yml trigger. It cannot run until an owner wires
-#   it into a pipeline definition in the internal project. Do not enable triggers
-#   or add it to CI without explicit sign-off (Hard Gate).
+#   STATUS: NOT CONNECTED. This pipeline is intentionally not referenced by
+#   sdk/cosmos/ci*.yml or any pr.yml trigger. It cannot run until an owner adds
+#   it to an internal pipeline definition. Do not enable triggers or add it to CI
+#   without explicit approval.
 #
 #   It productizes the manual windows/amd64 bootstrap (Azure/azure-cosmos-driver
 #   PR #5) into the full "Big 5 + musl" matrix. See ./README.md and
@@ -45,7 +45,8 @@ stages:
           - job: build_${{ replace(t.id, '-', '_') }}
             displayName: build ${{ t.id }}
             condition: ${{ eq(t.enabled, true) }}
-            pool: { name: $(pool-${{ t.pool }}) } # TODO: map to real 1ES managed pools per OS
+            pool:
+              name: $(pool-${{ t.pool }}) # TODO: map to real 1ES managed pools per OS
             steps:
               - pwsh: eng/scripts/Install-RustToolchains.ps1
                 displayName: Install Rust toolchain
@@ -66,9 +67,8 @@ stages:
                   # 1ES auto-injects the SBOM manifest (sbomEnabled default true on internal).
 
   # ---------------------------------------------------------------------------
-  # 2. Fail closed until both SBOMs and existing 1ES build evidence are wired.
-  #    SBOM (settled): 1ES SPDX authoritative (signed) + CycloneDX companion.
-  #    Provenance (settled): reuse signed 1ES BSI.
+  # 2. Fail closed until the signed 1ES SPDX manifest and build evidence are
+  #    located and verified.
   # ---------------------------------------------------------------------------
   - stage: security_evidence
     displayName: Verify SBOM + 1ES build evidence
@@ -76,22 +76,21 @@ stages:
     jobs:
       - job: evidence
         displayName: Supply-chain evidence gate
-        pool: { name: $(pool-linux) }
+        pool:
+          name: $(pool-linux)
         steps:
           - pwsh: |
               throw @"
               UNWIRED SECURITY GATE:
               - confirm the 1ES SPDX manifest (authoritative, signed) is emitted;
-              - generate the Cargo-aware CycloneDX SBOM (companion) per native target;
               - confirm and verify the existing signed 1ES BSI build evidence;
-              - verify all three before the Go publication stage.
+              - verify both before the Go publication stage.
               "@
             displayName: Block until trusted evidence is configured
 
   # ---------------------------------------------------------------------------
-  # 3. Generate the per-target Go modules (Deliverable 2) and publish the
-  #    azure-cosmos-driver layout + SHA256SUMS. Publishing to the remote repo is
-  #    a SEPARATE, gated release step — never automatic from this skeleton.
+  # 3. Generate the per-target Go modules and publish the
+  #    azure-cosmos-driver layout + SHA256SUMS.
   # ---------------------------------------------------------------------------
   - stage: gomodules
     displayName: Generate Go modules + SHA256SUMS
@@ -99,7 +98,8 @@ stages:
     jobs:
       - job: generate
         displayName: New-GoModules
-        pool: { name: $(pool-linux) }
+        pool:
+          name: $(pool-linux)
         steps:
           - download: current
           - pwsh: |
@@ -128,5 +128,76 @@ stages:
             parameters:
               ArtifactName: azure-cosmos-driver-modules
               ArtifactPath: $(Build.ArtifactStagingDirectory)/azure-cosmos-driver
-          # TODO(gated): a manual-approval release job pushes the generated layout
-          # to github.com/Azure/azure-cosmos-driver. Requires explicit sign-off.
+
+  # ---------------------------------------------------------------------------
+  # 4. For successful main-branch builds only, verify the combined artifact,
+  #    update Azure/azure-cosmos-driver, and open a draft PR. GitHub branch
+  #    protection and CODEOWNERS provide the human approval boundary.
+  # ---------------------------------------------------------------------------
+  - stage: publish_go_pr
+    displayName: Open downstream Go draft PR
+    dependsOn: gomodules
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+        ne(variables['Build.Reason'], 'PullRequest')
+      )
+    jobs:
+      - job: publish
+        displayName: Publish Azure/azure-cosmos-driver PR
+        pool:
+          name: $(pool-linux)
+        steps:
+          - download: current
+            artifact: azure-cosmos-driver-modules
+          - pwsh: |
+              $matrix = Get-Content -Raw "$(pipelineDir)/build-matrix.json" | ConvertFrom-Json
+              Write-Host "##vso[task.setvariable variable=GoVersion]$($matrix.go_version)"
+            displayName: Read Go version from build matrix
+          - task: GoTool@0
+            displayName: Install Go $(GoVersion)
+            inputs:
+              version: $(GoVersion)
+          - template: /eng/common/pipelines/templates/steps/login-to-github.yml
+            parameters:
+              TokenOwners:
+                - Azure
+          - pwsh: |
+              $checkout = "$(Pipeline.Workspace)/azure-cosmos-driver"
+              if (Test-Path $checkout) {
+                throw "Downstream checkout path already exists: $checkout"
+              }
+
+              $credential = [Convert]::ToBase64String(
+                [Text.Encoding]::ASCII.GetBytes("x-access-token:$env:GH_TOKEN")
+              )
+              git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $credential" `
+                clone --branch main --single-branch `
+                https://github.com/Azure/azure-cosmos-driver.git $checkout
+              if ($LASTEXITCODE -ne 0) {
+                throw "Unable to clone Azure/azure-cosmos-driver."
+              }
+            displayName: Clone private downstream repository
+            env:
+              GH_TOKEN: $(GH_TOKEN)
+          - pwsh: >
+              $(pipelineDir)/Prepare-GoDriverPullRequest.ps1
+              -GeneratedRoot $(Pipeline.Workspace)/azure-cosmos-driver-modules
+              -CheckoutRoot $(Pipeline.Workspace)/azure-cosmos-driver
+            displayName: Verify and stage generated Go modules
+          - template: /eng/common/pipelines/templates/steps/create-pull-request.yml
+            parameters:
+              PROwner: Azure
+              RepoOwner: Azure
+              RepoName: azure-cosmos-driver
+              BaseBranchName: main
+              PRBranchName: automation/native-driver-$(Build.BuildId)
+              CommitMsg: Update Cosmos native driver libraries
+              PRTitle: Update Cosmos native driver libraries
+              PRBody: "Generated from Azure/azure-sdk-for-rust commit $(Build.SourceVersion) by Azure DevOps build $(Build.BuildNumber)."
+              GHTeamReviewers: azure-cosmos-sdk
+              OpenAsDraft: true
+              AuthToken: $(GH_TOKEN)
+              WorkingDirectory: $(Pipeline.Workspace)/azure-cosmos-driver
+              ScriptDirectory: $(Build.SourcesDirectory)/eng/common/scripts

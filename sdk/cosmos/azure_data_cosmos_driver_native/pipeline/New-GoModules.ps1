@@ -5,8 +5,8 @@
 
 <#
 .SYNOPSIS
-    Deliverable 2 (SKELETON): generate the per-target Go modules for the
-    Azure/azure-cosmos-driver repository layout.
+    Generate the per-target Go modules for the Azure/azure-cosmos-driver
+    repository layout.
 
 .DESCRIPTION
     Reads build-matrix.json and the per-artifact
@@ -38,8 +38,8 @@
         * glibc distros (default): `go build`                 (no tag)
         * Alpine / musl:           `go build -tags cosmos_musl`
 
-    Trade-off (flagged as an OPEN decision to ratify): forgetting -tags cosmos_musl
-    on a musl host produces a LOUD link/runtime error, not silent corruption.
+    Known requirement: forgetting -tags cosmos_musl on a musl host produces a
+    loud link or runtime error, not silent corruption.
     The considered alternative — a distinct module path `linux_musl/amd64` — is
     documented in NATIVE_SUPPLY_CHAIN.md; it removes the tag footgun but forces
     the azcosmos consumer into build-tag-switched import files. Do not change the

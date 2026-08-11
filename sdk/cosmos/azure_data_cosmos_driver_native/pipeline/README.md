@@ -3,102 +3,154 @@ Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 -->
 
-# Native driver cross-build pipeline (M2)
+# Go native driver build pipeline
 
-This folder productizes the manual `windows/amd64` bootstrap
-(`Azure/azure-cosmos-driver` PR #5) into a reproducible cross-build and
-supply-chain-evidence pipeline for `libazurecosmosdriver.a`.
+This folder contains the scripts and Azure DevOps pipeline definition that build
+the Cosmos Rust native driver for Go. The output is a static Rust library named
+`libazurecosmosdriver.a`, together with the C header and release evidence needed
+to review where the library came from.
 
-> **Status: SKELETON.** These scripts run locally for validation. The pipeline
-> (`native-driver.yml`) is **unwired** — it is not referenced by any `pr.yml` /
-> `ci.yml` and cannot run until an owner wires it in. No remote pushes, PRs, or
-> pipeline runs without explicit sign-off.
+The production pipeline is not connected to a CI or release definition yet. Its
+security check stops the pipeline deliberately until the signed evidence
+produced by 1ES can be located and verified. After that check is implemented, a
+successful main-branch build can open a draft pull request in
+`Azure/azure-cosmos-driver`.
+
+## What this pull request supports
+
+The active build targets are:
+
+- Windows AMD64
+- Linux AMD64 using glibc
+- Linux ARM64 using glibc
+- Linux AMD64 using musl
+- Linux ARM64 using musl
+- macOS ARM64
+
+Windows ARM64 and Intel macOS remain disabled. Dynamic libraries for .NET, Java,
+and Python are also outside this pull request. Those follow-up paths are tracked
+by [#5047](https://github.com/Azure/azure-sdk-for-rust/issues/5047) and
+[#5048](https://github.com/Azure/azure-sdk-for-rust/issues/5048).
 
 ## Files
 
-| File | Deliverable | Purpose |
-| ---- | ----------- | ------- |
-| `build-matrix.json` | — | Single source of truth: the "Big 5 + musl" target rows, Go layout, and the musl build tag. Versions come from Cargo metadata. |
-| `Build-NativeMatrix.ps1` | D1 | Per-triple: capture syslibs (`--print native-static-libs`), build native libraries with `cargo-auditable`, and emit `rust-driver-native-interface-metadata.json`. |
-| `New-GoModules.ps1` | D2 | Emit the `azure-cosmos-driver/<goos>/<goarch>` Go modules (`go.mod` + `link_*.go` + `native/`), splicing captured syslibs into cgo `LDFLAGS`. |
-| `Invoke-LocalSupplyChain.ps1` | rehearsal | Build, test-sign, generate and validate SBOM/provenance evidence, validate Go/cgo, and prepare a local-only `azure-cosmos-driver` PR commit. |
-| `native-driver.yml` | D1+D2+D3 | 1ES-style pipeline skeleton: build matrix -> security-evidence gate -> generate Go modules -> publish artifacts + `SHA256SUMS`. **Unwired and fail-closed.** |
-| `../docs/NATIVE_SUPPLY_CHAIN.md` | D3 | Signing, SBOM, provenance, and `cargo-auditable` design across the static-`.a` and dynamic-lib consumption paths. |
+| File | Purpose |
+| ---- | ------- |
+| `build-matrix.json` | Lists supported Rust targets and their Go module paths. |
+| `Build-NativeMatrix.ps1` | Builds each static library, records required system libraries, and writes release metadata. |
+| `New-GoModules.ps1` | Creates the `Azure/azure-cosmos-driver` directory layout, Go module files, cgo linker files, headers, and static libraries. |
+| `Prepare-GoDriverPullRequest.ps1` | Verifies checksums and generated paths, validates the Go modules, and stages the downstream changes. |
+| `Invoke-LocalSupplyChain.ps1` | Runs a local end-to-end integration test without publishing anything. |
+| `native-driver.yml` | Defines the production build, evidence check, Go module artifact, and downstream draft pull request. |
+| `../docs/NATIVE_SUPPLY_CHAIN.md` | Explains how the artifacts are built and verified. |
 
-## Local usage
+## Production flow
 
-```powershell
-# Full local Windows/amd64 rehearsal. This never pushes or opens a remote PR.
-./Invoke-LocalSupplyChain.ps1
-
-# Build only one target (cross targets need their matching linker).
-./Build-NativeMatrix.ps1 -TargetId windows-amd64
-
-# Dry run (capture syslibs + write metadata only, no native libraries).
-./Build-NativeMatrix.ps1 -SkipBuild
-
-# Generate the Go modules from already-built artifacts.
-./New-GoModules.ps1
+```text
+Pinned azure-sdk-for-rust commit
+    |
+    v
+Build one static library for each supported target
+    |
+    v
+Publish each target through 1ES
+    |
+    v
+Verify the signed SPDX inventory and signed 1ES build record
+    |
+    v
+Generate and test the Go modules
+    |
+    v
+Publish the azure-cosmos-driver-modules pipeline artifact
+    |
+    v
+Verify the downloaded artifact and generated paths
+    |
+    v
+Open a draft pull request in Azure/azure-cosmos-driver
+    |
+    v
+GitHub code-owner review and approval
 ```
 
-Outputs land under `pipeline/artifacts/<target-id>/` (built libs + manifests)
-and `pipeline/generated/azure-cosmos-driver/` (Go module layout). Both are
-git-ignored — see the crate `.gitignore`.
+The evidence check currently throws an error on purpose. It must remain
+fail-closed until an internal non-pull-request build confirms the exact paths and
+verification commands for the signed SPDX inventory and 1ES build record.
 
-Each local rehearsal writes to an isolated timestamped directory:
+The publication stage runs only after a successful non-pull-request build of
+`refs/heads/main`. It mints a short-lived Azure SDK Automation GitHub App token,
+clones the downstream repository, verifies `SHA256SUMS`, rejects changes outside
+the generated module paths, runs Go validation for each module definition and
+the Linux AMD64 module, and opens a draft pull request. The target repository's
+branch rules require review and code-owner approval before merge.
+
+## Local integration test
+
+Run the complete local test on Windows AMD64:
+
+```powershell
+./Invoke-LocalSupplyChain.ps1
+```
+
+The script:
+
+1. Builds the native libraries.
+2. Applies a disposable self-signed certificate to the Windows DLL.
+3. Generates and validates a local SPDX inventory.
+4. Writes SHA256 checksums.
+5. Generates and tests the Go module.
+6. Clones `Azure/azure-cosmos-driver`.
+7. Creates a local branch, commit, and pull-request preview.
+
+It never pushes the branch or opens a remote pull request. Local signatures and
+SPDX files demonstrate the mechanics only; they are not Microsoft release
+evidence.
+
+The generated files are placed under:
 
 ```text
 pipeline/artifacts/local-rehearsal/<timestamp>/
-├── native/<target-id>/{sbom,_manifest,signing,audit}/
-├── azure-cosmos-driver-output/  # generated module tree
-├── azure-cosmos-driver-pr/      # local clone, branch, and commit
-└── LOCAL_PR_PREVIEW.md          # exact local PR summary
+├── native/<target-id>/{_manifest,signing,audit,validation}/
+├── azure-cosmos-driver-output/
+├── azure-cosmos-driver-pr/
+└── LOCAL_PR_PREVIEW.md
 ```
 
-All locally generated evidence is marked non-production. The SPDX SBOM proves
-the Microsoft tool invocation and file inventory; the CycloneDX SBOM proves the
-Cargo dependency view. Metadata records both `HEAD` and a SHA256 snapshot of all
-tracked and non-ignored source files so a dirty rehearsal is not attributed only
-to a clean commit. Windows signing uses a disposable self-signed certificate.
-Trusted releases use existing signed 1ES BSI build evidence. Dynamic-library
-signing is deferred to the separate non-Go release path.
+`pipeline/artifacts/` and `pipeline/generated/` are ignored by Git. Local test
+results are not committed to the repository.
 
-`native-driver.yml` deliberately throws at its security-evidence stage until
-the Cargo-aware CycloneDX generation and signed 1ES BSI evidence are verified.
-This prevents the skeleton from publishing an artifact based only on local or
-placeholder trust evidence.
+Individual steps can also be run separately:
 
-The orchestrated local rehearsal currently supports `windows-amd64`. The
-`windows-arm64` row fails closed until a validated GNU toolchain or MSVC
-fallback is ratified; the unwired pipeline preserves that matrix row but marks
-it disabled by default. Linux module publication must provide both glibc and
-musl rows; selecting either row in `New-GoModules.ps1` automatically selects
-and requires its sibling.
+```powershell
+# Build one target.
+./Build-NativeMatrix.ps1 -TargetId windows-amd64
 
-## The musl / glibc decision (read before changing the layout)
+# Inspect metadata without producing native libraries.
+./Build-NativeMatrix.ps1 -SkipBuild
 
-`linux/amd64` and `linux/arm64` each map to **two** matrix rows (glibc + musl)
-but a single Go module path. They are disambiguated by a consumer-set build tag:
+# Generate Go modules from previously built artifacts.
+./New-GoModules.ps1
+```
 
-- **glibc (default):** `go build`
-- **musl (Alpine/AKS/Dapr):** `go build -tags cosmos_musl`
+## Linux glibc and musl
 
-The link files and `native/{glibc,musl}/` subdirs are generated accordingly.
-Each module also contains `azurecosmosdriver.h` at its root for cgo
-preprocessing, while the release copy remains beside the archive under
-`native/` or `native/<libc>/`.
-Go validation passes `-tags cosmos_musl` for a selected musl row.
-Forgetting the tag on a musl host is a **loud link error**, not silent breakage.
-The alternative (distinct `linux_musl/amd64` module path) and the rationale are
-in `../docs/NATIVE_SUPPLY_CHAIN.md`. Don't change the scheme here without
-updating that doc and the `azure-sdk-for-go` consumer.
+The glibc and musl builds share the same Go module path. The generated cgo files
+select the correct static library:
 
-## Open risks (ratify, don't silently decide)
+- glibc is the default: `go build`
+- musl requires: `go build -tags cosmos_musl`
 
-- **windows/arm64 gnu toolchain** immaturity — investigate an msvc-built `.a`
-  fallback.
-- **musl/glibc tag footgun** — the loud-error trade-off above.
-- **static-`.a` signing gap** — Authenticode/codesign apply to the dynamic lib,
-  not the `.a`; static-path trust is SBOM + provenance + published SHA256.
-- **driver is a path dependency** (`azure_data_cosmos_driver` 0.7.0), not a
-  published/workspace crate — provenance pins the source commit, not crates.io.
+The module stores the libraries under `native/glibc/` and `native/musl/`.
+Selecting either Linux row in `New-GoModules.ps1` also selects its matching libc
+row so an incomplete module is not generated.
+
+## Work still required before release
+
+- Connect `native-driver.yml` to approved 1ES pools.
+- Confirm the signed SPDX and build-record layout from an internal release run.
+- Replace the deliberate evidence-check failure with real verification commands.
+- Confirm that the Azure SDK Automation GitHub App installation includes the
+  private `Azure/azure-cosmos-driver` repository and that this pipeline may use
+  the `AzureSDKEngKeyVault Secrets` service connection.
+- Decide whether Intel macOS has enough demand to enable it.

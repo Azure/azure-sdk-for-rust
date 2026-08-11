@@ -9,7 +9,7 @@
 
 .DESCRIPTION
     Produces a deliberately non-production release bundle containing the native
-    libraries, C header, Cargo-derived metadata, CycloneDX and SPDX SBOMs,
+    libraries, C header, Cargo-derived metadata, an SPDX SBOM,
     cargo-auditable read-back evidence, SHA256SUMS, and local test-signing
     evidence.
 
@@ -146,12 +146,10 @@ $dynamicLibraryPath = ([System.IO.Path]::Combine(
 $headerPath = ([System.IO.Path]::Combine($TargetArtifactDir, $matrix.header_filename))
 
 $signingDir = ([System.IO.Path]::Combine($TargetArtifactDir, 'signing'))
-$sbomDir = ([System.IO.Path]::Combine($TargetArtifactDir, 'sbom'))
 $auditDir = ([System.IO.Path]::Combine($TargetArtifactDir, 'audit'))
 $validationDir = ([System.IO.Path]::Combine($TargetArtifactDir, 'validation'))
 New-Item -ItemType Directory -Force -Path @(
     $signingDir,
-    $sbomDir,
     $auditDir,
     $validationDir
 ) | Out-Null
@@ -245,61 +243,18 @@ $staticAuditEvidence = [ordered]@{
     explanation = if ($LASTEXITCODE -eq 0) {
         'Embedded dependency metadata was recovered from the static archive.'
     } else {
-        'rust-audit-info treats the static archive as non-executable; use the CycloneDX SBOM and linked-binary read-back.'
+        'rust-audit-info treats the static archive as non-executable; verify the published archive with SHA256SUMS and the signed 1ES SPDX manifest.'
     }
 }
 $staticAuditPath = ([System.IO.Path]::Combine($auditDir, 'static-library-auditable-status.json'))
 $staticAuditEvidence | ConvertTo-Json -Depth 6 |
     Set-Content -Path $staticAuditPath -Encoding utf8
 
-Write-Host 'Generating the Cargo-aware CycloneDX SBOM'
-$cycloneFilename = 'rust-driver-native-interface.cdx.json'
-$temporaryCycloneBase = "local-rehearsal-$RunId.cdx"
-$temporaryCycloneFilename = "$temporaryCycloneBase.json"
-$temporaryCyclonePaths = @()
-try {
-    Invoke-Checked 'cargo' @(
-        'cyclonedx',
-        '--manifest-path', ([System.IO.Path]::Combine($CrateDir, 'Cargo.toml')),
-        '--format', 'json',
-        '--spec-version', '1.5',
-        '--target', $row.triple,
-        '--override-filename', $temporaryCycloneBase
-    )
-    # cargo-cyclonedx emits one file per workspace member even when given a
-    # member manifest. Use a run-unique name, retain this crate's SBOM, and
-    # remove only the temporary files created by this invocation.
-    $temporaryCyclonePaths = @(
-        Get-ChildItem `
-            -Path $RepoRoot `
-            -Filter $temporaryCycloneFilename `
-            -Recurse `
-            -File
-    )
-    $temporaryCyclonePath = ([System.IO.Path]::Combine(
-        $CrateDir,
-        $temporaryCycloneFilename
-    ))
-    if (-not (Test-Path $temporaryCyclonePath)) {
-        throw "cargo-cyclonedx did not generate the expected crate SBOM: $temporaryCyclonePath"
-    }
-    $cyclonePath = ([System.IO.Path]::Combine($sbomDir, $cycloneFilename))
-    Move-Item $temporaryCyclonePath $cyclonePath -Force
-}
-finally {
-    foreach ($path in $temporaryCyclonePaths) {
-        if (Test-Path $path.FullName) {
-            Remove-Item $path.FullName -Force
-        }
-    }
-}
-
 $primaryArtifacts = @(
     $staticLibraryPath,
     $dynamicLibraryPath,
     $headerPath,
     $metadataPath,
-    $cyclonePath,
     $dynamicAuditPath,
     $staticAuditPath,
     $signingEvidencePath
@@ -351,7 +306,7 @@ $releaseMetadataDir = ([System.IO.Path]::Combine(
 New-Item -ItemType Directory -Force -Path $releaseMetadataDir | Out-Null
 Copy-Item $metadataPath, $sha256Path, $signingEvidencePath `
     -Destination $releaseMetadataDir -Force
-Copy-Item $sbomDir, $auditDir, ([System.IO.Path]::Combine($TargetArtifactDir, '_manifest')) `
+Copy-Item $auditDir, ([System.IO.Path]::Combine($TargetArtifactDir, '_manifest')) `
     -Destination $releaseMetadataDir -Recurse -Force
 
 $moduleDir = ([System.IO.Path]::Combine(
@@ -442,7 +397,7 @@ evidence for workflow validation.
 
 - Rust native static and dynamic libraries built with cargo-auditable
 - Dynamic-library auditable metadata recovered successfully
-- CycloneDX 1.5 and Microsoft SPDX 2.2 SBOMs generated
+- Microsoft SPDX 2.2 SBOM generated
 - SPDX SBOM validated with Microsoft sbom-tool
 - Go/cgo module linked and tested for **$TargetId**
 

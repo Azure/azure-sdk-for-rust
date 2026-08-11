@@ -19,10 +19,9 @@
          GOOS/GOARCH/libc, package versions, source commit, toolchain versions,
          SHA256, and syslibs).
 
-    This is a PLAN-FIRST skeleton. It runs end-to-end for a target whose
-    toolchain/linker is present (typically the host triple) and PREFLIGHTS —
-    rather than silently failing — targets that need a cross-linker that is not
-    installed. Wiring into CI happens in native-driver.yml, not here.
+    The script runs end-to-end for a target whose toolchain and linker are
+    installed, typically the host target. It reports a clear error before the
+    build when a required cross-linker is missing. Wiring into CI happens in native-driver.yml, not here.
 
 .PARAMETER TargetId
     Optional filter: build only the matching matrix row id(s) (e.g.

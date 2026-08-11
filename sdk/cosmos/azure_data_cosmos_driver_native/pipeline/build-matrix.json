@@ -100,7 +100,7 @@
       "module_path": "windows/arm64",
       "native_subdir": null,
       "build_tag_extra": null,
-      "risk": "Deferred (M2 ships Go/.a only): the gnu arm64-windows toolchain is immature, and a robust windows-arm64 build needs MSVC + dynamic DLL output. Tracked by Azure/azure-sdk-for-rust#5047."
+      "risk": "Deferred because this pipeline ships Go static libraries only: the GNU ARM64 Windows toolchain is immature, and a robust Windows ARM64 build needs MSVC and dynamic DLL output. Tracked by Azure/azure-sdk-for-rust#5047."
     }
   ],
   "reference_syslibs": {
