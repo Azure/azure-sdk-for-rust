@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  NuGet configuration used by CI builds to route package restores through the
+  Centralized Feed Service (CFS) instead of the public internet.
+-->
+<configuration>
+  <packageSources>
+    <!-- Clears all existing package sources (like default nuget.org) -->
+    <clear />
+    <add key="azure-sdk-for-net" value="https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-net/nuget/v3/index.json" />
+  </packageSources>
+  <disabledPackageSources>
+    <clear />
+  </disabledPackageSources>
+</configuration>

@@ -1,0 +1,26 @@
+steps:
+  # Set global NuGet config to use the azure-sdk-for-net feed
+  - pwsh: |
+      $nugetConfigDir = if ($env:APPDATA) {
+        ([System.IO.Path]::Combine($env:APPDATA, 'NuGet'))
+      } else {
+        ([System.IO.Path]::Combine($HOME, '.nuget', 'NuGet'))
+      }
+      New-Item -ItemType Directory -Force -Path $nugetConfigDir | Out-Null
+
+      $configPath = ([System.IO.Path]::Combine($nugetConfigDir, 'NuGet.Config'))
+      Copy-Item `
+        -Path '$(Build.SourcesDirectory)/eng/templates/NuGet.config.template' `
+        -Destination $configPath `
+        -Force
+
+      Write-Host "Wrote NuGet config to $configPath"
+      Get-Content $configPath
+
+      if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+        dotnet nuget list source
+      }
+    displayName: Configure NuGet to use the azure-sdk-for-net feed
+
+  - task: NuGetAuthenticate@1
+    displayName: Authenticate NuGet to Azure Artifacts feeds
