@@ -49,6 +49,17 @@ extends:
     EnvVars:
       RUST_TEST_THREADS: '1'
       RUST_BACKTRACE: '1'
+      # Live budget for the binary-encoding round-trip fuzzer
+      # (azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs). Only consumed on
+      # the `binary_encoding` live leg (live-platform-matrix.json); a no-op
+      # elsewhere. Each iteration exercises 3 encoding configs x 4 point ops, so
+      # 200 => ~2400 round-trips — bounded to fit the live-test time cap. Bump it
+      # for a deeper soak.
+      AZURE_COSMOS_FUZZ_ITERATIONS: '200'
+      # Enable the wide-number generator (integers at or beyond 2^53, where the
+      # service's number model stores the value as an IEEE-754 double). Without
+      # this the fuzzer never covers the precision boundary it exists to guard.
+      AZURE_COSMOS_FUZZ_WIDE_NUMBERS: 'true'
       AZURE_COSMOS_GW_V2_ENDPOINT: $(thinclient-test-endpoint)
       AZURE_COSMOS_GW_V2_KEY: $(thinclient-test-key)
       AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT: $(thin-client-canary-multi-region-session-endpoint)

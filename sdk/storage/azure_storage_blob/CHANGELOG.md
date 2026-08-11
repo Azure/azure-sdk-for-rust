@@ -4,7 +4,11 @@
 
 ### Features Added
 
+- Added `BlobClient::start_copy_from_url()` and `BlobClient::abort_copy()` for asynchronous blob copy operations.
+
 ### Breaking Changes
+
+- Removed `BlobContainerClient::list_blobs_hierarchical()`.
 
 ### Bugs Fixed
 
