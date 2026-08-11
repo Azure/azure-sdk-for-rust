@@ -31,7 +31,7 @@ Install [PowerShell](https://learn.microsoft.com/powershell/scripting/install/in
 ./sdk/core/azure_core_amqp/Test-Setup.ps1
 ```
 
-The script clones Azure/azure-amqp at commit [`111de654e170de3ab6cefe150043458c67b6660d`](https://github.com/Azure/azure-amqp/commit/111de654e170de3ab6cefe150043458c67b6660d), restores through the `nuget.cfsclean.config` in this package, builds `TestAmqpBroker` for .NET 10, and launches it in the background. Run the package tests in the same PowerShell process so `TEST_BROKER_ADDRESS` remains available.
+The script clones Azure/azure-amqp at the commit that `Test-Setup.ps1` pins, restores through `eng/templates/NuGet.config.template`, builds `TestAmqpBroker` for .NET 10, and launches it in the background. Run the package tests in the same PowerShell process so `TEST_BROKER_ADDRESS` remains available.
 
 ```pwsh
 cargo test --package azure_core_amqp --all-features
@@ -45,7 +45,7 @@ Stop the broker after the tests finish.
 
 #### Updating the broker pin
 
-Update the pin to any azure-amqp commit that builds `TestAmqpBroker` for `net10.0`. The commit does not need to carry a restore configuration, because this package owns that file. Change `$repositoryHash` in `Test-Setup.ps1` to the full 40-character SHA, update the same SHA in this file, run the setup and cleanup scripts, and make sure that setup reports a clean azure-amqp clone. The pin stays a bare SHA. A tag is not safe here, because azure-amqp uses lightweight tags and has no tag ruleset, so a maintainer can move a tag to a different commit without a trace.
+Update the pin to any azure-amqp commit that builds `TestAmqpBroker` for `net10.0`. The commit does not need to carry a restore configuration. Change `$repositoryHash` in `Test-Setup.ps1` to the full 40-character SHA, update the same SHA in this file, run the setup and cleanup scripts, and make sure that setup reports a clean azure-amqp clone. The pin stays a bare SHA. A tag is not safe here, because azure-amqp uses lightweight tags and has no tag ruleset, so a maintainer can move a tag to a different commit without a trace.
 
 Set `TEST_BROKER_COMMIT` to try a different commit without a code change.
 
@@ -55,7 +55,7 @@ $env:TEST_BROKER_COMMIT = '<full 40-character SHA>'
 
 Setup also asks the GitHub compare API whether the pinned commit is reachable from azure-amqp `master`. A reachable pin says nothing. An unreachable pin writes a warning, and `TEST_BROKER_REQUIRE_MERGED` turns that warning into an error. A check that could not run writes a warning and always continues, because the unauthenticated rate limit is 60 requests each hour for each IP address.
 
-The current pin is `111de654e170de3ab6cefe150043458c67b6660d`, the head of `master` in Azure/azure-amqp, so no warning appears. Azure/azure-amqp squash-merges its pull requests, so the commit that lands on `master` is the `merge_commit_sha` of a merged pull request and never the head commit of that pull request.
+`Test-Setup.ps1` holds the pin, and it is the only place that needs an update. The pin sits on `master` in Azure/azure-amqp today, so no warning appears. Azure/azure-amqp squash-merges its pull requests, so the commit that lands on `master` is the `merge_commit_sha` of a merged pull request and never the head commit of that pull request.
 
 ### Manual broker install
 
@@ -63,7 +63,7 @@ Clone the pinned azure-amqp commit to a local directory.
 
 ```pwsh
 cd <Test Working Directory>
-git clone https://github.com/Azure/azure-amqp --revision 111de654e170de3ab6cefe150043458c67b6660d
+git clone https://github.com/Azure/azure-amqp --revision <the commit that Test-Setup.ps1 pins>
 ```
 
 Normal external developer builds use the repository's standard NuGet configuration.
@@ -76,7 +76,7 @@ dotnet build .\test\TestAmqpBroker\TestAmqpBroker.csproj --configuration Debug -
 CFSClean builds restore from the `azure-sdk-for-net` Azure Artifacts feed. The feed is public and answers anonymous reads, so an external developer needs no credentials to restore a package that the feed has already cached. The CFSClean environment supplies credentials because a cache miss makes the feed fetch the package from upstream, and that fetch needs an authenticated caller. Run this restore and build sequence from the clone root.
 
 ```pwsh
-dotnet restore .\test\TestAmqpBroker\TestAmqpBroker.csproj --configfile <this directory>\nuget.cfsclean.config
+dotnet restore .\test\TestAmqpBroker\TestAmqpBroker.csproj --configfile <repo root>\eng\templates\NuGet.config.template
 dotnet build .\test\TestAmqpBroker\TestAmqpBroker.csproj --configuration Debug --framework net10.0 --no-restore
 ```
 
