@@ -389,7 +389,8 @@ fn assert_vector_and_full_text_policies(properties: &ContainerProperties, stage:
         .as_ref()
         .unwrap_or_else(|| panic!("{stage}: full text policy should be present"));
     assert_eq!(
-        "en-US", full_text_policy.default_language,
+        Some("en-US"),
+        full_text_policy.default_language.as_deref(),
         "{stage}: full text default language"
     );
     let mut full_text_paths: Vec<&str> = full_text_policy
@@ -402,6 +403,25 @@ fn assert_vector_and_full_text_policies(properties: &ContainerProperties, stage:
         vec!["/body", "/title"],
         full_text_paths,
         "{stage}: full text paths"
+    );
+    let title_path = full_text_policy
+        .full_text_paths
+        .iter()
+        .find(|path| path.path == "/title")
+        .unwrap_or_else(|| panic!("{stage}: title full text path should be present"));
+    assert_eq!(
+        Some("en-US"),
+        title_path.language.as_deref(),
+        "{stage}: title full text language"
+    );
+    let body_path = full_text_policy
+        .full_text_paths
+        .iter()
+        .find(|path| path.path == "/body")
+        .unwrap_or_else(|| panic!("{stage}: body full text path should be present"));
+    assert_eq!(
+        None, body_path.language,
+        "{stage}: body should inherit the default full text language"
     );
 
     let indexing_policy = properties

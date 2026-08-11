@@ -163,6 +163,7 @@ pub struct ContainerProperties {
     /// Captured on deserialization and written back on serialization so a
     /// read-modify-replace round trip does not silently drop server-side
     /// configuration the SDK doesn't know about yet.
+    #[safe(false)]
     #[serde(flatten)]
     extra: BTreeMap<String, serde_json::Value>,
 }
@@ -256,6 +257,7 @@ pub struct VectorEmbeddingPolicy {
     /// Captured on deserialization and written back on serialization so a
     /// read-modify-replace round trip does not silently drop server-side
     /// configuration the SDK doesn't know about yet.
+    #[safe(false)]
     #[serde(flatten)]
     extra: BTreeMap<String, serde_json::Value>,
 }
@@ -291,6 +293,7 @@ pub struct VectorEmbedding {
     /// Captured on deserialization and written back on serialization so a
     /// read-modify-replace round trip does not silently drop server-side
     /// configuration the SDK doesn't know about yet.
+    #[safe(false)]
     #[serde(flatten)]
     extra: BTreeMap<String, serde_json::Value>,
 }
@@ -386,13 +389,14 @@ pub enum VectorDistanceFunction {
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct FullTextPolicy {
-    /// The language used to analyze any [`FullTextPath`] that does not specify its own.
+    /// The optional language used to analyze any [`FullTextPath`] that does not specify its own.
     ///
     /// This is a language tag such as `en-US`. The service validates the value
     /// and rejects unsupported languages; this type does not enforce the
     /// supported set, leaving the service as the source of truth.
     #[serde(default)]
-    pub default_language: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_language: Option<String>,
 
     /// The paths holding full text content in items in the container.
     #[serde(default)]
@@ -404,6 +408,7 @@ pub struct FullTextPolicy {
     /// Captured on deserialization and written back on serialization so a
     /// read-modify-replace round trip does not silently drop server-side
     /// configuration the SDK doesn't know about yet.
+    #[safe(false)]
     #[serde(flatten)]
     extra: BTreeMap<String, serde_json::Value>,
 }
@@ -412,7 +417,7 @@ impl FullTextPolicy {
     /// Creates a new [`FullTextPolicy`] with the given default language and no paths.
     pub fn new(default_language: impl Into<String>) -> Self {
         Self {
-            default_language: default_language.into(),
+            default_language: Some(default_language.into()),
             full_text_paths: Vec::new(),
             extra: BTreeMap::new(),
         }
@@ -420,7 +425,7 @@ impl FullTextPolicy {
 
     /// Sets the language used to analyze any [`FullTextPath`] that does not specify its own.
     pub fn with_default_language(mut self, default_language: impl Into<String>) -> Self {
-        self.default_language = default_language.into();
+        self.default_language = Some(default_language.into());
         self
     }
 
@@ -453,6 +458,7 @@ pub struct FullTextPath {
     /// Captured on deserialization and written back on serialization so a
     /// read-modify-replace round trip does not silently drop server-side
     /// configuration the SDK doesn't know about yet.
+    #[safe(false)]
     #[serde(flatten)]
     extra: BTreeMap<String, serde_json::Value>,
 }
@@ -967,6 +973,37 @@ mod tests {
     }
 
     #[test]
+    fn container_properties_preserves_absent_full_text_default_language() {
+        let json = r#"{
+            "id": "MyContainer",
+            "partitionKey": {"paths": ["/partitionKey"], "kind": "Hash", "version": 2},
+            "fullTextPolicy": {
+                "fullTextPaths": [
+                    {"path": "/title", "language": "en-US"},
+                    {"path": "/abstract", "language": "fr-FR"}
+                ]
+            }
+        }"#;
+
+        let properties: ContainerProperties = serde_json::from_str(json).unwrap();
+        let policy = properties
+            .full_text_policy
+            .as_ref()
+            .expect("full text policy should be present");
+
+        assert_eq!(None, policy.default_language);
+        assert_eq!(Some("en-US"), policy.full_text_paths[0].language.as_deref());
+
+        let round_tripped = serde_json::to_value(&properties).unwrap();
+        assert!(
+            round_tripped["fullTextPolicy"]
+                .get("defaultLanguage")
+                .is_none(),
+            "an absent default language must not be replaced with an empty string"
+        );
+    }
+
+    #[test]
     fn container_properties_preserves_unknown_fields_through_round_trip() {
         // A container configured by a newer SDK, another language SDK, or the
         // portal must survive a read-modify-replace round trip through this SDK
@@ -1030,6 +1067,14 @@ mod tests {
             round_tripped["fullTextPolicy"]["fullTextPaths"][0]["tokenizer"]
         );
 
+        let debug = format!("{properties:?}");
+        for unknown_value in ["Geography", "text-embedding-3-small", "standard", "word"] {
+            assert!(
+                !debug.contains(unknown_value),
+                "unknown field value should be redacted from Debug output: {unknown_value}"
+            );
+        }
+
         // System properties must keep their existing treatment: `_rid` round
         // trips, while `_etag` and `_ts` stay read-only and are not sent back.
         assert_eq!(json!("rid-value"), round_tripped["_rid"]);
@@ -1043,7 +1088,7 @@ mod tests {
             properties
                 .full_text_policy
                 .as_ref()
-                .map(|policy| policy.default_language.as_str())
+                .and_then(|policy| policy.default_language.as_deref())
         );
     }
 }

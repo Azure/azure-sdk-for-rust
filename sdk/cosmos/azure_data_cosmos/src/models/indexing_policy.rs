@@ -61,6 +61,7 @@ pub struct IndexingPolicy {
     /// Captured on deserialization and written back on serialization so a
     /// read-modify-replace round trip does not silently drop server-side
     /// configuration the SDK doesn't know about yet.
+    #[safe(false)]
     #[serde(flatten)]
     extra: BTreeMap<String, serde_json::Value>,
 }
@@ -303,6 +304,7 @@ pub struct VectorIndex {
     /// Captured on deserialization and written back on serialization so a
     /// read-modify-replace round trip does not silently drop server-side
     /// configuration the SDK doesn't know about yet.
+    #[safe(false)]
     #[serde(flatten)]
     extra: BTreeMap<String, serde_json::Value>,
 }
@@ -409,6 +411,7 @@ pub struct FullTextIndex {
     /// Captured on deserialization and written back on serialization so a
     /// read-modify-replace round trip does not silently drop server-side
     /// configuration the SDK doesn't know about yet.
+    #[safe(false)]
     #[serde(flatten)]
     extra: BTreeMap<String, serde_json::Value>,
 }
@@ -708,6 +711,14 @@ mod tests {
             json!("on"),
             round_tripped["fullTextIndexes"][0]["someFutureTextKnob"]
         );
+
+        let debug = format!("{policy:?}");
+        for unknown_value in ["someFuturePolicyKnob", "someFutureVectorKnob"] {
+            assert!(
+                !debug.contains(unknown_value),
+                "unknown field value should be redacted from Debug output: {unknown_value}"
+            );
+        }
 
         // The modelled fields must still be readable alongside the unknown ones.
         assert_eq!(Some(IndexingMode::Consistent), policy.indexing_mode);
