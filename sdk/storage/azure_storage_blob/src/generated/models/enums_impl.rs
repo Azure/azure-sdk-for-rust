@@ -7,9 +7,9 @@ use super::{
     AccessTier, AccountKind, ArchiveStatus, BlobCopySourceTags, BlobDeleteType, BlobType,
     BlockListType, CopyStatus, DeleteSnapshotsOptionType, EncryptionAlgorithmType,
     FileShareTokenIntent, FilterBlobsIncludeItem, GeoReplicationStatusType, ImmutabilityPolicyMode,
-    LeaseDuration, LeaseState, LeaseStatus, ListBlobsIncludeItem, ListBlobsRawResponseContentType,
-    ListContainersIncludeType, PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority,
-    SequenceNumberActionType, SkuName, StorageErrorCode,
+    LeaseDuration, LeaseState, LeaseStatus, ListBlobsIncludeItem, ListContainersIncludeType,
+    PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority, SequenceNumberActionType,
+    SkuName, StorageErrorCode,
 };
 use azure_core::error::{Error, ErrorKind};
 use std::{
@@ -37,7 +37,6 @@ impl<'a> From<&'a AccessTier> for &'a str {
             AccessTier::P70 => "P70",
             AccessTier::P80 => "P80",
             AccessTier::Premium => "Premium",
-            AccessTier::Smart => "Smart",
             AccessTier::UnknownValue(s) => s.as_ref(),
         }
     }
@@ -63,7 +62,6 @@ impl FromStr for AccessTier {
             "P70" => AccessTier::P70,
             "P80" => AccessTier::P80,
             "Premium" => AccessTier::Premium,
-            "Smart" => AccessTier::Smart,
             _ => AccessTier::UnknownValue(s.to_string()),
         })
     }
@@ -88,7 +86,6 @@ impl AsRef<str> for AccessTier {
             AccessTier::P70 => "P70",
             AccessTier::P80 => "P80",
             AccessTier::Premium => "Premium",
-            AccessTier::Smart => "Smart",
             AccessTier::UnknownValue(s) => s.as_str(),
         }
     }
@@ -113,7 +110,6 @@ impl Display for AccessTier {
             AccessTier::P70 => f.write_str("P70"),
             AccessTier::P80 => f.write_str("P80"),
             AccessTier::Premium => f.write_str("Premium"),
-            AccessTier::Smart => f.write_str("Smart"),
             AccessTier::UnknownValue(s) => f.write_str(s.as_str()),
         }
     }
@@ -167,7 +163,6 @@ impl<'a> From<&'a ArchiveStatus> for &'a str {
             ArchiveStatus::RehydratePendingToCold => "rehydrate-pending-to-cold",
             ArchiveStatus::RehydratePendingToCool => "rehydrate-pending-to-cool",
             ArchiveStatus::RehydratePendingToHot => "rehydrate-pending-to-hot",
-            ArchiveStatus::RehydratePendingToSmart => "rehydrate-pending-to-smart",
             ArchiveStatus::UnknownValue(s) => s.as_ref(),
         }
     }
@@ -180,7 +175,6 @@ impl FromStr for ArchiveStatus {
             "rehydrate-pending-to-cold" => ArchiveStatus::RehydratePendingToCold,
             "rehydrate-pending-to-cool" => ArchiveStatus::RehydratePendingToCool,
             "rehydrate-pending-to-hot" => ArchiveStatus::RehydratePendingToHot,
-            "rehydrate-pending-to-smart" => ArchiveStatus::RehydratePendingToSmart,
             _ => ArchiveStatus::UnknownValue(s.to_string()),
         })
     }
@@ -192,7 +186,6 @@ impl AsRef<str> for ArchiveStatus {
             ArchiveStatus::RehydratePendingToCold => "rehydrate-pending-to-cold",
             ArchiveStatus::RehydratePendingToCool => "rehydrate-pending-to-cool",
             ArchiveStatus::RehydratePendingToHot => "rehydrate-pending-to-hot",
-            ArchiveStatus::RehydratePendingToSmart => "rehydrate-pending-to-smart",
             ArchiveStatus::UnknownValue(s) => s.as_str(),
         }
     }
@@ -204,7 +197,6 @@ impl Display for ArchiveStatus {
             ArchiveStatus::RehydratePendingToCold => f.write_str("rehydrate-pending-to-cold"),
             ArchiveStatus::RehydratePendingToCool => f.write_str("rehydrate-pending-to-cool"),
             ArchiveStatus::RehydratePendingToHot => f.write_str("rehydrate-pending-to-hot"),
-            ArchiveStatus::RehydratePendingToSmart => f.write_str("rehydrate-pending-to-smart"),
             ArchiveStatus::UnknownValue(s) => f.write_str(s.as_str()),
         }
     }
@@ -759,45 +751,6 @@ impl Display for ListBlobsIncludeItem {
             ListBlobsIncludeItem::Tags => Display::fmt("tags", f),
             ListBlobsIncludeItem::UncommittedBlobs => Display::fmt("uncommittedblobs", f),
             ListBlobsIncludeItem::Versions => Display::fmt("versions", f),
-        }
-    }
-}
-
-impl FromStr for ListBlobsRawResponseContentType {
-    type Err = Error;
-    fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err> {
-        Ok(match s {
-            "application/vnd.apache.arrow.stream" => {
-                ListBlobsRawResponseContentType::ApplicationVndApacheArrowStream
-            }
-            "application/xml" => ListBlobsRawResponseContentType::ApplicationXml,
-            _ => {
-                return Err(Error::with_message_fn(ErrorKind::DataConversion, || {
-                    format!("unknown variant of ListBlobsRawResponseContentType found: \"{s}\"")
-                }))
-            }
-        })
-    }
-}
-
-impl AsRef<str> for ListBlobsRawResponseContentType {
-    fn as_ref(&self) -> &str {
-        match self {
-            ListBlobsRawResponseContentType::ApplicationVndApacheArrowStream => {
-                "application/vnd.apache.arrow.stream"
-            }
-            ListBlobsRawResponseContentType::ApplicationXml => "application/xml",
-        }
-    }
-}
-
-impl Display for ListBlobsRawResponseContentType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result {
-        match self {
-            ListBlobsRawResponseContentType::ApplicationVndApacheArrowStream => {
-                Display::fmt("application/vnd.apache.arrow.stream", f)
-            }
-            ListBlobsRawResponseContentType::ApplicationXml => Display::fmt("application/xml", f),
         }
     }
 }

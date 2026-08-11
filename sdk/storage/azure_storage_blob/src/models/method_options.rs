@@ -5,16 +5,13 @@ use std::{collections::HashMap, num::NonZero};
 
 use azure_core::{
     fmt::SafeDebug,
-    http::{pager::PagerOptions, ClientMethodOptions, Etag},
+    http::{ClientMethodOptions, Etag},
 };
 use time::OffsetDateTime;
 
 use crate::models::{
     AccessTier, BlobClientDownloadInternalOptions, EncryptionAlgorithmType, HttpRange,
     ImmutabilityPolicyMode,
-};
-use crate::{
-    generated::models::ListBlobsIncludeItem, models::BlobContainerClientListBlobsRawOptions,
 };
 
 /// Options to be passed to `BlobClient::download()`
@@ -110,73 +107,6 @@ impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptio
             version_id: value.version_id,
         }
     }
-}
-
-/// Options to be passed to `BlobContainerClient::list_blobs()`.
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientListBlobsOptions<'a> {
-    /// Specify to include additional, optional information.
-    pub include: Option<Vec<ListBlobsIncludeItem>>,
-
-    /// An opaque string value that identifies the portion of the result set to return with this operation.
-    pub marker: Option<String>,
-
-    /// Specifies the maximum number of resources to return.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
-
-    /// Filters the results to return only resources whose name begins with the specified prefix.
-    pub prefix: Option<String>,
-
-    /// Selects the response format requested from the service.
-    pub response_format: Option<StorageResponseFormat>,
-
-    /// Specifies the relative path to list paths from.
-    pub start_from: Option<String>,
-
-    /// The timeout parameter is expressed in seconds.
-    pub timeout: Option<i32>,
-}
-
-impl<'a> From<BlobContainerClientListBlobsOptions<'a>>
-    for BlobContainerClientListBlobsRawOptions<'a>
-{
-    fn from(value: BlobContainerClientListBlobsOptions<'a>) -> Self {
-        let BlobContainerClientListBlobsOptions {
-            include,
-            marker,
-            maxresults,
-            method_options,
-            prefix,
-            response_format: _,
-            start_from,
-            timeout,
-        } = value;
-        Self {
-            include,
-            marker,
-            maxresults,
-            method_options: ClientMethodOptions {
-                context: method_options.context,
-            },
-            prefix,
-            start_from,
-            timeout,
-        }
-    }
-}
-
-/// The response format requested from Azure Storage.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub enum StorageResponseFormat {
-    /// Apache Arrow IPC stream format.
-    Arrow,
-
-    /// XML format.
-    #[default]
-    Xml,
 }
 
 /// Options to be passed to `BlockBlobClient::upload()`

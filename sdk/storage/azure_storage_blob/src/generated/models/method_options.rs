@@ -1053,64 +1053,37 @@ impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
     }
 }
 
-/// Options to be passed to `BlobContainerClient::list_blobs_raw()`
+/// Options to be passed to `BlobContainerClient::list_blobs()`
 #[derive(Clone, Default, SafeDebug)]
-pub(crate) struct BlobContainerClientListBlobsRawOptions<'a> {
+pub struct BlobContainerClientListBlobsOptions<'a> {
     /// Specify to include additional, optional information.
-    pub(crate) include: Option<Vec<ListBlobsIncludeItem>>,
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
 
     /// An opaque string value that identifies the portion of the result set to return with this operation.
-    pub(crate) marker: Option<String>,
+    pub marker: Option<String>,
 
     /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
     /// greater than 5000, the server will return up to 5000 items.
-    pub(crate) maxresults: Option<i32>,
+    pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub(crate) method_options: ClientMethodOptions<'a>,
+    pub method_options: PagerOptions<'a>,
 
     /// Filters the results to return only resources whose name begins with the specified prefix.
-    pub(crate) prefix: Option<String>,
+    pub prefix: Option<String>,
 
     /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
     /// list, multiple entity levels are supported. (Inclusive)
-    pub(crate) start_from: Option<String>,
+    pub start_from: Option<String>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
-    pub(crate) timeout: Option<i32>,
+    pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobContainerClient::list_blobs_xml()`
-#[derive(Clone, Default, SafeDebug)]
-pub(crate) struct BlobContainerClientListBlobsXmlOptions<'a> {
-    /// Specify to include additional, optional information.
-    pub(crate) include: Option<Vec<ListBlobsIncludeItem>>,
-
-    /// An opaque string value that identifies the portion of the result set to return with this operation.
-    pub(crate) marker: Option<String>,
-
-    /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
-    /// greater than 5000, the server will return up to 5000 items.
-    pub(crate) maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub(crate) method_options: PagerOptions<'a>,
-
-    /// Filters the results to return only resources whose name begins with the specified prefix.
-    pub(crate) prefix: Option<String>,
-
-    /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
-    /// list, multiple entity levels are supported. (Inclusive)
-    pub(crate) start_from: Option<String>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
-    pub(crate) timeout: Option<i32>,
-}
-
-impl BlobContainerClientListBlobsXmlOptions<'_> {
-    /// Transforms this [`BlobContainerClientListBlobsXmlOptions`] into a new `BlobContainerClientListBlobsXmlOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobContainerClientListBlobsXmlOptions<'static> {
-        BlobContainerClientListBlobsXmlOptions {
+impl BlobContainerClientListBlobsOptions<'_> {
+    /// Transforms this [`BlobContainerClientListBlobsOptions`] into a new `BlobContainerClientListBlobsOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
+        BlobContainerClientListBlobsOptions {
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,
