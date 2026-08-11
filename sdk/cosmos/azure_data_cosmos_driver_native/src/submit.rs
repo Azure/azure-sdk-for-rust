@@ -26,9 +26,9 @@ use std::any::Any;
 use std::future::Future;
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::models::{AccountReference, ContainerReference, CosmosResponse};
 use azure_data_cosmos_driver::options::DriverOptions;
+use azure_data_cosmos_driver::{driver::CosmosDriver, options::OperationOptions};
 
 use crate::account_ref::AccountRefHandle;
 use crate::completion::{
@@ -628,7 +628,7 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
         task_runtime,
         async move {
             driver_arc
-                .resolve_container_by_name(&db_id, &container_id)
+                .resolve_container_by_name(&db_id, &container_id, OperationOptions::default())
                 .await
         },
         |container_ref: azure_data_cosmos_driver::models::ContainerReference| {

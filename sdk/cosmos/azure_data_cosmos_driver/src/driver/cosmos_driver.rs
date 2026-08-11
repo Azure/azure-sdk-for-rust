@@ -1342,9 +1342,9 @@ impl CosmosDriver {
         &self,
         db_name: &str,
         container_name: &str,
+        options: OperationOptions,
     ) -> crate::error::Result<ContainerReference> {
         let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
-        let options = OperationOptions::default();
 
         let container_result = self
             .execute_singleton_operation(
@@ -2050,7 +2050,7 @@ impl CosmosDriver {
         db_name: &str,
         container_name: &str,
     ) -> crate::error::Result<()> {
-        self.resolve_container_by_name(db_name, container_name)
+        self.resolve_container_by_name(db_name, container_name, OperationOptions::default())
             .await?;
         Ok(())
     }
@@ -3112,7 +3112,7 @@ impl CosmosDriver {
     ///     .await?;
     ///
     /// // Resolve the container (fetched from service on each call)
-    /// let container = driver.resolve_container("mydb", "mycontainer").await?;
+    /// let container = driver.resolve_container("mydb", "mycontainer", OperationOptions::default()).await?;
     ///
     /// // Use the resolved container for item operations
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
@@ -3126,8 +3126,9 @@ impl CosmosDriver {
         &self,
         db_name: &str,
         container_name: &str,
+        operation_options: OperationOptions,
     ) -> crate::error::Result<ContainerReference> {
-        self.resolve_container_by_name(db_name, container_name)
+        self.resolve_container_by_name(db_name, container_name, operation_options)
             .await
     }
 
@@ -3139,6 +3140,7 @@ impl CosmosDriver {
         &self,
         db_name: &str,
         container_name: &str,
+        operation_options: OperationOptions,
     ) -> crate::error::Result<ContainerReference> {
         let endpoint = self.account().endpoint().as_str().to_owned();
         let db_name_owned = db_name.to_owned();
@@ -3148,7 +3150,11 @@ impl CosmosDriver {
             .runtime
             .container_cache()
             .get_or_fetch_by_name(&endpoint, db_name, container_name, || async move {
-                self.fetch_container_by_name(&db_name_owned, &container_name_owned)
+                self.fetch_container_by_name(
+                    &db_name_owned,
+                    &container_name_owned,
+                    operation_options,
+                )
                     .await
                     .map_err(|err| {
                         crate::error::CosmosErrorBuilder::from_error(err)

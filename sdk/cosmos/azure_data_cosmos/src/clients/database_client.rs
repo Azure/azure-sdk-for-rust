@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::clients::{ClientContext, ContainerClient};
+use crate::options::ContainerClientOptions;
 use crate::{ResourceId, ResourceIdentity};
 #[cfg(feature = "control_plane")]
 use azure_data_cosmos_driver::models::DatabaseReference;
@@ -71,28 +72,24 @@ impl DatabaseClient {
     /// Gets a [`ContainerClient`] that can be used to access the container with the
     /// specified identity.
     ///
-    /// This method eagerly resolves immutable container metadata (resource ID and partition key
-    /// definition) from the service, so the returned client is ready for immediate use without
-    /// per-operation cache lookups.
-    ///
-    /// The container's addressing mode must match this database's: a name-addressed
-    /// database accepts only name-addressed containers, and a RID-addressed database
-    /// accepts only [`ResourceId`](crate::ResourceId)-addressed containers.
+    /// This method eagerly resolves immutable container metadata before returning the client.
     ///
     /// # Arguments
     /// * `container` - The name or RID of the container.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the container does not exist, the metadata cannot be
-    /// resolved, or the addressing mode does not match this database's.
+    /// * `options` - Optional parameters for creating the client.
     pub async fn container_client(
         &self,
         container: impl Into<ResourceIdentity>,
+        options: Option<ContainerClientOptions>,
     ) -> crate::Result<ContainerClient> {
-        ContainerClient::new(self.context.clone(), &self.identity, container.into()).await
+        ContainerClient::new(
+            self.context.clone(),
+            &self.identity,
+            container.into(),
+            options.unwrap_or_default(),
+        )
+        .await
     }
-
     /// Returns the identity (name or RID) used to construct this client.
     pub fn id(&self) -> &ResourceIdentity {
         &self.identity
@@ -404,6 +401,7 @@ mod tests {
     fn _assert_futures_are_send() {
         fn assert_send<T: Send>(_: T) {}
         let client: &DatabaseClient = todo!();
+        assert_send(client.container_client(todo!(), None));
         let container_identity: ResourceIdentity = todo!();
         assert_send(client.container_client(container_identity));
         assert_send(client.read(todo!()));

@@ -152,7 +152,7 @@ async fn build_fixture_with_failover(
         .expect("driver initializes against emulator metadata");
 
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
 
