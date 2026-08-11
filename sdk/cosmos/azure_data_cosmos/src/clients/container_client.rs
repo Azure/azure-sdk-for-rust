@@ -943,13 +943,16 @@ impl ContainerClient {
         if let Some(hint) = options.feed.max_item_count {
             initial_operation = initial_operation.with_max_item_count(hint);
         }
-        let plan = Box::pin(self.context.driver.plan_operation(
-            initial_operation,
-            &options.operation,
-            options.feed.continuation_token.as_ref(),
-            &options.feed.to_plan_options(),
-        ))
-        .await?;
+        let plan = self
+            .context
+            .driver
+            .plan_operation(
+                initial_operation,
+                &options.operation,
+                options.feed.continuation_token.as_ref(),
+                &options.feed.to_plan_options(),
+            )
+            .await?;
         Ok(QueryItemIterator::new(
             self.context.driver.clone(),
             Some(self.container_ref.clone()),
