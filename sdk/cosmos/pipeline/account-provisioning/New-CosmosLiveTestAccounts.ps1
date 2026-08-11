@@ -9,9 +9,8 @@
 .DESCRIPTION
     The Rust Cosmos live tests run against fixed, self-owned accounts in a permanent
     subscription/resource group (default: sdk-ci) instead of accounts deployed per-run
-    into the (frequently rotating) ephemeral test tenant. This mirrors the mechanism
-    used by azure-sdk-for-java (PR #49735). This script is re-run whenever an account
-    needs to be created or a key rotated, and:
+    into the (frequently rotating) ephemeral test tenant. This script is re-run
+    whenever an account needs to be created or a key rotated, and:
       1. Ensures the resource group (default: sdk-ci) exists (created if missing).
       2. Creates (idempotently) one Cosmos account per entry in the definition file,
          with the requested consistency / multi-write / multi-region / automatic-failover

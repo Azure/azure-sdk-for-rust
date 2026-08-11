@@ -1,7 +1,7 @@
 # Cosmos live-test account provisioning
 
 Creates and rotates the fixed, self-owned Cosmos DB accounts used by the
-`Cosmos_live_test` leg (see [`../README.md`](../README.md) for the overall
+`Cosmos_live_test` leg (see `../README.md` for the overall
 mechanism this supports).
 
 ## Prerequisites
@@ -46,7 +46,7 @@ Treat the JSON as a secret at every step - it contains account keys.
 ## Adding a new account / rotating a key
 
 1. Add (or edit) an entry in
-   [`cosmos-live-test-accounts.definition.json`](cosmos-live-test-accounts.definition.json).
+   `cosmos-live-test-accounts.definition.json`.
    The `name` becomes the `AccountSelector` that
    `sdk/cosmos/live-platform-matrix.json` must reference.
 2. Re-run the script (see Usage above).
@@ -68,6 +68,4 @@ The previous live-test flow deployed a fresh Cosmos account per CI run via
 That tenant is ephemeral and rotates periodically, and rotating it requires
 recreating the ADO service connection - an admin operation, not something
 that can be done from a pipeline. Fixed, self-owned accounts in a permanent
-subscription sidestep that dependency entirely for key-based tests, mirroring
-the approach taken in
-[azure-sdk-for-java#49735](https://github.com/Azure/azure-sdk-for-java/pull/49735).
+subscription sidestep that dependency entirely for key-based tests.

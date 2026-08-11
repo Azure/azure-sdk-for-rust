@@ -1,9 +1,7 @@
 # Cosmos live-test fixed accounts
 
 This directory implements fixed, self-owned Cosmos DB accounts for the
-`Cosmos_live_test` CI leg, mirroring the mechanism used by
-[azure-sdk-for-java#49735](https://github.com/Azure/azure-sdk-for-java/pull/49735)
-("Use fixed self-owned accounts for key-based live tests").
+`Cosmos_live_test` CI leg.
 
 ## Why
 
@@ -30,15 +28,15 @@ before. Thin-client/GatewayV2 legs are also unaffected/out of scope.
 
 ## How it fits together
 
-1. [`live-test-accounts.schema.json`](live-test-accounts.schema.json) defines
+1. `live-test-accounts.schema.json` defines
    the shape of a single JSON blob describing every fixed account
    (endpoint, key, consistency, region info, etc.), keyed by a logical
    **account selector**.
-2. [`live-test-accounts.sample.json`](live-test-accounts.sample.json) is a
+2. `live-test-accounts.sample.json` is a
    placeholder-filled example matching the current
    `sdk/cosmos/live-platform-matrix.json` selectors, used by the local
    resolver tests.
-3. [`account-provisioning/`](account-provisioning/) contains the one-time /
+3. `account-provisioning/` contains the one-time /
    per-rotation script (`New-CosmosLiveTestAccounts.ps1`) that creates the
    accounts in the `sdk-ci` resource group and prints the JSON to store in
    the ADO secret. See its README for the full runbook.
@@ -48,7 +46,7 @@ before. Thin-client/GatewayV2 legs are also unaffected/out of scope.
    Because the variable group is a KV-backed mapping, rotation happens on the
    Key Vault secret itself - editing the variable-group value in ADO has no
    effect.
-5. [`resolve-cosmos-test-account.ps1`](resolve-cosmos-test-account.ps1) is a
+5. `resolve-cosmos-test-account.ps1` is a
    cross-platform (pwsh) script that, given a selector and the JSON secret,
    resolves and exports (via Azure DevOps `##vso[task.setvariable]` logging
    commands):
@@ -61,7 +59,7 @@ before. Thin-client/GatewayV2 legs are also unaffected/out of scope.
    `sdk/cosmos/test-resources.bicep` used to produce as ARM deployment
    outputs, so the test frameworks
    (`azure_data_cosmos`/`azure_data_cosmos_driver`) need no changes.
-6. [`resolve-test-account-steps.yml`](resolve-test-account-steps.yml) is a
+6. `resolve-test-account-steps.yml` is a
    reusable ADO step template that invokes the resolver script with the
    current job's `$(AccountSelector)` matrix variable.
 7. `sdk/cosmos/live-platform-matrix.json` adds an `AccountSelector` string
@@ -102,7 +100,7 @@ $env:COSMOS_TEST_ACCOUNTS_JSON = Get-Content -Raw sdk/cosmos/pipeline/live-test-
 
 ## Adding or rotating an account
 
-See [`account-provisioning/README.md`](account-provisioning/README.md).
+See `account-provisioning/README.md`.
 
 ## What this does *not* solve
 
@@ -111,5 +109,4 @@ requires a real Entra ID identity/tenant to authenticate against; fixed
 accounts don't remove that requirement, they only remove it for the tests
 that don't need AAD in the first place. `Cosmos_live_test_aad` still depends
 on the ephemeral tenant and the `azure-sdk-tests-cosmos` service connection,
-exactly as it did before this change - the same open problem Java has for its
-AAD-specific (Kafka) tests.
+exactly as it did before this change.
