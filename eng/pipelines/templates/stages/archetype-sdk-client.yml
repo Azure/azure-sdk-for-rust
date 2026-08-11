@@ -52,6 +52,21 @@ parameters:
     Selection: sparse
     NonSparseParameters: RustToolchainName
     GenerateVMJobs: true
+# A second, independent set of live-test matrix configs for legs that test against fixed,
+# self-owned resources instead of resources deployed fresh each run. Unlike
+# LiveTestMatrixConfigs, jobs generated from these configs skip ARM deployment entirely
+# (DisableAzureResourceCreation: true) and run PreTestRunSteps in its place, with
+# UseFederatedAuth forced off since no Azure tenant auth is needed. See
+# sdk/cosmos/pipeline/README.md for the motivating example.
+- name: FixedAccountMatrixConfigs
+  type: object
+  default: []
+# Steps to run instead of ARM deployment for jobs generated from FixedAccountMatrixConfigs
+# (e.g. resolving a fixed account's endpoint/key from a secret). Ignored if
+# FixedAccountMatrixConfigs is empty.
+- name: PreTestRunSteps
+  type: object
+  default: []
 - name: AdditionalMatrixConfigs
   type: object
   default: []
@@ -170,6 +185,39 @@ extends:
                     SubscriptionConfiguration: ${{ cloud.value.SubscriptionConfiguration }}
                     SubscriptionConfigurations: ${{ cloud.value.SubscriptionConfigurations }}
                     SubscriptionConfigurationFilePaths: ${{ cloud.value.SubscriptionConfigurationFilePaths }}
+
+              - ${{ if ne(length(parameters.FixedAccountMatrixConfigs), 0) }}:
+                - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
+                  parameters:
+                    GenerateJobName: generate_job_matrix_fixed_account
+                    JobTemplatePath: /eng/pipelines/templates/jobs/live.tests.yml
+                    AdditionalParameters:
+                      ServiceDirectory: ${{ parameters.ServiceDirectory }}
+                      TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+                      EnvVars: ${{ parameters.EnvVars }}
+                      PreSteps: ${{ parameters.PreSteps }}
+                      PostSteps: ${{ parameters.PostSteps }}
+                      Location: ${{ parameters.Location }}
+                      # Fixed, self-owned accounts need no Azure tenant auth at all.
+                      UseFederatedAuth: false
+                      PersistOidcToken: false
+                      DisableAzureResourceCreation: true
+                      PreTestRunSteps: ${{ parameters.PreTestRunSteps }}
+                    MatrixConfigs:
+                    - ${{ parameters.FixedAccountMatrixConfigs }}
+                    MatrixFilters:
+                    - ${{ cloud.value.MatrixFilters }}
+                    - ${{ parameters.MatrixFilters }}
+                    MatrixReplace:
+                    - ${{ cloud.value.MatrixReplace }}
+                    - ${{ parameters.MatrixReplace }}
+                    CloudConfig:
+                      Cloud: ${{ cloud.key }}
+                      Location: ${{ coalesce(cloud.value.Location, parameters.Location) }}
+                      ServiceConnection: ${{ coalesce(cloud.value.ServiceConnection, lower(format('azure-sdk-tests-{0}', cloud.key))) }}
+                      SubscriptionConfiguration: ${{ cloud.value.SubscriptionConfiguration }}
+                      SubscriptionConfigurations: ${{ cloud.value.SubscriptionConfigurations }}
+                      SubscriptionConfigurationFilePaths: ${{ cloud.value.SubscriptionConfigurationFilePaths }}
 
     # The Prerelease and Release stages are conditioned on:
     # 1. Internal trigger, not Pull Request trigger

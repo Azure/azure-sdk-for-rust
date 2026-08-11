@@ -76,10 +76,30 @@ extends:
         Path: sdk/cosmos/inmemory-emulator-matrix.json
         Selection: all
         GenerateVMJobs: true
-    LiveTestMatrixConfigs:
+    # Cosmos_live_test runs against fixed, self-owned accounts (see
+    # sdk/cosmos/pipeline/README.md) instead of resources deployed fresh each run,
+    # so it lives in FixedAccountMatrixConfigs rather than LiveTestMatrixConfigs.
+    # PreTestRunSteps resolves the account selected by each matrix leg's
+    # AccountSelector from the rust-ci secret, in place of
+    # ARM deployment (DisableAzureResourceCreation: true is set automatically for
+    # this leg by archetype-sdk-client.yml).
+    FixedAccountMatrixConfigs:
       - Name: Cosmos_live_test
         Path: sdk/cosmos/live-platform-matrix.json
         Selection: sparse
+        GenerateVMJobs: true
+    PreTestRunSteps:
+      - template: /sdk/cosmos/pipeline/resolve-test-account-steps.yml
+        parameters:
+          AccountSelector: $(AccountSelector)
+    LiveTestMatrixConfigs:
+      # Thin-client (GatewayV2) legs still use ARM-deployed per-run Cosmos
+      # accounts (they run against $(thinclient-test-endpoint)/$(thinclient-test-key)
+      # for the thin-client itself, but their primary client still needs an
+      # ARM-provisioned account). Left on the legacy per-run path intentionally.
+      - Name: Cosmos_live_thinclient
+        Path: sdk/cosmos/live-thinclient-matrix.json
+        Selection: all
         GenerateVMJobs: true
       # Dedicated live leg that runs the full integration suite with the primary
       # (data-plane) client authenticated via Entra ID (AAD) instead of the

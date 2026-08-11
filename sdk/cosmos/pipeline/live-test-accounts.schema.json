@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Azure/azure-sdk-for-rust/sdk/cosmos/pipeline/live-test-accounts.schema.json",
+  "title": "Cosmos live-test fixed accounts config",
+  "description": "Single-secret JSON describing the fixed, self-owned Cosmos DB accounts used by the Rust Cosmos live tests (resource group 'sdk-ci' in a permanent, non-ephemeral subscription). Stored as an ADO variable-group secret and refreshed by account-provisioning/New-CosmosLiveTestAccounts.ps1 whenever an account is rotated. Each live-test matrix leg selects one account by its logical AccountSelector.",
+  "type": "object",
+  "required": ["version", "accounts"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "description": "Schema version. resolve-cosmos-test-account.ps1 rejects versions it does not understand.",
+      "enum": [1]
+    },
+    "accounts": {
+      "type": "object",
+      "description": "Map of logical account selector (matches AccountSelector in live-platform-matrix.json) -> account descriptor.",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/definitions/account" }
+    }
+  },
+  "definitions": {
+    "account": {
+      "type": "object",
+      "required": ["endpoint", "key", "consistency", "testCategory"],
+      "additionalProperties": false,
+      "properties": {
+        "endpoint": {
+          "type": "string",
+          "description": "documentEndpoint of the Cosmos account (https://<name>.documents.azure.com:443/).",
+          "pattern": "^https://"
+        },
+        "key": {
+          "type": "string",
+          "description": "Primary master key. Treated as a secret by the resolver (masked in pipeline logs).",
+          "minLength": 1
+        },
+        "secondaryKey": {
+          "type": "string",
+          "description": "Optional secondary master key (exported as AZURE_COSMOS_SECONDARY_KEY when present). Not consumed by any test today; reserved for future use."
+        },
+        "database": {
+          "type": "string",
+          "description": "Name of the pre-created shared test database on this account, exported as DATABASE_NAME. Defaults to 'shared-test-db' when omitted."
+        },
+        "consistency": {
+          "type": "string",
+          "description": "Account default consistency level, exported as AZURE_COSMOS_DEFAULT_CONSISTENCY.",
+          "enum": ["Strong", "BoundedStaleness", "Session", "ConsistentPrefix", "Eventual"]
+        },
+        "testCategory": {
+          "type": "string",
+          "description": "Value used to build the RUSTFLAGS cfg exported as COSMOS_RUSTFLAGS, i.e. --cfg=test_category=\"<testCategory>\". Must match the test_category gate the corresponding tests expect (e.g. 'emulator', 'multi_write', 'split', 'multi_region')."
+        },
+        "multiWrite": {
+          "type": "boolean",
+          "description": "True if the account has multiple write locations (multi-master). Informational; not exported."
+        },
+        "multiRegion": {
+          "type": "boolean",
+          "description": "True if the account is provisioned with more than one region. Informational; not exported."
+        },
+        "regions": {
+          "type": "array",
+          "description": "Regions the account is provisioned in (informational / documentation only).",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

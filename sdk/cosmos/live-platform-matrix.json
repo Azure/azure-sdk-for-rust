@@ -18,42 +18,29 @@
     "RustToolchainName": ["stable"],
     "Account Settings": {
       "Eventual SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual'; enableAutomaticFailover = $false; enableContinuousBackup = $true }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual'; enableAutomaticFailover = $false; enableContinuousBackup = $true }",
+        "AccountSelector": "eventual-singlewrite"
       },
       "Session SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; enableContinuousBackup = $true }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; enableContinuousBackup = $true }",
+        "AccountSelector": "session-singlewrite"
       },
       "Strong SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; enableAutomaticFailover = $false; enableContinuousBackup = $true }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; enableAutomaticFailover = $false; enableContinuousBackup = $true }",
+        "AccountSelector": "strong-singlewrite"
       },
       "Session MultiWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; enableAutomaticFailover = $false; testCategory = 'multi_write'; enableMultipleRegions = $true }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; enableAutomaticFailover = $false; testCategory = 'multi_write'; enableMultipleRegions = $true }",
+        "AccountSelector": "session-multiwrite"
       },
       "Session Split": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'split'; enableContinuousBackup = $true }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'split'; enableContinuousBackup = $true }",
+        "AccountSelector": "session-split"
       },
       "Session SingleWrite MultiRegion PartitionFailover": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $true; enableMultipleRegions = $true; testCategory = 'multi_region' }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $true; enableMultipleRegions = $true; testCategory = 'multi_region' }",
+        "AccountSelector": "session-mr-failover"
       }
     }
-  },
-  "include": [
-    {
-      "Agent": {
-        "ubuntu": {
-          "OSVmImage": "env:LINUXVMIMAGE",
-          "Pool": "env:LINUXPOOL"
-        }
-      },
-      "RustToolchainName": ["stable"],
-      "Account Settings": {
-        "Session SingleRegion GatewayV2": {
-          "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; testCategory = 'gateway_v2' }"
-        },
-        "Session MultiRegion GatewayV2": {
-          "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleRegions = $true; testCategory = 'gateway_v2_multi_region' }"
-        }
-      }
-    }
-  ]
+  }
 }
