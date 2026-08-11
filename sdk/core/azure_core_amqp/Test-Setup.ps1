@@ -202,9 +202,10 @@ try {
   #   2. Put the full 40-character SHA of that commit below, and update the
   #      comment above with the ref that the SHA comes from. For a merged
   #      pull request, use the merge_commit_sha, not the head SHA.
-  #   3. Update the same SHA in sdk/core/azure_core_amqp/README.md.
-  #   4. Run this script and then Test-Cleanup.ps1. Make sure that setup
+  #   3. Run this script and then Test-Cleanup.ps1. Make sure that setup
   #      reports a clean azure-amqp clone.
+  #
+  # This line is the only place that holds the pin. README.md points here.
   #
   # Set TEST_BROKER_COMMIT to point the broker at a different commit without a
   # code change.
@@ -270,10 +271,12 @@ try {
     exit 1
   }
 
-  # The restore config belongs to this repository, and not to the broker clone. The restricted
-  # feed policy is this pipeline's requirement, so the file that satisfies it sits next to this
-  # script. Pass an absolute path, because the dotnet calls run from the clone root.
-  $nugetConfig = [System.IO.Path]::Combine($PSScriptRoot, "nuget.cfsclean.config")
+  # Restore through the same feed configuration that the pipeline uses, at
+  # eng/templates/NuGet.config.template. The broker clone carries its own nuget.config that
+  # adds NuGet.org, and a directory level file wins over the user level one, so the restore
+  # has to name a configuration explicitly. Pass an absolute path, because the dotnet calls
+  # run from the clone root.
+  $nugetConfig = [System.IO.Path]::Combine($RepoRoot, "eng", "templates", "NuGet.config.template")
   if (!(Test-Path $nugetConfig)) {
     LogError "This repository does not contain $nugetConfig."
     exit 1
