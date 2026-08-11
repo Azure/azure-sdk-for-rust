@@ -177,16 +177,16 @@ async fn build_client_ppcb_disabled(
 }
 
 /// Resolves a container client, retrying past the two transient windows that
-/// follow a fresh `create_container` on thin-client (Gateway 2.0) accounts:
+/// follow a fresh `create_container` on Gateway 2.0 accounts:
 ///
 /// - `404 / 1013 CollectionCreateInProgress` while the service finishes
 ///   provisioning the collection, and
-/// - `404 / 1003 OwnerResourceNotFound` while the thin-client proxy's routing
+/// - `404 / 1003 OwnerResourceNotFound` while the Gateway 2.0 proxy's routing
 ///   table catches up so the freshly-created collection becomes routable.
 ///
 /// Crucially, a freshly-created collection can resolve at the metadata gateway
 /// (so `container_client(..)` and a container `read` both succeed) while the
-/// thin-client *data plane* still routes to nothing — meaning the caller's very
+/// Gateway 2.0 *data plane* still routes to nothing — meaning the caller's very
 /// first item write/query is the request that races the `404 / 1003` window and
 /// fails. Gating on metadata alone is therefore not enough: this helper also
 /// drives one page of a read-only full-container query so a data-plane
@@ -205,19 +205,22 @@ async fn wait_for_container_ready(
 
     // A freshly-created collection is still "becoming ready" when the service
     // reports `404 / 1013 CollectionCreateInProgress` (create not finished) or
-    // the thin-client proxy reports `404 / 1003 OwnerResourceNotFound` (routing
+    // the Gateway 2.0 proxy reports `404 / 1003 OwnerResourceNotFound` (routing
     // table not yet propagated). Both are transient; anything else is fatal.
     fn is_transient_not_ready(status: &azure_data_cosmos::CosmosStatus) -> bool {
-        matches!(
-            status.sub_status(),
-            Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS)
-        ) || (status.status_code() == StatusCode::NotFound
-            && status.sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND))
+        status.status_code() == StatusCode::NotFound
+            && matches!(
+                status.sub_status(),
+                Some(
+                    SubStatusCode::COLLECTION_CREATE_IN_PROGRESS
+                        | SubStatusCode::OWNER_RESOURCE_NOT_FOUND
+                )
+            )
     }
 
     // A single end-to-end readiness attempt: resolve the container, read its
     // metadata, and drive one page of a read-only full-container query so the
-    // thin-client proxy's collection routing is proven resolvable on the data
+    // Gateway 2.0 proxy's collection routing is proven resolvable on the data
     // plane before the caller issues its first item operation. The query scope
     // is partition-key-shape agnostic (works for flat and hierarchical keys)
     // and read-only, so it is safe on the just-created empty collection.
