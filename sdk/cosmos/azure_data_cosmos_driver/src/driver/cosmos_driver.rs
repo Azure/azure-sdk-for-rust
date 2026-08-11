@@ -2601,28 +2601,6 @@ impl CosmosDriver {
             .await;
         }
 
-        // Resolve binary encoding through the same layered view as every other
-        // option, and only honor it for point **item** operations (the resource
-        // must be a `Document`; query/feed/batch and every control-plane
-        // resource are deferred per the binary-encoding spec).
-        let binary =
-            if Self::binary_encoding_applies(operation.resource_type(), operation.operation_type())
-            {
-                self.operation_options_view(&options)
-                    .binary_encoding()
-                    .cloned()
-                    .unwrap_or_default()
-            } else {
-                crate::options::BinaryEncodingOptions::default()
-            };
-        let operation = if binary.enabled {
-            Self::apply_request_binary_encoding(operation)?
-        } else {
-            operation
-        };
-
-        let transcode_response_to_text = binary.enabled && binary.request_text_response;
-
         // TODO: This boxing is a temporary fix to avoid a large future.
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
         let response = Box::pin(async {
@@ -2634,29 +2612,16 @@ impl CosmosDriver {
         })
         .await?;
 
-        // Driver-side transcoding: convert the binary response body to text
-        // when the caller asked for a text payload over a binary wire.
-        if transcode_response_to_text {
-            if let Some(mut response) = response {
-                response.transcode_body_to_text()?;
-                return Ok(Some(response));
-            }
-        }
         Ok(response)
     }
 
     /// Whether binary encoding applies to an operation.
     ///
-    /// Honored only for point item operations: the resource must be a
-    /// [`ResourceType::Document`] and the operation one of create/read/replace/
-    /// upsert. Control-plane resources share those operation types but must
-    /// never be binary encoded (some carry JSON bodies).
-    fn binary_encoding_applies(
-        resource_type: crate::models::ResourceType,
-        operation_type: crate::models::OperationType,
-    ) -> bool {
-        resource_type == crate::models::ResourceType::Document
-            && operation_type.supports_binary_encoding()
+    /// Honored only for document operations with JSON bodies or feed pages.
+    fn binary_encoding_applies(operation: &CosmosOperation) -> bool {
+        operation.resource_type() == crate::models::ResourceType::Document
+            && operation.operation_type().supports_binary_encoding()
+            && !operation.is_change_feed()
     }
 
     /// Applies request-side binary encoding to an operation: transcodes a text
@@ -2692,6 +2657,16 @@ impl CosmosDriver {
             None => operation,
         };
         Ok(operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS))
+    }
+
+    fn query_plan_request_body(operation: &CosmosOperation) -> crate::error::Result<Vec<u8>> {
+        crate::binary_json::transcode_to_text(operation.body().unwrap_or_default()).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+                .with_message("failed to prepare text query-plan request body")
+                .with_source(e)
+                .build()
+        })
     }
 
     /// Executes a singleton operation (operations which return only a single result).
@@ -2940,7 +2915,22 @@ impl CosmosDriver {
             topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
         );
 
-        plan.pipeline.next_page(&mut context).await
+        let binary_enabled = plan.binary_encoding().enabled;
+        let request_text_response = plan.binary_encoding().request_text_response;
+        let mut response = plan.pipeline.next_page(&mut context).await?;
+        if binary_enabled {
+            if let Some(response) = response.as_mut() {
+                if request_text_response {
+                    response.transcode_body_to_text()?;
+                } else if matches!(
+                    plan.operation().operation_type(),
+                    crate::models::OperationType::Query | crate::models::OperationType::ReadFeed
+                ) {
+                    response.transcode_body_to_binary()?;
+                }
+            }
+        }
+        Ok(response)
     }
 
     async fn execute_operation_direct(
@@ -3238,6 +3228,19 @@ impl CosmosDriver {
         // reference, so it issues no additional network calls and does not change
         // the request flow.
         operation.validate_addressing()?;
+        let binary = if Self::binary_encoding_applies(&operation) {
+            self.operation_options_view(options)
+                .binary_encoding()
+                .cloned()
+                .unwrap_or_default()
+        } else {
+            crate::options::BinaryEncodingOptions::default()
+        };
+        let operation = if binary.enabled {
+            Self::apply_request_binary_encoding(operation)?
+        } else {
+            operation
+        };
 
         // Planning holds the whole pipeline-builder state across several await
         // points, which makes it one of the largest futures in the driver —
@@ -3245,7 +3248,11 @@ impl CosmosDriver {
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        Box::pin(self.plan_operation_inner(operation, options, continuation, plan_options)).await
+        let mut plan =
+            Box::pin(self.plan_operation_inner(operation, options, continuation, plan_options))
+                .await?;
+        plan.set_binary_encoding(binary);
+        Ok(plan)
     }
 
     async fn plan_operation_inner(
@@ -3409,7 +3416,7 @@ impl CosmosDriver {
             container.clone(),
             std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
         )
-        .with_body(operation.body().unwrap_or_default().to_vec());
+        .with_body(Self::query_plan_request_body(operation)?);
 
         let response = self
             .execute_operation_direct(
@@ -3463,9 +3470,9 @@ impl CosmosDriver {
             .map(|props| props.query_engine_configuration.clone())
             .unwrap_or_default();
 
-        let native_result = operation
-            .body()
-            .and_then(|b| std::str::from_utf8(b).ok())
+        let query_plan_body = Self::query_plan_request_body(operation)?;
+        let native_result = std::str::from_utf8(&query_plan_body)
+            .ok()
             .map(|json| self.try_native_query_plan(json, container, &query_engine_config));
 
         match native_result {
@@ -6272,28 +6279,38 @@ mod tests {
     fn binary_encoding_applies_only_to_document_item_ops() {
         use crate::models::{OperationType, ResourceType};
 
-        // Point item ops on `Document` are the only combinations that qualify.
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
         for op in [
             OperationType::Create,
             OperationType::Read,
             OperationType::Replace,
             OperationType::Upsert,
+            OperationType::Query,
+            OperationType::ReadFeed,
         ] {
+            let operation = CosmosOperation::new(
+                op,
+                crate::models::CosmosResourceReference::from(container.clone())
+                    .with_resource_type(ResourceType::Document)
+                    .into_feed_reference(),
+                Some(crate::models::FeedRange::full()),
+            );
             assert!(
-                CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                CosmosDriver::binary_encoding_applies(&operation),
                 "Document + {op:?} should be binary-encodable",
             );
         }
 
-        // Non-item operation types on `Document` are excluded (query/feed/delete/patch).
-        for op in [
-            OperationType::Delete,
-            OperationType::Query,
-            OperationType::ReadFeed,
-            OperationType::Patch,
-        ] {
+        for op in [OperationType::Delete, OperationType::Patch] {
+            let operation = CosmosOperation::new(
+                op,
+                crate::models::CosmosResourceReference::from(container.clone())
+                    .with_resource_type(ResourceType::Document)
+                    .into_feed_reference(),
+                Some(crate::models::FeedRange::full()),
+            );
             assert!(
-                !CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                !CosmosDriver::binary_encoding_applies(&operation),
                 "Document + {op:?} must not be binary-encoded",
             );
         }
@@ -6314,12 +6331,23 @@ mod tests {
                 OperationType::Replace,
                 OperationType::Upsert,
             ] {
+                let operation = CosmosOperation::new(
+                    op,
+                    crate::models::CosmosResourceReference::from(container.clone())
+                        .with_resource_type(rt)
+                        .into_feed_reference(),
+                    None,
+                );
                 assert!(
-                    !CosmosDriver::binary_encoding_applies(rt, op),
+                    !CosmosDriver::binary_encoding_applies(&operation),
                     "{rt:?} + {op:?} must not be binary-encoded (control plane)",
                 );
             }
         }
+
+        let change_feed =
+            CosmosOperation::change_feed(container, Some(crate::models::FeedRange::full()));
+        assert!(!CosmosDriver::binary_encoding_applies(&change_feed));
     }
 
     fn binary_encoding_test_operation(body: Vec<u8>) -> CosmosOperation {

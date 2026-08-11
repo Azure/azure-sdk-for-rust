@@ -100,6 +100,40 @@ async fn read_document_feed_paginates_documents() {
 }
 
 #[tokio::test]
+async fn read_document_feed_honors_binary_negotiation() {
+    let ctx = setup_single_region().await;
+    let body = serde_json::json!({"id": "item1", "pk": "pk1"});
+    let response = ctx
+        .emulator
+        .execute_request(&create_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            &body,
+            r#"["pk1"]"#,
+            false,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::Created);
+
+    let url = format!("{}/dbs/testdb/colls/testcoll/docs", ctx.gateway_url);
+    let mut request = Request::new(Url::parse(&url).unwrap(), Method::Get);
+    request.headers_mut().insert(
+        SUPPORTED_SERIALIZATION_FORMATS.clone(),
+        HeaderValue::from_static("JsonText,CosmosBinary"),
+    );
+    let response = ctx.emulator.execute_request(&request).await.unwrap();
+    let (status, _, body) = collect_raw_response(response).await;
+
+    assert_eq!(status, StatusCode::Ok);
+    assert!(azure_data_cosmos_driver::binary_json::is_binary(&body));
+    let decoded: serde_json::Value =
+        azure_data_cosmos_driver::binary_json::from_slice(&body).unwrap();
+    assert_eq!(decoded["Documents"][0]["id"], "item1");
+}
+
+#[tokio::test]
 async fn read_document_feed_rejects_invalid_continuation() {
     let ctx = setup_single_region().await;
 

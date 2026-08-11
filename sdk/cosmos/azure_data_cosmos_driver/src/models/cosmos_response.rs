@@ -53,6 +53,12 @@ impl CosmosResponsePayload {
         self.body = body.transcode_to_text()?;
         Ok(())
     }
+
+    fn transcode_body_to_binary(&mut self) -> crate::error::Result<()> {
+        let body = std::mem::take(&mut self.body);
+        self.body = body.transcode_to_binary()?;
+        Ok(())
+    }
 }
 /// Result of a Cosmos DB operation.
 ///
@@ -151,6 +157,10 @@ impl CosmosResponse {
     /// Returns an error if a binary payload is malformed.
     pub(crate) fn transcode_body_to_text(&mut self) -> crate::error::Result<()> {
         self.payload.transcode_body_to_text()
+    }
+
+    pub(crate) fn transcode_body_to_binary(&mut self) -> crate::error::Result<()> {
+        self.payload.transcode_body_to_binary()
     }
 
     /// Returns a reference to the extracted headers.

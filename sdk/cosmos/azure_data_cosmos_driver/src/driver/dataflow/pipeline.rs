@@ -6,6 +6,7 @@
 use std::sync::Arc;
 
 use crate::models::{ContinuationToken, CosmosOperation, CosmosResponse};
+use crate::options::BinaryEncodingOptions;
 
 use super::context::PipelineContext;
 use super::node::{PageResult, PipelineNode};
@@ -98,6 +99,7 @@ impl Pipeline {
 pub struct OperationPlan {
     pub(crate) pipeline: Pipeline,
     operation: Arc<CosmosOperation>,
+    binary_encoding: BinaryEncodingOptions,
 }
 
 impl OperationPlan {
@@ -106,7 +108,20 @@ impl OperationPlan {
         Self {
             pipeline,
             operation,
+            binary_encoding: BinaryEncodingOptions::default(),
         }
+    }
+
+    pub(crate) fn operation(&self) -> &CosmosOperation {
+        &self.operation
+    }
+
+    pub(crate) fn binary_encoding(&self) -> &BinaryEncodingOptions {
+        &self.binary_encoding
+    }
+
+    pub(crate) fn set_binary_encoding(&mut self, binary_encoding: BinaryEncodingOptions) {
+        self.binary_encoding = binary_encoding;
     }
 
     /// Snapshots this plan into a [`ContinuationToken`] suitable for cross-process

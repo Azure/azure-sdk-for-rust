@@ -202,8 +202,11 @@ pub(crate) fn rewrite_query_body(
         "query".to_owned(),
         serde_json::Value::String(rewritten_query.to_owned()),
     );
-    serde_json::to_vec(&value)
-        .map_err(|e| body_error("failed to serialize rewritten query body", e))
+    serialize_query_body(
+        original_body,
+        &value,
+        "failed to serialize rewritten query body",
+    )
 }
 
 /// Inserts the .NET-compatible structured `"resumeFilter"` field into an
@@ -236,8 +239,11 @@ pub(crate) fn with_resume_filter(
         "resumeFilter".to_owned(),
         order_by::resume_filter_json(resume_values, rid, exclude),
     );
-    serde_json::to_vec(&value)
-        .map_err(|e| body_error("failed to serialize query body with resume filter", e))
+    serialize_query_body(
+        body,
+        &value,
+        "failed to serialize query body with resume filter",
+    )
 }
 
 /// Parses a query operation's JSON body, erroring on a missing body or
@@ -246,8 +252,25 @@ fn parse_query_body(body: Option<&[u8]>) -> crate::error::Result<serde_json::Val
     let body = body.ok_or_else(|| {
         body_error_msg("cannot rewrite an ORDER BY query operation with no request body")
     })?;
-    serde_json::from_slice(body)
+    let text = crate::binary_json::transcode_to_text(body).map_err(|e| {
+        binary_body_error("failed to transcode original query body to text JSON", e)
+    })?;
+    serde_json::from_slice(&text)
         .map_err(|e| body_error("failed to parse original query body as JSON", e))
+}
+
+fn serialize_query_body(
+    original_body: Option<&[u8]>,
+    value: &serde_json::Value,
+    error_message: &'static str,
+) -> crate::error::Result<Vec<u8>> {
+    let text = serde_json::to_vec(value).map_err(|e| body_error(error_message, e))?;
+    if original_body.is_some_and(crate::binary_json::is_binary) {
+        crate::binary_json::transcode_to_binary(&text)
+            .map_err(|e| binary_body_error("failed to transcode rewritten query body to binary", e))
+    } else {
+        Ok(text)
+    }
 }
 
 /// One row parsed from a rewritten-envelope backend page, ready for the
@@ -298,7 +321,7 @@ pub(crate) fn parse_envelope_page(
 ) -> crate::error::Result<Vec<EnvelopeRow>> {
     let bytes = match body {
         ResponseBody::NoPayload => return Ok(Vec::new()),
-        ResponseBody::Bytes(b) => b.clone(),
+        ResponseBody::Bytes(b) => normalize_page_body(b)?,
         ResponseBody::Items(_) => {
             return Err(envelope_error(
                 "rewritten-query backend page returned an already-split `Items` body; \
@@ -536,14 +559,32 @@ pub(crate) fn retain_documents(documents: &[Box<RawValue>], keep: &[usize]) -> (
 pub(crate) fn parse_document_page(body: &ResponseBody) -> crate::error::Result<Vec<Box<RawValue>>> {
     match body {
         ResponseBody::NoPayload => Ok(Vec::new()),
-        ResponseBody::Bytes(bytes) => serde_json::from_slice::<RawFeedBody>(bytes)
-            .map(|feed| feed.documents)
-            .map_err(|e| body_error("failed to parse backend page as a feed body", e)),
+        ResponseBody::Bytes(bytes) => {
+            let bytes = normalize_page_body(bytes)?;
+            serde_json::from_slice::<RawFeedBody>(&bytes)
+                .map(|feed| feed.documents)
+                .map_err(|e| body_error("failed to parse backend page as a feed body", e))
+        }
         ResponseBody::Items(_) => Err(envelope_error(
             "backend page returned an already-split `Items` body; expected a raw \
              `Documents`-array feed body",
         )),
     }
+}
+
+fn normalize_page_body(bytes: &bytes::Bytes) -> crate::error::Result<bytes::Bytes> {
+    if !crate::binary_json::is_binary(bytes) {
+        return Ok(bytes.clone());
+    }
+    crate::binary_json::transcode_to_text(bytes)
+        .map(bytes::Bytes::from)
+        .map_err(|source| {
+            crate::error::CosmosError::builder()
+                .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to transcode binary query page to text JSON")
+                .with_source(source)
+                .build()
+        })
 }
 
 /// A fresh, empty [`DiagnosticsContext`] for a page needing no new backend
@@ -565,6 +606,17 @@ fn envelope_error(message: impl Into<std::borrow::Cow<'static, str>>) -> crate::
 }
 
 fn body_error(message: &'static str, source: serde_json::Error) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID)
+        .with_message(message)
+        .with_source(source)
+        .build()
+}
+
+fn binary_body_error(
+    message: &'static str,
+    source: crate::binary_json::BinaryError,
+) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
         .with_status(CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID)
         .with_message(message)
@@ -800,6 +852,52 @@ mod tests {
         assert_eq!(rows[0].payload.get(), r#"{"id":"d1"}"#);
         assert_eq!(rows[1].rid, "r2");
         assert_eq!(rows[1].keys, vec![OrderByItem::Undefined]);
+    }
+
+    #[test]
+    fn parse_envelope_page_accepts_binary_feed_body() {
+        let value = serde_json::json!({
+            "_rid": "abc",
+            "Documents": [{
+                "_rid": "r1",
+                "orderByItems": [{"item": 1.0}],
+                "payload": {"id": "d1"}
+            }],
+            "_count": 1
+        });
+        let body = ResponseBody::from_bytes(crate::binary_json::encode(&value));
+        let rows = parse_envelope_page(&body, 1).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].rid, "r1");
+        assert_eq!(rows[0].keys, vec![OrderByItem::Number(1.0.into())]);
+        assert_eq!(rows[0].payload.get(), r#"{"id":"d1"}"#);
+    }
+
+    #[test]
+    fn parse_document_page_accepts_binary_feed_body() {
+        let value = serde_json::json!({
+            "_rid": "abc",
+            "Documents": [{"id": "d1"}, {"id": "d2"}],
+            "_count": 2
+        });
+        let body = ResponseBody::from_bytes(crate::binary_json::encode(&value));
+        let documents = parse_document_page(&body).unwrap();
+
+        assert_eq!(documents.len(), 2);
+        assert_eq!(documents[0].get(), r#"{"id":"d1"}"#);
+        assert_eq!(documents[1].get(), r#"{"id":"d2"}"#);
+    }
+
+    #[test]
+    fn malformed_binary_page_is_a_response_serialization_error() {
+        let body = ResponseBody::from_bytes(vec![crate::binary_json::PREAMBLE]);
+        let err = parse_document_page(&body).unwrap_err();
+
+        assert_eq!(
+            err.status(),
+            CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID
+        );
     }
 
     #[test]

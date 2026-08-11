@@ -22,7 +22,7 @@ Because the option lives on the driver and is schema-agnostic, the driver perfor
 
 A self-contained, in-tree **end-to-end validation loop** is included via the in-memory emulator (no Docker, no live account, no external test vectors).
 
-> **Scope:** item operations (`create` / `replace` / `upsert` / `read`). Query, patch, transactional batch, and bulk are intentionally deferred (see [Deferred work](#deferred-work)).
+> **Scope:** item operations (`create` / `replace` / `upsert` / `read`), SQL query pages, and document read feeds. Change feed, patch, transactional batch, and bulk are intentionally deferred (see [Deferred work](#deferred-work)).
 
 ---
 
@@ -55,7 +55,7 @@ FFI hosts set the equivalent flat fields on the C ABI `cosmos_operation_options_
 
 ### Two transcodes, both in the driver (schema-agnostic)
 
-When `binary_encoding.enabled` is set, `CosmosDriver::execute_operation` owns the wire format both ways:
+When `binary_encoding.enabled` is set, `CosmosDriver::plan_operation` and `execute_plan` own the wire format both ways:
 
 * **Request** (`apply_request_binary_encoding`) — transcodes a **text** request body to Cosmos binary JSON via `binary_json::transcode_to_binary` (`serde_json::from_slice` → `encode`) and advertises `JsonText,CosmosBinary`. An **already-binary** or empty body passes through unchanged, so a caller that pre-encoded pays nothing.
 * **Response** (when `request_text_response` is set) — transcodes the binary response back to text JSON via `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire stays binary in both directions.
@@ -68,13 +68,15 @@ The Rust SDK keeps a typed fast path: `serialize_item_body` encodes `T: Serializ
 
 ### Negotiation header
 
-When binary is enabled, item operations set:
+When binary is enabled, eligible item, query, and document read-feed operations set:
 
 ```
 x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary
 ```
 
 The value matches the .NET reference (`string.Join(",", JsonText, CosmosBinary)` — no space). The request `Content-Type` stays `application/json`; the service detects the binary body from its first byte. The **driver** sets this header whenever `binary_encoding.enabled` is set — including under `request_text_response`, where the wire stays binary and the driver transcodes the response (see above).
+
+The `/queryplan` request is the deliberate exception: it remains text and does not advertise binary because that endpoint ignores binary negotiation. Query page bodies are normalized from binary to text once at pipeline ingest so DISTINCT and streaming ORDER BY continue to operate on their existing text representation. Rebuilt pages are restored to the negotiated format at the plan boundary. `ResponseBody::Items` encodes each item independently, including its own `0x80` preamble, so every slice remains a standalone binary document.
 
 ---
 
@@ -394,9 +396,8 @@ opts.binary_encoding_request_text_response = 2;    /* 2 = true  */
 
 ## Deferred work
 
-* **Query binary negotiation** — the request-body encoding + negotiation for query pages is still deferred. Binary encoding now lives on `OperationOptions.binary_encoding`, so a driver-minted page operation *can* carry it; what remains is confirming query-body semantics (`application/query+json`) and the native cross-partition query engine's handling of binary item bytes. The query *response* decode already works via the shared choke point.
-* **Binary feed responses** — the feed splitter scans **text** JSON, so binary `Documents` envelopes cannot be sliced yet; making it binary-aware is a prerequisite for any feed/query binary negotiation.
 * **`patch`** — excluded from binary encoding for now (the driver's request-side encode intentionally skips patch); transactional `batch` / `bulk` are deferred by spec.
+* **Change feed** — remains text because its continuation and resume semantics differ from ordinary document read feeds.
 * **Cross-implementation vectors** — validate against captured real .NET / Java binary output.
 
 ---

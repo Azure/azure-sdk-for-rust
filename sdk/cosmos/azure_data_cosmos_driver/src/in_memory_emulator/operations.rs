@@ -2329,6 +2329,7 @@ fn success_feed_response(
     items: Vec<serde_json::Value>,
     page_options: FeedPageOptions<'_>,
     feed_headers: FeedResponseHeaders,
+    binary: bool,
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_values(
@@ -2342,9 +2343,10 @@ fn success_feed_response(
     };
     let item_count = page.len() as u32;
     let body = feed_to_json(envelope_name, page, rid);
-    let mut builder = success_response(
+    let mut builder = success_response_with_format(
         StatusCode::Ok,
         &body,
+        binary,
         1.0,
         &feed_headers.session_token,
         start,
@@ -2371,6 +2373,7 @@ fn success_document_feed_response(
     items: Vec<DocumentFeedItem>,
     page_options: FeedPageOptions<'_>,
     feed_headers: FeedResponseHeaders,
+    binary: bool,
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_document_feed_items(
@@ -2384,9 +2387,10 @@ fn success_document_feed_response(
     };
     let item_count = page.len() as u32;
     let body = feed_to_json(envelope_name, page, rid);
-    let mut builder = success_response(
+    let mut builder = success_response_with_format(
         StatusCode::Ok,
         &body,
+        binary,
         1.0,
         &feed_headers.session_token,
         start,
@@ -2424,7 +2428,13 @@ fn parse_query_spec(
     request_body: &[u8],
     start: Instant,
 ) -> Result<(String, Vec<(String, serde_json::Value)>), AsyncRawResponse> {
-    let spec: QuerySpec = serde_json::from_slice(request_body).map_err(|e| {
+    let spec: QuerySpec = if crate::binary_json::is_binary(request_body) {
+        crate::binary_json::from_slice(request_body)
+            .map_err(|e| format!("invalid binary query body: {e}"))
+    } else {
+        serde_json::from_slice(request_body).map_err(|e| format!("invalid text query body: {e}"))
+    }
+    .map_err(|e| {
         error_response(
             StatusCode::BadRequest,
             None,
@@ -2490,6 +2500,7 @@ fn execute_query_feed(
         results,
         FeedPageOptions::from_request(parsed),
         feed_headers,
+        parsed.binary_response,
         start,
     )
 }
@@ -2514,6 +2525,7 @@ fn execute_document_query_feed(
             results,
             FeedPageOptions::from_request(parsed),
             feed_headers,
+            parsed.binary_response,
             start,
         ),
         Ok(None) => {
@@ -2539,6 +2551,7 @@ fn execute_document_query_feed(
                 results,
                 FeedPageOptions::from_request(parsed),
                 feed_headers,
+                parsed.binary_response,
                 start,
             )
         }
@@ -2717,6 +2730,7 @@ fn handle_read_feed_databases(
         databases,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
+        false,
         start,
     )
 }
@@ -2782,6 +2796,7 @@ fn handle_read_feed_containers(
         containers,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
+        false,
         start,
     )
 }
@@ -2843,6 +2858,7 @@ fn handle_read_feed_offers(
         offers,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
+        false,
         start,
     )
 }
@@ -3184,6 +3200,7 @@ fn handle_read_feed_items(
                 docs,
                 FeedPageOptions::from_request(parsed),
                 headers,
+                parsed.binary_response && parsed.a_im.is_none(),
                 start,
             )
         }

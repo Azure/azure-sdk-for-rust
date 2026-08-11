@@ -26,7 +26,9 @@ use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, FeedRange, ItemReference, MaxItemCountHint, PartitionKey,
     PartitionKeyDefinition,
 };
-use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, PlanOptions};
+use azure_data_cosmos_driver::options::{
+    BinaryEncodingOptions, DriverOptions, OperationOptions, OperationOptionsBuilder, PlanOptions,
+};
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
 
@@ -168,8 +170,48 @@ fn documents_of(
     let Ok(bytes) = response.into_body().single() else {
         return Vec::new();
     };
-    let value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let value: serde_json::Value = if azure_data_cosmos_driver::binary_json::is_binary(&bytes) {
+        azure_data_cosmos_driver::binary_json::from_slice(&bytes).unwrap()
+    } else {
+        serde_json::from_slice(&bytes).unwrap()
+    };
     value["Documents"].as_array().cloned().unwrap_or_default()
+}
+
+async fn drain_query_with_options(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    query: &QuerySpec,
+    planning_options: OperationOptions,
+    execution_options: OperationOptions,
+) -> (Vec<serde_json::Value>, Vec<bool>) {
+    let mut plan = Box::pin(driver.plan_operation(
+        query_operation(container, query, 1),
+        &planning_options,
+        None,
+        &PlanOptions::default(),
+    ))
+    .await
+    .unwrap();
+    let mut values = Vec::new();
+    let mut formats = Vec::new();
+
+    while let Some(response) = driver
+        .execute_plan(
+            &mut plan,
+            Some(container.clone()),
+            execution_options.clone(),
+        )
+        .await
+        .unwrap()
+    {
+        let bytes = response.body().clone().single().unwrap();
+        let is_binary = azure_data_cosmos_driver::binary_json::is_binary(&bytes);
+        formats.push(is_binary);
+        values.extend(documents_of(response));
+    }
+
+    (values, formats)
 }
 
 /// Sorts values by their serialized form so an unordered result can be
@@ -522,5 +564,127 @@ async fn split_mid_drain_does_not_reemit_deduplicated_values() {
             "{scenario_id}: the drain must continue past the split for the test to prove anything"
         );
         assert_matches_expected(scenario, all);
+    }
+}
+
+#[tokio::test]
+async fn text_and_binary_query_pages_have_pipeline_parity() {
+    let (_emulator, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .unwrap();
+    let documents: Vec<serde_json::Value> = [
+        ("a", "pk1", 1),
+        ("b", "pk2", 1),
+        ("c", "pk3", 2),
+        ("d", "pk4", 2),
+        ("e", "pk5", 3),
+    ]
+    .into_iter()
+    .map(|(id, pk, value)| serde_json::json!({"id": id, "pk": pk, "value": value}))
+    .collect();
+    seed(&driver, &container, &documents).await;
+
+    for query in [
+        QuerySpec {
+            text: "SELECT * FROM c".to_owned(),
+            parameters: Vec::new(),
+            distinct_type: "None".to_owned(),
+        },
+        QuerySpec {
+            text: "SELECT DISTINCT VALUE c.value FROM c".to_owned(),
+            parameters: Vec::new(),
+            distinct_type: "Unordered".to_owned(),
+        },
+        QuerySpec {
+            text: "SELECT DISTINCT VALUE c.value FROM c ORDER BY c.value".to_owned(),
+            parameters: Vec::new(),
+            distinct_type: "Ordered".to_owned(),
+        },
+    ] {
+        let (text, text_formats) = drain_query_with_options(
+            &driver,
+            &container,
+            &query,
+            OperationOptions::default(),
+            OperationOptions::default(),
+        )
+        .await;
+        let binary_options = OperationOptionsBuilder::new()
+            .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+        let (binary, binary_formats) = drain_query_with_options(
+            &driver,
+            &container,
+            &query,
+            binary_options.clone(),
+            binary_options.clone(),
+        )
+        .await;
+        let binary_as_text_options = OperationOptionsBuilder::new()
+            .with_binary_encoding(
+                BinaryEncodingOptions::new()
+                    .with_enabled(true)
+                    .with_request_text_response(true),
+            )
+            .build();
+        let (binary_as_text, binary_as_text_formats) = drain_query_with_options(
+            &driver,
+            &container,
+            &query,
+            binary_as_text_options.clone(),
+            binary_as_text_options,
+        )
+        .await;
+        let (_, planned_binary_formats) = drain_query_with_options(
+            &driver,
+            &container,
+            &query,
+            binary_options.clone(),
+            OperationOptions::default(),
+        )
+        .await;
+        let (_, planned_text_formats) = drain_query_with_options(
+            &driver,
+            &container,
+            &query,
+            OperationOptions::default(),
+            binary_options,
+        )
+        .await;
+
+        if query.distinct_type == "Ordered" {
+            assert_eq!(binary, text, "{}", query.text);
+            assert_eq!(binary_as_text, text, "{}", query.text);
+        } else {
+            assert_eq!(sorted(binary), sorted(text.clone()), "{}", query.text);
+            assert_eq!(sorted(binary_as_text), sorted(text), "{}", query.text);
+        }
+        assert!(
+            text_formats.iter().all(|is_binary| !is_binary),
+            "{}",
+            query.text
+        );
+        assert!(
+            binary_formats.iter().all(|is_binary| *is_binary),
+            "{}",
+            query.text
+        );
+        assert!(
+            binary_as_text_formats.iter().all(|is_binary| !is_binary),
+            "{}",
+            query.text
+        );
+        assert!(
+            planned_binary_formats.iter().all(|is_binary| *is_binary),
+            "planning must own response encoding even when execution options differ: {}",
+            query.text
+        );
+        assert!(
+            planned_text_formats.iter().all(|is_binary| !is_binary),
+            "execution options must not enable binary after text planning: {}",
+            query.text
+        );
     }
 }

@@ -638,10 +638,9 @@ impl OperationType {
         )
     }
 
-    /// True for the point item ops (create/read/replace/upsert) eligible for
-    /// binary encoding. Necessary but not sufficient: the full gate also
-    /// requires [`ResourceType::Document`] (see
-    /// `CosmosDriver::binary_encoding_applies`).
+    /// True for item and document-feed operations eligible for binary encoding.
+    /// Necessary but not sufficient: the full gate also requires
+    /// [`ResourceType::Document`] and excludes change feed.
     pub(crate) fn supports_binary_encoding(self) -> bool {
         matches!(
             self,
@@ -649,6 +648,8 @@ impl OperationType {
                 | OperationType::Read
                 | OperationType::Replace
                 | OperationType::Upsert
+                | OperationType::Query
+                | OperationType::ReadFeed
         )
     }
 
@@ -894,23 +895,20 @@ mod tests {
     use serde::{Deserialize, Serialize};
 
     #[test]
-    fn supports_binary_encoding_covers_only_bodied_point_ops() {
-        // Matches the binary-encoding spec §2 scope table: create/read/replace/
-        // upsert. `delete` is excluded (no request or response body); query,
-        // feed, batch, and stored-procedure paths are deferred.
+    fn supports_binary_encoding_covers_item_and_feed_ops() {
         for op in [
             OperationType::Create,
             OperationType::Read,
             OperationType::Replace,
             OperationType::Upsert,
+            OperationType::Query,
+            OperationType::ReadFeed,
         ] {
             assert!(op.supports_binary_encoding(), "{op:?} should be supported");
         }
         for op in [
             OperationType::Delete,
-            OperationType::Query,
             OperationType::SqlQuery,
-            OperationType::ReadFeed,
             OperationType::Batch,
             OperationType::Execute,
             OperationType::Patch,
