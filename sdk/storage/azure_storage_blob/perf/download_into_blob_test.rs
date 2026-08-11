@@ -9,38 +9,19 @@ use std::{
 
 use azure_core::http::Url;
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfTest},
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
     TestContext,
 };
 use azure_storage_blob::{models::BlobClientDownloadOptions, BlobContainerClient};
 use bytes::Bytes;
-use clap::Args;
 use futures::{lock::Mutex, FutureExt};
 
 use crate::{
-    clap_parsers::non_zero_usize,
     extensions::{OnceLockExt, RecordingExt},
+    options,
 };
 
 const BLOB_NAME: &str = "perf-blob";
-
-#[derive(Args, Clone, Debug)]
-pub struct DownloadIntoBlobTestOptions {
-    // The size of each blob in bytes.
-    #[arg(long)]
-    pub size: usize,
-
-    // Number of concurrent network transfers.
-    #[arg(long, value_parser = non_zero_usize)]
-    concurrency: Option<NonZero<usize>>,
-
-    // Size in bytes to partition data into for each transfer.
-    #[arg(long, value_parser = non_zero_usize)]
-    partition_size: Option<NonZero<usize>>,
-
-    #[arg(long)]
-    endpoint: Option<Url>,
-}
 
 pub struct DownloadIntoBlobTest {
     size: usize,
@@ -52,18 +33,44 @@ pub struct DownloadIntoBlobTest {
 }
 
 impl DownloadIntoBlobTest {
-    pub fn new(args: DownloadIntoBlobTestOptions) -> CreatePerfTestReturn {
+    fn create_test(runner: PerfRunner) -> CreatePerfTestReturn {
         async move {
+            let size = runner
+                .try_get_test_arg("size")?
+                .expect("size argument is mandatory");
+            let endpoint = runner
+                .try_get_test_arg::<String>("endpoint")?
+                .map(|endpoint| Url::parse(&endpoint))
+                .transpose()?;
+
             Ok(Box::new(DownloadIntoBlobTest {
-                size: args.size,
-                concurrency: args.concurrency,
-                partition_size: args.partition_size,
-                endpoint: args.endpoint,
+                size,
+                concurrency: runner
+                    .try_get_test_arg::<usize>("concurrency")?
+                    .and_then(NonZero::new),
+                partition_size: runner
+                    .try_get_test_arg::<usize>("partition-size")?
+                    .and_then(NonZero::new),
+                endpoint,
                 client: OnceLock::new(),
-                buffer: Mutex::new(vec![0; args.size]),
+                buffer: Mutex::new(vec![0; size]),
             }) as Box<dyn PerfTest>)
         }
         .boxed()
+    }
+
+    pub fn test_metadata() -> PerfTestMetadata {
+        PerfTestMetadata {
+            name: "download_into_blob",
+            description: "Download a blob from a container directly into a memory buffer.",
+            options: vec![
+                options::size(),
+                options::concurrency(),
+                options::partition_size(),
+                options::endpoint(),
+            ],
+            create_test: Self::create_test,
+        }
     }
 
     fn download_options(&self) -> BlobClientDownloadOptions<'_> {

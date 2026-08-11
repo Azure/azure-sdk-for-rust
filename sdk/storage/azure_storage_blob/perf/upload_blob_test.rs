@@ -8,35 +8,16 @@ use std::{
 
 use azure_core::{http::Url, Bytes};
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfTest},
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
     TestContext,
 };
 use azure_storage_blob::{models::BlobClientUploadOptions, BlobContainerClient};
-use clap::Args;
 use futures::FutureExt;
 
 use crate::{
-    clap_parsers::{non_zero_u64, non_zero_usize},
     extensions::{OnceLockExt, RecordingExt},
+    options,
 };
-
-#[derive(Args, Clone, Debug)]
-pub struct UploadBlobTestOptions {
-    // The size of each blob in bytes.
-    #[arg(long)]
-    pub size: usize,
-
-    // Number of concurrent network transfers.
-    #[arg(long, value_parser = non_zero_usize)]
-    concurrency: Option<NonZero<usize>>,
-
-    // Size in bytes to partition data into for each transfer.
-    #[arg(long, value_parser = non_zero_u64)]
-    partition_size: Option<NonZero<u64>>,
-
-    #[arg(long)]
-    endpoint: Option<Url>,
-}
 
 pub struct UploadBlobTest {
     size: usize,
@@ -48,18 +29,43 @@ pub struct UploadBlobTest {
 }
 
 impl UploadBlobTest {
-    pub fn new(args: UploadBlobTestOptions) -> CreatePerfTestReturn {
+    fn create_test(runner: PerfRunner) -> CreatePerfTestReturn {
         async move {
+            let endpoint = runner
+                .try_get_test_arg::<String>("endpoint")?
+                .map(|endpoint| Url::parse(&endpoint))
+                .transpose()?;
+
             Ok(Box::new(UploadBlobTest {
-                size: args.size,
-                concurrency: args.concurrency,
-                partition_size: args.partition_size,
-                endpoint: args.endpoint,
+                size: runner
+                    .try_get_test_arg("size")?
+                    .expect("size argument is mandatory"),
+                concurrency: runner
+                    .try_get_test_arg::<usize>("concurrency")?
+                    .and_then(NonZero::new),
+                partition_size: runner
+                    .try_get_test_arg::<usize>("partition-size")?
+                    .and_then(|value| NonZero::new(value as u64)),
+                endpoint,
                 client: OnceLock::new(),
                 upload_buffer: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
         .boxed()
+    }
+
+    pub fn test_metadata() -> PerfTestMetadata {
+        PerfTestMetadata {
+            name: "upload_blob",
+            description: "Upload blobs to a container",
+            options: vec![
+                options::size(),
+                options::concurrency(),
+                options::partition_size(),
+                options::endpoint(),
+            ],
+            create_test: Self::create_test,
+        }
     }
 }
 
