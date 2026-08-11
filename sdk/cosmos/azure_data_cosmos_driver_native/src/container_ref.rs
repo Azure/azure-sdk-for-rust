@@ -32,7 +32,9 @@
 use std::ffi::{c_char, CStr};
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::models::ContainerReference as DriverContainerReference;
+use azure_data_cosmos_driver::{
+    models::ContainerReference as DriverContainerReference, options::OperationOptions,
+};
 
 use crate::driver::DriverHandle;
 use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
