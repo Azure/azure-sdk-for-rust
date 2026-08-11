@@ -24,7 +24,9 @@ use super::response::headers::{
 };
 #[cfg(feature = "preview_dtx")]
 use super::response::headers::{ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS};
-use super::response::{error_response, success_response, ResponseBuilder};
+use super::response::{
+    error_response, success_response, success_response_with_format, ResponseBuilder,
+};
 use super::ru_model::RuChargingModel;
 use super::session::SessionToken;
 use super::store::{
@@ -140,7 +142,7 @@ pub(crate) async fn handle_operation(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
-    request_headers: &Headers,
+    _request_headers: &Headers,
     request_body: &[u8],
 ) -> AsyncRawResponse {
     let start = Instant::now();
@@ -273,8 +275,14 @@ pub(crate) async fn handle_operation(
         }
         #[cfg(feature = "preview_dtx")]
         OperationType::DistributedTransaction => {
-            handle_distributed_transaction(store, region_name, request_headers, request_body, start)
-                .await
+            handle_distributed_transaction(
+                store,
+                region_name,
+                _request_headers,
+                request_body,
+                start,
+            )
+            .await
         }
         OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
         OperationType::InvalidInput(desc) => invalid_input_response(desc, start),
@@ -645,6 +653,7 @@ pub(crate) async fn handle_operation(
             partition_key_header: Some(operation.partition_key.to_string()),
             if_match: operation.if_match.clone(),
             if_none_match: operation.if_none_match.clone(),
+            if_modified_since: None,
             session_token: operation.session_token.clone(),
             activity_id: None,
             content_response_on_write: true,
@@ -657,7 +666,9 @@ pub(crate) async fn handle_operation(
             end_epk: None,
             is_query_plan: false,
             is_batch: false,
+            binary_response: false,
             is_upsert: matches!(operation_type, OperationType::Upsert),
+            a_im: None,
         };
 
         match operation_type {
@@ -1449,6 +1460,7 @@ pub(crate) async fn handle_operation(
             partition_key_header: Some(operation.partition_key.to_string()),
             if_match: operation.if_match.clone(),
             if_none_match: operation.if_none_match.clone(),
+            if_modified_since: None,
             session_token: operation.session_token.clone(),
             activity_id: None,
             content_response_on_write: true,
@@ -1461,7 +1473,9 @@ pub(crate) async fn handle_operation(
             end_epk: None,
             is_query_plan: false,
             is_batch: false,
+            binary_response: false,
             is_upsert: false,
+            a_im: None,
         }
     }
 
@@ -2080,14 +2094,6 @@ fn handle_read_pkranges(
 
     region_ref
         .with_container(db_id, coll_id, |state| {
-            // Honor If-None-Match for change-feed-style routing-map refreshes.
-            // The driver's `fetch_and_build_routing_map` loops calling
-            // `fetch_pk_ranges` with the previous etag as `If-None-Match` until
-            // the service returns 304 (or hits `MAX_FETCH_ITERATIONS`).
-            // Without 304 support the loop runs the maximum number of iterations,
-            // accumulates duplicate ranges, and `ContainerRoutingMap::try_create`
-            // produces an empty map — defeating PK-range pre-resolution and
-            // any feature that depends on it (PPCB, PPAF).
             if let Some(client_etag) = if_none_match {
                 if client_etag == state.metadata.etag {
                     return ResponseBuilder::new(StatusCode::NotModified, start)
@@ -2096,10 +2102,27 @@ fn handle_read_pkranges(
                         .build();
                 }
             }
-            let body = pkranges_to_json(state);
+
+            let total = state.physical_partitions.len();
+            let page_start = if_none_match
+                .and_then(|token| parse_pkrange_page_token(token, &state.metadata.etag))
+                .unwrap_or(0)
+                .min(total);
+            let page_size = state
+                .metadata
+                .partition_key_range_page_size
+                .map(|size| size as usize)
+                .unwrap_or(total.max(1));
+            let page_end = page_start.saturating_add(page_size).min(total);
+            let next_etag = if page_end < total {
+                pkrange_page_token(page_end, &state.metadata.etag)
+            } else {
+                state.metadata.etag.clone()
+            };
+            let body = pkranges_to_json(state, page_start, page_end);
             success_response(StatusCode::Ok, &body, 1.0, "", start)
-                .with_etag(&state.metadata.etag)
-                .with_item_count(state.physical_partitions.len() as u32)
+                .with_etag(&next_etag)
+                .with_item_count((page_end - page_start) as u32)
                 .build()
         })
         .unwrap_or_else(|| {
@@ -2114,6 +2137,18 @@ fn handle_read_pkranges(
             )
             .build()
         })
+}
+
+fn pkrange_page_token(offset: usize, etag: &str) -> String {
+    format!("pkranges/{offset}/{etag}")
+}
+
+fn parse_pkrange_page_token(token: &str, expected_etag: &str) -> Option<usize> {
+    let token = token.strip_prefix("pkranges/")?;
+    let (offset, etag) = token.split_once('/')?;
+    (etag == expected_etag)
+        .then(|| offset.parse::<usize>().ok())
+        .flatten()
 }
 
 fn paginate_values(
@@ -3114,8 +3149,34 @@ fn handle_read_feed_items(
     parsed: &ParsedRequest,
     start: Instant,
 ) -> AsyncRawResponse {
+    // The service only supports the AllVersionsAndDeletes (full-fidelity) change
+    // feed starting from `Now` or resuming from a continuation. A `Beginning`
+    // start (no `If-None-Match`) or a `PointInTime` start (`If-Modified-Since`)
+    // is rejected with 400. The SDK relies on the service to gate these, so
+    // mirror that here.
+    if is_full_fidelity_feed(parsed.a_im.as_deref()) {
+        if let Some(response) = reject_unsupported_full_fidelity_start(parsed, start) {
+            return response;
+        }
+    }
     match collect_item_documents(store, region_name, parsed, start) {
         Ok((rid, docs, token, mut headers)) => {
+            // Full-fidelity (AllVersionsAndDeletes) change feed reads carry
+            // `A-IM: Full-Fidelity Feed`. The in-memory store only retains the
+            // latest state of each document (no change log), so it cannot replay
+            // historical versions, deletes, or pre-images. It therefore
+            // synthesizes a minimal `create` envelope per current document so the
+            // SDK's full-fidelity code path (header emission, mode dispatch, and
+            // the iterator's raw `ChangeFeedItem<T>` deserialization) can be
+            // exercised end-to-end. Deletes / `previous` images remain covered by
+            // unit tests and are a documented follow-up. Incremental
+            // (`A-IM: Incremental Feed`) and plain read-feed requests are
+            // unchanged and return flat documents.
+            let docs = if is_full_fidelity_feed(parsed.a_im.as_deref()) {
+                docs.into_iter().map(full_fidelity_envelope).collect()
+            } else {
+                docs
+            };
             headers.session_token = token;
             success_document_feed_response(
                 "Documents",
@@ -3127,6 +3188,70 @@ fn handle_read_feed_items(
             )
         }
         Err(response) => response,
+    }
+}
+
+/// Returns `true` when the `A-IM` header selects the full-fidelity
+/// (AllVersionsAndDeletes) change feed.
+fn is_full_fidelity_feed(a_im: Option<&str>) -> bool {
+    a_im.is_some_and(|value| value.eq_ignore_ascii_case("Full-Fidelity Feed"))
+}
+
+/// Rejects AllVersionsAndDeletes change-feed reads that start from an
+/// unsupported position.
+///
+/// Returns `Some(400)` for a `Beginning` start (no `If-None-Match`) or a
+/// `PointInTime` start (`If-Modified-Since` present), and `None` for `Now`
+/// (`If-None-Match: *`) or a resume (`If-None-Match: <etag>`).
+fn reject_unsupported_full_fidelity_start(
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> Option<AsyncRawResponse> {
+    let reason = if parsed.if_modified_since.is_some() {
+        "a point-in-time start"
+    } else if parsed.if_none_match.is_none() {
+        "a start from the beginning"
+    } else {
+        return None;
+    };
+
+    Some(
+        error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            &format!(
+                "The AllVersionsAndDeletes change feed mode does not support {reason}; \
+                 start from Now or resume from a continuation token."
+            ),
+            0.0,
+            "",
+            start,
+        )
+        .build(),
+    )
+}
+
+/// Wraps a current document body in a minimal full-fidelity change envelope.
+///
+/// The emulator has no change log, so every retained document is surfaced as a
+/// `create`. `crts` is taken from the document's `_ts` when available; `lsn` and
+/// `previous` are omitted because the store does not track them.
+fn full_fidelity_envelope(doc: DocumentFeedItem) -> DocumentFeedItem {
+    let crts = doc
+        .body
+        .get("_ts")
+        .cloned()
+        .unwrap_or(serde_json::Value::Null);
+    DocumentFeedItem {
+        body: serde_json::json!({
+            "current": doc.body,
+            "metadata": {
+                "operationType": "create",
+                "crts": crts,
+            },
+        }),
+        cursor: doc.cursor,
     }
 }
 
@@ -3185,7 +3310,13 @@ fn local_sort_order_to_dataflow(
 
 fn local_query_info_to_dataflow(
     info: crate::query::plan::LocalQueryInfo,
+    original_query: &str,
 ) -> crate::driver::dataflow::query_plan::QueryInfo {
+    let rewritten_query = if info.order_by.is_empty() {
+        Some(String::new())
+    } else {
+        synthesize_order_by_rewritten_query(original_query, &info.order_by_expressions)
+    };
     crate::driver::dataflow::query_plan::QueryInfo {
         distinct_type: local_distinct_type_to_dataflow(info.distinct_type),
         top: info.top.map(|v| v as u64),
@@ -3205,10 +3336,129 @@ fn local_query_info_to_dataflow(
             .map(|a| format!("{a:?}"))
             .collect(),
         group_by_alias_to_aggregate_type: HashMap::new(),
-        rewritten_query: Some(String::new()),
+        rewritten_query,
         has_select_value: info.has_select_value,
         has_non_streaming_order_by: false,
     }
+}
+
+/// Synthesizes a single-level rewritten `ORDER BY` envelope query, mirroring
+/// what the real Gateway/native query-plan engine returns in
+/// `rewrittenQuery`:
+///
+/// ```text
+/// SELECT VALUE {"_rid": <alias>._rid, "orderByItems": [{"item": <expr0>}, ...], "payload": <alias>}
+/// <original FROM clause, sliced verbatim>
+/// WHERE [(<original predicate>) AND] {documentdb-formattableorderbyquery-filter}
+/// <original ORDER BY clause, sliced verbatim>
+/// ```
+///
+/// The placeholder is substituted in place by the client with `true`
+/// (fresh start) or a scalar `_rid`-aware resume filter (see
+/// `driver::dataflow::query_response`) — no outer subquery wrapper, so the
+/// result stays flat and directly evaluable.
+///
+/// Supports `SELECT *` and `SELECT VALUE <expression>`. Other projection
+/// shapes return `None` rather than synthesizing the wrong payload.
+fn synthesize_order_by_rewritten_query(
+    original_query: &str,
+    order_by_expressions: &[String],
+) -> Option<String> {
+    use crate::query::lexer::{Lexer, TokenKind};
+
+    // Kept in sync with `driver::dataflow::query_response`'s
+    // `ORDER_BY_FILTER_PLACEHOLDER` (this authors it; that substitutes it).
+    const ORDER_BY_FILTER_PLACEHOLDER: &str = "{documentdb-formattableorderbyquery-filter}";
+
+    let tokens = Lexer::tokenize(original_query);
+    let mut depth = 0_usize;
+    let mut top_level = Vec::new();
+    for (index, token) in tokens.iter().enumerate() {
+        if matches!(
+            token.kind,
+            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace
+        ) {
+            depth = depth.saturating_sub(1);
+        }
+        if depth == 0 {
+            top_level.push(index);
+        }
+        if matches!(
+            token.kind,
+            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace
+        ) {
+            depth += 1;
+        }
+    }
+    let is_clause_keyword = |index: usize| index == 0 || tokens[index - 1].kind != TokenKind::Dot;
+    let select_idx = top_level
+        .iter()
+        .copied()
+        .find(|&i| tokens[i].kind == TokenKind::Select)?;
+    let from_idx = top_level
+        .iter()
+        .copied()
+        .find(|&i| tokens[i].kind == TokenKind::From && is_clause_keyword(i))?;
+    let collection_token = tokens.get(from_idx + 1)?;
+    let alias = match tokens.get(from_idx + 2) {
+        Some(t) if t.kind == TokenKind::As => tokens.get(from_idx + 3)?.text,
+        Some(t) if t.kind == TokenKind::Identifier => t.text,
+        _ => collection_token.text,
+    };
+    let payload = match tokens.get(select_idx + 1)? {
+        token if token.kind == TokenKind::Star => alias.to_owned(),
+        token if token.kind == TokenKind::Value => original_query
+            [token.span.end..tokens[from_idx].span.start]
+            .trim()
+            .to_owned(),
+        _ => return None,
+    };
+
+    let order_idx = top_level.iter().copied().find(|&i| {
+        tokens[i].kind == TokenKind::Order
+            && tokens
+                .get(i + 1)
+                .is_some_and(|token| token.kind == TokenKind::By)
+    });
+    let clause_end = order_idx
+        .map(|i| tokens[i].span.start)
+        .unwrap_or(original_query.len());
+    let order_by_text = order_idx.map(|i| original_query[tokens[i].span.start..].trim())?;
+
+    // FROM is emitted verbatim; the placeholder is ANDed into WHERE
+    // (creating one if absent) — the slot every rewritten query carries.
+    let where_bound = order_idx.unwrap_or(tokens.len());
+    let where_idx = top_level.iter().copied().find(|&i| {
+        i > from_idx
+            && i < where_bound
+            && tokens[i].kind == TokenKind::Where
+            && is_clause_keyword(i)
+    });
+    let from_end = where_idx
+        .map(|i| tokens[i].span.start)
+        .unwrap_or(clause_end);
+    let from_text = original_query[tokens[from_idx].span.start..from_end].trim();
+    let where_clause = match where_idx {
+        Some(i) => {
+            let predicate = original_query[tokens[i].span.end..clause_end].trim();
+            format!("WHERE ({predicate}) AND {ORDER_BY_FILTER_PLACEHOLDER}")
+        }
+        None => format!("WHERE {ORDER_BY_FILTER_PLACEHOLDER}"),
+    };
+
+    let order_by_items: Vec<String> = order_by_expressions
+        .iter()
+        .map(|expr| format!(r#"{{"item": {expr}}}"#))
+        .collect();
+
+    Some(format!(
+        r#"SELECT VALUE {{"_rid": {alias}._rid, "orderByItems": [{items}], "payload": {payload}}} {from_text} {where_clause} {order_by}"#,
+        items = order_by_items.join(", "),
+        payload = payload,
+        from_text = from_text,
+        where_clause = where_clause,
+        order_by = order_by_text,
+    ))
 }
 
 fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
@@ -3387,7 +3637,7 @@ fn handle_query_plan(
 
     let plan = crate::driver::dataflow::query_plan::QueryPlan {
         partitioned_query_execution_info_version: 2,
-        query_info: Some(local_query_info_to_dataflow(local_plan.query_info)),
+        query_info: Some(local_query_info_to_dataflow(local_plan.query_info, &query)),
         query_ranges,
         hybrid_search_query_info: None,
     };
@@ -4157,6 +4407,21 @@ fn check_throttle(
     None
 }
 
+/// Parses a request body as either Cosmos binary JSON (when it begins with the
+/// `0x80` preamble) or UTF-8 text JSON.
+///
+/// This mirrors the SDK's response-side auto-detection so the emulator accepts
+/// binary-encoded item writes when the client negotiated binary, letting the
+/// full encode → store → decode loop be validated locally. Returns `Err(())` on
+/// a malformed body; callers turn that into a `400 BadRequest`.
+fn decode_request_body(request_body: &[u8]) -> Result<serde_json::Value, ()> {
+    if crate::binary_json::is_binary(request_body) {
+        crate::binary_json::decode(request_body).map_err(|_| ())
+    } else {
+        serde_json::from_slice(request_body).map_err(|_| ())
+    }
+}
+
 async fn handle_create(
     store: &Arc<EmulatorStore>,
     region_name: &str,
@@ -4186,7 +4451,7 @@ async fn handle_create_locked(
         return resp;
     }
 
-    let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
+    let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
         Err(_) => {
             return error_response(
@@ -4363,9 +4628,16 @@ async fn handle_create_locked(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
-                success_response(StatusCode::Created, &response_body, charge, &token, start)
-                    .with_etag(&doc.etag)
-                    .with_lsn(doc.lsn)
+                success_response_with_format(
+                    StatusCode::Created,
+                    &response_body,
+                    parsed.binary_response,
+                    charge,
+                    &token,
+                    start,
+                )
+                .with_etag(&doc.etag)
+                .with_lsn(doc.lsn)
             } else {
                 ResponseBuilder::new(StatusCode::Created, start)
                     .with_request_charge(charge)
@@ -4559,6 +4831,7 @@ fn handle_read(
                     .ru_model()
                     .compute_read_ru(doc.body_size_bytes);
                 let lsn = partition.current_lsn();
+                let item_lsn = doc.lsn;
                 let body = doc.body.clone();
                 let etag = doc.etag.clone();
                 drop(docs);
@@ -4573,13 +4846,19 @@ fn handle_read(
                         .with_request_charge(charge)
                         .with_session_token(&token)
                         .with_etag(&etag);
-                    return Err(decorate_point_response(builder, headers, Some(lsn)).build());
+                    return Err(decorate_point_response(builder, headers, Some(item_lsn)).build());
                 }
-                return Ok((body, etag, token, charge, lsn, headers));
+                return Ok((body, etag, token, charge, lsn, item_lsn, headers));
             }
         }
 
-        Err(error_response(
+        let lsn = partition.current_lsn();
+        drop(docs);
+        let headers = Some(PointResponseHeaders::from_partition(
+            partition,
+            store.next_transport_request_id(),
+        ));
+        let builder = error_response(
             StatusCode::NotFound,
             None,
             "NotFound",
@@ -4591,15 +4870,23 @@ fn handle_read(
             &token,
             start,
         )
-        .build())
+        .with_lsn(lsn);
+        Err(decorate_point_response(builder, headers, Some(lsn)).build())
     });
 
     match result {
-        Some(Ok((body, etag, token, charge, lsn, headers))) => {
-            let builder = success_response(StatusCode::Ok, &body, charge, &token, start)
-                .with_etag(&etag)
-                .with_lsn(lsn);
-            decorate_point_response(builder, headers, Some(lsn)).build()
+        Some(Ok((body, etag, token, charge, lsn, item_lsn, headers))) => {
+            let builder = success_response_with_format(
+                StatusCode::Ok,
+                &body,
+                parsed.binary_response,
+                charge,
+                &token,
+                start,
+            )
+            .with_etag(&etag)
+            .with_lsn(lsn);
+            decorate_point_response(builder, headers, Some(item_lsn)).build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -4636,7 +4923,7 @@ async fn handle_replace_locked(
         return resp;
     }
 
-    let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
+    let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
         Err(_) => {
             return error_response(
@@ -4926,9 +5213,16 @@ async fn handle_replace_locked(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
-                success_response(StatusCode::Ok, &response_body, charge, &token, start)
-                    .with_etag(&doc.etag)
-                    .with_lsn(doc.lsn)
+                success_response_with_format(
+                    StatusCode::Ok,
+                    &response_body,
+                    parsed.binary_response,
+                    charge,
+                    &token,
+                    start,
+                )
+                .with_etag(&doc.etag)
+                .with_lsn(doc.lsn)
             } else {
                 ResponseBuilder::new(StatusCode::Ok, start)
                     .with_request_charge(charge)
@@ -4973,7 +5267,7 @@ async fn handle_upsert_locked(
         return resp;
     }
 
-    let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
+    let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
         Err(_) => {
             return error_response(
@@ -5053,6 +5347,23 @@ async fn handle_upsert_locked(
         let (new_doc, status, charge) = {
             let mut docs = partition.documents.write().unwrap();
             let logical = docs.entry(epk.clone()).or_default();
+            if let Some(if_match) = parsed.if_match.as_ref() {
+                if logical
+                    .get(&doc_id)
+                    .is_some_and(|existing| *if_match != existing.etag)
+                {
+                    return Err(error_response(
+                        StatusCode::PreconditionFailed,
+                        None,
+                        "PreconditionFailed",
+                        "One of the specified pre-condition is not met.",
+                        1.0,
+                        "",
+                        start,
+                    )
+                    .build());
+                }
+            }
             let (status, rid, self_link) = match logical.get(&doc_id) {
                 Some(existing) => (
                     StatusCode::Ok,
@@ -5135,9 +5446,16 @@ async fn handle_upsert_locked(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
-                success_response(status, &response_body, charge, &token, start)
-                    .with_etag(&doc.etag)
-                    .with_lsn(doc.lsn)
+                success_response_with_format(
+                    status,
+                    &response_body,
+                    parsed.binary_response,
+                    charge,
+                    &token,
+                    start,
+                )
+                .with_etag(&doc.etag)
+                .with_lsn(doc.lsn)
             } else {
                 ResponseBuilder::new(status, start)
                     .with_request_charge(charge)
@@ -5469,6 +5787,74 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pkrange_page_token_round_trips_offset_and_etag() {
+        let token = pkrange_page_token(1_000, "\"etag/with/slashes\"");
+
+        assert_eq!(
+            parse_pkrange_page_token(&token, "\"etag/with/slashes\""),
+            Some(1_000)
+        );
+        assert_eq!(parse_pkrange_page_token(&token, "\"other-etag\""), None);
+    }
+
+    #[test]
+    fn order_by_rewrite_preserves_supported_projection_shapes() {
+        let select_star = synthesize_order_by_rewritten_query(
+            "SELECT * FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(select_star.contains(r#""payload": c"#));
+
+        let select_value = synthesize_order_by_rewritten_query(
+            "SELECT VALUE c.id FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(select_value.contains(r#""payload": c.id"#));
+
+        let join_value = synthesize_order_by_rewritten_query(
+            "SELECT VALUE t FROM c JOIN t IN c.tags ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(join_value.contains(r#""payload": t"#));
+    }
+
+    #[test]
+    fn order_by_rewrite_rejects_unsupported_select_list() {
+        assert!(synthesize_order_by_rewritten_query(
+            "SELECT c.id FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn order_by_rewrite_ignores_order_property_identifier() {
+        let rewritten = synthesize_order_by_rewritten_query(
+            "SELECT * FROM c WHERE c.order > 0 ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+
+        assert!(rewritten
+            .contains("WHERE (c.order > 0) AND {documentdb-formattableorderbyquery-filter}"));
+        assert!(rewritten.ends_with("ORDER BY c.rank"));
+    }
+
+    #[test]
+    fn order_by_rewrite_uses_outer_clauses_around_scalar_subquery() {
+        let rewritten = synthesize_order_by_rewritten_query(
+            "SELECT VALUE (SELECT VALUE t FROM t IN c.tags) FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(rewritten.contains(r#""payload": (SELECT VALUE t FROM t IN c.tags)} FROM c WHERE"#));
+        assert!(rewritten.ends_with("ORDER BY c.rank"));
+    }
 
     fn document_item(epk: &str, id: &str) -> DocumentFeedItem {
         DocumentFeedItem {

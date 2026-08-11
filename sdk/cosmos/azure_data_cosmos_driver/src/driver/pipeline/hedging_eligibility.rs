@@ -31,17 +31,42 @@ use crate::{
 /// this constant is the upper bound.
 const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
 
-/// Resource types eligible for cross-region hedging in the current phase.
+/// Fixed cross-region hedge threshold for the two metadata cache reads
+/// (`Collection` `Read` and `PartitionKeyRange` `ReadFeed`).
 ///
-/// Subsequent phases widen this single constant — no other change to
-/// [`should_hedge`] is required.
-const HEDGEABLE_RESOURCE_TYPES: &[ResourceType] = &[ResourceType::Document];
+/// Unlike the data-plane default (`min(1000ms, request_timeout / 2)`), metadata
+/// reads use a fixed threshold chosen to sit between the control-plane
+/// first-attempt (~1s) and second-attempt (~5s) HTTP timeouts — matching the
+/// .NET metadata hedging threshold (first-attempt timeout + 500ms = 1.5s).
+/// Metadata reads run with `OperationOptions::default()` (no configured
+/// end-to-end latency), so deriving from `request_timeout` is not meaningful;
+/// the value is fixed and not customer-configurable. See `docs/HEDGING_SPEC.md`.
+const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 
-/// Operation types eligible for cross-region hedging in the current phase.
+/// `(ResourceType, OperationType)` pairs eligible for cross-region hedging.
 ///
-/// Future phases will append feed-style operations
-/// (`Query` / `ReadFeed` / `QueryPlan`) and metadata reads.
-const HEDGEABLE_OPERATION_TYPES: &[OperationType] = &[OperationType::Read];
+/// This is the **single source of truth** for hedge eligibility, expressed as
+/// exact pairs rather than an independent resource set AND operation set. Pair
+/// gating is deliberate: a cartesian `resource ∈ SET_A && op ∈ SET_B` gate would
+/// let widening one dimension silently enable an unintended combination — most
+/// dangerously `(Document, ReadFeed)` (document change feed), a data-plane feed
+/// whose continuation is region-affine and which has no hedge pinning. Listing
+/// pairs makes writes and stray feed combinations non-eligible structurally.
+///
+/// Current members:
+/// * `(Document, Read)` — data-plane point reads (Phase 1).
+/// * `(DocumentCollection, Read)` — `Collection` `Read` metadata cache read.
+/// * `(PartitionKeyRange, ReadFeed)` — `PartitionKeyRange` `ReadFeed` metadata
+///   cache read. Only the cold first change-feed page is hedged; if the hedge
+///   wins, later pages are pinned to the winning region (the continuation ETag
+///   is region-affine) via `OperationOverrides::region_pin`.
+///
+/// See `docs/HEDGING_SPEC.md`.
+const HEDGEABLE_PAIRS: &[(ResourceType, OperationType)] = &[
+    (ResourceType::Document, OperationType::Read),
+    (ResourceType::DocumentCollection, OperationType::Read),
+    (ResourceType::PartitionKeyRange, OperationType::ReadFeed),
+];
 
 /// Returns `true` when the operation is eligible for cross-region hedging.
 ///
@@ -67,20 +92,8 @@ pub(crate) fn should_hedge(
         return false;
     }
 
-    if !HEDGEABLE_RESOURCE_TYPES.contains(&operation.resource_type()) {
-        return false;
-    }
-
-    // Writes are never hedged. The phase also restricts OperationType to
-    // `Read`, which is a superset of "not a write", but the explicit
-    // `is_read_only()` guard documents the intent and protects against
-    // future phase widenings that add non-read OperationTypes (e.g. feed
-    // reads) without revisiting this predicate.
-    let op = operation.operation_type();
-    if !op.is_read_only() {
-        return false;
-    }
-    if !HEDGEABLE_OPERATION_TYPES.contains(&op) {
+    let pair = (operation.resource_type(), operation.operation_type());
+    if !HEDGEABLE_PAIRS.contains(&pair) {
         return false;
     }
 
@@ -282,11 +295,37 @@ pub(crate) fn evaluate_hedge_eligibility(
         endpoint: secondary_ep,
     };
 
+    // Metadata cache reads use a fixed threshold (see METADATA_HEDGE_THRESHOLD),
+    // not the data-plane `min(1000ms, request_timeout / 2)` default. The
+    // enablement decision (Disabled / env-disabled) still comes from
+    // `resolve_availability_strategy` above; only the threshold is overridden.
+    let threshold = if is_metadata_hedge_read(operation) {
+        HedgeThreshold::new(METADATA_HEDGE_THRESHOLD)
+            .expect("METADATA_HEDGE_THRESHOLD is statically non-zero")
+    } else {
+        strategy.threshold()
+    };
+
     Some(HedgeUpgrade {
         secondary_routing,
-        threshold: strategy.threshold(),
-        strategy_config: HedgingStrategyConfig::new(strategy.threshold()),
+        threshold,
+        strategy_config: HedgingStrategyConfig::new(threshold),
     })
+}
+
+/// True when the operation is a metadata cache read that hedges with the fixed
+/// [`METADATA_HEDGE_THRESHOLD`] rather than the data-plane default.
+///
+/// This mirrors the metadata entries of [`HEDGEABLE_PAIRS`]: `(DocumentCollection,
+/// Read)` and `(PartitionKeyRange, ReadFeed)`. Eligibility itself is always
+/// decided by `should_hedge` / [`HEDGEABLE_PAIRS`]; this predicate only selects
+/// which threshold an already-eligible operation uses.
+fn is_metadata_hedge_read(operation: &CosmosOperation) -> bool {
+    matches!(
+        (operation.resource_type(), operation.operation_type()),
+        (ResourceType::DocumentCollection, OperationType::Read)
+            | (ResourceType::PartitionKeyRange, OperationType::ReadFeed)
+    )
 }
 
 #[cfg(test)]
@@ -370,6 +409,19 @@ mod tests {
         CosmosOperation::read_database(db)
     }
 
+    fn read_container_operation() -> CosmosOperation {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://acct.documents.azure.com/").unwrap(),
+            "k",
+        );
+        let db = DatabaseReference::from_name(account, "db");
+        CosmosOperation::read_container_by_name(db, "c".to_owned())
+    }
+
+    fn read_pk_ranges_operation() -> CosmosOperation {
+        CosmosOperation::read_all_partition_key_ranges(fake_container_reference())
+    }
+
     fn enabled_strategy() -> HedgingStrategy {
         HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(500)).unwrap())
     }
@@ -427,21 +479,71 @@ mod tests {
 
     #[test]
     fn should_hedge_non_document() {
-        // Reads against non-Document resource types are excluded in Phase 1.
+        // A Database read is a metadata read that is intentionally NOT in scope
+        // (this phase matches .NET #5999: only Collection Read and
+        // PartitionKeyRange ReadFeed are hedged). `(Database, Read)` is not a
+        // HEDGEABLE_PAIRS member, so it must not hedge.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_database_operation();
         assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_collection_read() {
+        // Metadata Collection Read `(DocumentCollection, Read)` IS hedged.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_container_operation();
+        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_pkrange_readfeed() {
+        // Metadata PartitionKeyRange ReadFeed `(PartitionKeyRange, ReadFeed)` IS
+        // hedged; the cache hedges only the cold first change-feed page and pins
+        // later pages to the winner via OperationOverrides::region_pin.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_pk_ranges_operation();
+        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn hedgeable_pairs_includes_both_metadata_reads() {
+        assert!(HEDGEABLE_PAIRS.contains(&(ResourceType::DocumentCollection, OperationType::Read)));
+        assert!(
+            HEDGEABLE_PAIRS.contains(&(ResourceType::PartitionKeyRange, OperationType::ReadFeed))
+        );
+    }
+
+    #[test]
+    fn hedgeable_pairs_excludes_stray_and_write_pairs() {
+        // Pair gating (not a cartesian resource×op gate) must keep these OUT even
+        // though each element appears in some in-scope pair. `(Document, ReadFeed)`
+        // is the dangerous one: a data-plane change feed with a region-affine
+        // continuation and no hedge pinning.
+        for stray in [
+            (ResourceType::Document, OperationType::ReadFeed),
+            (ResourceType::DocumentCollection, OperationType::ReadFeed),
+            (ResourceType::PartitionKeyRange, OperationType::Read),
+            (ResourceType::Database, OperationType::Read),
+            (ResourceType::Offer, OperationType::Read),
+            (ResourceType::Document, OperationType::Create),
+        ] {
+            assert!(
+                !HEDGEABLE_PAIRS.contains(&stray),
+                "{stray:?} must not be hedge-eligible"
+            );
+        }
     }
 
     #[cfg(feature = "preview_dtx")]
     #[test]
     fn should_hedge_distributed_transaction_never() {
         // DTX operations carry `ResourceType::DistributedTransactionBatch`, which
-        // is not in HEDGEABLE_RESOURCE_TYPES, so neither the write commit nor the
+        // is not in any HEDGEABLE_PAIRS entry, so neither the write commit nor the
         // read snapshot is hedge-eligible — even though the read reports
         // `is_read_only() == true`. This is the real guard: hedging can fire at
         // the pre-attempt STAGE 2b before the DTX classifier ever runs, so the
-        // resource-type exclusion (not the classifier short-circuit) is what
+        // pair-gating exclusion (not the classifier short-circuit) is what
         // keeps DTX out of hedging. Pin it directly.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let account = AccountReference::with_master_key(
@@ -839,6 +941,39 @@ mod tests {
             upgrade.strategy_config,
             HedgingStrategyConfig::new(upgrade.threshold)
         );
+    }
+
+    #[test]
+    fn evaluate_uses_fixed_1500ms_threshold_for_metadata_reads() {
+        // Both hedged metadata reads (Collection Read, PartitionKeyRange ReadFeed)
+        // use a fixed 1.5s threshold (match .NET), independent of request_timeout
+        // and not the data-plane min(1000ms, timeout/2) default.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let primary = primary_routing_for(&state);
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        for op in [read_container_operation(), read_pk_ranges_operation()] {
+            let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+                .expect("eligible metadata read");
+            assert_eq!(
+                upgrade.threshold.get(),
+                Duration::from_millis(1500),
+                "metadata reads use the fixed 1.5s threshold"
+            );
+            assert_eq!(
+                upgrade.strategy_config,
+                HedgingStrategyConfig::new(upgrade.threshold)
+            );
+        }
+
+        // A data-plane point read still gets the driver default (1000ms), even
+        // with a request_timeout supplied, so the metadata override is scoped.
+        let dp = read_item_operation();
+        let dp_upgrade =
+            evaluate_hedge_eligibility(&dp, &view, &state, &primary, Some(Duration::from_secs(10)))
+                .expect("eligible data-plane read");
+        assert_eq!(dp_upgrade.threshold.get(), Duration::from_millis(1000));
     }
 
     #[test]

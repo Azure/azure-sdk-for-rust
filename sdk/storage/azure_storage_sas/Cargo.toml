@@ -14,7 +14,7 @@ keywords = ["sdk", "cloud"]
 categories = ["api-bindings"]
 
 [dependencies]
-azure_core = { workspace = true }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1" }
 azure_storage_common = { path = "../azure_storage_common", version = "0.2.0" }
 base64 = { workspace = true }
 hmac = { workspace = true }

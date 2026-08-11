@@ -11,6 +11,11 @@ if ($IsMacOS) {
   exit 0
 }
 
+if ($true) {
+  Write-Host "AMQP Test Broker tests disabled until test broker is updated."
+  exit 0
+}
+
 # Create the test binary *outside* the repo root to avoid polluting the repo.
 $WorkingDirectory = [System.IO.Path]::Combine($RepoRoot, "../TestArtifacts")
 

@@ -2,25 +2,32 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::{offers_client, ClientContext},
+    clients::ClientContext,
+    diagnostics::CosmosOperationContext,
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
-    models::TransactionalBatch,
-    models::{BatchResponse, ChangeFeedItem, ItemResponse, ResourceResponse},
-    models::{ContainerProperties, PatchInstructions, ThroughputProperties},
+    models::{BatchResponse, ChangeFeedItem, ItemResponse, PatchInstructions, TransactionalBatch},
     options::{
-        BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
-        ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition, QueryOptions,
-        ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions, SessionToken,
-        ThroughputOptions,
+        BatchOptions, BinaryEncodingOptions, ChangeFeedMode, ChangeFeedOptions,
+        ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, PatchItemOptions,
+        Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, SessionToken,
     },
-    PartitionKey, Query,
+    PartitionKey, Query, ResourceIdentity,
 };
 
-use super::ThroughputPoller;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
 use serde::{de::DeserializeOwned, Serialize};
+
+use crate::models::{ContainerProperties, ResourceResponse};
+
+#[cfg(feature = "control_plane")]
+use super::ThroughputPoller;
+#[cfg(feature = "control_plane")]
+use crate::{
+    models::ThroughputProperties,
+    options::{DeleteContainerOptions, ReplaceContainerOptions, ThroughputOptions},
+};
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
@@ -40,26 +47,90 @@ impl ContainerClient {
 
     pub(crate) async fn new(
         context: ClientContext,
-        container_id: &str,
-        database_id: &str,
+        database: &ResourceIdentity,
+        container: ResourceIdentity,
     ) -> crate::Result<Self> {
-        // Eagerly resolve immutable container metadata from the driver.
-        let container_ref = context
-            .driver
-            .resolve_container(database_id, container_id)
-            .await
-            .map_err(|e| {
-                azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
-                    .with_context(format!(
-                        "failed to resolve container metadata for '{database_id}/{container_id}'"
-                    ))
+        // The container's addressing mode must match the database's: name-with-name
+        // or RID-with-RID. Mixing the two is not supported by the service routing.
+        let container_ref = match (database, &container) {
+            (ResourceIdentity::Name(db_name), ResourceIdentity::Name(container_name)) => context
+                .driver
+                .resolve_container(db_name, container_name)
+                .await
+                .map_err(|e| {
+                    azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
+                        .with_context(format!(
+                            "failed to resolve container metadata for '{db_name}/{container_name}'"
+                        ))
+                        .build()
+                })?,
+            (ResourceIdentity::Rid(db_rid), ResourceIdentity::Rid(container_rid)) => {
+                let resolved = context
+                    .driver
+                    .resolve_container_by_rid(container_rid.as_str())
+                    .await
+                    .map_err(|e| {
+                        azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
+                            .with_context(format!(
+                                "failed to resolve container metadata for RID '{}'",
+                                container_rid.as_str()
+                            ))
+                            .build()
+                    })?;
+
+                // The parent database RID is derived from the container RID, not
+                // taken from this `DatabaseClient`. Reject a container whose parent
+                // database does not match the addressed database so callers can't
+                // accidentally reach into a different database.
+                if resolved.database_rid() != db_rid.as_str() {
+                    return Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                        .with_status(
+                            azure_data_cosmos_driver::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID,
+                        )
+                        .with_message(format!(
+                            "container RID '{}' belongs to database '{}', not the addressed database '{}'",
+                            container_rid.as_str(),
+                            resolved.database_rid(),
+                            db_rid.as_str()
+                        ))
+                        .build()
+                        .into());
+                }
+
+                resolved
+            }
+            (ResourceIdentity::Name(_), ResourceIdentity::Rid(_))
+            | (ResourceIdentity::Rid(_), ResourceIdentity::Name(_)) => {
+                return Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                    .with_status(
+                        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING,
+                    )
+                    .with_message(
+                        "database and container must use the same addressing mode: \
+                         address both by name or both by RID",
+                    )
                     .build()
-            })?;
+                    .into());
+            }
+        };
 
         Ok(Self {
             container_ref,
             context,
         })
+    }
+
+    /// Builds the SDK-side [`CosmosOperationContext`] for this container's
+    /// operations, carrying the operation name plus the database and container
+    /// identity the driver context does not know.
+    fn operation_context(&self, operation_name: &'static str) -> CosmosOperationContext {
+        let context = CosmosOperationContext::new()
+            .with_operation_name(operation_name)
+            .with_container_name(self.container_ref.name().to_string());
+        match self.container_ref.database_name() {
+            Some(name) => context.with_database_name(name.to_string()),
+            None => context,
+        }
     }
 
     /// Reads the properties of the container.
@@ -85,14 +156,15 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let operation = CosmosOperation::read_container(self.container_ref.clone());
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("read_container"))?,
         ))
     }
 
@@ -122,6 +194,7 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "control_plane")]
     pub async fn replace(
         &self,
         properties: ContainerProperties,
@@ -138,14 +211,16 @@ impl ContainerClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, operation_options)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_result(driver_result, || {
+                self.operation_context("replace_container")
+            })?,
         ))
     }
 
@@ -155,16 +230,18 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[cfg(feature = "control_plane")]
     pub async fn read_throughput(
         &self,
         options: Option<ThroughputOptions>,
     ) -> crate::Result<Option<ThroughputProperties>> {
         let options = options.unwrap_or_default();
-        offers_client::find_offer(
-            &self.context.driver,
+        crate::clients::offers_client::find_offer(
+            &self.context,
             self.container_ref.account(),
             self.container_ref.rid(),
             options.operation,
+            self.operation_context("read_container_throughput"),
         )
         .await
     }
@@ -194,6 +271,7 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "control_plane")]
     pub async fn begin_replace_throughput(
         &self,
         throughput: ThroughputProperties,
@@ -201,12 +279,13 @@ impl ContainerClient {
     ) -> crate::Result<ThroughputPoller> {
         let options = options.unwrap_or_default();
 
-        offers_client::begin_replace(
-            self.context.driver.clone(),
+        crate::clients::offers_client::begin_replace(
+            self.context.clone(),
             self.container_ref.account().clone(),
             self.container_ref.rid(),
             throughput,
             options.operation,
+            self.operation_context("replace_container_throughput"),
         )
         .await
     }
@@ -217,6 +296,7 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[cfg(feature = "control_plane")]
     pub async fn delete(
         &self,
         options: Option<DeleteContainerOptions>,
@@ -224,14 +304,15 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let operation = CosmosOperation::delete_container(self.container_ref.clone());
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("delete_container"))?,
         ))
     }
 
@@ -308,7 +389,9 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let (operation_options, binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let body = serialize_item_body(&item, binary.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -321,16 +404,18 @@ impl ContainerClient {
         let operation = CosmosOperation::create_item(item_ref).with_body(body);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
-        let driver_response = self
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
+        let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .execute_singleton_operation(operation, operation_options)
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("create_item"))?,
         ))
     }
 
@@ -406,7 +491,9 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let (operation_options, binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let body = serialize_item_body(&item, binary.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -419,16 +506,18 @@ impl ContainerClient {
         let operation = CosmosOperation::replace_item(item_ref).with_body(body);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
-        let driver_response = self
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
+        let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .execute_singleton_operation(operation, operation_options)
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("replace_item"))?,
         ))
     }
 
@@ -527,14 +616,15 @@ impl ContainerClient {
         // session token.
         let operation = apply_item_options(operation, options.session_token, None);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("patch_item"))?,
         ))
     }
 
@@ -614,7 +704,9 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let (operation_options, binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let body = serialize_item_body(&item, binary.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -627,16 +719,18 @@ impl ContainerClient {
         let operation = CosmosOperation::upsert_item(item_ref).with_body(body);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
-        let driver_response = self
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
+        let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .execute_singleton_operation(operation, operation_options)
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("upsert_item"))?,
         ))
     }
 
@@ -675,6 +769,8 @@ impl ContainerClient {
         options: Option<ItemReadOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
+        let (operation_options, _binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -687,16 +783,18 @@ impl ContainerClient {
         let operation = CosmosOperation::read_item(item_ref);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
-        let driver_response = self
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
+        let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .execute_singleton_operation(operation, operation_options)
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("read_item"))?,
         ))
     }
 
@@ -740,15 +838,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("delete_item"))?,
         ))
     }
 
@@ -851,6 +950,7 @@ impl ContainerClient {
                 initial_operation,
                 &options.operation,
                 options.feed.continuation_token.as_ref(),
+                &options.feed.to_plan_options(),
             )
             .await?;
         Ok(QueryItemIterator::new(
@@ -858,15 +958,31 @@ impl ContainerClient {
             Some(self.container_ref.clone()),
             plan,
             options.operation,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("query_items"),
         ))
     }
 
     /// Queries the change feed for a container, returning a stream of pages.
     ///
-    /// The change feed provides an ordered list of changes (creates and
-    /// replaces) made to items in the container. Each change is yielded as a
-    /// [`ChangeFeedItem<T>`](crate::models::ChangeFeedItem); see that type for
-    /// how to read the changed document.
+    /// The change feed provides an ordered list of changes made to items in the
+    /// container. Every change is returned as a
+    /// [`ChangeFeedItem<T>`](crate::models::ChangeFeedItem) wire-format
+    /// envelope, so bind `T = YourDoc` and read the post-change
+    /// document via [`current()`](crate::models::ChangeFeedItem::current).
+    ///
+    /// The [`mode`](crate::options::ChangeFeedOptions::mode) selects what each
+    /// change carries:
+    ///
+    /// * [`ChangeFeedMode::LatestVersion`] (default) — the latest version of
+    ///   each created or replaced item. `current()` holds the item and
+    ///   `metadata()` may also be present (for example `lsn` and the commit
+    ///   timestamp), while `previous()` is not populated.
+    /// * [`ChangeFeedMode::AllVersionsAndDeletes`] — every intermediate version
+    ///   plus deletes. The envelope additionally exposes the
+    ///   pre-change document
+    ///   ([`previous()`](crate::models::ChangeFeedItem::previous)) and change
+    ///   [`metadata()`](crate::models::ChangeFeedItem::metadata).
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
@@ -875,12 +991,32 @@ impl ContainerClient {
     ///   the token holds its own position.
     /// * `options` - Optional parameters controlling mode, session token, and paging.
     ///
+    /// # AllVersionsAndDeletes limitations
+    ///
+    /// * Only [`ChangeFeedStartFrom::Now`] or resuming from a continuation token
+    ///   is supported. [`ChangeFeedStartFrom::Beginning`] and
+    ///   [`ChangeFeedStartFrom::PointInTime`] are **not** supported, because
+    ///   intermediate versions and deletes are only retained within the
+    ///   container's retention / continuous-backup window. The service gates
+    ///   this and rejects such a request with `400 Bad Request`.
+    /// * When starting from [`ChangeFeedStartFrom::Now`], every range is pinned
+    ///   to its concrete starting position before the first page is returned, so
+    ///   a range that is never served before a checkpoint still resumes from its
+    ///   true start rather than resume-time. No intermediate versions or deletes
+    ///   are dropped across a resume. `Now` is deliberately **not** rewritten to
+    ///   a concrete [`ChangeFeedStartFrom::PointInTime`], which would change its
+    ///   semantics; each range instead captures its own server continuation.
+    /// * The feed mode is encoded in the continuation token, so a token issued in
+    ///   one mode cannot be used to resume in another; attempting to do so is
+    ///   rejected. Re-pass [`ChangeFeedMode::AllVersionsAndDeletes`] on resume to
+    ///   match the original mode.
+    ///
     /// # Examples
     ///
+    /// Read the latest version of each change from the beginning:
+    ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{
-    ///     clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom,
-    /// };
+    /// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
     /// use futures::StreamExt;
     /// use serde::Deserialize;
     ///
@@ -908,6 +1044,45 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// Read every version and delete:
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{
+    ///     clients::ContainerClient,
+    ///     feed::FeedScope,
+    ///     options::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom},
+    /// };
+    /// use futures::StreamExt;
+    /// use serde::Deserialize;
+    ///
+    /// // A delete envelope may omit non-key fields, so keep them optional.
+    /// #[derive(Debug, Deserialize)]
+    /// struct MyItem {
+    ///     id: String,
+    ///     #[serde(default)]
+    ///     value: Option<i64>,
+    /// }
+    ///
+    /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
+    /// let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
+    /// let mut pages = container
+    ///     .query_change_feed::<MyItem>(
+    ///         FeedScope::full_container(),
+    ///         ChangeFeedStartFrom::Now,
+    ///         Some(options),
+    ///     )
+    ///     .await?;
+    ///
+    /// while let Some(page) = pages.next().await {
+    ///     for item in page?.items() {
+    ///         println!("{:?}: current={:?} previous={:?}",
+    ///             item.operation_type(), item.current(), item.previous());
+    ///     }
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn query_change_feed<T: DeserializeOwned + Send + 'static>(
         &self,
         scope: FeedScope,
@@ -916,10 +1091,29 @@ impl ContainerClient {
     ) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<T>>> {
         let options = options.unwrap_or_default();
 
-        let mut initial_operation = CosmosOperation::change_feed(
-            self.container_ref.clone(),
-            Some(scope.into_feed_range(self.container_ref.partition_key_definition())),
-        );
+        let feed_range = scope.into_feed_range(self.container_ref.partition_key_definition());
+
+        // The mode selects the base operation, i.e. which `A-IM` header is sent.
+        // Both modes return `ChangeFeedItem<T>` envelopes; AllVersionsAndDeletes
+        // additionally populates `previous` and `metadata`.
+        let mut initial_operation = match options.mode {
+            ChangeFeedMode::AllVersionsAndDeletes => {
+                // AllVersionsAndDeletes can only read within the container's
+                // retention / continuous-backup window, so it supports starting
+                // only from "now" or by resuming a continuation token. Reading
+                // from the beginning of the container or from an arbitrary point
+                // in time is not supported in this mode; the service gates this
+                // and returns a `400 Bad Request`, so it is not re-validated
+                // client-side here.
+                CosmosOperation::change_feed_all_versions_and_deletes(
+                    self.container_ref.clone(),
+                    Some(feed_range),
+                )
+            }
+            ChangeFeedMode::LatestVersion => {
+                CosmosOperation::change_feed(self.container_ref.clone(), Some(feed_range))
+            }
+        };
 
         if let Some(token) = options.session_token {
             initial_operation = initial_operation.with_session_token(token);
@@ -936,21 +1130,21 @@ impl ContainerClient {
         // precedence. The driver owns the mapping to wire headers.
         initial_operation = initial_operation.with_change_feed_start(start_from);
 
-        let plan = self
-            .context
-            .driver
-            .plan_operation(
-                initial_operation,
-                &options.operation,
-                options.feed.continuation_token.as_ref(),
-            )
-            .await?;
+        let plan = Box::pin(self.context.driver.plan_operation(
+            initial_operation,
+            &options.operation,
+            options.feed.continuation_token.as_ref(),
+            &options.feed.to_plan_options(),
+        ))
+        .await?;
 
         Ok(ChangeFeedPageIterator::new(
             self.context.driver.clone(),
             Some(self.container_ref.clone()),
             plan,
             options.operation,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("query_change_feed"),
         ))
     }
 
@@ -1008,14 +1202,15 @@ impl ContainerClient {
             CosmosOperation::batch(self.container_ref.clone(), driver_pk).with_body(body);
         let operation = apply_batch_options(operation, &options);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(BatchResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("execute_batch"))?,
         ))
     }
 
@@ -1029,52 +1224,29 @@ impl ContainerClient {
             .context
             .driver
             .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
-            .await
-            .ok_or_else(|| {
-                // Service was reachable but didn't return a usable routing
-                // map — a service-side invariant violation, surfaced as a
-                // 500 with the client-generated
-                // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
-                // callers can distinguish it from caller misuse.
-                crate::DriverCosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                    .with_message("failed to resolve routing map for container")
-                    .build()
-            })?;
+            .await;
 
-        if ranges.is_empty() && !options.force_refresh() {
+        if should_force_refresh_feed_ranges(ranges.as_deref(), options.force_refresh()) {
             // A valid container always has at least one partition key range.
-            // Empty result likely means a stale/failed cache — retry with forced refresh.
+            // Missing or empty results likely mean a stale/failed cache.
             ranges = self
                 .context
                 .driver
                 .resolve_all_partition_key_ranges(&self.container_ref, true)
-                .await
-                .ok_or_else(|| {
-                    crate::DriverCosmosError::builder()
-                        .with_status(
-                            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-                        )
-                        .with_message("failed to resolve routing map for container")
-                        .build()
-                })?;
+                .await;
         }
 
-        if ranges.is_empty() {
-            // Forced refresh produced an empty routing map — either the
-            // container truly does not exist or the service is
-            // unreachable. Map to 503 with the transport-generated
-            // sub-status so the caller treats this as a service-side
-            // availability issue (not their bug).
-            return Err(crate::DriverCosmosError::builder()
-                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
-                .with_message(
-                    "resolved routing map contains no partition key ranges; \
-                     the container may not exist or the service may be unreachable",
-                )
+        let ranges = ranges.ok_or_else(|| {
+            // Service was reachable but didn't return a usable routing
+            // map — a service-side invariant violation, surfaced as a
+            // 500 with the client-generated
+            // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
+            // callers can distinguish it from caller misuse.
+            crate::DriverCosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to resolve routing map for container")
                 .build()
-                .into());
-        }
+        })?;
 
         ranges
             .iter()
@@ -1251,6 +1423,55 @@ fn apply_item_options(
     operation
 }
 
+/// Serializes an item write body as either Cosmos binary JSON (`binary`) or
+/// UTF-8 text JSON.
+///
+/// The binary path uses the driver's native serde serializer
+/// [`binary_json::to_vec`](azure_data_cosmos_driver::binary_json::to_vec),
+/// encoding `T` straight to Cosmos binary JSON without an intermediate
+/// [`serde_json::Value`]; the text path is the original [`serde_json::to_vec`].
+/// Both produce a body the service accepts — the binary form begins with the
+/// `0x80` preamble, which the service detects from the first byte, so the
+/// request `Content-Type` stays `application/json`.
+fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Vec<u8>> {
+    if binary {
+        let body = azure_data_cosmos_driver::binary_json::to_vec(item)
+            .map_err(crate::error::convert_binary_encode_error)?;
+        tracing::debug!(
+            binary_encoding = true,
+            "binary encoding applied to item write body"
+        );
+        Ok(body)
+    } else {
+        tracing::debug!(
+            binary_encoding = false,
+            "item write body serialized as text JSON"
+        );
+        serde_json::to_vec(item).map_err(crate::error::convert_json_encode_error)
+    }
+}
+
+/// Resolves the effective binary encoding for an item operation, preferring a
+/// caller-set per-operation value over the client-level default.
+///
+/// Returns the resolved options alongside the updated [`OperationOptions`] so
+/// the caller drives body serialization from the same decision. The operation
+/// field is normalized to `Some(effective)` when enabled (the driver negotiates
+/// the binary wire) and `None` when disabled (byte-for-byte unchanged).
+fn resolve_binary_encoding(
+    mut options: OperationOptions,
+    client_default: &BinaryEncodingOptions,
+) -> (OperationOptions, BinaryEncodingOptions) {
+    let effective = options
+        .binary_encoding
+        .take()
+        .unwrap_or_else(|| client_default.clone());
+    // Write `Some` (never `None`, which means "inherit") so a resolved disable
+    // overrides driver-layer defaults; the wire is unchanged when disabled.
+    options.binary_encoding = Some(effective.clone());
+    (options, effective)
+}
+
 /// Applies [`BatchOptions`] fields to a [`CosmosOperation`].
 ///
 /// [`BatchOptions`] carries a session token but no precondition (ETag-based
@@ -1260,6 +1481,10 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
         operation = operation.with_session_token(session_token.clone());
     }
     operation
+}
+
+fn should_force_refresh_feed_ranges<T>(ranges: Option<&[T]>, force_refresh: bool) -> bool {
+    !force_refresh && ranges.is_none_or(<[T]>::is_empty)
 }
 
 /// Compile-time guarantee that the futures returned by [`ContainerClient`]
@@ -1278,4 +1503,135 @@ fn _assert_futures_are_send() {
     let patch: PatchInstructions = todo!();
     let options: Option<PatchItemOptions> = todo!();
     assert_send(client.patch_item(partition_key, item_id, patch, options));
+}
+
+#[cfg(test)]
+mod tests {
+    //! These are sanity checks that [`serialize_item_body`] picks the right
+    //! path (text vs binary) and that binary encoding is actually applied —
+    //! not full serialize/deserialize coverage. Byte-level codec correctness
+    //! lives in the driver's `binary_json` snapshot, golden-vector, and parity
+    //! tests.
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn serialize_item_body_text_matches_serde_to_vec() {
+        // The text path is byte-for-byte the original `serde_json::to_vec`.
+        let item = json!({ "id": "1", "count": 7, "tags": ["a", "b"] });
+        let body = serialize_item_body(&item, false).unwrap();
+        assert_eq!(body, serde_json::to_vec(&item).unwrap());
+    }
+
+    #[test]
+    fn serialize_item_body_binary_round_trips() {
+        // The binary path begins with the `0x80` preamble and decodes back to
+        // the same value the text path would have serialized.
+        let item = json!({ "id": "doc-1", "count": 42, "nested": { "ok": true } });
+        let body = serialize_item_body(&item, true).unwrap();
+        assert_eq!(body.first(), Some(&0x80));
+        let decoded: serde_json::Value =
+            azure_data_cosmos_driver::binary_json::decode(&body).unwrap();
+        assert_eq!(decoded, item);
+    }
+
+    #[test]
+    fn serialize_item_body_text_encode_failure_is_request_body_invalid() {
+        // A map with non-string keys fails `serde_json::to_vec`; the write path
+        // must label it as a request-body (encode) error, not response-body.
+        let item: std::collections::HashMap<(i32, i32), i32> =
+            std::collections::HashMap::from([((1, 2), 3)]);
+        let err = serialize_item_body(&item, false).expect_err("must fail to serialize");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID
+        );
+    }
+
+    #[test]
+    fn serialize_item_body_binary_differs_from_text() {
+        // Sanity check that the two paths actually produce different bytes.
+        let item = json!({ "id": "x" });
+        let text = serialize_item_body(&item, false).unwrap();
+        let binary = serialize_item_body(&item, true).unwrap();
+        assert_ne!(text, binary);
+        assert_ne!(text.first(), Some(&0x80));
+    }
+
+    #[test]
+    fn resolve_binary_encoding_uses_client_default_when_operation_unset() {
+        // No per-operation value: the client-level default applies. Enabled ⇒
+        // the driver option is set.
+        let client = BinaryEncodingOptions::new().with_enabled(true);
+        let (options, effective) = resolve_binary_encoding(OperationOptions::default(), &client);
+        assert!(effective.enabled);
+        assert_eq!(options.binary_encoding, Some(client));
+    }
+
+    #[test]
+    fn resolve_binary_encoding_carries_request_text_response() {
+        // Binary on with request_text_response: the driver keeps the wire binary
+        // and transcodes the response to text. Both flags carry through.
+        let client = BinaryEncodingOptions::new()
+            .with_enabled(true)
+            .with_request_text_response(true);
+        let (options, effective) = resolve_binary_encoding(OperationOptions::default(), &client);
+        assert!(effective.enabled);
+        assert!(effective.request_text_response);
+        let resolved = options.binary_encoding.expect("binary encoding set");
+        assert!(resolved.enabled);
+        assert!(resolved.request_text_response);
+    }
+
+    #[test]
+    fn resolve_binary_encoding_omits_option_when_disabled() {
+        // Disabled default with no per-op value is preserved as `Some(false)`,
+        // not erased to `None`, so it overrides driver-layer defaults.
+        let client = BinaryEncodingOptions::new().with_enabled(false);
+        let (options, effective) = resolve_binary_encoding(OperationOptions::default(), &client);
+        assert!(!effective.enabled);
+        assert_eq!(
+            options.binary_encoding.map(|b| b.enabled),
+            Some(false),
+            "resolved disable must be preserved as Some(false) to override driver defaults"
+        );
+    }
+
+    #[test]
+    fn resolve_binary_encoding_operation_disable_overrides_enabled_client() {
+        // A per-operation disable wins over an enabled client default.
+        let client = BinaryEncodingOptions::new().with_enabled(true);
+        let mut operation = OperationOptions::default();
+        operation.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(false));
+        let (options, effective) = resolve_binary_encoding(operation, &client);
+        assert!(!effective.enabled);
+        assert_eq!(
+            options.binary_encoding.map(|b| b.enabled),
+            Some(false),
+            "per-operation disable must be preserved as Some(false)"
+        );
+    }
+
+    #[test]
+    fn resolve_binary_encoding_operation_enable_overrides_disabled_client() {
+        // Client disabled, but the caller enabled binary for this operation:
+        // the per-operation value wins, so binary is negotiated for this request.
+        let client = BinaryEncodingOptions::new().with_enabled(false);
+        let operation_be = BinaryEncodingOptions::new()
+            .with_enabled(true)
+            .with_request_text_response(true);
+        let mut operation = OperationOptions::default();
+        operation.binary_encoding = Some(operation_be.clone());
+        let (options, effective) = resolve_binary_encoding(operation, &client);
+        assert!(effective.enabled);
+        assert_eq!(options.binary_encoding, Some(operation_be));
+    }
+
+    #[test]
+    fn feed_ranges_refreshes_missing_or_empty_initial_resolution() {
+        assert!(should_force_refresh_feed_ranges::<()>(None, false));
+        assert!(should_force_refresh_feed_ranges::<()>(Some(&[]), false));
+        assert!(!should_force_refresh_feed_ranges(Some(&[()]), false));
+        assert!(!should_force_refresh_feed_ranges::<()>(None, true));
+    }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos_driver"
-version = "0.6.0"
+version = "0.7.0"
 description = "Core implementation layer for Azure Cosmos DB - provides transport, routing, and protocol handling for cross-language SDK reuse"
 readme = "README.md"
 authors.workspace = true
@@ -21,7 +21,7 @@ async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
-azure_data_cosmos_macros = { version = "0.3.0", path = "../azure_data_cosmos_macros" }
+azure_data_cosmos_macros = "0.2.0"
 backtrace.workspace = true
 base64.workspace = true
 bytes.workspace = true
@@ -32,7 +32,11 @@ percent-encoding = { workspace = true, optional = true }
 rand.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
-serde_json.workspace = true
+# `raw_value` lets the cross-partition streaming ORDER BY pipeline
+# (`driver::dataflow::query_response`) retain each item's `payload` as its
+# exact original JSON bytes while parsing the rewritten-query envelope,
+# instead of re-serializing (and potentially reformatting numbers).
+serde_json = { workspace = true, features = ["raw_value"] }
 time.workspace = true
 tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 tracing.workspace = true

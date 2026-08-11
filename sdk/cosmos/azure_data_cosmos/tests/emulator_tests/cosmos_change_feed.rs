@@ -16,6 +16,18 @@
 //!   occurred after the captured position.
 //! * Resuming a partially-polled `StartFrom::Now` feed does not replay history
 //!   on the partitions that were never polled before the checkpoint.
+//!
+//! A second group exercises the `AllVersionsAndDeletes` ("full fidelity") mode.
+//! How the mode is enabled differs by target: the emulator opts in per container
+//! via a change feed retention policy, while live accounts enable it at the
+//! account level and reject an explicit container-level retention (see
+//! [`create_avad_container`]). Create, replace, and delete each surface as a
+//! distinct [`ChangeFeedItem`] envelope, and the mode reads correctly across a
+//! cross-partition fan-out. These AVAD tests are gated on
+//! `test_category = "emulator"` only — the vnext (Linux) emulator does not yet
+//! support full-fidelity reads. The account-level opt-in cannot be set when an
+//! account is created and is not available on every subscription, so against a
+//! live account that lacks it these tests skip rather than fail.
 
 use super::framework;
 
@@ -23,12 +35,21 @@ use std::error::Error;
 use std::num::NonZeroU32;
 use std::time::Duration;
 
+use azure_core::http::StatusCode;
+use azure_data_cosmos::clients::{ContainerClient, DatabaseClient};
 use azure_data_cosmos::feed::{ChangeFeedPageIterator, ContinuationToken, FeedScope};
-use azure_data_cosmos::models::{ChangeFeedItem, ThroughputProperties};
-use azure_data_cosmos::options::{ChangeFeedOptions, ChangeFeedStartFrom, MaxItemCountHint};
-use framework::{test_data, MockItem, TestClient, TestOptions};
+use azure_data_cosmos::models::{
+    ChangeFeedItem, ChangeFeedOperationType, ChangeFeedPolicy, ContainerProperties,
+    ThroughputProperties,
+};
+use azure_data_cosmos::options::{
+    ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom, CreateContainerOptions,
+    MaxItemCountHint,
+};
+use framework::{test_data, MockItem, TestClient, TestOptions, TestRunContext};
 use futures::StreamExt;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
 /// Maximum number of page polls a drain loop will perform before giving up.
@@ -114,8 +135,16 @@ fn currents(envelopes: Vec<ChangeFeedItem<MockItem>>) -> Vec<MockItem> {
 /// (single-request) change feed path.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_from_beginning_single_partition() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -155,8 +184,16 @@ pub async fn change_feed_from_beginning_single_partition() -> Result<(), Box<dyn
 /// partitions so the cross-partition merge path is genuinely exercised.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_from_beginning_full_container() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -197,8 +234,16 @@ pub async fn change_feed_from_beginning_full_container() -> Result<(), Box<dyn E
 /// position and surfaces only changes made afterwards.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_start_from_now_returns_only_new_changes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -260,8 +305,12 @@ pub async fn change_feed_start_from_now_returns_only_new_changes() -> Result<(),
 /// without erroring or terminating the stream.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn change_feed_no_changes_returns_empty_page() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -304,8 +353,16 @@ pub async fn change_feed_no_changes_returns_empty_page() -> Result<(), Box<dyn E
 /// position.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -476,8 +533,16 @@ pub async fn change_feed_now_resume_does_not_replay_history() -> Result<(), Box<
 /// to keep the boundary unambiguous.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_point_in_time_excludes_earlier_changes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -537,8 +602,16 @@ pub async fn change_feed_point_in_time_excludes_earlier_changes() -> Result<(), 
 /// still surfacing every item exactly once.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet model change-feed start and continuation semantics"
 )]
 pub async fn change_feed_max_item_count_pages_backlog() -> Result<(), Box<dyn Error>> {
     const PAGE_LIMIT: u32 = 10;
@@ -613,4 +686,490 @@ pub async fn change_feed_max_item_count_pages_backlog() -> Result<(), Box<dyn Er
         Some(TestOptions::for_emulator()),
     )
     .await
+}
+
+// ---------------------------------------------------------------------------
+// AllVersionsAndDeletes ("full fidelity") change feed
+// ---------------------------------------------------------------------------
+
+/// A change feed document tolerant of the minimal `current` a full-fidelity
+/// delete carries: every field is optional so a delete envelope — whose
+/// `current` omits (or nulls out) the document fields — still deserializes
+/// instead of failing the whole page.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AvadItem {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    partition_key: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
+}
+
+impl AvadItem {
+    fn doc(id: &str, partition_key: &str, description: &str) -> Self {
+        Self {
+            id: Some(id.to_string()),
+            partition_key: Some(partition_key.to_string()),
+            description: Some(description.to_string()),
+        }
+    }
+}
+
+/// Creates a container configured for full-fidelity (`AllVersionsAndDeletes`)
+/// reads.
+///
+/// How the retention window is configured differs between the emulator and a
+/// live account:
+///
+/// * **Emulator**: full-fidelity retention is opted into per container via
+///   `changeFeedPolicy.retentionDuration`, so `retention` is applied.
+/// * **Live account**: `AllVersionsAndDeletes` requires the account to run in
+///   continuous backup mode, and the retention window is then derived from the
+///   backup retention. Setting `changeFeedPolicy.retentionDuration` on such an
+///   account is rejected with HTTP 400 ("The retention duration in the Change
+///   Feed policy should not be set when continuous backup mode is enabled for
+///   the database account"), so the policy is omitted entirely.
+///
+/// See <https://aka.ms/ChangeFeed-AllVersionsAndDeletes>.
+async fn create_avad_container(
+    run_context: &TestRunContext,
+    db_client: &DatabaseClient,
+    name: &str,
+    retention: Duration,
+    throughput: Option<ThroughputProperties>,
+) -> azure_data_cosmos::Result<ContainerClient> {
+    let mut properties = ContainerProperties::new(name.to_string(), "/partitionKey".into());
+    if framework::targets_emulator() {
+        properties = properties.with_change_feed_policy(
+            ChangeFeedPolicy::default().with_retention_duration(retention),
+        );
+    }
+    let options = throughput.map(|t| CreateContainerOptions::default().with_throughput(t));
+    run_context
+        .create_container(db_client, properties, options)
+        .await
+}
+
+/// Polls an AVAD change feed, accumulating every envelope seen, until
+/// `is_complete` is satisfied by the collection so far or a deadline elapses.
+///
+/// Full-fidelity changes — deletes especially — can take a little while to
+/// materialize on the emulator, so (unlike the incremental [`drain_changes`]
+/// helper) this keeps polling across empty 304 pages rather than stopping at the
+/// first empty streak.
+async fn drain_avad_until<F>(
+    iterator: &mut ChangeFeedPageIterator<ChangeFeedItem<AvadItem>>,
+    deadline: std::time::Instant,
+    mut is_complete: F,
+) -> Result<Vec<ChangeFeedItem<AvadItem>>, Box<dyn Error>>
+where
+    F: FnMut(&[ChangeFeedItem<AvadItem>]) -> bool,
+{
+    let mut collected = Vec::new();
+
+    while std::time::Instant::now() < deadline {
+        if is_complete(&collected) {
+            break;
+        }
+
+        match iterator.next().await {
+            Some(page) => {
+                let page = page?;
+                if page.items().is_empty() {
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                } else {
+                    collected.extend(page.into_items());
+                }
+            }
+            None => break,
+        }
+    }
+
+    Ok(collected)
+}
+
+/// Whether an error is the service refusing `AllVersionsAndDeletes` because the
+/// account was never enabled for it.
+///
+/// The mode requires an account-level opt-in that cannot be set at creation
+/// time and is not available on every subscription, so a live account that is
+/// otherwise healthy can still reject the read outright. Detecting it lets the
+/// AVAD tests skip rather than fail on such an account, while still running in
+/// full against the emulator (and against any live account that does have the
+/// mode enabled).
+fn avad_unsupported(err: &azure_data_cosmos::CosmosError) -> bool {
+    if err.status().status_code() != StatusCode::BadRequest {
+        return false;
+    }
+    message_reports_avad_unsupported(&err.to_string())
+}
+
+/// The message-text half of [`avad_unsupported`], split out so the exact
+/// wording the service uses can be pinned by a unit test.
+fn message_reports_avad_unsupported(message: &str) -> bool {
+    message.contains("All Versions and Deletes") && message.contains("must be enabled")
+}
+
+/// Result of the initial "prime" poll on an `AllVersionsAndDeletes` feed.
+enum AvadPrime {
+    /// The feed is positioned and the test can proceed.
+    Ready,
+    /// The account does not support the mode; the caller should skip.
+    Unsupported,
+}
+
+/// Performs the initial `StartFrom::Now` poll, which must return an empty page,
+/// and reports whether the account supports the mode at all.
+async fn prime_avad_feed(
+    iterator: &mut ChangeFeedPageIterator<ChangeFeedItem<AvadItem>>,
+) -> Result<AvadPrime, Box<dyn Error>> {
+    match iterator
+        .next()
+        .await
+        .expect("change feed stream always yields a page")
+    {
+        Ok(page) => {
+            assert!(
+                page.items().is_empty(),
+                "StartFrom::Now must start empty, got {}",
+                page.items().len()
+            );
+            Ok(AvadPrime::Ready)
+        }
+        Err(err) if avad_unsupported(&err) => Ok(AvadPrime::Unsupported),
+        Err(err) => Err(err.into()),
+    }
+}
+
+/// AllVersionsAndDeletes surfaces a create, a replace, and a delete of the same
+/// document as three distinct full-fidelity envelopes.
+///
+/// This mirrors the .NET SDK's emulator coverage: with only a retention policy
+/// configured the service does not return a pre-image, so `previous` is absent
+/// on every envelope; the replace's `previousImageLsn` instead chains back to
+/// the create's LSN. The delete carries a delete `operationType` and metadata
+/// but a minimal `current`.
+///
+/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
+/// supported by the vnext (Linux) emulator.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+)]
+pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result<(), Box<dyn Error>>
+{
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = create_avad_container(
+                &run_context,
+                db_client,
+                "AvadCreateReplaceDelete",
+                // The emulator accepts a short (5 minute) full-fidelity retention.
+                Duration::from_secs(5 * 60),
+                None,
+            )
+            .await?;
+            let pk = "1";
+
+            let mut iterator = container
+                .query_change_feed::<AvadItem>(
+                    FeedScope::partition(pk),
+                    ChangeFeedStartFrom::Now,
+                    Some(
+                        ChangeFeedOptions::default()
+                            .with_mode(ChangeFeedMode::AllVersionsAndDeletes),
+                    ),
+                )
+                .await?;
+
+            // Prime the `Now` position: the first poll (before any writes) is an
+            // empty 304 that establishes where the feed starts.
+            if let AvadPrime::Unsupported = prime_avad_feed(&mut iterator).await? {
+                eprintln!(
+                    "Skipping all_versions_and_deletes_surfaces_create_replace_delete: \
+                     the account does not have AllVersionsAndDeletes enabled."
+                );
+                return Ok(());
+            }
+
+            // Create, then replace, then delete the same document.
+            container
+                .create_item(pk, "1", &AvadItem::doc("1", pk, "original test"), None)
+                .await?;
+            container
+                .replace_item(pk, "1", &AvadItem::doc("1", pk, "test after replace"), None)
+                .await?;
+            container.delete_item(pk, "1", None).await?;
+
+            // Full-fidelity deletes can lag, so poll until the delete arrives.
+            let deadline = std::time::Instant::now() + Duration::from_secs(180);
+            let envelopes = drain_avad_until(&mut iterator, deadline, |seen| {
+                seen.iter()
+                    .any(|e| e.operation_type() == Some(ChangeFeedOperationType::Delete))
+            })
+            .await?;
+
+            let find_op = |op| {
+                envelopes
+                    .iter()
+                    .find(move |e| e.operation_type() == Some(op))
+            };
+            let create =
+                find_op(ChangeFeedOperationType::Create).expect("a create envelope must surface");
+            let replace =
+                find_op(ChangeFeedOperationType::Replace).expect("a replace envelope must surface");
+            let delete =
+                find_op(ChangeFeedOperationType::Delete).expect("a delete envelope must surface");
+
+            // Create: `current` holds the original document and there is no
+            // pre-image.
+            assert_eq!(
+                create.current().and_then(|c| c.description.as_deref()),
+                Some("original test")
+            );
+            assert!(
+                create.previous().is_none(),
+                "a create has no previous image"
+            );
+            let create_lsn = create.metadata().and_then(|m| m.lsn());
+            assert!(create_lsn.is_some(), "create metadata must carry an LSN");
+
+            // Replace: `current` holds the new document; the pre-image is not
+            // returned, but `previousImageLsn` chains back to the create's LSN.
+            assert_eq!(
+                replace.current().and_then(|c| c.description.as_deref()),
+                Some("test after replace")
+            );
+            assert!(
+                replace.previous().is_none(),
+                "the retention policy alone does not enable replace pre-images"
+            );
+            assert_eq!(
+                replace.metadata().and_then(|m| m.previous_image_lsn()),
+                create_lsn,
+                "the replace's previousImageLsn must chain to the create's LSN"
+            );
+
+            // Delete: a delete `operationType` with metadata; the emulator does
+            // not return a delete pre-image without an explicit opt-in.
+            assert_eq!(
+                delete.operation_type(),
+                Some(ChangeFeedOperationType::Delete)
+            );
+            assert!(
+                delete.metadata().and_then(|m| m.lsn()).is_some(),
+                "delete metadata must carry an LSN"
+            );
+
+            Ok(())
+        },
+        // The internal drain deadline (180s) must sit below the framework's
+        // per-test timeout, otherwise a lagging full-fidelity delete gets the
+        // test force-killed mid-poll instead of awaited.
+        Some(TestOptions::for_emulator().with_timeout(Duration::from_secs(210))),
+    )
+    .await
+}
+
+/// AllVersionsAndDeletes reads fan out across every physical partition: a create
+/// on each of many logical partitions surfaces exactly once as a full-fidelity
+/// create envelope. The container is provisioned with enough throughput to force
+/// multiple physical partitions so the cross-partition merge path is exercised.
+///
+/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
+/// supported by the vnext (Linux) emulator.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+)]
+pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
+) -> Result<(), Box<dyn Error>> {
+    const PK_COUNT: usize = 10;
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            // 11000 RU/s forces the service to create at least 2 physical
+            // partitions, so the full-container read must fan out.
+            let container = create_avad_container(
+                &run_context,
+                db_client,
+                "AvadFanOut",
+                Duration::from_secs(5 * 60),
+                Some(ThroughputProperties::manual(11000)),
+            )
+            .await?;
+
+            let mut iterator = container
+                .query_change_feed::<AvadItem>(
+                    FeedScope::full_container(),
+                    ChangeFeedStartFrom::Now,
+                    Some(
+                        ChangeFeedOptions::default()
+                            .with_mode(ChangeFeedMode::AllVersionsAndDeletes),
+                    ),
+                )
+                .await?;
+
+            // Prime the per-range `Now` positions before writing.
+            if let AvadPrime::Unsupported = prime_avad_feed(&mut iterator).await? {
+                eprintln!(
+                    "Skipping all_versions_and_deletes_fans_out_creates_across_partitions: \
+                     the account does not have AllVersionsAndDeletes enabled."
+                );
+                return Ok(());
+            }
+
+            let mut expected_ids: Vec<String> = Vec::new();
+            for p in 0..PK_COUNT {
+                let partition_key = format!("pk{p}");
+                let id = format!("doc{p}");
+                expected_ids.push(id.clone());
+                container
+                    .create_item(
+                        partition_key.clone(),
+                        &id,
+                        &AvadItem::doc(&id, &partition_key, "created"),
+                        None,
+                    )
+                    .await?;
+            }
+
+            let deadline = std::time::Instant::now() + Duration::from_secs(180);
+            let envelopes = drain_avad_until(&mut iterator, deadline, |seen| {
+                seen.iter()
+                    .filter(|e| e.operation_type() == Some(ChangeFeedOperationType::Create))
+                    .count()
+                    >= PK_COUNT
+            })
+            .await?;
+
+            let mut seen_ids: Vec<String> = envelopes
+                .iter()
+                .filter(|e| e.operation_type() == Some(ChangeFeedOperationType::Create))
+                .filter_map(|e| e.current().and_then(|c| c.id.clone()))
+                .collect();
+            seen_ids.sort();
+            expected_ids.sort();
+
+            assert_eq!(
+                seen_ids, expected_ids,
+                "every create must surface exactly once across the fan-out"
+            );
+            Ok(())
+        },
+        // Raise the per-test timeout above the internal drain deadline (180s) so
+        // fanning the creates out across every physical partition has room to
+        // complete instead of being force-killed at the default 80s.
+        Some(TestOptions::for_emulator().with_timeout(Duration::from_secs(210))),
+    )
+    .await
+}
+
+/// AllVersionsAndDeletes rejects a `PointInTime` start.
+///
+/// Full-fidelity reads can only start from "now" or resume from a continuation
+/// token within the container's retention / continuous-backup window; the
+/// service does not support reading from an arbitrary point in time in this
+/// mode. This mirrors the .NET and Java SDKs, which reject
+/// `ChangeFeedStartFrom.Time` for all-versions-and-deletes. The client issues
+/// the request and the service returns a `BadRequest`.
+///
+/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
+/// supported by the vnext (Linux) emulator.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+)]
+pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = create_avad_container(
+                &run_context,
+                db_client,
+                "AvadRejectPointInTime",
+                Duration::from_secs(5 * 60),
+                None,
+            )
+            .await?;
+
+            let mut pages = container
+                .query_change_feed::<AvadItem>(
+                    FeedScope::partition("1"),
+                    ChangeFeedStartFrom::PointInTime(OffsetDateTime::now_utc()),
+                    Some(
+                        ChangeFeedOptions::default()
+                            .with_mode(ChangeFeedMode::AllVersionsAndDeletes),
+                    ),
+                )
+                .await?;
+
+            // The client issues the request lazily; the service rejects the
+            // unsupported start on the first page poll.
+            let err = pages
+                .next()
+                .await
+                .expect("the change feed should yield a page")
+                .expect_err("PointInTime start must be rejected for AllVersionsAndDeletes");
+            // An account without AllVersionsAndDeletes enabled also answers 400,
+            // which would let this test pass for the wrong reason. Skip that case
+            // rather than treat it as evidence that PointInTime was rejected.
+            if avad_unsupported(&err) {
+                eprintln!(
+                    "Skipping all_versions_and_deletes_rejects_point_in_time_start: \
+                     the account does not have AllVersionsAndDeletes enabled."
+                );
+                return Ok(());
+            }
+            assert_eq!(
+                StatusCode::BadRequest,
+                err.status().status_code(),
+                "expected BadRequest (400) for AVAD + PointInTime, got {:?}",
+                err.status().status_code()
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::message_reports_avad_unsupported;
+
+    /// The exact message live accounts without the account-level opt-in return,
+    /// as observed in CI, rendered through the SDK's error `Display`.
+    const AVAD_NOT_ENABLED: &str =
+        "400: Cosmos DB returned HTTP 400: Unknown. Details: Change Feed \
+         'All Versions and Deletes' mode must be enabled. Refer to \
+         https://aka.ms/ChangeFeed-AllVersionsAndDeletes for Preview program.";
+
+    #[test]
+    fn detects_account_without_avad_enabled() {
+        assert!(message_reports_avad_unsupported(AVAD_NOT_ENABLED));
+    }
+
+    #[test]
+    fn ignores_the_point_in_time_rejection() {
+        // This 400 is the assertion `all_versions_and_deletes_rejects_point_in_time_start`
+        // exists to make, so it must never be mistaken for an unsupported account.
+        assert!(!message_reports_avad_unsupported(
+            "400: Cosmos DB returned HTTP 400: Unknown. Details: Start from beginning is not \
+             supported with 'All Versions and Deletes' mode."
+        ));
+    }
+
+    #[test]
+    fn ignores_unrelated_bad_requests() {
+        assert!(!message_reports_avad_unsupported(
+            "400: Cosmos DB returned HTTP 400: Unknown. Details: The retention duration in the \
+             Change Feed policy should not be set when continuous backup mode is enabled."
+        ));
+    }
 }

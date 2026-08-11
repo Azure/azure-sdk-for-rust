@@ -16,7 +16,7 @@ rust-version.workspace = true
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
-azure_core_macros.workspace = true
+azure_core_macros = { path = "../azure_core_macros", version = "1.1.0-beta.1" }
 bytes.workspace = true
 futures.workspace = true
 hmac = { workspace = true, optional = true }
@@ -27,8 +27,8 @@ serde_json.workspace = true
 sha2 = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
-typespec = { workspace = true, features = ["http", "json"] }
-typespec_client_core = { workspace = true, default-features = false, features = [
+typespec = { path = "../typespec", version = "1.2.0-beta.1", features = ["http", "json"] }
+typespec_client_core = { path = "../typespec_client_core", version = "1.2.0-beta.1", default-features = false, features = [
   "derive",
   "http",
   "json",
@@ -38,9 +38,9 @@ typespec_client_core = { workspace = true, default-features = false, features = 
 rustc_version.workspace = true
 
 [dev-dependencies]
-azure_core_examples.path = "../azure_core_examples"
-azure_core_macros.workspace = true
-azure_core_test.path = "../azure_core_test"
+azure_core_examples = { path = "../azure_core_examples" }
+azure_core_macros = { path = "../azure_core_macros" }
+azure_core_test = { path = "../azure_core_test" }
 clap = { workspace = true, features = ["derive"] }
 criterion.workspace = true
 http = "1.4.0"

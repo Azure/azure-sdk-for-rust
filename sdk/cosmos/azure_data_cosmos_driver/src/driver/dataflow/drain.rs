@@ -80,7 +80,7 @@ impl PipelineNode for SequentialDrain {
                     self.children.pop_front();
                     // Loop to try the next child.
                 }
-                PageResult::SplitRequired { replacement_nodes } => {
+                PageResult::SplitRequired { replacements } => {
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
                         // This should be ridiculously rare.
@@ -96,7 +96,7 @@ impl PipelineNode for SequentialDrain {
 
                     // Remove the split child and splice in replacements at the front.
                     self.children.pop_front();
-                    for (i, node) in replacement_nodes.into_iter().enumerate() {
+                    for (i, node) in replacements.into_nodes().into_iter().enumerate() {
                         self.children.insert(i, node);
                     }
                     // Loop to drain the first replacement.
@@ -194,10 +194,15 @@ impl PipelineNode for SequentialDrain {
         // thus it cannot itself be the target of a topology change error that would cause a split or merge.
         false
     }
+
+    fn fan_out_width(&self) -> usize {
+        self.children.iter().map(|c| c.fan_out_width()).sum()
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::super::SplitReplacements;
     use super::*;
     use crate::driver::dataflow::mocks::*;
     use crate::models::effective_partition_key::EffectivePartitionKey;
@@ -229,6 +234,19 @@ mod tests {
             b"p2"
         );
         assert_drained(drain.next_page(&mut context).await);
+    }
+
+    #[test]
+    fn fan_out_width_sums_children_recursively() {
+        // A leaf counts as 1; a SequentialDrain sums its children, including a
+        // nested parent node — so the total is the leaf count of the tree.
+        let leaf = || Box::new(MockLeaf::with_pages(vec![])) as Box<dyn PipelineNode>;
+        assert_eq!(leaf().fan_out_width(), 1);
+
+        let inner = SequentialDrain::new(vec![leaf(), leaf()]);
+        let outer = SequentialDrain::new(vec![leaf(), Box::new(inner)]);
+        // 1 leaf + (2 leaves inside the nested drain) = 3.
+        assert_eq!(outer.fan_out_width(), 3);
     }
 
     #[tokio::test]
@@ -329,7 +347,10 @@ mod tests {
         ]);
 
         let split_child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
-            replacement_nodes: vec![Box::new(replacement1), Box::new(replacement2)],
+            replacements: SplitReplacements::untiled(vec![
+                Box::new(replacement1),
+                Box::new(replacement2),
+            ]),
         })]);
 
         let trailing_child = MockLeaf::with_pages(vec![
@@ -378,7 +399,7 @@ mod tests {
             Ok(PageResult::Drained),
         ]);
         let split_child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
-            replacement_nodes: vec![Box::new(replacement)],
+            replacements: SplitReplacements::untiled(vec![Box::new(replacement)]),
         })]);
 
         let child3 = MockLeaf::with_pages(vec![
@@ -431,7 +452,7 @@ mod tests {
             Ok(PageResult::Drained),
         ]);
         let split_child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
-            replacement_nodes: vec![Box::new(replacement)],
+            replacements: SplitReplacements::untiled(vec![Box::new(replacement)]),
         })]);
 
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(split_child)]);
@@ -461,11 +482,11 @@ mod tests {
         ]);
 
         let cascading_replacement = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
-            replacement_nodes: vec![Box::new(final_leaf)],
+            replacements: SplitReplacements::untiled(vec![Box::new(final_leaf)]),
         })]);
 
         let initial_split = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
-            replacement_nodes: vec![Box::new(cascading_replacement)],
+            replacements: SplitReplacements::untiled(vec![Box::new(cascading_replacement)]),
         })]);
 
         let mut drain = SequentialDrain::new(vec![Box::new(initial_split)]);
@@ -490,7 +511,7 @@ mod tests {
 
         for _ in 0..12 {
             current = Box::new(MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
-                replacement_nodes: vec![current],
+                replacements: SplitReplacements::untiled(vec![current]),
             })]));
         }
 
@@ -555,7 +576,11 @@ mod tests {
         ]);
 
         let split_child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
-            replacement_nodes: vec![Box::new(r1), Box::new(r2), Box::new(r3)],
+            replacements: SplitReplacements::untiled(vec![
+                Box::new(r1),
+                Box::new(r2),
+                Box::new(r3),
+            ]),
         })]);
 
         let mut drain = SequentialDrain::new(vec![Box::new(split_child)]);
@@ -668,7 +693,7 @@ mod tests {
         ]);
 
         let split_child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
-            replacement_nodes: vec![Box::new(replacement)],
+            replacements: SplitReplacements::untiled(vec![Box::new(replacement)]),
         })]);
 
         let mut drain = SequentialDrain::new(vec![Box::new(split_child)]);

@@ -1,16 +1,25 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::clients::{ClientContext, DatabaseClient};
+use crate::ResourceIdentity;
+use azure_core::http::Url;
+
+#[cfg(feature = "control_plane")]
 use crate::{
-    clients::{ClientContext, DatabaseClient},
+    diagnostics::CosmosOperationContext,
     feed::QueryItemIterator,
-    models::DatabaseProperties,
-    models::ResourceResponse,
+    models::{DatabaseProperties, ResourceResponse},
     options::{CreateDatabaseOptions, QueryDatabasesOptions},
     Query,
 };
-use azure_core::http::Url;
+#[cfg(feature = "control_plane")]
 use azure_data_cosmos_driver::models::CosmosOperation;
+
+#[cfg(feature = "control_plane")]
+use azure_data_cosmos_driver::options::PlanOptions;
+
+#[cfg(feature = "control_plane")]
 use serde::Serialize;
 
 pub use super::cosmos_client_builder::CosmosClientBuilder;
@@ -95,12 +104,29 @@ impl CosmosClient {
         CosmosClientBuilder::new()
     }
 
-    /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
+    /// Gets a [`DatabaseClient`] that can be used to access the database with the
+    /// specified identity.
+    ///
+    /// The database may be addressed either by name or by [`ResourceId`](crate::ResourceId)
+    /// (RID). Anything that converts into a [`ResourceIdentity`](crate::ResourceIdentity)
+    /// is accepted — a `&str`/`String` selects name addressing, a `ResourceId`
+    /// selects RID addressing.
     ///
     /// # Arguments
-    /// * `id` - The ID of the database.
-    pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(self.context.clone(), id)
+    /// * `database` - The name or RID of the database.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{CosmosClient, ResourceId};
+    /// # let client: CosmosClient = panic!("this is a non-running example");
+    /// // By name:
+    /// let db = client.database_client("my-database");
+    /// // By RID:
+    /// let db = client.database_client(ResourceId::from("abc123=="));
+    /// ```
+    pub fn database_client(&self, database: impl Into<ResourceIdentity>) -> DatabaseClient {
+        DatabaseClient::new(self.context.clone(), database.into())
     }
 
     /// Commits a preview distributed write transaction.
@@ -165,6 +191,7 @@ impl CosmosClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
+    #[cfg(feature = "control_plane")]
     pub async fn query_databases(
         &self,
         query: impl Into<Query>,
@@ -177,17 +204,21 @@ impl CosmosClient {
             CosmosOperation::query_databases(account).with_body(serde_json::to_vec(&query)?);
         let operation_options = options.operation;
 
-        let plan = self
-            .context
-            .driver
-            .plan_operation(initial_operation, &operation_options, None)
-            .await?;
+        let plan = Box::pin(self.context.driver.plan_operation(
+            initial_operation,
+            &operation_options,
+            None,
+            &PlanOptions::default(),
+        ))
+        .await?;
 
         Ok(QueryItemIterator::new(
             self.context.driver.clone(),
             None,
             plan,
             operation_options,
+            self.context.diagnostics_handlers.clone(),
+            CosmosOperationContext::new().with_operation_name("query_databases"),
         ))
     }
 
@@ -200,6 +231,7 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the new database.
     /// * `options` - Optional parameters for the request.
+    #[cfg(feature = "control_plane")]
     pub async fn create_database(
         &self,
         id: &str,
@@ -221,19 +253,24 @@ impl CosmosClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, operation_options)
-            .await?;
+            .await;
 
-        Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
-        ))
+        Ok(ResourceResponse::new(self.context.complete_result(
+            driver_result,
+            || {
+                CosmosOperationContext::new()
+                    .with_operation_name("create_database")
+                    .with_database_name(id.to_string())
+            },
+        )?))
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "control_plane"))]
 mod tests {
     use super::*;
 

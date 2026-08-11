@@ -18,7 +18,7 @@ default = ["azure_core/default"]
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { workspace = true, features = ["xml"] }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", features = ["xml"] }
 azure_storage_common = { path = "../azure_storage_common", version = "0.2.0" }
 serde = { workspace = true }
 time.workspace = true
@@ -27,8 +27,8 @@ time.workspace = true
 workspace = true
 
 [dev-dependencies]
-azure_core_test = { workspace = true, features = ["tracing"] }
-azure_identity.workspace = true
+azure_core_test = { path = "../../core/azure_core_test", features = ["tracing"] }
+azure_identity = { path = "../../identity/azure_identity" }
 azure_storage_sas.path = "../azure_storage_sas"
 futures.workspace = true
 rand.workspace = true

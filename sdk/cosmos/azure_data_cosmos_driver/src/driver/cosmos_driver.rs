@@ -16,7 +16,12 @@ use crate::{
             CachedTopologyProvider, OperationPlan, PartitionRoutingRefresh, PipelineContext,
             PipelineNodeState, RequestExecutor, RequestTarget, TopologyProvider,
         },
-        pipeline::operation_pipeline::OperationOverrides,
+        pipeline::components::{
+            ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
+            METADATA_MAX_THROTTLE_WAIT,
+        },
+        pipeline::hedge_budget::HedgeBudget,
+        pipeline::operation_pipeline::{OperationOverrides, RegionPin},
         routing::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
             CosmosEndpoint, LocationStateStore,
@@ -30,19 +35,21 @@ use crate::{
         UserAgentFeatureFlags,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView, PlanOptions,
         ResolvedThroughputControl, ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse,
 };
 use arc_swap::ArcSwap;
 use futures::future::BoxFuture;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 #[cfg(feature = "preview_dtx")]
 use std::time::Instant;
 use url::Url;
+use uuid::Uuid;
 
 /// Gateway 2.0 endpoint-discovery opt-in header, sent on every
 /// `getDatabaseAccount` request. Aliases the canonical wire string in
@@ -65,6 +72,19 @@ const DTX_OUTER_MAX_EXPONENT: u32 = 5;
 const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
+
+/// Serialization formats advertised (`x-ms-cosmos-supported-serialization-formats`)
+/// on point operations when binary encoding is enabled. Point operations
+/// advertise `CosmosBinary` only — matching the .NET SDK's point-op default
+/// (`RequestInvokerHandler` sets `BinarySerializationFormat =
+/// SupportedSerializationFormats.CosmosBinary`) — so the service is required to
+/// reply in binary, preserving the read-side RU/COGS benefit the caller opted
+/// into. When the caller also asked for a text payload
+/// (`request_text_response`), the driver transcodes the guaranteed-binary
+/// response back to text after receiving it, keeping the wire binary in both
+/// directions. (The broader `JsonText,CosmosBinary` negotiation applies to
+/// query/feed, which is not yet wired.)
+const BINARY_NEGOTIATION_FORMATS: &str = "CosmosBinary";
 
 fn should_retry_account_properties_connectivity_error(
     error: &crate::error::CosmosError,
@@ -118,6 +138,20 @@ struct DriverRequestExecutor<'a> {
     options: &'a OperationOptions,
 }
 
+/// Region pins for the PartitionKeyRange change feed, keyed by container.
+///
+/// The `/pkranges` change-feed continuation is an ETag that only the region
+/// which issued it can interpret, and [`PartitionKeyRangeCache`] persists that
+/// continuation in `ContainerRoutingMap::change_feed_next_if_none_match` across
+/// fetch operations — well beyond the lifetime of the closure that produced it.
+/// Pinning per fetcher closure would therefore leak the token into normal
+/// routing on the next refresh, so the pin lives at driver scope alongside the
+/// cache whose entries it protects.
+///
+/// A cold read (no carried continuation) starts a brand new ETag chain, so it
+/// clears any existing pin and installs the region that served it.
+type PkRangeRegionPins = Mutex<HashMap<ContainerReference, CosmosEndpoint>>;
+
 fn request_target_overrides(
     operation_partition_key: Option<&PartitionKey>,
     target: RequestTarget,
@@ -162,6 +196,7 @@ fn request_target_overrides(
             // backend returns every document in the physical partition.
             partition_key: operation_partition_key.cloned(),
             continuation,
+            ..Default::default()
         },
         RequestTarget::NonPartitioned => OperationOverrides {
             continuation,
@@ -247,6 +282,13 @@ pub struct CosmosDriver {
     /// Used to pre-resolve partition key range IDs for PPAF/PPCB
     /// before the first request attempt.
     pk_range_cache: PartitionKeyRangeCache,
+    /// Region pins protecting the change-feed continuations held by
+    /// `pk_range_cache`. See [`PkRangeRegionPins`].
+    pk_range_region_pins: PkRangeRegionPins,
+    /// Per-client ceiling on metadata operations making simultaneous cross-region attempts.
+    /// Bounds the request amplification a hedging client can inflict on an
+    /// alternate region during a brownout. See [`HedgeBudget`].
+    hedge_budget: HedgeBudget,
     /// Session token cache for session consistency.
     session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
@@ -262,6 +304,8 @@ pub struct CosmosDriver {
     /// runtime). When the suffix is `Some`, this is a freshly-computed
     /// `UserAgent` wrapped in its own `Arc`.
     user_agent: Arc<UserAgent>,
+    /// Stable SDK-generated identifier stamped on every request from this driver.
+    client_id: azure_core::http::headers::HeaderValue,
     /// HTTP client factory used by every per-account transport this driver
     /// builds.
     ///
@@ -367,6 +411,7 @@ impl CosmosDriver {
         http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
         version: TransportHttpVersion,
+        client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
     ) -> crate::error::Result<(super::cache::AccountProperties, CosmosTransport)> {
         let endpoint = AccountEndpoint::from(account);
@@ -383,6 +428,7 @@ impl CosmosDriver {
             account,
             None,
             &user_agent,
+            client_id,
             fault_injection_enabled,
         )
         .await?;
@@ -403,6 +449,7 @@ impl CosmosDriver {
         override_http_client_factory: Option<
             &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         >,
+        client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
@@ -430,6 +477,7 @@ impl CosmosDriver {
             account,
             None,
             &user_agent,
+            client_id,
             fault_injection_enabled,
         )
         .await
@@ -450,12 +498,14 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
+        client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
     ) -> crate::error::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
         match Self::fetch_initial_account_properties_for_endpoint(
             runtime,
             http_client_factory,
             account,
+            client_id,
             fault_injection_enabled,
         )
         .await
@@ -474,6 +524,7 @@ impl CosmosDriver {
                         runtime,
                         http_client_factory,
                         &backup_account,
+                        client_id,
                         fault_injection_enabled,
                     )
                     .await
@@ -511,6 +562,7 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
+        client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
     ) -> crate::error::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
         if !runtime.connection_pool().is_http2_allowed() {
@@ -520,6 +572,7 @@ impl CosmosDriver {
                 http_client_factory,
                 account,
                 TransportHttpVersion::Http11,
+                client_id,
                 fault_injection_enabled,
             )
             .await?;
@@ -536,6 +589,7 @@ impl CosmosDriver {
             } else {
                 None
             },
+            client_id,
             fault_injection_enabled,
         )
         .await
@@ -565,6 +619,7 @@ impl CosmosDriver {
                     http_client_factory,
                     account,
                     TransportHttpVersion::Http11,
+                    client_id,
                     fault_injection_enabled,
                 )
                 .await?;
@@ -630,6 +685,7 @@ impl CosmosDriver {
         account: &AccountReference,
         region: Option<&crate::options::Region>,
         user_agent: &azure_core::http::headers::HeaderValue,
+        client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
@@ -658,13 +714,43 @@ impl CosmosDriver {
         // `_with_version` calls record the post-negotiation value. Probing first would
         // require a separate diagnostics envelope around the probe itself; we accept the
         // pre-negotiation label on bootstrap as the lower-risk tradeoff.
+        // Bootstrap fetch runs off the normal transport pipeline, so it applies
+        // both the connectivity-retry loop and the same 429 throttle-retry
+        // budget the metadata pipeline uses (previously bootstrap had no 429
+        // retry at all).
         let mut connectivity_retry_count = 0_u32;
-        let (response, request_handle) = loop {
-            let execution_context = if connectivity_retry_count == 0 {
-                ExecutionContext::Initial
-            } else {
-                ExecutionContext::TransportRetry
-            };
+        // Resolve the caller-configured throttle limits the same way the
+        // metadata operation pipeline does, falling back to the metadata class
+        // defaults. This is a static helper that only receives the runtime, so
+        // only the runtime-level layers apply: the client-wide default set via
+        // `with_default_operation_options` (which takes precedence) and the
+        // environment (`AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`). Without this a
+        // caller that disabled retries (`max_retry_count = 0`) would still see
+        // the nine-retry metadata default here, inconsistent with normal
+        // metadata operations. The per-retry delay cap has no caller override
+        // and stays at the metadata class default, matching the pipeline.
+        let bootstrap_options = OperationOptionsView::new(
+            Some(Arc::clone(runtime.env_operation_options())),
+            Some(runtime.default_operation_options()),
+            None,
+            None,
+        );
+        let throttling_retry_options = bootstrap_options.throttling_retry_options();
+        let max_throttle_attempts = throttling_retry_options
+            .max_retry_count()
+            .copied()
+            .unwrap_or(METADATA_MAX_THROTTLE_ATTEMPTS);
+        let max_throttle_wait_time = throttling_retry_options
+            .max_retry_wait_time()
+            .copied()
+            .unwrap_or(METADATA_MAX_THROTTLE_WAIT);
+        let mut throttle = ThrottleRetryState::with_limits(
+            max_throttle_attempts,
+            max_throttle_wait_time,
+            METADATA_MAX_PER_RETRY_DELAY,
+        );
+        let mut execution_context = ExecutionContext::Initial;
+        let (response, cosmos_headers, status_code, sub_status, cosmos_status) = loop {
             let request_handle = diagnostics.start_request(
                 execution_context,
                 PipelineType::Metadata,
@@ -680,7 +766,8 @@ impl CosmosDriver {
             // `build_account_properties_request` applies the standard cosmos headers
             // and the `x-ms-cosmos-use-thinclient: true` discovery opt-in so the
             // server emits `thinClient*Locations` when the federation supports it.
-            let mut request = Self::build_account_properties_request(&endpoint, user_agent);
+            let mut request =
+                Self::build_account_properties_request(&endpoint, user_agent, client_id);
 
             // Tag the request so `FaultInjectingHttpClient` can match
             // `FaultOperationType::MetadataReadDatabaseAccount` rules against the
@@ -718,8 +805,8 @@ impl CosmosDriver {
                     .build());
             }
 
-            match transport.send(&request).await {
-                Ok(r) => break (r, request_handle),
+            let response = match transport.send(&request).await {
+                Ok(r) => r,
                 Err(e) => {
                     if should_retry_account_properties_connectivity_error(
                         &e.error,
@@ -747,6 +834,7 @@ impl CosmosDriver {
                                 .unwrap_or(azure_core::time::Duration::ZERO),
                         )
                         .await;
+                        execution_context = ExecutionContext::TransportRetry;
                         continue;
                     }
 
@@ -764,14 +852,41 @@ impl CosmosDriver {
                         .with_diagnostics(Arc::new(diagnostics.complete()))
                         .build());
                 }
-            }
-        };
-        let cosmos_headers = crate::models::CosmosResponseHeaders::from_headers(&response.headers);
-        let status_code = azure_core::http::StatusCode::from(response.status);
-        let sub_status = cosmos_headers.substatus;
-        let cosmos_status = crate::error::CosmosStatus::from_parts(status_code, sub_status);
+            };
 
-        diagnostics.record_response(request_handle, status_code, &cosmos_headers);
+            let cosmos_headers =
+                crate::models::CosmosResponseHeaders::from_headers(&response.headers);
+            let status_code = azure_core::http::StatusCode::from(response.status);
+            let sub_status = cosmos_headers.substatus;
+            let cosmos_status = crate::error::CosmosStatus::from_parts(status_code, sub_status);
+
+            diagnostics.record_response(request_handle, status_code, &cosmos_headers);
+
+            // Retry 429s using the shared metadata throttle budget before
+            // surfacing the error.
+            if cosmos_status.is_throttled() {
+                if let Some((delay, next)) =
+                    throttle.next_throttle_retry(cosmos_headers.retry_after_ms)
+                {
+                    throttle = next;
+                    azure_core::sleep(
+                        azure_core::time::Duration::try_from(delay)
+                            .unwrap_or(azure_core::time::Duration::ZERO),
+                    )
+                    .await;
+                    execution_context = ExecutionContext::Retry;
+                    continue;
+                }
+            }
+
+            break (
+                response,
+                cosmos_headers,
+                status_code,
+                sub_status,
+                cosmos_status,
+            );
+        };
 
         // Gate parsing on HTTP status. Non-2xx bodies (5xx envelopes, AAD 401/403, proxy text)
         // would otherwise serde-fail and surface as `SERIALIZATION_RESPONSE_BODY_INVALID`.
@@ -843,6 +958,7 @@ impl CosmosDriver {
     fn build_account_properties_request(
         endpoint: &AccountEndpoint,
         user_agent: &azure_core::http::headers::HeaderValue,
+        client_id: &azure_core::http::headers::HeaderValue,
     ) -> HttpRequest {
         let mut request = HttpRequest {
             url: endpoint.join_path("/"),
@@ -853,7 +969,7 @@ impl CosmosDriver {
             #[cfg(feature = "fault_injection")]
             evaluation_collector: None,
         };
-        cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+        cosmos_headers::apply_cosmos_headers(&mut request, user_agent, client_id);
         request.headers.insert(
             GATEWAY_V2_DISCOVERY_OPT_IN,
             azure_core::http::headers::HeaderValue::from_static("true"),
@@ -909,6 +1025,7 @@ impl CosmosDriver {
             account,
             &self.transport,
             &self.user_agent,
+            &self.client_id,
             None,
             fault_injection_enabled,
         )
@@ -934,12 +1051,17 @@ impl CosmosDriver {
     /// cycle. A fresh probe only occurs when the driver is currently pinned to
     /// HTTP/1.1 or when the active transport actually fails, both of which are
     /// expected to be rare in steady-state operation.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "metadata refresh needs its transport state plus stable request identity"
+    )]
     async fn refresh_account_properties(
         runtime: &CosmosDriverRuntime,
         http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         user_agent: &Arc<UserAgent>,
+        client_id: &azure_core::http::headers::HeaderValue,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
         fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
@@ -955,6 +1077,7 @@ impl CosmosDriver {
             account,
             None,
             &user_agent_header,
+            client_id,
             fault_injection_enabled,
         )
         .await
@@ -967,6 +1090,7 @@ impl CosmosDriver {
                     transport_holder,
                     current_version,
                     &endpoint,
+                    client_id,
                     fault_injection_enabled,
                 )
                 .await;
@@ -981,6 +1105,7 @@ impl CosmosDriver {
                     current_version,
                     &endpoint,
                     error,
+                    client_id,
                     fault_injection_enabled,
                 )
                 .await
@@ -993,6 +1118,7 @@ impl CosmosDriver {
                             account,
                             transport_holder,
                             user_agent,
+                            client_id,
                             &endpoint,
                             primary_error,
                             previous_props,
@@ -1016,6 +1142,7 @@ impl CosmosDriver {
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         user_agent: &Arc<UserAgent>,
+        client_id: &azure_core::http::headers::HeaderValue,
         primary_endpoint: &AccountEndpoint,
         primary_error: crate::error::CosmosError,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
@@ -1066,6 +1193,7 @@ impl CosmosDriver {
                 &regional_account,
                 Some(region),
                 &user_agent,
+                client_id,
                 fault_injection_enabled,
             )
             .await
@@ -1095,6 +1223,10 @@ impl CosmosDriver {
         Err(primary_error)
     }
 
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "HTTP/2 restoration needs refresh state plus the stable client ID"
+    )]
     async fn maybe_restore_http2_after_refresh(
         runtime: &CosmosDriverRuntime,
         http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
@@ -1102,6 +1234,7 @@ impl CosmosDriver {
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
+        client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
     ) {
         if !matches!(current_version, TransportHttpVersion::Http11)
@@ -1119,6 +1252,7 @@ impl CosmosDriver {
             } else {
                 None
             },
+            client_id,
             fault_injection_enabled,
         )
         .await
@@ -1167,6 +1301,7 @@ impl CosmosDriver {
         current_version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
         error: crate::error::CosmosError,
+        client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         if Self::should_downgrade_http2(
@@ -1189,6 +1324,7 @@ impl CosmosDriver {
                 http_client_factory,
                 account,
                 fallback_version,
+                client_id,
                 fault_injection_enabled,
             )
             .await?;
@@ -1278,6 +1414,89 @@ impl CosmosDriver {
         ))
     }
 
+    /// Fetches a container's metadata from the service addressing it purely by RID.
+    ///
+    /// The parent database RID is derived from the container RID's encoded byte
+    /// layout (the first 4 decoded bytes), so no `read_database` round-trip is
+    /// needed. The read response supplies the container's name and partition key.
+    /// The resulting [`ContainerReference`] is RID-addressed (it carries no
+    /// database name).
+    async fn fetch_container_by_rid(
+        &self,
+        container_rid: &str,
+    ) -> crate::error::Result<ContainerReference> {
+        // A container RID decodes to exactly 8 bytes: the first 4 identify the
+        // parent database, the next 4 the container. A shorter value (e.g. a
+        // bare 4-byte database RID) or a longer one (e.g. a 16-byte document
+        // RID) is not a container RID — fail fast rather than issuing a request
+        // that the service would reject, or misrouting a document RID into the
+        // `colls` segment.
+        let decoded = crate::models::resource_id::decode_rid(container_rid).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                .with_message(format!("invalid container RID '{container_rid}'"))
+                .with_source(e)
+                .build()
+        })?;
+        if decoded.len() != 8 {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                .with_message(format!(
+                    "'{container_rid}' is not a container RID (decodes to {} bytes; a container RID must be exactly 8)",
+                    decoded.len()
+                ))
+                .with_source(std::io::Error::other("container RID has non-container byte length"))
+                .build());
+        }
+        let db_rid = crate::models::resource_id::ResourceId::new(
+            crate::models::resource_id::encode_rid(&decoded[0..4]),
+        );
+
+        let options = OperationOptions::default();
+
+        let container_result = self
+            .execute_singleton_operation(
+                CosmosOperation::read_container_by_rid(
+                    self.account().clone(),
+                    db_rid.as_str().to_owned(),
+                    container_rid.to_owned(),
+                ),
+                options,
+            )
+            .await?;
+        let container_headers = container_result.headers().clone();
+        let container_diagnostics = container_result.diagnostics();
+        let container_props: ContainerProperties =
+            container_result.into_body().into_single().map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("failed to deserialize container response")
+                    .with_response_parts(crate::models::CosmosResponsePayload::new(
+                        crate::models::ResponseBody::NoPayload,
+                        container_headers.clone(),
+                    ))
+                    .with_diagnostics(container_diagnostics.clone())
+                    .with_source(e)
+                    .build()
+            })?;
+
+        // Prefer the authoritative RID echoed back by the service; fall back to
+        // the caller-supplied RID if the response omits it.
+        let resolved_rid = container_props
+            .system_properties
+            .rid
+            .clone()
+            .unwrap_or_else(|| container_rid.to_owned());
+
+        Ok(ContainerReference::new_by_rid(
+            self.account().clone(),
+            db_rid.as_str().to_owned(),
+            container_props.id.clone().into_owned(),
+            resolved_rid,
+            &container_props,
+        ))
+    }
+
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::create_driver()`] instead.
@@ -1321,6 +1540,7 @@ impl CosmosDriver {
             }
             None => Arc::new(runtime.user_agent_with_feature_flags(feature_flags)),
         };
+        let client_id = azure_core::http::headers::HeaderValue::from(Uuid::new_v4().to_string());
 
         // Per-driver HTTP client factory: wrap with fault injection if rules
         // are installed on this driver's options; otherwise share the
@@ -1360,6 +1580,7 @@ impl CosmosDriver {
         let account_for_callback = account.clone();
         let transport_for_callback = Arc::clone(&transport);
         let user_agent_for_callback = Arc::clone(&user_agent);
+        let client_id_for_callback = client_id.clone();
         let factory_for_callback = Arc::clone(&http_client_factory);
         #[cfg(feature = "fault_injection")]
         let fault_injection_for_callback = fault_injection_enabled;
@@ -1371,6 +1592,7 @@ impl CosmosDriver {
                 let account = account_for_callback.clone();
                 let transport_holder = Arc::clone(&transport_for_callback);
                 let user_agent = Arc::clone(&user_agent_for_callback);
+                let client_id = client_id_for_callback.clone();
                 let factory = Arc::clone(&factory_for_callback);
                 let fault_injection_enabled = fault_injection_for_callback;
                 let fut: BoxFuture<'static, crate::error::Result<super::cache::AccountProperties>> =
@@ -1381,6 +1603,7 @@ impl CosmosDriver {
                             &account,
                             &transport_holder,
                             &user_agent,
+                            &client_id,
                             previous_props,
                             fault_injection_enabled,
                         )
@@ -1423,7 +1646,10 @@ impl CosmosDriver {
                     HttpClientConfig::dataplane_gateway_v2(runtime.connection_pool());
                 let probe_client =
                     http_client_factory.build(runtime.connection_pool(), probe_config)?;
-                Some(Arc::new(Http2ConnectivityProbe::new(probe_client)))
+                Some(Arc::new(Http2ConnectivityProbe::new(
+                    probe_client,
+                    client_id.clone(),
+                )))
             };
 
         let location_state_store = Arc::new(LocationStateStore::new(
@@ -1463,10 +1689,12 @@ impl CosmosDriver {
             let account_for_probe = account.clone();
             let transport_for_probe = Arc::clone(&transport);
             let user_agent_for_probe = Arc::clone(&user_agent);
+            let client_id_for_probe = client_id.clone();
             Arc::new(move |url: Url| {
                 let account = account_for_probe.clone();
                 let transport_holder = Arc::clone(&transport_for_probe);
                 let user_agent = Arc::clone(&user_agent_for_probe);
+                let client_id = client_id_for_probe.clone();
                 Box::pin(async move {
                     let probe_account = CosmosDriver::with_endpoint(&account, url);
                     let endpoint = AccountEndpoint::from(&probe_account);
@@ -1475,8 +1703,13 @@ impl CosmosDriver {
                         return false;
                     };
                     let user_agent = CosmosDriver::user_agent_header(&user_agent);
-                    probe_endpoint_connectivity(&metadata_transport, &probe_account, &user_agent)
-                        .await
+                    probe_endpoint_connectivity(
+                        &metadata_transport,
+                        &probe_account,
+                        &user_agent,
+                        &client_id,
+                    )
+                    .await
                 }) as BoxFuture<'static, bool>
             }) as EndpointProbeFn
         };
@@ -1499,6 +1732,10 @@ impl CosmosDriver {
         // Clone the per-driver registry as-is for the request hot path.
         let throughput_control_groups = options.throughput_control_groups().clone();
 
+        // Read the hedge ceiling once, here: it is fixed for the driver's
+        // lifetime, and `options` is moved into `Self` below.
+        let hedge_budget = HedgeBudget::new(options.hedging_options());
+
         Ok(Self {
             runtime,
             options,
@@ -1510,9 +1747,12 @@ impl CosmosDriver {
             ))]
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
             pk_range_cache: PartitionKeyRangeCache::new(),
+            pk_range_region_pins: Mutex::new(HashMap::new()),
+            hedge_budget,
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
             user_agent,
+            client_id,
             http_client_factory,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled,
@@ -1755,6 +1995,7 @@ impl CosmosDriver {
             &self.runtime,
             &self.http_client_factory,
             account,
+            &self.client_id,
             fault_injection_enabled,
         )
         .await?;
@@ -1931,7 +2172,8 @@ impl CosmosDriver {
         &self,
         container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
+        region_pin: Option<RegionPin>,
+    ) -> (Option<PkRangeFetchResult>, Option<CosmosEndpoint>) {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
@@ -1948,23 +2190,44 @@ impl CosmosDriver {
         request_headers.max_item_count = Some(crate::models::MaxItemCountHint::ServerDecides);
         operation = operation.with_request_headers(request_headers);
 
+        // Hedging is decided entirely by `region_pin`: absent (a cold read) the
+        // request is hedge-eligible; present it is not. The pin carries that
+        // suppression itself rather than going through
+        // `AvailabilityStrategy::Disabled`, which the
+        // `AZURE_COSMOS_HEDGING_ENABLED` env switch is allowed to override —
+        // a region-affine continuation must never be raced regardless of
+        // configuration. The pin's endpoint additionally routes the request back
+        // to the region that served the cold page, so a failover retry cannot
+        // move the chain either.
         let options = OperationOptions::default();
+        let overrides = OperationOverrides {
+            region_pin: region_pin.map(Box::new),
+            ..Default::default()
+        };
 
         match self
-            .execute_operation_direct(&operation, OperationOverrides::default(), &options)
+            .execute_operation_direct(&operation, overrides, &options)
             .await
         {
             Ok(response) => {
+                // Capture the region that served this page before the response
+                // body is consumed, so the caller can pin subsequent
+                // change-feed pages to it.
+                let serving_endpoint = self.response_endpoint(&response);
+
                 let etag = response.headers().etag.as_ref().map(|e| e.to_string());
 
                 // 304 Not Modified is a success outcome for conditional
                 // changefeed reads: the cached routing map is still current.
                 if response.status().status_code() == azure_core::http::StatusCode::NotModified {
-                    return Some(PkRangeFetchResult {
-                        ranges: vec![],
-                        continuation,
-                        not_modified: true,
-                    });
+                    return (
+                        Some(PkRangeFetchResult {
+                            ranges: vec![],
+                            continuation,
+                            not_modified: true,
+                        }),
+                        serving_endpoint,
+                    );
                 }
 
                 let body_bytes = match response.into_body().single() {
@@ -1974,21 +2237,24 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Partition key ranges response was a feed body, expected single payload"
                         );
-                        return None;
+                        return (None, serving_endpoint);
                     }
                 };
                 match parse_pk_ranges_response(&body_bytes) {
-                    Some(ranges) => Some(PkRangeFetchResult {
-                        ranges,
-                        continuation: etag,
-                        not_modified: false,
-                    }),
+                    Some(ranges) => (
+                        Some(PkRangeFetchResult {
+                            ranges,
+                            continuation: etag,
+                            not_modified: false,
+                        }),
+                        serving_endpoint,
+                    ),
                     None => {
                         tracing::error!(
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        None
+                        (None, serving_endpoint)
                     }
                 }
             }
@@ -2018,7 +2284,7 @@ impl CosmosDriver {
                             error = %e,
                             "Permanent error fetching partition key ranges — check account credentials and container existence"
                         );
-                        return None;
+                        return (None, None);
                     }
                 }
 
@@ -2027,8 +2293,100 @@ impl CosmosDriver {
                     error = %e,
                     "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
                 );
-                None
+                (None, None)
             }
+        }
+    }
+
+    /// Maps the region that produced `response` onto the account endpoint that
+    /// serves it.
+    ///
+    /// Used to pin the pages that follow a change-feed cold read. The ETag a
+    /// page returns is only meaningful to the region that issued it, so **every**
+    /// successful cold page must be recorded — not just the ones an alternate
+    /// region won via hedging. Recording only hedge wins would leave the common
+    /// primary-answered case unpinned, and a `FailoverRetry`/`SessionRetry` on a
+    /// later page would then be free to carry that region-affine ETag into a
+    /// different region.
+    ///
+    /// `None` when the response names no serving region, or when that region is
+    /// absent from the account's preferred read endpoints; the caller then falls
+    /// back to a pin that carries no endpoint but still forbids hedging.
+    fn response_endpoint(
+        &self,
+        response: &crate::models::CosmosResponse,
+    ) -> Option<CosmosEndpoint> {
+        let region = response.serving_region()?;
+        let snapshot = self.location_state_store.snapshot();
+        snapshot
+            .account
+            .preferred_read_endpoints
+            .iter()
+            .find(|ep| ep.region() == Some(&region))
+            .cloned()
+    }
+
+    /// Builds the per-fetch-operation closure that the PartitionKeyRange cache
+    /// drives page-by-page.
+    ///
+    /// Encapsulates the change-feed hedging policy. A **cold** call (no carried
+    /// continuation) starts a fresh ETag chain, so it drops any existing pin for
+    /// the container and is hedge-eligible; whichever region serves it — the
+    /// primary or a hedge-winning alternate — is recorded as the container's
+    /// pin. Every call that carries a continuation is region-pinned instead:
+    /// hedging is suppressed, and the call is routed back to the recorded region
+    /// so neither a hedge nor a mid-page failover can carry the region-affine
+    /// ETag somewhere it means nothing.
+    ///
+    /// The pin is held on the driver rather than in the closure because the
+    /// cache persists the continuation past the closure's lifetime — see
+    /// [`PkRangeRegionPins`].
+    ///
+    /// A pinned chain that fails is not left pinned: the cache discards the
+    /// failed continuation and retries the fetch cold, which routes back through
+    /// the `continuation.is_none()` branch below and clears the pin. Both halves
+    /// of the region-affine state therefore die together, so an unreachable
+    /// pinned region cannot wedge later force-refreshes.
+    fn pk_range_page_fetcher<'a>(
+        &'a self,
+    ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
+           + Send
+           + 'a {
+        move |container, continuation| {
+            Box::pin(async move {
+                let region_pin = {
+                    let mut pins = self
+                        .pk_range_region_pins
+                        .lock()
+                        .expect("pk-range region pin mutex poisoned");
+                    if continuation.is_none() {
+                        // A cold read starts a new ETag chain, so the previous
+                        // chain's pin no longer applies and must not outlive it.
+                        pins.remove(&container);
+                        None
+                    } else {
+                        Some(RegionPin {
+                            endpoint: pins.get(&container).cloned(),
+                        })
+                    }
+                };
+                let is_cold = region_pin.is_none();
+
+                let (result, serving_endpoint) = self
+                    .fetch_pk_ranges_from_service(container.clone(), continuation, region_pin)
+                    .await;
+                // Record the serving region for every successful cold page, so
+                // the continuation pages that follow are pinned to it. Pages
+                // that already carry a pin leave it untouched: the chain must
+                // stay on the region that opened it.
+                if let Some(endpoint) = serving_endpoint.filter(|_| is_cold) {
+                    self.pk_range_region_pins
+                        .lock()
+                        .expect("pk-range region pin mutex poisoned")
+                        .insert(container, endpoint);
+                }
+                result
+            })
         }
     }
 
@@ -2124,9 +2482,12 @@ impl CosmosDriver {
         if let Some(partition_key) = partition_key {
             return self
                 .pk_range_cache
-                .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
-                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-                })
+                .resolve_partition_key_range_id(
+                    container,
+                    partition_key,
+                    false,
+                    self.pk_range_page_fetcher(),
+                )
                 .await
                 .map(PartitionKeyRangeId::from);
         }
@@ -2151,7 +2512,7 @@ impl CosmosDriver {
                 container,
                 target.min_inclusive()..target.max_exclusive(),
                 false,
-                |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+                self.pk_range_page_fetcher(),
             )
             .await
             .map(PartitionKeyRangeId::from)
@@ -2222,10 +2583,9 @@ impl CosmosDriver {
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         // PATCH is a virtual operation type: dispatch it to the dedicated
-        // Read-Modify-Write handler before any of the standard pipeline steps
-        // run, because the handler issues its own Read/Replace operations
-        // through this same entry point. `Box::pin` is required so the
-        // resulting async future has a fixed size even though it can recurse.
+        // Read-Modify-Write handler, which issues its own Read/Replace
+        // operations through this same entry point. `Box::pin` gives the
+        // recursive future a fixed size.
         if operation.operation_type() == crate::models::OperationType::Patch {
             let max_attempts = operation.patch_max_attempts();
             return Box::pin(async {
@@ -2241,14 +2601,97 @@ impl CosmosDriver {
             .await;
         }
 
+        // Resolve binary encoding through the same layered view as every other
+        // option, and only honor it for point **item** operations (the resource
+        // must be a `Document`; query/feed/batch and every control-plane
+        // resource are deferred per the binary-encoding spec).
+        let binary =
+            if Self::binary_encoding_applies(operation.resource_type(), operation.operation_type())
+            {
+                self.operation_options_view(&options)
+                    .binary_encoding()
+                    .cloned()
+                    .unwrap_or_default()
+            } else {
+                crate::options::BinaryEncodingOptions::default()
+            };
+        let operation = if binary.enabled {
+            Self::apply_request_binary_encoding(operation)?
+        } else {
+            operation
+        };
+
+        let transcode_response_to_text = binary.enabled && binary.request_text_response;
+
         // TODO: This boxing is a temporary fix to avoid a large future.
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
-        Box::pin(async {
+        let response = Box::pin(async {
             let container = operation.container().cloned();
-            let mut plan = Box::pin(self.plan_operation(operation, &options, None)).await?;
+            let mut plan = self
+                .plan_operation(operation, &options, None, &PlanOptions::default())
+                .await?;
             self.execute_plan(&mut plan, container, options).await
         })
-        .await
+        .await?;
+
+        // Driver-side transcoding: convert the binary response body to text
+        // when the caller asked for a text payload over a binary wire.
+        if transcode_response_to_text {
+            if let Some(mut response) = response {
+                response.transcode_body_to_text()?;
+                return Ok(Some(response));
+            }
+        }
+        Ok(response)
+    }
+
+    /// Whether binary encoding applies to an operation.
+    ///
+    /// Honored only for point item operations: the resource must be a
+    /// [`ResourceType::Document`] and the operation one of create/read/replace/
+    /// upsert. Control-plane resources share those operation types but must
+    /// never be binary encoded (some carry JSON bodies).
+    fn binary_encoding_applies(
+        resource_type: crate::models::ResourceType,
+        operation_type: crate::models::OperationType,
+    ) -> bool {
+        resource_type == crate::models::ResourceType::Document
+            && operation_type.supports_binary_encoding()
+    }
+
+    /// Applies request-side binary encoding to an operation: transcodes a text
+    /// request body to Cosmos binary JSON (an already-binary or empty body is
+    /// passed through) and advertises binary responses via the
+    /// `x-ms-cosmos-supported-serialization-formats` header.
+    ///
+    /// This is schema-agnostic — it operates on the raw body bytes — so a
+    /// caller that deals only in text JSON gets a binary wire without encoding
+    /// anything itself.
+    fn apply_request_binary_encoding(
+        operation: CosmosOperation,
+    ) -> crate::error::Result<CosmosOperation> {
+        // Transcode a non-empty *text* body to binary. A body that is already
+        // binary (the SDK's typed fast path) or empty is left in place — no
+        // clone — so only genuinely text bodies pay the conversion.
+        let transcoded = match operation.body() {
+            Some(body) if !body.is_empty() && !crate::binary_json::is_binary(body) => {
+                Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+                        .with_message(format!(
+                            "failed to transcode text request body to Cosmos binary JSON: {e}"
+                        ))
+                        .with_source(e)
+                        .build()
+                })?)
+            }
+            _ => None,
+        };
+        let operation = match transcoded {
+            Some(bytes) => operation.with_body(bytes),
+            None => operation,
+        };
+        Ok(operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS))
     }
 
     /// Executes a singleton operation (operations which return only a single result).
@@ -2471,35 +2914,36 @@ impl CosmosDriver {
         container: Option<ContainerReference>,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
-        if !self.initialized.load(Ordering::Acquire) {
-            let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
-                .with_message(format!(
-                    "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
-                     use CosmosDriverRuntime::create_driver() which initializes automatically"
-                ))
-                .build());
-        }
-        tracing::debug!("plan execution started");
+        Box::pin(async move {
+            if !self.initialized.load(Ordering::Acquire) {
+                let endpoint = AccountEndpoint::from(self.options.account());
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
+                    .with_message(format!(
+                        "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
+                         use CosmosDriverRuntime::create_driver() which initializes automatically"
+                    ))
+                    .build());
+            }
+            tracing::debug!("plan execution started");
 
-        let mut executor = DriverRequestExecutor {
-            driver: self,
-            options: &options,
-        };
+            let mut executor = DriverRequestExecutor {
+                driver: self,
+                options: &options,
+            };
 
-        let mut topology = container.map(|c| {
-            CachedTopologyProvider::new(&self.pk_range_cache, c, |container, continuation| {
-                self.fetch_pk_ranges_from_service(container, continuation)
-            })
-        });
+            let mut topology = container.map(|c| {
+                CachedTopologyProvider::new(&self.pk_range_cache, c, self.pk_range_page_fetcher())
+            });
 
-        let mut context = PipelineContext::new(
-            &mut executor,
-            topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
-        );
+            let mut context = PipelineContext::new(
+                &mut executor,
+                topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
+            );
 
-        plan.pipeline.next_page(&mut context).await
+            plan.pipeline.next_page(&mut context).await
+        })
+        .await
     }
 
     async fn execute_operation_direct(
@@ -2587,12 +3031,21 @@ impl CosmosDriver {
                 false
             }
         };
-        let (diagnostics_builder, transport_security) = Self::new_diagnostics_envelope(
+        let (mut diagnostics_builder, transport_security) = Self::new_diagnostics_envelope(
             &self.runtime,
             activity_id.clone(),
             &endpoint,
             fault_injection_enabled,
         );
+
+        // Populate the canonical `db.operation.name` (e.g. `read_item`,
+        // `query_items`) so the finalized diagnostics carry it in production —
+        // feeding the emission layer's span/log attribute and the point-vs.-
+        // non-point tail-sampling classification. `None` for operations without
+        // a canonical name leaves it unset, matching prior behavior.
+        if let Some(operation_name) = operation.db_operation_name() {
+            diagnostics_builder.set_operation_name(operation_name);
+        }
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
@@ -2614,6 +3067,7 @@ impl CosmosDriver {
             &endpoint,
             auth,
             &user_agent,
+            &self.client_id,
             &activity_id,
             pipeline_type,
             transport_security,
@@ -2624,6 +3078,7 @@ impl CosmosDriver {
                 .default_consistency_level,
             effective_throughput_control,
             pre_resolved_pk_range_id,
+            &self.hedge_budget,
         )
         .await
     }
@@ -2711,6 +3166,38 @@ impl CosmosDriver {
         Ok(resolved.as_ref().clone())
     }
 
+    /// Resolves a container by its RID.
+    ///
+    /// Attempts to resolve from `ContainerCache` (by-RID index) first. On a cache
+    /// miss, fetches metadata from the service addressing the container by RID and
+    /// populates the cache. The returned [`ContainerReference`] is RID-addressed
+    /// (it carries no database name).
+    pub async fn resolve_container_by_rid(
+        &self,
+        container_rid: &str,
+    ) -> crate::error::Result<ContainerReference> {
+        let endpoint = self.account().endpoint().as_str().to_owned();
+        let container_rid_owned = container_rid.to_owned();
+
+        let resolved = self
+            .runtime
+            .container_cache()
+            .get_or_fetch_by_rid(&endpoint, container_rid, || async move {
+                self.fetch_container_by_rid(&container_rid_owned)
+                    .await
+                    .map_err(|err| {
+                        crate::error::CosmosErrorBuilder::from_error(err)
+                            .with_context(format!(
+                                "resolve container by rid (container_rid='{container_rid_owned}')"
+                            ))
+                            .build()
+                    })
+            })
+            .await?;
+
+        Ok(resolved.as_ref().clone())
+    }
+
     /// Plans the execution of a Cosmos DB operation.
     ///
     /// For trivial operations (non-query or single-partition), returns a
@@ -2725,11 +3212,55 @@ impl CosmosDriver {
     /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
     ///   for trivial operations; passing one to a cross-partition query
     ///   returns a `Client`-shaped error.
+    ///
+    /// `plan_options` shapes the plan itself — today, the maximum fan-out a
+    /// *fresh* cross-partition operation may produce. A fresh plan exceeding
+    /// [`PlanOptions::max_fan_out`] is rejected with
+    /// [`CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED).
+    /// Resuming from a `continuation` skips the check — the caller already
+    /// opted in when the operation was first planned.
     pub async fn plan_operation(
         &self,
         operation: CosmosOperation,
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
+        plan_options: &PlanOptions,
+    ) -> crate::error::Result<OperationPlan> {
+        // Reject mixed name/RID addressing before any IO work is done. The
+        // service classifies a request as name-based or RID-based from its `dbs`
+        // segment alone, so a reference that mixes a name-addressed parent with
+        // a RID-addressed child (or vice versa) signs and routes inconsistently
+        // and the gateway rejects it with an opaque 401, while a name leaf under
+        // a RID-addressed parent is rejected with a 400 the caller cannot act
+        // on. Validating here — the single choke point every externally
+        // executable operation passes through on its way to a plan — turns both
+        // into deterministic client-side errors for references built through any
+        // path (including direct `plan_operation` + `execute_plan` callers and
+        // multi-page queries), not just `execute_operation`. The check is a cheap
+        // in-memory field comparison and a no-op for every consistently-addressed
+        // reference, so it issues no additional network calls and does not change
+        // the request flow.
+        operation.validate_addressing()?;
+
+        // Planning holds the whole pipeline-builder state across several await
+        // points, which makes it one of the largest futures in the driver —
+        // large enough to trip `clippy::large_futures` in callers. Box it once
+        // here so every caller awaits a pointer-sized future instead of having
+        // to pin at its own call site and rediscover this each time the state
+        // grows.
+        Box::pin(async move {
+            self.plan_operation_inner(operation, options, continuation, plan_options)
+                .await
+        })
+        .await
+    }
+
+    async fn plan_operation_inner(
+        &self,
+        operation: CosmosOperation,
+        options: &OperationOptions,
+        continuation: Option<&ContinuationToken>,
+        plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
@@ -2751,6 +3282,11 @@ impl CosmosDriver {
 
         // Resolve the continuation token (if any) into a planner-ready resume
         // state. Server-issued tokens are only valid for trivial operations.
+        //
+        // A fresh plan (no continuation) is subject to the max fan-out check;
+        // a resume is not, because the caller already opted in to the fan-out
+        // when the operation was first planned.
+        let is_fresh = continuation.is_none();
         let resume_state = match continuation {
             None => None,
             Some(token) => {
@@ -2785,7 +3321,7 @@ impl CosmosDriver {
         //    to the gateway without query planning.
         if operation.is_trivial() {
             let pipeline = planner::build_trivial_pipeline(operation.clone(), resume_state)?;
-            return Ok(OperationPlan::new(pipeline, operation));
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
         // 2. Change feed: resolve the target feed range against the current
@@ -2806,9 +3342,7 @@ impl CosmosDriver {
             let mut topology = CachedTopologyProvider::new(
                 &self.pk_range_cache,
                 container_ref,
-                |container, continuation| {
-                    self.fetch_pk_ranges_from_service(container, continuation)
-                },
+                self.pk_range_page_fetcher(),
             );
             let pipeline = planner::build_unordered_merge(
                 &feed_range,
@@ -2817,7 +3351,7 @@ impl CosmosDriver {
                 resume_state,
             )
             .await?;
-            return Ok(OperationPlan::new(pipeline, operation));
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
         // 3. Cross-partition query: obtain a query plan and build the fan-out
@@ -2832,22 +3366,39 @@ impl CosmosDriver {
                 .build()
         })?;
 
-        let query_plan = self
-            .resolve_query_plan(container, &operation, options)
-            .await?;
+        // `Box::pin` keeps `plan_operation`'s future small. Inlined, it grows to
+        // 17,288 bytes and trips `clippy::large_futures` at five caller sites.
+        let query_plan = Box::pin(self.resolve_query_plan(container, &operation, options)).await?;
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
         let mut topology = CachedTopologyProvider::new(
             &self.pk_range_cache,
             container_ref,
-            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
+            self.pk_range_page_fetcher(),
         );
+
+        // Route streaming ORDER BY queries to the k-way merge instead of
+        // the natural-order sequential drain.
+        if query_plan
+            .query_info
+            .as_ref()
+            .is_some_and(planner::is_streaming_order_by)
+        {
+            let pipeline = planner::build_streaming_ordered_merge(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
 
         let pipeline =
             planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
                 .await?;
-        Ok(OperationPlan::new(pipeline, operation))
+        planner::finalize_plan(pipeline, operation, is_fresh, plan_options)
     }
 
     /// Fetches a query plan from the Gateway backend.
@@ -2857,10 +3408,9 @@ impl CosmosDriver {
         operation: &CosmosOperation,
         options: &OperationOptions,
     ) -> crate::error::Result<QueryPlan> {
-        // Advertise the SDK's supported query-rewrite features. The default
-        // (`SUPPORTED_QUERY_FEATURES`) is `"None"` until the cross-partition
-        // pipeline gains rewrite support, but the value must be non-empty so
-        // the Gateway V2 thin-client proxy accepts the QueryPlan request.
+        // Advertise exactly the query-rewrite features implemented by the
+        // production dataflow pipeline (`OrderBy,MultipleOrderBy`). The value
+        // must remain non-empty so Gateway V2 accepts the QueryPlan request.
         let query_plan_operation = CosmosOperation::query_plan(
             container.clone(),
             std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
@@ -2990,9 +3540,7 @@ impl CosmosDriver {
     ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
         let routing_map = self
             .pk_range_cache
-            .try_lookup(container, force_refresh, |c, cont| {
-                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-            })
+            .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
             .await?;
 
         let ranges = routing_map.ranges();
@@ -3035,9 +3583,7 @@ impl CosmosDriver {
             // Full key — point lookup
             let routing_map = self
                 .pk_range_cache
-                .try_lookup(container, force_refresh, |c, cont| {
-                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-                })
+                .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
                 .await?;
             if routing_map.ranges().is_empty() {
                 return None;
@@ -3055,7 +3601,7 @@ impl CosmosDriver {
                     container,
                     &epk_range.start..&epk_range.end,
                     force_refresh,
-                    |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+                    self.pk_range_page_fetcher(),
                 )
                 .await
         }
@@ -3127,6 +3673,7 @@ async fn probe_endpoint_connectivity(
     transport: &super::transport::adaptive_transport::AdaptiveTransport,
     account: &AccountReference,
     user_agent: &azure_core::http::headers::HeaderValue,
+    client_id: &azure_core::http::headers::HeaderValue,
 ) -> bool {
     let endpoint = AccountEndpoint::from(account);
     let mut request = HttpRequest {
@@ -3138,7 +3685,7 @@ async fn probe_endpoint_connectivity(
         #[cfg(feature = "fault_injection")]
         evaluation_collector: None,
     };
-    cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+    cosmos_headers::apply_cosmos_headers(&mut request, user_agent, client_id);
 
     // Any wire response (including a non-2xx envelope) proves reachability;
     // only a transport error with no response means the endpoint could not
@@ -3161,7 +3708,7 @@ mod tests {
         models::AccountReference,
         options::{
             ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
-            UserAgentSuffix, WorkloadId,
+            ThrottlingRetryOptionsBuilder, UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -3175,6 +3722,9 @@ mod tests {
         },
         options::ConnectionPoolOptions,
     };
+
+    static TEST_CLIENT_ID: azure_core::http::headers::HeaderValue =
+        azure_core::http::headers::HeaderValue::from_static("00000000-0000-4000-8000-000000000000");
 
     const ACCOUNT_PROPERTIES_PAYLOAD: &str = r#"{
         "_self": "",
@@ -3456,6 +4006,68 @@ mod tests {
             None,
         )
         .is_some());
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_mixed_addressing() {
+        // The mixed name/RID guard lives in plan_operation, the single choke
+        // point every externally executable operation passes through. Calling
+        // plan_operation directly (the path queries and direct callers use,
+        // bypassing execute_operation) must still reject a mixed reference with
+        // the deterministic CLIENT_MIXED_NAME_RID_ADDRESSING error before any
+        // plan is built or signed.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        // Name-addressed database parent with a RID-addressed collection leaf.
+        let db = DatabaseReference::from_name(test_account(), "testdb");
+        let mixed = crate::models::CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid("Lx1BALxJyZ8=".into());
+        let operation = CosmosOperation::new(crate::models::OperationType::Read, mixed, None);
+
+        let err = match Box::pin(driver.plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        ))
+        .await
+        {
+            Ok(_) => panic!("mixed addressing must be rejected before planning"),
+            Err(e) => e,
+        };
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+        );
+    }
+
+    #[tokio::test]
+    async fn resolve_container_by_rid_rejects_non_container_byte_length() {
+        // A container RID decodes to exactly 8 bytes. A 4-byte database RID and a
+        // 16-byte document RID must both be rejected up front with
+        // CLIENT_INVALID_RESOURCE_ID rather than being misrouted into the
+        // `colls` segment of a service request.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        for byte_len in [4usize, 16] {
+            let rid = crate::models::resource_id::encode_rid(&vec![0u8; byte_len]);
+            let err = match driver.resolve_container_by_rid(&rid).await {
+                Ok(_) => panic!("a {byte_len}-byte RID must not resolve as a container"),
+                Err(e) => e,
+            };
+            assert_eq!(
+                err.status(),
+                crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID,
+                "{byte_len}-byte RID should be rejected as invalid"
+            );
+        }
     }
 
     #[tokio::test]
@@ -3748,7 +4360,8 @@ mod tests {
         let endpoint = AccountEndpoint::try_from("https://test.documents.azure.com:443/").unwrap();
         let user_agent = azure_core::http::headers::HeaderValue::from_static("test-ua");
 
-        let request = CosmosDriver::build_account_properties_request(&endpoint, &user_agent);
+        let request =
+            CosmosDriver::build_account_properties_request(&endpoint, &user_agent, &TEST_CLIENT_ID);
 
         let opt_in = request
             .headers
@@ -3966,6 +4579,7 @@ mod tests {
             &runtime,
             runtime.http_client_factory(),
             &account,
+            &TEST_CLIENT_ID,
             false,
         )
         .await
@@ -4004,6 +4618,7 @@ mod tests {
             &account,
             &transport_holder,
             runtime.user_agent(),
+            &TEST_CLIENT_ID,
             None,
             false,
         )
@@ -4047,6 +4662,7 @@ mod tests {
             &account,
             &transport_holder,
             runtime.user_agent(),
+            &TEST_CLIENT_ID,
             None,
             false,
         )
@@ -4091,6 +4707,7 @@ mod tests {
             &account,
             &transport_holder,
             runtime.user_agent(),
+            &TEST_CLIENT_ID,
             None,
             false,
         )
@@ -4114,7 +4731,39 @@ mod tests {
         assert_send(driver.execute_operation(todo!(), todo!()));
         assert_send(driver.execute_singleton_operation(todo!(), todo!()));
         assert_send(driver.execute_plan(todo!(), todo!(), todo!()));
-        assert_send(driver.plan_operation(todo!(), todo!(), todo!()));
+        assert_send(driver.plan_operation(todo!(), todo!(), todo!(), todo!()));
+    }
+
+    #[tokio::test]
+    async fn operation_futures_stay_within_size_budget() {
+        fn assert_size<T>(value: &T, budget: usize, name: &str) {
+            let actual = std::mem::size_of_val(value);
+            assert!(
+                actual <= budget,
+                "{name} future is {actual} bytes, exceeding the {budget}-byte budget"
+            );
+        }
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let driver = CosmosDriver::new(runtime, DriverOptions::builder(account).build()).unwrap();
+        driver.initialized.store(true, Ordering::Release);
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let operation = CosmosOperation::read_item(crate::models::ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let operation_options = OperationOptions::default();
+        let plan_options = PlanOptions::default();
+
+        let plan_future = driver.plan_operation(operation, &operation_options, None, &plan_options);
+        assert_size(&plan_future, 1024, "plan_operation");
+        let mut plan = plan_future.await.unwrap();
+
+        let execute_future =
+            driver.execute_plan(&mut plan, Some(container), OperationOptions::default());
+        assert_size(&execute_future, 512, "execute_plan");
     }
 
     // Account properties with two readable locations for regional fallback tests.
@@ -4263,6 +4912,7 @@ mod tests {
             &account,
             &transport_holder,
             runtime.user_agent(),
+            &TEST_CLIENT_ID,
             Some(multi_region_previous_props()),
             false,
         )
@@ -4305,6 +4955,7 @@ mod tests {
             &account,
             &transport_holder,
             runtime.user_agent(),
+            &TEST_CLIENT_ID,
             Some(multi_region_previous_props()),
             false,
         )
@@ -4342,6 +4993,7 @@ mod tests {
             &account,
             &transport_holder,
             runtime.user_agent(),
+            &TEST_CLIENT_ID,
             None,
             false,
         )
@@ -4361,6 +5013,8 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+        let client_id =
+            azure_core::http::headers::HeaderValue::from("00000000-0000-4000-8000-000000000000");
 
         let err = CosmosDriver::fetch_account_properties_with_transport(
             &runtime,
@@ -4368,6 +5022,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            &client_id,
             false,
         )
         .await
@@ -4422,6 +5077,143 @@ mod tests {
         assert!(
             err.response().is_some(),
             "with_response_parts + with_diagnostics must promote the error to Wire, exposing response(). Got: {err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_retries_on_throttle_then_succeeds() {
+        // Returns 429 (with x-ms-retry-after-ms) on the first attempt, then 200.
+        // Bootstrap must retry the throttle instead of surfacing it.
+        #[derive(Debug)]
+        struct ThrottleThenSucceedClient {
+            calls: Arc<std::sync::atomic::AtomicUsize>,
+        }
+
+        #[async_trait]
+        impl TransportClient for ThrottleThenSucceedClient {
+            async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+                let n = self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                if n == 0 {
+                    let mut headers = Headers::new();
+                    headers.insert(
+                        azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms"),
+                        azure_core::http::headers::HeaderValue::from_static("1"),
+                    );
+                    Ok(HttpResponse {
+                        status: 429,
+                        headers,
+                        body: Vec::new(),
+                    })
+                } else {
+                    Ok(HttpResponse {
+                        status: 200,
+                        headers: Headers::new(),
+                        body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
+                    })
+                }
+            }
+        }
+
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let client: Arc<dyn TransportClient> = Arc::new(ThrottleThenSucceedClient {
+            calls: Arc::clone(&calls),
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+            &TEST_CLIENT_ID,
+            false,
+        )
+        .await
+        .expect("bootstrap must retry the 429 and then succeed");
+
+        assert_eq!(
+            calls.load(std::sync::atomic::Ordering::SeqCst),
+            2,
+            "expected one throttled attempt followed by one successful retry"
+        );
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_honors_disabled_throttle_retries() {
+        // A caller-configured `max_retry_count = 0` disables throttle retries.
+        // The bootstrap probe must honor it the same way normal metadata
+        // operations do: surface the 429 after a single wire attempt instead of
+        // falling back to the nine-retry metadata default.
+        #[derive(Debug)]
+        struct AlwaysThrottleClient {
+            calls: Arc<std::sync::atomic::AtomicUsize>,
+        }
+
+        #[async_trait]
+        impl TransportClient for AlwaysThrottleClient {
+            async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+                self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                let mut headers = Headers::new();
+                headers.insert(
+                    azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms"),
+                    azure_core::http::headers::HeaderValue::from_static("1"),
+                );
+                Ok(HttpResponse {
+                    status: 429,
+                    headers,
+                    body: Vec::new(),
+                })
+            }
+        }
+
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let client: Arc<dyn TransportClient> = Arc::new(AlwaysThrottleClient {
+            calls: Arc::clone(&calls),
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let opts = OperationOptionsBuilder::new()
+            .with_throttling_retry_options(
+                ThrottlingRetryOptionsBuilder::new()
+                    .with_max_retry_count(0)
+                    .build(),
+            )
+            .build();
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_default_operation_options(opts)
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        let err = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+            &TEST_CLIENT_ID,
+            false,
+        )
+        .await
+        .expect_err("disabled throttle retries must surface the 429");
+        assert!(
+            err.status().is_throttled(),
+            "expected the 429 to propagate, got {err:?}"
+        );
+
+        assert_eq!(
+            calls.load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "max_retry_count = 0 must yield exactly one wire attempt (no retries)"
         );
     }
 
@@ -4503,6 +5295,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            &TEST_CLIENT_ID,
             false,
         )
         .await
@@ -4528,6 +5321,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            &TEST_CLIENT_ID,
             false,
         )
         .await
@@ -4556,6 +5350,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            &TEST_CLIENT_ID,
             false,
         )
         .await
@@ -4627,7 +5422,7 @@ mod tests {
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
 
-        probe_endpoint_connectivity(&transport, &account, &user_agent).await
+        probe_endpoint_connectivity(&transport, &account, &user_agent, &TEST_CLIENT_ID).await
     }
 
     async fn drive_probe_unreachable() -> bool {
@@ -4638,7 +5433,7 @@ mod tests {
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
 
-        probe_endpoint_connectivity(&transport, &account, &user_agent).await
+        probe_endpoint_connectivity(&transport, &account, &user_agent, &TEST_CLIENT_ID).await
     }
 
     /// The endpoint probe gates failback on *connectivity*, not on the account
@@ -4942,6 +5737,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            &TEST_CLIENT_ID,
             false,
         )
         .await
@@ -5013,6 +5809,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            &TEST_CLIENT_ID,
             false,
         )
         .await
@@ -5143,6 +5940,8 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account(&format!("http://127.0.0.1:{port}/"));
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+        let client_id =
+            azure_core::http::headers::HeaderValue::from("00000000-0000-4000-8000-000000000000");
 
         let result = CosmosDriver::fetch_account_properties_with_transport(
             &runtime,
@@ -5150,6 +5949,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            &client_id,
             false,
         )
         .await;
@@ -5218,6 +6018,48 @@ mod tests {
         assert!(
             Arc::ptr_eq(driver_a.user_agent(), driver_b.user_agent()),
             "drivers A and B must share the same User-Agent Arc"
+        );
+    }
+
+    #[tokio::test]
+    async fn drivers_generate_stable_unique_client_ids() {
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+                ResponsePlan::Success,
+                10,
+            ))))
+            .build()
+            .await
+            .unwrap();
+
+        let driver_a = CosmosDriver::new(
+            Arc::clone(&runtime),
+            DriverOptionsBuilder::new(signed_test_account(
+                "https://account-a.documents.azure.com:443/",
+            ))
+            .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+        let driver_b = CosmosDriver::new(
+            runtime,
+            DriverOptionsBuilder::new(signed_test_account(
+                "https://account-b.documents.azure.com:443/",
+            ))
+            .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+
+        let client_id_a = driver_a.client_id.as_str();
+        let parsed = uuid::Uuid::parse_str(client_id_a).expect("client ID must be a UUID");
+        assert_eq!(parsed.get_version(), Some(uuid::Version::Random));
+        assert_eq!(
+            driver_a.client_id.as_str(),
+            client_id_a,
+            "a driver must retain one client ID for its lifetime"
+        );
+        assert_ne!(
+            driver_a.client_id, driver_b.client_id,
+            "independently-created drivers must have distinct client IDs"
         );
     }
 
@@ -5459,6 +6301,129 @@ mod tests {
         assert!(
             id.as_str() == "0" || id.as_str() == "1",
             "logical PK must resolve to a single owning range, got {id}",
+        );
+    }
+
+    // ── apply_request_binary_encoding (schema-agnostic request-side encode) ──
+
+    #[test]
+    fn binary_encoding_applies_only_to_document_item_ops() {
+        use crate::models::{OperationType, ResourceType};
+
+        // Point item ops on `Document` are the only combinations that qualify.
+        for op in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::Replace,
+            OperationType::Upsert,
+        ] {
+            assert!(
+                CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                "Document + {op:?} should be binary-encodable",
+            );
+        }
+
+        // Non-item operation types on `Document` are excluded (query/feed/delete/patch).
+        for op in [
+            OperationType::Delete,
+            OperationType::Query,
+            OperationType::ReadFeed,
+            OperationType::Patch,
+        ] {
+            assert!(
+                !CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                "Document + {op:?} must not be binary-encoded",
+            );
+        }
+
+        // Control-plane resources share the create/read/replace/upsert operation
+        // types but must NEVER be binary encoded — some carry JSON bodies.
+        for rt in [
+            ResourceType::Database,
+            ResourceType::DocumentCollection,
+            ResourceType::Offer,
+            ResourceType::StoredProcedure,
+            ResourceType::Trigger,
+            ResourceType::UserDefinedFunction,
+        ] {
+            for op in [
+                OperationType::Create,
+                OperationType::Read,
+                OperationType::Replace,
+                OperationType::Upsert,
+            ] {
+                assert!(
+                    !CosmosDriver::binary_encoding_applies(rt, op),
+                    "{rt:?} + {op:?} must not be binary-encoded (control plane)",
+                );
+            }
+        }
+    }
+
+    fn binary_encoding_test_operation(body: Vec<u8>) -> CosmosOperation {
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let item =
+            crate::models::ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        CosmosOperation::create_item(item).with_body(body)
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_transcodes_text_body_to_binary() {
+        // A caller (e.g. FFI) hands a TEXT JSON body; the driver transcodes it
+        // to Cosmos binary JSON and advertises binary responses. The caller
+        // never encoded binary itself.
+        let text = serde_json::to_vec(&serde_json::json!({ "id": "doc1", "n": 7 })).unwrap();
+        assert!(!crate::binary_json::is_binary(&text));
+
+        let op = binary_encoding_test_operation(text);
+        let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
+
+        let body = op.body().expect("body present");
+        assert!(
+            crate::binary_json::is_binary(body),
+            "text body must be transcoded to binary on the wire",
+        );
+        // Decodes back to the same value.
+        assert_eq!(
+            crate::binary_json::decode(body).unwrap(),
+            serde_json::json!({ "id": "doc1", "n": 7 }),
+        );
+        // Advertises binary responses.
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+        );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_passes_binary_body_through() {
+        // A typed consumer (Rust SDK) may pre-encode to binary; the driver's
+        // request-side transcode sees an already-binary body and passes it
+        // through unchanged.
+        let binary = crate::binary_json::encode(&serde_json::json!({ "id": "doc1", "n": 7 }));
+        let op = binary_encoding_test_operation(binary.clone());
+        let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
+
+        assert_eq!(op.body().unwrap(), binary.as_slice());
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+        );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_errors_on_invalid_text_body() {
+        // A body that is neither binary nor valid JSON surfaces as a
+        // request-body serialization error.
+        let op = binary_encoding_test_operation(b"{not json".to_vec());
+        let err = CosmosDriver::apply_request_binary_encoding(op).unwrap_err();
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
         );
     }
 }

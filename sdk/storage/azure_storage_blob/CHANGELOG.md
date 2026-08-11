@@ -1,6 +1,6 @@
 # Release History
 
-## 1.1.0-beta.2 (Unreleased)
+## 1.1.0-beta.3 (Unreleased)
 
 ### Features Added
 
@@ -11,10 +11,18 @@
 
 - Added the `AccessTier::Smart` and `ArchiveStatus::RehydratePendingToSmart` enum variants.
 - Added `access_tier`, `access_tier_changed_on`, `access_tier_inferred`, and `smart_access_tier` to `BlobDownloadProperties` and marked the struct as non-exhaustive.
+- Added `BlobClient::start_copy_from_url()` and `BlobClient::abort_copy()` for asynchronous blob copy operations.
 
-### Bugs Fixed
+## 1.1.0-beta.2 (2026-08-11)
 
-### Other Changes
+### Features Added
+
+- Added `BlobClient::start_copy_from_url()` and `BlobClient::abort_copy()` for asynchronous blob copy operations.
+
+### Breaking Changes
+
+- Removed `BlobContainerClient::list_blobs_hierarchical()`.
+
 
 ## 1.1.0-beta.1 (2026-07-14)
 

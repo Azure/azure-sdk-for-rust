@@ -10,6 +10,7 @@ use std::time::Duration;
 
 use azure_core::http::Url;
 
+use azure_data_cosmos_driver::diagnostics::PipelineType;
 use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
@@ -335,7 +336,11 @@ async fn upsert_item_403_1008_triggers_refresh_and_cross_region_retry() {
 }
 
 /// **403/1008 — bounded bubble-up.** All-region 1008 retries must terminate.
-#[tokio::test]
+// Runs on tokio's paused clock: the backend-failover budget sleeps up to 5s of
+// backoff via `azure_core::sleep` (tokio timer). Paused time auto-advances those
+// sleeps, so `tokio::time::Instant` still observes the full 5s of virtual delay
+// without any real wall-clock sleeping.
+#[tokio::test(start_paused = true)]
 async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     let recorder = HostRecorder::new();
     let east_rule = region_fault_rule(
@@ -362,13 +367,14 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     seed_item_via_driver(&driver, "all-stale-item").await;
     recorder.clear();
 
-    // Timeout is the runaway-loop guard for the 120-attempt backend-failover budget.
+    let started = tokio::time::Instant::now();
     let result = tokio::time::timeout(
-        Duration::from_secs(180),
+        Duration::from_secs(20),
         read_item(&driver, "all-stale-item"),
     )
     .await
-    .expect("post-fix retry budget must be bounded — operation hung past 180s");
+    .expect("five-second retry budget must complete within 20s");
+    let elapsed = started.elapsed();
 
     let err = result.expect_err("with both regions returning 1008, the read must fail");
     let status = err.status();
@@ -382,18 +388,22 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     let diagnostics = err
         .diagnostics()
         .expect("wire-response error must carry diagnostics");
-    assert!(
-        diagnostics.request_count() >= 2,
-        "post-fix: SDK must attempt ≥ 2 requests (one per region) \
-         before bubbling up 1008; observed request_count={}",
-        diagnostics.request_count(),
+    let data_attempts = diagnostics
+        .requests()
+        .iter()
+        .filter(|request| {
+            request.pipeline_type() == PipelineType::DataPlane
+                && request.status().is_database_account_not_found()
+        })
+        .count();
+    assert_eq!(
+        data_attempts, 7,
+        "the initial two-leg hedge uses generic both-transient accounting; \
+         subsequent 1008 retries must remain sequential and bounded"
     );
-    // Sanity guardrail against an unbounded retry loop.
     assert!(
-        diagnostics.request_count() <= 250,
-        "retry budget for 1008 must be bounded; observed \
-         request_count={} which suggests an infinite-retry regression",
-        diagnostics.request_count(),
+        elapsed >= Duration::from_millis(4900) && elapsed < Duration::from_secs(20),
+        "five-second 1008 policy took {elapsed:?}"
     );
 }
 
@@ -490,7 +500,10 @@ async fn write_403_3_triggers_topology_refresh() {
 }
 
 /// **403/3 — bounded bubble-up.** All-region 403/3 retries must terminate.
-#[tokio::test]
+// Paused clock: the backend-failover budget sleeps up to 5s of backoff with both
+// regions faulted. Paused time auto-advances those sleeps, so `tokio::time::Instant`
+// observes the full virtual delay without real wall-clock sleeping.
+#[tokio::test(start_paused = true)]
 async fn all_regions_403_3_bounded_retries_then_bubble_up() {
     let recorder = HostRecorder::new();
     let east = region_fault_rule(
@@ -516,13 +529,14 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
 
     recorder.clear();
 
-    // Timeout is the runaway-loop guard for the 120-attempt backend-failover budget.
+    let started = tokio::time::Instant::now();
     let result = tokio::time::timeout(
-        Duration::from_secs(180),
+        Duration::from_secs(20),
         create_item(&driver, "403-3-all-forbidden-item"),
     )
     .await
-    .expect("retry budget must be bounded — operation hung past 180s");
+    .expect("five-second retry budget must complete within 20s");
+    let elapsed = started.elapsed();
 
     let err = result.expect_err("with both regions returning 403/3, the create must fail");
     let status = err.status();
@@ -536,11 +550,21 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
     let diagnostics = err
         .diagnostics()
         .expect("wire-response error must carry diagnostics");
+    let data_attempts = diagnostics
+        .requests()
+        .iter()
+        .filter(|request| {
+            request.pipeline_type() == PipelineType::DataPlane
+                && request.status().is_write_forbidden()
+        })
+        .count();
+    assert_eq!(
+        data_attempts, 5,
+        "five-second 403/3 policy must produce initial + 4 retry attempts"
+    );
     assert!(
-        diagnostics.request_count() <= 250,
-        "retry budget for 403/3 must be bounded; observed \
-         request_count={} which suggests an infinite-retry regression",
-        diagnostics.request_count(),
+        elapsed >= Duration::from_millis(4900) && elapsed < Duration::from_secs(20),
+        "five-second 403/3 policy took {elapsed:?}"
     );
 }
 
@@ -596,7 +620,10 @@ async fn write_403_3_second_attempt_targets_different_region() {
 }
 
 /// **403/3 — persistent one-region failures must not pin retries there.**
-#[tokio::test]
+// Paused clock: the persistent-fault retry loop backs off 1s per attempt via a
+// tokio timer; paused time collapses those sleeps so the runaway guard never
+// costs real wall-clock time.
+#[tokio::test(start_paused = true)]
 async fn write_403_3_persistent_fault_pins_retries_to_same_region() {
     let recorder = HostRecorder::new();
     let rule = region_fault_rule(
@@ -681,7 +708,10 @@ async fn write_403_3_persistent_fault_pins_retries_to_same_region() {
 }
 
 /// **403/3 — backend-driven failover honors caller `excluded_regions`.**
-#[tokio::test]
+// Paused clock: West is excluded so East's persistent 403/3 exhausts the
+// 120-attempt budget (1s backoff each) before bubbling up; paused time makes it
+// instant.
+#[tokio::test(start_paused = true)]
 async fn write_403_3_retry_honors_excluded_region() {
     let recorder = HostRecorder::new();
     let rule = region_fault_rule(
@@ -715,7 +745,7 @@ async fn write_403_3_retry_honors_excluded_region() {
     let mut opts = OperationOptions::default();
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
 
-    // Timeout leaves headroom for the 120-attempt backend-failover budget.
+    // Timeout leaves headroom for the backend-failover budget.
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(180),
         driver.execute_operation(op, opts),
@@ -739,7 +769,9 @@ async fn write_403_3_retry_honors_excluded_region() {
 }
 
 /// **403/1008 — backend-driven failover honors caller `excluded_regions`.**
-#[tokio::test]
+// Paused clock: West is excluded so East's persistent 403/1008 exhausts the
+// 120-attempt budget (1s backoff each); paused time makes it instant.
+#[tokio::test(start_paused = true)]
 async fn create_item_403_1008_retry_honors_excluded_region() {
     let recorder = HostRecorder::new();
     let rule = region_fault_rule(
@@ -773,7 +805,8 @@ async fn create_item_403_1008_retry_honors_excluded_region() {
     let mut opts = OperationOptions::default();
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
 
-    // 120-attempt budget x 1000ms BACKEND_FAILOVER_RETRY_INTERVAL = up to ~120s wall time.
+    // Exponential backend-failover backoff is bounded by the 5s cumulative
+    // delay budget; 180s leaves CI headroom for jitter and per-attempt latency.
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(180),
         driver.execute_operation(op, opts),
@@ -797,7 +830,9 @@ async fn create_item_403_1008_retry_honors_excluded_region() {
 }
 
 /// **GetDatabaseAccount metadata refresh is independent of `excluded_regions`.**
-#[tokio::test]
+// Paused clock: the excluded-region retry path exhausts the backend-failover
+// budget with 1s backoffs; paused time collapses those sleeps.
+#[tokio::test(start_paused = true)]
 async fn metadata_refresh_ignores_excluded_regions() {
     let recorder = HostRecorder::new();
     let rule = region_fault_rule(
@@ -834,8 +869,8 @@ async fn metadata_refresh_ignores_excluded_regions() {
     // Exclude East — the same region that hosts the global bootstrap endpoint.
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::EAST_US]));
 
-    // 120-attempt budget x 1000ms BACKEND_FAILOVER_RETRY_INTERVAL = up
-    // to ~120s wall time on bubble-up; 180s leaves CI headroom.
+    // Exponential backend-failover backoff is bounded by the 5s cumulative
+    // delay budget on bubble-up; 180s leaves CI headroom.
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(180),
         driver.execute_operation(op, opts),
@@ -869,7 +904,9 @@ async fn metadata_refresh_ignores_excluded_regions() {
 }
 
 /// **Regional-endpoint metadata-refresh fallback ignores `excluded_regions`.**
-#[tokio::test]
+// Paused clock: the excluded-region regional-fallback retry path exhausts the
+// backend-failover budget with 1s backoffs; paused time collapses those sleeps.
+#[tokio::test(start_paused = true)]
 async fn metadata_refresh_regional_fallback_ignores_excluded_regions() {
     let recorder = HostRecorder::new();
     let data_plane_rule = region_fault_rule(

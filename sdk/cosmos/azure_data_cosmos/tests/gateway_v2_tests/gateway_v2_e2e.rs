@@ -7,16 +7,17 @@ use azure_core::credentials::Secret;
 use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::diagnostics::{DiagnosticsContext, TransportKind};
 use azure_data_cosmos::models::{
-    ContainerProperties, PartitionKeyDefinition, PartitionKeyVersion, ThroughputProperties,
+    CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, ContainerProperties,
+    IndexingPolicy, PartitionKeyDefinition, PartitionKeyVersion, ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    CreateContainerOptions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint,
-    OperationOptionsBuilder, PartitionFailoverOptions, Precondition, QueryOptions,
-    ReadConsistencyStrategy, Region,
+    ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions, ItemWriteOptions,
+    MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions, Precondition,
+    QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, FeedScope, Query, RoutingStrategy,
-    SubStatusCode, TransactionalBatch,
+    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
+    RoutingStrategy, SubStatusCode, TransactionalBatch,
 };
 use azure_data_cosmos_driver::{
     models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
@@ -108,6 +109,27 @@ async fn build_client(
     build_client_for_region(endpoint, key, Region::EAST_US).await
 }
 
+async fn build_client_with_gateway_v2_disabled(
+    endpoint: &str,
+    key: &str,
+    gateway_v2_disabled: bool,
+) -> Result<CosmosClient, Box<dyn std::error::Error>> {
+    let pool = ConnectionPoolOptions::builder()
+        .with_gateway_v2_disabled(gateway_v2_disabled)
+        .build()?;
+    let runtime = CosmosRuntime::builder()
+        .with_connection_pool(pool)
+        .build()
+        .await?;
+    let endpoint: AccountEndpoint = normalize_gateway_v2_endpoint(endpoint).parse()?;
+    let account_ref =
+        AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
+    Ok(CosmosClient::builder()
+        .with_runtime(runtime)
+        .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await?)
+}
+
 /// Like [`build_client`] but pins proximity routing to `region` so reads are
 /// served from that region's replica when the account advertises it. Used by
 /// the multi-region usability test to prove a collection is reachable over
@@ -154,42 +176,80 @@ async fn build_client_ppcb_disabled(
     Ok(client)
 }
 
-/// Resolves a container client, retrying past the
-/// `404 / 1013 CollectionCreateInProgress` window that follows a fresh
-/// `create_container` on multi-region thin-client accounts. Both the
-/// metadata resolution in [`DatabaseClient::container_client`] and the
-/// subsequent first data-plane request can race the gateway's
-/// container-create completion; this helper keeps retrying the metadata
-/// resolution *and* a follow-up `read` until both succeed or until a
-/// non-1013 error surfaces.
+/// Resolves a container client, retrying past the two transient windows that
+/// follow a fresh `create_container` on Gateway 2.0 accounts:
+///
+/// - `404 / 1013 CollectionCreateInProgress` while the service finishes
+///   provisioning the collection, and
+/// - `404 / 1003 OwnerResourceNotFound` while the Gateway 2.0 proxy's routing
+///   table catches up so the freshly-created collection becomes routable.
+///
+/// Crucially, a freshly-created collection can resolve at the metadata gateway
+/// (so `container_client(..)` and a container `read` both succeed) while the
+/// Gateway 2.0 *data plane* still routes to nothing — meaning the caller's very
+/// first item write/query is the request that races the `404 / 1003` window and
+/// fails. Gating on metadata alone is therefore not enough: this helper also
+/// drives one page of a read-only full-container query so a data-plane
+/// `404 / 1003` surfaces *here* (and is retried) rather than in the caller.
+///
+/// It keeps retrying container resolution, the metadata `read`, and the
+/// data-plane query probe until all succeed, until an error outside those two
+/// transient conditions surfaces, or until the bounded poll budget is
+/// exhausted.
 async fn wait_for_container_ready(
     db_client: &azure_data_cosmos::clients::DatabaseClient,
     container_name: &str,
 ) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
-    const MAX_ATTEMPTS: u32 = 60;
+    const MAX_ATTEMPTS: u32 = 120;
     const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
 
+    // A freshly-created collection is still "becoming ready" when the service
+    // reports `404 / 1013 CollectionCreateInProgress` (create not finished) or
+    // the Gateway 2.0 proxy reports `404 / 1003 OwnerResourceNotFound` (routing
+    // table not yet propagated). Both are transient; anything else is fatal.
+    fn is_transient_not_ready(status: &azure_data_cosmos::CosmosStatus) -> bool {
+        status.status_code() == StatusCode::NotFound
+            && matches!(
+                status.sub_status(),
+                Some(
+                    SubStatusCode::COLLECTION_CREATE_IN_PROGRESS
+                        | SubStatusCode::OWNER_RESOURCE_NOT_FOUND
+                )
+            )
+    }
+
+    // A single end-to-end readiness attempt: resolve the container, read its
+    // metadata, and drive one page of a read-only full-container query so the
+    // Gateway 2.0 proxy's collection routing is proven resolvable on the data
+    // plane before the caller issues its first item operation. The query scope
+    // is partition-key-shape agnostic (works for flat and hierarchical keys)
+    // and read-only, so it is safe on the just-created empty collection.
+    async fn probe_ready(
+        db_client: &azure_data_cosmos::clients::DatabaseClient,
+        container_name: &str,
+    ) -> azure_data_cosmos::Result<azure_data_cosmos::clients::ContainerClient> {
+        let container_client = db_client.container_client(container_name).await?;
+        container_client.read(None).await?;
+        let mut pages = container_client
+            .query_items::<serde_json::Value>(
+                Query::from("SELECT * FROM c"),
+                FeedScope::full_container(),
+                None,
+            )
+            .await?
+            .into_pages();
+        if let Some(page) = pages.next().await {
+            page?;
+        }
+        Ok(container_client)
+    }
+
     for attempt in 0..MAX_ATTEMPTS {
-        let last_err: Box<dyn std::error::Error> =
-            match db_client.container_client(container_name).await {
-                Ok(container_client) => match container_client.read(None).await {
-                    Ok(_) => return Ok(container_client),
-                    Err(e)
-                        if e.status().sub_status()
-                            == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS) =>
-                    {
-                        Box::new(e)
-                    }
-                    Err(e) => return Err(Box::new(e)),
-                },
-                Err(e)
-                    if e.status().sub_status()
-                        == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS) =>
-                {
-                    Box::new(e)
-                }
-                Err(e) => return Err(Box::new(e)),
-            };
+        let last_err = match probe_ready(db_client, container_name).await {
+            Ok(container_client) => return Ok(container_client),
+            Err(e) if is_transient_not_ready(&e.status()) => e,
+            Err(e) => return Err(Box::new(e)),
+        };
 
         if attempt + 1 == MAX_ATTEMPTS {
             return Err(format!(
@@ -305,6 +365,9 @@ async fn drop_database(client: &CosmosClient, db_name: &str) {
 struct GwV2TestItem {
     id: String,
     pk: String,
+    /// Serialized as `sortValue`: `value` is a reserved word in Cosmos SQL, so
+    /// `ORDER BY c.value` fails query-plan generation with `400`/`13013`.
+    #[serde(rename = "sortValue")]
     value: i64,
     label: String,
 }
@@ -832,6 +895,136 @@ async fn provision_database_and_multi_partition_container(
     let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
     Ok((db_name, container_client))
+}
+
+async fn drain_order_by_with_transport(
+    container: &azure_data_cosmos::clients::ContainerClient,
+    expected_transport: TransportKind,
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let query = Query::from("SELECT * FROM c ORDER BY c.sortValue ASC, c.label DESC");
+    let mut continuation = None;
+    let mut ids = Vec::new();
+    let mut requests_seen = 0_usize;
+    loop {
+        let mut options = QueryOptions::default()
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
+        if let Some(token) = continuation.take() {
+            options = options.with_continuation_token(token);
+        }
+        let mut pages = container
+            .query_items::<GwV2TestItem>(query.clone(), FeedScope::full_container(), Some(options))
+            .await?
+            .into_pages();
+        let Some(page) = pages.next().await else {
+            break;
+        };
+        let page = page?;
+        if !page.diagnostics().requests().is_empty() {
+            assert_transport_kind(&page.diagnostics(), expected_transport);
+            requests_seen += page.diagnostics().requests().len();
+        }
+        ids.extend(page.into_items().into_iter().map(|item| item.id));
+        let serialized = pages.to_continuation_token()?.as_str().to_owned();
+        drop(pages);
+        continuation = Some(azure_data_cosmos::feed::ContinuationToken::from_string(
+            serialized,
+        ));
+    }
+    assert!(
+        requests_seen > 0,
+        "expected at least one backend request over {expected_transport:?}"
+    );
+    Ok(ids)
+}
+
+/// Executes the same resumable cross-partition ORDER BY through Gateway 1.x
+/// and Gateway 2.0 against the same container.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn order_by_continuation_matches_gateway_v1_and_v2(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+    let gateway_v2 = build_client_with_gateway_v2_disabled(&endpoint, &key, false).await?;
+    let gateway_v1 = build_client_with_gateway_v2_disabled(&endpoint, &key, true).await?;
+
+    let unique = azure_core::Uuid::new_v4();
+    let db_name = format!("gw_v2-orderby-db-{unique}");
+    let container_name = format!("gw_v2-orderby-container-{unique}");
+    gateway_v2.create_database(&db_name, None).await?;
+    let result = AssertUnwindSafe(async {
+        let database = gateway_v2.database_client(&db_name);
+        let composite_index = CompositeIndex::default()
+            .with_property(CompositeIndexProperty::new(
+                "/sortValue",
+                CompositeIndexOrder::Ascending,
+            ))
+            .with_property(CompositeIndexProperty::new(
+                "/label",
+                CompositeIndexOrder::Descending,
+            ));
+        let mut indexing_policy = IndexingPolicy::default().with_composite_index(composite_index);
+        indexing_policy.automatic = true;
+        let properties =
+            ContainerProperties::new(container_name.clone(), PartitionKeyDefinition::from("/pk"))
+                .with_indexing_policy(indexing_policy);
+        database
+            .create_container(
+                properties,
+                Some(
+                    CreateContainerOptions::default()
+                        .with_throughput(ThroughputProperties::manual(11_000)),
+                ),
+            )
+            .await?;
+        let v2_container = wait_for_container_ready(&database, &container_name).await?;
+
+        for index in 0..20 {
+            let item = GwV2TestItem {
+                id: format!("orderby-{index:02}"),
+                pk: format!("pk-{index:02}"),
+                value: (index / 4) as i64,
+                label: format!("label-{}", index % 4),
+            };
+            let response = v2_container
+                .create_item(&item.pk, &item.id, &item, None)
+                .await?;
+            assert_transport_kind(&response.diagnostics(), TransportKind::GatewayV2);
+        }
+
+        let v1_container = gateway_v1
+            .database_client(&db_name)
+            .container_client(&container_name)
+            .await?;
+        let v2_ids = drain_order_by_with_transport(&v2_container, TransportKind::GatewayV2).await?;
+        let v1_ids = drain_order_by_with_transport(&v1_container, TransportKind::Gateway).await?;
+        assert_eq!(v1_ids, v2_ids);
+        assert_eq!(v1_ids.len(), 20);
+        Ok::<(), Box<dyn std::error::Error>>(())
+    })
+    .catch_unwind()
+    .await;
+
+    let cleanup = gateway_v2.database_client(&db_name).delete(None).await;
+    match result {
+        Ok(result) => {
+            cleanup?;
+            result
+        }
+        Err(panic_payload) => {
+            if let Err(cleanup_error) = cleanup {
+                panic!("Gateway parity test panicked and database cleanup failed: {cleanup_error}");
+            }
+            std::panic::resume_unwind(panic_payload);
+        }
+    }
 }
 
 /// Cross-partition `SELECT *` over `FeedScope::full_container()` on Gateway

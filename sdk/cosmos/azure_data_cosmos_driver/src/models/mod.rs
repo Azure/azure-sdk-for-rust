@@ -36,8 +36,9 @@ pub(crate) use finite_f64::FiniteF64;
 #[allow(dead_code)]
 pub mod effective_partition_key;
 mod feed_range;
-#[allow(dead_code)]
-mod murmur_hash;
+// Used by `driver::dataflow::order_by` to hash complex resume values into
+// a bounded 128-bit representation (mirrors .NET's complex-key encoding).
+pub(crate) mod murmur_hash;
 #[allow(dead_code)]
 pub mod partition_key_range;
 #[allow(dead_code)]
@@ -65,6 +66,7 @@ pub use distributed_transaction::{
     DistributedTransactionResponse, DistributedTransactionResultBody, DistributedTransactionTarget,
     DistributedTransactionType,
 };
+pub use resource_id::is_database_rid;
 // Cosmos status types are owned by `crate::error::cosmos_status` (canonical home,
 // tightly coupled to the typed Cosmos error). Re-exported here for ergonomic access
 // via the historic `crate::models::CosmosStatus` path used throughout the driver
@@ -636,6 +638,20 @@ impl OperationType {
         )
     }
 
+    /// True for the point item ops (create/read/replace/upsert) eligible for
+    /// binary encoding. Necessary but not sufficient: the full gate also
+    /// requires [`ResourceType::Document`] (see
+    /// `CosmosDriver::binary_encoding_applies`).
+    pub(crate) fn supports_binary_encoding(self) -> bool {
+        matches!(
+            self,
+            OperationType::Create
+                | OperationType::Read
+                | OperationType::Replace
+                | OperationType::Upsert
+        )
+    }
+
     /// Returns the HTTP method for this operation type.
     pub fn http_method(self) -> azure_core::http::Method {
         use azure_core::http::Method;
@@ -878,6 +894,35 @@ mod tests {
     use serde::{Deserialize, Serialize};
 
     #[test]
+    fn supports_binary_encoding_covers_only_bodied_point_ops() {
+        // Matches the binary-encoding spec §2 scope table: create/read/replace/
+        // upsert. `delete` is excluded (no request or response body); query,
+        // feed, batch, and stored-procedure paths are deferred.
+        for op in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::Replace,
+            OperationType::Upsert,
+        ] {
+            assert!(op.supports_binary_encoding(), "{op:?} should be supported");
+        }
+        for op in [
+            OperationType::Delete,
+            OperationType::Query,
+            OperationType::SqlQuery,
+            OperationType::ReadFeed,
+            OperationType::Batch,
+            OperationType::Execute,
+            OperationType::Patch,
+        ] {
+            assert!(
+                !op.supports_binary_encoding(),
+                "{op:?} should not be supported"
+            );
+        }
+    }
+
+    #[test]
     fn partition_key_version_numeric_mapping() {
         assert_eq!(
             PartitionKeyVersion::try_from(1),
@@ -1065,5 +1110,68 @@ mod tests {
         let merged = a.merge(&b).unwrap();
         // Higher version (2) wins for globalLSN; region 1: max(100, 50) = 100
         assert_eq!(merged.as_str(), "0:2#200#1=100");
+    }
+}
+
+/// Size budgets for the hot-path model types.
+///
+/// `CosmosOperation` and `CosmosResponse` are moved and cloned throughout the
+/// driver pipeline (planner, dataflow, retry). Keeping them small keeps those
+/// moves cheap and keeps futures that hold them small.
+///
+/// Budgets are set above the current actual sizes, so adding a field is not an
+/// automatic failure — but growing past the budget is, which forces a conscious
+/// decision: does the new state belong inline, or behind a `Box` / `Arc` / rare
+/// storage? When a change legitimately needs more room, raise the budget
+/// deliberately rather than silently.
+///
+/// The four concrete handles (`AccountReference`, `DatabaseReference`,
+/// `ContainerReference`, `ItemReference`) are newtypes over an `Arc<…Inner>`, so
+/// they are pointer-sized and their budgets are tight on purpose: a regression
+/// there means someone re-inlined state that should be shared.
+/// `CosmosResourceReference` stays inline — it holds a resource type, an account
+/// handle, a scope, and an optional identifier — so its budget is correspondingly
+/// larger.
+#[cfg(test)]
+mod size_budgets {
+    use super::*;
+    use std::mem::size_of;
+
+    /// Asserts `size_of::<T>() <= budget`, reporting the actual size.
+    macro_rules! assert_size {
+        ($t:ty, $budget:expr) => {{
+            let actual = size_of::<$t>();
+            assert!(
+                actual <= $budget,
+                concat!(
+                    "size_of::<",
+                    stringify!($t),
+                    ">() = {} exceeds budget of {} bytes. \
+                     Consider boxing/sharing the new state instead of inlining it, \
+                     or raise the budget deliberately if the growth is warranted."
+                ),
+                actual,
+                $budget
+            );
+        }};
+    }
+
+    #[test]
+    fn model_sizes_within_budget() {
+        assert_size!(CosmosOperation, 448);
+
+        // TODO: Separate investigations into reducing response header size
+        assert_size!(CosmosResponse, 900);
+        assert_size!(CosmosRequestHeaders, 300);
+        assert_size!(CosmosResponseHeaders, 800);
+
+        // Pointer-sized (or near it) by construction — see the module docs.
+        assert_size!(CosmosResourceReference, 72);
+        assert_size!(AccountReference, 8);
+        assert_size!(DatabaseReference, 8);
+        assert_size!(ContainerReference, 8);
+        assert_size!(ItemReference, 8);
+
+        assert_size!(FeedRange, 80);
     }
 }

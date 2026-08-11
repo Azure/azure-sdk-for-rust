@@ -9,18 +9,18 @@ use super::{
     BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
     BlobClientCreateSnapshotResult, BlobClientDownloadInternalResult,
     BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
-    BlobClientRenewLeaseResult, BlobContainerClientAcquireLeaseResult,
-    BlobContainerClientBreakLeaseResult, BlobContainerClientChangeLeaseResult,
-    BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
-    BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
-    BlobServiceClientGetAccountInfoResult, BlobType, BlockBlobClientCommitBlockListResult,
-    BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
-    BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadInternalResult, BlockList,
-    CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus,
-    PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
-    PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
-    PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
-    SignedIdentifiers, SkuName,
+    BlobClientRenewLeaseResult, BlobClientStartCopyFromUrlResult,
+    BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
+    BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
+    BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
+    BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult, BlobType,
+    BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+    BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+    BlockBlobClientUploadInternalResult, BlockList, CopyStatus, ImmutabilityPolicyMode,
+    LeaseDuration, LeaseState, LeaseStatus, PageBlobClientClearPagesResult,
+    PageBlobClientCreateResult, PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
+    PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
+    PublicAccessType, RehydratePriority, SignedIdentifiers, SkuName,
 };
 use azure_core::{
     base64,
@@ -1357,6 +1357,67 @@ impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult, 
     /// Uniquely identifies a blob's lease.
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
+    }
+}
+
+/// Provides access to typed response headers for `BlobClient::start_copy_from_url()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientStartCopyFromUrlResult, BlobClientStartCopyFromUrlResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientStartCopyFromUrlResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("last-modified: {:?}", last_modified);
+///     }
+///     if let Some(copy_id) = response.copy_id()? {
+///         println!("x-ms-copy-id: {:?}", copy_id);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobClientStartCopyFromUrlResultHeaders: private::Sealed {
+    fn etag(&self) -> Result<Option<Etag>>;
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn copy_id(&self) -> Result<Option<String>>;
+    fn copy_status(&self) -> Result<Option<CopyStatus>>;
+    fn version_id(&self) -> Result<Option<String>>;
+}
+
+impl BlobClientStartCopyFromUrlResultHeaders
+    for Response<BlobClientStartCopyFromUrlResult, NoFormat>
+{
+    /// An opaque identifier for the current state of the resource.
+    fn etag(&self) -> Result<Option<Etag>> {
+        Headers::get_optional_as(self.headers(), &ETAG)
+    }
+
+    /// The date-time that the resource was last modified.
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// Identifier for this copy operation.
+    fn copy_id(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &COPY_ID)
+    }
+
+    /// Status of the copy operation.
+    fn copy_status(&self) -> Result<Option<CopyStatus>> {
+        Headers::get_optional_as(self.headers(), &COPY_STATUS)
+    }
+
+    /// The version ID of the blob.
+    fn version_id(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &VERSION_ID)
     }
 }
 
@@ -2703,14 +2764,14 @@ mod private {
         BlobClientBreakLeaseResult, BlobClientChangeLeaseResult, BlobClientCreateSnapshotResult,
         BlobClientDownloadInternalResult, BlobClientGetAccountInfoResult,
         BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
-        BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
-        BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
-        BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
-        BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
-        BlockBlobClientUploadInternalResult, BlockList, PageBlobClientClearPagesResult,
-        PageBlobClientCreateResult, PageBlobClientResizeResult,
+        BlobClientStartCopyFromUrlResult, BlobContainerClientAcquireLeaseResult,
+        BlobContainerClientBreakLeaseResult, BlobContainerClientChangeLeaseResult,
+        BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
+        BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
+        BlobServiceClientGetAccountInfoResult, BlockBlobClientCommitBlockListResult,
+        BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadInternalResult, BlockList,
+        PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
         PageBlobClientUploadPagesResult, PageList, SignedIdentifiers,
     };
@@ -2731,6 +2792,7 @@ mod private {
     impl Sealed for Response<BlobClientGetPropertiesResult, NoFormat> {}
     impl Sealed for Response<BlobClientReleaseLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobClientRenewLeaseResult, NoFormat> {}
+    impl Sealed for Response<BlobClientStartCopyFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientAcquireLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientBreakLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientChangeLeaseResult, NoFormat> {}

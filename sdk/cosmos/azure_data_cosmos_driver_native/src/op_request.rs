@@ -40,13 +40,16 @@ use std::num::{NonZeroU32, NonZeroU8};
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::Etag;
-use azure_data_cosmos_driver::models::{
-    ActivityId, ContainerReference, ContinuationToken, CosmosOperation, ItemReference,
-    MaxItemCountHint, PartitionKey, Precondition, SessionToken, ThroughputControlGroupName,
-};
 use azure_data_cosmos_driver::options::{
-    ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
-    ReadConsistencyStrategy, Region, ThroughputControlOptions,
+    BinaryEncodingOptions, ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
+    OperationOptions, ReadConsistencyStrategy, Region, ThroughputControlOptions,
+};
+use azure_data_cosmos_driver::{
+    models::{
+        ActivityId, ContainerReference, ContinuationToken, CosmosOperation, ItemReference,
+        MaxItemCountHint, PartitionKey, Precondition, SessionToken, ThroughputControlGroupName,
+    },
+    options::PlanOptions,
 };
 
 use crate::account_ref::AccountRefHandle;
@@ -101,6 +104,18 @@ fn decode_opt_u32(v: i32) -> Option<u32> {
     }
 }
 
+/// Builds [`PlanOptions`] from a C `max_fan_out` value. `0` means "unset" and
+/// yields the driver default; any other value opts into a specific maximum
+/// fan-out. Using `u32` (matching the C surface) avoids any truncation when
+/// mapping onto the driver's `u32` limit.
+fn plan_options_from_max_fan_out(max_fan_out: u32) -> PlanOptions {
+    if max_fan_out > 0 {
+        PlanOptions::default().with_max_fan_out(max_fan_out)
+    } else {
+        PlanOptions::default()
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // cosmos_read_consistency_strategy_t  (0 = unset)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -124,7 +139,7 @@ pub enum CosmosReadConsistencyStrategy {
 
 impl CosmosReadConsistencyStrategy {
     /// Validates a host-supplied `i32` discriminant and returns the matching
-    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidOptionValue`] for
+    /// variant, or a `CLIENT_FFI_INVALID_OPTION_VALUE` pre-flight status for
     /// an unknown value.
     ///
     /// The flat options struct stores this field as a raw `i32` (not as this
@@ -173,7 +188,7 @@ pub enum CosmosContentResponseOnWriteOpt {
 
 impl CosmosContentResponseOnWriteOpt {
     /// Validates a host-supplied `i32` discriminant and returns the matching
-    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidOptionValue`] for
+    /// variant, or a `CLIENT_FFI_INVALID_OPTION_VALUE` pre-flight status for
     /// an unknown value. See [`CosmosReadConsistencyStrategy::from_i32`] for
     /// why the field is read as a raw `i32`.
     fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
@@ -212,6 +227,13 @@ pub struct CosmosHeaderKv {
 /// Decodes a `(ptr, len)` header array into a driver `HashMap`. NULL / `0`
 /// length yields `None`; an empty-but-non-NULL slice yields `Some(empty)`.
 ///
+/// Each header name is validated against the RFC 7230 `token` grammar and each
+/// value against visible ASCII plus space; a name/value carrying disallowed
+/// bytes (separators or non-`tchar` in names, control or non-ASCII bytes in
+/// either) is rejected with
+/// [`CosmosErrorCode::CosmosErrorCodeInvalidHeader`] before it can reach
+/// transport processing.
+///
 /// # Safety
 ///
 /// `headers` must either be NULL or point at `len` initialized
@@ -230,12 +252,52 @@ unsafe fn decode_headers(
     for kv in slice {
         let name = cstr_to_str(kv.name)?;
         let value = cstr_to_str(kv.value)?;
+        if !header_name_is_valid(name) || !header_value_is_valid(value) {
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidHeader);
+        }
         map.insert(
             HeaderName::from(name.to_owned()),
             HeaderValue::from(value.to_owned()),
         );
     }
     Ok(Some(map))
+}
+
+/// A valid header name is a non-empty RFC 7230 `token`: every byte must be a
+/// `tchar` (visible ASCII excluding separators). This rejects field-name
+/// separators such as `:`, `/`, `(`, `)`, `,`, and `@` up front rather than
+/// letting them fail later while building the request.
+fn header_name_is_valid(name: &str) -> bool {
+    !name.is_empty() && name.bytes().all(is_tchar)
+}
+
+/// RFC 7230 `tchar`: `"!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" /
+/// "." / "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA`.
+fn is_tchar(b: u8) -> bool {
+    b.is_ascii_alphanumeric()
+        || matches!(
+            b,
+            b'!' | b'#'
+                | b'$'
+                | b'%'
+                | b'&'
+                | b'\''
+                | b'*'
+                | b'+'
+                | b'-'
+                | b'.'
+                | b'^'
+                | b'_'
+                | b'`'
+                | b'|'
+                | b'~'
+        )
+}
+
+/// A valid header value contains only visible ASCII characters and spaces
+/// (no control characters or non-ASCII bytes).
+fn header_value_is_valid(value: &str) -> bool {
+    value.bytes().all(|b| b == b' ' || b.is_ascii_graphic())
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -285,6 +347,24 @@ pub struct CosmosOperationOptions {
     pub custom_headers: *const CosmosHeaderKv,
     /// Number of entries in `custom_headers`.
     pub custom_headers_len: usize,
+
+    /// Whether Cosmos binary JSON is used on the wire. Tri-state bool
+    /// (`0` unset / `1` false / `2` true).
+    ///
+    /// When true, the driver transcodes a **text** request body to binary
+    /// before sending it (an already-binary body is passed through) and
+    /// advertises `CosmosBinary`, so the caller never encodes binary itself.
+    /// An explicit `false` forces binary **off** for this operation regardless
+    /// of any account/runtime default; `unset` inherits a lower layer (text by
+    /// default).
+    pub binary_encoding_enabled: i8,
+    /// Whether the driver transcodes the binary response back to **text** JSON.
+    /// Tri-state bool (`0` unset / `1` false / `2` true).
+    ///
+    /// Only meaningful when [`binary_encoding_enabled`](Self::binary_encoding_enabled)
+    /// is true: the wire stays binary in both directions and the driver hands
+    /// back text. `unset` / `false` returns the binary response as-is.
+    pub binary_encoding_request_text_response: i8,
 }
 
 impl CosmosOperationOptions {
@@ -337,6 +417,21 @@ impl CosmosOperationOptions {
             unsafe { decode_headers(self.custom_headers, self.custom_headers_len)? }
         {
             opts.custom_headers = Some(headers);
+        }
+
+        // Binary encoding is a whole-value option. It is tri-state: `unset`
+        // leaves `binary_encoding` as `None` (inherit a lower layer), while an
+        // explicit `true`/`false` is honored as `Some(..)` so a host can force
+        // binary off regardless of any account/runtime default. The
+        // `request_text_response` flag is only meaningful when binary is on.
+        if let Some(enabled) = decode_tristate_bool(self.binary_encoding_enabled)? {
+            let request_text_response =
+                decode_tristate_bool(self.binary_encoding_request_text_response)?.unwrap_or(false);
+            opts.binary_encoding = Some(
+                BinaryEncodingOptions::new()
+                    .with_enabled(enabled)
+                    .with_request_text_response(request_text_response),
+            );
         }
 
         Ok(opts)
@@ -393,6 +488,8 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
         excluded_regions_len: 0,
         custom_headers: std::ptr::null(),
         custom_headers_len: 0,
+        binary_encoding_enabled: TRISTATE_UNSET,
+        binary_encoding_request_text_response: TRISTATE_UNSET,
     }
 }
 
@@ -406,7 +503,7 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CosmosOperationKind {
-    /// Invalid / uninitialized — always rejected with `INVALID_ARGUMENT`.
+    /// Invalid / uninitialized — always rejected (`400` / `CLIENT_FFI_NULL_ARGUMENT`).
     CosmosOperationKindInvalid = 0,
 
     // Account-scope.
@@ -468,7 +565,7 @@ pub enum CosmosOperationKind {
 
 impl CosmosOperationKind {
     /// Validates a host-supplied `i32` discriminant and returns the matching
-    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidArgument`] for an
+    /// variant, or a `CLIENT_FFI_INVALID_OPTION_VALUE` pre-flight status for an
     /// unknown value.
     ///
     /// The request struct stores `kind` as a raw `i32` (not as this enum
@@ -502,7 +599,7 @@ impl CosmosOperationKind {
             22 => Self::CosmosOperationKindReplaceItem,
             23 => Self::CosmosOperationKindDeleteItem,
             24 => Self::CosmosOperationKindPatchItem,
-            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument),
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
         })
     }
 }
@@ -525,7 +622,7 @@ pub enum CosmosPreconditionKind {
 
 impl CosmosPreconditionKind {
     /// Validates a host-supplied `i32` discriminant and returns the matching
-    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidArgument`] for an
+    /// variant, or a `CLIENT_FFI_INVALID_OPTION_VALUE` pre-flight status for an
     /// unknown value. See [`CosmosOperationKind::from_i32`] for why the field
     /// is read as a raw `i32`.
     fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
@@ -533,7 +630,7 @@ impl CosmosPreconditionKind {
             0 => Self::CosmosPreconditionKindNone,
             1 => Self::CosmosPreconditionKindIfMatch,
             2 => Self::CosmosPreconditionKindIfNoneMatch,
-            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument),
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
         })
     }
 }
@@ -545,7 +642,7 @@ impl CosmosPreconditionKind {
 /// Self-describing request passed to the two submit entry points. The host
 /// fills out the fields relevant to `kind`; irrelevant fields must be left
 /// NULL / sentinel (strict validation rejects mismatches with
-/// `INVALID_ARGUMENT`).
+/// `400` / `CLIENT_FFI_NULL_ARGUMENT`).
 ///
 /// All pointers are borrowed for the duration of the submit call only.
 #[repr(C)]
@@ -605,6 +702,14 @@ pub struct CosmosOperationRequest {
 
     /// Max item count hint for feeds. `< 0` = unset.
     pub max_item_count: i32,
+    /// Maximum number of physical partitions a fresh cross-partition feed may
+    /// fan out to. `0` = unset (the driver default of 100 applies). Only
+    /// meaningful for feed kinds dispatched through `cosmos_submit_operation`.
+    ///
+    /// The limit is enforced only at initial query setup; if a partition splits
+    /// mid-execution and pushes the fan-out higher, the operation keeps running.
+    /// It is also ignored when resuming from a `continuation_token`.
+    pub max_fan_out: u32,
     /// PATCH read-modify-write attempt budget. `0` = unset.
     pub patch_max_attempts: u8,
     /// Populate index metrics. Tri-state bool (`0` unset / `1` false / `2` true).
@@ -636,6 +741,10 @@ pub(crate) struct BuiltRequest {
     /// [`azure_data_cosmos_driver::driver::CosmosDriver::plan_operation`] by
     /// the feed submit entry point; ignored by the singleton entry point.
     pub(crate) continuation: Option<ContinuationToken>,
+    /// Plan-time options (e.g. maximum fan-out). Threaded into
+    /// [`azure_data_cosmos_driver::driver::CosmosDriver::plan_operation`] by
+    /// the feed submit entry point; ignored by the singleton entry point.
+    pub(crate) plan_options: PlanOptions,
 }
 
 /// Validates `request` and builds the driver `CosmosOperation` +
@@ -671,10 +780,15 @@ pub(crate) unsafe fn build_request(
         Some(ContinuationToken::from_string(token.to_owned()))
     };
 
+    // A `max_fan_out` of 0 means "unset": fall back to the driver default. A
+    // non-zero value opts into a broader (or narrower) fan-out.
+    let plan_options = plan_options_from_max_fan_out(req.max_fan_out);
+
     Ok(BuiltRequest {
         operation,
         options,
         continuation,
+        plan_options,
     })
 }
 
@@ -972,12 +1086,54 @@ mod tests {
     }
 
     #[test]
+    fn header_validation_accepts_visible_ascii() {
+        assert!(header_name_is_valid("x-ms-custom"));
+        assert!(header_value_is_valid("some value 123"));
+        // Non-separator tchar punctuation is a valid token.
+        assert!(header_name_is_valid("X-Foo_Bar.Baz!~"));
+    }
+
+    #[test]
+    fn header_validation_rejects_empty_or_control_or_non_ascii() {
+        // Empty / space-bearing names are rejected.
+        assert!(!header_name_is_valid(""));
+        assert!(!header_name_is_valid("bad name"));
+        // RFC 7230 separators are not valid tchar and are rejected in names.
+        assert!(!header_name_is_valid("bad:name"));
+        assert!(!header_name_is_valid("bad/name"));
+        assert!(!header_name_is_valid("bad(name)"));
+        assert!(!header_name_is_valid("bad,name"));
+        assert!(!header_name_is_valid("bad@name"));
+        // Control characters are rejected in names and values.
+        assert!(!header_name_is_valid("bad\nname"));
+        assert!(!header_value_is_valid("bad\tvalue"));
+        assert!(!header_value_is_valid("line\nbreak"));
+        // Non-ASCII bytes are rejected in names and values.
+        assert!(!header_name_is_valid("naïve"));
+        assert!(!header_value_is_valid("café"));
+    }
+
+    #[test]
     fn opt_u32_treats_negative_as_unset() {
         assert_eq!(decode_opt_u32(-1), None);
         assert_eq!(decode_opt_u32(i32::MIN), None);
         assert_eq!(decode_opt_u32(0), Some(0));
         assert_eq!(decode_opt_u32(7), Some(7));
         assert_eq!(decode_opt_u32(i32::MAX), Some(i32::MAX as u32));
+    }
+
+    #[test]
+    fn max_fan_out_maps_to_plan_options() {
+        // Zero = unset => driver default.
+        let default = PlanOptions::default().max_fan_out;
+        assert_eq!(plan_options_from_max_fan_out(0).max_fan_out, default);
+        // Non-zero = explicit opt-in.
+        assert_eq!(plan_options_from_max_fan_out(1).max_fan_out, 1);
+        assert_eq!(plan_options_from_max_fan_out(250).max_fan_out, 250);
+        assert_eq!(
+            plan_options_from_max_fan_out(u32::MAX).max_fan_out,
+            u32::MAX
+        );
     }
 
     #[test]
@@ -1058,11 +1214,11 @@ mod tests {
         assert_eq!(K::from_i32(24), Ok(K::CosmosOperationKindPatchItem));
         assert_eq!(
             K::from_i32(25),
-            Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
         assert_eq!(
             K::from_i32(-1),
-            Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
     }
 
@@ -1073,7 +1229,7 @@ mod tests {
         assert_eq!(P::from_i32(2), Ok(P::CosmosPreconditionKindIfNoneMatch));
         assert_eq!(
             P::from_i32(3),
-            Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
     }
 
@@ -1098,6 +1254,8 @@ mod tests {
         assert_eq!(o.excluded_regions_len, 0);
         assert!(o.custom_headers.is_null());
         assert_eq!(o.custom_headers_len, 0);
+        assert_eq!(o.binary_encoding_enabled, TRISTATE_UNSET);
+        assert_eq!(o.binary_encoding_request_text_response, TRISTATE_UNSET);
     }
 
     #[test]
@@ -1115,6 +1273,62 @@ mod tests {
         assert_eq!(driver.end_to_end_latency_policy, None);
         assert_eq!(driver.excluded_regions, None);
         assert!(driver.throughput_control.is_none());
+        assert!(driver.binary_encoding.is_none());
+    }
+
+    #[test]
+    fn binary_encoding_flags_convert_to_driver_option() {
+        // enabled = true, request_text = true → the driver option is built with
+        // both flags set. An FFI host that deals only in text can thus get a
+        // binary wire and a text response without encoding anything itself.
+        let mut o = cosmos_operation_options_default();
+        o.binary_encoding_enabled = TRISTATE_TRUE;
+        o.binary_encoding_request_text_response = TRISTATE_TRUE;
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        let be = driver.binary_encoding.expect("binary encoding set");
+        assert!(be.enabled);
+        assert!(be.request_text_response);
+    }
+
+    #[test]
+    fn binary_encoding_enabled_without_text_response() {
+        let mut o = cosmos_operation_options_default();
+        o.binary_encoding_enabled = TRISTATE_TRUE;
+        // request_text_response left unset → defaults to false.
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        let be = driver.binary_encoding.expect("binary encoding set");
+        assert!(be.enabled);
+        assert!(!be.request_text_response);
+    }
+
+    #[test]
+    fn binary_encoding_unset_yields_no_option() {
+        // enabled unset → no binary-encoding option at all (inherit a lower
+        // layer), even if the text-response flag is set (a no-op when unset).
+        let mut o = cosmos_operation_options_default();
+        o.binary_encoding_request_text_response = TRISTATE_TRUE;
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        assert!(driver.binary_encoding.is_none());
+    }
+
+    #[test]
+    fn binary_encoding_explicit_false_is_honored() {
+        // enabled = false is an *explicit* opt-out: it must produce
+        // `Some(disabled)` so the driver forces binary off for this operation
+        // rather than inheriting an account/runtime default (which `None` does).
+        let mut o = cosmos_operation_options_default();
+        o.binary_encoding_enabled = TRISTATE_FALSE;
+        // request_text_response set but irrelevant when binary is off.
+        o.binary_encoding_request_text_response = TRISTATE_TRUE;
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        let be = driver
+            .binary_encoding
+            .expect("explicit false must be honored as Some(disabled)");
+        assert!(!be.enabled);
     }
 
     #[test]

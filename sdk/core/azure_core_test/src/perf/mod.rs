@@ -464,4 +464,7 @@ impl<T: PerfTestFactory> PerfRunner<T> {
 }
 
 #[cfg(test)]
+mod config_tests;
+
+#[cfg(test)]
 mod framework_tests;
