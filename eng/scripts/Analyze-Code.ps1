@@ -32,20 +32,18 @@ Analyzing code with
     RUST_LOG: '${env:RUST_LOG}'
 "@
 
-# Tool versions remain pinned by cgmanifest.json. Do not force their published
-# lockfiles because the CI feed may not retain every historical transitive version.
 if ($Audit) {
   $cargoAuditVersionParams = Get-VersionParamsFromCgManifest cargo-audit
-  Invoke-LoggedCommand "cargo install cargo-audit $($cargoAuditVersionParams -join ' ')" -GroupOutput
+  Invoke-LoggedCommand "cargo install cargo-audit --locked $($cargoAuditVersionParams -join ' ')" -GroupOutput
 }
 
 if ($Deny) {
   $cargoDenyVersionParams = Get-VersionParamsFromCgManifest cargo-deny
-  Invoke-LoggedCommand "cargo install cargo-deny $($cargoDenyVersionParams -join ' ')" -GroupOutput
+  Invoke-LoggedCommand "cargo install cargo-deny --locked $($cargoDenyVersionParams -join ' ')" -GroupOutput
 }
 
 $taploCliVersionParams = Get-VersionParamsFromCgManifest taplo-cli
-Invoke-LoggedCommand "cargo install taplo-cli $($taploCliVersionParams -join ' ')" -GroupOutput
+Invoke-LoggedCommand "cargo install taplo-cli --locked $($taploCliVersionParams -join ' ')" -GroupOutput
 
 $packageArgs = if ($PackageName) {
   '--package ' + ($PackageName -join ' --package ')
