@@ -26,9 +26,9 @@ use std::any::Any;
 use std::future::Future;
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::models::{AccountReference, ContainerReference, CosmosResponse};
 use azure_data_cosmos_driver::options::DriverOptions;
+use azure_data_cosmos_driver::{driver::CosmosDriver, options::OperationOptions};
 
 use crate::account_ref::AccountRefHandle;
 use crate::completion::{
