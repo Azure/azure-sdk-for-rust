@@ -27,8 +27,7 @@
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; enableAutomaticFailover = $false; enableContinuousBackup = $true }"
       },
       "Session MultiWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; enableAutomaticFailover = $false; testCategory = 'multi_write'; enableMultipleRegions = $true }",
-        "RUST_LOG": "azure_data_cosmos_driver::driver::transport::authorization_policy=trace"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; enableAutomaticFailover = $false; testCategory = 'multi_write'; enableMultipleRegions = $true }"
       },
       "Session Split": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'split'; enableContinuousBackup = $true }"

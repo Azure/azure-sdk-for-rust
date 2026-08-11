@@ -187,20 +187,6 @@ fn transient_satellite_readiness_error(error: &CosmosError, auth_mode: AuthMode)
         || (auth_mode == AuthMode::Aad && aad_token_invalid_issuer(error))
 }
 
-#[cfg(test_category = "multi_write")]
-fn latest_request_endpoint(
-    diagnostics: Option<std::sync::Arc<azure_data_cosmos::diagnostics::DiagnosticsContext>>,
-) -> String {
-    diagnostics
-        .and_then(|diagnostics| {
-            diagnostics
-                .requests()
-                .last()
-                .map(|request| request.endpoint().to_owned())
-        })
-        .unwrap_or_else(|| "<unknown>".to_string())
-}
-
 fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosError {
     azure_data_cosmos_driver::error::CosmosError::builder()
         .with_status(CosmosStatus::new(StatusCode::RequestTimeout))
@@ -1324,7 +1310,6 @@ impl TestRunContext {
             ]));
         let options = azure_data_cosmos::options::ReadContainerOptions::default()
             .with_operation_options(operation);
-        let started = std::time::Instant::now();
         let mut backoff = SATELLITE_READINESS_INITIAL_BACKOFF;
 
         for attempt in 1..=SATELLITE_READINESS_MAX_ATTEMPTS {
@@ -1349,52 +1334,25 @@ impl TestRunContext {
                             .build()
                             .into());
                     }
-                    let endpoint = latest_request_endpoint(Some(diagnostics));
-                    println!(
-                        "satellite data-plane readiness probe succeeded with {auth_mode:?} auth on attempt {attempt} after {:?}: endpoint={endpoint}",
-                        started.elapsed(),
-                    );
                     return Ok(());
                 }
                 Ok(Err(error)) if transient_satellite_readiness_error(&error, auth_mode) => {
-                    let endpoint = latest_request_endpoint(error.diagnostics());
                     if attempt == SATELLITE_READINESS_MAX_ATTEMPTS {
-                        println!(
-                            "satellite data-plane readiness probe still returned a transient error with {auth_mode:?} auth after {attempt} attempts and {:?}: endpoint={endpoint}; error={error}",
-                            started.elapsed(),
-                        );
                         return Err(error);
                     }
 
-                    println!(
-                        "satellite data-plane readiness probe returned a transient error with {auth_mode:?} auth on attempt {attempt} after {:?}: endpoint={endpoint}; error={error}; retrying in {backoff:?}",
-                        started.elapsed(),
-                    );
+                    println!("waiting for container to be ready in {SATELLITE_REGION}: {error}");
                     tokio::time::sleep(backoff).await;
                     backoff = (backoff * 2).min(SATELLITE_READINESS_MAX_BACKOFF);
                 }
-                Ok(Err(error)) => {
-                    let endpoint = latest_request_endpoint(error.diagnostics());
-                    println!(
-                        "satellite data-plane readiness probe failed without retry with {auth_mode:?} auth on attempt {attempt} after {:?}: endpoint={endpoint}; error={error}",
-                        started.elapsed(),
-                    );
-                    return Err(error);
-                }
+                Ok(Err(error)) => return Err(error),
                 Err(_) => {
                     if attempt < SATELLITE_READINESS_MAX_ATTEMPTS {
-                        println!(
-                            "satellite data-plane readiness probe timed out with {auth_mode:?} auth on attempt {attempt} after {:?}; retrying in {backoff:?}",
-                            started.elapsed(),
-                        );
+                        println!("container readiness probe timed out in {SATELLITE_REGION}");
                         tokio::time::sleep(backoff).await;
                         backoff = (backoff * 2).min(SATELLITE_READINESS_MAX_BACKOFF);
                         continue;
                     }
-                    println!(
-                        "satellite data-plane readiness probe timed out with {auth_mode:?} auth after {attempt} attempts and {:?}",
-                        started.elapsed(),
-                    );
                     return Err(container_readiness_timeout_error(
                         SATELLITE_REGION.as_str(),
                         attempt,
@@ -1403,7 +1361,7 @@ impl TestRunContext {
             }
         }
 
-        unreachable!("satellite AAD readiness attempts are non-zero")
+        unreachable!("satellite readiness attempts are non-zero")
     }
 
     /// Creates a CosmosClient with a specific preferred region.
