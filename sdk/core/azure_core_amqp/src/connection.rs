@@ -28,8 +28,10 @@ pub enum AmqpTransport {
     /// AMQP framing tunneled over secure WebSockets (`wss://`, port 443).
     ///
     /// This variant needs the `fe2o3_amqp_ws` feature, which the `default`
-    /// feature selects. A build without it can still select this variant, but
-    /// the connection then returns an error when it opens.
+    /// feature selects. A build that keeps the `fe2o3_amqp` backend and drops
+    /// `fe2o3_amqp_ws` can still select this variant, and the connection then
+    /// returns an error when it opens. A build that names no backend feature
+    /// gets the no-op connection, which panics when it opens.
     ///
     /// `fe2o3_amqp_ws` names no TLS stack. `default` adds
     /// `fe2o3_amqp_ws_rustls`, which selects rustls with the aws-lc-rs
