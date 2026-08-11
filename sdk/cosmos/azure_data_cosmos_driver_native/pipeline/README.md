@@ -6,8 +6,8 @@ Licensed under the MIT License.
 # Native driver cross-build pipeline (M2)
 
 This folder productizes the manual `windows/amd64` bootstrap
-(`Azure/azure-cosmos-driver` PR #5) into a reproducible cross-build +
-signing/provenance pipeline for `libazurecosmosdriver.a`.
+(`Azure/azure-cosmos-driver` PR #5) into a reproducible cross-build and
+supply-chain-evidence pipeline for `libazurecosmosdriver.a`.
 
 > **Status: SKELETON.** These scripts run locally for validation. The pipeline
 > (`native-driver.yml`) is **unwired** — it is not referenced by any `pr.yml` /
@@ -22,7 +22,7 @@ signing/provenance pipeline for `libazurecosmosdriver.a`.
 | `Build-NativeMatrix.ps1` | D1 | Per-triple: capture syslibs (`--print native-static-libs`), build native libraries with `cargo-auditable`, and emit `rust-driver-native-interface-metadata.json`. |
 | `New-GoModules.ps1` | D2 | Emit the `azure-cosmos-driver/<goos>/<goarch>` Go modules (`go.mod` + `link_*.go` + `native/`), splicing captured syslibs into cgo `LDFLAGS`. |
 | `Invoke-LocalSupplyChain.ps1` | rehearsal | Build, test-sign, generate and validate SBOM/provenance evidence, validate Go/cgo, and prepare a local-only `azure-cosmos-driver` PR commit. |
-| `native-driver.yml` | D1+D2+D3 | 1ES-style pipeline skeleton: build matrix -> ESRP-sign dynamic libs -> security-evidence gate -> generate Go modules -> publish artifacts + `SHA256SUMS`. **Unwired and fail-closed.** |
+| `native-driver.yml` | D1+D2+D3 | 1ES-style pipeline skeleton: build matrix -> security-evidence gate -> generate Go modules -> publish artifacts + `SHA256SUMS`. **Unwired and fail-closed.** |
 | `../docs/NATIVE_SUPPLY_CHAIN.md` | D3 | Signing, SBOM, provenance, and `cargo-auditable` design across the static-`.a` and dynamic-lib consumption paths. |
 
 ## Local usage
@@ -49,7 +49,7 @@ Each local rehearsal writes to an isolated timestamped directory:
 
 ```text
 pipeline/artifacts/local-rehearsal/<timestamp>/
-├── native/<target-id>/{sbom,_manifest,provenance,signing,audit}/
+├── native/<target-id>/{sbom,_manifest,signing,audit}/
 ├── azure-cosmos-driver-output/  # generated module tree
 ├── azure-cosmos-driver-pr/      # local clone, branch, and commit
 └── LOCAL_PR_PREVIEW.md          # exact local PR summary
@@ -57,15 +57,14 @@ pipeline/artifacts/local-rehearsal/<timestamp>/
 
 All locally generated evidence is marked non-production. The SPDX SBOM proves
 the Microsoft tool invocation and file inventory; the CycloneDX SBOM proves the
-Cargo dependency view. The provenance statement is intentionally unsigned and
-identifies its builder as local. It records both `HEAD` and a SHA256 snapshot of
-all tracked and non-ignored source files so a dirty rehearsal is not attributed
-only to a clean commit. Windows signing uses a disposable self-signed
-certificate. Trusted releases must replace those controls with 1ES provenance
-and Microsoft-managed signing.
+Cargo dependency view. Metadata records both `HEAD` and a SHA256 snapshot of all
+tracked and non-ignored source files so a dirty rehearsal is not attributed only
+to a clean commit. Windows signing uses a disposable self-signed certificate.
+Trusted releases use existing signed 1ES BSI build evidence. Dynamic-library
+signing is deferred to the separate non-Go release path.
 
 `native-driver.yml` deliberately throws at its security-evidence stage until
-the Cargo-aware CycloneDX generation and signed 1ES/SLSA attestation are wired.
+the Cargo-aware CycloneDX generation and signed 1ES BSI evidence are verified.
 This prevents the skeleton from publishing an artifact based only on local or
 placeholder trust evidence.
 

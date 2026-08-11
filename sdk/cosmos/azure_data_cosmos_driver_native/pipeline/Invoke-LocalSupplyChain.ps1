@@ -10,15 +10,15 @@
 .DESCRIPTION
     Produces a deliberately non-production release bundle containing the native
     libraries, C header, Cargo-derived metadata, CycloneDX and SPDX SBOMs,
-    cargo-auditable read-back evidence, an unsigned local SLSA provenance
-    statement, SHA256SUMS, and local test-signing evidence.
+    cargo-auditable read-back evidence, SHA256SUMS, and local test-signing
+    evidence.
 
     The script also generates the Azure/azure-cosmos-driver module layout. With
     PrepareGoPr enabled, it clones that repository, creates a local branch,
     overlays the generated files, runs the target Go test, and creates a
     local-only commit and PR preview. It never pushes or opens a remote PR.
 
-    Local SBOMs, provenance, and signatures demonstrate mechanics only. They do
+    Local SBOMs and signatures demonstrate mechanics only. They do
     not claim Microsoft 1ES, ESRP, Azure Trusted Signing, or Apple trust.
 
 .PARAMETER TargetId
@@ -70,15 +70,6 @@ function Invoke-Checked([string] $Command, [string[]] $Arguments) {
 
 function Get-RelativePath([string] $BasePath, [string] $Path) {
     ([System.IO.Path]::GetRelativePath($BasePath, $Path)) -replace '\\', '/'
-}
-
-function Get-HashSubject([string] $BasePath, [string] $Path) {
-    [ordered]@{
-        name = Get-RelativePath $BasePath $Path
-        digest = [ordered]@{
-            sha256 = (Get-FileHash $Path -Algorithm SHA256).Hash.ToLowerInvariant()
-        }
-    }
 }
 
 function Get-SourceTreeEvidence([string] $Root) {
@@ -156,13 +147,11 @@ $headerPath = ([System.IO.Path]::Combine($TargetArtifactDir, $matrix.header_file
 
 $signingDir = ([System.IO.Path]::Combine($TargetArtifactDir, 'signing'))
 $sbomDir = ([System.IO.Path]::Combine($TargetArtifactDir, 'sbom'))
-$provenanceDir = ([System.IO.Path]::Combine($TargetArtifactDir, 'provenance'))
 $auditDir = ([System.IO.Path]::Combine($TargetArtifactDir, 'audit'))
 $validationDir = ([System.IO.Path]::Combine($TargetArtifactDir, 'validation'))
 New-Item -ItemType Directory -Force -Path @(
     $signingDir,
     $sbomDir,
-    $provenanceDir,
     $auditDir,
     $validationDir
 ) | Out-Null
@@ -305,10 +294,6 @@ finally {
     }
 }
 
-$sourceCommit = (& git -C $RepoRoot rev-parse HEAD).Trim()
-if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve the source commit.' }
-$sourceRemote = (& git -C $RepoRoot remote get-url origin).Trim()
-if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve the source repository.' }
 $primaryArtifacts = @(
     $staticLibraryPath,
     $dynamicLibraryPath,
@@ -319,55 +304,7 @@ $primaryArtifacts = @(
     $staticAuditPath,
     $signingEvidencePath
 )
-$provenance = [ordered]@{
-    _type = 'https://in-toto.io/Statement/v1'
-    subject = @($primaryArtifacts | ForEach-Object {
-        Get-HashSubject $TargetArtifactDir $_
-    })
-    predicateType = 'https://slsa.dev/provenance/v1'
-    predicate = [ordered]@{
-        buildDefinition = [ordered]@{
-            buildType = 'https://github.com/Azure/azure-sdk-for-rust/local-native-interface-rehearsal/v1'
-            externalParameters = [ordered]@{
-                target_id = $TargetId
-                target_triple = $row.triple
-                native_interface_version = $metadata.native_interface_version
-                source_tree = $sourceTreeEvidence
-            }
-            internalParameters = [ordered]@{
-                trusted_build = $false
-                purpose = 'Local mechanics rehearsal only'
-            }
-            resolvedDependencies = @(
-                [ordered]@{
-                    uri = $sourceRemote
-                    digest = [ordered]@{ gitCommit = $sourceCommit }
-                }
-            )
-        }
-        runDetails = [ordered]@{
-            builder = [ordered]@{
-                id = 'local://developer-workstation/Invoke-LocalSupplyChain.ps1'
-                version = [ordered]@{
-                    rustc = $metadata.toolchains.rustc
-                    cargo = $metadata.toolchains.cargo
-                }
-            }
-            metadata = [ordered]@{
-                invocationId = [guid]::NewGuid().ToString()
-                finishedOn = (Get-Date).ToUniversalTime().ToString('o')
-            }
-        }
-    }
-}
-$provenancePath = ([System.IO.Path]::Combine(
-    $provenanceDir,
-    'local-build-provenance.intoto.json'
-))
-$provenance | ConvertTo-Json -Depth 12 |
-    Set-Content -Path $provenancePath -Encoding utf8
-
-$hashFiles = @($primaryArtifacts) + $provenancePath
+$hashFiles = @($primaryArtifacts)
 $sha256Path = ([System.IO.Path]::Combine($TargetArtifactDir, 'SHA256SUMS'))
 $hashFiles |
     Sort-Object |
@@ -412,7 +349,7 @@ $releaseMetadataDir = ([System.IO.Path]::Combine(
     $TargetId
 ))
 New-Item -ItemType Directory -Force -Path $releaseMetadataDir | Out-Null
-Copy-Item $metadataPath, $sha256Path, $provenancePath, $signingEvidencePath `
+Copy-Item $metadataPath, $sha256Path, $signingEvidencePath `
     -Destination $releaseMetadataDir -Force
 Copy-Item $sbomDir, $auditDir, ([System.IO.Path]::Combine($TargetArtifactDir, '_manifest')) `
     -Destination $releaseMetadataDir -Recurse -Force

@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 # =============================================================================
-# native-driver.yml  --  Cosmos native-driver cross-build + signing/provenance
+# native-driver.yml  --  Cosmos Go native-driver cross-build + supply-chain evidence
 #
 #   STATUS: SKELETON / UNWIRED. This pipeline is intentionally NOT referenced by
 #   sdk/cosmos/ci*.yml or any pr.yml trigger. It cannot run until an owner wires
@@ -66,41 +66,13 @@ stages:
                   # 1ES auto-injects the SBOM manifest (sbomEnabled default true on internal).
 
   # ---------------------------------------------------------------------------
-  # 2. Sign the DYNAMIC libs per OS (ESRP). The static .a is NOT signable here;
-  #    its trust comes from SBOM + provenance + published SHA256 (see doc).
-  # ---------------------------------------------------------------------------
-  - stage: sign
-    displayName: ESRP sign dynamic libs
-    dependsOn: build
-    jobs:
-      - job: sign_windows
-        displayName: Authenticode sign azurecosmosdriver.dll
-        pool: { name: $(pool-windows) }
-        steps:
-          # TODO: ESRPCodeSigning@5 with an Authenticode cert profile (NOT the
-          # EsrpRelease@11 crate-publish flow used by archetype-rust-release.yml).
-          - pwsh: Write-Host "TODO: Authenticode-sign the Windows .dll artifacts"
-            displayName: (placeholder) Authenticode
-      - job: sign_macos
-        displayName: codesign + notarize libazurecosmosdriver.dylib
-        pool: { name: $(pool-macos) }
-        steps:
-          # TODO: ESRP Mac signing profile: codesign (Developer ID) then notarize + staple.
-          - pwsh: Write-Host "TODO: codesign + notarize the macOS .dylib artifacts"
-            displayName: (placeholder) codesign
-      # Linux: no artifact-signing standard. Trust = SBOM + provenance + SHA256.
-
-  # ---------------------------------------------------------------------------
-  # 3. Fail closed until BOTH SBOMs and trusted provenance are wired.
-  #    The local rehearsal proves the formats, but production must replace its
-  #    unsigned statement with a 1ES-attested builder identity.
+  # 2. Fail closed until both SBOMs and existing 1ES build evidence are wired.
   #    SBOM (settled): 1ES SPDX authoritative (signed) + CycloneDX companion.
-  #    Provenance (OPEN): P1 reuse 1ES BSI (subject=build) vs P2 add SLSA/in-toto
-  #    (subject=artifact hash H). See ../docs/NATIVE_SUPPLY_CHAIN.md §3.1.
+  #    Provenance (settled): reuse signed 1ES BSI.
   # ---------------------------------------------------------------------------
   - stage: security_evidence
-    displayName: Generate SBOM + trusted provenance
-    dependsOn: [build, sign]
+    displayName: Verify SBOM + 1ES build evidence
+    dependsOn: build
     jobs:
       - job: evidence
         displayName: Supply-chain evidence gate
@@ -111,13 +83,13 @@ stages:
               UNWIRED SECURITY GATE:
               - confirm the 1ES SPDX manifest (authoritative, signed) is emitted;
               - generate the Cargo-aware CycloneDX SBOM (companion) per native target;
-              - generate a signed 1ES/SLSA provenance attestation (resolve P1 vs P2);
+              - confirm and verify the existing signed 1ES BSI build evidence;
               - verify all three before the Go publication stage.
               "@
             displayName: Block until trusted evidence is configured
 
   # ---------------------------------------------------------------------------
-  # 4. Generate the per-target Go modules (Deliverable 2) and publish the
+  # 3. Generate the per-target Go modules (Deliverable 2) and publish the
   #    azure-cosmos-driver layout + SHA256SUMS. Publishing to the remote repo is
   #    a SEPARATE, gated release step — never automatic from this skeleton.
   # ---------------------------------------------------------------------------
