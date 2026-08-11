@@ -34,7 +34,7 @@
 
 // Test-only enqueue helper. Not part of the public ABI, forward-declared
 // so the auto-discovered CMake target can link against it.
-extern cosmos_error_code_t
+extern cosmos_status_code_t
 __test_only_enqueue_ok_completion_with_all_value_kinds(cosmos_completion_queue_t *queue);
 
 // Small helper: build a runtime + queue, or return non-zero on failure so
@@ -51,7 +51,7 @@ static int make_runtime_and_cq(cosmos_runtime_t **out_runtime,
     cosmos_runtime_t *runtime = NULL;
     cosmos_error_t *err = NULL;
     int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
-    if (rc != COSMOS_ERROR_CODE_SUCCESS || runtime == NULL) {
+    if (rc != COSMOS_STATUS_SUCCESS || runtime == NULL) {
         cosmos_error_free(err);
         return 1;
     }
@@ -90,9 +90,9 @@ static int test_completion_headers_dispatch_by_kind(void)
         return TEST_SKIP;
     }
 
-    cosmos_error_code_t enq =
+    cosmos_status_code_t enq =
         __test_only_enqueue_ok_completion_with_all_value_kinds(cq);
-    REQUIRE(enq == COSMOS_ERROR_CODE_SUCCESS,
+    REQUIRE(enq == COSMOS_STATUS_SUCCESS,
             "enqueue helper succeeded (rc=%d)", (int)enq);
 
     // Drain the single completion (100ms is comfortably more than needed
