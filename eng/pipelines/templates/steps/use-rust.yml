@@ -38,10 +38,63 @@ steps:
       Write-Host "##vso[task.setvariable variable=CargoConfigPath]$configPath"
     displayName: Configure cargo to use the azure-sdk-for-rust feed
 
+  # EXPERIMENT (draft): report whether the job access token reaches the task at all.
+  # Never prints the token itself; only its shape.
+  - pwsh: |
+      # Build the macro text dynamically so Azure Pipelines cannot expand it here.
+      $macro = '$' + '(System.AccessToken)'
+      $token = $env:SYSTEM_ACCESSTOKEN
+
+      Write-Host "System.PullRequest.IsFork = '$env:IS_FORK'"
+      if ($null -eq $token) {
+        Write-Host "SYSTEM_ACCESSTOKEN: <not set>"
+      } elseif ($token -eq '') {
+        Write-Host "SYSTEM_ACCESSTOKEN: <empty string>"
+      } elseif ($token -eq $macro) {
+        Write-Host "SYSTEM_ACCESSTOKEN: <unexpanded macro literal>"
+      } else {
+        Write-Host "SYSTEM_ACCESSTOKEN: <present, length $($token.Length)>"
+      }
+    displayName: Diagnose job access token availability
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      IS_FORK: $(System.PullRequest.IsFork)
+
   - task: CargoAuthenticate@0
     displayName: Authenticate cargo to the azure-sdk-for-rust feed
     inputs:
       configFile: $(CargoConfigPath)
+    # EXPERIMENT (draft): CargoAuthenticate reads tl.getVariable('System.AccessToken'),
+    # which Azure DevOps withholds from fork builds, so it sends "Bearer undefined".
+    # Because the variable is absent from VSTS_SECRET_VARIABLES in fork builds,
+    # task-lib falls back to process.env['SYSTEM_ACCESSTOKEN'] -- so this mapping is
+    # actually read there. In non-fork builds the variable is a known secret and the
+    # vault value wins, making this mapping inert.
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  # EXPERIMENT (draft): prove what the resulting cargo credential does against the feed.
+  - pwsh: |
+      $url = 'https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-rust-public~force-auth/Cargo/index/config.json'
+      $auth = $env:CARGO_REGISTRIES_AZURE_SDK_FOR_RUST_PUBLIC_TOKEN
+
+      if (-not $auth) {
+        Write-Host "cargo registry token variable was never set"
+      } else {
+        # Report only the scheme and length, never the credential.
+        $scheme = ($auth -split ' ')[0]
+        Write-Host "cargo Authorization scheme='$scheme' totalLength=$($auth.Length)"
+      }
+
+      try {
+        $response = Invoke-WebRequest -Uri $url -Headers @{ Authorization = $auth } -UseBasicParsing -SkipHttpErrorCheck
+        Write-Host "Feed probe returned HTTP $($response.StatusCode)"
+        Write-Host $response.Content
+      } catch {
+        Write-Host "Feed probe threw: $($_.Exception.Message)"
+      }
+    displayName: Probe the cargo feed with the configured credential
+    continueOnError: true
 
 - task: PowerShell@2
   displayName: "Use Rust ${{ parameters.Toolchain }}"
