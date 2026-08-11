@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-# cspell: ignore JOBID cfsclean configfile depsfile
 
 
 # Load common ES scripts
@@ -147,6 +146,13 @@ if ($IsMacOS) {
   Write-Host "AMQP tests are not supported on macOS. Skipping test setup."
   exit 0
 }
+
+# This script starts a broker, so a broker test that finds no address is a fault and not a
+# reason to skip. Set the flag here, and not in a pipeline template, because the flag belongs
+# to this package and a template serves every package. macOS never reaches this line, so macOS
+# keeps the skip behavior.
+$env:TEST_BROKER_REQUIRED = "true"
+Write-Host "##vso[task.setvariable variable=TEST_BROKER_REQUIRED]true"
 
 # Create the test binary *outside* the repo root to avoid polluting the repo.
 $WorkingDirectory = [System.IO.Path]::Combine($RepoRoot, "../TestArtifacts")

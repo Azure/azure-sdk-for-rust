@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-# cspell: ignore JOBID
 
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
