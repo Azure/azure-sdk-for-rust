@@ -38,8 +38,15 @@ steps:
       Write-Host "##vso[task.setvariable variable=CargoConfigPath]$configPath"
     displayName: Configure cargo to use the azure-sdk-for-rust feed
 
+  # NuGetAuthenticate@1 uses the SYSTEMVSSCONNECTION endpoint token, which Azure
+  # DevOps does deliver to fork builds, and publishes it as VSS_NUGET_ACCESSTOKEN
+  # for later steps. It runs as `public Build Service (azure-sdk)`, which holds
+  # Feed and Upstream Reader on the cargo feed.
+  - task: NuGetAuthenticate@1
+    displayName: Acquire an Azure Artifacts token that fork builds can use
+
   # EXPERIMENT (draft): report whether the job access token reaches the task at all.
-  # Never prints the token itself; only its shape.
+  # Never prints a token itself; only its shape.
   - pwsh: |
       # Build the macro text dynamically so Azure Pipelines cannot expand it here.
       $macro = '$' + '(System.AccessToken)'
@@ -55,23 +62,38 @@ steps:
       } else {
         Write-Host "SYSTEM_ACCESSTOKEN: <present, length $($token.Length)>"
       }
+
+      $nuget = $env:VSS_NUGET_ACCESSTOKEN
+      if ([string]::IsNullOrEmpty($nuget)) {
+        Write-Host "VSS_NUGET_ACCESSTOKEN: <not available>"
+      } else {
+        Write-Host "VSS_NUGET_ACCESSTOKEN: <present, length $($nuget.Length)>"
+      }
     displayName: Diagnose job access token availability
     env:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      VSS_NUGET_ACCESSTOKEN: $(VSS_NUGET_ACCESSTOKEN)
       IS_FORK: $(System.PullRequest.IsFork)
 
   - task: CargoAuthenticate@0
     displayName: Authenticate cargo to the azure-sdk-for-rust feed
     inputs:
       configFile: $(CargoConfigPath)
-    # EXPERIMENT (draft): CargoAuthenticate reads tl.getVariable('System.AccessToken'),
-    # which Azure DevOps withholds from fork builds, so it sends "Bearer undefined".
-    # Because the variable is absent from VSTS_SECRET_VARIABLES in fork builds,
-    # task-lib falls back to process.env['SYSTEM_ACCESSTOKEN'] -- so this mapping is
-    # actually read there. In non-fork builds the variable is a known secret and the
-    # vault value wins, making this mapping inert.
+    # CargoAuthenticate@0 builds its credential from the `System.AccessToken`
+    # variable, which Azure DevOps withholds from fork builds. It is the only
+    # packaging auth task that does not use the SYSTEMVSSCONNECTION endpoint
+    # token, which forks *do* receive.
+    #
+    # Because the variable never reaches a fork build, it is also missing from
+    # VSTS_SECRET_VARIABLES, so task-lib does not treat it as a known secret and
+    # reads process.env['SYSTEM_ACCESSTOKEN'] instead. That makes this mapping
+    # effective in forks. In non-fork builds the variable is a known secret, so
+    # the vault value wins and this mapping is ignored.
+    #
+    # NuGetAuthenticate@1 above publishes the endpoint token as
+    # VSS_NUGET_ACCESSTOKEN, which is populated in fork builds.
     env:
-      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      SYSTEM_ACCESSTOKEN: $(VSS_NUGET_ACCESSTOKEN)
 
   # EXPERIMENT (draft): prove what the resulting cargo credential does against the feed.
   - pwsh: |
