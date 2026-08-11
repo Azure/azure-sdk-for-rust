@@ -38,6 +38,8 @@ steps:
       Write-Host "##vso[task.setvariable variable=CargoConfigPath]$configPath"
     displayName: Configure cargo to use the azure-sdk-for-rust feed
 
+  # Workaround issue in public pipelines. Revert when root cause issue is fixed:
+  # https://github.com/microsoft/azure-pipelines-tasks/issues/22421
   # NuGetAuthenticate@1 uses the SYSTEMVSSCONNECTION endpoint token, which Azure
   # DevOps does deliver to fork builds, and publishes it as VSS_NUGET_ACCESSTOKEN
   # for later steps. It runs as `public Build Service (azure-sdk)`, which holds
@@ -45,78 +47,18 @@ steps:
   - task: NuGetAuthenticate@1
     displayName: Acquire an Azure Artifacts token that fork builds can use
 
-  # EXPERIMENT (draft): report whether the job access token reaches the task at all.
-  # Never prints a token itself; only its shape.
-  - pwsh: |
-      # Build the macro text dynamically so Azure Pipelines cannot expand it here.
-      $macro = '$' + '(System.AccessToken)'
-      $token = $env:SYSTEM_ACCESSTOKEN
-
-      Write-Host "System.PullRequest.IsFork = '$env:IS_FORK'"
-      if ($null -eq $token) {
-        Write-Host "SYSTEM_ACCESSTOKEN: <not set>"
-      } elseif ($token -eq '') {
-        Write-Host "SYSTEM_ACCESSTOKEN: <empty string>"
-      } elseif ($token -eq $macro) {
-        Write-Host "SYSTEM_ACCESSTOKEN: <unexpanded macro literal>"
-      } else {
-        Write-Host "SYSTEM_ACCESSTOKEN: <present, length $($token.Length)>"
-      }
-
-      $nuget = $env:VSS_NUGET_ACCESSTOKEN
-      if ([string]::IsNullOrEmpty($nuget)) {
-        Write-Host "VSS_NUGET_ACCESSTOKEN: <not available>"
-      } else {
-        Write-Host "VSS_NUGET_ACCESSTOKEN: <present, length $($nuget.Length)>"
-      }
-    displayName: Diagnose job access token availability
-    env:
-      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-      VSS_NUGET_ACCESSTOKEN: $(VSS_NUGET_ACCESSTOKEN)
-      IS_FORK: $(System.PullRequest.IsFork)
-
   - task: CargoAuthenticate@0
     displayName: Authenticate cargo to the azure-sdk-for-rust feed
     inputs:
       configFile: $(CargoConfigPath)
-    # CargoAuthenticate@0 builds its credential from the `System.AccessToken`
-    # variable, which Azure DevOps withholds from fork builds. It is the only
-    # packaging auth task that does not use the SYSTEMVSSCONNECTION endpoint
-    # token, which forks *do* receive.
-    #
-    # Because the variable never reaches a fork build, it is also missing from
-    # VSTS_SECRET_VARIABLES, so task-lib does not treat it as a known secret and
-    # reads process.env['SYSTEM_ACCESSTOKEN'] instead. That makes this mapping
-    # effective in forks. In non-fork builds the variable is a known secret, so
-    # the vault value wins and this mapping is ignored.
+    # Workaround issue in public pipelines. Revert when root cause is fixed:
+    # https://github.com/microsoft/azure-pipelines-tasks/issues/22421
     #
     # NuGetAuthenticate@1 above publishes the endpoint token as
-    # VSS_NUGET_ACCESSTOKEN, which is populated in fork builds.
+    # VSS_NUGET_ACCESSTOKEN, which is populated in fork builds and useful as
+    # SYSTEM_ACCESSTOKEN for CargoAuthenticate.
     env:
       SYSTEM_ACCESSTOKEN: $(VSS_NUGET_ACCESSTOKEN)
-
-  # EXPERIMENT (draft): prove what the resulting cargo credential does against the feed.
-  - pwsh: |
-      $url = 'https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-rust-public~force-auth/Cargo/index/config.json'
-      $auth = $env:CARGO_REGISTRIES_AZURE_SDK_FOR_RUST_PUBLIC_TOKEN
-
-      if (-not $auth) {
-        Write-Host "cargo registry token variable was never set"
-      } else {
-        # Report only the scheme and length, never the credential.
-        $scheme = ($auth -split ' ')[0]
-        Write-Host "cargo Authorization scheme='$scheme' totalLength=$($auth.Length)"
-      }
-
-      try {
-        $response = Invoke-WebRequest -Uri $url -Headers @{ Authorization = $auth } -UseBasicParsing -SkipHttpErrorCheck
-        Write-Host "Feed probe returned HTTP $($response.StatusCode)"
-        Write-Host $response.Content
-      } catch {
-        Write-Host "Feed probe threw: $($_.Exception.Message)"
-      }
-    displayName: Probe the cargo feed with the configured credential
-    continueOnError: true
 
 - task: PowerShell@2
   displayName: "Use Rust ${{ parameters.Toolchain }}"
