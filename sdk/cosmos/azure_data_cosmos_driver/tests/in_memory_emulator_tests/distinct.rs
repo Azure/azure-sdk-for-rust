@@ -15,7 +15,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use azure_core::http::{headers::HeaderName, Request, Url};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::in_memory_emulator::{
@@ -203,10 +203,19 @@ async fn seed(
 }
 
 fn query_body(query: &QuerySpec) -> Vec<u8> {
-    serde_json::to_vec(&serde_json::json!({
-        "query": query.text,
-        "parameters": query.parameters,
-    }))
+    #[derive(Serialize)]
+    struct QueryBody<'a> {
+        query: &'a str,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        parameters: Vec<serde_json::Value>,
+    }
+
+    // Match azure_data_cosmos::Query field order because fingerprints hash bytes;
+    // a json! map sorts these keys and masks cross-encoding token regressions.
+    serde_json::to_vec(&QueryBody {
+        query: &query.text,
+        parameters: query.parameters.clone(),
+    })
     .unwrap()
 }
 

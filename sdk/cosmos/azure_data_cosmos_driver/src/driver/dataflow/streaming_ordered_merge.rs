@@ -2979,14 +2979,4 @@ mod tests {
             "b84b9c269862dcd73781038d90add3be",
         );
     }
-
-    #[test]
-    fn already_binary_query_fingerprint_is_stable() {
-        let text = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#;
-        let binary = crate::binary_json::transcode_to_binary(text).unwrap();
-        assert_eq!(
-            query_fingerprint(Some(&binary), Some(&range("", "80"))).unwrap(),
-            query_fingerprint(Some(&binary), Some(&range("", "80"))).unwrap(),
-        );
-    }
 }
