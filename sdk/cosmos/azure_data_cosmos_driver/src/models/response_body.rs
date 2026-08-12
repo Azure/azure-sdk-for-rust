@@ -199,20 +199,20 @@ impl ResponseBody {
     /// Each [`Items`](Self::Items) slice is encoded independently, so every
     /// resulting item carries the `0x80` preamble required for auto-detection.
     pub(crate) fn transcode_to_binary(self) -> crate::error::Result<Self> {
-        fn convert(bytes: &Bytes) -> crate::error::Result<Bytes> {
-            if crate::binary_json::is_binary(bytes) {
-                return Ok(bytes.clone());
+        fn convert(bytes: Bytes) -> crate::error::Result<Bytes> {
+            if crate::binary_json::is_binary(&bytes) {
+                return Ok(bytes);
             }
-            crate::binary_json::transcode_to_binary(bytes)
+            crate::binary_json::transcode_to_binary(&bytes)
                 .map(Bytes::from)
                 .map_err(|e| invalid_body_error("failed to transcode response body to binary", e))
         }
 
         match self {
             Self::NoPayload => Ok(Self::NoPayload),
-            Self::Bytes(bytes) => convert(&bytes).map(Self::Bytes),
+            Self::Bytes(bytes) => convert(bytes).map(Self::Bytes),
             Self::Items(items) => items
-                .iter()
+                .into_iter()
                 .map(convert)
                 .collect::<crate::error::Result<Vec<_>>>()
                 .map(Self::Items),

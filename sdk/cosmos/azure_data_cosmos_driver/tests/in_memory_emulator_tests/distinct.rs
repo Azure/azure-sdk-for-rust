@@ -335,6 +335,33 @@ fn sorted(mut values: Vec<serde_json::Value>) -> Vec<String> {
     text
 }
 
+fn normalize_integral_floats(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Number(number) if number.is_f64() => {
+            let float = number.as_f64().expect("finite JSON number");
+            if float.fract() == 0.0 {
+                if float >= i64::MIN as f64 && float < 0.0 {
+                    *number = serde_json::Number::from(float as i64);
+                } else if float >= 0.0 && float < 18_446_744_073_709_551_616.0 {
+                    *number = serde_json::Number::from(float as u64);
+                }
+            }
+        }
+        serde_json::Value::Array(values) => {
+            values.iter_mut().for_each(normalize_integral_floats);
+        }
+        serde_json::Value::Object(values) => {
+            values.values_mut().for_each(normalize_integral_floats);
+        }
+        _ => {}
+    }
+}
+
+fn normalize_binary_values(mut values: Vec<serde_json::Value>) -> Vec<serde_json::Value> {
+    values.iter_mut().for_each(normalize_integral_floats);
+    values
+}
+
 fn assert_matches_expected(scenario: &Scenario, actual: Vec<serde_json::Value>) {
     if !scenario.expected_ids.is_empty() {
         let mut ids: Vec<String> = actual
@@ -772,6 +799,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
         .await;
         let planned_text_request_modes = recorder.take();
 
+        let binary = normalize_binary_values(binary);
         if query.distinct_type == "Ordered" {
             assert_eq!(binary, text, "{}", query.text);
             assert_eq!(binary_as_text, text, "{}", query.text);

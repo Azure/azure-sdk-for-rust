@@ -1522,8 +1522,8 @@ impl SubStatusCode {
     pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode =
         SubStatusCode(20215);
 
-    /// A streaming `ORDER BY` plan is missing the request fingerprint captured
-    /// before wire encoding (20216). Indicates an internal planner invariant violation.
+    /// A streaming `ORDER BY` plan is missing its request fingerprint (20216).
+    /// Unreachable by construction; retained to avoid an FFI-boundary panic if that invariant regresses.
     pub const CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING: SubStatusCode = SubStatusCode(20216);
 
     // ----- 20300-20349: SDK-detected service contract violations -----

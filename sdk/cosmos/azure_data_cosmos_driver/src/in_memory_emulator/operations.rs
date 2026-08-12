@@ -2428,18 +2428,12 @@ fn parse_query_spec(
     request_body: &[u8],
     start: Instant,
 ) -> Result<(String, Vec<(String, serde_json::Value)>), AsyncRawResponse> {
-    let spec: QuerySpec = if crate::binary_json::is_binary(request_body) {
-        crate::binary_json::from_slice(request_body)
-            .map_err(|e| format!("invalid binary query body: {e}"))
-    } else {
-        serde_json::from_slice(request_body).map_err(|e| format!("invalid text query body: {e}"))
-    }
-    .map_err(|e| {
+    let spec: QuerySpec = serde_json::from_slice(request_body).map_err(|e| {
         error_response(
             StatusCode::BadRequest,
             None,
             "BadRequest",
-            &format!("Invalid query JSON body: {e}"),
+            &format!("Invalid text query JSON body: {e}"),
             0.0,
             "",
             start,

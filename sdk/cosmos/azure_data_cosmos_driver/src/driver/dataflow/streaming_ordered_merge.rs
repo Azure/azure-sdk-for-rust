@@ -784,13 +784,9 @@ impl PipelineNode for StreamingOrderedMerge {
 /// the Gateway's rewritten query so a service-side rewrite change does not
 /// invalidate in-flight tokens.
 ///
-/// Text bodies retain their exact serialized form for compatibility with
-/// existing tokens. The planner normally calls this before request encoding;
-/// restoring an already-binary caller body to text is a best-effort fallback.
-pub(super) fn query_fingerprint(
-    body: Option<&[u8]>,
-    scope: Option<&FeedRange>,
-) -> crate::binary_json::Result<String> {
+/// Bodies retain their exact serialized form for compatibility with existing
+/// tokens. The planner calls this before any optional request encoding.
+pub(super) fn query_fingerprint(body: Option<&[u8]>, scope: Option<&FeedRange>) -> String {
     // The body hash is rendered fixed-width first so the two components can
     // never run together; EPK hex is `[0-9A-F]*`, so neither separator can
     // occur inside a bound. Bounds render canonically (trailing zero bytes
@@ -798,15 +794,7 @@ pub(super) fn query_fingerprint(
     // backend and other SDKs may hand back a bound with that padding trimmed.
     // An absent scope hashes as empty, which stays distinct from the
     // full-container range (`-FF`).
-    let normalized_body;
-    let body = match body {
-        Some(body) if crate::binary_json::is_binary(body) => {
-            normalized_body = crate::binary_json::transcode_to_text(body)?;
-            normalized_body.as_slice()
-        }
-        Some(body) => body,
-        None => &[],
-    };
+    let body = body.unwrap_or_default();
     let body_hash = crate::models::murmur_hash::murmurhash3_128(body, 0);
     let scope = match scope {
         Some(range) => format!(
@@ -816,13 +804,13 @@ pub(super) fn query_fingerprint(
         ),
         None => String::new(),
     };
-    Ok(format!(
+    format!(
         "{:032x}",
         crate::models::murmur_hash::murmurhash3_128(
             format!("{body_hash:032x}:{scope}").as_bytes(),
             0
         )
-    ))
+    )
 }
 
 /// Builds the child streams needed to cover `scope`, given its topology
@@ -2930,10 +2918,10 @@ mod tests {
     #[test]
     fn query_fingerprint_distinguishes_feed_scope() {
         let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#;
-        let full = query_fingerprint(Some(body), Some(&FeedRange::full())).unwrap();
-        let left = query_fingerprint(Some(body), Some(&range("", "80"))).unwrap();
-        let right = query_fingerprint(Some(body), Some(&range("80", "FF"))).unwrap();
-        let unscoped = query_fingerprint(Some(body), None).unwrap();
+        let full = query_fingerprint(Some(body), Some(&FeedRange::full()));
+        let left = query_fingerprint(Some(body), Some(&range("", "80")));
+        let right = query_fingerprint(Some(body), Some(&range("80", "FF")));
+        let unscoped = query_fingerprint(Some(body), None);
 
         assert_ne!(full, left);
         assert_ne!(full, right);
@@ -2948,8 +2936,8 @@ mod tests {
     fn query_fingerprint_separators_cannot_collide() {
         // Both scopes render as `408080` once the bound separator is dropped.
         assert_ne!(
-            query_fingerprint(None, Some(&range("40", "8080"))).unwrap(),
-            query_fingerprint(None, Some(&range("4080", "80"))).unwrap(),
+            query_fingerprint(None, Some(&range("40", "8080"))),
+            query_fingerprint(None, Some(&range("4080", "80"))),
         );
     }
 
@@ -2960,12 +2948,12 @@ mod tests {
     #[test]
     fn query_fingerprint_ignores_trailing_zero_padding_in_scope() {
         assert_eq!(
-            query_fingerprint(None, Some(&range("", "80"))).unwrap(),
-            query_fingerprint(None, Some(&range("", "8000"))).unwrap(),
+            query_fingerprint(None, Some(&range("", "80"))),
+            query_fingerprint(None, Some(&range("", "8000"))),
         );
         assert_eq!(
-            query_fingerprint(None, Some(&range("40", "80"))).unwrap(),
-            query_fingerprint(None, Some(&range("400000", "8000"))).unwrap(),
+            query_fingerprint(None, Some(&range("40", "80"))),
+            query_fingerprint(None, Some(&range("400000", "8000"))),
         );
     }
 
@@ -2975,7 +2963,7 @@ mod tests {
     fn parameterized_text_query_fingerprint_matches_historical_value() {
         let body = br#"{"query":"SELECT * FROM c WHERE c.rank >= @min ORDER BY c.rank","parameters":[{"name":"@min","value":1}]}"#;
         assert_eq!(
-            query_fingerprint(Some(body), Some(&range("", "80"))).unwrap(),
+            query_fingerprint(Some(body), Some(&range("", "80"))),
             "b84b9c269862dcd73781038d90add3be",
         );
     }

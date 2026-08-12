@@ -94,10 +94,10 @@ async fn enabled_default_negotiation_yields_binary_response() {
         "response body must be detected as binary",
     );
 
-    // And it decodes back to the stored document.
+    // Binary responses preserve the service's double-only number representation.
     let decoded: serde_json::Value = binary_json::decode(&raw).unwrap();
     assert_eq!(decoded["id"], "bin-1");
-    assert_eq!(decoded["value"], 42);
+    assert_eq!(decoded["value"], 42.0);
 }
 
 /// Explicit `JsonText`-only negotiation: the response body is **text**, even

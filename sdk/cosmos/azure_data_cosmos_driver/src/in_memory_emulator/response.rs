@@ -227,13 +227,16 @@ impl ResponseBuilder {
     /// auto-detects from the first byte, so the `Content-Type` stays
     /// `application/json` either way (mirroring the real service).
     pub fn with_value_body(mut self, body: &serde_json::Value, binary: bool) -> Self {
+        let body = service_number_model(body.clone());
         self.body = if binary {
-            crate::binary_json::encode(body)
+            crate::binary_json::encode(&body)
         } else {
             // The emulator owns these `Value`s, so a serialization failure is a
             // bug in the emulator — fail loudly rather than emit an empty body
             // that would mask the defect downstream.
-            serde_json::to_vec(body).expect("emulator response body must serialize to JSON")
+            let mut body = body;
+            crate::binary_json::normalize_integral_floats(&mut body);
+            serde_json::to_vec(&body).expect("emulator response body must serialize to JSON")
         };
         self
     }
@@ -246,6 +249,28 @@ impl ResponseBuilder {
             HeaderValue::from(format!("{:.2}", elapsed_ms)),
         );
         AsyncRawResponse::from_bytes(self.status, headers, self.body)
+    }
+}
+
+fn service_number_model(value: serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Number(number) => serde_json::Number::from_f64(
+            number
+                .as_f64()
+                .expect("JSON numbers are representable as finite f64"),
+        )
+        .map(serde_json::Value::Number)
+        .expect("finite f64 is a valid JSON number"),
+        serde_json::Value::Array(values) => {
+            serde_json::Value::Array(values.into_iter().map(service_number_model).collect())
+        }
+        serde_json::Value::Object(values) => serde_json::Value::Object(
+            values
+                .into_iter()
+                .map(|(key, value)| (key, service_number_model(value)))
+                .collect(),
+        ),
+        value => value,
     }
 }
 

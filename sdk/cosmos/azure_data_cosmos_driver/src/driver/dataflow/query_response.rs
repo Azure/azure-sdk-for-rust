@@ -202,11 +202,7 @@ pub(crate) fn rewrite_query_body(
         "query".to_owned(),
         serde_json::Value::String(rewritten_query.to_owned()),
     );
-    serialize_query_body(
-        original_body,
-        &value,
-        "failed to serialize rewritten query body",
-    )
+    serialize_query_body(&value, "failed to serialize rewritten query body")
 }
 
 /// Inserts the .NET-compatible structured `"resumeFilter"` field into an
@@ -239,11 +235,7 @@ pub(crate) fn with_resume_filter(
         "resumeFilter".to_owned(),
         order_by::resume_filter_json(resume_values, rid, exclude),
     );
-    serialize_query_body(
-        body,
-        &value,
-        "failed to serialize query body with resume filter",
-    )
+    serialize_query_body(&value, "failed to serialize query body with resume filter")
 }
 
 /// Parses a query operation's JSON body, erroring on a missing body or
@@ -252,25 +244,15 @@ fn parse_query_body(body: Option<&[u8]>) -> crate::error::Result<serde_json::Val
     let body = body.ok_or_else(|| {
         body_error_msg("cannot rewrite an ORDER BY query operation with no request body")
     })?;
-    let text = crate::binary_json::transcode_to_text(body).map_err(|e| {
-        binary_body_error("failed to transcode original query body to text JSON", e)
-    })?;
-    serde_json::from_slice(&text)
+    serde_json::from_slice(body)
         .map_err(|e| body_error("failed to parse original query body as JSON", e))
 }
 
 fn serialize_query_body(
-    original_body: Option<&[u8]>,
     value: &serde_json::Value,
     error_message: &'static str,
 ) -> crate::error::Result<Vec<u8>> {
-    let text = serde_json::to_vec(value).map_err(|e| body_error(error_message, e))?;
-    if original_body.is_some_and(crate::binary_json::is_binary) {
-        crate::binary_json::transcode_to_binary(&text)
-            .map_err(|e| binary_body_error("failed to transcode rewritten query body to binary", e))
-    } else {
-        Ok(text)
-    }
+    serde_json::to_vec(value).map_err(|e| body_error(error_message, e))
 }
 
 /// One row parsed from a rewritten-envelope backend page, ready for the
@@ -606,17 +588,6 @@ fn envelope_error(message: impl Into<std::borrow::Cow<'static, str>>) -> crate::
 }
 
 fn body_error(message: &'static str, source: serde_json::Error) -> crate::error::CosmosError {
-    crate::error::CosmosError::builder()
-        .with_status(CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID)
-        .with_message(message)
-        .with_source(source)
-        .build()
-}
-
-fn binary_body_error(
-    message: &'static str,
-    source: crate::binary_json::BinaryError,
-) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
         .with_status(CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID)
         .with_message(message)

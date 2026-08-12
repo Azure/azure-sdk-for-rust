@@ -2624,27 +2624,26 @@ impl CosmosDriver {
             && !operation.is_change_feed()
     }
 
-    /// Whether a feed pipeline negotiated binary and must restore that wire
-    /// format after its text-based processing stages complete.
+    /// Whether a feed pipeline requested binary output after text normalization.
+    /// Text fallback pages are encoded too, preserving one format across a mixed rollout.
     fn binary_feed_response_restore_applies(operation: &CosmosOperation) -> bool {
         Self::binary_encoding_applies(operation) && operation.operation_type().is_feed()
     }
 
-    /// Applies request-side binary encoding to an operation: transcodes a text
-    /// request body to Cosmos binary JSON (an already-binary or empty body is
-    /// passed through) and advertises binary responses via the
-    /// `x-ms-cosmos-supported-serialization-formats` header.
+    /// Applies request-side binary encoding to an operation and advertises
+    /// binary responses via the supported-serialization-formats header.
     ///
-    /// This is schema-agnostic — it operates on the raw body bytes — so a
-    /// caller that deals only in text JSON gets a binary wire without encoding
-    /// anything itself.
+    /// Query specifications remain text because the negotiation header alone
+    /// produces binary query pages; item bodies retain the schema-agnostic
+    /// text-to-binary transcode.
     fn apply_request_binary_encoding(
         operation: CosmosOperation,
     ) -> crate::error::Result<CosmosOperation> {
-        // Transcode a non-empty *text* body to binary. A body that is already
-        // binary (the SDK's typed fast path) or empty is left in place — no
-        // clone — so only genuinely text bodies pay the conversion.
-        let transcoded = match operation.body() {
+        let encode_body = !matches!(
+            operation.operation_type(),
+            crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
+        );
+        let transcoded = match operation.body().filter(|_| encode_body) {
             Some(body) if !body.is_empty() && !crate::binary_json::is_binary(body) => {
                 Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
                     crate::error::CosmosError::builder()
@@ -3242,8 +3241,7 @@ impl CosmosDriver {
             operation.operation_type(),
             crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
         )
-        .then(|| planner::streaming_query_fingerprint(&operation))
-        .transpose()?;
+        .then(|| planner::streaming_query_fingerprint(&operation));
         let binary = if Self::binary_encoding_applies(&operation) {
             self.operation_options_view(options)
                 .binary_encoding()
@@ -6464,6 +6462,37 @@ mod tests {
                 .as_deref(),
             Some("CosmosBinary"),
         );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_keeps_query_body_text() {
+        use crate::models::{OperationType, ResourceType};
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let text =
+            br#"{"query":"SELECT * FROM c WHERE c.id = @p","parameters":[{"name":"@p","value":1}]}"#
+                .to_vec();
+        for operation_type in [OperationType::Query, OperationType::SqlQuery] {
+            let operation = CosmosOperation::new(
+                operation_type,
+                crate::models::CosmosResourceReference::from(container.clone())
+                    .with_resource_type(ResourceType::Document)
+                    .into_feed_reference(),
+                Some(crate::models::FeedRange::full()),
+            )
+            .with_body(text.clone());
+
+            let operation = CosmosDriver::apply_request_binary_encoding(operation).unwrap();
+
+            assert_eq!(operation.body(), Some(text.as_slice()));
+            assert_eq!(
+                operation
+                    .request_headers()
+                    .supported_serialization_formats
+                    .as_deref(),
+                Some("CosmosBinary"),
+            );
+        }
     }
 
     #[test]

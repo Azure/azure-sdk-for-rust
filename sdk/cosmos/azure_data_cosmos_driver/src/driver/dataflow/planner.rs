@@ -278,27 +278,10 @@ pub(crate) fn is_streaming_order_by(info: &QueryInfo) -> bool {
 }
 
 /// Fingerprints the caller's query body and feed scope before request encoding.
-pub(crate) fn streaming_query_fingerprint(
-    operation: &CosmosOperation,
-) -> crate::error::Result<String> {
-    streaming_ordered_merge::query_fingerprint(operation.body(), operation.target()).map_err(
-        |source| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
-                .with_message(
-                    "failed to normalize query body for continuation-token fingerprinting",
-                )
-                .with_source(source)
-                .build()
-        },
-    )
+pub(crate) fn streaming_query_fingerprint(operation: &CosmosOperation) -> String {
+    streaming_ordered_merge::query_fingerprint(operation.body(), operation.target())
 }
 
-/// Builds a streaming `ORDER BY` pipeline using the operation's current body.
-///
-/// Unit tests call this before any request encoding. Production planning uses
-/// [`build_streaming_ordered_merge_with_fingerprint`] with the fingerprint
-/// captured before binary conversion.
 #[cfg(test)]
 pub(crate) async fn build_streaming_ordered_merge(
     query_plan: &QueryPlan,
@@ -306,7 +289,7 @@ pub(crate) async fn build_streaming_ordered_merge(
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
-    let query_fingerprint = streaming_query_fingerprint(operation)?;
+    let query_fingerprint = streaming_query_fingerprint(operation);
     build_streaming_ordered_merge_with_fingerprint(
         query_plan,
         topology_provider,
@@ -317,6 +300,8 @@ pub(crate) async fn build_streaming_ordered_merge(
     .await
 }
 
+/// Builds a streaming `ORDER BY` pipeline with the query fingerprint captured
+/// before any optional request encoding can alter the caller's body bytes.
 pub(crate) async fn build_streaming_ordered_merge_with_fingerprint(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,

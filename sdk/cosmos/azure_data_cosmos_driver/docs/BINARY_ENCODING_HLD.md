@@ -15,10 +15,10 @@ Adds first-class support for **Cosmos binary JSON** to the Rust SDK and driver. 
 
 This design delivers a **complete decoder** and a **native serde codec**, and makes binary encoding a **driver capability** on `OperationOptions.binary_encoding` so it is shared by every consumer of the driver — the Rust SDK **and** any FFI-based SDK (.NET, Java, Go, …). It is opt-in (`CosmosClientBuilder::with_binary_encoding_options`, with an `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment-variable fallback). When the option is off, every request and response is **byte-for-byte unchanged** — the binary code is inert.
 
-Because the option lives on the driver and is schema-agnostic, the driver performs the byte-level transcoding **both ways** when needed:
+Because the option lives on the driver and is schema-agnostic, the driver performs byte-level transcoding when needed:
 
-* an opt-in **text-response** mode (`BinaryEncodingOptions::request_text_response`) keeps the wire binary in both directions (efficient RUs and bandwidth) while the driver transcodes the binary **response** back to text JSON;
-* a caller that deals only in **text** (most importantly an FFI host) can enable binary and the driver transcodes its text **request** body to binary — so it gets a fully binary wire **without encoding anything itself**.
+* an opt-in **text-response** mode (`BinaryEncodingOptions::request_text_response`) keeps responses binary on the wire (efficient RUs and bandwidth) while the driver transcodes them back to text JSON;
+* for item writes, a caller that deals only in **text** (most importantly an FFI host) can enable binary and let the driver transcode its text request body to binary. Query specifications deliberately remain text.
 
 A self-contained, in-tree **end-to-end validation loop** is included via the in-memory emulator (no Docker, no live account, no external test vectors).
 
@@ -57,8 +57,8 @@ FFI hosts set the equivalent flat fields on the C ABI `cosmos_operation_options_
 
 When `binary_encoding.enabled` is set, `CosmosDriver::plan_operation` and `execute_plan` own the wire format both ways:
 
-* **Request** (`apply_request_binary_encoding`) — transcodes a **text** request body to Cosmos binary JSON via `binary_json::transcode_to_binary` (`serde_json::from_slice` → `encode`) and advertises `JsonText,CosmosBinary`. An **already-binary** or empty body passes through unchanged, so a caller that pre-encoded pays nothing.
-* **Response** (when `request_text_response` is set) — transcodes the binary response back to text JSON via `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire stays binary in both directions.
+* **Request** (`apply_request_binary_encoding`) — transcodes a **text item** request body to Cosmos binary JSON via `binary_json::transcode_to_binary` (`serde_json::from_slice` → `encode`) and advertises `CosmosBinary`. An **already-binary** or empty item body passes through unchanged. Query and `SqlQuery` bodies remain text and only advertise response support.
+* **Response** (when `request_text_response` is set) — transcodes the binary response back to text JSON via `binary_json::transcode_to_text` (`decode` → integral-double normalization → `serde_json::to_vec`). This matches the service's text rendering of stored integral doubles.
 
 This keeps transcoding in the **driver** (not the backend) and, because it is schema-agnostic, lets a text-only FFI host get an efficient binary wire without any encoding on its side.
 
@@ -71,12 +71,20 @@ The Rust SDK keeps a typed fast path: `serialize_item_body` encodes `T: Serializ
 When binary is enabled, eligible item, query, and document read-feed operations set:
 
 ```
-x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary
+x-ms-cosmos-supported-serialization-formats: CosmosBinary
 ```
 
-The value matches the .NET reference (`string.Join(",", JsonText, CosmosBinary)` — no space). The request `Content-Type` stays `application/json`; the service detects the binary body from its first byte. The **driver** sets this header whenever `binary_encoding.enabled` is set — including under `request_text_response`, where the wire stays binary and the driver transcodes the response (see above).
+The request `Content-Type` stays `application/json`; binary responses retain that content type and are distinguished by the `0x80` preamble. The **driver** sets this header whenever `binary_encoding.enabled` is set — including under `request_text_response`, where the response wire stays binary and the driver transcodes it (see above).
 
-The `/queryplan` request is the deliberate exception: it remains text and does not advertise binary because that endpoint ignores binary negotiation. Query page bodies are normalized from binary to text once at pipeline ingest so DISTINCT and streaming ORDER BY continue to operate on their existing text representation. Rebuilt pages are restored to the negotiated format at the plan boundary. `ResponseBody::Items` encodes each item independently, including its own `0x80` preamble, so every slice remains a standalone binary document.
+The `/queryplan` request is the deliberate exception: it remains text and does not advertise binary because that endpoint ignores binary negotiation. Query page bodies are normalized from binary to text once at pipeline ingest so DISTINCT and streaming ORDER BY continue to operate on their existing text representation. Rebuilt pages are restored to the requested format at the plan boundary, including mixed-rollout text fallback pages. `ResponseBody::Items` binary conversion remains defensive test coverage; production feed paths currently use a single envelope buffer.
+
+Live gateway probes established the query contract:
+
+* Binary query request bodies are accepted, both with and without the `CosmosBinary` header.
+* A text query body plus the `CosmosBinary` header already returns a binary page, so binary request encoding adds cost without changing the response.
+* Text query results render a stored integral double such as `3.0` as `3`. The binary-to-text transcode therefore normalizes integral doubles to integer JSON syntax.
+
+The driver deliberately sends query specifications as text, matching other SDKs, and uses the header only for query response negotiation.
 
 ---
 
@@ -183,7 +191,7 @@ flowchart TD
     REQ -->|"no (text, e.g. FFI)"| RT["transcode_to_binary<br/>(from_slice &rarr; encode)"]
     REQ -->|"yes (SDK pre-encoded)"| PASS_BIN["pass through"]
     RT --> HDR
-    PASS_BIN --> HDR["advertise JsonText,CosmosBinary"]
+    PASS_BIN --> HDR["advertise CosmosBinary"]
     HDR --> WIRE["binary body on the wire"]
     WIRE --> SVC[("Cosmos DB")]
     SVC --> RESP["binary response (0x80)"]
@@ -240,7 +248,7 @@ sequenceDiagram
     Cod-->>SDK: 0x80-prefixed binary bytes
     SDK->>DRV: operation + OperationOptions.binary_encoding
     Note over DRV: request body already binary → pass through
-    DRV->>Svc: binary body + JsonText,CosmosBinary
+    DRV->>Svc: binary body + CosmosBinary
     Svc-->>DRV: binary response (0x80)
     opt request_text_response
         DRV->>Cod: transcode_to_text (decode → to_vec)
@@ -274,7 +282,7 @@ sequenceDiagram
     Note over DRV: request body is TEXT → transcode to binary
     DRV->>Cod: transcode_to_binary (from_slice → encode)
     Cod-->>DRV: 0x80-prefixed binary body
-    DRV->>Svc: binary body + JsonText,CosmosBinary
+    DRV->>Svc: binary body + CosmosBinary
     Svc-->>DRV: binary response (0x80)
     DRV->>Cod: transcode_to_text (decode → to_vec)
     Cod-->>DRV: TEXT json body
@@ -301,7 +309,7 @@ When the option is **off**, both paths collapse to the existing text behavior �
 | `deserialize_response` / `ResponseBody::transcode_to_text` | `models/response_body.rs` | Decode choke point for `into_single` / `into_items`; in-place binary→text conversion |
 | `BinaryEncodingOptions` | `azure_data_cosmos_driver/src/options/binary_encoding.rs` | **Driver-owned** options (`enabled`, `request_text_response`), on `OperationOptions.binary_encoding`; the SDK re-exports it |
 | `OperationOptions.binary_encoding` | `driver/options/operation_options.rs` | Layered option carrying binary encoding to every consumer (SDK + FFI) |
-| `execute_operation` / `apply_request_binary_encoding` | `driver/cosmos_driver.rs` | Driver owns the wire: transcodes text→binary request, advertises `CosmosBinary`, transcodes binary→text response |
+| `execute_operation` / `apply_request_binary_encoding` | `driver/cosmos_driver.rs` | Driver owns the wire: transcodes text→binary item requests, leaves query specifications text, advertises `CosmosBinary`, and transcodes binary→text responses |
 | `CosmosResponse::transcode_body_to_text` | `models/cosmos_response.rs` | Applies driver-side response transcoding |
 | `resolve_binary_encoding` / `with_binary_encoding` | `azure_data_cosmos/src/clients/{mod,container_client}.rs` | SDK: resolve enablement once; set the option on `OperationOptions` per item op |
 | `serialize_item_body` | `azure_data_cosmos/src/clients/container_client.rs` | SDK typed fast path: pre-encode `T` to binary (driver passes it through) |

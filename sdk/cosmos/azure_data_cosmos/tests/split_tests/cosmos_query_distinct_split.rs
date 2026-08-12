@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Live-only binary-encoding split coverage for cross-partition `DISTINCT`.
+//! Live split coverage for text and binary cross-partition `DISTINCT`.
 //!
 //! Neither .NET nor Java tests `DISTINCT` against a real partition split
 //! (.NET's `FullPipelineTests.TestMerge` covers `ORDER BY` only), so this is
@@ -119,12 +119,8 @@ where
 /// Part 2 captures an ordered `DISTINCT` continuation token before the split
 /// (already taken, since the split happened in part 1) and resumes it against
 /// the post-split topology.
-#[tokio::test]
-#[cfg_attr(
-    not(test_category = "split"),
-    ignore = "requires test_category 'split'"
-)]
-pub async fn binary_distinct_query_across_split_returns_each_value_once(
+async fn run_distinct_query_across_split_returns_each_value_once(
+    binary: bool,
 ) -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -272,11 +268,33 @@ pub async fn binary_distinct_query_across_split_returns_each_value_once(
         },
         // A real split takes minutes; the 80s default would abort mid-poll.
         // Matches the other split tests in this directory.
-        Some(
-            TestOptions::new()
-                .with_timeout(Duration::from_secs(40 * 60))
-                .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true)),
-        ),
+        Some({
+            let options = TestOptions::new().with_timeout(Duration::from_secs(40 * 60));
+            if binary {
+                options.with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true))
+            } else {
+                options
+            }
+        }),
     )
     .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "split"),
+    ignore = "requires test_category 'split'"
+)]
+pub async fn distinct_query_across_split_returns_each_value_once() -> Result<(), Box<dyn Error>> {
+    run_distinct_query_across_split_returns_each_value_once(false).await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "split"),
+    ignore = "requires test_category 'split'"
+)]
+pub async fn binary_distinct_query_across_split_returns_each_value_once(
+) -> Result<(), Box<dyn Error>> {
+    run_distinct_query_across_split_returns_each_value_once(true).await
 }
