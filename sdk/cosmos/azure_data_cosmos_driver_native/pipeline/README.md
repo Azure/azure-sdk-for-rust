@@ -132,7 +132,9 @@ Individual steps can also be run separately:
 
 ```powershell
 # Build one target.
-./Build-NativeMatrix.ps1 -TargetId windows-amd64
+./Build-NativeMatrix.ps1 `
+    -TargetId windows-amd64 `
+    -CCompiler x86_64-w64-mingw32-gcc
 
 # Inspect metadata without producing native libraries.
 ./Build-NativeMatrix.ps1 -SkipBuild

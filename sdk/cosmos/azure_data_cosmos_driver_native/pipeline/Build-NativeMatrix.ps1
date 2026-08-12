@@ -32,6 +32,10 @@
     rust-driver-native-interface-metadata.json.
     Default: ./artifacts under this folder.
 
+.PARAMETER CCompiler
+    C compiler/linker for the selected target. This overrides the compiler in
+    build-matrix.json and requires exactly one TargetId.
+
 .PARAMETER SkipBuild
     Capture syslibs + write manifests but do not produce the .a (dry run for the
     generator / offline manifest refresh).
@@ -41,12 +45,13 @@
     cargo-auditable is not installed on a dev box). CI MUST NOT set this.
 
 .EXAMPLE
-    ./Build-NativeMatrix.ps1 -TargetId windows-amd64
+    ./Build-NativeMatrix.ps1 -TargetId windows-amd64 -CCompiler x86_64-w64-mingw32-gcc
 #>
 [CmdletBinding()]
 param(
     [string[]] $TargetId,
     [string]   $OutputRoot,
+    [string]   $CCompiler,
     [switch]   $SkipBuild,
     [switch]   $NoAuditable
 )
@@ -64,9 +69,24 @@ if (-not $OutputRoot) { $OutputRoot = Join-Path $PipelineDir 'artifacts' }
 New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
 
 $matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
-$rows = $matrix.targets
-if ($TargetId) { $rows = $rows | Where-Object { $TargetId -contains $_.id } }
+$rows = @($matrix.targets)
+if ($TargetId) { $rows = @($rows | Where-Object { $TargetId -contains $_.id }) }
 if (-not $rows) { throw "No matching targets for filter: $($TargetId -join ', ')" }
+if ($CCompiler -and $rows.Count -ne 1) {
+    throw '-CCompiler can only be used when exactly one target is selected.'
+}
+
+$compilers = @{}
+foreach ($row in $rows) {
+    $compiler = if ($CCompiler) { $CCompiler } else { $row.c_compiler }
+    if (-not $compiler) {
+        throw "No C compiler is configured for target '$($row.id)'."
+    }
+    if (-not (Get-Command $compiler -CommandType Application -ErrorAction SilentlyContinue)) {
+        throw "C compiler '$compiler' is not available for target '$($row.id)'."
+    }
+    $compilers[$row.id] = $compiler
+}
 
 function Get-ToolVersion([string] $exe, [string[]] $verArgs) {
     try { (& $exe @verArgs 2>&1 | Select-Object -First 1) -join ' ' }
@@ -127,6 +147,7 @@ $builtWith = if ($NoAuditable) { 'cargo' } else { 'cargo-auditable' }
 $summary = @()
 foreach ($row in $rows) {
     Write-Host "==> $($row.id) ($($row.triple))" -ForegroundColor Cyan
+    $compiler = $compilers[$row.id]
 
     if (-not (Test-TripleInstalled $row.triple)) {
         Write-Host "    target not installed; attempting 'rustup target add $($row.triple)'"
@@ -135,73 +156,87 @@ foreach ($row in $rows) {
             throw "rustup target add failed for $($row.triple) with exit code $LASTEXITCODE"
         }
     }
-    # TODO(preflight): a `rustc --print native-static-libs` and the actual link
-    # additionally require a cross-linker for non-host triples:
-    #   *-pc-windows-gnu   -> mingw-w64
-    #   *-unknown-linux-*  -> the matching gcc/clang cross toolchain (musl: musl-gcc)
-    #   *-apple-darwin     -> Apple SDK (macOS host or osxcross)
-    # CI installs these per-agent; on a dev box a missing linker is reported here,
-    # not swallowed.
-
-    $syslibs = Get-NativeStaticLibs $row.triple
-    if ((-not $syslibs) -and $matrix.reference_syslibs.PSObject.Properties.Name -contains $row.triple) {
-        Write-Warning "    falling back to reference_syslibs for $($row.triple) (capture failed)"
-        $syslibs = @($matrix.reference_syslibs.$($row.triple))
-    }
-
     $targetOut = Join-Path $OutputRoot $row.id
     New-Item -ItemType Directory -Force -Path $targetOut | Out-Null
 
     $sha = $null
-    if (-not $SkipBuild) {
-        Push-Location $CrateDir
-        try {
-            $buildArgs = @(
-                'build', '--release',
-                '-p', $matrix.native_interface_crate,
-                '--target', $row.triple,
-                # Production size profile measured in Azure/azure-sdk-for-rust#4748:
-                # roughly 48-54% smaller with no observed runtime regression.
-                # Keep panic unwinding because the FFI boundary relies on it.
-                '--config', 'profile.release.opt-level="z"',
-                '--config', 'profile.release.lto="fat"',
-                '--config', 'profile.release.codegen-units=1',
-                '--config', 'profile.release.strip="symbols"'
-            )
-            if ($NoAuditable) { & cargo @buildArgs }
-            else              { & cargo auditable @buildArgs }
-            if ($LASTEXITCODE -ne 0) {
-                throw "$builtWith build failed for $($row.triple) with exit code $LASTEXITCODE"
+    $dynamicLibFilename = $null
+    $dynamicSha = $null
+    $normalizedTriple = $row.triple.Replace('-', '_')
+    $targetEnvironment = [ordered]@{
+        "CARGO_TARGET_$($normalizedTriple.ToUpperInvariant())_LINKER" = $compiler
+        "CC_$normalizedTriple" = $compiler
+    }
+    $savedTargetEnvironment = @{}
+    foreach ($name in $targetEnvironment.Keys) {
+        $savedTargetEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+    }
+
+    try {
+        foreach ($name in $targetEnvironment.Keys) {
+            [Environment]::SetEnvironmentVariable($name, $targetEnvironment[$name], 'Process')
+        }
+
+        $syslibs = @(Get-NativeStaticLibs $row.triple)
+        if ((-not $syslibs) -and $matrix.reference_syslibs.PSObject.Properties.Name -contains $row.triple) {
+            Write-Warning "    falling back to reference_syslibs for $($row.triple) (capture failed)"
+            $syslibs = @($matrix.reference_syslibs.$($row.triple))
+        }
+
+        if (-not $SkipBuild) {
+            Push-Location $CrateDir
+            try {
+                $buildArgs = @(
+                    'build', '--release',
+                    '-p', $matrix.native_interface_crate,
+                    '--target', $row.triple,
+                    # Production size profile measured in Azure/azure-sdk-for-rust#4748:
+                    # roughly 48-54% smaller with no observed runtime regression.
+                    # Keep panic unwinding because the FFI boundary relies on it.
+                    '--config', 'profile.release.opt-level="z"',
+                    '--config', 'profile.release.lto="fat"',
+                    '--config', 'profile.release.codegen-units=1',
+                    '--config', 'profile.release.strip="symbols"'
+                )
+                if ($NoAuditable) { & cargo @buildArgs }
+                else              { & cargo auditable @buildArgs }
+                if ($LASTEXITCODE -ne 0) {
+                    throw "$builtWith build failed for $($row.triple) with exit code $LASTEXITCODE"
+                }
+            }
+            finally { Pop-Location }
+
+            $aSrc = Join-Path $RepoRoot "target/$($row.triple)/release/$($matrix.static_lib_filename)"
+            if (-not (Test-Path $aSrc)) {
+                throw "Expected static library not found: $aSrc"
+            }
+            Copy-Item $aSrc (Join-Path $targetOut $matrix.static_lib_filename) -Force
+            $sha = (Get-FileHash $aSrc -Algorithm SHA256).Hash.ToLowerInvariant()
+
+            $dynamicLibFilename = switch ($row.goos) {
+                'windows' { "$($matrix.lib_basename).dll" }
+                'linux'   { "lib$($matrix.lib_basename).so" }
+                'darwin'  { "lib$($matrix.lib_basename).dylib" }
+                default   { throw "Unsupported GOOS for dynamic library naming: $($row.goos)" }
+            }
+            # The dynamic library (.dll/.so/.dylib) is a best-effort extensibility
+            # hook for the future .NET/Java/Python path (Azure/azure-sdk-for-rust#5048).
+            # It is NOT consumed by the Go/.a path, so a missing dynamic lib must not
+            # fail the build; only the static .a checked above is a hard gate.
+            $dynamicSrc = Join-Path $RepoRoot "target/$($row.triple)/release/$dynamicLibFilename"
+            if (Test-Path $dynamicSrc) {
+                Copy-Item $dynamicSrc (Join-Path $targetOut $dynamicLibFilename) -Force
+                $dynamicSha = (Get-FileHash $dynamicSrc -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+            else {
+                Write-Warning "    dynamic library not built (best-effort; not required for the Go/.a path): $dynamicSrc"
+                $dynamicLibFilename = $null
             }
         }
-        finally { Pop-Location }
-
-        $aSrc = Join-Path $RepoRoot "target/$($row.triple)/release/$($matrix.static_lib_filename)"
-        if (-not (Test-Path $aSrc)) {
-            throw "Expected static library not found: $aSrc"
-        }
-        Copy-Item $aSrc (Join-Path $targetOut $matrix.static_lib_filename) -Force
-        $sha = (Get-FileHash $aSrc -Algorithm SHA256).Hash.ToLowerInvariant()
-
-        $dynamicLibFilename = switch ($row.goos) {
-            'windows' { "$($matrix.lib_basename).dll" }
-            'linux'   { "lib$($matrix.lib_basename).so" }
-            'darwin'  { "lib$($matrix.lib_basename).dylib" }
-            default   { throw "Unsupported GOOS for dynamic library naming: $($row.goos)" }
-        }
-        # The dynamic library (.dll/.so/.dylib) is a best-effort extensibility
-        # hook for the future .NET/Java/Python path (Azure/azure-sdk-for-rust#5048).
-        # It is NOT consumed by the Go/.a path, so a missing dynamic lib must not
-        # fail the build; only the static .a checked above is a hard gate.
-        $dynamicSrc = Join-Path $RepoRoot "target/$($row.triple)/release/$dynamicLibFilename"
-        if (Test-Path $dynamicSrc) {
-            Copy-Item $dynamicSrc (Join-Path $targetOut $dynamicLibFilename) -Force
-            $dynamicSha = (Get-FileHash $dynamicSrc -Algorithm SHA256).Hash.ToLowerInvariant()
-        }
-        else {
-            Write-Warning "    dynamic library not built (best-effort; not required for the Go/.a path): $dynamicSrc"
-            $dynamicLibFilename = $null
-            $dynamicSha = $null
+    }
+    finally {
+        foreach ($name in $savedTargetEnvironment.Keys) {
+            [Environment]::SetEnvironmentVariable($name, $savedTargetEnvironment[$name], 'Process')
         }
     }
 
@@ -243,8 +278,10 @@ foreach ($row in $rows) {
         }
         native_static_libs = $syslibs
         toolchains = [ordered]@{
-            rustc = Get-ToolVersion 'rustc' @('--version')
-            cargo = Get-ToolVersion 'cargo' @('--version')
+            rustc              = Get-ToolVersion 'rustc' @('--version')
+            cargo              = Get-ToolVersion 'cargo' @('--version')
+            c_compiler         = $compiler
+            c_compiler_version = Get-ToolVersion $compiler @('--version')
         }
         generated_utc = (Get-Date).ToUniversalTime().ToString('o')
     }

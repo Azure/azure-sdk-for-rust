@@ -110,6 +110,7 @@ Assert-Command 'sbom-tool'
 $matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
 $row = $matrix.targets | Where-Object id -EQ $TargetId | Select-Object -First 1
 if (-not $row) { throw "Unknown target: $TargetId" }
+$cCompiler = $row.c_compiler
 $sourceTreeEvidence = Get-SourceTreeEvidence $RepoRoot
 
 if ($row.goos -eq 'windows') {
@@ -123,12 +124,14 @@ if ($row.goos -eq 'windows') {
         }
         $env:PATH = "$mingwBin;$env:PATH"
     }
+    $cCompiler = 'gcc'
 }
 
 Write-Host "Building $TargetId with cargo-auditable"
 & ([System.IO.Path]::Combine($PipelineDir, 'Build-NativeMatrix.ps1')) `
     -TargetId $TargetId `
-    -OutputRoot $ArtifactRoot
+    -OutputRoot $ArtifactRoot `
+    -CCompiler $cCompiler
 if ($LASTEXITCODE -ne 0) {
     throw "Build-NativeMatrix.ps1 failed with exit code $LASTEXITCODE"
 }

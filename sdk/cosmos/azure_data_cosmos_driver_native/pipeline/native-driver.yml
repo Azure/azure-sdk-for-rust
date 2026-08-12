@@ -67,6 +67,7 @@ stages:
                   $(pipelineDir)/Build-NativeMatrix.ps1
                   -TargetId ${{ t.id }}
                   -OutputRoot $(Build.ArtifactStagingDirectory)/native
+                  -CCompiler ${{ t.cc }}
                 displayName: Build ${{ t.id }} (native libraries + metadata)
               - pwsh: >
                   $(pipelineDir)/Test-NativeLink.ps1
