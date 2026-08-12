@@ -259,6 +259,32 @@ async fn re_added_region_keeps_its_region_id() {
     );
 }
 
+/// An exhausted region-ID space must be reported, not wrapped: reusing an ID
+/// would break the never-reuse invariant that keeps stale session tokens safe.
+#[tokio::test]
+async fn region_id_allocation_reports_exhaustion_instead_of_overflowing() {
+    let recorder = HostRecorder::new();
+    let emulator = build_emulator(
+        vec![
+            east(),
+            VirtualRegion::new("West US", Url::parse(WEST_URL).unwrap()).with_region_id(u64::MAX),
+        ],
+        WriteMode::Single,
+        recorder,
+    );
+    let store = emulator.store();
+
+    // Auto-allocating past `u64::MAX` must error rather than panic or wrap to 0.
+    let error = store
+        .add_region(central(), SeedingPolicy::Immediate)
+        .expect_err("allocating past the end of the ID space must fail");
+    assert_eq!(
+        error.status().status_code(),
+        StatusCode::BadRequest,
+        "exhaustion should surface as 400, got {error:?}"
+    );
+}
+
 /// A brand-new region gets a fresh ID that does not collide with any existing
 /// or retired region.
 #[tokio::test]

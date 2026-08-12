@@ -270,7 +270,7 @@ pub(crate) fn account_properties_to_json(
             .collect();
         let thin_client_writable: Vec<_> = regions
             .iter()
-            .filter(|region| config.is_write_region(region.name()))
+            .filter(|region| is_multi_write || region.name() == topology.write_region)
             .filter_map(|region| {
                 region.gateway_v2_url().map(|url| {
                     serde_json::json!({

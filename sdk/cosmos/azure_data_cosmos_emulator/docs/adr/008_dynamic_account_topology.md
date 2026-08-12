@@ -32,6 +32,25 @@ SDK failover behavior is driven by the same account topology contract used with 
 Replication lag and endpoint outage remain distinct failure models. Existing static behavior is
 preserved until the dynamic state is changed.
 
+### Known races
+
+Topology mutation and the data plane are guarded by separate locks, so a mutation is not atomic
+from a concurrent reader's perspective. These windows are narrow, only reachable when a topology
+change races live traffic, and closing them needs deliberate cross-lock coordination:
+
+- **Seeding vs. publication (`add_region`).** `seeded_from` deep-copies the source region before
+  the new region is published. A write committing after its source partition was copied but before
+  publication is absent from the copy and is never replicated, so `SeedingPolicy::Immediate` can
+  advertise permanently stale data.
+- **Publication vs. version bump (`add_region`).** The topology is published before vector-clock
+  versions are advanced, so an account read in that window can route a session request against
+  partitions still exposing the pre-change version — the old token is compared rather than
+  superseded. `remove_region` avoids this by bumping first, which is safe there; `add_region`
+  cannot, because the new region's own partitions must be included in the bump.
+- **Split interactions.** A region added mid-split can inherit a stale partition layout;
+  `catch_up_from` can clobber writes acknowledged by a delayed-seeding region under multi-write;
+  and an in-flight split can revert `advance_vector_clock_versions`.
+
 ## Alternatives
 
 - Treating replication pause as an outage was rejected because requests can still reach the

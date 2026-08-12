@@ -173,7 +173,7 @@ impl VirtualAccountConfig {
             .iter()
             .filter_map(|r| r.region_id)
             .max()
-            .map_or(0, |max| max + 1);
+            .map_or(0, |max| max.saturating_add(1));
         Ok(Self {
             topology: Arc::new(RwLock::new(AccountTopology {
                 active: regions,
@@ -510,10 +510,16 @@ impl VirtualAccountConfig {
                     "region ID {explicit} is already in use"
                 )));
             }
-            topology.next_region_id = topology.next_region_id.max(explicit + 1);
+            topology.next_region_id = topology.next_region_id.max(explicit.saturating_add(1));
         } else {
-            region.region_id = Some(topology.next_region_id);
-            topology.next_region_id += 1;
+            let id = topology.next_region_id;
+            if id == u64::MAX {
+                // Refuse rather than wrap: reusing an ID would break the
+                // never-reuse invariant that makes stale session tokens safe.
+                return Err(bad_request("region ID space is exhausted".to_string()));
+            }
+            region.region_id = Some(id);
+            topology.next_region_id = id + 1;
         }
 
         topology.active.push(region.clone());
@@ -592,10 +598,8 @@ impl VirtualAccountConfig {
 
     /// Switches the account between single- and multi-write.
     ///
-    /// Note the asymmetry with the real service: enabling multi-write is a
-    /// gated, effectively one-way migration there, while multi → single is not
-    /// a normal transition. Both directions are allowed here so tests can set
-    /// up either state cheaply.
+    /// Both directions are permitted: multi → single is a supported transition
+    /// on a normal account, not a one-way door.
     pub(crate) fn set_write_mode(&self, mode: WriteMode) {
         let mut topology = self.topology.write().unwrap();
         topology.write_mode = mode;

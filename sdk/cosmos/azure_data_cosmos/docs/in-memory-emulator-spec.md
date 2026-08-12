@@ -1409,7 +1409,8 @@ Differences are classified as:
 - Enabling multi-write makes satellite regions accept writes; `set_write_region` demotes the
   previous hub, which then returns 403/3.
 - Region IDs are stable across removal and re-addition.
-- The account read carries no `_etag`; `id` reflects the request host and `_rid` the write region.
+- The account read carries no `_etag`; `id` reflects the request host, and `_rid` names the same
+  account as `id` — the write-region component is deliberately not reproduced.
   Both are pinned by explicit expectations in the tests themselves.
 
 **Control Plane** (database/container CRUD):

@@ -401,8 +401,9 @@ async fn added_region_is_adopted_without_restart() {
 
 // --- Unavailability marks across topology changes ---------------------------
 
-/// A region marked unavailable, then removed and re-added, keeps its mark until
-/// a probe clears it — failback stays probe-gated across topology churn.
+/// A region marked unavailable, then removed and re-added, keeps its mark
+/// across the topology churn — `sync_account_properties` is a pure
+/// carry-forward, so no account payload can drop a mark.
 ///
 /// This is the driver-visible half of the "immortal mark" fix. The mark is
 /// deliberately **kept** rather than pruned on removal: it is inert for routing
@@ -412,6 +413,13 @@ async fn added_region_is_adopted_without_restart() {
 /// live traffic. The wasted-probe cost that motivated pruning is handled in
 /// `probe_and_failback_unavailable_endpoints`, which skips endpoints the account
 /// no longer advertises.
+///
+/// Scope: this test covers topology churn only. The probe cooldown is measured
+/// with `std::time::Instant`, which `start_paused` does **not** advance, so no
+/// endpoint becomes probe-due here however far the virtual clock moves — the
+/// probe loop is deliberately out of the picture. That the mark is cleared *by a
+/// probe* is proved separately by
+/// `a_successful_probe_is_what_clears_an_unavailability_mark`.
 #[tokio::test(start_paused = true)]
 async fn unavailability_mark_is_probe_gated_across_remove_and_re_add() {
     let recorder = HostRecorder::new();
@@ -477,6 +485,10 @@ async fn unavailability_mark_is_probe_gated_across_remove_and_re_add() {
 /// minutes during a transition. `sync_account_properties` is a pure carry-forward
 /// precisely so no payload — transient or not — can clear a mark; only a probe
 /// can. This asserts the mark *and* its routing effect survive repeated churn.
+///
+/// As above, the probe loop cannot fire under `start_paused` (its cooldown uses
+/// `std::time::Instant`), so this isolates the effect of the account payloads
+/// themselves.
 #[tokio::test(start_paused = true)]
 async fn unavailability_mark_survives_a_topology_flap() {
     let recorder = HostRecorder::new();
@@ -518,6 +530,77 @@ async fn unavailability_mark_survives_a_topology_flap() {
              routing; got {hosts:?}"
         );
     }
+}
+
+/// A successful **probe** is what clears an unavailability mark — the other
+/// half of "failback stays probe-gated".
+///
+/// The two tests above prove topology churn cannot clear a mark; this proves a
+/// probe can, so a returning region is gated on connectivity rather than on
+/// nothing at all.
+///
+/// Deliberately not `start_paused`: the probe cooldown is measured with
+/// `std::time::Instant`, which virtual time does not advance, so a paused test
+/// can never exercise this path. A zero `endpoint_unavailability_ttl` plus the
+/// one-shot probe hook drives failback deterministically without waiting for the
+/// 60-second background loop.
+#[tokio::test]
+async fn a_successful_probe_is_what_clears_an_unavailability_mark() {
+    let recorder = HostRecorder::new();
+    let emulator = build_emulator(vec![east(), west()], WriteMode::Single, recorder.clone());
+    let runtime = emulator
+        .runtime_builder()
+        .build()
+        .await
+        .expect("runtime should build against the in-memory emulator");
+
+    // Short cooldown: long enough that the mark is still excluding traffic for
+    // the first read, short enough that the endpoint becomes probe-due within
+    // the test. The cooldown doubles as the routing-exclusion window, so it
+    // cannot be zero.
+    let mut operation_options = OperationOptions::default();
+    operation_options.endpoint_unavailability_ttl = Some(Duration::from_millis(100));
+    let driver = runtime
+        .create_driver(
+            DriverOptions::builder(account())
+                .with_preferred_regions(vec![Region::WEST_US, Region::EAST_US])
+                .with_operation_options(operation_options)
+                .build(),
+        )
+        .await
+        .expect("driver should initialize");
+    seed_item(&driver, "probe-item").await;
+
+    assert!(driver.mark_region_endpoint_unavailable_for_testing(&Region::WEST_US));
+    recorder.clear();
+    read_item(&driver, "probe-item", OperationOptions::default())
+        .await
+        .expect("read should succeed while West is marked");
+    let hosts = recorder.data_plane_hosts();
+    assert!(
+        !hosts.is_empty() && hosts.iter().all(|h| h == EAST_HOST),
+        "test setup: a marked region must not take traffic; got {hosts:?}"
+    );
+
+    // Wall-clock wait: the cooldown is measured with `std::time::Instant`.
+    tokio::time::sleep(Duration::from_millis(200)).await;
+    driver.run_endpoint_probe_once_for_testing().await;
+    assert!(
+        !driver.is_endpoint_host_marked_unavailable_for_testing(WEST_HOST),
+        "a successful probe must clear the mark -- otherwise failback is not \
+         probe-gated, the region is simply stranded"
+    );
+
+    recorder.clear();
+    read_item(&driver, "probe-item", OperationOptions::default())
+        .await
+        .expect("read should succeed after failback");
+    let hosts = recorder.data_plane_hosts();
+    assert!(
+        !hosts.is_empty() && hosts.iter().all(|h| h == WEST_HOST),
+        "after failback the restored top-preference region must take traffic again; \
+         got {hosts:?}"
+    );
 }
 
 // --- Write-region movement --------------------------------------------------

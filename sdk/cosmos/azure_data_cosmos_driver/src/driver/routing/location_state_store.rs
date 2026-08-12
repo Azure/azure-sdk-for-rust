@@ -1021,11 +1021,15 @@ impl LocationStateStore {
                 let mut next = current.clone();
                 if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(url) {
                     if reachable {
-                        // Only fail back if the mark is the same one we probed.
+                        // Only fail back if the mark is the same one we probed
+                        // *and* the account still advertises the endpoint.
                         // A newer `marked_at` means a concurrent transport
                         // failure re-marked the endpoint while the probe was in
-                        // flight, so keep it out of rotation and re-probe later.
-                        if *marked_at == observed_marked_at {
+                        // flight; an endpoint that left the account in that
+                        // window must also keep its mark, so a later re-add is
+                        // still probe-gated instead of silently taking traffic.
+                        let still_advertised = advertised_endpoint_urls(current).contains(url);
+                        if *marked_at == observed_marked_at && still_advertised {
                             next.unavailable_endpoints.remove(url);
                         }
                     } else {
@@ -1794,6 +1798,87 @@ mod tests {
                 .unavailable_endpoints
                 .contains_key(&westus_url),
             "the mark must be kept so failback stays probe-gated if the region returns",
+        );
+    }
+
+    /// A region that leaves the account *while its probe is in flight* must keep
+    /// its mark. `advertised` is captured before the awaits, so without a
+    /// re-check inside the update a successful probe would clear a mark the
+    /// newer account state still wants held, and a later re-add would take
+    /// traffic without the promised fresh probe.
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn probe_does_not_fail_back_an_endpoint_removed_while_probing() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = Arc::new(LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            Duration::ZERO, // every mark is immediately due for a probe
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        ));
+
+        let westus_endpoint = AccountEndpoint::from(
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let westus_url = westus_endpoint.url().clone();
+        let westus_region = AccountRegion {
+            name: Region::from("westus"),
+            database_account_endpoint: westus_endpoint,
+        };
+
+        // Two regions, West US advertised and marked unavailable.
+        let mut two_regions = default_account_properties();
+        two_regions.readable_locations.push(westus_region);
+        two_regions.etag = "two-regions".into();
+        store.sync_account_properties(Arc::new(two_regions), &default_endpoint);
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            next.unavailable_endpoints.insert(
+                westus_url.clone(),
+                (Instant::now(), UnavailableReason::TransportError),
+            );
+            next
+        });
+
+        // The probe succeeds, but West US leaves the account *during* the probe.
+        let weak = Arc::downgrade(&store);
+        let probe_default_endpoint = default_endpoint.clone();
+        let probe: EndpointProbeFn = Arc::new(move |_url: Url| {
+            let weak = weak.clone();
+            let default_endpoint = probe_default_endpoint.clone();
+            let fut: BoxFuture<'static, bool> = Box::pin(async move {
+                if let Some(store) = weak.upgrade() {
+                    let mut one_region = default_account_properties();
+                    one_region.etag = "one-region".into();
+                    store.sync_account_properties(Arc::new(one_region), &default_endpoint);
+                }
+                true
+            });
+            fut
+        });
+
+        store.probe_and_failback_unavailable_endpoints(&probe).await;
+
+        assert!(
+            store
+                .snapshot()
+                .account
+                .unavailable_endpoints
+                .contains_key(&westus_url),
+            "an endpoint dropped from the account mid-probe must keep its mark, so a \
+             later re-add is still probe-gated",
         );
     }
 

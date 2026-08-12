@@ -988,9 +988,26 @@ impl EmulatorStore {
     /// Errors with `400` if the region is unknown, is the last region, or is the
     /// current write region.
     pub fn remove_region(&self, region_name: &str) -> crate::error::Result<()> {
+        // Bump versions *before* publishing the new membership. The reverse
+        // order leaves a window where account reads already show the region
+        // gone while partitions still expose the pre-change version, so a token
+        // naming the removed region is compared instead of superseded. Bumping
+        // first errs the other way -- tokens are superseded a moment early,
+        // which is the safe direction.
+        //
+        // Pre-flight first so a rejected removal has no side effects; `config`
+        // stays the single source of the error messages.
+        let topology = self.config.topology_snapshot();
+        let removable = topology.active.len() > 1
+            && topology.write_region != region_name
+            && topology.active.iter().any(|r| r.name() == region_name);
+        if !removable {
+            return self.config.remove_region(region_name);
+        }
+
+        self.advance_vector_clock_versions();
         self.config.remove_region(region_name)?;
         self.regions.write().unwrap().remove(region_name);
-        self.advance_vector_clock_versions();
         Ok(())
     }
 
