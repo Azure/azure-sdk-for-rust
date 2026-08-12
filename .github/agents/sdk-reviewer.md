@@ -5,8 +5,9 @@ model: gpt-5.4
 tools:
   - read
   - search
+  - execute
+  - web
   - github/*
-  - web-fetch
   - safeoutputs/*
 ---
 

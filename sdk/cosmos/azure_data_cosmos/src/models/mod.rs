@@ -19,14 +19,15 @@ pub use change_feed_item::{
 };
 pub use container_properties::{
     ChangeFeedPolicy, ConflictResolutionMode, ConflictResolutionPolicy, ContainerProperties,
-    TimeToLive, UniqueKey, UniqueKeyPolicy, VectorDataType, VectorDistanceFunction,
-    VectorEmbedding, VectorEmbeddingPolicy,
+    FullTextPath, FullTextPolicy, TimeToLive, UniqueKey, UniqueKeyPolicy, VectorDataType,
+    VectorDistanceFunction, VectorEmbedding, VectorEmbeddingPolicy,
 };
 #[cfg(feature = "control_plane")]
 pub use database_properties::DatabaseProperties;
 pub use indexing_policy::{
-    CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, IndexingMode, IndexingPolicy,
-    PropertyPath, SpatialIndex, SpatialType, VectorIndex, VectorIndexType,
+    CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, FullTextIndex, IndexingMode,
+    IndexingPolicy, PropertyPath, QuantizerType, SpatialIndex, SpatialType, VectorIndex,
+    VectorIndexType,
 };
 pub use item_response::ItemResponse;
 pub use resource_response::ResourceResponse;

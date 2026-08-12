@@ -83,12 +83,18 @@ impl CosmosStatusCode {
 /// This enum is the **single source of truth** for those names on the C side.
 /// Each discriminant is a literal copy of the corresponding
 /// [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
-/// literals to emit `= N`). Each discriminant must exactly match the driver
-/// constant it copies.
+/// literals to emit `= N`). A compile-time guard in the Rust source that defines
+/// this enum (`src/error.rs`, not part of the generated header) verifies every
+/// discriminant against the driver constant it mirrors, so a value that drifts
+/// from the driver — or a driver constant that is renamed or removed — fails the
+/// build instead of silently diverging.
 ///
 /// [`SubStatusCode`] is a set of associated `pub const`s, not an enumerable
-/// type, so keeping this enum in sync when the driver adds a new synthetic
-/// `2xxxx` sub-status is a **manual** step: add the matching variant here.
+/// type, so exposing a *new* synthetic `2xxxx` sub-status on the C surface is
+/// still a manual step: add the variant to the Rust enum and pin it in that same
+/// guard. Because the guard maps variants with an exhaustive match, a variant
+/// left unpinned fails to compile — the enum and the driver cannot silently
+/// diverge.
 ///
 /// The values are *not* exhaustive of the `2xxxx` range: the driver leaves gaps
 /// (e.g. `20009`, `20013`, `20103`) for future use. Do not invent variants for
@@ -235,6 +241,117 @@ pub enum CosmosSubStatus {
     /// `SERVER_BARRIER_THROTTLED` (21011).
     CosmosSubStatusServerBarrierThrottled = 21011,
 }
+
+/// Compile-time guard that keeps [`CosmosSubStatus`] pinned to the driver's
+/// canonical [`SubStatusCode`] constants.
+///
+/// cbindgen requires the enum above to carry literal discriminants (it neither
+/// expands macros nor parses the driver crate), so the names and values are
+/// spelled out by hand. `mirror_driver_sub_status!` re-expresses that same set
+/// once and enforces two invariants at compile time:
+///
+/// - **No value drift.** Each variant's literal discriminant is asserted equal
+///   to the value of the driver constant it mirrors, so changing a driver value
+///   — or renaming or removing a mirrored constant — fails the build.
+/// - **No unpinned variant.** The mapping is generated as an *exhaustive* match
+///   over [`CosmosSubStatus`], so adding a variant without pinning it to a
+///   driver constant here also fails to compile.
+const _: () = {
+    macro_rules! mirror_driver_sub_status {
+        ($($variant:ident => $driver:ident),+ $(,)?) => {
+            // Completeness: an exhaustive match forces every variant to be
+            // pinned to a driver constant (a new, unlisted variant won't compile).
+            const fn driver_of(v: CosmosSubStatus) -> SubStatusCode {
+                match v {
+                    $( CosmosSubStatus::$variant => SubStatusCode::$driver, )+
+                }
+            }
+            // Correctness: each literal discriminant equals its driver value.
+            $(
+                assert!(
+                    CosmosSubStatus::$variant as i32
+                        == driver_of(CosmosSubStatus::$variant).value() as i32,
+                    concat!(
+                        "CosmosSubStatus::",
+                        stringify!($variant),
+                        " no longer matches driver SubStatusCode::",
+                        stringify!($driver)
+                    )
+                );
+            )+
+        };
+    }
+
+    mirror_driver_sub_status! {
+        CosmosSubStatusTransportGenerated503 => TRANSPORT_GENERATED_503,
+        CosmosSubStatusClientCpuOverload => CLIENT_CPU_OVERLOAD,
+        CosmosSubStatusClientThreadStarvation => CLIENT_THREAD_STARVATION,
+        CosmosSubStatusChannelClosed => CHANNEL_CLOSED,
+        CosmosSubStatusMalformedContinuationToken => MALFORMED_CONTINUATION_TOKEN,
+        CosmosSubStatusClientOperationTimeout => CLIENT_OPERATION_TIMEOUT,
+        CosmosSubStatusTransportConnectionFailed => TRANSPORT_CONNECTION_FAILED,
+        CosmosSubStatusTransportIoFailed => TRANSPORT_IO_FAILED,
+        CosmosSubStatusTransportDnsFailed => TRANSPORT_DNS_FAILED,
+        CosmosSubStatusTransportBodyReadFailed => TRANSPORT_BODY_READ_FAILED,
+        CosmosSubStatusTransportHttp2Incompatible => TRANSPORT_HTTP2_INCOMPATIBLE,
+        CosmosSubStatusSerializationResponseBodyInvalid => SERIALIZATION_RESPONSE_BODY_INVALID,
+        CosmosSubStatusClientPartitionKeyEmpty => CLIENT_PARTITION_KEY_EMPTY,
+        CosmosSubStatusClientPartitionKeyTooManyComponents => CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
+        CosmosSubStatusClientPrefixPartitionKeyRequiresMultihash => CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH,
+        CosmosSubStatusClientConnectionStringEmpty => CLIENT_CONNECTION_STRING_EMPTY,
+        CosmosSubStatusClientConnectionStringMalformedPart => CLIENT_CONNECTION_STRING_MALFORMED_PART,
+        CosmosSubStatusClientConnectionStringMissingAccountKey => CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY,
+        CosmosSubStatusClientInvalidAccountEndpointUrl => CLIENT_INVALID_ACCOUNT_ENDPOINT_URL,
+        CosmosSubStatusClientInvalidUrl => CLIENT_INVALID_URL,
+        CosmosSubStatusClientUnknownConsistencyLevel => CLIENT_UNKNOWN_CONSISTENCY_LEVEL,
+        CosmosSubStatusClientUnknownPriorityLevel => CLIENT_UNKNOWN_PRIORITY_LEVEL,
+        CosmosSubStatusClientFeedRangeRequiresFanoutPipeline => CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE,
+        CosmosSubStatusClientUnsupportedQueryFeature => CLIENT_UNSUPPORTED_QUERY_FEATURE,
+        CosmosSubStatusClientQueryPlanInvalidTopOffsetLimit => CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT,
+        CosmosSubStatusClientContinuationTokenNonQueryOperation => CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION,
+        CosmosSubStatusClientDuplicateFaultInjectionRuleId => CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
+        CosmosSubStatusClientThroughputControlGroupNotRegistered => CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED,
+        CosmosSubStatusClientHttpClientConstructionFailed => CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED,
+        CosmosSubStatusClientReqwestFeatureRequired => CLIENT_REQWEST_FEATURE_REQUIRED,
+        CosmosSubStatusClientRequestUrlMissingHost => CLIENT_REQUEST_URL_MISSING_HOST,
+        CosmosSubStatusClientRequestUrlMissingKnownPort => CLIENT_REQUEST_URL_MISSING_KNOWN_PORT,
+        CosmosSubStatusClientImdsHttpClientConstructionFailed => CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED,
+        CosmosSubStatusClientImdsReqwestFeatureRequired => CLIENT_IMDS_REQWEST_FEATURE_REQUIRED,
+        CosmosSubStatusClientContinuationTokenFetchInFlight => CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT,
+        CosmosSubStatusClientTopologyProviderMissing => CLIENT_TOPOLOGY_PROVIDER_MISSING,
+        CosmosSubStatusClientDriverNotInitialized => CLIENT_DRIVER_NOT_INITIALIZED,
+        CosmosSubStatusClientContinuationTokenShapeMismatch => CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+        CosmosSubStatusClientContinuationTokenInvalidEpkRange => CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+        CosmosSubStatusClientSplitRetriesExhausted => CLIENT_SPLIT_RETRIES_EXHAUSTED,
+        CosmosSubStatusClientBuildResponseInvokedOnFailure => CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE,
+        CosmosSubStatusClientRootNodeCannotRequestSplit => CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT,
+        CosmosSubStatusClientSingletonOperationReturnedEmptyPage => CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE,
+        CosmosSubStatusClientContinuationTokenSavedRangeUnhonored => CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED,
+        CosmosSubStatusClientNoThroughputOfferForResource => CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE,
+        CosmosSubStatusClientQueryPlanProducedEmptyRanges => CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES,
+        CosmosSubStatusServiceReturnedOfferWithoutId => SERVICE_RETURNED_OFFER_WITHOUT_ID,
+        CosmosSubStatusClientThroughputPollerIncomplete => CLIENT_THROUGHPUT_POLLER_INCOMPLETE,
+        CosmosSubStatusClientTopologyResolutionFailed => CLIENT_TOPOLOGY_RESOLUTION_FAILED,
+        CosmosSubStatusServiceReturnedObjectWithoutRid => SERVICE_RETURNED_OBJECT_WITHOUT_RID,
+        CosmosSubStatusClientFfiNullArgument => CLIENT_FFI_NULL_ARGUMENT,
+        CosmosSubStatusClientFfiInvalidUtf8 => CLIENT_FFI_INVALID_UTF8,
+        CosmosSubStatusClientFfiInvalidHeader => CLIENT_FFI_INVALID_HEADER,
+        CosmosSubStatusClientFfiInvalidOptionValue => CLIENT_FFI_INVALID_OPTION_VALUE,
+        CosmosSubStatusClientFfiOperationConsumed => CLIENT_FFI_OPERATION_CONSUMED,
+        CosmosSubStatusClientFfiPreconditionAlreadySet => CLIENT_FFI_PRECONDITION_ALREADY_SET,
+        CosmosSubStatusClientFfiUnsupportedOperationForMutator => CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR,
+        CosmosSubStatusClientFfiFeedExhausted => CLIENT_FFI_FEED_EXHAUSTED,
+        CosmosSubStatusClientFfiQueueShutdown => CLIENT_FFI_QUEUE_SHUTDOWN,
+        CosmosSubStatusClientFfiQueueFull => CLIENT_FFI_QUEUE_FULL,
+        CosmosSubStatusClientFfiOperationCancelled => CLIENT_FFI_OPERATION_CANCELLED,
+        CosmosSubStatusClientFfiRuntimeBuildFailed => CLIENT_FFI_RUNTIME_BUILD_FAILED,
+        CosmosSubStatusClientFfiPanic => CLIENT_FFI_PANIC,
+        CosmosSubStatusClientGenerated401 => CLIENT_GENERATED_401,
+        CosmosSubStatusAuthenticationTokenAcquisitionFailed => AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
+        CosmosSubStatusTransitTimeout => TRANSIT_TIMEOUT,
+        CosmosSubStatusServerBarrierThrottled => SERVER_BARRIER_THROTTLED,
+    }
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FFI-boundary condition set
