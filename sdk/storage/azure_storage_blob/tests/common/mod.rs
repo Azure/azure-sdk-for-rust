@@ -29,12 +29,14 @@ use azure_core::{
 use azure_core_test::{Recording, TestMode};
 use azure_storage_blob::{
     models::{
-        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
-        EncryptionAlgorithmType,
+        BlobContainerClientListBlobsOptions, BlobItem, BlockBlobClientUploadOptions,
+        BlockBlobClientUploadResult, BlockLookupList, EncryptionAlgorithmType,
+        ListBlobsAcceptFormat, ListBlobsIncludeItem,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
     BlobServiceClient, BlobServiceClientOptions,
 };
+use futures::TryStreamExt;
 
 pub const KB: usize = 1024;
 pub const MB: usize = KB * 1024;
@@ -236,6 +238,35 @@ pub async fn create_test_blob(
                 .await
         }
     }
+}
+
+pub async fn list_blobs_page(
+    container_client: &BlobContainerClient,
+    accept: ListBlobsAcceptFormat,
+    include: Option<Vec<ListBlobsIncludeItem>>,
+) -> Result<Vec<BlobItem>> {
+    let page = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: Some(accept),
+            include,
+            ..Default::default()
+        }))?
+        .into_pages()
+        .try_next()
+        .await?
+        .expect("list_blobs returned at least one page")
+        .into_model()?;
+    Ok(page.blob_items)
+}
+
+/// Lists blobs in `container_client` using the Apache Arrow accept format and returns the
+/// decoded blob items from the first page. Used by Arrow field-mapping tests to verify
+/// listed properties over the wire.
+pub async fn list_blobs_arrow(
+    container_client: &BlobContainerClient,
+    include: Option<Vec<ListBlobsIncludeItem>>,
+) -> Result<Vec<BlobItem>> {
+    list_blobs_page(container_client, ListBlobsAcceptFormat::Arrow, include).await
 }
 
 pub trait ClientOptionsExt {

@@ -10,18 +10,20 @@ use azure_core::{
 use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
-    AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
-    BlobContainerClientBreakLeaseOptions, BlobContainerClientChangeLeaseResultHeaders,
-    BlobContainerClientCreateOptions, BlobContainerClientFindBlobsByTagsOptions,
-    BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
-    BlobContainerClientListBlobsOptions, BlobContainerClientSetMetadataOptions, BlobType,
-    BlockBlobClientUploadOptions, LeaseState, ListBlobsIncludeItem, SignedIdentifiers,
-    StorageErrorCode,
+    AccessPolicy, AccessTier, AccountKind, ArchiveStatus, BlobClientSetTierOptions,
+    BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientBreakLeaseOptions,
+    BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientCreateOptions,
+    BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccountInfoResultHeaders,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
+    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseDuration,
+    LeaseState, LeaseStatus, ListBlobsAcceptFormat, ListBlobsIncludeItem,
+    PageBlobClientSetSequenceNumberOptions, RehydratePriority, SequenceNumberActionType,
+    SignedIdentifiers, StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
 use common::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_container_name, poll_until, StorageAccount,
+    get_container_name, get_valid_encryption_scope, list_blobs_arrow, poll_until, StorageAccount,
 };
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -137,6 +139,369 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         assert_eq!(BlobType::BlockBlob, blob_type);
         assert!(etag.is_some());
     }
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_blobs_arrow_populates_properties(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, false, StorageAccount::Standard, None).await?;
+    container_client.create(None).await?;
+
+    // Arrange: upload a blob populating as many listable properties as possible.
+    let blob_name = get_blob_name(recording);
+    let payload = b"arrow phase a payload".to_vec();
+    // Base64 MD5 of `payload`; the service validates x-ms-blob-content-md5 against the body.
+    let content_md5 = azure_core::base64::decode("IU+6Y1iDGdD2YaCH1kdRpg==")?;
+    let metadata = HashMap::from([("team".to_string(), "sdk".to_string())]);
+    let upload_options = BlockBlobClientUploadOptions {
+        blob_cache_control: Some("max-age=3600".to_string()),
+        blob_content_disposition: Some("inline".to_string()),
+        blob_content_encoding: Some("gzip".to_string()),
+        blob_content_language: Some("en-US".to_string()),
+        blob_content_md5: Some(content_md5.clone()),
+        blob_content_type: Some("text/plain".to_string()),
+        metadata: Some(metadata.clone()),
+        tier: Some(AccessTier::Hot),
+        ..Default::default()
+    }
+    .with_tags(HashMap::from([("env".to_string(), "test".to_string())]));
+    create_test_blob(
+        &container_client.blob_client(&blob_name),
+        Some(RequestContent::from(payload.clone())),
+        Some(upload_options),
+    )
+    .await?;
+
+    // Act: request the Apache Arrow stream. The SDK transparently decodes Arrow or
+    // falls back to XML, so this exercises the field mapping on whichever wire
+    // format the live service returns.
+    let page = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: Some(ListBlobsAcceptFormat::Arrow),
+            include: Some(vec![
+                ListBlobsIncludeItem::Metadata,
+                ListBlobsIncludeItem::Tags,
+            ]),
+            ..Default::default()
+        }))?
+        .into_pages()
+        .try_next()
+        .await?
+        .unwrap()
+        .into_model()?;
+
+    // Assert: the scalar/timestamp/enum properties round-trip through the mapping.
+    let blob = page
+        .blob_items
+        .iter()
+        .find(|b| b.name.as_deref() == Some(blob_name.as_str()))
+        .expect("expected uploaded blob in listing");
+    let props = blob.properties.as_ref().expect("expected blob properties");
+
+    assert_eq!(Some(BlobType::BlockBlob), props.blob_type);
+    assert!(props.etag.is_some());
+    assert_eq!(Some(payload.len() as u64), props.content_length);
+    assert_eq!(Some("text/plain".to_string()), props.content_type);
+    assert_eq!(Some("gzip".to_string()), props.content_encoding);
+    assert_eq!(Some("en-US".to_string()), props.content_language);
+    assert_eq!(Some("inline".to_string()), props.content_disposition);
+    assert_eq!(Some("max-age=3600".to_string()), props.cache_control);
+    assert_eq!(Some(content_md5), props.content_md5);
+    assert!(props.creation_time.is_some());
+    assert!(props.last_modified.is_some());
+    assert!(props.access_tier.is_some());
+    assert!(props.access_tier_change_time.is_some());
+    assert_eq!(Some(LeaseState::Available), props.lease_state);
+    assert_eq!(Some(LeaseStatus::Unlocked), props.lease_status);
+    assert_eq!(Some(true), props.server_encrypted);
+    assert_eq!(Some(1), props.tag_count);
+
+    // Map-typed columns decode from the Arrow `map<utf8,utf8>` columns.
+    let blob_meta = blob
+        .metadata
+        .as_ref()
+        .expect("metadata should be populated");
+    assert_eq!(Some(&metadata), blob_meta.values.as_ref());
+    let tags = blob
+        .blob_tags
+        .as_ref()
+        .expect("blob_tags should be populated")
+        .blob_tag_set
+        .as_ref()
+        .expect("tag set should be present");
+    assert!(tags
+        .iter()
+        .any(|t| t.key.as_deref() == Some("env") && t.value.as_deref() == Some("test")));
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_blobs_arrow_stateful_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    // Blob with an infinite lease -> Leased / Locked / Infinite.
+    let leased_name = get_blob_name(recording);
+    let leased_client = container_client.blob_client(&leased_name);
+    create_test_blob(&leased_client, None, None).await?;
+    leased_client.acquire_lease(-1, None).await?;
+
+    // Sealed append blob -> is_sealed, blob_type = AppendBlob.
+    let sealed_name = get_blob_name(recording);
+    let append_client = container_client
+        .blob_client(&sealed_name)
+        .append_blob_client();
+    append_client.create(None).await?;
+    append_client.seal(None).await?;
+
+    // Page blob with a sequence number -> blob_sequence_number, blob_type = PageBlob.
+    let page_name = get_blob_name(recording);
+    let page_client = container_client.blob_client(&page_name).page_blob_client();
+    page_client.create(1024, None).await?;
+    page_client
+        .set_sequence_number(
+            SequenceNumberActionType::Update,
+            Some(PageBlobClientSetSequenceNumberOptions {
+                blob_sequence_number: Some(7),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Blob with a snapshot -> snapshot row present with the Snapshots include.
+    let snapshot_name = get_blob_name(recording);
+    let snapshot_client = container_client.blob_client(&snapshot_name);
+    create_test_blob(&snapshot_client, None, None).await?;
+    snapshot_client.create_snapshot(None).await?;
+
+    // Blob uploaded with an encryption scope -> encryption_scope.
+    let scope_name = get_blob_name(recording);
+    let scope_client = container_client.blob_client(&scope_name);
+    create_test_blob(
+        &scope_client,
+        None,
+        Some(BlockBlobClientUploadOptions {
+            encryption_scope: Some(get_valid_encryption_scope()),
+            ..Default::default()
+        }),
+    )
+    .await?;
+
+    // Archived blob rehydrating to Hot -> access_tier = Archive, archive_status, rehydrate_priority.
+    let archive_name = get_blob_name(recording);
+    let archive_client = container_client.blob_client(&archive_name);
+    create_test_blob(&archive_client, None, None).await?;
+    archive_client.set_tier(AccessTier::Archive, None).await?;
+    archive_client
+        .set_tier(
+            AccessTier::Hot,
+            Some(BlobClientSetTierOptions {
+                rehydrate_priority: Some(RehydratePriority::High),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Blob uploaded without an explicit tier -> access_tier_inferred.
+    let inferred_name = get_blob_name(recording);
+    let inferred_client = container_client.blob_client(&inferred_name);
+    create_test_blob(&inferred_client, None, None).await?;
+
+    // Soft-deleted blob -> deleted, deleted_time, remaining_retention_days with the Deleted include.
+    let deleted_name = get_blob_name(recording);
+    let deleted_client = container_client.blob_client(&deleted_name);
+    create_test_blob(&deleted_client, None, None).await?;
+    deleted_client.delete(None).await?;
+
+    // A single Arrow list call covers every blob staged above.
+    let items = list_blobs_arrow(
+        &container_client,
+        Some(vec![
+            ListBlobsIncludeItem::Snapshots,
+            ListBlobsIncludeItem::Deleted,
+        ]),
+    )
+    .await?;
+    let find = |name: &str| {
+        items
+            .iter()
+            .find(|b| b.name.as_deref() == Some(name) && b.snapshot.is_none())
+            .unwrap_or_else(|| panic!("expected blob {name} in listing"))
+    };
+
+    // Lease.
+    let props = find(&leased_name)
+        .properties
+        .as_ref()
+        .expect("leased properties");
+    assert_eq!(Some(LeaseState::Leased), props.lease_state);
+    assert_eq!(Some(LeaseStatus::Locked), props.lease_status);
+    assert_eq!(Some(LeaseDuration::Infinite), props.lease_duration);
+
+    // Sealed append blob.
+    let props = find(&sealed_name)
+        .properties
+        .as_ref()
+        .expect("sealed properties");
+    assert_eq!(Some(true), props.is_sealed);
+    assert_eq!(Some(BlobType::AppendBlob), props.blob_type);
+
+    // Page blob sequence number.
+    let props = find(&page_name)
+        .properties
+        .as_ref()
+        .expect("page properties");
+    assert_eq!(Some(7), props.blob_sequence_number);
+    assert_eq!(Some(BlobType::PageBlob), props.blob_type);
+
+    // Encryption scope.
+    let props = find(&scope_name)
+        .properties
+        .as_ref()
+        .expect("scope properties");
+    assert_eq!(Some(get_valid_encryption_scope()), props.encryption_scope);
+
+    // Archive + rehydrate.
+    let props = find(&archive_name)
+        .properties
+        .as_ref()
+        .expect("archive properties");
+    assert_eq!(Some(AccessTier::Archive), props.access_tier);
+    assert_eq!(
+        Some(ArchiveStatus::RehydratePendingToHot),
+        props.archive_status
+    );
+    assert_eq!(Some(RehydratePriority::High), props.rehydrate_priority);
+
+    // Inferred tier.
+    let props = find(&inferred_name)
+        .properties
+        .as_ref()
+        .expect("inferred properties");
+    assert_eq!(Some(true), props.access_tier_inferred);
+
+    // Soft-deleted blob.
+    let deleted = find(&deleted_name);
+    assert_eq!(Some(true), deleted.deleted);
+    let props = deleted.properties.as_ref().expect("deleted properties");
+    assert!(props.deleted_time.is_some());
+    assert!(props.remaining_retention_days.is_some());
+
+    // Snapshot row (distinct from the base blob row).
+    assert!(
+        items
+            .iter()
+            .any(|b| b.name.as_deref() == Some(snapshot_name.as_str()) && b.snapshot.is_some()),
+        "expected a snapshot row for {snapshot_name}"
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_blobs_arrow_version_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
+
+    // Blob with two versions, current version retained -> version_id, is_current_version.
+    let versioned_name = get_blob_name(recording);
+    let versioned_client = container_client.blob_client(&versioned_name);
+    create_test_blob(
+        &versioned_client,
+        Some(RequestContent::from(b"version 1".to_vec())),
+        None,
+    )
+    .await?;
+    create_test_blob(
+        &versioned_client,
+        Some(RequestContent::from(b"version 2".to_vec())),
+        None,
+    )
+    .await?;
+
+    let items = list_blobs_arrow(
+        &container_client,
+        Some(vec![ListBlobsIncludeItem::Versions]),
+    )
+    .await?;
+
+    // The retained blob exposes version_id on every row and exactly one current version.
+    let versions: Vec<_> = items
+        .iter()
+        .filter(|b| b.name.as_deref() == Some(versioned_name.as_str()))
+        .collect();
+    assert!(
+        versions.len() >= 2,
+        "expected at least two versions for {versioned_name}, got {}",
+        versions.len()
+    );
+    assert!(
+        versions.iter().all(|b| b.version_id.is_some()),
+        "every version row should carry a version_id"
+    );
+    assert_eq!(
+        1,
+        versions
+            .iter()
+            .filter(|b| b.is_current_version == Some(true))
+            .count(),
+        "exactly one row should be the current version"
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_blobs_arrow_has_versions_only(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Versioned, None).await?;
+
+    // Create two versions, then delete the base blob so only versions remain. Listing with
+    // DeletedWithVersions surfaces the blob as a root entry with has_versions_only set.
+    let name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(&name);
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from(b"v1".to_vec())),
+        None,
+    )
+    .await?;
+    create_test_blob(
+        &blob_client,
+        Some(RequestContent::from(b"v2".to_vec())),
+        None,
+    )
+    .await?;
+    blob_client.delete(None).await?;
+
+    let items = list_blobs_arrow(
+        &container_client,
+        Some(vec![ListBlobsIncludeItem::DeletedWithVersions]),
+    )
+    .await?;
+
+    let blob = items
+        .iter()
+        .find(|b| b.name.as_deref() == Some(name.as_str()))
+        .expect("expected versions-only blob in listing");
+    assert_eq!(Some(true), blob.has_versions_only);
 
     container_client.delete(None).await?;
     Ok(())
