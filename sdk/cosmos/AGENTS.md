@@ -449,11 +449,11 @@ Run cspell to check for spelling errors in changed files (requires Node.js):
 pwsh eng/common/scripts/check-spelling-in-changed-files.ps1 -TargetCommittish "upstream/main"
 ```
 
-To fix spelling errors, either correct typos in source code or add legitimate terms to dictionary files:
+To fix spelling errors, either correct typos in source code or add legitimate terms to the appropriate spelling configuration:
 
 - **Crate names**: `eng/dict/crates.txt`
-- **Service-specific terms**: `sdk/<service>/.dict.txt` (e.g., `sdk/cosmos/.dict.txt`)
-- **Global dictionary**: `.vscode/cspell.json`
+- **Cosmos-specific words not in the dictionary**: add them to `ignoreWords` in `sdk/cosmos/.cspell.json`. Do not add Cosmos-specific words to the global `.vscode/cspell.json`; changing the global file triggers reviews from the central SDK reviewers.
+- **Terms shared across SDKs**: `.vscode/cspell.json`
 
 ### Pre-Completion Validation Checklist
 
