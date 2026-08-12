@@ -36,13 +36,13 @@
                          LDFLAGS -L ${SRCDIR}/native/musl  ...
 
     Consumer selection:
-        * glibc distros (default): `go build`                 (no tag)
+        * glibc distributions (default): `go build`          (no tag)
         * Alpine / musl:           `go build -tags cosmos_musl`
 
     Known requirement: forgetting -tags cosmos_musl on a musl host produces a
     loud link or runtime error, not silent corruption.
     The considered alternative — a distinct module path `linux_musl/amd64` — is
-    documented in NATIVE_SUPPLY_CHAIN.md; it removes the tag footgun but forces
+    documented in NATIVE_SUPPLY_CHAIN.md; it removes the tag hazard but forces
     the azcosmos consumer into build-tag-switched import files. Do not change the
     scheme here without updating that doc and the azure-sdk-for-go consumer.
 
