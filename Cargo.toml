@@ -34,7 +34,7 @@ members = [
   "sdk/storage/azure_storage_common",
   "sdk/storage/azure_storage_queue",
   "sdk/storage/azure_storage_sas",
-  "sdk/storage/azure_storage_stress",
+  "sdk/storage/azure_storage_stress", "sdk/storage/azure_storage_stress_blob",
 ]
 exclude = [
   "eng/scripts/",
