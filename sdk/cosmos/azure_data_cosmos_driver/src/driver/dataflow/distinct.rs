@@ -42,7 +42,9 @@
 //!
 //! The wrapped fan-out node absorbs `SplitRequired` internally and is never
 //! rebuilt, so the map survives a split mid-drain and an already-emitted value
-//! cannot be resurrected.
+//! cannot be resurrected. A split that does reach this node is refused rather
+//! than forwarded: `SplitRequired` replaces the node that emits it, so passing
+//! it up would discard the map along with the node.
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -247,11 +249,19 @@ impl PipelineNode for Distinct {
                     }
                     return Ok(PageResult::Drained);
                 }
-                PageResult::SplitRequired { replacements } => {
-                    // The wrapped fan-out node absorbs splits internally and
-                    // never surfaces `SplitRequired`; forward defensively so a
-                    // future child type that does is not silently dropped.
-                    return Ok(PageResult::SplitRequired { replacements });
+                PageResult::SplitRequired { .. } => {
+                    // `SplitRequired` replaces the node that emits it, so
+                    // forwarding would drop this node along with its
+                    // deduplication map and resurrect suppressed values. The
+                    // wrapped fan-out node absorbs splits internally, so this
+                    // is unreachable today; fail loudly if that ever changes.
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(CosmosStatus::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT)
+                        .with_message(
+                            "DISTINCT cannot forward a partition split; the wrapped fan-out \
+                             node must absorb splits internally",
+                        )
+                        .build());
                 }
                 PageResult::Page {
                     response,
@@ -329,6 +339,7 @@ impl PipelineNode for Distinct {
 mod tests {
     use super::*;
     use crate::driver::dataflow::mocks::*;
+    use crate::driver::dataflow::node::SplitReplacements;
     use crate::models::ResponseBody;
     use serde::Serialize;
 
@@ -808,6 +819,28 @@ mod tests {
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
         assert!(node.next_page(&mut context).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn forwarded_split_surfaces_a_typed_error() {
+        // `SplitRequired` replaces the node that emits it, so forwarding one
+        // would discard this node's deduplication map and let suppressed values
+        // reappear. Unreachable in production (the wrapped fan-out node absorbs
+        // splits), so this pins the guard rather than a live path.
+        let replacement = MockLeaf::with_pages(vec![Ok(PageResult::Drained)]);
+        let child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
+            replacements: SplitReplacements::untiled(vec![Box::new(replacement)]),
+        })]);
+        let mut node = Distinct::new(Box::new(child), DistinctType::Unordered);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        let err = node.next_page(&mut context).await.unwrap_err();
+        assert_eq!(
+            err.status(),
+            CosmosStatus::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT
+        );
     }
 
     #[tokio::test]
