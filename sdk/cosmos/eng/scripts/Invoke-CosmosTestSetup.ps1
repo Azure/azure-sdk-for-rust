@@ -211,7 +211,7 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
         $env:AZURE_COSMOS_CONNECTION_STRING = "AccountEndpoint=http://localhost:8081;AccountKey=$vnextKey;"
         Write-Host "Set AZURE_COSMOS_CONNECTION_STRING to vnext emulator endpoint."
     }
-    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_vnext`""
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_vnext`" --cfg=cosmos_aad_supported"
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
     $env:RUST_TEST_THREADS = "1"
     return
@@ -299,7 +299,7 @@ if ($IsWindows) {
 
     # Set environment variables for the tests
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
-    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`" --cfg=cosmos_aad_supported"
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
 
     # Run tests single-threaded to avoid env var contamination from proxy tests.
@@ -352,7 +352,7 @@ elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
 
     # Set environment variables for the tests
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
-    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`" --cfg=cosmos_aad_supported"
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
 
     # Run tests single-threaded to avoid env var contamination from proxy tests.

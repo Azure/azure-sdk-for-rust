@@ -12,11 +12,12 @@
 //! mirrors the data-plane RBAC role provisioned in `test-resources.bicep`, which
 //! grants item/metadata data actions but **not** management-plane permissions.
 //!
-//! Because the standard `test_category="emulator"` gate is used, the same tests
-//! run against the local emulator (Build stage, with the emulator started using
-//! `/enableaadauthentication`) and against live accounts (LiveTest stage), where
-//! the framework selects a real Entra ID credential via
-//! `azure_core_test::credentials::from_env`.
+//! Because these tests need AAD data-plane access, they gate on the
+//! `cosmos_aad_supported` cfg (set by the local emulator setup when started
+//! with `/enableaadauthentication`, and by bicep-provisioned live accounts
+//! that include the Cosmos data-plane role assignment). Fixed self-owned live
+//! accounts without that role assignment do not set this cfg, so these tests
+//! are skipped on those legs.
 
 use super::framework;
 
@@ -48,12 +49,8 @@ struct AadTestItem {
 /// invoked for the Cosmos scope, guarding against silently exercising key auth.
 #[tokio::test]
 #[cfg_attr(
-    not(any(
-        test_category = "emulator",
-        test_category = "emulator_vnext",
-        test_category = "emulator_inmemory"
-    )),
-    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+    not(cosmos_aad_supported),
+    ignore = "requires an AAD-enabled Cosmos target (emulator with /enableaadauthentication, or a live account with the Cosmos data-plane role assignment)"
 )]
 #[cfg_attr(
     test_category = "emulator_inmemory",
@@ -157,12 +154,8 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
 /// the `readMetadata` data action the SDK requires on its first request.
 #[tokio::test]
 #[cfg_attr(
-    not(any(
-        test_category = "emulator",
-        test_category = "emulator_vnext",
-        test_category = "emulator_inmemory"
-    )),
-    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+    not(cosmos_aad_supported),
+    ignore = "requires an AAD-enabled Cosmos target (emulator with /enableaadauthentication, or a live account with the Cosmos data-plane role assignment)"
 )]
 #[cfg_attr(
     test_category = "emulator_inmemory",
