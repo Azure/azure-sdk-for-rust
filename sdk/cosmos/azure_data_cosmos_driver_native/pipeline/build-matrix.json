@@ -21,6 +21,11 @@
       "module_path": "windows/amd64",
       "native_subdir": null,
       "build_tag_extra": null,
+      "static_runtime_ldflags": [
+        "-Wl,-Bstatic",
+        "-lwinpthread",
+        "-Wl,-Bdynamic"
+      ],
       "risk": null
     },
     {
@@ -100,6 +105,11 @@
       "module_path": "windows/arm64",
       "native_subdir": null,
       "build_tag_extra": null,
+      "static_runtime_ldflags": [
+        "-Wl,-Bstatic",
+        "-lwinpthread",
+        "-Wl,-Bdynamic"
+      ],
       "risk": "Deferred because this pipeline ships Go static libraries only: the GNU ARM64 Windows toolchain is immature, and a robust Windows ARM64 build needs MSVC and dynamic DLL output. Tracked by Azure/azure-sdk-for-rust#5047."
     }
   ],

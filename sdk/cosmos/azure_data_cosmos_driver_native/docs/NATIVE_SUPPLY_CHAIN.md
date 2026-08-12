@@ -67,7 +67,9 @@ azure-cosmos-driver/
 ```
 
 Each module contains a `go.mod`, generated cgo linker files, the C header, and
-the matching static library.
+the matching static library. The Windows linker file also statically links the
+MinGW pthread runtime so the final Go application does not require a separate
+`libwinpthread-1.dll`.
 
 ## Why the static library is not code-signed
 

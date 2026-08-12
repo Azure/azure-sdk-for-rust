@@ -32,6 +32,10 @@ and Python are also outside this pull request. Those follow-up paths are tracked
 by [#5047](https://github.com/Azure/azure-sdk-for-rust/issues/5047) and
 [#5048](https://github.com/Azure/azure-sdk-for-rust/issues/5048).
 
+The generated Windows cgo linker file statically links the MinGW pthread runtime.
+This prevents the final Go application from requiring a separately distributed
+`libwinpthread-1.dll`.
+
 ## Files
 
 | File | Purpose |

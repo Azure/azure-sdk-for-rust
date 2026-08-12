@@ -66,6 +66,7 @@ $modulePaths = @(
 )
 $expectedFiles = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 $expectedLibraries = [Collections.Generic.List[string]]::new()
+$requiredLinkerFlags = @{}
 [void]$expectedFiles.Add('SHA256SUMS')
 
 foreach ($modulePath in $modulePaths) {
@@ -84,6 +85,9 @@ foreach ($target in $matrix.targets) {
     $linkPath = "$modulePath/link_$($target.goos)_$($target.goarch)$linkSuffix.go"
     foreach ($path in @($libraryPath, $headerPath, $linkPath)) {
         [void]$expectedFiles.Add($path)
+    }
+    if ($target.PSObject.Properties.Name -contains 'static_runtime_ldflags') {
+        $requiredLinkerFlags[$linkPath] = @($target.static_runtime_ldflags) -join ' '
     }
     $expectedLibraries.Add($libraryPath)
 }
@@ -105,6 +109,14 @@ $missingFiles = @($expectedFiles | Where-Object { $_ -notin $actualFiles })
 $unexpectedFiles = @($actualFiles | Where-Object { -not $expectedFiles.Contains($_) })
 if ($missingFiles.Count -gt 0 -or $unexpectedFiles.Count -gt 0) {
     throw "Generated artifact layout does not match build-matrix.json. Missing: [$($missingFiles -join ', ')]; unexpected: [$($unexpectedFiles -join ', ')]."
+}
+
+foreach ($entry in $requiredLinkerFlags.GetEnumerator()) {
+    $linkFile = Join-Path $generatedRootPath $entry.Key
+    $linkFileContents = Get-Content $linkFile -Raw
+    if (-not $linkFileContents.Contains($entry.Value)) {
+        throw "Generated linker file '$($entry.Key)' is missing required static runtime flags: $($entry.Value)"
+    }
 }
 
 $checksumPath = Join-Path $generatedRootPath 'SHA256SUMS'

@@ -18,8 +18,9 @@
         <module_path>/native[/<libc>]/libazurecosmosdriver.a
         <module_path>/native[/<libc>]/azurecosmosdriver.h
 
-    The captured `native-static-libs` from each metadata file are spliced verbatim
-    into the cgo `#cgo LDFLAGS:` line (never hand-guessed).
+    The captured `native-static-libs` from each metadata file and any
+    target-specific static runtime flags from build-matrix.json are spliced into
+    the cgo `#cgo LDFLAGS:` line.
 
     ------------------------------------------------------------------------
     KEY DESIGN DECISION — glibc vs musl collision (the core Deliverable-2 output)
@@ -103,6 +104,22 @@ function Get-SyslibsForRow($row) {
     throw "[$($row.id)] no syslibs available; run Build-NativeMatrix.ps1 first."
 }
 
+function Write-GeneratedTextFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Content
+    )
+
+    $normalizedContent = $Content.Replace("`r`n", "`n").Replace("`r", "`n")
+    if (-not $normalizedContent.EndsWith("`n")) {
+        $normalizedContent += "`n"
+    }
+    [IO.File]::WriteAllText($Path, $normalizedContent, [Text.UTF8Encoding]::new($false))
+}
+
 $writtenGoMods = @{}
 foreach ($row in $rows) {
     $moduleDir = Join-Path $OutputRoot ($row.module_path -replace '/', [IO.Path]::DirectorySeparatorChar)
@@ -111,11 +128,12 @@ foreach ($row in $rows) {
     # go.mod is written once per module_path (glibc + musl rows share it).
     if (-not $writtenGoMods.ContainsKey($row.module_path)) {
         $modulePathFull = "$($matrix.module_root)/$($row.module_path)"
-        @"
+        $goModContent = @"
 module $modulePathFull
 
 go $($matrix.go_version)
-"@ | Set-Content -Path (Join-Path $moduleDir 'go.mod') -Encoding utf8 -NoNewline
+"@
+        Write-GeneratedTextFile -Path (Join-Path $moduleDir 'go.mod') -Content $goModContent
         $writtenGoMods[$row.module_path] = $true
     }
 
@@ -144,12 +162,23 @@ go $($matrix.go_version)
     if ($row.build_tag_extra) { $tag += " && $($row.build_tag_extra)" }
 
     $syslibs = (Get-SyslibsForRow $row) -join ' '
-    $ldflags = "-L`${SRCDIR}/$nativeRel -l$($matrix.lib_basename) $syslibs".TrimEnd()
+    $staticRuntimeLdflags = if ($row.PSObject.Properties.Name -contains 'static_runtime_ldflags') {
+        @($row.static_runtime_ldflags) -join ' '
+    } else {
+        ''
+    }
+    $ldflags = @(
+        "-L`${SRCDIR}/$nativeRel"
+        "-l$($matrix.lib_basename)"
+        $staticRuntimeLdflags
+        $syslibs
+    ) | Where-Object { $_ }
+    $ldflags = $ldflags -join ' '
 
     $suffix = if ($row.native_subdir) { "_$($row.native_subdir)" } else { '' }
     $linkName = "link_$($row.goos)_$($row.goarch)$suffix.go"
 
-    @"
+    $linkFileContent = @"
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
@@ -163,7 +192,8 @@ package $($matrix.go_package)
 // #cgo LDFLAGS: $ldflags
 // #include "$($matrix.header_filename)"
 import "C"
-"@ | Set-Content -Path (Join-Path $moduleDir $linkName) -Encoding utf8
+"@
+    Write-GeneratedTextFile -Path (Join-Path $moduleDir $linkName) -Content $linkFileContent
 
     Write-Host "[$($row.id)] -> $($row.module_path)/$linkName  (tag: $tag)"
 }
