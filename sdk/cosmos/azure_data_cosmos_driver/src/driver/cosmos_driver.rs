@@ -3404,8 +3404,15 @@ impl CosmosDriver {
             .as_ref()
             .is_some_and(planner::is_streaming_order_by)
         {
-            let query_fingerprint = query_fingerprint
-                .expect("query operations capture a fingerprint before request encoding");
+            let query_fingerprint = query_fingerprint.ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+                    .with_message(
+                        "internal error: streaming ORDER BY query is missing its pre-encoding \
+                         request fingerprint",
+                    )
+                    .build()
+            })?;
             let pipeline = planner::build_streaming_ordered_merge_with_fingerprint(
                 &query_plan,
                 &mut topology,
