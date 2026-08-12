@@ -17,7 +17,7 @@
 //! calling from two threads simultaneously is undefined behavior. See section 9 Q12.
 //!
 //! The crate ships the full FFI surface plus internal test-only helpers
-//! ([`__test_only_enqueue_completion`]) so the receive-loop contract can be
+//! (`__test_only_enqueue_completion`) so the receive-loop contract can be
 //! validated end-to-end independently of the real submit pipeline.
 
 use std::collections::VecDeque;
@@ -28,12 +28,13 @@ use std::time::{Duration, Instant};
 
 use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 use azure_data_cosmos_driver::models::{
-    ContainerReference as DriverContainerReference, CosmosResponse, ResponseBody,
+    ContainerReference as DriverContainerReference, CosmosResponse, CosmosResponseHeaders,
+    ResponseBody,
 };
 
 use crate::container_ref::ContainerRefHandle;
 use crate::driver::DriverHandle;
-use crate::error::CosmosErrorCode;
+use crate::error::{CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS};
 use crate::response_header::{
     synthesize_response_headers, CosmosResponseHeader, OwnedResponseHeaders,
 };
@@ -234,18 +235,33 @@ impl OperationHandle {
 /// **borrowed** — valid only until the free. To retain any string / body past
 /// the free, the host must copy it into its own memory first.
 ///
-/// Error detail is **inline** (`http_status_code` / `sub_status` / `message` /
-/// …) rather than a separate error handle. The degenerate driver-creation and
-/// container-resolution completions carry their result in the owned `driver` /
-/// `container` fields, which the host may detach with
-/// [`cosmos_completion_take_driver`] / [`cosmos_completion_take_container`]
-/// (otherwise the free reclaims them).
+/// Header-derived response metadata (activity id, session token, ETag,
+/// server continuation, request charge, sub-status, retry-after) is carried
+/// **exclusively** in the [`headers`](Self::headers) list, each entry
+/// tagged with its stable [`CosmosHeaderId`](crate::response_header::CosmosHeaderId) and typed via
+/// [`CosmosValue`](crate::response_header::CosmosValue). Only genuinely
+/// non-header signals live inline:
+///
+/// - The completion / operation lifecycle (outcome, coarse status,
+///   user data, cancellation flag).
+/// - The wire HTTP status code and error metadata (`http_status_code`,
+///   `is_from_wire`, `message`, `backtrace`) — none of which appear as
+///   response headers.
+/// - The planner-derived `next_continuation` — distinct from the
+///   `x-ms-continuation` server header, which sits in the header list.
+/// - The `body` bytes and the degenerate `driver` / `container` owned
+///   side-payloads.
+///
+/// The degenerate driver-creation and container-resolution completions
+/// carry their result in the owned `driver` / `container` fields, which the
+/// host may detach with [`cosmos_completion_take_driver`] /
+/// [`cosmos_completion_take_container`] (otherwise the free reclaims them).
 #[repr(C)]
 pub struct CosmosCompletion {
     /// The completion outcome (`Ok` / `Error` / `Cancelled` / `Unknown`).
     pub outcome: CosmosCompletionOutcome,
-    /// Coarse status code (always populated).
-    pub status: CosmosErrorCode,
+    /// Packed status code (always populated).
+    pub status: CosmosStatusCode,
     /// The host's opaque pointer-sized cookie, round-tripped verbatim from
     /// submit; the wrapper never dereferences it.
     pub user_data: isize,
@@ -253,33 +269,44 @@ pub struct CosmosCompletion {
     pub was_cancel_requested: u8,
     /// Wire HTTP status code, or `0` when there is no wire response.
     pub http_status_code: u16,
-    /// Cosmos sub-status code, or `-1` when absent.
-    pub sub_status: i32,
-    /// Request charge in Request Units, or `0.0` when absent.
-    pub request_charge: f64,
-    /// Retry-after hint in milliseconds, or `-1` when absent.
-    pub retry_after_ms: i64,
     /// `1` iff an error completion originated from a service wire response.
     pub is_from_wire: u8,
     /// Borrowed error message (NUL-terminated UTF-8), or NULL on a non-error
     /// completion / when error details are suppressed.
     pub message: *const c_char,
-    /// Borrowed activity id, or NULL when absent.
-    pub activity_id: *const c_char,
-    /// Borrowed session token, or NULL when absent.
-    pub session_token: *const c_char,
-    /// Borrowed ETag, or NULL when absent.
-    pub etag: *const c_char,
-    /// Borrowed server-header continuation token, or NULL when absent.
-    pub continuation: *const c_char,
     /// Borrowed planner-derived next-page continuation token, or NULL when this
-    /// was the last page / not a feed response.
+    /// was the last page / not a feed response. Distinct from the
+    /// `x-ms-continuation` server header, which is carried in
+    /// [`headers`](Self::headers) instead.
     pub next_continuation: *const c_char,
     /// Borrowed error backtrace, or NULL when none was captured.
     pub backtrace: *const c_char,
     /// Borrowed `(id, value)` response-header list; NULL when empty. Resolve
     /// each id to its wire name with
-    /// [`cosmos_header_name`](crate::response_header::cosmos_header_name).
+    /// [`cosmos_header_name`](crate::response_header::cosmos_header_name),
+    /// and read each entry's native-typed value through its
+    /// [`CosmosValue`](crate::response_header::CosmosValue) — this is the
+    /// single source of truth for header-derived metadata such as the
+    /// request charge, activity id, ETag, session token, sub-status,
+    /// continuation, and retry-after.
+    ///
+    /// **Presence / absence contract:** each header id appears **only when
+    /// the service (or the driver's synthesis path) actually produced a
+    /// value for it** — there are no placeholder entries. Bindings must
+    /// treat a missing id as absent and apply their own default. Earlier
+    /// revisions of this struct exposed a handful of scalars inline with
+    /// fixed sentinels; the equivalent missing-id defaults callers should
+    /// substitute are:
+    ///
+    /// | Former inline field | Header id | Missing-id default |
+    /// |---------------------|-----------|--------------------|
+    /// | `request_charge: f64` | `CosmosHeaderIdRequestCharge` | `0.0` |
+    /// | `sub_status: i32` | `CosmosHeaderIdSubStatus` | `-1` |
+    /// | `retry_after_ms: i64` | `CosmosHeaderIdRetryAfterMs` | `-1` |
+    /// | `activity_id: *const c_char` | `CosmosHeaderIdActivityId` | `NULL` |
+    /// | `session_token: *const c_char` | `CosmosHeaderIdSessionToken` | `NULL` |
+    /// | `etag: *const c_char` | `CosmosHeaderIdEtag` | `NULL` |
+    /// | `continuation: *const c_char` | `CosmosHeaderIdContinuation` | `NULL` |
     pub headers: *const CosmosResponseHeader,
     /// Number of entries addressable from `headers`.
     pub headers_len: usize,
@@ -312,10 +339,6 @@ pub struct CosmosCompletionBacking {
     response: Option<CosmosResponse>,
     headers: OwnedResponseHeaders,
     message: Option<CString>,
-    activity_id: Option<CString>,
-    session_token: Option<CString>,
-    etag: Option<CString>,
-    continuation: Option<CString>,
     next_continuation: Option<CString>,
     backtrace: Option<CString>,
 }
@@ -325,19 +348,12 @@ pub struct CosmosCompletionBacking {
 /// by [`PendingCompletion::into_ffi`].
 pub(crate) struct PendingCompletion {
     outcome: CosmosCompletionOutcome,
-    status: CosmosErrorCode,
+    status: CosmosStatusCode,
     user_data: isize,
     was_cancel_requested: bool,
     http_status_code: u16,
-    sub_status: i32,
-    request_charge: f64,
-    retry_after_ms: i64,
     is_from_wire: bool,
     message: Option<CString>,
-    activity_id: Option<CString>,
-    session_token: Option<CString>,
-    etag: Option<CString>,
-    continuation: Option<CString>,
     next_continuation: Option<CString>,
     backtrace: Option<CString>,
     headers: OwnedResponseHeaders,
@@ -380,7 +396,7 @@ fn body_view(response: &CosmosResponse) -> (*const u8, usize) {
 impl PendingCompletion {
     fn base(
         outcome: CosmosCompletionOutcome,
-        status: CosmosErrorCode,
+        status: CosmosStatusCode,
         user_data: isize,
         op_inner: Arc<OperationInner>,
     ) -> Self {
@@ -390,15 +406,8 @@ impl PendingCompletion {
             user_data,
             was_cancel_requested: false,
             http_status_code: 0,
-            sub_status: -1,
-            request_charge: 0.0,
-            retry_after_ms: -1,
             is_from_wire: false,
             message: None,
-            activity_id: None,
-            session_token: None,
-            etag: None,
-            continuation: None,
             next_continuation: None,
             backtrace: None,
             headers: OwnedResponseHeaders::empty(),
@@ -412,6 +421,12 @@ impl PendingCompletion {
     /// Successful completion carrying a response page (or a degenerate
     /// end-of-feed shell when `response` is `None`) plus an optional planner
     /// next-page token.
+    ///
+    /// Response header-derived metadata (activity id, session token, ETag,
+    /// server continuation, request charge, sub-status, retry-after) lives
+    /// only in the synthesized [`OwnedResponseHeaders`] list on the
+    /// completion; there is no longer a duplicate inline scalar for any
+    /// header value the SDK could read from the header list instead.
     pub(crate) fn ok_response(
         user_data: isize,
         op_inner: Arc<OperationInner>,
@@ -420,43 +435,24 @@ impl PendingCompletion {
     ) -> Self {
         let mut p = Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             user_data,
             op_inner,
         );
         p.next_continuation = next_continuation.and_then(to_cstring);
         if let Some(resp) = response {
-            let headers = resp.headers();
             p.http_status_code = u16::from(resp.status().status_code());
-            p.sub_status = resp
-                .status()
-                .sub_status()
-                .map_or(-1, |s| i32::from(s.value()));
-            p.request_charge = headers
-                .request_charge
-                .as_ref()
-                .map(|c| c.value())
-                .unwrap_or(0.0);
-            p.retry_after_ms = headers
-                .retry_after_ms
-                .map_or(-1, |ms| i64::try_from(ms).unwrap_or(i64::MAX));
-            p.activity_id = headers
-                .activity_id
-                .as_ref()
-                .and_then(|a| to_cstring(a.as_str()));
-            p.session_token = headers
-                .session_token
-                .as_ref()
-                .and_then(|t| to_cstring(t.as_str()));
-            p.etag = headers
-                .etag
-                .as_ref()
-                .and_then(|e| to_cstring(e.to_string()));
-            p.continuation = headers
-                .continuation
-                .as_ref()
-                .and_then(|c| to_cstring(c.clone()));
-            p.headers = synthesize_response_headers(headers);
+            // Overlay the status-level sub-status onto a clone of the wire
+            // headers before synthesis — mirrors the error path. Keeps the
+            // FFI-observable sub-status symmetric across success and error
+            // (the earlier inline `p.sub_status` field read from
+            // `resp.status().sub_status()`, so a 2xx with a sub-status must
+            // still surface it through the header list).
+            let mut effective_headers = resp.headers().clone();
+            if let Some(sub) = resp.status().sub_status() {
+                effective_headers.substatus = Some(sub);
+            }
+            p.headers = synthesize_response_headers(&effective_headers);
             p.response = Some(resp);
         }
         p
@@ -470,7 +466,7 @@ impl PendingCompletion {
     ) -> Self {
         let mut p = Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             user_data,
             op_inner,
         );
@@ -486,7 +482,7 @@ impl PendingCompletion {
     ) -> Self {
         let mut p = Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             user_data,
             op_inner,
         );
@@ -496,73 +492,61 @@ impl PendingCompletion {
 
     /// Error completion. When `include_details` is set the rich error fields
     /// (message, wire status, headers, backtrace) are flattened inline;
-    /// otherwise only the coarse `status` is populated.
+    /// otherwise only the packed `status` is populated.
     pub(crate) fn error(
         user_data: isize,
         op_inner: Arc<OperationInner>,
         err: DriverCosmosError,
-        coarse: CosmosErrorCode,
         include_details: bool,
     ) -> Self {
         let mut p = Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            coarse,
+            CosmosStatusCode::from_driver_error(&err),
             user_data,
             op_inner,
         );
         if include_details {
             p.http_status_code = u16::from(err.status().status_code());
-            p.sub_status = err
-                .status()
-                .sub_status()
-                .map_or(-1, |s| i32::from(s.value()));
             p.is_from_wire = err.is_from_wire();
             p.message = to_cstring(err.to_string());
             p.backtrace = err
                 .backtrace()
                 .and_then(|bt| to_cstring(bt.as_ref().to_string()));
             if let Some(resp) = err.response() {
-                let headers = resp.headers();
-                p.activity_id = headers
-                    .activity_id
-                    .as_ref()
-                    .and_then(|a| to_cstring(a.as_str()));
-                p.session_token = headers
-                    .session_token
-                    .as_ref()
-                    .and_then(|t| to_cstring(t.as_str()));
-                p.etag = headers
-                    .etag
-                    .as_ref()
-                    .and_then(|e| to_cstring(e.to_string()));
-                p.retry_after_ms = headers
-                    .retry_after_ms
-                    .map_or(-1, |ms| i64::try_from(ms).unwrap_or(i64::MAX));
+                // Wire response: overlay the effective sub-status onto the
+                // wire headers before synthesis. `err.status().sub_status()`
+                // is authoritative — for a body-attached deserialization
+                // failure the driver stamps a synthetic code (e.g.
+                // `SERIALIZATION_RESPONSE_BODY_INVALID`) after the wire
+                // response has already been captured, so the raw wire
+                // header alone would miss it. Cloning the driver's typed
+                // header struct is cheap (small `Option<T>` fields) and
+                // keeps a single synthesis path.
+                let mut effective_headers = resp.headers().clone();
+                if let Some(sub) = err.status().sub_status() {
+                    effective_headers.substatus = Some(sub);
+                }
+                p.headers = synthesize_response_headers(&effective_headers);
+            } else if let Some(sub) = err.status().sub_status() {
+                // Synthetic (client-side) error with no wire response but
+                // still carrying a sub-status sentinel (e.g. the driver's
+                // `CLIENT_OPERATION_TIMEOUT`, `TRANSPORT_GENERATED_503`, …).
+                // Deliver it through the header list — same channel the wire
+                // path uses — so an SDK reader has one lookup for
+                // sub-status regardless of the error's origin.
+                let mut synthetic_headers = CosmosResponseHeaders::default();
+                synthetic_headers.substatus = Some(sub);
+                p.headers = synthesize_response_headers(&synthetic_headers);
             }
         }
         p
-    }
-
-    /// Error completion carrying only a coarse code (no rich detail) — used for
-    /// the submit panic firewall.
-    pub(crate) fn error_coarse(
-        user_data: isize,
-        op_inner: Arc<OperationInner>,
-        coarse: CosmosErrorCode,
-    ) -> Self {
-        Self::base(
-            CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            coarse,
-            user_data,
-            op_inner,
-        )
     }
 
     /// Cancelled completion.
     pub(crate) fn cancelled(user_data: isize, op_inner: Arc<OperationInner>) -> Self {
         Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
-            CosmosErrorCode::CosmosErrorCodeOperationCancelled,
+            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code(),
             user_data,
             op_inner,
         )
@@ -578,9 +562,6 @@ impl PendingCompletion {
         let user_data = self.user_data;
         let was_cancel_requested = u8::from(self.was_cancel_requested);
         let http_status_code = self.http_status_code;
-        let sub_status = self.sub_status;
-        let request_charge = self.request_charge;
-        let retry_after_ms = self.retry_after_ms;
         let is_from_wire = u8::from(self.is_from_wire);
 
         let driver = self
@@ -594,20 +575,12 @@ impl PendingCompletion {
             response: self.response,
             headers: self.headers,
             message: self.message,
-            activity_id: self.activity_id,
-            session_token: self.session_token,
-            etag: self.etag,
-            continuation: self.continuation,
             next_continuation: self.next_continuation,
             backtrace: self.backtrace,
         });
 
         // Borrowed pointers into the (now heap-stable) backing box.
         let message = cstr_ptr(&backing.message);
-        let activity_id = cstr_ptr(&backing.activity_id);
-        let session_token = cstr_ptr(&backing.session_token);
-        let etag = cstr_ptr(&backing.etag);
-        let continuation = cstr_ptr(&backing.continuation);
         let next_continuation = cstr_ptr(&backing.next_continuation);
         let backtrace = cstr_ptr(&backing.backtrace);
         let (headers, headers_len) = backing.headers.as_ptr_len();
@@ -622,15 +595,8 @@ impl PendingCompletion {
             user_data,
             was_cancel_requested,
             http_status_code,
-            sub_status,
-            request_charge,
-            retry_after_ms,
             is_from_wire,
             message,
-            activity_id,
-            session_token,
-            etag,
-            continuation,
             next_continuation,
             backtrace,
             headers,
@@ -707,28 +673,50 @@ impl Default for CqOptions {
     }
 }
 
-/// Layout of the `cosmos_completion_queue_options_t` struct as it appears at the C ABI
-/// boundary. Caller-owned, pass-by-value (per section 3.1.2 the layout is published
-/// for inputs).
+/// Layout of the `cosmos_completion_queue_options_t` struct as it appears at
+/// the C ABI boundary. Caller-owned, pass-by-value (per section 3.1.2 the
+/// layout is published for inputs).
+///
+/// The Rust representation does **not** derive `Copy` — nor is it materialized
+/// by value from a caller-supplied pointer — because `include_error_details`
+/// is declared as `bool` in the emitted C header. Materializing an
+/// arbitrary caller byte through a Rust `bool` would be undefined behavior,
+/// so `cqoptions_from_ptr` reads each field byte-by-byte via
+/// [`std::ptr::addr_of!`] and inspects the boolean byte as a raw `u8`.
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
 pub struct CosmosCompletionQueueOptions {
     pub capacity_hint: u32,
     pub max_capacity: u32,
-    /// Whether to capture rich error payloads, as a C boolean (`0` = false,
-    /// non-zero = true). Read as a `u8` rather than a Rust `bool` so an
-    /// arbitrary host-written byte cannot produce an invalid `bool` (which
-    /// would be undefined behavior).
-    pub include_error_details: u8,
+    /// Whether to capture rich error payloads. Emitted as a C `bool`; the
+    /// wrapper reads the underlying byte via a raw pointer and treats any
+    /// non-zero value as `true`, so an arbitrary host-written byte cannot
+    /// produce an invalid Rust `bool` (which would be undefined behavior).
+    pub include_error_details: bool,
 }
 
-impl From<CosmosCompletionQueueOptions> for CqOptions {
-    fn from(c: CosmosCompletionQueueOptions) -> Self {
-        Self {
-            capacity_hint: c.capacity_hint,
-            max_capacity: c.max_capacity,
-            include_error_details: c.include_error_details != 0,
-        }
+/// Converts a caller-supplied [`CosmosCompletionQueueOptions`] pointer into
+/// the internal [`CqOptions`] without materializing the boolean field through
+/// a Rust `bool`. `options` must be non-NULL and point to an initialized
+/// struct.
+///
+/// # Safety
+///
+/// The caller guarantees `options` points to a fully-initialized
+/// [`CosmosCompletionQueueOptions`] value that outlives the call.
+unsafe fn cqoptions_from_ptr(options: *const CosmosCompletionQueueOptions) -> CqOptions {
+    // SAFETY: caller contract — `options` is non-NULL and initialized. Using
+    // `addr_of!` avoids materializing the whole struct on the stack; reading
+    // `include_error_details` via a raw `u8` avoids constructing an invalid
+    // `bool` when the caller wrote a byte other than 0 or 1.
+    let capacity_hint = unsafe { std::ptr::read(std::ptr::addr_of!((*options).capacity_hint)) };
+    let max_capacity = unsafe { std::ptr::read(std::ptr::addr_of!((*options).max_capacity)) };
+    let include_byte = unsafe {
+        std::ptr::read(std::ptr::addr_of!((*options).include_error_details) as *const u8)
+    };
+    CqOptions {
+        capacity_hint,
+        max_capacity,
+        include_error_details: include_byte != 0,
     }
 }
 
@@ -851,6 +839,7 @@ impl CompletionQueue {
 
     /// Internal: pushes a completion onto the queue identified by the
     /// raw pointer.
+    #[cfg(any(test, feature = "test-abi"))]
     pub(crate) fn enqueue(p: *const CompletionQueue, c: PendingCompletion) -> CosmosErrorCode {
         let Some(handle) = Self::from_ptr(p) else {
             return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
@@ -946,8 +935,11 @@ pub extern "C" fn cosmos_completion_queue_create(
     } else {
         // SAFETY: `options` is non-null and the caller guarantees it points
         // at a fully-initialized `CosmosCompletionQueueOptions` valid for the
-        // duration of the call (per section 3.2 Pattern A inputs).
-        CqOptions::from(*unsafe { &*options })
+        // duration of the call (per section 3.2 Pattern A inputs). The reader
+        // avoids materializing the struct value (whose `include_error_details`
+        // is declared as `bool` on the C ABI) so an out-of-range caller byte
+        // cannot produce an invalid Rust `bool`.
+        unsafe { cqoptions_from_ptr(options) }
     };
     CompletionQueue::new_raw(inner_rt, opts)
 }
@@ -1335,10 +1327,11 @@ pub fn __test_only_create_operation_handle() -> *mut OperationHandle {
 /// Test-only: reserve an in-flight slot on `queue`, simulating what the real
 /// submit pre-flight does when it admits an operation. Lets tests exercise the
 /// `in_flight` accounting (which gates the `SHUTDOWN` → `DRAINED` transition)
-/// without standing up the full submit pipeline. Returns the coarse code from
+/// without standing up the full submit pipeline. Returns the packed status code from
 /// [`CompletionQueueInner::reserve_in_flight`].
 #[doc(hidden)]
-pub fn __test_only_reserve_in_flight(queue: *mut CompletionQueue) -> CosmosErrorCode {
+#[cfg(test)]
+pub(crate) fn __test_only_reserve_in_flight(queue: *mut CompletionQueue) -> CosmosErrorCode {
     let Some(inner_arc) = CompletionQueue::inner_arc(queue) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
     };
@@ -1355,11 +1348,12 @@ pub fn __test_only_reserve_in_flight(queue: *mut CompletionQueue) -> CosmosError
 /// An `Error` outcome flattens `error` (or a synthetic placeholder) inline,
 /// honoring the queue's `include_error_details`.
 #[doc(hidden)]
-pub fn __test_only_enqueue_completion(
+#[cfg(test)]
+pub(crate) fn __test_only_enqueue_completion(
     queue: *mut CompletionQueue,
     op_handle: *mut OperationHandle,
     outcome: CosmosCompletionOutcome,
-    status: CosmosErrorCode,
+    status: CosmosStatusCode,
     // Test ergonomics: callers pass a pointer-cast cookie; we store it as the
     // `isize` the real submit path uses. This helper is `#[doc(hidden)]` and
     // never crosses the (now `intptr_t`) C ABI.
@@ -1382,7 +1376,7 @@ pub fn __test_only_enqueue_completion(
                     .with_message("synthetic test error")
                     .build()
             });
-            PendingCompletion::error(ud, op_inner, err, status, include_error)
+            PendingCompletion::error(ud, op_inner, err, include_error)
         }
         CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled => {
             let mut p = PendingCompletion::cancelled(ud, op_inner);
@@ -1397,6 +1391,69 @@ pub fn __test_only_enqueue_completion(
         }
     };
     CompletionQueue::enqueue(queue, pending)
+}
+
+/// Test-only C-ABI helper: enqueues an OK completion whose header list
+/// contains one entry for every [`CosmosValueKind`] discriminant.
+///
+/// Used by `c_tests/completion_headers_abi.c` to verify each tagged-union
+/// leg round-trips through the generated C header. Mints its own operation
+/// handle so a C caller only needs a queue pointer.
+///
+/// Not part of the public ABI. Gated behind the `test-abi` Cargo feature so
+/// the symbol is only present in the cdylib / staticlib when the C-test
+/// build enables it — production builds (default features) do not export
+/// this symbol at all, and `build.rs`'s `export.exclude` keeps it out of
+/// the checked-in public header even when the feature is on. Bindings must
+/// not depend on it.
+///
+/// Returns [`CosmosStatusCode`] with `COSMOS_STATUS_SUCCESS` on success, or a
+/// packed argument-shape rejection code when `queue` is NULL.
+#[cfg(feature = "test-abi")]
+#[doc(hidden)]
+#[no_mangle]
+pub extern "C" fn __test_only_enqueue_ok_completion_with_all_value_kinds(
+    queue: *mut CompletionQueue,
+) -> CosmosStatusCode {
+    use azure_data_cosmos_driver::models::ActivityId;
+
+    if CompletionQueue::from_ptr(queue).is_none() {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+    }
+
+    // Mint and immediately drop an ephemeral operation handle; only its
+    // inner Arc needs to survive on the pending completion.
+    let op_raw = OperationHandle::new_raw();
+    // SAFETY: `op_raw` was just returned by `new_raw` and is exclusively
+    // owned here, so dereferencing it to clone its inner Arc is sound.
+    let op_inner = unsafe { Arc::clone(&(*op_raw).inner) };
+    OperationHandle::drop_raw(op_raw);
+
+    // One driver field per `CosmosValueKind` so the synthesized header list
+    // exercises every union leg the ABI exposes:
+    //   activity_id           → String
+    //   item_count            → I64
+    //   server_duration_ms    → F64
+    //   offer_replace_pending → Bool
+    //   lsn                   → U64  (value above `i64::MAX` so the C-side
+    //                                 read observes the full unsigned range,
+    //                                 not a saturated `i64::MAX`)
+    let mut headers = CosmosResponseHeaders::default();
+    headers.activity_id = Some(ActivityId::from_string("abi-test-activity".to_owned()));
+    headers.item_count = Some(42);
+    headers.server_duration_ms = Some(12.5);
+    headers.offer_replace_pending = Some(true);
+    headers.lsn = Some(u64::MAX - 1);
+
+    let mut p = PendingCompletion::base(
+        CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+        CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code(),
+        0,
+        op_inner,
+    );
+    p.http_status_code = 200;
+    p.headers = synthesize_response_headers(&headers);
+    CompletionQueue::enqueue(queue, p).as_status_code()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1414,7 +1471,7 @@ mod tests {
         let opts = CosmosCompletionQueueOptions {
             capacity_hint: 0,
             max_capacity,
-            include_error_details: include_error_details as u8,
+            include_error_details,
         };
         let q = cosmos_completion_queue_create(rt, &opts as *const _);
         // Runtime is held internally via Arc; we can free the producer-side
@@ -1492,7 +1549,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             token as *mut c_void,
             None,
         );
@@ -1510,7 +1567,7 @@ mod tests {
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk
         );
         assert_eq!(c.user_data, token as isize);
-        assert_eq!(c.status, CosmosErrorCode::CosmosErrorCodeSuccess);
+        assert_eq!(c.status, COSMOS_STATUS_SUCCESS);
         assert_eq!(c.was_cancel_requested, 0);
 
         free_one(c);
@@ -1538,7 +1595,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );
@@ -1584,7 +1641,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             0x42 as *mut c_void,
             None,
         );
@@ -1618,7 +1675,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );
@@ -1654,7 +1711,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
-            CosmosErrorCode::CosmosErrorCodeOperationCancelled,
+            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code(),
             std::ptr::null_mut(),
             None,
         );
@@ -1664,7 +1721,8 @@ mod tests {
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
         );
         assert_eq!(c.was_cancel_requested, 1);
-        assert_eq!(c.status, CosmosErrorCode::CosmosErrorCodeOperationCancelled);
+        let bits = c.status.0 as u32;
+        assert_eq!((bits >> 16, bits & 0xFFFF), (408, 20360));
         // The operation handle's state should reflect Cancelled.
         assert_eq!(
             cosmos_operation_handle_state(op),
@@ -1689,7 +1747,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );
@@ -1713,7 +1771,7 @@ mod tests {
                 q,
                 op,
                 CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-                CosmosErrorCode::CosmosErrorCodeSuccess,
+                COSMOS_STATUS_SUCCESS,
                 std::ptr::null_mut(),
                 None,
             );
@@ -1726,7 +1784,7 @@ mod tests {
             q,
             op3,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );
@@ -1765,7 +1823,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );
@@ -1789,7 +1847,7 @@ mod tests {
                 q,
                 op,
                 CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-                CosmosErrorCode::CosmosErrorCodeSuccess,
+                COSMOS_STATUS_SUCCESS,
                 i as *mut c_void,
                 None,
             );
@@ -1822,13 +1880,20 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            CosmosErrorCode::CosmosErrorCodeNotFound,
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::NotFound,
+            )),
             std::ptr::null_mut(),
             Some(err),
         );
 
         let c = wait_one_ffi(q, 100).expect("completion delivered");
-        assert_eq!(c.status, CosmosErrorCode::CosmosErrorCodeNotFound);
+        assert_eq!(
+            c.status,
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::NotFound
+            ))
+        );
         assert_eq!(c.http_status_code, 404);
         assert!(!c.message.is_null());
         // SAFETY: `message` is a NUL-terminated string owned by the completion.
@@ -1855,16 +1920,77 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            CosmosErrorCode::CosmosErrorCodeConflict,
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::Conflict,
+            )),
             std::ptr::null_mut(),
             Some(err),
         );
         let c = wait_one_ffi(q, 100).expect("completion delivered");
-        // Coarse status survives.
-        assert_eq!(c.status, CosmosErrorCode::CosmosErrorCodeConflict);
+        // Packed status survives.
+        assert_eq!(
+            c.status,
+            crate::error::CosmosStatusCode::from_status(CosmosStatus::new(
+                azure_core::http::StatusCode::Conflict
+            ))
+        );
         // Rich detail suppressed.
         assert!(c.message.is_null());
         assert_eq!(c.http_status_code, 0);
+        free_one(c);
+        cosmos_operation_handle_free(op);
+        cosmos_completion_queue_free(q);
+    }
+
+    #[test]
+    fn synthetic_error_sub_status_reaches_headers_list() {
+        // Pre-reconciliation, an error completion delivered `sub_status`
+        // through a dedicated inline scalar. Post-reconciliation the wire
+        // path emits it via the synthesized header list (with the
+        // effective `err.status().sub_status()` overlaid onto the wire
+        // headers so post-hoc codes like `SERIALIZATION_RESPONSE_BODY_INVALID`
+        // survive even when the raw wire header doesn't carry them). A
+        // synthetic (no-wire-response) error still carrying a sub-status
+        // sentinel — e.g. driver-side timeout — must reach the SDK by the
+        // same channel so no data is lost across the FFI boundary. This
+        // test exercises the synthetic branch, which shares the same
+        // `synthesize_response_headers` implementation as the wire
+        // overlay, so both branches inherit the assertions below.
+        use crate::response_header::{CosmosHeaderId, CosmosValueKind};
+        use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus, SubStatusCode};
+        let q = fresh_queue(0, true);
+        let op = __test_only_create_operation_handle();
+        let status = CosmosStatus::new(azure_core::http::StatusCode::RequestTimeout)
+            .with_sub_status(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value());
+        let err = CosmosError::builder()
+            .with_status(status)
+            .with_message("client-side timeout")
+            .build();
+        __test_only_enqueue_completion(
+            q,
+            op,
+            CosmosCompletionOutcome::CosmosCompletionOutcomeError,
+            crate::error::CosmosStatusCode::from_status(status),
+            std::ptr::null_mut(),
+            Some(err),
+        );
+        let c = wait_one_ffi(q, 100).expect("completion delivered");
+        assert!(
+            !c.headers.is_null(),
+            "synthetic error still populates headers list"
+        );
+        assert_eq!(c.headers_len, 1, "only sub_status is synthesized");
+        // SAFETY: `headers` addresses `headers_len` initialized entries owned
+        // by the completion.
+        let entries = unsafe { std::slice::from_raw_parts(c.headers, c.headers_len) };
+        assert_eq!(entries[0].id, CosmosHeaderId::CosmosHeaderIdSubStatus);
+        assert_eq!(entries[0].value.kind, CosmosValueKind::I64.0);
+        // SAFETY: `kind == I64` selects `i64_value` per the tagged-union contract.
+        let sub = unsafe { entries[0].value.payload.i64_value };
+        assert_eq!(
+            sub,
+            i64::from(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value())
+        );
         free_one(c);
         cosmos_operation_handle_free(op);
         cosmos_completion_queue_free(q);
@@ -1905,7 +2031,7 @@ mod tests {
             q,
             op,
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            CosmosErrorCode::CosmosErrorCodeSuccess,
+            COSMOS_STATUS_SUCCESS,
             std::ptr::null_mut(),
             None,
         );

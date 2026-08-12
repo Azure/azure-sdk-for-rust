@@ -24,7 +24,7 @@ use std::time::Duration;
 use azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder;
 use azure_data_cosmos_driver::options::{CorrelationId, UserAgentSuffix, WorkloadId};
 
-use crate::error::{CosmosErrorCode, CosmosErrorHandle};
+use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
 use crate::runtime::RuntimeContext;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,46 +65,59 @@ fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 /// `(out_runtime, out_error)` contract used by [`cosmos_runtime_build`].
 ///
 /// On success writes the runtime handle to `*out_runtime` and returns
-/// `SUCCESS`. On failure returns `RUNTIME_BUILD_FAILED` and, when
-/// `out_error` is non-NULL, writes a rich `cosmos_error_t *` describing the
-/// failure. Callers must null-check `out_runtime` before calling.
+/// `SUCCESS`. On failure returns a packed [`crate::error::CosmosStatusCode`]
+/// that describes the failure and, when `out_error` is non-NULL, writes a rich
+/// `cosmos_error_t *` whose `status` field carries the **same** packed value —
+/// the return code and the rich error never disagree. A wrapper-side Tokio
+/// runtime failure maps to `CLIENT_FFI_RUNTIME_BUILD_FAILED`; a driver-side
+/// build failure surfaces the driver's own status verbatim. Callers must
+/// null-check `out_runtime` before calling.
 fn finish_runtime_build(
     result: Result<*mut RuntimeContext, RuntimeBuildError>,
     out_runtime: *mut *mut RuntimeContext,
-    out_error: *mut *mut CosmosErrorHandle,
-) -> i32 {
+    out_error: *mut *mut CosmosError,
+) -> CosmosStatusCode {
     match result {
         Ok(ptr) => {
             // SAFETY: caller guarantees `out_runtime` is non-NULL and writable
             // for one `*mut RuntimeContext`.
             unsafe { *out_runtime = ptr };
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
         }
         Err(RuntimeBuildError::TokioInit(io)) => {
             // The wrapper-side Tokio runtime couldn't be constructed — an
             // OS-level resource failure (thread limit, file descriptor
-            // limit). Map to the driver's `TRANSPORT_IO_FAILED` status
-            // (the closest existing "wrapper-side resource issue"
-            // classification) so callers can log it through the same
-            // accessor surface as a real driver-side failure.
+            // limit). Surface it as the dedicated
+            // `CLIENT_FFI_RUNTIME_BUILD_FAILED` status. The synthesized rich
+            // error is built from that *same* status so the return code and
+            // `(*out_error).status` describe one failure.
+            let code = CosmosErrorCode::CosmosErrorCodeRuntimeBuildFailed;
             if !out_error.is_null() {
+                // `to_status` is `Some` for every non-success code.
+                let status = code
+                    .to_status()
+                    .expect("runtime-build code always has a status");
                 let driver_err = azure_data_cosmos_driver::error::CosmosError::builder()
-                    .with_status(azure_data_cosmos_driver::error::CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(status)
                     .with_message(format!("wrapper Tokio runtime build failed: {io}"))
                     .build();
                 // SAFETY: caller guarantees `out_error` is writable for one
-                // `*mut CosmosErrorHandle`.
-                unsafe { *out_error = CosmosErrorHandle::into_raw(driver_err) };
+                // `*mut CosmosError`.
+                unsafe { *out_error = CosmosError::into_raw(driver_err) };
             }
-            CosmosErrorCode::CosmosErrorCodeRuntimeBuildFailed.as_i32()
+            code.as_status_code()
         }
         Err(RuntimeBuildError::Driver(driver_err)) => {
+            // The driver's own build failed with a real `CosmosError`. Return
+            // its status verbatim (no re-classification) so the return
+            // code equals the rich error's `status` field.
+            let rc = CosmosStatusCode::from_driver_error(&driver_err);
             if !out_error.is_null() {
                 // SAFETY: caller guarantees `out_error` is writable for one
-                // `*mut CosmosErrorHandle`.
-                unsafe { *out_error = CosmosErrorHandle::into_raw(driver_err) };
+                // `*mut CosmosError`.
+                unsafe { *out_error = CosmosError::into_raw(driver_err) };
             }
-            CosmosErrorCode::CosmosErrorCodeRuntimeBuildFailed.as_i32()
+            rc
         }
     }
 }
@@ -228,27 +241,35 @@ pub extern "C" fn cosmos_runtime_options_default() -> CosmosRuntimeOptions {
 ///   every field (equivalent to [`cosmos_runtime_options_default`]).
 /// - `out_runtime` — on success, receives the new runtime handle. Must be
 ///   non-NULL.
-/// - `out_error` — optional. On `RUNTIME_BUILD_FAILED`, receives a rich
-///   `cosmos_error_t *` describing the driver-side failure. If NULL the rich
-///   error is dropped. Never populated on success.
+/// - `out_error` — optional, and populated **only for runtime-construction
+///   failures** (the wrapper-side Tokio runtime or the driver-side build). On
+///   those paths it receives a rich `cosmos_error_t *` whose `status` field
+///   equals the returned packed status code. Pre-flight rejections (NULL
+///   `out_runtime`, invalid UTF-8, out-of-range option values) return the
+///   packed status code alone and do **not** write `out_error`. If NULL the
+///   rich error is dropped. Never populated on success.
 ///
 /// # Returns
 ///
-/// - `SUCCESS` (0) with `*out_runtime` populated.
-/// - `INVALID_ARGUMENT` (1) when `out_runtime` is NULL.
-/// - `INVALID_UTF8` (2) when a string field is not valid UTF-8.
-/// - `INVALID_OPTION_VALUE` (4014) when a field is outside its documented
-///   range.
-/// - `RUNTIME_BUILD_FAILED` (4015) when the underlying build failed;
-///   `*out_error` is populated when non-NULL.
+/// A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+/// decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+///
+/// - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_runtime` populated.
+/// - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `out_runtime` is NULL.
+/// - `400` / `CLIENT_FFI_INVALID_UTF8` when a string field is not valid UTF-8.
+/// - `400` / `CLIENT_FFI_INVALID_OPTION_VALUE` when a field is outside its
+///   documented range.
+/// - `500` / `CLIENT_FFI_RUNTIME_BUILD_FAILED` when the wrapper-side Tokio
+///   runtime could not be built, or the driver's own status verbatim when the
+///   driver-side build failed; `*out_error` is populated when non-NULL.
 #[no_mangle]
 pub extern "C" fn cosmos_runtime_build(
     options: *const CosmosRuntimeOptions,
     out_runtime: *mut *mut RuntimeContext,
-    out_error: *mut *mut CosmosErrorHandle,
-) -> i32 {
+    out_error: *mut *mut CosmosError,
+) -> CosmosStatusCode {
     if out_runtime.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
     let mut builder = CosmosDriverRuntimeBuilder::new();
     if !options.is_null() {
@@ -257,7 +278,7 @@ pub extern "C" fn cosmos_runtime_build(
         // UTF-8 for the duration of the call.
         builder = match unsafe { (*options).apply_to(builder) } {
             Ok(b) => b,
-            Err(code) => return code.as_i32(),
+            Err(code) => return code.as_status_code(),
         };
     }
     finish_runtime_build(
@@ -292,11 +313,11 @@ mod tests {
     #[test]
     fn flat_build_rejects_null_out_runtime() {
         let opts = cosmos_runtime_options_default();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
         let code = cosmos_runtime_build(&opts, ptr::null_mut(), &mut err);
         assert_eq!(
             code,
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(err.is_null());
     }
@@ -307,10 +328,10 @@ mod tests {
         let mut opts = cosmos_runtime_options_default();
         opts.workload_id = 51;
         let mut runtime: *mut RuntimeContext = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
         assert_eq!(
             cosmos_runtime_build(&opts, &mut runtime, &mut err),
-            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
         );
         assert!(runtime.is_null());
 
@@ -320,7 +341,7 @@ mod tests {
         opts.correlation_id = bad.as_ptr();
         assert_eq!(
             cosmos_runtime_build(&opts, &mut runtime, &mut err),
-            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
         );
         assert!(runtime.is_null());
 
@@ -329,7 +350,7 @@ mod tests {
         opts.cpu_refresh_interval_ms = 999;
         assert_eq!(
             cosmos_runtime_build(&opts, &mut runtime, &mut err),
-            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_i32()
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
         );
         assert!(runtime.is_null());
     }
@@ -337,10 +358,13 @@ mod tests {
     #[test]
     fn flat_build_null_options_uses_defaults_and_builds() {
         let mut runtime: *mut RuntimeContext = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
         // A NULL options pointer means "all driver defaults".
         let code = cosmos_runtime_build(ptr::null(), &mut runtime, &mut err);
-        assert_eq!(code, CosmosErrorCode::CosmosErrorCodeSuccess.as_i32());
+        assert_eq!(
+            code,
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        );
         assert!(!runtime.is_null());
         assert!(err.is_null());
         crate::runtime::cosmos_runtime_free(runtime);
@@ -358,11 +382,11 @@ mod tests {
         opts.cpu_refresh_interval_ms = 5_000;
 
         let mut runtime: *mut RuntimeContext = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
         let code = cosmos_runtime_build(&opts, &mut runtime, &mut err);
         assert_eq!(
             code,
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32(),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code(),
             "flat build must succeed for valid options"
         );
         assert!(!runtime.is_null());

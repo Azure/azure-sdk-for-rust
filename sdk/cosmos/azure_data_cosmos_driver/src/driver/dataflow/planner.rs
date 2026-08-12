@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore unemitted checkpointed
+
 //! Pipeline planner for Cosmos DB operations.
 //!
 //! The planner validates an operation's target against its resource type and
@@ -23,10 +25,12 @@ use crate::{
 
 use super::{
     intersect_feed_ranges,
-    query_plan::{QueryInfo, QueryPlan},
-    DrainedLeaf, OperationPlan, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState,
-    RangedToken, Request, RequestTarget, ResolvedRange, SequentialDrain, TopologyProvider,
-    UnorderedMerge,
+    query_plan::{QueryInfo, QueryPlan, SortOrder},
+    query_response,
+    snapshot::{OrderByRangeToken, ValueBoundary},
+    streaming_ordered_merge, DrainedLeaf, OperationPlan, PartitionRoutingRefresh, Pipeline,
+    PipelineNode, PipelineNodeState, RangedToken, Request, RequestTarget, ResolvedRange,
+    SequentialDrain, StreamingOrderedMerge, TopologyProvider, UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -244,6 +248,296 @@ pub(crate) async fn build_sequential_drain(
     // the single Request with multiple Requests.
     let root = Box::new(SequentialDrain::new(request_nodes));
     Ok(Pipeline::new(root))
+}
+
+/// `true` if `query_info` selects the streaming `ORDER BY` pipeline (one or
+/// more `ORDER BY` columns not requiring the non-streaming buffered sort).
+pub(crate) fn is_streaming_order_by(info: &QueryInfo) -> bool {
+    !info.order_by.is_empty() && !info.has_non_streaming_order_by
+}
+
+/// Builds a [`streaming_ordered_merge::StreamingOrderedMerge`] pipeline
+/// from a backend query plan whose `queryInfo.orderBy` is non-empty.
+/// Mirrors [`build_sequential_drain`]'s shape, but snapshots every
+/// still-active range explicitly since global ordering means any range
+/// may still have unemitted rows.
+///
+/// `resume` re-resolves each saved range against current topology and
+/// rebuilds it via [`streaming_ordered_merge::build_children`], the same
+/// path a live split uses.
+pub(crate) async fn build_streaming_ordered_merge(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
+    validate_query_plan_for_streaming_order_by(query_plan)?;
+    let info = query_plan
+        .query_info
+        .as_ref()
+        .expect("is_streaming_order_by requires query_info to be Some");
+    let rewritten_query = info
+        .rewritten_query
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY,
+                )
+                .with_message(
+                    "query plan reported one or more ORDER BY columns but did not supply a \
+                     non-empty rewrittenQuery",
+                )
+                .build()
+        })?;
+    let directions = info.order_by.clone();
+
+    let query_from_beginning = query_response::rewritten_query_from_beginning(rewritten_query)?;
+    let plain_body = query_response::rewrite_query_body(operation.body(), &query_from_beginning)?;
+    let plain_operation = Arc::new((**operation).clone().with_body(plain_body));
+
+    let is_resume = resume.is_some();
+    // The feed scope is folded into the fingerprint (see
+    // `streaming_ordered_merge::query_fingerprint`) because nothing else binds
+    // a token to it: a resumed node treats its saved ranges as authoritative,
+    // and `is_valid_for_operation` checks only the operation kind and RID.
+    let scope_range = operation.target();
+    let query_fingerprint =
+        streaming_ordered_merge::query_fingerprint(operation.body(), scope_range);
+    let saved_ranges = match resume {
+        None => None,
+        Some(PipelineNodeState::Drained) => {
+            return Ok(Pipeline::new(Box::new(DrainedLeaf)));
+        }
+        Some(PipelineNodeState::StreamingOrderedMerge {
+            directions: saved_directions,
+            query_fingerprint: saved_fingerprint,
+            ranges,
+        }) => Some(validate_streaming_order_by_snapshot(
+            &directions,
+            &saved_directions,
+            &query_fingerprint,
+            saved_fingerprint.as_deref(),
+            ranges,
+        )?),
+        Some(other) => {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(format!(
+                    "continuation token shape {} does not match a streaming ORDER BY operation",
+                    snapshot_kind(&other)
+                ))
+                .build());
+        }
+    };
+
+    let mut children = Vec::new();
+
+    if let Some(saved_ranges) = saved_ranges {
+        for saved in saved_ranges {
+            // A matching fingerprint already proves the scope is unchanged, so
+            // this only fires for a token that carries no fingerprint. Reject
+            // rather than clip: `build_children` decides whether a saved server
+            // continuation is safe to replay by comparing the resolved topology
+            // against this range, so narrowing it would make a stale pre-split
+            // continuation look replayable instead of taking the rebuild path.
+            if let Some(scope) = scope_range {
+                if !saved.range.is_subset_of(scope) {
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(
+                            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+                        )
+                        .with_message(format!(
+                            "continuation token covers {}-{}, which is not contained in the requested feed scope {}-{}",
+                            saved.range.min_inclusive().to_hex(),
+                            saved.range.max_exclusive().to_hex(),
+                            scope.min_inclusive().to_hex(),
+                            scope.max_exclusive().to_hex(),
+                        ))
+                        .build());
+                }
+            }
+            let resolved = topology_provider
+                .resolve_ranges(&saved.range, PartitionRoutingRefresh::UseCached)
+                .await?;
+            let mut range_children = streaming_ordered_merge::build_children(
+                &resolved,
+                &saved.range,
+                &plain_operation,
+                &directions,
+                saved.server_continuation,
+                saved.boundary.as_ref(),
+            )?;
+            children.append(&mut range_children);
+        }
+    } else {
+        // See `plan_fresh` for rationale on intersecting with the operation scope.
+        let normalized_len = operation
+            .container()
+            .and_then(|c| normalized_epk_len(c.partition_key_definition()));
+        for query_range in &query_plan.query_ranges {
+            let plan_range = query_range_to_feed_range(query_range, normalized_len)?;
+            let feed_range = match scope_range {
+                Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                    Some(r) => r,
+                    None => continue,
+                },
+                None => plan_range,
+            };
+            let resolved = topology_provider
+                .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
+                .await?;
+            let mut range_children = streaming_ordered_merge::build_children(
+                &resolved,
+                &feed_range,
+                &plain_operation,
+                &directions,
+                None,
+                None,
+            )?;
+            children.append(&mut range_children);
+        }
+    }
+
+    if children.is_empty() {
+        if is_resume {
+            return Ok(Pipeline::new(Box::new(DrainedLeaf)));
+        }
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("query plan produced no partition ranges to query")
+            .build());
+    }
+
+    let root = Box::new(StreamingOrderedMerge::new(
+        plain_operation,
+        directions,
+        children,
+        query_fingerprint,
+    ));
+    Ok(Pipeline::new(root))
+}
+
+/// A saved [`OrderByRangeToken`], parsed and validated into planner-ready
+/// types.
+struct ParsedOrderByRange {
+    range: FeedRange,
+    server_continuation: Option<String>,
+    boundary: Option<ValueBoundary>,
+}
+
+/// Validates a resumed `StreamingOrderedMerge` continuation's `ORDER BY`
+/// direction and query-fingerprint discriminators against the current query,
+/// then validates and parses every saved range: well-formed, sorted,
+/// non-overlapping bounds, and a boundary whose resume-value count matches the
+/// columns and whose RID is a decodable document RID.
+fn validate_streaming_order_by_snapshot(
+    directions: &[SortOrder],
+    saved_directions: &[SortOrder],
+    query_fingerprint: &str,
+    saved_fingerprint: Option<&str>,
+    ranges: Vec<OrderByRangeToken>,
+) -> crate::error::Result<Vec<ParsedOrderByRange>> {
+    if saved_directions != directions {
+        return Err(order_by_state_invalid(format!(
+            "continuation token has ORDER BY direction(s) {saved_directions:?} but the current \
+             query has {directions:?}"
+        )));
+    }
+    // Tokens minted before the fingerprint existed carry `None` and can only
+    // be checked on `directions`.
+    if let Some(saved_fingerprint) = saved_fingerprint {
+        if saved_fingerprint != query_fingerprint {
+            return Err(order_by_state_invalid(
+                "continuation token was produced by a different query (query text, parameters, or \
+                 feed scope changed); a streaming ORDER BY token can only resume the query and \
+                 scope that minted it",
+            ));
+        }
+    }
+    if ranges.is_empty() {
+        return Err(order_by_state_invalid(
+            "continuation token has an empty StreamingOrderedMerge range list; a fully-drained \
+             operation must use the Drained shape instead",
+        ));
+    }
+
+    let mut parsed = Vec::with_capacity(ranges.len());
+    let mut prev_max: Option<EffectivePartitionKey> = None;
+    for entry in ranges {
+        let min = EffectivePartitionKey::from(entry.min_epk);
+        let max = EffectivePartitionKey::from(entry.max_epk);
+        if min >= max {
+            return Err(order_by_state_invalid(format!(
+                "continuation token has an invalid range (min `{}` >= max `{}`)",
+                min.to_hex(),
+                max.to_hex(),
+            )));
+        }
+        if let Some(prev) = &prev_max {
+            if &min < prev {
+                return Err(order_by_state_invalid(
+                    "continuation token ranges must be sorted ascending and non-overlapping",
+                ));
+            }
+        }
+        prev_max = Some(max.clone());
+
+        if let Some(boundary) = &entry.boundary {
+            if boundary.resume_values.len() != directions.len() {
+                return Err(order_by_state_invalid(format!(
+                    "continuation token range boundary has {} resume value(s) but the query has \
+                     {} ORDER BY column(s)",
+                    boundary.resume_values.len(),
+                    directions.len(),
+                )));
+            }
+            // A non-empty RID isn't enough, and neither is a decodable one:
+            // the boundary RID is compared against real backend `_rid`s by
+            // `compare_document_rids`, so it must be a *document* RID. A
+            // sibling 16-byte RID (partition key range, stored procedure, ...)
+            // would yield an arbitrary ordinal, and an undecodable one would
+            // silently degrade to raw-string ordering, which is not monotonic
+            // in document ordinal — either way the discard pass would drop or
+            // keep the wrong rows inside the boundary tie group. Reject it
+            // here, as .NET/Java do when `ResourceId.TryParse` fails.
+            if crate::models::resource_id::document_ordinal(&boundary.last_rid).is_none() {
+                return Err(order_by_state_invalid(format!(
+                    "continuation token range boundary RID `{}` is not a decodable Cosmos \
+                     document RID",
+                    boundary.last_rid,
+                )));
+            }
+            // Rust's versioned client-token boundary counts at least its own
+            // boundary row, so `skip_count` is always >= 1. This is not a
+            // restriction on the .NET-compatible resumeFilter wire contract.
+            // An explicit 0 is corrupt (a legacy token that omits the field is
+            // read back as 1 by serde default, not 0).
+            if boundary.skip_count == 0 {
+                return Err(order_by_state_invalid(
+                    "continuation token range boundary has a skip count of 0 (must be >= 1)",
+                ));
+            }
+        }
+
+        parsed.push(ParsedOrderByRange {
+            range: FeedRange::new(min, max)?,
+            server_continuation: entry.server_continuation,
+            boundary: entry.boundary,
+        });
+    }
+
+    Ok(parsed)
+}
+
+fn order_by_state_invalid(
+    message: impl Into<std::borrow::Cow<'static, str>>,
+) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID)
+        .with_message(message)
+        .build()
 }
 
 /// Builds an [`UnorderedMerge`] pipeline for change feed operations.
@@ -869,6 +1163,7 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
         PipelineNodeState::Request { .. } => "Request",
         PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
         PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
+        PipelineNodeState::StreamingOrderedMerge { .. } => "StreamingOrderedMerge",
     }
 }
 
@@ -955,6 +1250,56 @@ fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
     }
     if info.distinct_type != DistinctType::None {
         return Err(unsupported_feature("DISTINCT in cross-partition queries"));
+    }
+    Ok(())
+}
+
+/// Validates a query plan for [`build_streaming_ordered_merge`]: `ORDER BY`
+/// is expected, but every other unsupported feature (TOP, non-streaming
+/// `ORDER BY`, DISTINCT/GROUP BY/aggregates/OFFSET/LIMIT/hybrid-search) is
+/// still rejected the same way [`validate_query_info`] rejects it.
+fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error::Result<()> {
+    if plan.hybrid_search_query_info.is_some() {
+        return Err(unsupported_feature("hybrid search queries"));
+    }
+    let info = plan.query_info.as_ref().ok_or_else(|| {
+        // Precondition of `is_streaming_order_by`; an internal planner bug if violated.
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+            .with_message(
+                "internal error: streaming ORDER BY path selected with no queryInfo present",
+            )
+            .build()
+    })?;
+    if info.has_non_streaming_order_by {
+        return Err(unsupported_feature(
+            "non-streaming ORDER BY in cross-partition queries",
+        ));
+    }
+    if info.top.is_some() {
+        return Err(unsupported_feature(
+            "TOP combined with streaming ORDER BY (requires the TOP composition stage)",
+        ));
+    }
+    if info.offset.is_some() || info.limit.is_some() {
+        return Err(unsupported_feature(
+            "OFFSET/LIMIT combined with ORDER BY in cross-partition queries",
+        ));
+    }
+    if !info.aggregates.is_empty() {
+        return Err(unsupported_feature(
+            "aggregates combined with ORDER BY in cross-partition queries",
+        ));
+    }
+    if !info.group_by_expressions.is_empty() {
+        return Err(unsupported_feature(
+            "GROUP BY combined with ORDER BY in cross-partition queries",
+        ));
+    }
+    if info.distinct_type != DistinctType::None {
+        return Err(unsupported_feature(
+            "DISTINCT combined with ORDER BY in cross-partition queries",
+        ));
     }
     Ok(())
 }
@@ -2385,6 +2730,7 @@ mod tests {
             left_most_undrained_epk: "80".to_owned(),
             active_tokens: vec![],
         };
+        let resume = serde_json::from_str(&serde_json::to_string(&resume).unwrap()).unwrap();
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
@@ -2421,7 +2767,7 @@ mod tests {
             },
         ]);
         let op = cross_partition_query_operation();
-        // Both points resolve to the same single partition.
+        // Both resumed point fragments resolve to the same single partition.
         let mut topology = MockTopologyProvider::new(vec![
             Ok(vec![rr("", "FF", "pk-0")]),
             Ok(vec![rr("", "FF", "pk-0")]),
@@ -2731,5 +3077,582 @@ mod tests {
                 "front grand-child {idx} must carry T1",
             );
         }
+    }
+
+    // ── Streaming ORDER BY selection and validation ───────────────────────
+
+    fn order_by_query_info(rewritten_query: Option<&str>) -> QueryInfo {
+        QueryInfo {
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.rank".to_owned()],
+            rewritten_query: rewritten_query.map(str::to_owned),
+            ..Default::default()
+        }
+    }
+
+    fn order_by_plan(rewritten_query: Option<&str>, ranges: Vec<QueryRange>) -> QueryPlan {
+        QueryPlan {
+            partitioned_query_execution_info_version: 2,
+            query_info: Some(order_by_query_info(rewritten_query)),
+            query_ranges: ranges,
+            hybrid_search_query_info: None,
+        }
+    }
+
+    fn order_by_operation() -> CosmosOperation {
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec())
+    }
+
+    #[test]
+    fn is_streaming_order_by_true_only_for_non_empty_streaming_order_by() {
+        assert!(!is_streaming_order_by(&QueryInfo::default()));
+        assert!(is_streaming_order_by(&order_by_query_info(Some(
+            "SELECT 1"
+        ))));
+
+        let mut non_streaming = order_by_query_info(Some("SELECT 1"));
+        non_streaming.has_non_streaming_order_by = true;
+        assert!(!is_streaming_order_by(&non_streaming));
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_accepts_plain_order_by() {
+        let plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_ok());
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_rejects_non_streaming_order_by() {
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().has_non_streaming_order_by = true;
+        let err = validate_query_plan_for_streaming_order_by(&plan).unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+        );
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_rejects_top() {
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().top = Some(5);
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_rejects_offset_limit() {
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().offset = Some(1);
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().limit = Some(1);
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_rejects_aggregates_group_by_distinct() {
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().aggregates = vec!["Count".to_owned()];
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().group_by_expressions = vec!["c.a".to_owned()];
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().distinct_type = DistinctType::Ordered;
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_rejects_hybrid_search() {
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.hybrid_search_query_info =
+            Some(crate::driver::dataflow::query_plan::HybridSearchQueryInfo {
+                global_statistics_query: String::new(),
+                component_query_infos: vec![],
+                component_weights: vec![],
+                skip: None,
+                take: None,
+                requires_global_statistics: false,
+            });
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_missing_rewritten_query() {
+        let op = Arc::new(order_by_operation());
+        let plan = order_by_plan(None, vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_empty_rewritten_query() {
+        let op = Arc::new(order_by_operation());
+        let plan = order_by_plan(Some(""), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_builds_one_child_per_resolved_range() {
+        let op = Arc::new(order_by_operation());
+        let plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "80", "pk-left"),
+            rr("80", "FF", "pk-right"),
+        ])]);
+
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
+        let root = pipeline.into_root();
+        let merge = root
+            .downcast::<crate::driver::dataflow::StreamingOrderedMerge>()
+            .expect("root must be a StreamingOrderedMerge");
+        let children = merge.into_children();
+        assert_eq!(
+            children.len(),
+            2,
+            "one child per resolved physical partition"
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_empty_ranges_errors_on_fresh_start() {
+        let op = Arc::new(order_by_operation());
+        // Empty `query_ranges` exercises the "produced nothing" guard.
+        let plan = order_by_plan(Some("SELECT 1"), vec![]);
+        let mut topology = MockTopologyProvider::new(vec![]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES
+        );
+    }
+
+    /// An operation whose SQL body carries `sql` as the `query` field.
+    fn order_by_operation_with_query(sql: &str) -> CosmosOperation {
+        let body = serde_json::json!({ "query": sql, "parameters": [] });
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(serde_json::to_vec(&body).unwrap())
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_accepts_join_query() {
+        // A JOIN can emit multiple rows per document `_rid`; the resume cursor
+        // now tracks that with a `_rid`-tie skip count (mirroring .NET), so a
+        // JOIN-shaped ORDER BY builds instead of being rejected up front.
+        let op = Arc::new(order_by_operation_with_query(
+            "SELECT * FROM c JOIN t IN c.tags ORDER BY c.rank",
+        ));
+        let plan = order_by_plan(
+            Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c JOIN t IN c.tags ORDER BY c.rank ASC"),
+            vec![qr("", "FF")],
+        );
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .expect("a JOIN-shaped ORDER BY must build a pipeline");
+        assert!(
+            pipeline
+                .into_root()
+                .downcast::<crate::driver::dataflow::StreamingOrderedMerge>()
+                .is_some(),
+            "a JOIN-shaped ORDER BY builds a StreamingOrderedMerge"
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_accepts_ordinary_parameterized_order_by() {
+        // An ordinary single-source, parameterized ORDER BY builds normally
+        // (no local SQL parsing gate stands in the way).
+        let op = Arc::new(order_by_operation_with_query(
+            "SELECT * FROM c WHERE c.tenant = @t ORDER BY c.rank",
+        ));
+        let plan = order_by_plan(
+            Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"),
+            vec![qr("", "FF")],
+        );
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .expect("ordinary parameterized ORDER BY must build a pipeline");
+        assert!(
+            pipeline
+                .into_root()
+                .downcast::<crate::driver::dataflow::StreamingOrderedMerge>()
+                .is_some(),
+            "ordinary parameterized ORDER BY builds a StreamingOrderedMerge"
+        );
+    }
+
+    /// A token minted for a different query text (or different parameter
+    /// values) must be rejected: the resume filter is built client-side from
+    /// the saved boundary, so replaying it against another query silently
+    /// returns the wrong rows rather than failing at the service.
+    #[test]
+    fn streaming_order_by_snapshot_rejects_mismatched_query_fingerprint() {
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: None,
+        }];
+        let err = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "current-query",
+            Some("other-query"),
+            ranges,
+        )
+        .err()
+        .expect("a token minted by a different query must be rejected");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "got: {err}"
+        );
+    }
+
+    /// A token minted under one feed scope must not resume under another.
+    /// Nothing else binds the two: the resumed node treats its saved ranges as
+    /// authoritative, and `is_valid_for_operation` checks only the operation
+    /// kind and container RID, so without the scope in the fingerprint the
+    /// query would read outside the caller's scope.
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_token_from_a_different_feed_scope() {
+        let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec();
+        let scoped_op = |min: &str, max: &str| {
+            Arc::new(
+                CosmosOperation::query_items(
+                    test_container(),
+                    Some(
+                        FeedRange::new(
+                            EffectivePartitionKey::from(min),
+                            EffectivePartitionKey::from(max),
+                        )
+                        .unwrap(),
+                    ),
+                )
+                .with_body(body.clone()),
+            )
+        };
+        let plan = order_by_plan(
+            Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"),
+            vec![qr("", "FF")],
+        );
+
+        // Mint a token under the left half of the key space.
+        let minted = {
+            let op = scoped_op("", "80");
+            let mut topology =
+                PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0"), rr("80", "FF", "pk-1")]);
+            build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+                .await
+                .expect("fresh scoped plan must build")
+                .into_root()
+                .snapshot_state()
+                .expect("a fresh merge must snapshot")
+        };
+        assert!(
+            matches!(
+                &minted,
+                PipelineNodeState::StreamingOrderedMerge {
+                    query_fingerprint: Some(_),
+                    ..
+                }
+            ),
+            "the minted token must carry a fingerprint: {minted:?}"
+        );
+
+        // Replay it against the right half — same query text and parameters.
+        // The topology resolves against the requested range, so without the
+        // scope check this would succeed and happily query `..80` (the token's
+        // scope) while the caller asked for `80..`.
+        let op = scoped_op("80", "FF");
+        let mut topology =
+            PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0"), rr("80", "FF", "pk-1")]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(minted))
+            .await
+            .err()
+            .expect("a token minted under a different feed scope must be rejected");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "got: {err}"
+        );
+    }
+
+    /// A legacy token predating `query_fingerprint` carries `None`, so the
+    /// fingerprint check cannot catch a scope mismatch. Each saved range must
+    /// still be contained in the operation's scope, so such a token can never
+    /// read outside it. Rejected rather than clipped: narrowing a saved range
+    /// would make a stale pre-split server continuation look replayable to
+    /// `build_children`.
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_legacy_token_ranges_outside_scope() {
+        let op = Arc::new(
+            CosmosOperation::query_items(
+                test_container(),
+                Some(
+                    FeedRange::new(
+                        EffectivePartitionKey::from(""),
+                        EffectivePartitionKey::from("80"),
+                    )
+                    .unwrap(),
+                ),
+            )
+            .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec()),
+        );
+        // A legacy token spanning the whole key space: one range inside the
+        // operation's scope, one entirely outside it.
+        let resume = PipelineNodeState::StreamingOrderedMerge {
+            directions: vec![SortOrder::Ascending],
+            query_fingerprint: None,
+            ranges: vec![
+                OrderByRangeToken {
+                    min_epk: String::new(),
+                    max_epk: "80".to_owned(),
+                    server_continuation: None,
+                    boundary: None,
+                },
+                OrderByRangeToken {
+                    min_epk: "80".to_owned(),
+                    max_epk: "FF".to_owned(),
+                    server_continuation: None,
+                    boundary: None,
+                },
+            ],
+        };
+        let plan = order_by_plan(
+            Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"),
+            vec![qr("", "FF")],
+        );
+        let mut topology =
+            PhysicalTopologyProvider::new(vec![rr("", "80", "pk-0"), rr("80", "FF", "pk-1")]);
+
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resume))
+            .await
+            .expect_err("the `80..FF` saved range lies outside the operation's scope");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "got: {err}"
+        );
+    }
+
+    /// A token minted before `query_fingerprint` existed carries `None` and
+    /// still resumes — it is validated on `directions` alone.
+    #[test]
+    fn streaming_order_by_snapshot_accepts_absent_query_fingerprint() {
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: None,
+        }];
+        let parsed = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "current-query",
+            None,
+            ranges,
+        )
+        .expect("a legacy token without a fingerprint stays resumable");
+        assert_eq!(parsed.len(), 1);
+    }
+
+    /// A boundary RID that isn't a decodable Cosmos document RID must be
+    /// rejected: `compare_document_rids` would fall back to raw-string order,
+    /// which is not monotonic in document ordinal, so the discard pass would
+    /// drop or keep the wrong rows inside the boundary tie group.
+    #[test]
+    fn streaming_order_by_snapshot_rejects_undecodable_boundary_rid() {
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: "not-a-rid".to_owned(),
+                skip_count: 1,
+            }),
+        }];
+        let err = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
+            ranges,
+        )
+        .err()
+        .expect("an undecodable boundary RID must be rejected");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "got: {err}"
+        );
+    }
+
+    /// A well-formed 16-byte RID is *not* automatically a document RID: the
+    /// child-resource type nibble distinguishes documents from partition key
+    /// ranges, stored procedures, and so on. Without that check a crafted
+    /// token would pass validation and enter the numeric tie-break with an
+    /// arbitrary ordinal.
+    #[test]
+    fn streaming_order_by_snapshot_rejects_non_document_boundary_rid() {
+        // Same shape as `valid_rid`, but tagged as a partition key range.
+        let mut bytes = [0u8; 16];
+        bytes[0..8].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D, 0x80, 0x01, 0x02, 0x03]);
+        bytes[8..16].copy_from_slice(&7u64.to_le_bytes());
+        bytes[15] = 0x50;
+        let pkrange_rid = crate::models::resource_id::encode_rid(&bytes);
+
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: pkrange_rid,
+                skip_count: 1,
+            }),
+        }];
+        let err = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
+            ranges,
+        )
+        .err()
+        .expect("a non-document boundary RID must be rejected");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "got: {err}"
+        );
+    }
+
+    /// A realistic 16-byte document `_rid`, as the backend emits — the
+    /// boundary validator requires one it can decode.
+    fn valid_rid(doc_id: u64) -> String {
+        let mut bytes = [0u8; 16];
+        bytes[0..8].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D, 0x80, 0x01, 0x02, 0x03]);
+        bytes[8..16].copy_from_slice(&doc_id.to_le_bytes());
+        crate::models::resource_id::encode_rid(&bytes)
+    }
+
+    /// A boundary in a resumed `StreamingOrderedMerge` snapshot always counts
+    /// at least its own boundary row, so an explicit `skip_count` of 0 is a
+    /// corrupt token and must be rejected.
+    #[test]
+    fn streaming_order_by_snapshot_rejects_zero_skip_count() {
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: valid_rid(1),
+                skip_count: 0,
+            }),
+        }];
+        let err = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
+            ranges,
+        )
+        .err()
+        .expect("a boundary skip_count of 0 must be rejected");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "a boundary skip_count of 0 must be rejected, got: {err}"
+        );
+    }
+
+    /// The smallest well-formed boundary carries `skip_count == 1` (just the
+    /// boundary row) and validates.
+    #[test]
+    fn streaming_order_by_snapshot_accepts_skip_count_one() {
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: valid_rid(1),
+                skip_count: 1,
+            }),
+        }];
+        let parsed = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
+            ranges,
+        )
+        .expect("a well-formed boundary with skip_count 1 is valid");
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].boundary.as_ref().unwrap().skip_count, 1);
+    }
+
+    /// A legacy token that omits `skip_count` deserializes as 1 (not 0), so it
+    /// still validates — its boundary row is discarded on resume, never
+    /// re-emitted.
+    #[test]
+    fn streaming_order_by_snapshot_defaults_missing_skip_count_to_one() {
+        let token: OrderByRangeToken = serde_json::from_str(&format!(
+            r#"{{"min_epk":"","max_epk":"FF","boundary":{{"resume_values":[{{"type":"number","value":5.0}}],"last_rid":"{rid}"}}}}"#,
+            rid = valid_rid(1),
+        ))
+        .unwrap();
+        assert_eq!(token.boundary.as_ref().unwrap().skip_count, 1);
+        let parsed = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
+            vec![token],
+        )
+        .expect("a legacy boundary missing skip_count defaults to 1 and is valid");
+        assert_eq!(parsed[0].boundary.as_ref().unwrap().skip_count, 1);
     }
 }

@@ -8,8 +8,8 @@ use std::sync::Arc;
 use crate::{
     models::AccountReference,
     options::{
-        OperationOptions, PartitionFailoverOptions, Region, ThroughputControlGroupOptions,
-        ThroughputControlGroupRegistry, UserAgentSuffix,
+        HedgingOptions, OperationOptions, PartitionFailoverOptions, Region,
+        ThroughputControlGroupOptions, ThroughputControlGroupRegistry, UserAgentSuffix,
     },
 };
 
@@ -94,6 +94,14 @@ pub struct DriverOptions {
     /// behavior for the lifetime of the driver. They are independent of
     /// per-operation [`OperationOptions`].
     partition_failover_options: PartitionFailoverOptions,
+    /// Driver-level limits on simultaneous cross-region attempts.
+    ///
+    /// Hedging adds a regional attempt to complete an operation when the first is
+    /// slow. Read once at driver construction time, these options bound how many
+    /// such simultaneous attempts the driver may perform, above whatever the
+    /// per-operation [`AvailabilityStrategy`](crate::options::AvailabilityStrategy)
+    /// asks for.
+    hedging_options: HedgingOptions,
 }
 
 impl DriverOptions {
@@ -146,6 +154,11 @@ impl DriverOptions {
     pub fn partition_failover_options(&self) -> &PartitionFailoverOptions {
         &self.partition_failover_options
     }
+
+    /// Returns the driver-level cross-region hedging limits.
+    pub fn hedging_options(&self) -> &HedgingOptions {
+        &self.hedging_options
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -163,6 +176,7 @@ pub struct DriverOptionsBuilder {
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
     throughput_control_groups: ThroughputControlGroupRegistry,
     partition_failover_options: Option<PartitionFailoverOptions>,
+    hedging_options: Option<HedgingOptions>,
 }
 
 impl DriverOptionsBuilder {
@@ -177,6 +191,7 @@ impl DriverOptionsBuilder {
             fault_injection_rules: None,
             throughput_control_groups: ThroughputControlGroupRegistry::new(),
             partition_failover_options: None,
+            hedging_options: None,
         }
     }
 
@@ -293,6 +308,16 @@ impl DriverOptionsBuilder {
         self
     }
 
+    /// Sets the cross-region hedging limits for this driver.
+    ///
+    /// These are read once at driver construction time and bound how much
+    /// hedging the driver may have in flight at once, for its lifetime. See
+    /// [`HedgingOptions`] for the individual settings.
+    pub fn with_hedging_options(mut self, options: HedgingOptions) -> Self {
+        self.hedging_options = Some(options);
+        self
+    }
+
     /// Builds the [`DriverOptions`].
     ///
     /// When [`with_partition_failover_options`](Self::with_partition_failover_options)
@@ -338,6 +363,7 @@ impl DriverOptionsBuilder {
             fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
             throughput_control_groups: self.throughput_control_groups,
             partition_failover_options,
+            hedging_options: self.hedging_options.unwrap_or_default(),
         }
     }
 }

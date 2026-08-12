@@ -497,6 +497,84 @@ mod tests {
         assert!(!attrs.contains_key(attributes::ATTR_SUB_STATUS_CODE));
     }
 
+    /// Returns `(bounds, bucket_counts)` for the duration histogram.
+    fn duration_buckets(metrics: &[ResourceMetrics]) -> Option<(Vec<f64>, Vec<u64>)> {
+        for rm in metrics {
+            for sm in rm.scope_metrics() {
+                for m in sm.metrics() {
+                    if m.name() != attributes::METRIC_OPERATION_DURATION {
+                        continue;
+                    }
+                    if let AggregatedMetrics::F64(MetricData::Histogram(histogram)) = m.data() {
+                        if let Some(point) = histogram.data_points().next() {
+                            return Some((
+                                point.bounds().collect(),
+                                point.bucket_counts().collect(),
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    /// The duration histogram must be able to *distinguish* realistic Cosmos
+    /// latencies, which is the whole point of recording it as a histogram.
+    ///
+    /// This guards a failure mode that is invisible from the outside: the metric
+    /// is recorded in seconds, but OpenTelemetry's default bucket boundaries are
+    /// scaled for milliseconds. With those defaults every real operation lands in
+    /// the first bucket, `histogram_quantile` degenerates to interpolation inside
+    /// that one bucket, and p50/p95/p99 become constants that depend only on the
+    /// quantile requested. Dashboards keep drawing plausible-looking lines that
+    /// can never move, so a latency regression cannot be detected — and nothing
+    /// errors to say so.
+    ///
+    /// Asserting on *separation* rather than on the literal boundary list keeps
+    /// this a test of the property we care about: the boundaries stay free to be
+    /// re-tuned, as long as they still resolve these three latencies apart.
+    #[test]
+    fn duration_histogram_separates_realistic_latencies() {
+        let harness = test_meter();
+        let handler = CosmosMetricsHandler::with_meter(harness.meter.clone());
+        let cx = Context::new().with_value(operation_context());
+
+        // A fast point read, a slow-but-normal query, and a degraded request.
+        for millis in [2_u64, 30, 300] {
+            handler.handle(
+                &DiagnosticsContext::for_testing_completed(
+                    ActivityId::new_uuid(),
+                    Duration::from_millis(millis),
+                    Some(CosmosStatus::new(StatusCode::from(200))),
+                ),
+                &cx,
+            );
+        }
+
+        let metrics = harness.collect();
+        let (bounds, counts) =
+            duration_buckets(&metrics).expect("duration histogram should be emitted");
+
+        assert_eq!(counts.iter().sum::<u64>(), 3, "all observations recorded");
+
+        let occupied = counts.iter().filter(|c| **c > 0).count();
+        assert_eq!(
+            occupied, 3,
+            "2ms/30ms/300ms must land in 3 distinct buckets, but they occupy {occupied}; \
+             boundaries are {bounds:?}. Boundaries scaled for milliseconds collapse every \
+             real latency into one bucket and make percentiles constant."
+        );
+
+        // Guard the specific regression: seconds-valued data against
+        // millisecond-scaled boundaries. 10s is a degraded request, not a
+        // routine one, so nothing sane needs a boundary above it.
+        assert!(
+            bounds.iter().all(|b| *b <= 10.0),
+            "boundaries look millisecond-scaled for a seconds-valued metric: {bounds:?}"
+        );
+    }
+
     #[test]
     fn failure_sets_error_type_to_status_code() {
         let harness = test_meter();
