@@ -67,14 +67,14 @@ param(
     [string]   $ArtifactRoot,
     [string]   $OutputRoot,
     [string[]] $TargetId,
-    [switch]   $SkipNativeCopy
+    [switch]   $SkipNativeCopy,
+    [string]   $MatrixPath = (Join-Path $PSScriptRoot 'build-matrix.json')
 )
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
 $PipelineDir = $PSScriptRoot
-$MatrixPath  = Join-Path $PipelineDir 'build-matrix.json'
 $MetadataFilename = 'rust-driver-native-interface-metadata.json'
 if (-not $ArtifactRoot) { $ArtifactRoot = Join-Path $PipelineDir 'artifacts' }
 if (-not $OutputRoot)   { $OutputRoot   = Join-Path $PipelineDir 'generated' 'azure-cosmos-driver' }
@@ -89,19 +89,78 @@ if ($TargetId) {
 }
 if (-not $rows) { throw "No matching targets for filter: $($TargetId -join ', ')" }
 
-New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
+function Test-Property {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Object,
 
-function Get-SyslibsForRow($row) {
-    $manifestPath = Join-Path $ArtifactRoot $row.id $MetadataFilename
-    if (Test-Path $manifestPath) {
-        $m = Get-Content $manifestPath -Raw | ConvertFrom-Json
-        if ($m.native_static_libs) { return @($m.native_static_libs) }
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $null -ne $Object -and $Object.PSObject.Properties.Name -contains $Name
+}
+
+function Assert-MetadataValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$TargetId,
+
+        [Parameter(Mandatory = $true)]
+        [object]$Metadata,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+
+        [AllowNull()]
+        [object]$Expected
+    )
+
+    if (-not (Test-Property -Object $Metadata -Name $Name)) {
+        throw "[$TargetId] metadata is missing '$Name'."
     }
-    if ($matrix.reference_syslibs.PSObject.Properties.Name -contains $row.triple) {
-        Write-Warning "[$($row.id)] no manifest syslibs; using reference_syslibs."
-        return @($matrix.reference_syslibs.$($row.triple))
+
+    $actual = $Metadata.$Name
+    if ($null -eq $Expected) {
+        if ($null -ne $actual) {
+            throw "[$TargetId] metadata '$Name' mismatch: expected null, found '$actual'."
+        }
+        return
     }
-    throw "[$($row.id)] no syslibs available; run Build-NativeMatrix.ps1 first."
+
+    if ([string]$actual -cne [string]$Expected) {
+        throw "[$TargetId] metadata '$Name' mismatch: expected '$Expected', found '$actual'."
+    }
+}
+
+function Get-FileSha256 {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    (Get-FileHash $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Assert-FileHash {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$TargetId,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Description,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedHash
+    )
+
+    $actualHash = Get-FileSha256 -Path $Path
+    if ($actualHash -cne $ExpectedHash.ToLowerInvariant()) {
+        throw "[$TargetId] $Description SHA256 mismatch: metadata records '$ExpectedHash', file is '$actualHash'."
+    }
 }
 
 function Write-GeneratedTextFile {
@@ -120,8 +179,110 @@ function Write-GeneratedTextFile {
     [IO.File]::WriteAllText($Path, $normalizedContent, [Text.UTF8Encoding]::new($false))
 }
 
-$writtenGoMods = @{}
+$verifiedArtifacts = @{}
+$releaseIdentity = $null
+$releaseHeaderHash = $null
+
 foreach ($row in $rows) {
+    $targetRoot = Join-Path $ArtifactRoot $row.id
+    $manifestPath = Join-Path $targetRoot $MetadataFilename
+    if (-not (Test-Path $manifestPath -PathType Leaf)) {
+        throw "[$($row.id)] missing $MetadataFilename; run Build-NativeMatrix.ps1 first."
+    }
+
+    $metadata = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'schema_version' -Expected 2
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'artifact_id' -Expected $row.id
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'triple' -Expected $row.triple
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'goos' -Expected $row.goos
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'goarch' -Expected $row.goarch
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'libc' -Expected $row.libc
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'native_interface_crate' -Expected $matrix.native_interface_crate
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'rust_driver_crate' -Expected $matrix.rust_driver_crate
+
+    foreach ($name in @(
+        'source_commit',
+        'native_interface_version',
+        'rust_driver_version',
+        'native_static_libs',
+        'static_library',
+        'header'
+    )) {
+        if (-not (Test-Property -Object $metadata -Name $name)) {
+            throw "[$($row.id)] metadata is missing '$name'."
+        }
+    }
+    if (-not $metadata.source_commit) {
+        throw "[$($row.id)] metadata 'source_commit' must not be empty."
+    }
+    if (-not $metadata.native_interface_version -or -not $metadata.rust_driver_version) {
+        throw "[$($row.id)] metadata package versions must not be empty."
+    }
+
+    if (-not (Test-Property -Object $metadata.static_library -Name 'sha256')) {
+        throw "[$($row.id)] metadata static library is missing 'sha256'."
+    }
+    if (-not (Test-Property -Object $metadata.header -Name 'sha256')) {
+        throw "[$($row.id)] metadata header is missing 'sha256'."
+    }
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata.static_library -Name 'filename' -Expected $matrix.static_lib_filename
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata.header -Name 'filename' -Expected $matrix.header_filename
+    if (-not $metadata.header.sha256) {
+        throw "[$($row.id)] metadata header SHA256 must not be empty."
+    }
+
+    $headerPath = Join-Path $targetRoot $matrix.header_filename
+    if (-not (Test-Path $headerPath -PathType Leaf)) {
+        throw "[$($row.id)] missing $($matrix.header_filename); build the complete module first."
+    }
+    Assert-FileHash -TargetId $row.id -Description 'header' -Path $headerPath -ExpectedHash $metadata.header.sha256
+
+    $staticLibraryPath = Join-Path $targetRoot $matrix.static_lib_filename
+    if (-not $SkipNativeCopy) {
+        if (-not (Test-Path $staticLibraryPath -PathType Leaf)) {
+            throw "[$($row.id)] missing $($matrix.static_lib_filename); build the complete module first."
+        }
+        if (-not $metadata.static_library.sha256) {
+            throw "[$($row.id)] metadata static-library SHA256 must not be empty."
+        }
+        Assert-FileHash -TargetId $row.id -Description 'static library' -Path $staticLibraryPath -ExpectedHash $metadata.static_library.sha256
+    }
+
+    $identity = [ordered]@{
+        source_commit = [string]$metadata.source_commit
+        native_interface_version = [string]$metadata.native_interface_version
+        rust_driver_version = [string]$metadata.rust_driver_version
+    }
+    if ($null -eq $releaseIdentity) {
+        $releaseIdentity = $identity
+    } else {
+        foreach ($name in $identity.Keys) {
+            if ($identity[$name] -cne $releaseIdentity[$name]) {
+                throw "[$($row.id)] release identity '$name' mismatch: expected '$($releaseIdentity[$name])', found '$($identity[$name])'."
+            }
+        }
+    }
+
+    $headerHash = ([string]$metadata.header.sha256).ToLowerInvariant()
+    if ($null -eq $releaseHeaderHash) {
+        $releaseHeaderHash = $headerHash
+    } elseif ($headerHash -cne $releaseHeaderHash) {
+        throw "[$($row.id)] header SHA256 differs from the other selected targets: expected '$releaseHeaderHash', found '$headerHash'."
+    }
+
+    $verifiedArtifacts[$row.id] = [pscustomobject]@{
+        Metadata = $metadata
+        HeaderPath = $headerPath
+        StaticLibraryPath = $staticLibraryPath
+    }
+}
+
+New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
+
+$writtenGoMods = @{}
+$writtenModuleHeaders = @{}
+foreach ($row in $rows) {
+    $verifiedArtifact = $verifiedArtifacts[$row.id]
     $moduleDir = Join-Path $OutputRoot ($row.module_path -replace '/', [IO.Path]::DirectorySeparatorChar)
     New-Item -ItemType Directory -Force -Path $moduleDir | Out-Null
 
@@ -142,18 +303,15 @@ go $($matrix.go_version)
     $nativeDir = Join-Path $moduleDir ($nativeRel -replace '/', [IO.Path]::DirectorySeparatorChar)
     New-Item -ItemType Directory -Force -Path $nativeDir | Out-Null
 
-    $aSrc = Join-Path $ArtifactRoot $row.id $matrix.static_lib_filename
-    $hSrc = Join-Path $ArtifactRoot $row.id $matrix.header_filename
-    if (-not (Test-Path $hSrc)) {
-        throw "[$($row.id)] missing $($matrix.header_filename); build the complete module first."
-    }
+    $aSrc = $verifiedArtifact.StaticLibraryPath
+    $hSrc = $verifiedArtifact.HeaderPath
     Copy-Item $hSrc $nativeDir -Force
-    Copy-Item $hSrc $moduleDir -Force
+    if (-not $writtenModuleHeaders.ContainsKey($row.module_path)) {
+        Copy-Item $hSrc $moduleDir -Force
+        $writtenModuleHeaders[$row.module_path] = $true
+    }
 
     if (-not $SkipNativeCopy) {
-        if (-not (Test-Path $aSrc)) {
-            throw "[$($row.id)] missing $($matrix.static_lib_filename); build the complete module first."
-        }
         Copy-Item $aSrc $nativeDir -Force
     }
 
@@ -161,7 +319,7 @@ go $($matrix.go_version)
     $tag = "cgo && $($row.goos) && $($row.goarch)"
     if ($row.build_tag_extra) { $tag += " && $($row.build_tag_extra)" }
 
-    $syslibs = (Get-SyslibsForRow $row) -join ' '
+    $syslibs = @($verifiedArtifact.Metadata.native_static_libs) -join ' '
     $staticRuntimeLdflags = if ($row.PSObject.Properties.Name -contains 'static_runtime_ldflags') {
         @($row.static_runtime_ldflags) -join ' '
     } else {

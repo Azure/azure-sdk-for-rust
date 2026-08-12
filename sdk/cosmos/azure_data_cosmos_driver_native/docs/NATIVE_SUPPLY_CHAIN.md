@@ -54,10 +54,13 @@ The metadata records:
 - the native-interface and driver versions;
 - the Rust and Cargo tool versions;
 - the operating-system libraries required by the Go linker; and
-- the SHA256 checksums of the built libraries.
+- the SHA256 checksums of the built libraries and C header.
 
-After all targets pass their release checks, `New-GoModules.ps1` creates the
-directory layout expected by `Azure/azure-cosmos-driver`:
+Before generating output, `New-GoModules.ps1` verifies that every selected
+artifact matches its matrix identity and recorded file hashes, that all targets
+come from the same source commit and package versions, and that every target
+contains the same C header. After those checks pass, it creates the directory
+layout expected by `Azure/azure-cosmos-driver`:
 
 ```text
 azure-cosmos-driver/
@@ -87,10 +90,11 @@ authenticate the `.a`. They are different files with different bytes.
 The Go release therefore uses this chain:
 
 1. 1ES builds the `.a` from a recorded repository commit.
-2. 1ES publishes a signed SPDX inventory and a signed build record.
-3. The build writes a SHA256 checksum for the exact `.a` bytes.
-4. The downstream Go release verifies those files before accepting the library.
-5. The Go customer signs the final executable that contains the Rust library.
+2. The target job links a minimal Go/cgo program against the `.a`.
+3. 1ES publishes a signed SPDX inventory and a signed build record.
+4. The build writes a SHA256 checksum for the exact `.a` bytes.
+5. The downstream Go release verifies those files before accepting the library.
+6. The Go customer signs the final executable that contains the Rust library.
 
 No unsigned Microsoft shared library is loaded at runtime in this model. The
 `.a` becomes part of the customer's Go executable.
@@ -171,7 +175,7 @@ The intended production sequence is:
 Recorded source commit
     |
     v
-Build and publish each target through 1ES
+Build and link-smoke each target, then publish through 1ES
     |
     v
 Locate and verify the signed SPDX inventory and signed build record
@@ -204,10 +208,12 @@ After the evidence check succeeds, the publication stage runs only for a
 successful non-pull-request build of `refs/heads/main`. It uses the existing Azure
 SDK Automation GitHub App to clone the downstream repository and open a draft
 pull request. `Prepare-GoDriverPullRequest.ps1` verifies every checksum, rejects
-unexpected generated paths, replaces only module paths declared in
-`build-matrix.json`, validates the Go files, and rejects changes elsewhere in the
-repository. The target repository then requires one approval and code-owner
-approval before merge.
+unexpected generated paths, replaces the pipeline-owned `windows`, `linux`, and
+`darwin` roots with the exact generated artifact, validates the resulting paths
+and hashes, and rejects changes elsewhere in the repository. This stages retired
+generated files as deletions while preserving hand-maintained repository files.
+The target repository then requires one approval and code-owner approval before
+merge.
 
 ## Local integration test
 

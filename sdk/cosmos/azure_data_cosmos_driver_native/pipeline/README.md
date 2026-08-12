@@ -42,8 +42,12 @@ This prevents the final Go application from requiring a separately distributed
 | ---- | ------- |
 | `build-matrix.json` | Lists supported Rust targets and their Go module paths. |
 | `Build-NativeMatrix.ps1` | Builds each static library, records required system libraries, and writes release metadata. |
+| `Test-NativeLink.ps1` | Cross-links a minimal Go/cgo program against each target archive before publication. |
 | `New-GoModules.ps1` | Creates the `Azure/azure-cosmos-driver` directory layout, Go module files, cgo linker files, headers, and static libraries. |
-| `Prepare-GoDriverPullRequest.ps1` | Verifies checksums and generated paths, validates the Go modules, and stages the downstream changes. |
+| `Prepare-GoDriverPullRequest.ps1` | Verifies the artifact, synchronizes the downstream generated roots, validates the Go modules, and stages the changes. |
+| `tests/New-GoModules.Tests.ps1` | Verifies that Go module generation rejects mixed, mislabeled, or modified target artifacts. |
+| `tests/Prepare-GoDriverPullRequest.Tests.ps1` | Verifies that downstream synchronization removes retired generated files without modifying hand-maintained files. |
+| `tests/Test-NativeLink.Tests.ps1` | Verifies target metadata checks and Go link-smoke command wiring. |
 | `Invoke-LocalSupplyChain.ps1` | Runs a local end-to-end integration test without publishing anything. |
 | `native-driver.yml` | Defines the production build, evidence check, Go module artifact, and downstream draft pull request. |
 | `../docs/NATIVE_SUPPLY_CHAIN.md` | Explains how the artifacts are built and verified. |

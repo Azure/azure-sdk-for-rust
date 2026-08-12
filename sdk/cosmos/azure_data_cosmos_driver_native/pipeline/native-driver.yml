@@ -21,13 +21,13 @@ parameters:
   - name: targets
     type: object
     default:
-      - { id: windows-amd64,      pool: windows, triple: x86_64-pc-windows-gnu,    enabled: true }
-      - { id: windows-arm64,      pool: windows, triple: aarch64-pc-windows-gnu,   enabled: false } # RISK: unsupported Rust target; investigate gnullvm/msvc
-      - { id: linux-amd64-glibc,  pool: linux,   triple: x86_64-unknown-linux-gnu, enabled: true }
-      - { id: linux-arm64-glibc,  pool: linux,   triple: aarch64-unknown-linux-gnu, enabled: true }
-      - { id: linux-amd64-musl,   pool: linux,   triple: x86_64-unknown-linux-musl, enabled: true }
-      - { id: linux-arm64-musl,   pool: linux,   triple: aarch64-unknown-linux-musl, enabled: true }
-      - { id: darwin-arm64,       pool: macos,   triple: aarch64-apple-darwin,      enabled: true }
+      - { id: windows-amd64,      pool: windows, triple: x86_64-pc-windows-gnu,    cc: x86_64-w64-mingw32-gcc, enabled: true }
+      - { id: windows-arm64,      pool: windows, triple: aarch64-pc-windows-gnu,   cc: aarch64-w64-mingw32-gcc, enabled: false } # RISK: unsupported Rust target; investigate gnullvm/msvc
+      - { id: linux-amd64-glibc,  pool: linux,   triple: x86_64-unknown-linux-gnu, cc: gcc, enabled: true }
+      - { id: linux-arm64-glibc,  pool: linux,   triple: aarch64-unknown-linux-gnu, cc: aarch64-linux-gnu-gcc, enabled: true }
+      - { id: linux-amd64-musl,   pool: linux,   triple: x86_64-unknown-linux-musl, cc: musl-gcc, enabled: true }
+      - { id: linux-arm64-musl,   pool: linux,   triple: aarch64-unknown-linux-musl, cc: aarch64-linux-musl-gcc, enabled: true }
+      - { id: darwin-arm64,       pool: macos,   triple: aarch64-apple-darwin,      cc: clang, enabled: true }
 
 variables:
   crateDir: sdk/cosmos/azure_data_cosmos_driver_native
@@ -41,6 +41,14 @@ stages:
   - stage: build
     displayName: Cross-build native matrix
     jobs:
+      - job: test_generation_scripts
+        displayName: Test native generation scripts
+        pool:
+          name: $(pool-windows)
+        steps:
+          - template: /eng/common/pipelines/templates/steps/run-pester-tests.yml
+            parameters:
+              TargetDirectory: $(pipelineDir)/tests
       - ${{ each t in parameters.targets }}:
           - job: build_${{ replace(t.id, '-', '_') }}
             displayName: build ${{ t.id }}
@@ -60,6 +68,12 @@ stages:
                   -TargetId ${{ t.id }}
                   -OutputRoot $(Build.ArtifactStagingDirectory)/native
                 displayName: Build ${{ t.id }} (native libraries + metadata)
+              - pwsh: >
+                  $(pipelineDir)/Test-NativeLink.ps1
+                  -TargetId ${{ t.id }}
+                  -ArtifactRoot $(Build.ArtifactStagingDirectory)/native
+                  -CCompiler ${{ t.cc }}
+                displayName: Link smoke test ${{ t.id }}
               - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
                 parameters:
                   ArtifactName: native-${{ t.id }}

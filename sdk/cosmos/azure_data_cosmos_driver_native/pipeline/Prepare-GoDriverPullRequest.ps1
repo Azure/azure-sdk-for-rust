@@ -6,9 +6,10 @@
 Validates generated Go modules and stages them in an azure-cosmos-driver checkout.
 
 .DESCRIPTION
-Verifies SHA256SUMS, rejects unexpected generated paths, replaces only the module
-paths declared in build-matrix.json, validates the Go files, and stages the
-resulting downstream changes. The script does not push or open a pull request.
+Verifies SHA256SUMS, rejects unexpected generated paths, synchronizes the
+pipeline-owned platform roots to the exact generated artifact, validates the Go
+files, and stages the resulting downstream changes. The script does not push or
+open a pull request.
 #>
 [CmdletBinding()]
 param(
@@ -49,6 +50,22 @@ function Get-NormalizedRelativePath {
     )
 
     [IO.Path]::GetRelativePath($Root, $Path).Replace('\', '/')
+}
+
+$managedRoots = @('windows', 'linux', 'darwin')
+
+function Test-IsManagedPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    foreach ($root in $managedRoots) {
+        if ($Path.StartsWith("$root/", [StringComparison]::Ordinal)) {
+            return $true
+        }
+    }
+    return $Path -eq 'SHA256SUMS'
 }
 
 $generatedRootPath = (Resolve-Path $GeneratedRoot).Path
@@ -152,12 +169,74 @@ if ($missingChecksums.Count -gt 0 -or $unexpectedChecksums.Count -gt 0) {
     throw "SHA256SUMS does not match the generated libraries. Missing: [$($missingChecksums -join ', ')]; unexpected: [$($unexpectedChecksums -join ', ')]."
 }
 
+foreach ($root in $managedRoots) {
+    $managedRootPath = Join-Path $checkoutRootPath $root
+    if (-not (Test-Path $managedRootPath)) {
+        continue
+    }
+
+    $managedRootItem = Get-Item $managedRootPath -Force
+    if (-not $managedRootItem.PSIsContainer) {
+        throw "Managed generated root is not a directory: '$root'."
+    }
+    if ($managedRootItem.LinkType -or ($managedRootItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw "Managed generated root is a link or reparse point: '$root'."
+    }
+    $linkedManagedPaths = @(
+        Get-ChildItem $managedRootPath -Recurse -Force |
+            Where-Object { $_.LinkType -or ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) } |
+            ForEach-Object { Get-NormalizedRelativePath -Root $checkoutRootPath -Path $_.FullName }
+    )
+    if ($linkedManagedPaths.Count -gt 0) {
+        throw "Managed generated root contains links or reparse points: $($linkedManagedPaths -join ', ')"
+    }
+    Remove-Item $managedRootPath -Recurse -Force
+}
+
+$checkoutChecksumPath = Join-Path $checkoutRootPath 'SHA256SUMS'
+if (Test-Path $checkoutChecksumPath) {
+    $checksumItem = Get-Item $checkoutChecksumPath -Force
+    if (-not $checksumItem.PSIsContainer -and
+        -not $checksumItem.LinkType -and
+        -not ($checksumItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        Remove-Item $checkoutChecksumPath -Force
+    }
+    else {
+        throw "Managed generated path is not a regular file: 'SHA256SUMS'."
+    }
+}
+
 foreach ($relativePath in $expectedFiles) {
     $source = Join-Path $generatedRootPath $relativePath
     $destination = Join-Path $checkoutRootPath $relativePath
     $destinationDirectory = Split-Path -Parent $destination
     New-Item -ItemType Directory -Force -Path $destinationDirectory | Out-Null
     Copy-Item $source $destination -Force
+}
+
+$destinationFiles = @(
+    foreach ($root in $managedRoots) {
+        $managedRootPath = Join-Path $checkoutRootPath $root
+        if (Test-Path $managedRootPath) {
+            Get-ChildItem $managedRootPath -Recurse -File |
+                ForEach-Object { Get-NormalizedRelativePath -Root $checkoutRootPath -Path $_.FullName }
+        }
+    }
+    if (Test-Path $checkoutChecksumPath -PathType Leaf) {
+        'SHA256SUMS'
+    }
+)
+$missingDestinationFiles = @($expectedFiles | Where-Object { $_ -notin $destinationFiles })
+$unexpectedDestinationFiles = @($destinationFiles | Where-Object { -not $expectedFiles.Contains($_) })
+if ($missingDestinationFiles.Count -gt 0 -or $unexpectedDestinationFiles.Count -gt 0) {
+    throw "Downstream generated layout does not match the artifact. Missing: [$($missingDestinationFiles -join ', ')]; unexpected: [$($unexpectedDestinationFiles -join ', ')]."
+}
+foreach ($relativePath in $expectedFiles) {
+    $sourceHash = (Get-FileHash (Join-Path $generatedRootPath $relativePath) -Algorithm SHA256).Hash
+    $destinationHash = (Get-FileHash (Join-Path $checkoutRootPath $relativePath) -Algorithm SHA256).Hash
+    if ($sourceHash -cne $destinationHash) {
+        throw "Downstream generated file differs from the artifact: '$relativePath'."
+    }
 }
 
 $goFiles = @(
@@ -209,7 +288,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $unexpectedChanges = @(
     $changedPaths |
-        Where-Object { -not $expectedFiles.Contains($_) }
+        Where-Object { -not (Test-IsManagedPath -Path $_) }
 )
 if ($unexpectedChanges.Count -gt 0) {
     throw "Downstream checkout contains changes outside the generated file allowlist: $($unexpectedChanges -join ', ')"
