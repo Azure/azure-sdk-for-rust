@@ -1088,9 +1088,12 @@ pub struct BlobContainerClientGetPropertiesOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobContainerClient::list_blobs()`
+/// Options to be passed to `BlobContainerClient::list_blobs_hierarchical_internal()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientListBlobsOptions<'a> {
+pub struct BlobContainerClientListBlobsHierarchicalInternalOptions<'a> {
+    /// Filters the results to return only names that are ordered before this value. Currently only applies to Apache Arrow scenario.
+    pub end_before: Option<String>,
+
     /// Specify to include additional, optional information.
     pub include: Option<Vec<ListBlobsIncludeItem>>,
 
@@ -1102,7 +1105,7 @@ pub struct BlobContainerClientListBlobsOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: PagerOptions<'a>,
+    pub method_options: ClientMethodOptions<'a>,
 
     /// Filters the results to return only resources whose name begins with the specified prefix.
     pub prefix: Option<String>,
@@ -1115,10 +1118,67 @@ pub struct BlobContainerClientListBlobsOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-impl BlobContainerClientListBlobsOptions<'_> {
-    /// Transforms this [`BlobContainerClientListBlobsOptions`] into a new `BlobContainerClientListBlobsOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
-        BlobContainerClientListBlobsOptions {
+/// Options to be passed to `BlobContainerClient::list_blobs_internal()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobContainerClientListBlobsInternalOptions<'a> {
+    /// Filters the results to return only names that are ordered before this value. Currently only applies to Apache Arrow scenario.
+    pub end_before: Option<String>,
+
+    /// Specify to include additional, optional information.
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// Filters the results to return only resources whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
+    /// list, multiple entity levels are supported. (Inclusive)
+    pub start_from: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `BlobContainerClient::list_blobs_xml()`
+#[derive(Clone, Default, SafeDebug)]
+pub(crate) struct BlobContainerClientListBlobsXmlOptions<'a> {
+    /// Specify to include additional, optional information.
+    pub(crate) include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub(crate) marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub(crate) maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub(crate) method_options: PagerOptions<'a>,
+
+    /// Filters the results to return only resources whose name begins with the specified prefix.
+    pub(crate) prefix: Option<String>,
+
+    /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
+    /// list, multiple entity levels are supported. (Inclusive)
+    pub(crate) start_from: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub(crate) timeout: Option<i32>,
+}
+
+impl BlobContainerClientListBlobsXmlOptions<'_> {
+    /// Transforms this [`BlobContainerClientListBlobsXmlOptions`] into a new `BlobContainerClientListBlobsXmlOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> BlobContainerClientListBlobsXmlOptions<'static> {
+        BlobContainerClientListBlobsXmlOptions {
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,

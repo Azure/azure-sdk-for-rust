@@ -7,7 +7,8 @@ use super::{
     AccessTier, AccountKind, ArchiveStatus, BlobCopySourceTags, BlobDeleteType, BlobType,
     BlockListType, CopyStatus, DeleteSnapshotsOptionType, EncryptionAlgorithmType,
     FileShareTokenIntent, FilterBlobsIncludeItem, GeoReplicationStatusType, ImmutabilityPolicyMode,
-    LeaseDuration, LeaseState, LeaseStatus, ListBlobsIncludeItem, ListContainersIncludeType,
+    LeaseDuration, LeaseState, LeaseStatus, ListBlobsHierarchicalInternalResponseContentType,
+    ListBlobsIncludeItem, ListBlobsInternalResponseContentType, ListContainersIncludeType,
     PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority, SequenceNumberActionType,
     SkuName, StorageErrorCode,
 };
@@ -336,6 +337,25 @@ impl Serialize for LeaseStatus {
     }
 }
 
+impl<'de> Deserialize<'de> for ListBlobsHierarchicalInternalResponseContentType {
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for ListBlobsHierarchicalInternalResponseContentType {
+    fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        s.serialize_str(self.as_ref())
+    }
+}
+
 impl<'de> Deserialize<'de> for ListBlobsIncludeItem {
     fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
     where
@@ -347,6 +367,25 @@ impl<'de> Deserialize<'de> for ListBlobsIncludeItem {
 }
 
 impl Serialize for ListBlobsIncludeItem {
+    fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        s.serialize_str(self.as_ref())
+    }
+}
+
+impl<'de> Deserialize<'de> for ListBlobsInternalResponseContentType {
+    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for ListBlobsInternalResponseContentType {
     fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
     where
         S: Serializer,

@@ -7,7 +7,8 @@ use super::{
     AccessTier, AccountKind, ArchiveStatus, BlobCopySourceTags, BlobDeleteType, BlobType,
     BlockListType, CopyStatus, DeleteSnapshotsOptionType, EncryptionAlgorithmType,
     FileShareTokenIntent, FilterBlobsIncludeItem, GeoReplicationStatusType, ImmutabilityPolicyMode,
-    LeaseDuration, LeaseState, LeaseStatus, ListBlobsIncludeItem, ListContainersIncludeType,
+    LeaseDuration, LeaseState, LeaseStatus, ListBlobsHierarchicalInternalResponseContentType,
+    ListBlobsIncludeItem, ListBlobsInternalResponseContentType, ListContainersIncludeType,
     PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority, SequenceNumberActionType,
     SkuName, StorageErrorCode,
 };
@@ -706,6 +707,47 @@ impl Display for LeaseStatus {
     }
 }
 
+impl FromStr for ListBlobsHierarchicalInternalResponseContentType {
+    type Err = Error;
+    fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err> {
+        Ok(match s {
+            "application/vnd.apache.arrow.stream" => {
+                ListBlobsHierarchicalInternalResponseContentType::ApplicationVndApacheArrowStream
+            }
+            "application/xml" => ListBlobsHierarchicalInternalResponseContentType::ApplicationXml,
+            _ => {
+                return Err(Error::with_message_fn(ErrorKind::DataConversion, || {
+                    format!("unknown variant of ListBlobsHierarchicalInternalResponseContentType found: \"{s}\"")
+                }))
+            }
+        })
+    }
+}
+
+impl AsRef<str> for ListBlobsHierarchicalInternalResponseContentType {
+    fn as_ref(&self) -> &str {
+        match self {
+            ListBlobsHierarchicalInternalResponseContentType::ApplicationVndApacheArrowStream => {
+                "application/vnd.apache.arrow.stream"
+            }
+            ListBlobsHierarchicalInternalResponseContentType::ApplicationXml => "application/xml",
+        }
+    }
+}
+
+impl Display for ListBlobsHierarchicalInternalResponseContentType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result {
+        match self {
+            ListBlobsHierarchicalInternalResponseContentType::ApplicationVndApacheArrowStream => {
+                Display::fmt("application/vnd.apache.arrow.stream", f)
+            }
+            ListBlobsHierarchicalInternalResponseContentType::ApplicationXml => {
+                Display::fmt("application/xml", f)
+            }
+        }
+    }
+}
+
 impl FromStr for ListBlobsIncludeItem {
     type Err = Error;
     fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err> {
@@ -759,6 +801,49 @@ impl Display for ListBlobsIncludeItem {
             ListBlobsIncludeItem::Tags => Display::fmt("tags", f),
             ListBlobsIncludeItem::UncommittedBlobs => Display::fmt("uncommittedblobs", f),
             ListBlobsIncludeItem::Versions => Display::fmt("versions", f),
+        }
+    }
+}
+
+impl FromStr for ListBlobsInternalResponseContentType {
+    type Err = Error;
+    fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err> {
+        Ok(match s {
+            "application/vnd.apache.arrow.stream" => {
+                ListBlobsInternalResponseContentType::ApplicationVndApacheArrowStream
+            }
+            "application/xml" => ListBlobsInternalResponseContentType::ApplicationXml,
+            _ => {
+                return Err(Error::with_message_fn(ErrorKind::DataConversion, || {
+                    format!(
+                        "unknown variant of ListBlobsInternalResponseContentType found: \"{s}\""
+                    )
+                }))
+            }
+        })
+    }
+}
+
+impl AsRef<str> for ListBlobsInternalResponseContentType {
+    fn as_ref(&self) -> &str {
+        match self {
+            ListBlobsInternalResponseContentType::ApplicationVndApacheArrowStream => {
+                "application/vnd.apache.arrow.stream"
+            }
+            ListBlobsInternalResponseContentType::ApplicationXml => "application/xml",
+        }
+    }
+}
+
+impl Display for ListBlobsInternalResponseContentType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result {
+        match self {
+            ListBlobsInternalResponseContentType::ApplicationVndApacheArrowStream => {
+                Display::fmt("application/vnd.apache.arrow.stream", f)
+            }
+            ListBlobsInternalResponseContentType::ApplicationXml => {
+                Display::fmt("application/xml", f)
+            }
         }
     }
 }
