@@ -27,6 +27,27 @@
 #define COSMOS_STATUS_HTTP(code) ((int)((uint32_t)(code) >> 16))
 #define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))
 
+// Discriminants for `cosmos_partition_key_component_t.kind`.
+// Emitted here (rather than as `pub const` in Rust) so cbindgen's
+// `export.prefix = "cosmos_"` does not double-prefix them into
+// `cosmos_COSMOS_*`. Values must stay in sync with the associated
+// consts on `CosmosPartitionKeyComponentKind` in
+// `src/partition_key.rs`.
+#define COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING    0
+#define COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER    1
+#define COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL      2
+#define COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL      3
+#define COSMOS_PARTITION_KEY_COMPONENT_KIND_UNDEFINED 4
+
+// Discriminants for `cosmos_value_t.kind`. Values must stay in
+// sync with the associated consts on `CosmosValueKind` in
+// `src/response_header.rs`.
+#define COSMOS_VALUE_KIND_STRING 0
+#define COSMOS_VALUE_KIND_I64    1
+#define COSMOS_VALUE_KIND_F64    2
+#define COSMOS_VALUE_KIND_BOOL   3
+#define COSMOS_VALUE_KIND_U64    4
+
 /**
  * Per spec section 3.6.1, every completion has exactly one of these outcomes.
  *
@@ -449,47 +470,6 @@ enum cosmos_CosmosContentResponseOnWriteOpt
 typedef enum cosmos_CosmosContentResponseOnWriteOpt cosmos_CosmosContentResponseOnWriteOpt;
 #else
 typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
-#endif // __STDC_VERSION__ >= 202311L
-#endif // __cplusplus
-
-/**
- * Discriminant for a [`CosmosPartitionKeyComponent`].
- *
- * Stored on the component as a raw `i32` (validated, never transmuted), so an
- * out-of-range host value yields `400` / `CLIENT_FFI_INVALID_OPTION_VALUE`
- * instead of UB.
- */
-enum cosmos_partition_key_component_kind_t
-#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
-  : int32_t
-#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
- {
-  /**
-   * String component — read from `string_value`.
-   */
-  COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING = 0,
-  /**
-   * Numeric component — read from `number_value` (must be finite).
-   */
-  COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER = 1,
-  /**
-   * Boolean component — read from `bool_value` (`0` = false, else true).
-   */
-  COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL = 2,
-  /**
-   * Explicit JSON `null` component — no value field is read.
-   */
-  COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL = 3,
-  /**
-   * `undefined` (missing-value) component — no value field is read.
-   */
-  COSMOS_PARTITION_KEY_COMPONENT_KIND_UNDEFINED = 4,
-};
-#ifndef __cplusplus
-#if __STDC_VERSION__ >= 202311L
-typedef enum cosmos_partition_key_component_kind_t cosmos_partition_key_component_kind_t;
-#else
-typedef int32_t cosmos_partition_key_component_kind_t;
 #endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
@@ -1001,27 +981,90 @@ typedef struct cosmos_bytes_t {
 } cosmos_bytes_t;
 
 /**
- * Layout of the `cosmos_completion_queue_options_t` struct as it appears at the C ABI
- * boundary. Caller-owned, pass-by-value (per section 3.1.2 the layout is published
- * for inputs).
+ * Layout of the `cosmos_completion_queue_options_t` struct as it appears at
+ * the C ABI boundary. Caller-owned, pass-by-value (per section 3.1.2 the
+ * layout is published for inputs).
+ *
+ * The Rust representation does **not** derive `Copy` — nor is it materialized
+ * by value from a caller-supplied pointer — because `include_error_details`
+ * is declared as `bool` in the emitted C header. Materializing an
+ * arbitrary caller byte through a Rust `bool` would be undefined behavior,
+ * so `cqoptions_from_ptr` reads each field byte-by-byte via
+ * [`std::ptr::addr_of!`] and inspects the boolean byte as a raw `u8`.
  */
 typedef struct cosmos_completion_queue_options_t {
   uint32_t capacity_hint;
   uint32_t max_capacity;
   /**
-   * Whether to capture rich error payloads, as a C boolean (`0` = false,
-   * non-zero = true). Read as a `u8` rather than a Rust `bool` so an
-   * arbitrary host-written byte cannot produce an invalid `bool` (which
-   * would be undefined behavior).
+   * Whether to capture rich error payloads. Emitted as a C `bool`; the
+   * wrapper reads the underlying byte via a raw pointer and treats any
+   * non-zero value as `true`, so an arbitrary host-written byte cannot
+   * produce an invalid Rust `bool` (which would be undefined behavior).
    */
-  uint8_t include_error_details;
+  bool include_error_details;
 } cosmos_completion_queue_options_t;
+
+/**
+ * Payload half of the [`CosmosValue`] tagged union. Only the field selected
+ * by the sibling `kind` discriminant may be read; reading any other field is
+ * undefined behavior.
+ *
+ * The wrapper only ever writes this union (Rust → C direction), so hosts
+ * observing a well-formed `CosmosValue` never see an invalid bit pattern
+ * under a given kind.
+ */
+typedef union cosmos_value_payload_t {
+  /**
+   * Borrowed NUL-terminated UTF-8 string, valid until the owning
+   * completion is freed. Read iff `kind == CosmosValueKind::STRING`.
+   */
+  const char *string_value;
+  /**
+   * Signed 64-bit integer. Read iff `kind == CosmosValueKind::I64`.
+   */
+  int64_t i64_value;
+  /**
+   * 64-bit floating-point value. Read iff `kind == CosmosValueKind::F64`.
+   */
+  double f64_value;
+  /**
+   * Boolean value. Read iff `kind == CosmosValueKind::BOOL`.
+   */
+  bool bool_value;
+  /**
+   * Unsigned 64-bit integer. Read iff `kind == CosmosValueKind::U64`.
+   */
+  uint64_t u64_value;
+} cosmos_value_payload_t;
+
+/**
+ * A tagged union carrying a header (or, in the future, diagnostic) value in
+ * its native type — a string, signed integer, floating point number, or
+ * boolean. Numeric headers avoid the stringify-on-emit / parse-on-read round
+ * trip the earlier `*const c_char`-only surface required.
+ *
+ * The `kind` field is a `u8` matching a [`CosmosValueKind`] discriminant.
+ * The wrapper is the sole producer of these values so hosts never observe
+ * an out-of-range kind in practice; forward-compat readers should still
+ * treat an unrecognized discriminant as "unknown / skip".
+ */
+typedef struct cosmos_value_t {
+  /**
+   * Which payload field is active, matching a [`CosmosValueKind`].
+   */
+  uint8_t kind;
+  /**
+   * Native-typed payload; read the field selected by `kind`.
+   */
+  union cosmos_value_payload_t payload;
+} cosmos_value_t;
 
 /**
  * A single response header as an `(id, value)` pair.
  *
- * The `value` pointer is a borrowed NUL-terminated UTF-8 string valid for the
- * lifetime of the owning completion (until it is freed). Use
+ * The `value` carries the header's native type via a [`CosmosValue`] tagged
+ * union — string payloads borrow storage owned by the completion (valid
+ * until it is freed), while numeric and boolean payloads live inline. Use
  * [`cosmos_header_name`] to resolve `id` to its canonical wire name.
  */
 typedef struct cosmos_response_header_t {
@@ -1030,9 +1073,9 @@ typedef struct cosmos_response_header_t {
    */
   cosmos_header_id_t id;
   /**
-   * Borrowed header value (NUL-terminated UTF-8).
+   * Native-typed header value (see [`CosmosValue`] / [`CosmosValueKind`]).
    */
-  const char *value;
+  struct cosmos_value_t value;
 } cosmos_response_header_t;
 
 /**
@@ -1045,12 +1088,27 @@ typedef struct cosmos_response_header_t {
  * **borrowed** — valid only until the free. To retain any string / body past
  * the free, the host must copy it into its own memory first.
  *
- * Error detail is **inline** (`http_status_code` / `sub_status` / `message` /
- * …) rather than a separate error handle. The degenerate driver-creation and
- * container-resolution completions carry their result in the owned `driver` /
- * `container` fields, which the host may detach with
- * [`cosmos_completion_take_driver`] / [`cosmos_completion_take_container`]
- * (otherwise the free reclaims them).
+ * Header-derived response metadata (activity id, session token, ETag,
+ * server continuation, request charge, sub-status, retry-after) is carried
+ * **exclusively** in the [`headers`](Self::headers) list, each entry
+ * tagged with its stable [`CosmosHeaderId`](crate::response_header::CosmosHeaderId) and typed via
+ * [`CosmosValue`](crate::response_header::CosmosValue). Only genuinely
+ * non-header signals live inline:
+ *
+ * - The completion / operation lifecycle (outcome, coarse status,
+ *   user data, cancellation flag).
+ * - The wire HTTP status code and error metadata (`http_status_code`,
+ *   `is_from_wire`, `message`, `backtrace`) — none of which appear as
+ *   response headers.
+ * - The planner-derived `next_continuation` — distinct from the
+ *   `x-ms-continuation` server header, which sits in the header list.
+ * - The `body` bytes and the degenerate `driver` / `container` owned
+ *   side-payloads.
+ *
+ * The degenerate driver-creation and container-resolution completions
+ * carry their result in the owned `driver` / `container` fields, which the
+ * host may detach with [`cosmos_completion_take_driver`] /
+ * [`cosmos_completion_take_container`] (otherwise the free reclaims them).
  */
 typedef struct cosmos_completion_t {
   /**
@@ -1075,18 +1133,6 @@ typedef struct cosmos_completion_t {
    */
   uint16_t http_status_code;
   /**
-   * Cosmos sub-status code, or `-1` when absent.
-   */
-  int32_t sub_status;
-  /**
-   * Request charge in Request Units, or `0.0` when absent.
-   */
-  double request_charge;
-  /**
-   * Retry-after hint in milliseconds, or `-1` when absent.
-   */
-  int64_t retry_after_ms;
-  /**
    * `1` iff an error completion originated from a service wire response.
    */
   uint8_t is_from_wire;
@@ -1096,24 +1142,10 @@ typedef struct cosmos_completion_t {
    */
   const char *message;
   /**
-   * Borrowed activity id, or NULL when absent.
-   */
-  const char *activity_id;
-  /**
-   * Borrowed session token, or NULL when absent.
-   */
-  const char *session_token;
-  /**
-   * Borrowed ETag, or NULL when absent.
-   */
-  const char *etag;
-  /**
-   * Borrowed server-header continuation token, or NULL when absent.
-   */
-  const char *continuation;
-  /**
    * Borrowed planner-derived next-page continuation token, or NULL when this
-   * was the last page / not a feed response.
+   * was the last page / not a feed response. Distinct from the
+   * `x-ms-continuation` server header, which is carried in
+   * [`headers`](Self::headers) instead.
    */
   const char *next_continuation;
   /**
@@ -1123,7 +1155,30 @@ typedef struct cosmos_completion_t {
   /**
    * Borrowed `(id, value)` response-header list; NULL when empty. Resolve
    * each id to its wire name with
-   * [`cosmos_header_name`](crate::response_header::cosmos_header_name).
+   * [`cosmos_header_name`](crate::response_header::cosmos_header_name),
+   * and read each entry's native-typed value through its
+   * [`CosmosValue`](crate::response_header::CosmosValue) — this is the
+   * single source of truth for header-derived metadata such as the
+   * request charge, activity id, ETag, session token, sub-status,
+   * continuation, and retry-after.
+   *
+   * **Presence / absence contract:** each header id appears **only when
+   * the service (or the driver's synthesis path) actually produced a
+   * value for it** — there are no placeholder entries. Bindings must
+   * treat a missing id as absent and apply their own default. Earlier
+   * revisions of this struct exposed a handful of scalars inline with
+   * fixed sentinels; the equivalent missing-id defaults callers should
+   * substitute are:
+   *
+   * | Former inline field | Header id | Missing-id default |
+   * |---------------------|-----------|--------------------|
+   * | `request_charge: f64` | `CosmosHeaderIdRequestCharge` | `0.0` |
+   * | `sub_status: i32` | `CosmosHeaderIdSubStatus` | `-1` |
+   * | `retry_after_ms: i64` | `CosmosHeaderIdRetryAfterMs` | `-1` |
+   * | `activity_id: *const c_char` | `CosmosHeaderIdActivityId` | `NULL` |
+   * | `session_token: *const c_char` | `CosmosHeaderIdSessionToken` | `NULL` |
+   * | `etag: *const c_char` | `CosmosHeaderIdEtag` | `NULL` |
+   * | `continuation: *const c_char` | `CosmosHeaderIdContinuation` | `NULL` |
    */
   const struct cosmos_response_header_t *headers;
   /**
@@ -1304,20 +1359,18 @@ typedef struct cosmos_driver_options_config_t {
 } cosmos_driver_options_config_t;
 
 /**
- * One component of a hierarchical partition key, assembled inline by the host
- * (a C-style tagged union: a `kind` tag plus all possible value fields).
+ * Payload half of a [`CosmosPartitionKeyComponent`] — a C `union` whose
+ * active field is selected by the sibling `kind` discriminant. Only the
+ * field selected by `kind` may be read; the others are ignored (the
+ * `Null` / `Undefined` kinds do not read any payload field at all).
  *
- * This lets a calling SDK assemble a whole partition key in a single array
- * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest)
- * or [`cosmos_partition_key_create`]. Only the field selected
- * by `kind` is read; the others are ignored.
+ * The boolean payload is exposed as a plain `u8` (rather than a Rust
+ * `bool`) so any host-written byte is a defined value: zero encodes
+ * `false`, any non-zero byte encodes `true`. This avoids the undefined
+ * behavior that would arise if a caller wrote a byte other than `0x00`
+ * or `0x01` into a `bool`-typed field.
  */
-typedef struct cosmos_partition_key_component_t {
-  /**
-   * Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
-   * discriminant.
-   */
-  int32_t kind;
+typedef union cosmos_partition_key_component_value_t {
   /**
    * String payload (NUL-terminated UTF-8). Read iff `kind` is `String`.
    */
@@ -1327,11 +1380,37 @@ typedef struct cosmos_partition_key_component_t {
    */
   double number_value;
   /**
-   * Boolean payload (`0` = false, non-zero = true). Read iff `kind` is
-   * `Bool`. Taken as `u8` so an arbitrary host byte cannot form an invalid
-   * `bool` (which would be undefined behavior).
+   * Boolean payload as `u8`: `0` encodes `false`, any non-zero byte
+   * encodes `true`. Read iff `kind` is `Bool`. Typed as `u8` rather
+   * than a Rust `bool` so an arbitrary host-written byte is always a
+   * defined value.
    */
   uint8_t bool_value;
+} cosmos_partition_key_component_value_t;
+
+/**
+ * One component of a hierarchical partition key, assembled inline by the host
+ * (a C-style tagged union: a `kind` tag plus a value `union` sharing storage
+ * across every possible payload).
+ *
+ * This lets a calling SDK assemble a whole partition key in a single array
+ * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest)
+ * or [`cosmos_partition_key_create`]. Only the union field selected by `kind`
+ * is read; the others are ignored.
+ */
+typedef struct cosmos_partition_key_component_t {
+  /**
+   * Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
+   * discriminant. Stored as `u8` so every host-written byte is a
+   * defined value — an out-of-range kind falls through to the wildcard
+   * branch of the reader's match and is rejected with
+   * `INVALID_OPTION_VALUE`.
+   */
+  uint8_t kind;
+  /**
+   * The union payload; read the field selected by `kind`.
+   */
+  union cosmos_partition_key_component_value_t value;
 } cosmos_partition_key_component_t;
 
 /**
