@@ -151,6 +151,7 @@ fn row_to_blob_item(batch: &RecordBatch, row: usize) -> BlobItem {
         encryption_key_sha256: string_at(batch, "CustomerProvidedKeySha256", row),
         encryption_scope: string_at(batch, "EncryptionScope", row),
         etag: string_at(batch, "Etag", row).map(Etag::from),
+        expires_on: timestamp_at(batch, "Expiry-Time", row),
         immutability_policy_expires_on: timestamp_at(batch, "ImmutabilityPolicyUntilDate", row),
         immutability_policy_mode: string_at(batch, "ImmutabilityPolicyMode", row)
             .and_then(|value| value.parse().ok()),
@@ -437,6 +438,7 @@ mod tests {
             ("CustomerProvidedKeySha256", s("cpk-sha")),
             ("EncryptionScope", s("scope-1")),
             ("Etag", s("0xETAG")),
+            ("Expiry-Time", ts(8_000_000)),
             ("ImmutabilityPolicyUntilDate", ts(6_000_000)),
             ("ImmutabilityPolicyMode", s("unlocked")),
             ("IncrementalCopy", b(false)),
@@ -504,6 +506,7 @@ mod tests {
         assert_eq!(Some("cpk-sha".to_string()), props.encryption_key_sha256);
         assert_eq!(Some("scope-1".to_string()), props.encryption_scope);
         assert_eq!(Some(Etag::from("0xETAG")), props.etag);
+        assert_eq!(Some(expected_ts(8_000_000)), props.expires_on);
         assert_eq!(
             Some(expected_ts(6_000_000)),
             props.immutability_policy_expires_on
@@ -707,5 +710,68 @@ mod tests {
     #[test]
     fn missing_content_type_defaults_to_xml() {
         assert!(matches!(wire_format(&Headers::new()), Ok(WireFormat::Xml)));
+    }
+
+    #[test]
+    fn arrow_contract_covers_every_model_field() {
+        // Compile-time guard: adding a field to `BlobItem`/`BlobProperties` breaks this
+        // exhaustive destructure until `row_to_blob_item` is updated to map it, preventing
+        // the Arrow path from silently dropping model fields the XML path would populate.
+        let item = row_to_blob_item(&batch(vec![("Name", s("guard"))]), 0);
+        let BlobItem {
+            blob_tags: _,
+            deleted: _,
+            has_versions_only: _,
+            is_current_version: _,
+            metadata: _,
+            name: _,
+            object_replication_metadata: _,
+            properties,
+            snapshot: _,
+            version_id: _,
+        } = item;
+        let BlobProperties {
+            access_tier: _,
+            access_tier_change_time: _,
+            access_tier_inferred: _,
+            archive_status: _,
+            blob_sequence_number: _,
+            blob_type: _,
+            cache_control: _,
+            content_disposition: _,
+            content_encoding: _,
+            content_language: _,
+            content_length: _,
+            content_md5: _,
+            content_type: _,
+            copy_completion_time: _,
+            copy_id: _,
+            copy_progress: _,
+            copy_source: _,
+            copy_status: _,
+            copy_status_description: _,
+            creation_time: _,
+            deleted_time: _,
+            destination_snapshot: _,
+            encryption_key_sha256: _,
+            encryption_scope: _,
+            etag: _,
+            expires_on: _,
+            immutability_policy_expires_on: _,
+            immutability_policy_mode: _,
+            incremental_copy: _,
+            is_sealed: _,
+            last_accessed_on: _,
+            last_modified: _,
+            lease_duration: _,
+            lease_state: _,
+            lease_status: _,
+            legal_hold: _,
+            rehydrate_priority: _,
+            remaining_retention_days: _,
+            server_encrypted: _,
+            smart_access_tier: _,
+            tag_count: _,
+        } = properties.expect("properties should be set");
     }
 }

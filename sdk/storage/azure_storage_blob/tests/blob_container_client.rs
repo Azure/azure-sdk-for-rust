@@ -7,18 +7,19 @@ use azure_core::{
     http::{RequestContent, StatusCode},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
 };
-use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
+use azure_core_test::{recorded, Matcher, TestContext, TestMode, VarOptions};
 use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
-    AccessPolicy, AccessTier, AccountKind, ArchiveStatus, BlobClientSetTierOptions,
+    AccessPolicy, AccessTier, AccountKind, ArchiveStatus, BlobClientGetPropertiesResultHeaders,
+    BlobClientSetImmutabilityPolicyOptions, BlobClientSetTierOptions,
     BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientBreakLeaseOptions,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientCreateOptions,
     BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccountInfoResultHeaders,
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
-    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseDuration,
-    LeaseState, LeaseStatus, ListBlobsAcceptFormat, ListBlobsIncludeItem,
-    PageBlobClientSetSequenceNumberOptions, RehydratePriority, SequenceNumberActionType,
-    SignedIdentifiers, StorageErrorCode,
+    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, CopyStatus,
+    ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, ListBlobsAcceptFormat,
+    ListBlobsIncludeItem, PageBlobClientSetSequenceNumberOptions, RehydratePriority,
+    SequenceNumberActionType, SignedIdentifiers, StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
 use common::{
@@ -504,6 +505,219 @@ async fn test_list_blobs_arrow_has_versions_only(ctx: TestContext) -> Result<(),
     assert_eq!(Some(true), blob.has_versions_only);
 
     container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_blobs_arrow_copy_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    // Async Copy Blob populates the copy_* properties on the destination blob.
+    let source_name = get_blob_name(recording);
+    let source_client = container_client.blob_client(&source_name);
+    create_test_blob(
+        &source_client,
+        Some(RequestContent::from(b"arrow copy source".to_vec())),
+        None,
+    )
+    .await?;
+
+    let dest_name = get_blob_name(recording);
+    let dest_client = container_client.blob_client(&dest_name);
+    dest_client
+        .start_copy_from_url(source_client.url().as_str().into(), None)
+        .await?;
+
+    // Wait for the async copy to reach a terminal state so the listing reports it.
+    let mut copy_status = None;
+    for _ in 0..10 {
+        copy_status = dest_client.get_properties(None).await?.copy_status()?;
+        if copy_status != Some(CopyStatus::Pending) {
+            break;
+        }
+        if recording.test_mode() == TestMode::Live || recording.test_mode() == TestMode::Record {
+            time::sleep(Duration::from_secs(1)).await;
+        }
+    }
+    assert_eq!(Some(CopyStatus::Success), copy_status);
+
+    let items = list_blobs_arrow(&container_client, Some(vec![ListBlobsIncludeItem::Copy])).await?;
+    let blob = items
+        .iter()
+        .find(|b| b.name.as_deref() == Some(dest_name.as_str()))
+        .expect("expected destination blob in listing");
+    let props = blob.properties.as_ref().expect("expected blob properties");
+
+    // copy_status_description, incremental_copy, and destination_snapshot are not emitted by a
+    // successful non-incremental copy; they remain covered by the decoder unit tests.
+    assert!(props.copy_id.is_some());
+    assert_eq!(Some(CopyStatus::Success), props.copy_status);
+    assert!(props.copy_source.is_some());
+    assert!(props.copy_progress.is_some());
+    assert!(props.copy_completion_time.is_some());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+// Re-record, playback only after
+#[recorded::test]
+async fn test_list_blobs_arrow_immutability_properties(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // TODO: requires an immutable-storage-with-versioning account. Record this test against such an
+    // account; the account and container are pinned so the recorded request paths replay.
+
+    // Recording Setup
+    let recording = ctx.recording();
+    let mut options = azure_storage_blob::BlobContainerClientOptions::default();
+    recording.instrument(&mut options.client_options);
+    let account = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
+    let container_client = azure_storage_blob::BlobContainerClient::new(
+        azure_core::http::Url::parse(&format!(
+            "https://{}.blob.core.windows.net/arrow-immut-1786504855",
+            account.as_str()
+        ))?,
+        Some(recording.credential()),
+        Some(options),
+    )?;
+    container_client.create(None).await?;
+
+    let blob_name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(&blob_name);
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Fixed expiry from the recording so the immutability-policy-until-date header matches.
+    let expiry = parse_rfc3339(recording.var("IMMUTABILITY_EXPIRY", None).as_str())?;
+    blob_client
+        .set_immutability_policy(
+            &expiry,
+            Some(BlobClientSetImmutabilityPolicyOptions {
+                immutability_policy_mode: Some(ImmutabilityPolicyMode::Unlocked),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    blob_client.set_legal_hold(true, None).await?;
+
+    let items = list_blobs_arrow(
+        &container_client,
+        Some(vec![
+            ListBlobsIncludeItem::ImmutabilityPolicy,
+            ListBlobsIncludeItem::LegalHold,
+        ]),
+    )
+    .await?;
+    let blob = items
+        .iter()
+        .find(|b| b.name.as_deref() == Some(blob_name.as_str()))
+        .expect("expected blob in listing");
+    let props = blob.properties.as_ref().expect("expected blob properties");
+
+    assert_eq!(
+        Some(ImmutabilityPolicyMode::Unlocked),
+        props.immutability_policy_mode
+    );
+    assert!(props.immutability_policy_expires_on.is_some());
+    assert_eq!(Some(true), props.legal_hold);
+
+    // Clear the legal hold and policy so the blob and container can be torn down.
+    blob_client.set_legal_hold(false, None).await?;
+    blob_client.delete_immutability_policy(None).await?;
+    blob_client.delete(None).await?;
+    // Container delete returns 409 on an immutability-with-versioning account; best-effort.
+    let _ = container_client.delete(None).await;
+    Ok(())
+}
+
+// Re-record, playback only
+#[recorded::test]
+async fn test_list_blobs_arrow_last_accessed_on(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // TODO: requires an account with last-access-time tracking enabled. Record this test against
+    // such an account; the account and container are pinned so the recorded request paths replay.
+
+    // Recording Setup
+    let recording = ctx.recording();
+    let mut options = azure_storage_blob::BlobContainerClientOptions::default();
+    recording.instrument(&mut options.client_options);
+    let account = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
+    let container_client = azure_storage_blob::BlobContainerClient::new(
+        azure_core::http::Url::parse(&format!(
+            "https://{}.blob.core.windows.net/arrow-lat-1786505136",
+            account.as_str()
+        ))?,
+        Some(recording.credential()),
+        Some(options),
+    )?;
+    container_client.create(None).await?;
+
+    let blob_name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(&blob_name);
+    create_test_blob(&blob_client, None, None).await?;
+    // Reading the blob registers a last-access timestamp on tracking-enabled accounts.
+    let _ = blob_client.download(None).await?.body.collect().await?;
+
+    let items = list_blobs_arrow(&container_client, None).await?;
+    let blob = items
+        .iter()
+        .find(|b| b.name.as_deref() == Some(blob_name.as_str()))
+        .expect("expected blob in listing");
+    let props = blob.properties.as_ref().expect("expected blob properties");
+    assert!(props.last_accessed_on.is_some());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+//Re-record, playback only
+#[recorded::test]
+async fn test_list_blobs_arrow_object_replication_metadata(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // TODO: requires a source account with an object-replication policy. Record this test against
+    // such an account; test1/bla.txt is a replicated blob that carries OR status metadata.
+
+    // Recording Setup
+    let recording = ctx.recording();
+    let account = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
+    const CONTAINER: &str = "test1";
+    const BLOB_NAME: &str = "bla.txt";
+    const VERSION_ID: &str = "2022-08-29T21:54:26.5412339Z";
+    const METADATA_KEY: &str =
+        "or-c570de93-3a83-4718-8ebe-f17b20d38a4f_49f6dc14-f5f7-4471-bf13-da984b86d136";
+    const EXPECTED_STATUS: &str = "complete";
+    let mut options = azure_storage_blob::BlobServiceClientOptions::default();
+    recording.instrument(&mut options.client_options);
+    let service_client = azure_storage_blob::BlobServiceClient::new(
+        azure_core::http::Url::parse(&format!("https://{account}.blob.core.windows.net/"))?,
+        Some(recording.credential()),
+        Some(options),
+    )?;
+
+    let container_client = service_client.blob_container_client(CONTAINER);
+    let blobs = list_blobs_arrow(&container_client, None).await?;
+    let blob = blobs
+        .iter()
+        .find(|blob| {
+            blob.name.as_deref() == Some(BLOB_NAME)
+                && blob.version_id.as_deref() == Some(VERSION_ID)
+                && blob.is_current_version == Some(true)
+        })
+        .expect("expected configured object-replication source blob version");
+
+    let properties = blob
+        .object_replication_metadata
+        .as_ref()
+        .and_then(|metadata| metadata.additional_properties.as_ref())
+        .expect("expected object replication metadata on configured source blob");
+    assert_eq!(1, properties.len());
+    assert_eq!(
+        Some(EXPECTED_STATUS),
+        properties.get(METADATA_KEY).map(String::as_str)
+    );
     Ok(())
 }
 
