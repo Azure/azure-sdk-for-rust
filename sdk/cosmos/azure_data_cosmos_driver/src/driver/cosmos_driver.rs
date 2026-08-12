@@ -2624,6 +2624,12 @@ impl CosmosDriver {
             && !operation.is_change_feed()
     }
 
+    /// Whether a feed pipeline negotiated binary and must restore that wire
+    /// format after its text-based processing stages complete.
+    fn binary_feed_response_restore_applies(operation: &CosmosOperation) -> bool {
+        Self::binary_encoding_applies(operation) && operation.operation_type().is_feed()
+    }
+
     /// Applies request-side binary encoding to an operation: transcodes a text
     /// request body to Cosmos binary JSON (an already-binary or empty body is
     /// passed through) and advertises binary responses via the
@@ -2929,10 +2935,7 @@ impl CosmosDriver {
             if let Some(response) = response.as_mut() {
                 if request_text_response {
                     response.transcode_body_to_text()?;
-                } else if matches!(
-                    plan.operation().operation_type(),
-                    crate::models::OperationType::Query | crate::models::OperationType::ReadFeed
-                ) {
+                } else if Self::binary_feed_response_restore_applies(plan.operation()) {
                     response.transcode_body_to_binary()?;
                 }
             }
@@ -6323,17 +6326,29 @@ mod tests {
     // ── apply_request_binary_encoding (schema-agnostic request-side encode) ──
 
     #[test]
-    fn binary_encoding_applies_only_to_document_item_ops() {
+    fn binary_encoding_request_and_feed_restore_predicates_agree() {
         use crate::models::{OperationType, ResourceType};
 
         let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
-        for op in [
-            OperationType::Create,
-            OperationType::Read,
-            OperationType::Replace,
-            OperationType::Upsert,
-            OperationType::Query,
-            OperationType::ReadFeed,
+        for (op, request_applies, feed_restore_applies) in [
+            (OperationType::Create, true, false),
+            (OperationType::Read, true, false),
+            (OperationType::ReadFeed, true, true),
+            (OperationType::Replace, true, false),
+            (OperationType::Delete, false, false),
+            (OperationType::Upsert, true, false),
+            (OperationType::Query, true, true),
+            (OperationType::SqlQuery, true, true),
+            (OperationType::QueryPlan, false, false),
+            (OperationType::Batch, false, false),
+            (OperationType::Head, false, false),
+            (OperationType::HeadFeed, false, false),
+            (OperationType::Execute, false, false),
+            (OperationType::Patch, false, false),
+            #[cfg(feature = "preview_dtx")]
+            (OperationType::CommitDistributedTransaction, false, false),
+            #[cfg(feature = "preview_dtx")]
+            (OperationType::ReadDistributedTransaction, false, false),
         ] {
             let operation = CosmosOperation::new(
                 op,
@@ -6342,23 +6357,15 @@ mod tests {
                     .into_feed_reference(),
                 Some(crate::models::FeedRange::full()),
             );
-            assert!(
+            assert_eq!(
                 CosmosDriver::binary_encoding_applies(&operation),
-                "Document + {op:?} should be binary-encodable",
+                request_applies,
+                "unexpected request-side binary eligibility for Document + {op:?}",
             );
-        }
-
-        for op in [OperationType::Delete, OperationType::Patch] {
-            let operation = CosmosOperation::new(
-                op,
-                crate::models::CosmosResourceReference::from(container.clone())
-                    .with_resource_type(ResourceType::Document)
-                    .into_feed_reference(),
-                Some(crate::models::FeedRange::full()),
-            );
-            assert!(
-                !CosmosDriver::binary_encoding_applies(&operation),
-                "Document + {op:?} must not be binary-encoded",
+            assert_eq!(
+                CosmosDriver::binary_feed_response_restore_applies(&operation),
+                feed_restore_applies,
+                "request/restore binary eligibility diverged for Document + {op:?}",
             );
         }
 
@@ -6389,12 +6396,19 @@ mod tests {
                     !CosmosDriver::binary_encoding_applies(&operation),
                     "{rt:?} + {op:?} must not be binary-encoded (control plane)",
                 );
+                assert!(
+                    !CosmosDriver::binary_feed_response_restore_applies(&operation),
+                    "{rt:?} + {op:?} must not restore binary feed responses",
+                );
             }
         }
 
         let change_feed =
             CosmosOperation::change_feed(container, Some(crate::models::FeedRange::full()));
         assert!(!CosmosDriver::binary_encoding_applies(&change_feed));
+        assert!(!CosmosDriver::binary_feed_response_restore_applies(
+            &change_feed
+        ));
     }
 
     fn binary_encoding_test_operation(body: Vec<u8>) -> CosmosOperation {
