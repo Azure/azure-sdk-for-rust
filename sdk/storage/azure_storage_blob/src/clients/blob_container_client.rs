@@ -180,16 +180,21 @@ impl BlobContainerClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::ListBlobsAcceptFormat;
+    use arrow_array::{builder::StringBuilder, RecordBatch};
+    use arrow_ipc::writer::StreamWriter;
+    use arrow_schema::{DataType, Field, Schema};
     use azure_core::{
         http::{
-            headers::Headers, pager::PagerContinuation, AsyncRawResponse, ClientOptions,
-            StatusCode, Transport,
+            headers::{Headers, ACCEPT, CONTENT_TYPE},
+            pager::{PagerContinuation, PagerOptions},
+            AsyncRawResponse, ClientOptions, StatusCode, Transport,
         },
         Bytes,
     };
     use azure_core_test::http::MockHttpClient;
     use futures::{FutureExt as _, TryStreamExt as _};
-    use std::sync::Arc;
+    use std::{collections::HashMap, sync::Arc};
 
     const LIST_BLOBS_PAGE: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
 <EnumerationResults ServiceEndpoint="https://example.blob.core.windows.net/" ContainerName="container">
@@ -202,6 +207,23 @@ mod tests {
     </Blob>
   </Blobs>
   <NextMarker>page-2</NextMarker>
+</EnumerationResults>"#;
+
+    const XML_PAGE_1: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
+<EnumerationResults ServiceEndpoint="https://example.blob.core.windows.net/" ContainerName="container">
+  <Blobs>
+    <Blob><Name>page1-a.txt</Name><Properties><BlobType>BlockBlob</BlobType></Properties></Blob>
+    <Blob><Name>page1-b.txt</Name><Properties><BlobType>BlockBlob</BlobType></Properties></Blob>
+  </Blobs>
+  <NextMarker>page2</NextMarker>
+</EnumerationResults>"#;
+
+    const XML_PAGE_2: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
+<EnumerationResults ServiceEndpoint="https://example.blob.core.windows.net/" ContainerName="container">
+  <Blobs>
+    <Blob><Name>page2-a.txt</Name><Properties><BlobType>BlockBlob</BlobType></Properties></Blob>
+    <Blob><Name>page2-b.txt</Name><Properties><BlobType>BlockBlob</BlobType></Properties></Blob>
+  </Blobs>
 </EnumerationResults>"#;
 
     #[test]
@@ -244,17 +266,7 @@ mod tests {
             }
             .boxed()
         }));
-        let client = BlobContainerClient::new(
-            Url::parse("https://example.blob.core.windows.net/container").unwrap(),
-            None,
-            Some(BlobContainerClientOptions {
-                client_options: ClientOptions {
-                    transport: Some(Transport::new(mock_client)),
-                    ..Default::default()
-                },
-                ..Default::default()
-            }),
-        )?;
+        let client = container_client_with(mock_client);
 
         let mut pages = client.list_blobs(None)?.into_pages();
         let page = pages.try_next().await?.expect("expected a page");
@@ -270,5 +282,156 @@ mod tests {
         assert_eq!(page.blob_items[0].name.as_deref(), Some("blob1"));
 
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn list_blobs_mock_arrow_all_pages() -> Result<()> {
+        let client = container_client_with(arrow_mock_client());
+        let names = collect_blob_names(client.list_blobs(None)?).await?;
+        assert_eq!(
+            names,
+            ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn list_blobs_mock_arrow_xml_fallback() -> Result<()> {
+        // Arrow is requested (the default), but the service replies with XML; the pager must
+        // still decode every blob across both pages via the XML fallback path.
+        let client = container_client_with(xml_mock_client_with_accept(
+            "application/vnd.apache.arrow.stream,application/xml",
+        ));
+        let names = collect_blob_names(client.list_blobs(None)?).await?;
+        assert_eq!(
+            names,
+            ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn list_blobs_mock_arrow_from_continuation() -> Result<()> {
+        let client = container_client_with(arrow_mock_client());
+        let options = BlobContainerClientListBlobsOptions {
+            method_options: PagerOptions {
+                continuation: Some(PagerContinuation::Token("page2".into())),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let names = collect_blob_names(client.list_blobs(Some(options))?).await?;
+        assert_eq!(names, ["page2-a.txt", "page2-b.txt"]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn list_blobs_mock_explicit_xml() -> Result<()> {
+        let client = container_client_with(xml_mock_client_with_accept("application/xml"));
+        let options = BlobContainerClientListBlobsOptions {
+            accept: Some(ListBlobsAcceptFormat::Xml),
+            ..Default::default()
+        };
+        let names = collect_blob_names(client.list_blobs(Some(options))?).await?;
+        assert_eq!(
+            names,
+            ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
+        );
+        Ok(())
+    }
+
+    fn container_client_with(mock: Arc<dyn azure_core::http::HttpClient>) -> BlobContainerClient {
+        BlobContainerClient::new(
+            Url::parse("https://example.blob.core.windows.net/container").unwrap(),
+            None,
+            Some(BlobContainerClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(mock)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )
+        .unwrap()
+    }
+
+    async fn collect_blob_names(
+        pager: Pager<ListBlobsResponse, AutoFormat>,
+    ) -> Result<Vec<String>> {
+        let mut pages = pager.into_pages();
+        let mut names = Vec::new();
+        while let Some(page) = pages.try_next().await? {
+            let model = page.into_model()?;
+            names.extend(model.blob_items.into_iter().filter_map(|b| b.name));
+        }
+        Ok(names)
+    }
+
+    fn build_arrow_list_blobs(names: &[&str], next_marker: Option<&str>) -> Bytes {
+        let metadata: HashMap<String, String> = next_marker
+            .map(|m| HashMap::from([("NextMarker".to_string(), m.to_string())]))
+            .unwrap_or_default();
+        let schema = Arc::new(Schema::new_with_metadata(
+            vec![Field::new("Name", DataType::Utf8, true)],
+            metadata,
+        ));
+        let mut builder = StringBuilder::new();
+        for name in names {
+            builder.append_value(name);
+        }
+        let batch = RecordBatch::try_new(schema.clone(), vec![Arc::new(builder.finish())])
+            .expect("valid batch");
+        let mut buf = Vec::new();
+        let mut writer = StreamWriter::try_new(&mut buf, &schema).expect("valid writer");
+        writer.write(&batch).expect("write batch");
+        writer.finish().expect("finish");
+        Bytes::from(buf)
+    }
+
+    fn arrow_mock_client() -> Arc<dyn azure_core::http::HttpClient> {
+        let page1 = build_arrow_list_blobs(&["page1-a.txt", "page1-b.txt"], Some("page2"));
+        let page2 = build_arrow_list_blobs(&["page2-a.txt", "page2-b.txt"], None);
+        Arc::new(MockHttpClient::new(move |req| {
+            assert_eq!(
+                req.headers().get_str(&ACCEPT).unwrap(),
+                "application/vnd.apache.arrow.stream,application/xml"
+            );
+            let is_page2 = req
+                .url()
+                .query_pairs()
+                .any(|(k, v)| k == "marker" && v == "page2");
+            let body = if is_page2 {
+                page2.clone()
+            } else {
+                page1.clone()
+            };
+            async move {
+                let mut headers = Headers::new();
+                headers.insert(CONTENT_TYPE, "application/vnd.apache.arrow.stream");
+                Ok(AsyncRawResponse::from_bytes(StatusCode::Ok, headers, body))
+            }
+            .boxed()
+        }))
+    }
+
+    fn xml_mock_client_with_accept(accept: &'static str) -> Arc<dyn azure_core::http::HttpClient> {
+        Arc::new(MockHttpClient::new(move |req| {
+            assert_eq!(req.headers().get_str(&ACCEPT).unwrap(), accept);
+            let is_page2 = req
+                .url()
+                .query_pairs()
+                .any(|(k, v)| k == "marker" && v == "page2");
+            async move {
+                let mut headers = Headers::new();
+                headers.insert(CONTENT_TYPE, "application/xml");
+                let body = if is_page2 { XML_PAGE_2 } else { XML_PAGE_1 };
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    headers,
+                    Bytes::from_static(body),
+                ))
+            }
+            .boxed()
+        }))
     }
 }
