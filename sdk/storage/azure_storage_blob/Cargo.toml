@@ -18,6 +18,9 @@ default = ["tokio", "azure_core/default"]
 tokio = ["dep:tokio", "azure_core/tokio"]
 
 [dependencies]
+arrow-array.workspace = true
+arrow-ipc.workspace = true
+arrow-schema.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", features = ["xml"] }

@@ -9,6 +9,7 @@
 
 ### Breaking Changes
 
+- `BlobContainerClient::list_blobs()` now requests Apache Arrow by default and returns `Result<Pager<ListBlobsResponse, AutoFormat>>` instead of `Result<Pager<ListBlobsResponse, XmlFormat>>`. Use `BlobContainerClientListBlobsOptions::accept` to request a different response format.
 - Added the `AccessTier::Smart` and `ArchiveStatus::RehydratePendingToSmart` enum variants.
 - Added `access_tier`, `access_tier_changed_on`, `access_tier_inferred`, and `smart_access_tier` to `BlobDownloadProperties` and marked the struct as non-exhaustive.
 - Added `BlobClient::start_copy_from_url()` and `BlobClient::abort_copy()` for asynchronous blob copy operations.

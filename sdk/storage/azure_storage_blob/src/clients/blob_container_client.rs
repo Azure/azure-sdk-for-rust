@@ -3,13 +3,18 @@
 
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
-use crate::{models::StorageErrorCode, BlobClient};
+use crate::{
+    arrow_decode::decode_next_marker,
+    models::{BlobContainerClientListBlobsOptions, ListBlobsResponse, StorageErrorCode},
+    AutoFormat, BlobClient,
+};
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
+        pager::{PagerContinuation, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Pipeline, StatusCode, Url,
+        ClientMethodOptions, Pager, Pipeline, RawResponse, StatusCode, Url,
     },
     tracing, Result,
 };
@@ -113,6 +118,62 @@ impl BlobContainerClient {
             },
             Err(e) => Err(e),
         }
+    }
+
+    /// Returns a list of the blobs in the specified container.
+    ///
+    /// Apache Arrow is requested by default, with automatic XML fallback. To require XML, set
+    /// [`BlobContainerClientListBlobsOptions::accept`] to
+    /// [`ListBlobsAcceptFormat::Xml`](crate::models::ListBlobsAcceptFormat::Xml). See
+    /// [`ListBlobsAcceptFormat`](crate::models::ListBlobsAcceptFormat) for the available response
+    /// formats.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    ///
+    pub fn list_blobs(
+        &self,
+        options: Option<BlobContainerClientListBlobsOptions<'_>>,
+    ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
+        let options = options.unwrap_or_default().into_owned();
+        let accept = options.accept.unwrap_or_default().as_header_value();
+        let pager_options = options.method_options.clone();
+        let client = Arc::new(BlobContainerClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        });
+
+        Ok(Pager::new(
+            move |state: PagerState, pager_options| {
+                let client = client.clone();
+                let mut options = options.to_internal(ClientMethodOptions {
+                    context: pager_options.context,
+                });
+                if let PagerState::More(continuation) = state {
+                    options.marker = Some(continuation.into());
+                }
+                Box::pin(async move {
+                    let response = client
+                        .list_blobs_internal(accept.to_string(), Some(options))
+                        .await?;
+                    let (status, headers, body) = response.deconstruct();
+                    let body = body.collect().await?;
+                    let next_marker = decode_next_marker(&headers, &body)?;
+                    let response = RawResponse::from_bytes(status, headers, body).into();
+                    Ok(match next_marker {
+                        Some(next_marker) => PagerResult::More {
+                            response,
+                            continuation: PagerContinuation::Token(next_marker),
+                        },
+                        None => PagerResult::Done { response },
+                    })
+                })
+            },
+            Some(pager_options),
+        ))
     }
 }
 

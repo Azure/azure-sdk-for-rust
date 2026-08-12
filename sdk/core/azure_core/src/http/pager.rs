@@ -953,14 +953,76 @@ mod tests {
         ItemIterator, PageIterator, Pager, PagerContinuation, PagerOptions, PagerResult, PagerState,
     };
     use crate::http::{
-        headers::{HeaderName, HeaderValue},
+        headers::{HeaderName, HeaderValue, Headers},
         pager::PagerResultFuture,
-        RawResponse, Response, StatusCode,
+        DeserializeWith, Format, RawResponse, Response, StatusCode,
     };
     use async_trait::async_trait;
     use futures::{StreamExt as _, TryStreamExt};
-    use serde::Deserialize;
+    use serde::{de::DeserializeOwned, Deserialize};
     use std::collections::HashMap;
+
+    #[derive(Debug)]
+    struct ManualFormat;
+
+    impl Format for ManualFormat {
+        fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(_body: S) -> crate::Result<T> {
+            Err(crate::Error::new(
+                crate::error::ErrorKind::DataConversion,
+                "not supported",
+            ))
+        }
+    }
+
+    struct ManualPage(Vec<i32>);
+
+    impl DeserializeWith<ManualFormat> for ManualPage {
+        fn deserialize_with(body: typespec::http::response::ResponseBody) -> crate::Result<Self> {
+            let items = body
+                .as_ref()
+                .iter()
+                .filter_map(|byte| {
+                    if byte.is_ascii_digit() {
+                        Some(i32::from(byte - b'0'))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            Ok(Self(items))
+        }
+    }
+
+    #[async_trait]
+    impl super::Page for ManualPage {
+        type Item = i32;
+        type IntoIter = <Vec<i32> as IntoIterator>::IntoIter;
+
+        async fn into_items(self) -> crate::Result<Self::IntoIter> {
+            Ok(self.0.into_iter())
+        }
+    }
+
+    #[tokio::test]
+    async fn item_pagination_supports_non_serde_custom_deserialization() {
+        let pager: Pager<ManualPage, ManualFormat> = Pager::new(
+            |_, _| {
+                Box::pin(async move {
+                    Ok(PagerResult::Done {
+                        response: RawResponse::from_bytes(
+                            StatusCode::Ok,
+                            Headers::new(),
+                            "items: 1, 2, 3",
+                        )
+                        .into(),
+                    })
+                })
+            },
+            None,
+        );
+
+        assert_eq!(pager.try_collect::<Vec<_>>().await.unwrap(), vec![1, 2, 3]);
+    }
 
     #[derive(Deserialize, Debug, PartialEq, Eq)]
     struct Page {
