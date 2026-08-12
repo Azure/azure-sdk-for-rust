@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::models::{
-    BlobItem, BlobMetadata, BlobProperties, BlobTag, BlobTags, ListBlobsResponse,
-    ObjectReplicationMetadata,
+    BlobHierarchyList, BlobItem, BlobMetadata, BlobPrefix, BlobProperties, BlobTag, BlobTags,
+    ListBlobsHierarchicalResponse, ListBlobsResponse, ObjectReplicationMetadata,
 };
 use arrow_array::{
     Array, BooleanArray, Int32Array, Int64Array, MapArray, RecordBatch, StringArray,
@@ -58,6 +58,19 @@ impl DeserializeWith<AutoFormat> for ListBlobsResponse {
     }
 }
 
+impl DeserializeWith<AutoFormat> for ListBlobsHierarchicalResponse {
+    fn deserialize_with(body: ResponseBody) -> Result<Self> {
+        body.xml()
+    }
+
+    fn deserialize_from(response: RawResponse) -> Result<Self> {
+        match wire_format(response.headers())? {
+            WireFormat::Arrow => decode_arrow_list_blobs_hierarchy(response.body()),
+            WireFormat::Xml => azure_core::xml::from_xml(response.body()),
+        }
+    }
+}
+
 pub(crate) fn decode_next_marker(headers: &Headers, bytes: &[u8]) -> Result<Option<String>> {
     match wire_format(headers)? {
         WireFormat::Arrow => arrow_next_marker(bytes),
@@ -101,7 +114,10 @@ fn arrow_next_marker(bytes: &[u8]) -> Result<Option<String>> {
         .cloned())
 }
 
-fn decode_arrow_list_blobs(bytes: &[u8]) -> Result<ListBlobsResponse> {
+fn read_arrow_rows<F>(bytes: &[u8], mut per_row: F) -> Result<Option<String>>
+where
+    F: FnMut(&RecordBatch, usize),
+{
     let reader = StreamReader::try_new(bytes, None).map_err(to_error)?;
     let next_marker = reader
         .schema()
@@ -109,18 +125,53 @@ fn decode_arrow_list_blobs(bytes: &[u8]) -> Result<ListBlobsResponse> {
         .get(NEXT_MARKER_KEY)
         .filter(|marker| !marker.is_empty())
         .cloned();
-    let mut blob_items = Vec::new();
     for batch in reader {
         let batch = batch.map_err(to_error)?;
         for row in 0..batch.num_rows() {
-            blob_items.push(row_to_blob_item(&batch, row));
+            per_row(&batch, row);
         }
     }
+    Ok(next_marker)
+}
+
+fn decode_arrow_list_blobs(bytes: &[u8]) -> Result<ListBlobsResponse> {
+    let mut blob_items = Vec::new();
+    let next_marker = read_arrow_rows(bytes, |batch, row| {
+        blob_items.push(row_to_blob_item(batch, row));
+    })?;
     Ok(ListBlobsResponse {
         blob_items,
         next_marker,
         ..Default::default()
     })
+}
+
+fn decode_arrow_list_blobs_hierarchy(bytes: &[u8]) -> Result<ListBlobsHierarchicalResponse> {
+    let mut blob_items = Vec::new();
+    let mut blob_prefixes = Vec::new();
+    // Virtual-directory rows are marked with ResourceType == "blobprefix" and carry only a Name.
+    let next_marker = read_arrow_rows(bytes, |batch, row| {
+        if is_blob_prefix_row(batch, row) {
+            blob_prefixes.push(BlobPrefix {
+                name: string_at(batch, "Name", row),
+            });
+        } else {
+            blob_items.push(row_to_blob_item(batch, row));
+        }
+    })?;
+    Ok(ListBlobsHierarchicalResponse {
+        hierarchical_list: BlobHierarchyList {
+            blob_items,
+            blob_prefixes: (!blob_prefixes.is_empty()).then_some(blob_prefixes),
+        },
+        next_marker,
+        ..Default::default()
+    })
+}
+
+fn is_blob_prefix_row(batch: &RecordBatch, row: usize) -> bool {
+    string_at(batch, "ResourceType", row)
+        .is_some_and(|value| value.eq_ignore_ascii_case("blobprefix"))
 }
 
 fn row_to_blob_item(batch: &RecordBatch, row: usize) -> BlobItem {
@@ -773,5 +824,80 @@ mod tests {
             smart_access_tier: _,
             tag_count: _,
         } = properties.expect("properties should be set");
+    }
+
+    #[test]
+    fn hierarchy_splits_prefix_rows() {
+        let names = Arc::new(StringArray::from(vec![
+            Some("dir1/"),
+            Some("blob-a.txt"),
+            Some("blob-b.txt"),
+        ])) as ArrayRef;
+        let resource_types = Arc::new(StringArray::from(vec![
+            Some("blobprefix"),
+            Option::<&str>::None,
+            Some("blob"),
+        ])) as ArrayRef;
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("Name", DataType::Utf8, true),
+            Field::new("ResourceType", DataType::Utf8, true),
+        ]));
+        let record_batch =
+            RecordBatch::try_new(schema.clone(), vec![names, resource_types]).unwrap();
+
+        let mut buffer = Vec::new();
+        {
+            let mut writer = StreamWriter::try_new(&mut buffer, &schema).unwrap();
+            writer.write(&record_batch).unwrap();
+            writer.finish().unwrap();
+        }
+
+        let response = decode_arrow_list_blobs_hierarchy(&buffer).unwrap();
+        let list = response.hierarchical_list;
+        assert_eq!(2, list.blob_items.len());
+        assert_eq!(Some("blob-a.txt".to_string()), list.blob_items[0].name);
+        assert_eq!(Some("blob-b.txt".to_string()), list.blob_items[1].name);
+        let prefixes = list.blob_prefixes.expect("prefixes should be present");
+        assert_eq!(1, prefixes.len());
+        assert_eq!(Some("dir1/".to_string()), prefixes[0].name);
+    }
+
+    #[test]
+    fn hierarchy_absent_prefixes_are_none() {
+        let names = Arc::new(StringArray::from(vec![Some("only-a.txt")])) as ArrayRef;
+        let schema = Arc::new(Schema::new(vec![Field::new("Name", DataType::Utf8, true)]));
+        let record_batch = RecordBatch::try_new(schema.clone(), vec![names]).unwrap();
+
+        let mut buffer = Vec::new();
+        {
+            let mut writer = StreamWriter::try_new(&mut buffer, &schema).unwrap();
+            writer.write(&record_batch).unwrap();
+            writer.finish().unwrap();
+        }
+
+        let response = decode_arrow_list_blobs_hierarchy(&buffer).unwrap();
+        assert_eq!(1, response.hierarchical_list.blob_items.len());
+        assert!(response.hierarchical_list.blob_prefixes.is_none());
+    }
+
+    #[test]
+    fn hierarchy_contract_covers_every_model_field() {
+        // Compile-time guard: adding a field to the hierarchy models breaks this destructure until
+        // the Arrow decoder is updated, preventing silently dropped data.
+        let ListBlobsHierarchicalResponse {
+            container_name: _,
+            delimiter: _,
+            hierarchical_list,
+            marker: _,
+            max_results: _,
+            next_marker: _,
+            prefix: _,
+            service_endpoint: _,
+        } = ListBlobsHierarchicalResponse::default();
+        let BlobHierarchyList {
+            blob_items: _,
+            blob_prefixes: _,
+        } = hierarchical_list;
+        let BlobPrefix { name: _ } = BlobPrefix::default();
     }
 }

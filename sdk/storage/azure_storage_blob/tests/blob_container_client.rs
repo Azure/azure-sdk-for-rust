@@ -15,11 +15,12 @@ use azure_storage_blob::models::{
     BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientBreakLeaseOptions,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientCreateOptions,
     BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccountInfoResultHeaders,
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsOptions,
-    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, CopyStatus,
-    ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, ListBlobsAcceptFormat,
-    ListBlobsIncludeItem, PageBlobClientSetSequenceNumberOptions, RehydratePriority,
-    SequenceNumberActionType, SignedIdentifiers, StorageErrorCode,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsHierarchicalOptions,
+    BlobContainerClientListBlobsOptions, BlobContainerClientSetMetadataOptions, BlobType,
+    BlockBlobClientUploadOptions, CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState,
+    LeaseStatus, ListBlobsAcceptFormat, ListBlobsIncludeItem,
+    PageBlobClientSetSequenceNumberOptions, RehydratePriority, SequenceNumberActionType,
+    SignedIdentifiers, StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
 use common::{
@@ -240,6 +241,91 @@ async fn test_list_blobs_arrow_populates_properties(
     assert!(tags
         .iter()
         .any(|t| t.key.as_deref() == Some("env") && t.value.as_deref() == Some("test")));
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_blobs_hierarchical_arrow(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, false, StorageAccount::Standard, None).await?;
+    container_client.create(None).await?;
+
+    // Arrange: two blobs under a virtual directory plus one at the container root.
+    for name in ["dir1/a.txt", "dir1/b.txt", "top.txt"] {
+        create_test_blob(&container_client.blob_client(name), None, None).await?;
+    }
+
+    // Act: list hierarchically over Apache Arrow, grouping the directory with "/".
+    let page = container_client
+        .list_blobs_hierarchical(
+            "/",
+            Some(BlobContainerClientListBlobsHierarchicalOptions {
+                accept: Some(ListBlobsAcceptFormat::Arrow),
+                ..Default::default()
+            }),
+        )?
+        .into_pages()
+        .try_next()
+        .await?
+        .expect("expected a page")
+        .into_model()?;
+
+    // Assert: the directory collapses into a BlobPrefix and the root blob is listed.
+    let prefixes = page
+        .hierarchical_list
+        .blob_prefixes
+        .expect("expected blob prefixes");
+    assert!(prefixes.iter().any(|p| p.name.as_deref() == Some("dir1/")));
+    assert!(page
+        .hierarchical_list
+        .blob_items
+        .iter()
+        .any(|b| b.name.as_deref() == Some("top.txt")));
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_blobs_arrow_end_before(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, false, StorageAccount::Standard, None).await?;
+    container_client.create(None).await?;
+
+    // Arrange: four lexicographically ordered blobs.
+    for name in ["aa.txt", "bb.txt", "cc.txt", "dd.txt"] {
+        create_test_blob(&container_client.blob_client(name), None, None).await?;
+    }
+
+    // Act: Apache Arrow range listing stops before "cc.txt" (exclusive).
+    let page = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: Some(ListBlobsAcceptFormat::Arrow),
+            end_before: Some("cc.txt".to_string()),
+            ..Default::default()
+        }))?
+        .into_pages()
+        .try_next()
+        .await?
+        .expect("expected a page")
+        .into_model()?;
+
+    // Assert: only names ordered before "cc.txt" are returned.
+    let names: Vec<_> = page
+        .blob_items
+        .iter()
+        .filter_map(|b| b.name.as_deref())
+        .collect();
+    assert!(names.contains(&"aa.txt"));
+    assert!(names.contains(&"bb.txt"));
+    assert!(!names.contains(&"cc.txt"));
+    assert!(!names.contains(&"dd.txt"));
 
     container_client.delete(None).await?;
     Ok(())
