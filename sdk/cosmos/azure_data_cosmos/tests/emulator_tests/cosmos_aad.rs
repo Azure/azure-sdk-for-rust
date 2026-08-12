@@ -49,7 +49,7 @@ struct AadTestItem {
 /// invoked for the Cosmos scope, guarding against silently exercising key auth.
 #[tokio::test]
 #[cfg_attr(
-    not(cosmos_aad_supported),
+    all(not(cosmos_aad_supported), not(test_category = "emulator_inmemory")),
     ignore = "requires an AAD-enabled Cosmos target (emulator with /enableaadauthentication, or a live account with the Cosmos data-plane role assignment)"
 )]
 #[cfg_attr(
@@ -154,7 +154,7 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
 /// the `readMetadata` data action the SDK requires on its first request.
 #[tokio::test]
 #[cfg_attr(
-    not(cosmos_aad_supported),
+    all(not(cosmos_aad_supported), not(test_category = "emulator_inmemory")),
     ignore = "requires an AAD-enabled Cosmos target (emulator with /enableaadauthentication, or a live account with the Cosmos data-plane role assignment)"
 )]
 #[cfg_attr(
