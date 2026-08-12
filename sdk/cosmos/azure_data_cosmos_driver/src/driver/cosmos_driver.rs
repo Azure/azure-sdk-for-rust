@@ -6498,10 +6498,7 @@ mod tests {
             "query request body must never be binary-encoded",
         );
         assert!(
-            CosmosDriver::binary_negotiates_response(
-                ResourceType::Document,
-                OperationType::Query
-            ),
+            CosmosDriver::binary_negotiates_response(ResourceType::Document, OperationType::Query),
             "query must negotiate a binary response",
         );
     }
