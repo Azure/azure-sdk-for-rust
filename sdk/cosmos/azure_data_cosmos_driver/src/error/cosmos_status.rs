@@ -499,6 +499,9 @@ impl SubStatusCode {
             20119 => Some("ClientOrderByComplexValueUnsupported"),
             20120 => Some("ClientInvalidResourceId"),
             20121 => Some("ClientMixedNameRidAddressing"),
+            20122 => Some("ClientDistinctValueTooDeeplyNested"),
+            20123 => Some("ClientDistinctContinuationUnsupported"),
+            20124 => Some("ClientDistinctCannotForwardSplit"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1384,6 +1387,12 @@ impl SubStatusCode {
     /// so the token is refused rather than silently re-emitting duplicates.
     /// Adding a matching `ORDER BY` makes the query resumable.
     pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = SubStatusCode(20123);
+
+    /// A `DISTINCT` node was asked to forward a partition split (20124).
+    /// `SplitRequired` replaces the node that emits it, which would discard the
+    /// deduplication map and resurrect already-suppressed values, so the split
+    /// is refused here instead of being passed to a parent.
+    pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: SubStatusCode = SubStatusCode(20124);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -2329,6 +2338,13 @@ impl CosmosStatus {
     pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED),
+    };
+
+    /// 500 / 20124 — a `DISTINCT` node was asked to forward a partition split,
+    /// which would discard its deduplication state.
+    pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT),
     };
 
     // Configuration / setup (HTTP 400, sub-status 20150-20199)
