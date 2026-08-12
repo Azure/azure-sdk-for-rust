@@ -8,6 +8,7 @@
     "Bdynamic",
     "Bstatic",
     "CFLAGS",
+    "cose",
     "ESRP",
     "gnullvm",
     "goarch",
@@ -21,6 +22,7 @@
     "ldflags",
     "libc",
     "libwinpthread",
+    "LINUXOS",
     "lkernel",
     "lncrypt",
     "lntdll",
@@ -31,6 +33,8 @@
     "luser",
     "luserenv",
     "lwinpthread",
+    "MACVMIMAGEM",
+    "msvc",
     "osxcross",
     "pscustomobject",
     "pthread",
@@ -42,6 +46,6 @@
     "tlinux",
     "trimpath",
     "twindows",
-    "UNWIRED"
+    "WINDOWSOS"
   ]
 }

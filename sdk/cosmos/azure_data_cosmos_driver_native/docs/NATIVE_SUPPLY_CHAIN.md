@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 -->
-<!-- cSpell:ignore Authenticode codesign dylib staticlib rustls mingw musl SPDX BSI COSE -->
+<!-- cSpell:ignore Authenticode codesign dylib staticlib rustls mingw musl SPDX -->
 
 # How the Go native driver is built and verified
 
@@ -64,6 +64,8 @@ layout expected by `Azure/azure-cosmos-driver`:
 
 ```text
 azure-cosmos-driver/
+├── _manifest/
+│   └── spdx_2.2/
 ├── windows/amd64/
 ├── linux/amd64/
 │   └── native/{glibc,musl}/
@@ -73,10 +75,11 @@ azure-cosmos-driver/
 └── SHA256SUMS
 ```
 
-Each module contains a `go.mod`, generated cgo linker files, the C header, and
-the matching static library. The Windows linker file also statically links the
-MinGW pthread runtime so the final Go application does not require a separate
-`libwinpthread-1.dll`.
+The pipeline-owned `_manifest` root contains the complete evidence directory
+produced while publishing the combined artifact. Each module contains a
+`go.mod`, generated cgo linker files, the C header, and the matching static
+library. The Windows linker file also statically links the MinGW pthread runtime
+so the final Go application does not require a separate `libwinpthread-1.dll`.
 
 ## Why the static library is not code-signed
 
@@ -89,11 +92,11 @@ authenticate the `.a`. They are different files with different bytes.
 
 The Go release therefore uses this chain:
 
-1. 1ES builds the `.a` from a recorded repository commit.
+1. The official 1ES template builds the `.a` from a recorded repository commit.
 2. The target job links a minimal Go/cgo program against the `.a`.
-3. 1ES publishes a signed SPDX inventory and a signed build record.
+3. 1ES publishes its standard SBOM and governed build provenance.
 4. The build writes a SHA256 checksum for the exact `.a` bytes.
-5. The downstream Go release verifies those files before accepting the library.
+5. The downstream preparation step verifies the artifact metadata and checksums.
 6. The Go customer signs the final executable that contains the Rust library.
 
 No unsigned Microsoft shared library is loaded at runtime in this model. The
@@ -116,17 +119,19 @@ The SPDX inventory answers:
 - Has the inventory changed since 1ES produced it?
 
 The shared template disables this automatic generation for public and
-pull-request validation builds. The final paths and signatures must therefore be
-confirmed in an internal non-pull-request pipeline run.
+pull-request validation builds. Downstream publication is therefore restricted
+to successful non-pull-request builds of `main` in the internal project.
 
-### Signed 1ES build record
+### Official 1ES build provenance
 
-1ES also emits a signed build record, commonly represented by `bsi.json` and
-`bsi.cose`. It connects the release to the governed pipeline run, repository,
-and source commit.
+The pipeline extends the repository's `1es-redirect.yml` entry point. In the
+internal Azure SDK project, that entry point selects the official 1ES pipeline
+template and connects the release to the governed pipeline run, repository, and
+source commit.
 
-In plain terms, the build record answers, “Did the approved Microsoft build
-produce this release from the expected source?”
+The official template is the trust boundary for this release. The native-driver
+pipeline does not duplicate the platform's evidence validation with a custom
+signature-verification step.
 
 ### SHA256SUMS
 
@@ -134,7 +139,7 @@ The trusted build writes `SHA256SUMS` from the final static libraries. A
 downstream consumer recomputes each checksum and rejects any mismatch.
 
 A checksum detects changed bytes. Its trust comes from being produced and
-published by the same governed build whose signed record is verified.
+published by the same governed official 1ES build.
 
 ### Embedded dependency information
 
@@ -178,9 +183,6 @@ Recorded source commit
 Build and link-smoke each target, then publish through 1ES
     |
     v
-Locate and verify the signed SPDX inventory and signed build record
-    |
-    v
 Generate the Go modules
     |
     v
@@ -196,24 +198,21 @@ Open a draft pull request in Azure/azure-cosmos-driver
 Receive GitHub code-owner review and approval
 ```
 
-The checked-in pipeline currently stops at the evidence check. That stage throws
-an error deliberately because the exact internal 1ES evidence paths and
-verification commands have not yet been confirmed. Consequently, the Go module
-and draft pull-request stages cannot run.
+The checked-in pipeline extends the official 1ES wrapper and uses the standard
+managed pool definitions for Linux, Windows, and Apple Silicon macOS. It remains
+unregistered, so an owner must create its internal Azure DevOps definition
+before it can run.
 
-The pipeline does publish per-target build artifacts before reaching that check.
-Those artifacts are not releasable until the evidence check succeeds.
-
-After the evidence check succeeds, the publication stage runs only for a
-successful non-pull-request build of `refs/heads/main`. It uses the existing Azure
-SDK Automation GitHub App to clone the downstream repository and open a draft
-pull request. `Prepare-GoDriverPullRequest.ps1` verifies every checksum, rejects
-unexpected generated paths, replaces the pipeline-owned `windows`, `linux`, and
-`darwin` roots with the exact generated artifact, validates the resulting paths
-and hashes, and rejects changes elsewhere in the repository. This stages retired
-generated files as deletions while preserving hand-maintained repository files.
-The target repository then requires one approval and code-owner approval before
-merge.
+The publication stage runs only for a successful non-pull-request build of
+`refs/heads/main`. It uses the existing Azure SDK Automation GitHub App to clone
+the downstream repository and open a draft pull request.
+`Prepare-GoDriverPullRequest.ps1` verifies every checksum, requires the standard
+SPDX manifest, rejects unexpected payload paths, and replaces the pipeline-owned
+`_manifest`, `windows`, `linux`, and `darwin` roots with the exact generated
+artifact. It validates the resulting paths and hashes and rejects changes
+elsewhere in the repository. This stages retired generated files as deletions
+while preserving hand-maintained repository files. The target repository then
+requires one approval and code-owner approval before merge.
 
 ## Local integration test
 
@@ -231,7 +230,7 @@ files are marked non-production and stored in Git-ignored directories. The local
 SPDX file and test certificate do not represent Microsoft release trust.
 
 The local test exists to catch layout, linking, and script errors before an
-internal pipeline run. It does not replace 1ES evidence verification.
+internal pipeline run. It does not replace the governed official 1ES build.
 
 ## Linux library selection
 

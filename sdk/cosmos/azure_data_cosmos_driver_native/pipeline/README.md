@@ -10,11 +10,10 @@ the Cosmos Rust native driver for Go. The output is a static Rust library named
 `libazurecosmosdriver.a`, together with the C header and release evidence needed
 to review where the library came from.
 
-The production pipeline is not connected to a CI or release definition yet. Its
-security check stops the pipeline deliberately until the signed evidence
-produced by 1ES can be located and verified. After that check is implemented, a
-successful main-branch build can open a draft pull request in
-`Azure/azure-cosmos-driver`.
+The production pipeline extends the repository's official 1ES wrapper but is
+not connected to a CI or release definition yet. After an owner registers it in
+the internal Azure SDK project, a successful main-branch build can open a draft
+pull request in `Azure/azure-cosmos-driver`.
 
 ## What this pull request supports
 
@@ -49,7 +48,7 @@ This prevents the final Go application from requiring a separately distributed
 | `tests/Prepare-GoDriverPullRequest.Tests.ps1` | Verifies that downstream synchronization removes retired generated files without modifying hand-maintained files. |
 | `tests/Test-NativeLink.Tests.ps1` | Verifies target metadata checks and Go link-smoke command wiring. |
 | `Invoke-LocalSupplyChain.ps1` | Runs a local end-to-end integration test without publishing anything. |
-| `native-driver.yml` | Defines the production build, evidence check, Go module artifact, and downstream draft pull request. |
+| `native-driver.yml` | Defines the official 1ES build, Go module artifact, and downstream draft pull request. |
 | `../docs/NATIVE_SUPPLY_CHAIN.md` | Explains how the artifacts are built and verified. |
 
 ## Production flow
@@ -61,10 +60,7 @@ Pinned azure-sdk-for-rust commit
 Build one static library for each supported target
     |
     v
-Publish each target through 1ES
-    |
-    v
-Verify the signed SPDX inventory and signed 1ES build record
+Publish each target through the official 1ES template with its standard SBOM
     |
     v
 Generate and test the Go modules
@@ -82,16 +78,19 @@ Open a draft pull request in Azure/azure-cosmos-driver
 GitHub code-owner review and approval
 ```
 
-The evidence check currently throws an error on purpose. It must remain
-fail-closed until an internal non-pull-request build confirms the exact paths and
-verification commands for the signed SPDX inventory and 1ES build record.
+The official 1ES template is the governed build and provenance boundary. The
+pipeline uses the repository's standard `1ES.PublishPipelineArtifact@1` wrapper
+with SBOM generation enabled rather than implementing a second, pipeline-local
+signature verifier.
 
 The publication stage runs only after a successful non-pull-request build of
 `refs/heads/main`. It mints a short-lived Azure SDK Automation GitHub App token,
-clones the downstream repository, verifies `SHA256SUMS`, rejects changes outside
-the generated module paths, runs Go validation for each module definition and
-the Linux AMD64 module, and opens a draft pull request. The target repository's
-branch rules require review and code-owner approval before merge.
+clones the downstream repository, verifies `SHA256SUMS`, excludes the 1ES
+`_manifest` evidence directory from payload validation, copies the complete
+manifest into the downstream repository, rejects files outside the managed
+roots, runs Go validation for each module definition and the Linux AMD64 module,
+and opens a draft pull request. The target repository's branch rules require
+review and code-owner approval before merge.
 
 ## Local integration test
 
@@ -121,7 +120,7 @@ The generated files are placed under:
 pipeline/artifacts/local-rehearsal/<timestamp>/
 ├── native/<target-id>/{_manifest,signing,audit,validation}/
 ├── azure-cosmos-driver-output/
-├── azure-cosmos-driver-pr/
+├── azure-cosmos-driver-pr/{_manifest,windows,linux,darwin}/
 └── LOCAL_PR_PREVIEW.md
 ```
 
@@ -157,9 +156,12 @@ row so an incomplete module is not generated.
 
 ## Work still required before release
 
-- Connect `native-driver.yml` to approved 1ES pools.
-- Confirm the signed SPDX and build-record layout from an internal release run.
-- Replace the deliberate evidence-check failure with real verification commands.
+- Register `native-driver.yml` in the internal Azure SDK project so
+  `1es-redirect.yml` selects the official 1ES template.
+- Confirm with the central security owners that the official 1ES template is the
+  approved trust boundary for these static libraries.
+- Install or confirm availability of every cross-compiler named by the build
+  matrix on its selected managed image.
 - Confirm that the Azure SDK Automation GitHub App installation includes the
   private `Azure/azure-cosmos-driver` repository and that this pipeline may use
   the `AzureSDKEngKeyVault Secrets` service connection.

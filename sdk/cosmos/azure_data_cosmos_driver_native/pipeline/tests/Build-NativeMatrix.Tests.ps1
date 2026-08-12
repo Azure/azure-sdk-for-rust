@@ -148,4 +148,39 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             $pipelineCompilers.ContainsKey($target.id) | Should -BeTrue
         }
     }
+
+    It 'uses the official 1ES wrapper and managed pool descriptors' {
+        $pipeline = Get-Content $PipelinePath -Raw
+
+        $pipeline | Should -Match ([regex]::Escape(
+            'template: /eng/pipelines/templates/stages/1es-redirect.yml'
+        ))
+        $pipeline | Should -Match 'Use1ESOfficial:\s+true'
+        $pipeline | Should -Match ([regex]::Escape(
+            'template: /eng/pipelines/templates/variables/image.yml'
+        ))
+        $pipeline | Should -Not -Match '\$\(pool-'
+
+        foreach ($variable in @(
+            '$(WINDOWSPOOL)',
+            '$(WINDOWSVMIMAGE)',
+            '$(WINDOWSOS)',
+            '$(LINUXPOOL)',
+            '$(LINUXVMIMAGE)',
+            '$(LINUXOS)',
+            '$(MACPOOL)',
+            '$(MACVMIMAGEM1)',
+            '$(MACOS)'
+        )) {
+            $pipeline | Should -Match ([regex]::Escape($variable))
+        }
+    }
+
+    It 'publishes directly after the official 1ES build without a custom evidence gate' {
+        $pipeline = Get-Content $PipelinePath -Raw
+
+        $pipeline | Should -Not -Match 'security_evidence'
+        $pipeline | Should -Match '(?s)stage:\s+gomodules.*?dependsOn:\s+build'
+        ([regex]::Matches($pipeline, 'SbomEnabled:\s+true')).Count | Should -Be 2
+    }
 }

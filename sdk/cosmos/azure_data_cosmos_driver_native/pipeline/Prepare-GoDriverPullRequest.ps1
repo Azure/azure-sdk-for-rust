@@ -6,10 +6,10 @@
 Validates generated Go modules and stages them in an azure-cosmos-driver checkout.
 
 .DESCRIPTION
-Verifies SHA256SUMS, rejects unexpected generated paths, synchronizes the
-pipeline-owned platform roots to the exact generated artifact, validates the Go
-files, and stages the resulting downstream changes. The script does not push or
-open a pull request.
+Verifies SHA256SUMS, requires the 1ES SPDX manifest, rejects unexpected generated
+paths, synchronizes the pipeline-owned platform and manifest roots to the exact
+generated artifact, validates the Go files, and stages the resulting downstream
+changes. The script does not push or open a pull request.
 #>
 [CmdletBinding()]
 param(
@@ -52,7 +52,7 @@ function Get-NormalizedRelativePath {
     [IO.Path]::GetRelativePath($Root, $Path).Replace('\', '/')
 }
 
-$managedRoots = @('windows', 'linux', 'darwin')
+$managedRoots = @('windows', 'linux', 'darwin', '_manifest')
 
 function Test-IsManagedPath {
     param(
@@ -66,6 +66,15 @@ function Test-IsManagedPath {
         }
     }
     return $Path -eq 'SHA256SUMS'
+}
+
+function Test-Is1EsEvidencePath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $Path.StartsWith('_manifest/', [StringComparison]::Ordinal)
 }
 
 $generatedRootPath = (Resolve-Path $GeneratedRoot).Path
@@ -122,6 +131,15 @@ $actualFiles = @(
     Get-ChildItem $generatedRootPath -Recurse -File |
         ForEach-Object { Get-NormalizedRelativePath -Root $generatedRootPath -Path $_.FullName }
 )
+$requiredManifestPath = '_manifest/spdx_2.2/manifest.spdx.json'
+$manifestFiles = @($actualFiles | Where-Object { Test-Is1EsEvidencePath -Path $_ })
+if ($requiredManifestPath -notin $manifestFiles) {
+    throw "Generated artifact is missing the required 1ES manifest: $requiredManifestPath"
+}
+foreach ($manifestFile in $manifestFiles) {
+    [void]$expectedFiles.Add($manifestFile)
+}
+
 $missingFiles = @($expectedFiles | Where-Object { $_ -notin $actualFiles })
 $unexpectedFiles = @($actualFiles | Where-Object { -not $expectedFiles.Contains($_) })
 if ($missingFiles.Count -gt 0 -or $unexpectedFiles.Count -gt 0) {

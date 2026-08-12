@@ -111,7 +111,14 @@ import "C"
 
         $GeneratedRoot = Join-Path $TestDrive 'generated'
         $CheckoutRoot = Join-Path $TestDrive 'checkout'
+        Remove-Item $GeneratedRoot, $CheckoutRoot -Recurse -Force -ErrorAction SilentlyContinue
         New-GeneratedFixture -Root $GeneratedRoot
+        Write-TestFile `
+            -Path (Join-Path $GeneratedRoot '_manifest/spdx_2.2/manifest.spdx.json') `
+            -Content "{}`n"
+        Write-TestFile `
+            -Path (Join-Path $GeneratedRoot '_manifest/spdx_2.2/bsi.cose') `
+            -Content "signed evidence`n"
 
         New-Item -ItemType Directory -Path $CheckoutRoot | Out-Null
         Invoke-TestGit -Root $CheckoutRoot -Arguments @('init', '--quiet')
@@ -128,7 +135,7 @@ import "C"
         Invoke-TestGit -Root $CheckoutRoot -Arguments @('commit', '--quiet', '-m', 'Seed downstream checkout')
     }
 
-    It 'stages retired generated files as deletions and preserves hand-maintained files' {
+    It 'publishes all 1ES evidence while preserving hand-maintained files' {
         & $ScriptPath `
             -GeneratedRoot $GeneratedRoot `
             -CheckoutRoot $CheckoutRoot `
@@ -139,5 +146,33 @@ import "C"
         $stagedChanges | Should -Contain "D`twindows/arm64/native/libazurecosmosdriver.a"
         Get-Content (Join-Path $CheckoutRoot 'README.md') -Raw | Should -Be "hand maintained`n"
         $stagedChanges | Where-Object { $_ -match 'README\.md$' } | Should -BeNullOrEmpty
+        Get-Content (Join-Path $CheckoutRoot '_manifest/spdx_2.2/manifest.spdx.json') -Raw |
+            Should -Be "{}`n"
+        Get-Content (Join-Path $CheckoutRoot '_manifest/spdx_2.2/bsi.cose') -Raw |
+            Should -Be "signed evidence`n"
+        $stagedChanges | Should -Contain "A`t_manifest/spdx_2.2/manifest.spdx.json"
+        $stagedChanges | Should -Contain "A`t_manifest/spdx_2.2/bsi.cose"
+    }
+
+    It 'rejects unexpected files outside the managed roots' {
+        Write-TestFile -Path (Join-Path $GeneratedRoot 'unexpected.txt') -Content "unexpected`n"
+
+        {
+            & $ScriptPath `
+                -GeneratedRoot $GeneratedRoot `
+                -CheckoutRoot $CheckoutRoot `
+                -MatrixPath $MatrixPath
+        } | Should -Throw '*unexpected.txt*'
+    }
+
+    It 'requires the standard 1ES SPDX manifest' {
+        Remove-Item (Join-Path $GeneratedRoot '_manifest/spdx_2.2/manifest.spdx.json')
+
+        {
+            & $ScriptPath `
+                -GeneratedRoot $GeneratedRoot `
+                -CheckoutRoot $CheckoutRoot `
+                -MatrixPath $MatrixPath
+        } | Should -Throw '*missing the required 1ES manifest*'
     }
 }
