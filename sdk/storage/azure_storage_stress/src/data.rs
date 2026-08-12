@@ -7,7 +7,7 @@ use azure_core::{
     http::{Body, NoFormat, RequestContent},
     stream::SeekableStream,
 };
-use bytes::{BufMut, Bytes};
+use bytes::Bytes;
 use crc_fast::{CrcAlgorithm, Digest};
 use futures::{AsyncRead, Stream};
 use rand::random;
@@ -37,7 +37,8 @@ pub fn random_data_memory_with_checksum(len: usize, algorithm: CrcAlgorithm) -> 
     let mut data = Vec::with_capacity(len);
 
     for i in (0..len).step_by(buf.len()) {
-        data.put(&buf[..min(buf.len(), i - len)]);
+        let copy = min(buf.len(), len - i);
+        data[i..i + copy].copy_from_slice(&buf[..copy]);
     }
 
     let mut digest = Digest::new(algorithm);
