@@ -141,10 +141,10 @@ impl AdaptiveTransport {
         }
     }
 
-    /// Returns the shard ID that would be selected for the given request,
-    /// without actually dispatching the request. Used to capture shard identity
-    /// before a timeout race so that diagnostics can report which shard was
-    /// targeted even when the transport future is cancelled.
+    /// Returns the best-effort shard ID for timeout diagnostics.
+    ///
+    /// Preselection may create pool capacity but does not reserve a stream. The
+    /// eventual dispatch may use a different shard if load changes first.
     pub(crate) fn pre_select_shard(
         &self,
         excluded_shard_id: Option<u64>,
