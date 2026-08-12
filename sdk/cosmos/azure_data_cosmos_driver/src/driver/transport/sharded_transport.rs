@@ -90,8 +90,8 @@ impl ShardedHttpTransport {
             }
         };
 
-        let shard = match pool.select_shard(excluded_shard_id, preferred_shard_id) {
-            Ok(shard) => shard,
+        let reservation = match pool.select_shard(excluded_shard_id, preferred_shard_id) {
+            Ok(reservation) => reservation,
             Err(error) => {
                 return TransportDispatch {
                     result: Err(TransportError::new(
@@ -104,11 +104,9 @@ impl ShardedHttpTransport {
             }
         };
 
-        let shard_id = shard.id;
-        let guard = shard.start_request();
-        let result = shard.client.send(request).await;
-        guard.finish(&result);
-        let shard_diagnostics = Some(shard.transport_diagnostics());
+        let shard_id = reservation.shard.id;
+        let result = reservation.shard.client.send(request).await;
+        let shard_diagnostics = Some(reservation.finish(&result));
 
         TransportDispatch {
             result,
@@ -131,9 +129,10 @@ impl ShardedHttpTransport {
         pool.is_some_and(|pool| pool.can_select_different_shard(excluded_shard_id))
     }
 
-    /// Returns the ID of the shard that would be selected for the given request,
-    /// without dispatching the request. Returns `None` if the pool does not exist
-    /// or shard selection fails.
+    /// Returns the best-effort ID of the shard that would be selected.
+    ///
+    /// Preselection may create pool capacity but does not reserve a stream. The
+    /// eventual dispatch may use a different shard if load changes first.
     pub(crate) fn pre_select_shard_id(
         &self,
         excluded_shard_id: Option<u64>,
@@ -145,11 +144,9 @@ impl ShardedHttpTransport {
             let pools = self.pools.lock().unwrap_or_else(|e| e.into_inner());
             pools.get(endpoint_key).cloned()
         };
-        // The outer pools mutex is released before calling select_shard,
-        // which acquires the inner shards RwLock. This avoids blocking
-        // get_or_create_pool for other endpoints during shard selection.
-        pool.and_then(|pool| pool.select_shard(excluded_shard_id, None).ok())
-            .map(|shard| shard.id)
+        // Release the outer pools mutex first. Pool-level preselection may
+        // acquire its write lock and create capacity before returning an ID.
+        pool.and_then(|pool| pool.pre_select_shard_id(excluded_shard_id).ok())
     }
 
     fn get_or_create_pool(
@@ -218,6 +215,10 @@ impl fmt::Debug for ShardedHttpTransport {
                 &self.connection_pool.max_http2_streams_per_client(),
             )
             .field(
+                "fan_out_threshold_percent",
+                &self.connection_pool.http2_fan_out_threshold_percent(),
+            )
+            .field(
                 "max_connections_per_endpoint",
                 &self.connection_pool.max_http2_connections_per_endpoint(),
             )
@@ -263,11 +264,13 @@ struct EndpointShardPool {
     /// reader-counter contention. Writes build a new `Vec` and swap
     /// the pointer atomically.
     shards: ArcSwap<Vec<Arc<ClientShard>>>,
-    /// Serializes write operations (try_create_shard, health sweep)
+    /// Serializes request-path scale-up and health-sweep mutations
     /// to prevent concurrent mutations from racing. Readers never
     /// acquire this lock — they use `shards.load()` directly.
     write_lock: Mutex<()>,
     next_shard_id: AtomicU64,
+    #[cfg(test)]
+    preselection_slow_path_barrier: Mutex<Option<Arc<std::sync::Barrier>>>,
 }
 
 impl EndpointShardPool {
@@ -285,11 +288,13 @@ impl EndpointShardPool {
             shards: ArcSwap::from_pointee(Vec::new()),
             write_lock: Mutex::new(()),
             next_shard_id: AtomicU64::new(1),
+            #[cfg(test)]
+            preselection_slow_path_barrier: Mutex::new(None),
         };
 
         // Best-effort eager shard creation. If a transient TLS/DNS issue
         // prevents building the initial shard(s), the pool starts empty and
-        // `select_shard` → `try_create_shard` will retry on the next request.
+        // request-path scale-up will retry on the next request.
         // The background health sweep also backfills to min_clients.
         {
             let mut initial = Vec::new();
@@ -318,36 +323,119 @@ impl EndpointShardPool {
         &self,
         excluded_shard_id: Option<u64>,
         preferred_shard_id: Option<u64>,
-    ) -> crate::error::Result<Arc<ClientShard>> {
+    ) -> crate::error::Result<InflightGuard> {
         let max_streams = self.connection_pool.max_http2_streams_per_client();
+        let target_streams = self.connection_pool.target_http2_streams_per_client();
         let min_connections = self.connection_pool.min_http2_connections_per_endpoint();
 
-        // Fast path: lock-free read via ArcSwap::load().
+        // Fast path: make a bounded number of lock-free reservation attempts.
         {
             let shards = self.shards.load();
-            if let Some(shard) = select_from_shards(
+            if let Some(reservation) = try_reserve_preferred(
                 &shards,
                 excluded_shard_id,
                 preferred_shard_id,
-                max_streams,
-                min_connections,
+                target_streams,
             ) {
-                return Ok(shard);
+                return Ok(reservation);
+            }
+
+            // Below the connection cap, normal selection is bounded by the
+            // desired `target_streams` occupancy (not the higher `max_streams`
+            // threshold) so load fans out across shards early instead of filling a
+            // single shard all the way up before another is used.
+            if let Some(reservation) =
+                reserve_from_shards(&shards, excluded_shard_id, target_streams, min_connections)
+            {
+                return Ok(reservation);
+            }
+
+            if shards.len() >= self.connection_pool.max_http2_connections_per_endpoint() {
+                return self.reserve_at_max_connections(&shards, excluded_shard_id, max_streams);
             }
         }
 
-        // All active shards at capacity (or pool is empty) — try creating a new one.
-        if let Some(shard) = self.try_create_shard()? {
-            return Ok(shard);
+        // Slow path serializes scale-up, rechecks capacity after waiting for
+        // the lock, and reserves a new shard before publishing it.
+        let guard = self.write_lock.lock().unwrap_or_else(|e| e.into_inner());
+        let current = self.shards.load();
+        if let Some(reservation) = try_reserve_preferred(
+            &current,
+            excluded_shard_id,
+            preferred_shard_id,
+            target_streams,
+        ) {
+            return Ok(reservation);
+        }
+        if let Some(reservation) =
+            reserve_from_shards(&current, excluded_shard_id, target_streams, min_connections)
+        {
+            return Ok(reservation);
         }
 
-        // Fallback: least-loaded of all selectable shards (over-capacity).
-        let shards = self.shards.load();
-        shards
+        if current.len() < self.connection_pool.max_http2_connections_per_endpoint() {
+            // Runs under write_lock on the request path. HttpClientFactory::build
+            // must remain non-blocking and must not perform network I/O.
+            let shard = match self.build_shard() {
+                Ok(shard) => Arc::new(shard),
+                Err(error) => {
+                    tracing::debug!(
+                        endpoint = %self.endpoint.0,
+                        %error,
+                        "Shard scale-up failed; using existing hard-cap headroom"
+                    );
+                    drop(guard);
+                    return match self.reserve_at_max_connections(
+                        &current,
+                        excluded_shard_id,
+                        max_streams,
+                    ) {
+                        Ok(reservation) => Ok(reservation),
+                        Err(_) => Err(error),
+                    };
+                }
+            };
+            let reservation = shard.reserve_initial();
+            trace!(
+                endpoint = %self.endpoint.0,
+                shard_id = shard.id,
+                pool_size = current.len() + 1,
+                "Created and reserved new shard (scale-up from request path)"
+            );
+            let mut updated = (**current).clone();
+            updated.push(shard);
+            self.shards.store(Arc::new(updated));
+            return Ok(reservation);
+        }
+
+        drop(guard);
+        self.reserve_at_max_connections(&current, excluded_shard_id, max_streams)
+    }
+
+    fn reserve_at_max_connections(
+        &self,
+        shards: &[Arc<ClientShard>],
+        excluded_shard_id: Option<u64>,
+        max_streams: u32,
+    ) -> crate::error::Result<InflightGuard> {
+        // Max-connections fallback: no more shards can be created. Prefer an
+        // existing selectable shard below the SDK's `max_streams` threshold.
+        // This may push a shard above the early fan-out target.
+        let selectable_count = shards
             .iter()
-            .filter(|s| s.is_selectable(excluded_shard_id))
-            .min_by_key(|s| s.inflight())
-            .cloned()
+            .filter(|shard| shard.is_selectable(excluded_shard_id))
+            .count();
+        if let Some(reservation) =
+            reserve_least_loaded_shard(shards, excluded_shard_id, selectable_count, max_streams)
+        {
+            return Ok(reservation);
+        }
+
+        // Once every selectable shard reaches the SDK threshold and no more
+        // shards can be created, keep dispatching through the least-loaded
+        // shard. The downstream HTTP/2 transport queues at the peer-advertised
+        // SETTINGS_MAX_CONCURRENT_STREAMS limit.
+        let shard = select_least_loaded_shard(shards, excluded_shard_id, selectable_count, None)
             .ok_or_else(|| {
                 crate::error::CosmosError::builder()
                     .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
@@ -356,7 +444,94 @@ impl EndpointShardPool {
                         self.endpoint.0
                     ))
                     .build()
-            })
+            })?;
+        Ok(shard.reserve_over_capacity())
+    }
+
+    fn pre_select_shard_id(&self, excluded_shard_id: Option<u64>) -> crate::error::Result<u64> {
+        let max_streams = self.connection_pool.max_http2_streams_per_client();
+        let target_streams = self.connection_pool.target_http2_streams_per_client();
+        let min_connections = self.connection_pool.min_http2_connections_per_endpoint();
+
+        {
+            let shards = self.shards.load();
+            if let Some(shard) = select_from_shards(
+                &shards,
+                excluded_shard_id,
+                None,
+                target_streams,
+                min_connections,
+            ) {
+                return Ok(shard.id);
+            }
+
+            if shards.len() >= self.connection_pool.max_http2_connections_per_endpoint() {
+                return self.preselect_at_max_connections(&shards, excluded_shard_id, max_streams);
+            }
+        }
+
+        // Preselection is diagnostic-only. Unlike dispatch, a scale-up build
+        // failure returns no hint rather than consuming existing hard-cap headroom.
+        if let Some(shard) =
+            self.select_or_create_shard(excluded_shard_id, target_streams, min_connections)?
+        {
+            return Ok(shard.id);
+        }
+
+        // Max-connections fallback mirrors `select_shard`: prefer a shard
+        // below the `max_streams` threshold before falling back to
+        // the least-loaded shard unconditionally.
+        let shards = self.shards.load();
+        let selectable_count = shards
+            .iter()
+            .filter(|shard| shard.is_selectable(excluded_shard_id))
+            .count();
+        select_least_loaded_shard(
+            &shards,
+            excluded_shard_id,
+            selectable_count,
+            Some(max_streams),
+        )
+        .or_else(|| select_least_loaded_shard(&shards, excluded_shard_id, selectable_count, None))
+        .map(|shard| shard.id)
+        .ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_message(format!(
+                    "endpoint shard pool {} has no available shards",
+                    self.endpoint.0
+                ))
+                .build()
+        })
+    }
+
+    fn preselect_at_max_connections(
+        &self,
+        shards: &[Arc<ClientShard>],
+        excluded_shard_id: Option<u64>,
+        max_streams: u32,
+    ) -> crate::error::Result<u64> {
+        let selectable_count = shards
+            .iter()
+            .filter(|shard| shard.is_selectable(excluded_shard_id))
+            .count();
+        select_least_loaded_shard(
+            shards,
+            excluded_shard_id,
+            selectable_count,
+            Some(max_streams),
+        )
+        .or_else(|| select_least_loaded_shard(shards, excluded_shard_id, selectable_count, None))
+        .map(|shard| shard.id)
+        .ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_message(format!(
+                    "endpoint shard pool {} has no available shards",
+                    self.endpoint.0
+                ))
+                .build()
+        })
     }
 
     fn can_select_different_shard(&self, excluded_shard_id: u64) -> bool {
@@ -367,18 +542,40 @@ impl EndpointShardPool {
             || shards.len() < self.connection_pool.max_http2_connections_per_endpoint()
     }
 
-    /// Creates a new shard if below the max limit. Serialized via `write_lock`
-    /// to prevent concurrent scale-up from exceeding `max_connections`.
-    fn try_create_shard(&self) -> crate::error::Result<Option<Arc<ClientShard>>> {
+    /// Rechecks selection under `write_lock` before creating a shard below the max limit.
+    ///
+    /// `desired_streams` is the occupancy threshold used to decide whether an
+    /// existing shard still has room (typically `target_streams`, mirroring
+    /// `select_shard`'s normal-path fan-out behavior).
+    fn select_or_create_shard(
+        &self,
+        excluded_shard_id: Option<u64>,
+        desired_streams: u32,
+        min_connections: usize,
+    ) -> crate::error::Result<Option<Arc<ClientShard>>> {
+        #[cfg(test)]
+        self.wait_for_preselection_slow_path();
+
         // Safe to ignore poisoning: the critical section only reads
         // ArcSwap, builds a shard, and stores a new Vec — none of
         // which panic.
         let _guard = self.write_lock.lock().unwrap_or_else(|e| e.into_inner());
         let current = self.shards.load();
+        if let Some(shard) = select_from_shards(
+            &current,
+            excluded_shard_id,
+            None,
+            desired_streams,
+            min_connections,
+        ) {
+            return Ok(Some(shard));
+        }
         if current.len() >= self.connection_pool.max_http2_connections_per_endpoint() {
             return Ok(None);
         }
 
+        // Runs under write_lock on the request path. HttpClientFactory::build
+        // must remain non-blocking and must not perform network I/O.
         let shard = Arc::new(self.build_shard()?);
         trace!(
             endpoint = %self.endpoint.0,
@@ -390,6 +587,26 @@ impl EndpointShardPool {
         new_vec.push(shard.clone());
         self.shards.store(Arc::new(new_vec));
         Ok(Some(shard))
+    }
+
+    #[cfg(test)]
+    fn wait_for_preselection_slow_path(&self) {
+        let barrier = self
+            .preselection_slow_path_barrier
+            .lock()
+            .expect("preselection barrier lock poisoned")
+            .clone();
+        if let Some(barrier) = barrier {
+            barrier.wait();
+        }
+    }
+
+    #[cfg(test)]
+    fn set_preselection_slow_path_barrier(&self, barrier: Arc<std::sync::Barrier>) {
+        *self
+            .preselection_slow_path_barrier
+            .lock()
+            .expect("preselection barrier lock poisoned") = Some(barrier);
     }
 
     fn build_shard(&self) -> crate::error::Result<ClientShard> {
@@ -512,9 +729,9 @@ impl EndpointShardPool {
             return Ok(());
         }
 
-        // Phase 2: build replacement shards outside the lock. This is the
-        // expensive part (TCP connect, TLS handshake) and does not block
-        // concurrent `select_shard` readers.
+        // Phase 2: build replacement shards outside the lock defensively. The
+        // current factory is non-blocking, but future implementations must not
+        // extend the health-sweep critical section.
         let mut new_shards = Vec::with_capacity(shards_needed);
         for _ in 0..shards_needed {
             match self.build_shard() {
@@ -613,19 +830,62 @@ impl ClientShard {
         self.inflight.load(Ordering::Relaxed)
     }
 
-    /// Begins tracking an inflight request and returns an RAII guard.
-    ///
-    /// Fully lock-free: only atomic increments on `inflight` and `total_requests`,
-    /// plus an atomic store for `last_request_at_nanos`.
-    fn start_request(&self) -> InflightGuard<'_> {
+    fn try_reserve(self: &Arc<Self>, max_streams: u32) -> Option<InflightGuard> {
+        self.try_reserve_after_load(max_streams, || {})
+    }
+
+    fn try_reserve_after_load<F>(
+        self: &Arc<Self>,
+        max_streams: u32,
+        before_first_cas: F,
+    ) -> Option<InflightGuard>
+    where
+        F: FnOnce(),
+    {
+        let mut inflight = self.inflight.load(Ordering::Relaxed);
+        if inflight >= max_streams {
+            return None;
+        }
+        before_first_cas();
+
+        loop {
+            match self.inflight.compare_exchange(
+                inflight,
+                inflight + 1,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ) {
+                Ok(_) => {
+                    self.record_reservation();
+                    return Some(InflightGuard::new(Arc::clone(self)));
+                }
+                Err(current) => {
+                    if current >= max_streams {
+                        return None;
+                    }
+                    inflight = current;
+                }
+            }
+        }
+    }
+
+    fn reserve_initial(self: &Arc<Self>) -> InflightGuard {
+        let previous = self.inflight.fetch_add(1, Ordering::Relaxed);
+        debug_assert_eq!(previous, 0, "new shards must be unpublished and idle");
+        self.record_reservation();
+        InflightGuard::new(Arc::clone(self))
+    }
+
+    fn reserve_over_capacity(self: &Arc<Self>) -> InflightGuard {
         self.inflight.fetch_add(1, Ordering::Relaxed);
+        self.record_reservation();
+        InflightGuard::new(Arc::clone(self))
+    }
+
+    fn record_reservation(&self) {
         self.total_requests.fetch_add(1, Ordering::Relaxed);
         self.last_request_at_nanos
             .store(self.instant_to_nanos(Instant::now()), Ordering::Relaxed);
-        InflightGuard {
-            shard: self,
-            finished: false,
-        }
     }
 
     fn record_request_outcome(&self, result: &Result<HttpResponse, TransportError>) {
@@ -656,22 +916,33 @@ impl ClientShard {
 /// state). If the guard is dropped without calling `finish` (e.g., the future
 /// was cancelled by a timeout race), only the inflight counter is decremented —
 /// no success/failure state change is recorded, which is the safest default.
-struct InflightGuard<'a> {
-    shard: &'a ClientShard,
+struct InflightGuard {
+    shard: Arc<ClientShard>,
     finished: bool,
 }
 
-impl<'a> InflightGuard<'a> {
+impl InflightGuard {
+    fn new(shard: Arc<ClientShard>) -> Self {
+        Self {
+            shard,
+            finished: false,
+        }
+    }
+
     /// Records the request outcome and consumes the guard.
     ///
     /// This decrements the inflight counter and updates success/failure state.
-    fn finish(mut self, result: &Result<HttpResponse, TransportError>) {
+    fn finish(
+        mut self,
+        result: &Result<HttpResponse, TransportError>,
+    ) -> TransportShardDiagnostics {
         self.finished = true;
         self.shard.record_request_outcome(result);
+        self.shard.transport_diagnostics()
     }
 }
 
-impl Drop for InflightGuard<'_> {
+impl Drop for InflightGuard {
     fn drop(&mut self) {
         if !self.finished {
             self.shard.decrement_inflight();
@@ -700,7 +971,7 @@ impl ClientShard {
         )
     }
 
-    /// Bumps inflight for test setup (not cancellation-safe; use `start_request` in production).
+    /// Bumps inflight for test setup (not cancellation-safe; reserve through the pool in production).
     #[cfg(test)]
     fn record_request_start(&self) {
         self.inflight.fetch_add(1, Ordering::Relaxed);
@@ -811,15 +1082,16 @@ impl ClientShardHealthSnapshot {
 
 /// Pure selection logic operating on a shard slice — no side effects.
 ///
-/// Returns the best shard from `shards` that is selectable and under the
-/// stream limit, preferring `preferred_shard_id` when available. Returns
-/// `None` when all shards are at capacity (caller should try creating a
-/// new shard or fall back to over-capacity selection).
+/// Returns the best shard from `shards` that is selectable and under
+/// `desired_streams` occupancy, preferring `preferred_shard_id` when
+/// available. Returns `None` when all active shards are at or above
+/// `desired_streams` (caller should try creating a new shard or fall back to
+/// over-capacity selection).
 fn select_from_shards(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
     preferred_shard_id: Option<u64>,
-    max_streams: u32,
+    desired_streams: u32,
     min_connections: usize,
 ) -> Option<Arc<ClientShard>> {
     if shards.is_empty() {
@@ -833,32 +1105,126 @@ fn select_from_shards(
             .iter()
             .find(|s| s.id == preferred_id && s.is_selectable(excluded_shard_id))
         {
-            if shard.inflight() < max_streams {
+            if shard.inflight() < desired_streams {
                 return Some(Arc::clone(shard));
             }
         }
     }
 
-    let active_count = active_shard_count(shards, excluded_shard_id, max_streams, min_connections);
+    let active_count =
+        active_shard_count(shards, excluded_shard_id, desired_streams, min_connections);
 
-    // Try least-loaded with capacity among active shards
+    select_least_loaded_shard(
+        shards,
+        excluded_shard_id,
+        active_count,
+        Some(desired_streams),
+    )
+}
+
+fn reserve_from_shards(
+    shards: &[Arc<ClientShard>],
+    excluded_shard_id: Option<u64>,
+    desired_streams: u32,
+    min_connections: usize,
+) -> Option<InflightGuard> {
+    let active_count =
+        active_shard_count(shards, excluded_shard_id, desired_streams, min_connections);
+    reserve_least_loaded_shard(shards, excluded_shard_id, active_count, desired_streams)
+}
+
+fn try_reserve_preferred(
+    shards: &[Arc<ClientShard>],
+    excluded_shard_id: Option<u64>,
+    preferred_shard_id: Option<u64>,
+    stream_limit: u32,
+) -> Option<InflightGuard> {
+    selectable_preferred_shard(shards, excluded_shard_id, preferred_shard_id)
+        .and_then(|shard| shard.try_reserve(stream_limit))
+}
+
+fn selectable_preferred_shard(
+    shards: &[Arc<ClientShard>],
+    excluded_shard_id: Option<u64>,
+    preferred_shard_id: Option<u64>,
+) -> Option<&Arc<ClientShard>> {
+    let preferred_id = preferred_shard_id?;
     shards
         .iter()
-        .filter(|s| s.is_selectable(excluded_shard_id))
-        .take(active_count)
-        .filter(|s| s.inflight() < max_streams)
-        .min_by_key(|s| s.inflight())
-        .cloned()
+        .find(|shard| shard.id == preferred_id && shard.is_selectable(excluded_shard_id))
+}
+
+fn select_least_loaded_shard(
+    shards: &[Arc<ClientShard>],
+    excluded_shard_id: Option<u64>,
+    candidate_count: usize,
+    max_streams: Option<u32>,
+) -> Option<Arc<ClientShard>> {
+    let mut selected: Option<(Arc<ClientShard>, u32)> = None;
+    for shard in shards
+        .iter()
+        .filter(|shard| shard.is_selectable(excluded_shard_id))
+        .take(candidate_count)
+    {
+        let inflight = shard.inflight();
+        if max_streams.is_some_and(|max_streams| inflight >= max_streams) {
+            continue;
+        }
+        if selected
+            .as_ref()
+            .is_none_or(|(_, selected_inflight)| inflight < *selected_inflight)
+        {
+            selected = Some((Arc::clone(shard), inflight));
+        }
+    }
+
+    selected.map(|(shard, _)| shard)
+}
+
+fn reserve_least_loaded_shard(
+    shards: &[Arc<ClientShard>],
+    excluded_shard_id: Option<u64>,
+    candidate_count: usize,
+    max_streams: u32,
+) -> Option<InflightGuard> {
+    let selected = select_least_loaded_shard(
+        shards,
+        excluded_shard_id,
+        candidate_count,
+        Some(max_streams),
+    )?;
+    if let Some(reservation) = selected.try_reserve(max_streams) {
+        return Some(reservation);
+    }
+
+    for shard in shards
+        .iter()
+        .filter(|shard| shard.is_selectable(excluded_shard_id))
+        .take(candidate_count)
+    {
+        if shard.id == selected.id {
+            continue;
+        }
+        if let Some(reservation) = shard.try_reserve(max_streams) {
+            return Some(reservation);
+        }
+    }
+
+    None
 }
 
 /// Computes the number of active shards that should participate in selection.
 ///
-/// Based on current inflight load, returns a count between `min_connections`
-/// and the number of selectable shards.
+/// Based on current inflight load relative to the `desired_streams` occupancy
+/// target, returns a count between `min_connections` and the number of
+/// selectable shards. Using `desired_streams` (rather than the higher
+/// `max_streams` threshold) as the divisor here is what drives early fan-out:
+/// the active window grows once shards approach their desired occupancy,
+/// rather than only once they hit the higher threshold.
 fn active_shard_count(
     shards: &[Arc<ClientShard>],
     excluded_shard_id: Option<u64>,
-    max_streams: u32,
+    desired_streams: u32,
     min_connections: usize,
 ) -> usize {
     let mut selectable_count = 0usize;
@@ -875,7 +1241,7 @@ fn active_shard_count(
         return 0;
     }
 
-    let needed = (total_inflight as usize + 1).div_ceil(max_streams as usize);
+    let needed = (total_inflight as usize + 1).div_ceil(desired_streams as usize);
     needed.max(min_connections).min(selectable_count).max(1)
 }
 
@@ -931,6 +1297,7 @@ mod tests {
         HttpRequest, HttpResponse, TransportError,
     };
     use async_trait::async_trait;
+    use std::sync::{mpsc, Barrier};
 
     fn synthetic_transport_error() -> TransportError {
         TransportError::new(
@@ -942,6 +1309,14 @@ mod tests {
                 .build(),
             crate::diagnostics::RequestSentStatus::NotSent,
         )
+    }
+
+    fn successful_response() -> HttpResponse {
+        HttpResponse {
+            status: 200,
+            headers: azure_core::http::headers::Headers::new(),
+            body: Vec::new(),
+        }
     }
 
     #[derive(Debug, Default)]
@@ -990,9 +1365,95 @@ mod tests {
         }
     }
 
+    #[derive(Debug)]
+    struct StaticClientFactory {
+        client: Arc<dyn TransportClient>,
+    }
+
+    impl HttpClientFactory for StaticClientFactory {
+        fn build(
+            &self,
+            _connection_pool: &ConnectionPoolOptions,
+            _config: HttpClientConfig,
+        ) -> crate::error::Result<Arc<dyn TransportClient>> {
+            Ok(Arc::clone(&self.client))
+        }
+    }
+
+    #[derive(Debug)]
+    struct FailAfterFactory {
+        successful_builds: usize,
+        build_calls: std::sync::atomic::AtomicUsize,
+    }
+
+    impl HttpClientFactory for FailAfterFactory {
+        fn build(
+            &self,
+            _connection_pool: &ConnectionPoolOptions,
+            _config: HttpClientConfig,
+        ) -> crate::error::Result<Arc<dyn TransportClient>> {
+            let call = self.build_calls.fetch_add(1, Ordering::Relaxed);
+            if call < self.successful_builds {
+                Ok(Arc::new(NoopTransportClient))
+            } else {
+                Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED)
+                    .with_message("synthetic client construction failure")
+                    .build())
+            }
+        }
+    }
+
+    #[derive(Debug, Default)]
+    struct CompletingTransportClient {
+        active: AtomicU32,
+        peak_active: AtomicU32,
+        completions: AtomicU64,
+        overlap_barrier: Mutex<Option<Arc<tokio::sync::Barrier>>>,
+    }
+
+    impl CompletingTransportClient {
+        fn set_overlap_barrier(&self, barrier: Option<Arc<tokio::sync::Barrier>>) {
+            *self
+                .overlap_barrier
+                .lock()
+                .expect("overlap barrier lock poisoned") = barrier;
+        }
+    }
+
+    #[async_trait]
+    impl TransportClient for CompletingTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            let active = self.active.fetch_add(1, Ordering::Relaxed) + 1;
+            self.peak_active.fetch_max(active, Ordering::Relaxed);
+            let overlap_barrier = self
+                .overlap_barrier
+                .lock()
+                .expect("overlap barrier lock poisoned")
+                .clone();
+            if let Some(overlap_barrier) = overlap_barrier {
+                overlap_barrier.wait().await;
+            }
+            self.active.fetch_sub(1, Ordering::Relaxed);
+            self.completions.fetch_add(1, Ordering::Relaxed);
+            Ok(successful_response())
+        }
+    }
+
+    #[derive(Debug)]
+    struct PendingTransportClient;
+
+    #[async_trait]
+    impl TransportClient for PendingTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            futures::future::pending().await
+        }
+    }
+
     fn connection_pool() -> ConnectionPoolOptions {
         ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(2)
+            .with_http2_fan_out_threshold_percent(100)
             .with_min_http2_connections_per_endpoint(1)
             .with_max_http2_connections_per_endpoint(4)
             .with_http2_consecutive_failure_threshold(2)
@@ -1009,6 +1470,612 @@ mod tests {
         )
     }
 
+    fn test_request(endpoint: &str) -> HttpRequest {
+        HttpRequest {
+            url: Url::parse(endpoint).unwrap(),
+            method: azure_core::http::Method::Post,
+            headers: azure_core::http::headers::Headers::new(),
+            body: None,
+            timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
+        }
+    }
+
+    fn shard_pool(
+        min_shard_count: usize,
+        max_shard_count: usize,
+        max_streams: u32,
+    ) -> EndpointShardPool {
+        // Preserves prior test semantics for callers written before the
+        // target/max split: target == max, so normal-path selection is
+        // bounded by the same value as the hard reservation cap.
+        shard_pool_with_target(min_shard_count, max_shard_count, max_streams, max_streams)
+    }
+
+    fn shard_pool_with_target(
+        min_shard_count: usize,
+        max_shard_count: usize,
+        max_streams: u32,
+        target_streams: u32,
+    ) -> EndpointShardPool {
+        let threshold_percent = (((target_streams - 1) * 100) / max_streams + 1) as u8;
+        let connection_pool = ConnectionPoolOptions::builder()
+            .with_max_http2_streams_per_client(max_streams)
+            .with_http2_fan_out_threshold_percent(threshold_percent)
+            .with_min_http2_connections_per_endpoint(min_shard_count)
+            .with_max_http2_connections_per_endpoint(max_shard_count)
+            .build()
+            .unwrap();
+        let client_config = HttpClientConfig::dataplane_gateway(
+            &connection_pool,
+            crate::diagnostics::TransportHttpVersion::Http2,
+        );
+        EndpointShardPool::new(
+            EndpointKey(Arc::from("shard-pool.documents.azure.com:443")),
+            connection_pool,
+            Arc::new(TrackingFactory::default()),
+            client_config,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn concurrent_preselection_reuses_new_capacity_before_scaling_again() {
+        const PRESELECT_COUNT: usize = 16;
+
+        let pool = Arc::new(shard_pool(1, 4, 1));
+        let full_reservation = pool.select_shard(None, None).unwrap();
+        let full_shard_id = full_reservation.shard.id;
+        pool.set_preselection_slow_path_barrier(Arc::new(Barrier::new(PRESELECT_COUNT)));
+
+        let selections = std::thread::scope(|scope| {
+            let (sender, receiver) = mpsc::channel();
+            for _ in 0..PRESELECT_COUNT {
+                let pool = Arc::clone(&pool);
+                let sender = sender.clone();
+                scope.spawn(move || {
+                    sender
+                        .send(pool.pre_select_shard_id(None).unwrap())
+                        .unwrap();
+                });
+            }
+            drop(sender);
+            receiver.into_iter().collect::<Vec<_>>()
+        });
+
+        assert_eq!(selections.len(), PRESELECT_COUNT);
+        assert!(selections.iter().all(|shard_id| *shard_id != full_shard_id));
+        assert!(selections.iter().all(|shard_id| *shard_id == selections[0]));
+        assert_eq!(pool.shards.load().len(), 2);
+    }
+
+    #[test]
+    fn concurrent_selection_reserves_without_exceeding_stream_limit() {
+        const MAX_STREAMS: u32 = 2;
+        const REQUEST_COUNT: usize = 32;
+
+        let connection_pool = ConnectionPoolOptions::builder()
+            .with_max_http2_streams_per_client(MAX_STREAMS)
+            .with_http2_fan_out_threshold_percent(100)
+            .with_min_http2_connections_per_endpoint(1)
+            .with_max_http2_connections_per_endpoint(REQUEST_COUNT / MAX_STREAMS as usize)
+            .build()
+            .unwrap();
+        let client_config = HttpClientConfig::dataplane_gateway(
+            &connection_pool,
+            crate::diagnostics::TransportHttpVersion::Http2,
+        );
+        let pool = Arc::new(
+            EndpointShardPool::new(
+                EndpointKey(Arc::from("concurrent.documents.azure.com:443")),
+                connection_pool,
+                Arc::new(TrackingFactory::default()),
+                client_config,
+            )
+            .unwrap(),
+        );
+        let start = Arc::new(Barrier::new(REQUEST_COUNT + 1));
+
+        let reservations = std::thread::scope(|scope| {
+            let (sender, receiver) = mpsc::channel();
+            for _ in 0..REQUEST_COUNT {
+                let pool = Arc::clone(&pool);
+                let start = Arc::clone(&start);
+                let sender = sender.clone();
+                scope.spawn(move || {
+                    start.wait();
+                    let reservation = pool.select_shard(None, None).unwrap();
+                    assert!(sender.send(reservation).is_ok());
+                });
+            }
+            drop(sender);
+            start.wait();
+            receiver.into_iter().collect::<Vec<_>>()
+        });
+
+        assert_eq!(reservations.len(), REQUEST_COUNT);
+        let inflight = pool
+            .shards
+            .load()
+            .iter()
+            .map(|shard| shard.inflight())
+            .collect::<Vec<_>>();
+        assert_eq!(inflight.iter().sum::<u32>(), REQUEST_COUNT as u32);
+        assert!(inflight.iter().all(|count| *count <= MAX_STREAMS));
+        assert!(inflight.contains(&MAX_STREAMS));
+    }
+
+    #[test]
+    fn successful_reservation_finishes_once() {
+        let pool = EndpointShardPool::new(
+            EndpointKey(Arc::from("success.documents.azure.com:443")),
+            connection_pool(),
+            Arc::new(TrackingFactory::default()),
+            client_config(),
+        )
+        .unwrap();
+
+        let reservation = pool.select_shard(None, None).unwrap();
+        let shard = Arc::clone(&reservation.shard);
+
+        assert_eq!(shard.inflight(), 1);
+        assert_eq!(shard.total_requests.load(Ordering::Relaxed), 1);
+
+        reservation.finish(&Ok(successful_response()));
+
+        assert_eq!(shard.inflight(), 0);
+        assert_eq!(shard.total_requests.load(Ordering::Relaxed), 1);
+        assert_eq!(shard.total_cancellations.load(Ordering::Relaxed), 0);
+        assert_ne!(
+            shard.last_success_at_nanos.load(Ordering::Relaxed),
+            TIMESTAMP_NONE
+        );
+    }
+
+    #[test]
+    fn dropped_reservation_records_cancellation_once() {
+        let pool = EndpointShardPool::new(
+            EndpointKey(Arc::from("cancel.documents.azure.com:443")),
+            connection_pool(),
+            Arc::new(TrackingFactory::default()),
+            client_config(),
+        )
+        .unwrap();
+
+        let reservation = pool.select_shard(None, None).unwrap();
+        let shard = Arc::clone(&reservation.shard);
+        drop(reservation);
+
+        assert_eq!(shard.inflight(), 0);
+        assert_eq!(shard.total_requests.load(Ordering::Relaxed), 1);
+        assert_eq!(shard.total_cancellations.load(Ordering::Relaxed), 1);
+        assert_eq!(shard.total_failures.load(Ordering::Relaxed), 0);
+    }
+
+    #[test]
+    fn repeated_concurrent_sends_complete_and_release_reservations() {
+        const CONCURRENCY: usize = 20;
+        const ROUNDS: usize = 50;
+        const SEED_COUNT: usize = 100;
+
+        let expected = (SEED_COUNT + CONCURRENCY * ROUNDS) as u64;
+        let (sender, receiver) = mpsc::sync_channel(1);
+        let worker = std::thread::spawn(move || {
+            let runtime = tokio::runtime::Builder::new_multi_thread()
+                .worker_threads(4)
+                .enable_time()
+                .build()
+                .unwrap();
+            runtime.block_on(async move {
+                let connection_pool = ConnectionPoolOptions::builder()
+                    .with_max_http2_streams_per_client(16)
+                    .with_min_http2_connections_per_endpoint(1)
+                    .with_max_http2_connections_per_endpoint(4)
+                    .build()
+                    .unwrap();
+                let client = Arc::new(CompletingTransportClient::default());
+                let transport_client: Arc<dyn TransportClient> = client.clone();
+                let transport = Arc::new(ShardedHttpTransport::new(
+                    connection_pool.clone(),
+                    Arc::new(StaticClientFactory {
+                        client: transport_client,
+                    }),
+                    HttpClientConfig::dataplane_gateway_v2(&connection_pool),
+                ));
+                let endpoint =
+                    Arc::new(EndpointKey(Arc::from("send-test.documents.azure.com:443")));
+                let request = Arc::new(test_request("https://send-test.documents.azure.com/dbs"));
+
+                for _ in 0..SEED_COUNT {
+                    let dispatch = transport.send(&request, None, &endpoint, None).await;
+                    assert!(dispatch.result.is_ok());
+                }
+
+                for _ in 0..ROUNDS {
+                    client.set_overlap_barrier(Some(Arc::new(tokio::sync::Barrier::new(
+                        CONCURRENCY,
+                    ))));
+                    let start = Arc::new(tokio::sync::Barrier::new(CONCURRENCY + 1));
+                    let mut tasks = tokio::task::JoinSet::new();
+                    for _ in 0..CONCURRENCY {
+                        let transport = Arc::clone(&transport);
+                        let endpoint = Arc::clone(&endpoint);
+                        let request = Arc::clone(&request);
+                        let start = Arc::clone(&start);
+                        tasks.spawn(async move {
+                            start.wait().await;
+                            let preferred = transport.pre_select_shard_id(None, &endpoint);
+                            transport.send(&request, None, &endpoint, preferred).await
+                        });
+                    }
+                    start.wait().await;
+                    while let Some(result) = tasks.join_next().await {
+                        assert!(result.unwrap().result.is_ok());
+                    }
+                    client.set_overlap_barrier(None);
+                }
+
+                let pool = transport
+                    .get_or_create_pool(endpoint.as_ref().clone())
+                    .unwrap();
+                let shards = pool.shards.load();
+                let inflight = shards.iter().map(|shard| shard.inflight()).sum::<u32>();
+                let total_requests = shards
+                    .iter()
+                    .map(|shard| shard.total_requests.load(Ordering::Relaxed))
+                    .sum::<u64>();
+                let total_cancellations = shards
+                    .iter()
+                    .map(|shard| shard.total_cancellations.load(Ordering::Relaxed))
+                    .sum::<u64>();
+                sender
+                    .send((
+                        client.completions.load(Ordering::Relaxed),
+                        client.peak_active.load(Ordering::Relaxed),
+                        inflight,
+                        total_requests,
+                        total_cancellations,
+                    ))
+                    .unwrap();
+            });
+        });
+
+        let summary = match receiver.recv_timeout(Duration::from_secs(5)) {
+            Ok(summary) => summary,
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                worker.join().expect("concurrent send worker panicked");
+                panic!("concurrent send worker exited without a summary");
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                panic!("concurrent sends should complete before the timeout");
+            }
+        };
+        worker.join().expect("concurrent send worker panicked");
+
+        let (completions, peak_active, inflight, total_requests, total_cancellations) = summary;
+        assert_eq!(
+            (completions, inflight, total_requests, total_cancellations),
+            (expected, 0, expected, 0)
+        );
+        assert_eq!(peak_active, CONCURRENCY as u32);
+    }
+
+    #[tokio::test]
+    async fn cancelled_send_releases_reservation_once() {
+        let connection_pool = connection_pool();
+        let transport = ShardedHttpTransport::new(
+            connection_pool.clone(),
+            Arc::new(StaticClientFactory {
+                client: Arc::new(PendingTransportClient),
+            }),
+            HttpClientConfig::dataplane_gateway_v2(&connection_pool),
+        );
+        let endpoint = EndpointKey(Arc::from("cancel-send.documents.azure.com:443"));
+        let request = test_request("https://cancel-send.documents.azure.com/dbs");
+        let pool = transport.get_or_create_pool(endpoint.clone()).unwrap();
+        let preferred = transport.pre_select_shard_id(None, &endpoint);
+
+        let result = tokio::time::timeout(
+            Duration::from_millis(25),
+            transport.send(&request, None, &endpoint, preferred),
+        )
+        .await;
+
+        assert!(result.is_err());
+        let shards = pool.shards.load();
+        assert_eq!(shards.iter().map(|shard| shard.inflight()).sum::<u32>(), 0);
+        assert_eq!(
+            shards
+                .iter()
+                .map(|shard| shard.total_requests.load(Ordering::Relaxed))
+                .sum::<u64>(),
+            1
+        );
+        assert_eq!(
+            shards
+                .iter()
+                .map(|shard| shard.total_cancellations.load(Ordering::Relaxed))
+                .sum::<u64>(),
+            1
+        );
+        assert_eq!(
+            shards
+                .iter()
+                .map(|shard| shard.total_failures.load(Ordering::Relaxed))
+                .sum::<u64>(),
+            0
+        );
+    }
+
+    #[test]
+    fn preselection_is_non_reserving_and_preferred_when_selectable() {
+        let pool = EndpointShardPool::new(
+            EndpointKey(Arc::from("preferred.documents.azure.com:443")),
+            connection_pool(),
+            Arc::new(TrackingFactory::default()),
+            client_config(),
+        )
+        .unwrap();
+
+        let preferred_id = pool.pre_select_shard_id(None).unwrap();
+        let preferred = Arc::clone(&pool.shards.load()[0]);
+
+        assert_eq!(preferred.id, preferred_id);
+        assert_eq!(preferred.inflight(), 0);
+        assert_eq!(preferred.total_requests.load(Ordering::Relaxed), 0);
+
+        let reservation = pool.select_shard(None, Some(preferred_id)).unwrap();
+
+        assert_eq!(reservation.shard.id, preferred_id);
+        assert_eq!(preferred.inflight(), 1);
+        assert_eq!(preferred.total_requests.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn preferred_at_target_uses_less_loaded_peer() {
+        let pool = shard_pool_with_target(2, 2, 4, 1);
+        let shards = pool.shards.load();
+        let preferred = Arc::clone(&shards[0]);
+        let peer = Arc::clone(&shards[1]);
+        drop(shards);
+
+        let preferred_reservation = preferred.try_reserve(4).unwrap();
+        let selected = pool.select_shard(None, Some(preferred.id)).unwrap();
+
+        assert_eq!(preferred.inflight(), 1);
+        assert_eq!(selected.shard.id, peer.id);
+        assert_eq!(peer.inflight(), 1);
+
+        selected.finish(&Ok(successful_response()));
+        preferred_reservation.finish(&Ok(successful_response()));
+    }
+
+    #[test]
+    fn shard_build_failure_uses_existing_hard_cap_headroom() {
+        let connection_pool = ConnectionPoolOptions::builder()
+            .with_max_http2_streams_per_client(4)
+            .with_http2_fan_out_threshold_percent(1)
+            .with_min_http2_connections_per_endpoint(1)
+            .with_max_http2_connections_per_endpoint(2)
+            .build()
+            .unwrap();
+        let client_config = HttpClientConfig::dataplane_gateway(
+            &connection_pool,
+            crate::diagnostics::TransportHttpVersion::Http2,
+        );
+        let factory = Arc::new(FailAfterFactory {
+            successful_builds: 1,
+            build_calls: std::sync::atomic::AtomicUsize::new(0),
+        });
+        let pool = EndpointShardPool::new(
+            EndpointKey(Arc::from("build-failure.documents.azure.com:443")),
+            connection_pool,
+            factory.clone(),
+            client_config,
+        )
+        .unwrap();
+
+        let target_reservation = pool.select_shard(None, None).unwrap();
+        let fallback = pool.select_shard(None, None).unwrap();
+
+        assert_eq!(factory.build_calls.load(Ordering::Relaxed), 2);
+        assert_eq!(pool.shards.load().len(), 1);
+        assert_eq!(fallback.shard.id, target_reservation.shard.id);
+        assert_eq!(fallback.shard.inflight(), 2);
+
+        fallback.finish(&Ok(successful_response()));
+        target_reservation.finish(&Ok(successful_response()));
+    }
+
+    #[test]
+    fn shard_build_failure_without_fallback_preserves_original_error() {
+        let connection_pool = ConnectionPoolOptions::builder()
+            .with_max_http2_streams_per_client(4)
+            .with_http2_fan_out_threshold_percent(1)
+            .with_min_http2_connections_per_endpoint(1)
+            .with_max_http2_connections_per_endpoint(2)
+            .build()
+            .unwrap();
+        let client_config = HttpClientConfig::dataplane_gateway(
+            &connection_pool,
+            crate::diagnostics::TransportHttpVersion::Http2,
+        );
+        let pool = EndpointShardPool::new(
+            EndpointKey(Arc::from("empty-build-failure.documents.azure.com:443")),
+            connection_pool,
+            Arc::new(FailAfterFactory {
+                successful_builds: 0,
+                build_calls: std::sync::atomic::AtomicUsize::new(0),
+            }),
+            client_config,
+        )
+        .unwrap();
+
+        let error = match pool.select_shard(None, None) {
+            Ok(_) => panic!("selection should preserve the construction failure"),
+            Err(error) => error,
+        };
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED
+        );
+        assert_eq!(pool.shards.load().len(), 0);
+    }
+
+    #[test]
+    fn max_connections_fallback_does_not_wait_for_write_lock() {
+        let pool = Arc::new(shard_pool_with_target(1, 1, 4, 1));
+        let target_reservation = pool.select_shard(None, None).unwrap();
+        let write_guard = pool
+            .write_lock
+            .lock()
+            .expect("write lock should not be poisoned");
+        let (sender, receiver) = mpsc::sync_channel(1);
+        let pool_for_thread = Arc::clone(&pool);
+        let handle = std::thread::spawn(move || {
+            sender
+                .send(pool_for_thread.select_shard(None, None))
+                .unwrap();
+        });
+
+        let result = receiver.recv_timeout(Duration::from_secs(1));
+        drop(write_guard);
+        handle.join().expect("selection thread should not panic");
+        let fallback = result
+            .expect("max-connections fallback should not wait for write_lock")
+            .unwrap();
+
+        assert_eq!(fallback.shard.id, target_reservation.shard.id);
+        assert_eq!(fallback.shard.inflight(), 2);
+
+        fallback.finish(&Ok(successful_response()));
+        target_reservation.finish(&Ok(successful_response()));
+    }
+
+    #[test]
+    fn hard_limit_fallback_uses_least_loaded_shard_not_preferred() {
+        let pool = shard_pool_with_target(2, 2, 4, 1);
+        let shards = pool.shards.load();
+        let preferred = Arc::clone(&shards[0]);
+        let peer = Arc::clone(&shards[1]);
+        drop(shards);
+
+        let preferred_reservations = (0..3)
+            .map(|_| preferred.try_reserve(4).unwrap())
+            .collect::<Vec<_>>();
+        let peer_reservation = peer.try_reserve(4).unwrap();
+
+        let selected = pool.select_shard(None, Some(preferred.id)).unwrap();
+
+        assert_eq!(selected.shard.id, peer.id);
+        assert_eq!(preferred.inflight(), 3);
+        assert_eq!(peer.inflight(), 2);
+
+        selected.finish(&Ok(successful_response()));
+        peer_reservation.finish(&Ok(successful_response()));
+        for reservation in preferred_reservations {
+            reservation.finish(&Ok(successful_response()));
+        }
+    }
+
+    #[test]
+    fn selection_excludes_preferred_shard_when_requested() {
+        let pool = EndpointShardPool::new(
+            EndpointKey(Arc::from("excluded.documents.azure.com:443")),
+            connection_pool(),
+            Arc::new(TrackingFactory::default()),
+            client_config(),
+        )
+        .unwrap();
+        let excluded_id = pool.pre_select_shard_id(None).unwrap();
+
+        let reservation = pool
+            .select_shard(Some(excluded_id), Some(excluded_id))
+            .unwrap();
+
+        assert_ne!(reservation.shard.id, excluded_id);
+        assert_eq!(pool.shards.load().len(), 2);
+    }
+
+    #[test]
+    fn selection_can_exceed_sdk_threshold_at_max_connections() {
+        let connection_pool = ConnectionPoolOptions::builder()
+            .with_max_http2_streams_per_client(1)
+            .with_http2_fan_out_threshold_percent(100)
+            .with_min_http2_connections_per_endpoint(1)
+            .with_max_http2_connections_per_endpoint(1)
+            .build()
+            .unwrap();
+        let client_config = HttpClientConfig::dataplane_gateway(
+            &connection_pool,
+            crate::diagnostics::TransportHttpVersion::Http2,
+        );
+        let pool = EndpointShardPool::new(
+            EndpointKey(Arc::from("fallback.documents.azure.com:443")),
+            connection_pool,
+            Arc::new(TrackingFactory::default()),
+            client_config,
+        )
+        .unwrap();
+
+        let first = pool.select_shard(None, None).unwrap();
+        let fallback = pool.select_shard(None, None).unwrap();
+
+        assert_eq!(fallback.shard.id, first.shard.id);
+        assert_eq!(first.shard.inflight(), 2);
+        assert_eq!(pool.shards.load().len(), 1);
+    }
+
+    #[test]
+    fn bounded_reservation_retries_contention_until_threshold() {
+        const MAX_STREAMS: u32 = 4;
+        const ATTEMPTS: usize = 20;
+
+        let pool = shard_pool_with_target(1, 1, MAX_STREAMS, MAX_STREAMS);
+        let shard = Arc::clone(&pool.shards.load()[0]);
+        let before_first_cas = Arc::new(Barrier::new(ATTEMPTS));
+
+        let reservations = std::thread::scope(|scope| {
+            let (sender, receiver) = mpsc::channel();
+            for _ in 0..ATTEMPTS {
+                let shard = Arc::clone(&shard);
+                let before_first_cas = Arc::clone(&before_first_cas);
+                let sender = sender.clone();
+                scope.spawn(move || {
+                    let reservation = shard.try_reserve_after_load(MAX_STREAMS, || {
+                        before_first_cas.wait();
+                    });
+                    assert!(sender.send(reservation).is_ok());
+                });
+            }
+            drop(sender);
+            receiver.into_iter().flatten().collect::<Vec<_>>()
+        });
+
+        assert_eq!(reservations.len(), MAX_STREAMS as usize);
+        assert_eq!(shard.inflight(), MAX_STREAMS);
+        for reservation in reservations {
+            reservation.finish(&Ok(successful_response()));
+        }
+        assert_eq!(shard.inflight(), 0);
+    }
+
+    #[test]
+    fn preselection_returns_shard_at_max_connections_and_sdk_threshold() {
+        let pool = shard_pool_with_target(1, 1, 1, 1);
+        let reservation = pool.select_shard(None, None).unwrap();
+
+        let preselected_id = pool.pre_select_shard_id(None).unwrap();
+
+        assert_eq!(preselected_id, reservation.shard.id);
+        assert_eq!(reservation.shard.inflight(), 1);
+        assert_eq!(reservation.shard.total_requests.load(Ordering::Relaxed), 1);
+
+        reservation.finish(&Ok(successful_response()));
+    }
+
     #[test]
     fn endpoint_pool_scales_up_when_active_shards_are_full() {
         let factory = Arc::new(TrackingFactory::default());
@@ -1021,12 +2088,15 @@ mod tests {
         .unwrap();
 
         let first = pool.select_shard(None, None).unwrap();
-        first.record_request_start();
-        first.record_request_start();
-
+        let first_id = first.shard.id;
+        let first_second_stream = pool.select_shard(None, None).unwrap();
         let second = pool.select_shard(None, None).unwrap();
 
-        assert_ne!(first.id, second.id);
+        assert_eq!(first_second_stream.shard.id, first_id);
+        assert_ne!(first_id, second.shard.id);
+        assert_eq!(second.shard.inflight(), 1);
+        assert_eq!(second.shard.total_requests.load(Ordering::Relaxed), 1);
+        assert_eq!(second.shard.total_cancellations.load(Ordering::Relaxed), 0);
         assert_eq!(pool.shards.load().len(), 2);
     }
 
@@ -1041,17 +2111,17 @@ mod tests {
         )
         .unwrap();
 
-        let first = pool.select_shard(None, None).unwrap();
-        first.record_request_start();
-        first.record_request_start();
-        let overflow = pool.select_shard(None, None).unwrap();
-        overflow.record_request_start();
-        overflow.record_request_finish(&Err(synthetic_transport_error()));
+        let first_request = pool.select_shard(None, None).unwrap();
+        let first = Arc::clone(&first_request.shard);
+        let first_second_request = pool.select_shard(None, None).unwrap();
+        let overflow_request = pool.select_shard(None, None).unwrap();
+        let overflow = Arc::clone(&overflow_request.shard);
+        overflow_request.finish(&Err(synthetic_transport_error()));
 
         overflow.set_last_request_at(Instant::now() - Duration::from_secs(5));
 
-        first.record_request_finish(&Err(synthetic_transport_error()));
-        first.record_request_finish(&Err(synthetic_transport_error()));
+        first_request.finish(&Err(synthetic_transport_error()));
+        first_second_request.finish(&Err(synthetic_transport_error()));
 
         first.set_consecutive_failures(0);
         first.set_last_success_at(Some(Instant::now()));
@@ -1060,7 +2130,7 @@ mod tests {
 
         let selected = pool.select_shard(None, None).unwrap();
 
-        assert_eq!(selected.id, first.id);
+        assert_eq!(selected.shard.id, first.id);
         assert_eq!(pool.shards.load().len(), 1);
     }
 
@@ -1076,15 +2146,17 @@ mod tests {
         .unwrap();
 
         let first = pool.select_shard(None, None).unwrap();
-        first.record_request_start();
-        first.record_request_start();
+        let first_id = first.shard.id;
+        let first_second_stream = pool.select_shard(None, None).unwrap();
         let second = pool.select_shard(None, None).unwrap();
-        second.record_request_start();
-        second.record_request_start();
+        let second_id = second.shard.id;
+        let second_second_stream = pool.select_shard(None, None).unwrap();
         let third = pool.select_shard(None, None).unwrap();
 
-        assert_ne!(first.id, second.id);
-        assert_ne!(second.id, third.id);
+        assert_eq!(first_second_stream.shard.id, first_id);
+        assert_eq!(second_second_stream.shard.id, second_id);
+        assert_ne!(first_id, second_id);
+        assert_ne!(second_id, third.shard.id);
         assert_eq!(factory.idle_ping_flags(), vec![true, true, true]);
     }
 
@@ -1099,16 +2171,15 @@ mod tests {
         )
         .unwrap();
 
-        let first = pool.select_shard(None, None).unwrap();
-        first.record_request_start();
-        first.record_request_start();
-        let second = pool.select_shard(None, None).unwrap();
+        let first_request = pool.select_shard(None, None).unwrap();
+        let first = Arc::clone(&first_request.shard);
+        let first_second_request = pool.select_shard(None, None).unwrap();
+        let second_request = pool.select_shard(None, None).unwrap();
+        let second = Arc::clone(&second_request.shard);
 
-        first.record_request_finish(&Err(synthetic_transport_error()));
-        first.record_request_finish(&Err(synthetic_transport_error()));
-
-        second.record_request_start();
-        second.record_request_finish(&Err(synthetic_transport_error()));
+        first_request.finish(&Err(synthetic_transport_error()));
+        first_second_request.finish(&Err(synthetic_transport_error()));
+        second_request.finish(&Err(synthetic_transport_error()));
         second.record_request_start();
         second.record_request_finish(&Err(synthetic_transport_error()));
 
@@ -1145,21 +2216,21 @@ mod tests {
         )
         .unwrap();
 
-        let first = pool.select_shard(None, None).unwrap();
-        first.record_request_start();
-        first.record_request_start();
-        let second = pool.select_shard(None, None).unwrap();
+        let first_request = pool.select_shard(None, None).unwrap();
+        let first = Arc::clone(&first_request.shard);
+        let first_second_request = pool.select_shard(None, None).unwrap();
+        let second_request = pool.select_shard(None, None).unwrap();
+        let second = Arc::clone(&second_request.shard);
 
-        first.record_request_finish(&Err(synthetic_transport_error()));
-        first.record_request_finish(&Err(synthetic_transport_error()));
+        first_request.finish(&Err(synthetic_transport_error()));
+        first_second_request.finish(&Err(synthetic_transport_error()));
+        second_request.finish(&Err(synthetic_transport_error()));
 
         for shard in [&first, &second] {
             shard.set_last_success_at(None);
             shard.set_last_request_at(Instant::now() - Duration::from_secs(5));
             shard.set_consecutive_failures(2);
         }
-
-        first.inflight.store(0, Ordering::Relaxed);
 
         pool.run_health_sweep().unwrap();
 
@@ -1184,6 +2255,7 @@ mod tests {
         let health_interval = Duration::from_millis(100);
         let pool_opts = ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(2)
+            .with_http2_fan_out_threshold_percent(100)
             .with_min_http2_connections_per_endpoint(1)
             .with_max_http2_connections_per_endpoint(4)
             .with_http2_consecutive_failure_threshold(2)
@@ -1206,13 +2278,14 @@ mod tests {
         let pool = transport.get_or_create_pool(endpoint_key.clone()).unwrap();
 
         // Fill the first shard so a second shard is created.
-        let first = pool.select_shard(None, None).unwrap();
-        first.record_request_start();
-        first.record_request_start();
-        let second = pool.select_shard(None, None).unwrap();
+        let first_request = pool.select_shard(None, None).unwrap();
+        let first_second_request = pool.select_shard(None, None).unwrap();
+        let second_request = pool.select_shard(None, None).unwrap();
+        let second = Arc::clone(&second_request.shard);
 
         // Mark the second shard with consecutive failures above threshold.
-        for _ in 0..3 {
+        second_request.finish(&Err(synthetic_transport_error()));
+        for _ in 0..2 {
             second.record_request_start();
             second.record_request_finish(&Err(synthetic_transport_error()));
         }
@@ -1222,16 +2295,8 @@ mod tests {
         second.set_last_request_at(Instant::now() - Duration::from_secs(5));
 
         // Ensure the first shard is healthy so eviction can proceed.
-        first.record_request_finish(&Ok(HttpResponse {
-            status: 200,
-            headers: azure_core::http::headers::Headers::new(),
-            body: Vec::new(),
-        }));
-        first.record_request_finish(&Ok(HttpResponse {
-            status: 200,
-            headers: azure_core::http::headers::Headers::new(),
-            body: Vec::new(),
-        }));
+        first_request.finish(&Ok(successful_response()));
+        first_second_request.finish(&Ok(successful_response()));
 
         let second_id = second.id;
 
@@ -1250,6 +2315,127 @@ mod tests {
         assert!(
             !shard_ids.contains(&second_id),
             "failed shard {second_id} should have been evicted by background sweep, remaining: {shard_ids:?}"
+        );
+    }
+
+    #[test]
+    fn fifth_reservation_with_target_four_creates_second_shard() {
+        // target=4 (desired occupancy), max=16 (higher threshold), enough max
+        // connections to scale up. The first 4 reservations should all land
+        // on the initial shard; the 5th should trigger a second shard.
+        let pool = shard_pool_with_target(1, 4, 16, 4);
+
+        let mut reservations = Vec::new();
+        for _ in 0..4 {
+            reservations.push(pool.select_shard(None, None).unwrap());
+        }
+        assert_eq!(pool.shards.load().len(), 1);
+        let first_shard_id = reservations[0].shard.id;
+        assert!(reservations.iter().all(|r| r.shard.id == first_shard_id));
+
+        let fifth = pool.select_shard(None, None).unwrap();
+        assert_eq!(pool.shards.load().len(), 2);
+        assert_ne!(fifth.shard.id, first_shard_id);
+    }
+
+    #[test]
+    fn concurrent_selection_with_target_four_distributes_over_five_shards() {
+        const REQUEST_COUNT: usize = 20;
+        const TARGET_STREAMS: u32 = 4;
+        const MAX_STREAMS: u32 = 16;
+
+        // With sufficient max connections available, 20 concurrent
+        // reservations at target=4 should fan out over at least 5 shards,
+        // and no shard should exceed the target occupancy.
+        let pool = Arc::new(shard_pool_with_target(1, 10, MAX_STREAMS, TARGET_STREAMS));
+        let start = Arc::new(Barrier::new(REQUEST_COUNT + 1));
+
+        let reservations = std::thread::scope(|scope| {
+            let (sender, receiver) = mpsc::channel();
+            for _ in 0..REQUEST_COUNT {
+                let pool = Arc::clone(&pool);
+                let start = Arc::clone(&start);
+                let sender = sender.clone();
+                scope.spawn(move || {
+                    start.wait();
+                    let reservation = pool.select_shard(None, None).unwrap();
+                    assert!(sender.send(reservation).is_ok());
+                });
+            }
+            drop(sender);
+            start.wait();
+            receiver.into_iter().collect::<Vec<_>>()
+        });
+
+        assert_eq!(reservations.len(), REQUEST_COUNT);
+        let shards = pool.shards.load();
+        assert!(
+            shards.len() >= 5,
+            "expected at least 5 shards for {REQUEST_COUNT} requests at target {TARGET_STREAMS}, got {}",
+            shards.len()
+        );
+        let inflight = shards
+            .iter()
+            .map(|shard| shard.inflight())
+            .collect::<Vec<_>>();
+        assert_eq!(inflight.iter().sum::<u32>(), REQUEST_COUNT as u32);
+        assert!(
+            inflight.iter().all(|count| *count <= TARGET_STREAMS),
+            "no shard should exceed target occupancy of {TARGET_STREAMS}, got {inflight:?}"
+        );
+    }
+
+    #[test]
+    fn normal_path_does_not_exceed_target_when_scale_up_available() {
+        // 9 sequential reservations at target=4 with 3 connections
+        // available should fan out to 3 shards (4/4/1) rather than filling
+        // a single shard toward the higher max threshold.
+        let pool = shard_pool_with_target(1, 3, 16, 4);
+
+        let mut reservations = Vec::new();
+        for _ in 0..9 {
+            reservations.push(pool.select_shard(None, None).unwrap());
+        }
+
+        let shards = pool.shards.load();
+        assert_eq!(
+            shards.len(),
+            3,
+            "9 reservations at target 4 with scale-up available should use 3 shards"
+        );
+        let inflight = shards
+            .iter()
+            .map(|shard| shard.inflight())
+            .collect::<Vec<_>>();
+        assert_eq!(inflight.iter().sum::<u32>(), 9);
+        assert!(
+            inflight.iter().all(|count| *count <= 4),
+            "no shard should exceed the target occupancy of 4, got {inflight:?}"
+        );
+    }
+
+    #[test]
+    fn max_connections_fallback_can_exceed_target_and_max_threshold() {
+        // A single allowed connection means no new shard can ever be
+        // created. Selection prefers the shard below max (16), then continues
+        // dispatching while downstream HTTP/2 owns the protocol limit.
+        let pool = shard_pool_with_target(1, 1, 16, 4);
+
+        let mut reservations = Vec::new();
+        for _ in 0..17 {
+            reservations.push(pool.select_shard(None, None).unwrap());
+        }
+
+        let shards = pool.shards.load();
+        assert_eq!(
+            shards.len(),
+            1,
+            "max_http2_connections_per_endpoint=1 must not create a second shard"
+        );
+        assert_eq!(
+            shards[0].inflight(),
+            17,
+            "single shard should grow beyond target(4) and max threshold(16)"
         );
     }
 }

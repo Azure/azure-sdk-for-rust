@@ -511,11 +511,8 @@ async fn execute_http_attempt(inputs: HttpAttemptInputs<'_>) -> ExecutedTranspor
         should_unwrap_gateway_v2,
     } = inputs;
     if let Some(timeout_duration) = per_request_timeout {
-        // Pre-select the shard so we know which shard the request was dispatched
-        // to even if the transport future is cancelled by the timeout race.
-        // The ID is passed as a preferred_shard_id hint to the actual dispatch
-        // so the same shard is reused when still selectable, keeping the
-        // diagnostic shard ID accurate.
+        // Capture a best-effort shard ID before the timeout race. Dispatch uses
+        // it as a preference, but concurrent load changes may select a peer.
         let dispatched_shard = transport.pre_select_shard(excluded_shard_id, endpoint_key);
 
         let transport_future = execute_http_attempt_future(
@@ -1822,6 +1819,7 @@ mod tests {
     ) -> AdaptiveTransport {
         let pool = crate::options::ConnectionPoolOptions::builder()
             .with_max_http2_streams_per_client(1)
+            .with_http2_fan_out_threshold_percent(100)
             .with_min_http2_connections_per_endpoint(2)
             .with_max_http2_connections_per_endpoint(2)
             .build()

@@ -24,7 +24,6 @@
 
 - Removed `BlobContainerClient::list_blobs_hierarchical()`.
 
-
 ## 1.1.0-beta.1 (2026-07-14)
 
 ### Features Added

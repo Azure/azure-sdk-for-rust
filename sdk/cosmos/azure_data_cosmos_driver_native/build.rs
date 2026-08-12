@@ -59,7 +59,28 @@ fn generate_c_header() {
          // extracts the HTTP status (high 16 bits); COSMOS_STATUS_SUB extracts the\n\
          // sub-status (low 16 bits, 0 when the operation had no sub-status).\n\
          #define COSMOS_STATUS_HTTP(code) ((int)((uint32_t)(code) >> 16))\n\
-         #define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))",
+         #define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))\n\
+         \n\
+         // Discriminants for `cosmos_partition_key_component_t.kind`.\n\
+         // Emitted here (rather than as `pub const` in Rust) so cbindgen's\n\
+         // `export.prefix = \"cosmos_\"` does not double-prefix them into\n\
+         // `cosmos_COSMOS_*`. Values must stay in sync with the associated\n\
+         // consts on `CosmosPartitionKeyComponentKind` in\n\
+         // `src/partition_key.rs`.\n\
+         #define COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING    0\n\
+         #define COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER    1\n\
+         #define COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL      2\n\
+         #define COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL      3\n\
+         #define COSMOS_PARTITION_KEY_COMPONENT_KIND_UNDEFINED 4\n\
+         \n\
+         // Discriminants for `cosmos_value_t.kind`. Values must stay in\n\
+         // sync with the associated consts on `CosmosValueKind` in\n\
+         // `src/response_header.rs`.\n\
+         #define COSMOS_VALUE_KIND_STRING 0\n\
+         #define COSMOS_VALUE_KIND_I64    1\n\
+         #define COSMOS_VALUE_KIND_F64    2\n\
+         #define COSMOS_VALUE_KIND_BOOL   3\n\
+         #define COSMOS_VALUE_KIND_U64    4",
         env!("CARGO_PKG_VERSION")
     );
 
@@ -127,7 +148,14 @@ fn generate_c_header() {
             "CosmosPartitionKeyComponentKind".into(),
             "partition_key_component_kind_t".into(),
         ),
+        (
+            "CosmosPartitionKeyComponentValue".into(),
+            "partition_key_component_value_t".into(),
+        ),
         ("CosmosResponseHeader".into(), "response_header_t".into()),
+        ("CosmosValue".into(), "value_t".into()),
+        ("CosmosValueKind".into(), "value_kind_t".into()),
+        ("CosmosValuePayload".into(), "value_payload_t".into()),
         (
             "CosmosOperationOptions".into(),
             "operation_options_t".into(),
@@ -199,6 +227,7 @@ fn generate_c_header() {
                 cbindgen::ItemType::Constants,
                 cbindgen::ItemType::Enums,
                 cbindgen::ItemType::Structs,
+                cbindgen::ItemType::Unions,
                 cbindgen::ItemType::OpaqueItems,
                 cbindgen::ItemType::Typedefs,
             ],
@@ -207,21 +236,34 @@ fn generate_c_header() {
             // on an out-of-range host value), so cbindgen no longer sees them
             // referenced by any exported item — but hosts still need the
             // generated `COSMOS_*` named constants to populate those fields.
+            //
+            // `CosmosValueKind` / `CosmosPartitionKeyComponentKind` are
+            // newtype-around-`u8` structs whose C-side `#define` constants
+            // are surfaced through `after_includes` (see above); cbindgen does
+            // not need to force-include them, so they are intentionally
+            // omitted from this list.
             include: vec![
                 "CosmosOperationKind".into(),
                 "CosmosPreconditionKind".into(),
                 "CosmosReadConsistencyStrategy".into(),
                 "CosmosContentResponseOnWriteOpt".into(),
-                "CosmosPartitionKeyComponentKind".into(),
                 // Named mirror of the driver's synthetic sub-status codes. Not
                 // referenced by any exported struct field (hosts read the low 16
                 // bits of a packed cosmos_status_code_t), so force its emission.
                 "CosmosSubStatus".into(),
             ],
-            // The packed-status helpers are emitted as `#define`s via
+            // Test-only C-ABI helpers gated behind the `test-abi` feature.
+            // Kept out of the public header even when the feature is on so
+            // production and test builds share the same header shape; each
+            // C test forward-declares them locally.
+            //
+            // `COSMOS_STATUS_SUCCESS` is emitted as a `#define` via
             // `after_includes` (see above) to avoid the `cosmos_` export prefix
-            // double-prefixing them into `cosmos_COSMOS_STATUS_*`.
-            exclude: vec!["COSMOS_STATUS_SUCCESS".into()],
+            // double-prefixing it into `cosmos_COSMOS_STATUS_SUCCESS`.
+            exclude: vec![
+                "__test_only_enqueue_ok_completion_with_all_value_kinds".into(),
+                "COSMOS_STATUS_SUCCESS".into(),
+            ],
             rename,
             ..Default::default()
         },

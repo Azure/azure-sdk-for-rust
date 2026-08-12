@@ -1097,6 +1097,27 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn item_pagination_supports_non_serde_custom_deserialization() {
+        let pager: Pager<ManualPage, ManualFormat> = Pager::new(
+            |_, _| {
+                Box::pin(async move {
+                    Ok(PagerResult::Done {
+                        response: RawResponse::from_bytes(
+                            StatusCode::Ok,
+                            Headers::new(),
+                            "items: 1, 2, 3",
+                        )
+                        .into(),
+                    })
+                })
+            },
+            None,
+        );
+
+        assert_eq!(pager.try_collect::<Vec<_>>().await.unwrap(), vec![1, 2, 3]);
+    }
+
+    #[tokio::test]
     async fn callback_item_pagination_error() {
         let pager: Pager<Page> = ItemIterator::new(
             |continuation: PagerState, _options| {
