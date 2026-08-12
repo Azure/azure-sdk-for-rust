@@ -1,15 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{error::ErrorKind, http::response::ResponseBody};
+use crate::{
+    error::ErrorKind,
+    http::response::{RawResponse, ResponseBody},
+};
 use serde::de::DeserializeOwned;
 
 /// A trait used to indicate the serialization format used for a response body.
 ///
-/// The [`Response`](crate::http::Response) type uses this trait in parameter `F` to determine how to deserialize the body in to the model `T` when using [`Response::into_body`](crate::http::Response::into_body).
+/// The [`Response`](crate::http::Response) type uses this trait in parameter `F` to determine how to deserialize the body in to the model `T` when using [`Response::into_model`](crate::http::Response::into_model).
 /// This allows the client library to define the format for each client method so callers can deserialize the model `T` without having to know or specify the format.
 pub trait Format: std::fmt::Debug {
-    /// Deserialize body into model `T`.
+    /// Deserialize body bytes into model `T`.
     ///
     /// # Arguments
     /// * `body` - The body to deserialize.
@@ -39,6 +42,15 @@ pub trait DeserializeWith<F: Format>: Sized {
     /// # Returns
     /// A `Result` containing the deserialized value of type `Self`, or an error if deserialization fails.
     fn deserialize_with(body: ResponseBody) -> typespec::Result<Self>;
+
+    /// Deserialize a full response into `Self`, with access to both headers and body.
+    ///
+    /// The default implementation ignores the headers and delegates to
+    /// [`DeserializeWith::deserialize_with`]. Override this method to select a deserialization
+    /// strategy at runtime based on response headers.
+    fn deserialize_from(response: RawResponse) -> crate::Result<Self> {
+        Self::deserialize_with(response.into_body())
+    }
 }
 
 /// Implements [`DeserializeWith<JsonFormat>`] for an arbitrary type `D`
