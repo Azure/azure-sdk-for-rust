@@ -45,9 +45,11 @@ use azure_data_cosmos::options::{
     OperationOptions, Region, ServerCertificateValidation,
 };
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy, SubStatusCode,
+    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
+    RoutingStrategy, SubStatusCode,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
+use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Number, Value};
 use sha2::{Digest, Sha256};
@@ -1969,6 +1971,83 @@ where
     }
 }
 
+/// Queries the just-written item back and asserts it round-trips, covering the
+/// query binary-response decode path (which point ops do not exercise). Runs
+/// two shapes so both query pipelines are hit under binary encoding:
+///
+/// * a single-partition query (`WHERE c.id = @id` scoped to the item's
+///   partition) — the passthrough decode path, and
+/// * a cross-partition streaming `ORDER BY` query (`... ORDER BY c.id` over the
+///   full container) — the k-way merge, whose per-page envelope decode is the
+///   binary path added for query support.
+///
+/// Both filter on the unique `id`, so each returns exactly this item.
+async fn assert_query_roundtrip(
+    container: &ContainerClient,
+    pk: &str,
+    id: &str,
+    sent_canon: &str,
+    sent_hash: &[u8; 32],
+    doc: &Map<String, Value>,
+    context: &str,
+) -> Result<(), Box<dyn Error>> {
+    let single_partition = with_transient_retry("query", context, || async {
+        let query = Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", id)?;
+        let iter = container
+            .query_items::<Value>(query, FeedScope::partition(pk.to_string()), None)
+            .await?;
+        iter.try_collect::<Vec<_>>().await
+    })
+    .await?;
+    assert_query_hit(
+        &single_partition,
+        doc,
+        sent_canon,
+        sent_hash,
+        context,
+        "query",
+    );
+
+    let order_by = with_transient_retry("query-order-by", context, || async {
+        let query = Query::from("SELECT * FROM c WHERE c.id = @id ORDER BY c.id")
+            .with_parameter("@id", id)?;
+        let iter = container
+            .query_items::<Value>(query, FeedScope::full_container(), None)
+            .await?;
+        iter.try_collect::<Vec<_>>().await
+    })
+    .await?;
+    assert_query_hit(
+        &order_by,
+        doc,
+        sent_canon,
+        sent_hash,
+        context,
+        "query-order-by",
+    );
+
+    Ok(())
+}
+
+/// Asserts a query returned exactly the one expected item and that it
+/// round-trips against the sent canonical form.
+fn assert_query_hit(
+    results: &[Value],
+    doc: &Map<String, Value>,
+    sent_canon: &str,
+    sent_hash: &[u8; 32],
+    context: &str,
+    phase: &str,
+) {
+    assert_eq!(
+        results.len(),
+        1,
+        "{context}: {phase} expected exactly one item, got {}",
+        results.len()
+    );
+    assert_roundtrip(doc, &results[0], sent_canon, sent_hash, context, phase);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // The fuzzer test
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2176,6 +2255,22 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             // Four point-op round-trips this config: create, read, replace, upsert.
             checked += 4;
 
+            // QUERY the item back (single-partition + cross-partition ORDER BY).
+            // Covers the query binary-response decode path — including the
+            // streaming ORDER BY per-page envelope decode — which the point ops
+            // above do not exercise.
+            assert_query_roundtrip(
+                &container,
+                &pk,
+                &id,
+                &sent_canon,
+                &sent_hash,
+                &doc,
+                &context,
+            )
+            .await?;
+            checked += 2;
+
             // The four ops above decode into `serde_json::Value` (→
             // `deserialize_any`), so they do NOT cover the native typed-integer
             // path (`deserialize_integer`) this PR ships. A typed probe covers it
@@ -2194,7 +2289,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     }
 
     println!(
-        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs × 4 point ops = {checked} round-trips, all canonical-equal (seed={})",
+        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs × (4 point ops + 2 queries) = {checked} round-trips, all canonical-equal (seed={})",
         cfg.iterations,
         configs.len(),
         cfg.seed

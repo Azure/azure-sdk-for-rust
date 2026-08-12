@@ -38,7 +38,8 @@ Legend: ✅ supported · ❌ not · — not applicable.
 | Delete item | — | ✅ (in point-binary set) | ❌ | ❌ | — | ⚠️ diff |
 | Query — single-partition | text body | ✅ (Query only) | text body | ✅ | ✅ | ✅ match |
 | Query — passthrough cross-partition | text body | ✅ | text body | ✅ | ✅ | ✅ match |
-| Query — ORDER BY / aggregate / GROUP BY / DISTINCT / TOP / LIMIT | ✅ | ✅ | ❌ (engine absent) | ❌ | ❌ | ⚠️ diff |
+| Query — streaming ORDER BY (scalar sort keys) | text body | ✅ | text body | ✅ | ✅ | ✅ match (PR #4800) |
+| Query — aggregate / GROUP BY / DISTINCT / TOP / LIMIT | text body | ✅ | ❌ (engine absent) | ❌ | ❌ | ⚠️ diff |
 | Change feed / ReadFeed | ❌ (backend bug) | ❌ | ❌ | ❌ | (capable, unused) | ✅ match |
 | Patch | ❌ (real server op) | ❌ | ✅ via internal Read+Replace | ✅ (sub-ops) | ✅ | ⚠️ diff (mechanism) |
 | Transactional batch | ❌ (HybridRow, not binary JSON) | ❌ | ❌ | ❌ | — | ✅ match |
@@ -50,7 +51,7 @@ Legend: ✅ supported · ❌ not · — not applicable.
 
 | # | Difference | Detail | Severity |
 |---|---|---|---|
-| 1 | ORDER BY / aggregate / GROUP BY / DISTINCT / TOP / LIMIT cross-partition | .NET runs them; its cross-partition merge is on the format-agnostic `CosmosElement` model, so binary works for free. Rust's `validate_query_info` (`dataflow/planner.rs`) **rejects them in any encoding** — the ordered/aggregate merge engine does not exist yet, and `SUPPORTED_QUERY_FEATURES = "None"`. | Real capability gap (not binary-specific) |
+| 1 | aggregate / GROUP BY / DISTINCT / TOP / LIMIT cross-partition | .NET runs them; its cross-partition merge is on the format-agnostic `CosmosElement` model, so binary works for free. Rust's `validate_query_info` (`dataflow/planner.rs`) still **rejects these in any encoding** — the aggregate/GROUP BY/DISTINCT merge engine does not exist yet. (Streaming ORDER BY with scalar sort keys is now supported — see PR #4800 — and binary works for it because response decode is format-agnostic.) | Real capability gap (not binary-specific) |
 | 2 | Delete negotiation | .NET's `IsPointOperationSupportedForBinaryEncoding` includes `Delete`; Rust's `supports_binary_encoding` / `supports_binary_response` exclude it. Low impact (delete carries no request body and typically no response body), but Rust does not advertise binary for delete. | Minor |
 | 3 | Patch mechanism | .NET Patch is a real server op and is **not** binary-negotiated. Rust Patch is a client-side Read-Modify-Write, so its internal Read/Replace **are** binary-encoded when enabled. Different architecture; both functionally correct. | Cosmetic / architectural |
 | 4 | Negotiation header value | .NET query default = `"JsonText,CosmosBinary"`; .NET point ops = `"CosmosBinary"`. Rust = `"CosmosBinary"` for all paths (`BINARY_NEGOTIATION_FORMATS`). Rust always forces binary rather than advertising "either". | Minor wire diff |
@@ -72,8 +73,10 @@ queries, Rust and .NET are **functionally equivalent** on binary encoding.
 Actionable divergences:
 
 - **#1** is the only user-facing gap, and it is a missing query engine, not a
-  binary issue — deferred. When that engine is built, use a format-agnostic value
-  model (like .NET's `CosmosElement`) so binary support is inherent, not retrofitted.
+  binary issue — deferred. Streaming ORDER BY (scalar sort keys) already landed via
+  PR #4800 with binary working for free; the remaining aggregate/GROUP BY/DISTINCT
+  engine should likewise use a format-agnostic value model (like .NET's
+  `CosmosElement`) so binary support is inherent, not retrofitted.
 - **#2 (Delete)** is a genuine small binary-scope divergence: add `Delete` to the
   Rust predicates to match .NET's point-operation binary scope exactly.
 - **#3, #4** are mechanism / wire nuances with no functional impact.
@@ -85,7 +88,9 @@ Rust:
 - `src/models/mod.rs` — `OperationType::supports_binary_encoding` / `supports_binary_response`.
 - `src/driver/cosmos_driver.rs` — `binary_encodes_request_body`, `binary_negotiates_response`, `apply_request_binary_encoding`, `apply_response_negotiation`, `BINARY_NEGOTIATION_FORMATS`.
 - `src/models/response_body.rs` — `deserialize_response`, `into_single`, `into_items` (text-only splitter note).
-- `src/driver/dataflow/planner.rs` — `validate_query_info` (rejects ORDER BY / aggregate / etc.).
+- `src/driver/dataflow/planner.rs` — `validate_query_info` (rejects aggregate / GROUP BY / DISTINCT / TOP / LIMIT).
+- `src/driver/dataflow/order_by.rs`, `src/driver/dataflow/streaming_ordered_merge.rs` — streaming ORDER BY merge (PR #4800).
+- `src/driver/dataflow/query_response.rs` — `parse_envelope_page` transcodes a binary ORDER BY page to text (`binary_json::transcode_to_text`) before the envelope parse, so the merge is format-agnostic like the point/passthrough decode path.
 
 .NET (`Azure/azure-cosmos-dotnet-v3`):
 

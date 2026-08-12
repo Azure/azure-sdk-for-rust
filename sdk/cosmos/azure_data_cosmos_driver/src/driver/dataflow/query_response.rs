@@ -306,6 +306,13 @@ pub(crate) fn parse_envelope_page(
             ));
         }
     };
+    // Binary-negotiated ORDER BY pages arrive as Cosmos binary JSON; the
+    // envelope parse below is text-only, so transcode first (no-op for text).
+    let bytes = crate::binary_json::transcode_to_text(&bytes).map_err(|e| {
+        envelope_error(format!(
+            "failed to transcode binary ORDER BY envelope page to text: {e}"
+        ))
+    })?;
     let feed: RawFeedBody = serde_json::from_slice(&bytes).map_err(|e| {
         body_error(
             "failed to parse rewritten-query backend page as a feed body",
@@ -751,6 +758,23 @@ mod tests {
         assert_eq!(rows[0].payload.get(), r#"{"id":"d1"}"#);
         assert_eq!(rows[1].rid, "r2");
         assert_eq!(rows[1].keys, vec![OrderByItem::Undefined]);
+    }
+
+    #[test]
+    fn parse_envelope_page_decodes_binary_envelope() {
+        // A binary-encoded page must parse into the same rows as its text form.
+        let text = br#"{"_rid":"abc","Documents":[{"_rid":"r1","orderByItems":[{"item":1}],"payload":{"id":"d1"}},{"_rid":"r2","orderByItems":[{}],"payload":{"id":"d2"}}],"_count":2}"#;
+        let binary = crate::binary_json::transcode_to_binary(text).unwrap();
+        assert!(crate::binary_json::is_binary(&binary));
+
+        let rows = parse_envelope_page(&ResponseBody::from_bytes(binary), 1).unwrap();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].rid, "r1");
+        assert_eq!(rows[0].keys, vec![OrderByItem::Number(1.0.into())]);
+        assert_eq!(rows[0].payload.get(), r#"{"id":"d1"}"#);
+        assert_eq!(rows[1].rid, "r2");
+        assert_eq!(rows[1].keys, vec![OrderByItem::Undefined]);
+        assert_eq!(rows[1].payload.get(), r#"{"id":"d2"}"#);
     }
 
     #[test]

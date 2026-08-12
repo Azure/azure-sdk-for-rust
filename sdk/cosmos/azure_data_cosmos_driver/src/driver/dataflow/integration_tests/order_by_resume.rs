@@ -214,6 +214,43 @@ fn envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResp
     )
 }
 
+/// Like [`envelope_page`] but encodes the feed body as Cosmos **binary** JSON,
+/// exercising `parse_envelope_page`'s transcode path through the merge.
+fn binary_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResponse {
+    let documents: Vec<serde_json::Value> = rows
+        .iter()
+        .map(|(rid, rank)| {
+            serde_json::json!({
+                "_rid": label_rid(rid),
+                "orderByItems": [{"item": rank}],
+                "payload": {"id": rid, "rank": rank},
+            })
+        })
+        .collect();
+    let body = serde_json::json!({
+        "_rid": "",
+        "Documents": documents,
+        "_count": documents.len(),
+    });
+    let text = serde_json::to_vec(&body).unwrap();
+    let binary = crate::binary_json::transcode_to_binary(&text).unwrap();
+    assert!(crate::binary_json::is_binary(&binary));
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    diagnostics.set_operation_status(azure_core::http::StatusCode::Ok, None);
+    let mut headers = CosmosResponseHeaders::new();
+    headers.continuation = continuation.map(str::to_owned);
+    headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
+    CosmosResponse::new(
+        binary,
+        headers,
+        CosmosStatus::new(azure_core::http::StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
 /// Like [`envelope_page`] but JOIN-shaped: `(rid, rank, id)` rows where
 /// several rows may share one `_rid` (a single document expanded by a JOIN)
 /// while carrying distinct payload `id`s. Drives the `skip_count` resume path.
@@ -476,6 +513,43 @@ async fn merges_two_partitions_into_global_order() {
             .map(str::to_owned)
             .collect::<Vec<_>>(),
         "rows must interleave in ascending rank order across both partitions"
+    );
+}
+
+/// Binary-negotiated ORDER BY pages must merge into the same global order as
+/// the text path — proof the merge is format-agnostic.
+#[tokio::test]
+async fn merges_two_binary_partitions_into_global_order() {
+    let op = order_by_operation();
+    let plan = order_by_plan();
+
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(binary_envelope_page(
+            &[("l1", 1), ("l2", 3), ("l3", 5)],
+            None,
+        )),
+        Ok(binary_envelope_page(
+            &[("r1", 2), ("r2", 4), ("r3", 6)],
+            None,
+        )),
+    ]);
+
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+        .await
+        .unwrap();
+    let ids = drain_all(&mut pipeline, &mut executor).await;
+
+    assert_eq!(
+        ids,
+        vec!["l1", "r1", "l2", "r2", "l3", "r3"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        "binary ORDER BY pages must interleave in the same global order as text"
     );
 }
 
