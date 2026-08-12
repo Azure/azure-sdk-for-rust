@@ -42,7 +42,7 @@ static int test_account_ref_master_key_happy_path(void) {
         "fake-master-key",
         &account,
         &err);
-    REQUIRE(rc == COSMOS_ERROR_CODE_SUCCESS,
+    REQUIRE(rc == COSMOS_STATUS_SUCCESS,
             "with_master_key returned SUCCESS (rc=%d)", rc);
     REQUIRE(account != NULL, "out_account populated on success");
     ASSERT(err == NULL, "out_error untouched on success");
@@ -59,18 +59,18 @@ static int test_account_ref_rejects_null_arguments(void) {
 
     int32_t rc = cosmos_account_ref_with_master_key(
         NULL, "k", &account, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL endpoint rejected (rc=%d)", rc);
     ASSERT(account == NULL, "out_account untouched on NULL endpoint");
 
     rc = cosmos_account_ref_with_master_key(
         "https://x.documents.azure.com:443/", NULL, &account, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL key rejected (rc=%d)", rc);
 
     rc = cosmos_account_ref_with_master_key(
         "https://x.documents.azure.com:443/", "k", NULL, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL out_account rejected (rc=%d)", rc);
 
     return result;
@@ -82,7 +82,7 @@ static int test_account_ref_rejects_invalid_endpoint(void) {
     cosmos_error_t *err = NULL;
     int32_t rc = cosmos_account_ref_with_master_key(
         "not a url", "k", &account, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ACCOUNT_REFERENCE,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_INVALID_ACCOUNT_ENDPOINT_URL,
            "invalid endpoint rejected (rc=%d)", rc);
     ASSERT(account == NULL, "no handle on failure");
     ASSERT(err != NULL, "rich error populated on parse failure");
@@ -100,7 +100,7 @@ static int test_database_ref_create_happy_path(void) {
 
     cosmos_database_ref_t *db = NULL;
     int32_t rc = cosmos_database_ref_create(account, "mydb", &db);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
+    ASSERT(rc == COSMOS_STATUS_SUCCESS,
            "database_ref_create returned SUCCESS (rc=%d)", rc);
     ASSERT(db != NULL, "database_ref produced a non-NULL handle");
 
@@ -126,13 +126,13 @@ static int test_database_ref_rejects_null_arguments(void) {
 
     cosmos_database_ref_t *db = NULL;
     int32_t rc = cosmos_database_ref_create(NULL, "mydb", &db);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL account rejected (rc=%d)", rc);
     rc = cosmos_database_ref_create(account, NULL, &db);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL database_id rejected (rc=%d)", rc);
     rc = cosmos_database_ref_create(account, "mydb", NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL out_database rejected (rc=%d)", rc);
 
 cleanup:
@@ -155,7 +155,7 @@ static int test_driver_options_build_happy_path(void) {
 
     cosmos_driver_options_t *opts = NULL;
     int32_t rc = cosmos_driver_options_build(account, &cfg, &opts);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
+    ASSERT(rc == COSMOS_STATUS_SUCCESS,
            "build returned SUCCESS (rc=%d)", rc);
     ASSERT(opts != NULL, "build produced a non-NULL handle");
 
@@ -176,7 +176,7 @@ static int test_driver_options_build_null_config(void) {
     // A NULL config means "no preferred regions, default operation options".
     cosmos_driver_options_t *opts = NULL;
     int32_t rc = cosmos_driver_options_build(account, NULL, &opts);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "build(NULL config) works (rc=%d)", rc);
+    ASSERT(rc == COSMOS_STATUS_SUCCESS, "build(NULL config) works (rc=%d)", rc);
     ASSERT(opts != NULL, "build produced a non-NULL handle");
 
     cosmos_driver_options_free(opts);
@@ -198,13 +198,13 @@ static int test_driver_options_build_rejects_nulls(void) {
 
     // NULL account.
     int32_t rc = cosmos_driver_options_build(NULL, &cfg, &opts);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL account rejected (rc=%d)", rc);
     ASSERT(opts == NULL, "out_options untouched on NULL account");
 
     // NULL out_options.
     rc = cosmos_driver_options_build(account, &cfg, NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL out_options rejected (rc=%d)", rc);
 
     // NULL entry within the regions array.
@@ -212,7 +212,7 @@ static int test_driver_options_build_rejects_nulls(void) {
     cfg.preferred_regions = bad_regions;
     cfg.preferred_regions_len = 1;
     rc = cosmos_driver_options_build(account, &cfg, &opts);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL region entry rejected (rc=%d)", rc);
     ASSERT(opts == NULL, "out_options untouched on NULL region entry");
 

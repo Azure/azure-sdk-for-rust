@@ -9,6 +9,7 @@
 
 pub(crate) mod components;
 pub(crate) mod from_local_body;
+pub(crate) mod hedge_budget;
 pub(crate) mod hedging_diagnostics;
 pub(crate) mod hedging_eligibility;
 pub(crate) mod operation_pipeline;

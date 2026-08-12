@@ -147,7 +147,7 @@ pub(crate) async fn handle_operation(
 ) -> AsyncRawResponse {
     let start = Instant::now();
     let response = match &parsed.operation {
-        OperationType::ReadAccount => handle_read_account(store, start),
+        OperationType::ReadAccount => handle_read_account(store, parsed, start),
         OperationType::CreateDatabase => {
             if !store.config().is_write_region(region_name) {
                 return write_forbidden_response(start);
@@ -669,6 +669,7 @@ pub(crate) async fn handle_operation(
             binary_response: false,
             is_upsert: matches!(operation_type, OperationType::Upsert),
             a_im: None,
+            request_host: None,
         };
 
         match operation_type {
@@ -1476,6 +1477,7 @@ pub(crate) async fn handle_operation(
             binary_response: false,
             is_upsert: false,
             a_im: None,
+            request_host: None,
         }
     }
 
@@ -1674,8 +1676,12 @@ pub(crate) async fn handle_operation(
 
 // --- Control-Plane Operations ---
 
-fn handle_read_account(store: &Arc<EmulatorStore>, start: Instant) -> AsyncRawResponse {
-    let body = account_properties_to_json(store.config());
+fn handle_read_account(
+    store: &Arc<EmulatorStore>,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let body = account_properties_to_json(store.config(), parsed.request_host.as_deref());
     success_response(StatusCode::Ok, &body, 0.0, "", start)
         .with_item_count(1)
         .build()
@@ -3310,7 +3316,13 @@ fn local_sort_order_to_dataflow(
 
 fn local_query_info_to_dataflow(
     info: crate::query::plan::LocalQueryInfo,
+    original_query: &str,
 ) -> crate::driver::dataflow::query_plan::QueryInfo {
+    let rewritten_query = if info.order_by.is_empty() {
+        Some(String::new())
+    } else {
+        synthesize_order_by_rewritten_query(original_query, &info.order_by_expressions)
+    };
     crate::driver::dataflow::query_plan::QueryInfo {
         distinct_type: local_distinct_type_to_dataflow(info.distinct_type),
         top: info.top.map(|v| v as u64),
@@ -3330,10 +3342,129 @@ fn local_query_info_to_dataflow(
             .map(|a| format!("{a:?}"))
             .collect(),
         group_by_alias_to_aggregate_type: HashMap::new(),
-        rewritten_query: Some(String::new()),
+        rewritten_query,
         has_select_value: info.has_select_value,
         has_non_streaming_order_by: false,
     }
+}
+
+/// Synthesizes a single-level rewritten `ORDER BY` envelope query, mirroring
+/// what the real Gateway/native query-plan engine returns in
+/// `rewrittenQuery`:
+///
+/// ```text
+/// SELECT VALUE {"_rid": <alias>._rid, "orderByItems": [{"item": <expr0>}, ...], "payload": <alias>}
+/// <original FROM clause, sliced verbatim>
+/// WHERE [(<original predicate>) AND] {documentdb-formattableorderbyquery-filter}
+/// <original ORDER BY clause, sliced verbatim>
+/// ```
+///
+/// The placeholder is substituted in place by the client with `true`
+/// (fresh start) or a scalar `_rid`-aware resume filter (see
+/// `driver::dataflow::query_response`) — no outer subquery wrapper, so the
+/// result stays flat and directly evaluable.
+///
+/// Supports `SELECT *` and `SELECT VALUE <expression>`. Other projection
+/// shapes return `None` rather than synthesizing the wrong payload.
+fn synthesize_order_by_rewritten_query(
+    original_query: &str,
+    order_by_expressions: &[String],
+) -> Option<String> {
+    use crate::query::lexer::{Lexer, TokenKind};
+
+    // Kept in sync with `driver::dataflow::query_response`'s
+    // `ORDER_BY_FILTER_PLACEHOLDER` (this authors it; that substitutes it).
+    const ORDER_BY_FILTER_PLACEHOLDER: &str = "{documentdb-formattableorderbyquery-filter}";
+
+    let tokens = Lexer::tokenize(original_query);
+    let mut depth = 0_usize;
+    let mut top_level = Vec::new();
+    for (index, token) in tokens.iter().enumerate() {
+        if matches!(
+            token.kind,
+            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace
+        ) {
+            depth = depth.saturating_sub(1);
+        }
+        if depth == 0 {
+            top_level.push(index);
+        }
+        if matches!(
+            token.kind,
+            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace
+        ) {
+            depth += 1;
+        }
+    }
+    let is_clause_keyword = |index: usize| index == 0 || tokens[index - 1].kind != TokenKind::Dot;
+    let select_idx = top_level
+        .iter()
+        .copied()
+        .find(|&i| tokens[i].kind == TokenKind::Select)?;
+    let from_idx = top_level
+        .iter()
+        .copied()
+        .find(|&i| tokens[i].kind == TokenKind::From && is_clause_keyword(i))?;
+    let collection_token = tokens.get(from_idx + 1)?;
+    let alias = match tokens.get(from_idx + 2) {
+        Some(t) if t.kind == TokenKind::As => tokens.get(from_idx + 3)?.text,
+        Some(t) if t.kind == TokenKind::Identifier => t.text,
+        _ => collection_token.text,
+    };
+    let payload = match tokens.get(select_idx + 1)? {
+        token if token.kind == TokenKind::Star => alias.to_owned(),
+        token if token.kind == TokenKind::Value => original_query
+            [token.span.end..tokens[from_idx].span.start]
+            .trim()
+            .to_owned(),
+        _ => return None,
+    };
+
+    let order_idx = top_level.iter().copied().find(|&i| {
+        tokens[i].kind == TokenKind::Order
+            && tokens
+                .get(i + 1)
+                .is_some_and(|token| token.kind == TokenKind::By)
+    });
+    let clause_end = order_idx
+        .map(|i| tokens[i].span.start)
+        .unwrap_or(original_query.len());
+    let order_by_text = order_idx.map(|i| original_query[tokens[i].span.start..].trim())?;
+
+    // FROM is emitted verbatim; the placeholder is ANDed into WHERE
+    // (creating one if absent) — the slot every rewritten query carries.
+    let where_bound = order_idx.unwrap_or(tokens.len());
+    let where_idx = top_level.iter().copied().find(|&i| {
+        i > from_idx
+            && i < where_bound
+            && tokens[i].kind == TokenKind::Where
+            && is_clause_keyword(i)
+    });
+    let from_end = where_idx
+        .map(|i| tokens[i].span.start)
+        .unwrap_or(clause_end);
+    let from_text = original_query[tokens[from_idx].span.start..from_end].trim();
+    let where_clause = match where_idx {
+        Some(i) => {
+            let predicate = original_query[tokens[i].span.end..clause_end].trim();
+            format!("WHERE ({predicate}) AND {ORDER_BY_FILTER_PLACEHOLDER}")
+        }
+        None => format!("WHERE {ORDER_BY_FILTER_PLACEHOLDER}"),
+    };
+
+    let order_by_items: Vec<String> = order_by_expressions
+        .iter()
+        .map(|expr| format!(r#"{{"item": {expr}}}"#))
+        .collect();
+
+    Some(format!(
+        r#"SELECT VALUE {{"_rid": {alias}._rid, "orderByItems": [{items}], "payload": {payload}}} {from_text} {where_clause} {order_by}"#,
+        items = order_by_items.join(", "),
+        payload = payload,
+        from_text = from_text,
+        where_clause = where_clause,
+        order_by = order_by_text,
+    ))
 }
 
 fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
@@ -3512,7 +3643,7 @@ fn handle_query_plan(
 
     let plan = crate::driver::dataflow::query_plan::QueryPlan {
         partitioned_query_execution_info_version: 2,
-        query_info: Some(local_query_info_to_dataflow(local_plan.query_info)),
+        query_info: Some(local_query_info_to_dataflow(local_plan.query_info, &query)),
         query_ranges,
         hybrid_search_query_info: None,
     };
@@ -5591,6 +5722,33 @@ fn write_forbidden_response(start: Instant) -> AsyncRawResponse {
     .build()
 }
 
+/// Response for a request routed to a region that is no longer part of the
+/// account.
+///
+/// Shape verified against the live service: removing a region makes its regional
+/// endpoint return `403 Forbidden` with `x-ms-substatus: 1008`, a
+/// `"Database Account {id} does not exist"` message, the account id, and
+/// **empty** location lists.
+pub(crate) fn database_account_not_found_response(
+    account_id: &str,
+    start: Instant,
+) -> AsyncRawResponse {
+    let body = serde_json::json!({
+        "code": "Forbidden",
+        "message": format!("Database Account {account_id} does not exist"),
+        "writableLocations": [],
+        "readableLocations": [],
+        "id": account_id,
+    });
+
+    ResponseBuilder::new(StatusCode::Forbidden, start)
+        .with_request_charge(0.0)
+        .with_session_token("")
+        .with_json_body(&body)
+        .with_substatus(1008)
+        .build()
+}
+
 fn bad_request_path_response(path: &str, start: Instant) -> AsyncRawResponse {
     error_response(
         StatusCode::BadRequest,
@@ -5672,6 +5830,63 @@ mod tests {
             Some(1_000)
         );
         assert_eq!(parse_pkrange_page_token(&token, "\"other-etag\""), None);
+    }
+
+    #[test]
+    fn order_by_rewrite_preserves_supported_projection_shapes() {
+        let select_star = synthesize_order_by_rewritten_query(
+            "SELECT * FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(select_star.contains(r#""payload": c"#));
+
+        let select_value = synthesize_order_by_rewritten_query(
+            "SELECT VALUE c.id FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(select_value.contains(r#""payload": c.id"#));
+
+        let join_value = synthesize_order_by_rewritten_query(
+            "SELECT VALUE t FROM c JOIN t IN c.tags ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(join_value.contains(r#""payload": t"#));
+    }
+
+    #[test]
+    fn order_by_rewrite_rejects_unsupported_select_list() {
+        assert!(synthesize_order_by_rewritten_query(
+            "SELECT c.id FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn order_by_rewrite_ignores_order_property_identifier() {
+        let rewritten = synthesize_order_by_rewritten_query(
+            "SELECT * FROM c WHERE c.order > 0 ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+
+        assert!(rewritten
+            .contains("WHERE (c.order > 0) AND {documentdb-formattableorderbyquery-filter}"));
+        assert!(rewritten.ends_with("ORDER BY c.rank"));
+    }
+
+    #[test]
+    fn order_by_rewrite_uses_outer_clauses_around_scalar_subquery() {
+        let rewritten = synthesize_order_by_rewritten_query(
+            "SELECT VALUE (SELECT VALUE t FROM t IN c.tags) FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(rewritten.contains(r#""payload": (SELECT VALUE t FROM t IN c.tags)} FROM c WHERE"#));
+        assert!(rewritten.ends_with("ORDER BY c.rank"));
     }
 
     fn document_item(epk: &str, id: &str) -> DocumentFeedItem {

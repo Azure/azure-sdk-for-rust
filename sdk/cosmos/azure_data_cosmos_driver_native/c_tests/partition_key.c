@@ -27,8 +27,9 @@
 #include "test_common.h"
 
 // Convenience: a component of a given kind with default value fields.
-static cosmos_partition_key_component_t pk_component(
-    cosmos_partition_key_component_kind_t kind)
+// `kind` is a `uint8_t` matching a `COSMOS_PARTITION_KEY_COMPONENT_KIND_*`
+// discriminant defined in azurecosmosdriver.h.
+static cosmos_partition_key_component_t pk_component(uint8_t kind)
 {
     cosmos_partition_key_component_t c = {0};
     c.kind = kind;
@@ -73,11 +74,11 @@ static int test_single_string_component(void)
     int result = TEST_PASS;
     cosmos_partition_key_component_t comps[1];
     comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING);
-    comps[0].string_value = "tenant-42";
+    comps[0].value.string_value = "tenant-42";
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
+    ASSERT(rc == COSMOS_STATUS_SUCCESS,
            "create returned SUCCESS (rc=%d)", rc);
     REQUIRE(pk != NULL, "create produced a non-NULL handle");
     ASSERT(cosmos_partition_key_component_count(pk) == 1,
@@ -95,15 +96,17 @@ static int test_hierarchical_all_value_kinds(void)
     int result = TEST_PASS;
     cosmos_partition_key_component_t comps[3];
     comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING);
-    comps[0].string_value = "region-1";
+    comps[0].value.string_value = "region-1";
     comps[1] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER);
-    comps[1].number_value = 42.0;
+    comps[1].value.number_value = 42.0;
     comps[2] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL);
-    comps[2].bool_value = 1;
+    // `bool_value` is `uint8_t`: 0 encodes false, any non-zero byte
+    // encodes true. Using `1` here for the canonical `true` encoding.
+    comps[2].value.bool_value = 1;
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 3, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "create ok (rc=%d)", rc);
+    ASSERT(rc == COSMOS_STATUS_SUCCESS, "create ok (rc=%d)", rc);
     ASSERT(cosmos_partition_key_component_count(pk) == 3,
            "3-component hierarchical key");
 
@@ -121,7 +124,7 @@ static int test_null_and_undefined_components(void)
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 2, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "create ok (rc=%d)", rc);
+    ASSERT(rc == COSMOS_STATUS_SUCCESS, "create ok (rc=%d)", rc);
     ASSERT(cosmos_partition_key_component_count(pk) == 2,
            "(null, undefined) is a 2-component key, not EMPTY");
 
@@ -137,7 +140,7 @@ static int test_empty_create_rejected(void)
     // NULL array / zero length is rejected (use cosmos_partition_key_empty
     // for the deliberate cross-partition key).
     int32_t rc = cosmos_partition_key_create(NULL, 0, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_PARTITION_KEY,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_EMPTY,
            "empty create rejected (rc=%d)", rc);
     ASSERT(pk == NULL, "no handle on empty-create failure");
     return result;
@@ -153,7 +156,7 @@ static int test_over_cap_rejected(void)
     }
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 4, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_PARTITION_KEY,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
            "4-component create rejected (rc=%d)", rc);
     ASSERT(pk == NULL, "no handle on over-cap failure");
     return result;
@@ -167,18 +170,18 @@ static int test_number_rejects_non_finite(void)
     cosmos_partition_key_component_t comps[1];
     comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER);
 
-    comps[0].number_value = NAN;
+    comps[0].value.number_value = NAN;
     int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE, "NaN rejected (rc=%d)", rc);
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE, "NaN rejected (rc=%d)", rc);
     ASSERT(pk == NULL, "no handle on NaN");
 
-    comps[0].number_value = INFINITY;
+    comps[0].value.number_value = INFINITY;
     rc = cosmos_partition_key_create(comps, 1, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE, "+Inf rejected (rc=%d)", rc);
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE, "+Inf rejected (rc=%d)", rc);
 
-    comps[0].number_value = -INFINITY;
+    comps[0].value.number_value = -INFINITY;
     rc = cosmos_partition_key_create(comps, 1, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE, "-Inf rejected (rc=%d)", rc);
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE, "-Inf rejected (rc=%d)", rc);
 
     return result;
 }
@@ -188,11 +191,11 @@ static int test_string_null_value_rejected(void)
     int result = TEST_PASS;
     cosmos_partition_key_component_t comps[1];
     comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING);
-    comps[0].string_value = NULL;
+    comps[0].value.string_value = NULL;
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "string component with NULL value rejected (rc=%d)", rc);
     ASSERT(pk == NULL, "no handle on NULL string value");
     return result;
@@ -204,7 +207,7 @@ static int test_create_rejects_null_out(void)
     cosmos_partition_key_component_t comps[1];
     comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL);
     int32_t rc = cosmos_partition_key_create(comps, 1, NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "create(comps, 1, NULL) rejected (rc=%d)", rc);
     return result;
 }

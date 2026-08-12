@@ -853,7 +853,9 @@ impl LocationStateStore {
             // The background endpoint-probe loop is the sole owner of
             // account-level failback: a marked endpoint is only cleared once a
             // connectivity probe confirms it is reachable, never on a time
-            // basis. See `probe_and_failback_unavailable_endpoints`.
+            // basis. See `probe_and_failback_unavailable_endpoints`, which
+            // skips probing endpoints the account no longer advertises so a
+            // removed region's mark costs nothing while it lingers.
             next.unavailable_endpoints = current.unavailable_endpoints.clone();
             next
         });
@@ -978,6 +980,15 @@ impl LocationStateStore {
     /// reachable endpoint has its unavailability mark removed (rejoining the
     /// rotation); an unreachable endpoint has its cooldown reset so it is
     /// re-probed after the next interval rather than thrashing.
+    ///
+    /// Endpoints the account no longer advertises are skipped. A mark for a
+    /// region that has left the account is inert for routing — endpoint
+    /// selection only ever consults marks for endpoints drawn from the
+    /// preferred/account endpoint lists — so probing it would burn a
+    /// connection attempt every interval, forever, against a hostname that is
+    /// eventually withdrawn from DNS. Skipping rather than *dropping* the mark
+    /// keeps failback probe-gated: if the region returns to the topology it
+    /// still has to pass a probe before it takes traffic again.
     #[cfg(feature = "tokio")]
     pub(crate) async fn probe_and_failback_unavailable_endpoints(
         &self,
@@ -986,6 +997,7 @@ impl LocationStateStore {
         let now = Instant::now();
         let ttl = self.endpoint_unavailability_ttl;
         let snapshot = self.account_snapshot();
+        let advertised = advertised_endpoint_urls(&snapshot);
 
         // Capture each due endpoint's observed `marked_at` so we can detect a
         // concurrent re-mark that lands while the (potentially slow) probe is in
@@ -994,6 +1006,7 @@ impl LocationStateStore {
         let due: Vec<(&Url, Instant)> = snapshot
             .unavailable_endpoints
             .iter()
+            .filter(|(url, _)| advertised.contains(*url))
             .filter(|(_, (marked_at, _))| now.saturating_duration_since(*marked_at) >= ttl)
             .map(|(url, (marked_at, _))| (url, *marked_at))
             .collect();
@@ -1008,11 +1021,15 @@ impl LocationStateStore {
                 let mut next = current.clone();
                 if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(url) {
                     if reachable {
-                        // Only fail back if the mark is the same one we probed.
+                        // Only fail back if the mark is the same one we probed
+                        // *and* the account still advertises the endpoint.
                         // A newer `marked_at` means a concurrent transport
                         // failure re-marked the endpoint while the probe was in
-                        // flight, so keep it out of rotation and re-probe later.
-                        if *marked_at == observed_marked_at {
+                        // flight; an endpoint that left the account in that
+                        // window must also keep its mark, so a later re-add is
+                        // still probe-gated instead of silently taking traffic.
+                        let still_advertised = advertised_endpoint_urls(current).contains(url);
+                        if *marked_at == observed_marked_at && still_advertised {
                             next.unavailable_endpoints.remove(url);
                         }
                     } else {
@@ -1098,6 +1115,24 @@ impl LocationStateStore {
             record_hedge_primary_win(current, partition, primary_region)
         });
     }
+}
+
+/// Returns the set of endpoint URLs the account currently advertises.
+///
+/// Marks are keyed by the standard gateway URL (see `mark_endpoint_unavailable`),
+/// so only that URL needs matching.
+fn advertised_endpoint_urls(state: &AccountEndpointState) -> HashSet<&Url> {
+    let mut known: HashSet<&Url> = HashSet::new();
+    known.insert(state.default_endpoint.url());
+    for endpoint in state
+        .preferred_read_endpoints
+        .iter()
+        .chain(state.preferred_write_endpoints.iter())
+        .chain(state.account_write_endpoints.iter())
+    {
+        known.insert(endpoint.url());
+    }
+    known
 }
 
 /// Background account-metadata refresh loop. Periodically calls
@@ -1497,6 +1532,127 @@ mod tests {
         );
     }
 
+    /// Exercises the account endpoint-unavailability LIFECYCLE as one ordered
+    /// state machine: mark-unavailable -> (still present, not removed) ->
+    /// cooldown gate -> expiry via backdated `marked_at` -> successful probe ->
+    /// restore.
+    ///
+    /// Deterministic in-memory unit test: no network, no sleeps. It drives
+    /// `probe_and_failback_unavailable_endpoints` directly and backdates
+    /// `marked_at` to simulate an elapsed cooldown, because the background probe
+    /// loop's cadence (`ENDPOINT_PROBE_INTERVAL`) is a fixed 60s const and is not
+    /// test-injectable.
+    ///
+    /// Coverage split: this module owns the *membership* half of the lifecycle
+    /// (a mark living in / leaving `unavailable_endpoints`, and never mutating
+    /// the preferred order). The *routing* consequences of a mark —
+    /// demote-to-tail (the marked endpoint is skipped during selection but kept
+    /// as a last resort, never removed) and the read/write/both distinction
+    /// (`WriteForbidden` demotes writes only) — are enforced by the resolver and
+    /// are covered by the `resolve_endpoint` tests in
+    /// `driver::pipeline::operation_pipeline`.
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn endpoint_unavailability_lifecycle_mark_cooldown_probe_restore() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        // Non-zero cooldown so the "not yet due" gate is observable.
+        let cooldown = Duration::from_secs(60);
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            cooldown,
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        let endpoint_url = default_endpoint.url().clone();
+        // The preferred read order that the mark/restore must never mutate.
+        let preferred_before = store.snapshot().account.preferred_read_endpoints.clone();
+        assert!(
+            preferred_before.iter().any(|e| e.url() == &endpoint_url),
+            "precondition: the endpoint under test is in the preferred read order",
+        );
+
+        // 1. MARK UNAVAILABLE (a both-affecting reason, not WriteForbidden).
+        store
+            .apply(&[LocationEffect::MarkEndpointUnavailable {
+                endpoint: default_endpoint.clone(),
+                reason: UnavailableReason::TransportError,
+            }])
+            .await;
+        let marked = store.snapshot();
+        assert!(
+            marked
+                .account
+                .unavailable_endpoints
+                .contains_key(&endpoint_url),
+            "mark must record the endpoint as unavailable",
+        );
+        // NOT REMOVAL: marking leaves the preferred read order untouched, so the
+        // endpoint is only ever demoted (by the resolver), never dropped.
+        assert_eq!(
+            marked.account.preferred_read_endpoints.as_ref(),
+            preferred_before.as_ref(),
+            "marking unavailable must not remove or reorder the preferred read endpoints",
+        );
+
+        // 2. COOLDOWN GATE: before the TTL elapses, even a reachable probe is a
+        //    no-op — nothing is due, so the mark survives.
+        let reachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { true }) as BoxFuture<'static, bool>);
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert!(
+            store
+                .snapshot()
+                .account
+                .unavailable_endpoints
+                .contains_key(&endpoint_url),
+            "an endpoint still within its cooldown must not be probed or failed back",
+        );
+
+        // 3. EXPIRY: backdate `marked_at` past the TTL so the endpoint is due.
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(&endpoint_url) {
+                *marked_at = Instant::now() - (cooldown + Duration::from_secs(1));
+            }
+            next
+        });
+
+        // 4. PROBE + RESTORE: a reachable probe on the due endpoint clears the
+        //    mark, returning the endpoint to rotation.
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        let restored = store.snapshot();
+        assert!(
+            !restored
+                .account
+                .unavailable_endpoints
+                .contains_key(&endpoint_url),
+            "a due endpoint must fail back after a successful probe",
+        );
+        // The preferred order was never mutated across the whole lifecycle.
+        assert_eq!(
+            restored.account.preferred_read_endpoints.as_ref(),
+            preferred_before.as_ref(),
+            "restore must leave the preferred read endpoints unchanged",
+        );
+    }
+
     #[test]
     fn account_sync_preserves_unavailable_marks_for_probe_loop() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
@@ -1550,6 +1706,179 @@ mod tests {
             store.snapshot().account.unavailable_endpoints.len(),
             1,
             "account sync must NOT clear unavailable marks; only a probe may",
+        );
+    }
+
+    /// A mark for a region the account no longer advertises must not be
+    /// probed: the endpoint is gone (its DNS name is eventually withdrawn), so
+    /// probing it would burn a connection attempt every interval forever.
+    ///
+    /// The mark itself is deliberately *kept*, not dropped — it is inert for
+    /// routing while the region is absent, and keeping it means a region that
+    /// returns to the topology still has to pass a probe before taking traffic.
+    #[tokio::test]
+    async fn probe_skips_endpoints_the_account_no_longer_advertises() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            Duration::ZERO, // every mark is immediately due for a probe
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        let westus_endpoint = AccountEndpoint::from(
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let westus_url = westus_endpoint.url().clone();
+        let westus_region = AccountRegion {
+            name: Region::from("westus"),
+            database_account_endpoint: westus_endpoint,
+        };
+
+        // Two regions, West US marked unavailable.
+        let mut two_regions = default_account_properties();
+        two_regions.readable_locations.push(westus_region);
+        two_regions.etag = "two-regions".into();
+        store.sync_account_properties(Arc::new(two_regions), &default_endpoint);
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            next.unavailable_endpoints.insert(
+                westus_url.clone(),
+                (Instant::now(), UnavailableReason::TransportError),
+            );
+            next
+        });
+
+        // Record which URLs the probe is asked about.
+        let probed: Arc<std::sync::Mutex<Vec<Url>>> = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let probed_clone = Arc::clone(&probed);
+        let probe: EndpointProbeFn = Arc::new(move |url: Url| {
+            probed_clone.lock().unwrap().push(url);
+            let fut: BoxFuture<'static, bool> = Box::pin(async move { false });
+            fut
+        });
+
+        // While the region is advertised, it IS probed.
+        store.probe_and_failback_unavailable_endpoints(&probe).await;
+        assert_eq!(
+            probed.lock().unwrap().as_slice(),
+            std::slice::from_ref(&westus_url),
+            "an advertised endpoint must still be probed",
+        );
+        probed.lock().unwrap().clear();
+
+        // West US leaves the account.
+        let mut one_region = default_account_properties();
+        one_region.etag = "one-region".into();
+        store.sync_account_properties(Arc::new(one_region), &default_endpoint);
+
+        store.probe_and_failback_unavailable_endpoints(&probe).await;
+        assert!(
+            probed.lock().unwrap().is_empty(),
+            "an endpoint the account no longer advertises must not be probed; \
+             probed {:?}",
+            probed.lock().unwrap(),
+        );
+        assert!(
+            store
+                .snapshot()
+                .account
+                .unavailable_endpoints
+                .contains_key(&westus_url),
+            "the mark must be kept so failback stays probe-gated if the region returns",
+        );
+    }
+
+    /// A region that leaves the account *while its probe is in flight* must keep
+    /// its mark. `advertised` is captured before the awaits, so without a
+    /// re-check inside the update a successful probe would clear a mark the
+    /// newer account state still wants held, and a later re-add would take
+    /// traffic without the promised fresh probe.
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn probe_does_not_fail_back_an_endpoint_removed_while_probing() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = Arc::new(LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            Duration::ZERO, // every mark is immediately due for a probe
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        ));
+
+        let westus_endpoint = AccountEndpoint::from(
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let westus_url = westus_endpoint.url().clone();
+        let westus_region = AccountRegion {
+            name: Region::from("westus"),
+            database_account_endpoint: westus_endpoint,
+        };
+
+        // Two regions, West US advertised and marked unavailable.
+        let mut two_regions = default_account_properties();
+        two_regions.readable_locations.push(westus_region);
+        two_regions.etag = "two-regions".into();
+        store.sync_account_properties(Arc::new(two_regions), &default_endpoint);
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            next.unavailable_endpoints.insert(
+                westus_url.clone(),
+                (Instant::now(), UnavailableReason::TransportError),
+            );
+            next
+        });
+
+        // The probe succeeds, but West US leaves the account *during* the probe.
+        let weak = Arc::downgrade(&store);
+        let probe_default_endpoint = default_endpoint.clone();
+        let probe: EndpointProbeFn = Arc::new(move |_url: Url| {
+            let weak = weak.clone();
+            let default_endpoint = probe_default_endpoint.clone();
+            let fut: BoxFuture<'static, bool> = Box::pin(async move {
+                if let Some(store) = weak.upgrade() {
+                    let mut one_region = default_account_properties();
+                    one_region.etag = "one-region".into();
+                    store.sync_account_properties(Arc::new(one_region), &default_endpoint);
+                }
+                true
+            });
+            fut
+        });
+
+        store.probe_and_failback_unavailable_endpoints(&probe).await;
+
+        assert!(
+            store
+                .snapshot()
+                .account
+                .unavailable_endpoints
+                .contains_key(&westus_url),
+            "an endpoint dropped from the account mid-probe must keep its mark, so a \
+             later re-add is still probe-gated",
         );
     }
 

@@ -20,7 +20,8 @@ use crate::{
             ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
             METADATA_MAX_THROTTLE_WAIT,
         },
-        pipeline::operation_pipeline::OperationOverrides,
+        pipeline::hedge_budget::HedgeBudget,
+        pipeline::operation_pipeline::{OperationOverrides, RegionPin},
         routing::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
             CosmosEndpoint, LocationStateStore,
@@ -41,8 +42,9 @@ use crate::{
 };
 use arc_swap::ArcSwap;
 use futures::future::BoxFuture;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 #[cfg(feature = "preview_dtx")]
 use std::time::Instant;
@@ -136,6 +138,20 @@ struct DriverRequestExecutor<'a> {
     options: &'a OperationOptions,
 }
 
+/// Region pins for the PartitionKeyRange change feed, keyed by container.
+///
+/// The `/pkranges` change-feed continuation is an ETag that only the region
+/// which issued it can interpret, and [`PartitionKeyRangeCache`] persists that
+/// continuation in `ContainerRoutingMap::change_feed_next_if_none_match` across
+/// fetch operations — well beyond the lifetime of the closure that produced it.
+/// Pinning per fetcher closure would therefore leak the token into normal
+/// routing on the next refresh, so the pin lives at driver scope alongside the
+/// cache whose entries it protects.
+///
+/// A cold read (no carried continuation) starts a brand new ETag chain, so it
+/// clears any existing pin and installs the region that served it.
+type PkRangeRegionPins = Mutex<HashMap<ContainerReference, CosmosEndpoint>>;
+
 fn request_target_overrides(
     operation_partition_key: Option<&PartitionKey>,
     target: RequestTarget,
@@ -180,6 +196,7 @@ fn request_target_overrides(
             // backend returns every document in the physical partition.
             partition_key: operation_partition_key.cloned(),
             continuation,
+            ..Default::default()
         },
         RequestTarget::NonPartitioned => OperationOverrides {
             continuation,
@@ -265,6 +282,13 @@ pub struct CosmosDriver {
     /// Used to pre-resolve partition key range IDs for PPAF/PPCB
     /// before the first request attempt.
     pk_range_cache: PartitionKeyRangeCache,
+    /// Region pins protecting the change-feed continuations held by
+    /// `pk_range_cache`. See [`PkRangeRegionPins`].
+    pk_range_region_pins: PkRangeRegionPins,
+    /// Per-client ceiling on metadata operations making simultaneous cross-region attempts.
+    /// Bounds the request amplification a hedging client can inflict on an
+    /// alternate region during a brownout. See [`HedgeBudget`].
+    hedge_budget: HedgeBudget,
     /// Session token cache for session consistency.
     session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
@@ -1390,6 +1414,89 @@ impl CosmosDriver {
         ))
     }
 
+    /// Fetches a container's metadata from the service addressing it purely by RID.
+    ///
+    /// The parent database RID is derived from the container RID's encoded byte
+    /// layout (the first 4 decoded bytes), so no `read_database` round-trip is
+    /// needed. The read response supplies the container's name and partition key.
+    /// The resulting [`ContainerReference`] is RID-addressed (it carries no
+    /// database name).
+    async fn fetch_container_by_rid(
+        &self,
+        container_rid: &str,
+    ) -> crate::error::Result<ContainerReference> {
+        // A container RID decodes to exactly 8 bytes: the first 4 identify the
+        // parent database, the next 4 the container. A shorter value (e.g. a
+        // bare 4-byte database RID) or a longer one (e.g. a 16-byte document
+        // RID) is not a container RID — fail fast rather than issuing a request
+        // that the service would reject, or misrouting a document RID into the
+        // `colls` segment.
+        let decoded = crate::models::resource_id::decode_rid(container_rid).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                .with_message(format!("invalid container RID '{container_rid}'"))
+                .with_source(e)
+                .build()
+        })?;
+        if decoded.len() != 8 {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                .with_message(format!(
+                    "'{container_rid}' is not a container RID (decodes to {} bytes; a container RID must be exactly 8)",
+                    decoded.len()
+                ))
+                .with_source(std::io::Error::other("container RID has non-container byte length"))
+                .build());
+        }
+        let db_rid = crate::models::resource_id::ResourceId::new(
+            crate::models::resource_id::encode_rid(&decoded[0..4]),
+        );
+
+        let options = OperationOptions::default();
+
+        let container_result = self
+            .execute_singleton_operation(
+                CosmosOperation::read_container_by_rid(
+                    self.account().clone(),
+                    db_rid.as_str().to_owned(),
+                    container_rid.to_owned(),
+                ),
+                options,
+            )
+            .await?;
+        let container_headers = container_result.headers().clone();
+        let container_diagnostics = container_result.diagnostics();
+        let container_props: ContainerProperties =
+            container_result.into_body().into_single().map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("failed to deserialize container response")
+                    .with_response_parts(crate::models::CosmosResponsePayload::new(
+                        crate::models::ResponseBody::NoPayload,
+                        container_headers.clone(),
+                    ))
+                    .with_diagnostics(container_diagnostics.clone())
+                    .with_source(e)
+                    .build()
+            })?;
+
+        // Prefer the authoritative RID echoed back by the service; fall back to
+        // the caller-supplied RID if the response omits it.
+        let resolved_rid = container_props
+            .system_properties
+            .rid
+            .clone()
+            .unwrap_or_else(|| container_rid.to_owned());
+
+        Ok(ContainerReference::new_by_rid(
+            self.account().clone(),
+            db_rid.as_str().to_owned(),
+            container_props.id.clone().into_owned(),
+            resolved_rid,
+            &container_props,
+        ))
+    }
+
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::create_driver()`] instead.
@@ -1625,6 +1732,10 @@ impl CosmosDriver {
         // Clone the per-driver registry as-is for the request hot path.
         let throughput_control_groups = options.throughput_control_groups().clone();
 
+        // Read the hedge ceiling once, here: it is fixed for the driver's
+        // lifetime, and `options` is moved into `Self` below.
+        let hedge_budget = HedgeBudget::new(options.hedging_options());
+
         Ok(Self {
             runtime,
             options,
@@ -1636,6 +1747,8 @@ impl CosmosDriver {
             ))]
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
             pk_range_cache: PartitionKeyRangeCache::new(),
+            pk_range_region_pins: Mutex::new(HashMap::new()),
+            hedge_budget,
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
             user_agent,
@@ -2059,7 +2172,8 @@ impl CosmosDriver {
         &self,
         container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
+        region_pin: Option<RegionPin>,
+    ) -> (Option<PkRangeFetchResult>, Option<CosmosEndpoint>) {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
@@ -2076,23 +2190,44 @@ impl CosmosDriver {
         request_headers.max_item_count = Some(crate::models::MaxItemCountHint::ServerDecides);
         operation = operation.with_request_headers(request_headers);
 
+        // Hedging is decided entirely by `region_pin`: absent (a cold read) the
+        // request is hedge-eligible; present it is not. The pin carries that
+        // suppression itself rather than going through
+        // `AvailabilityStrategy::Disabled`, which the
+        // `AZURE_COSMOS_HEDGING_ENABLED` env switch is allowed to override —
+        // a region-affine continuation must never be raced regardless of
+        // configuration. The pin's endpoint additionally routes the request back
+        // to the region that served the cold page, so a failover retry cannot
+        // move the chain either.
         let options = OperationOptions::default();
+        let overrides = OperationOverrides {
+            region_pin: region_pin.map(Box::new),
+            ..Default::default()
+        };
 
         match self
-            .execute_operation_direct(&operation, OperationOverrides::default(), &options)
+            .execute_operation_direct(&operation, overrides, &options)
             .await
         {
             Ok(response) => {
+                // Capture the region that served this page before the response
+                // body is consumed, so the caller can pin subsequent
+                // change-feed pages to it.
+                let serving_endpoint = self.response_endpoint(&response);
+
                 let etag = response.headers().etag.as_ref().map(|e| e.to_string());
 
                 // 304 Not Modified is a success outcome for conditional
                 // changefeed reads: the cached routing map is still current.
                 if response.status().status_code() == azure_core::http::StatusCode::NotModified {
-                    return Some(PkRangeFetchResult {
-                        ranges: vec![],
-                        continuation,
-                        not_modified: true,
-                    });
+                    return (
+                        Some(PkRangeFetchResult {
+                            ranges: vec![],
+                            continuation,
+                            not_modified: true,
+                        }),
+                        serving_endpoint,
+                    );
                 }
 
                 let body_bytes = match response.into_body().single() {
@@ -2102,21 +2237,24 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Partition key ranges response was a feed body, expected single payload"
                         );
-                        return None;
+                        return (None, serving_endpoint);
                     }
                 };
                 match parse_pk_ranges_response(&body_bytes) {
-                    Some(ranges) => Some(PkRangeFetchResult {
-                        ranges,
-                        continuation: etag,
-                        not_modified: false,
-                    }),
+                    Some(ranges) => (
+                        Some(PkRangeFetchResult {
+                            ranges,
+                            continuation: etag,
+                            not_modified: false,
+                        }),
+                        serving_endpoint,
+                    ),
                     None => {
                         tracing::error!(
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        None
+                        (None, serving_endpoint)
                     }
                 }
             }
@@ -2146,7 +2284,7 @@ impl CosmosDriver {
                             error = %e,
                             "Permanent error fetching partition key ranges — check account credentials and container existence"
                         );
-                        return None;
+                        return (None, None);
                     }
                 }
 
@@ -2155,8 +2293,100 @@ impl CosmosDriver {
                     error = %e,
                     "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
                 );
-                None
+                (None, None)
             }
+        }
+    }
+
+    /// Maps the region that produced `response` onto the account endpoint that
+    /// serves it.
+    ///
+    /// Used to pin the pages that follow a change-feed cold read. The ETag a
+    /// page returns is only meaningful to the region that issued it, so **every**
+    /// successful cold page must be recorded — not just the ones an alternate
+    /// region won via hedging. Recording only hedge wins would leave the common
+    /// primary-answered case unpinned, and a `FailoverRetry`/`SessionRetry` on a
+    /// later page would then be free to carry that region-affine ETag into a
+    /// different region.
+    ///
+    /// `None` when the response names no serving region, or when that region is
+    /// absent from the account's preferred read endpoints; the caller then falls
+    /// back to a pin that carries no endpoint but still forbids hedging.
+    fn response_endpoint(
+        &self,
+        response: &crate::models::CosmosResponse,
+    ) -> Option<CosmosEndpoint> {
+        let region = response.serving_region()?;
+        let snapshot = self.location_state_store.snapshot();
+        snapshot
+            .account
+            .preferred_read_endpoints
+            .iter()
+            .find(|ep| ep.region() == Some(&region))
+            .cloned()
+    }
+
+    /// Builds the per-fetch-operation closure that the PartitionKeyRange cache
+    /// drives page-by-page.
+    ///
+    /// Encapsulates the change-feed hedging policy. A **cold** call (no carried
+    /// continuation) starts a fresh ETag chain, so it drops any existing pin for
+    /// the container and is hedge-eligible; whichever region serves it — the
+    /// primary or a hedge-winning alternate — is recorded as the container's
+    /// pin. Every call that carries a continuation is region-pinned instead:
+    /// hedging is suppressed, and the call is routed back to the recorded region
+    /// so neither a hedge nor a mid-page failover can carry the region-affine
+    /// ETag somewhere it means nothing.
+    ///
+    /// The pin is held on the driver rather than in the closure because the
+    /// cache persists the continuation past the closure's lifetime — see
+    /// [`PkRangeRegionPins`].
+    ///
+    /// A pinned chain that fails is not left pinned: the cache discards the
+    /// failed continuation and retries the fetch cold, which routes back through
+    /// the `continuation.is_none()` branch below and clears the pin. Both halves
+    /// of the region-affine state therefore die together, so an unreachable
+    /// pinned region cannot wedge later force-refreshes.
+    fn pk_range_page_fetcher<'a>(
+        &'a self,
+    ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
+           + Send
+           + 'a {
+        move |container, continuation| {
+            Box::pin(async move {
+                let region_pin = {
+                    let mut pins = self
+                        .pk_range_region_pins
+                        .lock()
+                        .expect("pk-range region pin mutex poisoned");
+                    if continuation.is_none() {
+                        // A cold read starts a new ETag chain, so the previous
+                        // chain's pin no longer applies and must not outlive it.
+                        pins.remove(&container);
+                        None
+                    } else {
+                        Some(RegionPin {
+                            endpoint: pins.get(&container).cloned(),
+                        })
+                    }
+                };
+                let is_cold = region_pin.is_none();
+
+                let (result, serving_endpoint) = self
+                    .fetch_pk_ranges_from_service(container.clone(), continuation, region_pin)
+                    .await;
+                // Record the serving region for every successful cold page, so
+                // the continuation pages that follow are pinned to it. Pages
+                // that already carry a pin leave it untouched: the chain must
+                // stay on the region that opened it.
+                if let Some(endpoint) = serving_endpoint.filter(|_| is_cold) {
+                    self.pk_range_region_pins
+                        .lock()
+                        .expect("pk-range region pin mutex poisoned")
+                        .insert(container, endpoint);
+                }
+                result
+            })
         }
     }
 
@@ -2252,9 +2482,12 @@ impl CosmosDriver {
         if let Some(partition_key) = partition_key {
             return self
                 .pk_range_cache
-                .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
-                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-                })
+                .resolve_partition_key_range_id(
+                    container,
+                    partition_key,
+                    false,
+                    self.pk_range_page_fetcher(),
+                )
                 .await
                 .map(PartitionKeyRangeId::from);
         }
@@ -2279,7 +2512,7 @@ impl CosmosDriver {
                 container,
                 target.min_inclusive()..target.max_exclusive(),
                 false,
-                |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+                self.pk_range_page_fetcher(),
             )
             .await
             .map(PartitionKeyRangeId::from)
@@ -2681,35 +2914,36 @@ impl CosmosDriver {
         container: Option<ContainerReference>,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
-        if !self.initialized.load(Ordering::Acquire) {
-            let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
-                .with_message(format!(
-                    "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
-                     use CosmosDriverRuntime::create_driver() which initializes automatically"
-                ))
-                .build());
-        }
-        tracing::debug!("plan execution started");
+        Box::pin(async move {
+            if !self.initialized.load(Ordering::Acquire) {
+                let endpoint = AccountEndpoint::from(self.options.account());
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
+                    .with_message(format!(
+                        "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
+                         use CosmosDriverRuntime::create_driver() which initializes automatically"
+                    ))
+                    .build());
+            }
+            tracing::debug!("plan execution started");
 
-        let mut executor = DriverRequestExecutor {
-            driver: self,
-            options: &options,
-        };
+            let mut executor = DriverRequestExecutor {
+                driver: self,
+                options: &options,
+            };
 
-        let mut topology = container.map(|c| {
-            CachedTopologyProvider::new(&self.pk_range_cache, c, |container, continuation| {
-                self.fetch_pk_ranges_from_service(container, continuation)
-            })
-        });
+            let mut topology = container.map(|c| {
+                CachedTopologyProvider::new(&self.pk_range_cache, c, self.pk_range_page_fetcher())
+            });
 
-        let mut context = PipelineContext::new(
-            &mut executor,
-            topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
-        );
+            let mut context = PipelineContext::new(
+                &mut executor,
+                topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
+            );
 
-        plan.pipeline.next_page(&mut context).await
+            plan.pipeline.next_page(&mut context).await
+        })
+        .await
     }
 
     async fn execute_operation_direct(
@@ -2844,6 +3078,7 @@ impl CosmosDriver {
                 .default_consistency_level,
             effective_throughput_control,
             pre_resolved_pk_range_id,
+            &self.hedge_budget,
         )
         .await
     }
@@ -2931,6 +3166,38 @@ impl CosmosDriver {
         Ok(resolved.as_ref().clone())
     }
 
+    /// Resolves a container by its RID.
+    ///
+    /// Attempts to resolve from `ContainerCache` (by-RID index) first. On a cache
+    /// miss, fetches metadata from the service addressing the container by RID and
+    /// populates the cache. The returned [`ContainerReference`] is RID-addressed
+    /// (it carries no database name).
+    pub async fn resolve_container_by_rid(
+        &self,
+        container_rid: &str,
+    ) -> crate::error::Result<ContainerReference> {
+        let endpoint = self.account().endpoint().as_str().to_owned();
+        let container_rid_owned = container_rid.to_owned();
+
+        let resolved = self
+            .runtime
+            .container_cache()
+            .get_or_fetch_by_rid(&endpoint, container_rid, || async move {
+                self.fetch_container_by_rid(&container_rid_owned)
+                    .await
+                    .map_err(|err| {
+                        crate::error::CosmosErrorBuilder::from_error(err)
+                            .with_context(format!(
+                                "resolve container by rid (container_rid='{container_rid_owned}')"
+                            ))
+                            .build()
+                    })
+            })
+            .await?;
+
+        Ok(resolved.as_ref().clone())
+    }
+
     /// Plans the execution of a Cosmos DB operation.
     ///
     /// For trivial operations (non-query or single-partition), returns a
@@ -2959,13 +3226,33 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        // Reject mixed name/RID addressing before any IO work is done. The
+        // service classifies a request as name-based or RID-based from its `dbs`
+        // segment alone, so a reference that mixes a name-addressed parent with
+        // a RID-addressed child (or vice versa) signs and routes inconsistently
+        // and the gateway rejects it with an opaque 401, while a name leaf under
+        // a RID-addressed parent is rejected with a 400 the caller cannot act
+        // on. Validating here — the single choke point every externally
+        // executable operation passes through on its way to a plan — turns both
+        // into deterministic client-side errors for references built through any
+        // path (including direct `plan_operation` + `execute_plan` callers and
+        // multi-page queries), not just `execute_operation`. The check is a cheap
+        // in-memory field comparison and a no-op for every consistently-addressed
+        // reference, so it issues no additional network calls and does not change
+        // the request flow.
+        operation.validate_addressing()?;
+
         // Planning holds the whole pipeline-builder state across several await
         // points, which makes it one of the largest futures in the driver —
         // large enough to trip `clippy::large_futures` in callers. Box it once
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        Box::pin(self.plan_operation_inner(operation, options, continuation, plan_options)).await
+        Box::pin(async move {
+            self.plan_operation_inner(operation, options, continuation, plan_options)
+                .await
+        })
+        .await
     }
 
     async fn plan_operation_inner(
@@ -3055,9 +3342,7 @@ impl CosmosDriver {
             let mut topology = CachedTopologyProvider::new(
                 &self.pk_range_cache,
                 container_ref,
-                |container, continuation| {
-                    self.fetch_pk_ranges_from_service(container, continuation)
-                },
+                self.pk_range_page_fetcher(),
             );
             let pipeline = planner::build_unordered_merge(
                 &feed_range,
@@ -3090,8 +3375,25 @@ impl CosmosDriver {
         let mut topology = CachedTopologyProvider::new(
             &self.pk_range_cache,
             container_ref,
-            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
+            self.pk_range_page_fetcher(),
         );
+
+        // Route streaming ORDER BY queries to the k-way merge instead of
+        // the natural-order sequential drain.
+        if query_plan
+            .query_info
+            .as_ref()
+            .is_some_and(planner::is_streaming_order_by)
+        {
+            let pipeline = planner::build_streaming_ordered_merge(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
 
         let pipeline =
             planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
@@ -3106,10 +3408,9 @@ impl CosmosDriver {
         operation: &CosmosOperation,
         options: &OperationOptions,
     ) -> crate::error::Result<QueryPlan> {
-        // Advertise the SDK's supported query-rewrite features. The default
-        // (`SUPPORTED_QUERY_FEATURES`) is `"None"` until the cross-partition
-        // pipeline gains rewrite support, but the value must be non-empty so
-        // the Gateway V2 thin-client proxy accepts the QueryPlan request.
+        // Advertise exactly the query-rewrite features implemented by the
+        // production dataflow pipeline (`OrderBy,MultipleOrderBy`). The value
+        // must remain non-empty so Gateway V2 accepts the QueryPlan request.
         let query_plan_operation = CosmosOperation::query_plan(
             container.clone(),
             std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
@@ -3239,9 +3540,7 @@ impl CosmosDriver {
     ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
         let routing_map = self
             .pk_range_cache
-            .try_lookup(container, force_refresh, |c, cont| {
-                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-            })
+            .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
             .await?;
 
         let ranges = routing_map.ranges();
@@ -3284,9 +3583,7 @@ impl CosmosDriver {
             // Full key — point lookup
             let routing_map = self
                 .pk_range_cache
-                .try_lookup(container, force_refresh, |c, cont| {
-                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-                })
+                .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
                 .await?;
             if routing_map.ranges().is_empty() {
                 return None;
@@ -3304,7 +3601,7 @@ impl CosmosDriver {
                     container,
                     &epk_range.start..&epk_range.end,
                     force_refresh,
-                    |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+                    self.pk_range_page_fetcher(),
                 )
                 .await
         }
@@ -3709,6 +4006,68 @@ mod tests {
             None,
         )
         .is_some());
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_mixed_addressing() {
+        // The mixed name/RID guard lives in plan_operation, the single choke
+        // point every externally executable operation passes through. Calling
+        // plan_operation directly (the path queries and direct callers use,
+        // bypassing execute_operation) must still reject a mixed reference with
+        // the deterministic CLIENT_MIXED_NAME_RID_ADDRESSING error before any
+        // plan is built or signed.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        // Name-addressed database parent with a RID-addressed collection leaf.
+        let db = DatabaseReference::from_name(test_account(), "testdb");
+        let mixed = crate::models::CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid("Lx1BALxJyZ8=".into());
+        let operation = CosmosOperation::new(crate::models::OperationType::Read, mixed, None);
+
+        let err = match Box::pin(driver.plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        ))
+        .await
+        {
+            Ok(_) => panic!("mixed addressing must be rejected before planning"),
+            Err(e) => e,
+        };
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+        );
+    }
+
+    #[tokio::test]
+    async fn resolve_container_by_rid_rejects_non_container_byte_length() {
+        // A container RID decodes to exactly 8 bytes. A 4-byte database RID and a
+        // 16-byte document RID must both be rejected up front with
+        // CLIENT_INVALID_RESOURCE_ID rather than being misrouted into the
+        // `colls` segment of a service request.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        for byte_len in [4usize, 16] {
+            let rid = crate::models::resource_id::encode_rid(&vec![0u8; byte_len]);
+            let err = match driver.resolve_container_by_rid(&rid).await {
+                Ok(_) => panic!("a {byte_len}-byte RID must not resolve as a container"),
+                Err(e) => e,
+            };
+            assert_eq!(
+                err.status(),
+                crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID,
+                "{byte_len}-byte RID should be rejected as invalid"
+            );
+        }
     }
 
     #[tokio::test]
@@ -4373,6 +4732,38 @@ mod tests {
         assert_send(driver.execute_singleton_operation(todo!(), todo!()));
         assert_send(driver.execute_plan(todo!(), todo!(), todo!()));
         assert_send(driver.plan_operation(todo!(), todo!(), todo!(), todo!()));
+    }
+
+    #[tokio::test]
+    async fn operation_futures_stay_within_size_budget() {
+        fn assert_size<T>(value: &T, budget: usize, name: &str) {
+            let actual = std::mem::size_of_val(value);
+            assert!(
+                actual <= budget,
+                "{name} future is {actual} bytes, exceeding the {budget}-byte budget"
+            );
+        }
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let driver = CosmosDriver::new(runtime, DriverOptions::builder(account).build()).unwrap();
+        driver.initialized.store(true, Ordering::Release);
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let operation = CosmosOperation::read_item(crate::models::ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let operation_options = OperationOptions::default();
+        let plan_options = PlanOptions::default();
+
+        let plan_future = driver.plan_operation(operation, &operation_options, None, &plan_options);
+        assert_size(&plan_future, 1024, "plan_operation");
+        let mut plan = plan_future.await.unwrap();
+
+        let execute_future =
+            driver.execute_plan(&mut plan, Some(container), OperationOptions::default());
+        assert_size(&execute_future, 512, "execute_plan");
     }
 
     // Account properties with two readable locations for regional fallback tests.

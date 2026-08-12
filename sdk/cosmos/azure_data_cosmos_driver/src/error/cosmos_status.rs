@@ -496,6 +496,9 @@ impl SubStatusCode {
             20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
             20118 => Some("ClientCrossPartitionFanOutExceeded"),
+            20119 => Some("ClientOrderByComplexValueUnsupported"),
+            20120 => Some("ClientInvalidResourceId"),
+            20121 => Some("ClientMixedNameRidAddressing"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -519,12 +522,33 @@ impl SubStatusCode {
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
             20212 => Some("ClientChangeFeedPipelineUnexpectedlyDrained"),
             20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
+            20214 => Some("ClientContinuationTokenOrderByStateInvalid"),
+            20215 => Some("ClientStreamingMergeSplitReplacementInvalid"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
             20303 => Some("ServiceReturnedOfferWithoutId"),
             20304 => Some("ClientThroughputPollerIncomplete"),
             20305 => Some("ClientTopologyResolutionFailed"),
+            20306 => Some("ServiceReturnedObjectWithoutRid"),
+            20307 => Some("ClientQueryPlanRangeNotCoveredByTopology"),
+            20308 => Some("ServiceOrderByEnvelopeInvalid"),
+            20309 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
+
+            // Native FFI wrapper pre-flight / plumbing codes (20350-20399)
+            20350 => Some("ClientFfiNullArgument"),
+            20351 => Some("ClientFfiInvalidUtf8"),
+            20352 => Some("ClientFfiInvalidHeader"),
+            20353 => Some("ClientFfiInvalidOptionValue"),
+            20354 => Some("ClientFfiOperationConsumed"),
+            20355 => Some("ClientFfiPreconditionAlreadySet"),
+            20356 => Some("ClientFfiUnsupportedOperationForMutator"),
+            20357 => Some("ClientFfiFeedExhausted"),
+            20358 => Some("ClientFfiQueueShutdown"),
+            20359 => Some("ClientFfiQueueFull"),
+            20360 => Some("ClientFfiOperationCancelled"),
+            20361 => Some("ClientFfiRuntimeBuildFailed"),
+            20362 => Some("ClientFfiPanic"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1334,6 +1358,22 @@ impl SubStatusCode {
     /// client-side input-validation rejection of the request.
     pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: SubStatusCode = SubStatusCode(20118);
 
+    /// An `ORDER BY` query sorted on a value that evaluated to an array or
+    /// object (20119). Cross-partition `ORDER BY` on complex values is not
+    /// currently supported.
+    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = SubStatusCode(20119);
+
+    /// A caller-supplied resource RID could not be parsed as a valid Cosmos DB
+    /// RID (20120). RIDs are Base64-encoded byte sequences; this is raised when
+    /// the bytes cannot be decoded or are too short to extract the expected
+    /// resource hierarchy.
+    pub const CLIENT_INVALID_RESOURCE_ID: SubStatusCode = SubStatusCode(20120);
+
+    /// Name-based and RID-based addressing were mixed across the
+    /// database/container hierarchy (20121). A RID-addressed database requires a
+    /// RID-addressed container and vice versa.
+    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = SubStatusCode(20121);
+
     // ----- 20150-20199: SDK configuration / setup errors -----
 
     /// Two fault-injection rules registered with the same id (20150).
@@ -1449,6 +1489,18 @@ impl SubStatusCode {
     /// see also 20200, 20203, 20204, 20205.
     pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: SubStatusCode = SubStatusCode(20213);
 
+    /// A `StreamingOrderedMerge` continuation token is semantically invalid
+    /// (bad column/direction, hash, RID, or skip count) (20214).
+    pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: SubStatusCode =
+        SubStatusCode(20214);
+
+    /// `StreamingOrderedMerge` split replacement nodes are unusable (20215):
+    /// either their ranges do not exactly cover the prior range (a coverage
+    /// gap/overlap), or a replacement carries no continuation to resume a
+    /// mid-group boundary and cannot be safely repositioned.
+    pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode =
+        SubStatusCode(20215);
+
     // ----- 20300-20349: SDK-detected service contract violations -----
 
     /// The supplied session-token feed ranges contain no overlap with
@@ -1494,6 +1546,16 @@ impl SubStatusCode {
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
 
+    /// A cross-partition streaming `ORDER BY` rewritten-query result item
+    /// did not match the expected envelope shape: missing `payload`,
+    /// missing/empty RID, or a mismatched `orderByItems` length (20308).
+    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: SubStatusCode = SubStatusCode(20308);
+
+    /// The backend query plan reported `ORDER BY` columns but did not
+    /// supply a non-empty `rewrittenQuery` (20309).
+    pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: SubStatusCode =
+        SubStatusCode(20309);
+
     /// A topology range resolved for a query-plan EPK range did not
     /// overlap that range (20307). The query planner intersects each
     /// resolved partition with the query-plan range it was resolved
@@ -1502,6 +1564,70 @@ impl SubStatusCode {
     /// error (paired with HTTP 500) instead of panicking the worker
     /// thread, which would deadlock the caller. See issue #4574.
     pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: SubStatusCode = SubStatusCode(20307);
+
+    // ----- 20350-20399: native FFI wrapper pre-flight / plumbing codes -----
+    //
+    // These are surfaced exclusively by the `azure_data_cosmos_driver_native`
+    // C ABI wrapper for failures that arise at the FFI boundary itself (bad
+    // pointer / encoding arguments, operation-lifecycle misuse, completion-queue
+    // back-pressure). They live here so the wrapper has a single canonical
+    // `(status, sub-status)` taxonomy shared with the driver instead of a
+    // parallel bespoke one. They are never produced by the driver's own
+    // request pipeline.
+
+    /// A required pointer argument to a wrapper C function was `NULL` (20350).
+    /// Paired with HTTP 400.
+    pub const CLIENT_FFI_NULL_ARGUMENT: SubStatusCode = SubStatusCode(20350);
+
+    /// A `*const c_char` argument to a wrapper C function was not valid
+    /// UTF-8 (20351). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_UTF8: SubStatusCode = SubStatusCode(20351);
+
+    /// A request header supplied to the wrapper had a non-ASCII / control
+    /// character name or value (20352). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_HEADER: SubStatusCode = SubStatusCode(20352);
+
+    /// A wrapper builder setter received a value outside its documented
+    /// range (20353). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_OPTION_VALUE: SubStatusCode = SubStatusCode(20353);
+
+    /// A mutator or second submit was attempted on a wrapper operation handle
+    /// already consumed by an earlier successful submit (20354). Paired with
+    /// HTTP 400.
+    pub const CLIENT_FFI_OPERATION_CONSUMED: SubStatusCode = SubStatusCode(20354);
+
+    /// A second precondition setter was called on a wrapper operation that
+    /// already had one (20355). Paired with HTTP 400.
+    pub const CLIENT_FFI_PRECONDITION_ALREADY_SET: SubStatusCode = SubStatusCode(20355);
+
+    /// A wrapper mutator only meaningful for a specific operation kind was
+    /// applied to an incompatible operation (20356). Paired with HTTP 400.
+    pub const CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR: SubStatusCode = SubStatusCode(20356);
+
+    /// A single-shot wrapper submit of a feed-style operation yielded no
+    /// further page (20357). Paired with HTTP 404.
+    pub const CLIENT_FFI_FEED_EXHAUSTED: SubStatusCode = SubStatusCode(20357);
+
+    /// A wrapper submit targeted a completion queue that had already been
+    /// shut down (20358). Paired with HTTP 503.
+    pub const CLIENT_FFI_QUEUE_SHUTDOWN: SubStatusCode = SubStatusCode(20358);
+
+    /// A wrapper submit targeted a completion queue already at its hard
+    /// capacity (20359). Paired with HTTP 503.
+    pub const CLIENT_FFI_QUEUE_FULL: SubStatusCode = SubStatusCode(20359);
+
+    /// A wrapper operation was cancelled before it completed, via an explicit
+    /// cancel or a queue shutdown (20360). Paired with HTTP 408.
+    pub const CLIENT_FFI_OPERATION_CANCELLED: SubStatusCode = SubStatusCode(20360);
+
+    /// The wrapper could not construct the underlying driver runtime (20361).
+    /// Paired with HTTP 500.
+    pub const CLIENT_FFI_RUNTIME_BUILD_FAILED: SubStatusCode = SubStatusCode(20361);
+
+    /// A driver future spawned by the wrapper panicked; the wrapper's panic
+    /// firewall synthesized a failure so the host continuation is released
+    /// rather than leaked (20362). Paired with HTTP 500.
+    pub const CLIENT_FFI_PANIC: SubStatusCode = SubStatusCode(20362);
 }
 
 impl Default for SubStatusCode {
@@ -2160,6 +2286,26 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
     };
 
+    /// 400 / 20119 — a cross-partition `ORDER BY` sorted on an array or
+    /// object value, which is not currently supported.
+    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
+    };
+
+    /// 400 / 20120 — caller-supplied resource RID could not be parsed.
+    pub const CLIENT_INVALID_RESOURCE_ID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_INVALID_RESOURCE_ID),
+    };
+
+    /// 400 / 20121 — name-based and RID-based addressing were mixed across the
+    /// database/container hierarchy.
+    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_MIXED_NAME_RID_ADDRESSING),
+    };
+
     // Configuration / setup (HTTP 400, sub-status 20150-20199)
 
     /// 400 / 20150 — duplicate fault-injection rule id.
@@ -2314,6 +2460,21 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
     };
 
+    /// 500 / 20214 — a `StreamingOrderedMerge` continuation token is
+    /// semantically invalid (bad column/direction, hash, RID, or count).
+    pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+    };
+
+    /// 500 / 20215 — `StreamingOrderedMerge` split replacement nodes are
+    /// unusable: their ranges do not exactly cover the prior range, or a
+    /// replacement carries no continuation to resume a mid-group boundary.
+    pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+    };
+
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)
 
     /// 410 / 20300 — the supplied session-token feed ranges contain no
@@ -2360,6 +2521,20 @@ impl CosmosStatus {
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::ServiceUnavailable,
         sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
+    };
+
+    /// 500 / 20308 — a rewritten-query result item didn't match the
+    /// expected envelope shape.
+    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_ORDER_BY_ENVELOPE_INVALID),
+    };
+
+    /// 500 / 20309 — the query plan reported `ORDER BY` columns but no
+    /// `rewrittenQuery`.
+    pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY),
     };
 
     /// 500 / 20307 — a topology range resolved for a query-plan EPK
@@ -2454,6 +2629,20 @@ mod tests {
         assert!(status.sub_status().is_none());
         assert!(status.is_success());
         assert!(status.name().is_none());
+    }
+
+    #[test]
+    fn client_rid_addressing_status_names() {
+        // The 20120/20121 client statuses must resolve to searchable names so the
+        // deterministic client-side errors are useful in diagnostics and logs.
+        assert_eq!(
+            CosmosStatus::CLIENT_INVALID_RESOURCE_ID.name(),
+            Some("ClientInvalidResourceId")
+        );
+        assert_eq!(
+            CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING.name(),
+            Some("ClientMixedNameRidAddressing")
+        );
     }
 
     #[test]
