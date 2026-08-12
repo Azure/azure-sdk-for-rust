@@ -6,10 +6,9 @@ Licensed under the MIT License.
 
 # How the Go native driver is built and verified
 
-This document explains the complete release design for the static Cosmos native
-driver consumed by Go. It describes what is built, why the static library cannot
-be signed directly, which release files establish trust, and what remains to be
-implemented before the pipeline can run in production.
+This document explains the release design for the static Cosmos native driver
+consumed by Go. It describes what is built, why the static library cannot be
+signed directly, and which release files establish trust.
 
 The pipeline definition is
 [`pipeline/native-driver.yml`](../pipeline/native-driver.yml). The operational
@@ -27,21 +26,26 @@ This pull request produces `libazurecosmosdriver.a` for:
 The Go SDK links this static library into the customer's final executable.
 
 This pull request does not distribute DLLs, macOS dynamic libraries, or Linux
-shared objects. Dynamic-library distribution and signing are tracked by
-[#5048](https://github.com/Azure/azure-sdk-for-rust/issues/5048). Windows ARM64
-and MSVC support are tracked by
-[#5047](https://github.com/Azure/azure-sdk-for-rust/issues/5047).
+shared objects. Dynamic-library distribution and signing belong to a future
+release path.
 
 ## What is published
 
-Each supported target produces:
+Each target build produces an intermediate Azure DevOps pipeline artifact:
 
 ```text
 <target-id>/
 ├── libazurecosmosdriver.a
+├── <platform-dynamic-library>
 ├── azurecosmosdriver.h
 └── rust-driver-native-interface-metadata.json
 ```
+
+The dynamic library is retained only as intermediate pipeline output for
+inspection. It is not copied into the combined Go-module artifact or the
+downstream Go pull request. Only `libazurecosmosdriver.a` is delivered through
+the Go release path. Dynamic libraries can be delivered by a future release
+pipeline designed for their signing and packaging requirements.
 
 The metadata records:
 
@@ -50,7 +54,7 @@ The metadata records:
 - the native-interface and driver versions;
 - the Rust and Cargo tool versions;
 - the operating-system libraries required by the Go linker; and
-- the SHA256 checksum of the static library.
+- the SHA256 checksums of the built libraries.
 
 After all targets pass their release checks, `New-GoModules.ps1` creates the
 directory layout expected by `Azure/azure-cosmos-driver`:
@@ -173,7 +177,7 @@ Build and publish each target through 1ES
 Locate and verify the signed SPDX inventory and signed build record
     |
     v
-Generate and test all Go modules
+Generate the Go modules
     |
     v
 Publish the combined Go-module pipeline artifact and SHA256SUMS
@@ -239,34 +243,3 @@ go build -tags cosmos_musl
 
 Omitting the tag on a musl system produces a linker or runtime failure rather
 than silently selecting the intended musl library.
-
-## Remaining release work
-
-The following work must be completed before this pipeline can release Go
-artifacts:
-
-1. Connect each target to an approved 1ES managed pool.
-2. Run an internal non-pull-request build and record the actual signed SPDX and
-   build-record paths.
-3. Replace the deliberate evidence-check error with commands that verify both
-   signed files and fail on any mismatch.
-4. Confirm that `SHA256SUMS` contains every published `.a`.
-5. Confirm that the Azure SDK Automation GitHub App installation includes the
-   private `Azure/azure-cosmos-driver` repository.
-6. Authorize this pipeline to use the `AzureSDKEngKeyVault Secrets` service
-   connection that mints the short-lived GitHub App token.
-
-The existing shared
-`eng/common/pipelines/templates/steps/create-pull-request.yml` template provides
-the branch push and pull-request creation mechanism. `native-driver.yml` reuses
-it without storing a personal access token.
-
-## Deferred work
-
-- Dynamic libraries and .NET/NuGet distribution:
-  [#5048](https://github.com/Azure/azure-sdk-for-rust/issues/5048)
-- Windows ARM64 and MSVC:
-  [#5047](https://github.com/Azure/azure-sdk-for-rust/issues/5047)
-- Artifact-digest-bound build evidence:
-  [#5050](https://github.com/Azure/azure-sdk-for-rust/issues/5050)
-- Intel macOS: enable only when customer demand justifies the additional target.
