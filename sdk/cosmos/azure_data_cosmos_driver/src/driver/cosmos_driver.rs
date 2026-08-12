@@ -3406,7 +3406,9 @@ impl CosmosDriver {
         {
             let query_fingerprint = query_fingerprint.ok_or_else(|| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING,
+                    )
                     .with_message(
                         "internal error: streaming ORDER BY query is missing its pre-encoding \
                          request fingerprint",
