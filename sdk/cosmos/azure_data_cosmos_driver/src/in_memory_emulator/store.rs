@@ -870,7 +870,6 @@ impl EmulatorStore {
     /// restart and never resolves it before it can serve requests.
     ///
     /// Errors with `400` if the region is already part of the account.
-    #[doc(hidden)]
     pub fn add_region(
         &self,
         region: VirtualRegion,
@@ -970,14 +969,12 @@ impl EmulatorStore {
     /// seconds, the account read keeps listing the region for minutes — so a
     /// client that refreshes topology in response to the 1008 still gets the
     /// dead region back. Follow with [`Self::remove_region`] to complete it.
-    #[doc(hidden)]
     pub fn begin_region_removal(&self, region_name: &str) -> crate::error::Result<()> {
         self.config.begin_region_removal(region_name)
     }
 
     /// Aborts an in-flight region removal, returning a draining region to
     /// normal service. Without this, draining would be a one-way door.
-    #[doc(hidden)]
     pub fn cancel_region_removal(&self, region_name: &str) -> crate::error::Result<()> {
         self.config.cancel_region_removal(region_name)
     }
@@ -990,7 +987,6 @@ impl EmulatorStore {
     ///
     /// Errors with `400` if the region is unknown, is the last region, or is the
     /// current write region.
-    #[doc(hidden)]
     pub fn remove_region(&self, region_name: &str) -> crate::error::Result<()> {
         self.config.remove_region(region_name)?;
         self.regions.write().unwrap().remove(region_name);
@@ -999,7 +995,6 @@ impl EmulatorStore {
     }
 
     /// Switches the account between single- and multi-write at runtime.
-    #[doc(hidden)]
     pub fn set_write_mode(&self, mode: WriteMode) {
         self.config.set_write_mode(mode);
     }
@@ -1007,7 +1002,6 @@ impl EmulatorStore {
     /// Moves write ownership to another region, as a failover would.
     ///
     /// Writes to the demoted region then fail with `403/3 WriteForbidden`.
-    #[doc(hidden)]
     pub fn set_write_region(&self, region_name: &str) -> crate::error::Result<()> {
         self.config.set_write_region(region_name)
     }
