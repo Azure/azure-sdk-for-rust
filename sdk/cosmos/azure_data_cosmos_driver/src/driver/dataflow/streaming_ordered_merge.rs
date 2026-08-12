@@ -784,12 +784,13 @@ impl PipelineNode for StreamingOrderedMerge {
 /// the Gateway's rewritten query so a service-side rewrite change does not
 /// invalidate in-flight tokens.
 ///
-/// Because this hashes the *serialized* body, the query body's serialization
-/// shape (serde field order, optional-field emission) is a compatibility
-/// surface: changing it invalidates in-flight tokens with a hard
-/// `CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID` rather than silently
-/// resuming the wrong query.
-pub(super) fn query_fingerprint(body: Option<&[u8]>, scope: Option<&FeedRange>) -> String {
+/// Text bodies retain their exact serialized form for compatibility with
+/// existing tokens. The planner normally calls this before request encoding;
+/// restoring an already-binary caller body to text is a best-effort fallback.
+pub(super) fn query_fingerprint(
+    body: Option<&[u8]>,
+    scope: Option<&FeedRange>,
+) -> crate::binary_json::Result<String> {
     // The body hash is rendered fixed-width first so the two components can
     // never run together; EPK hex is `[0-9A-F]*`, so neither separator can
     // occur inside a bound. Bounds render canonically (trailing zero bytes
@@ -797,7 +798,16 @@ pub(super) fn query_fingerprint(body: Option<&[u8]>, scope: Option<&FeedRange>) 
     // backend and other SDKs may hand back a bound with that padding trimmed.
     // An absent scope hashes as empty, which stays distinct from the
     // full-container range (`-FF`).
-    let body_hash = crate::models::murmur_hash::murmurhash3_128(body.unwrap_or_default(), 0);
+    let normalized_body;
+    let body = match body {
+        Some(body) if crate::binary_json::is_binary(body) => {
+            normalized_body = crate::binary_json::transcode_to_text(body)?;
+            normalized_body.as_slice()
+        }
+        Some(body) => body,
+        None => &[],
+    };
+    let body_hash = crate::models::murmur_hash::murmurhash3_128(body, 0);
     let scope = match scope {
         Some(range) => format!(
             "{}-{}",
@@ -806,13 +816,13 @@ pub(super) fn query_fingerprint(body: Option<&[u8]>, scope: Option<&FeedRange>) 
         ),
         None => String::new(),
     };
-    format!(
+    Ok(format!(
         "{:032x}",
         crate::models::murmur_hash::murmurhash3_128(
             format!("{body_hash:032x}:{scope}").as_bytes(),
             0
         )
-    )
+    ))
 }
 
 /// Builds the child streams needed to cover `scope`, given its topology
@@ -2920,10 +2930,10 @@ mod tests {
     #[test]
     fn query_fingerprint_distinguishes_feed_scope() {
         let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#;
-        let full = query_fingerprint(Some(body), Some(&FeedRange::full()));
-        let left = query_fingerprint(Some(body), Some(&range("", "80")));
-        let right = query_fingerprint(Some(body), Some(&range("80", "FF")));
-        let unscoped = query_fingerprint(Some(body), None);
+        let full = query_fingerprint(Some(body), Some(&FeedRange::full())).unwrap();
+        let left = query_fingerprint(Some(body), Some(&range("", "80"))).unwrap();
+        let right = query_fingerprint(Some(body), Some(&range("80", "FF"))).unwrap();
+        let unscoped = query_fingerprint(Some(body), None).unwrap();
 
         assert_ne!(full, left);
         assert_ne!(full, right);
@@ -2938,8 +2948,8 @@ mod tests {
     fn query_fingerprint_separators_cannot_collide() {
         // Both scopes render as `408080` once the bound separator is dropped.
         assert_ne!(
-            query_fingerprint(None, Some(&range("40", "8080"))),
-            query_fingerprint(None, Some(&range("4080", "80"))),
+            query_fingerprint(None, Some(&range("40", "8080"))).unwrap(),
+            query_fingerprint(None, Some(&range("4080", "80"))).unwrap(),
         );
     }
 
@@ -2950,22 +2960,33 @@ mod tests {
     #[test]
     fn query_fingerprint_ignores_trailing_zero_padding_in_scope() {
         assert_eq!(
-            query_fingerprint(None, Some(&range("", "80"))),
-            query_fingerprint(None, Some(&range("", "8000"))),
+            query_fingerprint(None, Some(&range("", "80"))).unwrap(),
+            query_fingerprint(None, Some(&range("", "8000"))).unwrap(),
         );
         assert_eq!(
-            query_fingerprint(None, Some(&range("40", "80"))),
-            query_fingerprint(None, Some(&range("400000", "8000"))),
+            query_fingerprint(None, Some(&range("40", "80"))).unwrap(),
+            query_fingerprint(None, Some(&range("400000", "8000"))).unwrap(),
         );
     }
 
-    /// Same body and same scope is stable, so an unchanged query resumes.
+    /// Preserve the exact fingerprint minted before binary query encoding so
+    /// in-flight text tokens remain valid.
     #[test]
-    fn query_fingerprint_is_stable_for_identical_inputs() {
-        let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#;
+    fn parameterized_text_query_fingerprint_matches_historical_value() {
+        let body = br#"{"query":"SELECT * FROM c WHERE c.rank >= @min ORDER BY c.rank","parameters":[{"name":"@min","value":1}]}"#;
         assert_eq!(
-            query_fingerprint(Some(body), Some(&range("", "80"))),
-            query_fingerprint(Some(body), Some(&range("", "80"))),
+            query_fingerprint(Some(body), Some(&range("", "80"))).unwrap(),
+            "b84b9c269862dcd73781038d90add3be",
+        );
+    }
+
+    #[test]
+    fn already_binary_query_fingerprint_is_stable() {
+        let text = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#;
+        let binary = crate::binary_json::transcode_to_binary(text).unwrap();
+        assert_eq!(
+            query_fingerprint(Some(&binary), Some(&range("", "80"))).unwrap(),
+            query_fingerprint(Some(&binary), Some(&range("", "80"))).unwrap(),
         );
     }
 }

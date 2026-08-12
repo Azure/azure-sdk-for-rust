@@ -2659,14 +2659,21 @@ impl CosmosDriver {
         Ok(operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS))
     }
 
-    fn query_plan_request_body(operation: &CosmosOperation) -> crate::error::Result<Vec<u8>> {
-        crate::binary_json::transcode_to_text(operation.body().unwrap_or_default()).map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
-                .with_message("failed to prepare text query-plan request body")
-                .with_source(e)
-                .build()
-        })
+    fn query_plan_request_body(
+        operation: &CosmosOperation,
+    ) -> crate::error::Result<Option<Vec<u8>>> {
+        let Some(body) = operation.body().filter(|body| !body.is_empty()) else {
+            return Ok(None);
+        };
+        crate::binary_json::transcode_to_text(body)
+            .map(Some)
+            .map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+                    .with_message("failed to prepare text query-plan request body")
+                    .with_source(e)
+                    .build()
+            })
     }
 
     /// Executes a singleton operation (operations which return only a single result).
@@ -3228,6 +3235,12 @@ impl CosmosDriver {
         // reference, so it issues no additional network calls and does not change
         // the request flow.
         operation.validate_addressing()?;
+        let query_fingerprint = matches!(
+            operation.operation_type(),
+            crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
+        )
+        .then(|| planner::streaming_query_fingerprint(&operation))
+        .transpose()?;
         let binary = if Self::binary_encoding_applies(&operation) {
             self.operation_options_view(options)
                 .binary_encoding()
@@ -3248,9 +3261,14 @@ impl CosmosDriver {
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        let mut plan =
-            Box::pin(self.plan_operation_inner(operation, options, continuation, plan_options))
-                .await?;
+        let mut plan = Box::pin(self.plan_operation_inner(
+            operation,
+            options,
+            continuation,
+            plan_options,
+            query_fingerprint,
+        ))
+        .await?;
         plan.set_binary_encoding(binary);
         Ok(plan)
     }
@@ -3261,6 +3279,7 @@ impl CosmosDriver {
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
+        query_fingerprint: Option<String>,
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
@@ -3385,11 +3404,14 @@ impl CosmosDriver {
             .as_ref()
             .is_some_and(planner::is_streaming_order_by)
         {
-            let pipeline = planner::build_streaming_ordered_merge(
+            let query_fingerprint = query_fingerprint
+                .expect("query operations capture a fingerprint before request encoding");
+            let pipeline = planner::build_streaming_ordered_merge_with_fingerprint(
                 &query_plan,
                 &mut topology,
                 &operation,
                 resume_state,
+                query_fingerprint,
             )
             .await?;
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
@@ -3416,7 +3438,7 @@ impl CosmosDriver {
             container.clone(),
             std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
         )
-        .with_body(Self::query_plan_request_body(operation)?);
+        .with_body(Self::query_plan_request_body(operation)?.unwrap_or_default());
 
         let response = self
             .execute_operation_direct(
@@ -3471,8 +3493,9 @@ impl CosmosDriver {
             .unwrap_or_default();
 
         let query_plan_body = Self::query_plan_request_body(operation)?;
-        let native_result = std::str::from_utf8(&query_plan_body)
-            .ok()
+        let native_result = query_plan_body
+            .as_deref()
+            .and_then(|body| std::str::from_utf8(body).ok())
             .map(|json| self.try_native_query_plan(json, container, &query_engine_config));
 
         match native_result {
@@ -3851,6 +3874,21 @@ mod tests {
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
+    }
+
+    #[test]
+    fn empty_query_body_skips_native_query_plan_input() {
+        let resource = crate::models::CosmosResourceReference::from(test_account());
+        let missing =
+            CosmosOperation::new(crate::models::OperationType::Query, resource.clone(), None);
+        let empty = CosmosOperation::new(crate::models::OperationType::Query, resource, None)
+            .with_body(Vec::new());
+
+        assert_eq!(
+            CosmosDriver::query_plan_request_body(&missing).unwrap(),
+            None
+        );
+        assert_eq!(CosmosDriver::query_plan_request_body(&empty).unwrap(), None);
     }
 
     #[cfg(feature = "preview_dtx")]

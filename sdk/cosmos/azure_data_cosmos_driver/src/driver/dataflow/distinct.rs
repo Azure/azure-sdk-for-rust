@@ -330,6 +330,7 @@ mod tests {
     use super::*;
     use crate::driver::dataflow::mocks::*;
     use crate::models::ResponseBody;
+    use serde::Serialize;
 
     /// Builds a query-page body from a list of raw JSON document texts.
     fn page_body(documents: &[&str]) -> Vec<u8> {
@@ -344,6 +345,34 @@ mod tests {
     fn page(documents: &[&str], is_terminal: bool) -> crate::error::Result<PageResult> {
         Ok(PageResult::Page {
             response: response(&page_body(documents)),
+            is_terminal,
+        })
+    }
+
+    fn binary_float_page(values: &[f64], is_terminal: bool) -> crate::error::Result<PageResult> {
+        #[derive(Serialize)]
+        struct FeedBody<'a> {
+            #[serde(rename = "_rid")]
+            rid: &'static str,
+            #[serde(rename = "Documents")]
+            documents: &'a [f64],
+            #[serde(rename = "_count")]
+            count: usize,
+        }
+
+        let body = crate::binary_json::to_vec(&FeedBody {
+            rid: "",
+            documents: values,
+            count: values.len(),
+        })
+        .unwrap();
+        assert_eq!(
+            crate::binary_json::to_vec(&1.0f64).unwrap()[1],
+            crate::binary_json::markers::NUMBER_DOUBLE,
+            "the fixture must use the service's Float64 number form"
+        );
+        Ok(PageResult::Page {
+            response: response(&body),
             is_terminal,
         })
     }
@@ -496,6 +525,17 @@ mod tests {
         ]);
         let mut node = Distinct::new(Box::new(child), DistinctType::Unordered);
         assert_eq!(drain(&mut node).await.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn unordered_collapses_text_integer_and_binary_float64_pages() {
+        let child = MockLeaf::with_pages(vec![
+            page(&["1"], false),
+            binary_float_page(&[1.0], true),
+            Ok(PageResult::Drained),
+        ]);
+        let mut node = Distinct::new(Box::new(child), DistinctType::Unordered);
+        assert_eq!(strings(&drain(&mut node).await), vec!["1"]);
     }
 
     // ── Ordered map ──────────────────────────────────────────────────────

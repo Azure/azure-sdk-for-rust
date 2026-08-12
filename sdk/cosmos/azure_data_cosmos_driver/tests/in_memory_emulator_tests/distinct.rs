@@ -11,16 +11,16 @@
 //! Scenarios come from `tests/fixtures/distinct_scenarios.json`, the same
 //! source-attributed catalog every other layer reads.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use azure_core::http::Url;
+use azure_core::http::{headers::HeaderName, Request, Url};
 use serde::Deserialize;
 
 use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::in_memory_emulator::{
-    ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
-    VirtualRegion,
+    ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver,
+    VirtualAccountConfig, VirtualRegion,
 };
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, FeedRange, ItemReference, MaxItemCountHint, PartitionKey,
@@ -31,6 +31,10 @@ use azure_data_cosmos_driver::options::{
 };
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
+static IS_QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-isquery");
+static IS_QUERY_PLAN: HeaderName = HeaderName::from_static("x-ms-cosmos-is-query-plan-request");
+static SUPPORTED_FORMATS: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-supported-serialization-formats");
 
 const CATALOG_JSON: &str = include_str!("../fixtures/distinct_scenarios.json");
 
@@ -77,9 +81,48 @@ fn catalog() -> Catalog {
     serde_json::from_str(CATALOG_JSON).expect("catalog must parse")
 }
 
+#[derive(Debug, Default)]
+struct QueryRequestRecorder {
+    binary_modes: Mutex<Vec<bool>>,
+}
+
+impl QueryRequestRecorder {
+    fn take(&self) -> Vec<bool> {
+        std::mem::take(&mut *self.binary_modes.lock().unwrap())
+    }
+}
+
+impl RequestObserver for QueryRequestRecorder {
+    fn on_request(&self, request: &Request) {
+        let headers = request.headers();
+        let is_true = |name: &HeaderName| {
+            headers
+                .get_optional_str(name)
+                .is_some_and(|value| value.eq_ignore_ascii_case("true"))
+        };
+        if !is_true(&IS_QUERY) || is_true(&IS_QUERY_PLAN) {
+            return;
+        }
+        let binary = headers
+            .get_optional_str(&SUPPORTED_FORMATS)
+            .is_some_and(|value| {
+                value
+                    .split(',')
+                    .any(|format| format.trim().eq_ignore_ascii_case("CosmosBinary"))
+            });
+        self.binary_modes.lock().unwrap().push(binary);
+    }
+}
+
 /// Builds a two-physical-partition in-memory emulator container and a driver
 /// wired to it.
 async fn setup() -> (Arc<InMemoryEmulatorHttpClient>, Arc<CosmosDriver>) {
+    setup_with_observer(None).await
+}
+
+async fn setup_with_observer(
+    observer: Option<Arc<dyn RequestObserver>>,
+) -> (Arc<InMemoryEmulatorHttpClient>, Arc<CosmosDriver>) {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
@@ -87,7 +130,12 @@ async fn setup() -> (Arc<InMemoryEmulatorHttpClient>, Arc<CosmosDriver>) {
     .unwrap()
     .with_consistency(ConsistencyLevel::Session);
 
-    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let emulator = InMemoryEmulatorHttpClient::new(config);
+    let emulator = match observer {
+        Some(observer) => emulator.with_request_observer(observer),
+        None => emulator,
+    };
+    let emulator = Arc::new(emulator);
     let store = emulator.store();
     store.create_database("testdb");
     let container_config = ContainerConfig::new()
@@ -115,6 +163,17 @@ async fn setup() -> (Arc<InMemoryEmulatorHttpClient>, Arc<CosmosDriver>) {
         .await
         .expect("driver initializes against the emulator");
     (emulator, driver)
+}
+
+async fn setup_with_query_recorder() -> (
+    Arc<InMemoryEmulatorHttpClient>,
+    Arc<CosmosDriver>,
+    Arc<QueryRequestRecorder>,
+) {
+    let recorder = Arc::new(QueryRequestRecorder::default());
+    let observer: Arc<dyn RequestObserver> = recorder.clone();
+    let (emulator, driver) = setup_with_observer(Some(observer)).await;
+    (emulator, driver, recorder)
 }
 
 async fn seed(
@@ -212,6 +271,51 @@ async fn drain_query_with_options(
     }
 
     (values, formats)
+}
+
+async fn drain_with_cross_encoding_resume(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    query: &QuerySpec,
+    mint_options: OperationOptions,
+    resume_options: OperationOptions,
+) -> Vec<serde_json::Value> {
+    let mut plan = Box::pin(driver.plan_operation(
+        query_operation(container, query, 1),
+        &mint_options,
+        None,
+        &PlanOptions::default(),
+    ))
+    .await
+    .unwrap();
+    let first = driver
+        .execute_plan(&mut plan, Some(container.clone()), mint_options)
+        .await
+        .unwrap()
+        .expect("ordered query must emit a first page");
+    let mut values = documents_of(first);
+    let token = plan.to_continuation_token().unwrap();
+
+    let mut resumed = Box::pin(driver.plan_operation(
+        query_operation(container, query, 1),
+        &resume_options,
+        Some(&token),
+        &PlanOptions::default(),
+    ))
+    .await
+    .unwrap();
+    while let Some(response) = driver
+        .execute_plan(
+            &mut resumed,
+            Some(container.clone()),
+            resume_options.clone(),
+        )
+        .await
+        .unwrap()
+    {
+        values.extend(documents_of(response));
+    }
+    values
 }
 
 /// Sorts values by their serialized form so an unordered result can be
@@ -569,7 +673,7 @@ async fn split_mid_drain_does_not_reemit_deduplicated_values() {
 
 #[tokio::test]
 async fn text_and_binary_query_pages_have_pipeline_parity() {
-    let (_emulator, driver) = setup().await;
+    let (_emulator, driver, recorder) = setup_with_query_recorder().await;
     let container = driver
         .resolve_container("testdb", "testcoll")
         .await
@@ -611,6 +715,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             OperationOptions::default(),
         )
         .await;
+        let text_request_modes = recorder.take();
         let binary_options = OperationOptionsBuilder::new()
             .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true))
             .build();
@@ -622,6 +727,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             binary_options.clone(),
         )
         .await;
+        let binary_request_modes = recorder.take();
         let binary_as_text_options = OperationOptionsBuilder::new()
             .with_binary_encoding(
                 BinaryEncodingOptions::new()
@@ -637,6 +743,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             binary_as_text_options,
         )
         .await;
+        let binary_as_text_request_modes = recorder.take();
         let (_, planned_binary_formats) = drain_query_with_options(
             &driver,
             &container,
@@ -645,6 +752,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             OperationOptions::default(),
         )
         .await;
+        let planned_binary_request_modes = recorder.take();
         let (_, planned_text_formats) = drain_query_with_options(
             &driver,
             &container,
@@ -653,6 +761,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             binary_options,
         )
         .await;
+        let planned_text_request_modes = recorder.take();
 
         if query.distinct_type == "Ordered" {
             assert_eq!(binary, text, "{}", query.text);
@@ -672,8 +781,27 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             query.text
         );
         assert!(
+            !binary_request_modes.is_empty()
+                && binary_request_modes.iter().all(|is_binary| *is_binary),
+            "binary negotiation must reach per-partition requests: {}",
+            query.text
+        );
+        assert!(
+            !text_request_modes.is_empty() && text_request_modes.iter().all(|is_binary| !is_binary),
+            "text requests must not advertise binary: {}",
+            query.text
+        );
+        assert!(
             binary_as_text_formats.iter().all(|is_binary| !is_binary),
             "{}",
+            query.text
+        );
+        assert!(
+            !binary_as_text_request_modes.is_empty()
+                && binary_as_text_request_modes
+                    .iter()
+                    .all(|is_binary| *is_binary),
+            "text-response mode must still negotiate a binary wire: {}",
             query.text
         );
         assert!(
@@ -682,8 +810,91 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             query.text
         );
         assert!(
+            !planned_binary_request_modes.is_empty()
+                && planned_binary_request_modes
+                    .iter()
+                    .all(|is_binary| *is_binary),
+            "binary planning must own wire negotiation: {}",
+            query.text
+        );
+        assert!(
             planned_text_formats.iter().all(|is_binary| !is_binary),
             "execution options must not enable binary after text planning: {}",
+            query.text
+        );
+        assert!(
+            !planned_text_request_modes.is_empty()
+                && planned_text_request_modes
+                    .iter()
+                    .all(|is_binary| !is_binary),
+            "binary execution options must not change text-planned negotiation: {}",
+            query.text
+        );
+    }
+}
+
+#[tokio::test]
+async fn ordered_distinct_tokens_resume_across_binary_modes() {
+    let (_emulator, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .unwrap();
+    let documents: Vec<serde_json::Value> = [("a", "pk1", 1), ("b", "pk2", 2), ("c", "pk3", 3)]
+        .into_iter()
+        .map(|(id, pk, value)| serde_json::json!({"id": id, "pk": pk, "value": value}))
+        .collect();
+    seed(&driver, &container, &documents).await;
+    let binary = OperationOptionsBuilder::new()
+        .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true))
+        .build();
+    for (query, expected) in [
+        (
+            QuerySpec {
+                text: "SELECT DISTINCT VALUE c.value FROM c ORDER BY c.value".to_owned(),
+                parameters: Vec::new(),
+                distinct_type: "Ordered".to_owned(),
+            },
+            vec![
+                serde_json::json!(1),
+                serde_json::json!(2),
+                serde_json::json!(3),
+            ],
+        ),
+        (
+            QuerySpec {
+                text: "SELECT DISTINCT VALUE c.value FROM c WHERE c.value >= @min ORDER BY c.value"
+                    .to_owned(),
+                parameters: vec![serde_json::json!({"name": "@min", "value": 2})],
+                distinct_type: "Ordered".to_owned(),
+            },
+            vec![serde_json::json!(2), serde_json::json!(3)],
+        ),
+    ] {
+        assert_eq!(
+            drain_with_cross_encoding_resume(
+                &driver,
+                &container,
+                &query,
+                OperationOptions::default(),
+                binary.clone(),
+            )
+            .await,
+            expected,
+            "text-minted token must resume in binary mode: {}",
+            query.text
+        );
+        assert_eq!(
+            drain_with_cross_encoding_resume(
+                &driver,
+                &container,
+                &query,
+                binary.clone(),
+                OperationOptions::default(),
+            )
+            .await,
+            expected,
+            "binary-minted token must resume in text mode: {}",
             query.text
         );
     }

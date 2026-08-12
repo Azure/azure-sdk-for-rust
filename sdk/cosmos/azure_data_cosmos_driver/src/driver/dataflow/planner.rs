@@ -277,27 +277,64 @@ pub(crate) fn is_streaming_order_by(info: &QueryInfo) -> bool {
     !info.order_by.is_empty() && !info.has_non_streaming_order_by
 }
 
-/// Builds a [`streaming_ordered_merge::StreamingOrderedMerge`] pipeline
-/// from a backend query plan whose `queryInfo.orderBy` is non-empty.
-/// Mirrors [`build_sequential_drain`]'s shape, but snapshots every
-/// still-active range explicitly since global ordering means any range
-/// may still have unemitted rows.
+/// Fingerprints the caller's query body and feed scope before request encoding.
+pub(crate) fn streaming_query_fingerprint(
+    operation: &CosmosOperation,
+) -> crate::error::Result<String> {
+    streaming_ordered_merge::query_fingerprint(operation.body(), operation.target()).map_err(
+        |source| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+                .with_message(
+                    "failed to normalize query body for continuation-token fingerprinting",
+                )
+                .with_source(source)
+                .build()
+        },
+    )
+}
+
+/// Builds a streaming `ORDER BY` pipeline using the operation's current body.
 ///
-/// `resume` re-resolves each saved range against current topology and
-/// rebuilds it via [`streaming_ordered_merge::build_children`], the same
-/// path a live split uses.
+/// Unit tests call this before any request encoding. Production planning uses
+/// [`build_streaming_ordered_merge_with_fingerprint`] with the fingerprint
+/// captured before binary conversion.
+#[cfg(test)]
 pub(crate) async fn build_streaming_ordered_merge(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
+    let query_fingerprint = streaming_query_fingerprint(operation)?;
+    build_streaming_ordered_merge_with_fingerprint(
+        query_plan,
+        topology_provider,
+        operation,
+        resume,
+        query_fingerprint,
+    )
+    .await
+}
+
+pub(crate) async fn build_streaming_ordered_merge_with_fingerprint(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+    query_fingerprint: String,
+) -> crate::error::Result<Pipeline> {
     let distinct_type = plan_distinct_type(query_plan);
     let (inner_resume, last_hash) = peel_distinct_resume(resume, distinct_type)?;
     let resumed_drained = matches!(inner_resume, Some(PipelineNodeState::Drained));
-    let pipeline =
-        build_streaming_ordered_merge_inner(query_plan, topology_provider, operation, inner_resume)
-            .await?;
+    let pipeline = build_streaming_ordered_merge_inner(
+        query_plan,
+        topology_provider,
+        operation,
+        inner_resume,
+        query_fingerprint,
+    )
+    .await?;
     Ok(apply_distinct(
         pipeline,
         distinct_type,
@@ -311,6 +348,7 @@ async fn build_streaming_ordered_merge_inner(
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
+    query_fingerprint: String,
 ) -> crate::error::Result<Pipeline> {
     validate_query_plan_for_streaming_order_by(query_plan)?;
     let info = query_plan
@@ -339,13 +377,10 @@ async fn build_streaming_ordered_merge_inner(
     let plain_operation = Arc::new((**operation).clone().with_body(plain_body));
 
     let is_resume = resume.is_some();
-    // The feed scope is folded into the fingerprint (see
-    // `streaming_ordered_merge::query_fingerprint`) because nothing else binds
+    // The feed scope is folded into the fingerprint because nothing else binds
     // a token to it: a resumed node treats its saved ranges as authoritative,
     // and `is_valid_for_operation` checks only the operation kind and RID.
     let scope_range = operation.target();
-    let query_fingerprint =
-        streaming_ordered_merge::query_fingerprint(operation.body(), scope_range);
     let saved_ranges = match resume {
         None => None,
         Some(PipelineNodeState::Drained) => {

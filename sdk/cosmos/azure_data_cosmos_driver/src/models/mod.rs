@@ -649,6 +649,7 @@ impl OperationType {
                 | OperationType::Replace
                 | OperationType::Upsert
                 | OperationType::Query
+                | OperationType::SqlQuery
                 | OperationType::ReadFeed
         )
     }
@@ -902,13 +903,13 @@ mod tests {
             OperationType::Replace,
             OperationType::Upsert,
             OperationType::Query,
+            OperationType::SqlQuery,
             OperationType::ReadFeed,
         ] {
             assert!(op.supports_binary_encoding(), "{op:?} should be supported");
         }
         for op in [
             OperationType::Delete,
-            OperationType::SqlQuery,
             OperationType::Batch,
             OperationType::Execute,
             OperationType::Patch,
