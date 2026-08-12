@@ -115,15 +115,18 @@ flowchart TD
 
     subgraph DRIVER_REQ["Driver — request side (schema-agnostic)"]
         DRV["execute_operation"]
-        DRV --> GATE{"binary_encoding_applies?<br/>(Document + point op)<br/>AND binary.enabled"}
-        GATE -->|no| WIRE
-        GATE -->|yes| APPLY["apply_request_binary_encoding"]
+        DRV --> GATE{"binary_encodes_request_body?<br/>(Document + point op)<br/>AND binary.enabled"}
+        GATE -->|no| PLAN
+        GATE -->|yes| APPLY["apply_request_binary_encoding<br/>(body transcode only)"]
         APPLY --> CHK{"body already binary?"}
         CHK -->|yes / empty| PASS["pass through unchanged"]
         CHK -->|no = text| TRANS["transcode_to_binary(bytes)"]
-        PASS --> HDR
-        TRANS --> HDR["advertise CosmosBinary<br/>(supported-serialization-formats header)"]
-        HDR --> WIRE["send request to Cosmos"]
+        PASS --> PLAN
+        TRANS --> PLAN["plan_operation →<br/>apply_response_negotiation"]
+        PLAN --> NEG{"binary_negotiates_response?<br/>(point op + query)<br/>AND binary.enabled"}
+        NEG -->|no| WIRE["send request to Cosmos"]
+        NEG -->|yes| HDR["advertise CosmosBinary<br/>(supported-serialization-formats header)"]
+        HDR --> WIRE
     end
 
     WIRE --> COSMOS[("Cosmos DB service")]
@@ -394,8 +397,8 @@ opts.binary_encoding_request_text_response = 2;    /* 2 = true  */
 
 ## Deferred work
 
-* **Query response negotiation** — **done.** A `query_items` call now advertises a binary response via `x-ms-cosmos-supported-serialization-formats` (set once at the `plan_operation` choke point that every per-page request flows through). The query request body is a `application/query+json` spec, not a document, so it intentionally stays text — there is no query request-body encoding. The query *response* decodes via the shared choke point.
-* **Cross-partition / ORDER BY merge on binary bytes** — the SDK's `parse_envelope_page` merge path parses page envelopes with text-only `serde_json` + `RawValue`, so cross-partition ordering over *binary* item bytes is not yet covered. Single-partition and `into_single` query drains already round-trip binary end to end.
+* **Query response negotiation** — **done.** A `query_items` call now advertises a binary response via `x-ms-cosmos-supported-serialization-formats` (set once at the `plan_operation` choke point that every per-page request flows through). The query request body is a `application/query+json` spec, not a document, so it intentionally stays text — there is no query request-body encoding. The query *response* decodes via the shared choke point. **Standard-gateway path only:** the Gateway 2.0 / thin-client path re-encodes the request as an RNTBD metadata token list that has no `SupportedSerializationFormats` token, so the header is dropped there and the service returns text (which still decodes). Adding the RNTBD token is a **follow-up**.
+* **Cross-partition / ORDER BY merge on binary bytes** — **scalar-key streaming ORDER BY now works on binary.** `parse_envelope_page` transcodes a binary-negotiated page to text before its text-only `serde_json` + `RawValue` envelope parse, so cross-partition ORDER BY over binary item bytes round-trips end to end. Single-partition and `into_single` query drains already round-trip binary directly. Remaining gap: **aggregate / GROUP BY / DISTINCT** merges over binary (and a binary-aware envelope parse that avoids the transcode copy — see the architecture note).
 * **Binary feed responses** — the `into_items` feed splitter scans **text** JSON, so binary `Documents` envelopes cannot be sliced by that splitter yet. (The SDK query path uses `into_single`, which is unaffected.) `ReadFeed` / change feed is excluded from binary negotiation: the backend does not honor the header for it.
 * **`patch`** — excluded from binary encoding for now (the driver's request-side encode intentionally skips patch); transactional `batch` / `bulk` are deferred by spec.
 * **Cross-implementation vectors** — validate against captured real .NET / Java binary output.

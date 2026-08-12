@@ -251,9 +251,13 @@ fn parse_query_body(body: Option<&[u8]>) -> crate::error::Result<serde_json::Val
 }
 
 /// One row parsed from a rewritten-envelope backend page, ready for the
-/// merge heap. `payload` retains the item's exact original JSON bytes
-/// (via [`RawValue`]) rather than a re-serialized value, so the emitted
-/// item is byte-identical to what the backend returned.
+/// merge heap. On the text path, `payload` retains the item's exact original
+/// JSON bytes (via [`RawValue`]) rather than a re-serialized value, so the
+/// emitted item is byte-identical to what the backend returned. On the
+/// binary-negotiated path the page is transcoded to text before parsing, so
+/// `payload` reflects that canonicalized text (normalized key order, collapsed
+/// duplicate keys, canonical number formatting) rather than the raw binary
+/// bytes.
 #[derive(Debug)]
 pub(crate) struct EnvelopeRow {
     pub(crate) keys: Vec<OrderByItem>,
@@ -307,13 +311,22 @@ pub(crate) fn parse_envelope_page(
         }
     };
     // Binary-negotiated ORDER BY pages arrive as Cosmos binary JSON; the
-    // envelope parse below is text-only, so transcode first (no-op for text).
-    let bytes = crate::binary_json::transcode_to_text(&bytes).map_err(|e| {
-        envelope_error(format!(
-            "failed to transcode binary ORDER BY envelope page to text: {e}"
-        ))
-    })?;
-    let feed: RawFeedBody = serde_json::from_slice(&bytes).map_err(|e| {
+    // envelope parse below is text-only, so transcode first. Text pages (the
+    // default, since binary is opt-in) skip the transcode entirely and parse
+    // the borrowed bytes directly — `transcode_to_text` would otherwise copy
+    // the whole page into a fresh `Vec<u8>`, taxing every existing ORDER BY
+    // user for a feature they did not enable.
+    let feed: RawFeedBody = if crate::binary_json::is_binary(&bytes) {
+        let text = crate::binary_json::transcode_to_text(&bytes).map_err(|e| {
+            envelope_error(format!(
+                "failed to transcode binary ORDER BY envelope page to text: {e}"
+            ))
+        })?;
+        serde_json::from_slice(&text)
+    } else {
+        serde_json::from_slice(&bytes)
+    }
+    .map_err(|e| {
         body_error(
             "failed to parse rewritten-query backend page as a feed body",
             e,

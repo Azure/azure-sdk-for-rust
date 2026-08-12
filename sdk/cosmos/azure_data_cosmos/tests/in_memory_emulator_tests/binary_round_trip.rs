@@ -444,7 +444,9 @@ impl RequestObserver for QueryRequestRecorder {
         self.negotiation_formats.lock().unwrap().push(formats);
 
         let is_binary = match request.body() {
-            azure_core::http::request::Body::Bytes(bytes) => bytes.first() == Some(&0x80),
+            azure_core::http::request::Body::Bytes(bytes) => {
+                azure_data_cosmos_driver::binary_json::is_binary(bytes)
+            }
             _ => false,
         };
         self.body_is_binary.lock().unwrap().push(is_binary);

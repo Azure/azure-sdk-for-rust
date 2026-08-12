@@ -649,7 +649,7 @@ impl OperationType {
     /// negotiates a binary *response* — see [`supports_binary_response`].
     ///
     /// [`supports_binary_response`]: OperationType::supports_binary_response
-    pub(crate) fn supports_binary_encoding(self) -> bool {
+    pub(crate) fn supports_binary_request_body(self) -> bool {
         matches!(
             self,
             OperationType::Create
@@ -661,7 +661,7 @@ impl OperationType {
 
     /// True for the ops that may negotiate a binary **response** via the
     /// `x-ms-cosmos-supported-serialization-formats` header. This is a superset
-    /// of [`supports_binary_encoding`](OperationType::supports_binary_encoding):
+    /// of [`supports_binary_request_body`](OperationType::supports_binary_request_body):
     /// the point item ops plus `Query` / `SqlQuery`.
     ///
     /// `ReadFeed` / change feed is intentionally excluded: the backend only
@@ -669,7 +669,7 @@ impl OperationType {
     /// for a `ReadFeed`-with-partition-key request as a known bug — so change
     /// feed must never advertise binary.
     pub(crate) fn supports_binary_response(self) -> bool {
-        self.supports_binary_encoding()
+        self.supports_binary_request_body()
             || matches!(self, OperationType::Query | OperationType::SqlQuery)
     }
 
@@ -915,7 +915,7 @@ mod tests {
     use serde::{Deserialize, Serialize};
 
     #[test]
-    fn supports_binary_encoding_covers_only_bodied_point_ops() {
+    fn supports_binary_request_body_covers_only_bodied_point_ops() {
         // Matches the binary-encoding spec §2 scope table: create/read/replace/
         // upsert. `delete` is excluded (no request or response body); query,
         // feed, batch, and stored-procedure paths are deferred.
@@ -925,7 +925,10 @@ mod tests {
             OperationType::Replace,
             OperationType::Upsert,
         ] {
-            assert!(op.supports_binary_encoding(), "{op:?} should be supported");
+            assert!(
+                op.supports_binary_request_body(),
+                "{op:?} should be supported"
+            );
         }
         for op in [
             OperationType::Delete,
@@ -937,7 +940,7 @@ mod tests {
             OperationType::Patch,
         ] {
             assert!(
-                !op.supports_binary_encoding(),
+                !op.supports_binary_request_body(),
                 "{op:?} should not be supported"
             );
         }
