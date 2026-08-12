@@ -28,7 +28,7 @@ async fn main() {
 
 #[derive(Debug, Subcommand)]
 enum StressTests {
-    /// Continuously upload blobs.
+    /// Continuously upload then download blobs.
     Roundtrip(RoundtripBlobsTestArgs),
 }
 

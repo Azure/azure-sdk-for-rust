@@ -5,7 +5,6 @@ use std::{num::NonZero, sync::LazyLock, time::Duration};
 
 use async_trait::async_trait;
 use azure_core::{
-    error::ErrorKind,
     http::{Body, ClientMethodOptions, Context},
     Error, Result,
 };
@@ -20,7 +19,7 @@ use azure_storage_stress::{
     data,
     fault_injection::{self, FaultInjectionProbabilities},
     futures_ext::OptionalTimeoutFutureExt,
-    value_parsers::{non_zero_usize, simple_non_zero_len_u64},
+    value_parsers::{non_zero_u64, non_zero_usize},
     StressRunOutput, StressTest, StressTestOperation,
 };
 use clap::{Args, ValueEnum};
@@ -33,16 +32,16 @@ const CRC_ALGORITHM: CrcAlgorithm = CrcAlgorithm::Crc64Nvme;
 
 #[derive(Args, Debug)]
 pub(crate) struct RoundtripBlobsTestArgs {
-    /// Concurrency value for download options.
-    #[arg(long, default_value_t = 2, value_parser = non_zero_usize, value_name = "NUM WORKERS")]
-    concurrency: usize,
+    /// Concurrency value for transfer options.
+    #[arg(long, default_value_t = NonZero::new(2).unwrap(), value_parser = non_zero_usize, value_name = "NUM WORKERS")]
+    concurrency: NonZero<usize>,
 
-    /// Block length for download options.
-    #[arg(long, default_value_t = 4 << 20, value_parser = simple_non_zero_len_u64)]
-    block_len: u64,
+    /// Block length for transfer options.
+    #[arg(long, default_value_t = NonZero::new(4 << 20).unwrap(), value_parser = non_zero_u64, value_name = "BYTES")]
+    block_len: NonZero<u64>,
 
-    /// Data length of blob(s) to download.
-    #[arg(long, value_parser = simple_non_zero_len_u64)]
+    /// Data length of blob(s) to transfer.
+    #[arg(long, value_name = "BYTES")]
     data_len: u64,
 
     /// Type of data source to upload from.
@@ -68,8 +67,8 @@ impl RoundtripBlobsTestArgs {
             container_client: crate::clients::get_container_client(fault_options)?,
             data_len: self.data_len,
             data_type: self.data_source,
-            parallel: NonZero::new(self.concurrency).ok_or_else(non_zero_err)?,
-            chunk_len: NonZero::new(self.block_len).ok_or_else(non_zero_err)?,
+            parallel: self.concurrency,
+            chunk_len: self.block_len,
         }))
     }
 }
@@ -223,8 +222,4 @@ impl StressTestOperation for RoundtripOperation {
         };
         let _ = result_sender.send(output).await;
     }
-}
-
-fn non_zero_err() -> Error {
-    Error::with_message(ErrorKind::DataConversion, "Tried to wrap 0 as a NonZero.")
 }

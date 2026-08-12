@@ -7,7 +7,7 @@ use azure_core::Result;
 use clap::{Args, Parser};
 
 use crate::{
-    fault_injection::FaultInjectionProbabilities, value_parsers::simple_duration, StressTest,
+    fault_injection::FaultInjectionProbabilities, value_parsers::duration_from_seconds, StressTest,
     StressTestFactory,
 };
 
@@ -18,19 +18,19 @@ pub struct StressRunnerOptions<T: StressTestFactory> {
     pub parallel: usize,
 
     /// Duration of the stress test, excluding setup and cleanup.
-    #[arg(long, default_value = "10", value_parser = simple_duration, value_name = "SECONDS")]
+    #[arg(long, default_value = "10", value_parser = duration_from_seconds, value_name = "SECONDS")]
     pub duration: Duration,
 
     /// Optional timeout for one-time test setup.
-    #[arg(long, value_parser = simple_duration, value_name = "SECONDS")]
+    #[arg(long, value_parser = duration_from_seconds, value_name = "SECONDS")]
     pub setup_timeout: Option<Duration>,
 
     /// Optional timeout for individual operations during the test.
-    #[arg(long, value_parser = simple_duration, value_name = "SECONDS")]
+    #[arg(long, value_parser = duration_from_seconds, value_name = "SECONDS")]
     pub operation_timeout: Option<Duration>,
 
     /// Optional timeout for one-time test cleanup.
-    #[arg(long, value_parser = simple_duration, value_name = "SECONDS")]
+    #[arg(long, value_parser = duration_from_seconds, value_name = "SECONDS")]
     pub cleanup_timeout: Option<Duration>,
 
     /// Path to a json config file for fault injection.
