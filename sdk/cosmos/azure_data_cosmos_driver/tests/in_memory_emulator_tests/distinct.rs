@@ -286,8 +286,8 @@ async fn drain_query_with_options(
     {
         // The pipeline emits pre-split `Items`, each slice carrying its own
         // `0x80` preamble; a single-partition passthrough page is one `Bytes`
-        // envelope. An empty page has no bytes to classify, so it inherits the
-        // text answer and is filtered out of the all/none assertions below.
+        // envelope. An empty page has no bytes to classify, so it has no format
+        // and is filtered out of the all/none assertions below.
         let is_binary = match response.body() {
             ResponseBody::Bytes(bytes) => azure_data_cosmos_driver::binary_json::is_binary(bytes),
             ResponseBody::Items(items) => items
@@ -831,6 +831,19 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             assert_eq!(sorted(binary), sorted(text.clone()), "{}", query.text);
             assert_eq!(sorted(binary_as_text), sorted(text), "{}", query.text);
         }
+        assert!(
+            [
+                &text_formats,
+                &binary_formats,
+                &binary_as_text_formats,
+                &planned_binary_formats,
+                &planned_text_formats,
+            ]
+            .iter()
+            .all(|formats| !formats.is_empty()),
+            "each mode must emit at least one classifiable page: {}",
+            query.text
+        );
         assert!(
             text_formats.iter().all(|is_binary| !is_binary),
             "{}",

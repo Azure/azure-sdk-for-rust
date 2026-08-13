@@ -12,8 +12,9 @@
 //! Rather than re-serialize a trimmed envelope back to bytes (which the calling
 //! SDK would then have to re-parse), these helpers split the `Documents` array
 //! into a list of per-document [`Bytes`] — each a zero-copy
-//! [`slice_ref`](bytes::Bytes::slice_ref) of the original page buffer — and
-//! trim that list. [`SkipTake`] emits the surviving slices directly as a
+//! [`slice_ref`](bytes::Bytes::slice_ref) of the text page buffer — and trim
+//! that list. Binary pages are first normalized into one text buffer.
+//! [`SkipTake`] emits the surviving slices directly as a
 //! [`ResponseBody::Items`](crate::models::ResponseBody::Items) body.
 //!
 //! [`SkipTake`]: super::SkipTake
@@ -29,7 +30,7 @@ pub(crate) struct SkipTakeOutcome {
     /// Number of documents kept (equal to `items.len()`).
     pub emitted: u64,
     /// The surviving per-document payloads, each an unmodified slice of the
-    /// original page bytes.
+    /// normalized page bytes.
     pub items: Vec<Bytes>,
 }
 
@@ -43,7 +44,8 @@ struct RawQueryPage<'a> {
 }
 
 /// Splits a backend query-page envelope into a list of per-document payloads,
-/// each a zero-copy [`slice_ref`](bytes::Bytes::slice_ref) of `body`.
+/// each a zero-copy [`slice_ref`](bytes::Bytes::slice_ref) of the normalized
+/// text buffer. Text pages retain their original allocation.
 ///
 /// An empty (`NoPayload`) body is treated as a zero-document page.
 pub(crate) fn split_feed_envelope(body: &Bytes) -> crate::error::Result<Vec<Bytes>> {
@@ -165,6 +167,18 @@ mod tests {
         assert_eq!(out.dropped, 0);
         assert_eq!(out.emitted, 0);
         assert!(out.items.is_empty());
+    }
+
+    #[test]
+    fn binary_envelope_is_normalized_before_splitting() {
+        let body = Bytes::from(crate::binary_json::encode(&serde_json::json!({
+            "Documents": [{"id": 1.0}, {"id": 2.0}],
+            "_count": 2.0,
+        })));
+
+        let items = split_feed_envelope(&body).unwrap();
+
+        assert_eq!(raw(&items), vec![r#"{"id":1}"#, r#"{"id":2}"#]);
     }
 
     #[test]
