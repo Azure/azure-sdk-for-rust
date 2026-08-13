@@ -74,16 +74,21 @@ const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
 
 /// Serialization formats advertised (`x-ms-cosmos-supported-serialization-formats`)
-/// on point operations when binary encoding is enabled. Point operations
-/// advertise `CosmosBinary` only — matching the .NET SDK's point-op default
+/// when binary encoding is enabled, for every operation that negotiates a binary
+/// response — point item ops **and** query (see
+/// [`binary_negotiates_response`](CosmosDriver::binary_negotiates_response)).
+/// Rust advertises `CosmosBinary` only — matching the .NET SDK's point-op default
 /// (`RequestInvokerHandler` sets `BinarySerializationFormat =
 /// SupportedSerializationFormats.CosmosBinary`) — so the service is required to
 /// reply in binary, preserving the read-side RU/COGS benefit the caller opted
-/// into. When the caller also asked for a text payload
-/// (`request_text_response`), the driver transcodes the guaranteed-binary
-/// response back to text after receiving it, keeping the wire binary in both
-/// directions. (The broader `JsonText,CosmosBinary` negotiation applies to
-/// query/feed, which is not yet wired.)
+/// into. When the caller also asked for a text payload (`request_text_response`),
+/// the driver transcodes the guaranteed-binary response back to text after
+/// receiving it, keeping the wire binary in both directions.
+///
+/// Note: .NET's *query* default is the broader `JsonText,CosmosBinary` ("send
+/// either, service chooses"); Rust deliberately forces `CosmosBinary` for query
+/// too. Decode is format-agnostic (first-byte detection), so binary-only costs
+/// nothing on the decode side.
 const BINARY_NEGOTIATION_FORMATS: &str = "CosmosBinary";
 
 fn should_retry_account_properties_connectivity_error(
@@ -6482,24 +6487,44 @@ mod tests {
         );
     }
 
-    #[test]
-    fn query_negotiates_response_but_never_encodes_its_request_body() {
-        use crate::models::{OperationType, ResourceType};
-        // A query op negotiates a binary *response* but must never have its
-        // `application/query+json` body transcoded, because the body is a query
-        // spec, not a document. The two gates encode exactly that: query is in
-        // the response-negotiation set but excluded from request-body encoding,
-        // so `apply_request_binary_encoding` is never reached for a query.
+    #[tokio::test]
+    async fn query_negotiates_binary_response_without_transcoding_its_body() {
+        use crate::models::FeedRange;
+
+        // Build a driver with binary encoding enabled and run a real query
+        // operation through the actual negotiation step
+        // (`apply_response_negotiation`, the sole header owner that every query
+        // reaches via `plan_operation`). The behavioral invariant: a query
+        // advertises a binary *response* while its `application/query+json`
+        // request body stays text — the body is a query spec, not a document.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let query_body =
+            serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap();
+        let op = CosmosOperation::query_items(container, Some(FeedRange::full()))
+            .with_body(query_body.clone());
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+        let op = driver.apply_response_negotiation(op, &options);
+
+        // Body is unchanged text — never transcoded to binary.
+        assert_eq!(op.body().unwrap(), query_body.as_slice());
         assert!(
-            !CosmosDriver::binary_encodes_request_body(
-                ResourceType::Document,
-                OperationType::Query
-            ),
-            "query request body must never be binary-encoded",
+            !crate::binary_json::is_binary(op.body().unwrap()),
+            "query body must remain text on the wire",
         );
-        assert!(
-            CosmosDriver::binary_negotiates_response(ResourceType::Document, OperationType::Query),
-            "query must negotiate a binary response",
+        // Still advertises a binary response.
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
         );
     }
 }

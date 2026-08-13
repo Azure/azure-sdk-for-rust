@@ -451,8 +451,10 @@ it through. It sets the option via a `with_binary_encoding` helper on
 (`operation_options_view`) as every other option, so a default set at the
 runtime/account layer is honored. Two independent gates apply. Request-body
 transcoding is honored **only for point item operations**
-(`OperationType::supports_binary_request_body`: create, read, replace, upsert,
-delete). Response negotiation (the `x-ms-cosmos-supported-serialization-formats`
+(`OperationType::supports_binary_request_body`: create, read, replace, upsert;
+delete is excluded — it carries no body, though .NET's
+`IsPointOperationSupportedForBinaryEncoding` does include it). Response
+negotiation (the `x-ms-cosmos-supported-serialization-formats`
 header) covers the same point item ops **plus query**
 (`OperationType::supports_binary_response`) — a query advertises a binary
 response while keeping its `application/query+json` request body text. Feed
@@ -547,7 +549,7 @@ rare forms is a possible future optimization.)
   assembled response body.
 - `azure_data_cosmos_driver/src/models/mod.rs`:
   `OperationType::supports_binary_request_body` gates binary encoding to point item
-  operations (create/read/replace/upsert/delete).
+  operations (create/read/replace/upsert; delete excluded — no body).
 - `azure_data_cosmos_driver/src/driver/cosmos_driver.rs`: `execute_operation`
   resolves `binary_encoding` via the layered `operation_options_view`, applies
   request-side transcoding for supported operation types, and transcodes the
