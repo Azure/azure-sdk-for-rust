@@ -48,6 +48,8 @@ pub(crate) mod planner;
 pub(crate) mod query_plan;
 mod query_response;
 mod request;
+mod skip_take;
+mod skip_take_page;
 mod snapshot;
 mod streaming_ordered_merge;
 mod topology;
@@ -64,6 +66,7 @@ pub(crate) use node::{
 pub use pipeline::OperationPlan;
 pub(crate) use pipeline::Pipeline;
 pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};
+pub(crate) use skip_take::SkipTake;
 pub(crate) use snapshot::{PipelineNodeState, RangedToken};
 pub(crate) use streaming_ordered_merge::StreamingOrderedMerge;
 pub(crate) use topology::CachedTopologyProvider;
