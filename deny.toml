@@ -11,6 +11,7 @@ allow = [
   # See https://docs.opensource.microsoft.com/legal/resources/oss-licenses-by-type for acceptable licenses.
   "Apache-2.0",
   "BSD-3-Clause",
+  "CC0-1.0",
   "CDLA-Permissive-2.0",
   "ISC",
   "MIT",

@@ -69,11 +69,11 @@ Follow these steps strictly:
      re-run `cargo fmt` to ensure the auto-fixed code is properly formatted (e.g., `cargo clippy --fix` can
      leave trailing blank lines when removing unused imports).
    - Documentation builds successfully where applicable
-   - **Spell check (cspell)**: CI runs cspell on all changed files using the config at `.vscode/cspell.json`
-     with the Cosmos-specific dictionary at `sdk/cosmos/.dict.txt`. Run locally with:
-     `npx cspell lint --config .vscode/cspell.json --no-must-find-files <target path>/**`
+   - **Spell check (cspell)**: CI runs cspell on all changed files using the root config at `.vscode/cspell.json`;
+     Cosmos-specific words are managed in `ignoreWords` in `sdk/cosmos/.cspell.json`. Run locally with:
+     `npx cspell lint --config sdk/cosmos/.cspell.json --no-must-find-files <target path>/**`
      If `auto-fix` is true and unknown words are legitimate (e.g., API type names, technical terms),
-     add them to `sdk/cosmos/.dict.txt`.
+     add them to `ignoreWords` in `sdk/cosmos/.cspell.json`.
    - Unit and emulator tests relevant to the touched modules and crates
    - **CI-gated tests**: Tests gated by `test_category` (e.g., emulator, multi-write) are always **compiled** but are **ignored at runtime** unless the corresponding cfg is set via `RUSTFLAGS`.
      This means `cargo check --tests` and `cargo test` will compile these tests without any special flags, so build errors are caught locally.

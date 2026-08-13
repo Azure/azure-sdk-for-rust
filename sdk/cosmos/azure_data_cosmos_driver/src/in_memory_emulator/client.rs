@@ -14,7 +14,7 @@ use azure_core::Bytes;
 use super::config::VirtualAccountConfig;
 use super::dispatch::{parse_request, resolve_region};
 use super::observer::RequestObserver;
-use super::operations::handle_operation;
+use super::operations::{database_account_not_found_response, handle_operation};
 use super::store::EmulatorStore;
 use crate::driver::transport::cosmos_transport_client::{
     HttpRequest as DriverHttpRequest, HttpResponse as DriverHttpResponse, TransportClient,
@@ -160,9 +160,24 @@ impl InMemoryEmulatorHttpClient {
 
         let parsed = parse_request(request);
 
-        // Resolve region from URL
+        // Retired regions still resolve: a client keeps sending to a removed
+        // endpoint until its next topology refresh, and the service answers
+        // those with 403/1008 rather than failing to route.
         let region_name = match resolve_region(request.url(), self.store.config()) {
-            Some(r) => r,
+            Some(resolved) if !resolved.status.is_unavailable() => resolved.name,
+            Some(_) => {
+                // The service names the account in this error, derived from the
+                // regional host it was called on.
+                let account_id = request
+                    .url()
+                    .host_str()
+                    .and_then(|host| host.split('.').next())
+                    .unwrap_or("emulator-account");
+                return Ok(database_account_not_found_response(
+                    account_id,
+                    std::time::Instant::now(),
+                ));
+            }
             None => {
                 return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
                     .with_message(format!(
@@ -178,7 +193,7 @@ impl InMemoryEmulatorHttpClient {
 
         let response = handle_operation(
             &self.store,
-            region_name,
+            &region_name,
             &parsed,
             request.headers(),
             &body_bytes,

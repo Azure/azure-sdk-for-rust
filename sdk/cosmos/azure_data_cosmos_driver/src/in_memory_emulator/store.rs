@@ -9,7 +9,9 @@ use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
-use super::config::{ContainerConfig, VirtualAccountConfig};
+use super::config::{
+    already_present, ContainerConfig, SeedingPolicy, VirtualAccountConfig, VirtualRegion, WriteMode,
+};
 use super::epk::Epk;
 use super::rid::RidGenerator;
 use super::session::SessionState;
@@ -283,7 +285,7 @@ impl EmulatorStore {
     /// Creates a new store from the given account configuration.
     pub(crate) fn new(config: VirtualAccountConfig) -> Arc<Self> {
         let mut regions = HashMap::new();
-        for region in config.regions() {
+        for region in config.active_regions() {
             regions.insert(region.name().to_string(), Arc::new(RegionStore::new()));
         }
 
@@ -859,6 +861,168 @@ impl EmulatorStore {
         Ok(())
     }
 
+    /// Adds a region to the account at runtime.
+    ///
+    /// The new region is seeded from the current write region (mirroring the
+    /// initial replication a joining region receives) and inserted into the
+    /// store before being advertised in the account topology, so a running
+    /// driver picks it up on its next background account refresh with no
+    /// restart and never resolves it before it can serve requests.
+    ///
+    /// Errors with `400` if the region is already part of the account.
+    pub fn add_region(
+        &self,
+        region: VirtualRegion,
+        seeding: SeedingPolicy,
+    ) -> crate::error::Result<()> {
+        let region_name = region.name().to_string();
+        let source_name = self.config.write_region_name();
+        let source = {
+            let regions = self.regions.read().unwrap();
+            if regions.contains_key(&region_name) {
+                // Bail out before building anything, so a duplicate add can
+                // never clobber the existing region's data.
+                return Err(already_present(&region_name));
+            }
+            regions.get(&source_name).map(Arc::clone)
+        };
+
+        let region_store = match source {
+            Some(source) => RegionStore::seeded_from(&source),
+            None => RegionStore::new(),
+        };
+        if let SeedingPolicy::Delayed(_) = seeding {
+            region_store.clear_documents();
+        }
+        let region_store = Arc::new(region_store);
+
+        // Insert the store *before* publishing the region into the topology.
+        // Seeding deep-copies every document, so the reverse order would leave a
+        // window -- proportional to dataset size -- in which the region is
+        // already advertised and resolvable but has no store, and requests
+        // routed to it would get a bare 404 that is indistinguishable from a
+        // genuine "item not found".
+        {
+            let mut regions = self.regions.write().unwrap();
+            if regions.contains_key(&region_name) {
+                return Err(already_present(&region_name));
+            }
+            regions.insert(region_name.clone(), Arc::clone(&region_store));
+        }
+
+        if let Err(error) = self.config.add_region(region) {
+            self.regions.write().unwrap().remove(&region_name);
+            return Err(error);
+        }
+
+        // Only after the region is published, so the new region's own partitions
+        // are included in the bump and every region agrees on the version.
+        self.advance_vector_clock_versions();
+
+        if let SeedingPolicy::Delayed(delay) = seeding {
+            // Hold Arcs to the two region stores directly; nothing here needs
+            // the outer store, so the task stays alive exactly as long as the
+            // regions it touches.
+            let target = Arc::clone(&region_store);
+            let source = {
+                let regions = self.regions.read().unwrap();
+                regions.get(&source_name).map(Arc::clone)
+            };
+            if let Some(source) = source {
+                tokio::spawn(async move {
+                    tokio::time::sleep(delay).await;
+                    target.catch_up_from(&source);
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Advances every partition's vector-clock version across all regions.
+    ///
+    /// A region membership change bumps the session-token version on the live
+    /// service (observed: `-1 -> 0` on add, `2 -> 3` on remove, `3 -> 4` on
+    /// re-add). That bump is what makes a client's older token safe: region
+    /// entries recorded under a previous version are superseded rather than
+    /// compared against a topology that no longer exists.
+    ///
+    /// Applied uniformly to every region so the versions cannot diverge.
+    fn advance_vector_clock_versions(&self) {
+        let regions = self.regions.read().unwrap();
+        for region in regions.values() {
+            let containers = region.containers.read().unwrap();
+            for state in containers.values() {
+                for partition in &state.physical_partitions {
+                    partition
+                        .vector_clock_version
+                        .fetch_add(1, Ordering::SeqCst);
+                }
+            }
+        }
+    }
+
+    /// Starts draining a region at runtime: its endpoint begins rejecting
+    /// requests with `403/1008` while the account read still advertises it.
+    ///
+    /// Reproduces the real removal ordering — the regional endpoint fails within
+    /// seconds, the account read keeps listing the region for minutes — so a
+    /// client that refreshes topology in response to the 1008 still gets the
+    /// dead region back. Follow with [`Self::remove_region`] to complete it.
+    pub fn begin_region_removal(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.begin_region_removal(region_name)
+    }
+
+    /// Aborts an in-flight region removal, returning a draining region to
+    /// normal service. Without this, draining would be a one-way door.
+    pub fn cancel_region_removal(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.cancel_region_removal(region_name)
+    }
+
+    /// Removes a region from the account at runtime.
+    ///
+    /// The region's data is dropped, but its endpoint stays resolvable and
+    /// answers `403/1008 DatabaseAccountNotFound` — matching what the service
+    /// returns to a client that has not yet refreshed its topology.
+    ///
+    /// Errors with `400` if the region is unknown, is the last region, or is the
+    /// current write region.
+    pub fn remove_region(&self, region_name: &str) -> crate::error::Result<()> {
+        // Bump versions *before* publishing the new membership. The reverse
+        // order leaves a window where account reads already show the region
+        // gone while partitions still expose the pre-change version, so a token
+        // naming the removed region is compared instead of superseded. Bumping
+        // first errs the other way -- tokens are superseded a moment early,
+        // which is the safe direction.
+        //
+        // Pre-flight first so a rejected removal has no side effects; `config`
+        // stays the single source of the error messages.
+        let topology = self.config.topology_snapshot();
+        let removable = topology.active.len() > 1
+            && topology.write_region != region_name
+            && topology.active.iter().any(|r| r.name() == region_name);
+        if !removable {
+            return self.config.remove_region(region_name);
+        }
+
+        self.advance_vector_clock_versions();
+        self.config.remove_region(region_name)?;
+        self.regions.write().unwrap().remove(region_name);
+        Ok(())
+    }
+
+    /// Switches the account between single- and multi-write at runtime.
+    pub fn set_write_mode(&self, mode: WriteMode) {
+        self.config.set_write_mode(mode);
+    }
+
+    /// Moves write ownership to another region, as a failover would.
+    ///
+    /// Writes to the demoted region then fail with `403/3 WriteForbidden`.
+    pub fn set_write_region(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.set_write_region(region_name)
+    }
+
     /// Pauses replication TO the given target region.
     ///
     /// While paused, replicated writes destined for `target_region` accumulate in that
@@ -1279,6 +1443,104 @@ impl RegionStore {
             master_partition_lsn: AtomicU64::new(0),
         }
     }
+
+    /// Builds a region store seeded with a snapshot of `source`.
+    ///
+    /// Models the initial replication a region receives when it joins an
+    /// account: it comes online already holding the data, with the same
+    /// partition layout (so post-split layouts carry over) and LSN high-water
+    /// marks as the region it was seeded from. Pending replication buffers are
+    /// deliberately not copied — they belong to the source region.
+    fn seeded_from(source: &RegionStore) -> Self {
+        let seeded = Self::new();
+
+        *seeded.databases.write().unwrap() = source.databases.read().unwrap().clone();
+        *seeded.offers.write().unwrap() = source.offers.read().unwrap().clone();
+        seeded.master_partition_lsn.store(
+            source.master_partition_lsn.load(Ordering::SeqCst),
+            Ordering::SeqCst,
+        );
+
+        let source_containers = source.containers.read().unwrap();
+        let mut containers = seeded.containers.write().unwrap();
+        for (key, state) in source_containers.iter() {
+            containers.insert(
+                key.clone(),
+                ContainerState {
+                    metadata: state.metadata.clone(),
+                    physical_partitions: state
+                        .physical_partitions
+                        .iter()
+                        .map(PhysicalPartition::seeded_copy)
+                        .collect(),
+                },
+            );
+        }
+        drop(containers);
+
+        seeded
+    }
+
+    /// Drops every document **and rewinds the LSN counters**, keeping the
+    /// catalog and partition layout.
+    ///
+    /// Used by [`SeedingPolicy::Delayed`] to emulate the window in which a
+    /// region is advertised in the account topology but has not yet caught up.
+    /// The counters must be rewound along with the documents: session-token
+    /// freshness is judged against them, so a region left at the source's
+    /// high-water mark with no data would report itself fully caught up and
+    /// answer a session read with a bare `404` instead of the
+    /// `404/1002 ReadSessionNotAvailable` a genuinely lagging replica returns.
+    fn clear_documents(&self) {
+        self.master_partition_lsn.store(0, Ordering::SeqCst);
+        let containers = self.containers.read().unwrap();
+        for state in containers.values() {
+            for partition in &state.physical_partitions {
+                partition.documents.write().unwrap().clear();
+                partition.lsn.store(0, Ordering::SeqCst);
+                partition.local_lsn.store(0, Ordering::SeqCst);
+            }
+        }
+    }
+
+    /// Copies documents and LSN high-water marks from `source` into this
+    /// region, completing a [`SeedingPolicy::Delayed`] catch-up.
+    ///
+    /// Only partitions present in both regions are copied; a split that
+    /// happened during the delay window is left for normal replication to
+    /// reconcile.
+    fn catch_up_from(&self, source: &RegionStore) {
+        self.master_partition_lsn.store(
+            source.master_partition_lsn.load(Ordering::SeqCst),
+            Ordering::SeqCst,
+        );
+        let source_containers = source.containers.read().unwrap();
+        let containers = self.containers.read().unwrap();
+        for (key, source_state) in source_containers.iter() {
+            let Some(state) = containers.get(key) else {
+                continue;
+            };
+            for source_partition in &source_state.physical_partitions {
+                let Some(partition) = state
+                    .physical_partitions
+                    .iter()
+                    .find(|p| p.id == source_partition.id)
+                else {
+                    continue;
+                };
+                *partition.documents.write().unwrap() =
+                    source_partition.documents.read().unwrap().clone();
+                partition.lsn.store(
+                    source_partition.lsn.load(Ordering::SeqCst),
+                    Ordering::SeqCst,
+                );
+                partition.local_lsn.store(
+                    source_partition.local_lsn.load(Ordering::SeqCst),
+                    Ordering::SeqCst,
+                );
+            }
+        }
+    }
 }
 
 /// Pending replication entry.
@@ -1416,6 +1678,34 @@ pub(crate) struct PhysicalPartition {
 }
 
 impl PhysicalPartition {
+    /// Copies this partition into a freshly seeded region.
+    ///
+    /// Documents and LSN counters carry over so the new region starts at the
+    /// source's high-water mark; transient state (split/merge lock, deferred
+    /// replications, forced session markers) intentionally does not.
+    fn seeded_copy(&self) -> Self {
+        Self {
+            id: self.id,
+            epk_min: self.epk_min.clone(),
+            epk_max: self.epk_max.clone(),
+            lsn: AtomicU64::new(self.lsn.load(Ordering::SeqCst)),
+            local_lsn: AtomicU64::new(self.local_lsn.load(Ordering::SeqCst)),
+            vector_clock_version: AtomicU64::new(self.vector_clock_version.load(Ordering::SeqCst)),
+            documents: RwLock::new(self.documents.read().unwrap().clone()),
+            session_state: SessionState::new(),
+            rid: self.rid.clone(),
+            rid_prefix: self.rid_prefix,
+            throughput_fraction: self.throughput_fraction,
+            parents: self.parents.clone(),
+            locked: AtomicBool::new(false),
+            throughput_tracker: self
+                .throughput_tracker
+                .as_ref()
+                .map(|t| ThroughputTracker::new(t.provisioned_ru())),
+            deferred_replications: RwLock::new(Vec::new()),
+        }
+    }
+
     /// Checks if an EPK falls within this partition's range [min_inclusive, max_exclusive).
     pub fn contains_epk(&self, epk: &Epk) -> bool {
         *epk >= self.epk_min && *epk < self.epk_max
@@ -1740,6 +2030,11 @@ impl ThroughputTracker {
         }
     }
 
+    /// Returns the provisioned RU/s budget this tracker enforces.
+    pub fn provisioned_ru(&self) -> u32 {
+        self.provisioned_ru
+    }
+
     /// Attempts to consume `charge` RU. Returns `Ok(())` if within budget,
     /// or `Err(retry_after_ms)` if throttled.
     pub fn try_consume(&self, charge: f64) -> Result<(), u64> {
@@ -1775,7 +2070,7 @@ impl EmulatorStore {
         split_epk: &Epk,
     ) -> crate::error::Result<()> {
         let region = self
-            .region(self.config.write_region_name())
+            .region(&self.config.write_region_name())
             .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
         region
             .with_container(db_id, coll_id, |state| {
@@ -1810,7 +2105,7 @@ impl EmulatorStore {
         partition_id: u32,
     ) -> crate::error::Result<Epk> {
         let region = self
-            .region(self.config.write_region_name())
+            .region(&self.config.write_region_name())
             .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
         region
             .with_container(db_id, coll_id, |state| {
@@ -1846,7 +2141,7 @@ impl EmulatorStore {
         partition_id: u32,
     ) -> crate::error::Result<Epk> {
         let region = self
-            .region(self.config.write_region_name())
+            .region(&self.config.write_region_name())
             .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
         region
             .with_container(db_id, coll_id, |state| {
@@ -1919,7 +2214,7 @@ impl EmulatorStore {
     #[cfg(feature = "__internal_in_memory_emulator")]
     #[doc(hidden)]
     pub fn child_partition_ids(&self, db_id: &str, coll_id: &str, parent_ids: &[u32]) -> Vec<u32> {
-        let Some(region) = self.region(self.config.write_region_name()) else {
+        let Some(region) = self.region(&self.config.write_region_name()) else {
             return Vec::new();
         };
         let mut children = region

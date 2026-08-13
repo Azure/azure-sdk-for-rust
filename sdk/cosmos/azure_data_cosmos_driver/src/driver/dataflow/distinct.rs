@@ -50,15 +50,15 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use serde_json::value::RawValue;
+use bytes::Bytes;
 
 use crate::diagnostics::DiagnosticsContext;
 use crate::error::CosmosStatus;
-use crate::models::{CosmosResponse, FeedRange, RequestCharge};
+use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
 
 use super::distinct_hash::{hash_value, Hash128};
 use super::query_plan::DistinctType;
-use super::{query_response, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
+use super::{skip_take_page, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
 
 /// Guidance surfaced when a caller asks for a continuation token on an
 /// unordered `DISTINCT` query. Mirrors .NET's
@@ -113,7 +113,7 @@ pub(crate) struct Distinct {
     /// The most recently suppressed page, kept as a template so accumulated
     /// charge/diagnostics can still be flushed as a final empty page if the
     /// child drains without ever surfacing a terminal page.
-    pending_flush: Option<(CosmosResponse, Vec<u8>)>,
+    pending_flush: Option<CosmosResponse>,
 }
 
 impl Distinct {
@@ -151,14 +151,12 @@ impl Distinct {
         }
     }
 
-    /// Selects the indices of `documents` that survive deduplication.
-    fn select_survivors(
-        &mut self,
-        documents: &[Box<RawValue>],
-    ) -> crate::error::Result<Vec<usize>> {
-        let mut keep = Vec::with_capacity(documents.len());
-        for (index, document) in documents.iter().enumerate() {
-            let value: serde_json::Value = serde_json::from_str(document.get()).map_err(|e| {
+    /// Selects the items that survive deduplication, preserving order and each
+    /// item's exact backend bytes.
+    fn select_survivors(&mut self, items: &[Bytes]) -> crate::error::Result<Vec<Bytes>> {
+        let mut keep = Vec::with_capacity(items.len());
+        for item in items {
+            let value: serde_json::Value = serde_json::from_slice(item).map_err(|e| {
                 crate::error::CosmosError::builder()
                     .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("failed to parse a DISTINCT row payload as JSON")
@@ -166,7 +164,7 @@ impl Distinct {
                     .build()
             })?;
             if self.map.accept(hash_value(&value)?) {
-                keep.push(index);
+                keep.push(item.clone());
             }
         }
         Ok(keep)
@@ -177,7 +175,7 @@ impl Distinct {
     fn rebuild(
         &mut self,
         response: &CosmosResponse,
-        body: Vec<u8>,
+        survivors: Vec<Bytes>,
         emitted: usize,
     ) -> CosmosResponse {
         let mut headers = response.headers().clone();
@@ -186,18 +184,23 @@ impl Distinct {
             let base = headers.request_charge.unwrap_or_default();
             headers.request_charge = Some(base + self.suppressed_charge);
         }
-        let rebuilt = CosmosResponse::new(body, headers, response.status(), response.diagnostics());
+        let rebuilt = CosmosResponse::new(
+            ResponseBody::from_items(survivors),
+            headers,
+            response.status(),
+            response.diagnostics(),
+        );
         let merged = rebuilt.with_aggregated_prior_diagnostics(&self.suppressed_diagnostics);
         self.clear_suppressed();
         merged
     }
 
     /// Accumulates an all-duplicate page's charge and diagnostics.
-    fn suppress(&mut self, response: CosmosResponse, empty_body: Vec<u8>) {
+    fn suppress(&mut self, response: CosmosResponse) {
         self.suppressed_charge =
             self.suppressed_charge + response.headers().request_charge.unwrap_or_default();
         self.suppressed_diagnostics.push(response.diagnostics());
-        self.pending_flush = Some((response, empty_body));
+        self.pending_flush = Some(response);
     }
 
     fn clear_suppressed(&mut self) {
@@ -209,7 +212,7 @@ impl Distinct {
     /// Emits a final empty page carrying accumulated suppressed charge and
     /// diagnostics, or `None` if nothing is pending.
     fn flush_suppressed(&mut self) -> Option<PageResult> {
-        let (template, body) = self.pending_flush.take()?;
+        let template = self.pending_flush.take()?;
         // `suppressed_diagnostics` already includes the template's own
         // diagnostics, so aggregate the list rather than layering onto it.
         let diagnostics =
@@ -219,7 +222,12 @@ impl Distinct {
         let mut headers = template.headers().clone();
         headers.item_count = Some(0);
         headers.request_charge = Some(self.suppressed_charge);
-        let response = CosmosResponse::new(body, headers, template.status(), diagnostics);
+        let response = CosmosResponse::new(
+            ResponseBody::from_items(Vec::new()),
+            headers,
+            template.status(),
+            diagnostics,
+        );
         self.clear_suppressed();
         Some(PageResult::Page {
             response,
@@ -267,20 +275,26 @@ impl PipelineNode for Distinct {
                     response,
                     is_terminal,
                 } => {
-                    let documents = query_response::parse_document_page(response.body())?;
-                    let keep = self.select_survivors(&documents)?;
-                    // `emitted` comes from the rebuilt body rather than
-                    // `keep.len()`, so the header can never disagree with it.
-                    let (body, emitted) = query_response::retain_documents(&documents, &keep);
+                    // Normalize the child's page into per-document slices. A
+                    // streaming ordered merge (and a `SkipTake` below us) hands
+                    // over pre-split `Items`; a raw backend feed page arrives as
+                    // `Bytes`; `NoPayload` is a zero-document page.
+                    let items: Vec<Bytes> = match response.body() {
+                        ResponseBody::Items(items) => items.clone(),
+                        ResponseBody::Bytes(bytes) => skip_take_page::split_feed_envelope(bytes)?,
+                        ResponseBody::NoPayload => Vec::new(),
+                    };
+                    let survivors = self.select_survivors(&items)?;
+                    let emitted = survivors.len();
 
                     // An all-duplicate intermediate page becomes a pull rather
                     // than an empty public page; its RU/diagnostics are retained.
                     if emitted == 0 && !is_terminal {
-                        self.suppress(response, body);
+                        self.suppress(response);
                         continue;
                     }
 
-                    let new_response = self.rebuild(&response, body, emitted);
+                    let new_response = self.rebuild(&response, survivors, emitted);
                     return Ok(PageResult::Page {
                         response: new_response,
                         is_terminal,
@@ -400,12 +414,16 @@ mod tests {
     }
 
     fn documents_of(response: &CosmosResponse) -> Vec<serde_json::Value> {
-        let body = match response.body() {
-            ResponseBody::Bytes(b) => b.to_vec(),
-            other => panic!("expected a Bytes body, got {other:?}"),
-        };
-        let value: serde_json::Value = serde_json::from_slice(&body).unwrap();
-        value["Documents"].as_array().cloned().unwrap_or_default()
+        // `Distinct` emits pre-split `Items`, matching `StreamingOrderedMerge`
+        // and `SkipTake`, so a parent node never has to re-split the page.
+        match response.body() {
+            ResponseBody::Items(items) => items
+                .iter()
+                .map(|item| serde_json::from_slice(item).unwrap())
+                .collect(),
+            ResponseBody::NoPayload => Vec::new(),
+            other => panic!("expected an Items body, got {other:?}"),
+        }
     }
 
     async fn drain(node: &mut Distinct) -> Vec<serde_json::Value> {

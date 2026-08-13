@@ -46,17 +46,6 @@ impl Pipeline {
         self.root
     }
 
-    /// Rewraps the root in a new parent node.
-    ///
-    /// Used by the planner to stack composition stages (today `DISTINCT`)
-    /// above the cross-partition fan-out root.
-    pub(crate) fn wrap_root(
-        self,
-        wrap: impl FnOnce(Box<dyn PipelineNode>) -> Box<dyn PipelineNode>,
-    ) -> Self {
-        Self::new(wrap(self.root))
-    }
-
     /// Emits the next page from the root node.
     ///
     /// Returns `Ok(Some(response))` for a page, `Ok(None)` when drained.

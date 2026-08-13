@@ -24,7 +24,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
 };
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, FeedRange, ItemReference, MaxItemCountHint, PartitionKey,
-    PartitionKeyDefinition,
+    PartitionKeyDefinition, ResponseBody,
 };
 use azure_data_cosmos_driver::options::{
     BinaryEncodingOptions, DriverOptions, OperationOptions, OperationOptionsBuilder, PlanOptions,
@@ -231,19 +231,30 @@ fn query_operation(
         ))
 }
 
-/// Extracts every `Documents` item from a response body.
+/// Extracts every row from a response body, whichever wire shape it arrived in.
+///
+/// The cross-partition pipeline emits pre-split `Items`; a raw single-partition
+/// backend page arrives as a `{"Documents":[...]}` envelope.
 fn documents_of(
     response: azure_data_cosmos_driver::models::CosmosResponse,
 ) -> Vec<serde_json::Value> {
-    let Ok(bytes) = response.into_body().single() else {
-        return Vec::new();
-    };
-    let value: serde_json::Value = if azure_data_cosmos_driver::binary_json::is_binary(&bytes) {
-        azure_data_cosmos_driver::binary_json::from_slice(&bytes).unwrap()
-    } else {
-        serde_json::from_slice(&bytes).unwrap()
-    };
-    value["Documents"].as_array().cloned().unwrap_or_default()
+    // Each buffer may be text or Cosmos binary JSON; `0x80` disambiguates.
+    fn decode(bytes: &[u8]) -> serde_json::Value {
+        if azure_data_cosmos_driver::binary_json::is_binary(bytes) {
+            azure_data_cosmos_driver::binary_json::from_slice(bytes).unwrap()
+        } else {
+            serde_json::from_slice(bytes).unwrap()
+        }
+    }
+
+    match response.into_body() {
+        ResponseBody::NoPayload => Vec::new(),
+        ResponseBody::Items(items) => items.iter().map(|item| decode(item)).collect(),
+        ResponseBody::Bytes(bytes) => {
+            let value = decode(&bytes);
+            value["Documents"].as_array().cloned().unwrap_or_default()
+        }
+    }
 }
 
 async fn drain_query_with_options(
@@ -273,9 +284,22 @@ async fn drain_query_with_options(
         .await
         .unwrap()
     {
-        let bytes = response.body().clone().single().unwrap();
-        let is_binary = azure_data_cosmos_driver::binary_json::is_binary(&bytes);
-        formats.push(is_binary);
+        // The pipeline emits pre-split `Items`, each slice carrying its own
+        // `0x80` preamble; a single-partition passthrough page is one `Bytes`
+        // envelope. An empty page has no bytes to classify, so it inherits the
+        // text answer and is filtered out of the all/none assertions below.
+        let is_binary = match response.body() {
+            ResponseBody::Bytes(bytes) => azure_data_cosmos_driver::binary_json::is_binary(bytes),
+            ResponseBody::Items(items) => items
+                .iter()
+                .all(|item| azure_data_cosmos_driver::binary_json::is_binary(item)),
+            ResponseBody::NoPayload => false,
+        };
+        let has_payload = !matches!(response.body(), ResponseBody::NoPayload)
+            && !matches!(response.body(), ResponseBody::Items(items) if items.is_empty());
+        if has_payload {
+            formats.push(is_binary);
+        }
         values.extend(documents_of(response));
     }
 
