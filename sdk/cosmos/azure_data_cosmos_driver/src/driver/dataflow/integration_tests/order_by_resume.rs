@@ -559,6 +559,59 @@ async fn merges_two_binary_partitions_into_global_order() {
     );
 }
 
+/// Regression: a binary-sourced merge must emit **binary** on every output
+/// page, including pages served entirely from buffered rows (no backend fetch).
+/// With page size 1 and a single 3-row binary backend page, output pages 2 and
+/// 3 consume no backend response, so a per-page `emit_binary` flag would leave
+/// them text — carrying binary-canonicalized payloads that then fail typed
+/// decode. The flag is sticky on the merge, so every page stays binary.
+#[tokio::test]
+async fn binary_merge_keeps_every_page_binary_including_buffer_only_pages() {
+    let op = order_by_operation_with_page_size(1);
+    let plan = order_by_plan();
+
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut executor = MockRequestExecutor::new(vec![Ok(binary_envelope_page(
+        &[("a", 1), ("b", 2), ("c", 3)],
+        None,
+    ))]);
+
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+        .await
+        .unwrap();
+
+    let mut formats = Vec::new();
+    let mut ids = Vec::new();
+    let mut noop_topology = super::super::mocks::NoopTopologyProvider;
+    loop {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut noop_topology));
+        match pipeline.next_page(&mut context).await.unwrap() {
+            Some(response) => {
+                formats.push(crate::binary_json::is_binary(response.body_bytes()));
+                ids.extend(ids_in_page(&response));
+            }
+            None => break,
+        }
+    }
+
+    assert_eq!(
+        ids,
+        vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],
+        "all rows must still be emitted in order",
+    );
+    // The single backend page fills 3 rows; page size 1 emits 3 pages, only the
+    // first of which touches the backend. Every page must still be binary.
+    assert!(
+        formats.len() >= 3,
+        "expected at least 3 output pages, got {}",
+        formats.len()
+    );
+    assert!(
+        formats.iter().all(|&is_binary| is_binary),
+        "every page of a binary-sourced merge must stay binary, got {formats:?}",
+    );
+}
+
 /// A single partition, single page: the trivial case must still flow
 /// through the merge machinery correctly (no fan-out needed).
 #[tokio::test]

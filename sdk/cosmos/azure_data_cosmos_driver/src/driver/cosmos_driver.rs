@@ -83,7 +83,13 @@ const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_mill
 /// reply in binary, preserving the read-side RU/COGS benefit the caller opted
 /// into. When the caller also asked for a text payload (`request_text_response`),
 /// the driver transcodes the guaranteed-binary response back to text after
-/// receiving it, keeping the wire binary in both directions.
+/// receiving it, keeping the wire binary in both directions. **This transcode is
+/// honored only for point operations** (the `execute_operation` path); a query
+/// drains through `plan_operation` → `execute_plan`, which does not transcode, so
+/// `request_text_response` has no effect on a query. The SDK's typed query path
+/// is unaffected (it decodes either format transparently via first-byte
+/// detection); a raw/FFI query consumer that needs text must transcode the pages
+/// itself.
 ///
 /// Note: .NET's *query* default is the broader `JsonText,CosmosBinary` ("send
 /// either, service chooses"); Rust deliberately forces `CosmosBinary` for query

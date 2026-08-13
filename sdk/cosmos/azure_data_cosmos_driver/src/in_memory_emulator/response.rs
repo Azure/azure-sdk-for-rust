@@ -263,6 +263,20 @@ pub(crate) fn success_response(
 /// Like [`success_response`], but encodes the body as Cosmos binary JSON when
 /// `binary` is set. Used by the item read/write handlers to honor a client that
 /// negotiated binary responses via `x-ms-cosmos-supported-serialization-formats`.
+pub(crate) fn success_response_with_format(
+    status: StatusCode,
+    body: &serde_json::Value,
+    binary: bool,
+    charge: f64,
+    session_token: &str,
+    start: Instant,
+) -> ResponseBuilder {
+    ResponseBuilder::new(status, start)
+        .with_request_charge(charge)
+        .with_session_token(session_token)
+        .with_value_body(body, binary)
+}
+
 /// The serialization format the emulator emits for a feed response body.
 ///
 /// Replaces a bare positional `bool` on the feed builders so each call site
@@ -292,20 +306,6 @@ impl From<bool> for ResponseFormat {
             ResponseFormat::Text
         }
     }
-}
-
-pub(crate) fn success_response_with_format(
-    status: StatusCode,
-    body: &serde_json::Value,
-    binary: bool,
-    charge: f64,
-    session_token: &str,
-    start: Instant,
-) -> ResponseBuilder {
-    ResponseBuilder::new(status, start)
-        .with_request_charge(charge)
-        .with_session_token(session_token)
-        .with_value_body(body, binary)
 }
 
 /// Creates an error response.

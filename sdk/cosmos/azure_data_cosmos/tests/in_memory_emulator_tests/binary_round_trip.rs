@@ -418,11 +418,14 @@ async fn request_text_response_keeps_wire_binary_and_returns_data() {
 /// application/query+json`), the advertised negotiation header and whether the
 /// request body was Cosmos binary JSON (first byte `0x80`). Lets a test assert
 /// that a query advertises a binary *response* while keeping its request body
-/// text.
+/// text. Query-plan requests (metadata, which must **not** negotiate binary) are
+/// recorded separately in `query_plan_formats` so a test can assert they carry
+/// no binary header rather than silently skipping them.
 #[derive(Debug, Default)]
 struct QueryRequestRecorder {
     negotiation_formats: Mutex<Vec<Option<String>>>,
     body_is_binary: Mutex<Vec<bool>>,
+    query_plan_formats: Mutex<Vec<Option<String>>>,
 }
 
 impl RequestObserver for QueryRequestRecorder {
@@ -436,9 +439,17 @@ impl RequestObserver for QueryRequestRecorder {
         if content_type.as_deref() != Some("application/query+json") {
             return;
         }
+        let formats = request
+            .headers()
+            .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
+                "x-ms-cosmos-supported-serialization-formats",
+            ))
+            .map(|s| s.to_string());
         // The query-plan request shares the `application/query+json` content type
-        // but is metadata (no data negotiation); skip it so only the data query
-        // is asserted on.
+        // but is metadata that must never negotiate binary. Record its advertised
+        // format separately so a test can assert the header is absent, rather than
+        // skipping it (which would let a regression that started negotiating on
+        // query plans pass unnoticed).
         if request
             .headers()
             .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
@@ -446,14 +457,9 @@ impl RequestObserver for QueryRequestRecorder {
             ))
             .is_some()
         {
+            self.query_plan_formats.lock().unwrap().push(formats);
             return;
         }
-        let formats = request
-            .headers()
-            .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
-                "x-ms-cosmos-supported-serialization-formats",
-            ))
-            .map(|s| s.to_string());
         self.negotiation_formats.lock().unwrap().push(formats);
 
         let is_binary = match request.body() {
@@ -709,6 +715,17 @@ fn assert_query_advertised_binary(recorder: &QueryRequestRecorder) {
         assert!(
             !is_binary,
             "query request body must stay text (application/query+json is a spec, not a document)",
+        );
+    }
+    // A query-plan request is metadata and must never negotiate binary — assert
+    // the header is absent rather than skipping these requests, so a regression
+    // that started negotiating on query plans is caught.
+    let query_plan_formats = recorder.query_plan_formats.lock().unwrap();
+    for value in query_plan_formats.iter() {
+        assert_eq!(
+            value.as_deref(),
+            None,
+            "query-plan request must not advertise a binary response",
         );
     }
 }

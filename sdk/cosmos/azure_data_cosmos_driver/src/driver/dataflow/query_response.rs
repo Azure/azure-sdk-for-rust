@@ -410,6 +410,23 @@ impl PageAggregator {
         self.session_token = session_token;
     }
 
+    /// Seeds the sticky binary-emit flag from the owning merge, so a page served
+    /// entirely from buffered rows (no backend fetch, so no [`absorb`]) still
+    /// emits binary when the query's earlier pages were binary. See the
+    /// `emit_binary` field on the merge for why this must persist across pages.
+    ///
+    /// [`absorb`]: Self::absorb
+    pub(crate) fn seed_emit_binary(&mut self, emit_binary: bool) {
+        self.emit_binary = emit_binary;
+    }
+
+    /// Whether this page will emit a Cosmos binary JSON envelope — `true` once
+    /// any absorbed backend page was binary or the flag was seeded from the
+    /// merge's sticky state.
+    pub(crate) fn emits_binary(&self) -> bool {
+        self.emit_binary
+    }
+
     pub(crate) fn session_token(&self) -> Option<&SessionToken> {
         self.session_token.as_ref()
     }
