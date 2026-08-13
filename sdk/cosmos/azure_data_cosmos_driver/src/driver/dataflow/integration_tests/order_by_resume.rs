@@ -355,8 +355,14 @@ fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cosm
 }
 
 /// Extracts every item's `id` across `page`'s `Documents`, in wire order.
+/// Auto-detects the page format: a binary-negotiated ORDER BY merge emits a
+/// binary envelope (so the SDK's binary deserializer runs), which is transcoded
+/// to text here before the text parse — mirroring the SDK's format-agnostic
+/// decode choke point.
 fn ids_in_page(page: &CosmosResponse) -> Vec<String> {
-    let value: serde_json::Value = serde_json::from_slice(page.body_bytes()).unwrap();
+    let bytes = page.body_bytes();
+    let text = crate::binary_json::transcode_to_text(bytes).unwrap();
+    let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
     value["Documents"]
         .as_array()
         .unwrap()

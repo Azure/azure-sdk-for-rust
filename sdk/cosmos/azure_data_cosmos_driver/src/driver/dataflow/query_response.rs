@@ -376,6 +376,14 @@ pub(crate) struct PageAggregator {
     index_metrics: Option<String>,
     query_metrics: Option<String>,
     status: CosmosStatus,
+    /// Set once any absorbed backend page arrived as Cosmos binary JSON. When
+    /// true, [`build_page`](Self::build_page) emits the synthetic envelope as
+    /// binary so the SDK decodes it through the binary deserializer — which
+    /// applies the integral-`Double`→integer coercion that a passthrough binary
+    /// query already gets. Emitting text here would instead route the payloads
+    /// through the text deserializer, which hard-fails on a service-echoed
+    /// integral double for an integer field (the text/binary divergence).
+    emit_binary: bool,
 }
 
 impl Default for PageAggregator {
@@ -388,6 +396,7 @@ impl Default for PageAggregator {
             index_metrics: None,
             query_metrics: None,
             status: CosmosStatus::new(azure_core::http::StatusCode::Ok),
+            emit_binary: false,
         }
     }
 }
@@ -415,6 +424,9 @@ impl PageAggregator {
         let charge = response.headers().request_charge.unwrap_or_default();
         self.request_charge = self.request_charge + charge;
         self.diagnostics_sources.push(response.diagnostics());
+        if response_body_is_binary(response.body()) {
+            self.emit_binary = true;
+        }
         if let Some(id) = &response.headers().activity_id {
             self.activity_id = Some(id.clone());
         }
@@ -467,9 +479,12 @@ impl PageAggregator {
     /// final ordered list of raw item payloads.
     ///
     /// Body is a synthetic `{"_rid": "", "Documents": [...], "_count": N}`
-    /// envelope of `payloads`' bytes unmodified — the wire shape every
-    /// other feed node returns. `_rid` is left empty (per-item `_rid`
-    /// identifies each item, not the feed-level one).
+    /// envelope of `payloads`' bytes — the wire shape every other feed node
+    /// returns. `_rid` is left empty (per-item `_rid` identifies each item, not
+    /// the feed-level one). When the source pages were binary, the assembled
+    /// envelope is re-encoded to Cosmos binary JSON so the SDK's binary
+    /// deserializer (with integral-`Double`→integer coercion) decodes it, exactly
+    /// as it would a passthrough binary query; text sources are emitted verbatim.
     ///
     /// It's valid for no backend page to have been absorbed (page
     /// assembled entirely from previously-buffered rows); it then reports
@@ -490,6 +505,23 @@ impl PageAggregator {
         body.extend_from_slice(br#"],"_count":"#);
         body.extend_from_slice(payloads.len().to_string().as_bytes());
         body.push(b'}');
+
+        // When the source pages were binary, re-encode the assembled envelope to
+        // Cosmos binary JSON so the SDK decodes it through the binary
+        // deserializer (which coerces a service-echoed integral `Double` into an
+        // integer target). Emitting text here would route the same payloads
+        // through the text deserializer, which hard-fails on that double — the
+        // divergence a passthrough binary query does not have. Text sources keep
+        // the zero-extra-copy text envelope.
+        let body = if self.emit_binary {
+            crate::binary_json::transcode_to_binary(&body).map_err(|e| {
+                envelope_error(format!(
+                    "failed to transcode merged ORDER BY envelope page to binary: {e}"
+                ))
+            })?
+        } else {
+            body
+        };
 
         let diagnostics = DiagnosticsContext::aggregate_sub_operations(&self.diagnostics_sources)
             .map(Arc::new)
@@ -526,6 +558,15 @@ fn empty_diagnostics() -> Arc<DiagnosticsContext> {
     );
     builder.set_operation_status(azure_core::http::StatusCode::Ok, None);
     Arc::new(builder.complete())
+}
+
+/// Returns whether a backend page body is Cosmos binary JSON, so the merge can
+/// mirror the source format when it re-emits the assembled envelope.
+fn response_body_is_binary(body: &ResponseBody) -> bool {
+    match body {
+        ResponseBody::Bytes(b) => crate::binary_json::is_binary(b),
+        _ => false,
+    }
 }
 
 fn envelope_error(message: impl Into<std::borrow::Cow<'static, str>>) -> crate::error::CosmosError {
@@ -794,6 +835,83 @@ mod tests {
     fn parse_envelope_page_empty_body_yields_no_rows() {
         let rows = parse_envelope_page(&ResponseBody::NoPayload, 1).unwrap();
         assert!(rows.is_empty());
+    }
+
+    #[test]
+    fn build_page_binary_source_emits_binary_and_coerces_integral_double() {
+        // Reproduces the text/binary ORDER BY divergence (#5028): a service
+        // echoes a document's integer field as an integral `Double`. A
+        // passthrough binary query coerces it into the integer target via the
+        // binary deserializer; the merge must do the same. Emitting the merged
+        // envelope as text instead would route the payload through the text
+        // deserializer, which hard-fails on the float for a `u64` field.
+        #[derive(serde::Deserialize, PartialEq, Debug)]
+        struct Doc {
+            id: String,
+            wide: u64,
+        }
+
+        // Force a `Double` (not an integer marker) for `wide`, exactly as the
+        // service stores every number. `from_f64` serializes as `...0`, a float
+        // literal the text deserializer rejects for a `u64`.
+        let wide_double = 9_007_199_254_740_992.0_f64; // 2^53, exactly integral
+        let payload = serde_json::json!({
+            "id": "d1",
+            "wide": serde_json::Number::from_f64(wide_double).unwrap(),
+        });
+        let payload_raw = serde_json::value::to_raw_value(&payload).unwrap();
+
+        // Sanity: the text form of this payload cannot decode into `Doc` — this
+        // is exactly the failure the binary path must avoid.
+        assert!(
+            serde_json::from_str::<Doc>(payload_raw.get()).is_err(),
+            "the text payload must reject a float into a u64 field (the divergence)"
+        );
+
+        let mut aggregator = PageAggregator::new();
+        aggregator.emit_binary = true;
+        let response = aggregator.build_page(&[payload_raw]).unwrap();
+
+        // The merge emits a binary envelope so the SDK's binary deserializer runs.
+        let bytes = match response.body() {
+            ResponseBody::Bytes(b) => b.clone(),
+            other => panic!("expected a bytes body, got {other:?}"),
+        };
+        assert!(
+            crate::binary_json::is_binary(&bytes),
+            "a binary source must produce a binary merged envelope"
+        );
+
+        // And that deserializer coerces the integral double into the u64 target.
+        #[derive(serde::Deserialize)]
+        struct Feed {
+            #[serde(alias = "Documents")]
+            documents: Vec<Doc>,
+        }
+        let feed: Feed = crate::binary_json::from_slice(&bytes).unwrap();
+        assert_eq!(
+            feed.documents,
+            vec![Doc {
+                id: "d1".to_owned(),
+                wide: 9_007_199_254_740_992,
+            }],
+        );
+    }
+
+    #[test]
+    fn build_page_text_source_emits_text_envelope() {
+        // A text source keeps the zero-extra-copy text envelope — no binary
+        // re-encode, so existing text ORDER BY users are unaffected.
+        let payload = serde_json::value::to_raw_value(&serde_json::json!({"id":"d1"})).unwrap();
+        let aggregator = PageAggregator::new();
+        let response = aggregator.build_page(&[payload]).unwrap();
+        match response.body() {
+            ResponseBody::Bytes(b) => assert!(
+                !crate::binary_json::is_binary(b),
+                "a text source must stay text"
+            ),
+            other => panic!("expected a bytes body, got {other:?}"),
+        }
     }
 
     #[test]

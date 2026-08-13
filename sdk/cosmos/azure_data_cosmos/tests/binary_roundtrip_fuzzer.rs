@@ -1919,6 +1919,32 @@ async fn assert_typed_integer_probe(
         got, sent,
         "{context}: typed integer probe round-trip changed"
     );
+
+    // Also decode the same wide-integer probe through a cross-partition binary
+    // ORDER BY query. This drives the streaming-merge envelope decode
+    // (`build_page` re-encodes to binary so the SDK's `deserialize_integer`
+    // coercion runs), which the point-op read above does not exercise. A merge
+    // that emitted text instead would fail here with `invalid type: floating
+    // point, expected u64` for the `wide` field — the text/binary divergence.
+    let order_by = with_transient_retry("int-probe-order-by", context, || async {
+        let query = Query::from("SELECT * FROM c WHERE c.id = @id ORDER BY c.id")
+            .with_parameter("@id", id.as_str())?;
+        let iter = container
+            .query_items::<IntProbe>(query, FeedScope::full_container(), None)
+            .await?;
+        iter.try_collect::<Vec<_>>().await
+    })
+    .await?;
+    assert_eq!(
+        order_by.len(),
+        1,
+        "{context}: typed integer ORDER BY probe expected exactly one item, got {}",
+        order_by.len(),
+    );
+    assert_eq!(
+        order_by[0], sent,
+        "{context}: typed integer probe changed through the binary ORDER BY merge"
+    );
     Ok(())
 }
 
@@ -1972,14 +1998,13 @@ where
 }
 
 /// Queries the just-written item back and asserts it round-trips, covering the
-/// query binary-response decode path (which point ops do not exercise). Runs
-/// two shapes so both query pipelines are hit under binary encoding:
-///
-/// * a single-partition query (`WHERE c.id = @id` scoped to the item's
-///   partition) — the passthrough decode path, and
-/// * a cross-partition streaming `ORDER BY` query (`... ORDER BY c.id` over the
-///   full container) — the k-way merge, whose per-page envelope decode is the
-///   binary path added for query support.
+/// query binary-response decode path (which point ops do not exercise). Always
+/// runs a single-partition query (the passthrough decode path). When
+/// `include_cross_partition_order_by` is set, also runs a cross-partition
+/// streaming `ORDER BY` query — the k-way merge, whose per-page envelope decode
+/// is the binary path added for query support. That fan-out is the most
+/// expensive query shape and adds no binary coverage on the text-control config,
+/// so callers gate it to the binary configs.
 ///
 /// Both filter on the unique `id`, so each returns exactly this item.
 async fn assert_query_roundtrip(
@@ -1990,7 +2015,8 @@ async fn assert_query_roundtrip(
     sent_hash: &[u8; 32],
     doc: &Map<String, Value>,
     context: &str,
-) -> Result<(), Box<dyn Error>> {
+    include_cross_partition_order_by: bool,
+) -> Result<usize, Box<dyn Error>> {
     let single_partition = with_transient_retry("query", context, || async {
         let query = Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", id)?;
         let iter = container
@@ -2007,6 +2033,10 @@ async fn assert_query_roundtrip(
         context,
         "query",
     );
+
+    if !include_cross_partition_order_by {
+        return Ok(1);
+    }
 
     let order_by = with_transient_retry("query-order-by", context, || async {
         let query = Query::from("SELECT * FROM c WHERE c.id = @id ORDER BY c.id")
@@ -2026,7 +2056,7 @@ async fn assert_query_roundtrip(
         "query-order-by",
     );
 
-    Ok(())
+    Ok(2)
 }
 
 /// Asserts a query returned exactly the one expected item and that it
@@ -2255,11 +2285,13 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             // Four point-op round-trips this config: create, read, replace, upsert.
             checked += 4;
 
-            // QUERY the item back (single-partition + cross-partition ORDER BY).
-            // Covers the query binary-response decode path — including the
-            // streaming ORDER BY per-page envelope decode — which the point ops
-            // above do not exercise.
-            assert_query_roundtrip(
+            // QUERY the item back. The single-partition passthrough query runs
+            // on every config; the expensive cross-partition ORDER BY fan-out —
+            // whose per-page envelope decode is the binary path added for query
+            // support — runs only on the binary configs, where it adds coverage
+            // (on text-control it would just cost time).
+            let include_order_by = *label != "text-control";
+            let queries_checked = assert_query_roundtrip(
                 &container,
                 &pk,
                 &id,
@@ -2267,9 +2299,10 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
                 &sent_hash,
                 &doc,
                 &context,
+                include_order_by,
             )
             .await?;
-            checked += 2;
+            checked += queries_checked as u64;
 
             // The four ops above decode into `serde_json::Value` (→
             // `deserialize_any`), so they do NOT cover the native typed-integer
@@ -2289,7 +2322,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     }
 
     println!(
-        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs × (4 point ops + 2 queries) = {checked} round-trips, all canonical-equal (seed={})",
+        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs (4 point ops each + 1–2 queries; cross-partition ORDER BY on binary configs only) = {checked} round-trips, all canonical-equal (seed={})",
         cfg.iterations,
         configs.len(),
         cfg.seed

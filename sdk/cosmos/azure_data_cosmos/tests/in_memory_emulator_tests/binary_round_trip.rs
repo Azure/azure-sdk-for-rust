@@ -31,7 +31,7 @@ use std::sync::{Arc, Mutex};
 
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 struct TestItem {
     id: String,
     pk: String,
@@ -104,7 +104,15 @@ async fn build_container(db_name: &str, binary: bool) -> ContainerClient {
 /// Like [`build_container`], but provisions `partition_count` physical
 /// partitions so a full-container query fans out across ranges (the passthrough
 /// cross-partition path). Binary encoding is enabled.
-async fn build_multi_partition_container(db_name: &str, partition_count: u32) -> ContainerClient {
+/// Builds a multi-partition container with binary encoding enabled, attaching a
+/// [`QueryRequestRecorder`] and returning it, so a cross-partition query test can
+/// assert that every fan-out page actually advertised a binary response (a plain
+/// results-match assertion would still pass if negotiation silently broke and the
+/// emulator returned text, since text decodes fine).
+async fn build_multi_partition_container_with_recorder(
+    db_name: &str,
+    partition_count: u32,
+) -> (ContainerClient, Arc<QueryRequestRecorder>) {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         azure_core::http::Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
@@ -112,7 +120,11 @@ async fn build_multi_partition_container(db_name: &str, partition_count: u32) ->
     .unwrap()
     .with_consistency(ConsistencyLevel::Session);
 
-    let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let recorder = Arc::new(QueryRequestRecorder::default());
+    let emulator = std::sync::Arc::new(
+        InMemoryEmulatorHttpClient::new(config)
+            .with_request_observer(Arc::clone(&recorder) as Arc<dyn RequestObserver>),
+    );
     let store = emulator.store();
     store.create_database(db_name);
     store.create_container_with_config(
@@ -147,11 +159,12 @@ async fn build_multi_partition_container(db_name: &str, partition_count: u32) ->
         .await
         .unwrap();
 
-    client
+    let container = client
         .database_client(db_name)
         .container_client("items")
         .await
-        .unwrap()
+        .unwrap();
+    (container, recorder)
 }
 
 /// With binary enabled, an item written through the SDK is binary-encoded on the
@@ -570,10 +583,13 @@ async fn binary_query_negotiates_response_and_round_trips() {
 /// fans out across multiple physical partitions. Each partition's page is
 /// returned as an independent binary `Documents` envelope, decoded per page
 /// through the shared choke point — so every item round-trips regardless of
-/// which partition served it.
+/// which partition served it. The attached recorder asserts every fan-out page
+/// actually advertised a binary response, so a silently-broken negotiation
+/// (which would return text that still decodes) cannot pass this test.
 #[tokio::test]
 async fn binary_cross_partition_query_round_trips() {
-    let container = build_multi_partition_container("bin-xpart-query", 3).await;
+    let (container, recorder) =
+        build_multi_partition_container_with_recorder("bin-xpart-query", 3).await;
 
     // Spread items across several partition keys so the fan-out spans ranges.
     let items: Vec<TestItem> = (0..12)
@@ -607,4 +623,92 @@ async fn binary_cross_partition_query_round_trips() {
         results, expected,
         "cross-partition query results must round-trip through binary",
     );
+
+    assert_query_advertised_binary(&recorder);
+}
+
+/// **Cross-partition binary ORDER BY** — the centerpiece merge path. A
+/// full-container `SELECT * ... ORDER BY c.value` fans out across partitions and
+/// the driver runs the streaming k-way merge, whose per-page envelope decode
+/// (`parse_envelope_page`) is exactly the binary path added for query support.
+/// Unlike the passthrough test above, this exercises the *rewritten-envelope*
+/// binary decode inside the merge, in an always-run test (previously covered
+/// only by a mocked driver test and the live-only fuzzer).
+#[tokio::test]
+async fn binary_cross_partition_order_by_merges_and_round_trips() {
+    let (container, recorder) =
+        build_multi_partition_container_with_recorder("bin-xpart-order-by", 3).await;
+
+    // Interleave values across partition keys so the global order differs from
+    // any single partition's local order — forcing the k-way merge to actually
+    // reorder across binary pages rather than concatenate.
+    let items: Vec<TestItem> = (0..12)
+        .map(|i| TestItem {
+            id: format!("o-{i}"),
+            pk: format!("pk{}", i % 4),
+            value: (i * 7) % 12,
+            note: format!("café ☃ {i}"),
+        })
+        .collect();
+    for item in &items {
+        container
+            .create_item(&item.pk, &item.id, item, Some(write_options_with_content()))
+            .await
+            .unwrap();
+    }
+
+    let iter = Box::pin(container.query_items(
+        Query::from("SELECT * FROM c ORDER BY c.value"),
+        FeedScope::full_container(),
+        None,
+    ))
+    .await
+    .unwrap();
+    let results: Vec<TestItem> = Box::pin(iter.try_collect()).await.unwrap();
+
+    // The merge must emit items in global ascending `value` order — asserting the
+    // ordering (not just set membership) proves the binary pages were decoded and
+    // merged correctly, not merely concatenated.
+    let mut expected = items;
+    expected.sort_by(|a, b| a.value.cmp(&b.value).then_with(|| a.id.cmp(&b.id)));
+    let mut got = results.clone();
+    // Stable tie-break on id only for comparison; the service orders equal keys
+    // arbitrarily, so normalize ties before comparing the full sequence.
+    got.sort_by(|a, b| a.value.cmp(&b.value).then_with(|| a.id.cmp(&b.id)));
+    assert_eq!(
+        got, expected,
+        "binary ORDER BY must round-trip every item through the merge",
+    );
+    // The values themselves must already be globally non-decreasing as returned.
+    assert!(
+        results.windows(2).all(|w| w[0].value <= w[1].value),
+        "binary ORDER BY results must be in ascending value order, got {:?}",
+        results.iter().map(|r| r.value).collect::<Vec<_>>(),
+    );
+
+    assert_query_advertised_binary(&recorder);
+}
+
+/// Asserts a query recorder saw at least one query request and that every query
+/// request advertised a binary response while keeping its body text.
+fn assert_query_advertised_binary(recorder: &QueryRequestRecorder) {
+    let formats = recorder.negotiation_formats.lock().unwrap();
+    assert!(
+        !formats.is_empty(),
+        "expected at least one query request to be recorded",
+    );
+    for value in formats.iter() {
+        assert_eq!(
+            value.as_deref(),
+            Some("CosmosBinary"),
+            "every query fan-out page must advertise a binary response",
+        );
+    }
+    let body_is_binary = recorder.body_is_binary.lock().unwrap();
+    for is_binary in body_is_binary.iter() {
+        assert!(
+            !is_binary,
+            "query request body must stay text (application/query+json is a spec, not a document)",
+        );
+    }
 }
