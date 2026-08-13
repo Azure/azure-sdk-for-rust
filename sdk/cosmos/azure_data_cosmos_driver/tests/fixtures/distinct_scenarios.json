@@ -16,7 +16,10 @@
           "test": "queryDocuments"
         }
       ],
-      "layers": ["mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c",
         "parameters": [],
@@ -24,32 +27,66 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Redmond" },
-        { "id": "d3", "pk": "pk-c", "city": "Seattle" },
-        { "id": "d4", "pk": "pk-d", "city": "Boston" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "80" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "80"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "p0-r1", "payload": "Seattle" },
-                  { "rid": "p0-r2", "payload": "Redmond" }
+                  {
+                    "rid": "p0-r1",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "p0-r2",
+                    "payload": "Redmond"
+                  }
                 ],
                 "continuation": null
               }
             ]
           },
           {
-            "range": { "minEpk": "80", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "80",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "p1-r1", "payload": "Seattle" },
-                  { "rid": "p1-r2", "payload": "Boston" }
+                  {
+                    "rid": "p1-r1",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "p1-r2",
+                    "payload": "Boston"
+                  }
                 ],
                 "continuation": null
               }
@@ -57,9 +94,17 @@
           }
         ]
       },
-      "pageSizes": [1, 2, 10],
+      "pageSizes": [
+        1,
+        2,
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Seattle", "Redmond", "Boston"],
+      "expectedValues": [
+        "Seattle",
+        "Redmond",
+        "Boston"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -74,7 +119,9 @@
           "test": "SanityTests"
         }
       ],
-      "layers": ["mockPipeline"],
+      "layers": [
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.item FROM c",
         "parameters": [],
@@ -85,19 +132,34 @@
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": 42 },
-                  { "rid": "r2", "payload": 1337 }
+                  {
+                    "rid": "r1",
+                    "payload": 42
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": 1337
+                  }
                 ],
                 "continuation": "page-2"
               },
               {
                 "rows": [
-                  { "rid": "r3", "payload": 1337 },
-                  { "rid": "r4", "payload": 42 }
+                  {
+                    "rid": "r3",
+                    "payload": 1337
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": 42
+                  }
                 ],
                 "continuation": null
               }
@@ -105,9 +167,16 @@
           }
         ]
       },
-      "pageSizes": [1, 3, 10],
+      "pageSizes": [
+        1,
+        3,
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": [42, 1337],
+      "expectedValues": [
+        42,
+        1337
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -122,7 +191,9 @@
           "test": "queryDistinctDocuments"
         }
       ],
-      "layers": ["mockPipeline"],
+      "layers": [
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.age FROM c",
         "parameters": [],
@@ -133,14 +204,29 @@
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": 1 },
-                  { "rid": "r2", "payload": 1 },
-                  { "rid": "r3", "payload": 2 },
-                  { "rid": "r4", "payload": 1 }
+                  {
+                    "rid": "r1",
+                    "payload": 1
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": 1
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": 2
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": 1
+                  }
                 ],
                 "continuation": null
               }
@@ -148,9 +234,14 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": [1, 2],
+      "expectedValues": [
+        1,
+        2
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -165,7 +256,10 @@
           "test": "TestDistinct_ExecuteNextAsync"
         }
       ],
-      "layers": ["mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c",
         "parameters": [],
@@ -173,20 +267,44 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Redmond" },
-        { "id": "d3", "pk": "pk-c", "city": "Boston" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": "Seattle" },
-                  { "rid": "r2", "payload": "Redmond" },
-                  { "rid": "r3", "payload": "Boston" }
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": "Redmond"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Boston"
+                  }
                 ],
                 "continuation": null
               }
@@ -194,9 +312,16 @@
           }
         ]
       },
-      "pageSizes": [1, 10],
+      "pageSizes": [
+        1,
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Seattle", "Redmond", "Boston"],
+      "expectedValues": [
+        "Seattle",
+        "Redmond",
+        "Boston"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -211,7 +336,10 @@
           "test": "SanityTests"
         }
       ],
-      "layers": ["mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c",
         "parameters": [],
@@ -219,35 +347,74 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Seattle" },
-        { "id": "d3", "pk": "pk-c", "city": "Seattle" },
-        { "id": "d4", "pk": "pk-d", "city": "Seattle" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Seattle"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Seattle"
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
-                "rows": [{ "rid": "r1", "payload": "Seattle" }],
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  }
+                ],
                 "continuation": "p2"
               },
               {
-                "rows": [{ "rid": "r2", "payload": "Seattle" }],
+                "rows": [
+                  {
+                    "rid": "r2",
+                    "payload": "Seattle"
+                  }
+                ],
                 "continuation": "p3"
               },
               {
-                "rows": [{ "rid": "r3", "payload": "Seattle" }],
+                "rows": [
+                  {
+                    "rid": "r3",
+                    "payload": "Seattle"
+                  }
+                ],
                 "continuation": null
               }
             ]
           }
         ]
       },
-      "pageSizes": [1, 10],
+      "pageSizes": [
+        1,
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Seattle"],
+      "expectedValues": [
+        "Seattle"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -267,7 +434,10 @@
           "test": "booleanHash"
         }
       ],
-      "layers": ["distinctMap", "mockPipeline"],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.flag FROM c",
         "parameters": [],
@@ -278,16 +448,37 @@
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": null },
-                  { "rid": "r2", "payload": false },
-                  { "rid": "r3", "payload": true },
-                  { "rid": "r4", "payload": null },
-                  { "rid": "r5", "payload": false },
-                  { "rid": "r6", "payload": true }
+                  {
+                    "rid": "r1",
+                    "payload": null
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": false
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": true
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": null
+                  },
+                  {
+                    "rid": "r5",
+                    "payload": false
+                  },
+                  {
+                    "rid": "r6",
+                    "payload": true
+                  }
                 ],
                 "continuation": null
               }
@@ -295,9 +486,15 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": [null, false, true],
+      "expectedValues": [
+        null,
+        false,
+        true
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -312,7 +509,10 @@
           "test": "ElementsHash"
         }
       ],
-      "layers": ["distinctMap", "mockPipeline"],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.value FROM c",
         "parameters": [],
@@ -323,17 +523,41 @@
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": "" },
-                  { "rid": "r2", "payload": [] },
-                  { "rid": "r3", "payload": {} },
-                  { "rid": "r4", "payload": null },
-                  { "rid": "r5", "payload": "" },
-                  { "rid": "r6", "payload": [] },
-                  { "rid": "r7", "payload": {} }
+                  {
+                    "rid": "r1",
+                    "payload": ""
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": []
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": {}
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": null
+                  },
+                  {
+                    "rid": "r5",
+                    "payload": ""
+                  },
+                  {
+                    "rid": "r6",
+                    "payload": []
+                  },
+                  {
+                    "rid": "r7",
+                    "payload": {}
+                  }
                 ],
                 "continuation": null
               }
@@ -341,9 +565,16 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["", [], {}, null],
+      "expectedValues": [
+        "",
+        [],
+        {},
+        null
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -358,7 +589,11 @@
           "test": "queryDocumentsForDistinctIntValues"
         }
       ],
-      "layers": ["distinctMap", "mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "distinctMap",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.intprop FROM c",
         "parameters": [],
@@ -366,20 +601,44 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "intprop": 5 },
-        { "id": "d2", "pk": "pk-b", "intprop": 5.0 },
-        { "id": "d3", "pk": "pk-c", "intprop": 6 }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "intprop": 5
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "intprop": 5.0
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "intprop": 6
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": 5 },
-                  { "rid": "r2", "payload": 5.0 },
-                  { "rid": "r3", "payload": 6 }
+                  {
+                    "rid": "r1",
+                    "payload": 5
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": 5.0
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": 6
+                  }
                 ],
                 "continuation": null
               }
@@ -387,9 +646,14 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": [5, 6],
+      "expectedValues": [
+        5,
+        6
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -404,7 +668,10 @@
           "test": "CosmosNumberHasher (implementation; no peer test exists)"
         }
       ],
-      "layers": ["distinctMap", "mockPipeline"],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.value FROM c",
         "parameters": [],
@@ -415,13 +682,25 @@
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": -0.0 },
-                  { "rid": "r2", "payload": 0.0 },
-                  { "rid": "r3", "payload": 0 }
+                  {
+                    "rid": "r1",
+                    "payload": -0.0
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": 0.0
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": 0
+                  }
                 ],
                 "continuation": null
               }
@@ -429,9 +708,13 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": [-0.0],
+      "expectedValues": [
+        -0.0
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -451,7 +734,11 @@
           "test": "Visit(CosmosObject) (implementation; no .NET test exists)"
         }
       ],
-      "layers": ["distinctMap", "mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "distinctMap",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.pet FROM c",
         "parameters": [],
@@ -459,20 +746,62 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "pet": { "name": "fido", "species": "dog" } },
-        { "id": "d2", "pk": "pk-b", "pet": { "species": "dog", "name": "fido" } },
-        { "id": "d3", "pk": "pk-c", "pet": { "name": "fido", "species": "cat" } }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "pet": {
+            "name": "fido",
+            "species": "dog"
+          }
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "pet": {
+            "species": "dog",
+            "name": "fido"
+          }
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "pet": {
+            "name": "fido",
+            "species": "cat"
+          }
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": { "name": "fido", "species": "dog" } },
-                  { "rid": "r2", "payload": { "species": "dog", "name": "fido" } },
-                  { "rid": "r3", "payload": { "name": "fido", "species": "cat" } }
+                  {
+                    "rid": "r1",
+                    "payload": {
+                      "name": "fido",
+                      "species": "dog"
+                    }
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": {
+                      "species": "dog",
+                      "name": "fido"
+                    }
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": {
+                      "name": "fido",
+                      "species": "cat"
+                    }
+                  }
                 ],
                 "continuation": null
               }
@@ -480,11 +809,19 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
       "expectedValues": [
-        { "name": "fido", "species": "dog" },
-        { "name": "fido", "species": "cat" }
+        {
+          "name": "fido",
+          "species": "dog"
+        },
+        {
+          "name": "fido",
+          "species": "cat"
+        }
       ],
       "checkpoint": null,
       "expectedContinuation": null,
@@ -505,7 +842,11 @@
           "test": "ElementsHash"
         }
       ],
-      "layers": ["distinctMap", "mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "distinctMap",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.tags FROM c",
         "parameters": [],
@@ -513,20 +854,62 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "tags": [1, 2] },
-        { "id": "d2", "pk": "pk-b", "tags": [2, 1] },
-        { "id": "d3", "pk": "pk-c", "tags": [1, 2] }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "tags": [
+            1,
+            2
+          ]
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "tags": [
+            2,
+            1
+          ]
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "tags": [
+            1,
+            2
+          ]
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": [1, 2] },
-                  { "rid": "r2", "payload": [2, 1] },
-                  { "rid": "r3", "payload": [1, 2] }
+                  {
+                    "rid": "r1",
+                    "payload": [
+                      1,
+                      2
+                    ]
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": [
+                      2,
+                      1
+                    ]
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": [
+                      1,
+                      2
+                    ]
+                  }
                 ],
                 "continuation": null
               }
@@ -534,9 +917,20 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": [[1, 2], [2, 1]],
+      "expectedValues": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          1
+        ]
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -551,7 +945,10 @@
           "test": "WrappedElementsHash"
         }
       ],
-      "layers": ["distinctMap", "mockPipeline"],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.value FROM c",
         "parameters": [],
@@ -562,16 +959,45 @@
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": 42 },
-                  { "rid": "r2", "payload": [42] },
-                  { "rid": "r3", "payload": { "prop": 42 } },
-                  { "rid": "r4", "payload": 42 },
-                  { "rid": "r5", "payload": [42] },
-                  { "rid": "r6", "payload": { "prop": 42 } }
+                  {
+                    "rid": "r1",
+                    "payload": 42
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": [
+                      42
+                    ]
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": {
+                      "prop": 42
+                    }
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": 42
+                  },
+                  {
+                    "rid": "r5",
+                    "payload": [
+                      42
+                    ]
+                  },
+                  {
+                    "rid": "r6",
+                    "payload": {
+                      "prop": 42
+                    }
+                  }
                 ],
                 "continuation": null
               }
@@ -579,9 +1005,19 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": [42, [42], { "prop": 42 }],
+      "expectedValues": [
+        42,
+        [
+          42
+        ],
+        {
+          "prop": 42
+        }
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -596,7 +1032,10 @@
           "test": "MixedTypeTests"
         }
       ],
-      "layers": ["distinctMap", "mockPipeline"],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.value FROM c",
         "parameters": [],
@@ -607,14 +1046,33 @@
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": "敏捷的棕色狐狸" },
-                  { "rid": "r2", "payload": "敏捷的棕色狐狸" },
-                  { "rid": "r3", "payload": { "فوق": 1 } },
-                  { "rid": "r4", "payload": { "تحت": 1 } }
+                  {
+                    "rid": "r1",
+                    "payload": "\u654f\u6377\u7684\u68d5\u8272\u72d0\u72f8"
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": "\u654f\u6377\u7684\u68d5\u8272\u72d0\u72f8"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": {
+                      "\u0641\u0648\u0642": 1
+                    }
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": {
+                      "\u062a\u062d\u062a": 1
+                    }
+                  }
                 ],
                 "continuation": null
               }
@@ -622,9 +1080,19 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["敏捷的棕色狐狸", { "فوق": 1 }, { "تحت": 1 }],
+      "expectedValues": [
+        "\u654f\u6377\u7684\u68d5\u8272\u72d0\u72f8",
+        {
+          "\u0641\u0648\u0642": 1
+        },
+        {
+          "\u062a\u062d\u062a": 1
+        }
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -644,7 +1112,10 @@
           "test": "TestDistinct_ExecuteNextAsync"
         }
       ],
-      "layers": ["mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT c.name, c.city FROM c",
         "parameters": [],
@@ -652,20 +1123,56 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "name": "ann", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "name": "ann", "city": "Boston" },
-        { "id": "d3", "pk": "pk-c", "name": "ann", "city": "Seattle" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "name": "ann",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "name": "ann",
+          "city": "Boston"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "name": "ann",
+          "city": "Seattle"
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": { "name": "ann", "city": "Seattle" } },
-                  { "rid": "r2", "payload": { "name": "ann", "city": "Boston" } },
-                  { "rid": "r3", "payload": { "name": "ann", "city": "Seattle" } }
+                  {
+                    "rid": "r1",
+                    "payload": {
+                      "name": "ann",
+                      "city": "Seattle"
+                    }
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": {
+                      "name": "ann",
+                      "city": "Boston"
+                    }
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": {
+                      "name": "ann",
+                      "city": "Seattle"
+                    }
+                  }
                 ],
                 "continuation": null
               }
@@ -673,11 +1180,19 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
       "expectedValues": [
-        { "name": "ann", "city": "Seattle" },
-        { "name": "ann", "city": "Boston" }
+        {
+          "name": "ann",
+          "city": "Seattle"
+        },
+        {
+          "name": "ann",
+          "city": "Boston"
+        }
       ],
       "checkpoint": null,
       "expectedContinuation": null,
@@ -685,7 +1200,7 @@
     },
     {
       "id": "select_star_whole_document",
-      "description": "SELECT DISTINCT * deduplicates whole documents. Since every document carries a unique id and system properties, nothing collapses — the guard is that DISTINCT does not corrupt the passthrough.",
+      "description": "SELECT DISTINCT * deduplicates whole documents. Since every document carries a unique id and system properties, nothing collapses \u2014 the guard is that DISTINCT does not corrupt the passthrough.",
       "sources": [
         {
           "sdk": "dotnet",
@@ -698,7 +1213,9 @@
           "test": "queryDistinctDocuments"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT * FROM c",
         "parameters": [],
@@ -706,13 +1223,31 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Seattle" },
-        { "id": "d3", "pk": "pk-c", "city": "Boston" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Seattle"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        }
       ],
       "mock": null,
-      "pageSizes": [10],
-      "expectedIds": ["d1", "d2", "d3"],
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [
+        "d1",
+        "d2",
+        "d3"
+      ],
       "expectedValues": [],
       "checkpoint": null,
       "expectedContinuation": null,
@@ -720,7 +1255,7 @@
     },
     {
       "id": "select_value_constant_with_from_still_deduplicates",
-      "description": "DISTINCT over a constant collapses to distinctType None only when there is no FROM clause. With a FROM the query yields one row per document, so deduplication is real work and the service reports Unordered — measured live. Every row is the same constant, so exactly one survives.",
+      "description": "DISTINCT over a constant collapses to distinctType None only when there is no FROM clause. With a FROM the query yields one row per document, so deduplication is real work and the service reports Unordered \u2014 measured live. Every row is the same constant, so exactly one survives.",
       "sources": [
         {
           "sdk": "java",
@@ -728,7 +1263,9 @@
           "test": "queryDistinctDocuments"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE 1 FROM c",
         "parameters": [],
@@ -736,13 +1273,23 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a" },
-        { "id": "d2", "pk": "pk-b" }
+        {
+          "id": "d1",
+          "pk": "pk-a"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b"
+        }
       ],
       "mock": null,
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": [1],
+      "expectedValues": [
+        1
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -757,22 +1304,48 @@
           "test": "queryDistinctDocuments"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c WHERE c.active = @active",
-        "parameters": [{ "name": "@active", "value": true }],
+        "parameters": [
+          {
+            "name": "@active",
+            "value": true
+          }
+        ],
         "columns": [],
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle", "active": true },
-        { "id": "d2", "pk": "pk-b", "city": "Seattle", "active": true },
-        { "id": "d3", "pk": "pk-c", "city": "Boston", "active": false }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle",
+          "active": true
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Seattle",
+          "active": true
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston",
+          "active": false
+        }
       ],
       "mock": null,
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Seattle"],
+      "expectedValues": [
+        "Seattle"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -787,23 +1360,42 @@
           "test": "TestDistinct_ExecuteNextAsync"
         }
       ],
-      "layers": ["mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c WHERE c.city = 'nowhere'",
         "parameters": [],
         "columns": [],
         "distinctType": "Unordered"
       },
-      "documents": [{ "id": "d1", "pk": "pk-a", "city": "Seattle" }],
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        }
+      ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
-            "pages": [{ "rows": [], "continuation": null }]
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [],
+                "continuation": null
+              }
+            ]
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
       "expectedValues": [],
       "checkpoint": null,
@@ -820,7 +1412,9 @@
           "test": "SanityTests"
         }
       ],
-      "layers": ["mockPipeline"],
+      "layers": [
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c",
         "parameters": [],
@@ -831,24 +1425,45 @@
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
-                "rows": [{ "rid": "r1", "payload": "Seattle" }],
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  }
+                ],
                 "continuation": "p2"
               },
-              { "rows": [], "continuation": "p3" },
               {
-                "rows": [{ "rid": "r2", "payload": "Boston" }],
+                "rows": [],
+                "continuation": "p3"
+              },
+              {
+                "rows": [
+                  {
+                    "rid": "r2",
+                    "payload": "Boston"
+                  }
+                ],
                 "continuation": null
               }
             ]
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Seattle", "Boston"],
+      "expectedValues": [
+        "Seattle",
+        "Boston"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -863,7 +1478,9 @@
           "test": "queryDocuments"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c WHERE c.pk = 'solo'",
         "parameters": [],
@@ -871,14 +1488,31 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "solo", "city": "Seattle" },
-        { "id": "d2", "pk": "solo", "city": "Seattle" },
-        { "id": "d3", "pk": "solo", "city": "Boston" }
+        {
+          "id": "d1",
+          "pk": "solo",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "solo",
+          "city": "Seattle"
+        },
+        {
+          "id": "d3",
+          "pk": "solo",
+          "city": "Boston"
+        }
       ],
       "mock": null,
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Seattle", "Boston"],
+      "expectedValues": [
+        "Seattle",
+        "Boston"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -898,32 +1532,79 @@
           "test": "queryDocumentsWithOrderBy"
         }
       ],
-      "layers": ["distinctMap", "mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "distinctMap",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
         "parameters": [],
-        "columns": [{ "expression": "c.city", "direction": "Ascending" }],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
         "distinctType": "Ordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Redmond" },
-        { "id": "d3", "pk": "pk-c", "city": "Seattle" },
-        { "id": "d4", "pk": "pk-d", "city": "Boston" },
-        { "id": "d5", "pk": "pk-e", "city": "Redmond" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Redmond"
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": "Boston" },
-                  { "rid": "r2", "payload": "Redmond" },
-                  { "rid": "r3", "payload": "Redmond" },
-                  { "rid": "r4", "payload": "Seattle" },
-                  { "rid": "r5", "payload": "Seattle" }
+                  {
+                    "rid": "r1",
+                    "payload": "Boston"
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": "Redmond"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Redmond"
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "r5",
+                    "payload": "Seattle"
+                  }
                 ],
                 "continuation": null
               }
@@ -931,9 +1612,17 @@
           }
         ]
       },
-      "pageSizes": [1, 2, 10],
+      "pageSizes": [
+        1,
+        2,
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Boston", "Redmond", "Seattle"],
+      "expectedValues": [
+        "Boston",
+        "Redmond",
+        "Seattle"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -948,28 +1637,60 @@
           "test": "queryWithOrderByProvider"
         }
       ],
-      "layers": ["mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city DESC",
         "parameters": [],
-        "columns": [{ "expression": "c.city", "direction": "Descending" }],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Descending"
+          }
+        ],
         "distinctType": "Ordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Boston" },
-        { "id": "d3", "pk": "pk-c", "city": "Seattle" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Boston"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": "Seattle" },
-                  { "rid": "r2", "payload": "Seattle" },
-                  { "rid": "r3", "payload": "Boston" }
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Boston"
+                  }
                 ],
                 "continuation": null
               }
@@ -977,9 +1698,14 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Seattle", "Boston"],
+      "expectedValues": [
+        "Seattle",
+        "Boston"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -994,24 +1720,44 @@
           "test": "OrderedDistinctMap.Add (implementation; untested in both peers)"
         }
       ],
-      "layers": ["distinctMap", "mockPipeline"],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
         "parameters": [],
-        "columns": [{ "expression": "c.city", "direction": "Ascending" }],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
         "distinctType": "Ordered"
       },
       "documents": [],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r1", "payload": "Seattle" },
-                  { "rid": "r2", "payload": "Boston" },
-                  { "rid": "r3", "payload": "Seattle" }
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": "Boston"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Seattle"
+                  }
                 ],
                 "continuation": null
               }
@@ -1019,9 +1765,15 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Seattle", "Boston", "Seattle"],
+      "expectedValues": [
+        "Seattle",
+        "Boston",
+        "Seattle"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -1036,27 +1788,48 @@
           "test": "TestDistinct_ContinuationTokenSupportAsync"
         }
       ],
-      "layers": ["mockPipeline"],
+      "layers": [
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
         "parameters": [],
-        "columns": [{ "expression": "c.city", "direction": "Ascending" }],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
         "distinctType": "Ordered"
       },
       "documents": [],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
-                "rows": [{ "rid": "r1", "payload": "Redmond" }],
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Redmond"
+                  }
+                ],
                 "continuation": "p2"
               },
               {
                 "rows": [
-                  { "rid": "r2", "payload": "Redmond" },
-                  { "rid": "r3", "payload": "Seattle" }
+                  {
+                    "rid": "r2",
+                    "payload": "Redmond"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Seattle"
+                  }
                 ],
                 "continuation": null
               }
@@ -1064,9 +1837,14 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Redmond", "Seattle"],
+      "expectedValues": [
+        "Redmond",
+        "Seattle"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -1086,23 +1864,39 @@
           "test": "queryDocumentsWithOrderBy"
         }
       ],
-      "layers": ["mockPipeline"],
+      "layers": [
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
         "parameters": [],
-        "columns": [{ "expression": "c.city", "direction": "Ascending" }],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
         "distinctType": "Ordered"
       },
       "documents": [],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
                 "rows": [
-                  { "rid": "r2", "payload": "Redmond" },
-                  { "rid": "r3", "payload": "Seattle" }
+                  {
+                    "rid": "r2",
+                    "payload": "Redmond"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Seattle"
+                  }
                 ],
                 "continuation": null
               }
@@ -1110,10 +1904,16 @@
           }
         ]
       },
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Seattle"],
-      "checkpoint": { "lastValue": "Redmond" },
+      "expectedValues": [
+        "Seattle"
+      ],
+      "checkpoint": {
+        "lastValue": "Redmond"
+      },
       "expectedContinuation": null,
       "expectedError": null
     },
@@ -1127,26 +1927,68 @@
           "test": "TestDistinct_CosmosElementContinuationTokenAsync"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
         "parameters": [],
-        "columns": [{ "expression": "c.city", "direction": "Ascending" }],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
         "distinctType": "Ordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Redmond" },
-        { "id": "d3", "pk": "pk-c", "city": "Seattle" },
-        { "id": "d4", "pk": "pk-d", "city": "Boston" },
-        { "id": "d5", "pk": "pk-e", "city": "Redmond" },
-        { "id": "d6", "pk": "pk-f", "city": "Austin" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Redmond"
+        },
+        {
+          "id": "d6",
+          "pk": "pk-f",
+          "city": "Austin"
+        }
       ],
       "mock": null,
-      "pageSizes": [1, 2, 10],
+      "pageSizes": [
+        1,
+        2,
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Austin", "Boston", "Redmond", "Seattle"],
-      "checkpoint": { "resumeAfterPage": 1 },
+      "expectedValues": [
+        "Austin",
+        "Boston",
+        "Redmond",
+        "Seattle"
+      ],
+      "checkpoint": {
+        "resumeAfterPage": 1
+      },
       "expectedContinuation": null,
       "expectedError": null
     },
@@ -1160,22 +2002,49 @@
           "test": "queryWithOrderByProvider"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.rank ASC",
         "parameters": [],
-        "columns": [{ "expression": "c.rank", "direction": "Ascending" }],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ],
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle", "rank": 3 },
-        { "id": "d2", "pk": "pk-b", "city": "Boston", "rank": 1 },
-        { "id": "d3", "pk": "pk-c", "city": "Seattle", "rank": 2 }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle",
+          "rank": 3
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Boston",
+          "rank": 1
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle",
+          "rank": 2
+        }
       ],
       "mock": null,
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": ["Boston", "Seattle"],
+      "expectedValues": [
+        "Boston",
+        "Seattle"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -1195,7 +2064,10 @@
           "test": "createAsync (BadRequestException on lastHash for a non-ordered query)"
         }
       ],
-      "layers": ["mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c",
         "parameters": [],
@@ -1203,23 +2075,41 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Boston" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Boston"
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
-                "rows": [{ "rid": "r1", "payload": "Seattle" }],
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  }
+                ],
                 "continuation": "p2"
               }
             ]
           }
         ]
       },
-      "pageSizes": [1],
+      "pageSizes": [
+        1
+      ],
       "expectedIds": [],
       "expectedValues": [],
       "checkpoint": null,
@@ -1244,16 +2134,25 @@
           "test": "DistinctContinuationToken.TryParse"
         }
       ],
-      "layers": ["mockPipeline"],
+      "layers": [
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
         "parameters": [],
-        "columns": [{ "expression": "c.city", "direction": "Ascending" }],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
         "distinctType": "Ordered"
       },
       "documents": [],
       "mock": null,
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
       "expectedValues": [],
       "checkpoint": null,
@@ -1273,16 +2172,25 @@
           "test": "DistinctContinuationToken.TryParse"
         }
       ],
-      "layers": ["mockPipeline"],
+      "layers": [
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
         "parameters": [],
-        "columns": [{ "expression": "c.city", "direction": "Ascending" }],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
         "distinctType": "Ordered"
       },
       "documents": [],
       "mock": null,
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
       "expectedValues": [],
       "checkpoint": null,
@@ -1302,7 +2210,9 @@
           "test": "createAsync"
         }
       ],
-      "layers": ["mockPipeline"],
+      "layers": [
+        "mockPipeline"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c",
         "parameters": [],
@@ -1311,7 +2221,9 @@
       },
       "documents": [],
       "mock": null,
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
       "expectedValues": [],
       "checkpoint": null,
@@ -1331,7 +2243,9 @@
           "test": "TestMerge (split coverage exists for ORDER BY only; DISTINCT is untested in both peers)"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c",
         "parameters": [],
@@ -1339,16 +2253,40 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Redmond" },
-        { "id": "d3", "pk": "pk-c", "city": "Seattle" },
-        { "id": "d4", "pk": "pk-d", "city": "Boston" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        }
       ],
       "mock": null,
-      "pageSizes": [1],
+      "pageSizes": [
+        1
+      ],
       "expectedIds": [],
-      "expectedValues": ["Boston", "Redmond", "Seattle"],
-      "checkpoint": { "splitAfterPage": 1 },
+      "expectedValues": [
+        "Boston",
+        "Redmond",
+        "Seattle"
+      ],
+      "checkpoint": {
+        "splitAfterPage": 1
+      },
       "expectedContinuation": null,
       "expectedError": null
     },
@@ -1362,24 +2300,55 @@
           "test": "TestMerge (split coverage exists for ORDER BY only; DISTINCT is untested in both peers)"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
         "parameters": [],
-        "columns": [{ "expression": "c.city", "direction": "Ascending" }],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
         "distinctType": "Ordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Redmond" },
-        { "id": "d3", "pk": "pk-c", "city": "Seattle" },
-        { "id": "d4", "pk": "pk-d", "city": "Boston" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        }
       ],
       "mock": null,
-      "pageSizes": [1],
+      "pageSizes": [
+        1
+      ],
       "expectedIds": [],
-      "expectedValues": ["Boston", "Redmond", "Seattle"],
-      "checkpoint": { "splitAfterPage": 1 },
+      "expectedValues": [
+        "Boston",
+        "Redmond",
+        "Seattle"
+      ],
+      "checkpoint": {
+        "splitAfterPage": 1
+      },
       "expectedContinuation": null,
       "expectedError": null
     },
@@ -1393,7 +2362,10 @@
           "test": "queryDocuments"
         }
       ],
-      "layers": ["mockPipeline", "inMemoryEmulator"],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE c.city FROM c",
         "parameters": [],
@@ -1401,35 +2373,74 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Seattle" },
-        { "id": "d3", "pk": "pk-c", "city": "Seattle" },
-        { "id": "d4", "pk": "pk-d", "city": "Boston" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Seattle"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        }
       ],
       "mock": {
         "partitions": [
           {
-            "range": { "minEpk": "", "maxEpk": "FF" },
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
             "pages": [
               {
-                "rows": [{ "rid": "r1", "payload": "Seattle" }],
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  }
+                ],
                 "continuation": "p2"
               },
               {
-                "rows": [{ "rid": "r2", "payload": "Seattle" }],
+                "rows": [
+                  {
+                    "rid": "r2",
+                    "payload": "Seattle"
+                  }
+                ],
                 "continuation": "p3"
               },
               {
-                "rows": [{ "rid": "r3", "payload": "Boston" }],
+                "rows": [
+                  {
+                    "rid": "r3",
+                    "payload": "Boston"
+                  }
+                ],
                 "continuation": null
               }
             ]
           }
         ]
       },
-      "pageSizes": [1],
+      "pageSizes": [
+        1
+      ],
       "expectedIds": [],
-      "expectedValues": ["Seattle", "Boston"],
+      "expectedValues": [
+        "Seattle",
+        "Boston"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
       "expectedError": null
@@ -1444,7 +2455,9 @@
           "test": "MonadicCreate (GROUP BY composes above DISTINCT)"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT c.city FROM c GROUP BY c.city",
         "parameters": [],
@@ -1452,11 +2465,21 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Boston" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Boston"
+        }
       ],
       "mock": null,
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
       "expectedValues": [],
       "checkpoint": null,
@@ -1467,8 +2490,8 @@
       }
     },
     {
-      "id": "unsupported_combination_top",
-      "description": "DISTINCT combined with TOP is not yet supported: TOP composes above DISTINCT, so applying it before deduplication would truncate the wrong set.",
+      "id": "combination_top_applies_after_distinct",
+      "description": "DISTINCT composes below TOP: the row limit counts deduplicated values, not raw rows. The ordered stream repeats its first value, so applying TOP before deduplication would return one value instead of two \u2014 this pins the DISTINCT-inside-SkipTake pipeline order.",
       "sources": [
         {
           "sdk": "dotnet",
@@ -1481,27 +2504,55 @@
           "test": "queryDistinctDocuments"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
-        "text": "SELECT DISTINCT TOP 2 VALUE c.city FROM c",
+        "text": "SELECT DISTINCT TOP 2 VALUE c.city FROM c ORDER BY c.city",
         "parameters": [],
-        "columns": [],
-        "distinctType": "Unordered"
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "city": "Seattle" },
-        { "id": "d2", "pk": "pk-b", "city": "Boston" }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Boston"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Boston"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Portland"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Seattle"
+        }
       ],
       "mock": null,
-      "pageSizes": [10],
+      "pageSizes": [
+        1,
+        10
+      ],
       "expectedIds": [],
-      "expectedValues": [],
+      "expectedValues": [
+        "Boston",
+        "Portland"
+      ],
       "checkpoint": null,
       "expectedContinuation": null,
-      "expectedError": {
-        "category": "clientUnsupportedQueryFeature",
-        "messageFragment": "TOP"
-      }
+      "expectedError": null
     },
     {
       "id": "unsupported_combination_aggregate",
@@ -1518,7 +2569,9 @@
           "test": "queryDistinctDocuments"
         }
       ],
-      "layers": ["inMemoryEmulator"],
+      "layers": [
+        "inMemoryEmulator"
+      ],
       "query": {
         "text": "SELECT DISTINCT VALUE MAX(c.rank) FROM c",
         "parameters": [],
@@ -1526,11 +2579,21 @@
         "distinctType": "Unordered"
       },
       "documents": [
-        { "id": "d1", "pk": "pk-a", "rank": 1 },
-        { "id": "d2", "pk": "pk-b", "rank": 2 }
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "rank": 1
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "rank": 2
+        }
       ],
       "mock": null,
-      "pageSizes": [10],
+      "pageSizes": [
+        10
+      ],
       "expectedIds": [],
       "expectedValues": [],
       "checkpoint": null,

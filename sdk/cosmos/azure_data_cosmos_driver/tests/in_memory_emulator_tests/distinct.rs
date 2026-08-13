@@ -161,15 +161,25 @@ fn query_operation(
         ))
 }
 
-/// Extracts every `Documents` item from a response body.
+/// Extracts every row from a response body, whichever wire shape it arrived in.
+///
+/// The cross-partition pipeline emits pre-split `Items`; a raw single-partition
+/// backend page arrives as a `{"Documents":[...]}` envelope.
 fn documents_of(
     response: azure_data_cosmos_driver::models::CosmosResponse,
 ) -> Vec<serde_json::Value> {
-    let Ok(bytes) = response.into_body().single() else {
-        return Vec::new();
-    };
-    let value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    value["Documents"].as_array().cloned().unwrap_or_default()
+    use azure_data_cosmos_driver::models::ResponseBody;
+    match response.into_body() {
+        ResponseBody::NoPayload => Vec::new(),
+        ResponseBody::Items(items) => items
+            .iter()
+            .map(|item| serde_json::from_slice(item).unwrap())
+            .collect(),
+        ResponseBody::Bytes(bytes) => {
+            let value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            value["Documents"].as_array().cloned().unwrap_or_default()
+        }
+    }
 }
 
 /// Sorts values by their serialized form so an unordered result can be

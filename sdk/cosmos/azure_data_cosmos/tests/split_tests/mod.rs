@@ -3,6 +3,7 @@
 mod cosmos_change_feed_split;
 mod cosmos_query_distinct_split;
 mod cosmos_query_order_by_split;
+mod cosmos_query_skip_take_split;
 mod cosmos_query_split;
 mod cosmos_split_offers;
 

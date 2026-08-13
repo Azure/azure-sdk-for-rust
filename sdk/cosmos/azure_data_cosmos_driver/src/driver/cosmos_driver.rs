@@ -2914,33 +2914,36 @@ impl CosmosDriver {
         container: Option<ContainerReference>,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
-        if !self.initialized.load(Ordering::Acquire) {
-            let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
-                .with_message(format!(
-                    "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
-                     use CosmosDriverRuntime::create_driver() which initializes automatically"
-                ))
-                .build());
-        }
-        tracing::debug!("plan execution started");
+        Box::pin(async move {
+            if !self.initialized.load(Ordering::Acquire) {
+                let endpoint = AccountEndpoint::from(self.options.account());
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
+                    .with_message(format!(
+                        "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
+                         use CosmosDriverRuntime::create_driver() which initializes automatically"
+                    ))
+                    .build());
+            }
+            tracing::debug!("plan execution started");
 
-        let mut executor = DriverRequestExecutor {
-            driver: self,
-            options: &options,
-        };
+            let mut executor = DriverRequestExecutor {
+                driver: self,
+                options: &options,
+            };
 
-        let mut topology = container.map(|c| {
-            CachedTopologyProvider::new(&self.pk_range_cache, c, self.pk_range_page_fetcher())
-        });
+            let mut topology = container.map(|c| {
+                CachedTopologyProvider::new(&self.pk_range_cache, c, self.pk_range_page_fetcher())
+            });
 
-        let mut context = PipelineContext::new(
-            &mut executor,
-            topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
-        );
+            let mut context = PipelineContext::new(
+                &mut executor,
+                topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
+            );
 
-        plan.pipeline.next_page(&mut context).await
+            plan.pipeline.next_page(&mut context).await
+        })
+        .await
     }
 
     async fn execute_operation_direct(
@@ -3245,7 +3248,11 @@ impl CosmosDriver {
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        Box::pin(self.plan_operation_inner(operation, options, continuation, plan_options)).await
+        Box::pin(async move {
+            self.plan_operation_inner(operation, options, continuation, plan_options)
+                .await
+        })
+        .await
     }
 
     async fn plan_operation_inner(
@@ -4726,6 +4733,38 @@ mod tests {
         assert_send(driver.execute_singleton_operation(todo!(), todo!()));
         assert_send(driver.execute_plan(todo!(), todo!(), todo!()));
         assert_send(driver.plan_operation(todo!(), todo!(), todo!(), todo!()));
+    }
+
+    #[tokio::test]
+    async fn operation_futures_stay_within_size_budget() {
+        fn assert_size<T>(value: &T, budget: usize, name: &str) {
+            let actual = std::mem::size_of_val(value);
+            assert!(
+                actual <= budget,
+                "{name} future is {actual} bytes, exceeding the {budget}-byte budget"
+            );
+        }
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let driver = CosmosDriver::new(runtime, DriverOptions::builder(account).build()).unwrap();
+        driver.initialized.store(true, Ordering::Release);
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let operation = CosmosOperation::read_item(crate::models::ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let operation_options = OperationOptions::default();
+        let plan_options = PlanOptions::default();
+
+        let plan_future = driver.plan_operation(operation, &operation_options, None, &plan_options);
+        assert_size(&plan_future, 1024, "plan_operation");
+        let mut plan = plan_future.await.unwrap();
+
+        let execute_future =
+            driver.execute_plan(&mut plan, Some(container), OperationOptions::default());
+        assert_size(&execute_future, 512, "execute_plan");
     }
 
     // Account properties with two readable locations for regional fallback tests.

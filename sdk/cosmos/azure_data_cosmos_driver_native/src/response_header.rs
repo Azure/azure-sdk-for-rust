@@ -18,6 +18,7 @@
 //! inline on each completion.
 
 use std::ffi::{c_char, CString};
+use std::mem::MaybeUninit;
 
 use azure_data_cosmos_driver::models::CosmosResponseHeaders;
 
@@ -128,17 +129,182 @@ pub extern "C" fn cosmos_header_name(id: CosmosHeaderId) -> *const c_char {
 // Response header entry (cosmos_response_header_t)
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Tagged value (cosmos_value_t)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Discriminant for a [`CosmosValue`].
+///
+/// A newtype around `u8` — every bit pattern is a valid `CosmosValueKind`,
+/// so hosts that see an out-of-range discriminant from a newer runtime
+/// version route it through their default branch rather than triggering
+/// undefined behavior. The wrapper is the sole producer of these values
+/// so hosts never observe an out-of-range kind in practice.
+///
+/// The named C-side constants (`COSMOS_VALUE_KIND_STRING` etc.) are
+/// emitted by `build.rs` — the numeric values below must stay in sync
+/// with that list.
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CosmosValueKind(pub u8);
+
+impl CosmosValueKind {
+    /// String payload — read from `payload.string_value` (borrowed
+    /// NUL-terminated UTF-8, valid until the completion is freed).
+    pub const STRING: Self = Self(0);
+    /// Signed 64-bit integer payload — read from `payload.i64_value`.
+    pub const I64: Self = Self(1);
+    /// 64-bit floating-point payload — read from `payload.f64_value`.
+    pub const F64: Self = Self(2);
+    /// Boolean payload — read from `payload.bool_value`.
+    pub const BOOL: Self = Self(3);
+    /// Unsigned 64-bit integer payload — read from `payload.u64_value`.
+    /// Used for headers whose driver type is `u64` (LSNs, `retry-after-ms`)
+    /// so the full range is preserved instead of being saturated to
+    /// [`i64::MAX`].
+    pub const U64: Self = Self(4);
+}
+
+/// Payload half of the [`CosmosValue`] tagged union. Only the field selected
+/// by the sibling `kind` discriminant may be read; reading any other field is
+/// undefined behavior.
+///
+/// The wrapper only ever writes this union (Rust → C direction), so hosts
+/// observing a well-formed `CosmosValue` never see an invalid bit pattern
+/// under a given kind.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub union CosmosValuePayload {
+    /// Borrowed NUL-terminated UTF-8 string, valid until the owning
+    /// completion is freed. Read iff `kind == CosmosValueKind::STRING`.
+    pub string_value: *const c_char,
+    /// Signed 64-bit integer. Read iff `kind == CosmosValueKind::I64`.
+    pub i64_value: i64,
+    /// 64-bit floating-point value. Read iff `kind == CosmosValueKind::F64`.
+    pub f64_value: f64,
+    /// Boolean value. Read iff `kind == CosmosValueKind::BOOL`.
+    pub bool_value: bool,
+    /// Unsigned 64-bit integer. Read iff `kind == CosmosValueKind::U64`.
+    pub u64_value: u64,
+}
+
+/// A tagged union carrying a header (or, in the future, diagnostic) value in
+/// its native type — a string, signed integer, floating point number, or
+/// boolean. Numeric headers avoid the stringify-on-emit / parse-on-read round
+/// trip the earlier `*const c_char`-only surface required.
+///
+/// The `kind` field is a `u8` matching a [`CosmosValueKind`] discriminant.
+/// The wrapper is the sole producer of these values so hosts never observe
+/// an out-of-range kind in practice; forward-compat readers should still
+/// treat an unrecognized discriminant as "unknown / skip".
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct CosmosValue {
+    /// Which payload field is active, matching a [`CosmosValueKind`].
+    pub kind: u8,
+    /// Native-typed payload; read the field selected by `kind`.
+    pub payload: CosmosValuePayload,
+}
+
+impl CosmosValue {
+    /// Returns a fully zero-initialized [`CosmosValue`] so callers can
+    /// overwrite only the fields their variant needs while every other
+    /// byte — the 7-byte padding between `kind` and `payload`, and the
+    /// unused payload legs — is a defined zero rather than uninitialized
+    /// stack memory. Hosts that marshal the whole struct across an FFI
+    /// boundary (managed .NET / Go / Python bindings) therefore never
+    /// observe stale bytes from an earlier stack frame or freed heap
+    /// allocation.
+    ///
+    /// All-zero is a valid bit pattern for every field:
+    /// * `kind: u8` is a raw discriminant, and `0` matches
+    ///   [`CosmosValueKind::STRING`].
+    /// * Every [`CosmosValuePayload`] union leg has a well-defined value
+    ///   at bit pattern zero (`*const c_char` → NULL, integers → `0`,
+    ///   `f64` → `0.0`, `bool` → `false`).
+    fn new_zeroed() -> Self {
+        // SAFETY: see the doc comment above — every field has a valid
+        // all-zero bit pattern.
+        unsafe { MaybeUninit::<Self>::zeroed().assume_init() }
+    }
+
+    /// Builds a value carrying a borrowed C-string pointer.
+    fn string(ptr: *const c_char) -> Self {
+        let mut this = Self::new_zeroed();
+        this.kind = CosmosValueKind::STRING.0;
+        this.payload.string_value = ptr;
+        this
+    }
+
+    /// Builds a value carrying a signed 64-bit integer.
+    fn i64(v: i64) -> Self {
+        let mut this = Self::new_zeroed();
+        this.kind = CosmosValueKind::I64.0;
+        this.payload.i64_value = v;
+        this
+    }
+
+    /// Builds a value carrying an f64.
+    fn f64(v: f64) -> Self {
+        let mut this = Self::new_zeroed();
+        this.kind = CosmosValueKind::F64.0;
+        this.payload.f64_value = v;
+        this
+    }
+
+    /// Builds a value carrying a boolean.
+    fn bool(v: bool) -> Self {
+        let mut this = Self::new_zeroed();
+        this.kind = CosmosValueKind::BOOL.0;
+        this.payload.bool_value = v;
+        this
+    }
+
+    /// Builds a value carrying an unsigned 64-bit integer.
+    fn u64(v: u64) -> Self {
+        let mut this = Self::new_zeroed();
+        this.kind = CosmosValueKind::U64.0;
+        this.payload.u64_value = v;
+        this
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Response header entry (cosmos_response_header_t)
+// ─────────────────────────────────────────────────────────────────────────────
+
 /// A single response header as an `(id, value)` pair.
 ///
-/// The `value` pointer is a borrowed NUL-terminated UTF-8 string valid for the
-/// lifetime of the owning completion (until it is freed). Use
+/// The `value` carries the header's native type via a [`CosmosValue`] tagged
+/// union — string payloads borrow storage owned by the completion (valid
+/// until it is freed), while numeric and boolean payloads live inline. Use
 /// [`cosmos_header_name`] to resolve `id` to its canonical wire name.
 #[repr(C)]
 pub struct CosmosResponseHeader {
     /// Stable numeric identifier for the header (see [`CosmosHeaderId`]).
     pub id: CosmosHeaderId,
-    /// Borrowed header value (NUL-terminated UTF-8).
-    pub value: *const c_char,
+    /// Native-typed header value (see [`CosmosValue`] / [`CosmosValueKind`]).
+    pub value: CosmosValue,
+}
+
+impl CosmosResponseHeader {
+    /// Builds an entry with the 4-byte padding between `id` and `value`
+    /// (introduced by `value`'s 8-byte alignment) explicitly zeroed. Struct
+    /// literal init would leave those bytes undefined and expose stale stack
+    /// contents to any host that marshals the full 24-byte entry across an
+    /// FFI boundary.
+    ///
+    /// `CosmosHeaderId` is `#[repr(i32)]` with a well-defined all-zero
+    /// variant (`CosmosHeaderIdUnknown = 0`), and `CosmosValue`'s all-zero
+    /// bit pattern is valid — see [`CosmosValue::new_zeroed`].
+    fn new(id: CosmosHeaderId, value: CosmosValue) -> Self {
+        // SAFETY: both fields have valid all-zero bit patterns; see the
+        // doc comment above.
+        let mut this: Self = unsafe { MaybeUninit::<Self>::zeroed().assume_init() };
+        this.id = id;
+        this.value = value;
+        this
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -147,25 +313,27 @@ pub struct CosmosResponseHeader {
 
 /// Owns the `CString` value storage backing a borrowed
 /// [`CosmosResponseHeader`] list synthesized from a driver
-/// [`CosmosResponseHeaders`]. Kept alive by the owning completion so the
-/// `value` pointers stay valid until the completion is freed.
+/// [`CosmosResponseHeaders`]. Kept alive by the owning completion so string
+/// payloads stay valid until the completion is freed. Numeric and boolean
+/// payloads are inline in each [`CosmosValue`] and need no separate storage.
 pub(crate) struct OwnedResponseHeaders {
-    /// `CString` heap buffers the `list` entries' `value` pointers reference.
-    /// Never read directly; kept solely to own the value bytes so the borrowed
-    /// `value` pointers stay valid until this owner is dropped.
+    /// `CString` heap buffers each `String`-kind entry's `payload.string_value`
+    /// references. Never read directly; kept solely to own the value bytes so
+    /// the borrowed string pointers stay valid until this owner is dropped.
     #[allow(
         dead_code,
-        reason = "storage-only: owns the CString bytes the list's value pointers borrow"
+        reason = "storage-only: owns the CString bytes the list's string payloads borrow"
     )]
-    values: Vec<CString>,
+    strings: Vec<CString>,
     /// The `#[repr(C)]` entries handed across the ABI as `(ptr, len)`.
     list: Vec<CosmosResponseHeader>,
 }
 
-// SAFETY: the `value` raw pointers inside `list` only ever reference the
-// `CString` buffers owned by `values` in the same struct, so the raw pointers
-// do not alias foreign state and move with their owner. The struct is only ever
-// read behind a shared borrow while the owning completion is alive.
+// SAFETY: the string payloads inside `list` only ever reference `CString`
+// buffers owned by `strings` in the same struct, so the raw pointers do not
+// alias foreign state and move with their owner. Numeric / boolean payloads
+// carry no pointers. The struct is only ever read behind a shared borrow
+// while the owning completion is alive.
 unsafe impl Send for OwnedResponseHeaders {}
 unsafe impl Sync for OwnedResponseHeaders {}
 
@@ -174,7 +342,7 @@ impl OwnedResponseHeaders {
     /// no response (errors, cancellations, degenerate side-payload shells).
     pub(crate) fn empty() -> Self {
         Self {
-            values: Vec::new(),
+            strings: Vec::new(),
             list: Vec::new(),
         }
     }
@@ -190,99 +358,160 @@ impl OwnedResponseHeaders {
     }
 }
 
+/// Intermediate representation of a synthesized header value before its
+/// `CString` storage is materialized. Numeric / boolean variants carry their
+/// payload inline; the string variant carries an owned `String` that becomes
+/// a heap `CString` owned by the [`OwnedResponseHeaders`].
+enum SynthesizedValue {
+    String(String),
+    I64(i64),
+    F64(f64),
+    Bool(bool),
+    U64(u64),
+}
+
 /// Synthesizes a [`CosmosResponseHeader`] list from the driver's typed
 /// [`CosmosResponseHeaders`], assigning each populated field its stable
-/// [`CosmosHeaderId`] and rendering its value as a string.
+/// [`CosmosHeaderId`] and a [`CosmosValue`] carrying its native type.
 ///
-/// Only the commonly-needed headers are covered today; exhaustive coverage (or
-/// a driver-side raw header map) is a follow-up. A header whose rendered value
-/// would contain an interior NUL byte is skipped rather than truncated.
+/// Numeric headers (request-charge, item-count, LSNs, retry-after, …) carry
+/// their value inline as an integer or floating-point number rather than a
+/// string, so SDK consumers no longer need to stringify-then-parse. Only the
+/// commonly-needed headers are covered today; exhaustive coverage (or a
+/// driver-side raw header map) is a follow-up. A string-typed value with an
+/// interior NUL byte is skipped rather than truncated.
 pub(crate) fn synthesize_response_headers(headers: &CosmosResponseHeaders) -> OwnedResponseHeaders {
-    // (id, rendered-value) pairs collected in declaration order.
-    let mut pairs: Vec<(CosmosHeaderId, String)> = Vec::new();
+    // (id, native-typed value) pairs collected in declaration order.
+    let mut pairs: Vec<(CosmosHeaderId, SynthesizedValue)> = Vec::new();
 
-    /// Pushes `(id, render)` when the typed field is present, binding the
-    /// borrowed field payload to `$v` so `$render` can render it as a `String`.
+    /// Pushes `(id, SynthesizedValue::$variant($render))` when the typed field
+    /// is present, binding the borrowed field payload to `$v` so `$render` can
+    /// render it as the native-typed value.
     macro_rules! opt {
-        ($field:expr, $id:ident, |$v:ident| $render:expr) => {
+        ($field:expr, $id:ident, $variant:ident, |$v:ident| $render:expr) => {
             if let Some($v) = $field.as_ref() {
-                pairs.push((CosmosHeaderId::$id, $render));
+                pairs.push((CosmosHeaderId::$id, SynthesizedValue::$variant($render)));
             }
         };
     }
 
-    opt!(headers.activity_id, CosmosHeaderIdActivityId, |v| v
+    opt!(headers.activity_id, CosmosHeaderIdActivityId, String, |v| v
         .as_str()
         .to_owned());
-    opt!(headers.request_charge, CosmosHeaderIdRequestCharge, |v| v
-        .value()
-        .to_string());
-    opt!(headers.session_token, CosmosHeaderIdSessionToken, |v| v
-        .as_str()
-        .to_owned());
-    opt!(headers.etag, CosmosHeaderIdEtag, |v| v.to_string());
-    opt!(headers.continuation, CosmosHeaderIdContinuation, |v| v
-        .clone());
-    opt!(headers.item_count, CosmosHeaderIdItemCount, |v| v
-        .to_string());
-    opt!(headers.substatus, CosmosHeaderIdSubStatus, |v| v
-        .value()
-        .to_string());
-    opt!(headers.index_metrics, CosmosHeaderIdIndexMetrics, |v| v
-        .clone());
-    opt!(headers.query_metrics, CosmosHeaderIdQueryMetrics, |v| v
-        .clone());
+    opt!(
+        headers.request_charge,
+        CosmosHeaderIdRequestCharge,
+        F64,
+        |v| v.value()
+    );
+    opt!(
+        headers.session_token,
+        CosmosHeaderIdSessionToken,
+        String,
+        |v| v.as_str().to_owned()
+    );
+    opt!(headers.etag, CosmosHeaderIdEtag, String, |v| v.to_string());
+    opt!(
+        headers.continuation,
+        CosmosHeaderIdContinuation,
+        String,
+        |v| v.clone()
+    );
+    opt!(headers.item_count, CosmosHeaderIdItemCount, I64, |v| {
+        i64::from(*v)
+    });
+    opt!(headers.substatus, CosmosHeaderIdSubStatus, I64, |v| {
+        i64::from(v.value())
+    });
+    opt!(
+        headers.index_metrics,
+        CosmosHeaderIdIndexMetrics,
+        String,
+        |v| v.clone()
+    );
+    opt!(
+        headers.query_metrics,
+        CosmosHeaderIdQueryMetrics,
+        String,
+        |v| v.clone()
+    );
     opt!(
         headers.server_duration_ms,
         CosmosHeaderIdServerDurationMs,
-        |v| v.to_string()
+        F64,
+        |v| *v
     );
-    opt!(headers.lsn, CosmosHeaderIdLsn, |v| v.to_string());
-    opt!(headers.item_lsn, CosmosHeaderIdItemLsn, |v| v.to_string());
+    opt!(headers.lsn, CosmosHeaderIdLsn, U64, |v| *v);
+    opt!(headers.item_lsn, CosmosHeaderIdItemLsn, U64, |v| *v);
     opt!(
         headers.offer_replace_pending,
         CosmosHeaderIdOfferReplacePending,
-        |v| (if *v { "true" } else { "false" }).to_owned()
+        Bool,
+        |v| *v
     );
-    opt!(headers.retry_after_ms, CosmosHeaderIdRetryAfterMs, |v| v
-        .to_string());
+    opt!(
+        headers.retry_after_ms,
+        CosmosHeaderIdRetryAfterMs,
+        U64,
+        |v| *v
+    );
     opt!(
         headers.correlated_activity_id,
         CosmosHeaderIdCorrelatedActivityId,
+        String,
         |v| v.clone()
     );
     opt!(
         headers.global_committed_lsn,
         CosmosHeaderIdGlobalCommittedLsn,
-        |v| v.to_string()
+        I64,
+        |v| *v
     );
     opt!(
         headers.number_of_read_regions,
         CosmosHeaderIdNumberOfReadRegions,
-        |v| v.to_string()
+        I64,
+        |v| i64::from(*v)
     );
-    opt!(headers.gateway_version, CosmosHeaderIdGatewayVersion, |v| v
-        .clone());
-    opt!(headers.service_version, CosmosHeaderIdServiceVersion, |v| v
-        .clone());
+    opt!(
+        headers.gateway_version,
+        CosmosHeaderIdGatewayVersion,
+        String,
+        |v| v.clone()
+    );
+    opt!(
+        headers.service_version,
+        CosmosHeaderIdServiceVersion,
+        String,
+        |v| v.clone()
+    );
 
     // Materialize the owned `CString` storage first, then build the `#[repr(C)]`
     // entries pointing into it. Capacity is reserved up-front so no reallocation
     // moves a `CString` after its pointer is captured (the heap buffer is stable
     // regardless, but this keeps the invariant obvious).
-    let mut values: Vec<CString> = Vec::with_capacity(pairs.len());
+    let mut strings: Vec<CString> = Vec::with_capacity(pairs.len());
     let mut list: Vec<CosmosResponseHeader> = Vec::with_capacity(pairs.len());
-    for (id, rendered) in pairs {
-        // Skip a value with an interior NUL rather than truncating it.
-        let Ok(cstring) = CString::new(rendered) else {
-            continue;
+    for (id, synth) in pairs {
+        let value = match synth {
+            SynthesizedValue::String(s) => {
+                // Skip a value with an interior NUL rather than truncating it.
+                let Ok(cstring) = CString::new(s) else {
+                    continue;
+                };
+                let ptr = cstring.as_ptr();
+                strings.push(cstring);
+                CosmosValue::string(ptr)
+            }
+            SynthesizedValue::I64(v) => CosmosValue::i64(v),
+            SynthesizedValue::F64(v) => CosmosValue::f64(v),
+            SynthesizedValue::Bool(v) => CosmosValue::bool(v),
+            SynthesizedValue::U64(v) => CosmosValue::u64(v),
         };
-        let value = cstring.as_ptr();
-        values.push(cstring);
-        list.push(CosmosResponseHeader { id, value });
+        list.push(CosmosResponseHeader::new(id, value));
     }
 
-    OwnedResponseHeaders { values, list }
+    OwnedResponseHeaders { strings, list }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -343,14 +572,19 @@ mod tests {
     }
 
     #[test]
-    fn populated_headers_render_ids_and_values() {
+    fn populated_headers_render_ids_and_native_types() {
         // Set only the plain-typed fields that need no wrapper constructor, so
-        // the test exercises the synthesis loop, id assignment, value rendering,
-        // and the (ptr, len) view without depending on typed-value builders.
+        // the test exercises the synthesis loop, id assignment, native-typed
+        // value emission, and the (ptr, len) view without depending on
+        // typed-value builders. `server_duration_ms` exercises the `F64`
+        // variant; `lsn` / `retry_after_ms` exercise the `U64` variant with a
+        // value above `i64::MAX` to prove the full unsigned range survives
+        // (the earlier saturating-to-`i64` path silently clamped these).
         let mut headers = CosmosResponseHeaders::default();
         headers.continuation = Some("next-page".to_owned());
         headers.item_count = Some(42);
-        headers.lsn = Some(1234);
+        headers.server_duration_ms = Some(12.5);
+        headers.lsn = Some(u64::MAX - 1);
         headers.retry_after_ms = Some(500);
         headers.offer_replace_pending = Some(true);
         headers.gateway_version = Some("2.0.0".to_owned());
@@ -358,18 +592,41 @@ mod tests {
         let owned = synthesize_response_headers(&headers);
         let (ptr, len) = owned.as_ptr_len();
         assert!(!ptr.is_null());
-        assert_eq!(len, 6);
+        assert_eq!(len, 7);
 
         // SAFETY: `ptr` addresses `len` initialized entries owned by `owned`.
         let entries = unsafe { std::slice::from_raw_parts(ptr, len) };
-        let decoded: Vec<(CosmosHeaderId, String)> = entries
+
+        // Renders each entry's `(id, kind, textual-value)` so the assertion
+        // exercises every variant of the tagged union: string payloads are
+        // dereferenced through the borrowed C-string pointer, and numeric /
+        // boolean payloads are read via their matching union field.
+        let decoded: Vec<(CosmosHeaderId, CosmosValueKind, String)> = entries
             .iter()
             .map(|e| {
-                // SAFETY: each `value` is a NUL-terminated string owned by `owned`.
-                let s = unsafe { CStr::from_ptr(e.value) }
-                    .to_string_lossy()
-                    .into_owned();
-                (e.id, s)
+                let kind = CosmosValueKind(e.value.kind);
+                let rendered = match kind {
+                    CosmosValueKind::STRING => {
+                        // SAFETY: kind == String → payload is a valid
+                        // NUL-terminated string owned by `owned`.
+                        unsafe { CStr::from_ptr(e.value.payload.string_value) }
+                            .to_string_lossy()
+                            .into_owned()
+                    }
+                    // SAFETY: kind matches the union field being read below.
+                    CosmosValueKind::I64 => unsafe { e.value.payload.i64_value }.to_string(),
+                    CosmosValueKind::F64 => unsafe { e.value.payload.f64_value }.to_string(),
+                    CosmosValueKind::BOOL => {
+                        if unsafe { e.value.payload.bool_value } {
+                            "true".to_owned()
+                        } else {
+                            "false".to_owned()
+                        }
+                    }
+                    CosmosValueKind::U64 => unsafe { e.value.payload.u64_value }.to_string(),
+                    other => panic!("unexpected kind {}", other.0),
+                };
+                (e.id, kind, rendered)
             })
             .collect();
 
@@ -378,20 +635,187 @@ mod tests {
             vec![
                 (
                     CosmosHeaderId::CosmosHeaderIdContinuation,
+                    CosmosValueKind::STRING,
                     "next-page".to_owned()
                 ),
-                (CosmosHeaderId::CosmosHeaderIdItemCount, "42".to_owned()),
-                (CosmosHeaderId::CosmosHeaderIdLsn, "1234".to_owned()),
+                (
+                    CosmosHeaderId::CosmosHeaderIdItemCount,
+                    CosmosValueKind::I64,
+                    "42".to_owned()
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdServerDurationMs,
+                    CosmosValueKind::F64,
+                    12.5f64.to_string()
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdLsn,
+                    CosmosValueKind::U64,
+                    (u64::MAX - 1).to_string()
+                ),
                 (
                     CosmosHeaderId::CosmosHeaderIdOfferReplacePending,
+                    CosmosValueKind::BOOL,
                     "true".to_owned()
                 ),
-                (CosmosHeaderId::CosmosHeaderIdRetryAfterMs, "500".to_owned()),
+                (
+                    CosmosHeaderId::CosmosHeaderIdRetryAfterMs,
+                    CosmosValueKind::U64,
+                    "500".to_owned()
+                ),
                 (
                     CosmosHeaderId::CosmosHeaderIdGatewayVersion,
+                    CosmosValueKind::STRING,
                     "2.0.0".to_owned()
                 ),
             ]
+        );
+    }
+
+    #[test]
+    fn all_mapped_headers_render_expected_id_kind_sequence() {
+        // Table-driven "shape" test that populates every driver header field
+        // `synthesize_response_headers` maps and asserts the full expected
+        // `Vec<(CosmosHeaderId, CosmosValueKind)>` in declaration order.
+        //
+        // Retyping, reordering, or renaming any mapped field forces a
+        // conscious update to this list (and, by extension, to the generated
+        // C ABI a binding relies on).
+        use azure_core::http::Etag;
+        use azure_data_cosmos_driver::models::{ActivityId, RequestCharge, SessionToken};
+        use azure_data_cosmos_driver::SubStatusCode;
+
+        let mut headers = CosmosResponseHeaders::default();
+        headers.activity_id = Some(ActivityId::from_static("activity-1"));
+        headers.request_charge = Some(RequestCharge::new(1.5));
+        headers.session_token = Some(SessionToken::new("session-tok"));
+        headers.etag = Some(Etag::from("etag-1".to_owned()));
+        headers.continuation = Some("cont-1".to_owned());
+        headers.item_count = Some(7);
+        headers.substatus = Some(SubStatusCode::new(1002));
+        headers.index_metrics = Some("idx".to_owned());
+        headers.query_metrics = Some("qm".to_owned());
+        headers.server_duration_ms = Some(2.5);
+        headers.lsn = Some(100);
+        headers.item_lsn = Some(101);
+        headers.offer_replace_pending = Some(false);
+        headers.retry_after_ms = Some(500);
+        headers.correlated_activity_id = Some("cid".to_owned());
+        headers.global_committed_lsn = Some(200);
+        headers.number_of_read_regions = Some(3);
+        headers.gateway_version = Some("gw-1".to_owned());
+        headers.service_version = Some("svc-1".to_owned());
+
+        let owned = synthesize_response_headers(&headers);
+        let (ptr, len) = owned.as_ptr_len();
+        assert!(!ptr.is_null());
+        // SAFETY: `ptr` addresses `len` initialized entries owned by `owned`.
+        let entries = unsafe { std::slice::from_raw_parts(ptr, len) };
+
+        let actual: Vec<(CosmosHeaderId, CosmosValueKind)> = entries
+            .iter()
+            .map(|e| (e.id, CosmosValueKind(e.value.kind)))
+            .collect();
+
+        assert_eq!(
+            actual,
+            vec![
+                (
+                    CosmosHeaderId::CosmosHeaderIdActivityId,
+                    CosmosValueKind::STRING
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdRequestCharge,
+                    CosmosValueKind::F64
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdSessionToken,
+                    CosmosValueKind::STRING
+                ),
+                (CosmosHeaderId::CosmosHeaderIdEtag, CosmosValueKind::STRING),
+                (
+                    CosmosHeaderId::CosmosHeaderIdContinuation,
+                    CosmosValueKind::STRING
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdItemCount,
+                    CosmosValueKind::I64
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdSubStatus,
+                    CosmosValueKind::I64
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdIndexMetrics,
+                    CosmosValueKind::STRING
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdQueryMetrics,
+                    CosmosValueKind::STRING
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdServerDurationMs,
+                    CosmosValueKind::F64
+                ),
+                (CosmosHeaderId::CosmosHeaderIdLsn, CosmosValueKind::U64),
+                (CosmosHeaderId::CosmosHeaderIdItemLsn, CosmosValueKind::U64),
+                (
+                    CosmosHeaderId::CosmosHeaderIdOfferReplacePending,
+                    CosmosValueKind::BOOL
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdRetryAfterMs,
+                    CosmosValueKind::U64
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdCorrelatedActivityId,
+                    CosmosValueKind::STRING
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdGlobalCommittedLsn,
+                    CosmosValueKind::I64
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdNumberOfReadRegions,
+                    CosmosValueKind::I64
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdGatewayVersion,
+                    CosmosValueKind::STRING
+                ),
+                (
+                    CosmosHeaderId::CosmosHeaderIdServiceVersion,
+                    CosmosValueKind::STRING
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn value_bool_leaks_no_stale_payload_bytes() {
+        // Regression guard for the "bool constructor writes 1 of the 8
+        // payload bytes; the other 7 leak whatever was on the stack" concern.
+        //
+        // With `CosmosValue::new_zeroed`, every byte in the 16-byte struct
+        // — the `kind` discriminant, the 7-byte padding between `kind` and
+        // `payload`, and the 7 unused upper payload bytes — is a defined
+        // value: zero except for the `kind` byte (`BOOL == 3`) and the
+        // active `bool_value` byte (`true == 1`). If a future refactor
+        // reverts to struct-literal init this test starts observing extra
+        // non-zero bytes and fails loudly.
+        let v = CosmosValue::bool(true);
+        // SAFETY: `CosmosValue` is `#[repr(C)]` with valid all-zero bit
+        // patterns for every field and no niches — a byte view is sound.
+        let bytes: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                (&v as *const CosmosValue).cast::<u8>(),
+                std::mem::size_of::<CosmosValue>(),
+            )
+        };
+        let non_zero = bytes.iter().filter(|&&b| b != 0).count();
+        assert_eq!(
+            non_zero, 2,
+            "expected exactly the `kind` and `bool_value` bytes non-zero, got bytes {bytes:?}",
         );
     }
 }
