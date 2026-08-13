@@ -499,6 +499,7 @@ impl SubStatusCode {
             20119 => Some("ClientOrderByComplexValueUnsupported"),
             20120 => Some("ClientInvalidResourceId"),
             20121 => Some("ClientMixedNameRidAddressing"),
+            20122 => Some("ClientQueryRewriteBodyInvalid"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1373,6 +1374,12 @@ impl SubStatusCode {
     /// database/container hierarchy (20121). A RID-addressed database requires a
     /// RID-addressed container and vice versa.
     pub const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = SubStatusCode(20121);
+
+    /// The query plan's `rewrittenQuery` could not be substituted into the
+    /// per-partition request body because that body was not valid JSON
+    /// (20122). Cross-partition `OFFSET` / `LIMIT` / `TOP` requires rewriting
+    /// each partition's query text.
+    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: SubStatusCode = SubStatusCode(20122);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -2304,6 +2311,14 @@ impl CosmosStatus {
     pub const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_MIXED_NAME_RID_ADDRESSING),
+    };
+
+    /// 400 / 20122 — the query plan's `rewrittenQuery` could not be
+    /// substituted into a per-partition request body because that body was
+    /// not valid JSON.
+    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_REWRITE_BODY_INVALID),
     };
 
     // Configuration / setup (HTTP 400, sub-status 20150-20199)

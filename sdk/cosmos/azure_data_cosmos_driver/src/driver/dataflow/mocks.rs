@@ -323,6 +323,23 @@ pub(crate) fn response_with_continuation(
     )
 }
 
+/// Creates a test response carrying a specific request charge (RU) header.
+pub(crate) fn response_with_charge(body: &[u8], request_charge: f64) -> CosmosResponse {
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    diagnostics.set_operation_status(StatusCode::Ok, None);
+    let mut headers = CosmosResponseHeaders::new();
+    headers.request_charge = Some(crate::models::RequestCharge::new(request_charge));
+    CosmosResponse::new(
+        body.to_vec(),
+        headers,
+        CosmosStatus::new(StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
 /// Creates a test response whose diagnostics carry `requests` per-attempt
 /// records, so tests can assert on attempt counts surviving aggregation.
 pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosResponse {
