@@ -25,7 +25,7 @@ use super::response::headers::{
 #[cfg(feature = "preview_dtx")]
 use super::response::headers::{ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS};
 use super::response::{
-    error_response, success_response, success_response_with_format, ResponseBuilder,
+    error_response, success_response, success_response_with_format, ResponseBuilder, ResponseFormat,
 };
 use super::ru_model::RuChargingModel;
 use super::session::SessionToken;
@@ -2329,7 +2329,7 @@ fn success_feed_response(
     items: Vec<serde_json::Value>,
     page_options: FeedPageOptions<'_>,
     feed_headers: FeedResponseHeaders,
-    binary: bool,
+    format: ResponseFormat,
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_values(
@@ -2346,7 +2346,7 @@ fn success_feed_response(
     let mut builder = success_response_with_format(
         StatusCode::Ok,
         &body,
-        binary,
+        format.is_binary(),
         1.0,
         &feed_headers.session_token,
         start,
@@ -2373,7 +2373,7 @@ fn success_document_feed_response(
     items: Vec<DocumentFeedItem>,
     page_options: FeedPageOptions<'_>,
     feed_headers: FeedResponseHeaders,
-    binary: bool,
+    format: ResponseFormat,
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_document_feed_items(
@@ -2390,7 +2390,7 @@ fn success_document_feed_response(
     let mut builder = success_response_with_format(
         StatusCode::Ok,
         &body,
-        binary,
+        format.is_binary(),
         1.0,
         &feed_headers.session_token,
         start,
@@ -2494,7 +2494,7 @@ fn execute_query_feed(
         results,
         FeedPageOptions::from_request(parsed),
         feed_headers,
-        parsed.binary_response,
+        ResponseFormat::from(parsed.binary_response),
         start,
     )
 }
@@ -2519,7 +2519,7 @@ fn execute_document_query_feed(
             results,
             FeedPageOptions::from_request(parsed),
             feed_headers,
-            parsed.binary_response,
+            ResponseFormat::from(parsed.binary_response),
             start,
         ),
         Ok(None) => {
@@ -2545,7 +2545,7 @@ fn execute_document_query_feed(
                 results,
                 FeedPageOptions::from_request(parsed),
                 feed_headers,
-                parsed.binary_response,
+                ResponseFormat::from(parsed.binary_response),
                 start,
             )
         }
@@ -2724,7 +2724,7 @@ fn handle_read_feed_databases(
         databases,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
-        false,
+        ResponseFormat::Text,
         start,
     )
 }
@@ -2790,7 +2790,7 @@ fn handle_read_feed_containers(
         containers,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
-        false,
+        ResponseFormat::Text,
         start,
     )
 }
@@ -2852,7 +2852,7 @@ fn handle_read_feed_offers(
         offers,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
-        false,
+        ResponseFormat::Text,
         start,
     )
 }
@@ -3194,7 +3194,7 @@ fn handle_read_feed_items(
                 docs,
                 FeedPageOptions::from_request(parsed),
                 headers,
-                false,
+                ResponseFormat::Text,
                 start,
             )
         }

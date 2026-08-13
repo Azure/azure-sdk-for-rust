@@ -2638,7 +2638,16 @@ impl CosmosDriver {
         let response = Box::pin(async {
             let container = operation.container().cloned();
             let mut plan = self
-                .plan_operation(operation, &options, None, &PlanOptions::default())
+                .plan_operation_resolved(
+                    operation,
+                    &options,
+                    None,
+                    &PlanOptions::default(),
+                    // Reuse the `binary` already resolved above so the shared
+                    // `apply_response_negotiation` choke point does not re-resolve
+                    // the same layered view for this operation.
+                    Some(binary),
+                )
                 .await?;
             self.execute_plan(&mut plan, container, options).await
         })
@@ -2699,16 +2708,22 @@ impl CosmosDriver {
         &self,
         operation: CosmosOperation,
         options: &OperationOptions,
+        resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> CosmosOperation {
         if !Self::binary_negotiates_response(operation.resource_type(), operation.operation_type())
         {
             return operation;
         }
-        let binary = self
-            .operation_options_view(options)
-            .binary_encoding()
-            .cloned()
-            .unwrap_or_default();
+        // Reuse a caller-resolved value when available (the `execute_operation`
+        // path already resolved it for the request-body gate); otherwise resolve
+        // it here — the query path reaches `plan_operation` directly without a
+        // prior resolution.
+        let binary = resolved_binary.unwrap_or_else(|| {
+            self.operation_options_view(options)
+                .binary_encoding()
+                .cloned()
+                .unwrap_or_default()
+        });
         if binary.enabled {
             operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS)
         } else {
@@ -3306,7 +3321,33 @@ impl CosmosDriver {
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        Box::pin(self.plan_operation_inner(operation, options, continuation, plan_options)).await
+        Box::pin(self.plan_operation_inner(operation, options, continuation, plan_options, None))
+            .await
+    }
+
+    /// [`plan_operation`](Self::plan_operation) with a caller-resolved
+    /// [`BinaryEncodingOptions`](crate::options::BinaryEncodingOptions), letting
+    /// `execute_operation` avoid re-resolving the layered options view that it
+    /// already resolved for the request-body gate. The public `plan_operation`
+    /// entry point passes `None`, so the query path (which reaches the driver
+    /// here directly) resolves lazily at the negotiation choke point.
+    async fn plan_operation_resolved(
+        &self,
+        operation: CosmosOperation,
+        options: &OperationOptions,
+        continuation: Option<&ContinuationToken>,
+        plan_options: &PlanOptions,
+        resolved_binary: Option<crate::options::BinaryEncodingOptions>,
+    ) -> crate::error::Result<OperationPlan> {
+        operation.validate_addressing()?;
+        Box::pin(self.plan_operation_inner(
+            operation,
+            options,
+            continuation,
+            plan_options,
+            resolved_binary,
+        ))
+        .await
     }
 
     async fn plan_operation_inner(
@@ -3315,6 +3356,7 @@ impl CosmosDriver {
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
+        resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
@@ -3330,11 +3372,12 @@ impl CosmosDriver {
         tracing::debug!(operation_type = ?operation.operation_type(), resource_type = ?operation.resource_type(), resource_reference = ?operation.resource_reference(), "planning operation");
 
         // Advertise a binary response when negotiation applies (point item ops
-        // and query). Point ops also set this in `execute_operation`, but query
-        // reaches the driver through `plan_operation` directly, so this is the
-        // single choke point that covers every per-page request built from the
-        // resulting plan. The header set is idempotent.
-        let operation = self.apply_response_negotiation(operation, options);
+        // and query). This is the single choke point every operation passes
+        // through — including every per-page query request — so the header is
+        // owned here alone. `execute_operation` resolves the binary options once
+        // and forwards them via `resolved_binary` to avoid a second resolution;
+        // the query path passes `None` and resolves lazily.
+        let operation = self.apply_response_negotiation(operation, options, resolved_binary);
 
         // Share the operation across every Request node in the resulting plan.
         // Per-Request differences are layered on at execution time via
@@ -6511,7 +6554,7 @@ mod tests {
         let options = OperationOptionsBuilder::new()
             .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
             .build();
-        let op = driver.apply_response_negotiation(op, &options);
+        let op = driver.apply_response_negotiation(op, &options, None);
 
         // Body is unchanged text — never transcoded to binary.
         assert_eq!(op.body().unwrap(), query_body.as_slice());

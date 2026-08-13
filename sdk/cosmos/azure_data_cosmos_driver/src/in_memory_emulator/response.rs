@@ -263,6 +263,37 @@ pub(crate) fn success_response(
 /// Like [`success_response`], but encodes the body as Cosmos binary JSON when
 /// `binary` is set. Used by the item read/write handlers to honor a client that
 /// negotiated binary responses via `x-ms-cosmos-supported-serialization-formats`.
+/// The serialization format the emulator emits for a feed response body.
+///
+/// Replaces a bare positional `bool` on the feed builders so each call site
+/// reads `ResponseFormat::Text` / `ResponseFormat::Binary` instead of a naked
+/// `false` / `true` that a future edit could silently transpose with an
+/// adjacent argument.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ResponseFormat {
+    /// UTF-8 text JSON — the default for read-feed and control-plane responses.
+    Text,
+    /// Cosmos binary JSON — emitted only when the request negotiated it.
+    Binary,
+}
+
+impl ResponseFormat {
+    /// Whether this format is Cosmos binary JSON.
+    pub(crate) fn is_binary(self) -> bool {
+        matches!(self, ResponseFormat::Binary)
+    }
+}
+
+impl From<bool> for ResponseFormat {
+    fn from(binary: bool) -> Self {
+        if binary {
+            ResponseFormat::Binary
+        } else {
+            ResponseFormat::Text
+        }
+    }
+}
+
 pub(crate) fn success_response_with_format(
     status: StatusCode,
     body: &serde_json::Value,
