@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 
 use crate::{
     diagnostics::DiagnosticsContext,
-    feed::page::{FeedBody, FeedPage},
+    feed::page::FeedPage,
     models::{CosmosResponse, ResponseHeaders},
 };
 
@@ -98,17 +98,10 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
         let query_metrics = cosmos_headers.query_metrics.clone();
         let diagnostics = response.diagnostics();
 
-        // The cross-partition pipeline (skip/take, streaming ORDER BY merge)
-        // hands us a pre-split `Items` body, which we decode item-by-item
-        // without re-parsing an envelope. A single-partition page that never
-        // went through those nodes arrives as a raw `{"Documents":[...]}`
-        // envelope in `Bytes`, which we parse via [`FeedBody`].
-        let items: Vec<T> = if response.body_is_pre_split_feed() {
-            response.into_body().into_items()?
-        } else {
-            let body: FeedBody<T> = response.into_model()?;
-            body.items
-        };
+        // A feed page's items may arrive either pre-split (an `Items` body from
+        // the cross-partition pipeline) or as a raw `{"Documents":[...]}`
+        // envelope (a single-partition page); `into_items` decodes both.
+        let items: Vec<T> = response.into_body().into_items()?;
 
         Ok(Self {
             page: FeedPage::new(items, ResponseHeaders::from(cosmos_headers), diagnostics),

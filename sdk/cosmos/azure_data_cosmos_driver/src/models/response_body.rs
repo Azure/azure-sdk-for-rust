@@ -70,17 +70,6 @@ impl ResponseBody {
         Self::Items(items)
     }
 
-    /// Returns `true` if the body is an already-split feed body — an
-    /// [`Items`](Self::Items) list or a [`NoPayload`](Self::NoPayload) empty
-    /// page — rather than a single raw [`Bytes`](Self::Bytes) payload.
-    ///
-    /// A query/feed consumer uses this to decide whether it can read the items
-    /// directly ([`into_items`](Self::into_items)) or must first parse a raw
-    /// `{"Documents":[...]}` envelope out of the single `Bytes` payload.
-    pub fn is_pre_split_feed(&self) -> bool {
-        matches!(self, Self::Items(_) | Self::NoPayload)
-    }
-
     /// Returns `true` if the body carries no readable content.
     ///
     /// * [`NoPayload`](Self::NoPayload) is always empty.
