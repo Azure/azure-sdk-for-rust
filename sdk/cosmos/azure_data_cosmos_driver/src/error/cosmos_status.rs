@@ -502,7 +502,6 @@ impl SubStatusCode {
             20122 => Some("ClientQueryRewriteBodyInvalid"),
             20123 => Some("ClientDistinctValueTooDeeplyNested"),
             20124 => Some("ClientDistinctContinuationUnsupported"),
-            20125 => Some("ClientDistinctCannotForwardSplit"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -521,6 +520,7 @@ impl SubStatusCode {
             20206 => Some("ClientSplitRetriesExhausted"),
             20207 => Some("ClientBuildResponseInvokedOnFailure"),
             20208 => Some("ClientRootNodeCannotRequestSplit"),
+            20217 => Some("ClientDistinctCannotForwardSplit"),
             20209 => Some("ClientCrossPartitionQueryRequiresContainerRef"),
             20210 => Some("ClientSingletonOperationReturnedEmptyPage"),
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
@@ -1395,12 +1395,6 @@ impl SubStatusCode {
     /// Adding a matching `ORDER BY` makes the query resumable.
     pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = SubStatusCode(20124);
 
-    /// A `DISTINCT` node was asked to forward a partition split (20125).
-    /// `SplitRequired` replaces the node that emits it, which would discard the
-    /// deduplication map and resurrect already-suppressed values, so the split
-    /// is refused here instead of being passed to a parent.
-    pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: SubStatusCode = SubStatusCode(20125);
-
     // ----- 20150-20199: SDK configuration / setup errors -----
 
     /// Two fault-injection rules registered with the same id (20150).
@@ -1485,6 +1479,13 @@ impl SubStatusCode {
     /// A pipeline root node requested `SplitRequired`; splits must be
     /// handled by a parent node (20208).
     pub const CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT: SubStatusCode = SubStatusCode(20208);
+
+    /// A `DISTINCT` node was asked to forward a partition split (20217).
+    /// `SplitRequired` replaces the node that emits it, which would discard the
+    /// deduplication map and resurrect already-suppressed values, so the split
+    /// is refused here instead of being passed to a parent. Unreachable today:
+    /// the wrapped fan-out node absorbs splits internally.
+    pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: SubStatusCode = SubStatusCode(20217);
 
     /// A cross-partition query plan was attempted without a container
     /// reference (20209).
@@ -2355,7 +2356,7 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED),
     };
 
-    /// 500 / 20125 — a `DISTINCT` node was asked to forward a partition split,
+    /// 500 / 20217 — a `DISTINCT` node was asked to forward a partition split,
     /// which would discard its deduplication state.
     pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,

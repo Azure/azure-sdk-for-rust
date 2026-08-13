@@ -36,7 +36,11 @@
 //! [`CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED`], which surfaces
 //! at `OperationPlan::to_continuation_token` time — while the caller still
 //! holds a live plan and can either keep draining in-process or rewrite the
-//! query with a matching `ORDER BY`. .NET and Java both refuse here too.
+//! query with a matching `ORDER BY`. .NET refuses here too, with the same
+//! guidance. Java does not: it emits a token carrying only the source
+//! continuation, then rebuilds an empty map on resume, so an unordered
+//! `DISTINCT` resumed from a Java token silently re-emits values it already
+//! returned.
 //!
 //! # Splits
 //!
@@ -108,8 +112,11 @@ pub(crate) struct Distinct {
     /// therefore suppressed rather than emitted as empty pages. Folded into the
     /// next emitted page so billed RUs are never under-reported.
     suppressed_charge: RequestCharge,
-    /// Diagnostics from those same pages, in arrival order.
-    suppressed_diagnostics: Vec<Arc<DiagnosticsContext>>,
+    /// Diagnostics from those same pages, folded incrementally into a single
+    /// context rather than retained one-per-page: `aggregate_sub_operations`
+    /// re-bounds its record list to `max_request_diagnostics`, so a long run of
+    /// all-duplicate pages cannot grow the artifact without limit.
+    suppressed_diagnostics: Option<Arc<DiagnosticsContext>>,
     /// The most recently suppressed page, kept as a template so accumulated
     /// charge/diagnostics can still be flushed as a final empty page if the
     /// child drains without ever surfacing a terminal page.
@@ -146,7 +153,7 @@ impl Distinct {
             map,
             exhausted: false,
             suppressed_charge: RequestCharge::default(),
-            suppressed_diagnostics: Vec::new(),
+            suppressed_diagnostics: None,
             pending_flush: None,
         }
     }
@@ -190,7 +197,12 @@ impl Distinct {
             response.status(),
             response.diagnostics(),
         );
-        let merged = rebuilt.with_aggregated_prior_diagnostics(&self.suppressed_diagnostics);
+        let merged = match self.suppressed_diagnostics.as_ref() {
+            Some(accumulated) => {
+                rebuilt.with_aggregated_prior_diagnostics(std::slice::from_ref(accumulated))
+            }
+            None => rebuilt,
+        };
         self.clear_suppressed();
         merged
     }
@@ -199,13 +211,22 @@ impl Distinct {
     fn suppress(&mut self, response: CosmosResponse) {
         self.suppressed_charge =
             self.suppressed_charge + response.headers().request_charge.unwrap_or_default();
-        self.suppressed_diagnostics.push(response.diagnostics());
+        let incoming = response.diagnostics();
+        // Fold on arrival so only one context is ever retained. The newest page
+        // stays last, preserving the aggregate's "operation-level fields come
+        // from the final source" contract.
+        self.suppressed_diagnostics = match self.suppressed_diagnostics.take() {
+            None => Some(incoming),
+            Some(accumulated) => {
+                DiagnosticsContext::aggregate_sub_operations(&[accumulated, incoming]).map(Arc::new)
+            }
+        };
         self.pending_flush = Some(response);
     }
 
     fn clear_suppressed(&mut self) {
         self.suppressed_charge = RequestCharge::default();
-        self.suppressed_diagnostics.clear();
+        self.suppressed_diagnostics = None;
         self.pending_flush = None;
     }
 
@@ -215,10 +236,10 @@ impl Distinct {
         let template = self.pending_flush.take()?;
         // `suppressed_diagnostics` already includes the template's own
         // diagnostics, so aggregate the list rather than layering onto it.
-        let diagnostics =
-            DiagnosticsContext::aggregate_sub_operations(&self.suppressed_diagnostics)
-                .map(Arc::new)
-                .unwrap_or_else(|| template.diagnostics());
+        let diagnostics = self
+            .suppressed_diagnostics
+            .clone()
+            .unwrap_or_else(|| template.diagnostics());
         let mut headers = template.headers().clone();
         headers.item_count = Some(0);
         headers.request_charge = Some(self.suppressed_charge);

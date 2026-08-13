@@ -38,7 +38,7 @@ use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
-    models::{ContainerProperties, ThroughputProperties},
+    models::{ContainerProperties, CosmosStatus, ThroughputProperties},
     options::{MaxItemCountHint, QueryOptions},
 };
 use framework::{TestClient, TestOptions};
@@ -189,18 +189,27 @@ pub async fn distinct_query_across_split_returns_each_value_once() -> Result<(),
             // instead of a bare panic that would blame the wrong thing.
             let ordered_token = match ordered_pages.to_continuation_token() {
                 Ok(token) => ContinuationToken::from_string(token.as_str().to_owned()),
-                Err(error) => {
-                    println!(
-                        "Service planned `{ORDERED_QUERY}` as unordered DISTINCT \
-                         (continuation refused: {error}); skipping the ordered-resume half of \
-                         this test. The unordered half below still runs."
+                // Only an explicit "this shape cannot be resumed" refusal is a
+                // legitimate service-plan downgrade. Any other failure is a
+                // continuation regression and must not be swallowed, or this
+                // test would go green while resume is broken.
+                Err(error)
+                    if error.status().sub_status()
+                        == CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED.sub_status() =>
+                {
+                    panic!(
+                        "service planned `{ORDERED_QUERY}` as unordered DISTINCT (continuation \
+                         refused: {error}). The VALUE form with a matching ORDER BY is a required \
+                         contract for resumable DISTINCT; if the service genuinely changed, update \
+                         `plan::distinct_is_ordered` and the docs rather than skipping this test."
                     );
-                    drop(ordered_pages);
-                    let unordered_only =
-                        drain_with_hook(&container_client, UNORDERED_QUERY, || async { Ok(()) })
-                            .await?;
-                    assert_each_value_exactly_once(&unordered_only, "unordered DISTINCT");
-                    return Ok(());
+                }
+                Err(error) => {
+                    return Err(format!(
+                        "minting a continuation for `{ORDERED_QUERY}` failed with an unexpected \
+                         error (not the unsupported-continuation status): {error}"
+                    )
+                    .into());
                 }
             };
             drop(ordered_pages);
