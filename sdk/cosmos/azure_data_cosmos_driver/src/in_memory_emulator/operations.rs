@@ -147,7 +147,7 @@ pub(crate) async fn handle_operation(
 ) -> AsyncRawResponse {
     let start = Instant::now();
     let response = match &parsed.operation {
-        OperationType::ReadAccount => handle_read_account(store, start),
+        OperationType::ReadAccount => handle_read_account(store, parsed, start),
         OperationType::CreateDatabase => {
             if !store.config().is_write_region(region_name) {
                 return write_forbidden_response(start);
@@ -669,6 +669,7 @@ pub(crate) async fn handle_operation(
             binary_response: false,
             is_upsert: matches!(operation_type, OperationType::Upsert),
             a_im: None,
+            request_host: None,
         };
 
         match operation_type {
@@ -1476,6 +1477,7 @@ pub(crate) async fn handle_operation(
             binary_response: false,
             is_upsert: false,
             a_im: None,
+            request_host: None,
         }
     }
 
@@ -1674,8 +1676,12 @@ pub(crate) async fn handle_operation(
 
 // --- Control-Plane Operations ---
 
-fn handle_read_account(store: &Arc<EmulatorStore>, start: Instant) -> AsyncRawResponse {
-    let body = account_properties_to_json(store.config());
+fn handle_read_account(
+    store: &Arc<EmulatorStore>,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let body = account_properties_to_json(store.config(), parsed.request_host.as_deref());
     success_response(StatusCode::Ok, &body, 0.0, "", start)
         .with_item_count(1)
         .build()
@@ -3323,10 +3329,30 @@ fn local_query_info_to_dataflow(
     info: crate::query::plan::LocalQueryInfo,
     original_query: &str,
 ) -> crate::driver::dataflow::query_plan::QueryInfo {
-    let rewritten_query = if info.order_by.is_empty() {
-        Some(String::new())
-    } else {
+    // Compute the per-partition `rewrittenQuery` the real Gateway returns.
+    //
+    // - `ORDER BY` (with or without `OFFSET`/`LIMIT`): synthesize the order-by
+    //   envelope so each partition streams globally-ordered rows. The client's
+    //   `SkipTake` applies any `OFFSET`/`LIMIT`/`TOP` window *on top of* the
+    //   ordered merge, so the window is not pushed per-partition here.
+    // - `OFFSET`/`LIMIT` without ordering: each partition yields `offset +
+    //   limit` documents from the top (no per-partition skip); the client then
+    //   applies the single *global* skip/take. Without this rewrite a
+    //   cross-partition `OFFSET x LIMIT y` would skip `x` in every partition
+    //   *and* again in the client's `SkipTake`, dropping rows.
+    // - `TOP`-only (and everything else): no rewrite. A per-partition `TOP n`
+    //   combined with the client's global `TOP n` is already correct, so the
+    //   empty (no-op) rewritten query is kept.
+    let rewritten_query = if !info.order_by.is_empty() {
         synthesize_order_by_rewritten_query(original_query, &info.order_by_expressions)
+    } else if let Some(limit) = info.limit {
+        synthesize_offset_limit_rewritten_query(
+            original_query,
+            info.offset.unwrap_or(0) as u64,
+            limit as u64,
+        )
+    } else {
+        Some(String::new())
     };
     crate::driver::dataflow::query_plan::QueryInfo {
         distinct_type: local_distinct_type_to_dataflow(info.distinct_type),
@@ -3351,6 +3377,66 @@ fn local_query_info_to_dataflow(
         has_select_value: info.has_select_value,
         has_non_streaming_order_by: false,
     }
+}
+
+/// Synthesizes the per-partition `rewrittenQuery` the real Gateway returns for
+/// `OFFSET`/`LIMIT`: the original query with its trailing `OFFSET <x> LIMIT
+/// <y>` replaced by `OFFSET 0 LIMIT <x + y>`. Each partition then returns the
+/// first `x + y` documents (no per-partition skip) and the client applies the
+/// single global skip/take (see `driver::dataflow::SkipTake`).
+///
+/// The clause boundary is located by lexing rather than string-matching so a
+/// property path such as `c.offset` cannot be mistaken for the keyword. Returns
+/// `Some(String::new())` (no rewrite) if the query carries no `OFFSET` token,
+/// which shouldn't happen for a plan whose `LocalQueryInfo` reports a limit.
+///
+/// Only the *outer* trailing `OFFSET` clause is rewritten: the grammar places it
+/// after any `SELECT`/`WHERE`/`ORDER BY` at bracket depth zero, so a `SELECT`
+/// list containing a subquery with its own `OFFSET`/`LIMIT` (e.g.
+/// `SELECT (SELECT VALUE x FROM x OFFSET 1 LIMIT 2) ... OFFSET 5 LIMIT 10`) is
+/// left intact. We therefore track parenthesis / bracket / brace nesting and
+/// select the *last* `OFFSET` token seen at depth zero rather than the first
+/// token anywhere.
+///
+/// This rewrite is only used for cross-partition `OFFSET`/`LIMIT` *without*
+/// `ORDER BY`. When a query also has `ORDER BY`, `local_query_info_to_dataflow`
+/// synthesizes the order-by envelope instead and the client's `SkipTake`
+/// applies the `OFFSET`/`LIMIT` window on top of the ordered merge, so the two
+/// rewrites never combine into a single per-partition query.
+fn synthesize_offset_limit_rewritten_query(
+    original_query: &str,
+    offset: u64,
+    limit: u64,
+) -> Option<String> {
+    use crate::query::lexer::{Lexer, TokenKind};
+
+    let tokens = Lexer::tokenize(original_query);
+    let mut depth: u32 = 0;
+    let mut outer_offset_idx: Option<usize> = None;
+    for (idx, token) in tokens.iter().enumerate() {
+        match token.kind {
+            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => depth += 1,
+            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
+                depth = depth.saturating_sub(1);
+            }
+            TokenKind::Offset if depth == 0 => {
+                // Skip an `OFFSET` that is really a property access such as
+                // `c.offset`; the keyword only starts a clause when it is not
+                // immediately preceded by a member-access dot.
+                let is_property_access = idx > 0 && tokens[idx - 1].kind == TokenKind::Dot;
+                if !is_property_access {
+                    outer_offset_idx = Some(idx);
+                }
+            }
+            _ => {}
+        }
+    }
+    let Some(offset_idx) = outer_offset_idx else {
+        return Some(String::new());
+    };
+    let prefix = original_query[..tokens[offset_idx].span.start].trim_end();
+    let combined = offset.saturating_add(limit);
+    Some(format!("{prefix} OFFSET 0 LIMIT {combined}"))
 }
 
 /// Synthesizes a single-level rewritten `ORDER BY` envelope query, mirroring
@@ -3416,7 +3502,18 @@ fn synthesize_order_by_rewritten_query(
         Some(t) if t.kind == TokenKind::Identifier => t.text,
         _ => collection_token.text,
     };
-    let payload = match tokens.get(select_idx + 1)? {
+    // Skip a leading `TOP <n>` / `TOP @param`: the global TOP is applied by the
+    // client's `SkipTake` over the merged stream, so the per-partition envelope
+    // must not carry it (a per-partition TOP would drop rows a later partition
+    // needs for the global ordering).
+    let mut payload_idx = select_idx + 1;
+    if tokens
+        .get(payload_idx)
+        .is_some_and(|t| t.kind == TokenKind::Top)
+    {
+        payload_idx += 2;
+    }
+    let payload = match tokens.get(payload_idx)? {
         token if token.kind == TokenKind::Star => alias.to_owned(),
         token if token.kind == TokenKind::Value => original_query
             [token.span.end..tokens[from_idx].span.start]
@@ -3434,7 +3531,20 @@ fn synthesize_order_by_rewritten_query(
     let clause_end = order_idx
         .map(|i| tokens[i].span.start)
         .unwrap_or(original_query.len());
-    let order_by_text = order_idx.map(|i| original_query[tokens[i].span.start..].trim())?;
+    // The per-partition ORDER BY clause stops before any top-level OFFSET/LIMIT:
+    // the window is applied once, globally, by the client's `SkipTake`. Pushing
+    // it per partition would skip/limit locally and again on the client.
+    let order_by_end = order_idx.and_then(|oi| {
+        top_level
+            .iter()
+            .copied()
+            .find(|&i| i > oi && tokens[i].kind == TokenKind::Offset && is_clause_keyword(i))
+            .map(|i| tokens[i].span.start)
+    });
+    let order_by_text = order_idx.map(|i| {
+        let end = order_by_end.unwrap_or(original_query.len());
+        original_query[tokens[i].span.start..end].trim()
+    })?;
 
     // FROM is emitted verbatim; the placeholder is ANDed into WHERE
     // (creating one if absent) — the slot every rewritten query carries.
@@ -5727,6 +5837,33 @@ fn write_forbidden_response(start: Instant) -> AsyncRawResponse {
     .build()
 }
 
+/// Response for a request routed to a region that is no longer part of the
+/// account.
+///
+/// Shape verified against the live service: removing a region makes its regional
+/// endpoint return `403 Forbidden` with `x-ms-substatus: 1008`, a
+/// `"Database Account {id} does not exist"` message, the account id, and
+/// **empty** location lists.
+pub(crate) fn database_account_not_found_response(
+    account_id: &str,
+    start: Instant,
+) -> AsyncRawResponse {
+    let body = serde_json::json!({
+        "code": "Forbidden",
+        "message": format!("Database Account {account_id} does not exist"),
+        "writableLocations": [],
+        "readableLocations": [],
+        "id": account_id,
+    });
+
+    ResponseBuilder::new(StatusCode::Forbidden, start)
+        .with_request_charge(0.0)
+        .with_session_token("")
+        .with_json_body(&body)
+        .with_substatus(1008)
+        .build()
+}
+
 fn bad_request_path_response(path: &str, start: Instant) -> AsyncRawResponse {
     error_response(
         StatusCode::BadRequest,
@@ -5800,6 +5937,36 @@ mod tests {
     use super::*;
 
     #[test]
+    fn synthesize_rewrite_replaces_trailing_offset_limit() {
+        let rewritten =
+            synthesize_offset_limit_rewritten_query("SELECT * FROM c OFFSET 5 LIMIT 10", 5, 10)
+                .unwrap();
+        assert_eq!(rewritten, "SELECT * FROM c OFFSET 0 LIMIT 15");
+    }
+
+    #[test]
+    fn synthesize_rewrite_ignores_property_named_offset() {
+        // `c.offset` is a property path, not the OFFSET keyword; without a
+        // trailing OFFSET clause the query is returned untouched (empty rewrite).
+        let rewritten =
+            synthesize_offset_limit_rewritten_query("SELECT c.offset FROM c", 0, 3).unwrap();
+        assert_eq!(rewritten, "");
+    }
+
+    #[test]
+    fn synthesize_rewrite_targets_outer_offset_not_nested_subquery() {
+        // The SELECT list contains a subquery with its own OFFSET/LIMIT. Only the
+        // outer trailing clause (at bracket depth zero) must be rewritten; the
+        // nested subquery's OFFSET/LIMIT must survive verbatim.
+        let query = "SELECT (SELECT VALUE x FROM x OFFSET 1 LIMIT 2) AS s FROM c OFFSET 5 LIMIT 10";
+        let rewritten = synthesize_offset_limit_rewritten_query(query, 5, 10).unwrap();
+        assert_eq!(
+            rewritten,
+            "SELECT (SELECT VALUE x FROM x OFFSET 1 LIMIT 2) AS s FROM c OFFSET 0 LIMIT 15"
+        );
+    }
+
+    #[test]
     fn pkrange_page_token_round_trips_offset_and_etag() {
         let token = pkrange_page_token(1_000, "\"etag/with/slashes\"");
 
@@ -5808,6 +5975,42 @@ mod tests {
             Some(1_000)
         );
         assert_eq!(parse_pkrange_page_token(&token, "\"other-etag\""), None);
+    }
+
+    #[test]
+    fn order_by_rewrite_strips_offset_limit_window() {
+        // The per-partition envelope must carry only `ORDER BY <exprs>`; the
+        // OFFSET/LIMIT window is applied globally by the client's SkipTake.
+        let rewritten = synthesize_order_by_rewritten_query(
+            "SELECT * FROM c ORDER BY c.rank ASC OFFSET 2 LIMIT 3",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(
+            !rewritten.to_ascii_uppercase().contains("OFFSET"),
+            "envelope must not push OFFSET/LIMIT per partition: {rewritten}"
+        );
+        assert!(rewritten.ends_with("ORDER BY c.rank ASC"));
+    }
+
+    #[test]
+    fn order_by_rewrite_strips_leading_top() {
+        // `SELECT TOP n` combined with ORDER BY: TOP is applied globally by the
+        // client, so the envelope drops it and keeps the projection.
+        let star = synthesize_order_by_rewritten_query(
+            "SELECT TOP 3 * FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(star.contains(r#""payload": c"#));
+        assert!(!star.to_ascii_uppercase().contains(" TOP "));
+
+        let value = synthesize_order_by_rewritten_query(
+            "SELECT TOP 5 VALUE c.id FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(value.contains(r#""payload": c.id"#));
     }
 
     #[test]

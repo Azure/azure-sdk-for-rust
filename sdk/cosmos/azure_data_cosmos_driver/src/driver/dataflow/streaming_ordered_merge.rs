@@ -1236,12 +1236,19 @@ mod tests {
     }
 
     fn ids(response: &crate::models::CosmosResponse) -> Vec<String> {
-        let value: serde_json::Value = serde_json::from_slice(response.body_bytes()).unwrap();
-        value["Documents"]
-            .as_array()
-            .unwrap()
+        // The merge now emits a pre-split `Items` body: each item is one
+        // document payload (`{"id": ...}`), read directly without an envelope.
+        let items = match response.body() {
+            crate::models::ResponseBody::Items(items) => items.clone(),
+            crate::models::ResponseBody::NoPayload => Vec::new(),
+            crate::models::ResponseBody::Bytes(_) => panic!("expected Items body"),
+        };
+        items
             .iter()
-            .map(|item| item["id"].as_str().unwrap().to_owned())
+            .map(|item| {
+                let value: serde_json::Value = serde_json::from_slice(item).unwrap();
+                value["id"].as_str().unwrap().to_owned()
+            })
             .collect()
     }
 

@@ -354,21 +354,37 @@ fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cosm
     )
 }
 
-/// Extracts every item's `id` across `page`'s `Documents`, in wire order.
-/// Auto-detects the page format: a binary-negotiated ORDER BY merge emits a
-/// binary envelope (so the SDK's binary deserializer runs), which is transcoded
-/// to text here before the text parse — mirroring the SDK's format-agnostic
-/// decode choke point.
+/// Extracts every emitted item's `id`, in wire order. The pipeline emits a
+/// pre-split `Items` body (one payload per document). A binary-negotiated merge
+/// emits binary items, so each is transcoded to text before parsing — mirroring
+/// the SDK's per-slice format-agnostic decode.
 fn ids_in_page(page: &CosmosResponse) -> Vec<String> {
-    let bytes = page.body_bytes();
-    let text = crate::binary_json::transcode_to_text(bytes).unwrap();
-    let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
-    value["Documents"]
-        .as_array()
-        .unwrap()
+    let items = match page.body() {
+        crate::models::ResponseBody::Items(items) => items.clone(),
+        crate::models::ResponseBody::NoPayload => Vec::new(),
+        crate::models::ResponseBody::Bytes(_) => panic!("expected Items body"),
+    };
+    items
         .iter()
-        .map(|item| item["id"].as_str().unwrap().to_owned())
+        .map(|item| {
+            let text = crate::binary_json::transcode_to_text(item).unwrap();
+            let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
+            value["id"].as_str().unwrap().to_owned()
+        })
         .collect()
+}
+
+/// Whether every item in an emitted page is Cosmos binary JSON. An empty page
+/// (no items) is treated as binary-neutral (`true`) so a trailing empty page
+/// does not fail a binary-source assertion.
+fn page_is_binary(page: &CosmosResponse) -> bool {
+    match page.body() {
+        crate::models::ResponseBody::Items(items) => {
+            items.iter().all(|item| crate::binary_json::is_binary(item))
+        }
+        crate::models::ResponseBody::NoPayload => true,
+        crate::models::ResponseBody::Bytes(b) => crate::binary_json::is_binary(b),
+    }
 }
 
 async fn drain_all(pipeline: &mut Pipeline, executor: &mut MockRequestExecutor) -> Vec<String> {
@@ -587,7 +603,7 @@ async fn binary_merge_keeps_every_page_binary_including_buffer_only_pages() {
         let mut context = PipelineContext::new(&mut executor, Some(&mut noop_topology));
         match pipeline.next_page(&mut context).await.unwrap() {
             Some(response) => {
-                formats.push(crate::binary_json::is_binary(response.body_bytes()));
+                formats.push(page_is_binary(&response));
                 ids.extend(ids_in_page(&response));
             }
             None => break,

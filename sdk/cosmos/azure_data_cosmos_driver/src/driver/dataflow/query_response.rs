@@ -14,9 +14,9 @@
 //!   strict [`EnvelopeRow`]s (envelope shape `{"_rid", "orderByItems",
 //!   "payload"}`), retaining `payload` as raw JSON bytes.
 //!   [`PageAggregator`] accumulates charge/diagnostics across pages, and
-//!   [`PageAggregator::build_page`] reconstructs a synthetic
-//!   `Documents`-array [`CosmosResponse`] — the same wire shape every
-//!   other feed node returns.
+//!   [`PageAggregator::build_page`] emits the ordered payloads as a pre-split
+//!   [`ResponseBody::Items`](crate::models::ResponseBody::Items) body, so the
+//!   calling SDK reads each document directly without re-parsing an envelope.
 //!
 //! Backend continuations are never copied onto the emitted page's headers:
 //! `OperationPlan::to_continuation_token` owns the client-issued token, and
@@ -495,13 +495,14 @@ impl PageAggregator {
     /// Builds the emitted page from the accumulated aggregate plus the
     /// final ordered list of raw item payloads.
     ///
-    /// Body is a synthetic `{"_rid": "", "Documents": [...], "_count": N}`
-    /// envelope of `payloads`' bytes — the wire shape every other feed node
-    /// returns. `_rid` is left empty (per-item `_rid` identifies each item, not
-    /// the feed-level one). When the source pages were binary, the assembled
-    /// envelope is re-encoded to Cosmos binary JSON so the SDK's binary
-    /// deserializer (with integral-`Double`→integer coercion) decodes it, exactly
-    /// as it would a passthrough binary query; text sources are emitted verbatim.
+    /// The body is a [`ResponseBody::Items`] whose entries are the ordered
+    /// `payloads`' bytes — one per document. Emitting pre-split items (rather
+    /// than re-serializing a `{"Documents":[...]}` envelope only for the SDK to
+    /// re-parse) lets the calling SDK read each document directly. When the
+    /// source pages were binary, each item is re-encoded to Cosmos binary JSON
+    /// so the SDK decodes it through the binary deserializer (with
+    /// integral-`Double`→integer coercion), exactly as a passthrough binary
+    /// query; text sources are emitted verbatim.
     ///
     /// It's valid for no backend page to have been absorbed (page
     /// assembled entirely from previously-buffered rows); it then reports
@@ -510,35 +511,30 @@ impl PageAggregator {
         self,
         payloads: &[Box<RawValue>],
     ) -> crate::error::Result<CosmosResponse> {
-        let mut body =
-            Vec::with_capacity(64 + payloads.iter().map(|p| p.get().len() + 1).sum::<usize>());
-        body.extend_from_slice(br#"{"_rid":"","Documents":["#);
-        for (i, payload) in payloads.iter().enumerate() {
-            if i > 0 {
-                body.push(b',');
-            }
-            body.extend_from_slice(payload.get().as_bytes());
-        }
-        body.extend_from_slice(br#"],"_count":"#);
-        body.extend_from_slice(payloads.len().to_string().as_bytes());
-        body.push(b'}');
-
-        // When the source pages were binary, re-encode the assembled envelope to
-        // Cosmos binary JSON so the SDK decodes it through the binary
-        // deserializer (which coerces a service-echoed integral `Double` into an
-        // integer target). Emitting text here would route the same payloads
-        // through the text deserializer, which hard-fails on that double — the
-        // divergence a passthrough binary query does not have. Text sources keep
-        // the zero-extra-copy text envelope.
-        let body = if self.emit_binary {
-            crate::binary_json::transcode_to_binary(&body).map_err(|e| {
-                envelope_error(format!(
-                    "failed to transcode merged ORDER BY envelope page to binary: {e}"
-                ))
-            })?
-        } else {
-            body
-        };
+        // When the source pages were binary, re-encode each item to Cosmos
+        // binary JSON so the SDK decodes it through the binary deserializer
+        // (which coerces a service-echoed integral `Double` into an integer
+        // target). Emitting text items would route them through the text
+        // deserializer, which hard-fails on that double — the divergence a
+        // passthrough binary query does not have. Text sources emit the item
+        // bytes verbatim.
+        let items: Vec<bytes::Bytes> = payloads
+            .iter()
+            .map(|payload| {
+                let text = payload.get().as_bytes();
+                if self.emit_binary {
+                    crate::binary_json::transcode_to_binary(text)
+                        .map(bytes::Bytes::from)
+                        .map_err(|e| {
+                            envelope_error(format!(
+                                "failed to transcode merged ORDER BY item to binary: {e}"
+                            ))
+                        })
+                } else {
+                    Ok(bytes::Bytes::copy_from_slice(text))
+                }
+            })
+            .collect::<crate::error::Result<Vec<_>>>()?;
 
         let diagnostics = DiagnosticsContext::aggregate_sub_operations(&self.diagnostics_sources)
             .map(Arc::new)
@@ -558,7 +554,7 @@ impl PageAggregator {
         };
 
         Ok(CosmosResponse::new(
-            ResponseBody::from_bytes(body),
+            ResponseBody::from_items(items),
             headers,
             self.status,
             diagnostics,
@@ -860,7 +856,7 @@ mod tests {
         // echoes a document's integer field as an integral `Double`. A
         // passthrough binary query coerces it into the integer target via the
         // binary deserializer; the merge must do the same. Emitting the merged
-        // envelope as text instead would route the payload through the text
+        // items as text instead would route the payload through the text
         // deserializer, which hard-fails on the float for a `u64` field.
         #[derive(serde::Deserialize, PartialEq, Debug)]
         struct Doc {
@@ -889,45 +885,44 @@ mod tests {
         aggregator.emit_binary = true;
         let response = aggregator.build_page(&[payload_raw]).unwrap();
 
-        // The merge emits a binary envelope so the SDK's binary deserializer runs.
-        let bytes = match response.body() {
-            ResponseBody::Bytes(b) => b.clone(),
-            other => panic!("expected a bytes body, got {other:?}"),
+        // The merge emits binary items so the SDK's binary deserializer runs.
+        let items = match response.body() {
+            ResponseBody::Items(items) => items.clone(),
+            other => panic!("expected an items body, got {other:?}"),
         };
+        assert_eq!(items.len(), 1);
         assert!(
-            crate::binary_json::is_binary(&bytes),
-            "a binary source must produce a binary merged envelope"
+            crate::binary_json::is_binary(&items[0]),
+            "a binary source must produce binary merged items"
         );
 
         // And that deserializer coerces the integral double into the u64 target.
-        #[derive(serde::Deserialize)]
-        struct Feed {
-            #[serde(alias = "Documents")]
-            documents: Vec<Doc>,
-        }
-        let feed: Feed = crate::binary_json::from_slice(&bytes).unwrap();
+        let doc: Doc = crate::binary_json::from_slice(&items[0]).unwrap();
         assert_eq!(
-            feed.documents,
-            vec![Doc {
+            doc,
+            Doc {
                 id: "d1".to_owned(),
                 wide: 9_007_199_254_740_992,
-            }],
+            },
         );
     }
 
     #[test]
-    fn build_page_text_source_emits_text_envelope() {
-        // A text source keeps the zero-extra-copy text envelope — no binary
-        // re-encode, so existing text ORDER BY users are unaffected.
+    fn build_page_text_source_emits_text_items() {
+        // A text source keeps the item bytes verbatim — no binary re-encode, so
+        // existing text ORDER BY users are unaffected.
         let payload = serde_json::value::to_raw_value(&serde_json::json!({"id":"d1"})).unwrap();
         let aggregator = PageAggregator::new();
         let response = aggregator.build_page(&[payload]).unwrap();
         match response.body() {
-            ResponseBody::Bytes(b) => assert!(
-                !crate::binary_json::is_binary(b),
-                "a text source must stay text"
-            ),
-            other => panic!("expected a bytes body, got {other:?}"),
+            ResponseBody::Items(items) => {
+                assert_eq!(items.len(), 1);
+                assert!(
+                    !crate::binary_json::is_binary(&items[0]),
+                    "a text source must stay text"
+                );
+            }
+            other => panic!("expected an items body, got {other:?}"),
         }
     }
 
@@ -977,7 +972,7 @@ mod tests {
     }
 
     #[test]
-    fn page_aggregator_sums_charge_and_builds_documents_envelope() {
+    fn page_aggregator_sums_charge_and_builds_items_body() {
         let mut aggregator = PageAggregator::new();
         aggregator.absorb(&response(b"{}")).unwrap();
         aggregator.absorb(&response(b"{}")).unwrap();
@@ -986,11 +981,9 @@ mod tests {
             RawValue::from_string(r#"{"id":"b"}"#.to_owned()).unwrap(),
         ];
         let page = aggregator.build_page(&payloads).unwrap();
-        let body = page.body_bytes();
-        let value: serde_json::Value = serde_json::from_slice(body).unwrap();
-        assert_eq!(value["Documents"].as_array().unwrap().len(), 2);
-        assert_eq!(value["Documents"][0]["id"], "a");
-        assert_eq!(value["_count"], 2);
+        // The emitted body is an `Items` list of the payload bytes verbatim.
+        assert_eq!(item_bytes(&page), vec![r#"{"id":"a"}"#, r#"{"id":"b"}"#]);
+        assert_eq!(page.headers().item_count, Some(2));
         assert!(page.headers().continuation.is_none());
     }
 
@@ -1119,15 +1112,27 @@ mod tests {
         );
     }
 
+    /// The exact per-item bytes of a feed page's `Items` body, so tests assert
+    /// the emitted output directly rather than a re-parsed shape.
+    fn item_bytes(page: &CosmosResponse) -> Vec<String> {
+        match page.body() {
+            ResponseBody::Items(items) => items
+                .iter()
+                .map(|b| String::from_utf8(b.to_vec()).unwrap())
+                .collect(),
+            ResponseBody::NoPayload => Vec::new(),
+            ResponseBody::Bytes(_) => panic!("expected an Items feed body"),
+        }
+    }
+
     #[test]
     fn page_aggregator_builds_empty_page_when_polled_children_yielded_no_rows() {
         // At least one page absorbed, but zero rows contributed.
         let mut aggregator = PageAggregator::new();
         aggregator.absorb(&response(b"{}")).unwrap();
         let page = aggregator.build_page(&[]).unwrap();
-        let value: serde_json::Value = serde_json::from_slice(page.body_bytes()).unwrap();
-        assert_eq!(value["Documents"].as_array().unwrap().len(), 0);
-        assert_eq!(value["_count"], 0);
+        assert!(item_bytes(&page).is_empty());
+        assert_eq!(page.headers().item_count, Some(0));
     }
 
     #[test]
@@ -1141,7 +1146,8 @@ mod tests {
             page.headers().request_charge,
             Some(crate::models::RequestCharge::new(0.0))
         );
-        let value: serde_json::Value = serde_json::from_slice(page.body_bytes()).unwrap();
-        assert_eq!(value["Documents"][0]["id"], "a");
+        // The emitted body is the payload bytes verbatim, one item per document.
+        assert_eq!(item_bytes(&page), vec![r#"{"id":"a"}"#]);
+        assert_eq!(page.headers().item_count, Some(1));
     }
 }

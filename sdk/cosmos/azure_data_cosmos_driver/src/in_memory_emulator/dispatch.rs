@@ -104,6 +104,10 @@ pub(crate) struct ParsedRequest {
     /// read-feed handler consults this to decide whether to return flat
     /// documents or full-fidelity envelopes.
     pub a_im: Option<String>,
+    /// Host the request arrived on. The real gateway derives the account `id`
+    /// in the account-read response from this rather than reporting a fixed
+    /// name, so a client calling a regional endpoint sees the regional id.
+    pub request_host: Option<String>,
 }
 
 // Header name constants for request parsing
@@ -303,6 +307,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         is_batch,
         is_upsert,
         a_im,
+        request_host: url.host_str().map(|h| h.to_string()),
     }
 }
 
@@ -477,11 +482,12 @@ fn resolve_operation(
     }
 }
 
-/// Resolves the region name from the request URL by matching against configured regions.
-pub(crate) fn resolve_region<'a>(
+/// Resolves the region from the request URL, including regions that have been
+/// removed from the account (see [`super::config::RegionStatus`]).
+pub(crate) fn resolve_region(
     url: &azure_core::http::Url,
-    config: &'a super::config::VirtualAccountConfig,
-) -> Option<&'a str> {
+    config: &super::config::VirtualAccountConfig,
+) -> Option<super::config::ResolvedRegion> {
     config.region_for_url(url)
 }
 

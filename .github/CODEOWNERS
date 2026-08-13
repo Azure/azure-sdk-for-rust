@@ -45,6 +45,9 @@
 # PRLabel: %Azure.Core
 /sdk/core/               @heaths @xirzec @RickWinter @LarryOsterman
 
+# PRLabel: %Azure.Core
+/sdk/core/azure_core_amqp/    @heaths @xirzec @RickWinter @LarryOsterman @j7nw4r @sagar0207 @SwayGom @sjkwak @hmlam
+
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Identity
 # PRLabel: %Azure.Identity
@@ -92,7 +95,7 @@
 ###########
 /eng/                    @danieljurek @heaths @xirzec @RickWinter
 /eng/common/             @Azure/azure-sdk-eng
-/.github/workflows/      @Azure/azure-sdk-eng
+/.github/workflows/      @heaths @xirzec @Azure/azure-sdk-eng
 /.github/CODEOWNERS      @xirzec @RickWinter @Azure/azure-sdk-eng
 /.config/1espt/          @benbp
 /sdk/canary/             @danieljurek
