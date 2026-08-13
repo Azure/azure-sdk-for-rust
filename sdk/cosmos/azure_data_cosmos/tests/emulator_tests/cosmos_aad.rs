@@ -49,12 +49,8 @@ struct AadTestItem {
 /// invoked for the Cosmos scope, guarding against silently exercising key auth.
 #[tokio::test]
 #[cfg_attr(
-    all(not(cosmos_aad_supported), not(test_category = "emulator_inmemory")),
-    ignore = "requires an AAD-enabled Cosmos target (emulator with /enableaadauthentication, or a live account with the Cosmos data-plane role assignment)"
-)]
-#[cfg_attr(
-    test_category = "emulator_inmemory",
-    ignore = "hosted in-memory emulator authentication is deferred to PR3"
+    any(not(cosmos_aad_supported), test_category = "emulator_inmemory"),
+    ignore = "requires an AAD-enabled Cosmos target (emulator with /enableaadauthentication, or a live account with the Cosmos data-plane role assignment); hosted in-memory emulator authentication is deferred to a follow-up PR"
 )]
 pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -154,12 +150,8 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
 /// the `readMetadata` data action the SDK requires on its first request.
 #[tokio::test]
 #[cfg_attr(
-    all(not(cosmos_aad_supported), not(test_category = "emulator_inmemory")),
-    ignore = "requires an AAD-enabled Cosmos target (emulator with /enableaadauthentication, or a live account with the Cosmos data-plane role assignment)"
-)]
-#[cfg_attr(
-    test_category = "emulator_inmemory",
-    ignore = "hosted in-memory emulator authentication is deferred to PR3"
+    any(not(cosmos_aad_supported), test_category = "emulator_inmemory"),
+    ignore = "requires an AAD-enabled Cosmos target (emulator with /enableaadauthentication, or a live account with the Cosmos data-plane role assignment); hosted in-memory emulator authentication is deferred to a follow-up PR"
 )]
 pub async fn aad_read_container_metadata() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
