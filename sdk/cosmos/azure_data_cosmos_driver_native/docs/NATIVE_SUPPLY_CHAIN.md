@@ -10,9 +10,8 @@ This document explains the release design for the static Cosmos native driver
 consumed by Go. It describes what is built, why the static library cannot be
 signed directly, and which release files establish trust.
 
-The pipeline definition is
-[`pipeline/native-driver.yml`](../pipeline/native-driver.yml). The operational
-commands are documented in [`pipeline/README.md`](../pipeline/README.md).
+The pipeline definition is `pipeline/native-driver.yml`. The operational
+commands are documented in `pipeline/README.md`.
 
 ## Scope
 
