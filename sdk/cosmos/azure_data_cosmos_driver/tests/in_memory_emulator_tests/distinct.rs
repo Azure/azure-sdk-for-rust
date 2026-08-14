@@ -380,6 +380,83 @@ async fn catalog_emulator_error_scenarios_fail_as_expected() {
 /// Mirrors .NET `DistinctQueryTests.TestDistinct_ContinuationTokenSupportAsync`
 /// and Java `DistinctQueryTests.queryDocumentsWithOrderBy`.
 #[tokio::test]
+async fn distinct_under_a_window_resumes_across_tokens() {
+    // A continuation for `DISTINCT` + `OFFSET`/`LIMIT`/`TOP` nests
+    // `SkipTake { child: Distinct { .. } }`. Resuming has to peel and restore
+    // both layers in the right order: lose the window's remaining budget and
+    // the query over-returns, lose the dedup hash and it repeats the boundary
+    // value. Draining page-by-page must equal a single drain either way.
+    for scenario_id in [
+        "ordered_distinct_top_resume_round_trip",
+        "ordered_distinct_offset_limit_resume_round_trip",
+    ] {
+        let scenarios = catalog();
+        let scenario = scenarios
+            .scenarios
+            .iter()
+            .find(|s| s.id == scenario_id)
+            .unwrap_or_else(|| panic!("catalog carries {scenario_id}"));
+
+        let (_emulator, driver) = setup().await;
+        let container = driver
+            .resolve_container("testdb", "testcoll")
+            .await
+            .expect("container resolves");
+        seed(&driver, &container, &scenario.documents).await;
+
+        let single = drain_all(&driver, &container, &scenario.query, 10).await;
+        assert_eq!(
+            single, scenario.expected_values,
+            "{scenario_id}: single drain must honor the window over deduplicated values"
+        );
+
+        for &page_size in &scenario.page_sizes {
+            let mut resumed = Vec::new();
+            let mut token = None;
+            loop {
+                let mut plan = Box::pin(driver.plan_operation(
+                    query_operation(&container, &scenario.query, page_size),
+                    &OperationOptions::default(),
+                    token.as_ref(),
+                    &PlanOptions::default(),
+                ))
+                .await
+                .expect("plan builds (fresh or resumed)");
+
+                let Some(response) = driver
+                    .execute_plan(
+                        &mut plan,
+                        Some(container.clone()),
+                        OperationOptions::default(),
+                    )
+                    .await
+                    .expect("page executes")
+                else {
+                    break;
+                };
+                resumed.extend(documents_of(response));
+
+                // Once the window is satisfied the pipeline is drained and
+                // mints no further token; stop rather than replaying the last.
+                match plan.to_continuation_token() {
+                    Ok(next) => token = Some(next),
+                    Err(_) => break,
+                }
+                if resumed.len() > scenario.expected_values.len() + 4 {
+                    panic!("{scenario_id}: resume loop did not converge; got {resumed:?}");
+                }
+            }
+
+            assert_eq!(
+                resumed, scenario.expected_values,
+                "{scenario_id}: resuming at page size {page_size} must not drop, \
+                 duplicate, or over-return rows"
+            );
+        }
+    }
+}
+
+#[tokio::test]
 async fn ordered_distinct_resume_matches_a_single_drain() {
     let scenarios = catalog();
     let scenario = scenarios
@@ -462,6 +539,9 @@ async fn split_mid_drain_does_not_reemit_deduplicated_values() {
     for scenario_id in [
         "split_mid_query_unordered_does_not_reemit",
         "split_mid_query_ordered_does_not_reemit",
+        // `DISTINCT` under a window: the split must preserve both the dedup
+        // state and the window's remaining budget.
+        "split_mid_query_windowed_distinct_does_not_reemit",
     ] {
         let scenarios = catalog();
         let scenario = scenarios

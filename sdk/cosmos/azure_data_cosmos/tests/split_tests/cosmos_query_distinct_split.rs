@@ -51,6 +51,11 @@ const PAGE_SIZE: u32 = 5;
 
 const UNORDERED_QUERY: &str = "SELECT DISTINCT VALUE c.groupKey FROM c";
 const ORDERED_QUERY: &str = "SELECT DISTINCT VALUE c.groupKey FROM c ORDER BY c.groupKey";
+/// `DISTINCT` composed under a global row window. `GROUP_COUNT` distinct keys
+/// exist, so skipping one and taking two must yield exactly two — the window
+/// counts deduplicated values, not raw rows.
+const WINDOWED_QUERY: &str =
+    "SELECT DISTINCT VALUE c.groupKey FROM c ORDER BY c.groupKey OFFSET 1 LIMIT 2";
 
 /// A seeded document whose `groupKey` deliberately repeats across every
 /// partition key, so deduplication has to be global.
@@ -274,6 +279,37 @@ pub async fn distinct_query_across_split_returns_each_value_once() -> Result<(),
             assert_eq!(
                 ordered_collected, sorted,
                 "an ordered DISTINCT resume must preserve global sort order across the split"
+            );
+
+            // ── DISTINCT under a row window, drained across the split ─────
+            //
+            // `SkipTake` wraps `Distinct`, so a split must preserve both the
+            // dedup state and the window's remaining budget. Losing the former
+            // re-emits a value the window already paid for; losing the latter
+            // restarts the offset and over-returns. The emulator covers this
+            // with a simulated split — this is the same shape against a real
+            // one, where the fan-out is genuinely rebuilt.
+            let windowed =
+                drain_with_hook(&container_client, WINDOWED_QUERY, || async { Ok(()) }).await?;
+            assert_eq!(
+                windowed.len(),
+                2,
+                "`{WINDOWED_QUERY}` must apply its window to deduplicated values across the \
+                 split, got {windowed:?}"
+            );
+            let mut windowed_sorted = windowed.clone();
+            windowed_sorted.sort();
+            windowed_sorted.dedup();
+            assert_eq!(
+                windowed_sorted.len(),
+                windowed.len(),
+                "windowed DISTINCT across a split returned duplicates: {windowed:?}"
+            );
+            let mut in_order = windowed.clone();
+            in_order.sort();
+            assert_eq!(
+                windowed, in_order,
+                "windowed DISTINCT must preserve global sort order across the split"
             );
 
             Ok(())
