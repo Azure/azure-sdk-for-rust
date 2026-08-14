@@ -18,7 +18,7 @@ use azure_storage_blob::models::{
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsHierarchicalOptions,
     BlobContainerClientListBlobsOptions, BlobContainerClientSetMetadataOptions, BlobType,
     BlockBlobClientUploadOptions, CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState,
-    LeaseStatus, ListBlobsAcceptFormat, ListBlobsIncludeItem,
+    LeaseStatus, StorageResponseFormat, ListBlobsIncludeItem,
     PageBlobClientSetSequenceNumberOptions, RehydratePriority, SequenceNumberActionType,
     SignedIdentifiers, StorageErrorCode,
 };
@@ -186,7 +186,7 @@ async fn test_list_blobs_arrow_populates_properties(
     // format the live service returns.
     let page = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
-            accept: Some(ListBlobsAcceptFormat::Arrow),
+            response_format: Some(StorageResponseFormat::Arrow),
             include: Some(vec![
                 ListBlobsIncludeItem::Metadata,
                 ListBlobsIncludeItem::Tags,
@@ -264,7 +264,7 @@ async fn test_list_blobs_hierarchical_arrow(ctx: TestContext) -> Result<(), Box<
         .list_blobs_hierarchical(
             "/",
             Some(BlobContainerClientListBlobsHierarchicalOptions {
-                accept: Some(ListBlobsAcceptFormat::Arrow),
+                response_format: Some(StorageResponseFormat::Arrow),
                 ..Default::default()
             }),
         )?
@@ -306,7 +306,7 @@ async fn test_list_blobs_arrow_end_before(ctx: TestContext) -> Result<(), Box<dy
     // Act: Apache Arrow range listing stops before "cc.txt" (exclusive).
     let page = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
-            accept: Some(ListBlobsAcceptFormat::Arrow),
+            response_format: Some(StorageResponseFormat::Arrow),
             end_before: Some("cc.txt".to_string()),
             ..Default::default()
         }))?

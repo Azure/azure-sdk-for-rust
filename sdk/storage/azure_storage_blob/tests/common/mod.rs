@@ -31,7 +31,7 @@ use azure_storage_blob::{
     models::{
         BlobContainerClientListBlobsOptions, BlobItem, BlockBlobClientUploadOptions,
         BlockBlobClientUploadResult, BlockLookupList, EncryptionAlgorithmType,
-        ListBlobsAcceptFormat, ListBlobsIncludeItem,
+        StorageResponseFormat, ListBlobsIncludeItem,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
     BlobServiceClient, BlobServiceClientOptions,
@@ -242,12 +242,12 @@ pub async fn create_test_blob(
 
 pub async fn list_blobs_page(
     container_client: &BlobContainerClient,
-    accept: ListBlobsAcceptFormat,
+    accept: StorageResponseFormat,
     include: Option<Vec<ListBlobsIncludeItem>>,
 ) -> Result<Vec<BlobItem>> {
     let page = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
-            accept: Some(accept),
+            response_format: Some(accept),
             include,
             ..Default::default()
         }))?
@@ -266,7 +266,7 @@ pub async fn list_blobs_arrow(
     container_client: &BlobContainerClient,
     include: Option<Vec<ListBlobsIncludeItem>>,
 ) -> Result<Vec<BlobItem>> {
-    list_blobs_page(container_client, ListBlobsAcceptFormat::Arrow, include).await
+    list_blobs_page(container_client, StorageResponseFormat::Arrow, include).await
 }
 
 pub trait ClientOptionsExt {

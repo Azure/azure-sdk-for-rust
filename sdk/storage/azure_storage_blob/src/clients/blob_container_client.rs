@@ -4,20 +4,21 @@
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
 use crate::{
-    arrow_decode::decode_next_marker,
+    arrow_decode::{decode_next_marker, AutoFormat},
     models::{
         BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
         ListBlobsHierarchicalResponse, ListBlobsResponse, StorageErrorCode,
     },
-    AutoFormat, BlobClient,
+    BlobClient,
 };
 use azure_core::{
     credentials::TokenCredential,
-    error::ErrorKind,
+    error::{CheckSuccessOptions, ErrorKind},
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientMethodOptions, Pager, Pipeline, RawResponse, StatusCode, Url,
+        Method, Pager, Pipeline, PipelineSendOptions, RawResponse, Request, StatusCode, Url,
+        UrlExt,
     },
     tracing, Result,
 };
@@ -127,8 +128,8 @@ impl BlobContainerClient {
     ///
     /// Apache Arrow is requested by default, with automatic XML fallback. To require XML, set
     /// [`BlobContainerClientListBlobsOptions::accept`] to
-    /// [`ListBlobsAcceptFormat::Xml`](crate::models::ListBlobsAcceptFormat::Xml). See
-    /// [`ListBlobsAcceptFormat`](crate::models::ListBlobsAcceptFormat) for the available response
+    /// [`StorageResponseFormat::Xml`](crate::models::StorageResponseFormat::Xml). See
+    /// [`StorageResponseFormat`](crate::models::StorageResponseFormat) for the available response
     /// formats.
     ///
     /// Over Apache Arrow the service returns only the blob rows and next marker, so the response
@@ -144,30 +145,71 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
     ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
         let options = options.unwrap_or_default().into_owned();
-        let accept = options.accept.unwrap_or_default().as_header_value();
+        let accept = options.response_format.unwrap_or_default().as_header_value();
         let pager_options = options.method_options.clone();
-        let client = Arc::new(BlobContainerClient {
-            endpoint: self.endpoint.clone(),
-            pipeline: self.pipeline.clone(),
-            version: self.version.clone(),
-            tracer: self.tracer.clone(),
-        });
+        let pipeline = self.pipeline.clone();
+        let version = self.version.clone();
+        let mut first_url = self.endpoint.clone();
+        let mut query_builder = first_url.query_builder();
+        query_builder
+            .append_pair("comp", "list")
+            .append_pair("restype", "container");
+        if let Some(end_before) = options.end_before.as_ref() {
+            query_builder.set_pair("endBefore", end_before);
+        }
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
+                "include",
+                include
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
+        }
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            query_builder.set_pair("maxresults", maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
 
         Ok(Pager::new(
             move |state: PagerState, pager_options| {
-                let client = client.clone();
-                let mut options = options.to_internal(ClientMethodOptions {
-                    context: pager_options.context,
-                });
+                let mut url = first_url.clone();
                 if let PagerState::More(continuation) = state {
-                    options.marker = Some(continuation.into());
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", continuation.as_ref());
+                    query_builder.build();
                 }
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", accept);
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
                 Box::pin(async move {
-                    let response = client
-                        .list_blobs_internal(accept.to_string(), Some(options))
+                    let response = pipeline
+                        .send(
+                            &pager_options.context,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
                         .await?;
                     let (status, headers, body) = response.deconstruct();
-                    let body = body.collect().await?;
                     let next_marker = decode_next_marker(&headers, &body)?;
                     let response = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match next_marker {
@@ -206,36 +248,72 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobsHierarchicalOptions<'_>>,
     ) -> Result<Pager<ListBlobsHierarchicalResponse, AutoFormat>> {
         let options = options.unwrap_or_default().into_owned();
-        let accept = options.accept.unwrap_or_default().as_header_value();
-        let delimiter = delimiter.to_string();
+        let accept = options.response_format.unwrap_or_default().as_header_value();
         let pager_options = options.method_options.clone();
-        let client = Arc::new(BlobContainerClient {
-            endpoint: self.endpoint.clone(),
-            pipeline: self.pipeline.clone(),
-            version: self.version.clone(),
-            tracer: self.tracer.clone(),
-        });
+        let pipeline = self.pipeline.clone();
+        let version = self.version.clone();
+        let mut first_url = self.endpoint.clone();
+        let mut query_builder = first_url.query_builder();
+        query_builder
+            .append_pair("comp", "list")
+            .append_pair("restype", "container");
+        query_builder.set_pair("delimiter", delimiter);
+        if let Some(end_before) = options.end_before.as_ref() {
+            query_builder.set_pair("endBefore", end_before);
+        }
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
+                "include",
+                include
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
+        }
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            query_builder.set_pair("maxresults", maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
 
         Ok(Pager::new(
             move |state: PagerState, pager_options| {
-                let client = client.clone();
-                let delimiter = delimiter.clone();
-                let mut options = options.to_internal(ClientMethodOptions {
-                    context: pager_options.context,
-                });
+                let mut url = first_url.clone();
                 if let PagerState::More(continuation) = state {
-                    options.marker = Some(continuation.into());
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", continuation.as_ref());
+                    query_builder.build();
                 }
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", accept);
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
                 Box::pin(async move {
-                    let response = client
-                        .list_blobs_hierarchical_internal(
-                            accept.to_string(),
-                            &delimiter,
-                            Some(options),
+                    let response = pipeline
+                        .send(
+                            &pager_options.context,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
                         )
                         .await?;
                     let (status, headers, body) = response.deconstruct();
-                    let body = body.collect().await?;
                     let next_marker = decode_next_marker(&headers, &body)?;
                     let response = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match next_marker {
@@ -255,10 +333,10 @@ impl BlobContainerClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::ListBlobsAcceptFormat;
-    use arrow_array::{builder::StringBuilder, RecordBatch};
-    use arrow_ipc::writer::StreamWriter;
-    use arrow_schema::{DataType, Field, Schema};
+    use crate::models::StorageResponseFormat;
+    use arrow::array::{builder::StringBuilder, RecordBatch};
+    use arrow::datatypes::{DataType, Field, Schema};
+    use arrow::ipc::writer::StreamWriter;
     use azure_core::{
         http::{
             headers::{Headers, ACCEPT, CONTENT_TYPE},
@@ -404,7 +482,7 @@ mod tests {
     async fn list_blobs_mock_explicit_xml() -> Result<()> {
         let client = container_client_with(xml_mock_client_with_accept("application/xml"));
         let options = BlobContainerClientListBlobsOptions {
-            accept: Some(ListBlobsAcceptFormat::Xml),
+            response_format: Some(StorageResponseFormat::Xml),
             ..Default::default()
         };
         let names = collect_blob_names(client.list_blobs(Some(options))?).await?;
@@ -432,7 +510,7 @@ mod tests {
             .boxed()
         })));
         let options = BlobContainerClientListBlobsOptions {
-            accept: Some(ListBlobsAcceptFormat::Arrow),
+            response_format: Some(StorageResponseFormat::Arrow),
             end_before: Some("cc.txt".to_string()),
             ..Default::default()
         };

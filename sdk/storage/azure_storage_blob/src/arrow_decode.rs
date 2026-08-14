@@ -5,13 +5,14 @@ use crate::models::{
     BlobHierarchyList, BlobItem, BlobMetadata, BlobPrefix, BlobProperties, BlobTag, BlobTags,
     ListBlobsHierarchicalResponse, ListBlobsResponse, ObjectReplicationMetadata,
 };
-use arrow_array::{
+use arrow::array::{
     Array, BooleanArray, Int32Array, Int64Array, MapArray, RecordBatch, StringArray,
     TimestampMicrosecondArray, TimestampMillisecondArray, TimestampNanosecondArray,
     TimestampSecondArray, UInt32Array, UInt64Array,
 };
-use arrow_ipc::reader::StreamReader;
-use arrow_schema::{ArrowError, DataType, TimeUnit};
+use arrow::datatypes::{DataType, TimeUnit};
+use arrow::error::ArrowError;
+use arrow::ipc::reader::StreamReader;
 use azure_core::{
     base64,
     error::{Error, ErrorKind},
@@ -414,10 +415,10 @@ mod tests {
         AccessTier, ArchiveStatus, BlobType, CopyStatus, ImmutabilityPolicyMode, LeaseDuration,
         LeaseState, LeaseStatus, RehydratePriority,
     };
-    use arrow_array::builder::{MapBuilder, StringBuilder};
-    use arrow_array::ArrayRef;
-    use arrow_ipc::writer::StreamWriter;
-    use arrow_schema::{Field, Schema};
+    use arrow::array::builder::{MapBuilder, StringBuilder};
+    use arrow::array::ArrayRef;
+    use arrow::datatypes::{Field, Schema};
+    use arrow::ipc::writer::StreamWriter;
     use std::collections::HashMap;
     use std::sync::Arc;
 
