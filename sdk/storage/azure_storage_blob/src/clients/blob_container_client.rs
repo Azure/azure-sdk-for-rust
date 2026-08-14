@@ -127,7 +127,7 @@ impl BlobContainerClient {
     /// Returns a list of the blobs in the specified container.
     ///
     /// Apache Arrow is requested by default, with automatic XML fallback. To require XML, set
-    /// [`BlobContainerClientListBlobsOptions::accept`] to
+    /// [`BlobContainerClientListBlobsOptions::response_format`] to
     /// [`StorageResponseFormat::Xml`](crate::models::StorageResponseFormat::Xml). See
     /// [`StorageResponseFormat`](crate::models::StorageResponseFormat) for the available response
     /// formats.
