@@ -1169,12 +1169,12 @@ pub async fn distinct_combined_with_unsupported_stages_is_rejected() -> Result<(
             let container = test_data::create_container_with_items(db_client, items, None).await?;
 
             // Each of these needs a composition stage the driver does not have
-            // yet: GROUP BY, TOP, aggregates, and OFFSET/LIMIT respectively.
+            // yet: GROUP BY and aggregates. `TOP` and `OFFSET`/`LIMIT` are no
+            // longer here — `SkipTake` composes above `DISTINCT`, so those
+            // shapes are servable and are asserted positively below.
             let unsupported = [
                 "select distinct c.partitionKey, count(1) as n from c group by c.partitionKey",
-                "select distinct top 2 value c.partitionKey from c",
                 "select distinct value max(c.mergeOrder) from c",
-                "select distinct value c.partitionKey from c offset 1 limit 2",
             ];
 
             for query in unsupported {
@@ -1202,6 +1202,40 @@ pub async fn distinct_combined_with_unsupported_stages_is_rejected() -> Result<(
                     error.status().status_code(),
                     azure_core::http::StatusCode::BadRequest,
                     "expected 400 for `{query}`, got {error}"
+                );
+            }
+
+            // `DISTINCT` composed under a row window is servable, and the window
+            // counts *deduplicated* values: 4 partition keys over 12 items, so
+            // `TOP 2` yields 2 and `OFFSET 1 LIMIT 2` yields 2. Applying the
+            // window before deduplication would return fewer.
+            for (query, expected) in [
+                ("select distinct top 2 value c.partitionKey from c", 2usize),
+                (
+                    "select distinct value c.partitionKey from c offset 1 limit 2",
+                    2usize,
+                ),
+            ] {
+                let mut pages = container
+                    .query_items::<serde_json::Value>(query, FeedScope::full_container(), None)
+                    .await?
+                    .into_pages();
+                let mut values = Vec::new();
+                while let Some(page) = pages.next().await {
+                    values.extend(page?.into_items());
+                }
+                assert_eq!(
+                    values.len(),
+                    expected,
+                    "`{query}` must apply its window to deduplicated values, got {values:?}"
+                );
+                let mut deduped = values.clone();
+                deduped.sort_by_key(|v| v.to_string());
+                deduped.dedup_by_key(|v| v.to_string());
+                assert_eq!(
+                    deduped.len(),
+                    values.len(),
+                    "`{query}` returned duplicate values: {values:?}"
                 );
             }
 

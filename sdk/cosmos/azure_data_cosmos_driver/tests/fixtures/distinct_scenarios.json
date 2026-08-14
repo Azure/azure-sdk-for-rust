@@ -2602,6 +2602,288 @@
         "category": "clientUnsupportedQueryFeature",
         "messageFragment": "aggregates"
       }
+    },
+    {
+      "id": "ordered_offset_limit_applies_after_distinct",
+      "description": "Ordered DISTINCT under OFFSET/LIMIT: the window counts deduplicated values. The sorted stream repeats Austin and Seattle, so applying the window before deduplication would return a different (shorter or shifted) set. Closes the ordered OFFSET/LIMIT gap \u2014 TOP was covered but OFFSET/LIMIT was not.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC OFFSET 1 LIMIT 2",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Austin"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Austin"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Portland"
+        },
+        {
+          "id": "d6",
+          "pk": "pk-f",
+          "city": "Seattle"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Portland"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "ordered_distinct_top_resume_round_trip",
+      "description": "A continuation token for an ordered DISTINCT query under TOP nests SkipTake above Distinct. Draining page-by-page across serialized tokens must match a single drain: the window's remaining budget and the dedup hash have to be peeled and restored in the right order, or rows are dropped or repeated.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_CosmosElementContinuationTokenAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT TOP 3 VALUE c.city FROM c ORDER BY c.city ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Austin"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Austin"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Portland"
+        },
+        {
+          "id": "d6",
+          "pk": "pk-f",
+          "city": "Seattle"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1,
+        2
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Austin",
+        "Boston",
+        "Portland"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "ordered_distinct_offset_limit_resume_round_trip",
+      "description": "Same nested-token round trip as the TOP case, but with OFFSET/LIMIT so the resumed token must carry a partially-consumed skip as well as a remaining take. A token minted mid-skip that loses its remaining offset re-emits rows the first pass already skipped past.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_CosmosElementContinuationTokenAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC OFFSET 1 LIMIT 2",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Austin"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Austin"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Portland"
+        },
+        {
+          "id": "d6",
+          "pk": "pk-f",
+          "city": "Seattle"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1,
+        2
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Portland"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "split_mid_query_windowed_distinct_does_not_reemit",
+      "description": "A partition split mid-drain while DISTINCT runs under an OFFSET/LIMIT window. The fan-out root absorbs the split and neither the dedup state nor the window's remaining budget may be rebuilt: losing the former re-emits a value the window already paid for, losing the latter restarts the offset and over-returns. Closes the gap where split coverage existed for plain DISTINCT but not for DISTINCT composed under a window.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC OFFSET 1 LIMIT 2",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Austin"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Austin"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Portland"
+        },
+        {
+          "id": "d6",
+          "pk": "pk-f",
+          "city": "Seattle"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Portland"
+      ],
+      "checkpoint": {
+        "splitAfterPage": 1
+      },
+      "expectedContinuation": null,
+      "expectedError": null
     }
   ]
 }
