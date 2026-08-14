@@ -2,7 +2,7 @@
 
 This document is the high-level design for Cosmos **binary JSON** encoding in the
 Rust SDK and driver. It captures the goals, the wire/transcoding model, the
-component layout, testing, and the intentionally deferred work.
+component layout, testing, and the current support status.
 
 For the phased implementation plan and low-level wire details, see
 [`BINARY_ENCODING_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/BINARY_ENCODING_SPEC.md).
@@ -22,7 +22,7 @@ Because the option lives on the driver and is schema-agnostic, the driver perfor
 
 A self-contained, in-tree **end-to-end validation loop** is included via the in-memory emulator (no Docker, no live account, no external test vectors).
 
-> **Scope:** item operations (`create` / `replace` / `upsert` / `read`) encode request bodies and decode responses; `query` negotiates a binary response (its `application/query+json` request body stays text). Patch, transactional batch, and bulk are intentionally deferred (see [Deferred work](#deferred-work)).
+> **Scope:** item operations (`create` / `replace` / `upsert` / `read`) encode request bodies and decode responses; `query` negotiates a binary response (its `application/query+json` request body stays text). Patch, transactional batch, and bulk are intentionally excluded (see [Binary encoding support status](#binary-encoding-support-status)).
 
 ---
 
@@ -395,13 +395,125 @@ opts.binary_encoding_request_text_response = 2;    /* 2 = true  */
 
 ---
 
-## Deferred work
+## Binary encoding support status
 
-* **Query response negotiation** — **done.** A `query_items` call now advertises a binary response via `x-ms-cosmos-supported-serialization-formats` (set once at the `plan_operation` choke point that every per-page request flows through). The query request body is a `application/query+json` spec, not a document, so it intentionally stays text — there is no query request-body encoding. The query *response* decodes via the shared choke point. **Standard-gateway path only:** the Gateway 2.0 / thin-client path re-encodes the request as an RNTBD metadata token list that has no `SupportedSerializationFormats` token, so the header is dropped there and the service returns **text**. This is a customer-visible limitation, not benign: text pages reintroduce the integral-`Double`→integer divergence (#5028) this feature exists to fix, so a wide integer that round-trips over binary on the standard gateway can still fail typed deserialization on a thin-client account. Adding the RNTBD `SupportedSerializationFormats` token is a **follow-up**.
-* **Cross-partition / ORDER BY merge on binary bytes** — **scalar-key streaming ORDER BY now works on binary.** `parse_envelope_page` transcodes a binary-negotiated page to text before its text-only `serde_json` + `RawValue` envelope parse, so cross-partition ORDER BY over binary item bytes round-trips end to end. Single-partition and `into_single` query drains already round-trip binary directly. Remaining gap: **aggregate / GROUP BY / DISTINCT** merges over binary, plus a perf follow-up: a binary page is currently transcoded roughly three times per document (whole-page binary&rarr;text, `serde_json` envelope parse, then a per-item text&rarr;binary re-encode in `build_page`). A binary-aware envelope reader that yields each payload's binary sub-slice — re-prefixed with the `0x80` preamble — would reduce this to a slice + prefix and drop both the parse copy and the per-item re-encode. Note also that because `emit_binary` is sticky on the merge, once any page is binary the items sourced from **text** pages are re-encoded too, which normalizes key order and collapses duplicate keys.
-* **Binary feed responses** — the `into_items` feed splitter scans **text** JSON, so binary `Documents` envelopes cannot be sliced by that splitter yet. (The SDK query path uses `into_single`, which is unaffected.) `ReadFeed` / change feed is excluded from binary negotiation: the backend does not honor the header for it.
-* **`patch`** — excluded from binary encoding for now (the driver's request-side encode intentionally skips patch); transactional `batch` / `bulk` are deferred by spec.
-* **Cross-implementation vectors** — validate against captured real .NET / Java binary output.
+Legend: **Done** shipped · **Pending** actionable follow-up · **Blocked** waits on
+non-binary work · **N/A** out of scope by design.
+
+### By operation
+
+| Area | Request encode | Response negotiate | Response decode | Status |
+|---|:--:|:--:|:--:|---|
+| Point item ops (`create` / `read` / `replace` / `upsert`) | Yes | Yes | Yes | **Done** |
+| `delete` | — (no body) | No | — | **Pending** — .NET negotiates it; see parity #2 |
+| Query — single-partition | text by design | Yes | Yes | **Done** |
+| Query — passthrough cross-partition | text by design | Yes | Yes | **Done** |
+| Query — streaming ORDER BY (scalar keys) | text by design | Yes | Yes | **Done** |
+| Query — `OFFSET` / `LIMIT` / `TOP` (SkipTake) | text by design | Yes | Yes | **Done** |
+| Query — aggregate / GROUP BY / DISTINCT | — | — | — | **Blocked** — engine absent |
+| `patch` | No | No | Yes | **N/A** — client-side RMW; its inner read/replace are encoded |
+| Change feed / `ReadFeed` | No | No | capable, unused | **N/A** — backend does not honor the header |
+| Transactional `batch` / `bulk` / stored procedures / control-plane | No | No | — | **N/A** — deferred by spec |
+
+### Pending work
+
+| # | Item | Why it matters | Size |
+|---|---|---|---|
+| 1 | **Gateway 2.0 / thin client** — carry `SupportedSerializationFormats` as an RNTBD metadata token | Customer-visible. The thin-client path re-encodes requests as an RNTBD token list with no such token, so the header is dropped and the service returns **text** — reintroducing the integral-`Double`→integer divergence (#5028) this feature exists to fix. A wide integer that round-trips on the standard gateway can still fail typed deserialization on a thin-client account. | Medium |
+| 2 | **`parse_envelope_page` on binary (perf + fidelity)** — see below | Efficiency and byte fidelity only; no correctness gap | Medium–Large |
+| 3 | **`delete` negotiation** — add to `supports_binary_response` to match .NET | Wire-scope parity; low impact (no request body, usually no response body) | Small |
+| 4 | **Cross-implementation vectors** — validate against captured real .NET / Java binary output | Our encoder emits none of the compact forms (reference dedup, system strings), so emulator-based tests never exercise them. A slice-based reader would pass every test we have and still corrupt real service data. | Medium |
+| 5 | **Aggregate / GROUP BY / DISTINCT** | **Blocked, not pending.** `validate_query_info` rejects all three cross-partition in *any* encoding, so there is no merge to make binary-aware. Whoever builds the engine owns the binary path with it — ideally on a format-agnostic value model (like .NET's `CosmosElement`) so binary is inherent, not retrofitted. Single-partition DISTINCT is a passthrough drain and already round-trips binary. | — |
+
+#### Detail: item 2, binary-aware `parse_envelope_page`
+
+A binary page is currently transcoded roughly three times per document: whole-page
+binary&rarr;text, `serde_json` envelope parse, then a per-item text&rarr;binary
+re-encode in `build_page`. A binary-aware reader would decode only `orderByItems` /
+`_rid` and keep each payload as a **view** — the refcounted page `Bytes` plus an
+offset — so emitted items are the service's original bytes.
+
+> **Do not slice a document out and re-prefix it with `0x80`.** Reference strings
+> (`STR_R1`-`STR_R4`) resolve against *absolute page offsets* (see
+> `Reader::resolve_reference`) and the interning scope is the whole page, so a
+> detached sub-slice mis-resolves any reference pointing outside it — silently
+> returning wrong text rather than erroring, whenever the target bytes happen to
+> start with a string marker.
+
+A view keeps the page alive, and `Reader::new(buf, offset)` already reads from an
+arbitrary start. Trade-off: a buffered row pins its whole source page (peak
+retention ~ `fan_out x page_size`). ORDER BY gains most, because the merge fetches
+from every partition but emits a subset — today every fetched page is transcoded in
+full even when a `TOP` discards it. Blast radius is `ResponseBody::Items` (driver
+public API, also consumed by the native FFI crate) plus a `build_page` restructure,
+since merged rows span multiple source pages.
+
+Note also that because `emit_binary` is sticky on the merge, once any page is binary
+the items sourced from **text** pages are re-encoded too, which normalizes key order
+and collapses duplicate keys.
+
+#### Invariant for future feed splitters
+
+`skip_take_page::split_feed_envelope` detects a binary envelope, transcodes it, and
+re-encodes each document **standalone**, so every `ResponseBody::Items` producer
+emits per-document binary that `into_items` auto-detects by preamble. Any future
+splitter must keep that invariant: slicing a single-preamble envelope without
+re-encoding per document yields preamble-less sub-documents misrouted to the text
+path.
+
+---
+
+## Rust vs .NET parity
+
+How binary encoding compares to the .NET SDK (`Azure/azure-cosmos-dotnet-v3`).
+Binary encoding spans three independent concerns: **request encode** (body
+serialized as binary), **response negotiate** (advertise
+`x-ms-cosmos-supported-serialization-formats: CosmosBinary`), and **response
+decode** (auto-detected by the `0x80` first byte).
+
+> Last verified: 2026-08-10, against `azure-cosmos-dotnet-v3` `main`.
+
+### Enablement model
+
+| | .NET | Rust |
+|---|---|---|
+| Opt-in gate | `ConfigurationManager.IsBinaryEncodingEnabled()` (env var) + `ItemRequestOptions.EnableBinaryResponseOnPointOperations` | `BinaryEncodingOptions` (client default + per-op override) |
+| Suppressed with custom serializer | Yes — `GetTargetResponseSerializationFormat` returns `Text` | N/A (SDK owns serde) |
+| Response decode | Format-agnostic `JsonNavigator` (first-byte detect) | Shared `deserialize_response` / `is_binary` choke point |
+| Status | Preview / opt-in | Preview / opt-in |
+
+### Divergences
+
+| # | Difference | Detail | Severity |
+|---|---|---|---|
+| 1 | Aggregate / GROUP BY / DISTINCT cross-partition | .NET runs them; its merge is on the format-agnostic `CosmosElement` model, so binary works for free. Rust's `validate_query_info` **rejects them in any encoding** — the engine does not exist yet. | Real capability gap (not binary-specific) |
+| 2 | `delete` negotiation | .NET's `IsPointOperationSupportedForBinaryEncoding` includes `Delete`; Rust's `supports_binary_request_body` / `supports_binary_response` exclude it. | Minor — pending item 3 |
+| 3 | Gateway 2.0 negotiation | Honored on the standard gateway only; the thin-client path drops the header and the service returns text. | Real gap — pending item 1 |
+| 4 | Patch mechanism | .NET Patch is a real server op, not binary-negotiated. Rust Patch is a client-side read-modify-write, so its internal read/replace **are** encoded when enabled. Both functionally correct. | Cosmetic / architectural |
+| 5 | Negotiation header value | .NET query default = `"JsonText,CosmosBinary"`; .NET point ops = `"CosmosBinary"`. Rust = `"CosmosBinary"` everywhere, so it forces binary rather than advertising "either". | Minor wire diff |
+
+### Matched by design
+
+* Point item ops encode requests and decode responses identically.
+* Single-partition and passthrough cross-partition queries: text request body, negotiated binary response, per-page binary decode.
+* Query request body always stays text (`application/query+json` is a query spec, not a document).
+* Change feed / `ReadFeed` excluded from negotiation (the backend returns binary for ReadFeed-with-partition-key as a known bug).
+* Batch / bulk / stored procedures / control-plane resources never use binary JSON.
+* Response decode is a single format-agnostic choke point on both sides.
+
+### Bottom line
+
+For point operations, single-partition queries, and every cross-partition query
+shape Rust currently supports, the two SDKs are **functionally equivalent** on
+binary encoding. Divergence #1 is a missing query engine rather than a binary
+issue; #2 and #3 are the actionable binary items.
+
+### .NET source references
+
+* `src/Handler/RequestInvokerHandler.cs` — `IsPointOperationSupportedForBinaryEncoding` (create/replace/delete/read/upsert).
+* `src/RequestOptions/QueryRequestOptions.cs` — `PopulateRequestOptions` sets the header for `OperationType.Query` only (with the ReadFeed backend-bug comment).
+* `src/Query/v2Query/DocumentQueryExecutionContextBase.cs` — `DefaultSupportedSerializationFormats = "JsonText,CosmosBinary"`.
+* `src/Resource/Container/ContainerCore.Items.cs` — `GetTargetRequestSerializationFormat` / `GetTargetResponseSerializationFormat`.
 
 ---
 
