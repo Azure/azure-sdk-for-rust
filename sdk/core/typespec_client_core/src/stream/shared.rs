@@ -24,7 +24,7 @@ use std::{
 /// # Construction
 ///
 /// Use the [`FuturesAsyncReadExt`] extension trait to wrap any [`futures::io::AsyncRead`] source,
-/// or [`TokioAsyncReadExt`](tokio_util::compat::TokioAsyncReadCompatExt) for a [`tokio::io::AsyncRead`] source:
+/// or `TokioAsyncReadExt` for a [`tokio::io::AsyncRead`] source:
 ///
 /// ```
 /// # use typespec_client_core::stream::FuturesAsyncReadExt as _;
