@@ -2007,6 +2007,11 @@ where
 /// so callers gate it to the binary configs.
 ///
 /// Both filter on the unique `id`, so each returns exactly this item.
+// The sent-value trio (`sent_canon`, `sent_hash`, `doc`) plus routing context is
+// threaded verbatim into `assert_query_hit`/`assert_roundtrip`; bundling it into
+// a struct here would only move the argument count to those helpers, so the
+// eighth parameter is allowed on this test-only function.
+#[allow(clippy::too_many_arguments)]
 async fn assert_query_roundtrip(
     container: &ContainerClient,
     pk: &str,
