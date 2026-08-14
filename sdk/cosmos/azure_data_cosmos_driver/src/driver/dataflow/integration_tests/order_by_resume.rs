@@ -317,14 +317,20 @@ fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cosm
     )
 }
 
-/// Extracts every item's `id` across `page`'s `Documents`, in wire order.
+/// Extracts every emitted item's `id`, in wire order. The pipeline emits a
+/// pre-split `Items` body (one payload per document).
 fn ids_in_page(page: &CosmosResponse) -> Vec<String> {
-    let value: serde_json::Value = serde_json::from_slice(page.body_bytes()).unwrap();
-    value["Documents"]
-        .as_array()
-        .unwrap()
+    let items = match page.body() {
+        crate::models::ResponseBody::Items(items) => items.clone(),
+        crate::models::ResponseBody::NoPayload => Vec::new(),
+        crate::models::ResponseBody::Bytes(_) => panic!("expected Items body"),
+    };
+    items
         .iter()
-        .map(|item| item["id"].as_str().unwrap().to_owned())
+        .map(|item| {
+            let value: serde_json::Value = serde_json::from_slice(item).unwrap();
+            value["id"].as_str().unwrap().to_owned()
+        })
         .collect()
 }
 

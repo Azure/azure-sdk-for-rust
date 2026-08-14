@@ -84,6 +84,26 @@ pub(crate) enum PipelineNodeState {
         start_from: Option<ChangeFeedStartFrom>,
     },
 
+    /// A global skip/take (`OFFSET` / `LIMIT` / `TOP`) applied over a single
+    /// child pipeline.
+    ///
+    /// `remaining_skip` and `remaining_take` are the still-unsatisfied portions
+    /// of the window at snapshot time (`remaining_take = None` = unbounded).
+    /// `child` is the wrapped fan-out node's own snapshot, so resume rebuilds
+    /// the child and re-wraps it with the remaining window.
+    ///
+    /// The window itself carries no query-shape discriminator: `TOP n` and
+    /// `OFFSET x LIMIT y` produce an identical skip/take pipeline, so a
+    /// continuation is validated against the pipeline it resumes, not against
+    /// which SQL construct minted it (a `LIMIT 10` token may resume a `TOP 10`
+    /// query — both drive the same node).
+    SkipTake {
+        remaining_skip: u64,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        remaining_take: Option<u64>,
+        child: Box<PipelineNodeState>,
+    },
+
     /// A streaming cross-partition `ORDER BY` k-way merge.
     ///
     /// `directions` and `query_fingerprint` are query-shape discriminators
@@ -239,6 +259,7 @@ impl PipelineNodeState {
                         PipelineNodeState::Request { .. } => "Request",
                         PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
                         PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
+                        PipelineNodeState::SkipTake { .. } => "SkipTake",
                         PipelineNodeState::StreamingOrderedMerge { .. } => "StreamingOrderedMerge",
                     },
                 ))

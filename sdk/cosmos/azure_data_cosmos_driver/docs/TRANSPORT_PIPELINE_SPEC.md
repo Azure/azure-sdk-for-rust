@@ -1713,9 +1713,10 @@ The shard selection algorithm serves two goals simultaneously:
 3. **Avoid immediately replaying onto a shard that just failed** when a local connectivity retry is attempted
 
 The current active-set calculation is demand-based. For a snapshot of selectable shards, the pool
-computes how many shards are needed to absorb `total_inflight + 1` at the configured
-`max_http2_streams_per_client`, clamps that between the configured min and the number of currently
-selectable shards, then only considers that prefix of least-cost shards for normal request routing.
+computes how many shards are needed to absorb `total_inflight + 1` at the internal stream target
+derived from `http2_fan_out_threshold_percent`, clamps that between the configured min and the
+number of currently selectable shards, then only considers that prefix of least-cost shards for
+normal request routing.
 If transport-local retry is replaying after a connectivity failure, the failed shard ID is excluded
 from the selectable set for that one replay.
 
@@ -1728,20 +1729,20 @@ background sweep once they remain idle longer than `idle_http2_client_timeout`.
 Traffic spike scaling:
 
   Time T1 (spike starts):
-    Shard 1: [||||||||||||||||]  16/16 → at capacity
-    Shard 2: [||||||||||||||||]  16/16 → at capacity
-    → all active shards saturated → create Shard 3
+    Shard 1: [||||||||]           8/16 → at target
+    Shard 2: [||||||||]           8/16 → at target
+    → all active shards reached target → create Shard 3
 
   Time T2 (spike grows):
-    Shard 1: [||||||||||||||||]  16/16
-    Shard 2: [||||||||||||||||]  16/16
-    Shard 3: [||||||||||||||||]  16/16 → all at capacity → create Shard 4
-    Shard 4: [||||||||]           8/16 → absorbing overflow
+    Shard 1: [||||||||]           8/16
+    Shard 2: [||||||||]           8/16
+    Shard 3: [||||||||]           8/16 → all at target → create Shard 4
+    Shard 4: [||||]               4/16 → absorbing overflow
 
   Time T3 (spike subsides):
     demand-based active set drops to 2 shards
-    Shard 1: [||||||||||]        10/16  ← active (receives new requests)
-    Shard 2: [|||||||||]          9/16  ← active (receives new requests)
+    Shard 1: [||||||]             6/16  ← active (receives new requests)
+    Shard 2: [|||||]              5/16  ← active (receives new requests)
     Shard 3: [||]                 2/16  ← draining (no new requests)
     Shard 4: []                   0/16  ← draining, idle timer started
         let fallback = {
@@ -1752,20 +1753,21 @@ Traffic spike scaling:
             // count from current total inflight demand, then prefers the
             // least-loaded shard in that active prefix that still has room.
             // If none fit and the pool is under its max size, it creates a
-            // new shard; otherwise it falls back to the least-loaded
-            // selectable shard.
+            // new shard; otherwise it prefers the configured max threshold
+            // before falling back to the least-loaded shard unconditionally.
     ///    excluded by a just-failed local connectivity retry.
     /// 3. Compute the active shard count from current total inflight demand.
-    /// 4. Pick the least-loaded shard within that active set that still has
-    ///    room under `max_http2_streams_per_client`.
+    /// 4. Atomically reserve the least-loaded shard within that active set
+    ///    while it has room under the internally computed stream target.
     /// 5. If needed and still under the configured max, create a new shard.
-    /// 6. Otherwise fall back to the least-loaded selectable shard.
-    fn select_shard(&self, excluded_shard_id: Option<u64>) -> Arc<ClientShard> {
+    /// 6. At the connection limit, prefer the configured max threshold, then
+    ///    dispatch unconditionally; downstream HTTP/2 enforces the peer limit.
+    fn select_shard(&self, excluded_shard_id: Option<u64>) -> Result<InflightGuard> {
         // 1. Snapshot current shards.
         // 2. Filter out eviction-marked shards and an optionally excluded
         //    failed shard ID from a local connectivity retry.
         // 3. Compute `active_shard_count` from total inflight demand and the
-        //    configured `max_http2_streams_per_client`.
+        //    stream target derived from the configured fan-out percentage.
         // 4. Prefer the least-loaded selectable shard inside that active set
         //    while it still has room under the stream budget.
         // 5. If no active shard has room and the pool is still below
@@ -2209,7 +2211,7 @@ endpoints are detected and used. No sharding yet — stream limit may be hit und
 
 1. **6.1 `ShardedHttpTransport`**: Core per-endpoint shard pool with `EndpointShardPool`, `ClientShard`, inflight tracking, deterministic shard IDs, and shard-local health counters. Shard membership uses `ArcSwap` for lock-free reads; per-shard state uses individual atomics. Files: `driver/transport/sharded_transport.rs`.
 2. **6.2 Shard selection algorithm**: `select_shard` concentrates load on the earliest shards needed for current inflight demand, can exclude one failed shard during local retry, scales up when those shards are saturated, and falls back to the least-loaded shard at the configured maximum. Files: `driver/transport/sharded_transport.rs`.
-3. **6.3 Connection-pool knobs**: Add `max_http2_streams_per_client`, `max_http2_connections_per_endpoint = available_parallelism * 2`, `min_http2_connections_per_endpoint`, `idle_http2_client_timeout`, health-sweep knobs, HTTP/2 keepalive knobs, and TCP keepalive defaults for HTTP/1.1. Files: `options/connection_pool.rs`.
+3. **6.3 Connection-pool knobs**: Add `http2_fan_out_threshold_percent`, `max_http2_streams_per_client`, a CPU-scaled `max_http2_connections_per_endpoint` (2× parallelism below 4 logical CPUs; 32-connection floor at 4+), `min_http2_connections_per_endpoint`, `idle_http2_client_timeout`, health-sweep knobs, HTTP/2 keepalive knobs, and TCP keepalive defaults for HTTP/1.1. Files: `options/connection_pool.rs`.
 4. **6.4 Wire into `AdaptiveTransport`**: `Http2Preferred` and `Http2Only` policies use `ShardedHttpTransport`; `Http11Only` keeps the plain client path. `AdaptiveTransport` also exposes shard-aware dispatch metadata for local retry. Files: `driver/transport/adaptive_transport.rs`.
 5. **6.5 Background sweep and tests**: `BackgroundTaskManager` runs endpoint-local shard sweeps for unhealthy-shard eviction, paced probe replacement, and idle overflow reclaim, with unit coverage for scale-up / reclaim / eviction behavior. Files: `driver/transport/sharded_transport.rs`, `tests/`.
 
@@ -2310,12 +2312,16 @@ pub struct ConnectionPoolOptions {
 
     // --- New fields for HTTP/2 sharding (this spec) ---
 
-    /// Maximum concurrent HTTP/2 streams per `HttpClient` shard per endpoint
-    /// before a new shard is created. Default: 16 (leaves headroom below the
-    /// Cosmos gateway's 20-stream H2 limit).
+    /// Best-effort request occupancy threshold per `HttpClient` shard. This may
+    /// be exceeded at the endpoint connection limit; downstream HTTP/2 enforces
+    /// the peer-advertised stream limit. Default: 16.
     pub max_http2_streams_per_client: Option<u32>,
+    /// Percentage of the per-shard balancing threshold used to trigger
+    /// early fan-out. Default: 50.
+    pub http2_fan_out_threshold_percent: Option<u8>,
     /// Maximum number of `HttpClient` shards per endpoint.
-    /// Default: `available_parallelism() * 2`, fallback 32.
+    /// Default: 2× available parallelism below 4 logical CPUs; otherwise
+    /// `max(available_parallelism() * 2, 32)`. Fallback: 32.
     pub max_http2_connections_per_endpoint: Option<usize>,
     /// Minimum number of `HttpClient` shards per endpoint. The pool never
     /// scales below this count. Default: 1.
@@ -2340,7 +2346,8 @@ pub struct ConnectionPoolOptions {
 | ------------------------------------ | ------------------ | ----------------------------------------------------------------- | -------------------------------------------- |
 | `idle_timeout`                       | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_TIMEOUT`                                  | *(existing)*                                 |
 | `max_connections`                    | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_CONNECTIONS`                               | *(existing)*                                 |
-| `max_http2_streams_per_client`       | `Option<u32>`      | `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`       | **New.** H2 stream limit per shard.          |
+| `max_http2_streams_per_client`       | `Option<u32>`      | `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT`       | **New.** Best-effort balancing threshold.   |
+| `http2_fan_out_threshold_percent`    | `Option<u8>`       | `AZURE_COSMOS_CONNECTION_POOL_HTTP2_FAN_OUT_THRESHOLD_PERCENT`    | **New.** Relative early fan-out threshold.   |
 | `max_http2_connections_per_endpoint` | `Option<usize>`    | `AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT` | **New.** Upper bound on shards per endpoint. |
 | `min_http2_connections_per_endpoint` | `Option<usize>`    | `AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT` | **New.** Lower bound on shards per endpoint. |
 | `idle_http2_client_timeout`          | `Option<Duration>` | `AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS`       | **New.** Request-path idle reclaim.          |

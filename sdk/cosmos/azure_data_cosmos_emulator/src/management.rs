@@ -725,7 +725,7 @@ async fn resume_replication(
 fn ensure_region(store: &EmulatorStore, name: &str) -> ApiResult<()> {
     if store
         .config()
-        .regions()
+        .active_regions()
         .iter()
         .any(|region| region.name() == name)
     {

@@ -4,24 +4,23 @@
 # This file should be copied to $CARGO_HOME/config.toml
 #
 # CargoAuthenticate@0 parses the [registries] table below and exports the
-# CARGO_REGISTRIES_AZURE_SDK_FOR_RUST_TOKEN / _CREDENTIAL_PROVIDER variables that cargo
-# needs to authenticate against the feed. The feed sets "auth-required": true, so the
-# token is required even for reads.
+# CARGO_REGISTRIES_AZURE_SDK_FOR_RUST_PUBLIC_TOKEN / _CREDENTIAL_PROVIDER variables that
+# cargo needs to authenticate against the feed.
 #
-# The [source] replacement redirects index.crates.io and static.crates.io to the
-# feed.
-#
+# The `~force-auth` suffix on the feed name is required. See
+# https://learn.microsoft.com/azure/devops/artifacts/cargo/cargo-upstream-source.
+
 [registries]
-azure-sdk-for-rust = { index = "sparse+https://pkgs.dev.azure.com/azure-sdk/_packaging/azure-sdk-for-rust/Cargo/index/" }
+azure-sdk-for-rust-public = { index = "sparse+https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-rust-public~force-auth/Cargo/index/" }
 
 [source.crates-io]
-replace-with = "azure-sdk-for-rust"
+replace-with = "azure-sdk-for-rust-public"
 
 # Both `cargo package` and `cargo publish` refuse to run while crates-io is replaced
 # unless the target registry is named, failing with:
 #
-#   error: crates-io is replaced with remote registry azure-sdk-for-rust;
-#   include `--registry azure-sdk-for-rust` or `--registry crates-io`
+#   error: crates-io is replaced with remote registry azure-sdk-for-rust-public;
+#   include `--registry azure-sdk-for-rust-public` or `--registry crates-io`
 #
 # The target registry must be the replacement, not crates-io. When packaging several
 # workspace members at once, cargo satisfies their unpublished inter-member versions
@@ -34,4 +33,4 @@ replace-with = "azure-sdk-for-rust"
 # the only `cargo publish` in the repo is Pack-Crates.ps1's `--dry-run` validation, and
 # releases ship through ESRP.
 [registry]
-default = "azure-sdk-for-rust"
+default = "azure-sdk-for-rust-public"

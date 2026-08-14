@@ -21,6 +21,18 @@ parameters:
     default: true
 
 steps:
+# `variables/rust.yml` relocates CARGO_HOME off the OS volume. Cargo finds its own
+# subcommands there, but tools invoked directly (taplo, cargo2junit) need it on PATH.
+- pwsh: |
+    $cargoBin = ([System.IO.Path]::Combine($env:CARGO_HOME, 'bin'))
+    New-Item -ItemType Directory -Force -Path $cargoBin | Out-Null
+
+    if (($env:PATH -split [System.IO.Path]::PathSeparator) -notcontains $cargoBin) {
+      Write-Host "##vso[task.prependpath]$cargoBin"
+    }
+  displayName: Add CARGO_HOME/bin to PATH
+  condition: and(succeeded(), ne(variables['CARGO_HOME'], ''))
+
 - ${{ if parameters.ConfigureRegistry }}:
   - pwsh: |
       $cargoHome = $env:CARGO_HOME
@@ -38,10 +50,27 @@ steps:
       Write-Host "##vso[task.setvariable variable=CargoConfigPath]$configPath"
     displayName: Configure cargo to use the azure-sdk-for-rust feed
 
+  # Workaround issue in public pipelines. Revert when root cause issue is fixed:
+  # https://github.com/microsoft/azure-pipelines-tasks/issues/22421
+  # NuGetAuthenticate@1 uses the SYSTEMVSSCONNECTION endpoint token, which Azure
+  # DevOps does deliver to fork builds, and publishes it as VSS_NUGET_ACCESSTOKEN
+  # for later steps. It runs as `public Build Service (azure-sdk)`, which holds
+  # Feed and Upstream Reader on the cargo feed.
+  - task: NuGetAuthenticate@1
+    displayName: Acquire an Azure Artifacts token that fork builds can use
+
   - task: CargoAuthenticate@0
     displayName: Authenticate cargo to the azure-sdk-for-rust feed
     inputs:
       configFile: $(CargoConfigPath)
+    # Workaround issue in public pipelines. Revert when root cause is fixed:
+    # https://github.com/microsoft/azure-pipelines-tasks/issues/22421
+    #
+    # NuGetAuthenticate@1 above publishes the endpoint token as
+    # VSS_NUGET_ACCESSTOKEN, which is populated in fork builds and useful as
+    # SYSTEM_ACCESSTOKEN for CargoAuthenticate.
+    env:
+      SYSTEM_ACCESSTOKEN: $(VSS_NUGET_ACCESSTOKEN)
 
 - task: PowerShell@2
   displayName: "Use Rust ${{ parameters.Toolchain }}"
