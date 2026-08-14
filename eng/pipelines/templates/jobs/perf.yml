@@ -33,11 +33,6 @@ extends:
   parameters:
     Variables:
       - template: /eng/pipelines/templates/variables/globals.yml@self
-      # Keep the cargo cache off the OS volume like every other Rust pipeline.
-      # Set directly rather than pulling in `variables/rust.yml`, which would also
-      # apply `RUSTFLAGS: -Dwarnings` to perf builds.
-      - name: CARGO_HOME
-        value: $(Agent.TempDirectory)/cargo
     Language: Rust
     LanguageVersion: "N/A"
     InstallLanguageSteps:
