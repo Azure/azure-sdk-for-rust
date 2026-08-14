@@ -578,6 +578,16 @@ pub(crate) struct TransportRequest {
     pub transport_mode: TransportMode,
     /// The operation type being dispatched.
     pub operation_type: OperationType,
+    /// Whether this request addresses its resources by RID.
+    ///
+    /// Resolved once in the operation pipeline from the same
+    /// `CosmosResourceReference` that drove the routing decision, so the wire
+    /// layer cannot disagree with eligibility about the addressing mode.
+    pub is_rid_addressed: bool,
+    /// Whether the leaf resource id appears in the request path.
+    pub is_leaf_addressed: bool,
+    /// Leaf resource RID for a RID-addressed point operation.
+    pub resource_rid: Option<String>,
     /// Effective partition key precomputed in the operation pipeline for
     /// item-scoped Gateway 2.0 dispatch. Computing it before the transport
     /// pipeline keeps wire layers free of partition-key/definition logic.

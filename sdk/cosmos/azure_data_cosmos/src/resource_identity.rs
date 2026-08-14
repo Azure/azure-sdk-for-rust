@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Public types for addressing Cosmos DB databases and containers by name or RID.
+//! Public types for addressing Cosmos DB resources by name or RID.
 
 /// A Cosmos DB resource identifier (RID).
 ///
@@ -11,7 +11,9 @@
 ///
 /// Use [`ResourceId`] together with [`ResourceIdentity`] to obtain RID-addressed
 /// clients via [`CosmosClient::database_client`](crate::CosmosClient::database_client)
-/// and [`DatabaseClient::container_client`](crate::clients::DatabaseClient::container_client).
+/// and [`DatabaseClient::container_client`](crate::clients::DatabaseClient::container_client),
+/// or to address an item by its `_rid` through the point-operation methods on
+/// [`ContainerClient`](crate::clients::ContainerClient).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ResourceId(String);
 

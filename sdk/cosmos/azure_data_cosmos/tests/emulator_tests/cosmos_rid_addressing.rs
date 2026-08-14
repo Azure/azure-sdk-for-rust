@@ -10,7 +10,7 @@ use azure_core::Uuid;
 use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
-    models::{ContainerProperties, ThroughputProperties},
+    models::{ContainerProperties, PatchInstructions, PatchOperation, ThroughputProperties},
     options::CreateContainerOptions,
     CosmosStatus, Query, ResourceId,
 };
@@ -48,8 +48,9 @@ async fn collect_items(
 /// Cosmos classifies a request as name-based or RID-based from the `dbs`
 /// segment alone, so a RID-addressed path must be RID-addressed all the way
 /// down. Operations whose URI stops at the container (container read,
-/// throughput, create/upsert, queries, feed reads) therefore work by RID, while
-/// point operations that put an item *name* in the path are rejected.
+/// throughput, create/upsert, queries, feed reads) therefore work by RID. Point
+/// operations also work when the item itself is addressed by RID; an item name
+/// under a RID-addressed parent remains invalid.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -133,7 +134,7 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
             // Create an item through the RID-addressed container. Create POSTs
             // to the collection URL, so the item id never reaches the wire and
             // the service never tries to parse it as a ResourceId.
-            let item = RidItem {
+            let mut item = RidItem {
                 id: format!("item-{}", Uuid::new_v4()),
                 pk: "pk-1".to_string(),
                 value: 7,
@@ -168,6 +169,73 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
                 .await?
                 .into_model()?;
             assert_eq!(item, fetched);
+            let item_rid = name_container
+                .read_item(&item.pk, &item.id, None)
+                .await?
+                .into_model::<serde_json::Value>()?
+                .get("_rid")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+                .expect("item read should return a _rid");
+
+            let fetched_by_rid: RidItem = rid_container
+                .read_item(&item.pk, ResourceId::from(item_rid.clone()), None)
+                .await?
+                .into_model()?;
+            assert_eq!(item, fetched_by_rid);
+
+            item.value = 8;
+            rid_container
+                .replace_item(
+                    &item.pk,
+                    ResourceId::from(item_rid.clone()),
+                    &item,
+                    None,
+                )
+                .await?;
+            let replaced: RidItem = rid_container
+                .read_item(&item.pk, ResourceId::from(item_rid.clone()), None)
+                .await?
+                .into_model()?;
+            assert_eq!(item, replaced);
+
+            // PATCH by RID exercises the driver's read-modify-write loop, whose
+            // internal Read and Replace sub-operations must each preserve the
+            // leaf RID rather than re-deriving a name.
+            item.value = 9;
+            let patched: RidItem = rid_container
+                .patch_item(
+                    &item.pk,
+                    ResourceId::from(item_rid.clone()),
+                    PatchInstructions::from(vec![PatchOperation::set(
+                        "/value",
+                        serde_json::json!(9),
+                    )]),
+                    None,
+                )
+                .await?
+                .into_model()?;
+            assert_eq!(item, patched);
+
+            // Client-side RID validation: these all fail before any network
+            // call, so a bad RID never reaches the service as a misrouted
+            // request. A malformed RID and a well-formed RID that decodes to a
+            // non-document (here the container's own RID) are both rejected.
+            for bad_rid in ["not-a-rid", container_rid.as_str()] {
+                let err = rid_container
+                    .read_item(&item.pk, ResourceId::from(bad_rid), None)
+                    .await
+                    .expect_err("a non-document RID must be rejected client-side");
+                assert_eq!(CosmosStatus::CLIENT_INVALID_RESOURCE_ID, err.status());
+            }
+
+            // A RID item id under a *name*-addressed container is the mirror of
+            // the name-under-RID case above and is equally invalid.
+            let err = name_container
+                .read_item(&item.pk, ResourceId::from(item_rid.clone()), None)
+                .await
+                .expect_err("a RID item id requires a RID-addressed container");
+            assert_eq!(CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING, err.status());
 
             // Single-partition query against the RID-addressed container.
             let single = collect_items(
@@ -200,6 +268,10 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
                 container_ids.push(c.id);
             }
             assert_eq!(vec![container_name.clone()], container_ids);
+
+            rid_container
+                .delete_item(&item.pk, ResourceId::from(item_rid), None)
+                .await?;
 
             Ok(())
         },

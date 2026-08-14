@@ -133,6 +133,34 @@ impl ContainerClient {
         }
     }
 
+    /// Builds the driver [`ItemReference`] for a leaf-addressed item operation.
+    ///
+    /// A `&str`/`String` selects name addressing; a
+    /// [`ResourceId`](crate::ResourceId) selects RID addressing, matching how
+    /// [`CosmosClient::database_client`](crate::CosmosClient::database_client)
+    /// and [`DatabaseClient::container_client`](crate::clients::DatabaseClient::container_client)
+    /// address their resources.
+    ///
+    /// Addressing modes cannot be mixed across the hierarchy, so a RID item id
+    /// requires a RID-addressed container (and vice versa). The driver validates
+    /// this before signing and returns a typed error rather than letting the
+    /// service reject the request.
+    fn item_reference(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item_id: impl Into<ResourceIdentity>,
+    ) -> ItemReference {
+        let partition_key = partition_key.into();
+        match item_id.into() {
+            ResourceIdentity::Name(name) => {
+                ItemReference::from_name(&self.container_ref, partition_key, name)
+            }
+            ResourceIdentity::Rid(rid) => {
+                ItemReference::from_rid(&self.container_ref, partition_key, rid.as_str().to_owned())
+            }
+        }
+    }
+
     /// Reads the properties of the container.
     ///
     /// # Arguments
@@ -381,6 +409,14 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Addressing by RID
+    ///
+    /// Unlike [`read_item`](Self::read_item), [`replace_item`](Self::replace_item),
+    /// [`delete_item`](Self::delete_item), and [`patch_item`](Self::patch_item),
+    /// this method takes only a name. It POSTs to the container's feed URL, so
+    /// the item id never appears in the request path, and a not-yet-created item
+    /// has no service-assigned `_rid` to address it by.
     pub async fn create_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -483,10 +519,36 @@ impl ContainerClient {
     ///     .into_body().into_single::<Product>()?;
     /// # }
     /// ```
+    ///
+    /// # Addressing by RID
+    ///
+    /// `item_id` accepts either a name or a [`ResourceId`](crate::ResourceId).
+    /// Passing a `&str`/`String` addresses the item by its `id`; passing a
+    /// `ResourceId` addresses it by the service-assigned `_rid` returned in the
+    /// `_rid` system property of a prior read or query.
+    ///
+    /// RID addressing requires a RID-addressed container client (obtained via
+    /// [`DatabaseClient::container_client`](crate::clients::DatabaseClient::container_client)
+    /// with a `ResourceId`); Cosmos DB classifies a request from its `dbs`
+    /// segment, so name and RID addressing cannot be mixed across the
+    /// hierarchy.
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::ResourceId;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// # let item: serde_json::Value = panic!("non-running example");
+    /// // The `_rid` comes from a prior read or query on the same container.
+    /// let response = container_client
+    ///     .replace_item("partition1", ResourceId::from("rid=="), item, None)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn replace_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
-        item_id: &str,
+        item_id: impl Into<ResourceIdentity>,
         item: T,
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
@@ -496,11 +558,7 @@ impl ContainerClient {
         let body = serialize_item_body(&item, binary.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
-        let item_ref = ItemReference::from_name(
-            &self.container_ref,
-            partition_key.into(),
-            item_id.to_owned(),
-        );
+        let item_ref = self.item_reference(partition_key, item_id);
 
         // Create the driver operation and apply ItemWriteOptions fields.
         let operation = CosmosOperation::replace_item(item_ref).with_body(body);
@@ -590,21 +648,43 @@ impl ContainerClient {
     /// appends should either build idempotent ops (`PatchOperation::set` on a
     /// caller-computed value) or detect duplicate-application via a
     /// monotonic application-level sequence number.
+    ///
+    /// # Addressing by RID
+    ///
+    /// `item_id` accepts either a name or a [`ResourceId`](crate::ResourceId).
+    /// Passing a `&str`/`String` addresses the item by its `id`; passing a
+    /// `ResourceId` addresses it by the service-assigned `_rid` returned in the
+    /// `_rid` system property of a prior read or query.
+    ///
+    /// RID addressing requires a RID-addressed container client (obtained via
+    /// [`DatabaseClient::container_client`](crate::clients::DatabaseClient::container_client)
+    /// with a `ResourceId`); Cosmos DB classifies a request from its `dbs`
+    /// segment, so name and RID addressing cannot be mixed across the
+    /// hierarchy.
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::ResourceId;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// # let patch: azure_data_cosmos::models::PatchInstructions = panic!("non-running example");
+    /// // The `_rid` comes from a prior read or query on the same container.
+    /// let response = container_client
+    ///     .patch_item("partition1", ResourceId::from("rid=="), patch, None)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn patch_item(
         &self,
         partition_key: impl Into<PartitionKey>,
-        item_id: &str,
+        item_id: impl Into<ResourceIdentity>,
         patch: PatchInstructions,
         options: Option<PatchItemOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&patch)?;
 
-        let item_ref = ItemReference::from_name(
-            &self.container_ref,
-            partition_key.into(),
-            item_id.to_owned(),
-        );
+        let item_ref = self.item_reference(partition_key, item_id);
 
         // Build the PATCH operation. The handler reads the PatchInstructions back
         // out of the body, so we pass it through verbatim.
@@ -696,6 +776,15 @@ impl ContainerClient {
     ///     .into_body().into_single::<Product>()?;
     /// Ok(())
     /// # }
+    /// ```
+    ///
+    /// # Addressing by RID
+    ///
+    /// Unlike [`read_item`](Self::read_item), [`replace_item`](Self::replace_item),
+    /// [`delete_item`](Self::delete_item), and [`patch_item`](Self::patch_item),
+    /// this method takes only a name. It POSTs to the container's feed URL, so
+    /// the item id never appears in the request path, and a not-yet-created item
+    /// has no service-assigned `_rid` to address it by.
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -762,10 +851,40 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Addressing by RID
+    ///
+    /// `item_id` accepts either a name or a [`ResourceId`](crate::ResourceId).
+    /// Passing a `&str`/`String` addresses the item by its `id`; passing a
+    /// `ResourceId` addresses it by the service-assigned `_rid` returned in the
+    /// `_rid` system property of a prior read or query.
+    ///
+    /// RID addressing requires a RID-addressed container client (obtained via
+    /// [`DatabaseClient::container_client`](crate::clients::DatabaseClient::container_client)
+    /// with a `ResourceId`); Cosmos DB classifies a request from its `dbs`
+    /// segment, so name and RID addressing cannot be mixed across the
+    /// hierarchy.
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::ResourceId;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let client: azure_data_cosmos::CosmosClient = panic!("this is a non-running example");
+    /// // A RID item id requires a RID-addressed container client.
+    /// let container_client = client
+    ///     .database_client(ResourceId::from("db-rid=="))
+    ///     .container_client(ResourceId::from("coll-rid=="))
+    ///     .await?;
+    /// // The item `_rid` comes from a prior read or query on the same container.
+    /// let response = container_client
+    ///     .read_item("partition1", ResourceId::from("item-rid=="), None)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn read_item(
         &self,
         partition_key: impl Into<PartitionKey>,
-        item_id: &str,
+        item_id: impl Into<ResourceIdentity>,
         options: Option<ItemReadOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
@@ -773,11 +892,7 @@ impl ContainerClient {
             resolve_binary_encoding(options.operation, &self.context.binary_encoding);
 
         // Build the driver's item reference from our stored container metadata.
-        let item_ref = ItemReference::from_name(
-            &self.container_ref,
-            partition_key.into(),
-            item_id.to_owned(),
-        );
+        let item_ref = self.item_reference(partition_key, item_id);
 
         // Create the driver operation.
         let operation = CosmosOperation::read_item(item_ref);
@@ -818,20 +933,41 @@ impl ContainerClient {
     ///     .await?;
     /// # }
     /// ```
+    ///
+    /// # Addressing by RID
+    ///
+    /// `item_id` accepts either a name or a [`ResourceId`](crate::ResourceId).
+    /// Passing a `&str`/`String` addresses the item by its `id`; passing a
+    /// `ResourceId` addresses it by the service-assigned `_rid` returned in the
+    /// `_rid` system property of a prior read or query.
+    ///
+    /// RID addressing requires a RID-addressed container client (obtained via
+    /// [`DatabaseClient::container_client`](crate::clients::DatabaseClient::container_client)
+    /// with a `ResourceId`); Cosmos DB classifies a request from its `dbs`
+    /// segment, so name and RID addressing cannot be mixed across the
+    /// hierarchy.
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::ResourceId;
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// // The `_rid` comes from a prior read or query on the same container.
+    /// let response = container_client
+    ///     .delete_item("partition1", ResourceId::from("rid=="), None)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn delete_item(
         &self,
         partition_key: impl Into<PartitionKey>,
-        item_id: &str,
+        item_id: impl Into<ResourceIdentity>,
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
 
         // Build the driver's item reference from our stored container metadata.
-        let item_ref = ItemReference::from_name(
-            &self.container_ref,
-            partition_key.into(),
-            item_id.to_owned(),
-        );
+        let item_ref = self.item_reference(partition_key, item_id);
 
         // Create the driver operation (no body for delete).
         let operation = CosmosOperation::delete_item(item_ref);
