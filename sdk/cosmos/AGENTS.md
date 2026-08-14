@@ -534,6 +534,32 @@ Every public API should document:
 - **Performance**: RU/s implications, if relevant
 - **Partition Key**: Whether the operation is partition-scoped
 
+### Comment Brevity (IMPORTANT)
+
+Keep comments **short and dense**. Long, chatty comment blocks are noise: they age badly, bury the
+signal, and read as filler.
+
+- **Inline comments**: 1–2 lines. 3 is the hard ceiling. Explain *why*, never *what* the code already says.
+- **Doc comments**: lead with a one-sentence summary. Add detail only when a caller genuinely needs it
+  to use the API correctly.
+- **Test comments**: usually unnecessary — a good test name plus a clear assertion message says it.
+  Comment only a non-obvious setup or a subtle invariant.
+- **Never** restate an argument three ways, narrate the diff ("this used to be X, now it's Y"),
+  re-explain something already covered by a nearby doc comment, or write a mini design doc inline.
+  Link to the spec/HLD instead.
+- When a rationale really needs paragraphs, it belongs in `docs/`, not in the source.
+
+```rust
+// ❌ BAD: five lines to say one thing
+// This is a client-side re-encode of a payload the driver itself produced,
+// not a malformed service envelope, so it is a serialization fault (not the
+// 500 `SERVICE_ORDER_BY_ENVELOPE_INVALID`). Include the item ordinal to
+// correlate on a large page.
+
+// ✅ GOOD
+// Client-side re-encode failure, not a malformed service envelope.
+```
+
 ## Additional Resources
 
 - [Azure Cosmos DB REST API Reference](https://learn.microsoft.com/rest/api/cosmos-db/)

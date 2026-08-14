@@ -46,10 +46,53 @@ struct RawQueryPage<'a> {
 /// each a zero-copy [`slice_ref`](bytes::Bytes::slice_ref) of `body`.
 ///
 /// An empty (`NoPayload`) body is treated as a zero-document page.
+///
+/// A **Cosmos binary JSON** page is transcoded to text to split the `Documents`
+/// array, then each document is re-encoded to standalone binary. Per-document
+/// binary (rather than the split text slices) keeps the SDK's per-slice `0x80`
+/// auto-detection, so an integral `Double` still coerces into an integer target.
 pub(crate) fn split_feed_envelope(body: &Bytes) -> crate::error::Result<Vec<Bytes>> {
     if body.is_empty() {
         return Ok(Vec::new());
     }
+
+    // No `slice_ref` here: the parsed bytes live in the transcoded buffer.
+    if crate::binary_json::is_binary(body) {
+        let text = crate::binary_json::transcode_to_text(body).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to transcode binary cross-partition query page to text")
+                .with_source(e)
+                .build()
+        })?;
+        let page: RawQueryPage = serde_json::from_slice(&text).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to parse cross-partition query page envelope")
+                .with_source(e)
+                .build()
+        })?;
+        return page
+            .documents
+            .iter()
+            .map(|raw| {
+                crate::binary_json::transcode_to_binary(raw.get().as_bytes())
+                    .map(Bytes::from)
+                    .map_err(|e| {
+                        crate::error::CosmosError::builder()
+                            .with_status(
+                                crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+                            )
+                            .with_message(
+                                "failed to re-encode cross-partition query document to binary",
+                            )
+                            .with_source(e)
+                            .build()
+                    })
+            })
+            .collect();
+    }
+
     let page: RawQueryPage = serde_json::from_slice(body).map_err(|e| {
         crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
@@ -194,5 +237,47 @@ mod tests {
     fn malformed_body_errors() {
         let out = split_feed_envelope(&envelope(b"not json"));
         assert!(out.is_err());
+    }
+
+    #[test]
+    fn binary_page_splits_into_binary_items() {
+        let text = br#"{"Documents":[{"id":1},{"id":2},{"id":3}],"_count":3}"#;
+        let binary = crate::binary_json::transcode_to_binary(text).unwrap();
+        assert!(crate::binary_json::is_binary(&binary));
+
+        let items = split_feed_envelope(&Bytes::from(binary)).unwrap();
+        let out = skip_take_items(items, 1, Some(1));
+        assert_eq!(out.dropped, 1);
+        assert_eq!(out.emitted, 1);
+        assert!(crate::binary_json::is_binary(&out.items[0]));
+        let doc: serde_json::Value = crate::binary_json::from_slice(&out.items[0]).unwrap();
+        assert_eq!(doc, serde_json::json!({ "id": 2 }));
+    }
+
+    #[test]
+    fn binary_page_preserves_wide_integer_for_typed_decode() {
+        // #5028: a text split surfaces the integral `Double` as a float that a
+        // `u64` target rejects; the binary path re-encodes so it coerces back.
+        #[derive(serde::Deserialize, PartialEq, Debug)]
+        struct Doc {
+            wide: u64,
+        }
+        let wide = serde_json::Number::from_f64(9_007_199_254_740_992.0).unwrap();
+        let text = serde_json::to_vec(&serde_json::json!({
+            "Documents": [{ "wide": wide }],
+            "_count": 1,
+        }))
+        .unwrap();
+        let binary = crate::binary_json::transcode_to_binary(&text).unwrap();
+
+        let items = split_feed_envelope(&Bytes::from(binary)).unwrap();
+        assert_eq!(items.len(), 1);
+        let doc: Doc = crate::binary_json::from_slice(&items[0]).unwrap();
+        assert_eq!(
+            doc,
+            Doc {
+                wide: 9_007_199_254_740_992
+            }
+        );
     }
 }

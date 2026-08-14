@@ -101,17 +101,15 @@ async fn build_container(db_name: &str, binary: bool) -> ContainerClient {
         .unwrap()
 }
 
-/// Like [`build_container`], but provisions `partition_count` physical
-/// partitions so a full-container query fans out across ranges (the passthrough
-/// cross-partition path). Binary encoding is enabled.
-/// Builds a multi-partition container with binary encoding enabled, attaching a
-/// [`QueryRequestRecorder`] and returning it, so a cross-partition query test can
-/// assert that every fan-out page actually advertised a binary response (a plain
-/// results-match assertion would still pass if negotiation silently broke and the
-/// emulator returned text, since text decodes fine).
+/// Builds a container with `partition_count` physical partitions (so a
+/// full-container query fans out across ranges); `binary` toggles Cosmos binary
+/// JSON encoding. The returned [`QueryRequestRecorder`] lets a test assert what
+/// each query actually advertised — a results-match assertion alone would still
+/// pass if negotiation silently broke, since text decodes fine.
 async fn build_multi_partition_container_with_recorder(
     db_name: &str,
     partition_count: u32,
+    binary: bool,
 ) -> (ContainerClient, Arc<QueryRequestRecorder>) {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
@@ -147,14 +145,17 @@ async fn build_multi_partition_container_with_recorder(
         EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
-    let client = CosmosClientBuilder::new()
-        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(true))
-        .with_runtime(
-            CosmosRuntimeBuilder::from(emulator.runtime_builder())
-                .build()
-                .await
-                .unwrap(),
-        )
+    let mut builder = CosmosClientBuilder::new().with_runtime(
+        CosmosRuntimeBuilder::from(emulator.runtime_builder())
+            .build()
+            .await
+            .unwrap(),
+    );
+    if binary {
+        builder =
+            builder.with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(true));
+    }
+    let client = builder
         .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await
         .unwrap();
@@ -595,7 +596,7 @@ async fn binary_query_negotiates_response_and_round_trips() {
 #[tokio::test]
 async fn binary_cross_partition_query_round_trips() {
     let (container, recorder) =
-        build_multi_partition_container_with_recorder("bin-xpart-query", 3).await;
+        build_multi_partition_container_with_recorder("bin-xpart-query", 3, true).await;
 
     // Spread items across several partition keys so the fan-out spans ranges.
     let items: Vec<TestItem> = (0..12)
@@ -643,7 +644,7 @@ async fn binary_cross_partition_query_round_trips() {
 #[tokio::test]
 async fn binary_cross_partition_order_by_merges_and_round_trips() {
     let (container, recorder) =
-        build_multi_partition_container_with_recorder("bin-xpart-order-by", 3).await;
+        build_multi_partition_container_with_recorder("bin-xpart-order-by", 3, true).await;
 
     // Interleave values across partition keys so the global order differs from
     // any single partition's local order — forcing the k-way merge to actually
@@ -695,6 +696,64 @@ async fn binary_cross_partition_order_by_merges_and_round_trips() {
     assert_query_advertised_binary(&recorder);
 }
 
+/// `OFFSET`/`LIMIT` and `TOP` route the fan-out through the `SkipTake` node,
+/// which splits raw backend page envelopes itself. That splitter was text-only,
+/// so binary-enabled skip/take queries hard-failed; this is the end-to-end guard.
+#[tokio::test]
+async fn binary_cross_partition_skip_take_round_trips() {
+    let (container, recorder) =
+        build_multi_partition_container_with_recorder("bin-xpart-skip-take", 3, true).await;
+
+    let items: Vec<TestItem> = (0..10)
+        .map(|i| TestItem {
+            id: format!("s-{i:02}"),
+            pk: format!("pk{}", i % 3),
+            value: i,
+            note: format!("skip ☃ {i}"),
+        })
+        .collect();
+    for item in &items {
+        container
+            .create_item(&item.pk, &item.id, item, Some(write_options_with_content()))
+            .await
+            .unwrap();
+    }
+
+    let offset_limit = Box::pin(container.query_items::<TestItem>(
+        Query::from("SELECT * FROM c OFFSET 2 LIMIT 3"),
+        FeedScope::full_container(),
+        None,
+    ))
+    .await
+    .unwrap();
+    let paged: Vec<TestItem> = Box::pin(offset_limit.try_collect()).await.unwrap();
+    assert_eq!(
+        paged.len(),
+        3,
+        "OFFSET 2 LIMIT 3 must yield exactly 3 items"
+    );
+
+    let topped = Box::pin(container.query_items::<TestItem>(
+        Query::from("SELECT TOP 4 * FROM c"),
+        FeedScope::full_container(),
+        None,
+    ))
+    .await
+    .unwrap();
+    let top: Vec<TestItem> = Box::pin(topped.try_collect()).await.unwrap();
+    assert_eq!(top.len(), 4, "TOP 4 must yield exactly 4 items");
+
+    // Every returned item must be one we wrote, decoded intact from binary.
+    for item in paged.iter().chain(top.iter()) {
+        assert!(
+            items.contains(item),
+            "skip/take returned an item that did not round-trip: {item:?}",
+        );
+    }
+
+    assert_query_advertised_binary(&recorder);
+}
+
 /// Asserts a query recorder saw at least one query request and that every query
 /// request advertised a binary response while keeping its body text.
 fn assert_query_advertised_binary(recorder: &QueryRequestRecorder) {
@@ -711,6 +770,12 @@ fn assert_query_advertised_binary(recorder: &QueryRequestRecorder) {
         );
     }
     let body_is_binary = recorder.body_is_binary.lock().unwrap();
+    // Guards against `!is_binary` passing for a body the recorder never saw.
+    assert_eq!(
+        body_is_binary.len(),
+        formats.len(),
+        "every recorded query must have had its request body inspected",
+    );
     for is_binary in body_is_binary.iter() {
         assert!(
             !is_binary,
@@ -726,6 +791,53 @@ fn assert_query_advertised_binary(recorder: &QueryRequestRecorder) {
             value.as_deref(),
             None,
             "query-plan request must not advertise a binary response",
+        );
+    }
+}
+
+/// With binary encoding **disabled**, a query must carry no
+/// `x-ms-cosmos-supported-serialization-formats` header. The header is set at the
+/// global `plan_operation` choke point, so a regression there would opt every
+/// customer into binary.
+#[tokio::test]
+async fn disabled_binary_query_advertises_no_format() {
+    let (container, recorder) =
+        build_multi_partition_container_with_recorder("no-binary-xpart-query", 3, false).await;
+
+    let items: Vec<TestItem> = (0..6)
+        .map(|i| TestItem {
+            id: format!("n-{i}"),
+            pk: format!("pk{}", i % 3),
+            value: i,
+            note: format!("plain {i}"),
+        })
+        .collect();
+    for item in &items {
+        container
+            .create_item(&item.pk, &item.id, item, Some(write_options_with_content()))
+            .await
+            .unwrap();
+    }
+
+    let iter = Box::pin(container.query_items::<TestItem>(
+        Query::from("SELECT * FROM c"),
+        FeedScope::full_container(),
+        None,
+    ))
+    .await
+    .unwrap();
+    let _results: Vec<TestItem> = Box::pin(iter.try_collect()).await.unwrap();
+
+    let formats = recorder.negotiation_formats.lock().unwrap();
+    assert!(
+        !formats.is_empty(),
+        "expected at least one query request to be recorded",
+    );
+    for value in formats.iter() {
+        assert_eq!(
+            value.as_deref(),
+            None,
+            "a query on a binary-disabled client must advertise no serialization format",
         );
     }
 }

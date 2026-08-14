@@ -504,6 +504,11 @@ impl PageAggregator {
     /// integral-`Double`→integer coercion), exactly as a passthrough binary
     /// query; text sources are emitted verbatim.
     ///
+    /// Because `emit_binary` is sticky, once any page is binary a *text*-sourced
+    /// payload is re-encoded too, normalizing key order and collapsing duplicate
+    /// keys. A mixed merge shouldn't occur (a query negotiates one format for its
+    /// whole lifetime), so this is defensive.
+    ///
     /// It's valid for no backend page to have been absorbed (page
     /// assembled entirely from previously-buffered rows); it then reports
     /// zero charge and a fresh, empty [`DiagnosticsContext`].
@@ -520,15 +525,24 @@ impl PageAggregator {
         // bytes verbatim.
         let items: Vec<bytes::Bytes> = payloads
             .iter()
-            .map(|payload| {
+            .enumerate()
+            .map(|(index, payload)| {
                 let text = payload.get().as_bytes();
                 if self.emit_binary {
                     crate::binary_json::transcode_to_binary(text)
                         .map(bytes::Bytes::from)
                         .map_err(|e| {
-                            envelope_error(format!(
-                                "failed to transcode merged ORDER BY item to binary: {e}"
-                            ))
+                            // Client-side re-encode failure, not a malformed
+                            // service envelope — a serialization fault, not 500.
+                            crate::error::CosmosError::builder()
+                                .with_status(
+                                    crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+                                )
+                                .with_message(format!(
+                                    "failed to re-encode merged ORDER BY item {index} to binary: {e}"
+                                ))
+                                .with_source(e)
+                                .build()
                         })
                 } else {
                     Ok(bytes::Bytes::copy_from_slice(text))

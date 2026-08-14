@@ -626,6 +626,9 @@ impl PipelineNode for StreamingOrderedMerge {
             .ensure_all_streams_filled(context, &mut aggregator)
             .await
         {
+            // A child may have buffered binary-sourced rows before another
+            // errored; those rows outlive this aggregator, so promote now.
+            self.emit_binary |= aggregator.emits_binary();
             self.continuation_unsafe = true;
             return Err(err);
         }
@@ -699,9 +702,9 @@ impl PipelineNode for StreamingOrderedMerge {
         let is_terminal = self.children.is_empty() && self.deferred_error.is_none();
 
         self.session_token = aggregator.session_token().cloned();
-        // Persist the binary-emit flag so subsequent buffer-only pages stay
-        // binary even though they consume no backend response.
-        self.emit_binary = aggregator.emits_binary();
+        // Sticky so buffer-only pages stay binary; `|=` so a page with no fresh
+        // binary input cannot clear the flag.
+        self.emit_binary |= aggregator.emits_binary();
         let response = aggregator.build_page(&payloads)?;
         Ok(PageResult::Page {
             response,

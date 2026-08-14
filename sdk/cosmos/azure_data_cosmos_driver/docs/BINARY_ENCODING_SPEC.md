@@ -84,7 +84,11 @@ text — there is no query request-body encoding to do.
 > request is re-encoded as an RNTBD metadata token list, and there is no
 > `SupportedSerializationFormats` token, so the header cannot survive the
 > thin-client wrapping — a query against a Gateway 2.0 account silently returns
-> text (which still decodes correctly). Adding the RNTBD token is tracked as a
+> **text**. This is a **customer-visible limitation, not benign**: the whole
+> point of query binary negotiation is to fix the integral-`Double`→integer
+> divergence (#5028), so a wide integer that round-trips over binary on the
+> standard gateway can still fail typed deserialization over a thin-client
+> account. Adding the RNTBD `SupportedSerializationFormats` token is tracked as a
 > follow-up.
 
 ## 3. Background: the .NET reference

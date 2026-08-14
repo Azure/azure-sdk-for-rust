@@ -7,9 +7,11 @@
 //!
 //! The perf crate ships a large collection of representative JSON payloads in
 //! `testdata/`. This test picks random documents out of that corpus, injects an
-//! `id` and a `pk` (the container is partitioned on `/pk`), then creates each
-//! document and reads it back — with the SDK's binary-encoding preview enabled —
-//! asserting the fields we wrote survive the binary request/response round-trip.
+//! `id` and a `pk` (the container is partitioned on `/pk`), then round-trips each
+//! document — with the SDK's binary-encoding preview enabled — through create,
+//! read, a passthrough query, and an `ORDER BY` query (which routes the page
+//! through the streaming k-way merge), asserting the fields we wrote survive
+//! every path.
 //!
 //! # Test data dependency
 //!
@@ -54,15 +56,18 @@ use std::error::Error;
 use std::path::{Path, PathBuf};
 
 use azure_core::http::StatusCode;
+use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::{
     BinaryEncodingOptions, ConnectionPoolOptions, ContentResponseOnWrite, ItemWriteOptions,
     OperationOptions, Region, ServerCertificateValidation,
 };
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy,
+    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
+    RoutingStrategy,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
+use futures::TryStreamExt;
 use rand::RngExt;
 use serde_json::{Map, Value};
 use uuid::Uuid;
@@ -244,8 +249,28 @@ fn assert_sent_fields_round_tripped(sent: &Map<String, Value>, got: &Value, cont
     }
 }
 
+/// Runs `query` across the whole container and returns its single expected hit.
+async fn query_one(
+    container: &ContainerClient,
+    query: Query,
+    context: &str,
+) -> Result<Value, Box<dyn Error>> {
+    let iter = container
+        .query_items::<Value>(query, FeedScope::full_container(), None)
+        .await?;
+    let hits: Vec<Value> = iter.try_collect().await?;
+    assert_eq!(
+        hits.len(),
+        1,
+        "{context}: expected exactly one hit, got {}",
+        hits.len(),
+    );
+    Ok(hits.into_iter().next().expect("asserted non-empty"))
+}
+
 /// Samples documents from the bundled corpus and round-trips each one through
-/// create + read using binary encoding, asserting the sent fields survive.
+/// create, read, and both query shapes using binary encoding, asserting the sent
+/// fields survive.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "binary_encoding"),
@@ -311,6 +336,30 @@ async fn binary_round_trips_sampled_testdata() -> Result<(), Box<dyn Error>> {
         assert_eq!(read.status(), StatusCode::Ok, "{context}: read");
         let read_doc: Value = read.into_model()?;
         assert_sent_fields_round_tripped(&doc, &read_doc, &format!("{context}: read"));
+
+        // QUERY the document back. Queries negotiate a binary *response* but
+        // send a text `application/query+json` body, so this covers a decode
+        // path the point ops above do not reach.
+        let queried = query_one(
+            &container,
+            Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", id.as_str())?,
+            &format!("{context}: query"),
+        )
+        .await?;
+        assert_sent_fields_round_tripped(&doc, &queried, &format!("{context}: query"));
+
+        // Same document through an ORDER BY query, which routes the page through
+        // the streaming k-way merge instead of the passthrough drain. The merge
+        // re-encodes each item, so a corpus document that survives here has
+        // survived a full binary decode/re-encode cycle.
+        let ordered = query_one(
+            &container,
+            Query::from("SELECT * FROM c WHERE c.id = @id ORDER BY c.id")
+                .with_parameter("@id", id.as_str())?,
+            &format!("{context}: order-by query"),
+        )
+        .await?;
+        assert_sent_fields_round_tripped(&doc, &ordered, &format!("{context}: order-by query"));
     }
 
     println!("Round-tripped {SAMPLE_COUNT} sampled documents through binary encoding.");

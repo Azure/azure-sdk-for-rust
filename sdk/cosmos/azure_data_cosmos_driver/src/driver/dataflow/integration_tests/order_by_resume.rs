@@ -603,8 +603,12 @@ async fn binary_merge_keeps_every_page_binary_including_buffer_only_pages() {
         let mut context = PipelineContext::new(&mut executor, Some(&mut noop_topology));
         match pipeline.next_page(&mut context).await.unwrap() {
             Some(response) => {
-                formats.push(page_is_binary(&response));
-                ids.extend(ids_in_page(&response));
+                let page_ids = ids_in_page(&response);
+                // `page_is_binary` is vacuously true for an empty page.
+                if !page_ids.is_empty() {
+                    formats.push(page_is_binary(&response));
+                }
+                ids.extend(page_ids);
             }
             None => break,
         }

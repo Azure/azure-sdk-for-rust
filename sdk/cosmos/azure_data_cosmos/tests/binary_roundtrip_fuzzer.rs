@@ -1920,12 +1920,14 @@ async fn assert_typed_integer_probe(
         "{context}: typed integer probe round-trip changed"
     );
 
-    // Also decode the same wide-integer probe through a cross-partition binary
-    // ORDER BY query. This drives the streaming-merge envelope decode
-    // (`build_page` re-encodes to binary so the SDK's `deserialize_integer`
-    // coercion runs), which the point-op read above does not exercise. A merge
-    // that emitted text instead would fail here with `invalid type: floating
-    // point, expected u64` for the `wide` field — the text/binary divergence.
+    // Also decode the same wide-integer probe through a full-container binary
+    // ORDER BY query, driving the streaming-merge envelope decode (`build_page`
+    // re-encodes to binary so `deserialize_integer` runs). A merge that emitted
+    // text would fail here with `invalid type: floating point, expected u64`.
+    //
+    // This container has default throughput (one physical partition), so the
+    // merge runs with a single child — multi-child interleave is covered by the
+    // 3-partition emulator tests.
     let order_by = with_transient_retry("int-probe-order-by", context, || async {
         let query = Query::from("SELECT * FROM c WHERE c.id = @id ORDER BY c.id")
             .with_parameter("@id", id.as_str())?;
@@ -2000,11 +2002,13 @@ where
 /// Queries the just-written item back and asserts it round-trips, covering the
 /// query binary-response decode path (which point ops do not exercise). Always
 /// runs a single-partition query (the passthrough decode path). When
-/// `include_cross_partition_order_by` is set, also runs a cross-partition
-/// streaming `ORDER BY` query — the k-way merge, whose per-page envelope decode
-/// is the binary path added for query support. That fan-out is the most
-/// expensive query shape and adds no binary coverage on the text-control config,
-/// so callers gate it to the binary configs.
+/// `include_order_by` is set, also runs a full-container streaming `ORDER BY`
+/// query, whose per-page envelope decode is the binary path added for query
+/// support; it adds no binary coverage on text configs, so callers gate it.
+///
+/// The live container has default throughput (one physical partition), so the
+/// merge runs with a single child — multi-child interleave is covered by the
+/// 3-partition emulator tests.
 ///
 /// Both filter on the unique `id`, so each returns exactly this item.
 // The sent-value trio (`sent_canon`, `sent_hash`, `doc`) plus routing context is
@@ -2020,7 +2024,7 @@ async fn assert_query_roundtrip(
     sent_hash: &[u8; 32],
     doc: &Map<String, Value>,
     context: &str,
-    include_cross_partition_order_by: bool,
+    include_order_by: bool,
 ) -> Result<usize, Box<dyn Error>> {
     let single_partition = with_transient_retry("query", context, || async {
         let query = Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", id)?;
@@ -2039,7 +2043,7 @@ async fn assert_query_roundtrip(
         "query",
     );
 
-    if !include_cross_partition_order_by {
+    if !include_order_by {
         return Ok(1);
     }
 
@@ -2290,12 +2294,12 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             // Four point-op round-trips this config: create, read, replace, upsert.
             checked += 4;
 
-            // QUERY the item back. The single-partition passthrough query runs
-            // on every config; the expensive cross-partition ORDER BY fan-out —
-            // whose per-page envelope decode is the binary path added for query
-            // support — runs only on the binary configs, where it adds coverage
-            // (on text-control it would just cost time).
-            let include_order_by = *label != "text-control";
+            // QUERY the item back. The single-partition passthrough query runs on
+            // every config; the expensive ORDER BY merge runs only on pure
+            // `binary` — `text-control` adds no binary coverage, and
+            // `binary+text-response` suppresses query negotiation entirely, so
+            // both would merge over text.
+            let include_order_by = *label == "binary";
             let queries_checked = assert_query_roundtrip(
                 &container,
                 &pk,
@@ -2327,7 +2331,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     }
 
     println!(
-        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs (4 point ops each + 1–2 queries; cross-partition ORDER BY on binary configs only) = {checked} round-trips, all canonical-equal (seed={})",
+        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs (4 point ops each + 1–2 queries; full-container ORDER BY on binary configs only) = {checked} round-trips, all canonical-equal (seed={})",
         cfg.iterations,
         configs.len(),
         cfg.seed

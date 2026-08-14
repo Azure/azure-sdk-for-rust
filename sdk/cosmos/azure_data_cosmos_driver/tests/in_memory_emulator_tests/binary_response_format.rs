@@ -218,3 +218,118 @@ async fn text_read_of_binary_written_item_yields_text_response() {
     assert_eq!(decoded["id"], "mixed-1");
     assert_eq!(decoded["value"], 314);
 }
+
+/// Builds a `POST .../docs` query request (`application/query+json`), optionally
+/// advertising a response-format via `x-ms-cosmos-supported-serialization-formats`.
+fn query_items_request(
+    gateway_url: &str,
+    db: &str,
+    coll: &str,
+    query: &str,
+    serialization_formats: Option<&str>,
+) -> Request {
+    let url = format!("{}/dbs/{}/colls/{}/docs", gateway_url, db, coll);
+    let mut req = Request::new(Url::parse(&url).unwrap(), Method::Post);
+    let body = serde_json::json!({ "query": query, "parameters": [] });
+    req.set_body(serde_json::to_vec(&body).unwrap());
+    req.headers_mut().insert(
+        HeaderName::from_static("x-ms-documentdb-isquery"),
+        HeaderValue::from_static("True"),
+    );
+    req.headers_mut().insert(
+        HeaderName::from_static("content-type"),
+        HeaderValue::from_static("application/query+json"),
+    );
+    req.headers_mut().insert(
+        HeaderName::from_static("x-ms-documentdb-query-enablecrosspartition"),
+        HeaderValue::from_static("True"),
+    );
+    if let Some(formats) = serialization_formats {
+        req.headers_mut().insert(
+            SUPPORTED_SERIALIZATION_FORMATS.clone(),
+            HeaderValue::from(formats.to_string()),
+        );
+    }
+    req
+}
+
+/// A query advertising `CosmosBinary` gets a binary feed body, asserted on the
+/// raw wire bytes — the response half of query negotiation.
+#[tokio::test]
+async fn binary_query_yields_binary_response() {
+    let ctx = setup_single_region().await;
+
+    // Seed one item so the query returns a non-empty feed.
+    let seed = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &serde_json::json!({ "id": "q-1", "pk": "pk1", "value": 11 }),
+        r#"["pk1"]"#,
+        false,
+    );
+    let seed_resp = ctx.emulator.execute_request(&seed).await.unwrap();
+    let (seed_status, _h, _b) = collect_raw_response(seed_resp).await;
+    assert_eq!(seed_status, StatusCode::Created);
+
+    let req = query_items_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "SELECT * FROM c",
+        Some("CosmosBinary"),
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _headers, raw) = collect_raw_response(response).await;
+
+    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(
+        raw.first(),
+        Some(&PREAMBLE),
+        "a query advertising CosmosBinary must return a binary (0x80) feed body",
+    );
+    assert!(
+        binary_json::is_binary(&raw),
+        "query response body must be detected as binary",
+    );
+    // The binary feed envelope decodes back to the seeded document.
+    let decoded: serde_json::Value = binary_json::decode(&raw).unwrap();
+    assert_eq!(decoded["Documents"][0]["id"], "q-1");
+}
+
+/// Counter-case: a `JsonText`-only query gets a text feed body.
+#[tokio::test]
+async fn jsontext_query_yields_text_response() {
+    let ctx = setup_single_region().await;
+
+    let seed = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &serde_json::json!({ "id": "q-2", "pk": "pk1", "value": 22 }),
+        r#"["pk1"]"#,
+        false,
+    );
+    let seed_resp = ctx.emulator.execute_request(&seed).await.unwrap();
+    let (seed_status, _h, _b) = collect_raw_response(seed_resp).await;
+    assert_eq!(seed_status, StatusCode::Created);
+
+    let req = query_items_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "SELECT * FROM c",
+        Some("JsonText"),
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _headers, raw) = collect_raw_response(response).await;
+
+    assert_eq!(status, StatusCode::Ok);
+    assert!(
+        !binary_json::is_binary(&raw),
+        "a JsonText query must return a text feed body",
+    );
+    let text = std::str::from_utf8(&raw).expect("text response must be valid UTF-8");
+    let decoded: serde_json::Value = serde_json::from_str(text).unwrap();
+    assert_eq!(decoded["Documents"][0]["id"], "q-2");
+}

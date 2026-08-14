@@ -52,9 +52,12 @@ extends:
       # Live budget for the binary-encoding round-trip fuzzer
       # (azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs). Only consumed on
       # the `binary_encoding` live leg (live-platform-matrix.json); a no-op
-      # elsewhere. Each iteration exercises 3 encoding configs x 4 point ops, so
-      # 200 => ~2400 round-trips — bounded to fit the live-test time cap. Bump it
-      # for a deeper soak.
+      # elsewhere. Each iteration exercises 3 encoding configs; every config runs
+      # 4 point ops + 1 single-partition query, and the pure-`binary` config adds
+      # a cross-partition ORDER BY query plus a typed wide-integer probe (itself
+      # an extra ORDER BY). That is 3*(4+1) + 2 = ~17 round-trips per iteration,
+      # so 200 => ~3400 — bounded to fit the live-test time cap. Bump it for a
+      # deeper soak.
       AZURE_COSMOS_FUZZ_ITERATIONS: '200'
       # Enable the wide-number generator (integers at or beyond 2^53, where the
       # service's number model stores the value as an IEEE-754 double). Without

@@ -83,13 +83,10 @@ const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_mill
 /// reply in binary, preserving the read-side RU/COGS benefit the caller opted
 /// into. When the caller also asked for a text payload (`request_text_response`),
 /// the driver transcodes the guaranteed-binary response back to text after
-/// receiving it, keeping the wire binary in both directions. **This transcode is
-/// honored only for point operations** (the `execute_operation` path); a query
-/// drains through `plan_operation` → `execute_plan`, which does not transcode, so
-/// `request_text_response` has no effect on a query. The SDK's typed query path
-/// is unaffected (it decodes either format transparently via first-byte
-/// detection); a raw/FFI query consumer that needs text must transcode the pages
-/// itself.
+/// receiving it, keeping the wire binary in both directions. **Point ops only** —
+/// queries bypass that transcode, so a query with `request_text_response` set does
+/// not negotiate binary at all (see
+/// [`apply_response_negotiation`](CosmosDriver::apply_response_negotiation)).
 ///
 /// Note: .NET's *query* default is the broader `JsonText,CosmosBinary` ("send
 /// either, service chooses"); Rust deliberately forces `CosmosBinary` for query
@@ -2709,6 +2706,11 @@ impl CosmosDriver {
     /// only, so it is safe for query (whose text `application/query+json` body
     /// must never be transcoded).
     ///
+    /// Two guards: a caller-set header is never overwritten, and a **query** with
+    /// `request_text_response` does not negotiate binary (queries bypass the
+    /// transcode-back-to-text in `execute_operation`, so binary pages would defeat
+    /// an explicit text request). Point ops are unaffected.
+    ///
     /// [`binary_negotiates_response`]: CosmosDriver::binary_negotiates_response
     fn apply_response_negotiation(
         &self,
@@ -2717,6 +2719,14 @@ impl CosmosDriver {
         resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> CosmosOperation {
         if !Self::binary_negotiates_response(operation.resource_type(), operation.operation_type())
+        {
+            return operation;
+        }
+        // Never clobber a header a caller already set.
+        if operation
+            .request_headers()
+            .supported_serialization_formats
+            .is_some()
         {
             return operation;
         }
@@ -2730,11 +2740,18 @@ impl CosmosDriver {
                 .cloned()
                 .unwrap_or_default()
         });
-        if binary.enabled {
-            operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS)
-        } else {
-            operation
+        if !binary.enabled {
+            return operation;
         }
+        // Queries bypass the response transcode, so honor an explicit text request.
+        let is_query = matches!(
+            operation.operation_type(),
+            crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
+        );
+        if is_query && binary.request_text_response {
+            return operation;
+        }
+        operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS)
     }
 
     /// Transcodes an operation's **text** request body to Cosmos binary JSON.
@@ -3308,6 +3325,24 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        // `None` resolves the binary options lazily at the negotiation choke
+        // point. Boxed to keep this wrapper's future pointer-sized.
+        Box::pin(self.plan_operation_resolved(operation, options, continuation, plan_options, None))
+            .await
+    }
+
+    /// [`plan_operation`](Self::plan_operation) with an optional caller-resolved
+    /// [`BinaryEncodingOptions`](crate::options::BinaryEncodingOptions), so
+    /// `execute_operation` need not re-resolve what it already resolved for the
+    /// request-body gate. `None` resolves lazily at the negotiation choke point.
+    async fn plan_operation_resolved(
+        &self,
+        operation: CosmosOperation,
+        options: &OperationOptions,
+        continuation: Option<&ContinuationToken>,
+        plan_options: &PlanOptions,
+        resolved_binary: Option<crate::options::BinaryEncodingOptions>,
+    ) -> crate::error::Result<OperationPlan> {
         // Reject mixed name/RID addressing before any IO work is done. The
         // service classifies a request as name-based or RID-based from its `dbs`
         // segment alone, so a reference that mixes a name-addressed parent with
@@ -3330,28 +3365,6 @@ impl CosmosDriver {
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        Box::pin(async move {
-            self.plan_operation_inner(operation, options, continuation, plan_options, None)
-                .await
-        })
-        .await
-    }
-
-    /// [`plan_operation`](Self::plan_operation) with a caller-resolved
-    /// [`BinaryEncodingOptions`](crate::options::BinaryEncodingOptions), letting
-    /// `execute_operation` avoid re-resolving the layered options view that it
-    /// already resolved for the request-body gate. The public `plan_operation`
-    /// entry point passes `None`, so the query path (which reaches the driver
-    /// here directly) resolves lazily at the negotiation choke point.
-    async fn plan_operation_resolved(
-        &self,
-        operation: CosmosOperation,
-        options: &OperationOptions,
-        continuation: Option<&ContinuationToken>,
-        plan_options: &PlanOptions,
-        resolved_binary: Option<crate::options::BinaryEncodingOptions>,
-    ) -> crate::error::Result<OperationPlan> {
-        operation.validate_addressing()?;
         Box::pin(async move {
             self.plan_operation_inner(
                 operation,

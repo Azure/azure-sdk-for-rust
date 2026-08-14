@@ -32,9 +32,23 @@ For each generated document `D`:
    - drive every **body-carrying point op** — `create` → `read` → `replace` →
      `upsert` — each returning a document `R` (writes use content-response so the
      response decode path is exercised too);
+   - **query the item back** — a single-partition `SELECT * FROM c WHERE c.id`
+     on every config, plus (on the pure-`binary` config only) a full-container
+     `ORDER BY` query that exercises the streaming merge's binary decode path;
    - `Hc = hash(canonicalize(strip_system(R)))` for each op's `R`;
    - **assert `Hc == H0`** for every op — otherwise dump the seed + both
      canonical forms.
+
+The pure-`binary` config additionally runs a typed wide-integer probe (a
+`u64 = u64::MAX` document read back both as a point op and through a binary
+`ORDER BY` query) to exercise the native `deserialize_integer` coercion that the
+`Value`-based comparisons do not reach.
+
+> **Merge fan-out caveat.** The fuzzer's container is created with default
+> throughput, i.e. a **single physical partition**, so the `ORDER BY` query drives
+> the streaming merge with one child. It covers the per-page envelope decode and
+> the per-item binary re-encode, but not a true multi-child interleave — that is
+> covered by the 3-partition in-memory emulator tests.
 
 These are exactly the four point operations for which binary encoding is honored
 (`create` / `read` / `replace` / `upsert`); `delete` carries no body, and
@@ -123,7 +137,7 @@ flowchart TD
     NORM0 --> CANON0["json-canon (RFC 8785)\ncanonical string"]
     CANON0 --> HASH0["SHA-256 -> H0\n(expected)"]
 
-    BOUND --> STORE["for each config:\ncreate -> read -> replace -> upsert\n(each returns R)"]
+    BOUND --> STORE["for each config:\ncreate -> read -> replace -> upsert\n+ query back (ORDER BY on binary)\n(each returns R)"]
     STORE --> PROJ["project(R, keys(D))\nstrip _rid/_etag/_ts/..."]
     PROJ --> NORM1["normalize_numbers"]
     NORM1 --> CANON1["json-canon"]

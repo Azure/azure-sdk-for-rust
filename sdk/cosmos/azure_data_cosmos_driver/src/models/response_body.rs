@@ -145,22 +145,13 @@ impl ResponseBody {
             }
             Self::Items(items) => items
                 .into_iter()
-                // NOTE: `deserialize_response` auto-detects binary per slice via
-                // the `0x80` preamble, but the feed pipeline that produces
-                // `Self::Items` splits the `Documents` array by scanning **text**
-                // JSON — it is not binary-aware. A single-preamble binary feed
-                // envelope would therefore be sliced into sub-documents *without*
-                // preambles, which `is_binary` would then route to the text path.
-                // This branch is inert for the query path even though query binary
-                // negotiation is now enabled: a passthrough query decodes whole
-                // pages via `into_single`, and the ORDER BY merge parses pages with
-                // `parse_envelope_page`, which rejects a `Self::Items` body
-                // outright — so no query flow reaches this splitter with a binary
-                // body. The `Self::Items` branch has no production caller today and
-                // is exercised only by hand-prefixed synthetic tests. Should a
-                // future driver-side feed path route real binary feeds through this
-                // splitter, it must be made binary-aware (or each slice
-                // re-prefixed) first.
+                // Items are decoded independently, auto-detecting binary per
+                // slice via the `0x80` preamble. Safe because every producer
+                // (`skip_take_page::split_feed_envelope`, `build_page`) emits
+                // each document already standalone-encoded. A future splitter
+                // that slices a single-preamble envelope by scanning text would
+                // yield preamble-less sub-documents misrouted to the text path,
+                // so it must re-prefix per document first.
                 .map(|b| deserialize_response(&b, "failed to deserialize feed item"))
                 .collect(),
         }
