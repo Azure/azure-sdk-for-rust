@@ -87,6 +87,26 @@ if ($updated -eq $content) {
 }
 Set-Content -Path $languageSettingsPath -Value $updated -NoNewline
 
+# Update the nightly channel used by the engineering tools.
+$toolsToolchainPath = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'rust-toolchain.toml')
+Write-Host "Updating '$toolsToolchainPath'..."
+$content = Get-Content -Raw $toolsToolchainPath
+$updated = $content -replace 'channel = "nightly-\d{4}-\d{2}-\d{2}"', "channel = `"$nightlyChannel`""
+if ($updated -eq $content) {
+  LogWarning "No nightly channel was updated in '$toolsToolchainPath'."
+}
+Set-Content -Path $toolsToolchainPath -Value $updated -NoNewline
+
+# Update the stable Rust version required by the engineering tools.
+$toolsManifestPath = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'Cargo.toml')
+Write-Host "Updating '$toolsManifestPath'..."
+$content = Get-Content -Raw $toolsManifestPath
+$updated = $content -replace 'rust-version = "[^"]+"', "rust-version = `"$Version`""
+if ($updated -eq $content) {
+  LogWarning "No 'rust-version' value was updated in '$toolsManifestPath'."
+}
+Set-Content -Path $toolsManifestPath -Value $updated -NoNewline
+
 # Update shebang lines in all *.rs scripts under eng/scripts/
 $rsScriptsDir = [System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts')
 foreach ($rsFile in Get-ChildItem -Path $rsScriptsDir -Filter '*.rs') {

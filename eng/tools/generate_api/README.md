@@ -50,5 +50,5 @@ writes `API.md` into each crate root directory. Pipelines do not set `-APIReview
 The tool reads `eng/tools/rust-toolchain.toml` and invokes:
 
 ```sh
-cargo +nightly-2025-05-09 rustdoc -Z unstable-options --output-format json
+cargo +nightly-2026-04-14 rustdoc -Z unstable-options --output-format json
 ```
