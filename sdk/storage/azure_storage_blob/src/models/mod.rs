@@ -14,8 +14,8 @@ pub use http_ranges::HttpRange;
 pub(crate) mod response_ext;
 mod upload_result;
 
-pub use crate::generated::models::*;
 pub use crate::arrow_decode::AutoFormat;
+pub use crate::generated::models::*;
 pub use download_result::{
     BlobClientDownloadIntoResult, BlobClientDownloadResult, BlobDownloadProperties,
 };

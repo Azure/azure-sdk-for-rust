@@ -18,9 +18,8 @@ use azure_storage_blob::models::{
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobsHierarchicalOptions,
     BlobContainerClientListBlobsOptions, BlobContainerClientSetMetadataOptions, BlobType,
     BlockBlobClientUploadOptions, CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState,
-    LeaseStatus, StorageResponseFormat, ListBlobsIncludeItem,
-    PageBlobClientSetSequenceNumberOptions, RehydratePriority, SequenceNumberActionType,
-    SignedIdentifiers, StorageErrorCode,
+    LeaseStatus, ListBlobsIncludeItem, PageBlobClientSetSequenceNumberOptions, RehydratePriority,
+    SequenceNumberActionType, SignedIdentifiers, StorageErrorCode, StorageResponseFormat,
 };
 use azure_storage_blob::StorageError;
 use common::{

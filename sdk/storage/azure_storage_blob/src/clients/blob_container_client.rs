@@ -145,7 +145,10 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
     ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
         let options = options.unwrap_or_default().into_owned();
-        let accept = options.response_format.unwrap_or_default().as_header_value();
+        let accept = options
+            .response_format
+            .unwrap_or_default()
+            .as_header_value();
         let pager_options = options.method_options.clone();
         let pipeline = self.pipeline.clone();
         let version = self.version.clone();
@@ -248,7 +251,10 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobsHierarchicalOptions<'_>>,
     ) -> Result<Pager<ListBlobsHierarchicalResponse, AutoFormat>> {
         let options = options.unwrap_or_default().into_owned();
-        let accept = options.response_format.unwrap_or_default().as_header_value();
+        let accept = options
+            .response_format
+            .unwrap_or_default()
+            .as_header_value();
         let pager_options = options.method_options.clone();
         let pipeline = self.pipeline.clone();
         let version = self.version.clone();
