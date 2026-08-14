@@ -5,7 +5,7 @@
 
 pub mod options;
 
-use crate::stream::{BytesStream, ReadStream, SeekableStream};
+use crate::stream::{BytesStream, ReadStream, SeekableReadStream, SeekableStream};
 #[cfg(feature = "json")]
 use crate::{http::JsonFormat, json::to_json};
 use crate::{
@@ -17,7 +17,7 @@ use crate::{
 };
 #[cfg(any(feature = "json", feature = "xml"))]
 use crate::{time::OffsetDateTime, Value};
-use futures::AsyncRead;
+use futures::io::{AsyncRead, AsyncSeek};
 #[cfg(any(feature = "json", feature = "xml"))]
 use serde::Serialize;
 #[cfg(any(feature = "json", feature = "xml"))]
@@ -325,7 +325,11 @@ impl<T, F> RequestContent<T, F> {
 
     /// Create a new `RequestContent` from an [`AsyncRead`] source.
     ///
-    /// The source is wrapped in a type that implements [`SeekableStream`] but errs when [`SeekableStream::reset()`] is called.
+    /// The source is wrapped in a type that implements [`SeekableStream`] but errs when
+    /// [`SeekableStream::reset()`] is called. Request retries and other flows that must replay
+    /// the body will fail when using this constructor. If the source also implements
+    /// [`AsyncSeek`], use [`RequestContent::from_seekable_reader`] instead.
+    ///
     /// `len` is optional and, if `Some`, will be set in the `content-length` header.
     ///
     /// # Examples
@@ -343,21 +347,21 @@ impl<T, F> RequestContent<T, F> {
     /// ```
     ///
     /// Wrap a `tokio::io::AsyncRead` source e.g., a `tokio_util::io::StreamReader`, using
-    /// `tokio_util::compat::TokioAsyncReadCompatExt` to convert it to a `futures::io::AsyncRead`.
-    /// Then use [`FuturesAsyncReadExt::shared`](crate::stream::FuturesAsyncReadExt) to make it
-    /// cloneable before passing it to `from_reader`.
+    /// `tokio_util::compat::TokioAsyncReadCompatExt` to convert it to a `futures::io::AsyncRead`,
+    /// then pass the resulting reader directly to `from_reader`.
     ///
     /// ```no_run
     /// use bytes::Bytes;
-    /// use typespec_client_core::{http::RequestContent, stream::FuturesAsyncReadExt as _};
+    /// use typespec_client_core::http::RequestContent;
     /// use tokio_util::{compat::TokioAsyncReadCompatExt as _, io::StreamReader};
     ///
     /// # async fn example() {
     /// let iter = tokio_stream::iter(vec![
-    ///     Ok::<_, std::io::Error>(Bytes::from_static(b"hello ")),
+    ///     Ok::<_, std::io::Error>(Bytes::from_static(b"hello")),
+    ///     Ok(Bytes::from_static(b" ")),
     ///     Ok(Bytes::from_static(b"world")),
     /// ]);
-    /// let stream = StreamReader::new(iter).compat().shared(None);
+    /// let stream = StreamReader::new(iter).compat();
     /// let content: RequestContent<String> = RequestContent::from_reader(stream, None);
     /// # }
     /// ```
@@ -366,6 +370,36 @@ impl<T, F> RequestContent<T, F> {
         R: AsyncRead + Unpin + Send + Sync + 'static,
     {
         let reader = ReadStream::new(reader, len);
+        Self {
+            body: Body::SeekableStream(Box::new(reader)),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Create a new `RequestContent` from an [`AsyncRead`] + [`AsyncSeek`] source.
+    ///
+    /// The source is wrapped in a [`SeekableReadStream`], allowing
+    /// [`SeekableStream::reset()`] to rewind the body to the beginning so it can be replayed by
+    /// request retries or other reset-dependent flows.
+    ///
+    /// `len` is optional and, if `Some`, will be set in the `content-length` header.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use futures::io::Cursor;
+    /// use typespec_client_core::http::RequestContent;
+    ///
+    /// let data = b"hello world";
+    /// let cursor = Cursor::new(data.to_vec());
+    /// let content: RequestContent<String> =
+    ///     RequestContent::from_seekable_reader(cursor, Some(data.len() as u64));
+    /// ```
+    pub fn from_seekable_reader<R>(reader: R, len: Option<u64>) -> Self
+    where
+        R: AsyncRead + AsyncSeek + Unpin + Send + Sync + 'static,
+    {
+        let reader = SeekableReadStream::new(reader, len);
         Self {
             body: Body::SeekableStream(Box::new(reader)),
             phantom: PhantomData,
@@ -412,6 +446,7 @@ impl<T, F> From<Box<dyn SeekableStream>> for RequestContent<T, F> {
     /// Some implementations available in this crate:
     ///
     /// - [`BytesStream`]
+    /// - [`SharedStream`](crate::stream::SharedStream)
     ///
     /// # Examples
     ///
@@ -869,7 +904,6 @@ mod tests {
 
     #[tokio::test]
     async fn request_content_from_tokio_stream_reader() {
-        use crate::stream::FuturesAsyncReadExt as _;
         use futures::io::AsyncReadExt as _;
         use tokio_util::{compat::TokioAsyncReadCompatExt as _, io::StreamReader};
 
@@ -878,14 +912,39 @@ mod tests {
             Ok::<_, std::io::Error>(Bytes::from_static(&[b't', b'e'])),
             Ok(Bytes::from_static(&[b's', b't'])),
         ]);
-        // StreamReader is tokio::io::AsyncRead but not Clone; wrap it in SharedStream
-        // via TokioAsyncReadExt so it satisfies SeekableStream without requiring Clone on R.
-        let stream = StreamReader::new(iter).compat().shared(None);
+        let stream = StreamReader::new(iter).compat();
         let content: RequestContent<String> = RequestContent::from_reader(stream, None);
 
         let Body::SeekableStream(mut body) = content.body else {
             panic!("expected stream");
         };
+
+        let mut buf = Vec::new();
+        body.read_to_end(&mut buf).await.unwrap();
+        assert_eq!(buf, expected);
+    }
+
+    #[tokio::test]
+    async fn request_content_from_seekable_reader() {
+        use futures::io::{AsyncReadExt as _, Cursor};
+
+        let expected = b"seekable body";
+        let content: RequestContent<String> = RequestContent::from_seekable_reader(
+            Cursor::new(expected.to_vec()),
+            Some(expected.len() as u64),
+        );
+
+        assert_eq!(content.body().len(), Some(expected.len() as u64));
+
+        let Body::SeekableStream(mut body) = content.body else {
+            panic!("expected stream");
+        };
+
+        let mut buf = Vec::new();
+        body.read_to_end(&mut buf).await.unwrap();
+        assert_eq!(buf, expected);
+
+        body.reset().await.unwrap();
 
         let mut buf = Vec::new();
         body.read_to_end(&mut buf).await.unwrap();

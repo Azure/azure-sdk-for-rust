@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use super::SeekableStream;
+use crate::http::Body;
 use futures::{io::AsyncRead, lock::Mutex};
 use std::{
     fmt,
@@ -23,7 +24,7 @@ use std::{
 /// # Construction
 ///
 /// Use the [`FuturesAsyncReadExt`] extension trait to wrap any [`futures::io::AsyncRead`] source,
-/// or [`TokioAsyncReadExt`] for a [`tokio::io::AsyncRead`] source:
+/// or [`TokioAsyncReadExt`](tokio_util::compat::TokioAsyncReadCompatExt) for a [`tokio::io::AsyncRead`] source:
 ///
 /// ```
 /// # use typespec_client_core::stream::FuturesAsyncReadExt as _;
@@ -65,6 +66,12 @@ impl Clone for SharedStream {
 impl fmt::Debug for SharedStream {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("SharedStream").finish_non_exhaustive()
+    }
+}
+
+impl From<SharedStream> for Body {
+    fn from(shared_stream: SharedStream) -> Self {
+        Self::SeekableStream(Box::new(shared_stream))
     }
 }
 
