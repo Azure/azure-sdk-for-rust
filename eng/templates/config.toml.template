@@ -7,19 +7,8 @@
 # CARGO_REGISTRIES_AZURE_SDK_FOR_RUST_PUBLIC_TOKEN / _CREDENTIAL_PROVIDER variables that
 # cargo needs to authenticate against the feed.
 #
-# The `~force-auth` suffix on the feed name is required for authenticated callers. The
-# feed is in a public project, so Azure Artifacts answers the anonymous probe cargo makes
-# for `Cargo/index/config.json` with "auth-required": false. Cargo caches that and only
-# retries config.json itself with credentials, so without the suffix every crate lookup
-# goes out anonymously and the token is never used. Anonymous callers can only read crates
-# already saved in the feed, so the first crate that still has to come from the crates.io
-# upstream fails with a 401. See
+# The `~force-auth` suffix on the feed name is required. See
 # https://learn.microsoft.com/azure/devops/artifacts/cargo/cargo-upstream-source.
-#
-# eng/pipelines/templates/steps/use-rust.yml strips the suffix for pull requests from
-# forks, which run with a restricted System.AccessToken that cannot authenticate to the
-# feed. Those builds read the feed anonymously and are limited to crates already saved in
-# it, which is why CI on the default branch has to keep the feed populated.
 
 [registries]
 azure-sdk-for-rust-public = { index = "sparse+https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-rust-public~force-auth/Cargo/index/" }
