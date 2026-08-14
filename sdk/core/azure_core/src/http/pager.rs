@@ -1003,27 +1003,6 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn item_pagination_supports_non_serde_custom_deserialization() {
-        let pager: Pager<ManualPage, ManualFormat> = Pager::new(
-            |_, _| {
-                Box::pin(async move {
-                    Ok(PagerResult::Done {
-                        response: RawResponse::from_bytes(
-                            StatusCode::Ok,
-                            Headers::new(),
-                            "items: 1, 2, 3",
-                        )
-                        .into(),
-                    })
-                })
-            },
-            None,
-        );
-
-        assert_eq!(pager.try_collect::<Vec<_>>().await.unwrap(), vec![1, 2, 3]);
-    }
-
     #[derive(Deserialize, Debug, PartialEq, Eq)]
     struct Page {
         pub items: Vec<i32>,
@@ -1094,6 +1073,27 @@ mod tests {
         );
         let items: Vec<i32> = pager.try_collect().await.unwrap();
         assert_eq!(vec![1, 2, 3], items.as_slice())
+    }
+
+    #[tokio::test]
+    async fn item_pagination_supports_non_serde_custom_deserialization() {
+        let pager: Pager<ManualPage, ManualFormat> = Pager::new(
+            |_, _| {
+                Box::pin(async move {
+                    Ok(PagerResult::Done {
+                        response: RawResponse::from_bytes(
+                            StatusCode::Ok,
+                            Headers::new(),
+                            "items: 1, 2, 3",
+                        )
+                        .into(),
+                    })
+                })
+            },
+            None,
+        );
+
+        assert_eq!(pager.try_collect::<Vec<_>>().await.unwrap(), vec![1, 2, 3]);
     }
 
     #[tokio::test]

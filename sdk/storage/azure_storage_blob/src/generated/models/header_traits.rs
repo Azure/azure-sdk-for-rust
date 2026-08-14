@@ -1731,7 +1731,7 @@ impl BlobContainerClientGetPropertiesResultHeaders
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// use azure_core::{Result, http::AsyncResponse};
 /// use azure_storage_blob::models::{BlobContainerClientListBlobsHierarchicalInternalResult, BlobContainerClientListBlobsHierarchicalInternalResultHeaders};
 /// async fn example() -> Result<()> {
@@ -1743,7 +1743,9 @@ impl BlobContainerClientGetPropertiesResultHeaders
 ///     Ok(())
 /// }
 /// ```
-pub trait BlobContainerClientListBlobsHierarchicalInternalResultHeaders: private::Sealed {
+pub(crate) trait BlobContainerClientListBlobsHierarchicalInternalResultHeaders:
+    private::Sealed
+{
     fn content_type(&self) -> Result<Option<ListBlobsHierarchicalInternalResponseContentType>>;
 }
 
@@ -1760,7 +1762,7 @@ impl BlobContainerClientListBlobsHierarchicalInternalResultHeaders
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// use azure_core::{Result, http::AsyncResponse};
 /// use azure_storage_blob::models::{BlobContainerClientListBlobsInternalResult, BlobContainerClientListBlobsInternalResultHeaders};
 /// async fn example() -> Result<()> {
@@ -1772,7 +1774,7 @@ impl BlobContainerClientListBlobsHierarchicalInternalResultHeaders
 ///     Ok(())
 /// }
 /// ```
-pub trait BlobContainerClientListBlobsInternalResultHeaders: private::Sealed {
+pub(crate) trait BlobContainerClientListBlobsInternalResultHeaders: private::Sealed {
     fn content_type(&self) -> Result<Option<ListBlobsInternalResponseContentType>>;
 }
 

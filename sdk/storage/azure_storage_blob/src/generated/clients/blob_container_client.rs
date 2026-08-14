@@ -728,7 +728,7 @@ impl BlobContainerClient {
     /// The returned [`AsyncResponse`](azure_core::http::AsyncResponse) implements the [`BlobContainerClientListBlobsHierarchicalInternalResultHeaders`] trait, which provides
     /// access to response headers. For example:
     ///
-    /// ```no_run
+    /// ```ignore
     /// use azure_core::{Result, http::AsyncResponse};
     /// use azure_storage_blob::models::{BlobContainerClientListBlobsHierarchicalInternalResult, BlobContainerClientListBlobsHierarchicalInternalResultHeaders};
     /// async fn example() -> Result<()> {
@@ -746,7 +746,7 @@ impl BlobContainerClient {
     ///
     /// [`BlobContainerClientListBlobsHierarchicalInternalResultHeaders`]: crate::generated::models::BlobContainerClientListBlobsHierarchicalInternalResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobsHierarchicalInternal")]
-    pub async fn list_blobs_hierarchical_internal(
+    pub(crate) async fn list_blobs_hierarchical_internal(
         &self,
         accept: String,
         delimiter: &str,
@@ -918,7 +918,7 @@ impl BlobContainerClient {
     /// The returned [`AsyncResponse`](azure_core::http::AsyncResponse) implements the [`BlobContainerClientListBlobsInternalResultHeaders`] trait, which provides
     /// access to response headers. For example:
     ///
-    /// ```no_run
+    /// ```ignore
     /// use azure_core::{Result, http::AsyncResponse};
     /// use azure_storage_blob::models::{BlobContainerClientListBlobsInternalResult, BlobContainerClientListBlobsInternalResultHeaders};
     /// async fn example() -> Result<()> {
@@ -936,7 +936,7 @@ impl BlobContainerClient {
     ///
     /// [`BlobContainerClientListBlobsInternalResultHeaders`]: crate::generated::models::BlobContainerClientListBlobsInternalResultHeaders
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobsInternal")]
-    pub async fn list_blobs_internal(
+    pub(crate) async fn list_blobs_internal(
         &self,
         accept: String,
         options: Option<BlobContainerClientListBlobsInternalOptions<'_>>,

@@ -264,7 +264,7 @@ pub enum LeaseStatus {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ListBlobsHierarchicalInternalResponseContentType {
+pub(crate) enum ListBlobsHierarchicalInternalResponseContentType {
     ApplicationVndApacheArrowStream,
 
     ApplicationXml,
@@ -305,7 +305,7 @@ pub enum ListBlobsIncludeItem {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ListBlobsInternalResponseContentType {
+pub(crate) enum ListBlobsInternalResponseContentType {
     ApplicationVndApacheArrowStream,
 
     ApplicationXml,

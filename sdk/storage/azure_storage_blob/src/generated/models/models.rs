@@ -122,11 +122,11 @@ pub struct BlobContainerClientGetPropertiesResult;
 
 /// Contains results for `BlobContainerClient::list_blobs_hierarchical_internal()`
 #[derive(SafeDebug)]
-pub struct BlobContainerClientListBlobsHierarchicalInternalResult;
+pub(crate) struct BlobContainerClientListBlobsHierarchicalInternalResult;
 
 /// Contains results for `BlobContainerClient::list_blobs_internal()`
 #[derive(SafeDebug)]
-pub struct BlobContainerClientListBlobsInternalResult;
+pub(crate) struct BlobContainerClientListBlobsInternalResult;
 
 /// Contains results for `BlobContainerClient::release_lease()`
 #[derive(SafeDebug)]
