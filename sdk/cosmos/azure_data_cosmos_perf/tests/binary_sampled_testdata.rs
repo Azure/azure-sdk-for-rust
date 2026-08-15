@@ -1,17 +1,41 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Live integration test that samples the bundled `testdata/*.json` corpus and
-//! round-trips the sampled documents through Cosmos DB using **binary JSON**
-//! encoding.
+//! Live integration test that seeds the bundled `testdata/*.json` corpus into a
+//! container and then replays one query set **twice** — once over text JSON and
+//! once over **binary JSON** — to compare the two encodings apple-to-apple.
 //!
 //! The perf crate ships a large collection of representative JSON payloads in
-//! `testdata/`. This test picks random documents out of that corpus, injects an
-//! `id` and a `pk` (the container is partitioned on `/pk`), then round-trips each
-//! document — with the SDK's binary-encoding preview enabled — through create,
-//! read, a passthrough query, and an `ORDER BY` query (which routes the page
-//! through the streaming k-way merge), asserting the fields we wrote survive
-//! every path.
+//! `testdata/`. The test runs in two phases:
+//!
+//! 1. **Seed.** Sample documents out of the corpus, stamp each with a unique
+//!    `id`, a `pk` (the container is partitioned on `/pk`) and a per-run
+//!    `testRun` marker, then insert them all with binary encoding and a content
+//!    response, asserting both the echoed document and a subsequent point read
+//!    match what was sent. The `testRun` marker scopes every later query to this
+//!    run, so the container can be reused across runs without result counts
+//!    drifting.
+//! 2. **Compare.** Run each query shape twice over the seeded set — once with
+//!    binary encoding off, once with it on — assert the two agree, and report
+//!    item count, page count and RU charge side by side.
+//!
+//! Both arms use a **single client** and toggle encoding per operation via
+//! [`OperationOptions::binary_encoding`], so the two runs share a connection
+//! pool, session and routing state. Only the wire encoding differs.
+//!
+//! The query shapes cover the three cross-partition pipelines the binary work
+//! touches: the unordered passthrough drain, the streaming `ORDER BY` k-way
+//! merge (which decodes and re-encodes every item), and the `SkipTake` window
+//! behind `OFFSET`/`LIMIT`/`TOP`.
+//!
+//! # What the comparison does and does not prove
+//!
+//! Agreement between the arms proves the binary pipeline returns the same data
+//! as the text pipeline. It does **not** prove the binary arm actually put
+//! binary on the wire — that is asserted at the byte level by the driver and
+//! in-memory-emulator tests, which can inspect the request. Treat the reported
+//! page/RU numbers as observations, not assertions: page boundaries are chosen
+//! by the service, so they are reported rather than asserted on.
 //!
 //! # Test data dependency
 //!
@@ -47,8 +71,11 @@
 //! The test targets the `binary-encoding-perf-db` database and
 //! `binary-encoding-perf-ct` container (partition key `/pk`) by default,
 //! creating them if they do not already exist. Override the names with
-//! `AZURE_COSMOS_BINARY_TEST_DATABASE` / `AZURE_COSMOS_BINARY_TEST_CONTAINER`.
-//! To run against a local emulator, also set `AZURE_COSMOS_ALLOW_INVALID_CERT=true`.
+//! `AZURE_COSMOS_BINARY_TEST_DATABASE` / `AZURE_COSMOS_BINARY_TEST_CONTAINER`,
+//! and the number of seeded documents with `AZURE_COSMOS_BINARY_TEST_SEED_COUNT`
+//! (default 200). Seeding more documents makes multi-page results more likely,
+//! which is what exercises binary pagination. To run against a local emulator,
+//! also set `AZURE_COSMOS_ALLOW_INVALID_CERT=true`.
 
 #![allow(clippy::large_futures)]
 
@@ -60,7 +87,7 @@ use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::{
     BinaryEncodingOptions, ConnectionPoolOptions, ContentResponseOnWrite, ItemWriteOptions,
-    OperationOptions, Region, ServerCertificateValidation,
+    OperationOptions, QueryOptions, Region, ServerCertificateValidation,
 };
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
@@ -76,13 +103,32 @@ const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const ALLOW_INVALID_CERT_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 const DATABASE_NAME_ENV_VAR: &str = "AZURE_COSMOS_BINARY_TEST_DATABASE";
 const CONTAINER_NAME_ENV_VAR: &str = "AZURE_COSMOS_BINARY_TEST_CONTAINER";
+const SEED_COUNT_ENV_VAR: &str = "AZURE_COSMOS_BINARY_TEST_SEED_COUNT";
 
 const DEFAULT_DATABASE_NAME: &str = "binary-encoding-perf-db";
 const DEFAULT_CONTAINER_NAME: &str = "binary-encoding-perf-ct";
 const PARTITION_KEY_PATH: &str = "/pk";
 
-/// Number of documents sampled from the corpus per test run.
-const SAMPLE_COUNT: usize = 25;
+/// Number of corpus documents seeded per test run.
+const DEFAULT_SEED_COUNT: usize = 200;
+
+/// Upper bound on a sampled document's serialized size. Cosmos rejects items
+/// over 2 MB, and the service adds system properties on top of what we send, so
+/// oversized corpus objects are skipped rather than failing the seed with a 413.
+const MAX_DOCUMENT_BYTES: usize = 1_500_000;
+
+/// Attempts to draw an acceptably-sized document before giving up, so a corpus
+/// made entirely of oversized objects fails loudly instead of looping.
+const MAX_SAMPLE_ATTEMPTS: usize = 50;
+
+/// Number of documents seeded this run, from [`SEED_COUNT_ENV_VAR`].
+fn seed_count() -> usize {
+    std::env::var(SEED_COUNT_ENV_VAR)
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .filter(|&v| v > 0)
+        .unwrap_or(DEFAULT_SEED_COUNT)
+}
 
 /// Reads all bundled `testdata/*.json` files and flattens them into a pool of
 /// candidate JSON **objects** (non-object top-level values and array elements
@@ -234,6 +280,10 @@ fn write_options_with_content() -> ItemWriteOptions {
 /// service-returned `got`. The service adds system fields (`_rid`, `_etag`,
 /// `_ts`, ...) to stored documents, so a full-object equality would spuriously
 /// fail — we only verify the fields we control round-tripped intact.
+///
+/// Comparison is numerically tolerant (see [`json_equivalent`]) because Cosmos
+/// stores every number as a double, so a wide integer we sent can legitimately
+/// come back as the same value in a different `serde_json::Number` variant.
 fn assert_sent_fields_round_tripped(sent: &Map<String, Value>, got: &Value, context: &str) {
     let got = got
         .as_object()
@@ -242,43 +292,195 @@ fn assert_sent_fields_round_tripped(sent: &Map<String, Value>, got: &Value, cont
         let actual = got
             .get(key)
             .unwrap_or_else(|| panic!("{context}: response missing field {key:?}"));
-        assert_eq!(
-            actual, expected,
-            "{context}: field {key:?} did not round-trip",
+        assert!(
+            json_equivalent(actual, expected),
+            "{context}: field {key:?} did not round-trip\n  sent: {}\n  got:  {}",
+            render_capped(expected),
+            render_capped(actual),
         );
     }
 }
 
-/// Runs `query` across the whole container and returns its single expected hit.
-async fn query_one(
-    container: &ContainerClient,
-    query: Query,
-    context: &str,
-) -> Result<Value, Box<dyn Error>> {
-    let iter = container
-        .query_items::<Value>(query, FeedScope::full_container(), None)
-        .await?;
-    let hits: Vec<Value> = iter.try_collect().await?;
-    assert_eq!(
-        hits.len(),
-        1,
-        "{context}: expected exactly one hit, got {}",
-        hits.len(),
-    );
-    Ok(hits.into_iter().next().expect("asserted non-empty"))
+/// How a query shape's results may be compared across the two encodings.
+#[derive(Clone, Copy)]
+enum Compare {
+    /// The query pins a total order, so the runs must agree element by element.
+    Sequence,
+    /// Order is unspecified across partitions, so compare as sets keyed by `id`.
+    Set,
+    /// The shape does not pin *which* documents come back (`TOP` without
+    /// `ORDER BY` may return any window), so only cardinality is comparable.
+    Count,
 }
 
-/// Samples documents from the bundled corpus and round-trips each one through
-/// create, read, and both query shapes using binary encoding, asserting the sent
-/// fields survive.
+/// One query shape, run once per encoding.
+struct QuerySpec {
+    name: &'static str,
+    text: &'static str,
+    compare: Compare,
+    expected_items: usize,
+}
+
+/// A drained query, with the paging and RU facts used to compare encodings.
+struct QueryOutcome {
+    items: Vec<Value>,
+    pages: usize,
+    request_charge: f64,
+}
+
+/// Drains `spec` across the whole container with binary encoding forced on or
+/// off for this operation only.
+///
+/// The encoding is set explicitly on both arms so neither silently inherits the
+/// client-level default, which would make the comparison meaningless.
+async fn run_query(
+    container: &ContainerClient,
+    spec: &QuerySpec,
+    run_id: &str,
+    binary: bool,
+) -> Result<QueryOutcome, Box<dyn Error>> {
+    let query = Query::from(spec.text).with_parameter("@run", run_id)?;
+
+    let mut operation = OperationOptions::default();
+    operation.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(binary));
+    let options = QueryOptions::default().with_operation_options(operation);
+
+    let mut pages = container
+        .query_items::<Value>(query, FeedScope::full_container(), Some(options))
+        .await?
+        .into_pages();
+
+    let mut outcome = QueryOutcome {
+        items: Vec::new(),
+        pages: 0,
+        request_charge: 0.0,
+    };
+    while let Some(page) = pages.try_next().await? {
+        outcome.pages += 1;
+        outcome.request_charge += page.headers().request_charge().map_or(0.0, |c| c.value());
+        outcome.items.extend(page.into_items());
+    }
+    Ok(outcome)
+}
+
+/// Compares two JSON values treating numerically-equal numbers as equal.
+///
+/// Cosmos stores every number as an IEEE-754 double, so a wide integer can come
+/// back as an integer literal in text but as a `Double` in binary. Those decode
+/// to different `serde_json::Number` variants that compare unequal despite
+/// being the same value, so numbers are compared as `f64`.
+fn json_equivalent(a: &Value, b: &Value) -> bool {
+    match (a, b) {
+        (Value::Number(x), Value::Number(y)) => match (x.as_f64(), y.as_f64()) {
+            (Some(x), Some(y)) => x == y,
+            _ => x == y,
+        },
+        (Value::Array(x), Value::Array(y)) => {
+            x.len() == y.len() && x.iter().zip(y).all(|(a, b)| json_equivalent(a, b))
+        }
+        (Value::Object(x), Value::Object(y)) => {
+            x.len() == y.len()
+                && x.iter()
+                    .all(|(k, v)| y.get(k).is_some_and(|other| json_equivalent(v, other)))
+        }
+        _ => a == b,
+    }
+}
+
+fn id_of(value: &Value) -> &str {
+    value.get("id").and_then(Value::as_str).unwrap_or("<no id>")
+}
+
+fn sorted_by_id(items: &[Value]) -> Vec<&Value> {
+    let mut refs: Vec<&Value> = items.iter().collect();
+    refs.sort_by(|a, b| id_of(a).cmp(id_of(b)));
+    refs
+}
+
+/// Renders a value for an assertion message, capped so a multi-MB corpus
+/// document does not flood the log.
+fn render_capped(value: &Value) -> String {
+    let mut rendered = value.to_string();
+    if let Some((idx, _)) = rendered.char_indices().nth(512) {
+        rendered.truncate(idx);
+        rendered.push_str("... (truncated)");
+    }
+    rendered
+}
+
+/// Asserts the text and binary runs of `spec` returned equivalent results.
+fn assert_encodings_agree(spec: &QuerySpec, text: &QueryOutcome, binary: &QueryOutcome) {
+    assert_eq!(
+        text.items.len(),
+        binary.items.len(),
+        "{}: text returned {} items but binary returned {}",
+        spec.name,
+        text.items.len(),
+        binary.items.len(),
+    );
+
+    let (text_items, binary_items) = match spec.compare {
+        Compare::Count => return,
+        Compare::Sequence => (
+            text.items.iter().collect::<Vec<_>>(),
+            binary.items.iter().collect::<Vec<_>>(),
+        ),
+        Compare::Set => (sorted_by_id(&text.items), sorted_by_id(&binary.items)),
+    };
+
+    for (i, (t, b)) in text_items.iter().zip(&binary_items).enumerate() {
+        assert!(
+            json_equivalent(t, b),
+            "{}: item #{i} (id={}) differs between encodings\n  text:   {}\n  binary: {}",
+            spec.name,
+            id_of(t),
+            render_capped(t),
+            render_capped(b),
+        );
+    }
+}
+
+/// Draws a corpus document small enough to store, retrying past oversized ones.
+///
+/// Top-level `_`-prefixed keys are dropped: much of the corpus was exported
+/// from Cosmos and still carries system properties (`_rid`, `_etag`, `_ts`,
+/// ...) that the service owns and rewrites on write, so they can never
+/// round-trip.
+fn sample_document(
+    pool: &[Map<String, Value>],
+    rng: &mut impl rand::Rng,
+) -> Result<Map<String, Value>, Box<dyn Error>> {
+    for _ in 0..MAX_SAMPLE_ATTEMPTS {
+        let candidate: Map<String, Value> = pool[rng.random_range(0..pool.len())]
+            .iter()
+            .filter(|(k, _)| !k.starts_with('_'))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        let size = serde_json::to_vec(&candidate).map(|v| v.len()).unwrap_or(0);
+        if size > 0 && size <= MAX_DOCUMENT_BYTES {
+            return Ok(candidate);
+        }
+    }
+    Err(format!(
+        "no corpus document under {MAX_DOCUMENT_BYTES} bytes found in {MAX_SAMPLE_ATTEMPTS} attempts"
+    )
+    .into())
+}
+
+/// Seeds sampled corpus documents, then replays each query shape over both
+/// encodings and asserts they agree.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "binary_encoding"),
     ignore = "requires test_category 'binary_encoding' and a live account connection string"
 )]
-async fn binary_round_trips_sampled_testdata() -> Result<(), Box<dyn Error>> {
+async fn binary_and_text_queries_agree_over_seeded_corpus() -> Result<(), Box<dyn Error>> {
     let pool = load_sample_pool()?;
-    println!("Loaded {} candidate documents from testdata/", pool.len());
+    let seed_count = seed_count();
+    println!(
+        "Loaded {} candidate documents from testdata/; seeding {seed_count}.",
+        pool.len(),
+    );
 
     let client = build_client().await?;
 
@@ -304,26 +506,27 @@ async fn binary_round_trips_sampled_testdata() -> Result<(), Box<dyn Error>> {
     )?;
     let container = db_client.container_client(&container_name).await?;
 
+    // Scopes every query below to this run, so a reused container does not let
+    // earlier runs' documents perturb the expected counts.
+    let run_id = Uuid::new_v4().to_string();
     let mut rng = rand::rng();
-    let sampled: Vec<Map<String, Value>> = (0..SAMPLE_COUNT)
-        .map(|_| pool[rng.random_range(0..pool.len())].clone())
-        .collect();
 
-    for (i, base) in sampled.into_iter().enumerate() {
-        // Inject the id and partition key. The corpus documents may already
-        // carry an `id`/`pk`, which we overwrite to guarantee uniqueness and a
-        // valid single-value partition key.
+    // ---- Phase 1: seed every document up front ----
+    for i in 0..seed_count {
         let id = Uuid::new_v4().to_string();
         let pk = format!("pk-{}", rng.random_range(0..16));
 
-        let mut doc = base;
+        // Corpus documents may already carry `id`/`pk`, which we overwrite to
+        // guarantee uniqueness and a valid single-value partition key.
+        let mut doc = sample_document(&pool, &mut rng)?;
         doc.insert("id".to_string(), Value::String(id.clone()));
         doc.insert("pk".to_string(), Value::String(pk.clone()));
+        doc.insert("testRun".to_string(), Value::String(run_id.clone()));
 
-        let context = format!("sample #{i} (id={id})");
+        let context = format!("seed #{i} (id={id})");
 
-        // CREATE with content response: the service echoes the stored document
-        // back through the binary path.
+        // Content response echoes the stored document back, so the binary
+        // response decode path is exercised on every write.
         let created = container
             .create_item(&pk, &id, &doc, Some(write_options_with_content()))
             .await?;
@@ -331,37 +534,108 @@ async fn binary_round_trips_sampled_testdata() -> Result<(), Box<dyn Error>> {
         let created_doc: Value = created.into_model()?;
         assert_sent_fields_round_tripped(&doc, &created_doc, &format!("{context}: create echo"));
 
-        // READ back through the binary path and verify the stored values.
+        // Read back through the binary path, which decodes a stored document
+        // rather than the service's echo of the one just sent.
         let read = container.read_item(&pk, &id, None).await?;
         assert_eq!(read.status(), StatusCode::Ok, "{context}: read");
         let read_doc: Value = read.into_model()?;
         assert_sent_fields_round_tripped(&doc, &read_doc, &format!("{context}: read"));
+    }
+    println!("Seeded {seed_count} documents (testRun={run_id}).");
 
-        // QUERY the document back. Queries negotiate a binary *response* but
-        // send a text `application/query+json` body, so this covers a decode
-        // path the point ops above do not reach.
-        let queried = query_one(
-            &container,
-            Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", id.as_str())?,
-            &format!("{context}: query"),
-        )
-        .await?;
-        assert_sent_fields_round_tripped(&doc, &queried, &format!("{context}: query"));
+    // ---- Phase 2: replay each shape over both encodings ----
+    // `OFFSET`/`LIMIT` and `TOP` bounds are fixed, so the expected counts are
+    // clamped against the seeded total.
+    const OFFSET: usize = 5;
+    const LIMIT: usize = 25;
+    const TOP: usize = 10;
 
-        // Same document through an ORDER BY query, which routes the page through
-        // the streaming k-way merge instead of the passthrough drain. The merge
-        // re-encodes each item, so a corpus document that survives here has
-        // survived a full binary decode/re-encode cycle.
-        let ordered = query_one(
-            &container,
-            Query::from("SELECT * FROM c WHERE c.id = @id ORDER BY c.id")
-                .with_parameter("@id", id.as_str())?,
-            &format!("{context}: order-by query"),
-        )
-        .await?;
-        assert_sent_fields_round_tripped(&doc, &ordered, &format!("{context}: order-by query"));
+    let specs = [
+        QuerySpec {
+            name: "passthrough (unordered fan-out)",
+            text: "SELECT * FROM c WHERE c.testRun = @run",
+            compare: Compare::Set,
+            expected_items: seed_count,
+        },
+        QuerySpec {
+            name: "ORDER BY (streaming merge)",
+            text: "SELECT * FROM c WHERE c.testRun = @run ORDER BY c.id",
+            compare: Compare::Sequence,
+            expected_items: seed_count,
+        },
+        QuerySpec {
+            name: "ORDER BY + OFFSET/LIMIT (SkipTake)",
+            text: "SELECT * FROM c WHERE c.testRun = @run ORDER BY c.id OFFSET 5 LIMIT 25",
+            compare: Compare::Sequence,
+            expected_items: LIMIT.min(seed_count.saturating_sub(OFFSET)),
+        },
+        QuerySpec {
+            name: "TOP (SkipTake over passthrough)",
+            text: "SELECT TOP 10 * FROM c WHERE c.testRun = @run",
+            compare: Compare::Count,
+            expected_items: TOP.min(seed_count),
+        },
+    ];
+
+    println!(
+        "\n{:<38} {:>8} {:>7} {:>7} {:>10} {:>10}",
+        "query", "encoding", "items", "pages", "RU", "RU/item",
+    );
+
+    for spec in &specs {
+        let text = run_query(&container, spec, &run_id, false).await?;
+        let binary = run_query(&container, spec, &run_id, true).await?;
+
+        for (label, outcome) in [("text", &text), ("binary", &binary)] {
+            let per_item = if outcome.items.is_empty() {
+                0.0
+            } else {
+                outcome.request_charge / outcome.items.len() as f64
+            };
+            println!(
+                "{:<38} {:>8} {:>7} {:>7} {:>10.2} {:>10.3}",
+                spec.name,
+                label,
+                outcome.items.len(),
+                outcome.pages,
+                outcome.request_charge,
+                per_item,
+            );
+        }
+
+        assert_eq!(
+            text.items.len(),
+            spec.expected_items,
+            "{}: expected {} items from the seeded set, got {}",
+            spec.name,
+            spec.expected_items,
+            text.items.len(),
+        );
+        assert_encodings_agree(spec, &text, &binary);
+
+        // The encoding delta is the point of the run, so report it rather than
+        // leaving it to be eyeballed off the two rows above. Reported only:
+        // the service picks page boundaries, so these are observations.
+        let ru_delta = binary.request_charge - text.request_charge;
+        let ru_pct = if text.request_charge > 0.0 {
+            ru_delta / text.request_charge * 100.0
+        } else {
+            0.0
+        };
+        println!(
+            "{:<38} {:>8} {:>7} {:>+7} {:>+10.2} {:>9.1}%",
+            "",
+            "delta",
+            "",
+            binary.pages as i64 - text.pages as i64,
+            ru_delta,
+            ru_pct,
+        );
     }
 
-    println!("Round-tripped {SAMPLE_COUNT} sampled documents through binary encoding.");
+    println!(
+        "\nText and binary agreed on all {} query shapes.",
+        specs.len()
+    );
     Ok(())
 }

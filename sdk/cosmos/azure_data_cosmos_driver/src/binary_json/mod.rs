@@ -165,6 +165,28 @@ mod tests {
     }
 
     #[test]
+    fn transcode_round_trip_preserves_double_bits_exactly() {
+        // The merged ORDER BY path re-encodes payloads by transcoding binary to
+        // text and back, so that round trip must not perturb a double by even
+        // one ULP. `96.182417728091792` is a live corpus value that serde_json's
+        // default (non-`float_roundtrip`) parser decodes one ULP high, so this
+        // guards the `float_roundtrip` feature staying enabled.
+        let original = 96.182417728091792_f64;
+        let source_text = serde_json::to_vec(&serde_json::json!({ "Lon": original })).unwrap();
+
+        let binary = transcode_to_binary(&source_text).unwrap();
+        let text = transcode_to_text(&binary).unwrap();
+        let decoded = decode(&transcode_to_binary(&text).unwrap()).unwrap();
+
+        let round_tripped = decoded["Lon"].as_f64().unwrap();
+        assert_eq!(
+            round_tripped.to_bits(),
+            original.to_bits(),
+            "double changed across the transcode round trip: {round_tripped} vs {original}",
+        );
+    }
+
+    #[test]
     fn transcode_binary_to_text_produces_equivalent_json() {
         // A binary buffer transcodes to the same JSON serde_json would emit.
         let value = serde_json::json!({
