@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::source_cache;
 use rustdoc_types::{Attribute, AttributeRepr, Item, ItemEnum, ReprKind};
-use std::{fs, path::Path};
+use std::path::Path;
 
 pub(crate) fn attribute_texts(item: &Item) -> Vec<String> {
     let mut attributes = source_attributes(item);
@@ -106,7 +107,7 @@ fn source_attributes(item: &Item) -> Vec<String> {
     let Some(span) = &item.span else {
         return Vec::new();
     };
-    let Ok(source) = fs::read_to_string(Path::new(&span.filename)) else {
+    let Some(source) = source_cache::get(&span.filename) else {
         return Vec::new();
     };
 
@@ -116,7 +117,7 @@ fn source_attributes(item: &Item) -> Vec<String> {
 
     let mut attributes = source_attributes_before(&source, span.begin.0);
     if let Some((filename, line)) = cfg_trace_source(item) {
-        if let Ok(source) = fs::read_to_string(filename) {
+        if let Some(source) = source_cache::get(Path::new(filename)) {
             let source_attributes = item
                 .name
                 .as_deref()
@@ -142,6 +143,14 @@ fn source_attributes(item: &Item) -> Vec<String> {
         }
     }
     attributes
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum CfgPredicate {
+    NameValue { name: String, value: Option<String> },
+    Any(Vec<CfgPredicate>),
+    All(Vec<CfgPredicate>),
+    Not(Box<CfgPredicate>),
 }
 
 fn source_attributes_near(source: &str, start_line: usize, item_name: &str) -> Option<Vec<String>> {
@@ -240,32 +249,364 @@ fn source_crate_attributes(source: &str, start_line: usize) -> Vec<String> {
 }
 
 fn render_cfg_trace(text: &str) -> Option<String> {
-    let mut predicates = Vec::new();
-    let mut remaining = text;
-    while let Some(index) = remaining.find("NameValue { name: \"") {
-        remaining = &remaining[index + "NameValue { name: \"".len()..];
-        let name_end = remaining.find('"')?;
-        let name = &remaining[..name_end];
-        remaining = &remaining[name_end + 1..];
-        let value_start = remaining.find("value: Some(\"")? + "value: Some(\"".len();
-        remaining = &remaining[value_start..];
-        let value_end = remaining.find('"')?;
-        let value = &remaining[..value_end];
-        predicates.push(format!("{name} = {value:?}"));
-        remaining = &remaining[value_end + 1..];
+    let mut parser = CfgTraceParser::new(text);
+    let predicates = parser.parse_cfg_trace()?;
+    let body = match predicates.as_slice() {
+        [] => return None,
+        [predicate] => render_cfg_predicate(predicate),
+        _ => format!(
+            "all({})",
+            predicates
+                .iter()
+                .map(render_cfg_predicate)
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+    };
+    Some(format!("#[cfg({body})]"))
+}
+
+fn render_cfg_predicate(predicate: &CfgPredicate) -> String {
+    match predicate {
+        CfgPredicate::NameValue { name, value } => match value {
+            Some(value) => format!("{name} = {value:?}"),
+            None => name.clone(),
+        },
+        CfgPredicate::Any(predicates) => format!(
+            "any({})",
+            predicates
+                .iter()
+                .map(render_cfg_predicate)
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        CfgPredicate::All(predicates) => format!(
+            "all({})",
+            predicates
+                .iter()
+                .map(render_cfg_predicate)
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        CfgPredicate::Not(predicate) => format!("not({})", render_cfg_predicate(predicate)),
+    }
+}
+
+struct CfgTraceParser<'a> {
+    text: &'a str,
+    index: usize,
+}
+
+impl<'a> CfgTraceParser<'a> {
+    fn new(text: &'a str) -> Self {
+        Self { text, index: 0 }
     }
 
-    match predicates.len() {
-        0 => None,
-        1 => Some(format!("#[cfg({})]", predicates[0])),
-        _ => {
-            let operator = if text.contains("CfgTrace([Any(") {
-                "any"
-            } else {
-                "all"
-            };
-            Some(format!("#[cfg({operator}({}))]", predicates.join(", ")))
+    fn parse_cfg_trace(&mut self) -> Option<Vec<CfgPredicate>> {
+        self.consume("#[attr = CfgTrace(")?;
+        let predicates = self.parse_predicate_list()?;
+        self.skip_whitespace();
+        self.consume(")]")?;
+        self.skip_whitespace();
+        (self.index == self.text.len()).then_some(predicates)
+    }
+
+    fn parse_predicate_list(&mut self) -> Option<Vec<CfgPredicate>> {
+        self.skip_whitespace();
+        self.consume("[")?;
+        self.skip_whitespace();
+
+        let mut predicates = Vec::new();
+        while !self.starts_with("]") {
+            predicates.push(self.parse_predicate()?);
+            self.skip_whitespace();
+            if self.consume(",").is_none() {
+                break;
+            }
+            self.skip_whitespace();
         }
+
+        self.consume("]")?;
+        Some(predicates)
+    }
+
+    fn parse_predicate(&mut self) -> Option<CfgPredicate> {
+        self.skip_whitespace();
+        if self.starts_with("Any(") {
+            self.consume("Any(")?;
+            let predicates = self.parse_predicate_list()?;
+            self.finish_group()?;
+            return Some(CfgPredicate::Any(predicates));
+        }
+        if self.starts_with("All(") {
+            self.consume("All(")?;
+            let predicates = self.parse_predicate_list()?;
+            self.finish_group()?;
+            return Some(CfgPredicate::All(predicates));
+        }
+        if self.starts_with("Not(") {
+            self.consume("Not(")?;
+            let predicate = self.parse_predicate()?;
+            self.finish_group()?;
+            return Some(CfgPredicate::Not(Box::new(predicate)));
+        }
+        if self.starts_with("NameValue") {
+            return self.parse_name_value();
+        }
+        None
+    }
+
+    fn parse_name_value(&mut self) -> Option<CfgPredicate> {
+        self.consume("NameValue")?;
+        self.skip_whitespace();
+        self.consume("{")?;
+        self.skip_whitespace();
+
+        let mut name = None;
+        let mut value = None;
+
+        while !self.starts_with("}") {
+            let field = self.parse_identifier()?;
+            self.skip_whitespace();
+            self.consume(":")?;
+            self.skip_whitespace();
+
+            match field.as_str() {
+                "name" => name = Some(self.parse_string()?),
+                "value" => value = Some(self.parse_optional_string()?),
+                _ => self.skip_field_value()?,
+            }
+
+            self.skip_whitespace();
+            if self.starts_with(",") {
+                self.consume(",")?;
+                self.skip_whitespace();
+            } else {
+                break;
+            }
+        }
+
+        self.consume("}")?;
+        Some(CfgPredicate::NameValue {
+            name: name?,
+            value: value?,
+        })
+    }
+
+    fn parse_identifier(&mut self) -> Option<String> {
+        self.skip_whitespace();
+        let start = self.index;
+        while let Some(ch) = self.peek_char() {
+            if ch.is_ascii_alphanumeric() || ch == '_' {
+                self.index += ch.len_utf8();
+            } else {
+                break;
+            }
+        }
+        (self.index > start).then(|| self.text[start..self.index].to_string())
+    }
+
+    fn parse_optional_string(&mut self) -> Option<Option<String>> {
+        if self.consume("Some(").is_some() {
+            let value = self.parse_string()?;
+            self.skip_whitespace();
+            self.consume(")")?;
+            return Some(Some(value));
+        }
+        if self.consume("None").is_some() {
+            return Some(None);
+        }
+        None
+    }
+
+    fn parse_string(&mut self) -> Option<String> {
+        self.skip_whitespace();
+        if self.peek_char()? != '"' {
+            return None;
+        }
+        let start = self.index;
+        self.index += 1;
+        let mut escaped = false;
+        while let Some(ch) = self.peek_char() {
+            self.index += ch.len_utf8();
+            if escaped {
+                escaped = false;
+                continue;
+            }
+            match ch {
+                '\\' => escaped = true,
+                '"' => {
+                    let literal = &self.text[start..self.index];
+                    return serde_json::from_str(literal).ok();
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
+    fn skip_field_value(&mut self) -> Option<()> {
+        let mut parens = 0usize;
+        let mut brackets = 0usize;
+        let mut braces = 0usize;
+        let mut in_string = false;
+        let mut escaped = false;
+
+        while let Some(ch) = self.peek_char() {
+            if in_string {
+                self.index += ch.len_utf8();
+                if escaped {
+                    escaped = false;
+                    continue;
+                }
+                match ch {
+                    '\\' => escaped = true,
+                    '"' => in_string = false,
+                    _ => {}
+                }
+                continue;
+            }
+
+            match ch {
+                '"' => {
+                    in_string = true;
+                    self.index += ch.len_utf8();
+                }
+                '(' => {
+                    parens += 1;
+                    self.index += 1;
+                }
+                ')' => {
+                    if parens == 0 && brackets == 0 && braces == 0 {
+                        break;
+                    }
+                    parens = parens.saturating_sub(1);
+                    self.index += 1;
+                }
+                '[' => {
+                    brackets += 1;
+                    self.index += 1;
+                }
+                ']' => {
+                    if parens == 0 && brackets == 0 && braces == 0 {
+                        break;
+                    }
+                    brackets = brackets.saturating_sub(1);
+                    self.index += 1;
+                }
+                '{' => {
+                    braces += 1;
+                    self.index += 1;
+                }
+                '}' => {
+                    if parens == 0 && brackets == 0 && braces == 0 {
+                        break;
+                    }
+                    braces = braces.saturating_sub(1);
+                    self.index += 1;
+                }
+                ',' if parens == 0 && brackets == 0 && braces == 0 => break,
+                _ => self.index += ch.len_utf8(),
+            }
+        }
+        Some(())
+    }
+
+    fn finish_group(&mut self) -> Option<()> {
+        self.skip_whitespace();
+        if self.starts_with(",") {
+            self.consume(",")?;
+            self.skip_to_group_end()?;
+        }
+        self.consume(")")?;
+        Some(())
+    }
+
+    fn skip_to_group_end(&mut self) -> Option<()> {
+        let mut parens = 0usize;
+        let mut brackets = 0usize;
+        let mut braces = 0usize;
+        let mut in_string = false;
+        let mut escaped = false;
+
+        while let Some(ch) = self.peek_char() {
+            if in_string {
+                self.index += ch.len_utf8();
+                if escaped {
+                    escaped = false;
+                    continue;
+                }
+                match ch {
+                    '\\' => escaped = true,
+                    '"' => in_string = false,
+                    _ => {}
+                }
+                continue;
+            }
+
+            match ch {
+                '"' => {
+                    in_string = true;
+                    self.index += ch.len_utf8();
+                }
+                '(' => {
+                    parens += 1;
+                    self.index += 1;
+                }
+                ')' => {
+                    if parens == 0 && brackets == 0 && braces == 0 {
+                        break;
+                    }
+                    parens = parens.saturating_sub(1);
+                    self.index += 1;
+                }
+                '[' => {
+                    brackets += 1;
+                    self.index += 1;
+                }
+                ']' => {
+                    brackets = brackets.saturating_sub(1);
+                    self.index += 1;
+                }
+                '{' => {
+                    braces += 1;
+                    self.index += 1;
+                }
+                '}' => {
+                    braces = braces.saturating_sub(1);
+                    self.index += 1;
+                }
+                _ => self.index += ch.len_utf8(),
+            }
+        }
+        Some(())
+    }
+
+    fn skip_whitespace(&mut self) {
+        while let Some(ch) = self.peek_char() {
+            if ch.is_whitespace() {
+                self.index += ch.len_utf8();
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn starts_with(&self, needle: &str) -> bool {
+        self.text[self.index..].starts_with(needle)
+    }
+
+    fn consume(&mut self, needle: &str) -> Option<()> {
+        if self.starts_with(needle) {
+            self.index += needle.len();
+            Some(())
+        } else {
+            None
+        }
+    }
+
+    fn peek_char(&self) -> Option<char> {
+        self.text[self.index..].chars().next()
     }
 }
 
@@ -359,6 +700,27 @@ mod tests {
             )
             .as_deref(),
             Some("#[cfg(any(feature = \"json\", feature = \"xml\"))]")
+        );
+        assert_eq!(
+            render_cfg_trace(
+                "#[attr = CfgTrace([NameValue { name: \"unix\", value: None, span: src/lib.rs:1:1: 1:1 (#0) }])]"
+            )
+            .as_deref(),
+            Some("#[cfg(unix)]")
+        );
+        assert_eq!(
+            render_cfg_trace(
+                "#[attr = CfgTrace([Not(NameValue { name: \"feature\", value: Some(\"http\"), span: src/lib.rs:1:1: 1:1 (#0) }, src/lib.rs:1:1: 1:1 (#0))])]"
+            )
+            .as_deref(),
+            Some("#[cfg(not(feature = \"http\"))]")
+        );
+        assert_eq!(
+            render_cfg_trace(
+                "#[attr = CfgTrace([All([NameValue { name: \"unix\", value: None, span: src/lib.rs:1:1: 1:1 (#0) }, Any([NameValue { name: \"feature\", value: Some(\"json\"), span: src/lib.rs:1:1: 1:1 (#0) }, Not(NameValue { name: \"feature\", value: Some(\"xml\"), span: src/lib.rs:1:1: 1:1 (#0) }, src/lib.rs:1:1: 1:1 (#0))], src/lib.rs:1:1: 1:1 (#0))], src/lib.rs:1:1: 1:1 (#0))])]"
+            )
+            .as_deref(),
+            Some("#[cfg(all(unix, any(feature = \"json\", not(feature = \"xml\"))))]")
         );
     }
 
