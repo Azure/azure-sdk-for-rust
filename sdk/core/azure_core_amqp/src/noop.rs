@@ -11,7 +11,7 @@ use super::{
         AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpSource, AmqpTarget, DeliveryNumber,
         DeliveryTag,
     },
-    receiver::{AmqpDeliveryOutcome, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
+    receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     sender::{AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis, AmqpSenderOptions},
     session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
     simple_value::AmqpSimpleValue,
@@ -229,14 +229,6 @@ impl AmqpReceiverApis for NoopAmqpReceiver {
         unimplemented!();
     }
     async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()> {
-        unimplemented!();
-    }
-    #[allow(unused_variables)]
-    async fn settle_delivery(
-        &self,
-        delivery: &AmqpDelivery,
-        outcome: AmqpDeliveryOutcome,
-    ) -> Result<()> {
         unimplemented!();
     }
 }
