@@ -367,8 +367,26 @@ mod tests {
 
         // The info map carries the dead letter reason and description to the broker.
         // Dropping it is exactly the data loss this conversion exists to prevent.
-        let converted_info = converted.info.expect("info map should survive conversion");
+        let converted_info = converted
+            .info
+            .as_ref()
+            .expect("info map should survive conversion");
         assert_eq!(converted_info.len(), 2);
+
+        let round_trip: AmqpDescribedError = converted.into();
+        assert_eq!(round_trip.condition, AmqpErrorCondition::DeadLetter);
+        assert_eq!(round_trip.description.as_deref(), Some("rejected"));
+        assert_eq!(round_trip.info.len(), 2);
+        assert_eq!(
+            round_trip.info.get(&AmqpSymbol::from("DeadLetterReason")),
+            Some(&AmqpValue::from("ProcessingFailed"))
+        );
+        assert_eq!(
+            round_trip
+                .info
+                .get(&AmqpSymbol::from("DeadLetterErrorDescription")),
+            Some(&AmqpValue::from("the handler returned an error"))
+        );
     }
 
     #[test]
