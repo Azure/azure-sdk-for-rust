@@ -258,6 +258,10 @@ fn test_amqp_error_condition_display() {
         "amqp:not-found"
     );
     assert_eq!(
+        format!("{}", AmqpErrorCondition::DeadLetter),
+        "com.microsoft:dead-letter"
+    );
+    assert_eq!(
         format!("{}", AmqpErrorCondition::UnknownValue("test".to_string())),
         "test"
     );
