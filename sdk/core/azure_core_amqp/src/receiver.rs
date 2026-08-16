@@ -8,6 +8,7 @@ use crate::{
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
     ReceiverSettleMode,
 };
+use typespec_macros::SafeDebug;
 
 #[cfg(feature = "fe2o3_amqp")]
 type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;
@@ -156,7 +157,7 @@ pub(crate) enum DefaultSettlementRoute {
 ///
 /// See [AMQP delivery state](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#section-delivery-state)
 /// for the definition of each outcome.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(SafeDebug, Clone, PartialEq)]
 pub enum AmqpDeliveryOutcome {
     /// The delivery was processed successfully. The source may forget the message.
     Accepted,
