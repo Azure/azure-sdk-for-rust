@@ -93,6 +93,12 @@ pub fn is_binary(buffer: &[u8]) -> bool {
 ///   so the conversion is safe to apply unconditionally on a response whose
 ///   format was negotiated but not guaranteed.
 ///
+/// Integral `Double`s are rendered with integer syntax (`3`, not `3.0`), which
+/// is how the service renders them in text mode. Without this, a value read
+/// back from a binary page would differ from the same value read from a text
+/// page — visible on the wire in an ORDER BY `resumeFilter` and in a
+/// continuation token.
+///
 /// # Errors
 ///
 /// Returns a [`BinaryError`] if `buffer` is binary but malformed, or if the
@@ -102,9 +108,42 @@ pub fn transcode_to_text(buffer: &[u8]) -> Result<Vec<u8>> {
         // Already text (or empty): nothing to convert.
         return Ok(buffer.to_vec());
     }
-    let value = decode(buffer)?;
+    let mut value = decode(buffer)?;
+    normalize_integral_floats(&mut value);
     serde_json::to_vec(&value)
         .map_err(|e| BinaryError::Custom(format!("failed to re-serialize decoded value: {e}")))
+}
+
+/// Rewrites every integral `f64` in `value` to an integer `Number`, matching
+/// the service's text rendering of a stored `Double`.
+///
+/// Bounds are exclusive at `2^64` so a cast cannot saturate at `u64::MAX`;
+/// magnitudes outside the integer range stay floating point.
+pub(crate) fn normalize_integral_floats(value: &mut serde_json::Value) {
+    const U64_EXCLUSIVE_UPPER_BOUND: f64 = 18_446_744_073_709_551_616.0;
+
+    match value {
+        serde_json::Value::Number(number) if number.is_f64() => {
+            let Some(float) = number.as_f64() else {
+                return;
+            };
+            if float.fract() != 0.0 {
+                return;
+            }
+            if (0.0..U64_EXCLUSIVE_UPPER_BOUND).contains(&float) {
+                *number = serde_json::Number::from(float as u64);
+            } else if float < 0.0 && float >= i64::MIN as f64 {
+                *number = serde_json::Number::from(float as i64);
+            }
+        }
+        serde_json::Value::Array(values) => {
+            values.iter_mut().for_each(normalize_integral_floats);
+        }
+        serde_json::Value::Object(values) => {
+            values.values_mut().for_each(normalize_integral_floats);
+        }
+        _ => {}
+    }
 }
 
 /// Transcodes a UTF-8 **text** JSON buffer to Cosmos **binary** JSON.
@@ -205,6 +244,49 @@ mod tests {
         assert_eq!(text, serde_json::to_vec(&value).unwrap());
         let reparsed: serde_json::Value = serde_json::from_slice(&text).unwrap();
         assert_eq!(reparsed, value);
+    }
+
+    #[test]
+    fn transcode_renders_integral_double_as_integer() {
+        // The service renders a stored integral `Double` as `3`, so the binary
+        // transcode must too — otherwise a value read from a binary page differs
+        // from the same value read from a text page.
+        let binary = encode(&serde_json::json!({ "n": 3.0 }));
+        assert_eq!(transcode_to_text(&binary).unwrap(), br#"{"n":3}"#);
+    }
+
+    #[test]
+    fn transcode_keeps_fractional_double_unchanged() {
+        let binary = encode(&serde_json::json!({ "n": 3.5 }));
+        assert_eq!(transcode_to_text(&binary).unwrap(), br#"{"n":3.5}"#);
+    }
+
+    #[test]
+    fn transcode_normalizes_integral_doubles_nested_in_containers() {
+        let binary = encode(&serde_json::json!({ "a": [1.0, 2.5], "o": { "b": -4.0 } }));
+        let text = transcode_to_text(&binary).unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
+
+        assert_eq!(value["a"][0].as_u64(), Some(1));
+        assert!(value["a"][1].is_f64());
+        assert_eq!(value["o"]["b"].as_i64(), Some(-4));
+    }
+
+    /// Magnitudes outside the integer range stay floating point, so a cast can
+    /// never saturate at `u64::MAX` / `i64::MIN` and silently corrupt a value.
+    #[test]
+    fn transcode_leaves_out_of_range_integral_doubles_as_floats() {
+        let binary = encode(&serde_json::json!({
+            "i64_min": i64::MIN as f64,
+            "too_big": 18_446_744_073_709_551_616.0_f64,
+            "too_small": -18_446_744_073_709_551_616.0_f64,
+        }));
+        let text = transcode_to_text(&binary).unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
+
+        assert_eq!(value["i64_min"].as_i64(), Some(i64::MIN));
+        assert!(value["too_big"].is_f64());
+        assert!(value["too_small"].is_f64());
     }
 
     #[test]

@@ -310,23 +310,12 @@ pub(crate) fn parse_envelope_page(
             ));
         }
     };
-    // Binary-negotiated ORDER BY pages arrive as Cosmos binary JSON; the
-    // envelope parse below is text-only, so transcode first. Text pages (the
-    // default, since binary is opt-in) skip the transcode entirely and parse
-    // the borrowed bytes directly — `transcode_to_text` would otherwise copy
-    // the whole page into a fresh `Vec<u8>`, taxing every existing ORDER BY
-    // user for a feature they did not enable.
-    let feed: RawFeedBody = if crate::binary_json::is_binary(&bytes) {
-        let text = crate::binary_json::transcode_to_text(&bytes).map_err(|e| {
-            envelope_error(format!(
-                "failed to transcode binary ORDER BY envelope page to text: {e}"
-            ))
-        })?;
-        serde_json::from_slice(&text)
-    } else {
-        serde_json::from_slice(&bytes)
-    }
-    .map_err(|e| {
+    // Binary-negotiated pages arrive as Cosmos binary JSON; the envelope parse
+    // below is text-only. `normalize_page_body` is the single choke point every
+    // raw-feed consumer shares, so a text page (the default, since binary is
+    // opt-in) keeps its original allocation and pays nothing.
+    let bytes = normalize_page_body(&bytes)?;
+    let feed: RawFeedBody = serde_json::from_slice(&bytes).map_err(|e| {
         body_error(
             "failed to parse rewritten-query backend page as a feed body",
             e,
@@ -376,18 +365,19 @@ pub(crate) struct PageAggregator {
     index_metrics: Option<String>,
     query_metrics: Option<String>,
     status: CosmosStatus,
-    /// Set once any absorbed backend page arrived as Cosmos binary JSON. When
-    /// true, [`build_page`](Self::build_page) emits the synthetic envelope as
-    /// binary so the SDK decodes it through the binary deserializer — which
-    /// applies the integral-`Double`→integer coercion that a passthrough binary
-    /// query already gets. Emitting text here would instead route the payloads
-    /// through the text deserializer, which hard-fails on a service-echoed
-    /// integral double for an integer field (the text/binary divergence).
+    /// Whether [`build_page`](Self::build_page) emits the synthetic envelope as
+    /// Cosmos binary JSON. Derived from the negotiated operation by the owning
+    /// node — never from the bytes of an absorbed page, so a page served
+    /// entirely from buffered rows encodes the same as one that hit the network.
     emit_binary: bool,
 }
 
-impl Default for PageAggregator {
-    fn default() -> Self {
+impl PageAggregator {
+    /// Creates an aggregator emitting binary when the operation negotiated it
+    /// (see [`CosmosOperation::negotiates_binary_response`]).
+    ///
+    /// [`CosmosOperation::negotiates_binary_response`]: crate::models::CosmosOperation::negotiates_binary_response
+    pub(crate) fn new(emit_binary: bool) -> Self {
         Self {
             request_charge: crate::models::RequestCharge::default(),
             diagnostics_sources: Vec::new(),
@@ -396,35 +386,12 @@ impl Default for PageAggregator {
             index_metrics: None,
             query_metrics: None,
             status: CosmosStatus::new(azure_core::http::StatusCode::Ok),
-            emit_binary: false,
+            emit_binary,
         }
-    }
-}
-
-impl PageAggregator {
-    pub(crate) fn new() -> Self {
-        Self::default()
     }
 
     pub(crate) fn seed_session_token(&mut self, session_token: Option<SessionToken>) {
         self.session_token = session_token;
-    }
-
-    /// Seeds the sticky binary-emit flag from the owning merge, so a page served
-    /// entirely from buffered rows (no backend fetch, so no [`absorb`]) still
-    /// emits binary when the query's earlier pages were binary. See the
-    /// `emit_binary` field on the merge for why this must persist across pages.
-    ///
-    /// [`absorb`]: Self::absorb
-    pub(crate) fn seed_emit_binary(&mut self, emit_binary: bool) {
-        self.emit_binary = emit_binary;
-    }
-
-    /// Whether this page will emit a Cosmos binary JSON envelope — `true` once
-    /// any absorbed backend page was binary or the flag was seeded from the
-    /// merge's sticky state.
-    pub(crate) fn emits_binary(&self) -> bool {
-        self.emit_binary
     }
 
     pub(crate) fn session_token(&self) -> Option<&SessionToken> {
@@ -441,9 +408,6 @@ impl PageAggregator {
         let charge = response.headers().request_charge.unwrap_or_default();
         self.request_charge = self.request_charge + charge;
         self.diagnostics_sources.push(response.diagnostics());
-        if response_body_is_binary(response.body()) {
-            self.emit_binary = true;
-        }
         if let Some(id) = &response.headers().activity_id {
             self.activity_id = Some(id.clone());
         }
@@ -504,11 +468,6 @@ impl PageAggregator {
     /// integral-`Double`→integer coercion), exactly as a passthrough binary
     /// query; text sources are emitted verbatim.
     ///
-    /// Because `emit_binary` is sticky, once any page is binary a *text*-sourced
-    /// payload is re-encoded too, normalizing key order and collapsing duplicate
-    /// keys. A mixed merge shouldn't occur (a query negotiates one format for its
-    /// whole lifetime), so this is defensive.
-    ///
     /// It's valid for no backend page to have been absorbed (page
     /// assembled entirely from previously-buffered rows); it then reports
     /// zero charge and a fresh, empty [`DiagnosticsContext`].
@@ -516,13 +475,11 @@ impl PageAggregator {
         self,
         payloads: &[Box<RawValue>],
     ) -> crate::error::Result<CosmosResponse> {
-        // When the source pages were binary, re-encode each item to Cosmos
-        // binary JSON so the SDK decodes it through the binary deserializer
-        // (which coerces a service-echoed integral `Double` into an integer
-        // target). Emitting text items would route them through the text
-        // deserializer, which hard-fails on that double — the divergence a
-        // passthrough binary query does not have. Text sources emit the item
-        // bytes verbatim.
+        // A binary-negotiated query re-encodes each item to Cosmos binary JSON
+        // so the SDK decodes it through the binary deserializer, which coerces a
+        // service-echoed integral `Double` into an integer target. Emitting text
+        // would route them through the text deserializer, which hard-fails on
+        // that double — a divergence a passthrough binary query does not have.
         let items: Vec<bytes::Bytes> = payloads
             .iter()
             .enumerate()
@@ -587,13 +544,29 @@ fn empty_diagnostics() -> Arc<DiagnosticsContext> {
     Arc::new(builder.complete())
 }
 
-/// Returns whether a backend page body is Cosmos binary JSON, so the merge can
-/// mirror the source format when it re-emits the assembled envelope.
-fn response_body_is_binary(body: &ResponseBody) -> bool {
-    match body {
-        ResponseBody::Bytes(b) => crate::binary_json::is_binary(b),
-        _ => false,
+/// Decodes a Cosmos binary JSON feed page to text, passing a text page through
+/// unchanged (and allocation-free — `Bytes::clone` is a refcount bump).
+///
+/// This is the single choke point every raw-feed consumer goes through, so each
+/// one (`parse_envelope_page`, `split_feed_envelope`, and any future node) is
+/// binary-correct by construction rather than by convention.
+///
+/// A failure here is a decode fault on a body the driver already accepted, not
+/// a malformed service envelope, so it classifies as
+/// [`CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID`] and retains its source.
+pub(crate) fn normalize_page_body(bytes: &bytes::Bytes) -> crate::error::Result<bytes::Bytes> {
+    if !crate::binary_json::is_binary(bytes) {
+        return Ok(bytes.clone());
     }
+    crate::binary_json::transcode_to_text(bytes)
+        .map(bytes::Bytes::from)
+        .map_err(|source| {
+            crate::error::CosmosError::builder()
+                .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to transcode binary query page to text JSON")
+                .with_source(source)
+                .build()
+        })
 }
 
 fn envelope_error(message: impl Into<std::borrow::Cow<'static, str>>) -> crate::error::CosmosError {
@@ -864,6 +837,60 @@ mod tests {
         assert!(rows.is_empty());
     }
 
+    /// A boundary parsed from a **binary** page must render the byte-identical
+    /// `resumeFilter` as the same boundary parsed from text. The service stores
+    /// every number as a `Double` and renders an integral one as `5` in text
+    /// mode; without integral-float normalization the binary path decodes it to
+    /// `5.0` and ships `"value":[5.0]` on the wire (and in the continuation
+    /// token) where the text path ships `"value":[5]`.
+    ///
+    /// `OrderByItem`'s numeric equality is value-based across variants
+    /// (`I64(5) == F64(5.0)`), so comparing parsed rows cannot catch this —
+    /// only the rendered wire bytes can.
+    #[test]
+    fn binary_and_text_envelopes_render_identical_resume_filters() {
+        let text = br#"{"_rid":"abc","Documents":[{"_rid":"r1","orderByItems":[{"item":5}],"payload":{"id":"d1"}}],"_count":1}"#;
+
+        // Encode the ORDER BY key as a `Double`, exactly as the service stores
+        // it — not via `transcode_to_binary`, which would preserve the integer
+        // marker from the text literal and never exercise the divergence.
+        let binary = crate::binary_json::encode(&serde_json::json!({
+            "_rid": "abc",
+            "Documents": [{
+                "_rid": "r1",
+                "orderByItems": [{ "item": serde_json::Number::from_f64(5.0).unwrap() }],
+                "payload": { "id": "d1" },
+            }],
+            "_count": 1,
+        }));
+
+        let resume_filter = |body: Vec<u8>| {
+            let rows = parse_envelope_page(&ResponseBody::from_bytes(body), 1).unwrap();
+            let values: Vec<_> = rows[0]
+                .keys
+                .iter()
+                .map(|key| key.to_resume_value().expect("scalar key"))
+                .collect();
+            serde_json::to_string(&crate::driver::dataflow::order_by::resume_filter_json(
+                &values,
+                Some(&rows[0].rid),
+                false,
+            ))
+            .unwrap()
+        };
+
+        let from_text = resume_filter(text.to_vec());
+        assert_eq!(
+            from_text,
+            resume_filter(binary),
+            "a binary-sourced resume boundary must ship the same wire bytes as text"
+        );
+        assert!(
+            from_text.contains(r#""value":[5]"#),
+            "an integral ORDER BY key must stay an integer on the wire, got {from_text}"
+        );
+    }
+
     #[test]
     fn build_page_binary_source_emits_binary_and_coerces_integral_double() {
         // Reproduces the text/binary ORDER BY divergence (#5028): a service
@@ -895,8 +922,7 @@ mod tests {
             "the text payload must reject a float into a u64 field (the divergence)"
         );
 
-        let mut aggregator = PageAggregator::new();
-        aggregator.emit_binary = true;
+        let aggregator = PageAggregator::new(true);
         let response = aggregator.build_page(&[payload_raw]).unwrap();
 
         // The merge emits binary items so the SDK's binary deserializer runs.
@@ -907,7 +933,7 @@ mod tests {
         assert_eq!(items.len(), 1);
         assert!(
             crate::binary_json::is_binary(&items[0]),
-            "a binary source must produce binary merged items"
+            "a binary-negotiated query must produce binary merged items"
         );
 
         // And that deserializer coerces the integral double into the u64 target.
@@ -923,10 +949,10 @@ mod tests {
 
     #[test]
     fn build_page_text_source_emits_text_items() {
-        // A text source keeps the item bytes verbatim — no binary re-encode, so
-        // existing text ORDER BY users are unaffected.
+        // A text-negotiated query keeps the item bytes verbatim — no binary
+        // re-encode, so existing text ORDER BY users are unaffected.
         let payload = serde_json::value::to_raw_value(&serde_json::json!({"id":"d1"})).unwrap();
-        let aggregator = PageAggregator::new();
+        let aggregator = PageAggregator::new(false);
         let response = aggregator.build_page(&[payload]).unwrap();
         match response.body() {
             ResponseBody::Items(items) => {
@@ -987,7 +1013,7 @@ mod tests {
 
     #[test]
     fn page_aggregator_sums_charge_and_builds_items_body() {
-        let mut aggregator = PageAggregator::new();
+        let mut aggregator = PageAggregator::new(false);
         aggregator.absorb(&response(b"{}")).unwrap();
         aggregator.absorb(&response(b"{}")).unwrap();
         let payloads: Vec<Box<RawValue>> = vec![
@@ -1014,7 +1040,7 @@ mod tests {
             )
         }
 
-        let mut aggregator = PageAggregator::new();
+        let mut aggregator = PageAggregator::new(false);
         aggregator.absorb(&response_with_token("0:1#10")).unwrap();
         aggregator.absorb(&response_with_token("1:1#20")).unwrap();
         let page = aggregator.build_page(&[]).unwrap();
@@ -1033,7 +1059,7 @@ mod tests {
     /// grow with page count, so the aggregator folds them periodically.
     #[test]
     fn page_aggregator_folds_diagnostics_to_bound_retained_sources() {
-        let mut aggregator = PageAggregator::new();
+        let mut aggregator = PageAggregator::new(false);
         for _ in 0..(MAX_RETAINED_DIAGNOSTICS_SOURCES * 4) {
             aggregator
                 .absorb(&mocks::response_with_request_diagnostics(1))
@@ -1056,7 +1082,7 @@ mod tests {
         const PAGES: usize = MAX_RETAINED_DIAGNOSTICS_SOURCES * 8;
         const REQUESTS_PER_PAGE: usize = 3;
 
-        let mut aggregator = PageAggregator::new();
+        let mut aggregator = PageAggregator::new(false);
         let mut folded_before_build = false;
         for _ in 0..PAGES {
             let before = aggregator.diagnostics_sources.len();
@@ -1104,7 +1130,7 @@ mod tests {
             )
         }
 
-        let mut aggregator = PageAggregator::new();
+        let mut aggregator = PageAggregator::new(false);
         aggregator
             .absorb(&response_with_metrics(
                 Some(r#"{"UtilizedSingleIndexes":["first"]}"#),
@@ -1142,7 +1168,7 @@ mod tests {
     #[test]
     fn page_aggregator_builds_empty_page_when_polled_children_yielded_no_rows() {
         // At least one page absorbed, but zero rows contributed.
-        let mut aggregator = PageAggregator::new();
+        let mut aggregator = PageAggregator::new(false);
         aggregator.absorb(&response(b"{}")).unwrap();
         let page = aggregator.build_page(&[]).unwrap();
         assert!(item_bytes(&page).is_empty());
@@ -1152,7 +1178,7 @@ mod tests {
     #[test]
     fn page_aggregator_with_no_absorbed_response_builds_zero_charge_page() {
         // No new fetch needed; must still build a valid zero-charge page.
-        let aggregator = PageAggregator::new();
+        let aggregator = PageAggregator::new(false);
         let payloads: Vec<Box<RawValue>> =
             vec![RawValue::from_string(r#"{"id":"a"}"#.to_owned()).unwrap()];
         let page = aggregator.build_page(&payloads).unwrap();

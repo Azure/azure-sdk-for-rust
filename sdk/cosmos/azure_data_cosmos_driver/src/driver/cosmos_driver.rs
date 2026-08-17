@@ -6630,4 +6630,58 @@ mod tests {
             Some("CosmosBinary"),
         );
     }
+
+    /// `request_text_response` means two different things by operation type,
+    /// and that divergence is intentional: a point op keeps the wire binary and
+    /// transcodes the response back to text in `execute_operation`, but a query
+    /// bypasses that transcode — so honoring text there means not negotiating
+    /// binary at all. This pins both halves so neither drifts silently.
+    #[tokio::test]
+    async fn request_text_response_forfeits_binary_for_query_but_not_for_point_ops() {
+        use crate::models::FeedRange;
+
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(
+                crate::options::BinaryEncodingOptions::new()
+                    .with_enabled(true)
+                    .with_request_text_response(true),
+            )
+            .build();
+
+        let query = CosmosOperation::query_items(
+            epk_test_container(r#"{"paths":["/pk"],"version":2}"#),
+            Some(FeedRange::full()),
+        )
+        .with_body(serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap());
+        let query = driver.apply_response_negotiation(query, &options, None);
+        assert_eq!(
+            query
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            None,
+            "a query cannot transcode its response back to text, so an explicit \
+             text request must forfeit binary negotiation entirely",
+        );
+
+        let read = CosmosOperation::read_item(crate::models::ItemReference::from_name(
+            &epk_test_container(r#"{"paths":["/pk"],"version":2}"#),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let read = driver.apply_response_negotiation(read, &options, None);
+        assert_eq!(
+            read.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+            "a point op keeps the wire binary and transcodes back to text, so \
+             it still negotiates binary",
+        );
+    }
 }

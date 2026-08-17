@@ -56,22 +56,23 @@ pub(crate) fn split_feed_envelope(body: &Bytes) -> crate::error::Result<Vec<Byte
         return Ok(Vec::new());
     }
 
-    // No `slice_ref` here: the parsed bytes live in the transcoded buffer.
-    if crate::binary_json::is_binary(body) {
-        let text = crate::binary_json::transcode_to_text(body).map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("failed to transcode binary cross-partition query page to text")
-                .with_source(e)
-                .build()
-        })?;
-        let page: RawQueryPage = serde_json::from_slice(&text).map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("failed to parse cross-partition query page envelope")
-                .with_source(e)
-                .build()
-        })?;
+    // A negotiated-binary page arrives as one `0x80`-prefixed envelope. Decode
+    // it through the shared choke point so the scan below stays a plain
+    // text-JSON split and every consumer is binary-correct by construction.
+    let was_binary = crate::binary_json::is_binary(body);
+    let body = &super::query_response::normalize_page_body(body)?;
+
+    let page: RawQueryPage = serde_json::from_slice(body).map_err(|e| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("failed to parse cross-partition query page envelope")
+            .with_source(e)
+            .build()
+    })?;
+
+    if was_binary {
+        // Re-encode each document standalone so the SDK's per-slice `0x80`
+        // auto-detection still routes it through the binary deserializer.
         return page
             .documents
             .iter()
@@ -93,13 +94,6 @@ pub(crate) fn split_feed_envelope(body: &Bytes) -> crate::error::Result<Vec<Byte
             .collect();
     }
 
-    let page: RawQueryPage = serde_json::from_slice(body).map_err(|e| {
-        crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-            .with_message("failed to parse cross-partition query page envelope")
-            .with_source(e)
-            .build()
-    })?;
     Ok(page
         .documents
         .iter()

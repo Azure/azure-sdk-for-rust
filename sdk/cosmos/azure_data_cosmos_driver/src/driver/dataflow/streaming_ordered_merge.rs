@@ -379,15 +379,10 @@ pub(crate) struct StreamingOrderedMerge {
     /// past rows that were never emitted. Sticky: once set, snapshots resume
     /// from value boundaries instead of server continuations.
     continuation_unsafe: bool,
-    /// Set once any backend page for this query arrived as Cosmos binary JSON.
-    /// Sticky across pages: a single backend page routinely fills more rows than
-    /// one output page holds, so later pages are served entirely from buffered
-    /// rows and consume no backend response. Those rows were still decoded from
-    /// a binary page, so the emitted envelope must stay binary — otherwise the
-    /// SDK would text-decode a binary-canonicalized payload (e.g. a wide integer
-    /// widened to a float) and fail. Tracking this on the merge (not the
-    /// per-page aggregator) keeps every page's encoding tied to the data, not to
-    /// whether that page happened to touch the network.
+    /// Whether emitted pages carry Cosmos binary JSON items. Fixed at
+    /// construction from the negotiated operation, so every page encodes the
+    /// same way regardless of whether it touched the network — a page served
+    /// entirely from buffered rows cannot drift to text.
     emit_binary: bool,
 }
 
@@ -399,13 +394,13 @@ impl StreamingOrderedMerge {
         query_fingerprint: String,
     ) -> Self {
         Self {
+            emit_binary: plain_operation.negotiates_binary_response(),
             plain_operation,
             directions,
             children,
             session_token: None,
             deferred_error: None,
             continuation_unsafe: false,
-            emit_binary: false,
             query_fingerprint,
         }
     }
@@ -611,11 +606,8 @@ impl PipelineNode for StreamingOrderedMerge {
             return Ok(PageResult::Drained);
         }
 
-        let mut aggregator = PageAggregator::new();
+        let mut aggregator = PageAggregator::new(self.emit_binary);
         aggregator.seed_session_token(self.session_token.clone());
-        // Inherit the sticky binary-emit flag so a page served entirely from
-        // buffered rows still emits binary when earlier pages were binary.
-        aggregator.seed_emit_binary(self.emit_binary);
 
         // Prime every child up front so the heap sees a head row for each
         // non-drained child. This page has emitted nothing, but a fill commits
@@ -626,9 +618,6 @@ impl PipelineNode for StreamingOrderedMerge {
             .ensure_all_streams_filled(context, &mut aggregator)
             .await
         {
-            // A child may have buffered binary-sourced rows before another
-            // errored; those rows outlive this aggregator, so promote now.
-            self.emit_binary |= aggregator.emits_binary();
             self.continuation_unsafe = true;
             return Err(err);
         }
@@ -702,9 +691,6 @@ impl PipelineNode for StreamingOrderedMerge {
         let is_terminal = self.children.is_empty() && self.deferred_error.is_none();
 
         self.session_token = aggregator.session_token().cloned();
-        // Sticky so buffer-only pages stay binary; `|=` so a page with no fresh
-        // binary input cannot clear the flag.
-        self.emit_binary |= aggregator.emits_binary();
         let response = aggregator.build_page(&payloads)?;
         Ok(PageResult::Page {
             response,

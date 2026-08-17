@@ -82,6 +82,28 @@ fn order_by_operation_with_page_size(n: u32) -> Arc<CosmosOperation> {
     )
 }
 
+/// A binary-negotiated ORDER BY operation. The merge derives its emitted format
+/// from this header, not from the bytes of the pages it receives.
+fn binary_order_by_operation() -> Arc<CosmosOperation> {
+    Arc::new(
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec())
+            .with_supported_serialization_formats("CosmosBinary"),
+    )
+}
+
+/// Like [`binary_order_by_operation`] but with an explicit `max_item_count`.
+fn binary_order_by_operation_with_page_size(n: u32) -> Arc<CosmosOperation> {
+    Arc::new(
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec())
+            .with_max_item_count(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(n).unwrap(),
+            ))
+            .with_supported_serialization_formats("CosmosBinary"),
+    )
+}
+
 /// A single-ascending-column ORDER BY plan spanning the full container.
 fn order_by_plan() -> QueryPlan {
     QueryPlan {
@@ -542,7 +564,7 @@ async fn merges_two_partitions_into_global_order() {
 /// the text path — proof the merge is format-agnostic.
 #[tokio::test]
 async fn merges_two_binary_partitions_into_global_order() {
-    let op = order_by_operation();
+    let op = binary_order_by_operation();
     let plan = order_by_plan();
 
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![
@@ -575,15 +597,16 @@ async fn merges_two_binary_partitions_into_global_order() {
     );
 }
 
-/// Regression: a binary-sourced merge must emit **binary** on every output
+/// Regression: a binary-negotiated merge must emit **binary** on every output
 /// page, including pages served entirely from buffered rows (no backend fetch).
-/// With page size 1 and a single 3-row binary backend page, output pages 2 and
-/// 3 consume no backend response, so a per-page `emit_binary` flag would leave
-/// them text — carrying binary-canonicalized payloads that then fail typed
-/// decode. The flag is sticky on the merge, so every page stays binary.
+/// With page size 1 and a single 3-row backend page, output pages 2 and 3
+/// consume no backend response, so deriving the format per page from absorbed
+/// bytes would leave them text — carrying binary-canonicalized payloads that
+/// then fail typed decode. The format comes from the operation, so it cannot
+/// vary by whether a page touched the network.
 #[tokio::test]
 async fn binary_merge_keeps_every_page_binary_including_buffer_only_pages() {
-    let op = order_by_operation_with_page_size(1);
+    let op = binary_order_by_operation_with_page_size(1);
     let plan = order_by_plan();
 
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
@@ -629,6 +652,95 @@ async fn binary_merge_keeps_every_page_binary_including_buffer_only_pages() {
     assert!(
         formats.iter().all(|&is_binary| is_binary),
         "every page of a binary-sourced merge must stay binary, got {formats:?}",
+    );
+}
+
+/// A binary-negotiated merge resumed from a continuation token must keep the
+/// global order **across** the checkpoint and keep emitting binary. The token
+/// carries no format, so session 2 must re-derive it from its own backend
+/// pages; a mid-page checkpoint also exercises the value-boundary resume path
+/// (rather than a plain continuation) while binary is in play.
+#[tokio::test]
+async fn binary_merge_resumed_from_continuation_preserves_order_and_stays_binary() {
+    let op = binary_order_by_operation_with_page_size(1);
+    let plan = order_by_plan();
+
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor1 = MockRequestExecutor::new(vec![
+        Ok(binary_envelope_page(&[("l1", 1), ("l2", 3)], None)),
+        Ok(binary_envelope_page(&[("r1", 2), ("r2", 4)], None)),
+    ]);
+    let mut pipeline1 = build_streaming_ordered_merge(&plan, &mut topology1, &op, None)
+        .await
+        .unwrap();
+
+    let mut noop = super::super::mocks::NoopTopologyProvider;
+    let mut context = PipelineContext::new(&mut executor1, Some(&mut noop));
+    let first = pipeline1
+        .next_page(&mut context)
+        .await
+        .unwrap()
+        .expect("expected a first page");
+    assert_eq!(ids_in_page(&first), vec!["l1".to_owned()]);
+    assert!(
+        page_is_binary(&first),
+        "a binary-sourced merge must emit binary before the checkpoint"
+    );
+
+    let state = pipeline1.snapshot_state().unwrap();
+    drop(pipeline1);
+
+    // Mock re-serves the full pages (it cannot evaluate the resume filter);
+    // the client-side discard must strip the already-emitted "l1" row.
+    let resumed_state = round_trip_state(state, &op);
+    // A two-range resume re-resolves per saved range, so queue a result each.
+    let ranges = vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ];
+    let mut topology2 =
+        MockTopologyProvider::new(vec![Ok(ranges.clone()), Ok(ranges.clone()), Ok(ranges)]);
+    let mut executor2 = MockRequestExecutor::new(vec![
+        Ok(binary_envelope_page(&[("l1", 1), ("l2", 3)], None)),
+        Ok(binary_envelope_page(&[("r1", 2), ("r2", 4)], None)),
+    ]);
+    let mut pipeline2 =
+        build_streaming_ordered_merge(&plan, &mut topology2, &op, Some(resumed_state))
+            .await
+            .unwrap();
+
+    let mut ids = Vec::new();
+    let mut formats = Vec::new();
+    let mut noop2 = super::super::mocks::NoopTopologyProvider;
+    loop {
+        let mut context = PipelineContext::new(&mut executor2, Some(&mut noop2));
+        match pipeline2.next_page(&mut context).await.unwrap() {
+            Some(response) => {
+                let page_ids = ids_in_page(&response);
+                if !page_ids.is_empty() {
+                    formats.push(page_is_binary(&response));
+                }
+                ids.extend(page_ids);
+            }
+            None => break,
+        }
+    }
+
+    assert_eq!(
+        ids,
+        vec!["r1", "l2", "r2"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        "resumed binary merge must continue the global order without \
+         re-emitting the pre-checkpoint row"
+    );
+    assert!(
+        formats.iter().all(|&is_binary| is_binary),
+        "every page after a binary resume must stay binary, got {formats:?}"
     );
 }
 
