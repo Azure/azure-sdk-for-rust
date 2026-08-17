@@ -21,26 +21,50 @@ cargo add azure_storage_sas
 
 ### Which API should I use?
 
-Use `SasBuilder` to construct a user delegation SAS token, then set it as the query string on the resource URL. Obtain the `UserDelegationKey` from `BlobServiceClient::get_user_delegation_key` (in `azure_storage_blob`) or `QueueServiceClient::get_user_delegation_key` (in `azure_storage_queue`), then pass it to `SasBuilder::new` along with the account name, permissions, and expiry.
+Two builders are provided:
+
+- **`SasTokenBuilder`** — produces a [`SasToken`], the signed query string (e.g. `sv=...&sr=b&...&sig=...`). Use this when you need to attach the query string to an existing URL yourself. `build()` is infallible.
+- **`SasUrlBuilder`** — produces a [`SasUrl`], a complete URL with the signed query string already embedded. Use this when you want the full URL ready to share. `build()` returns a `Result`. Use [`SasUrlBuilder::endpoint`] to override the default `https://{account}.{service}.core.windows.net` base (e.g. for Azurite or sovereign clouds).
+
+Both builders expose the same resource selectors and permission setters.
 
 ## Examples
 
-### Generate a read-only blob SAS
+### Generate a blob SAS URL
 
-Produce the signed SAS token and set it as the query on a blob URL. Use the resulting URL with an unauthenticated `BlobClient::new` to grant a caller time-bound read access:
+Use `SasUrlBuilder` to produce a complete signed URL in one step:
 
-```rust ignore read_blob_sas
-use azure_core::{
-    http::Url,
-    time::{Duration, OffsetDateTime},
-};
-use azure_storage_sas::SasBuilder;
+```rust ignore blob_sas_url
+use azure_storage_sas::{SasUrlBuilder, UserDelegationKey};
+use time::OffsetDateTime;
+
+let url = SasUrlBuilder::new(
+        "myaccount",
+        &udk,
+        OffsetDateTime::now_utc() + time::Duration::hours(1),
+    )?
+    .blob("images", "photo.jpg")
+    .read()
+    .content_type("image/jpeg")
+    .build()?;
+
+// `url` is a complete signed URL ready to share
+println!("{url}");
+```
+
+### Generate a blob SAS token (query string only)
+
+Use `SasTokenBuilder` when you need just the signed query string to attach to an existing URL:
+
+```rust ignore blob_sas_token
+use azure_core::{http::Url, time::{Duration, OffsetDateTime}};
+use azure_storage_sas::{SasTokenBuilder, UserDelegationKey};
 
 let storage_account_name = "myaccount";
 let container_name = "images";
 let blob_name = "photo.jpg";
 
-let token = SasBuilder::new(
+let token = SasTokenBuilder::new(
         storage_account_name,
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
@@ -55,7 +79,7 @@ let token = SasBuilder::new(
 let mut sas_url = Url::parse(&format!(
     "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}"
 ))?;
-sas_url.set_query(Some(&token));
+sas_url.set_query(Some(&*token));
 ```
 
 ### Scope a container SAS to HTTPS and a single IP range
@@ -63,11 +87,11 @@ sas_url.set_query(Some(&token));
 Layer optional restrictions onto a container-level SAS: limit the caller to HTTPS only, pin them to a corporate egress range, and grant just enough permissions to list and read:
 
 ```rust ignore container_ip_range_sas
-use azure_storage_sas::{SasBuilder, SasIpRange, SasProtocol};
+use azure_storage_sas::{SasTokenBuilder, SasIpRange, SasProtocol};
 use std::net::Ipv4Addr;
 use time::OffsetDateTime;
 
-let sas = SasBuilder::new(
+let token = SasTokenBuilder::new(
         "myaccount",
         &udk,
         OffsetDateTime::now_utc() + time::Duration::hours(4),

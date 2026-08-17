@@ -162,6 +162,10 @@ pub(crate) trait SasResource: sealed::Sealed {
         key: &ValidatedKey<'_>,
         signature: &str,
     ) -> String;
+    /// Returns the URL path segments for this resource (each segment is individually encoded).
+    fn url_path_segments(&self) -> Vec<&str>;
+    /// Returns the default service endpoint for this resource type.
+    fn default_endpoint(account: &str) -> url::Url;
 }
 
 /// Computes an HMAC-SHA256 signature and returns it as a base64 string.
