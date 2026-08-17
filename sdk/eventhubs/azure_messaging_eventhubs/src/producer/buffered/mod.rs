@@ -214,6 +214,14 @@ struct PartitionState {
 ///   predictable.
 /// * Use [`ProducerClient`] when the application needs the result of each send.
 ///
+/// # The client reads the partition list one time
+///
+/// The client reads the partition IDs when it opens, and it does not read them
+/// again. A partition that the service adds later stays unused until the
+/// application opens a new client. This limitation affects the throughput. It
+/// does not affect the correctness, because the client still publishes every
+/// event to a partition that exists.
+///
 /// # Examples
 ///
 /// ```no_run
