@@ -56,8 +56,9 @@ extends:
       # 4 point ops + 1 single-partition query, and the pure-`binary` config adds
       # a cross-partition ORDER BY query plus a typed wide-integer probe (itself
       # an extra ORDER BY). That is 3*(4+1) + 2 = ~17 round-trips per iteration,
-      # so 200 => ~3400 — bounded to fit the live-test time cap. Bump it for a
-      # deeper soak.
+      # so 200 => ~3400. That count has not yet been timed against a full live
+      # run; the leg already needs ~63-65 min of the 90-min cap, so if it starts
+      # being cancelled, lower this first. Raise it for a deeper soak.
       AZURE_COSMOS_FUZZ_ITERATIONS: '200'
       # Enable the wide-number generator (integers at or beyond 2^53, where the
       # service's number model stores the value as an IEEE-754 double). Without

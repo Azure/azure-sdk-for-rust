@@ -301,7 +301,12 @@ pub(crate) async fn build_sequential_drain(
     // fan-out's EPK-ordered stream. When none is present the fan-out is the
     // pipeline root directly.
     let root: Box<dyn PipelineNode> = if needs_skip_take {
-        Box::new(SkipTake::new(fanout, skip, take))
+        Box::new(SkipTake::new(
+            fanout,
+            skip,
+            take,
+            operation.negotiates_binary_response(),
+        ))
     } else {
         fanout
     };
@@ -507,6 +512,7 @@ pub(crate) async fn build_streaming_ordered_merge(
             .build());
     }
 
+    let emit_binary = plain_operation.negotiates_binary_response();
     let ordered_root: Box<dyn PipelineNode> = Box::new(StreamingOrderedMerge::new(
         plain_operation,
         directions,
@@ -518,7 +524,7 @@ pub(crate) async fn build_streaming_ordered_merge(
     // the query carries none, the ordered merge is the pipeline root directly.
     let needs_skip_take = skip > 0 || take.is_some();
     let root: Box<dyn PipelineNode> = if needs_skip_take {
-        Box::new(SkipTake::new(ordered_root, skip, take))
+        Box::new(SkipTake::new(ordered_root, skip, take, emit_binary))
     } else {
         ordered_root
     };

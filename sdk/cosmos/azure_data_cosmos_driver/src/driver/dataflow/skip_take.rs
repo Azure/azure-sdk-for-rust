@@ -57,12 +57,27 @@ pub(crate) struct SkipTake {
     /// accumulated charge/diagnostics can still be flushed as a final empty
     /// page rather than being dropped.
     pending_flush: Option<CosmosResponse>,
+    /// Whether a re-split page is emitted as Cosmos binary JSON. Derived from
+    /// the negotiated operation, never from the bytes of a received page, so
+    /// this node agrees with [`PageAggregator`] on the same query.
+    ///
+    /// [`PageAggregator`]: super::query_response::PageAggregator
+    emit_binary: bool,
 }
 
 impl SkipTake {
     /// Wraps `child`, skipping `skip` documents then taking up to `take`
-    /// (`None` = all remaining).
-    pub(crate) fn new(child: Box<dyn PipelineNode>, skip: u64, take: Option<u64>) -> Self {
+    /// (`None` = all remaining). `emit_binary` is the operation's negotiated
+    /// response encoding (see
+    /// [`CosmosOperation::negotiates_binary_response`]).
+    ///
+    /// [`CosmosOperation::negotiates_binary_response`]: crate::models::CosmosOperation::negotiates_binary_response
+    pub(crate) fn new(
+        child: Box<dyn PipelineNode>,
+        skip: u64,
+        take: Option<u64>,
+        emit_binary: bool,
+    ) -> Self {
         Self {
             child,
             remaining_skip: skip,
@@ -71,6 +86,7 @@ impl SkipTake {
             suppressed_charge: RequestCharge::default(),
             suppressed_diagnostics: Vec::new(),
             pending_flush: None,
+            emit_binary,
         }
     }
 
@@ -202,7 +218,9 @@ impl PipelineNode for SkipTake {
                     // split here; `NoPayload` is a zero-document page.
                     let items: Vec<Bytes> = match response.body() {
                         ResponseBody::Items(items) => items.clone(),
-                        ResponseBody::Bytes(b) => skip_take_page::split_feed_envelope(b)?,
+                        ResponseBody::Bytes(b) => {
+                            skip_take_page::split_feed_envelope(b, self.emit_binary)?
+                        }
                         ResponseBody::NoPayload => Vec::new(),
                     };
 
@@ -341,7 +359,7 @@ mod tests {
             // If SkipTake pulled again this would be returned, but it must not.
             Ok(PageResult::Drained),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 0, Some(2));
+        let mut node = SkipTake::new(Box::new(child), 0, Some(2), false);
         assert_eq!(drain_ids(&mut node).await, vec![1, 2]);
     }
 
@@ -354,7 +372,7 @@ mod tests {
             Ok(PageResult::Drained),
         ]);
         // Skip 3, take rest → 4,5,6.
-        let mut node = SkipTake::new(Box::new(child), 3, None);
+        let mut node = SkipTake::new(Box::new(child), 3, None, false);
         assert_eq!(drain_ids(&mut node).await, vec![4, 5, 6]);
     }
 
@@ -367,7 +385,7 @@ mod tests {
             Ok(PageResult::Drained),
         ]);
         // OFFSET 1 LIMIT 3 → 2,3,4.
-        let mut node = SkipTake::new(Box::new(child), 1, Some(3));
+        let mut node = SkipTake::new(Box::new(child), 1, Some(3), false);
         assert_eq!(drain_ids(&mut node).await, vec![2, 3, 4]);
     }
 
@@ -378,14 +396,14 @@ mod tests {
             page_result(&[3], true),
             Ok(PageResult::Drained),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 10, Some(5));
+        let mut node = SkipTake::new(Box::new(child), 10, Some(5), false);
         assert_eq!(drain_ids(&mut node).await, Vec::<u64>::new());
     }
 
     #[tokio::test]
     async fn snapshot_reports_progress_then_drained() {
         let child = MockLeaf::with_pages(vec![page_result(&[1, 2, 3, 4], false)]);
-        let mut node = SkipTake::new(Box::new(child), 1, Some(2));
+        let mut node = SkipTake::new(Box::new(child), 1, Some(2), false);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -416,7 +434,7 @@ mod tests {
             page_result(&[1, 2], false),
             page_result(&[3, 4], false),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 1, Some(5));
+        let mut node = SkipTake::new(Box::new(child), 1, Some(5), false);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -462,7 +480,7 @@ mod tests {
             charged_page(&[4, 5], true, 7.0),
             Ok(PageResult::Drained),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 3, None);
+        let mut node = SkipTake::new(Box::new(child), 3, None, false);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -486,7 +504,7 @@ mod tests {
             charged_page(&[3], true, 4.0),
             Ok(PageResult::Drained),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 10, None);
+        let mut node = SkipTake::new(Box::new(child), 10, None, false);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));

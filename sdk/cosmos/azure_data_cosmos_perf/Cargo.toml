@@ -15,7 +15,14 @@ azure_core = { workspace = true, features = ["reqwest"] }
 azure_data_cosmos = { path = "../azure_data_cosmos", version = "0.38.0", features = ["key_auth", "control_plane"] }
 # `__internal_mocking` exposes `CosmosDriverRuntimeBuilder::with_mock_http_client_factory`,
 # which the `binary_payload_ab` harness uses to install a byte-counting transport in
-# front of reqwest. This crate is `publish = false`, so the unstable surface stays here.
+# front of reqwest.
+#
+# Note that this does NOT contain the feature: Cargo's v2 resolver unifies features
+# across a single build, so any `--workspace` build enables `__internal_mocking` on
+# `azure_data_cosmos_driver` for every other crate too. Verify with
+# `cargo tree --workspace -e features -i azure_data_cosmos_driver`. Published crates
+# are unaffected because they are built individually, but do not rely on this
+# dependency to keep the unstable surface off a workspace-wide build.
 azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.7.0", features = [
   "__internal_mocking",
 ] }

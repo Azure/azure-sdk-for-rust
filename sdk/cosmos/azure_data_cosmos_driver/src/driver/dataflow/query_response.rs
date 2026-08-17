@@ -458,11 +458,14 @@ impl PageAggregator {
     /// The body is a [`ResponseBody::Items`] whose entries are the ordered
     /// `payloads`' bytes — one per document. Emitting pre-split items (rather
     /// than re-serializing a `{"Documents":[...]}` envelope only for the SDK to
-    /// re-parse) lets the calling SDK read each document directly. When the
-    /// source pages were binary, each item is re-encoded to Cosmos binary JSON
-    /// so the SDK decodes it through the binary deserializer (with
-    /// integral-`Double`→integer coercion), exactly as a passthrough binary
-    /// query; text sources are emitted verbatim.
+    /// re-parse) lets the calling SDK read each document directly.
+    ///
+    /// `payloads` always arrives as text, because [`normalize_page_body`]
+    /// transcodes every absorbed page before it is split. When the operation
+    /// negotiated binary, each item is therefore re-encoded here so the SDK
+    /// decodes it through the binary deserializer — which coerces a
+    /// service-echoed integral `Double` into an integer target, exactly as a
+    /// passthrough binary query does. Text-negotiated queries emit verbatim.
     ///
     /// It's valid for no backend page to have been absorbed (page
     /// assembled entirely from previously-buffered rows); it then reports
@@ -483,8 +486,11 @@ impl PageAggregator {
                     crate::binary_json::transcode_to_binary(text)
                         .map(bytes::Bytes::from)
                         .map_err(|e| {
-                            // Client-side re-encode failure, not a malformed
-                            // service envelope — a serialization fault, not 500.
+                            // A client-side re-encode failure. The payload was
+                            // already parsed as JSON upstream, so reaching here
+                            // means the driver itself is at fault, which is what
+                            // `SERIALIZATION_RESPONSE_BODY_INVALID` (HTTP 500)
+                            // reports.
                             crate::error::CosmosError::builder()
                                 .with_status(
                                     crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
@@ -875,41 +881,45 @@ mod tests {
         );
     }
 
+    /// A binary-negotiated merge must carry a wide integral `Double` through the
+    /// **real** page path — binary envelope in, `parse_envelope_page`,
+    /// `build_page` out — and emit it as binary with its value intact.
+    ///
+    /// Driving the whole path matters: [`normalize_page_body`] rewrites the
+    /// integral `Double` to an integer literal while splitting the envelope, so
+    /// a test that hands `build_page` a hand-built float payload exercises an
+    /// input the pipeline can no longer produce. 2^53 is the first integer whose
+    /// neighbours are not representable, so a lossy round trip shifts it.
     #[test]
-    fn build_page_binary_source_emits_binary_and_coerces_integral_double() {
-        // Reproduces the text/binary ORDER BY divergence (#5028): a service
-        // echoes a document's integer field as an integral `Double`. A
-        // passthrough binary query coerces it into the integer target via the
-        // binary deserializer; the merge must do the same. Emitting the merged
-        // items as text instead would route the payload through the text
-        // deserializer, which hard-fails on the float for a `u64` field.
+    fn binary_page_round_trips_wide_integer_through_merge() {
         #[derive(serde::Deserialize, PartialEq, Debug)]
         struct Doc {
             id: String,
             wide: u64,
         }
 
-        // Force a `Double` (not an integer marker) for `wide`, exactly as the
-        // service stores every number. `from_f64` serializes as `...0`, a float
-        // literal the text deserializer rejects for a `u64`.
-        let wide_double = 9_007_199_254_740_992.0_f64; // 2^53, exactly integral
-        let payload = serde_json::json!({
-            "id": "d1",
-            "wide": serde_json::Number::from_f64(wide_double).unwrap(),
-        });
-        let payload_raw = serde_json::value::to_raw_value(&payload).unwrap();
+        const WIDE: u64 = 9_007_199_254_740_992; // 2^53
 
-        // Sanity: the text form of this payload cannot decode into `Doc` — this
-        // is exactly the failure the binary path must avoid.
-        assert!(
-            serde_json::from_str::<Doc>(payload_raw.get()).is_err(),
-            "the text payload must reject a float into a u64 field (the divergence)"
-        );
+        // Encode `wide` as a `Double`, exactly as the service stores every
+        // number — not via `transcode_to_binary`, which would preserve the
+        // integer marker from a text literal and never exercise the coercion.
+        let page = crate::binary_json::encode(&serde_json::json!({
+            "_rid": "abc",
+            "Documents": [{
+                "_rid": "r1",
+                "orderByItems": [{ "item": 1 }],
+                "payload": {
+                    "id": "d1",
+                    "wide": serde_json::Number::from_f64(WIDE as f64).unwrap(),
+                },
+            }],
+            "_count": 1,
+        }));
 
-        let aggregator = PageAggregator::new(true);
-        let response = aggregator.build_page(&[payload_raw]).unwrap();
+        let rows = parse_envelope_page(&ResponseBody::from_bytes(page), 1).unwrap();
+        let payloads: Vec<_> = rows.into_iter().map(|row| row.payload).collect();
+        let response = PageAggregator::new(true).build_page(&payloads).unwrap();
 
-        // The merge emits binary items so the SDK's binary deserializer runs.
         let items = match response.body() {
             ResponseBody::Items(items) => items.clone(),
             other => panic!("expected an items body, got {other:?}"),
@@ -920,14 +930,48 @@ mod tests {
             "a binary-negotiated query must produce binary merged items"
         );
 
-        // And that deserializer coerces the integral double into the u64 target.
+        // Exact bytes, not just an equal decode: the emitted item must be the
+        // canonical binary encoding of the expected document, so a change in
+        // how the merge re-encodes (key order, number marker width) is caught
+        // rather than absorbed by a tolerant comparison.
+        let expected = crate::binary_json::encode(&serde_json::json!({
+            "id": "d1",
+            "wide": WIDE,
+        }));
+        assert_eq!(
+            items[0].as_ref(),
+            expected.as_slice(),
+            "merged binary item must match the canonical encoding byte for byte"
+        );
+
         let doc: Doc = crate::binary_json::from_slice(&items[0]).unwrap();
         assert_eq!(
             doc,
             Doc {
                 id: "d1".to_owned(),
-                wide: 9_007_199_254_740_992,
+                wide: WIDE,
             },
+        );
+    }
+
+    /// The text deserializer rejects the float spelling of a wide integer, which
+    /// is why the page path normalizes integral `Double`s rather than leaving
+    /// the coercion to whichever deserializer happens to run.
+    #[test]
+    fn text_deserializer_rejects_float_spelling_of_wide_integer() {
+        #[derive(serde::Deserialize, Debug)]
+        struct Doc {
+            #[allow(dead_code)]
+            wide: u64,
+        }
+
+        let float_spelled = serde_json::json!({
+            "wide": serde_json::Number::from_f64(9_007_199_254_740_992.0).unwrap(),
+        })
+        .to_string();
+        assert!(
+            serde_json::from_str::<Doc>(&float_spelled).is_err(),
+            "a float literal must not deserialize into a u64 field"
         );
     }
 

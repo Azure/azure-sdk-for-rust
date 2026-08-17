@@ -128,6 +128,12 @@ pub(crate) fn normalize_integral_floats(value: &mut serde_json::Value) {
             if float.fract() != 0.0 {
                 return;
             }
+            // `-0.0` is integral and compares equal to `0.0`, so it would fall
+            // into the unsigned branch below and coerce to `0`, erasing a sign
+            // the service round-trips. Leave it alone.
+            if float == 0.0 && float.is_sign_negative() {
+                return;
+            }
             if (0.0..U64_EXCLUSIVE_UPPER_BOUND).contains(&float) {
                 *number = serde_json::Number::from(float as u64);
             } else if float < 0.0 && float >= i64::MIN as f64 {
@@ -255,6 +261,22 @@ mod tests {
     fn transcode_keeps_fractional_double_unchanged() {
         let binary = encode(&serde_json::json!({ "n": 3.5 }));
         assert_eq!(transcode_to_text(&binary).unwrap(), br#"{"n":3.5}"#);
+    }
+
+    /// `-0.0` is integral and `== 0.0`, so the unsigned coercion would fold it
+    /// to `0` and drop the sign. A text response preserves `-0.0`, so binary
+    /// must too or the two paths disagree.
+    #[test]
+    fn transcode_preserves_negative_zero() {
+        let binary = encode(&serde_json::json!({ "n": -0.0 }));
+        assert_eq!(transcode_to_text(&binary).unwrap(), br#"{"n":-0.0}"#);
+    }
+
+    /// Positive zero still normalizes, matching the service's text rendering.
+    #[test]
+    fn transcode_renders_positive_zero_as_integer() {
+        let binary = encode(&serde_json::json!({ "n": 0.0 }));
+        assert_eq!(transcode_to_text(&binary).unwrap(), br#"{"n":0}"#);
     }
 
     #[test]

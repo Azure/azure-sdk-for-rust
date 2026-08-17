@@ -786,6 +786,11 @@ fn assert_query_advertised_binary(recorder: &QueryRequestRecorder) {
     // the header is absent rather than skipping these requests, so a regression
     // that started negotiating on query plans is caught.
     let query_plan_formats = recorder.query_plan_formats.lock().unwrap();
+    assert!(
+        !query_plan_formats.is_empty(),
+        "expected at least one query-plan request; without one the assertion \
+         below is vacuous and would not catch a regression",
+    );
     for value in query_plan_formats.iter() {
         assert_eq!(
             value.as_deref(),

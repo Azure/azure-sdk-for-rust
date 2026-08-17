@@ -98,7 +98,7 @@ use azure_data_cosmos::{
 use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
 use rand::RngExt;
-use serde_json::{Map, Value};
+use serde_json::{Map, Number, Value};
 use uuid::Uuid;
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
@@ -365,18 +365,11 @@ async fn run_query(
     Ok(outcome)
 }
 
-/// Compares two JSON values treating numerically-equal numbers as equal.
-///
-/// Cosmos stores every number as an IEEE-754 double, so a wide integer can come
-/// back as an integer literal in text but as a `Double` in binary. Those decode
-/// to different `serde_json::Number` variants that compare unequal despite
-/// being the same value, so numbers are compared as `f64`.
+/// Compares two JSON values, treating the two spellings of a number the
+/// service may return as equal without loosening the comparison itself.
 fn json_equivalent(a: &Value, b: &Value) -> bool {
     match (a, b) {
-        (Value::Number(x), Value::Number(y)) => match (x.as_f64(), y.as_f64()) {
-            (Some(x), Some(y)) => x == y,
-            _ => x == y,
-        },
+        (Value::Number(x), Value::Number(y)) => numbers_equivalent(x, y),
         (Value::Array(x), Value::Array(y)) => {
             x.len() == y.len() && x.iter().zip(y).all(|(a, b)| json_equivalent(a, b))
         }
@@ -387,6 +380,65 @@ fn json_equivalent(a: &Value, b: &Value) -> bool {
         }
         _ => a == b,
     }
+}
+
+/// Exact numeric identity across the variants the service may produce.
+///
+/// Cosmos stores every number as an IEEE-754 double, so one value can come back
+/// as an integer literal in text but as a `Double` in binary. Those decode to
+/// different [`Number`] variants that compare unequal despite denoting the same
+/// value, so the variants have to be reconciled.
+///
+/// Reconciling them by comparing `as_f64()` would defeat the test: beyond 2^53
+/// distinct integers collapse onto the same `f64`, so a corrupted wide integer
+/// — precisely the class this corpus exists to catch — would compare equal to
+/// the original. Integral values are therefore compared exactly as `i128`.
+fn numbers_equivalent(x: &Number, y: &Number) -> bool {
+    match (integral_value(x), integral_value(y)) {
+        (Some(a), Some(b)) => a == b,
+        // Both fractional (or `-0.0`). Compare bit patterns so a 1-ULP shift is
+        // caught and `-0.0` stays distinct from `0.0`.
+        (None, None) => match (x.as_f64(), y.as_f64()) {
+            (Some(a), Some(b)) => a.to_bits() == b.to_bits(),
+            // Unreachable unless `serde_json/arbitrary_precision` is enabled,
+            // where a number need not be representable as an `f64`; fall back
+            // to the literal comparison rather than silently passing.
+            _ => x == y,
+        },
+        // One denotes an exact integer and the other does not, so they differ.
+        _ => false,
+    }
+}
+
+/// The exact integer `number` denotes, or `None` when it is fractional, is
+/// `-0.0`, or falls outside `i128` (where no exact comparison is available).
+///
+/// `-0.0` is integral but carries a sign no integer form can, so it is left to
+/// the bit-exact float path.
+fn integral_value(number: &Number) -> Option<i128> {
+    if let Some(value) = number.as_u64() {
+        return Some(i128::from(value));
+    }
+    if let Some(value) = number.as_i64() {
+        return Some(i128::from(value));
+    }
+
+    let float = number.as_f64()?;
+    if !float.is_finite() || float.fract() != 0.0 {
+        return None;
+    }
+    if float == 0.0 {
+        return if float.is_sign_negative() {
+            None
+        } else {
+            Some(0)
+        };
+    }
+    // `as` saturates rather than wrapping, so bound the cast to keep it exact.
+    const I128_EXCLUSIVE_UPPER_BOUND: f64 = 170_141_183_460_469_231_731_687_303_715_884_105_728.0;
+    (-I128_EXCLUSIVE_UPPER_BOUND..I128_EXCLUSIVE_UPPER_BOUND)
+        .contains(&float)
+        .then(|| float as i128)
 }
 
 fn id_of(value: &Value) -> &str {

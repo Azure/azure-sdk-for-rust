@@ -690,7 +690,18 @@ impl PipelineNode for StreamingOrderedMerge {
         let is_terminal = self.children.is_empty() && self.deferred_error.is_none();
 
         self.session_token = aggregator.session_token().cloned();
-        let response = aggregator.build_page(&payloads)?;
+        // Every row in `payloads` has already had its boundary advanced by
+        // `record_emission`, and drained children were just evicted, so the
+        // snapshot can no longer describe the rows this page would have
+        // carried. Propagating the error bare would let a caller resume from a
+        // token that silently skips them.
+        let response = match aggregator.build_page(&payloads) {
+            Ok(response) => response,
+            Err(err) => {
+                self.continuation_unsafe = true;
+                return Err(err);
+            }
+        };
         Ok(PageResult::Page {
             response,
             is_terminal,

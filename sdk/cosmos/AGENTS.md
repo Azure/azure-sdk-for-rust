@@ -152,13 +152,26 @@ The Cosmos DB implementation is split across three crates with distinct purposes
 
 ### Schema-Agnostic Data Plane Principle
 
-**Critical Architectural Rule**: `azure_data_cosmos_driver` is completely ignorant of document/item schemas and serialization formats.
+**Critical Architectural Rule**: `azure_data_cosmos_driver` is completely ignorant of document/item *schemas*.
 
 **Rationale**:
 
 - Cosmos DB is a **schemaless database** - item structure is application-defined
 - Driver must support multiple language SDKs (Rust, Java, .NET, Python) each with native serialization patterns
-- Serialization is a **core capability** that must be handled natively in the consuming SDK
+- Mapping items to application types is a **core capability** that must be handled natively in the consuming SDK
+
+**Where the wire encoding sits**: schema-ignorance does *not* extend to the Cosmos binary
+wire encoding. That encoding is negotiated with the service by the driver, on a header the
+driver owns (`x-ms-cosmos-supported-serialization-formats`), and the query pipeline cannot
+do its job without understanding it — nodes such as the ordered merge and `SkipTake` split
+a feed envelope apart, re-order documents across pages, and reassemble a new envelope. That
+is impossible to do over opaque bytes. So the boundary is:
+
+- **Driver owns the *envelope* and the wire encoding**: negotiating it, parsing feed pages,
+  and emitting pages in the negotiated encoding.
+- **SDK owns the *item***: turning a document's bytes into an application type and back.
+
+The driver never inspects or depends on the fields *inside* a document.
 
 **Driver Data Plane Contract**:
 
@@ -201,7 +214,12 @@ where
 }
 ```
 
-**Content Encoding**: UTF-8 JSON vs Cosmos binary encoding is detected automatically based on the first byte value (transparent to API).
+**Content Encoding**: a *received* body is recognised as UTF-8 JSON or Cosmos binary from its
+first byte, so decoding is transparent to the API. Do **not** extend that sniffing to decide
+what a pipeline node *emits* — the emitted encoding is whatever the operation negotiated
+(`CosmosOperation::negotiates_binary_response`). Deriving emission from received bytes lets
+two nodes in the same pipeline disagree when the service answers in a format other than the
+one that was requested.
 
 **Implications**:
 
