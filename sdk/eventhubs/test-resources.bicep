@@ -98,6 +98,11 @@ resource eventhubNamespace 'Microsoft.EventHub/namespaces@2024-05-01-preview' = 
       name: 'defaultGroup'
       properties: {}
     }
+
+    resource ownerLevelGroup 'consumergroups@2024-05-01-preview' = {
+      name: 'ownerLevelGroup'
+      properties: {}
+    }
   }
 
   resource eventhubNamespace_networkruleset_default 'networkrulesets@2024-05-01-preview' = {
