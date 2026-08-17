@@ -10,7 +10,6 @@
 ## Scope
 
 - This tool lives under `eng/tools/generate_api`.
-- `eng/tools/generate_api_report` is prior art only and not part of this design.
 - Run the CLI from the repo root.
 - Keep this file current as design behavior or integration points change.
 - Keep this file concise for LLMs but still easy for humans to review. Prefer short bullets and only enough detail to preserve intent.
@@ -36,7 +35,8 @@ Behavior:
 ## Toolchain and workspace
 
 - Standalone bin crate in the `eng/tools` workspace
-- Uses `eng/tools/rust-toolchain.toml` toolchain `nightly-2025-05-09`
+- Uses `eng/tools/rust-toolchain.toml` toolchain `nightly-2026-04-14`
+- Keep rustdoc schema compatibility logic isolated from the tool-owned model and renderers
 - Current deps: `rustdoc-types`, `serde`, `serde_json`, `clap`
 - `rustc-dev` stays included because long-term direction remains closer to librustdoc/HIR
 - Keep implementation and tests separate when practical. Prefer sibling `tests.rs` files over nested `mod tests` blocks. Tiny local `#[test]` items may stay inline
@@ -283,3 +283,11 @@ Preserved assumptions:
 - the important outputs are public API signatures attrs docs macros and module structure
 
 The implementation still acquires data through rustdoc JSON but the architecture should keep future movement toward direct librustdoc/HIR possible without rewriting the renderers.
+
+## Rustdoc schema compatibility
+
+- `rustdoc_compat.rs` isolates schema-specific attribute conversion and source recovery
+- Validate `format_version` before deserializing the complete rustdoc JSON
+- Keep `ApiModel` stable when updating `rustdoc-types`; do not pass schema-specific types to renderers
+- Recover source attributes only when rustdoc omits information needed to preserve existing output
+- Compare Markdown and APIView output against the previous nightly when updating the schema
