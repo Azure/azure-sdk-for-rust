@@ -13,7 +13,12 @@ rust-version.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["reqwest"] }
 azure_data_cosmos = { path = "../azure_data_cosmos", version = "0.38.0", features = ["key_auth", "control_plane"] }
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.7.0" }
+# `__internal_mocking` exposes `CosmosDriverRuntimeBuilder::with_mock_http_client_factory`,
+# which the `binary_payload_ab` harness uses to install a byte-counting transport in
+# front of reqwest. This crate is `publish = false`, so the unstable surface stays here.
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.7.0", features = [
+  "__internal_mocking",
+] }
 azure_identity = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 console-subscriber = { workspace = true, optional = true }
@@ -21,6 +26,9 @@ futures.workspace = true
 hdrhistogram.workspace = true
 hostname.workspace = true
 rand.workspace = true
+# Used only by the `binary_payload_ab` harness, which owns its own transport so it
+# can measure request/response body sizes at the wire boundary.
+reqwest = { workspace = true, features = ["http2", "rustls"] }
 serde.workspace = true
 serde_json.workspace = true
 sysinfo.workspace = true

@@ -52,10 +52,12 @@
 //! data — so removing the files from source control does not affect compilation
 //! or any gate.
 //!
-//! Binary encoding is enabled explicitly on the client via
-//! `CosmosClientBuilder::with_binary_encoding_options`, which the SDK resolves
-//! **once at client-build time**. This test therefore sets it when building the
-//! client.
+//! The client is built with binary encoding on via
+//! `CosmosClientBuilder::with_binary_encoding_options`, which sets the
+//! **default** for operations that do not specify one — that is what the seed
+//! phase writes under. Each query then sets [`OperationOptions::binary_encoding`]
+//! explicitly, which takes precedence over that default (see the SDK's
+//! `resolve_binary_encoding`), so the two comparison arms genuinely differ.
 //!
 //! # Running
 //!
