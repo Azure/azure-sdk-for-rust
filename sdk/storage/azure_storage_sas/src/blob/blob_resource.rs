@@ -4,8 +4,8 @@
 /// A blob resource for user delegation SAS.
 ///
 /// By default targets a base blob (`sr=b`). A snapshot timestamp or version ID
-/// is set through the [`snapshot`](crate::SasBuilder::snapshot) or
-/// [`version`](crate::SasBuilder::version) builder setters.
+/// is set through the [`snapshot`](crate::SasTokenBuilder::snapshot) or
+/// [`version`](crate::SasTokenBuilder::version) builder setters.
 #[derive(Debug)]
 pub(crate) struct BlobResource {
     container: String,
@@ -49,12 +49,17 @@ impl BlobResource {
     pub(crate) fn snapshot_or_version_time(&self) -> Option<&str> {
         self.snapshot.as_deref().or(self.version_id.as_deref())
     }
+
+    pub(crate) fn url_path_segments(&self) -> [&str; 2] {
+        [&self.container, &self.blob]
+    }
 }
 
 /// Permissions for a blob SAS.
 ///
 /// Serialization order: `racwdxytmeopi`. Flags are set through the permission
-/// setters on [`SasBuilder<BlobState>`](crate::SasBuilder).
+/// setters on [`SasTokenBuilder<BlobState>`](crate::SasTokenBuilder) and
+/// [`SasUrlBuilder<BlobState>`](crate::SasUrlBuilder).
 #[derive(Clone, Copy, Default)]
 pub(crate) struct BlobPermissions {
     pub(crate) read: bool,

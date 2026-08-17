@@ -118,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Generating SAS URLs
 
-Use the [`azure_storage_sas`] crate to create a user delegation SAS. Obtain a `UserDelegationKey` from `QueueServiceClient::get_user_delegation_key`, build the token with `SasBuilder`, then set it as the query string on the queue URL.
+Use the [`azure_storage_sas`] crate to create a user delegation SAS. Obtain a `UserDelegationKey` from `QueueServiceClient::get_user_delegation_key`, build the token with `SasTokenBuilder`, then set it as the query string on the queue URL.
 
 ```rust no_run
 use azure_core::{
@@ -126,7 +126,7 @@ use azure_core::{
     time::OffsetDateTime,
 };
 use azure_storage_queue::{models::KeyInfo, QueueServiceClient};
-use azure_storage_sas::SasBuilder;
+use azure_storage_sas::SasTokenBuilder;
 use azure_identity::DeveloperToolsCredential;
 use time::Duration;
 
@@ -156,7 +156,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .into_model()?;
 
     // Build a SAS token for a queue, then set it on the queue URL.
-    let token = SasBuilder::new(storage_account_name, &udk, now + Duration::hours(1))?
+    let token = SasTokenBuilder::new(storage_account_name, &udk, now + Duration::hours(1))?
         .queue(queue_name)
         .read()
         .add()

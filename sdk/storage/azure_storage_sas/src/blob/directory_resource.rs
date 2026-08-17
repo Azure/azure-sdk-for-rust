@@ -16,20 +16,31 @@ impl DirectoryResource {
     pub(crate) fn new(container: impl Into<String>, directory: impl Into<String>) -> Self {
         Self {
             container: container.into(),
-            directory: directory.into(),
+            directory: directory.into().trim_matches('/').to_string(),
         }
     }
 
     pub(crate) fn depth(&self) -> u32 {
-        let trimmed = self.directory.trim_matches('/');
-        if trimmed.is_empty() {
+        if self.directory.is_empty() {
             0
         } else {
-            trimmed.split('/').count() as u32
+            self.directory.split('/').count() as u32
         }
     }
 
     pub(crate) fn canonicalized_resource(&self, account: &str) -> String {
         format!("/blob/{}/{}/{}", account, self.container, self.directory)
+    }
+
+    /// Returns path segments for URL construction.
+    ///
+    /// The directory string may contain `/`-separated sub-segments which are
+    /// returned individually so each segment is percent-encoded on its own.
+    pub(crate) fn url_path_segments(&self) -> Vec<&str> {
+        let mut segments = vec![self.container.as_str()];
+        if !self.directory.is_empty() {
+            segments.extend(self.directory.split('/'));
+        }
+        segments
     }
 }
