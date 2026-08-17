@@ -815,6 +815,14 @@ async fn immediate_close_abandons_buffered_events() {
     assert_eq!(h.mock.total_events(), 0);
     assert_eq!(h.client.total_buffered_event_count(), 0);
     assert_eq!(h.client.buffered_event_count("0"), 0);
+
+    // A close is idempotent, in either form and in either order. A second call
+    // does nothing and returns Ok.
+    h.client.abort().await.unwrap();
+    h.client.close().await.unwrap();
+    assert_eq!(h.mock.total_events(), 0);
+    assert_eq!(h.client.total_buffered_event_count(), 0);
+    assert_eq!(h.client.buffered_event_count("0"), 0);
 }
 
 // 22. A close on an idle client completes.
@@ -1233,6 +1241,319 @@ async fn a_failure_handler_can_enqueue_again() {
     );
 
     client.close().await.unwrap();
+}
+
+// 30. One partition has one send in flight at a time.
+//
+// The worker awaits each send, so the batch behind it cannot start before the
+// batch in front of it settles. That is what keeps the events of a partition in
+// the order that the caller enqueued them, and what makes the delivery reports
+// of a partition arrive in that same order.
+#[tokio::test]
+async fn only_one_send_is_in_flight_for_a_partition() {
+    // One 1000 byte event fits the link and two do not, so each event is a
+    // batch of its own. The buffer holds 64 events, so no enqueue waits.
+    let mut h = harness(
+        &["0"],
+        Config {
+            max_message_size: 2500,
+            ..Default::default()
+        },
+    )
+    .await;
+
+    let release = h.mock.gate("0");
+
+    let first = "a".repeat(1000);
+    let second = "b".repeat(1000);
+    let third = "c".repeat(1000);
+    for body in [&first, &second, &third] {
+        h.client
+            .enqueue_event(body.clone(), to_partition("0"))
+            .await
+            .unwrap();
+    }
+
+    // The gate holds the first send, so that send is in flight.
+    let started = h.next_started().await;
+    assert_eq!(started, "0");
+
+    {
+        // The next two events are each a full batch, and both are in the queue.
+        // Neither may start while the first send is in flight.
+        let next_start = h.started.next();
+        pin_mut!(next_start);
+        assert!(
+            poll!(next_start.as_mut()).is_pending(),
+            "a second send started while the first was in flight"
+        );
+    }
+
+    let _ = release.send(());
+
+    // The reports arrive in the enqueue order, because the sends did.
+    let reports = h.next_reports(2).await;
+    assert!(reports.iter().all(|r| r.is_success()));
+    assert_eq!(reports[0].bodies(), [first]);
+    assert_eq!(reports[1].bodies(), [second]);
+
+    h.client.close().await.unwrap();
+    assert_eq!(h.mock.sends().len(), 3);
+}
+
+// 31. The builder defaults match the other Azure SDKs.
+//
+// A default that drifts changes the throughput and the memory of every
+// application that does not set these values.
+#[tokio::test]
+async fn the_builder_defaults_match_the_other_azure_sdks() {
+    assert_eq!(DEFAULT_MAX_WAIT_TIME_SECONDS, 1);
+    assert_eq!(DEFAULT_MAX_BUFFERED_EVENT_COUNT_PER_PARTITION, 1500);
+
+    let (mock, _started) = MockSendClient::new(&["0"]);
+    let client = BufferedProducerClient::builder()
+        .with_on_send_failed(|_| async {})
+        .open_with_send_client(mock.clone() as Arc<dyn BufferedSendClient>)
+        .await
+        .expect("the client opened");
+
+    // Hold the first send. No event then reaches a terminal outcome, so no
+    // capacity permit returns while the test fills the buffer.
+    let _release = mock.gate("0");
+
+    // The default buffer holds 1500 events for one partition.
+    tokio::time::timeout(std::time::Duration::from_secs(10), async {
+        for index in 0..1500 {
+            client
+                .enqueue_event(format!("e{index}"), to_partition("0"))
+                .await
+                .expect("the default buffer holds 1500 events for one partition");
+        }
+    })
+    .await
+    .expect("an enqueue waited for space before the buffer held 1500 events");
+
+    // The next event finds no permit, so the enqueue waits for space.
+    let pending = client.enqueue_event("overflow", to_partition("0"));
+    pin_mut!(pending);
+    assert!(
+        poll!(pending.as_mut()).is_pending(),
+        "the default buffer accepted more than 1500 events for one partition"
+    );
+
+    client.abort().await.unwrap();
+}
+
+// 32. A success handler can enqueue again once a send settles.
+//
+// Test 29 covers the path that fails an event before any send. This test covers
+// the send path. The batch is at a terminal outcome as soon as the send settles,
+// so the worker gives the capacity back before it calls the handlers. A handler
+// that enqueues to the same partition would otherwise wait for a permit that
+// only the worker can return, and the worker would wait for the handler.
+#[tokio::test]
+async fn a_success_handler_can_enqueue_again_after_a_send_settles() {
+    use std::sync::{OnceLock, Weak};
+
+    // One permit for the partition, so the handler can only proceed if the
+    // batch that it reports already gave its permit back.
+    const BUFFER: usize = 1;
+
+    let (mock, _started) = MockSendClient::new(&["0"]);
+
+    let slot: Arc<OnceLock<Weak<BufferedProducerClient>>> = Arc::new(OnceLock::new());
+    let handled = Arc::new(AtomicUsize::new(0));
+
+    let for_handler = slot.clone();
+    let counter = handled.clone();
+    let client = BufferedProducerClient::builder()
+        .with_max_wait_time(Duration::seconds(30))
+        .with_max_buffered_event_count_per_partition(BUFFER)
+        .with_on_send_succeeded(move |_context| {
+            let slot = for_handler.clone();
+            let counter = counter.clone();
+            async move {
+                // Enqueue one time only. A second one would recurse without an
+                // end.
+                if counter.fetch_add(1, Ordering::AcqRel) > 0 {
+                    return;
+                }
+                let client = slot
+                    .get()
+                    .expect("the test sets the client before it enqueues")
+                    .upgrade()
+                    .expect("the client is alive while the handler runs");
+                client
+                    .enqueue_event("second", to_partition("0"))
+                    .await
+                    .expect("the handler must not be rejected");
+            }
+        })
+        .with_on_send_failed(|_| async {})
+        .open_with_send_client(mock.clone() as Arc<dyn BufferedSendClient>)
+        .await
+        .expect("the client opened");
+
+    let client = Arc::new(client);
+    slot.set(Arc::downgrade(&client)).expect("set once");
+
+    // The batch holds one event, so the worker sends this one at once and the
+    // mock accepts it.
+    client
+        .enqueue_event("first", to_partition("0"))
+        .await
+        .unwrap();
+
+    // The deadlock shows up as a hang, so bound it. The counter reaches 2 once
+    // the handler ran for the event that the handler itself enqueued.
+    tokio::time::timeout(std::time::Duration::from_secs(10), async {
+        while handled.load(Ordering::Acquire) < 2 {
+            tokio::task::yield_now().await;
+        }
+        client.flush().await
+    })
+    .await
+    .expect("the success handler deadlocked with the worker")
+    .expect("the flush completed");
+
+    assert_eq!(
+        mock.total_events(),
+        2,
+        "the event that the handler enqueued must reach the service"
+    );
+
+    client.close().await.unwrap();
+}
+
+// 33. A slow delivery handler delays only its own partition.
+//
+// Each partition has its own worker, and a worker calls the handlers itself.
+// The builder documents that a slow handler slows only its own partition, so
+// the client must not report the outcomes of every partition through one task.
+#[tokio::test]
+async fn a_slow_handler_delays_only_its_own_partition() {
+    let (mock, _started) = MockSendClient::new(&["0", "1"]);
+    let (report_tx, mut reports) = mpsc::unbounded();
+
+    // The handler of partition 0 waits for this channel. The test holds the
+    // sender, so only the test releases that handler.
+    let (release, parked) = oneshot::channel::<()>();
+    let parked = Arc::new(Mutex::new(Some(parked)));
+
+    let tx = report_tx.clone();
+    let for_handler = parked.clone();
+    let client = BufferedProducerClient::builder()
+        .with_max_wait_time(Duration::seconds(30))
+        // One event for each batch, so each event is its own send.
+        .with_max_buffered_event_count_per_partition(1)
+        .with_on_send_succeeded(move |context: SendBatchSucceededContext| {
+            let tx = tx.clone();
+            let parked = for_handler.clone();
+            async move {
+                if context.partition_id == "0" {
+                    let waiter = parked.lock().unwrap().take();
+                    if let Some(waiter) = waiter {
+                        let _ = waiter.await;
+                    }
+                }
+                let _ = tx.unbounded_send(Report::Succeeded {
+                    partition_id: context.partition_id,
+                    bodies: bodies_of(&context.events),
+                });
+            }
+        })
+        .with_on_send_failed(|_| async {})
+        .open_with_send_client(mock.clone() as Arc<dyn BufferedSendClient>)
+        .await
+        .expect("the client opened");
+
+    client.enqueue_event("a", to_partition("0")).await.unwrap();
+    client.enqueue_event("b", to_partition("1")).await.unwrap();
+
+    // The handler of partition 0 is parked, and the report of partition 1 still
+    // arrives.
+    let report = tokio::time::timeout(std::time::Duration::from_secs(10), reports.next())
+        .await
+        .expect("the parked handler of partition 0 also held partition 1")
+        .expect("a delivery report was expected");
+    assert_eq!(report.partition_id(), "1");
+    assert_eq!(report.bodies(), ["b"]);
+
+    // The permit of "a" already returned, so partition 0 accepts another event.
+    // Its worker is inside the parked handler, so that event has no report yet.
+    client.enqueue_event("c", to_partition("0")).await.unwrap();
+    {
+        let next_report = reports.next();
+        pin_mut!(next_report);
+        assert!(
+            poll!(next_report.as_mut()).is_pending(),
+            "partition 0 reported an outcome while its handler was held"
+        );
+    }
+
+    let _ = release.send(());
+
+    let first = reports.next().await.expect("a report was expected");
+    assert_eq!(first.partition_id(), "0");
+    assert_eq!(first.bodies(), ["a"]);
+    let second = reports.next().await.expect("a report was expected");
+    assert_eq!(second.partition_id(), "0");
+    assert_eq!(second.bodies(), ["c"]);
+
+    client.close().await.unwrap();
+    assert_eq!(mock.total_events(), 3);
+}
+
+// 34. A delivery handler that panics does not hang a close.
+//
+// The panicking handler kills the worker of its partition. The client must
+// still serve the other partitions, and a close must still complete: it waits
+// for an acknowledgement that a dead worker can never send, so it has to accept
+// the cancelled channel and the join error of that task.
+//
+// The panic message in the test log is expected.
+#[tokio::test]
+async fn close_completes_after_a_handler_panics() {
+    let (mock, _started) = MockSendClient::new(&["0", "1"]);
+    let (report_tx, mut reports) = mpsc::unbounded();
+
+    let client = BufferedProducerClient::builder()
+        .with_max_wait_time(Duration::seconds(30))
+        // One event for each batch, so each event is its own send.
+        .with_max_buffered_event_count_per_partition(1)
+        .with_on_send_succeeded(move |context: SendBatchSucceededContext| {
+            let tx = report_tx.clone();
+            async move {
+                if context.partition_id == "0" {
+                    panic!("the handler of partition 0 panics on purpose");
+                }
+                let _ = tx.unbounded_send(Report::Succeeded {
+                    partition_id: context.partition_id,
+                    bodies: bodies_of(&context.events),
+                });
+            }
+        })
+        .with_on_send_failed(|_| async {})
+        .open_with_send_client(mock.clone() as Arc<dyn BufferedSendClient>)
+        .await
+        .expect("the client opened");
+
+    // The send settles, the handler panics, and the worker of partition 0 dies.
+    client.enqueue_event("a", to_partition("0")).await.unwrap();
+
+    // The client still serves the other partition.
+    client.enqueue_event("b", to_partition("1")).await.unwrap();
+    let report = tokio::time::timeout(std::time::Duration::from_secs(10), reports.next())
+        .await
+        .expect("the client stopped serving partition 1 after the panic")
+        .expect("a delivery report was expected");
+    assert_eq!(report.partition_id(), "1");
+    assert_eq!(report.bodies(), ["b"]);
+
+    tokio::time::timeout(std::time::Duration::from_secs(10), client.close())
+        .await
+        .expect("close hung after a handler panicked")
+        .expect("close failed after a handler panicked");
 }
 
 /// Live tests for the buffered producer.
