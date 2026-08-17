@@ -204,9 +204,13 @@ impl PartitionWorker {
             "Buffered producer partition worker stopped."
         );
 
-        // Tell the client that this worker holds nothing more. The client waits
-        // for this, so a close does not return while a worker still runs.
-        if let Some(stopped) = self.stopped.take() {
+        // Drop everything this worker owns before the client hears about it.
+        // The client takes the producer out of its Arc as soon as it reads the
+        // acknowledgement, and a worker that still held the send client would
+        // make that step find a second reference and skip the graceful close.
+        let stopped = self.stopped.take();
+        drop(self);
+        if let Some(stopped) = stopped {
             let _ = stopped.send(());
         }
     }
