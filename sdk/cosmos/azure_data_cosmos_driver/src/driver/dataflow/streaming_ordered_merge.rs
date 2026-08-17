@@ -380,9 +380,8 @@ pub(crate) struct StreamingOrderedMerge {
     /// from value boundaries instead of server continuations.
     continuation_unsafe: bool,
     /// Whether emitted pages carry Cosmos binary JSON items. Fixed at
-    /// construction from the negotiated operation, so every page encodes the
-    /// same way regardless of whether it touched the network — a page served
-    /// entirely from buffered rows cannot drift to text.
+    /// construction from the negotiated operation, so a page served entirely
+    /// from buffered rows encodes the same as one that hit the network.
     emit_binary: bool,
 }
 

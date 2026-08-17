@@ -166,8 +166,7 @@ struct Args {
     /// Maximum nesting depth of the generated documents.
     ///
     /// Ignored by `--profile simple`. Deeper documents have proportionally more
-    /// structural overhead in text JSON (braces, quotes, repeated property
-    /// names), which is precisely what binary encoding removes.
+    /// structural overhead, which is what binary encoding removes.
     #[arg(long, default_value_t = 6)]
     depth: u32,
 
@@ -796,12 +795,9 @@ struct SeededDoc {
 
 /// Writes the documents under test, replacing any previous run's contents.
 ///
-/// The write workload's target documents are seeded here too. If they were
-/// created lazily by the first upsert round, every mode after the first would
-/// see a larger container and its queries would return more items, making the
-/// byte-count comparison meaningless. Pre-seeding them keeps the container size
-/// constant from the first measured operation onward, so the upsert workload is
-/// pure replacement.
+/// The write workload's targets are pre-seeded here so the container size stays
+/// constant from the first measured operation; creating them lazily would let
+/// later modes query a larger container and skew the byte comparison.
 async fn seed(container: &ContainerClient, args: &Args) -> Result<Vec<SeededDoc>, Box<dyn Error>> {
     let partitions = args.partitions.max(1);
     let mut docs = Vec::with_capacity(args.docs);
@@ -853,11 +849,10 @@ fn write_targets_for(mode: Mode, args: &Args) -> Vec<(String, String, usize)> {
 }
 
 /// Maps an iteration onto a seeded document index, striding across the whole
-/// seeded set rather than reusing the first `--iterations` documents.
+/// seeded set.
 ///
-/// With the `corpus` profile document sizes span orders of magnitude, so
-/// sampling only the head of the set would report a size distribution unlike
-/// the one the queries actually read back.
+/// `corpus` document sizes span orders of magnitude, so sampling only the head
+/// would report a size distribution unlike the one the queries read back.
 fn document_index(iteration: usize, args: &Args) -> usize {
     let docs = args.docs.max(1);
     let iterations = args.iterations.max(1);

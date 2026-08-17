@@ -93,11 +93,9 @@ pub fn is_binary(buffer: &[u8]) -> bool {
 ///   so the conversion is safe to apply unconditionally on a response whose
 ///   format was negotiated but not guaranteed.
 ///
-/// Integral `Double`s are rendered with integer syntax (`3`, not `3.0`), which
-/// is how the service renders them in text mode. Without this, a value read
-/// back from a binary page would differ from the same value read from a text
-/// page — visible on the wire in an ORDER BY `resumeFilter` and in a
-/// continuation token.
+/// Integral `Double`s render with integer syntax (`3`, not `3.0`), matching the
+/// service's text mode, so a value read from a binary page matches the same
+/// value read from a text page.
 ///
 /// # Errors
 ///
@@ -117,8 +115,8 @@ pub fn transcode_to_text(buffer: &[u8]) -> Result<Vec<u8>> {
 /// Rewrites every integral `f64` in `value` to an integer `Number`, matching
 /// the service's text rendering of a stored `Double`.
 ///
-/// Bounds are exclusive at `2^64` so a cast cannot saturate at `u64::MAX`;
-/// magnitudes outside the integer range stay floating point.
+/// Bounds are exclusive at `2^64` so a cast cannot saturate; out-of-range
+/// magnitudes stay floating point.
 pub(crate) fn normalize_integral_floats(value: &mut serde_json::Value) {
     const U64_EXCLUSIVE_UPPER_BOUND: f64 = 18_446_744_073_709_551_616.0;
 
@@ -248,9 +246,7 @@ mod tests {
 
     #[test]
     fn transcode_renders_integral_double_as_integer() {
-        // The service renders a stored integral `Double` as `3`, so the binary
-        // transcode must too — otherwise a value read from a binary page differs
-        // from the same value read from a text page.
+        // The service renders a stored integral `Double` as `3`.
         let binary = encode(&serde_json::json!({ "n": 3.0 }));
         assert_eq!(transcode_to_text(&binary).unwrap(), br#"{"n":3}"#);
     }
@@ -272,8 +268,7 @@ mod tests {
         assert_eq!(value["o"]["b"].as_i64(), Some(-4));
     }
 
-    /// Magnitudes outside the integer range stay floating point, so a cast can
-    /// never saturate at `u64::MAX` / `i64::MIN` and silently corrupt a value.
+    /// Out-of-range magnitudes stay floating point rather than saturating.
     #[test]
     fn transcode_leaves_out_of_range_integral_doubles_as_floats() {
         let binary = encode(&serde_json::json!({

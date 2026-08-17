@@ -82,8 +82,7 @@ fn order_by_operation_with_page_size(n: u32) -> Arc<CosmosOperation> {
     )
 }
 
-/// A binary-negotiated ORDER BY operation. The merge derives its emitted format
-/// from this header, not from the bytes of the pages it receives.
+/// A binary-negotiated ORDER BY operation.
 fn binary_order_by_operation() -> Arc<CosmosOperation> {
     Arc::new(
         CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
@@ -597,13 +596,9 @@ async fn merges_two_binary_partitions_into_global_order() {
     );
 }
 
-/// Regression: a binary-negotiated merge must emit **binary** on every output
-/// page, including pages served entirely from buffered rows (no backend fetch).
-/// With page size 1 and a single 3-row backend page, output pages 2 and 3
-/// consume no backend response, so deriving the format per page from absorbed
-/// bytes would leave them text — carrying binary-canonicalized payloads that
-/// then fail typed decode. The format comes from the operation, so it cannot
-/// vary by whether a page touched the network.
+/// Regression: a binary-negotiated merge must emit binary on every output page,
+/// including pages served entirely from buffered rows. With page size 1 and one
+/// 3-row backend page, pages 2 and 3 consume no backend response.
 #[tokio::test]
 async fn binary_merge_keeps_every_page_binary_including_buffer_only_pages() {
     let op = binary_order_by_operation_with_page_size(1);
@@ -642,8 +637,7 @@ async fn binary_merge_keeps_every_page_binary_including_buffer_only_pages() {
         vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],
         "all rows must still be emitted in order",
     );
-    // The single backend page fills 3 rows; page size 1 emits 3 pages, only the
-    // first of which touches the backend. Every page must still be binary.
+    // The single backend page fills 3 rows; page size 1 emits 3 pages.
     assert!(
         formats.len() >= 3,
         "expected at least 3 output pages, got {}",
@@ -656,10 +650,8 @@ async fn binary_merge_keeps_every_page_binary_including_buffer_only_pages() {
 }
 
 /// A binary-negotiated merge resumed from a continuation token must keep the
-/// global order **across** the checkpoint and keep emitting binary. The token
-/// carries no format, so session 2 must re-derive it from its own backend
-/// pages; a mid-page checkpoint also exercises the value-boundary resume path
-/// (rather than a plain continuation) while binary is in play.
+/// global order across the checkpoint and keep emitting binary. The mid-page
+/// checkpoint also exercises the value-boundary resume path.
 #[tokio::test]
 async fn binary_merge_resumed_from_continuation_preserves_order_and_stays_binary() {
     let op = binary_order_by_operation_with_page_size(1);
@@ -693,8 +685,8 @@ async fn binary_merge_resumed_from_continuation_preserves_order_and_stays_binary
     let state = pipeline1.snapshot_state().unwrap();
     drop(pipeline1);
 
-    // Mock re-serves the full pages (it cannot evaluate the resume filter);
-    // the client-side discard must strip the already-emitted "l1" row.
+    // The mock re-serves full pages, so the client-side discard must strip the
+    // already-emitted "l1" row.
     let resumed_state = round_trip_state(state, &op);
     // A two-range resume re-resolves per saved range, so queue a result each.
     let ranges = vec![

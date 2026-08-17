@@ -47,18 +47,15 @@ struct RawQueryPage<'a> {
 ///
 /// An empty (`NoPayload`) body is treated as a zero-document page.
 ///
-/// A **Cosmos binary JSON** page is transcoded to text to split the `Documents`
-/// array, then each document is re-encoded to standalone binary. Per-document
-/// binary (rather than the split text slices) keeps the SDK's per-slice `0x80`
-/// auto-detection, so an integral `Double` still coerces into an integer target.
+/// A Cosmos binary JSON page is transcoded to text to split the `Documents`
+/// array, then each document is re-encoded to standalone binary so the SDK's
+/// per-slice `0x80` auto-detection still applies.
 pub(crate) fn split_feed_envelope(body: &Bytes) -> crate::error::Result<Vec<Bytes>> {
     if body.is_empty() {
         return Ok(Vec::new());
     }
 
-    // A negotiated-binary page arrives as one `0x80`-prefixed envelope. Decode
-    // it through the shared choke point so the scan below stays a plain
-    // text-JSON split and every consumer is binary-correct by construction.
+    // Decode binary pages so the scan below stays a plain text-JSON split.
     let was_binary = crate::binary_json::is_binary(body);
     let body = &super::query_response::normalize_page_body(body)?;
 
@@ -71,8 +68,6 @@ pub(crate) fn split_feed_envelope(body: &Bytes) -> crate::error::Result<Vec<Byte
     })?;
 
     if was_binary {
-        // Re-encode each document standalone so the SDK's per-slice `0x80`
-        // auto-detection still routes it through the binary deserializer.
         return page
             .documents
             .iter()

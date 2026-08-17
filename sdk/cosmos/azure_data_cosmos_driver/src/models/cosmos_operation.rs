@@ -409,10 +409,8 @@ impl CosmosOperation {
     /// Whether this operation advertised Cosmos binary JSON in its
     /// `x-ms-cosmos-supported-serialization-formats` header.
     ///
-    /// This is the authority on the response encoding for a cross-partition
-    /// query: nodes that synthesize a page (the ORDER BY merge) derive the
-    /// emitted format from the negotiated operation rather than inferring it
-    /// from the bytes of whichever backend page happened to arrive.
+    /// This is the authority on the response encoding: nodes that synthesize a
+    /// page derive their emitted format from here, not from received bytes.
     pub fn negotiates_binary_response(&self) -> bool {
         self.request_headers
             .supported_serialization_formats

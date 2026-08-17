@@ -310,10 +310,7 @@ pub(crate) fn parse_envelope_page(
             ));
         }
     };
-    // Binary-negotiated pages arrive as Cosmos binary JSON; the envelope parse
-    // below is text-only. `normalize_page_body` is the single choke point every
-    // raw-feed consumer shares, so a text page (the default, since binary is
-    // opt-in) keeps its original allocation and pays nothing.
+    // The envelope parse below is text-only, so decode binary pages first.
     let bytes = normalize_page_body(&bytes)?;
     let feed: RawFeedBody = serde_json::from_slice(&bytes).map_err(|e| {
         body_error(
@@ -367,8 +364,7 @@ pub(crate) struct PageAggregator {
     status: CosmosStatus,
     /// Whether [`build_page`](Self::build_page) emits the synthetic envelope as
     /// Cosmos binary JSON. Derived from the negotiated operation by the owning
-    /// node — never from the bytes of an absorbed page, so a page served
-    /// entirely from buffered rows encodes the same as one that hit the network.
+    /// node, never from the bytes of an absorbed page.
     emit_binary: bool,
 }
 
@@ -475,11 +471,9 @@ impl PageAggregator {
         self,
         payloads: &[Box<RawValue>],
     ) -> crate::error::Result<CosmosResponse> {
-        // A binary-negotiated query re-encodes each item to Cosmos binary JSON
-        // so the SDK decodes it through the binary deserializer, which coerces a
-        // service-echoed integral `Double` into an integer target. Emitting text
-        // would route them through the text deserializer, which hard-fails on
-        // that double — a divergence a passthrough binary query does not have.
+        // Binary items decode through the binary deserializer, which coerces a
+        // service-echoed integral `Double` into an integer target; the text
+        // deserializer hard-fails on it.
         let items: Vec<bytes::Bytes> = payloads
             .iter()
             .enumerate()
@@ -545,15 +539,10 @@ fn empty_diagnostics() -> Arc<DiagnosticsContext> {
 }
 
 /// Decodes a Cosmos binary JSON feed page to text, passing a text page through
-/// unchanged (and allocation-free — `Bytes::clone` is a refcount bump).
+/// unchanged (allocation-free — `Bytes::clone` is a refcount bump).
 ///
-/// This is the single choke point every raw-feed consumer goes through, so each
-/// one (`parse_envelope_page`, `split_feed_envelope`, and any future node) is
+/// The single choke point every raw-feed consumer shares, so each is
 /// binary-correct by construction rather than by convention.
-///
-/// A failure here is a decode fault on a body the driver already accepted, not
-/// a malformed service envelope, so it classifies as
-/// [`CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID`] and retains its source.
 pub(crate) fn normalize_page_body(bytes: &bytes::Bytes) -> crate::error::Result<bytes::Bytes> {
     if !crate::binary_json::is_binary(bytes) {
         return Ok(bytes.clone());
@@ -837,23 +826,18 @@ mod tests {
         assert!(rows.is_empty());
     }
 
-    /// A boundary parsed from a **binary** page must render the byte-identical
-    /// `resumeFilter` as the same boundary parsed from text. The service stores
-    /// every number as a `Double` and renders an integral one as `5` in text
-    /// mode; without integral-float normalization the binary path decodes it to
-    /// `5.0` and ships `"value":[5.0]` on the wire (and in the continuation
-    /// token) where the text path ships `"value":[5]`.
+    /// A boundary parsed from a binary page must render the byte-identical
+    /// `resumeFilter` as one parsed from text: the service stores every number
+    /// as a `Double` and renders an integral one as `5`.
     ///
     /// `OrderByItem`'s numeric equality is value-based across variants
-    /// (`I64(5) == F64(5.0)`), so comparing parsed rows cannot catch this —
-    /// only the rendered wire bytes can.
+    /// (`I64(5) == F64(5.0)`), so only the rendered bytes can catch this.
     #[test]
     fn binary_and_text_envelopes_render_identical_resume_filters() {
         let text = br#"{"_rid":"abc","Documents":[{"_rid":"r1","orderByItems":[{"item":5}],"payload":{"id":"d1"}}],"_count":1}"#;
 
-        // Encode the ORDER BY key as a `Double`, exactly as the service stores
-        // it — not via `transcode_to_binary`, which would preserve the integer
-        // marker from the text literal and never exercise the divergence.
+        // Encode the key as a `Double`, as the service stores it;
+        // `transcode_to_binary` would preserve the text integer marker.
         let binary = crate::binary_json::encode(&serde_json::json!({
             "_rid": "abc",
             "Documents": [{
