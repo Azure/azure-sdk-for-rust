@@ -4,9 +4,14 @@
 # Licensed under the MIT License.
 
 #Requires -Version 7.0
+[CmdletBinding(DefaultParameterSetName = 'Workspace')]
 param(
-  [Alias('PackageNames')]
-  [string[]] $PackageName
+  [Parameter(Mandatory, ParameterSetName = 'PackageNames')]
+  [ValidateNotNullOrEmpty()]
+  [string] $PackageNames,
+
+  [Parameter(Mandatory, ParameterSetName = 'Workspace')]
+  [switch] $Workspace
 )
 
 $ErrorActionPreference = 'Stop'
@@ -26,11 +31,11 @@ $stableRustc = (
     Select-Object -First 1
 ).Trim()
 
-$packageArgs = if ($PackageName) {
-  '--package ' + ($PackageName -join ' --package ')
+$packageArgs = if ($Workspace) {
+  '--workspace'
 }
 else {
-  '--workspace'
+  '--package ' + (($PackageNames -split ',') -join ' --package ')
 }
 
 # Cargo owns SBOM generation, so nightly Cargo can drive the stable compiler without
