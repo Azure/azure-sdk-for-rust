@@ -485,26 +485,14 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b71bd721089367eee3399ab7820052421ddb35916327d70d14667303617dfd21"
-dependencies = [
- "azure_core 1.1.0",
- "opentelemetry 0.31.0",
- "opentelemetry_sdk 0.31.0",
- "tracing",
-]
-
-[[package]]
-name = "azure_core_opentelemetry"
 version = "1.1.0-beta.1"
 dependencies = [
  "azure_core 1.2.0-beta.1",
  "azure_core_test 0.2.0",
  "azure_core_test_macros 0.2.0",
  "azure_identity 1.1.0-beta.1",
- "opentelemetry 0.32.0",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry",
+ "opentelemetry_sdk",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -599,8 +587,8 @@ dependencies = [
  "clap",
  "futures",
  "json-canon",
- "opentelemetry 0.32.0",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry",
+ "opentelemetry_sdk",
  "pin-project",
  "reqwest",
  "serde",
@@ -719,10 +707,10 @@ dependencies = [
  "azure_identity 1.0.0",
  "clap",
  "futures",
- "opentelemetry 0.32.0",
+ "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry-stdout",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry_sdk",
  "rand 0.10.2",
  "serde",
  "serde_json",
@@ -808,13 +796,13 @@ dependencies = [
  "async-lock",
  "async-stream",
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_amqp 1.1.0",
- "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_amqp 1.2.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "azure_messaging_eventhubs",
  "azure_messaging_eventhubs_checkpointstore_blob",
- "azure_storage_blob 1.0.0",
+ "azure_storage_blob",
  "base64",
  "criterion",
  "fe2o3-amqp",
@@ -836,17 +824,17 @@ name = "azure_messaging_eventhubs_checkpointstore_blob"
 version = "0.9.0"
 dependencies = [
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_opentelemetry 1.0.0",
- "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_opentelemetry",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "azure_messaging_eventhubs",
- "azure_storage_blob 1.0.0",
+ "azure_storage_blob",
  "futures",
- "opentelemetry 0.32.0",
+ "opentelemetry",
  "opentelemetry-appender-tracing",
  "opentelemetry-stdout",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry_sdk",
  "serde",
  "serde_json",
  "time",
@@ -951,25 +939,6 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "azure_core 1.2.0-beta.1",
- "tokio",
-]
-
-[[package]]
-name = "azure_storage_blob"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1756febbcca86c862ef718b983b505d08bd65a9bc984a915b0a16af4a4c3fe5b"
-dependencies = [
- "async-stream",
- "async-trait",
- "azure_core 1.1.0",
- "bytes",
- "futures",
- "percent-encoding",
- "pin-project",
- "serde",
- "serde_json",
- "time",
  "tokio",
 ]
 
@@ -2689,20 +2658,6 @@ dependencies = [
 
 [[package]]
 name = "opentelemetry"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b84bcd6ae87133e903af7ef497404dda70c60d0ea14895fc8a5e6722754fc2a0"
-dependencies = [
- "futures-core",
- "futures-sink",
- "js-sys",
- "pin-project-lite",
- "thiserror",
- "tracing",
-]
-
-[[package]]
-name = "opentelemetry"
 version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0142c63252a9e054e68a4c61a5778f7b14f576274d593f8ce883d191a099682"
@@ -2721,7 +2676,7 @@ version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c0080f0dc1d7c786f467cd85a4e395fcab11ee852004f39a29a18ab7c25d837"
 dependencies = [
- "opentelemetry 0.32.0",
+ "opentelemetry",
  "tracing",
  "tracing-core",
  "tracing-subscriber",
@@ -2734,9 +2689,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9966929966d17620d7c316c643ba62631826e10021409357772d5eea84f62c35"
 dependencies = [
  "http",
- "opentelemetry 0.32.0",
+ "opentelemetry",
  "opentelemetry-proto",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry_sdk",
  "prost 0.14.4",
  "thiserror",
  "tokio",
@@ -2750,8 +2705,8 @@ version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56d658ba1faf63f7b9c492cfbe6e0ec365440a16132d3270c1065f7b33f1b638"
 dependencies = [
- "opentelemetry 0.32.0",
- "opentelemetry_sdk 0.32.1",
+ "opentelemetry",
+ "opentelemetry_sdk",
  "prost 0.14.4",
  "tonic 0.14.6",
  "tonic-prost",
@@ -2764,23 +2719,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1b1c6a247d79091f0062a5f4bd058589525cf987a8d4c169440d9c1be72f0ad"
 dependencies = [
  "chrono",
- "opentelemetry 0.32.0",
- "opentelemetry_sdk 0.32.1",
-]
-
-[[package]]
-name = "opentelemetry_sdk"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e14ae4f5991976fd48df6d843de219ca6d31b01daaab2dad5af2badeded372bd"
-dependencies = [
- "futures-channel",
- "futures-executor",
- "futures-util",
- "opentelemetry 0.31.0",
- "percent-encoding",
- "rand 0.9.5",
- "thiserror",
+ "opentelemetry",
+ "opentelemetry_sdk",
 ]
 
 [[package]]
@@ -2792,7 +2732,7 @@ dependencies = [
  "futures-channel",
  "futures-executor",
  "futures-util",
- "opentelemetry 0.32.0",
+ "opentelemetry",
  "percent-encoding",
  "portable-atomic",
  "rand 0.9.5",
@@ -4465,7 +4405,6 @@ dependencies = [
  "base64",
  "bytes",
  "futures",
- "quick-xml",
  "serde",
  "serde_json",
  "url",

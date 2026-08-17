@@ -20,8 +20,8 @@ edition.workspace = true
 async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { workspace = true, default-features = false }
-azure_core_amqp.workspace = true
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
+azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.2.0-beta.1" }
 base64.workspace = true
 futures.workspace = true
 hmac.workspace = true
@@ -35,16 +35,18 @@ tracing.workspace = true
 rustc_version.workspace = true
 
 [dev-dependencies]
-azure_core_amqp = { workspace = true, features = ["test"] }
-azure_core_test = { workspace = true, features = ["tracing"] }
-azure_identity.workspace = true
+azure_core_amqp = { path = "../../core/azure_core_amqp", features = ["test"] }
+azure_core_test = { path = "../../core/azure_core_test", features = [
+  "tracing",
+] }
+azure_identity = { path = "../../identity/azure_identity" }
 azure_messaging_eventhubs = { path = ".", features = [
   "in_memory_checkpoint_store",
 ] }
 # Path-only so `cargo package` works: this crate is a dependency of the
 # checkpoint store crate, and the migration guide's blob sample compiles here.
 azure_messaging_eventhubs_checkpointstore_blob = { path = "../azure_messaging_eventhubs_checkpointstore_blob" }
-azure_storage_blob.workspace = true
+azure_storage_blob = { path = "../../storage/azure_storage_blob" }
 criterion.workspace = true
 fe2o3-amqp = { workspace = true, features = ["tracing"] }
 include-file.workspace = true
