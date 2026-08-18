@@ -305,7 +305,7 @@ pub(crate) async fn build_sequential_drain(
             fanout,
             skip,
             take,
-            operation.negotiates_binary_response(),
+            operation.emits_binary_payload(),
         ))
     } else {
         fanout
@@ -512,7 +512,7 @@ pub(crate) async fn build_streaming_ordered_merge(
             .build());
     }
 
-    let emit_binary = plain_operation.negotiates_binary_response();
+    let emit_binary = plain_operation.emits_binary_payload();
     let ordered_root: Box<dyn PipelineNode> = Box::new(StreamingOrderedMerge::new(
         plain_operation,
         directions,

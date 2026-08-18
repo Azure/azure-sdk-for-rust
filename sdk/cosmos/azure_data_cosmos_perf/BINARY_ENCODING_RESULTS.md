@@ -10,8 +10,9 @@ encoding negotiated. Text and binary arms are interleaved round by round.
 sampling the 29 real-world JSON files under `testdata/` — the same corpus the
 binary round-trip fuzzer draws its shapes from.
 
-Four runs, drawing on **two different corpus samples**. That distinction turns
-out to matter more than anything else in this document.
+Five runs, drawing on **two different corpus samples** plus one small-document
+profile. That distinction turns out to matter more than anything else in this
+document.
 
 | Run | Sample | Config | Purpose |
 | --- | --- | --- | --- |
@@ -19,6 +20,19 @@ out to matter more than anything else in this document.
 | 2 | A | 500 docs, 25 × 3 | Artifacts corrected |
 | 3 | A | 500 docs, 25 × 3 | Regression check after the negotiation-derived encoding change |
 | 4 | **B** | 800 docs, 30 × 4 | Different seed and 3× the per-file pool |
+| 5 | small-doc | 500 docs, 40 × 5 | After `request_text_response` stopped forfeiting the wire encoding |
+
+> **Runs 1–4 predate the `request_text_response` change.** In those runs the
+> `binary+text_resp` arm returned text on the wire; from run 5 on it returns
+> binary and transcodes client-side. Sections that depend on that arm are marked
+> and carry both readings. Payload, RU, and latency figures for the `text` and
+> `binary` arms are unaffected and remain comparable across all five runs.
+
+Run 5 seeds a much narrower document distribution than either corpus sample
+(min 434 B, p50 464 B, p95 477 B, max 477 B — essentially uniform), so its
+absolute percentages are not comparable to runs 1–4. It is included for the
+`request_text_response` behavior and for the two `SkipTake` workloads, which
+older runs did not exercise.
 
 Sample A drew 500 documents from a pool of ~39,000 harvested objects; sample B
 drew 800 from ~95,000 using a different `--seed`. The two samples are not
@@ -36,17 +50,17 @@ interchangeable:
 Sample B packs nearly the same total bytes into 60% more documents, so its mean
 document is ~38% smaller. Read that row before reading any percentage below.
 
-## The control arm
+## The control arm — valid for runs 1–4 only
 
-`binary+text_resp` sends binary requests but asks the service for text
-responses. On queries it returns **0% binary** and byte counts identical to
-plain text — so on the query workloads it is not a third configuration at all,
-it is a **second copy of the text arm**.
+In runs 1–4, `binary+text_resp` sent binary requests but asked the service for
+text responses. On queries it returned **0% binary** and byte counts identical
+to plain text — so on the query workloads it was not a third configuration at
+all, it was a **second copy of the text arm**.
 
-That makes it a free noise control. Any latency delta it reports is measurement
-noise by construction, because there is nothing different about the bytes.
+That made it a free noise control. Any latency delta it reported was
+measurement noise by construction, because nothing about the bytes differed.
 
-Its p50 versus text — noise by construction — across the runs:
+Its p50 versus text — noise by construction, in those runs:
 
 | Workload | Run 2 | Run 3 | Run 4 |
 | --- | ---: | ---: | ---: |
@@ -60,8 +74,17 @@ workload. Latency claims below are judged against the **worst** observed floor,
 not the most recent one — a quiet run does not retroactively license a noisy
 one's numbers.
 
-This is the single most important construct in this document: without it, run
-2's −13% on `SELECT *` would look like a result.
+Without this control, run 2's −13% on `SELECT *` would have looked like a
+result.
+
+**This construct no longer exists.** From run 5 the arm negotiates binary on
+the wire, so it is a genuine third configuration and its deltas are real, not
+noise. The ±18% floor derived above is retained as the standing noise estimate
+because it was measured honestly, but **no future run reproduces it for free**.
+Re-establishing a noise floor now requires either a duplicated arm or
+repeated runs of the same configuration — neither of which the harness
+currently does. Treat latency claims made from run 5 onward as having *no*
+contemporaneous noise control.
 
 ## 1. Payload size — direction is certain, magnitude is not
 
@@ -157,7 +180,13 @@ rather than serialization, hence the flat result in every run.
 Writes show a consistent but negligible −0.1% to −0.2%. This is a direct billing
 reduction, not just bandwidth.
 
-## 4. `request_text_response = true` forfeits the benefit entirely
+## 4. `request_text_response = true` — keeps the wire saving, costs a transcode
+
+This is the behavior that changed. Previously the flag forfeited binary
+negotiation on queries entirely; now it negotiates binary on the wire and
+transcodes to text before handing items back.
+
+### Before (runs 1–4)
 
 | Workload | text B/op | binary+text_resp B/op | delta |
 | --- | ---: | ---: | ---: |
@@ -165,20 +194,76 @@ reduction, not just bandwidth.
 | `ORDER BY` | 1920562 | 1920562 | +0.0% |
 | `SELECT c.id, c.seq` | 46227 | 46227 | +0.0% |
 
-Run 4 figures; byte-for-byte identical on **all three** workloads, at **0%
-binary responses**. Reproduced in every run.
+Run 4 figures; byte-for-byte identical on all three workloads, at **0% binary
+responses**, while point reads in the same mode came back 100% binary. The flag
+was honored for queries and silently ignored for point reads.
 
-**The flag is asymmetric.** Point reads in this same mode came back **100%
-binary** and kept the full saving (516 B in run 4, identical to the `binary`
-arm). So the option is honored for queries and silently ignored for point reads.
-A user who enables binary encoding *and* sets this flag pays the setup cost,
-gets zero query benefit, and gets binary responses anyway on the path where they
-explicitly asked for text — with no diagnostic indicating either.
+### After (run 5)
 
-This divergence is now pinned by a driver unit test
-(`request_text_response_forfeits_binary_for_query_but_not_for_point_ops`), so it
-is deliberate rather than accidental — but it remains surprising from the
-caller's side.
+| Workload | binary% | resp B/op vs text | RU/op vs text |
+| --- | ---: | ---: | ---: |
+| `SELECT *` | **95%** | −43.4% | −12.5% |
+| `ORDER BY` | **95%** | −45.3% | −9.9% |
+| `SELECT c.id, c.seq` | **95%** | −40.0% | −0.4% |
+| `ORDER BY … OFFSET/LIMIT` | **67%** | −32.2% | −5.2% |
+| `TOP` | **50%** | −40.7% | −6.1% |
+| Point read | **100%** | −44.4% | +0.0% |
+
+Every column matches the plain `binary` arm to the last digit. RU is
+server-reported and sensitive to response encoding, so identical RU is direct
+evidence the wire genuinely went binary — not merely that the byte counter
+agreed. The asymmetry between queries and point reads is gone.
+
+### The cost: what the text hand-back actually buys and charges
+
+Setting the flag now costs a client-side transcode instead of the wire saving.
+Isolating that — `binary+text_resp` p50 against the `binary` arm, run 5:
+
+| Workload | binary p50 | bin+text_resp p50 | transcode cost |
+| --- | ---: | ---: | ---: |
+| Point read | 18.63 ms | 19.73 ms | **+5.9%** |
+| `SELECT c.id, c.seq` | 416.68 ms | 431.51 ms | +3.6% |
+| `TOP` | 58.01 ms | 59.15 ms | +2.0% |
+| `ORDER BY … OFFSET/LIMIT` | 102.27 ms | 102.19 ms | −0.1% |
+| `SELECT *` | 871.69 ms | 863.73 ms | −0.9% |
+| `ORDER BY` | 907.64 ms | 888.79 ms | −2.1% |
+
+The query rows scatter in **both directions** across a ±3.6% span, which is
+well inside the ±8–18% floor measured in runs 2–4. On queries the transcode is
+not measurable by this harness — it is swamped by the decode the caller would
+have paid anyway.
+
+Point read is the exception and the one honest cost to quote: **+5.9% against
+binary, +7.0% against text**, and it is the only row that is consistently
+positive. A point read returns one small document, so there is no large parse
+for the transcode to hide behind.
+
+**Net:** the flag is now close to free on queries and a small latency tax on
+point reads, in exchange for keeping the full −40% payload and −10% RU saving
+that it previously threw away. Its remaining caveat is behavioral, not
+performance: the transcode re-serializes, so property order and number
+spellings (`1e20` → `1e+20`) are normalized rather than byte-preserved.
+
+## 4b. Client-synthesized pages (`TOP`, `OFFSET`/`LIMIT`)
+
+Runs 1–4 measured only workloads whose pages pass through from the service.
+`TOP` and `OFFSET`/`LIMIT` are different: the driver synthesizes the page
+client-side, so the **emitted** item encoding is chosen by the driver rather
+than by the wire. Run 5 adds both.
+
+| Workload | resp B/op | RU/op | binary% |
+| --- | ---: | ---: | ---: |
+| `ORDER BY … OFFSET 5 LIMIT 50` | −32.2% | −5.2% | 67% |
+| `SELECT TOP 50 *` | −40.7% | −6.1% | 50% |
+
+Both save less than the full-scan queries because they return a bounded window
+— fewer items to amortize the fixed per-response overhead over. `binary%` is
+lower for the same reason: the query-plan fetch is legitimately text and it is
+a larger share of a small request count.
+
+Both arms agree with each other exactly, which is the point of including them:
+these are the two paths where a bug in emitted-vs-wire encoding selection would
+show up, and it does not.
 
 ## 5. Write-side savings
 
@@ -249,9 +334,13 @@ Run 1 contained two artifacts, both now fixed in the harness:
 - **Two samples is not a distribution.** The size/savings relationship is
   inferred from two points. It is consistent with the projection query's
   invariance, but it is not established.
-- **Latency noise dominates, and the floor is unstable.** The control arm put
-  query-latency noise at ±18%, ±8%, and ±2% in three consecutive runs. Only the
-  projection query's win survives the worst of those.
+- **Latency noise dominates, and there is no longer a live control.** The
+  control arm put query-latency noise at ±18%, ±8%, and ±2% in three
+  consecutive runs. Only the projection query's win survives the worst of those.
+  Since run 5 the `binary+text_resp` arm is a real configuration rather than a
+  duplicated text arm, so **no run from 5 onward measures its own noise floor**.
+  This is a regression in the harness's evidentiary power and the most valuable
+  thing to restore — cheapest fix is a fourth arm that duplicates `text`.
 - **Stray requests inflate some text baselines.** Run 3's text arm logged 76
   requests for 75 point reads, and 902 for 900 `SELECT *` operations. That lifts
   the text byte total slightly and flatters the corresponding saving; it is why
@@ -279,21 +368,34 @@ Run 1 contained two artifacts, both now fixed in the harness:
 $env:AZURE_COSMOS_CONNECTION_STRING = "AccountEndpoint=...;AccountKey=...;"
 
 # Sample A (runs 1-3)
-cargo run --release -p azure_data_cosmos_perf --bin binary_payload_ab -- `
+cargo run --release -p azure_data_cosmos_perf --features binary-ab --bin binary_payload_ab -- `
   --application-region "<region>" `
   --profile corpus `
   --docs 500 --iterations 25 --rounds 3 --include-text-response-mode
 
 # Sample B (run 4) - different seed, 3x the per-file pool
-cargo run --release -p azure_data_cosmos_perf --bin binary_payload_ab -- `
+cargo run --release -p azure_data_cosmos_perf --features binary-ab --bin binary_payload_ab -- `
   --application-region "<region>" `
   --profile corpus --corpus-per-file 6000 --seed 987654321987654321 `
   --docs 800 --partitions 40 --iterations 30 --rounds 4 `
   --include-text-response-mode
+
+# Run 5 - small uniform documents, exercises TOP and OFFSET/LIMIT
+cargo run --release -p azure_data_cosmos_perf --features binary-ab --bin binary_payload_ab -- `
+  --application-region "<region>" `
+  --docs 500 --iterations 40 --rounds 5 --include-text-response-mode
 ```
 
-Always pass `--include-text-response-mode`: it costs one extra arm and buys the
-noise control that makes the latency numbers interpretable.
+Always pass `--include-text-response-mode`. Note what it now buys: through run 4
+it doubled as a noise control, but since `request_text_response` began
+negotiating binary on the wire it measures a real third configuration instead.
+It is still worth running — it is the only arm that exercises the transcode path
+— but it no longer establishes a noise floor.
+
+The `binary-ab` feature is required: it turns on the driver's
+`__internal_mocking` surface, which the harness needs to install its byte-counting
+transport. It is off by default so a plain workspace build does not pull that
+unstable surface into every other crate through feature unification.
 
 Run **both** samples. A single sample understates the spread — the mistake runs
 1–3 made.
@@ -323,10 +425,19 @@ documents and a run reproduces exactly.
 
 ## Notes
 
-- `binary%` on queries was 91–94% — roughly one non-binary request per query
-  execution, which is the query-plan fetch (legitimately text). That one plan
-  fetch occurs per execution of the *same* query string suggests the plan is not
-  being cached; unrelated to binary encoding, but worth a separate look.
+- `binary%` on the large query workloads was 91–95% — roughly one non-binary
+  request per query execution, which is the query-plan fetch (legitimately
+  text). That one plan fetch occurs per execution of the *same* query string
+  suggests the plan is not being cached; unrelated to binary encoding, but worth
+  a separate look. The bounded workloads (`TOP` 50%, `OFFSET`/`LIMIT` 67%) are
+  lower only because that same single plan fetch is a larger share of a much
+  smaller request count.
+- **Request counts vary by ±9 between arms that issue identical requests.** Run 5
+  logged 4000/4004/4007 on `ORDER BY` and 400/403/400 on `TOP`. An earlier
+  reading of this document attributed the extra requests to the
+  `binary+text_resp` arm specifically; run 5 shows them landing on the plain
+  `binary` arm just as often, so it is retry/throttle jitter and not
+  arm-correlated. Use the per-item columns, which are insensitive to it.
 - `point_read` shows 0% binary in the text arm and 100% in both binary arms, as
   expected.
 - Per-item and per-operation columns coincide because every mode returned

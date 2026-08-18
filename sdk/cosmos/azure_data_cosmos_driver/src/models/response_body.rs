@@ -397,6 +397,40 @@ mod tests {
         }
     }
 
+    /// A query page arrives as pre-split `Items`, so honoring
+    /// `request_text_response` for a query means transcoding every item, not
+    /// just a single body. Mixed input also proves the per-item binary sniff:
+    /// an already-text item must survive untouched rather than being re-parsed.
+    #[test]
+    fn transcode_to_text_converts_every_item_of_a_query_page() {
+        let binary_a = crate::binary_json::transcode_to_binary(br#"{"id":"a","n":1}"#).unwrap();
+        let binary_b = crate::binary_json::transcode_to_binary(br#"{"id":"b","n":2}"#).unwrap();
+        let already_text = Bytes::from_static(br#"{"id":"c"}"#);
+
+        let body = ResponseBody::from_items(vec![
+            Bytes::from(binary_a),
+            Bytes::from(binary_b),
+            already_text.clone(),
+        ]);
+        let text = body.transcode_to_text().unwrap();
+
+        match &text {
+            ResponseBody::Items(items) => {
+                assert_eq!(items.len(), 3);
+                for item in items {
+                    assert!(
+                        !crate::binary_json::is_binary(item),
+                        "every item must be text after transcoding",
+                    );
+                }
+                assert_eq!(&items[0][..], br#"{"id":"a","n":1}"#);
+                assert_eq!(&items[1][..], br#"{"id":"b","n":2}"#);
+                assert_eq!(&items[2][..], &already_text[..]);
+            }
+            _ => panic!("expected Items variant"),
+        }
+    }
+
     #[test]
     fn is_empty_true_for_empty_items_vec() {
         assert!(ResponseBody::from_items(Vec::new()).is_empty());

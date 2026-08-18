@@ -330,21 +330,59 @@ struct QueryOutcome {
     request_charge: f64,
 }
 
-/// Drains `spec` across the whole container with binary encoding forced on or
-/// off for this operation only.
+/// One of the encoding configurations a query shape is replayed under.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+enum Encoding {
+    /// Binary encoding off: text JSON in both directions. The baseline every
+    /// other arm is compared against.
+    Text,
+    /// Binary encoding on, response left in binary.
+    Binary,
+    /// Binary encoding on, but the caller asked for a text payload. The wire
+    /// stays binary and the driver transcodes each item back to text in
+    /// `execute_plan`, so this is the only arm that exercises that transcode
+    /// over a real multi-page query.
+    BinaryTextResponse,
+}
+
+impl Encoding {
+    /// The label used for this arm in the report.
+    fn label(self) -> &'static str {
+        match self {
+            Encoding::Text => "text",
+            Encoding::Binary => "binary",
+            Encoding::BinaryTextResponse => "bin+txt_rsp",
+        }
+    }
+
+    /// The per-operation options that select this arm.
+    fn options(self) -> BinaryEncodingOptions {
+        match self {
+            Encoding::Text => BinaryEncodingOptions::new().with_enabled(false),
+            Encoding::Binary => BinaryEncodingOptions::new()
+                .with_enabled(true)
+                .with_request_text_response(false),
+            Encoding::BinaryTextResponse => BinaryEncodingOptions::new()
+                .with_enabled(true)
+                .with_request_text_response(true),
+        }
+    }
+}
+
+/// Drains `spec` across the whole container under a single encoding arm.
 ///
-/// The encoding is set explicitly on both arms so neither silently inherits the
+/// The encoding is set explicitly on every arm so none silently inherits the
 /// client-level default, which would make the comparison meaningless.
 async fn run_query(
     container: &ContainerClient,
     spec: &QuerySpec,
     run_id: &str,
-    binary: bool,
+    encoding: Encoding,
 ) -> Result<QueryOutcome, Box<dyn Error>> {
     let query = Query::from(spec.text).with_parameter("@run", run_id)?;
 
     let mut operation = OperationOptions::default();
-    operation.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(binary));
+    operation.binary_encoding = Some(encoding.options());
     let options = QueryOptions::default().with_operation_options(operation);
 
     let mut pages = container
@@ -462,30 +500,36 @@ fn render_capped(value: &Value) -> String {
     rendered
 }
 
-/// Asserts the text and binary runs of `spec` returned equivalent results.
-fn assert_encodings_agree(spec: &QuerySpec, text: &QueryOutcome, binary: &QueryOutcome) {
+/// Asserts the baseline text run of `spec` and one other encoding arm returned
+/// equivalent results.
+fn assert_encodings_agree(
+    spec: &QuerySpec,
+    text: &QueryOutcome,
+    other: &QueryOutcome,
+    other_label: &str,
+) {
     assert_eq!(
         text.items.len(),
-        binary.items.len(),
-        "{}: text returned {} items but binary returned {}",
+        other.items.len(),
+        "{}: text returned {} items but {other_label} returned {}",
         spec.name,
         text.items.len(),
-        binary.items.len(),
+        other.items.len(),
     );
 
-    let (text_items, binary_items) = match spec.compare {
+    let (text_items, other_items) = match spec.compare {
         Compare::Count => return,
         Compare::Sequence => (
             text.items.iter().collect::<Vec<_>>(),
-            binary.items.iter().collect::<Vec<_>>(),
+            other.items.iter().collect::<Vec<_>>(),
         ),
-        Compare::Set => (sorted_by_id(&text.items), sorted_by_id(&binary.items)),
+        Compare::Set => (sorted_by_id(&text.items), sorted_by_id(&other.items)),
     };
 
-    for (i, (t, b)) in text_items.iter().zip(&binary_items).enumerate() {
+    for (i, (t, b)) in text_items.iter().zip(&other_items).enumerate() {
         assert!(
             json_equivalent(t, b),
-            "{}: item #{i} (id={}) differs between encodings\n  text:   {}\n  binary: {}",
+            "{}: item #{i} (id={}) differs between text and {other_label}\n  text:  {}\n  {other_label}: {}",
             spec.name,
             id_of(t),
             render_capped(t),
@@ -632,24 +676,33 @@ async fn binary_and_text_queries_agree_over_seeded_corpus() -> Result<(), Box<dy
     ];
 
     println!(
-        "\n{:<38} {:>8} {:>7} {:>7} {:>10} {:>10}",
+        "\n{:<38} {:>11} {:>7} {:>7} {:>10} {:>10}",
         "query", "encoding", "items", "pages", "RU", "RU/item",
     );
 
     for spec in &specs {
-        let text = run_query(&container, spec, &run_id, false).await?;
-        let binary = run_query(&container, spec, &run_id, true).await?;
+        let text = run_query(&container, spec, &run_id, Encoding::Text).await?;
+        let binary = run_query(&container, spec, &run_id, Encoding::Binary).await?;
+        // Binary on the wire, text handed back. Every item on this arm goes
+        // through the driver's transcode, so agreement here is what proves the
+        // transcode preserves values across a real multi-page query.
+        let binary_text =
+            run_query(&container, spec, &run_id, Encoding::BinaryTextResponse).await?;
 
-        for (label, outcome) in [("text", &text), ("binary", &binary)] {
+        for (encoding, outcome) in [
+            (Encoding::Text, &text),
+            (Encoding::Binary, &binary),
+            (Encoding::BinaryTextResponse, &binary_text),
+        ] {
             let per_item = if outcome.items.is_empty() {
                 0.0
             } else {
                 outcome.request_charge / outcome.items.len() as f64
             };
             println!(
-                "{:<38} {:>8} {:>7} {:>7} {:>10.2} {:>10.3}",
+                "{:<38} {:>11} {:>7} {:>7} {:>10.2} {:>10.3}",
                 spec.name,
-                label,
+                encoding.label(),
                 outcome.items.len(),
                 outcome.pages,
                 outcome.request_charge,
@@ -665,30 +718,41 @@ async fn binary_and_text_queries_agree_over_seeded_corpus() -> Result<(), Box<dy
             spec.expected_items,
             text.items.len(),
         );
-        assert_encodings_agree(spec, &text, &binary);
+        assert_encodings_agree(spec, &text, &binary, Encoding::Binary.label());
+        assert_encodings_agree(
+            spec,
+            &text,
+            &binary_text,
+            Encoding::BinaryTextResponse.label(),
+        );
 
         // The encoding delta is the point of the run, so report it rather than
-        // leaving it to be eyeballed off the two rows above. Reported only:
-        // the service picks page boundaries, so these are observations.
-        let ru_delta = binary.request_charge - text.request_charge;
-        let ru_pct = if text.request_charge > 0.0 {
-            ru_delta / text.request_charge * 100.0
-        } else {
-            0.0
-        };
-        println!(
-            "{:<38} {:>8} {:>7} {:>+7} {:>+10.2} {:>9.1}%",
-            "",
-            "delta",
-            "",
-            binary.pages as i64 - text.pages as i64,
-            ru_delta,
-            ru_pct,
-        );
+        // leaving it to be eyeballed off the rows above. Reported only: the
+        // service picks page boundaries, so these are observations.
+        for (encoding, outcome) in [
+            (Encoding::Binary, &binary),
+            (Encoding::BinaryTextResponse, &binary_text),
+        ] {
+            let ru_delta = outcome.request_charge - text.request_charge;
+            let ru_pct = if text.request_charge > 0.0 {
+                ru_delta / text.request_charge * 100.0
+            } else {
+                0.0
+            };
+            println!(
+                "{:<38} {:>11} {:>7} {:>+7} {:>+10.2} {:>9.1}%",
+                "",
+                format!("{} delta", encoding.label()),
+                "",
+                outcome.pages as i64 - text.pages as i64,
+                ru_delta,
+                ru_pct,
+            );
+        }
     }
 
     println!(
-        "\nText and binary agreed on all {} query shapes.",
+        "\nAll three encodings agreed on all {} query shapes.",
         specs.len()
     );
     Ok(())

@@ -159,6 +159,13 @@ pub struct CosmosOperation {
     /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
     /// is dispatched exactly like the standalone Read/Replace it is.
     is_patch_sub_operation: bool,
+    /// `true` when the caller asked for a **text** payload over a binary wire
+    /// (`BinaryEncodingOptions::request_text_response`) and this operation
+    /// negotiated binary anyway. Recorded at negotiation time so pipeline nodes
+    /// that synthesize a page can tell the *wire* format apart from the
+    /// *emitted* format — see
+    /// [`emits_binary_payload`](Self::emits_binary_payload).
+    transcodes_response_to_text: bool,
 }
 
 impl CosmosOperation {
@@ -409,8 +416,9 @@ impl CosmosOperation {
     /// Whether this operation advertised Cosmos binary JSON in its
     /// `x-ms-cosmos-supported-serialization-formats` header.
     ///
-    /// This is the authority on the response encoding: nodes that synthesize a
-    /// page derive their emitted format from here, not from received bytes.
+    /// This is the authority on the **wire** encoding — what the service is
+    /// asked to send. It is *not* necessarily what the caller receives: see
+    /// [`emits_binary_payload`](Self::emits_binary_payload).
     pub fn negotiates_binary_response(&self) -> bool {
         self.request_headers
             .supported_serialization_formats
@@ -420,6 +428,27 @@ impl CosmosOperation {
                     .split(',')
                     .any(|format| format.trim().eq_ignore_ascii_case("CosmosBinary"))
             })
+    }
+
+    /// Records that the driver will transcode this operation's response back to
+    /// text before returning it to the caller.
+    pub(crate) fn transcoding_response_to_text(mut self) -> Self {
+        self.transcodes_response_to_text = true;
+        self
+    }
+
+    /// Whether pipeline nodes that synthesize a page should emit **binary**
+    /// items.
+    ///
+    /// This is the authority on the encoding handed back, as distinct from
+    /// [`negotiates_binary_response`](Self::negotiates_binary_response), which
+    /// describes the wire. The two diverge under
+    /// `BinaryEncodingOptions::request_text_response`: the wire stays binary
+    /// (keeping the bandwidth saving) while the driver transcodes the response
+    /// to text on the way out. A node that emitted binary in that case would
+    /// re-encode every item only for `execute_plan` to immediately decode it.
+    pub fn emits_binary_payload(&self) -> bool {
+        self.negotiates_binary_response() && !self.transcodes_response_to_text
     }
 
     /// Sets the maximum number of items the server should return per page
@@ -545,6 +574,7 @@ impl CosmosOperation {
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,
+            transcodes_response_to_text: false,
         }
     }
 

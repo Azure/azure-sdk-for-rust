@@ -55,10 +55,10 @@ FFI hosts set the equivalent flat fields on the C ABI `cosmos_operation_options_
 
 ### Two transcodes, both in the driver (schema-agnostic)
 
-When `binary_encoding.enabled` is set, `CosmosDriver::execute_operation` owns the wire format both ways:
+When `binary_encoding.enabled` is set, the driver owns the wire format both ways — the request side in `execute_operation`, the response side in `execute_plan`:
 
-* **Request** (`apply_request_binary_encoding`) — transcodes a **text** request body to Cosmos binary JSON via `binary_json::transcode_to_binary` (`serde_json::from_slice` → `encode`) and advertises `JsonText,CosmosBinary`. An **already-binary** or empty body passes through unchanged, so a caller that pre-encoded pays nothing.
-* **Response** (when `request_text_response` is set) — transcodes the binary response back to text JSON via `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire stays binary in both directions.
+* **Request** (`apply_request_binary_encoding`) — transcodes a **text** request body to Cosmos binary JSON via `binary_json::transcode_to_binary` (`serde_json::from_slice` → `encode`). An **already-binary** or empty body passes through unchanged, so a caller that pre-encoded pays nothing. Response negotiation is a separate step (`apply_response_negotiation`) and advertises `CosmosBinary`.
+* **Response** (when `request_text_response` is set) — transcodes the binary response back to text JSON via `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire stays binary in both directions. This lives in `execute_plan`, which **every** operation type funnels through — point ops, queries, and change feed alike — so the contract holds uniformly. A page that is already text transcodes as a refcount clone, so plans that never negotiated binary pay nothing.
 
 This keeps transcoding in the **driver** (not the backend) and, because it is schema-agnostic, lets a text-only FFI host get an efficient binary wire without any encoding on its side.
 
@@ -71,10 +71,31 @@ The Rust SDK keeps a typed fast path: `serialize_item_body` encodes `T: Serializ
 When binary is enabled, item operations set:
 
 ```
-x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary
+x-ms-cosmos-supported-serialization-formats: CosmosBinary
 ```
 
-The value matches the .NET reference (`string.Join(",", JsonText, CosmosBinary)` — no space). The request `Content-Type` stays `application/json`; the service detects the binary body from its first byte. The **driver** sets this header whenever `binary_encoding.enabled` is set — including under `request_text_response`, where the wire stays binary and the driver transcodes the response (see above).
+.NET sends `JsonText,CosmosBinary` for queries and `CosmosBinary` for point ops. Rust sends `CosmosBinary` everywhere — a deliberate deviation, documented on `BINARY_NEGOTIATION_FORMATS` in `driver/cosmos_driver.rs`: advertising both would let the service pick text, and the driver would then have to handle either format per page. Forcing one format keeps the response encoding a property of the operation rather than of each page. See parity item 5.
+
+The request `Content-Type` stays `application/json`; the service detects the binary body from its first byte.
+
+The **driver** owns this header, and sets it only when all of the following hold:
+
+* `binary_encoding.enabled` is set;
+* the operation negotiates a binary response (`binary_negotiates_response` — `Document` plus a point item op or query; change feed is excluded);
+* the caller has not already set the header itself.
+
+`request_text_response` deliberately does **not** suppress negotiation, for any operation type. The flag describes the payload handed back to the caller, not the encoding on the wire: the wire stays binary and `execute_plan` transcodes the response before returning it. Suppressing negotiation would silently forfeit the bandwidth saving that enabling binary was meant to buy.
+
+One consequence is worth stating plainly: text handed back under `request_text_response` is **re-serialized by the driver**, not the service's original bytes. Values are preserved, but object keys are emitted in sorted order (`serde_json::Map` is a `BTreeMap`) and numbers use Rust's shortest round-trip rendering (`1e20` → `1e+20`). Callers needing byte-exact service output should leave binary encoding disabled.
+
+### Wire format vs emitted format
+
+These are two different questions, and `request_text_response` is exactly where they diverge:
+
+* `CosmosOperation::negotiates_binary_response()` — what the **service** was asked to send. Drives the request header.
+* `CosmosOperation::emits_binary_payload()` — what the **caller** receives. Equals `negotiates_binary_response() && !request_text_response`.
+
+Pipeline nodes that synthesize a page (`StreamingOrderedMerge`, `SkipTake`) derive `emit_binary` from the second. Deriving it from the first would have them re-encode every item to binary only for `execute_plan` to decode it straight back — a wasted round trip per item on the `ORDER BY` and `OFFSET`/`LIMIT` paths. The flag is recorded on the operation at negotiation time (`apply_response_negotiation`), so the planner does not need the options view threaded through it.
 
 ---
 
@@ -184,7 +205,7 @@ flowchart TD
     REQ -->|"no (text, e.g. FFI)"| RT["transcode_to_binary<br/>(from_slice &rarr; encode)"]
     REQ -->|"yes (SDK pre-encoded)"| PASS_BIN["pass through"]
     RT --> HDR
-    PASS_BIN --> HDR["advertise JsonText,CosmosBinary"]
+    PASS_BIN --> HDR["advertise CosmosBinary"]
     HDR --> WIRE["binary body on the wire"]
     WIRE --> SVC[("Cosmos DB")]
     SVC --> RESP["binary response (0x80)"]
@@ -241,7 +262,7 @@ sequenceDiagram
     Cod-->>SDK: 0x80-prefixed binary bytes
     SDK->>DRV: operation + OperationOptions.binary_encoding
     Note over DRV: request body already binary → pass through
-    DRV->>Svc: binary body + JsonText,CosmosBinary
+    DRV->>Svc: binary body + CosmosBinary
     Svc-->>DRV: binary response (0x80)
     opt request_text_response
         DRV->>Cod: transcode_to_text (decode → to_vec)
@@ -275,7 +296,7 @@ sequenceDiagram
     Note over DRV: request body is TEXT → transcode to binary
     DRV->>Cod: transcode_to_binary (from_slice → encode)
     Cod-->>DRV: 0x80-prefixed binary body
-    DRV->>Svc: binary body + JsonText,CosmosBinary
+    DRV->>Svc: binary body + CosmosBinary
     Svc-->>DRV: binary response (0x80)
     DRV->>Cod: transcode_to_text (decode → to_vec)
     Cod-->>DRV: TEXT json body
@@ -316,6 +337,7 @@ When the option is **off**, both paths collapse to the existing text behavior �
 * **Decoder** — golden-vector parity corpus; per-form unit tests across every marker family.
 * **Encoder** — `encode → decode` round-trip tests (numbers across all widths, strings incl. unicode/escapes/boundary lengths, nested containers, empties).
 * **Robustness (P4)** — deterministic fuzz suite asserting the decoder *always* terminates with `Ok | Err` on untrusted input: never panics on random / truncated / single-byte-corrupted buffers, never over-allocates on adversarial length prefixes (`u32::MAX` errors in O(1)), and rejects deep nesting with `DepthLimitExceeded` instead of a stack overflow.
+* **Nesting depth is symmetric.** `reader::MAX_DEPTH` (256, mirroring .NET's `JsonObjectState.JsonMaxNestingDepth`) bounds both directions. `transcode_to_binary` cannot simply use `serde_json::from_slice`, whose recursion guard stops at 128: the driver would then accept a document on the way in that it could not re-encode on the way out, and a legal service document would fail mid-pipeline (the ORDER BY merge re-encodes every item). `binary_json::parse_text_json` therefore bounds nesting with a non-recursive byte scan first, and only then disables `serde_json`'s own guard — the scan replaces it rather than removing it, so adversarial input still cannot exhaust the stack.
 * **End-to-end (in-memory emulator)** — `binary_round_trip.rs`:
   * `binary_encoding_item_write_read_round_trips` — create / read / upsert / replace through the full SDK → driver → emulator binary loop, including a unicode payload (`"café ☃ binary"`).
   * `binary_and_text_clients_interoperate` — a binary-written document reads back through a text client and vice-versa.
@@ -448,9 +470,10 @@ full even when a `TOP` discards it. Blast radius is `ResponseBody::Items` (drive
 public API, also consumed by the native FFI crate) plus a `build_page` restructure,
 since merged rows span multiple source pages.
 
-Note also that because `emit_binary` is sticky on the merge, once any page is binary
-the items sourced from **text** pages are re-encoded too, which normalizes key order
-and collapses duplicate keys.
+Note also that the emitted encoding follows the **negotiated operation**, not the
+bytes of any absorbed page, so on a binary-negotiated query the items sourced from
+**text** pages are re-encoded too, which normalizes key order and collapses
+duplicate keys.
 
 #### Invariant for future feed splitters
 

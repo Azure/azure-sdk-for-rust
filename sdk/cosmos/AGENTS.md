@@ -216,10 +216,16 @@ where
 
 **Content Encoding**: a *received* body is recognized as UTF-8 JSON or Cosmos binary from its
 first byte, so decoding is transparent to the API. Do **not** extend that sniffing to decide
-what a pipeline node *emits* — the emitted encoding is whatever the operation negotiated
-(`CosmosOperation::negotiates_binary_response`). Deriving emission from received bytes lets
-two nodes in the same pipeline disagree when the service answers in a format other than the
-one that was requested.
+what a pipeline node *emits* — the emitted encoding is a property of the operation
+(`CosmosOperation::emits_binary_payload`), not of the bytes that happened to arrive. Deriving
+emission from received bytes lets two nodes in the same pipeline disagree when the service
+answers in a format other than the one that was requested.
+
+Note `emits_binary_payload` rather than `negotiates_binary_response`: the former is what the
+caller receives, the latter is what the wire carries. They diverge under
+`BinaryEncodingOptions::request_text_response`, where the wire stays binary but the driver
+hands back text — so a node keyed off the wire format would re-encode items that
+`execute_plan` immediately decodes again.
 
 **Implications**:
 

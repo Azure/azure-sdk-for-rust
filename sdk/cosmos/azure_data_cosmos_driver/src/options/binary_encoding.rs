@@ -23,6 +23,12 @@
 ///   binary response to text before returning it. Has no effect unless
 ///   [`enabled`](Self::enabled) is `true`.
 ///
+/// The response side applies uniformly to every operation that negotiates
+/// binary — point item operations and queries alike. The request side is
+/// narrower: only an item body is transcoded. A query's request body is a query
+/// spec rather than a document, so it stays text either way while its *response*
+/// still comes back binary.
+///
 /// A typed consumer may pre-encode its request body straight from
 /// `T: Serialize` as an optimization; the driver's request-side transcoding then
 /// sees an already-binary body and passes it through unchanged.
@@ -44,9 +50,11 @@
 pub struct BinaryEncodingOptions {
     /// Whether Cosmos binary JSON is used on the wire for the operation.
     ///
-    /// When `true`, the request body is sent as binary (the driver transcodes a
-    /// text body to binary first, or passes an already-binary body through) and
-    /// the client advertises that it accepts binary responses.
+    /// When `true`, an item request body is sent as binary (the driver
+    /// transcodes a text body to binary first, or passes an already-binary body
+    /// through) and the client advertises that it accepts binary responses. A
+    /// query's request body stays text — it is a query spec, not a document —
+    /// but its response is still negotiated binary.
     pub enabled: bool,
 
     /// Whether the driver hands the caller **text** JSON even when binary
@@ -54,8 +62,15 @@ pub struct BinaryEncodingOptions {
     ///
     /// When `false` (the default), the binary response is returned as-is. When
     /// `true`, the wire stays binary in both directions and the driver
-    /// transcodes the binary response to text JSON before returning it. Has no
-    /// effect when [`enabled`](Self::enabled) is `false`.
+    /// transcodes the binary response to text JSON before returning it — for a
+    /// query, each result item in the page. Has no effect when
+    /// [`enabled`](Self::enabled) is `false`.
+    ///
+    /// The text produced this way is **re-serialized by the driver**, not the
+    /// service's original bytes. Values are preserved, but object keys are
+    /// emitted in sorted order and numbers use Rust's shortest round-trip
+    /// rendering (`1e20` renders as `1e+20`). Callers needing byte-exact service
+    /// output should leave [`enabled`](Self::enabled) `false`.
     pub request_text_response: bool,
 }
 

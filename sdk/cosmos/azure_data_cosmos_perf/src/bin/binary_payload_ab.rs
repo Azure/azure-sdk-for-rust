@@ -52,7 +52,7 @@
 //! # PowerShell: keep the key out of shell history and process listings.
 //! $env:AZURE_COSMOS_CONNECTION_STRING = "AccountEndpoint=...;AccountKey=...;"
 //!
-//! cargo run --release -p azure_data_cosmos_perf --bin binary_payload_ab -- \
+//! cargo run --release -p azure_data_cosmos_perf --features binary-ab --bin binary_payload_ab -- \
 //!     --application-region "West US 2" \
 //!     --docs 200 --rounds 3 --iterations 20 --include-text-response-mode
 //! ```
@@ -677,6 +677,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 *mode,
                 "query_projection",
                 Query::from("SELECT c.id, c.seq FROM c"),
+                &args,
+            )
+            .await?;
+            // The two `SkipTake` shapes. Both synthesize pages client-side
+            // rather than passing the service's page through, so they are the
+            // workloads where the emitted item encoding is chosen by the
+            // driver rather than by the wire.
+            run_query(
+                container,
+                &recorder,
+                *mode,
+                "query_order_by_offset_limit",
+                Query::from("SELECT * FROM c ORDER BY c.seq DESC OFFSET 5 LIMIT 50"),
+                &args,
+            )
+            .await?;
+            run_query(
+                container,
+                &recorder,
+                *mode,
+                "query_top",
+                Query::from("SELECT TOP 50 * FROM c"),
                 &args,
             )
             .await?;

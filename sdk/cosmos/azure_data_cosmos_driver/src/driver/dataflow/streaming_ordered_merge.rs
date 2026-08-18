@@ -56,7 +56,6 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use serde_json::value::RawValue;
 
 use crate::models::{CosmosOperation, FeedRange, MaxItemCountHint, SessionToken};
 
@@ -381,7 +380,9 @@ pub(crate) struct StreamingOrderedMerge {
     continuation_unsafe: bool,
     /// Whether emitted pages carry Cosmos binary JSON items. Fixed at
     /// construction from the negotiated operation, so a page served entirely
-    /// from buffered rows encodes the same as one that hit the network.
+    /// from buffered rows encodes the same as one that hit the network. This
+    /// tracks the *emitted* format, not the wire: under
+    /// `request_text_response` the wire is binary while items stay text.
     emit_binary: bool,
 }
 
@@ -393,7 +394,7 @@ impl StreamingOrderedMerge {
         query_fingerprint: String,
     ) -> Self {
         Self {
-            emit_binary: plain_operation.negotiates_binary_response(),
+            emit_binary: plain_operation.emits_binary_payload(),
             plain_operation,
             directions,
             children,
@@ -623,9 +624,9 @@ impl PipelineNode for StreamingOrderedMerge {
         let mut head_heap = self.build_head_heap();
 
         let cap = self.max_item_count();
-        let mut payloads: Vec<Box<RawValue>> = Vec::new();
+        let mut items: Vec<bytes::Bytes> = Vec::new();
 
-        while payloads.len() < cap {
+        while items.len() < cap {
             let Some(winner) = self.heap_pop(&mut head_heap) else {
                 break;
             };
@@ -633,18 +634,33 @@ impl PipelineNode for StreamingOrderedMerge {
                 .buffered
                 .pop_front()
                 .expect("head heap only contains indices with a buffered row");
+            // Encode *before* `record_emission` advances the boundary. Once the
+            // boundary moves, this row sits behind the resume point and can no
+            // longer be replayed, so a failure after that point would drop it
+            // silently. Encoding first keeps the failure recoverable.
+            let item = match aggregator.encode_item(items.len(), &row.payload) {
+                Ok(item) => item,
+                Err(err) => {
+                    self.children[winner].buffered.push_front(row);
+                    if items.is_empty() {
+                        return Err(err);
+                    }
+                    self.deferred_error = Some(err);
+                    break;
+                }
+            };
             if let Err(err) = self.children[winner].record_emission(&row.keys, &row.rid) {
                 // The boundary was not advanced, so put the row back and let
                 // it be re-emitted on a later attempt.
                 self.children[winner].buffered.push_front(row);
-                if payloads.is_empty() {
+                if items.is_empty() {
                     return Err(err);
                 }
                 self.deferred_error = Some(err);
                 break;
             }
-            payloads.push(row.payload);
-            if payloads.len() < cap {
+            items.push(item);
+            if items.len() < cap {
                 if self.children[winner].buffered.front().is_some() {
                     self.heap_push(&mut head_heap, winner);
                 } else {
@@ -690,20 +706,8 @@ impl PipelineNode for StreamingOrderedMerge {
         let is_terminal = self.children.is_empty() && self.deferred_error.is_none();
 
         self.session_token = aggregator.session_token().cloned();
-        // Every row in `payloads` has already had its boundary advanced by
-        // `record_emission`, and drained children were just evicted, so the
-        // snapshot can no longer describe the rows this page would have
-        // carried. Propagating the error bare would let a caller resume from a
-        // token that silently skips them.
-        let response = match aggregator.build_page(&payloads) {
-            Ok(response) => response,
-            Err(err) => {
-                self.continuation_unsafe = true;
-                return Err(err);
-            }
-        };
         Ok(PageResult::Page {
-            response,
+            response: aggregator.build_page(items),
             is_terminal,
         })
     }
@@ -2550,6 +2554,92 @@ mod tests {
             }
             other => panic!("expected StreamingOrderedMerge, got {other:?}"),
         }
+    }
+
+    /// Regression: a per-item encode failure must not consume the row it fails
+    /// on.
+    ///
+    /// The emitted encoding is re-derived per item, so an item can fail to
+    /// encode after earlier items in the same page succeeded. If the boundary
+    /// advanced first, the failing row would already sit behind the resume
+    /// point: the caller retries, resumes past it, and the document vanishes
+    /// with no error on the second attempt. Encoding before
+    /// `record_emission` keeps the row replayable.
+    ///
+    /// Nesting past `binary_json::reader::MAX_DEPTH` is the injection because
+    /// it is the one input the encoder rejects by contract; `parse_envelope_page`
+    /// retains payloads as `RawValue`, which does not walk the document, so it
+    /// reaches the encoder intact.
+    #[tokio::test]
+    async fn binary_encode_failure_does_not_advance_boundary_past_the_failing_row() {
+        let mut deep = serde_json::json!(1);
+        for _ in 0..(crate::binary_json::reader::MAX_DEPTH + 8) {
+            deep = serde_json::Value::Array(vec![deep]);
+        }
+        let body = serde_json::json!({
+            "_rid": "",
+            "Documents": [
+                {"_rid": "d1", "orderByItems": [{"item": 1}], "payload": {"id": "d1"}},
+                {"_rid": "d2", "orderByItems": [{"item": 2}], "payload": {"id": "d2", "deep": deep}},
+            ],
+            "_count": 2,
+        });
+        let child = ChildStream::fresh(
+            range("", "FF"),
+            Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                response: mocks::response_with_continuation(
+                    &serde_json::to_vec(&body).unwrap(),
+                    None,
+                ),
+                is_terminal: true,
+            })])),
+        );
+        let mut node = merge(vec![child], vec![SortOrder::Ascending]);
+        node.emit_binary = true;
+
+        let PageResult::Page { response, .. } = next_page(&mut node).await else {
+            panic!("expected the successfully-encoded rows as a partial page");
+        };
+        let items = match response.body() {
+            crate::models::ResponseBody::Items(items) => items.clone(),
+            other => panic!("expected an Items body, got {other:?}"),
+        };
+        assert_eq!(items.len(), 1, "only `d1` encodes");
+        assert_eq!(
+            response.headers().item_count,
+            Some(1),
+            "the item count must report what was emitted, not what was popped"
+        );
+
+        match node.snapshot_state().unwrap() {
+            PipelineNodeState::StreamingOrderedMerge { ranges, .. } => {
+                assert_eq!(
+                    ranges[0]
+                        .boundary
+                        .as_ref()
+                        .expect("`d1` was delivered, so the boundary advanced to it")
+                        .last_rid,
+                    "d1",
+                    "the boundary must not pass the row that failed to encode, or a resume \
+                     silently skips it"
+                );
+            }
+            other => panic!("expected StreamingOrderedMerge, got {other:?}"),
+        }
+
+        // The deferred failure is still delivered, so the caller learns the
+        // page is incomplete rather than seeing a short page and stopping.
+        let mut executor = mocks::NoopRequestExecutor;
+        let mut topology = mocks::NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        let err = node
+            .next_page(&mut context)
+            .await
+            .expect_err("the deferred encode failure must surface");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID
+        );
     }
 
     #[tokio::test]

@@ -83,10 +83,11 @@ const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_mill
 /// reply in binary, preserving the read-side RU/COGS benefit the caller opted
 /// into. When the caller also asked for a text payload (`request_text_response`),
 /// the driver transcodes the guaranteed-binary response back to text after
-/// receiving it, keeping the wire binary in both directions. **Point ops only** —
-/// queries bypass that transcode, so a query with `request_text_response` set does
-/// not negotiate binary at all (see
-/// [`apply_response_negotiation`](CosmosDriver::apply_response_negotiation)).
+/// receiving it, keeping the wire binary in both directions. That transcode
+/// lives in [`execute_plan`](CosmosDriver::execute_plan), which every operation
+/// type funnels through, so the behavior is uniform: a text-requesting caller
+/// gets the bandwidth saving whether it issued a point read or a
+/// cross-partition query.
 ///
 /// Note: .NET's *query* default is the broader `JsonText,CosmosBinary` ("send
 /// either, service chooses"); Rust deliberately forces `CosmosBinary` for query
@@ -2634,11 +2635,11 @@ impl CosmosDriver {
             operation
         };
 
-        let transcode_response_to_text = binary.enabled && binary.request_text_response;
-
         // TODO: This boxing is a temporary fix to avoid a large future.
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
-        let response = Box::pin(async {
+        // `execute_plan` applies the text-response transcode for every plan, so
+        // there is nothing further to do here.
+        Box::pin(async {
             let container = operation.container().cloned();
             let mut plan = self
                 .plan_operation_resolved(
@@ -2654,17 +2655,7 @@ impl CosmosDriver {
                 .await?;
             self.execute_plan(&mut plan, container, options).await
         })
-        .await?;
-
-        // Driver-side transcoding: convert the binary response body to text
-        // when the caller asked for a text payload over a binary wire.
-        if transcode_response_to_text {
-            if let Some(mut response) = response {
-                response.transcode_body_to_text()?;
-                return Ok(Some(response));
-            }
-        }
-        Ok(response)
+        .await
     }
 
     /// Whether an operation's **request body** should be transcoded to Cosmos
@@ -2706,10 +2697,14 @@ impl CosmosDriver {
     /// only, so it is safe for query (whose text `application/query+json` body
     /// must never be transcoded).
     ///
-    /// Two guards: a caller-set header is never overwritten, and a **query** with
-    /// `request_text_response` does not negotiate binary (queries bypass the
-    /// transcode-back-to-text in `execute_operation`, so binary pages would defeat
-    /// an explicit text request). Point ops are unaffected.
+    /// One guard: a caller-set header is never overwritten.
+    ///
+    /// `request_text_response` deliberately does **not** suppress negotiation.
+    /// That flag describes the payload the caller wants handed back, not the
+    /// encoding on the wire — the wire stays binary and
+    /// [`execute_plan`](CosmosDriver::execute_plan) transcodes the response
+    /// before returning it. Suppressing negotiation here would silently forfeit
+    /// the bandwidth saving that is the entire point of enabling binary.
     ///
     /// [`binary_negotiates_response`]: CosmosDriver::binary_negotiates_response
     fn apply_response_negotiation(
@@ -2743,15 +2738,14 @@ impl CosmosDriver {
         if !binary.enabled {
             return operation;
         }
-        // Queries bypass the response transcode, so honor an explicit text request.
-        let is_query = matches!(
-            operation.operation_type(),
-            crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
-        );
-        if is_query && binary.request_text_response {
-            return operation;
+        let operation = operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS);
+        // Record the text hand-back so pipeline nodes emit text items rather
+        // than re-encoding binary that `execute_plan` would immediately decode.
+        if binary.request_text_response {
+            operation.transcoding_response_to_text()
+        } else {
+            operation
         }
-        operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS)
     }
 
     /// Transcodes an operation's **text** request body to Cosmos binary JSON.
@@ -3007,6 +3001,16 @@ impl CosmosDriver {
     /// (e.g. topology repairs, advancing page state, etc.).
     /// After this returns, the plan may be executed again to fetch the next page of results, if any.
     /// Once this returns `None`, there are no more pages to fetch, and the operation is complete.
+    ///
+    /// # Binary encoding
+    ///
+    /// This is the single choke point for
+    /// [`BinaryEncodingOptions::request_text_response`](crate::options::BinaryEncodingOptions):
+    /// every operation the driver runs — point ops, queries, and change feed
+    /// alike — funnels through here, so the "binary wire, text payload" contract
+    /// holds uniformly rather than per operation type. Transcoding a body that
+    /// is already text is a refcount clone, so plans that never negotiated
+    /// binary (change feed, or binary disabled) pay nothing.
     pub async fn execute_plan(
         &self,
         plan: &mut OperationPlan,
@@ -3040,7 +3044,24 @@ impl CosmosDriver {
                 topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
             );
 
-            plan.pipeline.next_page(&mut context).await
+            let response = plan.pipeline.next_page(&mut context).await?;
+
+            // Driver-side transcoding: hand back text while the wire stayed
+            // binary. Resolved from the layered view here (rather than trusting
+            // a caller-supplied flag) so the decision matches the one
+            // `apply_response_negotiation` made when it set the request header.
+            let binary = self
+                .operation_options_view(&options)
+                .binary_encoding()
+                .cloned()
+                .unwrap_or_default();
+            if binary.enabled && binary.request_text_response {
+                if let Some(mut response) = response {
+                    response.transcode_body_to_text()?;
+                    return Ok(Some(response));
+                }
+            }
+            Ok(response)
         })
         .await
     }
@@ -6536,6 +6557,67 @@ mod tests {
         }
     }
 
+    /// A query plan is service metadata (`{"partitionedQueryExecutionInfo":…}`),
+    /// not documents, and the pipeline parses it as text JSON with no binary
+    /// branch. Negotiating binary for it would hand the parser bytes it cannot
+    /// read, so the exclusion is load-bearing rather than incidental.
+    #[test]
+    fn query_plan_does_not_negotiate_a_binary_response() {
+        use crate::models::{OperationType, ResourceType};
+
+        assert!(
+            !CosmosDriver::binary_negotiates_response(
+                ResourceType::Document,
+                OperationType::QueryPlan
+            ),
+            "a query plan must be fetched as text; its parser has no binary path",
+        );
+        assert!(
+            !OperationType::QueryPlan.supports_binary_response(),
+            "the operation-level gate must exclude QueryPlan too, not just the driver gate",
+        );
+    }
+
+    /// A caller that set `x-ms-cosmos-supported-serialization-formats` itself
+    /// has stated the formats it can decode. Overwriting it would hand that
+    /// caller a format it never agreed to, so the driver defers even when its
+    /// own binary encoding is enabled.
+    #[tokio::test]
+    async fn response_negotiation_never_clobbers_a_caller_set_header() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+
+        let caller_set = binary_encoding_test_operation(b"{}".to_vec())
+            .with_supported_serialization_formats("JsonText");
+        let negotiated = driver.apply_response_negotiation(caller_set, &options, None);
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("JsonText"),
+            "a caller-set negotiation header must survive untouched",
+        );
+
+        // Control: without a caller-set header the driver does advertise binary,
+        // so the assertion above reflects the guard and not an inert path.
+        let untouched = binary_encoding_test_operation(b"{}".to_vec());
+        let negotiated = driver.apply_response_negotiation(untouched, &options, None);
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some(BINARY_NEGOTIATION_FORMATS),
+        );
+    }
+
     fn binary_encoding_test_operation(body: Vec<u8>) -> CosmosOperation {
         let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
         let item =
@@ -6631,13 +6713,14 @@ mod tests {
         );
     }
 
-    /// `request_text_response` means two different things by operation type,
-    /// and that divergence is intentional: a point op keeps the wire binary and
-    /// transcodes the response back to text in `execute_operation`, but a query
-    /// bypasses that transcode — so honoring text there means not negotiating
-    /// binary at all. This pins both halves so neither drifts silently.
+    /// `request_text_response` describes the payload handed back, not the
+    /// encoding on the wire — so it must **not** suppress negotiation for any
+    /// operation type. Both queries and point ops keep the wire binary and rely
+    /// on `execute_plan` to transcode. Pins both halves so neither drifts back
+    /// to the old asymmetry, where a query silently forfeited the bandwidth
+    /// saving that enabling binary was meant to buy.
     #[tokio::test]
-    async fn request_text_response_forfeits_binary_for_query_but_not_for_point_ops() {
+    async fn request_text_response_still_negotiates_binary_for_query_and_point_ops() {
         use crate::models::FeedRange;
 
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
@@ -6664,9 +6747,9 @@ mod tests {
                 .request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            None,
-            "a query cannot transcode its response back to text, so an explicit \
-             text request must forfeit binary negotiation entirely",
+            Some("CosmosBinary"),
+            "a query keeps the wire binary and lets `execute_plan` transcode the \
+             page back to text, so it must still negotiate binary",
         );
 
         let read = CosmosOperation::read_item(crate::models::ItemReference::from_name(
@@ -6682,6 +6765,45 @@ mod tests {
             Some("CosmosBinary"),
             "a point op keeps the wire binary and transcodes back to text, so \
              it still negotiates binary",
+        );
+
+        // The wire and the emitted payload must disagree here: that divergence
+        // is what stops pipeline nodes re-encoding items to binary only for
+        // `execute_plan` to decode them straight back.
+        for op in [&query, &read] {
+            assert!(op.negotiates_binary_response(), "the wire must stay binary",);
+            assert!(
+                !op.emits_binary_payload(),
+                "synthesized pages must emit text when the driver transcodes",
+            );
+        }
+    }
+
+    /// Without `request_text_response` the two formats agree, so a synthesized
+    /// page emits binary and the caller decodes it. Guards against a change
+    /// that makes `emits_binary_payload` unconditionally false.
+    #[tokio::test]
+    async fn binary_without_text_request_emits_binary_payload() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+
+        let query = CosmosOperation::query_items(
+            epk_test_container(r#"{"paths":["/pk"],"version":2}"#),
+            Some(crate::models::FeedRange::full()),
+        )
+        .with_body(serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap());
+        let query = driver.apply_response_negotiation(query, &options, None);
+
+        assert!(query.negotiates_binary_response());
+        assert!(
+            query.emits_binary_payload(),
+            "with no text request the emitted format follows the wire",
         );
     }
 }

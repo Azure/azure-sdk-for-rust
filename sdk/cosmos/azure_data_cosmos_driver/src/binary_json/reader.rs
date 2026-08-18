@@ -45,7 +45,7 @@ use super::{is_binary, BinaryError, Result};
 /// stack's `JsonObjectState.JsonMaxNestingDepth` (256 simultaneously-open
 /// containers), so the Rust decoder enforces the same nesting policy while
 /// guarding against stack exhaustion from adversarial input.
-const MAX_DEPTH: usize = 256;
+pub(crate) const MAX_DEPTH: usize = 256;
 
 /// A single native scalar token read directly from the buffer, used by the
 /// native serde deserializer ([`super::de`]) to feed a visitor without

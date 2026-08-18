@@ -452,61 +452,70 @@ impl PageAggregator {
         }
     }
 
+    /// Converts one raw item payload into the bytes this aggregator emits.
+    ///
+    /// Payloads always arrive as text, because [`normalize_page_body`]
+    /// transcodes every absorbed page before it is split. When the operation
+    /// negotiated binary, the item is re-encoded here so the SDK decodes it
+    /// through the binary deserializer — which coerces a service-echoed
+    /// integral `Double` into an integer target, exactly as a passthrough
+    /// binary query does. Text-negotiated queries copy verbatim.
+    ///
+    /// This is deliberately separate from [`build_page`](Self::build_page) so
+    /// the caller can encode an item *before* committing to having emitted it.
+    /// A caller that advanced its continuation state first would be unable to
+    /// resume from a failure here: the row it lost is already behind the
+    /// resume boundary.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `payload` cannot be encoded to Cosmos binary JSON.
+    pub(crate) fn encode_item(
+        &self,
+        index: usize,
+        payload: &RawValue,
+    ) -> crate::error::Result<bytes::Bytes> {
+        let text = payload.get().as_bytes();
+        if !self.emit_binary {
+            return Ok(bytes::Bytes::copy_from_slice(text));
+        }
+        crate::binary_json::transcode_to_binary(text)
+            .map(bytes::Bytes::from)
+            .map_err(|e| {
+                // The payload reached here as a `RawValue`, which only checks
+                // that the bytes are *syntactically* JSON — it does not walk
+                // the document. So this is not "the bytes were already
+                // validated"; it is the narrower claim that every value the
+                // binary encoder can be handed here also round-tripped through
+                // `binary_json::decode`, whose limits the encoder now matches.
+                // A failure therefore indicates a driver-side encoder gap, not
+                // a malformed service response, and is not retriable.
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message(format!(
+                        "failed to re-encode merged ORDER BY item {index} to binary: {e}"
+                    ))
+                    .with_source(e)
+                    .build()
+            })
+    }
+
     /// Builds the emitted page from the accumulated aggregate plus the
-    /// final ordered list of raw item payloads.
+    /// final ordered list of encoded item bytes.
     ///
     /// The body is a [`ResponseBody::Items`] whose entries are the ordered
-    /// `payloads`' bytes — one per document. Emitting pre-split items (rather
+    /// `items` — one per document, each already in the emitted encoding (see
+    /// [`encode_item`](Self::encode_item)). Emitting pre-split items (rather
     /// than re-serializing a `{"Documents":[...]}` envelope only for the SDK to
     /// re-parse) lets the calling SDK read each document directly.
     ///
-    /// `payloads` always arrives as text, because [`normalize_page_body`]
-    /// transcodes every absorbed page before it is split. When the operation
-    /// negotiated binary, each item is therefore re-encoded here so the SDK
-    /// decodes it through the binary deserializer — which coerces a
-    /// service-echoed integral `Double` into an integer target, exactly as a
-    /// passthrough binary query does. Text-negotiated queries emit verbatim.
+    /// Infallible by construction: every fallible step happens in
+    /// `encode_item`, which the caller runs while it can still un-emit a row.
     ///
     /// It's valid for no backend page to have been absorbed (page
     /// assembled entirely from previously-buffered rows); it then reports
     /// zero charge and a fresh, empty [`DiagnosticsContext`].
-    pub(crate) fn build_page(
-        self,
-        payloads: &[Box<RawValue>],
-    ) -> crate::error::Result<CosmosResponse> {
-        // Binary items decode through the binary deserializer, which coerces a
-        // service-echoed integral `Double` into an integer target; the text
-        // deserializer hard-fails on it.
-        let items: Vec<bytes::Bytes> = payloads
-            .iter()
-            .enumerate()
-            .map(|(index, payload)| {
-                let text = payload.get().as_bytes();
-                if self.emit_binary {
-                    crate::binary_json::transcode_to_binary(text)
-                        .map(bytes::Bytes::from)
-                        .map_err(|e| {
-                            // A client-side re-encode failure. The payload was
-                            // already parsed as JSON upstream, so reaching here
-                            // means the driver itself is at fault, which is what
-                            // `SERIALIZATION_RESPONSE_BODY_INVALID` (HTTP 500)
-                            // reports.
-                            crate::error::CosmosError::builder()
-                                .with_status(
-                                    crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-                                )
-                                .with_message(format!(
-                                    "failed to re-encode merged ORDER BY item {index} to binary: {e}"
-                                ))
-                                .with_source(e)
-                                .build()
-                        })
-                } else {
-                    Ok(bytes::Bytes::copy_from_slice(text))
-                }
-            })
-            .collect::<crate::error::Result<Vec<_>>>()?;
-
+    pub(crate) fn build_page(self, items: Vec<bytes::Bytes>) -> CosmosResponse {
         let diagnostics = DiagnosticsContext::aggregate_sub_operations(&self.diagnostics_sources)
             .map(Arc::new)
             .unwrap_or_else(empty_diagnostics);
@@ -515,7 +524,7 @@ impl PageAggregator {
             activity_id: self.activity_id,
             request_charge: Some(self.request_charge),
             session_token: self.session_token,
-            item_count: Some(payloads.len() as u32),
+            item_count: Some(items.len() as u32),
             index_metrics: self.index_metrics,
             query_metrics: self.query_metrics,
             // Omitted: `continuation` (owned by
@@ -524,12 +533,12 @@ impl PageAggregator {
             ..Default::default()
         };
 
-        Ok(CosmosResponse::new(
+        CosmosResponse::new(
             ResponseBody::from_items(items),
             headers,
             self.status,
             diagnostics,
-        ))
+        )
     }
 }
 
@@ -918,7 +927,9 @@ mod tests {
 
         let rows = parse_envelope_page(&ResponseBody::from_bytes(page), 1).unwrap();
         let payloads: Vec<_> = rows.into_iter().map(|row| row.payload).collect();
-        let response = PageAggregator::new(true).build_page(&payloads).unwrap();
+        let aggregator = PageAggregator::new(true);
+        let items = encoded_items(&aggregator, &payloads).unwrap();
+        let response = aggregator.build_page(items);
 
         let items = match response.body() {
             ResponseBody::Items(items) => items.clone(),
@@ -981,7 +992,8 @@ mod tests {
         // re-encode, so existing text ORDER BY users are unaffected.
         let payload = serde_json::value::to_raw_value(&serde_json::json!({"id":"d1"})).unwrap();
         let aggregator = PageAggregator::new(false);
-        let response = aggregator.build_page(&[payload]).unwrap();
+        let items = encoded_items(&aggregator, &[payload]).unwrap();
+        let response = aggregator.build_page(items);
         match response.body() {
             ResponseBody::Items(items) => {
                 assert_eq!(items.len(), 1);
@@ -1048,7 +1060,8 @@ mod tests {
             RawValue::from_string(r#"{"id":"a"}"#.to_owned()).unwrap(),
             RawValue::from_string(r#"{"id":"b"}"#.to_owned()).unwrap(),
         ];
-        let page = aggregator.build_page(&payloads).unwrap();
+        let items = encoded_items(&aggregator, &payloads).unwrap();
+        let page = aggregator.build_page(items);
         // The emitted body is an `Items` list of the payload bytes verbatim.
         assert_eq!(item_bytes(&page), vec![r#"{"id":"a"}"#, r#"{"id":"b"}"#]);
         assert_eq!(page.headers().item_count, Some(2));
@@ -1071,7 +1084,7 @@ mod tests {
         let mut aggregator = PageAggregator::new(false);
         aggregator.absorb(&response_with_token("0:1#10")).unwrap();
         aggregator.absorb(&response_with_token("1:1#20")).unwrap();
-        let page = aggregator.build_page(&[]).unwrap();
+        let page = aggregator.build_page(Vec::new());
 
         assert_eq!(
             page.headers()
@@ -1121,7 +1134,7 @@ mod tests {
             // fold ran.
             folded_before_build |= aggregator.diagnostics_sources.len() < before;
         }
-        let page = aggregator.build_page(&[]).unwrap();
+        let page = aggregator.build_page(Vec::new());
 
         assert!(
             folded_before_build,
@@ -1168,7 +1181,7 @@ mod tests {
         aggregator
             .absorb(&response_with_metrics(Some(""), Some("")))
             .unwrap();
-        let page = aggregator.build_page(&[]).unwrap();
+        let page = aggregator.build_page(Vec::new());
 
         assert_eq!(
             page.headers().index_metrics.as_deref(),
@@ -1178,6 +1191,20 @@ mod tests {
             page.headers().query_metrics.as_deref(),
             Some("retrievedDocumentCount=1")
         );
+    }
+
+    /// Encodes every payload through the aggregator, mirroring the loop in
+    /// `StreamingOrderedMerge`. Tests go through the same seam production uses
+    /// so the encode step is never silently skipped.
+    fn encoded_items(
+        aggregator: &PageAggregator,
+        payloads: &[Box<RawValue>],
+    ) -> crate::error::Result<Vec<bytes::Bytes>> {
+        payloads
+            .iter()
+            .enumerate()
+            .map(|(index, payload)| aggregator.encode_item(index, payload))
+            .collect()
     }
 
     /// The exact per-item bytes of a feed page's `Items` body, so tests assert
@@ -1198,7 +1225,7 @@ mod tests {
         // At least one page absorbed, but zero rows contributed.
         let mut aggregator = PageAggregator::new(false);
         aggregator.absorb(&response(b"{}")).unwrap();
-        let page = aggregator.build_page(&[]).unwrap();
+        let page = aggregator.build_page(Vec::new());
         assert!(item_bytes(&page).is_empty());
         assert_eq!(page.headers().item_count, Some(0));
     }
@@ -1209,7 +1236,8 @@ mod tests {
         let aggregator = PageAggregator::new(false);
         let payloads: Vec<Box<RawValue>> =
             vec![RawValue::from_string(r#"{"id":"a"}"#.to_owned()).unwrap()];
-        let page = aggregator.build_page(&payloads).unwrap();
+        let items = encoded_items(&aggregator, &payloads).unwrap();
+        let page = aggregator.build_page(items);
         assert_eq!(
             page.headers().request_charge,
             Some(crate::models::RequestCharge::new(0.0))

@@ -317,4 +317,55 @@ mod tests {
             );
         }
     }
+
+    /// The binary counterpart of [`slices_are_zero_copy_verbatim`]: the text
+    /// path proves items are handed back byte-for-byte, and the binary path
+    /// must be pinned just as tightly. Comparing decoded values instead would
+    /// accept any re-encoding that happens to mean the same thing, which is
+    /// exactly the shape this file's tests were changed to stop accepting.
+    #[test]
+    fn binary_items_match_the_canonical_encoding_byte_for_byte() {
+        let text = envelope(br#"{"Documents":[{"id":1,  "a":  [ 1, 2 ]}],"_count":1}"#);
+
+        let items = split_feed_envelope(&text, true).unwrap();
+
+        assert_eq!(items.len(), 1);
+        let expected = crate::binary_json::encode(&serde_json::json!({ "id": 1, "a": [1, 2] }));
+        assert_eq!(
+            items[0].as_ref(),
+            expected.as_slice(),
+            "a binary-negotiated split must emit the canonical binary encoding, so a change \
+             in marker width or key order is caught rather than absorbed",
+        );
+    }
+
+    /// The binary counterpart of [`preserves_numeric_precision`]. Binary JSON
+    /// carries every number as an IEEE-754 double, so the wide-integer literal
+    /// the text path preserves verbatim cannot survive here — this pins what
+    /// the binary path *does* do rather than leaving it unstated: doubles are
+    /// bit-exact, and an integer beyond `u64` is representable only to double
+    /// precision.
+    #[test]
+    fn binary_split_preserves_double_bits_and_documents_integer_widening() {
+        let text = envelope(
+            br#"{"Documents":[{"v":1.7976931348623157e308},{"v":100000000000000000001}],"_count":2}"#,
+        );
+
+        let items = split_feed_envelope(&text, true).unwrap();
+
+        assert_eq!(items.len(), 2);
+        let first: serde_json::Value = crate::binary_json::from_slice(&items[0]).unwrap();
+        assert_eq!(
+            first["v"].as_f64().unwrap().to_bits(),
+            f64::MAX.to_bits(),
+            "the largest finite double must survive the re-encode bit-exactly",
+        );
+
+        // `100000000000000000001` exceeds `u64`, so binary stores it as the
+        // nearest double (1e20) — a real and deliberate difference from the
+        // verbatim text path, recorded here so it is a decision rather than a
+        // surprise.
+        let second: serde_json::Value = crate::binary_json::from_slice(&items[1]).unwrap();
+        assert_eq!(second["v"].as_f64().unwrap(), 1e20);
+    }
 }
