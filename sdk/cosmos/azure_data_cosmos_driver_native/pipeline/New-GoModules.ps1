@@ -14,37 +14,18 @@
     Build-NativeMatrix.ps1, then emits — for each matrix row — the m x n files:
 
         <module_path>/go.mod
-        <module_path>/link_<goos>_<goarch>[_<libc>].go
-        <module_path>/native[/<libc>]/libazurecosmosdriver.a
-        <module_path>/native[/<libc>]/azurecosmosdriver.h
+        <module_path>/link_<goos>_<goarch>.go
+        <module_path>/native/libazurecosmosdriver.a
+        <module_path>/native/azurecosmosdriver.h
 
     The captured `native-static-libs` from each metadata file and any
     target-specific static runtime flags from build-matrix.json are spliced into
     the cgo `#cgo LDFLAGS:` line.
 
-    ------------------------------------------------------------------------
-    KEY DESIGN DECISION — glibc vs musl collision (the core Deliverable-2 output)
-    ------------------------------------------------------------------------
-    Rows linux-amd64-glibc & linux-amd64-musl are BOTH GOOS=linux GOARCH=amd64
-    (same for arm64). Go's build system has no standard "musl" tag, so both rows
-    map to the SAME module path (e.g. linux/amd64). We disambiguate WITHIN the
-    module using a custom, consumer-set build tag:
-
-        glibc (default): link_linux_amd64_glibc.go  //go:build cgo && linux && amd64 && !cosmos_musl
-                         LDFLAGS -L ${SRCDIR}/native/glibc ...
-        musl  (opt-in) : link_linux_amd64_musl.go   //go:build cgo && linux && amd64 && cosmos_musl
-                         LDFLAGS -L ${SRCDIR}/native/musl  ...
-
-    Consumer selection:
-        * glibc distributions (default): `go build`          (no tag)
-        * Alpine / musl:           `go build -tags cosmos_musl`
-
-    Known requirement: forgetting -tags cosmos_musl on a musl host produces a
-    loud link or runtime error, not silent corruption.
-    The considered alternative — a distinct module path `linux_musl/amd64` — is
-    documented in NATIVE_SUPPLY_CHAIN.md; it removes the tag hazard but forces
-    the azcosmos consumer into build-tag-switched import files. Do not change the
-    scheme here without updating that doc and the azure-sdk-for-go consumer.
+    Linux glibc and musl use distinct modules. The unmarked linux/<arch> module
+    contains glibc, while linux/<arch>-musl contains musl. This follows the Go
+    distribution design and avoids requiring consumers to select the native
+    archive with a custom build tag.
 
 .PARAMETER ArtifactRoot
     Directory containing <target-id>/ produced by Build-NativeMatrix.ps1.
@@ -55,8 +36,7 @@
     Default: ./generated/azure-cosmos-driver under this folder.
 
 .PARAMETER TargetId
-    Optional filter: generate the matching matrix row id(s). A selected Linux
-    row also selects its sibling libc row because both share one Go module.
+    Optional filter: generate the matching matrix row id(s).
 
 .PARAMETER SkipNativeCopy
     Skip copying the static archive (e.g. when it is fetched separately in CI).
@@ -83,9 +63,7 @@ $matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
 $allRows = @($matrix.targets)
 $rows = $allRows
 if ($TargetId) {
-    $selectedRows = @($allRows | Where-Object { $TargetId -contains $_.id })
-    $selectedModulePaths = @($selectedRows.module_path | Sort-Object -Unique)
-    $rows = @($allRows | Where-Object { $selectedModulePaths -contains $_.module_path })
+    $rows = @($allRows | Where-Object { $TargetId -contains $_.id })
 }
 if (-not $rows) { throw "No matching targets for filter: $($TargetId -join ', ')" }
 
@@ -286,7 +264,7 @@ foreach ($row in $rows) {
     $moduleDir = Join-Path $OutputRoot ($row.module_path -replace '/', [IO.Path]::DirectorySeparatorChar)
     New-Item -ItemType Directory -Force -Path $moduleDir | Out-Null
 
-    # go.mod is written once per module_path (glibc + musl rows share it).
+    # go.mod is written once per module_path.
     if (-not $writtenGoMods.ContainsKey($row.module_path)) {
         $modulePathFull = "$($matrix.module_root)/$($row.module_path)"
         $goModContent = @"
@@ -298,7 +276,8 @@ go $($matrix.go_version)
         $writtenGoMods[$row.module_path] = $true
     }
 
-    # Native destination: native/ for single-libc rows, native/<libc>/ for linux.
+    # Native destination is normally native/. native_subdir remains available
+    # for any future target that needs multiple archives in one module.
     $nativeRel = if ($row.native_subdir) { "native/$($row.native_subdir)" } else { 'native' }
     $nativeDir = Join-Path $moduleDir ($nativeRel -replace '/', [IO.Path]::DirectorySeparatorChar)
     New-Item -ItemType Directory -Force -Path $nativeDir | Out-Null
@@ -358,4 +337,3 @@ import "C"
 
 Write-Host ''
 Write-Host "Generated Go modules under: $OutputRoot"
-Write-Host "musl consumers must build with: go build -tags $($matrix.musl_build_tag)"

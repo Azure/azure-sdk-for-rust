@@ -17,20 +17,7 @@
 trigger: none
 pr: none
 
-parameters:
-  - name: targets
-    type: object
-    default:
-      - { id: windows-amd64,      pool: windows, triple: x86_64-pc-windows-gnu,    cc: x86_64-w64-mingw32-gcc, enabled: true }
-      - { id: windows-arm64,      pool: windows, triple: aarch64-pc-windows-gnu,   cc: aarch64-w64-mingw32-gcc, enabled: false } # RISK: unsupported Rust target; investigate gnullvm/msvc
-      - { id: linux-amd64-glibc,  pool: linux,   triple: x86_64-unknown-linux-gnu, cc: gcc, enabled: true }
-      - { id: linux-arm64-glibc,  pool: linux,   triple: aarch64-unknown-linux-gnu, cc: aarch64-linux-gnu-gcc, enabled: true }
-      - { id: linux-amd64-musl,   pool: linux,   triple: x86_64-unknown-linux-musl, cc: musl-gcc, enabled: true }
-      - { id: linux-arm64-musl,   pool: linux,   triple: aarch64-unknown-linux-musl, cc: aarch64-linux-musl-gcc, enabled: true }
-      - { id: darwin-arm64,       pool: macos,   triple: aarch64-apple-darwin,      cc: clang, enabled: true }
-
 variables:
-  - template: /eng/pipelines/templates/variables/image.yml
   - name: crateDir
     value: sdk/cosmos/azure_data_cosmos_driver_native
   - name: pipelineDir
@@ -51,55 +38,28 @@ extends:
           - job: test_generation_scripts
             displayName: Test native generation scripts
             pool:
-              name: $(WINDOWSPOOL)
-              image: $(WINDOWSVMIMAGE)
-              os: $(WINDOWSOS)
+              name: azsdk-pool
+              image: windows-2022
+              os: windows
             steps:
               - template: /eng/common/pipelines/templates/steps/run-pester-tests.yml
                 parameters:
                   TargetDirectory: $(pipelineDir)/tests
-          - ${{ each t in parameters.targets }}:
-              - job: build_${{ replace(t.id, '-', '_') }}
-                displayName: build ${{ t.id }}
-                condition: ${{ eq(t.enabled, true) }}
-                pool:
-                  ${{ if eq(t.pool, 'windows') }}:
-                    name: $(WINDOWSPOOL)
-                    image: $(WINDOWSVMIMAGE)
-                    os: $(WINDOWSOS)
-                  ${{ elseif eq(t.pool, 'linux') }}:
-                    name: $(LINUXPOOL)
-                    image: $(LINUXVMIMAGE)
-                    os: $(LINUXOS)
-                  ${{ elseif eq(t.pool, 'macos') }}:
-                    name: $(MACPOOL)
-                    vmImage: $(MACVMIMAGEM1)
-                    os: $(MACOS)
-                steps:
-                  - pwsh: eng/scripts/Install-RustToolchains.ps1
-                    displayName: Install Rust toolchain
-                  - pwsh: cargo install cargo-auditable --locked
-                    displayName: Install cargo-auditable
-                  # TODO(preflight): install the cross-linker for ${{ t.triple }}
-                  #   *-pc-windows-gnu -> mingw-w64; *-linux-musl -> musl-gcc;
-                  #   *-linux-gnu cross -> gcc-<arch>-linux-gnu; darwin -> Apple SDK.
-                  - pwsh: >
-                      $(pipelineDir)/Build-NativeMatrix.ps1
-                      -TargetId ${{ t.id }}
-                      -OutputRoot $(Build.ArtifactStagingDirectory)/native
-                      -CCompiler ${{ t.cc }}
-                    displayName: Build ${{ t.id }} (native libraries + metadata)
-                  - pwsh: >
-                      $(pipelineDir)/Test-NativeLink.ps1
-                      -TargetId ${{ t.id }}
-                      -ArtifactRoot $(Build.ArtifactStagingDirectory)/native
-                      -CCompiler ${{ t.cc }}
-                    displayName: Link smoke test ${{ t.id }}
-                  - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
-                    parameters:
-                      ArtifactName: native-${{ t.id }}
-                      ArtifactPath: $(Build.ArtifactStagingDirectory)/native/${{ t.id }}
-                      SbomEnabled: true
+          - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
+            parameters:
+              JobTemplatePath: /sdk/cosmos/azure_data_cosmos_driver_native/pipeline/native-driver-build-job.yml
+              SparseCheckout: false
+              AdditionalParameters: {}
+              MatrixConfigs:
+                - Name: native_driver
+                  Path: $(Build.ArtifactStagingDirectory)/native-driver-job-matrix.json
+                  Selection: all
+                  GenerateVMJobs: true
+              PreGenerationSteps:
+                - pwsh: >
+                    $(pipelineDir)/New-NativeJobMatrix.ps1
+                    -OutputPath $(Build.ArtifactStagingDirectory)/native-driver-job-matrix.json
+                  displayName: Generate native driver job configuration
 
       # -----------------------------------------------------------------------
       # 2. Generate the per-target Go modules and publish the
@@ -112,9 +72,9 @@ extends:
           - job: generate
             displayName: New-GoModules
             pool:
-              name: $(LINUXPOOL)
-              image: $(LINUXVMIMAGE)
-              os: $(LINUXOS)
+              name: azsdk-pool
+              image: ubuntu-22.04
+              os: linux
             steps:
               - download: current
               - pwsh: |
@@ -157,15 +117,15 @@ extends:
           and(
             succeeded(),
             eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-            ne(variables['Build.Reason'], 'PullRequest')
+            eq(variables['Build.Reason'], 'Manual')
           )
         jobs:
           - job: publish
             displayName: Publish Azure/azure-cosmos-driver PR
             pool:
-              name: $(LINUXPOOL)
-              image: $(LINUXVMIMAGE)
-              os: $(LINUXOS)
+              name: azsdk-pool
+              image: ubuntu-22.04
+              os: linux
             steps:
               - download: current
                 artifact: azure-cosmos-driver-modules

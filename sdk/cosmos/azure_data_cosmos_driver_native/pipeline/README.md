@@ -12,8 +12,8 @@ to review where the library came from.
 
 The production pipeline extends the repository's official 1ES wrapper but is
 not connected to a CI or release definition yet. After an owner registers it in
-the internal Azure SDK project, a successful main-branch build can open a draft
-pull request in `Azure/azure-cosmos-driver`.
+the internal Azure SDK project, a successful manual main-branch build can open a
+draft pull request in `Azure/azure-cosmos-driver`.
 
 ## What this pull request supports
 
@@ -26,10 +26,8 @@ The active build targets are:
 - Linux ARM64 using musl
 - macOS ARM64
 
-Windows ARM64 and Intel macOS remain disabled. Dynamic libraries for .NET, Java,
-and Python are also outside this pull request. Those follow-up paths are tracked
-by [#5047](https://github.com/Azure/azure-sdk-for-rust/issues/5047) and
-[#5048](https://github.com/Azure/azure-sdk-for-rust/issues/5048).
+Windows ARM64 is outside this matrix, and Intel macOS remains disabled. Dynamic
+libraries for .NET, Java, and Python are also outside this pull request.
 
 The generated Windows cgo linker file statically links the MinGW pthread runtime.
 This prevents the final Go application from requiring a separately distributed
@@ -40,6 +38,7 @@ This prevents the final Go application from requiring a separately distributed
 | File | Purpose |
 | ---- | ------- |
 | `build-matrix.json` | Lists supported Rust targets and their Go module paths. |
+| `New-NativeJobMatrix.ps1` | Converts the canonical target list into the standard Azure Pipelines matrix-generator format. |
 | `Build-NativeMatrix.ps1` | Builds each static library, records required system libraries, and writes release metadata. |
 | `Test-NativeLink.ps1` | Cross-links a minimal Go/cgo program against each target archive before publication. |
 | `New-GoModules.ps1` | Creates the `Azure/azure-cosmos-driver` directory layout, Go module files, cgo linker files, headers, and static libraries. |
@@ -49,12 +48,17 @@ This prevents the final Go application from requiring a separately distributed
 | `tests/Test-NativeLink.Tests.ps1` | Verifies target metadata checks and Go link-smoke command wiring. |
 | `Invoke-LocalSupplyChain.ps1` | Runs a local end-to-end integration test without publishing anything. |
 | `native-driver.yml` | Defines the official 1ES build, Go module artifact, and downstream draft pull request. |
+| `native-driver-build-job.yml` | Runs one generated target row with the appropriate pool, image, Rust setup, and linker. |
+| `native-driver-pr-validation.yml` | Runs the pipeline Pester tests from the repository pull-request pipeline when files in this folder change. |
 | `../docs/NATIVE_SUPPLY_CHAIN.md` | Explains how the artifacts are built and verified. |
 
 ## Production flow
 
 ```text
 Pinned azure-sdk-for-rust commit
+    |
+    v
+Generate jobs from build-matrix.json using the shared matrix infrastructure
     |
     v
 Build one static library for each supported target
@@ -83,7 +87,7 @@ pipeline uses the repository's standard `1ES.PublishPipelineArtifact@1` wrapper
 with SBOM generation enabled rather than implementing a second, pipeline-local
 signature verifier.
 
-The publication stage runs only after a successful non-pull-request build of
+The publication stage runs only after a successful manual build of
 `refs/heads/main`. It mints a short-lived Azure SDK Automation GitHub App token,
 clones the downstream repository, verifies `SHA256SUMS`, excludes the 1ES
 `_manifest` evidence directory from payload validation, copies the complete
@@ -133,7 +137,7 @@ Individual steps can also be run separately:
 # Build one target.
 ./Build-NativeMatrix.ps1 `
     -TargetId windows-amd64 `
-    -CCompiler x86_64-w64-mingw32-gcc
+    -CCompiler gcc
 
 # Inspect metadata without producing native libraries.
 ./Build-NativeMatrix.ps1 -SkipBuild
@@ -144,15 +148,13 @@ Individual steps can also be run separately:
 
 ## Linux glibc and musl
 
-The glibc and musl builds share the same Go module path. The generated cgo files
-select the correct static library:
+The glibc and musl builds use separate Go module paths:
 
-- glibc is the default: `go build`
-- musl requires: `go build -tags cosmos_musl`
+- glibc: `linux/amd64` and `linux/arm64`
+- musl: `linux/amd64-musl` and `linux/arm64-musl`
 
-The module stores the libraries under `native/glibc/` and `native/musl/`.
-Selecting either Linux row in `New-GoModules.ps1` also selects its matching libc
-row so an incomplete module is not generated.
+Each module stores its library under `native/`. The consuming Go package selects
+the appropriate driver module, so users do not need a custom musl build tag.
 
 ## Work still required before release
 
@@ -160,8 +162,9 @@ row so an incomplete module is not generated.
   `1es-redirect.yml` selects the official 1ES template.
 - Confirm with the central security owners that the official 1ES template is the
   approved trust boundary for these static libraries.
-- Install or confirm availability of every cross-compiler named by the build
-  matrix on its selected managed image.
+- Provision every cross-compiler named by the build matrix. In particular, the
+  managed Ubuntu image does not include the ARM64 musl compiler required by
+  `linux-arm64-musl`; this must be resolved before registering the pipeline.
 - Confirm that the Azure SDK Automation GitHub App installation includes the
   private `Azure/azure-cosmos-driver` repository and that this pipeline may use
   the `AzureSDKEngKeyVault Secrets` service connection.

@@ -316,11 +316,7 @@ $moduleDir = ([System.IO.Path]::Combine(
     $GoOutputRoot,
     ($row.module_path -replace '/', [System.IO.Path]::DirectorySeparatorChar)
 ))
-$goTestArgs = @('test')
-if ($row.libc -eq 'musl') {
-    $goTestArgs += @('-tags', $matrix.musl_build_tag)
-}
-$goTestArgs += './...'
+$goTestArgs = @('test', './...')
 Push-Location $moduleDir
 try {
     $env:CGO_ENABLED = '1'

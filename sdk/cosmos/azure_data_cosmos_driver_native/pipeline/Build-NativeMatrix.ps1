@@ -13,8 +13,8 @@
       1. Ensures the Rust target triple is installed (rustup).
       2. Captures the exact syslib link line PROGRAMMATICALLY via
          `cargo rustc ... -- --print native-static-libs` (never hand-guessed).
-      3. Builds the static and dynamic libraries with cargo-auditable so the
-         artifacts embed their Rust dependency manifest.
+      3. Builds the native libraries with cargo-auditable so the artifacts
+         embed their Rust dependency manifest.
       4. Emits rust-driver-native-interface-metadata.json (triple,
          GOOS/GOARCH/libc, package versions, source commit, toolchain versions,
          SHA256, and syslibs).
@@ -44,8 +44,13 @@
     Build with plain `cargo` instead of `cargo auditable` (e.g. when
     cargo-auditable is not installed on a dev box). CI MUST NOT set this.
 
+.PARAMETER StaticOnly
+    Copies and describes only the static library release payload. The build may
+    still produce a dynamic library because of the crate types, but it is not
+    copied into the release artifact. Production Go publication MUST set this.
+
 .EXAMPLE
-    ./Build-NativeMatrix.ps1 -TargetId windows-amd64 -CCompiler x86_64-w64-mingw32-gcc
+    ./Build-NativeMatrix.ps1 -TargetId windows-amd64 -CCompiler gcc
 #>
 [CmdletBinding()]
 param(
@@ -53,7 +58,8 @@ param(
     [string]   $OutputRoot,
     [string]   $CCompiler,
     [switch]   $SkipBuild,
-    [switch]   $NoAuditable
+    [switch]   $NoAuditable,
+    [switch]   $StaticOnly
 )
 
 Set-StrictMode -Version 3.0
@@ -213,24 +219,24 @@ foreach ($row in $rows) {
             Copy-Item $aSrc (Join-Path $targetOut $matrix.static_lib_filename) -Force
             $sha = (Get-FileHash $aSrc -Algorithm SHA256).Hash.ToLowerInvariant()
 
-            $dynamicLibFilename = switch ($row.goos) {
-                'windows' { "$($matrix.lib_basename).dll" }
-                'linux'   { "lib$($matrix.lib_basename).so" }
-                'darwin'  { "lib$($matrix.lib_basename).dylib" }
-                default   { throw "Unsupported GOOS for dynamic library naming: $($row.goos)" }
-            }
-            # The dynamic library (.dll/.so/.dylib) is a best-effort extensibility
-            # hook for the future .NET/Java/Python path (Azure/azure-sdk-for-rust#5048).
-            # It is NOT consumed by the Go/.a path, so a missing dynamic lib must not
-            # fail the build; only the static .a checked above is a hard gate.
-            $dynamicSrc = Join-Path $RepoRoot "target/$($row.triple)/release/$dynamicLibFilename"
-            if (Test-Path $dynamicSrc) {
-                Copy-Item $dynamicSrc (Join-Path $targetOut $dynamicLibFilename) -Force
-                $dynamicSha = (Get-FileHash $dynamicSrc -Algorithm SHA256).Hash.ToLowerInvariant()
-            }
-            else {
-                Write-Warning "    dynamic library not built (best-effort; not required for the Go/.a path): $dynamicSrc"
-                $dynamicLibFilename = $null
+            if (-not $StaticOnly) {
+                $dynamicLibFilename = switch ($row.goos) {
+                    'windows' { "$($matrix.lib_basename).dll" }
+                    'linux'   { "lib$($matrix.lib_basename).so" }
+                    'darwin'  { "lib$($matrix.lib_basename).dylib" }
+                    default   { throw "Unsupported GOOS for dynamic library naming: $($row.goos)" }
+                }
+                # Dynamic output supports local rehearsals and future language
+                # bindings. It is excluded from the unsigned Go release payload.
+                $dynamicSrc = Join-Path $RepoRoot "target/$($row.triple)/release/$dynamicLibFilename"
+                if (Test-Path $dynamicSrc) {
+                    Copy-Item $dynamicSrc (Join-Path $targetOut $dynamicLibFilename) -Force
+                    $dynamicSha = (Get-FileHash $dynamicSrc -Algorithm SHA256).Hash.ToLowerInvariant()
+                }
+                else {
+                    Write-Warning "    dynamic library not built (best-effort): $dynamicSrc"
+                    $dynamicLibFilename = $null
+                }
             }
         }
     }

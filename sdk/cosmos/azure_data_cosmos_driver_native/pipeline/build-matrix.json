@@ -10,7 +10,6 @@
   "go_version": "1.25.0",
   "module_root": "github.com/Azure/azure-cosmos-driver",
   "go_package": "driver",
-  "musl_build_tag": "cosmos_musl",
   "targets": [
     {
       "id": "windows-amd64",
@@ -18,7 +17,7 @@
       "goarch": "amd64",
       "libc": null,
       "triple": "x86_64-pc-windows-gnu",
-      "c_compiler": "x86_64-w64-mingw32-gcc",
+      "c_compiler": "gcc",
       "module_path": "windows/amd64",
       "native_subdir": null,
       "build_tag_extra": null,
@@ -37,8 +36,8 @@
       "triple": "x86_64-unknown-linux-gnu",
       "c_compiler": "gcc",
       "module_path": "linux/amd64",
-      "native_subdir": "glibc",
-      "build_tag_extra": "!cosmos_musl",
+      "native_subdir": null,
+      "build_tag_extra": null,
       "risk": null
     },
     {
@@ -49,8 +48,8 @@
       "triple": "aarch64-unknown-linux-gnu",
       "c_compiler": "aarch64-linux-gnu-gcc",
       "module_path": "linux/arm64",
-      "native_subdir": "glibc",
-      "build_tag_extra": "!cosmos_musl",
+      "native_subdir": null,
+      "build_tag_extra": null,
       "risk": null
     },
     {
@@ -72,9 +71,9 @@
       "libc": "musl",
       "triple": "x86_64-unknown-linux-musl",
       "c_compiler": "musl-gcc",
-      "module_path": "linux/amd64",
-      "native_subdir": "musl",
-      "build_tag_extra": "cosmos_musl",
+      "module_path": "linux/amd64-musl",
+      "native_subdir": null,
+      "build_tag_extra": null,
       "risk": null
     },
     {
@@ -84,9 +83,9 @@
       "libc": "musl",
       "triple": "aarch64-unknown-linux-musl",
       "c_compiler": "aarch64-linux-musl-gcc",
-      "module_path": "linux/arm64",
-      "native_subdir": "musl",
-      "build_tag_extra": "cosmos_musl",
+      "module_path": "linux/arm64-musl",
+      "native_subdir": null,
+      "build_tag_extra": null,
       "risk": null
     }
   ],
@@ -102,23 +101,6 @@
       "native_subdir": null,
       "build_tag_extra": null,
       "risk": "long-tail; enable only if a customer needs Intel macOS."
-    },
-    {
-      "id": "windows-arm64",
-      "goos": "windows",
-      "goarch": "arm64",
-      "libc": null,
-      "triple": "aarch64-pc-windows-gnu",
-      "c_compiler": "aarch64-w64-mingw32-gcc",
-      "module_path": "windows/arm64",
-      "native_subdir": null,
-      "build_tag_extra": null,
-      "static_runtime_ldflags": [
-        "-Wl,-Bstatic",
-        "-lwinpthread",
-        "-Wl,-Bdynamic"
-      ],
-      "risk": "Deferred because this pipeline ships Go static libraries only: the GNU ARM64 Windows toolchain is immature, and a robust Windows ARM64 build needs MSVC and dynamic DLL output. Tracked by Azure/azure-sdk-for-rust#5047."
     }
   ],
   "reference_syslibs": {

@@ -134,9 +134,6 @@ try {
     $env:GOARCH = $target.goarch
     $outputPath = Join-Path $workRoot $(if ($target.goos -eq 'windows') { 'smoke.exe' } else { 'smoke' })
     $arguments = @('build', '-trimpath', '-o', $outputPath)
-    if ($target.libc -eq 'musl') {
-        $arguments += @('-tags', $matrix.musl_build_tag)
-    }
     $arguments += '.'
 
     Push-Location $workRoot

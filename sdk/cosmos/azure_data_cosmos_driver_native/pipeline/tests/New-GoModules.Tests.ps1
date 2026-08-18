@@ -93,6 +93,7 @@ BeforeAll {
 BeforeEach {
     $ArtifactRoot = Join-Path $TestDrive 'artifacts'
     $OutputRoot = Join-Path $TestDrive 'output'
+    Remove-Item $ArtifactRoot, $OutputRoot -Recurse -Force -ErrorAction SilentlyContinue
     New-TestArtifacts -Root $ArtifactRoot
 }
 
@@ -101,8 +102,24 @@ BeforeEach {
 
         Test-Path (Join-Path $OutputRoot 'windows/amd64/native/libazurecosmosdriver.a') |
             Should -BeTrue
-        Test-Path (Join-Path $OutputRoot 'linux/amd64/native/musl/libazurecosmosdriver.a') |
+        Test-Path (Join-Path $OutputRoot 'linux/amd64/native/libazurecosmosdriver.a') |
             Should -BeTrue
+        Test-Path (Join-Path $OutputRoot 'linux/amd64-musl/native/libazurecosmosdriver.a') |
+            Should -BeTrue
+        Get-Content (Join-Path $OutputRoot 'linux/amd64-musl/go.mod') -Raw |
+            Should -Match 'module github\.com/Azure/azure-cosmos-driver/linux/amd64-musl'
+        Get-Content (Join-Path $OutputRoot 'linux/amd64-musl/link_linux_amd64.go') -Raw |
+            Should -Not -Match 'cosmos_musl'
+    }
+
+    It 'generates only the selected standalone musl module' {
+        & $ScriptPath `
+            -ArtifactRoot $ArtifactRoot `
+            -OutputRoot $OutputRoot `
+            -TargetId 'linux-amd64-musl'
+
+        Test-Path (Join-Path $OutputRoot 'linux/amd64-musl/go.mod') | Should -BeTrue
+        Test-Path (Join-Path $OutputRoot 'linux/amd64/go.mod') | Should -BeFalse
     }
 
     It 'rejects an artifact ID that does not match its matrix row' {

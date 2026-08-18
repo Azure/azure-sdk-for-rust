@@ -67,9 +67,9 @@ azure-cosmos-driver/
 │   └── spdx_2.2/
 ├── windows/amd64/
 ├── linux/amd64/
-│   └── native/{glibc,musl}/
 ├── linux/arm64/
-│   └── native/{glibc,musl}/
+├── linux/amd64-musl/
+├── linux/arm64-musl/
 ├── darwin/arm64/
 └── SHA256SUMS
 ```
@@ -233,17 +233,8 @@ internal pipeline run. It does not replace the governed official 1ES build.
 
 ## Linux library selection
 
-Linux glibc and musl use the same Go module path. The generated Go files select
-the correct directory:
-
-- glibc is selected by default;
-- musl is selected with the `cosmos_musl` build tag.
-
-A musl consumer runs:
-
-```text
-go build -tags cosmos_musl
-```
-
-Omitting the tag on a musl system produces a linker or runtime failure rather
-than silently selecting the intended musl library.
+Linux glibc and musl use distinct Go module paths. The unmarked
+`linux/<arch>` modules contain glibc, while `linux/<arch>-musl` contains musl.
+Each module stores one archive under `native/`. The consuming Go package imports
+the correct driver module, avoiding a custom build tag and the risk of selecting
+the wrong libc archive.

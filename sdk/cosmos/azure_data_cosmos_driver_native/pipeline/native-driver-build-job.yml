@@ -1,0 +1,73 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+parameters:
+  - name: UsePlatformContainer
+    type: boolean
+  - name: OSName
+    type: string
+  - name: Matrix
+    type: object
+  - name: DependsOn
+    type: string
+  - name: CloudConfig
+    type: object
+
+jobs:
+  - job:
+    displayName: Build native driver
+    dependsOn: ${{ parameters.DependsOn }}
+    condition: and(succeeded(), ne(${{ parameters.Matrix }}, '{}'))
+    strategy:
+      matrix: $[ ${{ parameters.Matrix }} ]
+    pool:
+      name: $(Pool)
+      ${{ if eq(parameters.OSName, 'macOS') }}:
+        vmImage: $(OSVmImage)
+      ${{ else }}:
+        image: $(OSVmImage)
+      os: ${{ parameters.OSName }}
+    steps:
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        parameters:
+          Toolchain: active
+
+      - ${{ if eq(parameters.OSName, 'windows') }}:
+        - pwsh: |
+            $mingwBin = 'C:\msys64\mingw64\bin'
+            if (-not (Test-Path $mingwBin -PathType Container)) {
+              throw "MSYS2 MinGW64 toolchain directory was not found: $mingwBin"
+            }
+
+            Write-Host "##vso[task.prependpath]$mingwBin"
+            $env:PATH = "$mingwBin;$env:PATH"
+            foreach ($tool in @('gcc', 'ar')) {
+              if (-not (Get-Command $tool -CommandType Application -ErrorAction SilentlyContinue)) {
+                throw "Required MSYS2 tool is unavailable: $tool"
+              }
+            }
+          displayName: Add MSYS2 MinGW64 to PATH
+
+      - pwsh: cargo install cargo-auditable --locked
+        displayName: Install cargo-auditable
+
+      - pwsh: >
+          $(pipelineDir)/Build-NativeMatrix.ps1
+          -TargetId $(TargetId)
+          -OutputRoot $(Build.ArtifactStagingDirectory)/native
+          -CCompiler $(CCompiler)
+          -StaticOnly
+        displayName: Build $(TargetId) (static library + metadata)
+
+      - pwsh: >
+          $(pipelineDir)/Test-NativeLink.ps1
+          -TargetId $(TargetId)
+          -ArtifactRoot $(Build.ArtifactStagingDirectory)/native
+          -CCompiler $(CCompiler)
+        displayName: Link smoke test $(TargetId)
+
+      - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
+        parameters:
+          ArtifactName: native-$(TargetId)
+          ArtifactPath: $(Build.ArtifactStagingDirectory)/native/$(TargetId)
+          SbomEnabled: true

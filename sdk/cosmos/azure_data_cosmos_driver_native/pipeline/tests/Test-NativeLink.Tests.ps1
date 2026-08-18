@@ -32,7 +32,6 @@ Describe 'Test-NativeLink target validation' {
             static_lib_filename = 'libazurecosmosdriver.a'
             header_filename = 'azurecosmosdriver.h'
             go_version = '1.25.0'
-            musl_build_tag = 'cosmos_musl'
             targets = @(
                 [ordered]@{
                     id = 'test-target'
