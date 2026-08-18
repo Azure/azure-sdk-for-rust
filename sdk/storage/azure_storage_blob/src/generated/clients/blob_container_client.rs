@@ -7,23 +7,29 @@ use crate::generated::models::{
     BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
     BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
     BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
-    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
-    BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
-    BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
+    BlobContainerClientCreateOptions, BlobContainerClientCreateSessionOptions,
+    BlobContainerClientDeleteOptions, BlobContainerClientFindBlobsByTagsOptions,
+    BlobContainerClientGetAccessPolicyOptions, BlobContainerClientGetAccountInfoOptions,
+    BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientGetPropertiesResult,
+    BlobContainerClientListBlobFlatSegmentApacheArrowOptions,
+    BlobContainerClientListBlobFlatSegmentApacheArrowResult,
+    BlobContainerClientListBlobHierarchySegmentApacheArrowOptions,
+    BlobContainerClientListBlobHierarchySegmentApacheArrowResult,
     BlobContainerClientListBlobsOptions, BlobContainerClientReleaseLeaseOptions,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
     BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetMetadataOptions, FilteredBlobResponse, ListBlobsResponse,
-    SignedIdentifiers,
+    BlobContainerClientSetMetadataOptions, CreateSessionConfiguration, CreateSessionResponse,
+    FilteredBlobResponse, ListBlobsResponse, SignedIdentifiers,
 };
 use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
-        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
+        AsyncResponse, ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions,
+        PipelineStreamOptions, RawResponse, Request, RequestContent, Response, Url, UrlExt,
+        XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
@@ -332,6 +338,50 @@ impl BlobContainerClient {
             }
         }
         request.insert_header("x-ms-version", &self.version);
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[201],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
+    /// The Create Session operation enables users to create a session scoped to a container.
+    ///
+    /// # Arguments
+    ///
+    /// * `create_session_configuration` - The configuration used to create the session.
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlobContainerClient.createSession")]
+    pub async fn create_session(
+        &self,
+        create_session_configuration: RequestContent<CreateSessionConfiguration, XmlFormat>,
+        options: Option<BlobContainerClientCreateSessionOptions<'_>>,
+    ) -> Result<Response<CreateSessionResponse, XmlFormat>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
+        query_builder
+            .append_pair("comp", "session")
+            .append_pair("restype", "container");
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let mut request = Request::new(url, Method::Post);
+        request.insert_header("accept", "application/xml");
+        request.insert_header("content-type", "application/xml");
+        request.insert_header("x-ms-version", &self.version);
+        request.set_body(create_session_configuration);
         let rsp = self
             .pipeline
             .send(
@@ -707,6 +757,194 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
+    /// Returns a list of the blobs in Apache Arrow format as raw data, to be deserialized by the client.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`AsyncResponse`](azure_core::http::AsyncResponse) implements the [`BlobContainerClientListBlobFlatSegmentApacheArrowResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::AsyncResponse};
+    /// use azure_storage_blob::models::{BlobContainerClientListBlobFlatSegmentApacheArrowResult, BlobContainerClientListBlobFlatSegmentApacheArrowResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: AsyncResponse<BlobContainerClientListBlobFlatSegmentApacheArrowResult> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_type) = response.content_type()? {
+    ///         println!("content-type: {:?}", content_type);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_type`()](crate::generated::models::BlobContainerClientListBlobFlatSegmentApacheArrowResultHeaders::content_type) - content-type
+    ///
+    /// [`BlobContainerClientListBlobFlatSegmentApacheArrowResultHeaders`]: crate::generated::models::BlobContainerClientListBlobFlatSegmentApacheArrowResultHeaders
+    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobFlatSegmentApacheArrow")]
+    pub async fn list_blob_flat_segment_apache_arrow(
+        &self,
+        options: Option<BlobContainerClientListBlobFlatSegmentApacheArrowOptions<'_>>,
+    ) -> Result<AsyncResponse<BlobContainerClientListBlobFlatSegmentApacheArrowResult>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
+        query_builder
+            .append_pair("comp", "list")
+            .append_pair("restype", "container");
+        if let Some(end_before) = options.end_before.as_ref() {
+            query_builder.set_pair("endBefore", end_before);
+        }
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
+                "include",
+                include
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
+        }
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            query_builder.set_pair("maxresults", maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header(
+            "accept",
+            "application/vnd.apache.arrow.stream,application/xml",
+        );
+        request.insert_header("x-ms-version", &self.version);
+        let rsp = self
+            .pipeline
+            .stream(
+                &ctx,
+                &mut request,
+                Some(PipelineStreamOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
+    /// Returns a list of the blobs in Apache Arrow format as raw data, to be deserialized by the client. A delimiter can be used
+    /// to traverse a virtual hierarchy of blobs as though it were a file system.
+    ///
+    /// # Arguments
+    ///
+    /// * `delimiter` - If specified, the operation returns a BlobPrefix element that acts as a placeholder for all blobs whose
+    ///   names begin with the same substring up to the appearance of the delimiter character. The delimiter may be a single character
+    ///   or a string.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`AsyncResponse`](azure_core::http::AsyncResponse) implements the [`BlobContainerClientListBlobHierarchySegmentApacheArrowResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::AsyncResponse};
+    /// use azure_storage_blob::models::{BlobContainerClientListBlobHierarchySegmentApacheArrowResult, BlobContainerClientListBlobHierarchySegmentApacheArrowResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: AsyncResponse<BlobContainerClientListBlobHierarchySegmentApacheArrowResult> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_type) = response.content_type()? {
+    ///         println!("content-type: {:?}", content_type);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_type`()](crate::generated::models::BlobContainerClientListBlobHierarchySegmentApacheArrowResultHeaders::content_type) - content-type
+    ///
+    /// [`BlobContainerClientListBlobHierarchySegmentApacheArrowResultHeaders`]: crate::generated::models::BlobContainerClientListBlobHierarchySegmentApacheArrowResultHeaders
+    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobHierarchySegmentApacheArrow")]
+    pub async fn list_blob_hierarchy_segment_apache_arrow(
+        &self,
+        delimiter: &str,
+        options: Option<BlobContainerClientListBlobHierarchySegmentApacheArrowOptions<'_>>,
+    ) -> Result<AsyncResponse<BlobContainerClientListBlobHierarchySegmentApacheArrowResult>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
+        query_builder
+            .append_pair("comp", "list")
+            .append_pair("restype", "container");
+        query_builder.set_pair("delimiter", delimiter);
+        if let Some(end_before) = options.end_before.as_ref() {
+            query_builder.set_pair("endBefore", end_before);
+        }
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
+                "include",
+                include
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
+        }
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            query_builder.set_pair("maxresults", maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header(
+            "accept",
+            "application/vnd.apache.arrow.stream,application/xml",
+        );
+        request.insert_header("x-ms-version", &self.version);
+        let rsp = self
+            .pipeline
+            .stream(
+                &ctx,
+                &mut request,
+                Some(PipelineStreamOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
     /// Returns a list of the blobs in the specified container.
     ///
     /// # Arguments
@@ -1061,7 +1299,7 @@ impl BlobContainerClient {
 }
 
 /// Default value for [`BlobContainerClientOptions::version`].
-pub(crate) const DEFAULT_VERSION: &str = "2026-04-06";
+pub(crate) const DEFAULT_VERSION: &str = "2026-12-06";
 
 impl Default for BlobContainerClientOptions {
     fn default() -> Self {

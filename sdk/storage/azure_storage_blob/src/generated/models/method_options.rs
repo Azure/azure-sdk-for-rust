@@ -997,6 +997,16 @@ pub struct BlobContainerClientCreateOptions<'a> {
     pub timeout: Option<i32>,
 }
 
+/// Options to be passed to `BlobContainerClient::create_session()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobContainerClientCreateSessionOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+}
+
 /// Options to be passed to `BlobContainerClient::delete()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientDeleteOptions<'a> {
@@ -1083,6 +1093,66 @@ pub struct BlobContainerClientGetPropertiesOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `BlobContainerClient::list_blob_flat_segment_apache_arrow()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobContainerClientListBlobFlatSegmentApacheArrowOptions<'a> {
+    /// Filters the results to return only names that are ordered before this value. Currently only applies to Apache Arrow scenario.
+    pub end_before: Option<String>,
+
+    /// Specify to include additional, optional information.
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// Filters the results to return only resources whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
+    /// list, multiple entity levels are supported. (Inclusive)
+    pub start_from: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `BlobContainerClient::list_blob_hierarchy_segment_apache_arrow()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobContainerClientListBlobHierarchySegmentApacheArrowOptions<'a> {
+    /// Filters the results to return only names that are ordered before this value. Currently only applies to Apache Arrow scenario.
+    pub end_before: Option<String>,
+
+    /// Specify to include additional, optional information.
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// Filters the results to return only resources whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
+    /// list, multiple entity levels are supported. (Inclusive)
+    pub start_from: Option<String>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
