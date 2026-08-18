@@ -889,7 +889,7 @@ mod tests {
     /// integral `Double` to an integer literal while splitting the envelope, so
     /// a test that hands `build_page` a hand-built float payload exercises an
     /// input the pipeline can no longer produce. 2^53 is the first integer whose
-    /// neighbours are not representable, so a lossy round trip shifts it.
+    /// neighbors are not representable, so a lossy round trip shifts it.
     #[test]
     fn binary_page_round_trips_wide_integer_through_merge() {
         #[derive(serde::Deserialize, PartialEq, Debug)]

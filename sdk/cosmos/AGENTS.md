@@ -214,7 +214,7 @@ where
 }
 ```
 
-**Content Encoding**: a *received* body is recognised as UTF-8 JSON or Cosmos binary from its
+**Content Encoding**: a *received* body is recognized as UTF-8 JSON or Cosmos binary from its
 first byte, so decoding is transparent to the API. Do **not** extend that sniffing to decide
 what a pipeline node *emits* — the emitted encoding is whatever the operation negotiated
 (`CosmosOperation::negotiates_binary_response`). Deriving emission from received bytes lets
