@@ -791,7 +791,7 @@ impl FromStr for ListBlobHierarchySegmentApacheArrowResponseContentType {
         Ok(match s {
                 "application/vnd.apache.arrow.stream" => ListBlobHierarchySegmentApacheArrowResponseContentType::ApplicationVndApacheArrowStream,
                 "application/xml" => ListBlobHierarchySegmentApacheArrowResponseContentType::ApplicationXml,
-                _ => { 
+                _ => {
 return Err(Error::with_message_fn(ErrorKind::DataConversion, || {
 format!("unknown variant of ListBlobHierarchySegmentApacheArrowResponseContentType found: \"{s}\"")
                     }))

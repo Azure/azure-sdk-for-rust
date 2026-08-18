@@ -35,7 +35,7 @@ pub(crate) trait ExpiringValue: Clone + Send + Sync + 'static {
 }
 
 /// A factory that asynchronously acquires a fresh value.
-type AcquireFn<T> = Arc<dyn Fn() -> BoxFuture<'static, Result<T>> + Send + Sync>;
+pub(crate) type AcquireFn<T> = Arc<dyn Fn() -> BoxFuture<'static, Result<T>> + Send + Sync>;
 
 /// A clock, injected so tests can control the passage of time.
 type ClockFn = Arc<dyn Fn() -> OffsetDateTime + Send + Sync>;

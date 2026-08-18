@@ -10,4 +10,5 @@
 //! only ever supplies a [`TokenCredential`](azure_core::credentials::TokenCredential).
 
 pub(crate) mod cache;
+pub(crate) mod provider;
 pub(crate) mod signer;
