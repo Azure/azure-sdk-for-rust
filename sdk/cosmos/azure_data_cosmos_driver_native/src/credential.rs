@@ -12,7 +12,7 @@ use azure_core::{
     time::{Duration, OffsetDateTime},
     Error,
 };
-use tokio::sync::{oneshot, Mutex};
+use tokio::sync::{oneshot, RwLock};
 
 const TOKEN_REFRESH_SKEW: Duration = Duration::minutes(2);
 
@@ -77,7 +77,7 @@ struct PendingTokenRequest {
 struct CallbackTokenCredential {
     provider: CosmosTokenProvider,
     user_data: isize,
-    cached_token: Mutex<Option<AccessToken>>,
+    cached_token: RwLock<Option<AccessToken>>,
 }
 
 impl CallbackTokenCredential {
@@ -86,7 +86,7 @@ impl CallbackTokenCredential {
         Some(Arc::new(Self {
             provider,
             user_data,
-            cached_token: Mutex::new(None),
+            cached_token: RwLock::new(None),
         }))
     }
 
@@ -168,9 +168,23 @@ impl TokenCredential for CallbackTokenCredential {
             ));
         };
 
-        // Hold the lock through refresh so concurrent requests single-flight
-        // token acquisition instead of invoking the host callback in parallel.
-        let mut cached = self.cached_token.lock().await;
+        // Fast path: shared read lock lets concurrent callers hit a warm
+        // cache in parallel. Mirrors `azure_identity::TokenCache` in
+        // sdk/identity/azure_identity/src/cache.rs.
+        {
+            let cached = self.cached_token.read().await;
+            let now = OffsetDateTime::now_utc();
+            if let Some(token) = cached.as_ref() {
+                if token.expires_on > now.saturating_add(TOKEN_REFRESH_SKEW) {
+                    return Ok(token.clone());
+                }
+            }
+        }
+
+        // Slow path: exclusive lock single-flights refresh across concurrent
+        // misses. Double-check the cache in case another task refreshed while
+        // we were waiting on the write lock.
+        let mut cached = self.cached_token.write().await;
         let now = OffsetDateTime::now_utc();
         if let Some(token) = cached.as_ref() {
             if token.expires_on > now.saturating_add(TOKEN_REFRESH_SKEW) {
