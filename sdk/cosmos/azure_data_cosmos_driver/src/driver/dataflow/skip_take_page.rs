@@ -55,21 +55,16 @@ struct RawQueryPage<'a> {
 ///
 /// An empty (`NoPayload`) body is treated as a zero-document page.
 ///
-/// When `emit_binary` is false each payload is a zero-copy
-/// [`slice_ref`](bytes::Bytes::slice_ref) of `body`. When it is true — the
-/// operation negotiated Cosmos binary JSON — the page is decoded to text to
-/// split the `Documents` array, then each document is re-encoded to standalone
-/// binary so the SDK's per-slice `0x80` auto-detection still applies; those
-/// payloads are freshly allocated and value-preserving rather than
-/// byte-preserving.
+/// Payloads are always **text** here, regardless of what the operation
+/// negotiated: a binary envelope is decoded to text so the `Documents` array
+/// can be split, and each surviving document is re-encoded later by
+/// [`encode_items`] — after the skip/take window has discarded the documents
+/// this page does not contribute, so no discarded document costs a transcode or
+/// can fail the query.
 ///
-/// `emit_binary` comes from the operation, not from `body`, so a page the
-/// service answered in text on a binary-negotiated query still emits the same
-/// format as every other node in the pipeline.
-pub(crate) fn split_feed_envelope(
-    body: &Bytes,
-    emit_binary: bool,
-) -> crate::error::Result<Vec<Bytes>> {
+/// When the page arrived as text each payload is a zero-copy
+/// [`slice_ref`](bytes::Bytes::slice_ref) of `body`.
+pub(crate) fn split_feed_envelope(body: &Bytes) -> crate::error::Result<Vec<Bytes>> {
     if body.is_empty() {
         return Ok(Vec::new());
     }
@@ -85,28 +80,6 @@ pub(crate) fn split_feed_envelope(
             .build()
     })?;
 
-    if emit_binary {
-        return page
-            .documents
-            .iter()
-            .map(|raw| {
-                crate::binary_json::transcode_to_binary(raw.get().as_bytes())
-                    .map(Bytes::from)
-                    .map_err(|e| {
-                        crate::error::CosmosError::builder()
-                            .with_status(
-                                crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-                            )
-                            .with_message(
-                                "failed to re-encode cross-partition query document to binary",
-                            )
-                            .with_source(e)
-                            .build()
-                    })
-            })
-            .collect();
-    }
-
     Ok(page
         .documents
         .iter()
@@ -114,6 +87,53 @@ pub(crate) fn split_feed_envelope(
         // bytes lie within the same allocation and no document is re-serialized.
         .map(|raw| body.slice_ref(raw.get().as_bytes()))
         .collect())
+}
+
+/// Re-encodes surviving text payloads into the encoding the operation emits.
+///
+/// When `emit_binary` is false the payloads pass through unchanged, so a
+/// text-negotiated query's slices stay byte-for-byte identical to the backend
+/// bytes. When it is true each document is re-encoded to **standalone** binary
+/// so the SDK's per-slice `0x80` auto-detection still applies; those payloads
+/// are freshly allocated and value-preserving rather than byte-preserving.
+///
+/// `emit_binary` comes from the operation, not from the received bytes, so a
+/// page the service answered in text on a binary-negotiated query still emits
+/// the same format as every other node in the pipeline.
+///
+/// Called on the skip/take *survivors* only. Because this runs before the
+/// caller commits its window counters, a failure here leaves no row stranded
+/// behind the resume boundary.
+///
+/// # Errors
+///
+/// Returns an error if a payload cannot be encoded to Cosmos binary JSON.
+pub(crate) fn encode_items(
+    items: Vec<Bytes>,
+    emit_binary: bool,
+) -> crate::error::Result<Vec<Bytes>> {
+    if !emit_binary {
+        return Ok(items);
+    }
+
+    items
+        .iter()
+        .map(|raw| {
+            crate::binary_json::transcode_to_binary(raw)
+                .map(Bytes::from)
+                .map_err(|e| {
+                    crate::error::CosmosError::builder()
+                        .with_status(
+                            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+                        )
+                        .with_message(
+                            "failed to re-encode cross-partition query document to binary",
+                        )
+                        .with_source(e)
+                        .build()
+                })
+        })
+        .collect()
 }
 
 /// Drops up to `skip` documents from `items`, then keeps up to `take`
@@ -143,6 +163,13 @@ pub(crate) fn skip_take_items(items: Vec<Bytes>, skip: u64, take: Option<u64>) -
 mod tests {
     use super::*;
 
+    /// Split then encode, the order `SkipTake` uses when a page contributes
+    /// every document. Tests that exercise a skip/take window deliberately do
+    /// not use this — they encode the survivors, which is the point.
+    fn split_and_encode(body: &Bytes, emit_binary: bool) -> crate::error::Result<Vec<Bytes>> {
+        encode_items(split_feed_envelope(body)?, emit_binary)
+    }
+
     fn ids(items: &[Bytes]) -> Vec<serde_json::Value> {
         items
             .iter()
@@ -166,7 +193,7 @@ mod tests {
     #[test]
     fn take_only_truncates() {
         let body = envelope(br#"{"Documents":[{"id":1},{"id":2},{"id":3}],"_count":3}"#);
-        let items = split_feed_envelope(&body, false).unwrap();
+        let items = split_feed_envelope(&body).unwrap();
         let out = skip_take_items(items, 0, Some(2));
         assert_eq!(out.dropped, 0);
         assert_eq!(out.emitted, 2);
@@ -177,7 +204,7 @@ mod tests {
     #[test]
     fn skip_then_take() {
         let body = envelope(br#"{"Documents":[{"id":1},{"id":2},{"id":3},{"id":4}],"_count":4}"#);
-        let items = split_feed_envelope(&body, false).unwrap();
+        let items = split_feed_envelope(&body).unwrap();
         let out = skip_take_items(items, 1, Some(2));
         assert_eq!(out.dropped, 1);
         assert_eq!(out.emitted, 2);
@@ -187,7 +214,7 @@ mod tests {
     #[test]
     fn skip_exceeds_page() {
         let body = envelope(br#"{"Documents":[{"id":1},{"id":2}],"_count":2}"#);
-        let items = split_feed_envelope(&body, false).unwrap();
+        let items = split_feed_envelope(&body).unwrap();
         let out = skip_take_items(items, 5, Some(3));
         assert_eq!(out.dropped, 2);
         assert_eq!(out.emitted, 0);
@@ -197,7 +224,7 @@ mod tests {
     #[test]
     fn unbounded_take_keeps_remainder() {
         let body = envelope(br#"{"Documents":[{"id":1},{"id":2},{"id":3}],"_count":3}"#);
-        let items = split_feed_envelope(&body, false).unwrap();
+        let items = split_feed_envelope(&body).unwrap();
         let out = skip_take_items(items, 1, None);
         assert_eq!(out.emitted, 2);
         assert_eq!(ids(&out.items)[0]["id"], 2);
@@ -206,11 +233,7 @@ mod tests {
 
     #[test]
     fn empty_body_is_zero_documents() {
-        let out = skip_take_items(
-            split_feed_envelope(&Bytes::new(), false).unwrap(),
-            3,
-            Some(5),
-        );
+        let out = skip_take_items(split_feed_envelope(&Bytes::new()).unwrap(), 3, Some(5));
         assert_eq!(out.dropped, 0);
         assert_eq!(out.emitted, 0);
         assert!(out.items.is_empty());
@@ -222,7 +245,7 @@ mod tests {
         let body = envelope(
             br#"{"Documents":[{"v":1.7976931348623157e308},{"v":100000000000000000001}],"_count":2}"#,
         );
-        let items = split_feed_envelope(&body, false).unwrap();
+        let items = split_feed_envelope(&body).unwrap();
         let out = skip_take_items(items, 0, Some(2));
         assert_eq!(
             raw(&out.items),
@@ -239,15 +262,55 @@ mod tests {
         // exactly as it appeared in the source envelope, proving no
         // re-serialization occurred.
         let body = envelope(br#"{"Documents":[{"id":1,  "a":  [ 1, 2 ]}],"_count":1}"#);
-        let items = split_feed_envelope(&body, false).unwrap();
+        let items = split_feed_envelope(&body).unwrap();
         let out = skip_take_items(items, 0, None);
         assert_eq!(raw(&out.items), vec![r#"{"id":1,  "a":  [ 1, 2 ]}"#]);
     }
 
     #[test]
     fn malformed_body_errors() {
-        let out = split_feed_envelope(&envelope(b"not json"), false);
+        let out = split_feed_envelope(&envelope(b"not json"));
         assert!(out.is_err());
+    }
+
+    /// Splitting yields **text**, even for a binary page: encoding is deferred
+    /// to `encode_items` so it runs on the skip/take survivors rather than on
+    /// every document the page happened to carry.
+    ///
+    /// This pins the ordering that keeps a discarded document from paying a
+    /// transcode — and, if the encoder ever grows a failure mode the envelope
+    /// parse does not already reject, from failing a query it contributes
+    /// nothing to.
+    #[test]
+    fn splitting_defers_encoding_so_discarded_documents_are_never_encoded() {
+        let text = br#"{"Documents":[{"id":1},{"id":2},{"id":3}],"_count":3}"#;
+        let binary = crate::binary_json::transcode_to_binary(text).unwrap();
+
+        let items = split_feed_envelope(&Bytes::from(binary)).unwrap();
+        assert_eq!(items.len(), 3);
+        for item in &items {
+            assert!(
+                !crate::binary_json::is_binary(item),
+                "split must hand back text; encoding belongs to encode_items",
+            );
+        }
+
+        // Only the survivor is encoded.
+        let out = skip_take_items(items, 2, Some(1));
+        let encoded = encode_items(out.items, true).unwrap();
+        assert_eq!(encoded.len(), 1);
+        let doc: serde_json::Value = crate::binary_json::from_slice(&encoded[0]).unwrap();
+        assert_eq!(doc, serde_json::json!({ "id": 3 }));
+    }
+
+    /// A page fully consumed by an outstanding skip encodes nothing at all.
+    #[test]
+    fn fully_skipped_page_encodes_nothing() {
+        let body = envelope(br#"{"Documents":[{"id":1},{"id":2}],"_count":2}"#);
+        let items = split_feed_envelope(&body).unwrap();
+        let out = skip_take_items(items, 2, None);
+        assert_eq!(out.emitted, 0);
+        assert!(encode_items(out.items, true).unwrap().is_empty());
     }
 
     #[test]
@@ -256,12 +319,13 @@ mod tests {
         let binary = crate::binary_json::transcode_to_binary(text).unwrap();
         assert!(crate::binary_json::is_binary(&binary));
 
-        let items = split_feed_envelope(&Bytes::from(binary), true).unwrap();
+        let items = split_feed_envelope(&Bytes::from(binary)).unwrap();
         let out = skip_take_items(items, 1, Some(1));
+        let out_items = encode_items(out.items, true).unwrap();
         assert_eq!(out.dropped, 1);
         assert_eq!(out.emitted, 1);
-        assert!(crate::binary_json::is_binary(&out.items[0]));
-        let doc: serde_json::Value = crate::binary_json::from_slice(&out.items[0]).unwrap();
+        assert!(crate::binary_json::is_binary(&out_items[0]));
+        let doc: serde_json::Value = crate::binary_json::from_slice(&out_items[0]).unwrap();
         assert_eq!(doc, serde_json::json!({ "id": 2 }));
     }
 
@@ -281,7 +345,7 @@ mod tests {
         .unwrap();
         let binary = crate::binary_json::transcode_to_binary(&text).unwrap();
 
-        let items = split_feed_envelope(&Bytes::from(binary), true).unwrap();
+        let items = split_and_encode(&Bytes::from(binary), true).unwrap();
         assert_eq!(items.len(), 1);
         let doc: Doc = crate::binary_json::from_slice(&items[0]).unwrap();
         assert_eq!(
@@ -300,7 +364,7 @@ mod tests {
     fn emitted_encoding_follows_negotiation_not_received_bytes() {
         let text = envelope(br#"{"Documents":[{"id":1},{"id":2}],"_count":2}"#);
 
-        let negotiated_binary = split_feed_envelope(&text, true).unwrap();
+        let negotiated_binary = split_and_encode(&text, true).unwrap();
         assert_eq!(negotiated_binary.len(), 2);
         for item in &negotiated_binary {
             assert!(
@@ -309,7 +373,7 @@ mod tests {
             );
         }
 
-        let negotiated_text = split_feed_envelope(&text, false).unwrap();
+        let negotiated_text = split_feed_envelope(&text).unwrap();
         for item in &negotiated_text {
             assert!(
                 !crate::binary_json::is_binary(item),
@@ -327,7 +391,7 @@ mod tests {
     fn binary_items_match_the_canonical_encoding_byte_for_byte() {
         let text = envelope(br#"{"Documents":[{"id":1,  "a":  [ 1, 2 ]}],"_count":1}"#);
 
-        let items = split_feed_envelope(&text, true).unwrap();
+        let items = split_and_encode(&text, true).unwrap();
 
         assert_eq!(items.len(), 1);
         let expected = crate::binary_json::encode(&serde_json::json!({ "id": 1, "a": [1, 2] }));
@@ -351,7 +415,7 @@ mod tests {
             br#"{"Documents":[{"v":1.7976931348623157e308},{"v":100000000000000000001}],"_count":2}"#,
         );
 
-        let items = split_feed_envelope(&text, true).unwrap();
+        let items = split_and_encode(&text, true).unwrap();
 
         assert_eq!(items.len(), 2);
         let first: serde_json::Value = crate::binary_json::from_slice(&items[0]).unwrap();

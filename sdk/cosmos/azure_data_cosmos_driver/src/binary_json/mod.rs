@@ -169,7 +169,9 @@ pub(crate) fn normalize_integral_floats(value: &mut serde_json::Value) {
 /// # Errors
 ///
 /// Returns a [`BinaryError`] if `buffer` is neither binary nor valid text JSON,
-/// or if it nests containers deeper than [`reader::MAX_DEPTH`].
+/// or if it nests containers more than 256 deep — the same limit [`decode`]
+/// accepts. Exceeding it yields [`BinaryError::DepthLimitExceeded`], whose
+/// `limit` field reports the bound.
 pub fn transcode_to_binary(buffer: &[u8]) -> Result<Vec<u8>> {
     if buffer.is_empty() || is_binary(buffer) {
         // Empty, or already binary: nothing to convert.

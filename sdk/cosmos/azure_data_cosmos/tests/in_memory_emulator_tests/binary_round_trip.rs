@@ -567,13 +567,15 @@ async fn binary_query_negotiates_response_and_round_trips() {
         "query results must round-trip through binary"
     );
 
-    // The query advertised a binary response but kept its body text.
+    // The query advertised a binary response but kept its body text. The value
+    // is an accept-list, matching .NET: the service may answer text, which the
+    // per-page decode handles.
     let formats = recorder.negotiation_formats.lock().unwrap();
     assert!(!formats.is_empty(), "expected at least one query request");
     for value in formats.iter() {
         assert_eq!(
             value.as_deref(),
-            Some("CosmosBinary"),
+            Some("JsonText,CosmosBinary"),
             "query must advertise a binary response",
         );
     }
@@ -765,7 +767,7 @@ fn assert_query_advertised_binary(recorder: &QueryRequestRecorder) {
     for value in formats.iter() {
         assert_eq!(
             value.as_deref(),
-            Some("CosmosBinary"),
+            Some("JsonText,CosmosBinary"),
             "every query fan-out page must advertise a binary response",
         );
     }

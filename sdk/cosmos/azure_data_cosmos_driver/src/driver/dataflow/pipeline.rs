@@ -116,4 +116,14 @@ impl OperationPlan {
     pub fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken> {
         ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state()?)
     }
+
+    /// Whether the driver must transcode each page's body back to text before
+    /// returning it.
+    ///
+    /// Fixed when the plan was built, alongside the request header and the
+    /// `emit_binary` flag baked into the pipeline nodes, so every page of a
+    /// plan agrees on the emitted encoding.
+    pub(crate) fn transcodes_response_to_text(&self) -> bool {
+        self.operation.transcodes_response_to_text()
+    }
 }

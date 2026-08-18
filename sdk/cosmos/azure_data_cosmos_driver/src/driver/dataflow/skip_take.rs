@@ -214,14 +214,13 @@ impl PipelineNode for SkipTake {
                 } => {
                     // Split the child's page into per-document slices. A
                     // streaming ordered merge already hands us pre-split
-                    // `Items`; a raw backend feed page arrives as `Bytes` and is
-                    // split here; `NoPayload` is a zero-document page.
-                    let items: Vec<Bytes> = match response.body() {
-                        ResponseBody::Items(items) => items.clone(),
-                        ResponseBody::Bytes(b) => {
-                            skip_take_page::split_feed_envelope(b, self.emit_binary)?
-                        }
-                        ResponseBody::NoPayload => Vec::new(),
+                    // `Items` in the emitted encoding; a raw backend feed page
+                    // arrives as `Bytes` and is split here as text, then
+                    // re-encoded below; `NoPayload` is a zero-document page.
+                    let (items, needs_encode) = match response.body() {
+                        ResponseBody::Items(items) => (items.clone(), false),
+                        ResponseBody::Bytes(b) => (skip_take_page::split_feed_envelope(b)?, true),
+                        ResponseBody::NoPayload => (Vec::new(), false),
                     };
 
                     let outcome = skip_take_page::skip_take_items(
@@ -229,6 +228,18 @@ impl PipelineNode for SkipTake {
                         self.remaining_skip,
                         self.remaining_take,
                     );
+
+                    // Encode only the survivors, and only once this page's
+                    // contribution is known — a document the window discards
+                    // must not be able to fail the query. This runs before the
+                    // counter updates below so a failure leaves no row behind
+                    // the resume boundary.
+                    let emitted_items = if needs_encode {
+                        skip_take_page::encode_items(outcome.items, self.emit_binary)?
+                    } else {
+                        outcome.items
+                    };
+
                     self.remaining_skip -= outcome.dropped;
                     if let Some(take) = self.remaining_take.as_mut() {
                         *take -= outcome.emitted;
@@ -251,7 +262,7 @@ impl PipelineNode for SkipTake {
                         self.exhausted = true;
                     }
 
-                    let new_response = self.rebuild(&response, outcome.items, outcome.emitted);
+                    let new_response = self.rebuild(&response, emitted_items, outcome.emitted);
                     return Ok(PageResult::Page {
                         response: new_response,
                         is_terminal: terminal,

@@ -53,13 +53,21 @@ extends:
       # (azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs). Only consumed on
       # the `binary_encoding` live leg (live-platform-matrix.json); a no-op
       # elsewhere. Each iteration exercises 3 encoding configs; every config runs
-      # 4 point ops + 1 single-partition query, and the pure-`binary` config adds
-      # a cross-partition ORDER BY query plus a typed wide-integer probe (itself
-      # an extra ORDER BY). That is 3*(4+1) + 2 = ~17 round-trips per iteration,
-      # so 200 => ~3400. That count has not yet been timed against a full live
-      # run; the leg already needs ~63-65 min of the 90-min cap, so if it starts
-      # being cancelled, lower this first. Raise it for a deeper soak.
-      AZURE_COSMOS_FUZZ_ITERATIONS: '200'
+      # 4 point ops + 1 single-partition query + 1 cross-partition ORDER BY
+      # query, and the pure-`binary` config adds a typed wide-integer probe
+      # (itself an extra ORDER BY). That is 3*(4+2) + 1 = ~19 round-trips per
+      # iteration, so 180 => ~3420.
+      #
+      # ORDER BY runs on every config so the control exercises the same surface
+      # as the experiment (#4976); it previously ran only on pure `binary`, which
+      # left an ORDER BY failure unattributable. Iterations dropped 200 => 180 to
+      # hold the total round-trip count roughly flat while paying for that
+      # coverage.
+      #
+      # Neither count has been timed against a full live run; the leg already
+      # needs ~63-65 min of the 90-min cap, so if it starts being cancelled,
+      # lower this first. Raise it for a deeper soak.
+      AZURE_COSMOS_FUZZ_ITERATIONS: '180'
       # Enable the wide-number generator (integers at or beyond 2^53, where the
       # service's number model stores the value as an IEEE-754 double). Without
       # this the fuzzer never covers the precision boundary it exists to guard.

@@ -73,27 +73,24 @@ const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
 
-/// Serialization formats advertised (`x-ms-cosmos-supported-serialization-formats`)
-/// when binary encoding is enabled, for every operation that negotiates a binary
-/// response — point item ops **and** query (see
-/// [`binary_negotiates_response`](CosmosDriver::binary_negotiates_response)).
-/// Rust advertises `CosmosBinary` only — matching the .NET SDK's point-op default
-/// (`RequestInvokerHandler` sets `BinarySerializationFormat =
-/// SupportedSerializationFormats.CosmosBinary`) — so the service is required to
-/// reply in binary, preserving the read-side RU/COGS benefit the caller opted
-/// into. When the caller also asked for a text payload (`request_text_response`),
-/// the driver transcodes the guaranteed-binary response back to text after
-/// receiving it, keeping the wire binary in both directions. That transcode
-/// lives in [`execute_plan`](CosmosDriver::execute_plan), which every operation
-/// type funnels through, so the behavior is uniform: a text-requesting caller
-/// gets the bandwidth saving whether it issued a point read or a
-/// cross-partition query.
+/// Formats advertised (`x-ms-cosmos-supported-serialization-formats`) for
+/// **point item ops** when binary encoding is enabled, matching .NET's point-op
+/// default. A point response is a single body with no pipeline behind it, so
+/// there is nothing to gain from letting the service choose text.
+const BINARY_NEGOTIATION_FORMATS_POINT: &str = "CosmosBinary";
+
+/// Formats advertised for **queries** when binary encoding is enabled, matching
+/// .NET's query default.
 ///
-/// Note: .NET's *query* default is the broader `JsonText,CosmosBinary` ("send
-/// either, service chooses"); Rust deliberately forces `CosmosBinary` for query
-/// too. Decode is format-agnostic (first-byte detection), so binary-only costs
-/// nothing on the decode side.
-const BINARY_NEGOTIATION_FORMATS: &str = "CosmosBinary";
+/// An accept-list, not a demand: the service may answer in text, keeping .NET's
+/// safety valve for query shapes that cannot produce binary. Nothing downstream
+/// needs a uniform format — page decode sniffs the `0x80` preamble per page, and
+/// the emitted encoding is a property of the operation
+/// ([`CosmosOperation::emits_binary_payload`]), not of any absorbed page. The
+/// cost is diagnosability: a text answer silently forfeits the RU saving.
+///
+/// [`CosmosOperation::emits_binary_payload`]: crate::models::CosmosOperation::emits_binary_payload
+const BINARY_NEGOTIATION_FORMATS_QUERY: &str = "JsonText,CosmosBinary";
 
 fn should_retry_account_properties_connectivity_error(
     error: &crate::error::CosmosError,
@@ -2738,7 +2735,14 @@ impl CosmosDriver {
         if !binary.enabled {
             return operation;
         }
-        let operation = operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS);
+        // Queries advertise an accept-list; point ops force binary. Mirrors
+        // .NET — see the two constants.
+        let formats = if operation.operation_type() == crate::models::OperationType::Query {
+            BINARY_NEGOTIATION_FORMATS_QUERY
+        } else {
+            BINARY_NEGOTIATION_FORMATS_POINT
+        };
+        let operation = operation.with_supported_serialization_formats(formats);
         // Record the text hand-back so pipeline nodes emit text items rather
         // than re-encoding binary that `execute_plan` would immediately decode.
         if binary.request_text_response {
@@ -3011,6 +3015,12 @@ impl CosmosDriver {
     /// holds uniformly rather than per operation type. Transcoding a body that
     /// is already text is a refcount clone, so plans that never negotiated
     /// binary (change feed, or binary disabled) pay nothing.
+    ///
+    /// The decision comes from the **plan**, not from `options`. Binary
+    /// encoding is fixed when the plan is built, so changing
+    /// `request_text_response` in the `options` passed to a later page has no
+    /// effect: the request header is already sent and the pipeline nodes are
+    /// already built to emit one encoding. To switch, build a new plan.
     pub async fn execute_plan(
         &self,
         plan: &mut OperationPlan,
@@ -3047,15 +3057,13 @@ impl CosmosDriver {
             let response = plan.pipeline.next_page(&mut context).await?;
 
             // Driver-side transcoding: hand back text while the wire stayed
-            // binary. Resolved from the layered view here (rather than trusting
-            // a caller-supplied flag) so the decision matches the one
-            // `apply_response_negotiation` made when it set the request header.
-            let binary = self
-                .operation_options_view(&options)
-                .binary_encoding()
-                .cloned()
-                .unwrap_or_default();
-            if binary.enabled && binary.request_text_response {
+            // binary. Read from the plan, not from this call's `options`: the
+            // decision was made once by `apply_response_negotiation` — the same
+            // place that set the request header and the `emit_binary` flag on
+            // the pipeline nodes. Re-deriving it per page would let a caller
+            // who varies `request_text_response` between pages get nodes
+            // emitting one encoding while this step applies the other.
+            if plan.transcodes_response_to_text() {
                 if let Some(mut response) = response {
                     response.transcode_body_to_text()?;
                     return Ok(Some(response));
@@ -6614,7 +6622,51 @@ mod tests {
                 .request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some(BINARY_NEGOTIATION_FORMATS),
+            Some(BINARY_NEGOTIATION_FORMATS_POINT),
+        );
+    }
+
+    /// A query advertises .NET's accept-list (`JsonText,CosmosBinary`) while a
+    /// point op forces `CosmosBinary`. The split is deliberate: a query keeps
+    /// the service's ability to answer in text, which the driver already
+    /// handles per page, whereas a point response has no pipeline behind it.
+    #[tokio::test]
+    async fn query_advertises_accept_list_while_point_op_forces_binary() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let query = CosmosOperation::query_items(container, Some(crate::models::FeedRange::full()))
+            .with_body(
+                serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap(),
+            );
+        let negotiated = driver.apply_response_negotiation(query, &options, None);
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("JsonText,CosmosBinary"),
+            "queries must advertise both so the service can fall back to text",
+        );
+        // The accept-list still counts as negotiating binary, so pipeline nodes
+        // keep emitting binary regardless of which format the service picks.
+        assert!(negotiated.negotiates_binary_response());
+
+        let point = binary_encoding_test_operation(b"{}".to_vec());
+        let negotiated = driver.apply_response_negotiation(point, &options, None);
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+            "point ops force binary — there is no page pipeline to protect",
         );
     }
 
@@ -6704,12 +6756,13 @@ mod tests {
             !crate::binary_json::is_binary(op.body().unwrap()),
             "query body must remain text on the wire",
         );
-        // Still advertises a binary response.
+        // Still advertises a binary response — as an accept-list, so the
+        // service may answer text and the per-page decode handles it.
         assert_eq!(
             op.request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some("CosmosBinary"),
+            Some("JsonText,CosmosBinary"),
         );
     }
 
@@ -6747,7 +6800,7 @@ mod tests {
                 .request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some("CosmosBinary"),
+            Some("JsonText,CosmosBinary"),
             "a query keeps the wire binary and lets `execute_plan` transcode the \
              page back to text, so it must still negotiate binary",
         );

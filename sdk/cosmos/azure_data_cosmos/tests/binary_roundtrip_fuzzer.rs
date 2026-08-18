@@ -74,7 +74,7 @@ const DEFAULT_DATABASE_NAME: &str = "binary-fuzz-db";
 const DEFAULT_CONTAINER_NAME: &str = "binary-fuzz-ct";
 const PARTITION_KEY_PATH: &str = "/pk";
 
-const DEFAULT_ITERATIONS: u64 = 200;
+const DEFAULT_ITERATIONS: u64 = 180;
 const DEFAULT_MAX_DEPTH: u32 = 6;
 /// Upper bound for `max_depth`: the generator recurses per level, so an
 /// unbounded value would stack-overflow. 64 is safe on an ordinary stack.
@@ -2000,22 +2000,20 @@ where
 }
 
 /// Queries the just-written item back and asserts it round-trips, covering the
-/// query binary-response decode path (which point ops do not exercise). Always
-/// runs a single-partition query (the passthrough decode path). When
-/// `include_order_by` is set, also runs a full-container streaming `ORDER BY`
-/// query, whose per-page envelope decode is the binary path added for query
-/// support; it adds no binary coverage on text configs, so callers gate it.
+/// query binary-response decode path (which point ops do not exercise). Runs a
+/// single-partition query (the passthrough decode path) and a full-container
+/// streaming `ORDER BY` query, whose per-page envelope decode is the binary path
+/// added for query support.
+///
+/// Both shapes run on **every** config, including `text-control`: a control that
+/// exercises a smaller surface than the experiment cannot localize a failure to
+/// the encoding.
 ///
 /// The live container has default throughput (one physical partition), so the
 /// merge runs with a single child — multi-child interleave is covered by the
 /// 3-partition emulator tests.
 ///
 /// Both filter on the unique `id`, so each returns exactly this item.
-// The sent-value trio (`sent_canon`, `sent_hash`, `doc`) plus routing context is
-// threaded verbatim into `assert_query_hit`/`assert_roundtrip`; bundling it into
-// a struct here would only move the argument count to those helpers, so the
-// eighth parameter is allowed on this test-only function.
-#[allow(clippy::too_many_arguments)]
 async fn assert_query_roundtrip(
     container: &ContainerClient,
     pk: &str,
@@ -2024,7 +2022,6 @@ async fn assert_query_roundtrip(
     sent_hash: &[u8; 32],
     doc: &Map<String, Value>,
     context: &str,
-    include_order_by: bool,
 ) -> Result<usize, Box<dyn Error>> {
     let single_partition = with_transient_retry("query", context, || async {
         let query = Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", id)?;
@@ -2042,10 +2039,6 @@ async fn assert_query_roundtrip(
         context,
         "query",
     );
-
-    if !include_order_by {
-        return Ok(1);
-    }
 
     let order_by = with_transient_retry("query-order-by", context, || async {
         let query = Query::from("SELECT * FROM c WHERE c.id = @id ORDER BY c.id")
@@ -2294,12 +2287,10 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             // Four point-op round-trips this config: create, read, replace, upsert.
             checked += 4;
 
-            // QUERY the item back. The single-partition passthrough query runs on
-            // every config; the expensive ORDER BY merge runs only on pure
-            // `binary` — `text-control` adds no binary coverage, and
-            // `binary+text-response` suppresses query negotiation entirely, so
-            // both would merge over text.
-            let include_order_by = *label == "binary";
+            // QUERY the item back. Both query shapes run on every config so a
+            // failure localizes to the encoding, not the config (#4976). Note
+            // `binary+text-response` is still binary on the wire, so its ORDER BY
+            // merge runs over binary pages.
             let queries_checked = assert_query_roundtrip(
                 &container,
                 &pk,
@@ -2308,7 +2299,6 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
                 &sent_hash,
                 &doc,
                 &context,
-                include_order_by,
             )
             .await?;
             checked += queries_checked as u64;
@@ -2331,7 +2321,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     }
 
     println!(
-        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs (4 point ops each + 1–2 queries; full-container ORDER BY on binary configs only) = {checked} round-trips, all canonical-equal (seed={})",
+        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs (4 point ops each + 2 queries: single-partition and full-container ORDER BY) = {checked} round-trips, all canonical-equal (seed={})",
         cfg.iterations,
         configs.len(),
         cfg.seed

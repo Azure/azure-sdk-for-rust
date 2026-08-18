@@ -68,13 +68,25 @@ The Rust SDK keeps a typed fast path: `serialize_item_body` encodes `T: Serializ
 
 ### Negotiation header
 
-When binary is enabled, item operations set:
+When binary is enabled, the negotiation header is set per operation type,
+matching .NET:
 
 ```
-x-ms-cosmos-supported-serialization-formats: CosmosBinary
+point ops: x-ms-cosmos-supported-serialization-formats: CosmosBinary
+query:     x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary
 ```
 
-.NET sends `JsonText,CosmosBinary` for queries and `CosmosBinary` for point ops. Rust sends `CosmosBinary` everywhere — a deliberate deviation, documented on `BINARY_NEGOTIATION_FORMATS` in `driver/cosmos_driver.rs`: advertising both would let the service pick text, and the driver would then have to handle either format per page. Forcing one format keeps the response encoding a property of the operation rather than of each page. See parity item 5.
+A query advertises an **accept-list** and lets the service choose, preserving
+.NET's safety valve: a service version or query shape that cannot produce binary
+answers in text and the query still succeeds. Nothing downstream requires the
+format to be uniform across a result set — page decode sniffs the `0x80` preamble
+per page (`normalize_page_body`) and the emitted encoding is a property of the
+operation (`emits_binary_payload`), not of any absorbed page, so a merge over
+mixed binary and text source pages already normalizes them. The cost is
+diagnosability, not correctness: if the service picks text, the RU and bandwidth
+saving is silently forfeited. Point ops force `CosmosBinary` — a single body with
+no pipeline behind it has nothing to gain from a per-response choice. Both
+constants are documented in `driver/cosmos_driver.rs`.
 
 The request `Content-Type` stays `application/json`; the service detects the binary body from its first byte.
 
@@ -478,11 +490,16 @@ duplicate keys.
 #### Invariant for future feed splitters
 
 `skip_take_page::split_feed_envelope` detects a binary envelope, transcodes it, and
-re-encodes each document **standalone**, so every `ResponseBody::Items` producer
-emits per-document binary that `into_items` auto-detects by preamble. Any future
-splitter must keep that invariant: slicing a single-preamble envelope without
-re-encoding per document yields preamble-less sub-documents misrouted to the text
-path.
+splits it into **text** payloads; `skip_take_page::encode_items` then re-encodes each
+surviving document **standalone**, so every `ResponseBody::Items` producer emits
+per-document binary that `into_items` auto-detects by preamble. Any future splitter
+must keep that invariant: slicing a single-preamble envelope without re-encoding per
+document yields preamble-less sub-documents misrouted to the text path.
+
+The split/encode order matters as much as the encoding itself. `SkipTake` splits,
+applies its window, and only then encodes the survivors — so a document the window
+discards costs no transcode, and cannot fail a query it contributes nothing to. A
+splitter that encodes at split time pays for every document the page carried.
 
 ---
 
@@ -513,7 +530,7 @@ decode** (auto-detected by the `0x80` first byte).
 | 2 | `delete` negotiation | .NET's `IsPointOperationSupportedForBinaryEncoding` includes `Delete`; Rust's `supports_binary_request_body` / `supports_binary_response` exclude it. | Minor — pending item 3 |
 | 3 | Gateway 2.0 negotiation | Honored on the standard gateway only; the thin-client path drops the header and the service returns text. | Real gap — pending item 1 |
 | 4 | Patch mechanism | .NET Patch is a real server op, not binary-negotiated. Rust Patch is a client-side read-modify-write, so its internal read/replace **are** encoded when enabled. Both functionally correct. | Cosmetic / architectural |
-| 5 | Negotiation header value | .NET query default = `"JsonText,CosmosBinary"`; .NET point ops = `"CosmosBinary"`. Rust = `"CosmosBinary"` everywhere, so it forces binary rather than advertising "either". | Minor wire diff |
+| 5 | Negotiation header value | Matched. Query = `"JsonText,CosmosBinary"`, point ops = `"CosmosBinary"` on both SDKs. | None |
 
 ### Matched by design
 

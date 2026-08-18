@@ -437,6 +437,16 @@ impl CosmosOperation {
         self
     }
 
+    /// Whether the driver must transcode this operation's response body to text
+    /// before handing it back.
+    ///
+    /// Decided once at negotiation time, so a caller who varies
+    /// `request_text_response` between pages cannot desynchronize the emitted
+    /// encoding from what the pipeline nodes were built to produce.
+    pub(crate) fn transcodes_response_to_text(&self) -> bool {
+        self.transcodes_response_to_text
+    }
+
     /// Whether pipeline nodes that synthesize a page should emit **binary**
     /// items.
     ///
