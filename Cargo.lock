@@ -786,6 +786,7 @@ dependencies = [
  "openssl",
  "pin-project",
  "rand 0.10.2",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_test",

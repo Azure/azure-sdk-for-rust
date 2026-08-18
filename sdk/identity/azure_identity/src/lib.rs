@@ -15,6 +15,7 @@ mod client_assertion_credential;
 #[cfg(feature = "client_certificate")]
 mod client_certificate_credential;
 mod client_secret_credential;
+mod custom_token_proxy;
 mod developer_tools_credential;
 mod env;
 mod imds_managed_identity_credential;
