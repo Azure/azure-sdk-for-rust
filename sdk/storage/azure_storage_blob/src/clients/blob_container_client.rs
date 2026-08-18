@@ -13,12 +13,11 @@ use crate::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    error::{CheckSuccessOptions, ErrorKind},
+    error::ErrorKind,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Method, Pager, Pipeline, PipelineSendOptions, RawResponse, Request, StatusCode, Url,
-        UrlExt,
+        ClientMethodOptions, Pager, Pipeline, RawResponse, StatusCode, Url,
     },
     tracing, Result,
 };
@@ -150,69 +149,28 @@ impl BlobContainerClient {
             .unwrap_or_default()
             .as_header_value();
         let pager_options = options.method_options.clone();
-        let pipeline = self.pipeline.clone();
-        let version = self.version.clone();
-        let mut first_url = self.endpoint.clone();
-        let mut query_builder = first_url.query_builder();
-        query_builder
-            .append_pair("comp", "list")
-            .append_pair("restype", "container");
-        if let Some(end_before) = options.end_before.as_ref() {
-            query_builder.set_pair("endBefore", end_before);
-        }
-        if let Some(include) = options.include.as_ref() {
-            query_builder.set_pair(
-                "include",
-                include
-                    .iter()
-                    .map(|i| i.to_string())
-                    .collect::<Vec<String>>()
-                    .join(","),
-            );
-        }
-        if let Some(marker) = options.marker.as_ref() {
-            query_builder.set_pair("marker", marker);
-        }
-        if let Some(maxresults) = options.maxresults {
-            query_builder.set_pair("maxresults", maxresults.to_string());
-        }
-        if let Some(prefix) = options.prefix.as_ref() {
-            query_builder.set_pair("prefix", prefix);
-        }
-        if let Some(start_from) = options.start_from.as_ref() {
-            query_builder.set_pair("startFrom", start_from);
-        }
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
+        let client = Arc::new(BlobContainerClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        });
 
         Ok(Pager::new(
             move |state: PagerState, pager_options| {
-                let mut url = first_url.clone();
+                let client = client.clone();
+                let mut options = options.to_internal(ClientMethodOptions {
+                    context: pager_options.context,
+                });
                 if let PagerState::More(continuation) = state {
-                    let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", continuation.as_ref());
-                    query_builder.build();
+                    options.marker = Some(continuation.into());
                 }
-                let mut request = Request::new(url, Method::Get);
-                request.insert_header("accept", accept);
-                request.insert_header("x-ms-version", &version);
-                let pipeline = pipeline.clone();
                 Box::pin(async move {
-                    let response = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
+                    let response = client
+                        .list_blobs_internal(accept.to_string(), Some(options))
                         .await?;
                     let (status, headers, body) = response.deconstruct();
+                    let body = body.collect().await?;
                     let next_marker = decode_next_marker(&headers, &body)?;
                     let response = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match next_marker {
@@ -255,71 +213,35 @@ impl BlobContainerClient {
             .response_format
             .unwrap_or_default()
             .as_header_value();
+        let delimiter = delimiter.to_string();
         let pager_options = options.method_options.clone();
-        let pipeline = self.pipeline.clone();
-        let version = self.version.clone();
-        let mut first_url = self.endpoint.clone();
-        let mut query_builder = first_url.query_builder();
-        query_builder
-            .append_pair("comp", "list")
-            .append_pair("restype", "container");
-        query_builder.set_pair("delimiter", delimiter);
-        if let Some(end_before) = options.end_before.as_ref() {
-            query_builder.set_pair("endBefore", end_before);
-        }
-        if let Some(include) = options.include.as_ref() {
-            query_builder.set_pair(
-                "include",
-                include
-                    .iter()
-                    .map(|i| i.to_string())
-                    .collect::<Vec<String>>()
-                    .join(","),
-            );
-        }
-        if let Some(marker) = options.marker.as_ref() {
-            query_builder.set_pair("marker", marker);
-        }
-        if let Some(maxresults) = options.maxresults {
-            query_builder.set_pair("maxresults", maxresults.to_string());
-        }
-        if let Some(prefix) = options.prefix.as_ref() {
-            query_builder.set_pair("prefix", prefix);
-        }
-        if let Some(start_from) = options.start_from.as_ref() {
-            query_builder.set_pair("startFrom", start_from);
-        }
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
+        let client = Arc::new(BlobContainerClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        });
 
         Ok(Pager::new(
             move |state: PagerState, pager_options| {
-                let mut url = first_url.clone();
+                let client = client.clone();
+                let delimiter = delimiter.clone();
+                let mut options = options.to_internal(ClientMethodOptions {
+                    context: pager_options.context,
+                });
                 if let PagerState::More(continuation) = state {
-                    let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", continuation.as_ref());
-                    query_builder.build();
+                    options.marker = Some(continuation.into());
                 }
-                let mut request = Request::new(url, Method::Get);
-                request.insert_header("accept", accept);
-                request.insert_header("x-ms-version", &version);
-                let pipeline = pipeline.clone();
                 Box::pin(async move {
-                    let response = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
+                    let response = client
+                        .list_blobs_hierarchical_internal(
+                            accept.to_string(),
+                            &delimiter,
+                            Some(options),
                         )
                         .await?;
                     let (status, headers, body) = response.deconstruct();
+                    let body = body.collect().await?;
                     let next_marker = decode_next_marker(&headers, &body)?;
                     let response = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match next_marker {
