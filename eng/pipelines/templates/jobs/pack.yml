@@ -44,12 +44,12 @@ jobs:
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      WorkingDirectory: $(System.DefaultWorkingDirectory)/eng/tools/generate_api_report
+      WorkingDirectory: $(System.DefaultWorkingDirectory)/eng/tools
       SetDefault: false
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      Toolchain: $(PackToolchain)
+      Toolchain: stable
       ConfigureRegistry: false
 
   - ${{ if eq(parameters.TestPipeline, 'true') }}:
@@ -80,7 +80,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
-        arguments: -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '$(PackToolchain)'
+        arguments: -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
 
     # Temporary: remove check until after core crates are published
     - pwsh: Write-Host "Skipping Pack-Crates.ps1 for auto service directory"
@@ -121,7 +121,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
-        arguments: -PackageNames $(PackageNames) -Toolchain '$(PackToolchain)'
+        arguments: -PackageNames $(PackageNames)
 
     - task: Powershell@2
       displayName: Pack Crates
