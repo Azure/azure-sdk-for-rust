@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added `AmqpReceiverApis::settle_delivery` and `AmqpDeliveryOutcome` to settle deliveries with accepted, rejected, released, or modified outcomes. See [#4935](https://github.com/Azure/azure-sdk-for-rust/issues/4935).
+- Added the `AmqpErrorCondition::DeadLetter` variant for the `com.microsoft:dead-letter` error condition. See [#4935](https://github.com/Azure/azure-sdk-for-rust/issues/4935).
+
 ### Breaking Changes
 
 ### Bugs Fixed
