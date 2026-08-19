@@ -61,6 +61,8 @@ impl SessionAuthenticationPolicy {
         // x-ms-date participates in the string-to-sign, so set it before signing.
         request.insert_header(MS_DATE, to_rfc7231(&OffsetDateTime::now_utc()));
         let signature = signer::sign(request, &account, key)?;
+        // `authorization` is not in the logging allowlist, so the session token
+        // and signature are redacted by the logging policy.
         request.insert_header(AUTHORIZATION, format!("Session {token}:{signature}"));
         Ok(())
     }

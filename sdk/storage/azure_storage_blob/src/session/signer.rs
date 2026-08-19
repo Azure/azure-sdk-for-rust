@@ -233,7 +233,7 @@ mod tests {
 
     #[test]
     fn compute_signature_matches_known_answer() {
-        // Independently computed with .NET HMACSHA256 over the same inputs.
+        // Independently computed with .NET HMAC-SHA256 over the same inputs.
         let signature = compute_signature("c2Vzc2lvbi1rZXk=", "test-string-to-sign").unwrap();
         assert_eq!(signature, "I4BGEfas+uyRVJfNiy9KsuLp3XnhEw7x1yOgv0y3RTM=");
     }

@@ -162,3 +162,17 @@ pub(crate) fn apply_storage_logging_defaults(options: &mut ClientOptions) {
             .map(|s| Cow::Borrowed(*s)),
     );
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn authorization_is_not_logged() {
+        // Session credentials ride in the `authorization` header; it must never be
+        // allowlisted, so the logging policy redacts it.
+        assert!(!STORAGE_ALLOWED_HEADERS
+            .iter()
+            .any(|h| h.eq_ignore_ascii_case("authorization")));
+    }
+}
