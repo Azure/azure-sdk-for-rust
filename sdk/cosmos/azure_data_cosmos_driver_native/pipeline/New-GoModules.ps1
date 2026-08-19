@@ -169,7 +169,7 @@ foreach ($row in $rows) {
     }
 
     $metadata = Get-Content $manifestPath -Raw | ConvertFrom-Json
-    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'schema_version' -Expected 2
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'schema_version' -Expected 3
     Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'artifact_id' -Expected $row.id
     Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'triple' -Expected $row.triple
     Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'goos' -Expected $row.goos
@@ -182,6 +182,7 @@ foreach ($row in $rows) {
         'source_commit',
         'native_interface_version',
         'rust_driver_version',
+        'rustc_native_static_libs',
         'native_static_libs',
         'static_library',
         'header'

@@ -45,11 +45,13 @@ Describe 'Test-NativeLink target validation' {
         })
         $MetadataPath = Join-Path $TargetRoot 'rust-driver-native-interface-metadata.json'
         Write-TestJson -Path $MetadataPath -Value ([ordered]@{
+            schema_version = 3
             artifact_id = 'test-target'
             goos = 'windows'
             goarch = 'amd64'
             libc = $null
             triple = 'x86_64-pc-windows-gnu'
+            rustc_native_static_libs = @('-lsystem')
             native_static_libs = @('-lsystem')
         })
 

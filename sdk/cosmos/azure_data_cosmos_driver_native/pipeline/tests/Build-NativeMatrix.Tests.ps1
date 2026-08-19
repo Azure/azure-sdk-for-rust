@@ -24,6 +24,8 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $global:ObservedCc = $null
         $global:ObservedBuildCargoLinker = $null
         $global:ObservedBuildCc = $null
+        $global:CompilerLibraryPath = Join-Path $TestDrive 'libgcc_eh.a'
+        Set-Content $global:CompilerLibraryPath 'archive'
 
         Mock git {
             $global:LASTEXITCODE = 0
@@ -31,7 +33,19 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         }
         Mock rustup {
             $global:LASTEXITCODE = 0
-            'x86_64-pc-windows-gnu'
+            @(
+                'x86_64-pc-windows-gnu'
+                'x86_64-unknown-linux-musl'
+            )
+        }
+        Mock pwsh {
+            $global:LASTEXITCODE = 0
+            if ($args[0] -eq '-print-file-name=libgcc_eh.a') {
+                $global:CompilerLibraryPath
+            }
+            elseif ($args[0] -eq '--version') {
+                'PowerShell 7.0.0'
+            }
         }
         Mock cargo {
             $global:LASTEXITCODE = 0
@@ -51,6 +65,10 @@ Describe 'Build-NativeMatrix target compiler configuration' {
                     } | ConvertTo-Json -Depth 4
                 }
                 'rustc' {
+                    if ($args -contains 'x86_64-unknown-linux-musl') {
+                        'note: native-static-libs: -lunwind -lc'
+                        break
+                    }
                     $global:ObservedCargoLinker = [Environment]::GetEnvironmentVariable(
                         'CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER',
                         'Process'
@@ -102,6 +120,9 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             $metadataPath = Join-Path $TestDrive `
                 'artifacts/windows-amd64/rust-driver-native-interface-metadata.json'
             $metadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
+            $metadata.schema_version | Should -Be 3
+            @($metadata.rustc_native_static_libs) | Should -Be @('-lsystem')
+            @($metadata.native_static_libs) | Should -Be @('-lsystem')
             $metadata.toolchains.c_compiler | Should -Be 'pwsh'
         }
         finally {
@@ -120,6 +141,33 @@ Describe 'Build-NativeMatrix target compiler configuration' {
 
         $global:ObservedBuildCargoLinker | Should -Be 'pwsh'
         $global:ObservedBuildCc | Should -Be 'pwsh'
+    }
+
+    It 'uses the compiler unwind implementation for musl consumers' {
+        & $ScriptPath `
+            -TargetId 'linux-amd64-musl' `
+            -OutputRoot (Join-Path $TestDrive 'artifacts') `
+            -CCompiler 'pwsh' `
+            -SkipBuild
+
+        $metadataPath = Join-Path $TestDrive `
+            'artifacts/linux-amd64-musl/rust-driver-native-interface-metadata.json'
+        $metadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
+
+        @($metadata.rustc_native_static_libs) | Should -Be @('-lunwind', '-lc')
+        @($metadata.native_static_libs) | Should -Be @('-lgcc_eh', '-lc')
+    }
+
+    It 'rejects a musl compiler without its configured unwind implementation' {
+        $global:CompilerLibraryPath = 'libgcc_eh.a'
+
+        {
+            & $ScriptPath `
+                -TargetId 'linux-amd64-musl' `
+                -OutputRoot (Join-Path $TestDrive 'artifacts') `
+                -CCompiler 'pwsh' `
+                -SkipBuild
+        } | Should -Throw "*cannot provide required library 'libgcc_eh.a'*"
     }
 
     It 'rejects an unavailable compiler before invoking Cargo' {
@@ -201,6 +249,22 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $buildJobTemplate | Should -Match 'sha256sum --check'
         $buildJobTemplate | Should -Match 'task:\s+GoTool@0'
         $buildJobTemplate | Should -Match 'GOTOOLCHAIN:\s+local'
+    }
+
+    It 'declares musl unwind replacements without changing other targets' {
+        foreach ($targetId in @('linux-amd64-musl', 'linux-arm64-musl')) {
+            $target = $Matrix.targets | Where-Object id -EQ $targetId
+            $replacement = @($target.native_static_lib_replacements)
+
+            $replacement.Count | Should -Be 1
+            $replacement[0].rustc_flag | Should -Be '-lunwind'
+            $replacement[0].consumer_flag | Should -Be '-lgcc_eh'
+            $replacement[0].compiler_library | Should -Be 'libgcc_eh.a'
+        }
+
+        foreach ($target in @($Matrix.targets | Where-Object libc -NE 'musl')) {
+            $target.PSObject.Properties.Name | Should -Not -Contain 'native_static_lib_replacements'
+        }
     }
 
     It 'opts into the 1ES internal Go proxy without changing the shared default' {

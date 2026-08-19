@@ -11,8 +11,9 @@
 .DESCRIPTION
     For each row in build-matrix.json this script:
       1. Ensures the Rust target triple is installed (rustup).
-      2. Captures the exact syslib link line PROGRAMMATICALLY via
-         `cargo rustc ... -- --print native-static-libs` (never hand-guessed).
+      2. Captures the exact rustc syslib link line PROGRAMMATICALLY via
+         `cargo rustc ... -- --print native-static-libs`, then applies declared
+         target-specific ABI-compatible compiler-library replacements.
       3. Builds the native libraries with cargo-auditable so the artifacts
          embed their Rust dependency manifest.
       4. Emits rust-driver-native-interface-metadata.json (triple,
@@ -122,6 +123,56 @@ function Get-NativeStaticLibs([string] $triple) {
     ($line -replace '.*native-static-libs:\s*', '').Trim() -split '\s+' | Where-Object { $_ }
 }
 
+function Resolve-ConsumerNativeStaticLibs(
+    [object[]] $RustcNativeStaticLibs,
+    [object] $Target,
+    [string] $Compiler
+) {
+    $consumerNativeStaticLibs = @($RustcNativeStaticLibs)
+    if ($Target.PSObject.Properties.Name -notcontains 'native_static_lib_replacements') {
+        return $consumerNativeStaticLibs
+    }
+
+    foreach ($replacement in @($Target.native_static_lib_replacements)) {
+        foreach ($property in @('rustc_flag', 'consumer_flag', 'compiler_library')) {
+            if (
+                $replacement.PSObject.Properties.Name -notcontains $property -or
+                [string]::IsNullOrWhiteSpace([string]$replacement.$property)
+            ) {
+                throw "[$($Target.id)] native static library replacement is missing '$property'."
+            }
+        }
+
+        if ($replacement.rustc_flag -notin $consumerNativeStaticLibs) {
+            throw "[$($Target.id)] rustc did not report expected native static library flag '$($replacement.rustc_flag)'."
+        }
+
+        $compilerLibrary = (& $Compiler "-print-file-name=$($replacement.compiler_library)" 2>&1 |
+                Select-Object -Last 1) -join ''
+        if (
+            $LASTEXITCODE -ne 0 -or
+            [string]::IsNullOrWhiteSpace($compilerLibrary) -or
+            $compilerLibrary -eq $replacement.compiler_library -or
+            -not (Test-Path $compilerLibrary -PathType Leaf)
+        ) {
+            throw "[$($Target.id)] compiler '$Compiler' cannot provide required library '$($replacement.compiler_library)'."
+        }
+
+        $consumerNativeStaticLibs = @(
+            $consumerNativeStaticLibs | ForEach-Object {
+                if ($_ -eq $replacement.rustc_flag) {
+                    $replacement.consumer_flag
+                }
+                else {
+                    $_
+                }
+            }
+        )
+    }
+
+    $consumerNativeStaticLibs
+}
+
 function Test-TripleInstalled([string] $triple) {
     (& rustup target list --installed 2>$null) -contains $triple
 }
@@ -183,11 +234,17 @@ foreach ($row in $rows) {
             [Environment]::SetEnvironmentVariable($name, $targetEnvironment[$name], 'Process')
         }
 
-        $syslibs = @(Get-NativeStaticLibs $row.triple)
-        if ((-not $syslibs) -and $matrix.reference_syslibs.PSObject.Properties.Name -contains $row.triple) {
+        $rustcSyslibs = @(Get-NativeStaticLibs $row.triple)
+        if ((-not $rustcSyslibs) -and $matrix.reference_syslibs.PSObject.Properties.Name -contains $row.triple) {
             Write-Warning "    falling back to reference_syslibs for $($row.triple) (capture failed)"
-            $syslibs = @($matrix.reference_syslibs.$($row.triple))
+            $rustcSyslibs = @($matrix.reference_syslibs.$($row.triple))
         }
+        $syslibs = @(
+            Resolve-ConsumerNativeStaticLibs `
+                -RustcNativeStaticLibs $rustcSyslibs `
+                -Target $row `
+                -Compiler $compiler
+        )
 
         if (-not $SkipBuild) {
             Push-Location $CrateDir
@@ -255,7 +312,7 @@ foreach ($row in $rows) {
     $headerSha = (Get-FileHash $headerSrc -Algorithm SHA256).Hash.ToLowerInvariant()
 
     $manifest = [ordered]@{
-        schema_version           = 2
+        schema_version           = 3
         artifact_id              = $row.id
         goos                     = $row.goos
         goarch                   = $row.goarch
@@ -282,7 +339,8 @@ foreach ($row in $rows) {
                 sha256   = $dynamicSha
             }
         }
-        native_static_libs = $syslibs
+        rustc_native_static_libs = $rustcSyslibs
+        native_static_libs       = $syslibs
         toolchains = [ordered]@{
             rustc              = Get-ToolVersion 'rustc' @('--version')
             cargo              = Get-ToolVersion 'cargo' @('--version')

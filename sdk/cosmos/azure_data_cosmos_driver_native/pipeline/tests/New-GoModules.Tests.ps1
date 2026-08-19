@@ -45,7 +45,7 @@ BeforeAll {
             Write-TestFile -Path $libraryPath -Content "archive-$($row.id)"
 
             $metadata = [ordered]@{
-                schema_version = 2
+                schema_version = 3
                 artifact_id = $row.id
                 goos = $row.goos
                 goarch = $row.goarch
@@ -64,7 +64,16 @@ BeforeAll {
                     filename = $Matrix.header_filename
                     sha256 = Get-TestHash -Path $headerPath
                 }
-                native_static_libs = @('-lsystem')
+                rustc_native_static_libs = if ($row.libc -eq 'musl') {
+                    @('-lunwind', '-lc')
+                } else {
+                    @('-lsystem')
+                }
+                native_static_libs = if ($row.libc -eq 'musl') {
+                    @('-lgcc_eh', '-lc')
+                } else {
+                    @('-lsystem')
+                }
             }
             $metadataPath = Join-Path $targetRoot 'rust-driver-native-interface-metadata.json'
             $metadata | ConvertTo-Json -Depth 6 | Set-Content $metadataPath -Encoding utf8
@@ -110,6 +119,10 @@ BeforeEach {
             Should -Match 'module github\.com/Azure/azure-cosmos-driver/linux/amd64-musl'
         Get-Content (Join-Path $OutputRoot 'linux/amd64-musl/link_linux_amd64.go') -Raw |
             Should -Not -Match 'cosmos_musl'
+        Get-Content (Join-Path $OutputRoot 'linux/amd64-musl/link_linux_amd64.go') -Raw |
+            Should -Match ([regex]::Escape('-lgcc_eh -lc'))
+        Get-Content (Join-Path $OutputRoot 'linux/amd64-musl/link_linux_amd64.go') -Raw |
+            Should -Not -Match ([regex]::Escape('-lunwind'))
     }
 
     It 'generates only the selected standalone musl module' {

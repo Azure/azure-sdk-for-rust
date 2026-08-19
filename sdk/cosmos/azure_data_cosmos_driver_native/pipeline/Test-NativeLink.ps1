@@ -42,10 +42,22 @@ if (-not (Test-Path $metadataPath -PathType Leaf)) {
     throw "Target metadata is missing: $metadataPath"
 }
 $metadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
-foreach ($property in @('artifact_id', 'goos', 'goarch', 'libc', 'triple', 'native_static_libs')) {
+foreach ($property in @(
+    'schema_version',
+    'artifact_id',
+    'goos',
+    'goarch',
+    'libc',
+    'triple',
+    'rustc_native_static_libs',
+    'native_static_libs'
+)) {
     if ($metadata.PSObject.Properties.Name -notcontains $property) {
         throw "[$TargetId] metadata is missing '$property'."
     }
+}
+if ($metadata.schema_version -ne 3) {
+    throw "[$TargetId] metadata 'schema_version' does not match expected version 3."
 }
 $expectedIdentity = @{
     artifact_id = $target.id
