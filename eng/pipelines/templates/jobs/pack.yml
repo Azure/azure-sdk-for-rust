@@ -44,6 +44,7 @@ jobs:
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
+      Toolchain: nightly
       WorkingDirectory: $(System.DefaultWorkingDirectory)/eng/tools
       SetDefault: false
 
@@ -108,7 +109,6 @@ jobs:
           Write-Host "##vso[task.setvariable variable=AdditionalPackageParams]"
         }
       displayName: Configure crate packing
-      condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
 
     - task: PowerShell@2
       displayName: Check SemVer compatibility
@@ -135,6 +135,16 @@ jobs:
           -OutBuildOrderFile '$(Build.ArtifactStagingDirectory)/release-order.json'
           $(AdditionalPackageParams)
 
+  - ${{ if eq(variables['System.TeamProject'], 'internal') }}:
+    - task: PowerShell@2
+      displayName: Generate Cargo SBOMs
+      inputs:
+        pwsh: true
+        filePath: $(Build.SourcesDirectory)/eng/scripts/Generate-CargoSbom.ps1
+        ${{ if or(eq('auto', parameters.ServiceDirectory), endsWith(variables['Build.DefinitionName'], 'weekly')) }}:
+          arguments: -Workspace
+        ${{ else }}:
+          arguments: -PackageNames '$(PackageNames)'
 
   - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
     parameters:
