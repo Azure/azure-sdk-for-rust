@@ -216,12 +216,22 @@ impl ResponseBuilder {
         self
     }
 
-    pub fn with_json_body(self, body: &serde_json::Value) -> Self {
-        self.with_value_body(body, false)
+    /// Sets the body from a JSON value as UTF-8 text, verbatim.
+    ///
+    /// For bodies the emulator synthesizes itself — error envelopes,
+    /// control-plane payloads, transaction envelopes. These are not stored
+    /// documents, so the number-spelling normalization
+    /// [`with_document_body`](Self::with_document_body) applies does not belong
+    /// here: it would rewrite values the emulator authored (an RU charge of
+    /// `3.0` into `3`) for no fidelity gain.
+    pub fn with_json_body(mut self, body: &serde_json::Value) -> Self {
+        self.body = Self::to_text(body);
+        self
     }
 
-    /// Sets the body from a JSON value, encoded as Cosmos binary JSON when
-    /// `binary` is set (the client negotiated it) or UTF-8 text JSON otherwise.
+    /// Sets the body from a **stored document**, encoded as Cosmos binary JSON
+    /// when `binary` is set (the client negotiated it) or UTF-8 text JSON
+    /// otherwise.
     ///
     /// The binary form begins with the `0x80` preamble, which the SDK
     /// auto-detects from the first byte, so the `Content-Type` stays
@@ -229,27 +239,30 @@ impl ResponseBuilder {
     ///
     /// The text branch normalizes integral floats because the service spells a
     /// stored `3.0` as `3` in text but sends a `Double` in binary (measured live
-    /// by `binary_number_fidelity` in `azure_data_cosmos_perf`). Without this
-    /// the emulator, which re-serializes the caller's value verbatim, would show
-    /// a text/binary disagreement the service does not have — masking the real
-    /// one these tests exist to catch. The binary branch stays unnormalized so
-    /// the `NUMBER_DOUBLE` marker survives, which is the case under test.
+    /// against a real account). Without this the emulator, which re-serializes
+    /// the caller's value verbatim, would show a text/binary disagreement the
+    /// service does not have — masking the real one these tests exist to catch.
+    /// The binary branch stays unnormalized so the `NUMBER_DOUBLE` marker
+    /// survives, which is the case under test.
     ///
     /// Known gap: the service folds `-0.0` to `0` at storage; `normalize_integral_floats`
     /// preserves the sign to keep local round-trips byte-exact, so both branches
     /// agree here on a spelling the service would not produce.
-    pub fn with_value_body(mut self, body: &serde_json::Value, binary: bool) -> Self {
+    pub fn with_document_body(mut self, body: &serde_json::Value, binary: bool) -> Self {
         self.body = if binary {
             crate::binary_json::encode(body)
         } else {
             let mut normalized = body.clone();
             crate::binary_json::normalize_integral_floats(&mut normalized);
-            // The emulator owns these `Value`s, so a serialization failure is a
-            // bug in the emulator — fail loudly rather than emit an empty body
-            // that would mask the defect downstream.
-            serde_json::to_vec(&normalized).expect("emulator response body must serialize to JSON")
+            Self::to_text(&normalized)
         };
         self
+    }
+
+    /// Serializes a body the emulator owns. A failure here is an emulator bug,
+    /// so fail loudly rather than emit an empty body that would mask it.
+    fn to_text(body: &serde_json::Value) -> Vec<u8> {
+        serde_json::to_vec(body).expect("emulator response body must serialize to JSON")
     }
 
     pub fn build(self) -> AsyncRawResponse {
@@ -288,7 +301,7 @@ pub(crate) fn success_response_with_format(
     ResponseBuilder::new(status, start)
         .with_request_charge(charge)
         .with_session_token(session_token)
-        .with_value_body(body, binary)
+        .with_document_body(body, binary)
 }
 
 /// The serialization format the emulator emits for a feed response body.
