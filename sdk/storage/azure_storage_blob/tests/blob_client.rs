@@ -28,7 +28,7 @@ use azure_storage_blob::{
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
-use azure_storage_sas::SasBuilder;
+use azure_storage_sas::SasTokenBuilder;
 use bytes::{BufMut, BytesMut};
 use common::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
@@ -267,7 +267,7 @@ async fn test_start_copy_from_url_across_accounts(ctx: TestContext) -> Result<()
         .flatten()
         .rfind(|segment| !segment.is_empty())
         .expect("source container URL should contain a container name");
-    let sas = SasBuilder::new(
+    let sas = SasTokenBuilder::new(
         source_account_name.as_str(),
         &user_delegation_key,
         now + Duration::from_secs(60 * 60),
@@ -276,7 +276,7 @@ async fn test_start_copy_from_url_across_accounts(ctx: TestContext) -> Result<()
     .read()
     .build();
     let mut source_url = source_blob_client.url().clone();
-    source_url.set_query(Some(&sas));
+    source_url.set_query(Some(&*sas));
 
     // Act
     let response = destination_blob_client

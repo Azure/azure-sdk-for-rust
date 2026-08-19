@@ -32,4 +32,17 @@ impl DirectoryResource {
     pub(crate) fn canonicalized_resource(&self, account: &str) -> String {
         format!("/blob/{}/{}/{}", account, self.container, self.directory)
     }
+
+    /// Returns path segments for URL construction.
+    ///
+    /// The directory string may contain `/`-separated sub-segments which are
+    /// returned individually so each segment is percent-encoded on its own.
+    pub(crate) fn url_path_segments(&self) -> Vec<&str> {
+        let mut segs = vec![self.container.as_str()];
+        let trimmed = self.directory.trim_matches('/');
+        if !trimmed.is_empty() {
+            segs.extend(trimmed.split('/'));
+        }
+        segs
+    }
 }

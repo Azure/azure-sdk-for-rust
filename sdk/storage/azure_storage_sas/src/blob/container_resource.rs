@@ -18,13 +18,17 @@ impl ContainerResource {
     pub(crate) fn canonicalized_resource(&self, account: &str) -> String {
         format!("/blob/{}/{}", account, self.container)
     }
+
+    pub(crate) fn url_path_segments(&self) -> [&str; 1] {
+        [&self.container]
+    }
 }
 
 /// Permissions for a container or directory SAS.
 ///
 /// Serialization order: `racwdxyltmeopi`. Flags are set through the permission
-/// setters on [`SasBuilder<ContainerState>`](crate::SasBuilder) and
-/// [`SasBuilder<DirectoryState>`](crate::SasBuilder).
+/// setters on [`SasTokenBuilder<ContainerState>`](crate::SasTokenBuilder) and
+/// [`SasTokenBuilder<DirectoryState>`](crate::SasTokenBuilder).
 #[derive(Clone, Copy, Default)]
 pub(crate) struct ContainerPermissions {
     pub(crate) read: bool,

@@ -8,11 +8,11 @@
 //! ## Blob user delegation SAS
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, UserDelegationKey};
+//! use azure_storage_sas::{SasTokenBuilder, SasToken, UserDelegationKey};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
-//! let token = SasBuilder::new("myaccount", &udk,
+//! let token: SasToken = SasTokenBuilder::new("myaccount", &udk,
 //!         OffsetDateTime::now_utc() + time::Duration::hours(1))?
 //!     .blob("images", "photo.jpg")
 //!     .read()
@@ -25,11 +25,11 @@
 //! ## Container SAS
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, UserDelegationKey};
+//! use azure_storage_sas::{SasTokenBuilder, SasToken, UserDelegationKey};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
-//! let token = SasBuilder::new("myaccount", &udk,
+//! let token: SasToken = SasTokenBuilder::new("myaccount", &udk,
 //!         OffsetDateTime::now_utc() + time::Duration::hours(4))?
 //!     .container("logs")
 //!     .read()
@@ -55,7 +55,7 @@ pub(crate) use container_resource::ContainerPermissions;
 pub(crate) use container_resource::ContainerResource;
 pub(crate) use directory_resource::DirectoryResource;
 
-use crate::builder::SasBuilder;
+use crate::builder::{SasTokenBuilder, SasUrlBuilder};
 use crate::common::sealed::Sealed;
 use crate::common::{CommonFields, SasResource, ValidatedKey};
 use crate::SAS_VERSION;
@@ -197,7 +197,7 @@ mod options_access {
 // The `BlobOptions` bound grants mutable access to each blob state's
 // `BlobSasOptions` without exposing it on the public `BlobServiceState` trait.
 #[allow(private_bounds)]
-impl<S: BlobServiceState + BlobOptions> SasBuilder<'_, S> {
+impl<S: BlobServiceState + BlobOptions> SasTokenBuilder<'_, S> {
     /// Sets the encryption scope for the SAS.
     pub fn encryption_scope(mut self, scope: impl Into<String>) -> Self {
         self.state.options_mut().encryption_scope = Some(scope.into());
@@ -291,7 +291,7 @@ impl<S: BlobServiceState + BlobOptions> SasBuilder<'_, S> {
 }
 
 /// Permission and target setters for a blob SAS, gated on [`BlobState`].
-impl SasBuilder<'_, BlobState> {
+impl SasTokenBuilder<'_, BlobState> {
     /// Enables read permission.
     pub fn read(mut self) -> Self {
         self.state.permissions.read = true;
@@ -420,7 +420,7 @@ use permissions_access::ContainerPermsAccess;
 /// container permission set without exposing it publicly. `BlobState` does not
 /// implement the bound, so its own `read`/`write`/... setters do not conflict.
 #[allow(private_bounds)]
-impl<S: ContainerPermsAccess> SasBuilder<'_, S> {
+impl<S: ContainerPermsAccess> SasTokenBuilder<'_, S> {
     /// Enables read permission.
     pub fn read(mut self) -> Self {
         self.state.permissions_mut().read = true;
@@ -506,6 +506,181 @@ impl<S: ContainerPermsAccess> SasBuilder<'_, S> {
     }
 }
 
+#[allow(private_bounds)]
+impl<S: BlobServiceState + BlobOptions> SasUrlBuilder<'_, S> {
+    /// Sets the encryption scope for the SAS.
+    pub fn encryption_scope(self, scope: impl Into<String>) -> Self {
+        self.map(|b| b.encryption_scope(scope))
+    }
+    /// Sets the `Cache-Control` response header override.
+    pub fn cache_control(self, value: impl Into<String>) -> Self {
+        self.map(|b| b.cache_control(value))
+    }
+    /// Sets the `Content-Disposition` response header override.
+    pub fn content_disposition(self, value: impl Into<String>) -> Self {
+        self.map(|b| b.content_disposition(value))
+    }
+    /// Sets the `Content-Encoding` response header override.
+    pub fn content_encoding(self, value: impl Into<String>) -> Self {
+        self.map(|b| b.content_encoding(value))
+    }
+    /// Sets the `Content-Language` response header override.
+    pub fn content_language(self, value: impl Into<String>) -> Self {
+        self.map(|b| b.content_language(value))
+    }
+    /// Sets the `Content-Type` response header override.
+    pub fn content_type(self, value: impl Into<String>) -> Self {
+        self.map(|b| b.content_type(value))
+    }
+    /// Sets the authorized AAD object ID (`saoid`).
+    pub fn authorized_object_id(self, value: impl Into<String>) -> Self {
+        self.map(|b| b.authorized_object_id(value))
+    }
+    /// Sets the unauthorized AAD object ID (`suoid`).
+    pub fn unauthorized_object_id(self, value: impl Into<String>) -> Self {
+        self.map(|b| b.unauthorized_object_id(value))
+    }
+    /// Sets the correlation ID (`scid`).
+    pub fn correlation_id(self, value: impl Into<String>) -> Self {
+        self.map(|b| b.correlation_id(value))
+    }
+    /// Adds a signed request header constraint (`srh`).
+    pub fn signed_request_header(self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.map(|b| b.signed_request_header(key, value))
+    }
+    /// Adds a signed request query parameter constraint (`srq`).
+    pub fn signed_request_query_parameter(
+        self,
+        key: impl Into<String>,
+        value: impl Into<String>,
+    ) -> Self {
+        self.map(|b| b.signed_request_query_parameter(key, value))
+    }
+}
+
+impl SasUrlBuilder<'_, BlobState> {
+    /// Enables read permission.
+    pub fn read(self) -> Self {
+        self.map(|b| b.read())
+    }
+    /// Enables add permission.
+    pub fn add(self) -> Self {
+        self.map(|b| b.add())
+    }
+    /// Enables create permission.
+    pub fn create(self) -> Self {
+        self.map(|b| b.create())
+    }
+    /// Enables write permission.
+    pub fn write(self) -> Self {
+        self.map(|b| b.write())
+    }
+    /// Enables delete permission.
+    pub fn delete(self) -> Self {
+        self.map(|b| b.delete())
+    }
+    /// Enables delete version permission.
+    pub fn delete_version(self) -> Self {
+        self.map(|b| b.delete_version())
+    }
+    /// Enables permanent delete permission.
+    pub fn permanent_delete(self) -> Self {
+        self.map(|b| b.permanent_delete())
+    }
+    /// Enables tags permission.
+    pub fn tags(self) -> Self {
+        self.map(|b| b.tags())
+    }
+    /// Enables move blob permission.
+    pub fn move_blob(self) -> Self {
+        self.map(|b| b.move_blob())
+    }
+    /// Enables execute permission.
+    pub fn execute(self) -> Self {
+        self.map(|b| b.execute())
+    }
+    /// Enables ownership permission.
+    pub fn ownership(self) -> Self {
+        self.map(|b| b.ownership())
+    }
+    /// Enables permissions permission.
+    pub fn permissions(self) -> Self {
+        self.map(|b| b.permissions())
+    }
+    /// Enables set immutability policy permission.
+    pub fn set_immutability_policy(self) -> Self {
+        self.map(|b| b.set_immutability_policy())
+    }
+    /// Targets a specific snapshot of the blob (`sr=bs`).
+    pub fn snapshot(self, snapshot: impl Into<String>) -> Self {
+        self.map(|b| b.snapshot(snapshot))
+    }
+    /// Targets a specific version of the blob (`sr=bv`).
+    pub fn version(self, version_id: impl Into<String>) -> Self {
+        self.map(|b| b.version(version_id))
+    }
+}
+
+#[allow(private_bounds)]
+impl<S: ContainerPermsAccess> SasUrlBuilder<'_, S> {
+    /// Enables read permission.
+    pub fn read(self) -> Self {
+        self.map(|b| b.read())
+    }
+    /// Enables add permission.
+    pub fn add(self) -> Self {
+        self.map(|b| b.add())
+    }
+    /// Enables create permission.
+    pub fn create(self) -> Self {
+        self.map(|b| b.create())
+    }
+    /// Enables write permission.
+    pub fn write(self) -> Self {
+        self.map(|b| b.write())
+    }
+    /// Enables delete permission.
+    pub fn delete(self) -> Self {
+        self.map(|b| b.delete())
+    }
+    /// Enables delete version permission.
+    pub fn delete_version(self) -> Self {
+        self.map(|b| b.delete_version())
+    }
+    /// Enables permanent delete permission.
+    pub fn permanent_delete(self) -> Self {
+        self.map(|b| b.permanent_delete())
+    }
+    /// Enables list permission.
+    pub fn list(self) -> Self {
+        self.map(|b| b.list())
+    }
+    /// Enables tags permission.
+    pub fn tags(self) -> Self {
+        self.map(|b| b.tags())
+    }
+    /// Enables move blob permission.
+    pub fn move_blob(self) -> Self {
+        self.map(|b| b.move_blob())
+    }
+    /// Enables execute permission.
+    pub fn execute(self) -> Self {
+        self.map(|b| b.execute())
+    }
+    /// Enables ownership permission.
+    pub fn ownership(self) -> Self {
+        self.map(|b| b.ownership())
+    }
+    /// Enables permissions permission.
+    pub fn permissions(self) -> Self {
+        self.map(|b| b.permissions())
+    }
+    /// Enables set immutability policy permission.
+    pub fn set_immutability_policy(self) -> Self {
+        self.map(|b| b.set_immutability_policy())
+    }
+}
+
 impl SasResource for BlobState {
     fn string_to_sign(&self, common: &CommonFields, key: &ValidatedKey<'_>) -> String {
         let sp = self.permissions.to_sas_str();
@@ -542,6 +717,14 @@ impl SasResource for BlobState {
             signature,
         )
     }
+
+    fn url_path_segments(&self) -> Vec<&str> {
+        self.resource.url_path_segments().to_vec()
+    }
+
+    fn default_endpoint(account: &str) -> url::Url {
+        crate::url::blob_endpoint(account)
+    }
 }
 
 impl SasResource for ContainerState {
@@ -559,6 +742,14 @@ impl SasResource for ContainerState {
     ) -> String {
         let sp = self.permissions.to_sas_str();
         blob_udk_query_parameters(&sp, common, &self.options, key, "c", None, None, signature)
+    }
+
+    fn url_path_segments(&self) -> Vec<&str> {
+        self.resource.url_path_segments().to_vec()
+    }
+
+    fn default_endpoint(account: &str) -> url::Url {
+        crate::url::blob_endpoint(account)
     }
 }
 
@@ -587,6 +778,14 @@ impl SasResource for DirectoryState {
             Some(depth),
             signature,
         )
+    }
+
+    fn url_path_segments(&self) -> Vec<&str> {
+        self.resource.url_path_segments()
+    }
+
+    fn default_endpoint(account: &str) -> url::Url {
+        crate::url::blob_endpoint(account)
     }
 }
 
@@ -859,5 +1058,17 @@ mod tests {
         let lines: Vec<&str> = sts.split('\n').collect();
         assert_eq!(lines[18], "bs"); // sr
         assert_eq!(lines[19], "2025-02-20T08:30:00.0000000Z"); // snapshot in slot
+    }
+
+    #[test]
+    fn container_string_to_sign_has_28_fields() {
+        let udk = test_udk();
+        let key = ValidatedKey::from_key(&udk).unwrap();
+        let common = test_common(datetime!(2025-06-01 12:00:00 UTC));
+        let options = BlobSasOptions::default();
+        let sts = blob_udk_string_to_sign("rl", &common, &options, &key, "c", "/blob/acct/c", "");
+        let lines: Vec<&str> = sts.split('\n').collect();
+        assert_eq!(lines.len(), 28);
+        assert_eq!(lines[18], "c");
     }
 }
