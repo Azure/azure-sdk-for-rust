@@ -361,7 +361,7 @@ impl BlobContainerClient {
     /// * `create_session_configuration` - The configuration used to create the session.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlobContainerClient.createSession")]
-    pub async fn create_session(
+    pub(crate) async fn create_session(
         &self,
         create_session_configuration: RequestContent<CreateSessionConfiguration, XmlFormat>,
         options: Option<BlobContainerClientCreateSessionOptions<'_>>,

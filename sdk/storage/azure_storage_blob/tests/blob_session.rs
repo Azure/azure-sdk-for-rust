@@ -18,8 +18,7 @@ use azure_core::http::{
 };
 use azure_core_test::{recorded, BodyRegexSanitizer, Recording, TestContext};
 use azure_storage_blob::{
-    models::{AuthenticationType, BlockListType, CreateSessionConfiguration},
-    BlobServiceClient, BlobServiceClientOptions, SessionMode, SessionOptions,
+    models::BlockListType, BlobServiceClient, BlobServiceClientOptions, SessionMode, SessionOptions,
 };
 use common::{ClientOptionsExt, StorageAccount};
 use std::{
@@ -132,31 +131,6 @@ async fn session_service_client(
         session_options,
         Some(options),
     )
-}
-
-#[recorded::test]
-async fn create_session_returns_credentials(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    let recording = ctx.recording();
-    redact_session_credentials(recording).await?;
-    let container_client =
-        common::get_container_client(recording, true, StorageAccount::Standard, None).await?;
-
-    let config = CreateSessionConfiguration {
-        authentication_type: Some(AuthenticationType::Hmac),
-    };
-    let session = container_client
-        .create_session(config.try_into()?, None)
-        .await?
-        .into_model()?;
-
-    assert_eq!(session.authentication_type, Some(AuthenticationType::Hmac));
-    let credentials = session.credentials.expect("session credentials");
-    assert!(credentials.session_token.is_some());
-    assert!(credentials.session_key.is_some());
-    assert!(session.expiration.is_some());
-
-    container_client.delete(None).await?;
-    Ok(())
 }
 
 #[recorded::test]

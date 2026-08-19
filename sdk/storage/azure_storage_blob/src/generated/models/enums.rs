@@ -101,7 +101,7 @@ pub enum ArchiveStatus {
 
 /// The type of authentication required to create the session. The only type currently supported is HMAC.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum AuthenticationType {
+pub(crate) enum AuthenticationType {
     /// HMAC authentication.
     Hmac,
 

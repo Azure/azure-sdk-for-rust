@@ -999,12 +999,12 @@ pub struct BlobContainerClientCreateOptions<'a> {
 
 /// Options to be passed to `BlobContainerClient::create_session()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientCreateSessionOptions<'a> {
+pub(crate) struct BlobContainerClientCreateSessionOptions<'a> {
     /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
+    pub(crate) method_options: ClientMethodOptions<'a>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
-    pub timeout: Option<i32>,
+    pub(crate) timeout: Option<i32>,
 }
 
 /// Options to be passed to `BlobContainerClient::delete()`

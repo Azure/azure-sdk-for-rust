@@ -758,24 +758,24 @@ pub struct CorsRule {
 /// The configuration used to create a session.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "CreateSessionRequest")]
-pub struct CreateSessionConfiguration {
+pub(crate) struct CreateSessionConfiguration {
     /// The type of authentication required to create the session. The only type currently supported is HMAC.
     #[serde(rename = "AuthenticationType", skip_serializing_if = "Option::is_none")]
-    pub authentication_type: Option<AuthenticationType>,
+    pub(crate) authentication_type: Option<AuthenticationType>,
 }
 
 /// The response of the Create Session API.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "CreateSessionResult")]
-pub struct CreateSessionResponse {
+pub(crate) struct CreateSessionResponse {
     /// The type of authentication required to create the session. The only type currently supported is HMAC.
     #[serde(rename = "AuthenticationType", skip_serializing_if = "Option::is_none")]
-    pub authentication_type: Option<AuthenticationType>,
+    pub(crate) authentication_type: Option<AuthenticationType>,
 
     /// The credentials used to authorize subsequent requests in the session.
     #[serde(rename = "Credentials", skip_serializing_if = "Option::is_none")]
-    pub credentials: Option<SessionCredentials>,
+    pub(crate) credentials: Option<SessionCredentials>,
 
     /// The time when the session will expire.
     #[serde(
@@ -784,11 +784,11 @@ pub struct CreateSessionResponse {
         skip_serializing_if = "Option::is_none",
         with = "azure_core::time::rfc7231::option"
     )]
-    pub expiration: Option<OffsetDateTime>,
+    pub(crate) expiration: Option<OffsetDateTime>,
 
     /// A unique identifier for the created session.
     #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub(crate) id: Option<String>,
 }
 
 /// The error response.
@@ -1151,15 +1151,15 @@ pub struct RetentionPolicy {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Credentials")]
-pub struct SessionCredentials {
+pub(crate) struct SessionCredentials {
     /// Only returned when AuthenticationType is HMAC. A symmetric encryption key used to sign requests in the session using the
     /// Shared Key protocol.
     #[serde(rename = "SessionKey", skip_serializing_if = "Option::is_none")]
-    pub session_key: Option<String>,
+    pub(crate) session_key: Option<String>,
 
     /// An opaque token used to authorize subsequent requests in the session. Must be treated as a security credential.
     #[serde(rename = "SessionToken", skip_serializing_if = "Option::is_none")]
-    pub session_token: Option<String>,
+    pub(crate) session_token: Option<String>,
 }
 
 /// A signed identifier.
