@@ -231,6 +231,19 @@ The Rust deserializer **must** treat the RNTBD response metadata-token stream as
 - **Unknown token type IDs MUST be silently skipped** (consume `length` bytes and continue) — the deserializer must NOT panic, return an error, or fail the response, and must NOT log per-token (silent skip is the contract). The proxy is free to add new metadata tokens at any time and the driver must remain forward-compatible across proxy upgrades that ship before the corresponding Rust release. This silent-tolerance behavior is the *implementation* of the `IgnoreUnknownRntbdTokens` capability bit advertised over the `x-ms-cosmos-sdk-supportedcapabilities` header (see "SDK-supported-capabilities advertisement" below) — the proxy/backend assumes the SDK will not surface or warn on unknown tokens, so per-token logging is unnecessary noise.
 - **Inverse contract on the request side**: the request serializer drops headers that appear in `thinClientProxyExcludedSet` (see §"RNTBD Request Wire Format" Notes column). That set enumerates headers the proxy does not understand on the inbound RNTBD frame; emitting them would be either ignored or rejected.
 
+##### Name-based and RID-based resource identity
+
+Authorization and proxy routing use separate representations of the target resource. The authorization signing link may therefore differ from the full unencoded request path:
+
+- **Name-based requests** parse the full request path and emit `DatabaseName`, `CollectionName`, and, for point document operations, `DocumentName`. The names are read from the request path rather than the signing link because the signing link is not a resource path at all for a RID-addressed resource — it is a bare RID. (For name-addressed shapes the two sources happen to yield identical names, since a feed operation's signing link is its parent path and the trailing `docs` segment carries no id.)
+- **RID-based requests** follow the Java RNTBD contract: omit `DatabaseName`, `CollectionName`, and `DocumentName`, then emit `CollectionRid` and the decoded binary `ResourceId`.
+- RID-addressed document feed operations (`Create`, `Upsert`, `Query`, `SqlQuery`, `QueryPlan`, `ReadFeed`, and `Batch`) target the collection itself, so the resolved collection RID is the correct `ResourceId`.
+- RID-addressed point `Read`, `Replace`, and `Delete` emit the collection RID as `CollectionRid` and the leaf document RID as `ResourceId`. The driver validates that the leaf is a document RID whose encoded container prefix matches the addressed container before routing it.
+
+The full RID request path remains raw (for example `/dbs/{db-rid}/colls/{collection-rid}/docs`) while the master-key signature for a feed request is computed over the bare lowercased collection RID. The Gateway 2.0 wrapper must preserve both values rather than reconstructing one from the other.
+
+> **Deviation from the Java reference.** For name-addressed requests this driver emits `ResourceId` (the decoded collection RID) *in addition to* the three name tokens, because it always has the resolved collection RID available. Java sets `ResourceId` from `request.getResourceId()`, which on a name-based request is typically empty client-side. The proxy accepts both shapes — all name-addressed Gateway 2.0 traffic works today — so this is recorded rather than changed.
+
 ##### Continuation-token format (request and response)
 
 Continuation tokens are **opaque server-issued strings** in both directions; the SDK never parses, validates, or rewrites them. The wire format is a length-prefixed UTF-8 string token:
@@ -312,11 +325,11 @@ Only `ResourceType::Document` is eligible for gateway 2.0:
 | Operation | Supported | Notes |
 | --- | --- | --- |
 | Create | Yes | |
-| Read | Yes | |
-| Replace | Yes | |
+| Read | Yes | RID-addressed reads emit the leaf document RID as `ResourceId`. |
+| Replace | Yes | RID-addressed replaces emit the leaf document RID as `ResourceId`. |
 | Upsert | Yes | |
-| Delete | Yes | |
-| Patch | Yes | |
+| Delete | Yes | RID-addressed deletes emit the leaf document RID as `ResourceId`. |
+| Patch | Yes | Decomposes into an internal Read + Replace; both sub-operations preserve the leaf document RID when the item is RID-addressed. |
 | Query | Yes | |
 | QueryPlan | Yes | |
 | ReadFeed | Yes | LatestVersion change feed only; excludes AllVersionsAndDeletes |
@@ -565,6 +578,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Header injection | Yes | | | Point vs feed EPK headers, proxy type headers, range-header un-padded form |
 | HPK + Gateway 2.0: full vs partial PK | Yes | | Yes | Hierarchical container (2- and 3-component PK paths). **Full PK** (all components specified) on a point op → emits `x-ms-effective-partition-key` carrying the single EPK from `EffectivePartitionKey::compute()`. **Partial PK** (1- or 2-component prefix) on a feed / cross-partition / delete-by-PK op → emits `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` carrying the EPK range from `EffectivePartitionKey::compute_range()`. Asserted at unit level (header presence + exact wire form, range bounds for each prefix length) and E2E (round-trip against a live HPK container). |
 | Account-name RNTBD token | Yes | | | `GlobalDatabaseAccountName` (`0x00CE`, `String`) present in the RNTBD metadata stream of every Gateway 2.0 request (point, feed, batch, bulk, change feed). Value matches the host label of the account endpoint URL. |
+| RID-addressed operations | Yes | | Yes | Name tokens are omitted. Feed requests use the collection RID as `ResourceId`; point read/replace/delete requests use the leaf document RID. Live coverage exercises both shapes while asserting `TransportKind::GatewayV2`. |
 | SDK-supported-capabilities header | Yes | | | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `IgnoreUnknownRntbdTokens` (`"8"`), **not** `"0"`. |
 | Consistency reconciliation: token + header encoding | Yes | | | RNTBD token `0x00FE` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport. |
 | Consistency reconciliation: dual-header rejection | Yes | | | SDK never emits both `x-ms-consistency-level` AND `x-ms-cosmos-read-consistency-strategy` on V1; never emits both `ConsistencyLevel` and `ReadConsistencyStrategy` RNTBD tokens on V2. Verified across all 16 (CL × RCS, request-level × client-level) combinations. |

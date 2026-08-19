@@ -1419,7 +1419,6 @@ fn resolve_endpoint(
             operation.resource_type(),
             operation.operation_type(),
             operation.request_headers().full_fidelity_feed,
-            operation.resource_reference().is_rid_addressed(),
         );
     let transport_mode = if use_gateway_v2 {
         TransportMode::GatewayV2
@@ -1449,7 +1448,6 @@ fn resolve_endpoint(
                     operation.resource_type(),
                     operation.operation_type(),
                     operation.request_headers().full_fidelity_feed,
-                    operation.resource_reference().is_rid_addressed(),
                 );
             let ep_url = ep.selected_url(ep_use_gw_v2).clone();
             let ep_endpoint_key = if ep_use_gw_v2 {
@@ -1915,6 +1913,12 @@ fn build_transport_request(
         endpoint: ctx.routing.endpoint.clone(),
         transport_mode: ctx.routing.transport_mode,
         operation_type: operation.operation_type(),
+        is_rid_addressed: operation.resource_reference().is_rid_addressed(),
+        is_leaf_addressed: operation.addresses_leaf_resource(),
+        resource_rid: operation
+            .resource_reference()
+            .resource_rid()
+            .map(str::to_owned),
         effective_partition_key: effective_partition_key_for_request(operation)?,
         effective_consistency: ctx.effective_consistency,
         read_consistency_strategy: ctx.read_consistency_strategy,
@@ -5691,13 +5695,7 @@ mod tests {
     }
 
     #[test]
-    fn resolve_endpoint_falls_back_to_gateway_for_rid_addressed_operations() {
-        // Gateway 2.0 derives its DatabaseName/CollectionName routing tokens by
-        // parsing the signing link, but a RID-addressed feed signs over a bare
-        // lowercased RID with no `dbs`/`colls` segments. Routing such an
-        // operation to Gateway 2.0 would fail the wrap locally with
-        // CLIENT_BAD_REQUEST before the request is ever sent, so it must fall
-        // back to standard Gateway (which routes raw RID paths natively).
+    fn resolve_endpoint_routes_only_supported_rid_operations_to_gateway_v2() {
         let rid_container = ContainerReference::new_by_rid(
             test_account(),
             "testdb_rid",
@@ -5705,12 +5703,15 @@ mod tests {
             "testcontainer_rid",
             &test_container_props(),
         );
-        let operation = CosmosOperation::read_item(ItemReference::from_name(
+        let feed_operation =
+            CosmosOperation::read_all_items(rid_container.clone(), PartitionKey::from("pk1"));
+        let point_operation = CosmosOperation::read_item(ItemReference::from_rid(
             &rid_container,
             PartitionKey::from("pk1"),
-            "doc1",
+            "Lx1BALxJyZ8BAAAAAAAAAA==",
         ));
-        assert!(operation.resource_reference().is_rid_addressed());
+        assert!(feed_operation.resource_reference().is_rid_addressed());
+        assert!(point_operation.resource_reference().is_rid_addressed());
 
         let endpoint = CosmosEndpoint::regional_with_gateway_v2(
             "westus2".into(),
@@ -5736,18 +5737,32 @@ mod tests {
             2,
         );
 
-        let routing = super::resolve_endpoint(
-            &operation,
+        let feed_routing = super::resolve_endpoint(
+            &feed_operation,
             &retry_state,
             &location,
             true,
             true,
             Duration::from_secs(60),
         );
-        assert_eq!(routing.transport_mode, TransportMode::Gateway);
+        assert_eq!(feed_routing.transport_mode, TransportMode::GatewayV2);
         assert_eq!(
-            routing.selected_url.as_str(),
-            "https://test-westus2.documents.azure.com/"
+            feed_routing.selected_url.as_str(),
+            "https://test-westus2-thin.documents.azure.com:444/"
+        );
+
+        let point_routing = super::resolve_endpoint(
+            &point_operation,
+            &retry_state,
+            &location,
+            true,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(point_routing.transport_mode, TransportMode::GatewayV2);
+        assert_eq!(
+            point_routing.selected_url.as_str(),
+            "https://test-westus2-thin.documents.azure.com:444/"
         );
     }
 

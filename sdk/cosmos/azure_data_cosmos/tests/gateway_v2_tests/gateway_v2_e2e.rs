@@ -8,25 +8,29 @@ use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::diagnostics::{DiagnosticsContext, TransportKind};
 use azure_data_cosmos::models::{
     CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, ContainerProperties,
-    IndexingPolicy, PartitionKeyDefinition, PartitionKeyVersion, ThroughputProperties,
+    IndexingPolicy, PartitionKeyDefinition, PartitionKeyVersion, PatchInstructions, PatchOperation,
+    ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions, ItemWriteOptions,
-    MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions, Precondition,
-    QueryOptions, ReadConsistencyStrategy, Region,
+    ChangeFeedStartFrom, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
+    ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions,
+    Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
+    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query, ResourceId,
     RoutingStrategy, SubStatusCode, TransactionalBatch,
 };
 use azure_data_cosmos_driver::{
-    models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
+    models::{
+        AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference,
+        PartitionKey as DriverPartitionKey,
+    },
     options::OperationOptions,
     CosmosDriverRuntime, DriverOptions,
 };
 use futures::{FutureExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::{num::NonZeroU32, panic::AssertUnwindSafe};
+use std::{borrow::Cow, num::NonZeroU32, panic::AssertUnwindSafe};
 
 fn read_env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.trim().is_empty())
@@ -645,6 +649,217 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
 
     drop_database(&client, &db_name).await;
     Ok(())
+}
+
+/// Verifies RID-addressed container feed operations use Java-compatible
+/// Gateway 2.0 metadata instead of falling back to Gateway V1.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_rid_addressed_feed_operations() -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key).await?;
+    let (db_name, name_container) = provision_database_and_container(&client).await?;
+
+    let result = AssertUnwindSafe(async {
+        let db_rid = client
+            .database_client(&db_name)
+            .read(None)
+            .await?
+            .into_model()?
+            .system_properties
+            .resource_id
+            .expect("database read must return a RID");
+        let container_properties = name_container.read(None).await?.into_model()?;
+        let container_rid = container_properties
+            .system_properties
+            .resource_id
+            .clone()
+            .expect("container read must return a RID");
+        let rid_container = client
+            .database_client(ResourceId::from(db_rid))
+            .container_client(ResourceId::from(container_rid.clone()))
+            .await?;
+
+        let driver_account = DriverAccountReference::with_master_key(
+            normalize_gateway_v2_endpoint(&endpoint).parse::<url::Url>()?,
+            key.clone(),
+        );
+        let driver_runtime = CosmosDriverRuntime::builder().build().await?;
+        let driver = driver_runtime
+            .create_driver(DriverOptions::builder(driver_account).build())
+            .await?;
+        let driver_container = driver.resolve_container_by_rid(&container_rid).await?;
+
+        let query_plan = driver
+            .execute_singleton_operation(
+                CosmosOperation::query_plan(
+                    driver_container.clone(),
+                    Cow::Borrowed("OrderBy,MultipleOrderBy"),
+                )
+                .with_body(
+                    br#"{"query":"SELECT * FROM c ORDER BY c.sortValue","parameters":[]}"#.to_vec(),
+                ),
+                OperationOptions::default(),
+            )
+            .await?;
+        assert_transport_kind(&query_plan.diagnostics(), TransportKind::GatewayV2);
+
+        let pk = format!("rid-pk-{}", azure_core::Uuid::new_v4());
+        let read_feed = driver
+            .execute_singleton_operation(
+                CosmosOperation::read_all_items(
+                    driver_container,
+                    DriverPartitionKey::from(pk.clone()),
+                ),
+                OperationOptions::default(),
+            )
+            .await?;
+        assert_transport_kind(&read_feed.diagnostics(), TransportKind::GatewayV2);
+
+        let id = format!("rid-item-{}", azure_core::Uuid::new_v4());
+        let mut item = GwV2TestItem {
+            id: id.clone(),
+            pk: pk.clone(),
+            value: 1,
+            label: "created-by-rid".into(),
+        };
+
+        let create = rid_container.create_item(&pk, &id, &item, None).await?;
+        assert_transport_kind(&create.diagnostics(), TransportKind::GatewayV2);
+
+        item.value = 2;
+        item.label = "upserted-by-rid".into();
+        let upsert = rid_container.upsert_item(&pk, &id, &item, None).await?;
+        assert_transport_kind(&upsert.diagnostics(), TransportKind::GatewayV2);
+
+        let item_rid = name_container
+            .read_item(&pk, &id, None)
+            .await?
+            .into_model::<serde_json::Value>()?
+            .get("_rid")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned)
+            .expect("item read must return a RID");
+        let rid_read = rid_container
+            .read_item(&pk, ResourceId::from(item_rid.clone()), None)
+            .await?;
+        assert_transport_kind(&rid_read.diagnostics(), TransportKind::GatewayV2);
+        assert_eq!(rid_read.into_model::<GwV2TestItem>()?, item);
+
+        item.value = 4;
+        item.label = "replaced-by-rid".into();
+        let rid_replace = rid_container
+            .replace_item(&pk, ResourceId::from(item_rid.clone()), &item, None)
+            .await?;
+        assert_transport_kind(&rid_replace.diagnostics(), TransportKind::GatewayV2);
+
+        // Read back through the RID path: a wrong leaf `ResourceId` token would
+        // route the replace to a different document, which a transport-kind
+        // assertion alone cannot catch.
+        let reread = rid_container
+            .read_item(&pk, ResourceId::from(item_rid.clone()), None)
+            .await?;
+        assert_transport_kind(&reread.diagnostics(), TransportKind::GatewayV2);
+        assert_eq!(reread.into_model::<GwV2TestItem>()?, item);
+
+        // PATCH decomposes into an internal Read + Replace; both sub-operations
+        // must keep the leaf RID and stay on Gateway 2.0.
+        item.value = 5;
+        let rid_patch = rid_container
+            .patch_item(
+                &pk,
+                ResourceId::from(item_rid.clone()),
+                PatchInstructions::from(vec![PatchOperation::set("/value", serde_json::json!(5))]),
+                None,
+            )
+            .await?;
+        assert_transport_kind(&rid_patch.diagnostics(), TransportKind::GatewayV2);
+        assert_eq!(rid_patch.into_model::<GwV2TestItem>()?, item);
+
+        let query = Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", &id)?;
+        let mut partition_pages = rid_container
+            .query_items::<GwV2TestItem>(query, FeedScope::partition(&pk), None)
+            .await?
+            .into_pages();
+        let partition_page = partition_pages
+            .next()
+            .await
+            .expect("partition query must return a page")?;
+        assert_transport_kind(&partition_page.diagnostics(), TransportKind::GatewayV2);
+        assert_eq!(partition_page.items(), &[item.clone()]);
+
+        let mut cross_partition_pages = rid_container
+            .query_items::<GwV2TestItem>(
+                Query::from("SELECT * FROM c ORDER BY c.sortValue"),
+                FeedScope::full_container(),
+                None,
+            )
+            .await?
+            .into_pages();
+        let cross_partition_page = cross_partition_pages
+            .next()
+            .await
+            .expect("cross-partition query must return a page")?;
+        assert_transport_kind(
+            &cross_partition_page.diagnostics(),
+            TransportKind::GatewayV2,
+        );
+        assert!(cross_partition_page.items().contains(&item));
+
+        let mut change_feed = rid_container
+            .query_change_feed::<GwV2TestItem>(
+                FeedScope::partition(&pk),
+                ChangeFeedStartFrom::Beginning,
+                None,
+            )
+            .await?;
+        let change_page = change_feed
+            .next()
+            .await
+            .expect("change feed must return a page")?;
+        assert_transport_kind(&change_page.diagnostics(), TransportKind::GatewayV2);
+        assert!(change_page
+            .items()
+            .iter()
+            .any(|change| change.current() == Some(&item)));
+
+        let batch_item = GwV2TestItem {
+            id: format!("rid-batch-{}", azure_core::Uuid::new_v4()),
+            pk: pk.clone(),
+            value: 3,
+            label: "batch-by-rid".into(),
+        };
+        let batch = TransactionalBatch::new(&pk).create_item(&batch_item)?;
+        let batch_response = rid_container
+            .execute_transactional_batch(batch, None)
+            .await?;
+        assert_transport_kind(&batch_response.diagnostics(), TransportKind::GatewayV2);
+        assert_eq!(batch_response.into_model()?.results()[0].status_code(), 201);
+
+        let rid_delete = rid_container
+            .delete_item(&pk, ResourceId::from(item_rid), None)
+            .await?;
+        assert_transport_kind(&rid_delete.diagnostics(), TransportKind::GatewayV2);
+
+        Ok::<(), Box<dyn std::error::Error>>(())
+    })
+    .catch_unwind()
+    .await;
+
+    drop_database(&client, &db_name).await;
+    match result {
+        Ok(result) => result,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
 }
 
 /// Verifies that diagnostics are populated for SDK-issued requests routed

@@ -115,6 +115,19 @@ pub fn is_database_rid(rid: &str) -> bool {
 /// RIDs — partition key ranges, stored procedures, triggers, UDFs, conflicts,
 /// permissions — and synthetic test fixtures like `"a"` all return `None`;
 /// callers then fall back to raw-string ordering.
+///
+/// # Callers
+///
+/// This has two callers with *different* tolerance for `None`:
+///
+/// * `ORDER BY` tie-breaking, where `None` is safe and falls back to raw-string
+///   ordering.
+/// * [`CosmosResourceReference::validate_addressing`](crate::models::CosmosResourceReference),
+///   which treats `None` as a hard `CLIENT_INVALID_RESOURCE_ID` rejection for a
+///   RID-addressed item operation.
+///
+/// Relaxing the shape checks below for an ordering reason would therefore also
+/// widen what the addressing validator accepts.
 pub(crate) fn document_ordinal(rid: &str) -> Option<u64> {
     /// `CollectionChildResourceType.Document` in .NET/Java `ResourceId`: the
     /// high nibble of the document segment's most significant byte tags which

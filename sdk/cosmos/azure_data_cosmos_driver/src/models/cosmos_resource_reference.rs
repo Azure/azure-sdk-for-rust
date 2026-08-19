@@ -9,7 +9,7 @@
 //! **request paths** (for URL construction).
 
 use crate::models::{
-    resource_id::{ResourceId, ResourceIdentifier, ResourceName},
+    resource_id::{decode_rid, document_ordinal, ResourceId, ResourceIdentifier, ResourceName},
     AccountReference, ContainerReference, DatabaseReference, ItemReference, ResourceType,
     StoredProcedureReference, TriggerReference, UdfReference,
 };
@@ -139,6 +139,17 @@ impl CosmosResourceReference {
             ResourceScope::Container(container) => Some(container),
             ResourceScope::Account | ResourceScope::Database(_) => None,
         }
+    }
+
+    /// Returns the leaf resource RID for a RID-addressed point reference.
+    pub(crate) fn resource_rid(&self) -> Option<&str> {
+        self.id.as_ref().and_then(ResourceIdentifier::rid)
+    }
+
+    /// Returns `true` when this reference addresses a single leaf resource whose
+    /// id appears in the request path, rather than a feed of child resources.
+    pub(crate) fn addresses_leaf_resource(&self) -> bool {
+        !self.is_feed && self.id.is_some()
     }
 
     /// Returns the database reference, if this operation is anchored directly to a
@@ -280,7 +291,7 @@ impl CosmosResourceReference {
     /// [`request_path`](Self::request_path) separately.
     pub(crate) fn compute_paths(&self) -> ResourcePaths {
         #[cfg(debug_assertions)]
-        self.debug_assert_addressing_consistent(!self.is_feed);
+        self.debug_assert_addressing_consistent(self.addresses_leaf_resource());
 
         if self.resource_type == ResourceType::DatabaseAccount {
             return ResourcePaths::empty();
@@ -469,6 +480,50 @@ impl CosmosResourceReference {
                 .with_source(std::io::Error::other("mixed name/RID addressing"))
                 .build());
         }
+
+        if leaf_in_path && self.resource_type == ResourceType::Document {
+            if let (Some(item_rid), Some(container)) = (self.resource_rid(), self.container()) {
+                let item_bytes = decode_rid(item_rid).map_err(|err| {
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                        .with_message(format!("invalid document RID '{item_rid}'"))
+                        .with_source(err)
+                        .build()
+                })?;
+                // `document_ordinal` applies the same shape checks as .NET
+                // `ResourceId.TryParse` (16 bytes, collection-child bit, Document
+                // child-type nibble), so `None` here means the RID does not
+                // address a document at all.
+                if document_ordinal(item_rid).is_none() {
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                        .with_message(format!("RID '{item_rid}' is not a document RID"))
+                        .with_source(std::io::Error::other("RID is not a document RID"))
+                        .build());
+                }
+
+                let container_bytes = decode_rid(container.rid()).map_err(|err| {
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                        .with_message(format!("invalid container RID '{}'", container.rid()))
+                        .with_source(err)
+                        .build()
+                })?;
+                if container_bytes.len() != 8 || item_bytes[..8] != container_bytes {
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                        .with_message(format!(
+                            "document RID '{item_rid}' does not belong to container RID '{}'",
+                            container.rid()
+                        ))
+                        .with_source(std::io::Error::other(
+                            "document RID has a different container prefix",
+                        ))
+                        .build());
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -558,10 +613,10 @@ impl CosmosResourceReference {
     /// [`validate_addressing`](Self::validate_addressing), so they never reach
     /// path computation.
     ///
-    /// Also consumed by
-    /// [`is_operation_supported_by_gateway_v2`](crate::driver::transport::is_operation_supported_by_gateway_v2)
-    /// to route RID-addressed operations to standard Gateway, since Gateway 2.0
-    /// derives its routing tokens by parsing the name-based signing link.
+    /// Also consumed by `build_transport_request`, which stamps the result onto
+    /// the `TransportRequest` so the Gateway 2.0 dispatcher selects the RID
+    /// token shape from the same value that drove path computation and signing.
+    /// Gateway 2.0 *eligibility* no longer depends on addressing mode.
     pub(crate) fn is_rid_addressed(&self) -> bool {
         if let Some(container) = self.container() {
             if container.is_by_rid() {
@@ -1289,6 +1344,49 @@ mod tests {
             "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs/Lx1BALxJyZ8BAAAAAAAAAA=="
         );
         assert_eq!(paths.signing_link(), "lx1balxjyz8baaaaaaaaaa==");
+    }
+
+    #[test]
+    fn validate_addressing_rejects_non_document_rid_for_item() {
+        let item = ItemReference::from_rid(
+            &test_container_by_rid(),
+            PartitionKey::from("pk1"),
+            "Lx1BALxJyZ8=",
+        );
+        let reference =
+            CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
+
+        let error = reference
+            .validate_addressing(true)
+            .expect_err("a container RID must not be accepted as an item RID");
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID
+        );
+    }
+
+    #[test]
+    fn validate_addressing_rejects_item_rid_from_another_container() {
+        let mut item_bytes = decode_rid("Lx1BALxJyZ8BAAAAAAAAAA==").unwrap();
+        item_bytes[4] ^= 1;
+        let item_rid = crate::models::resource_id::encode_rid(&item_bytes);
+        let item = ItemReference::from_rid(
+            &test_container_by_rid(),
+            PartitionKey::from("pk1"),
+            item_rid,
+        );
+        let reference =
+            CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
+
+        let error = reference
+            .validate_addressing(true)
+            .expect_err("an item RID from another container must be rejected");
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID
+        );
     }
 
     #[test]

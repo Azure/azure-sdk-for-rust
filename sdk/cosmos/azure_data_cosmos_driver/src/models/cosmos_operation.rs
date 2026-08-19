@@ -311,6 +311,15 @@ impl CosmosOperation {
         }
     }
 
+    /// Returns `true` when this operation's leaf resource id appears in the
+    /// request path, rather than targeting a feed of child resources.
+    ///
+    /// Create and Upsert carry an item id but POST to the collection feed, so
+    /// their leaf never reaches the wire.
+    pub(crate) fn addresses_leaf_resource(&self) -> bool {
+        !self.uses_feed_paths() && self.resource_reference.addresses_leaf_resource()
+    }
+
     /// Validates that this operation does not mix name and RID addressing.
     ///
     /// Delegates to
@@ -319,7 +328,7 @@ impl CosmosOperation {
     /// (Create/Upsert) are correctly exempted from the leaf check.
     pub(crate) fn validate_addressing(&self) -> crate::error::Result<()> {
         self.resource_reference
-            .validate_addressing(!self.uses_feed_paths())
+            .validate_addressing(self.addresses_leaf_resource())
     }
 
     /// Returns the container for this operation, if applicable.

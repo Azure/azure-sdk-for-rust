@@ -66,8 +66,15 @@ const GATEWAY_V2_DISCOVERY_OPT_IN: HeaderName =
 /// Inputs resolved by the operation pipeline before a Gateway 2.0 dispatch.
 pub(crate) struct WrapInputs<'a> {
     pub(crate) auth_context: &'a AuthorizationContext,
+    pub(crate) is_rid_addressed: bool,
+    /// Whether the leaf resource id appears in the request path. Supplied by the
+    /// operation pipeline rather than inferred from `operation_type`, so a
+    /// future feed-shaped `Delete` (delete-by-partition-key) cannot be
+    /// misclassified as leaf-addressed.
+    pub(crate) is_leaf_addressed: bool,
     pub(crate) operation_type: OperationType,
     pub(crate) resource_type: ResourceType,
+    pub(crate) resource_rid: Option<&'a str>,
     /// Effective partition key precomputed in the operation pipeline (point or
     /// prefix EPK). `None` for cross-partition or partition-key-less requests.
     pub(crate) effective_partition_key: Option<&'a EffectivePartitionKey>,
@@ -95,8 +102,17 @@ pub(crate) fn wrap_request_for_gateway_v2(
         .account_name
         .filter(|value| !value.is_empty())
         .ok_or_else(|| data_conversion_error("Gateway 2.0 dispatch requires an account name"))?;
+    if inputs.is_rid_addressed && inputs.is_leaf_addressed && inputs.resource_rid.is_none() {
+        return Err(data_conversion_error(
+            "Gateway 2.0 RID-addressed point operations require a leaf resource RID",
+        ));
+    }
 
-    let resource_names = parse_resource_names(inputs.auth_context.resource_link.as_str())?;
+    let resource_names = if inputs.is_rid_addressed {
+        None
+    } else {
+        Some(parse_resource_names(inputs.auth_context.request_path())?)
+    };
     let has_payload = request.body.as_ref().is_some_and(|body| !body.is_empty());
 
     let epk_payload = effective_partition_key_payload(inputs)?;
@@ -154,19 +170,48 @@ pub(crate) fn wrap_request_for_gateway_v2(
         }
     }
     metadata.push(Token::global_database_account_name(account_name.to_owned()));
-    metadata.push(Token::database_name(resource_names.database));
-    metadata.push(Token::collection_name(resource_names.collection));
-    if let Some(rid) = inputs.collection_rid.filter(|s| !s.is_empty()) {
+    if let Some(resource_names) = resource_names.as_ref() {
+        metadata.push(Token::database_name(resource_names.database.clone()));
+        metadata.push(Token::collection_name(resource_names.collection.clone()));
+    }
+    let collection_rid = inputs.collection_rid.filter(|s| !s.is_empty());
+    let collection_resource_id = if let Some(rid) = collection_rid {
         metadata.push(Token::collection_rid(rid.to_owned()));
-        let decoded = decode_rid(rid)
-            .map_err(|e| data_conversion_error(format!("invalid collection RID: {e}")))?;
+        Some(
+            decode_rid(rid)
+                .map_err(|e| data_conversion_error(format!("invalid collection RID: {e}")))?,
+        )
+    } else if inputs.is_rid_addressed {
+        return Err(data_conversion_error(
+            "Gateway 2.0 RID-addressed dispatch requires a collection RID",
+        ));
+    } else {
+        None
+    };
+    let resource_id = if inputs.is_rid_addressed && inputs.is_leaf_addressed {
+        inputs
+            .resource_rid
+            .filter(|s| !s.is_empty())
+            .map(|rid| {
+                decode_rid(rid)
+                    .map_err(|e| data_conversion_error(format!("invalid resource RID: {e}")))
+            })
+            .transpose()?
+    } else {
+        collection_resource_id
+    };
+    if let Some(decoded) = resource_id {
         metadata.push(Token::resource_id(decoded));
+    } else if inputs.is_rid_addressed {
+        return Err(data_conversion_error(
+            "Gateway 2.0 RID-addressed dispatch requires a resource RID",
+        ));
     }
     metadata.push(Token::payload_present(has_payload));
     if inputs.resource_type == ResourceType::Document
         && inputs.operation_type != OperationType::Create
     {
-        if let Some(document) = resource_names.document {
+        if let Some(document) = resource_names.and_then(|names| names.document) {
             metadata.push(Token::document_name(document));
         }
     }
@@ -769,7 +814,10 @@ mod tests {
     };
     use crate::models::PartitionKeyValue;
     use crate::models::PartitionKeyVersion;
-    use crate::models::{PartitionKey, PartitionKeyDefinition};
+    use crate::models::{
+        AccountReference, ContainerProperties, ContainerReference, CosmosOperation, PartitionKey,
+        PartitionKeyDefinition, SystemProperties,
+    };
 
     const ACTIVITY_ID: &str = "00112233-4455-6677-8899-aabbccddeeff";
 
@@ -822,14 +870,90 @@ mod tests {
     ) -> WrapInputs<'a> {
         WrapInputs {
             auth_context,
+            is_rid_addressed: false,
+            // Deliberately `false`: this helper always builds a name-addressed
+            // request, where `is_leaf_addressed` is never read. Inferring it
+            // from `operation_type` here would reintroduce the very
+            // misclassification the production path was changed to avoid, so
+            // any leaf-sensitive test must use `wrap_inputs_for_operation`.
+            is_leaf_addressed: false,
             operation_type,
             resource_type: ResourceType::Document,
+            resource_rid: None,
             effective_partition_key,
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             account_name: Some("account"),
             collection_rid: None,
         }
+    }
+
+    /// Builds the authorization context the way `build_transport_request` does,
+    /// so a dispatch test exercises the real `ResourcePaths` split between the
+    /// full request path and the signing link instead of a hand-written string.
+    fn operation_auth_context(operation: &CosmosOperation) -> AuthorizationContext {
+        AuthorizationContext::from_paths(
+            operation.operation_type().http_method(),
+            operation.resource_type(),
+            operation.compute_resource_paths(),
+        )
+    }
+
+    /// Mirrors the pipeline's population of the addressing flags for `operation`.
+    fn wrap_inputs_for_operation<'a>(
+        operation: &CosmosOperation,
+        auth_context: &'a AuthorizationContext,
+    ) -> WrapInputs<'a> {
+        let mut inputs = wrap_inputs(auth_context, operation.operation_type(), None);
+        inputs.is_rid_addressed = operation.resource_reference().is_rid_addressed();
+        inputs.is_leaf_addressed = operation.addresses_leaf_resource();
+        inputs
+    }
+
+    /// A name-addressed container, used to prove the name-token path still
+    /// resolves `DatabaseName` / `CollectionName` / `DocumentName` correctly now
+    /// that they come from the request path rather than the signing link.
+    fn name_container() -> ContainerReference {
+        let account = AccountReference::with_master_key(
+            "https://account.documents.azure.com:443/".parse().unwrap(),
+            "test-key",
+        );
+        let properties = ContainerProperties {
+            id: "coll1".into(),
+            partition_key: PartitionKeyDefinition::new(vec![Cow::Borrowed("/pk")]),
+            system_properties: SystemProperties::default(),
+        };
+        ContainerReference::new(
+            account,
+            "db1",
+            "Lx1BAA==",
+            "coll1",
+            "Lx1BALxJyZ8=",
+            &properties,
+        )
+    }
+
+    fn rid_container() -> ContainerReference {
+        let account = AccountReference::with_master_key(
+            "https://account.documents.azure.com:443/".parse().unwrap(),
+            "test-key",
+        );
+        let properties = ContainerProperties {
+            id: "container".into(),
+            partition_key: PartitionKeyDefinition::new(vec![Cow::Borrowed("/pk")]),
+            system_properties: SystemProperties::default(),
+        };
+        ContainerReference::new_by_rid(
+            account,
+            "Lx1BAA==",
+            "container",
+            "Lx1BALxJyZ8=",
+            &properties,
+        )
+    }
+
+    fn rid_feed_operation() -> CosmosOperation {
+        CosmosOperation::read_all_items(rid_container(), PartitionKey::from("pk"))
     }
 
     /// Computes the effective partition key the way the operation pipeline does,
@@ -1067,6 +1191,174 @@ mod tests {
         assert_eq!(
             parsed.tokens[&0x00CE],
             ParsedTokenValue::String("account".into())
+        );
+    }
+
+    #[test]
+    fn wrap_sources_name_tokens_from_request_path_for_feed_operations() {
+        // Pins the name-token contract for a feed request built through the real
+        // `ResourcePaths` split, where the request path (`.../docs`) and the
+        // signing link (the parent, `dbs/db1/colls/coll1`) differ.
+        //
+        // NOTE: this is a contract pin, not a regression guard for the
+        // signing-link -> request-path switch. `parse_resource_names` walks
+        // `(kind, name)` pairs and drops a dangling final segment, so both
+        // sources yield the same names for every name-addressed shape. The
+        // switch matters because the signing link is not a path at all for a
+        // RID-addressed resource (it is a bare RID), which is why names are read
+        // from the path that actually routes the request.
+        let operation = CosmosOperation::read_all_items(name_container(), PartitionKey::from("pk"));
+        let auth_context = operation_auth_context(&operation);
+        assert_eq!(auth_context.request_path(), "/dbs/db1/colls/coll1/docs");
+        assert_eq!(auth_context.resource_link.as_str(), "dbs/db1/colls/coll1");
+
+        let wrapped = wrap_request_for_gateway_v2(
+            signed_request(None),
+            &wrap_inputs_for_operation(&operation, &auth_context),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert_eq!(
+            parsed.tokens[&0x0015],
+            ParsedTokenValue::String("db1".into())
+        );
+        assert_eq!(
+            parsed.tokens[&0x0016],
+            ParsedTokenValue::String("coll1".into())
+        );
+        assert!(
+            !parsed.tokens.contains_key(&0x0017),
+            "a feed request addresses no document, so DocumentName must be absent"
+        );
+    }
+
+    #[test]
+    fn wrap_sources_name_tokens_from_request_path_for_point_operations() {
+        // The point-op twin: the leaf id is in the request path, so
+        // `DocumentName` must be emitted alongside the database and collection.
+        let operation = CosmosOperation::read_item(crate::models::ItemReference::from_name(
+            &name_container(),
+            PartitionKey::from("pk"),
+            "doc1",
+        ));
+        let auth_context = operation_auth_context(&operation);
+        assert_eq!(
+            auth_context.request_path(),
+            "/dbs/db1/colls/coll1/docs/doc1"
+        );
+
+        let wrapped = wrap_request_for_gateway_v2(
+            signed_request(None),
+            &wrap_inputs_for_operation(&operation, &auth_context),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert_eq!(
+            parsed.tokens[&0x0015],
+            ParsedTokenValue::String("db1".into())
+        );
+        assert_eq!(
+            parsed.tokens[&0x0016],
+            ParsedTokenValue::String("coll1".into())
+        );
+        assert_eq!(
+            parsed.tokens[&0x0017],
+            ParsedTokenValue::String("doc1".into())
+        );
+    }
+
+    #[test]
+    fn wrap_builds_rid_feed_tokens_without_name_tokens() {
+        let operation = rid_feed_operation();
+        let auth_context = operation_auth_context(&operation);
+        assert_eq!(
+            auth_context.request_path(),
+            "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs"
+        );
+        assert_eq!(auth_context.resource_link.as_str(), "lx1balxjyz8=");
+
+        let mut inputs = wrap_inputs_for_operation(&operation, &auth_context);
+        inputs.collection_rid = Some("Lx1BALxJyZ8=");
+        let wrapped = wrap_request_for_gateway_v2(signed_request(None), &inputs).unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert!(!parsed.tokens.contains_key(&0x0015));
+        assert!(!parsed.tokens.contains_key(&0x0016));
+        assert!(!parsed.tokens.contains_key(&0x0017));
+        assert_eq!(
+            parsed.tokens[&0x0035],
+            ParsedTokenValue::String("Lx1BALxJyZ8=".into())
+        );
+        assert_eq!(
+            parsed.tokens[&0x0000],
+            ParsedTokenValue::Bytes(decode_rid("Lx1BALxJyZ8=").unwrap()),
+            "a feed request targets the collection, so ResourceId is the collection RID"
+        );
+    }
+
+    #[test]
+    fn wrap_rejects_rid_feed_without_collection_rid() {
+        let operation = rid_feed_operation();
+        let auth_context = operation_auth_context(&operation);
+
+        let error = wrap_request_for_gateway_v2(
+            signed_request(None),
+            &wrap_inputs_for_operation(&operation, &auth_context),
+        )
+        .unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("RID-addressed dispatch requires a collection RID"));
+    }
+
+    #[test]
+    fn wrap_rejects_rid_point_operation_without_leaf_resource_rid() {
+        let operation = CosmosOperation::read_item(crate::models::ItemReference::from_rid(
+            &rid_container(),
+            PartitionKey::from("pk"),
+            "Lx1BALxJyZ8BAAAAAAAAAA==",
+        ));
+        let auth_context = operation_auth_context(&operation);
+        let mut inputs = wrap_inputs_for_operation(&operation, &auth_context);
+        inputs.collection_rid = Some("Lx1BALxJyZ8=");
+        inputs.resource_rid = None;
+
+        let error = wrap_request_for_gateway_v2(signed_request(None), &inputs).unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("RID-addressed point operations require a leaf resource RID"));
+    }
+
+    #[test]
+    fn wrap_builds_rid_point_tokens_with_leaf_resource_id() {
+        let item_rid = "Lx1BALxJyZ8BAAAAAAAAAA==";
+        let operation = CosmosOperation::read_item(crate::models::ItemReference::from_rid(
+            &rid_container(),
+            PartitionKey::from("pk"),
+            item_rid,
+        ));
+        let auth_context = operation_auth_context(&operation);
+        let mut inputs = wrap_inputs_for_operation(&operation, &auth_context);
+        inputs.collection_rid = Some("Lx1BALxJyZ8=");
+        inputs.resource_rid = Some(item_rid);
+
+        let wrapped = wrap_request_for_gateway_v2(signed_request(None), &inputs).unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert!(!parsed.tokens.contains_key(&0x0015));
+        assert!(!parsed.tokens.contains_key(&0x0016));
+        assert!(!parsed.tokens.contains_key(&0x0017));
+        assert_eq!(
+            parsed.tokens[&0x0035],
+            ParsedTokenValue::String("Lx1BALxJyZ8=".into())
+        );
+        assert_eq!(
+            parsed.tokens[&0x0000],
+            ParsedTokenValue::Bytes(decode_rid(item_rid).unwrap())
         );
     }
 
@@ -1866,8 +2158,11 @@ mod tests {
             request,
             &WrapInputs {
                 auth_context: &auth_context,
+                is_rid_addressed: false,
+                is_leaf_addressed: false,
                 operation_type: OperationType::Query,
                 resource_type: ResourceType::Document,
+                resource_rid: None,
                 effective_partition_key: None,
                 effective_consistency: DefaultConsistencyLevel::Session,
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -1902,8 +2197,11 @@ mod tests {
             request,
             &WrapInputs {
                 auth_context: &auth_context,
+                is_rid_addressed: false,
+                is_leaf_addressed: false,
                 operation_type: OperationType::Query,
                 resource_type: ResourceType::Document,
+                resource_rid: None,
                 effective_partition_key: None,
                 effective_consistency: DefaultConsistencyLevel::Session,
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -1934,8 +2232,11 @@ mod tests {
             request,
             &WrapInputs {
                 auth_context: &auth_context,
+                is_rid_addressed: false,
+                is_leaf_addressed: false,
                 operation_type: OperationType::Query,
                 resource_type: ResourceType::Document,
+                resource_rid: None,
                 effective_partition_key: None,
                 effective_consistency: DefaultConsistencyLevel::Session,
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,

@@ -35,6 +35,13 @@ impl ResourceLink {
             Self::Owned(s) => s.as_str(),
         }
     }
+
+    pub(crate) fn request_path(&self) -> &str {
+        match self {
+            Self::Paths(p) => p.request_path(),
+            Self::Owned(s) => s.as_str(),
+        }
+    }
 }
 
 impl std::fmt::Debug for ResourceLink {
@@ -83,6 +90,16 @@ impl AuthorizationContext {
             resource_type,
             resource_link: ResourceLink::Paths(paths),
         }
+    }
+
+    /// Returns the full unencoded resource path independently from the signing link.
+    ///
+    /// Gateway 2.0 parses its `DatabaseName` / `CollectionName` / `DocumentName`
+    /// routing tokens from this value rather than the signing link, because a
+    /// feed operation signs its parent path and a RID-addressed resource signs a
+    /// bare RID.
+    pub(crate) fn request_path(&self) -> &str {
+        self.resource_link.request_path()
     }
 }
 
