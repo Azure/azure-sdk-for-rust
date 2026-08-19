@@ -78,6 +78,8 @@ json_canon
 json-canon
 json_patch
 json-patch
+libfuzzer_sys
+libfuzzer-sys
 litemap
 openssl
 opentelemetry
