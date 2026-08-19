@@ -3,9 +3,24 @@
 
 //! Clients used to communicate with Azure Blob Storage.
 
-use azure_core::http::{new_http_client, ClientOptions, HttpClientOptions, Transport};
+use azure_core::{
+    credentials::TokenCredential,
+    http::{
+        new_http_client,
+        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
+        ClientOptions, HttpClientOptions, Transport, Url,
+    },
+    Result,
+};
+use std::sync::Arc;
 
-use crate::logging::apply_storage_logging_defaults;
+use crate::{
+    logging::apply_storage_logging_defaults,
+    session::{
+        options::SessionOptions, policy::SessionAuthenticationPolicy,
+        provider::ContainerSessionProvider,
+    },
+};
 
 mod append_blob_client;
 mod blob_client;
@@ -21,6 +36,9 @@ pub use blob_service_client::{BlobServiceClient, BlobServiceClientOptions};
 pub use block_blob_client::{BlockBlobClient, BlockBlobClientOptions};
 pub use page_blob_client::{PageBlobClient, PageBlobClientOptions};
 
+/// The OAuth scope used for Entra ID authentication against Storage.
+const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
+
 #[allow(clippy::needless_update)]
 fn apply_client_defaults(options: &mut ClientOptions) {
     if options.transport.is_none() {
@@ -30,4 +48,226 @@ fn apply_client_defaults(options: &mut ClientOptions) {
         }))))
     }
     apply_storage_logging_defaults(options);
+}
+
+/// Builds the per-retry authentication policies for a client.
+///
+/// With no credential there are none. With a credential, the bearer token
+/// policy is used, wrapped by the [`SessionAuthenticationPolicy`] when session
+/// authentication is enabled so eligible downloads can use a session token.
+///
+/// The `client_options` and `version` are those of the constructing client,
+/// used to build the session provider's own session-free service client.
+//
+// This is a temporary shape: session options are threaded through a dedicated
+// parameter because they cannot yet be carried on the generated client options.
+// TODO: fold `SessionOptions` into the generated options once the generator
+// supports additional fields, and drop the `new_with_session_options` constructors.
+fn build_auth_policies(
+    endpoint: &Url,
+    credential: Option<Arc<dyn TokenCredential>>,
+    session_options: &SessionOptions,
+    client_options: &ClientOptions,
+    version: &str,
+) -> Result<Vec<Arc<dyn Policy>>> {
+    let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
+
+    let Some(credential) = credential else {
+        return Ok(per_retry_policies);
+    };
+    if !endpoint.scheme().starts_with("https") {
+        return Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            format!("{endpoint} must use https"),
+        ));
+    }
+
+    let bearer: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+        credential.clone(),
+        vec![STORAGE_SCOPE],
+    ));
+
+    if session_options.is_enabled() {
+        let service_options = BlobServiceClientOptions {
+            client_options: client_options.clone(),
+            version: version.to_string(),
+        };
+        let provider = Arc::new(ContainerSessionProvider::new(
+            endpoint,
+            credential,
+            service_options,
+        )?);
+        per_retry_policies.push(Arc::new(SessionAuthenticationPolicy::new(
+            provider,
+            bearer,
+            session_options.clone(),
+        )));
+    } else {
+        per_retry_policies.push(bearer);
+    }
+
+    Ok(per_retry_policies)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::session::options::SessionMode;
+    use async_trait::async_trait;
+    use azure_core::{
+        credentials::TokenCredential,
+        http::{
+            headers::{Headers, AUTHORIZATION},
+            AsyncRawResponse, Context, Method, Request, StatusCode,
+        },
+        Bytes,
+    };
+    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use futures::FutureExt as _;
+    use std::sync::Mutex;
+
+    const SESSION_XML: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
+<CreateSessionResult>
+  <AuthenticationType>HMAC</AuthenticationType>
+  <Credentials>
+    <SessionKey>c2Vzc2lvbi1rZXk=</SessionKey>
+    <SessionToken>token-abc</SessionToken>
+  </Credentials>
+  <Expiration>Wed, 01 Jan 2031 00:00:00 GMT</Expiration>
+  <Id>session-id</Id>
+</CreateSessionResult>"#;
+
+    /// A terminal policy that records the Authorization header it receives.
+    #[derive(Debug)]
+    struct CapturingTransport {
+        seen_auth: Mutex<Vec<Option<String>>>,
+    }
+
+    #[async_trait]
+    impl Policy for CapturingTransport {
+        async fn send(
+            &self,
+            _ctx: &Context,
+            request: &mut Request,
+            _next: &[Arc<dyn Policy>],
+        ) -> azure_core::http::policies::PolicyResult {
+            self.seen_auth.lock().unwrap().push(
+                request
+                    .headers()
+                    .get_optional_str(&AUTHORIZATION)
+                    .map(str::to_string),
+            );
+            Ok(AsyncRawResponse::from_bytes(
+                StatusCode::Ok,
+                Headers::new(),
+                Bytes::from_static(b""),
+            ))
+        }
+    }
+
+    /// Client options whose transport always answers Create Session with 201.
+    fn options_with_create_session_mock() -> ClientOptions {
+        let mock = Arc::new(MockHttpClient::new(|_req| {
+            async {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Created,
+                    Headers::new(),
+                    Bytes::from_static(SESSION_XML),
+                ))
+            }
+            .boxed()
+        }));
+        ClientOptions {
+            transport: Some(Transport::new(mock)),
+            ..Default::default()
+        }
+    }
+
+    fn endpoint() -> Url {
+        Url::parse("https://myaccount.blob.core.windows.net/").unwrap()
+    }
+
+    fn download_request() -> Request {
+        Request::new(
+            Url::parse("https://myaccount.blob.core.windows.net/mycontainer/myblob").unwrap(),
+            Method::Get,
+        )
+    }
+
+    async fn auth_scheme_used(policy: &Arc<dyn Policy>) -> Option<String> {
+        let transport = Arc::new(CapturingTransport {
+            seen_auth: Mutex::new(Vec::new()),
+        });
+        let next: [Arc<dyn Policy>; 1] = [transport.clone()];
+        let mut request = download_request();
+        policy
+            .send(&Context::new(), &mut request, &next)
+            .await
+            .unwrap();
+        let auth = transport
+            .seen_auth
+            .lock()
+            .unwrap()
+            .last()
+            .cloned()
+            .flatten();
+        auth
+    }
+
+    #[test]
+    fn no_credential_yields_no_auth_policy() {
+        let policies = build_auth_policies(
+            &endpoint(),
+            None,
+            &SessionOptions::default(),
+            &ClientOptions::default(),
+            "2026-02-06",
+        )
+        .unwrap();
+        assert!(policies.is_empty());
+    }
+
+    #[tokio::test]
+    async fn disabled_mode_wires_bearer_only() {
+        let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
+        let session_options = SessionOptions {
+            mode: SessionMode::Disabled,
+            account_name: None,
+        };
+
+        let policies = build_auth_policies(
+            &endpoint(),
+            Some(credential),
+            &session_options,
+            &ClientOptions::default(),
+            "2026-02-06",
+        )
+        .unwrap();
+
+        assert_eq!(policies.len(), 1);
+        let auth = auth_scheme_used(&policies[0]).await.unwrap();
+        assert!(auth.starts_with("Bearer "), "got: {auth}");
+    }
+
+    #[tokio::test]
+    async fn enabled_mode_wires_session_auth() {
+        let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
+        let session_options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: Some("myaccount".into()),
+        };
+
+        let policies = build_auth_policies(
+            &endpoint(),
+            Some(credential),
+            &session_options,
+            &options_with_create_session_mock(),
+            "2026-02-06",
+        )
+        .unwrap();
+
+        assert_eq!(policies.len(), 1);
+        let auth = auth_scheme_used(&policies[0]).await.unwrap();
+        assert!(auth.starts_with("Session token-abc:"), "got: {auth}");
+    }
 }
