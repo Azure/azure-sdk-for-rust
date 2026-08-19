@@ -3491,11 +3491,22 @@ fn synthesize_order_by_rewritten_query(
         Some(t) if t.kind == TokenKind::Identifier => t.text,
         _ => collection_token.text,
     };
+    // `SELECT DISTINCT …` — the envelope wraps each row with its `_rid`, so a
+    // per-partition `DISTINCT` on the envelope could never collapse anything.
+    // Drop it from the rewritten query and let the client-side ordered
+    // `Distinct` stage deduplicate the globally sorted stream instead.
+    let mut payload_idx = select_idx + 1;
+    if tokens
+        .get(payload_idx)
+        .is_some_and(|t| t.kind == TokenKind::Distinct)
+    {
+        payload_idx += 1;
+    }
     // Skip a leading `TOP <n>` / `TOP @param`: the global TOP is applied by the
     // client's `SkipTake` over the merged stream, so the per-partition envelope
     // must not carry it (a per-partition TOP would drop rows a later partition
-    // needs for the global ordering).
-    let mut payload_idx = select_idx + 1;
+    // needs for the global ordering). `DISTINCT` precedes `TOP` in SQL, so this
+    // runs after the `DISTINCT` skip above.
     if tokens
         .get(payload_idx)
         .is_some_and(|t| t.kind == TokenKind::Top)
