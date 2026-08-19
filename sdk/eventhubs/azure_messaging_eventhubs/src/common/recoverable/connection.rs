@@ -25,7 +25,7 @@ use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
     AmqpManagement, AmqpManagementApis, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions,
     AmqpSender, AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource,
-    AmqpSymbol,
+    AmqpSymbol, AmqpTransport,
 };
 #[cfg(test)]
 use std::sync::Mutex;
@@ -79,6 +79,7 @@ pub(crate) struct RecoverableConnection {
     pub(super) url: Url,
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
+    transport: AmqpTransport,
     // The management client is a single cached instance, held in a `OnceCell`
     // for the same reason the per-path caches are: the expensive build (connect
     // + session begin + CBS authorize + link attach) must not run while a lock
@@ -283,6 +284,7 @@ impl RecoverableConnection {
         url: Url,
         application_id: Option<String>,
         custom_endpoint: Option<Url>,
+        transport: AmqpTransport,
         credential: Arc<dyn TokenCredential>,
         retry_options: RetryOptions,
         cbs_token_type: Option<&'static str>,
@@ -299,6 +301,7 @@ impl RecoverableConnection {
                 application_id,
                 connection_name,
                 custom_endpoint,
+                transport,
                 retry_options,
                 cbs_lock: AsyncMutex::new(()),
                 connections: AsyncMutex::new(None),
@@ -808,6 +811,28 @@ impl RecoverableConnection {
         .cell
     }
 
+    /// Builds the options handed to [`AmqpConnection::open`]. Kept separate from
+    /// `create_connection` so the wiring can be asserted without a broker.
+    fn connection_options(&self) -> AmqpConnectionOptions {
+        AmqpConnectionOptions {
+            properties: Some(
+                vec![
+                    ("user-agent", get_user_agent(&self.application_id)),
+                    ("version", get_package_version()),
+                    ("platform", get_platform_info()),
+                    ("product", get_package_name()),
+                ]
+                .into_iter()
+                .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+                .collect(),
+            ),
+            desired_capabilities: Some(vec![GEODR_REPLICATION_CAPABILITY.into()]),
+            custom_endpoint: self.custom_endpoint.clone(),
+            transport: Some(self.transport),
+            ..Default::default()
+        }
+    }
+
     #[instrument(
         level = "debug",
         skip_all,
@@ -829,22 +854,7 @@ impl RecoverableConnection {
             .open(
                 self.connection_name.clone(),
                 self.url.clone(),
-                Some(AmqpConnectionOptions {
-                    properties: Some(
-                        vec![
-                            ("user-agent", get_user_agent(&self.application_id)),
-                            ("version", get_package_version()),
-                            ("platform", get_platform_info()),
-                            ("product", get_package_name()),
-                        ]
-                        .into_iter()
-                        .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
-                        .collect(),
-                    ),
-                    desired_capabilities: Some(vec![GEODR_REPLICATION_CAPABILITY.into()]),
-                    custom_endpoint: self.custom_endpoint.clone(),
-                    ..Default::default()
-                }),
+                Some(self.connection_options()),
             )
             .await?;
         info!(
@@ -1515,6 +1525,7 @@ mod tests {
             Url::parse("amqps://example.com").unwrap(),
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1550,6 +1561,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1573,6 +1585,7 @@ mod tests {
             url,
             Some(app_id.clone()),
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1593,6 +1606,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1613,6 +1627,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1667,6 +1682,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1696,6 +1712,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1740,6 +1757,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1785,6 +1803,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1840,6 +1859,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1943,6 +1963,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1992,12 +2013,58 @@ mod tests {
             url,
             None,
             Some(custom_endpoint.clone()),
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
         );
 
         assert_eq!(connection_manager.custom_endpoint, Some(custom_endpoint));
+    }
+
+    // The transport selected on a client builder (and, transitively, on an
+    // EventProcessor's injected ConsumerClient) must reach the connection so it
+    // is applied when the AMQP connection is opened. This verifies the field is
+    // stored on the RecoverableConnection.
+    #[test]
+    fn constructor_with_websocket_transport() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection_manager = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            AmqpTransport::WebSocket,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+
+        assert_eq!(connection_manager.transport, AmqpTransport::WebSocket);
+    }
+
+    // The stored transport must also reach the options handed to
+    // `AmqpConnection::open`. Asserting on the constructor alone would still
+    // pass if `create_connection` dropped the `with_transport` call.
+    #[test]
+    fn connection_options_carry_the_transport() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let custom_endpoint = Url::parse("amqps://proxy.example.com:8081").unwrap();
+        for transport in [AmqpTransport::Tcp, AmqpTransport::WebSocket] {
+            let connection_manager = RecoverableConnection::new(
+                url.clone(),
+                None,
+                Some(custom_endpoint.clone()),
+                transport,
+                Arc::new(MockCredential),
+                Default::default(),
+                None,
+            );
+
+            let options = connection_manager.connection_options();
+            assert_eq!(options.transport, Some(transport));
+            assert_eq!(options.custom_endpoint, Some(custom_endpoint.clone()));
+            assert!(options.properties.is_some());
+        }
     }
 
     #[test]
@@ -2363,6 +2430,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2439,6 +2507,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2488,6 +2557,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,

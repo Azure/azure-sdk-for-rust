@@ -14,7 +14,48 @@ type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
 #[cfg(not(feature = "fe2o3_amqp"))]
 type ConnectionImplementation = super::noop::NoopAmqpConnection;
 
+/// The transport used to carry the AMQP protocol.
+///
+/// AMQP is normally framed directly over a TCP/TLS socket, but some network
+/// environments (for example corporate firewalls) only permit outbound
+/// connections on port 443. In those cases the AMQP frames can be tunneled
+/// over a WebSocket connection instead.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum AmqpTransport {
+    /// AMQP framing over a TCP/TLS socket (port 5671). This is the default.
+    #[default]
+    Tcp,
+    /// AMQP framing tunneled over secure WebSockets (`wss://`, port 443).
+    ///
+    /// This variant needs the `fe2o3_amqp_ws` feature, which the `default`
+    /// feature selects. A build that keeps the `fe2o3_amqp` backend and drops
+    /// `fe2o3_amqp_ws` can still select this variant, and the connection then
+    /// returns an error when it opens. A build that names no backend feature
+    /// gets the no-op connection, which panics when it opens.
+    ///
+    /// `fe2o3_amqp_ws` names no TLS stack. `default` adds
+    /// `fe2o3_amqp_ws_rustls`, which selects rustls with the aws-lc-rs
+    /// provider. To use another stack, turn off the default features, name
+    /// `fe2o3_amqp_ws`, and take a direct dependency on `fe2o3-amqp-ws` with
+    /// the stack you want. A build that selects no stack also compiles, and
+    /// the connection reports the missing stack when it opens.
+    WebSocket,
+}
+
 /// Options for configuring an AMQP connection.
+///
+/// Build it from [`Default`] and set only the fields you need, so a later field
+/// addition does not break the call site:
+///
+/// ```
+/// use azure_core_amqp::{AmqpConnectionOptions, AmqpTransport};
+///
+/// #[allow(clippy::needless_update)]
+/// let options = AmqpConnectionOptions {
+///     transport: Some(AmqpTransport::WebSocket),
+///     ..Default::default()
+/// };
+/// ```
 #[derive(Debug, Default, Clone)]
 pub struct AmqpConnectionOptions {
     /// Maximum frame size for the connection in bytes.
@@ -36,10 +77,16 @@ pub struct AmqpConnectionOptions {
     /// Buffer size for the connection.
     pub buffer_size: Option<usize>,
     /// Custom endpoint for the connection. Used to connect to a local AMQP proxy server.
+    ///
+    /// The host and an explicit port both carry into the address that the
+    /// connection dials. Under [`AmqpTransport::WebSocket`] the port carries into
+    /// the `wss://` address, so name the port that the proxy accepts WebSockets
+    /// on, and leave the port out to dial the default port 443. The .NET Azure SDK
+    /// treats `CustomEndpointAddress` the same way.
     pub custom_endpoint: Option<Url>,
+    /// The transport used to carry the AMQP protocol. Defaults to [`AmqpTransport::Tcp`].
+    pub transport: Option<AmqpTransport>,
 }
-
-impl AmqpConnectionOptions {}
 
 /// Trait defining the asynchronous APIs for AMQP connection operations.
 #[async_trait::async_trait]
@@ -250,6 +297,7 @@ mod tests {
                     .collect(),
             ),
             buffer_size: Some(1024),
+            transport: Some(AmqpTransport::WebSocket),
         };
 
         assert_eq!(connection_options.max_frame_size, Some(1024));
@@ -281,6 +329,7 @@ mod tests {
             connection_options.custom_endpoint,
             Some(Url::parse("http://localhost:8080").unwrap())
         );
+        assert_eq!(connection_options.transport, Some(AmqpTransport::WebSocket));
     }
 
     // On macOS, there is a periodic issue where loopback TCP connections fail.
