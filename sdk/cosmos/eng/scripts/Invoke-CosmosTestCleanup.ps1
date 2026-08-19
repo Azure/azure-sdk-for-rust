@@ -102,4 +102,7 @@ $env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT = $null
 # The next package's setup will re-add the correct flag from COSMOS_RUSTFLAGS
 # (or from AZURE_COSMOS_EMULATOR_FLAVOR=vnext when running the vnext stage).
 $env:RUSTFLAGS = $env:RUSTFLAGS -replace '\s*--cfg=test_category="[^"]*"', ''
+# Also strip the cosmos_aad_supported marker cfg so the next package's setup
+# starts from a clean slate.
+$env:RUSTFLAGS = $env:RUSTFLAGS -replace '\s*--cfg=cosmos_aad_supported', ''
 Write-Host "RUSTFLAGS after cleanup: $env:RUSTFLAGS"

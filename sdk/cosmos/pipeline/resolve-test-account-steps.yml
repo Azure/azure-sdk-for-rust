@@ -1,0 +1,33 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# Reusable pre-test step that resolves one fixed Cosmos live-test account from the
+# single JSON secret and exports AZURE_COSMOS_CONNECTION_STRING (+ ACCOUNT_HOST,
+# DATABASE_NAME, AZURE_COSMOS_DEFAULT_CONSISTENCY, COSMOS_RUSTFLAGS, and optionally
+# AZURE_COSMOS_SECONDARY_KEY) for the test run. Drop this into a live-test stage's
+# PreTestRunSteps (see eng/pipelines/templates/jobs/live.tests.yml), used together with
+# DisableAzureResourceCreation: true so no per-run ARM deployment happens against the
+# (frequently rotating) test tenant.
+#
+# The account JSON lives in the ADO variable group secret referenced by
+# AccountsJsonVar (default: rust-ci, see
+# sdk/cosmos/pipeline/README.md for how to populate it).
+#
+# AccountSelector selects which logical account to use. It is typically the macro
+# $(AccountSelector) sourced from the live-platform-matrix.json leg.
+parameters:
+  - name: AccountSelector
+    type: string
+  - name: AccountsJsonVar
+    type: string
+    default: 'rust-ci'
+
+steps:
+  - task: Powershell@2
+    displayName: 'Resolve fixed Cosmos test account (${{ parameters.AccountSelector }})'
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/sdk/cosmos/pipeline/resolve-cosmos-test-account.ps1
+    env:
+      COSMOS_TEST_ACCOUNTS_JSON: $(${{ parameters.AccountsJsonVar }})
+      COSMOS_ACCOUNT_SELECTOR: ${{ parameters.AccountSelector }}
