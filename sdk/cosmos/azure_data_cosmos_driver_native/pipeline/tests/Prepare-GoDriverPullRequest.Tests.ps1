@@ -101,6 +101,7 @@ import "C"
                 "$hash  $relativeLibraryPath"
             }
             Write-TestFile -Path (Join-Path $Root 'SHA256SUMS') -Content ($checksumLines -join "`n")
+            Write-TestFile -Path (Join-Path $Root 'provenance.json') -Content "{`n  `"schema_version`": 1`n}`n"
         }
     }
 
@@ -152,6 +153,7 @@ import "C"
             Should -Be "signed evidence`n"
         $stagedChanges | Should -Contain "A`t_manifest/spdx_2.2/manifest.spdx.json"
         $stagedChanges | Should -Contain "A`t_manifest/spdx_2.2/bsi.cose"
+        $stagedChanges | Should -Contain "A`tprovenance.json"
     }
 
     It 'rejects unexpected files outside the managed roots' {

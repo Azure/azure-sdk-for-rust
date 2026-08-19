@@ -54,6 +54,11 @@ function Get-NormalizedRelativePath {
 
 $managedRoots = @('windows', 'linux', 'darwin', '_manifest')
 
+# Root-level files (no directory prefix) that the pipeline owns end-to-end. They
+# are generated fresh every run, replace any prior copy, and are the only
+# non-directory paths permitted at the checkout root.
+$managedRootFiles = @('SHA256SUMS', 'provenance.json')
+
 function Test-IsManagedPath {
     param(
         [Parameter(Mandatory = $true)]
@@ -65,7 +70,7 @@ function Test-IsManagedPath {
             return $true
         }
     }
-    return $Path -eq 'SHA256SUMS'
+    return $managedRootFiles -contains $Path
 }
 
 function Test-Is1EsEvidencePath {
@@ -93,7 +98,9 @@ $modulePaths = @(
 $expectedFiles = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 $expectedLibraries = [Collections.Generic.List[string]]::new()
 $requiredLinkerFlags = @{}
-[void]$expectedFiles.Add('SHA256SUMS')
+foreach ($managedRootFile in $managedRootFiles) {
+    [void]$expectedFiles.Add($managedRootFile)
+}
 
 foreach ($modulePath in $modulePaths) {
     [void]$expectedFiles.Add("$modulePath/go.mod")
@@ -211,16 +218,18 @@ foreach ($root in $managedRoots) {
     Remove-Item $managedRootPath -Recurse -Force
 }
 
-$checkoutChecksumPath = Join-Path $checkoutRootPath 'SHA256SUMS'
-if (Test-Path $checkoutChecksumPath) {
-    $checksumItem = Get-Item $checkoutChecksumPath -Force
-    if (-not $checksumItem.PSIsContainer -and
-        -not $checksumItem.LinkType -and
-        -not ($checksumItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
-        Remove-Item $checkoutChecksumPath -Force
-    }
-    else {
-        throw "Managed generated path is not a regular file: 'SHA256SUMS'."
+foreach ($managedRootFile in $managedRootFiles) {
+    $checkoutManagedFilePath = Join-Path $checkoutRootPath $managedRootFile
+    if (Test-Path $checkoutManagedFilePath) {
+        $managedFileItem = Get-Item $checkoutManagedFilePath -Force
+        if (-not $managedFileItem.PSIsContainer -and
+            -not $managedFileItem.LinkType -and
+            -not ($managedFileItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            Remove-Item $checkoutManagedFilePath -Force
+        }
+        else {
+            throw "Managed generated path is not a regular file: '$managedRootFile'."
+        }
     }
 }
 
@@ -240,8 +249,10 @@ $destinationFiles = @(
                 ForEach-Object { Get-NormalizedRelativePath -Root $checkoutRootPath -Path $_.FullName }
         }
     }
-    if (Test-Path $checkoutChecksumPath -PathType Leaf) {
-        'SHA256SUMS'
+    foreach ($managedRootFile in $managedRootFiles) {
+        if (Test-Path (Join-Path $checkoutRootPath $managedRootFile) -PathType Leaf) {
+            $managedRootFile
+        }
     }
 )
 $missingDestinationFiles = @($expectedFiles | Where-Object { $_ -notin $destinationFiles })

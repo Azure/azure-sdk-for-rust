@@ -125,6 +125,27 @@ BeforeEach {
             Should -Not -Match ([regex]::Escape('-lunwind'))
     }
 
+    It 'writes a consolidated provenance manifest binding the release identity' {
+        & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot
+
+        $provenancePath = Join-Path $OutputRoot 'provenance.json'
+        Test-Path $provenancePath | Should -BeTrue
+
+        $provenance = Get-Content $provenancePath -Raw | ConvertFrom-Json
+        $provenance.schema_version | Should -Be 1
+        $provenance.source_commit | Should -Be '0123456789abcdef0123456789abcdef01234567'
+        $provenance.rust_driver_crate | Should -Be $Matrix.rust_driver_crate
+        $provenance.rust_driver_version | Should -Be '0.7.0'
+        $provenance.native_interface_crate | Should -Be $Matrix.native_interface_crate
+        $provenance.native_interface_version | Should -Be '0.1.0'
+
+        @($provenance.targets).Count | Should -Be @($Matrix.targets).Count
+        $windowsEntry = @($provenance.targets | Where-Object { $_.id -eq 'windows-amd64' })
+        $windowsEntry.Count | Should -Be 1
+        $windowsEntry[0].static_library_sha256 | Should -Match '^[0-9a-f]{64}$'
+        $windowsEntry[0].header_sha256 | Should -Match '^[0-9a-f]{64}$'
+    }
+
     It 'generates only the selected standalone musl module' {
         & $ScriptPath `
             -ArtifactRoot $ArtifactRoot `
@@ -133,6 +154,10 @@ BeforeEach {
 
         Test-Path (Join-Path $OutputRoot 'linux/amd64-musl/go.mod') | Should -BeTrue
         Test-Path (Join-Path $OutputRoot 'linux/amd64/go.mod') | Should -BeFalse
+
+        $provenance = Get-Content (Join-Path $OutputRoot 'provenance.json') -Raw | ConvertFrom-Json
+        @($provenance.targets).Count | Should -Be 1
+        @($provenance.targets)[0].id | Should -Be 'linux-amd64-musl'
     }
 
     It 'rejects an artifact ID that does not match its matrix row' {

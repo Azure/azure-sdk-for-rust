@@ -71,14 +71,17 @@ azure-cosmos-driver/
 ├── linux/amd64-musl/
 ├── linux/arm64-musl/
 ├── darwin/arm64/
+├── provenance.json
 └── SHA256SUMS
 ```
 
 The pipeline-owned `_manifest` root contains the complete evidence directory
 produced while publishing the combined artifact. Each module contains a
 `go.mod`, generated cgo linker files, the C header, and the matching static
-library. The Windows linker file also statically links the MinGW pthread runtime
-so the final Go application does not require a separate `libwinpthread-1.dll`.
+library. The root also carries a consolidated `provenance.json` binding the
+release identity (see [provenance.json](#provenancejson)). The Windows linker
+file also statically links the MinGW pthread runtime so the final Go application
+does not require a separate `libwinpthread-1.dll`.
 
 ## Why the static library is not code-signed
 
@@ -139,6 +142,29 @@ downstream consumer recomputes each checksum and rejects any mismatch.
 
 A checksum detects changed bytes. Its trust comes from being produced and
 published by the same governed official 1ES build.
+
+### provenance.json
+
+`New-GoModules.ps1` writes a single consolidated `provenance.json` at the
+generated artifact root. It is the human-readable release-identity manifest that
+binds the published static libraries back to their exact source:
+
+- `source_commit` — the repository commit every target was built from;
+- `rust_driver_crate` / `rust_driver_version` — the path-pinned driver crate and
+  its version (the driver is not published to crates.io, so the commit is the
+  authoritative pin);
+- `native_interface_crate` / `native_interface_version` — the wrapper crate and
+  the `AZURECOSMOSDRIVER_H_VERSION` header contract; and
+- `targets[]` — one entry per built row with its `id`, `triple`, `module_path`,
+  and the SHA256 of the static library and C header.
+
+`New-GoModules.ps1` cross-validates that every selected target agrees on the
+identity fields before emitting the file, so a mismatched or tampered target
+fails the build rather than producing an inconsistent manifest. Because
+`provenance.json` sits inside the same SBOM-enabled scan root as the libraries,
+1ES includes it in the signed SPDX inventory — no separate signing step is
+required. The downstream `Prepare-GoDriverPullRequest.ps1` step treats it as a
+managed root file and republishes it alongside `SHA256SUMS`.
 
 ### Embedded dependency information
 

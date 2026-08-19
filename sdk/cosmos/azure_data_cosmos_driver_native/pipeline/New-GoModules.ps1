@@ -336,5 +336,35 @@ import "C"
     Write-Host "[$($row.id)] -> $($row.module_path)/$linkName  (tag: $tag)"
 }
 
+# Consolidated, human-readable release provenance for the whole generated tree.
+# It is written at the scan root ($OutputRoot) so the 1ES SBOM COSE signature
+# covers it, binding the Rust driver version and source commit into the signed
+# artifact. $releaseIdentity was cross-validated across every selected target in
+# the verification loop above, so it is the single agreed release identity.
+$provenanceTargets = foreach ($row in $rows) {
+    $targetMetadata = $verifiedArtifacts[$row.id].Metadata
+    [ordered]@{
+        id                    = [string]$row.id
+        triple                = [string]$row.triple
+        module_path           = [string]$row.module_path
+        static_library_sha256 = ([string]$targetMetadata.static_library.sha256).ToLowerInvariant()
+        header_sha256         = ([string]$targetMetadata.header.sha256).ToLowerInvariant()
+    }
+}
+
+$provenance = [ordered]@{
+    schema_version           = 1
+    source_commit            = $releaseIdentity['source_commit']
+    native_interface_crate   = [string]$matrix.native_interface_crate
+    native_interface_version = $releaseIdentity['native_interface_version']
+    rust_driver_crate        = [string]$matrix.rust_driver_crate
+    rust_driver_version      = $releaseIdentity['rust_driver_version']
+    targets                  = @($provenanceTargets)
+}
+
+$provenanceJson = $provenance | ConvertTo-Json -Depth 6
+Write-GeneratedTextFile -Path (Join-Path $OutputRoot 'provenance.json') -Content $provenanceJson
+Write-Host "Wrote provenance.json (commit $($releaseIdentity['source_commit']), rust_driver v$($releaseIdentity['rust_driver_version']))"
+
 Write-Host ''
 Write-Host "Generated Go modules under: $OutputRoot"
