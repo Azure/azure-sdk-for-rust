@@ -65,6 +65,12 @@ impl From<&fe2o3_amqp_types::definitions::ErrorCondition> for AmqpErrorCondition
             fe2o3_amqp_types::definitions::ErrorCondition::Custom(symbol) => {
                 AmqpErrorCondition::from(AmqpSymbol::from(symbol))
             }
+            #[cfg(feature = "transaction")]
+            fe2o3_amqp_types::definitions::ErrorCondition::TransactionError(
+                ref transaction_error,
+            ) => AmqpErrorCondition::from(AmqpSymbol::from(
+                fe2o3_amqp_types::primitives::Symbol::from(transaction_error),
+            )),
         }
     }
 }

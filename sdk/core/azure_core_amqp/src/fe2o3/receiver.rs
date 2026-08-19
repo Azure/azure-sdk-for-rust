@@ -13,11 +13,20 @@ use std::sync::OnceLock;
 use tokio::sync::Mutex;
 use tracing::{info, trace, warn};
 
+#[cfg(feature = "transaction")]
+use crate::TransactionId;
+#[cfg(feature = "transaction")]
+use fe2o3_amqp::transaction::OwnedTransaction;
+#[cfg(feature = "transaction")]
+use std::{collections::HashMap, sync::Arc};
+
 use super::error::Fe2o3ReceiverAttachError;
 
 #[derive(Default)]
 pub(crate) struct Fe2o3AmqpReceiver {
     receiver: OnceLock<Mutex<fe2o3_amqp::Receiver>>,
+    #[cfg(feature = "transaction")]
+    transactions: OnceLock<Arc<Mutex<HashMap<TransactionId, OwnedTransaction>>>>,
 }
 
 /// The fe2o3 link builder for a receiver, after the name, source and target are set.
@@ -95,6 +104,8 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         self.receiver
             .set(Mutex::new(receiver))
             .map_err(|_| Self::could_not_set_message_receiver())?;
+        #[cfg(feature = "transaction")]
+        let _ = self.transactions.set(session.implementation.transactions());
         Ok(())
     }
 
@@ -130,7 +141,8 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
 
     async fn credit_mode(&self) -> Result<ReceiverCreditMode> {
         let receiver = self.receiver.get().ok_or_else(Self::receiver_not_set)?;
-        Ok(receiver.lock().await.credit_mode().into())
+        let guard = receiver.lock().await;
+        Ok(guard.credit_mode().into())
     }
 
     async fn receive_delivery(&self) -> Result<AmqpDelivery> {
@@ -141,10 +153,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .lock()
             .await;
 
-        let delivery: fe2o3_amqp::link::delivery::Delivery<
-            fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-        > = receiver.recv().await.map_err(AmqpError::from)?;
-        trace!("Received delivery: {:?}", delivery);
+        let delivery = receiver.recv().await.map_err(AmqpError::from)?;
         Ok(delivery.into())
     }
 
@@ -201,12 +210,47 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
 
         Ok(())
     }
+
+    #[cfg(feature = "transaction")]
+    async fn settle_with_transaction(
+        &self,
+        delivery: &AmqpDelivery,
+        outcome: crate::messaging::AmqpOutcome,
+        txn_id: crate::TransactionId,
+    ) -> Result<()> {
+        use fe2o3_amqp::transaction::TransactionalRetirement;
+
+        let mut receiver = self
+            .receiver
+            .get()
+            .ok_or_else(Self::receiver_not_set)?
+            .lock()
+            .await;
+
+        let transactions = self.transactions.get().ok_or_else(Self::receiver_not_set)?;
+
+        trace!("Settling delivery with transaction.");
+        let fe2o3_outcome: fe2o3_amqp_types::messaging::Outcome = outcome.into();
+        let active_txns = transactions.lock().await;
+        let txn = active_txns.get(&txn_id).ok_or_else(|| {
+            AmqpError::with_message("Transaction not found or already discharged")
+        })?;
+
+        txn.retire(&mut receiver, &delivery.0.delivery, fe2o3_outcome)
+            .await
+            .map_err(AmqpError::from)?;
+        trace!("Settled delivery with transaction.");
+
+        Ok(())
+    }
 }
 
 impl Fe2o3AmqpReceiver {
     pub fn new() -> Self {
         Self {
             receiver: OnceLock::new(),
+            #[cfg(feature = "transaction")]
+            transactions: OnceLock::new(),
         }
     }
 
@@ -276,6 +320,10 @@ mod tests {
     use super::*;
     use crate::messaging::AmqpSource;
     use crate::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
+    #[cfg(feature = "transaction")]
+    use fe2o3_amqp::{acceptor::ConnectionAcceptor, connection::Connection};
+    #[cfg(feature = "transaction")]
+    use tokio::{io::duplex, sync::oneshot};
 
     // Makes sure the link properties survive the fe2o3 builder chain. The
     // `name` method clears the properties, so it must run before
@@ -412,5 +460,67 @@ mod tests {
                 .is_some(),
             "the reported error must carry the LinkStateError, not the enclosing RecvError"
         );
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "transaction")]
+    async fn settle_with_transaction_unattached_receiver_fails() {
+        let (client_io, server_io) = duplex(65536);
+        let (done_tx, done_rx) = oneshot::channel::<()>();
+
+        let server_task = tokio::spawn(async move {
+            let acceptor = ConnectionAcceptor::new("test-container");
+            let mut connection = acceptor.accept(server_io).await.unwrap();
+            let session_acceptor = fe2o3_amqp::acceptor::SessionAcceptor::new();
+            let mut session = session_acceptor.accept(&mut connection).await.unwrap();
+            let link_acceptor = fe2o3_amqp::acceptor::LinkAcceptor::new();
+            let fe2o3_amqp::acceptor::LinkEndpoint::Sender(mut sender_link) =
+                link_acceptor.accept(&mut session).await.unwrap()
+            else {
+                panic!("expected Sender link");
+            };
+            let message = fe2o3_amqp_types::messaging::Message::builder()
+                .value(42i32)
+                .build();
+            tokio::spawn(async move {
+                let _ = sender_link.send(message).await;
+            });
+            let _ = done_rx.await;
+        });
+
+        let mut connection = Connection::builder()
+            .container_id("client-container")
+            .open_with_stream(client_io)
+            .await
+            .unwrap();
+        let mut session = fe2o3_amqp::session::Session::begin(&mut connection)
+            .await
+            .unwrap();
+        let mut receiver_link = fe2o3_amqp::Receiver::builder()
+            .name("test-receiver")
+            .source("test-source")
+            .credit_mode(fe2o3_amqp::link::receiver::CreditMode::Auto(10))
+            .attach(&mut session)
+            .await
+            .unwrap();
+
+        let fe2o3_delivery = receiver_link
+            .recv::<fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>>()
+            .await
+            .unwrap();
+        let delivery: AmqpDelivery = fe2o3_delivery.into();
+
+        let receiver = Fe2o3AmqpReceiver::new();
+        let result = receiver
+            .settle_with_transaction(
+                &delivery,
+                crate::messaging::AmqpOutcome::Accepted,
+                vec![1, 2, 3],
+            )
+            .await;
+        assert!(result.is_err());
+
+        let _ = done_tx.send(());
+        let _ = server_task.await;
     }
 }
