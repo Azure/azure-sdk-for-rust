@@ -1,0 +1,53 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+jobs:
+  - job: detect_native_driver_pipeline_changes
+    displayName: Detect Cosmos native pipeline changes
+    condition: eq(variables['Build.Reason'], 'PullRequest')
+    pool:
+      name: azsdk-pool
+      image: ubuntu-24.04
+      os: linux
+    steps:
+      - pwsh: |
+          $changedFiles = @(
+            & eng/common/scripts/get-changedfiles.ps1 `
+              -DiffPath 'sdk/cosmos/azure_data_cosmos_driver_native/pipeline/**' `
+              -DiffFilterType '' |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+          )
+          if ($LASTEXITCODE -gt 1) {
+            # Change detection can fail when the merge-base ref (origin/main) is
+            # not resolvable in this job's shallow checkout - the same limitation
+            # the upstream check-spelling script tolerates. Fail safe by running
+            # the tests rather than hard-blocking the PR.
+            Write-Host "##vso[task.logissue type=warning]Unable to detect Cosmos native pipeline changes; running tests as a precaution."
+            $shouldRun = $true
+          } else {
+            $shouldRun = $changedFiles.Count -gt 0
+            Write-Host "Changed native pipeline files: $($changedFiles.Count)"
+          }
+          Write-Host "##vso[task.setvariable variable=ShouldRun;isOutput=true]$($shouldRun.ToString().ToLowerInvariant())"
+        name: detect
+        displayName: Check changed paths
+
+  - job: test_native_driver_pipeline
+    displayName: Test Cosmos native pipeline
+    dependsOn: detect_native_driver_pipeline_changes
+    condition: >-
+      and(
+        succeeded(),
+        eq(
+          dependencies.detect_native_driver_pipeline_changes.outputs['detect.ShouldRun'],
+          'true'
+        )
+      )
+    pool:
+      name: azsdk-pool
+      image: windows-2022
+      os: windows
+    steps:
+      - template: /eng/common/pipelines/templates/steps/run-pester-tests.yml
+        parameters:
+          TargetDirectory: sdk/cosmos/azure_data_cosmos_driver_native/pipeline/tests
