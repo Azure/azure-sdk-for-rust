@@ -14,7 +14,11 @@ use azure_core::{
 };
 use tokio::sync::{oneshot, RwLock};
 
-const TOKEN_REFRESH_SKEW: Duration = Duration::minutes(2);
+// Matches `azure_identity::TokenCache::should_refresh` in
+// sdk/identity/azure_identity/src/cache.rs (300 seconds). Keeping this in sync
+// avoids surprising divergence in when a token is treated as "close enough to
+// expiry" to refresh across the two credential stacks a host can use.
+const TOKEN_REFRESH_SKEW: Duration = Duration::minutes(5);
 
 /// Completes an asynchronous host token request.
 ///
@@ -192,12 +196,15 @@ impl TokenCredential for CallbackTokenCredential {
             }
         }
 
+        // Cache and return whatever the host handed us, matching
+        // `azure_identity::TokenCache::get_token` (which performs no
+        // post-fetch validation). If the host returns a token whose lifetime
+        // falls inside `TOKEN_REFRESH_SKEW`, the next call will see the
+        // fast-path check miss and re-invoke the host — same behavior a
+        // customer would see from any other Rust SDK credential in the same
+        // situation. Enforcing lifetime here would make this credential
+        // stricter than the rest of the SDK ecosystem.
         let token = self.request_token(scope).await?;
-        if token.expires_on <= OffsetDateTime::now_utc() {
-            return Err(credential_error(
-                "host token provider returned an expired access token",
-            ));
-        }
         *cached = Some(token.clone());
         Ok(token)
     }
@@ -250,10 +257,15 @@ fn build_access_token(
     error_message_len: usize,
 ) -> azure_core::Result<AccessToken> {
     if status != 0 {
+        // Mirror the sync-reject path (which includes the numeric status) so
+        // callers can classify AAD failures without string-matching against the
+        // host-supplied message.
         let message = copy_host_bytes(error_message, error_message_len)
             .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
-            .unwrap_or_else(|_| "host token provider failed without an error message".to_string());
-        return Err(credential_error(message));
+            .unwrap_or_else(|_| "no error message".to_string());
+        return Err(credential_error(format!(
+            "host token provider failed with status {status}: {message}"
+        )));
     }
 
     let token = copy_host_bytes(token, token_len)?;
@@ -515,19 +527,36 @@ mod tests {
 
         let error = credential.get_token(&["scope"], None).await.unwrap_err();
 
-        assert!(error.to_string().contains("credential unavailable"));
+        let message = error.to_string();
+        assert!(
+            message.contains("status 1"),
+            "missing status code: {message}"
+        );
+        assert!(
+            message.contains("credential unavailable"),
+            "missing host message: {message}"
+        );
     }
 
     #[tokio::test]
-    async fn rejects_expired_host_token() {
+    async fn returns_short_lived_host_token_verbatim() {
+        // Matches `azure_identity::TokenCache`, which performs no post-fetch
+        // validation of the token lifetime. A host returning a very short
+        // (or already-expired) token gets cached and returned as-is; the
+        // consumer will see refresh thrash on subsequent calls, same as any
+        // other Rust SDK credential would produce in the same situation.
         let expires = OffsetDateTime::now_utc()
             .saturating_sub(Duration::seconds(1))
             .unix_timestamp();
-        let (_state, credential) = credential(vec![("expired".to_string(), expires)]);
+        let (state, credential) = credential(vec![("short-lived".to_string(), expires)]);
 
-        let error = credential.get_token(&["scope"], None).await.unwrap_err();
+        let token = credential
+            .get_token(&["scope"], None)
+            .await
+            .expect("short-lived tokens should be returned verbatim");
 
-        assert!(error.to_string().contains("expired access token"));
+        assert_eq!(token.token.secret(), "short-lived");
+        assert_eq!(state.calls.load(Ordering::SeqCst), 1);
     }
 
     #[tokio::test]
