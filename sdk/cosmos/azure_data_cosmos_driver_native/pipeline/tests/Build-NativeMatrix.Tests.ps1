@@ -11,6 +11,7 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $BuildJobTemplatePath = Join-Path $PipelineDirectory 'native-driver-build-job.yml'
         $PrValidationTemplatePath = Join-Path $PipelineDirectory 'native-driver-pr-validation.yml'
         $RepositoryRoot = (Resolve-Path (Join-Path $PipelineDirectory '../../../..')).Path
+        $OneEsRedirectPath = Join-Path $RepositoryRoot 'eng/pipelines/templates/stages/1es-redirect.yml'
         $PullRequestPipelinePath = Join-Path $RepositoryRoot 'eng/pipelines/pullrequest.yml'
         $ClientArchetypePath = Join-Path $RepositoryRoot 'eng/pipelines/templates/stages/archetype-sdk-client.yml'
         $Matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
@@ -146,6 +147,7 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             $generated.TargetId | Should -Be $target.id
             $generated.Triple | Should -Be $target.triple
             $generated.CCompiler | Should -Be $target.c_compiler
+            $generated.GoToolchainVersion | Should -Be $Matrix.go_toolchain_version
         }
     }
 
@@ -168,6 +170,7 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             'template: /eng/pipelines/templates/stages/1es-redirect.yml'
         ))
         $pipeline | Should -Match 'Use1ESOfficial:\s+true'
+        $pipeline | Should -Match 'EnableGoInternalModuleProxy:\s+true'
         $pipeline | Should -Match ([regex]::Escape(
             'template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml'
         ))
@@ -183,6 +186,30 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             "C:\msys64\mingw64\bin"
         ))
         $buildJobTemplate | Should -Match ([regex]::Escape('-StaticOnly'))
+    }
+
+    It 'provisions Linux compilers from Ubuntu or checksum-pinned Microsoft prior art' {
+        $buildJobTemplate = Get-Content $BuildJobTemplatePath -Raw
+
+        $buildJobTemplate | Should -Match 'gcc-aarch64-linux-gnu'
+        $buildJobTemplate | Should -Match 'libc6-dev-arm64-cross'
+        $buildJobTemplate | Should -Match 'musl-dev musl-tools'
+        $buildJobTemplate | Should -Match ([regex]::Escape(
+            'microsoft/vscode-linux-build-agent/releases/download/'
+        ))
+        $buildJobTemplate | Should -Match '58cd59ee4038291fe8a7f4adccac0ecbe8d23cbad1cb650b381e45e7e1e22424'
+        $buildJobTemplate | Should -Match 'sha256sum --check'
+        $buildJobTemplate | Should -Match 'task:\s+GoTool@0'
+        $buildJobTemplate | Should -Match 'GOTOOLCHAIN:\s+local'
+    }
+
+    It 'opts into the 1ES internal Go proxy without changing the shared default' {
+        $pipeline = Get-Content $PipelinePath -Raw
+        $oneEsRedirect = Get-Content $OneEsRedirectPath -Raw
+
+        $pipeline | Should -Match 'EnableGoInternalModuleProxy:\s+true'
+        $oneEsRedirect | Should -Match '(?s)name:\s+EnableGoInternalModuleProxy.*?default:\s+false'
+        $oneEsRedirect | Should -Match '(?s)golang:.*?internalModuleProxy:.*?enabled:\s+true'
     }
 
     It 'publishes directly after the official 1ES build without a custom evidence gate' {

@@ -27,6 +27,7 @@ extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
   parameters:
     Use1ESOfficial: true
+    EnableGoInternalModuleProxy: true
     stages:
       # -----------------------------------------------------------------------
       # 1. Build each target: capture syslibs, build the .a with
@@ -131,7 +132,7 @@ extends:
                 artifact: azure-cosmos-driver-modules
               - pwsh: |
                   $matrix = Get-Content -Raw "$(pipelineDir)/build-matrix.json" | ConvertFrom-Json
-                  Write-Host "##vso[task.setvariable variable=GoVersion]$($matrix.go_version)"
+                  Write-Host "##vso[task.setvariable variable=GoVersion]$($matrix.go_toolchain_version)"
                 displayName: Read Go version from build matrix
               - task: GoTool@0
                 displayName: Install Go $(GoVersion)

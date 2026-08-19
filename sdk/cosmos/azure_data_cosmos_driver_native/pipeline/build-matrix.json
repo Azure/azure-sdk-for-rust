@@ -8,6 +8,7 @@
   "header_filename": "azurecosmosdriver.h",
   "rust_driver_features": ["tokio", "rustls"],
   "go_version": "1.25.0",
+  "go_toolchain_version": "1.25.12",
   "module_root": "github.com/Azure/azure-cosmos-driver",
   "go_package": "driver",
   "targets": [
