@@ -106,6 +106,25 @@ impl SessionTokenInfo {
     }
 }
 
+#[cfg(test)]
+impl SessionTokenInfo {
+    /// Builds a usable session for tests.
+    pub(crate) fn for_test(token: &str, key: &str, expires_on: OffsetDateTime) -> Self {
+        Self {
+            session_token: Some(token.into()),
+            session_key: Some(key.into()),
+            expires_on,
+            refresh_on: expires_on,
+            is_fallback_to_bearer: false,
+        }
+    }
+
+    /// Builds a fallback-to-bearer sentinel for tests.
+    pub(crate) fn fallback_for_test(expires_on: OffsetDateTime) -> Self {
+        Self::fallback_to_bearer(Duration::seconds(0), expires_on)
+    }
+}
+
 impl ExpiringValue for SessionTokenInfo {
     fn refresh_on(&self) -> OffsetDateTime {
         self.refresh_on
