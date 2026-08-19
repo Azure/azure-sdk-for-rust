@@ -35,6 +35,8 @@
 //! cross-partition strategies).
 
 mod context;
+mod distinct;
+pub(crate) mod distinct_hash;
 mod drain;
 mod drained;
 #[cfg(test)]
@@ -58,6 +60,7 @@ mod unordered_merge;
 pub(crate) use context::{
     PartitionRoutingRefresh, PipelineContext, RequestExecutor, ResolvedRange, TopologyProvider,
 };
+pub(crate) use distinct::Distinct;
 pub(crate) use drain::SequentialDrain;
 pub(crate) use drained::DrainedLeaf;
 pub(crate) use node::{

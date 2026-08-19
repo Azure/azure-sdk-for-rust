@@ -80,9 +80,9 @@ pub fn is_binary(buffer: &[u8]) -> bool {
 /// Transcodes a Cosmos binary JSON buffer to UTF-8 **text** JSON.
 ///
 /// This is the driver-side conversion used when an upstream SDK/app wants to
-/// deal only with text JSON while still keeping the wire binary (efficient RUs
-/// and network bandwidth): the request and the service response stay binary,
-/// and the driver converts the binary response to text before handing it back.
+/// deal only with text JSON while still keeping the response wire binary
+/// (efficient RUs and network bandwidth): the driver converts the binary
+/// response to text before handing it back.
 ///
 /// Behavior:
 ///
@@ -102,9 +102,41 @@ pub fn transcode_to_text(buffer: &[u8]) -> Result<Vec<u8>> {
         // Already text (or empty): nothing to convert.
         return Ok(buffer.to_vec());
     }
-    let value = decode(buffer)?;
+    let mut value = decode(buffer)?;
+    normalize_integral_floats(&mut value);
     serde_json::to_vec(&value)
         .map_err(|e| BinaryError::Custom(format!("failed to re-serialize decoded value: {e}")))
+}
+
+pub(crate) fn normalize_integral_floats(value: &mut serde_json::Value) {
+    const U64_EXCLUSIVE_UPPER_BOUND: f64 = 18_446_744_073_709_551_616.0;
+
+    match value {
+        serde_json::Value::Number(number) if number.is_f64() => {
+            let Some(float) = number.as_f64() else {
+                return;
+            };
+            if float.fract() != 0.0 {
+                return;
+            }
+
+            // Cosmos stores JSON numbers as doubles but renders integral values
+            // as integers in text mode. Use an exclusive 2^64 upper bound so a
+            // cast cannot saturate u64::MAX; larger doubles stay floating point.
+            if float >= 0.0 && float < U64_EXCLUSIVE_UPPER_BOUND {
+                *number = serde_json::Number::from(float as u64);
+            } else if float >= i64::MIN as f64 && float < 0.0 {
+                *number = serde_json::Number::from(float as i64);
+            }
+        }
+        serde_json::Value::Array(values) => {
+            values.iter_mut().for_each(normalize_integral_floats);
+        }
+        serde_json::Value::Object(values) => {
+            values.values_mut().for_each(normalize_integral_floats);
+        }
+        _ => {}
+    }
 }
 
 /// Transcodes a UTF-8 **text** JSON buffer to Cosmos **binary** JSON.
@@ -183,6 +215,36 @@ mod tests {
         assert_eq!(text, serde_json::to_vec(&value).unwrap());
         let reparsed: serde_json::Value = serde_json::from_slice(&text).unwrap();
         assert_eq!(reparsed, value);
+    }
+
+    #[test]
+    fn transcode_binary_integral_float_to_text_integer() {
+        let binary = encode(&serde_json::json!({ "n": 1.0 }));
+
+        assert_eq!(transcode_to_text(&binary).unwrap(), br#"{"n":1}"#);
+    }
+
+    #[test]
+    fn transcode_integral_float_respects_json_integer_bounds() {
+        let largest_u64_float = f64::from_bits((u64::MAX as f64).to_bits() - 1);
+        let below_i64_min = f64::from_bits((i64::MIN as f64).to_bits() + 1);
+        let binary = encode(&serde_json::json!({
+            "i64_min": i64::MIN as f64,
+            "largest_u64_float": largest_u64_float,
+            "u64_exclusive_bound": 18_446_744_073_709_551_616.0,
+            "below_i64_min": below_i64_min,
+        }));
+
+        let text = transcode_to_text(&binary).unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
+
+        assert_eq!(value["i64_min"].as_i64(), Some(i64::MIN));
+        assert_eq!(
+            value["largest_u64_float"].as_u64(),
+            Some(18_446_744_073_709_549_568)
+        );
+        assert!(value["u64_exclusive_bound"].is_f64());
+        assert!(value["below_i64_min"].is_f64());
     }
 
     #[test]

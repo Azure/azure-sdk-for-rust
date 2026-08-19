@@ -2601,28 +2601,6 @@ impl CosmosDriver {
             .await;
         }
 
-        // Resolve binary encoding through the same layered view as every other
-        // option, and only honor it for point **item** operations (the resource
-        // must be a `Document`; query/feed/batch and every control-plane
-        // resource are deferred per the binary-encoding spec).
-        let binary =
-            if Self::binary_encoding_applies(operation.resource_type(), operation.operation_type())
-            {
-                self.operation_options_view(&options)
-                    .binary_encoding()
-                    .cloned()
-                    .unwrap_or_default()
-            } else {
-                crate::options::BinaryEncodingOptions::default()
-            };
-        let operation = if binary.enabled {
-            Self::apply_request_binary_encoding(operation)?
-        } else {
-            operation
-        };
-
-        let transcode_response_to_text = binary.enabled && binary.request_text_response;
-
         // TODO: This boxing is a temporary fix to avoid a large future.
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
         let response = Box::pin(async {
@@ -2634,46 +2612,38 @@ impl CosmosDriver {
         })
         .await?;
 
-        // Driver-side transcoding: convert the binary response body to text
-        // when the caller asked for a text payload over a binary wire.
-        if transcode_response_to_text {
-            if let Some(mut response) = response {
-                response.transcode_body_to_text()?;
-                return Ok(Some(response));
-            }
-        }
         Ok(response)
     }
 
     /// Whether binary encoding applies to an operation.
     ///
-    /// Honored only for point item operations: the resource must be a
-    /// [`ResourceType::Document`] and the operation one of create/read/replace/
-    /// upsert. Control-plane resources share those operation types but must
-    /// never be binary encoded (some carry JSON bodies).
-    fn binary_encoding_applies(
-        resource_type: crate::models::ResourceType,
-        operation_type: crate::models::OperationType,
-    ) -> bool {
-        resource_type == crate::models::ResourceType::Document
-            && operation_type.supports_binary_encoding()
+    /// Honored only for document operations with JSON bodies or feed pages.
+    fn binary_encoding_applies(operation: &CosmosOperation) -> bool {
+        operation.resource_type() == crate::models::ResourceType::Document
+            && operation.operation_type().supports_binary_encoding()
+            && !operation.is_change_feed()
     }
 
-    /// Applies request-side binary encoding to an operation: transcodes a text
-    /// request body to Cosmos binary JSON (an already-binary or empty body is
-    /// passed through) and advertises binary responses via the
-    /// `x-ms-cosmos-supported-serialization-formats` header.
+    /// Whether a feed pipeline requested binary output after text normalization.
+    /// Text fallback pages are encoded too, preserving one format across a mixed rollout.
+    fn binary_feed_response_restore_applies(operation: &CosmosOperation) -> bool {
+        Self::binary_encoding_applies(operation) && operation.operation_type().is_feed()
+    }
+
+    /// Applies request-side binary encoding to an operation and advertises
+    /// binary responses via the supported-serialization-formats header.
     ///
-    /// This is schema-agnostic — it operates on the raw body bytes — so a
-    /// caller that deals only in text JSON gets a binary wire without encoding
-    /// anything itself.
+    /// Query specifications remain text because the negotiation header alone
+    /// produces binary query pages; item bodies retain the schema-agnostic
+    /// text-to-binary transcode.
     fn apply_request_binary_encoding(
         operation: CosmosOperation,
     ) -> crate::error::Result<CosmosOperation> {
-        // Transcode a non-empty *text* body to binary. A body that is already
-        // binary (the SDK's typed fast path) or empty is left in place — no
-        // clone — so only genuinely text bodies pay the conversion.
-        let transcoded = match operation.body() {
+        let encode_body = !matches!(
+            operation.operation_type(),
+            crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
+        );
+        let transcoded = match operation.body().filter(|_| encode_body) {
             Some(body) if !body.is_empty() && !crate::binary_json::is_binary(body) => {
                 Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
                     crate::error::CosmosError::builder()
@@ -2692,6 +2662,23 @@ impl CosmosDriver {
             None => operation,
         };
         Ok(operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS))
+    }
+
+    fn query_plan_request_body(
+        operation: &CosmosOperation,
+    ) -> crate::error::Result<Option<Vec<u8>>> {
+        let Some(body) = operation.body().filter(|body| !body.is_empty()) else {
+            return Ok(None);
+        };
+        crate::binary_json::transcode_to_text(body)
+            .map(Some)
+            .map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+                    .with_message("failed to prepare text query-plan request body")
+                    .with_source(e)
+                    .build()
+            })
     }
 
     /// Executes a singleton operation (operations which return only a single result).
@@ -2941,7 +2928,19 @@ impl CosmosDriver {
                 topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
             );
 
-            plan.pipeline.next_page(&mut context).await
+            let binary_enabled = plan.binary_encoding().enabled;
+            let request_text_response = plan.binary_encoding().request_text_response;
+            let mut response = plan.pipeline.next_page(&mut context).await?;
+            if binary_enabled {
+                if let Some(response) = response.as_mut() {
+                    if request_text_response {
+                        response.transcode_body_to_text()?;
+                    } else if Self::binary_feed_response_restore_applies(plan.operation()) {
+                        response.transcode_body_to_binary()?;
+                    }
+                }
+            }
+            Ok(response)
         })
         .await
     }
@@ -3241,6 +3240,24 @@ impl CosmosDriver {
         // reference, so it issues no additional network calls and does not change
         // the request flow.
         operation.validate_addressing()?;
+        let query_fingerprint = matches!(
+            operation.operation_type(),
+            crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
+        )
+        .then(|| planner::streaming_query_fingerprint(&operation));
+        let binary = if Self::binary_encoding_applies(&operation) {
+            self.operation_options_view(options)
+                .binary_encoding()
+                .cloned()
+                .unwrap_or_default()
+        } else {
+            crate::options::BinaryEncodingOptions::default()
+        };
+        let operation = if binary.enabled {
+            Self::apply_request_binary_encoding(operation)?
+        } else {
+            operation
+        };
 
         // Planning holds the whole pipeline-builder state across several await
         // points, which makes it one of the largest futures in the driver —
@@ -3248,11 +3265,19 @@ impl CosmosDriver {
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        Box::pin(async move {
-            self.plan_operation_inner(operation, options, continuation, plan_options)
-                .await
+        let mut plan = Box::pin(async move {
+            self.plan_operation_inner(
+                operation,
+                options,
+                continuation,
+                plan_options,
+                query_fingerprint,
+            )
+            .await
         })
-        .await
+        .await?;
+        plan.set_binary_encoding(binary);
+        Ok(plan)
     }
 
     async fn plan_operation_inner(
@@ -3261,6 +3286,7 @@ impl CosmosDriver {
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
+        query_fingerprint: Option<String>,
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
@@ -3385,11 +3411,23 @@ impl CosmosDriver {
             .as_ref()
             .is_some_and(planner::is_streaming_order_by)
         {
-            let pipeline = planner::build_streaming_ordered_merge(
+            let query_fingerprint = query_fingerprint.ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING,
+                    )
+                    .with_message(
+                        "internal error: streaming ORDER BY query is missing its pre-encoding \
+                         request fingerprint",
+                    )
+                    .build()
+            })?;
+            let pipeline = planner::build_streaming_ordered_merge_with_fingerprint(
                 &query_plan,
                 &mut topology,
                 &operation,
                 resume_state,
+                query_fingerprint,
             )
             .await?;
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
@@ -3409,13 +3447,14 @@ impl CosmosDriver {
         options: &OperationOptions,
     ) -> crate::error::Result<QueryPlan> {
         // Advertise exactly the query-rewrite features implemented by the
-        // production dataflow pipeline (`OrderBy,MultipleOrderBy`). The value
-        // must remain non-empty so Gateway V2 accepts the QueryPlan request.
+        // production dataflow pipeline (see `query::SUPPORTED_QUERY_FEATURES`).
+        // The value must remain non-empty so Gateway V2 accepts the QueryPlan
+        // request.
         let query_plan_operation = CosmosOperation::query_plan(
             container.clone(),
             std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
         )
-        .with_body(operation.body().unwrap_or_default().to_vec());
+        .with_body(Self::query_plan_request_body(operation)?.unwrap_or_default());
 
         let response = self
             .execute_operation_direct(
@@ -3469,9 +3508,10 @@ impl CosmosDriver {
             .map(|props| props.query_engine_configuration.clone())
             .unwrap_or_default();
 
-        let native_result = operation
-            .body()
-            .and_then(|b| std::str::from_utf8(b).ok())
+        let query_plan_body = Self::query_plan_request_body(operation)?;
+        let native_result = query_plan_body
+            .as_deref()
+            .and_then(|body| std::str::from_utf8(body).ok())
             .map(|json| self.try_native_query_plan(json, container, &query_engine_config));
 
         match native_result {
@@ -3850,6 +3890,21 @@ mod tests {
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
+    }
+
+    #[test]
+    fn empty_query_body_skips_native_query_plan_input() {
+        let resource = crate::models::CosmosResourceReference::from(test_account());
+        let missing =
+            CosmosOperation::new(crate::models::OperationType::Query, resource.clone(), None);
+        let empty = CosmosOperation::new(crate::models::OperationType::Query, resource, None)
+            .with_body(Vec::new());
+
+        assert_eq!(
+            CosmosDriver::query_plan_request_body(&missing).unwrap(),
+            None
+        );
+        assert_eq!(CosmosDriver::query_plan_request_body(&empty).unwrap(), None);
     }
 
     #[cfg(feature = "preview_dtx")]
@@ -6307,32 +6362,46 @@ mod tests {
     // ── apply_request_binary_encoding (schema-agnostic request-side encode) ──
 
     #[test]
-    fn binary_encoding_applies_only_to_document_item_ops() {
+    fn binary_encoding_request_and_feed_restore_predicates_agree() {
         use crate::models::{OperationType, ResourceType};
 
-        // Point item ops on `Document` are the only combinations that qualify.
-        for op in [
-            OperationType::Create,
-            OperationType::Read,
-            OperationType::Replace,
-            OperationType::Upsert,
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        for (op, request_applies, feed_restore_applies) in [
+            (OperationType::Create, true, false),
+            (OperationType::Read, true, false),
+            (OperationType::ReadFeed, true, true),
+            (OperationType::Replace, true, false),
+            (OperationType::Delete, false, false),
+            (OperationType::Upsert, true, false),
+            (OperationType::Query, true, true),
+            (OperationType::SqlQuery, true, true),
+            (OperationType::QueryPlan, false, false),
+            (OperationType::Batch, false, false),
+            (OperationType::Head, false, false),
+            (OperationType::HeadFeed, false, false),
+            (OperationType::Execute, false, false),
+            (OperationType::Patch, false, false),
+            #[cfg(feature = "preview_dtx")]
+            (OperationType::CommitDistributedTransaction, false, false),
+            #[cfg(feature = "preview_dtx")]
+            (OperationType::ReadDistributedTransaction, false, false),
         ] {
-            assert!(
-                CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
-                "Document + {op:?} should be binary-encodable",
+            let operation = CosmosOperation::new(
+                op,
+                crate::models::CosmosResourceReference::from(container.clone())
+                    .with_resource_type(ResourceType::Document)
+                    .into_feed_reference(),
+                Some(crate::models::FeedRange::full()),
             );
-        }
-
-        // Non-item operation types on `Document` are excluded (query/feed/delete/patch).
-        for op in [
-            OperationType::Delete,
-            OperationType::Query,
-            OperationType::ReadFeed,
-            OperationType::Patch,
-        ] {
-            assert!(
-                !CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
-                "Document + {op:?} must not be binary-encoded",
+            assert_eq!(
+                CosmosDriver::binary_encoding_applies(&operation),
+                request_applies,
+                "unexpected request-side binary eligibility for Document + {op:?}",
+            );
+            assert_eq!(
+                CosmosDriver::binary_feed_response_restore_applies(&operation),
+                feed_restore_applies,
+                "request/restore binary eligibility diverged for Document + {op:?}",
             );
         }
 
@@ -6352,12 +6421,30 @@ mod tests {
                 OperationType::Replace,
                 OperationType::Upsert,
             ] {
+                let operation = CosmosOperation::new(
+                    op,
+                    crate::models::CosmosResourceReference::from(container.clone())
+                        .with_resource_type(rt)
+                        .into_feed_reference(),
+                    None,
+                );
                 assert!(
-                    !CosmosDriver::binary_encoding_applies(rt, op),
+                    !CosmosDriver::binary_encoding_applies(&operation),
                     "{rt:?} + {op:?} must not be binary-encoded (control plane)",
+                );
+                assert!(
+                    !CosmosDriver::binary_feed_response_restore_applies(&operation),
+                    "{rt:?} + {op:?} must not restore binary feed responses",
                 );
             }
         }
+
+        let change_feed =
+            CosmosOperation::change_feed(container, Some(crate::models::FeedRange::full()));
+        assert!(!CosmosDriver::binary_encoding_applies(&change_feed));
+        assert!(!CosmosDriver::binary_feed_response_restore_applies(
+            &change_feed
+        ));
     }
 
     fn binary_encoding_test_operation(body: Vec<u8>) -> CosmosOperation {
@@ -6413,6 +6500,37 @@ mod tests {
                 .as_deref(),
             Some("CosmosBinary"),
         );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_keeps_query_body_text() {
+        use crate::models::{OperationType, ResourceType};
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let text =
+            br#"{"query":"SELECT * FROM c WHERE c.id = @p","parameters":[{"name":"@p","value":1}]}"#
+                .to_vec();
+        for operation_type in [OperationType::Query, OperationType::SqlQuery] {
+            let operation = CosmosOperation::new(
+                operation_type,
+                crate::models::CosmosResourceReference::from(container.clone())
+                    .with_resource_type(ResourceType::Document)
+                    .into_feed_reference(),
+                Some(crate::models::FeedRange::full()),
+            )
+            .with_body(text.clone());
+
+            let operation = CosmosDriver::apply_request_binary_encoding(operation).unwrap();
+
+            assert_eq!(operation.body(), Some(text.as_slice()));
+            assert_eq!(
+                operation
+                    .request_headers()
+                    .supported_serialization_formats
+                    .as_deref(),
+                Some("CosmosBinary"),
+            );
+        }
     }
 
     #[test]

@@ -2335,6 +2335,7 @@ fn success_feed_response(
     items: Vec<serde_json::Value>,
     page_options: FeedPageOptions<'_>,
     feed_headers: FeedResponseHeaders,
+    binary: bool,
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_values(
@@ -2348,9 +2349,10 @@ fn success_feed_response(
     };
     let item_count = page.len() as u32;
     let body = feed_to_json(envelope_name, page, rid);
-    let mut builder = success_response(
+    let mut builder = success_response_with_format(
         StatusCode::Ok,
         &body,
+        binary,
         1.0,
         &feed_headers.session_token,
         start,
@@ -2377,6 +2379,7 @@ fn success_document_feed_response(
     items: Vec<DocumentFeedItem>,
     page_options: FeedPageOptions<'_>,
     feed_headers: FeedResponseHeaders,
+    binary: bool,
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_document_feed_items(
@@ -2390,9 +2393,10 @@ fn success_document_feed_response(
     };
     let item_count = page.len() as u32;
     let body = feed_to_json(envelope_name, page, rid);
-    let mut builder = success_response(
+    let mut builder = success_response_with_format(
         StatusCode::Ok,
         &body,
+        binary,
         1.0,
         &feed_headers.session_token,
         start,
@@ -2435,7 +2439,7 @@ fn parse_query_spec(
             StatusCode::BadRequest,
             None,
             "BadRequest",
-            &format!("Invalid query JSON body: {e}"),
+            &format!("Invalid text query JSON body: {e}"),
             0.0,
             "",
             start,
@@ -2496,6 +2500,7 @@ fn execute_query_feed(
         results,
         FeedPageOptions::from_request(parsed),
         feed_headers,
+        parsed.binary_response,
         start,
     )
 }
@@ -2520,6 +2525,7 @@ fn execute_document_query_feed(
             results,
             FeedPageOptions::from_request(parsed),
             feed_headers,
+            parsed.binary_response,
             start,
         ),
         Ok(None) => {
@@ -2545,6 +2551,7 @@ fn execute_document_query_feed(
                 results,
                 FeedPageOptions::from_request(parsed),
                 feed_headers,
+                parsed.binary_response,
                 start,
             )
         }
@@ -2723,6 +2730,7 @@ fn handle_read_feed_databases(
         databases,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
+        false,
         start,
     )
 }
@@ -2788,6 +2796,7 @@ fn handle_read_feed_containers(
         containers,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
+        false,
         start,
     )
 }
@@ -2849,6 +2858,7 @@ fn handle_read_feed_offers(
         offers,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
+        false,
         start,
     )
 }
@@ -3190,6 +3200,7 @@ fn handle_read_feed_items(
                 docs,
                 FeedPageOptions::from_request(parsed),
                 headers,
+                parsed.binary_response && parsed.a_im.is_none(),
                 start,
             )
         }
@@ -3491,11 +3502,22 @@ fn synthesize_order_by_rewritten_query(
         Some(t) if t.kind == TokenKind::Identifier => t.text,
         _ => collection_token.text,
     };
+    // `SELECT DISTINCT …` — the envelope wraps each row with its `_rid`, so a
+    // per-partition `DISTINCT` on the envelope could never collapse anything.
+    // Drop it from the rewritten query and let the client-side ordered
+    // `Distinct` stage deduplicate the globally sorted stream instead.
+    let mut payload_idx = select_idx + 1;
+    if tokens
+        .get(payload_idx)
+        .is_some_and(|t| t.kind == TokenKind::Distinct)
+    {
+        payload_idx += 1;
+    }
     // Skip a leading `TOP <n>` / `TOP @param`: the global TOP is applied by the
     // client's `SkipTake` over the merged stream, so the per-partition envelope
     // must not carry it (a per-partition TOP would drop rows a later partition
-    // needs for the global ordering).
-    let mut payload_idx = select_idx + 1;
+    // needs for the global ordering). `DISTINCT` precedes `TOP` in SQL, so this
+    // runs after the `DISTINCT` skip above.
     if tokens
         .get(payload_idx)
         .is_some_and(|t| t.kind == TokenKind::Top)

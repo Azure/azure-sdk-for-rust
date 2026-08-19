@@ -6,6 +6,7 @@
 use std::sync::Arc;
 
 use crate::models::{ContinuationToken, CosmosOperation, CosmosResponse};
+use crate::options::BinaryEncodingOptions;
 
 use super::context::PipelineContext;
 use super::node::{PageResult, PipelineNode};
@@ -56,9 +57,10 @@ impl Pipeline {
             PageResult::Page { response, .. } => Ok(Some(response)),
             PageResult::Drained => Ok(None),
             // Defensive: today the root is always a `Request`, `SequentialDrain`,
-            // or `DrainedLeaf`, none of which can bubble `SplitRequired` up past
-            // their parent. If a future node type ever does, surfacing it as an
-            // explicit error is preferable to silently dropping the page.
+            // `Distinct`, or `DrainedLeaf`, none of which can bubble
+            // `SplitRequired` up past their parent. If a future node type ever
+            // does, surfacing it as an explicit error is preferable to silently
+            // dropping the page.
             PageResult::SplitRequired { .. } => Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT)
                 .with_message(
@@ -87,6 +89,7 @@ impl Pipeline {
 pub struct OperationPlan {
     pub(crate) pipeline: Pipeline,
     operation: Arc<CosmosOperation>,
+    binary_encoding: BinaryEncodingOptions,
 }
 
 impl OperationPlan {
@@ -95,7 +98,20 @@ impl OperationPlan {
         Self {
             pipeline,
             operation,
+            binary_encoding: BinaryEncodingOptions::default(),
         }
+    }
+
+    pub(crate) fn operation(&self) -> &CosmosOperation {
+        &self.operation
+    }
+
+    pub(crate) fn binary_encoding(&self) -> &BinaryEncodingOptions {
+        &self.binary_encoding
+    }
+
+    pub(crate) fn set_binary_encoding(&mut self, binary_encoding: BinaryEncodingOptions) {
+        self.binary_encoding = binary_encoding;
     }
 
     /// Snapshots this plan into a [`ContinuationToken`] suitable for cross-process
