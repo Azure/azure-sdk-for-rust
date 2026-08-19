@@ -416,9 +416,9 @@ impl CosmosOperation {
     /// Whether this operation advertised Cosmos binary JSON in its
     /// `x-ms-cosmos-supported-serialization-formats` header.
     ///
-    /// This is the authority on the **wire** encoding — what the service is
-    /// asked to send. It is *not* necessarily what the caller receives: see
-    /// [`emits_binary_payload`](Self::emits_binary_payload).
+    /// Describes the **wire**, not what the caller receives: under
+    /// `BinaryEncodingOptions::request_text_response` the wire stays binary
+    /// while the driver transcodes the response to text on the way out.
     pub fn negotiates_binary_response(&self) -> bool {
         self.request_headers
             .supported_serialization_formats
@@ -450,14 +450,12 @@ impl CosmosOperation {
     /// Whether pipeline nodes that synthesize a page should emit **binary**
     /// items.
     ///
-    /// This is the authority on the encoding handed back, as distinct from
-    /// [`negotiates_binary_response`](Self::negotiates_binary_response), which
-    /// describes the wire. The two diverge under
+    /// Distinct from [`negotiates_binary_response`](Self::negotiates_binary_response),
+    /// which describes the wire. The two diverge under
     /// `BinaryEncodingOptions::request_text_response`: the wire stays binary
-    /// (keeping the bandwidth saving) while the driver transcodes the response
-    /// to text on the way out. A node that emitted binary in that case would
-    /// re-encode every item only for `execute_plan` to immediately decode it.
-    pub fn emits_binary_payload(&self) -> bool {
+    /// while the driver transcodes on the way out, so a node emitting binary
+    /// would re-encode every item only for `execute_plan` to decode it again.
+    pub(crate) fn emits_binary_payload(&self) -> bool {
         self.negotiates_binary_response() && !self.transcodes_response_to_text
     }
 

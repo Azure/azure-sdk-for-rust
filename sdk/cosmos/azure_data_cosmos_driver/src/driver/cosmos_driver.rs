@@ -6750,8 +6750,8 @@ mod tests {
             .build();
 
         let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
-        // Mirrors `CosmosOperation::query_items`, which retargets the reference
-        // at `Document` — the resource type `binary_negotiates_response` gates
+        // Mirrors `CosmosOperation::query_items`, which points the reference at
+        // `Document` — the resource type `binary_negotiates_response` gates
         // on — but with `SqlQuery` as the operation type.
         let resource_ref = crate::models::CosmosResourceReference::from(container)
             .with_resource_type(crate::models::ResourceType::Document)

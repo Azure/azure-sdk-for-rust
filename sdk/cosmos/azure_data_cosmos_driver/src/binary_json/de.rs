@@ -225,11 +225,9 @@ impl<'de> Deserializer<'de> for &mut BinaryDeserializer<'de> {
                     // an integer visit.
                     //
                     // This also decides `#[serde(untagged)]` variant selection,
-                    // which buffers through `deserialize_any`: wire `3.0` picks
-                    // an integer variant over a float one. That is deliberate —
-                    // it is what the same enum already does over a text page,
-                    // where the service sends `3` — so the two encodings agree
-                    // rather than each picking a different variant.
+                    // which buffers through `deserialize_any`. Deliberate: the
+                    // same enum picks the integer variant over a text page, so
+                    // the two encodings agree rather than diverging.
                     match super::integral_double(f) {
                         Some(super::IntegralDouble::Unsigned(unsigned)) => {
                             visitor.visit_u64(unsigned)
@@ -565,12 +563,10 @@ mod tests {
         assert_eq!(back_exact, exact);
     }
 
-    /// `#[serde(untagged)]` resolves a variant by buffering through
-    /// `deserialize_any`, so the integral-`Double` coercion decides which
-    /// variant an integral number selects. The contract is that binary picks
-    /// the same variant text does — the service sends `3` in text mode, so an
-    /// integer variant there and a float variant over binary would make the
-    /// two encodings disagree for the same stored document.
+    /// `#[serde(untagged)]` buffers through `deserialize_any`, so the
+    /// integral-`Double` coercion decides which variant an integral number
+    /// selects. Binary must pick the same variant text does, or the two
+    /// encodings disagree for the same stored document.
     #[test]
     fn untagged_variant_selection_agrees_between_binary_and_text() {
         #[derive(Deserialize, PartialEq, Debug)]
@@ -580,15 +576,14 @@ mod tests {
             Float(f64),
         }
 
-        // Float variant declared second, so a float visit is required to reach
-        // it; this would pass vacuously if the order were reversed.
+        // Float variant declared second, so this would pass vacuously if the
+        // order were reversed.
         let from_binary: Value = from_slice(&double_buffer(3.0)).unwrap();
         let from_text: Value = serde_json::from_str("3").unwrap();
         assert_eq!(from_binary, Value::Int(3));
         assert_eq!(from_binary, from_text);
 
-        // A fractional `Double` is not integral, so it still reaches the float
-        // variant on both paths.
+        // A fractional `Double` still reaches the float variant on both paths.
         let fractional_binary: Value = from_slice(&double_buffer(2.5)).unwrap();
         let fractional_text: Value = serde_json::from_str("2.5").unwrap();
         assert_eq!(fractional_binary, Value::Float(2.5));

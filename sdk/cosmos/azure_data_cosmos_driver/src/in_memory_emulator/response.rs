@@ -220,34 +220,30 @@ impl ResponseBuilder {
     ///
     /// For bodies the emulator synthesizes itself — error envelopes,
     /// control-plane payloads, transaction envelopes. These are not stored
-    /// documents, so the number-spelling normalization
-    /// [`with_document_body`](Self::with_document_body) applies does not belong
-    /// here: it would rewrite values the emulator authored (an RU charge of
-    /// `3.0` into `3`) for no fidelity gain.
+    /// documents, so the normalization
+    /// [`with_document_body`](Self::with_document_body) applies would only
+    /// rewrite values the emulator authored (an RU charge of `3.0` into `3`).
     pub fn with_json_body(mut self, body: &serde_json::Value) -> Self {
         self.body = Self::to_text(body);
         self
     }
 
     /// Sets the body from a **stored document**, encoded as Cosmos binary JSON
-    /// when `binary` is set (the client negotiated it) or UTF-8 text JSON
-    /// otherwise.
-    ///
-    /// The binary form begins with the `0x80` preamble, which the SDK
-    /// auto-detects from the first byte, so the `Content-Type` stays
+    /// when `binary` is set or UTF-8 text JSON otherwise. The binary form's
+    /// `0x80` preamble is auto-detected by the SDK, so `Content-Type` stays
     /// `application/json` either way (mirroring the real service).
     ///
     /// The text branch normalizes integral floats because the service spells a
-    /// stored `3.0` as `3` in text but sends a `Double` in binary (measured live
-    /// against a real account). Without this the emulator, which re-serializes
-    /// the caller's value verbatim, would show a text/binary disagreement the
-    /// service does not have — masking the real one these tests exist to catch.
+    /// stored `3.0` as `3` in text but sends a `Double` in binary (measured
+    /// live). Without it the emulator would show a text/binary disagreement the
+    /// service does not have, masking the real one these tests exist to catch.
     /// The binary branch stays unnormalized so the `NUMBER_DOUBLE` marker
     /// survives, which is the case under test.
     ///
-    /// Known gap: the service folds `-0.0` to `0` at storage; `normalize_integral_floats`
-    /// preserves the sign to keep local round-trips byte-exact, so both branches
-    /// agree here on a spelling the service would not produce.
+    /// Known gap: the service folds `-0.0` to `0` at storage;
+    /// `normalize_integral_floats` preserves the sign to keep local round-trips
+    /// byte-exact, so both branches agree on a spelling the service would not
+    /// produce.
     pub fn with_document_body(mut self, body: &serde_json::Value, binary: bool) -> Self {
         self.body = if binary {
             crate::binary_json::encode(body)
