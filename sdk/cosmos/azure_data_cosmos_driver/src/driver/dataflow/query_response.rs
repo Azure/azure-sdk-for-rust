@@ -369,10 +369,14 @@ pub(crate) struct PageAggregator {
 }
 
 impl PageAggregator {
-    /// Creates an aggregator emitting binary when the operation negotiated it
-    /// (see [`CosmosOperation::negotiates_binary_response`]).
+    /// Creates an aggregator emitting binary when the operation hands binary
+    /// back to the caller (see [`CosmosOperation::emits_binary_payload`]) — not
+    /// [`negotiates_binary_response`], which is the encoding asked of the
+    /// service. The two differ under `request_text_response`, where the wire
+    /// stays binary but merged items must be emitted as text.
     ///
-    /// [`CosmosOperation::negotiates_binary_response`]: crate::models::CosmosOperation::negotiates_binary_response
+    /// [`CosmosOperation::emits_binary_payload`]: crate::models::CosmosOperation::emits_binary_payload
+    /// [`negotiates_binary_response`]: crate::models::CosmosOperation::negotiates_binary_response
     pub(crate) fn new(emit_binary: bool) -> Self {
         Self {
             request_charge: crate::models::RequestCharge::default(),

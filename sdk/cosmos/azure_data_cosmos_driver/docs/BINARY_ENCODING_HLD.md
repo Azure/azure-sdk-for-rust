@@ -51,7 +51,10 @@ Every binary buffer begins with the preamble byte `0x80`. Because `0x80` is a UT
 
 Binary encoding is a driver option: `OperationOptions.binary_encoding: Option<BinaryEncodingOptions>` (driver-owned type). The Rust SDK **re-exports** `BinaryEncodingOptions` and resolves enablement **once at client build** via `resolve_binary_encoding(Option<BinaryEncodingOptions>)`, storing it on the client context — there is no per-request lookup. It prefers the explicit `CosmosClientBuilder::with_binary_encoding_options(..)` option and falls back to the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy: `1` / `true` / `yes` / `on`, case-insensitive). Each item operation carries the resolved options onto its `OperationOptions` (via a `with_binary_encoding` helper).
 
-FFI hosts set the equivalent flat fields on the C ABI `cosmos_operation_options_t` (`binary_encoding_enabled`, `binary_encoding_request_text_response`), which convert to the same driver option — so no SDK code is involved.
+FFI hosts set the equivalent flat fields on the C ABI `cosmos_operation_options_t` (`binary_encoding_enabled`, `binary_encoding_request_text_response`), which convert to the same driver option — so no SDK code is involved. Two ABI-specific details:
+
+* Both fields are **tri-state** (`0` unset / `1` false / `2` true), not plain bools. `unset` inherits a lower layer, while an explicit `false` forces binary **off** for the operation regardless of any account or runtime default — a distinction the Rust `Option<BinaryEncodingOptions>` surface expresses with `None` vs `Some(..with_enabled(false))`.
+* `binary_encoding_request_text_response` defaults to **false**. A host that sets only `binary_encoding_enabled` gets a binary wire *and* binary response bodies — including query result items — and must decode them itself, detecting via the `0x80` preamble. Text-in / text-out requires setting **both** flags.
 
 ### Two transcodes, both in the driver (schema-agnostic)
 
@@ -60,7 +63,7 @@ When `binary_encoding.enabled` is set, the driver owns the wire format both ways
 * **Request** (`apply_request_binary_encoding`) — transcodes a **text** request body to Cosmos binary JSON via `binary_json::transcode_to_binary` (`serde_json::from_slice` → `encode`). An **already-binary** or empty body passes through unchanged, so a caller that pre-encoded pays nothing. Response negotiation is a separate step (`apply_response_negotiation`) and advertises `CosmosBinary`.
 * **Response** (when `request_text_response` is set) — transcodes the binary response back to text JSON via `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire stays binary in both directions. This lives in `execute_plan`, which **every** operation type funnels through — point ops, queries, and change feed alike — so the contract holds uniformly. A page that is already text transcodes as a refcount clone, so plans that never negotiated binary pay nothing.
 
-This keeps transcoding in the **driver** (not the backend) and, because it is schema-agnostic, lets a text-only FFI host get an efficient binary wire without any encoding on its side.
+This keeps transcoding in the **driver** (not the backend) and, because it is schema-agnostic, lets a text-only FFI host get an efficient binary wire without encoding anything on its side. Note the two transcodes are independently controlled: enabling binary buys the request-side transcode unconditionally, but the host still receives **binary** responses unless it also sets `request_text_response`.
 
 ### Rust SDK typed fast path (optimization)
 
@@ -79,14 +82,34 @@ query:     x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary
 A query advertises an **accept-list** and lets the service choose, preserving
 .NET's safety valve: a service version or query shape that cannot produce binary
 answers in text and the query still succeeds. Nothing downstream requires the
-format to be uniform across a result set — page decode sniffs the `0x80` preamble
-per page (`normalize_page_body`) and the emitted encoding is a property of the
-operation (`emits_binary_payload`), not of any absorbed page, so a merge over
-mixed binary and text source pages already normalizes them. The cost is
-diagnosability, not correctness: if the service picks text, the RU and bandwidth
-saving is silently forfeited. Point ops force `CosmosBinary` — a single body with
-no pipeline behind it has nothing to gain from a per-response choice. Both
-constants are documented in `driver/cosmos_driver.rs`.
+format to be uniform across a result set — the pipeline paths that reparse a page
+sniff the `0x80` preamble per page (`normalize_page_body`) and the emitted
+encoding is a property of the operation (`emits_binary_payload`), not of any
+absorbed page, so a merge over mixed binary and text source pages already
+normalizes them. Point ops force `CosmosBinary` — a single body with no pipeline
+behind it has nothing to gain from a per-response choice. Both constants are
+documented in `driver/cosmos_driver.rs`.
+
+**What a text answer costs.** The accept-list keeps the query *working*, but the
+fallback is not free and it is not only a diagnosability gap:
+
+* The RU and bandwidth saving is silently forfeited, with no signal distinguishing
+  "binary negotiated" from "binary received". Today the only way to observe it is
+  to count bytes, as the A/B harness does.
+* **Number fidelity reverts to the text path.** A text page is parsed by
+  `serde_json`, so an integral value the service would have tagged as an integer
+  in binary becomes an `f64` — reintroducing the integral-`Double`→integer
+  divergence (#5028) that motivated this feature. Typed deserialization into an
+  integer field can then fail.
+
+That second cost applies to **every** query shape, not just the ones that reparse
+pages. `normalize_page_body` is reached only from `parse_envelope_page` (the
+`ORDER BY` merge) and `skip_take_page`, and `build_sequential_drain` wraps the
+fan-out in `SkipTake` only when `skip > 0 || take.is_some()` — so a plain
+`SELECT * FROM c` hands the service's page back untouched. On the merge path the
+page is not rescued either: `normalize_page_body` is a no-op on text, and
+`build_page` re-encodes through `serde_json`, so the value has already lost its
+integer tag. Point ops are unaffected, since they demand `CosmosBinary` outright.
 
 The request `Content-Type` stays `application/json`; the service detects the binary body from its first byte.
 
@@ -252,68 +275,120 @@ flowchart TD
 
 ## Sequence diagrams
 
-### Rust SDK — write then read (binary enabled)
+Two shapes matter, and each behaves differently under `request_text_response`, so
+both settings are shown inline as branches.
 
-The SDK pre-encodes typed `T` to binary; the driver sees an already-binary body
-and passes it through. When `request_text_response` is set, the driver transcodes
-the response back to text and the SDK's decode takes the text branch.
+### Point operation (`create` / `read` / `replace` / `upsert`)
+
+The request body is encoded and the response is negotiated as `CosmosBinary`
+outright. `request_text_response` changes only the final hop — the wire is
+identical in both branches.
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant App
-    participant SDK as ContainerClient<br/>(azure_data_cosmos)
-    participant DRV as CosmosDriver::execute_operation
-    participant Cod as binary_json codec
+    participant SDK as ContainerClient
+    participant DRV as CosmosDriver
+    participant Cod as binary_json
     participant Svc as Cosmos DB
 
-    Note over SDK: binary_encoding resolved once at client build<br/>(with_binary_encoding_options, env fallback)
-
     App->>SDK: create_item(pk, id, item)
-    SDK->>Cod: to_vec(item)  (typed fast path)
-    Cod-->>SDK: 0x80-prefixed binary bytes
-    SDK->>DRV: operation + OperationOptions.binary_encoding
-    Note over DRV: request body already binary → pass through
-    DRV->>Svc: binary body + CosmosBinary
-    Svc-->>DRV: binary response (0x80)
-    opt request_text_response
-        DRV->>Cod: transcode_to_text (decode → to_vec)
-        Cod-->>DRV: text JSON body
+
+    alt Rust SDK (typed fast path)
+        SDK->>Cod: to_vec(T)
+        Cod-->>SDK: 0x80 binary body
+    else FFI host
+        Note over SDK,DRV: sends TEXT body
     end
-    DRV-->>SDK: response body
-    App->>SDK: into_body().into_single() → T
-    SDK->>Cod: is_binary? from_slice else serde_json::from_slice
-    Cod-->>SDK: typed item T
-    SDK-->>App: ItemResponse (typed T)
+
+    SDK->>DRV: execute_operation(op, binary_encoding)
+
+    Note over DRV: apply_request_binary_encoding
+    alt body already binary
+        Note over DRV: pass through
+    else body is text
+        DRV->>Cod: transcode_to_binary
+        Cod-->>DRV: 0x80 binary body
+    end
+
+    Note over DRV: apply_response_negotiation<br/>records emits_binary_payload
+    DRV->>Svc: binary body<br/>formats: CosmosBinary
+    Svc-->>DRV: binary response (0x80)
+
+    alt request_text_response = false
+        DRV-->>SDK: raw binary bytes
+        SDK->>Cod: is_binary → from_slice::<T>
+    else request_text_response = true
+        DRV->>Cod: transcode_to_text
+        Cod-->>DRV: text JSON
+        DRV-->>SDK: text bytes
+        SDK->>Cod: not binary → serde_json::from_slice::<T>
+    end
+
+    SDK-->>App: ItemResponse<T>
 ```
 
-### FFI host — text in, text out, binary wire
+### Query
 
-The FFI host deals only in text. It sets two flags; the driver transcodes the
-text request to binary and the binary response back to text. The host never
-touches binary.
+Three things differ from the point op. The request body is always text
+(`application/query+json` is a query spec, not a document), so only the response
+is negotiated. The header is an **accept-list**, so the service's choice is a real
+branch. And `request_text_response` changes the work the pipeline does, not just
+the final hop: it flips `emit_binary` on the nodes that synthesize pages, so
+`ORDER BY` and `OFFSET`/`LIMIT` skip re-encoding every item to binary only for the
+driver to decode it straight back.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Host as FFI host (.NET / Java)
-    participant ABI as cosmos_operation_options_t
-    participant DRV as CosmosDriver::execute_operation
-    participant Cod as binary_json codec
+    participant App
+    participant SDK as ContainerClient
+    participant DRV as CosmosDriver
+    participant PIPE as pipeline<br/>(merge / SkipTake)
+    participant Cod as binary_json
     participant Svc as Cosmos DB
 
-    Note over Host: TEXT json body<br/>enabled = true, request_text_response = true
-    Host->>ABI: binary_encoding_enabled + request_text flags
-    ABI->>DRV: OperationOptions.binary_encoding
-    Note over DRV: request body is TEXT → transcode to binary
-    DRV->>Cod: transcode_to_binary (from_slice → encode)
-    Cod-->>DRV: 0x80-prefixed binary body
-    DRV->>Svc: binary body + CosmosBinary
-    Svc-->>DRV: binary response (0x80)
-    DRV->>Cod: transcode_to_text (decode → to_vec)
-    Cod-->>DRV: TEXT json body
-    DRV-->>Host: TEXT json (never saw binary)
+    App->>SDK: query_items(sql)
+    SDK->>DRV: execute_operation(Query, binary_encoding)
+
+    DRV->>Svc: query plan (TEXT, no negotiation)
+    Svc-->>DRV: partitioned query plan
+
+    Note over DRV: request body stays TEXT<br/>(application/query+json)
+    Note over DRV: emits_binary_payload =<br/>negotiates && !request_text_response
+
+    DRV->>Svc: query<br/>formats: JsonText,CosmosBinary
+    alt service chooses binary
+        Svc-->>DRV: page (0x80)
+    else service chooses text
+        Svc-->>DRV: page (text) — accept-list safety valve
+    end
+
+    alt pipeline reparses pages (merge / SkipTake)
+        DRV->>PIPE: normalize_page_body (sniffs 0x80 per page)
+    else passthrough (no ORDER BY, no OFFSET/LIMIT)
+        Note over DRV: service page forwarded unchanged
+    end
+
+    alt request_text_response = false
+        Note over PIPE: emit_binary = true<br/>re-encodes items to binary
+        PIPE-->>DRV: binary items
+        DRV-->>SDK: binary items
+        SDK->>Cod: from_slice::<T> per item
+    else request_text_response = true
+        Note over PIPE: emit_binary = false<br/>no re-encode
+        PIPE-->>DRV: text items
+        DRV->>Cod: transcode_to_text (no-op: refcount clone)
+        DRV-->>SDK: text items
+        SDK->>Cod: serde_json::from_slice::<T>
+    end
+
+    SDK-->>App: FeedPage<T>
 ```
+
+The query-plan fetch is a separate text request, which is why `binary%` in the A/B
+harness tops out around 87–94% rather than 100% — expected, not a leak.
 
 When the option is **off**, both paths collapse to the existing text behavior —
 `serde_json` on the way out and back, byte-for-byte unchanged.

@@ -67,11 +67,15 @@ pub(crate) struct SkipTake {
 
 impl SkipTake {
     /// Wraps `child`, skipping `skip` documents then taking up to `take`
-    /// (`None` = all remaining). `emit_binary` is the operation's negotiated
-    /// response encoding (see
-    /// [`CosmosOperation::negotiates_binary_response`]).
+    /// (`None` = all remaining). `emit_binary` is the encoding the operation
+    /// hands back to the caller (see
+    /// [`CosmosOperation::emits_binary_payload`]) — not
+    /// [`negotiates_binary_response`], which is the encoding asked of the
+    /// service. The two differ under `request_text_response`, where the wire
+    /// stays binary but this node must emit text.
     ///
-    /// [`CosmosOperation::negotiates_binary_response`]: crate::models::CosmosOperation::negotiates_binary_response
+    /// [`CosmosOperation::emits_binary_payload`]: crate::models::CosmosOperation::emits_binary_payload
+    /// [`negotiates_binary_response`]: crate::models::CosmosOperation::negotiates_binary_response
     pub(crate) fn new(
         child: Box<dyn PipelineNode>,
         skip: u64,

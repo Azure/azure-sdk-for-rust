@@ -27,7 +27,13 @@
 //! wire bytes.
 //!
 //! Text and binary modes are interleaved round by round so that network
-//! drift, throttling, and cache warm-up affect both arms equally.
+//! drift, throttling, and cache warm-up affect both arms equally, and the arm
+//! order rotates each round so no arm consistently benefits from running last.
+//!
+//! `point_delete` doubles as the noise floor: it sends no request body and
+//! receives no response body, so its arms are byte-identical on the wire and
+//! any delta it reports is measurement bias rather than a real effect. Read the
+//! other workloads' latency deltas against it.
 //!
 //! ## Document shapes
 //!
@@ -641,7 +647,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     for round in 1..=args.rounds {
-        for (mode, container) in &clients {
+        // Rotate the arm order each round. With a fixed order the arm that
+        // runs last benefits from whatever warms up over a round (connection
+        // reuse, service-side caching), which shows up as a latency edge it
+        // did not earn — visible as a nonzero `point_delete` delta, a workload
+        // whose arms send byte-identical HTTP. Rotation spreads that bias
+        // evenly, and is deterministic (unlike shuffling) so runs stay
+        // comparable. Byte and RU columns are unaffected either way.
+        let offset = (round - 1) % clients.len();
+        for (mode, container) in clients.iter().cycle().skip(offset).take(clients.len()) {
             println!("round {round}: {}", mode.label());
 
             // Point writes run first and are size-neutral: every document
@@ -1598,7 +1612,9 @@ fn report(summaries: &BTreeMap<String, Summary>, modes: &[Mode]) {
          `http p50` is the HTTP round trip alone; the gap to `p50 ms` is client-side work\n\
          (including binary transcoding).\n\
          Prefer the per-item columns for query workloads: they stay valid even if the\n\
-         result-set size drifts between modes."
+         result-set size drifts between modes.\n\
+         `point_delete` is the noise floor: its arms send byte-identical HTTP, so its\n\
+         deltas are measurement bias. Discount the other latency deltas by that much."
     );
 }
 

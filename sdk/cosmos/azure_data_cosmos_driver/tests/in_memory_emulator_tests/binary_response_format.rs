@@ -219,6 +219,112 @@ async fn text_read_of_binary_written_item_yields_text_response() {
     assert_eq!(decoded["value"], 314);
 }
 
+/// The same item read as an **untyped** [`serde_json::Value`] must be identical
+/// whether the response arrived binary or text.
+///
+/// This is the assertion the rest of the suite structurally cannot make: the
+/// fuzzer compares two *binary* decoders, and the perf corpus test reconciles
+/// number variants through `numbers_equivalent`. Plain `==` on untyped `Value`s
+/// is what pins it, since `serde_json::Number`'s `PartialEq` is
+/// variant-sensitive (`PosInt(3) != Float(3.0)`).
+///
+/// Untyped matters: an integer field routes to `deserialize_integer`, which has
+/// coerced since #4976, while `Value` routes to `deserialize_any`, which did
+/// not. Every model in this repo is typed, which is why this went unnoticed on
+/// the point-read path even though point operations have negotiated binary all
+/// along.
+#[tokio::test]
+async fn untyped_read_agrees_between_binary_and_text_responses() {
+    let ctx = setup_single_region().await;
+    // Written as floats so the service (and emulator) hold them as `Double` —
+    // the case where the binary and text spellings of one value can diverge.
+    let body = serde_json::json!({
+        "id": "untyped-1",
+        "pk": "pk1",
+        "small": 3.0,
+        "negative": -7.0,
+        "fractional": 2.5,
+        "nested": { "arr": [1.0, 2.5, -3.0] },
+    });
+
+    let write = create_binary_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        Some("JsonText,CosmosBinary"),
+    );
+    let write_resp = ctx.emulator.execute_request(&write).await.unwrap();
+    let (write_status, _h, _raw) = collect_raw_response(write_resp).await;
+    assert_eq!(write_status, StatusCode::Created);
+
+    // Read once negotiating binary, once negotiating text.
+    let read_as = |formats: &'static str| {
+        let mut req = read_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            "untyped-1",
+            r#"["pk1"]"#,
+        );
+        req.headers_mut().insert(
+            SUPPORTED_SERIALIZATION_FORMATS.clone(),
+            HeaderValue::from_static(formats),
+        );
+        req
+    };
+
+    let binary_resp = ctx
+        .emulator
+        .execute_request(&read_as("JsonText,CosmosBinary"))
+        .await
+        .unwrap();
+    let (binary_status, _h, binary_raw) = collect_raw_response(binary_resp).await;
+    assert_eq!(binary_status, StatusCode::Ok);
+    assert!(
+        binary_json::is_binary(&binary_raw),
+        "test setup: the binary-negotiated read must actually return binary",
+    );
+
+    let text_resp = ctx
+        .emulator
+        .execute_request(&read_as("JsonText"))
+        .await
+        .unwrap();
+    let (text_status, _h, text_raw) = collect_raw_response(text_resp).await;
+    assert_eq!(text_status, StatusCode::Ok);
+    assert!(
+        !binary_json::is_binary(&text_raw),
+        "test setup: the text-negotiated read must actually return text",
+    );
+
+    // `from_slice` is the deserializer the driver hands binary bodies to, so
+    // this exercises the real caller boundary rather than the reference decoder.
+    let from_binary: serde_json::Value = binary_json::from_slice(&binary_raw).unwrap();
+    let from_text: serde_json::Value = serde_json::from_slice(&text_raw).unwrap();
+
+    assert_eq!(
+        from_binary, from_text,
+        "an untyped read must not depend on the response serialization format",
+    );
+
+    // Pin the direction of agreement, so the comparison above cannot be
+    // satisfied by both sides being wrong together.
+    assert!(
+        from_binary["small"].is_u64(),
+        "an integral double must read back as an integer, not a float",
+    );
+    assert!(
+        from_binary["negative"].is_i64(),
+        "a negative integral double must read back as a signed integer",
+    );
+    assert!(
+        from_binary["fractional"].is_f64(),
+        "a fractional double must stay floating point",
+    );
+}
+
 /// Builds a `POST .../docs` query request (`application/query+json`), optionally
 /// advertising a response-format via `x-ms-cosmos-supported-serialization-formats`.
 fn query_items_request(

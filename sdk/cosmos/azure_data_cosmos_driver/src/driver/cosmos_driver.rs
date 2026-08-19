@@ -2714,14 +2714,6 @@ impl CosmosDriver {
         {
             return operation;
         }
-        // Never clobber a header a caller already set.
-        if operation
-            .request_headers()
-            .supported_serialization_formats
-            .is_some()
-        {
-            return operation;
-        }
         // Reuse a caller-resolved value when available (the `execute_operation`
         // path already resolved it for the request-body gate); otherwise resolve
         // it here — the query path reaches `plan_operation` directly without a
@@ -2735,21 +2727,39 @@ impl CosmosDriver {
         if !binary.enabled {
             return operation;
         }
+        // Record the text hand-back BEFORE the caller-set-header guard below.
+        // The two decisions are independent: the header is a *wire* choice,
+        // `request_text_response` is a *payload-shape* choice. Recording it
+        // after the guard would let a caller who sets the header themselves and
+        // asks for text silently receive `0x80` bytes, because
+        // `emits_binary_payload()` would still be true and `execute_plan` would
+        // skip the transcode.
+        let operation = if binary.request_text_response {
+            operation.transcoding_response_to_text()
+        } else {
+            operation
+        };
+        // Never clobber a header a caller already set.
+        if operation
+            .request_headers()
+            .supported_serialization_formats
+            .is_some()
+        {
+            return operation;
+        }
         // Queries advertise an accept-list; point ops force binary. Mirrors
-        // .NET — see the two constants.
-        let formats = if operation.operation_type() == crate::models::OperationType::Query {
+        // .NET — see the two constants. `SqlQuery` is included because
+        // `OperationType::supports_binary_response` admits it, so gating on
+        // `Query` alone would hand a query the point-op *demand*.
+        let formats = if matches!(
+            operation.operation_type(),
+            crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
+        ) {
             BINARY_NEGOTIATION_FORMATS_QUERY
         } else {
             BINARY_NEGOTIATION_FORMATS_POINT
         };
-        let operation = operation.with_supported_serialization_formats(formats);
-        // Record the text hand-back so pipeline nodes emit text items rather
-        // than re-encoding binary that `execute_plan` would immediately decode.
-        if binary.request_text_response {
-            operation.transcoding_response_to_text()
-        } else {
-            operation
-        }
+        operation.with_supported_serialization_formats(formats)
     }
 
     /// Transcodes an operation's **text** request body to Cosmos binary JSON.
@@ -6675,6 +6685,92 @@ mod tests {
         let item =
             crate::models::ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
         CosmosOperation::create_item(item).with_body(body)
+    }
+
+    /// `request_text_response` is a *payload-shape* decision; the negotiation
+    /// header is a *wire* decision. A caller who makes the wire decision itself
+    /// must still get the payload it asked for — otherwise it silently receives
+    /// `0x80` bytes, because `emits_binary_payload()` stays true and
+    /// `execute_plan` skips the transcode.
+    #[tokio::test]
+    async fn caller_set_header_still_honors_request_text_response() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(
+                crate::options::BinaryEncodingOptions::new()
+                    .with_enabled(true)
+                    .with_request_text_response(true),
+            )
+            .build();
+
+        let caller_set = binary_encoding_test_operation(b"{}".to_vec())
+            .with_supported_serialization_formats("CosmosBinary");
+        let negotiated = driver.apply_response_negotiation(caller_set, &options, None);
+
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+            "the caller-set header must still survive untouched",
+        );
+        assert!(
+            !negotiated.emits_binary_payload(),
+            "request_text_response must be recorded even when the caller set the header",
+        );
+
+        // Control: the same operation without `request_text_response` does emit
+        // binary, so the assertion above reflects the flag and not a dead path.
+        let binary_only = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+        let caller_set = binary_encoding_test_operation(b"{}".to_vec())
+            .with_supported_serialization_formats("CosmosBinary");
+        let negotiated = driver.apply_response_negotiation(caller_set, &binary_only, None);
+        assert!(negotiated.emits_binary_payload());
+    }
+
+    /// `OperationType::supports_binary_response` admits `SqlQuery` alongside
+    /// `Query`, so the format picker must treat them alike. Gating on `Query`
+    /// alone would hand a query the point-op *demand* (`CosmosBinary`),
+    /// removing the service's text safety valve.
+    #[tokio::test]
+    async fn sql_query_advertises_the_query_accept_list() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        // Mirrors `CosmosOperation::query_items`, which retargets the reference
+        // at `Document` — the resource type `binary_negotiates_response` gates
+        // on — but with `SqlQuery` as the operation type.
+        let resource_ref = crate::models::CosmosResourceReference::from(container)
+            .with_resource_type(crate::models::ResourceType::Document)
+            .into_feed_reference();
+        let query = CosmosOperation::new(
+            crate::models::OperationType::SqlQuery,
+            resource_ref,
+            Some(crate::models::FeedRange::full()),
+        )
+        .with_body(serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap());
+        let negotiated = driver.apply_response_negotiation(query, &options, None);
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some(BINARY_NEGOTIATION_FORMATS_QUERY),
+            "SqlQuery is a query: it must advertise the accept-list, not the demand",
+        );
     }
 
     #[test]

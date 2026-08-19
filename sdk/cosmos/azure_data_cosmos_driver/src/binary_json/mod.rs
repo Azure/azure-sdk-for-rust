@@ -112,32 +112,66 @@ pub fn transcode_to_text(buffer: &[u8]) -> Result<Vec<u8>> {
         .map_err(|e| BinaryError::Custom(format!("failed to re-serialize decoded value: {e}")))
 }
 
-/// Rewrites every integral `f64` in `value` to an integer `Number`, matching
-/// the service's text rendering of a stored `Double`.
+/// The integer form of an integral `Double`, or `None` when the value must stay
+/// floating point.
+///
+/// The signed/unsigned split is not cosmetic: it selects which visitor a value
+/// is fed to, and a `u64` above `i64::MAX` is rejected by signed targets.
+pub(crate) enum IntegralDouble {
+    Unsigned(u64),
+    Signed(i64),
+}
+
+/// Classifies `float` as an integer when the service's text mode would render
+/// it with integer syntax (`3`, not `3.0`).
+///
+/// This is the single rule behind both [`normalize_integral_floats`] (which
+/// rewrites a decoded [`serde_json::Value`]) and the untyped decode path in
+/// [`de`](crate::binary_json::de). Keeping one rule is what makes a binary page
+/// decode to the same number types no matter which query pipeline carried it —
+/// see the `integral_doubles_decode_identically_*` tests.
 ///
 /// Bounds are exclusive at `2^64` so a cast cannot saturate; out-of-range
-/// magnitudes stay floating point.
-pub(crate) fn normalize_integral_floats(value: &mut serde_json::Value) {
+/// magnitudes stay floating point. Non-finite values return `None` because
+/// `NaN.fract()` is `NaN`.
+pub(crate) fn integral_double(float: f64) -> Option<IntegralDouble> {
     const U64_EXCLUSIVE_UPPER_BOUND: f64 = 18_446_744_073_709_551_616.0;
 
+    if float.fract() != 0.0 {
+        return None;
+    }
+    // `-0.0` is integral and compares equal to `0.0`, so it would fall into the
+    // unsigned branch and coerce to `0`, losing the sign a locally-encoded
+    // payload must round-trip byte-for-byte. (The service itself folds `-0.0`
+    // to `0` at storage, so this only ever applies to client-side encoding.)
+    if float == 0.0 && float.is_sign_negative() {
+        return None;
+    }
+    if (0.0..U64_EXCLUSIVE_UPPER_BOUND).contains(&float) {
+        Some(IntegralDouble::Unsigned(float as u64))
+    } else if float < 0.0 && float >= i64::MIN as f64 {
+        Some(IntegralDouble::Signed(float as i64))
+    } else {
+        None
+    }
+}
+
+/// Rewrites every integral `f64` in `value` to an integer `Number`, matching
+/// the service's text rendering of a stored `Double`.
+pub(crate) fn normalize_integral_floats(value: &mut serde_json::Value) {
     match value {
         serde_json::Value::Number(number) if number.is_f64() => {
             let Some(float) = number.as_f64() else {
                 return;
             };
-            if float.fract() != 0.0 {
-                return;
-            }
-            // `-0.0` is integral and compares equal to `0.0`, so it would fall
-            // into the unsigned branch below and coerce to `0`, erasing a sign
-            // the service round-trips. Leave it alone.
-            if float == 0.0 && float.is_sign_negative() {
-                return;
-            }
-            if (0.0..U64_EXCLUSIVE_UPPER_BOUND).contains(&float) {
-                *number = serde_json::Number::from(float as u64);
-            } else if float < 0.0 && float >= i64::MIN as f64 {
-                *number = serde_json::Number::from(float as i64);
+            match integral_double(float) {
+                Some(IntegralDouble::Unsigned(unsigned)) => {
+                    *number = serde_json::Number::from(unsigned);
+                }
+                Some(IntegralDouble::Signed(signed)) => {
+                    *number = serde_json::Number::from(signed);
+                }
+                None => {}
             }
         }
         serde_json::Value::Array(values) => {
@@ -397,6 +431,70 @@ mod tests {
     fn transcode_keeps_fractional_double_unchanged() {
         let binary = encode(&serde_json::json!({ "n": 3.5 }));
         assert_eq!(transcode_to_text(&binary).unwrap(), br#"{"n":3.5}"#);
+    }
+
+    /// A binary page reaches an untyped caller by two different routes: the
+    /// **passthrough** pipeline hands the envelope straight to `from_slice`,
+    /// while the **merge** and **SkipTake** pipelines make a binary→text hop
+    /// through [`transcode_to_text`] first. Both must produce the same
+    /// `serde_json::Value`, and both must match what a text-mode response
+    /// yields — `serde_json::Number`'s `PartialEq` is variant-sensitive, so
+    /// `PosInt(3) != Float(3.0)` and adding `ORDER BY` to a query would
+    /// otherwise silently change the JSON number type of every integral field.
+    #[test]
+    fn integral_doubles_decode_identically_on_every_pipeline() {
+        // Every number here is stored as a `Double` on the wire.
+        let stored = serde_json::json!({
+            "small": 3.0,
+            "negative": -7.0,
+            "wide": 9_007_199_254_740_993_f64,
+            "fractional": 3.5,
+            "negative_zero": -0.0,
+            "nested": { "arr": [1.0, 2.5, -3.0] },
+        });
+        let binary = encode(&stored);
+
+        // Route 1 — passthrough: binary bytes deserialized directly.
+        let passthrough: serde_json::Value = from_slice(&binary).unwrap();
+        // Route 2 — merge / SkipTake: binary transcoded to text, then parsed.
+        let via_text: serde_json::Value =
+            serde_json::from_slice(&transcode_to_text(&binary).unwrap()).unwrap();
+
+        assert_eq!(
+            passthrough, via_text,
+            "passthrough and the binary->text hop must agree on number types",
+        );
+
+        // Both must agree with the service's text rendering of the same values.
+        let text_mode: serde_json::Value =
+            serde_json::from_slice(br#"{"small":3,"negative":-7,"wide":9007199254740992,"fractional":3.5,"negative_zero":-0.0,"nested":{"arr":[1,2.5,-3]}}"#)
+                .unwrap();
+        assert_eq!(passthrough, text_mode);
+
+        // Spot-check the variants directly: `assert_eq!` above relies on
+        // `Number`'s variant sensitivity, so pin the intent explicitly.
+        assert!(passthrough["small"].is_u64(), "integral double -> integer");
+        assert!(passthrough["negative"].is_i64(), "negative integral -> i64");
+        assert!(passthrough["fractional"].is_f64(), "fraction stays f64");
+        assert!(
+            passthrough["negative_zero"].is_f64(),
+            "-0.0 must keep its sign rather than folding to 0",
+        );
+    }
+
+    /// A float target still receives a float when the wire value is integral:
+    /// serde's float visitors accept an integer visit, so coercing on the
+    /// untyped path must not break typed `f64` fields.
+    #[test]
+    fn integral_double_still_deserializes_into_a_float_target() {
+        #[derive(serde::Deserialize)]
+        struct Doc {
+            ratio: f64,
+        }
+
+        let binary = encode(&serde_json::json!({ "ratio": 4.0 }));
+        let doc: Doc = from_slice(&binary).unwrap();
+        assert_eq!(doc.ratio, 4.0);
     }
 
     /// `-0.0` is integral and `== 0.0`, so the unsigned coercion would fold it
