@@ -18,11 +18,16 @@ jobs:
                 Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
           )
           if ($LASTEXITCODE -gt 1) {
-            throw "Unable to detect Cosmos native pipeline changes."
+            # Change detection can fail when the merge-base ref (origin/main) is
+            # not resolvable in this job's shallow checkout - the same limitation
+            # the upstream check-spelling script tolerates. Fail safe by running
+            # the tests rather than hard-blocking the PR.
+            Write-Host "##vso[task.logissue type=warning]Unable to detect Cosmos native pipeline changes; running tests as a precaution."
+            $shouldRun = $true
+          } else {
+            $shouldRun = $changedFiles.Count -gt 0
+            Write-Host "Changed native pipeline files: $($changedFiles.Count)"
           }
-
-          $shouldRun = $changedFiles.Count -gt 0
-          Write-Host "Changed native pipeline files: $($changedFiles.Count)"
           Write-Host "##vso[task.setvariable variable=ShouldRun;isOutput=true]$($shouldRun.ToString().ToLowerInvariant())"
         name: detect
         displayName: Check changed paths
