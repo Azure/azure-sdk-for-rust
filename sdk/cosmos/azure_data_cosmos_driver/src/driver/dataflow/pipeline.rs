@@ -112,6 +112,35 @@ impl OperationPlan {
         self.continuation_poisoned = true;
     }
 
+    /// Whether a page advanced this plan without reaching the caller.
+    ///
+    /// Read by
+    /// [`CosmosDriver::execute_plan`](crate::driver::CosmosDriver::execute_plan)
+    /// to refuse the *next* page as well. Closing only the token exit would
+    /// leave the quieter one open: a caller that keeps pulling pages instead of
+    /// minting a token would receive the page *after* the lost one and never
+    /// learn a page went missing.
+    pub(crate) fn continuation_poisoned(&self) -> bool {
+        self.continuation_poisoned
+    }
+
+    /// The error a poisoned plan returns from every subsequent call.
+    ///
+    /// Deliberately carries the status of the failure that caused it — the
+    /// poison is not an independent fault, it is that fault made durable. Same
+    /// reasoning as `SkipTake::poisoned_error`, at the boundary layer.
+    pub(crate) fn poisoned_error() -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message(
+                "this plan is unusable: a page advanced it but could not be returned to the \
+                 caller, so its progress and what the caller received no longer agree. Continuing \
+                 would deliver the page *after* the lost one and no continuation token can be \
+                 minted; re-run the query from the last token that was captured successfully",
+            )
+            .build()
+    }
+
     /// Snapshots this plan into a [`ContinuationToken`] suitable for cross-process
     /// resumption.
     ///
@@ -139,6 +168,10 @@ impl OperationPlan {
     /// the caller — a binary response body that failed to transcode to text.
     /// Reported as
     /// [`CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE`](crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE).
+    /// That failure also stops the plan being executed again — see
+    /// [`CosmosDriver::execute_plan`](crate::driver::CosmosDriver::execute_plan)
+    /// — so a caller cannot step over the lost page by simply pulling the next
+    /// one instead of minting a token.
     pub fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken> {
         if self.continuation_poisoned {
             return Err(crate::error::CosmosError::builder()

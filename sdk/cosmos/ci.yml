@@ -54,9 +54,17 @@ extends:
       # the `binary_encoding` live leg (live-platform-matrix.json); a no-op
       # elsewhere. Each iteration exercises 3 encoding configs; every config runs
       # 4 point ops + 1 single-partition query + 1 cross-partition ORDER BY
-      # query, and the pure-`binary` config adds a typed wide-integer probe
-      # (itself an extra ORDER BY). That is 3*(4+2) + 1 = ~19 round-trips per
-      # iteration, so 180 => ~3420.
+      # query, and the pure-`binary` config adds a typed wide-integer probe of
+      # 3 more round-trips (upsert, point read, ORDER BY). That is 3*6 + 3 = 21
+      # per iteration, so 180 => ~3800.
+      #
+      # Treat that as a floor, not a total. It counts only the calls the fuzzer
+      # makes by name: it does not count the query-plan request a
+      # cross-partition query issues, nor the partition-key-range lookups, nor
+      # the per-partition fan-out of an ORDER BY (one page fetch per physical
+      # partition, not one per query). The real request count is higher by a
+      # factor that depends on the container's partition count, so size the
+      # budget by wall clock rather than by this number.
       #
       # ORDER BY runs on every config so the control exercises the same surface
       # as the experiment (#4976); it previously ran only on pure `binary`, which

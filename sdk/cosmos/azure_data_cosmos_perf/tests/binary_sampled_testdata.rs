@@ -871,3 +871,56 @@ mod comparators {
         assert!(!json_identical(&json!("3"), &json!(3)));
     }
 }
+
+/// Pins that the live comparison actually *uses* the strict comparator.
+///
+/// The checks in [`comparators`] exercise [`json_identical`] in isolation, so
+/// they stay green if the call inside [`assert_encodings_agree`] is switched
+/// back to [`json_equivalent`] — the one-line edit that would make the strict
+/// comparison vacuous. These drive the helper itself instead.
+mod use_site {
+    use super::{assert_encodings_agree, Compare, QueryOutcome, QuerySpec};
+    use serde_json::{json, Number, Value};
+
+    fn spec() -> QuerySpec {
+        QuerySpec {
+            name: "use-site guard",
+            text: "SELECT * FROM c",
+            compare: Compare::Sequence,
+            expected_items: 1,
+        }
+    }
+
+    fn outcome(items: Vec<Value>) -> QueryOutcome {
+        QueryOutcome {
+            items,
+            pages: 1,
+            request_charge: 0.0,
+        }
+    }
+
+    /// One item whose `n` is the integer `3`, and the same item whose `n` is
+    /// the double `3.0`: the same value in a different `Number` variant, which
+    /// is exactly what a defect in the encoding path looks like.
+    fn text_arm() -> QueryOutcome {
+        outcome(vec![json!({ "id": "a", "n": 3 })])
+    }
+
+    fn binary_arm() -> QueryOutcome {
+        let double = Value::Number(Number::from_f64(3.0).expect("finite"));
+        outcome(vec![json!({ "id": "a", "n": double })])
+    }
+
+    #[test]
+    #[should_panic(expected = "differs between text and binary")]
+    fn a_variant_split_between_the_arms_fails_the_comparison() {
+        assert_encodings_agree(&spec(), &text_arm(), &binary_arm(), "binary");
+    }
+
+    /// The companion: the panic above has to come from the variant split, not
+    /// from item counts or some unrelated assertion inside the helper.
+    #[test]
+    fn arms_that_match_exactly_pass_the_comparison() {
+        assert_encodings_agree(&spec(), &text_arm(), &text_arm(), "binary");
+    }
+}

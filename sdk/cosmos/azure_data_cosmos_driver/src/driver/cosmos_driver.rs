@@ -3031,6 +3031,15 @@ impl CosmosDriver {
     /// `request_text_response` in the `options` passed to a later page has no
     /// effect: the request header is already sent and the pipeline nodes are
     /// already built to emit one encoding. To switch, build a new plan.
+    ///
+    /// # Errors
+    ///
+    /// Once a page has advanced the plan without reaching the caller — a
+    /// response body that failed to transcode to text — the plan is spent, and
+    /// every later call fails with
+    /// [`SERIALIZATION_RESPONSE_BODY_INVALID`](crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID).
+    /// Returning the following page instead would hand back the page *after*
+    /// the one that was lost, with nothing to signal the gap.
     pub async fn execute_plan(
         &self,
         plan: &mut OperationPlan,
@@ -3047,6 +3056,13 @@ impl CosmosDriver {
                          use CosmosDriverRuntime::create_driver() which initializes automatically"
                     ))
                     .build());
+            }
+            // A page that advanced the plan but never reached the caller makes
+            // the plan unusable, not just untokenizable: the next page would be
+            // the one *after* the page that was lost. Refuse it here so the
+            // caller cannot silently step over the gap.
+            if plan.continuation_poisoned() {
+                return Err(OperationPlan::poisoned_error());
             }
             tracing::debug!("plan execution started");
 
@@ -6742,6 +6758,144 @@ mod tests {
             .with_supported_serialization_formats("CosmosBinary");
         let negotiated = driver.apply_response_negotiation(caller_set, &binary_only, None);
         assert!(negotiated.emits_binary_payload());
+    }
+
+    /// Pins the poison *wiring*, not just the flag. The tests in `dataflow`
+    /// call `poison_continuation` by hand, so they stay green if the call site
+    /// here is deleted — and a deleted call site is exactly the silent failure
+    /// the poison exists to prevent: the page is lost and a later token
+    /// resumes past it.
+    #[tokio::test]
+    async fn a_failed_transcode_poisons_the_plan_for_continuation_tokens() {
+        let driver = transcoding_test_driver().await;
+        // A lone preamble is a truncated binary buffer: `next_page` hands it
+        // back as a page, and the transcode in `execute_plan` fails on it.
+        let mut plan = transcoding_plan(&driver, &[&[crate::binary_json::PREAMBLE]]);
+
+        let err = driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect_err("a page that cannot be transcoded must not be returned");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "got: {err}",
+        );
+
+        let err = plan
+            .to_continuation_token()
+            .expect_err("the plan advanced past a page the caller never received");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            "got: {err}",
+        );
+    }
+
+    /// The token exit is the loud one; this is the quiet one. A caller that
+    /// keeps pulling pages rather than minting a token would otherwise receive
+    /// the page *after* the lost one and never learn a page went missing.
+    #[tokio::test]
+    async fn a_poisoned_plan_refuses_to_deliver_the_next_page() {
+        let driver = transcoding_test_driver().await;
+        // Two pages: the first fails to transcode, and the second is the one a
+        // caller would silently receive in its place if the plan kept going.
+        let mut plan = transcoding_plan(
+            &driver,
+            &[&[crate::binary_json::PREAMBLE], br#"{"id":"page-2"}"#],
+        );
+
+        driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect_err("the first page cannot be transcoded");
+
+        let err = driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect_err("a poisoned plan must not hand back the page after the lost one");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "got: {err}",
+        );
+        assert!(
+            err.to_string().contains("this plan is unusable"),
+            "the refusal must come from the plan's poison, not a second transcode failure; got: {err}",
+        );
+    }
+
+    /// The control: the poison above has to come from the failed transcode,
+    /// not from running `execute_plan` at all.
+    #[tokio::test]
+    async fn a_page_that_transcodes_cleanly_leaves_the_plan_unpoisoned() {
+        let driver = transcoding_test_driver().await;
+        let mut plan = transcoding_plan(&driver, &[b"{}"]);
+
+        driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect("a text page transcodes to itself");
+
+        let err = plan
+            .to_continuation_token()
+            .expect_err("a create_item operation cannot be tokenized");
+        assert_ne!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            "a plan whose page was delivered must not report transcode poisoning; got: {err}",
+        );
+    }
+
+    /// A driver marked initialized so `execute_plan` reaches the pipeline. No
+    /// request ever leaves it: the plans below are backed by a mock leaf.
+    async fn transcoding_test_driver() -> CosmosDriver {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build())
+            .expect("CosmosDriver::new should succeed in tests");
+        driver.initialized.store(true, Ordering::Release);
+        driver
+    }
+
+    /// A plan whose mock leaf yields one page per entry in `bodies`, over an
+    /// operation negotiated to hand the caller text — the only configuration in
+    /// which `execute_plan` transcodes.
+    fn transcoding_plan(driver: &CosmosDriver, bodies: &[&[u8]]) -> OperationPlan {
+        use crate::driver::dataflow::mocks::{response, MockLeaf};
+        use crate::driver::dataflow::{PageResult, Pipeline};
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(
+                crate::options::BinaryEncodingOptions::new()
+                    .with_enabled(true)
+                    .with_request_text_response(true),
+            )
+            .build();
+        let operation = driver.apply_response_negotiation(
+            binary_encoding_test_operation(b"{}".to_vec()),
+            &options,
+            None,
+        );
+        assert!(
+            operation.transcodes_response_to_text(),
+            "the fixture must select the transcoding path",
+        );
+
+        let last = bodies.len() - 1;
+        let pages = bodies
+            .iter()
+            .enumerate()
+            .map(|(i, body)| {
+                Ok(PageResult::Page {
+                    response: response(body),
+                    is_terminal: i == last,
+                })
+            })
+            .collect();
+        OperationPlan::new(
+            Pipeline::new(Box::new(MockLeaf::with_pages(pages))),
+            std::sync::Arc::new(operation),
+        )
     }
 
     /// `OperationType::supports_binary_response` admits `SqlQuery` alongside

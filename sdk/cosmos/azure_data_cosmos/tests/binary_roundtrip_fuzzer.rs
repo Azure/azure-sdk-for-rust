@@ -2311,7 +2311,10 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             // rejects into an integer).
             if *label == "binary" {
                 assert_typed_integer_probe(&container, &pk, iter, cfg.seed, &context).await?;
-                checked += 1;
+                // Three round-trips, not one: upsert, point read, ORDER BY.
+                // `checked` is reported as a round-trip count, and the CI
+                // budget in sdk/cosmos/ci.yml is sized off it.
+                checked += 3;
             }
         }
 
@@ -2321,7 +2324,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     }
 
     println!(
-        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs (4 point ops each + 2 queries: single-partition and full-container ORDER BY) = {checked} round-trips, all canonical-equal (seed={})",
+        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs (4 point ops each + 2 queries: single-partition and full-container ORDER BY, plus a 3-call typed integer probe on the pure-binary config) = {checked} round-trips, all canonical-equal (seed={})",
         cfg.iterations,
         configs.len(),
         cfg.seed
