@@ -442,10 +442,18 @@ async fn receive_events_from_processor(ctx: TestContext) -> Result<()> {
 /// The test watches every partition client A claims (not just the first),
 /// because B will only steal a fair share of partitions and that share is
 /// not deterministic.
+///
+/// A receiver reaches the broker on the first poll of `stream_events()`, and
+/// not when `next_partition_client()` hands the client out. The test polls B's
+/// streams, or B holds no link and steals nothing. Attach order also decides
+/// the direction: with an equal owner level the broker disconnects whichever
+/// receiver attached first, so every one of A's must attach before B starts.
 #[recorded::test(live)]
 async fn second_processor_displaces_first_with_consumer_disconnected(
     ctx: TestContext,
 ) -> Result<()> {
+    use futures::stream::select_all;
+
     // Use a short update interval so load balancing converges quickly; the
     // validation rule on the builder requires expiration > interval.
     const UPDATE_INTERVAL: Duration = Duration::seconds(5);
@@ -453,10 +461,13 @@ async fn second_processor_displaces_first_with_consumer_disconnected(
     // Give the broker + load balancer up to this long to displace at least
     // one of the first processor's receivers and propagate the AMQP detach.
     const STEAL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(90);
-    // How long to collect A's initial claims before starting B. With a 5s
-    // interval, two cycles is enough for A to grab whatever it is going to
-    // grab under a Greedy strategy.
+    // How long to collect a processor's claims before moving on. With a 5s
+    // interval, two cycles is enough for a Greedy processor to grab whatever
+    // it is going to grab.
     const COLLECT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
+    // How long to poll A's streams so every one of A's receivers reaches the
+    // broker before B contends for the same partitions.
+    const ATTACH_WINDOW: std::time::Duration = std::time::Duration::from_secs(15);
 
     let consumer_a = create_consumer_client(&ctx).await?;
     let processor_a = processor_builder(ProcessorStrategy::Greedy, UPDATE_INTERVAL, EXPIRATION)
@@ -475,6 +486,36 @@ async fn second_processor_displaces_first_with_consumer_disconnected(
         partition_clients_a.len()
     );
 
+    // Merge every partition's stream into one and watch for the first
+    // error. `select_all` does not require `Send`, which matters because
+    // `PartitionClient::stream_events` returns a non-`Send` boxed stream.
+    let tagged_streams = partition_clients_a.iter().map(|client| {
+        let partition_id = client.get_partition_id().to_string();
+        client
+            .stream_events()
+            .map(move |result| (partition_id.clone(), result))
+            .boxed_local()
+    });
+    let mut merged_a = select_all(tagged_streams);
+
+    // Polling is the only way to attach, so this window is what makes A the
+    // older receiver. An error here is a failed attach, not a displacement.
+    info!("Attaching processor A's receivers before the second processor starts.");
+    let attach_deadline = tokio::time::Instant::now() + ATTACH_WINDOW;
+    loop {
+        match tokio::time::timeout_at(attach_deadline, merged_a.next()).await {
+            Err(_) => break,
+            Ok(Some((_partition_id, Ok(_event)))) => continue,
+            Ok(Some((partition_id, Err(err)))) => panic!(
+                "partition {} failed on processor A before the second processor started: {:?}",
+                partition_id, err
+            ),
+            Ok(None) => {
+                panic!("every processor A stream ended before the second processor started")
+            }
+        }
+    }
+
     // Start the second processor against the same hub + consumer group;
     // it will open epoch-0 receivers and the broker will disconnect at
     // least one of A's receivers within the load-balancing window.
@@ -485,22 +526,34 @@ async fn second_processor_displaces_first_with_consumer_disconnected(
     let running_b = start_processor_running(&processor_b).await;
     info!("Second processor started; watching every partition A holds for a steal.");
 
-    // Merge every partition's stream into one and watch for the first
-    // error. `select_all` does not require `Send`, which matters because
-    // `PartitionClient::stream_events` returns a non-`Send` boxed stream.
-    use futures::stream::select_all;
-    let tagged_streams = partition_clients_a.iter().map(|client| {
-        let partition_id = client.get_partition_id().to_string();
-        client
-            .stream_events()
-            .map(move |result| (partition_id.clone(), result))
-            .boxed_local()
-    });
-    let mut merged = select_all(tagged_streams);
+    // `run()` claims partitions but attaches no receiver, so B steals nothing
+    // until something polls B's streams. They are not `Send`, so they run here.
+    let drive_b = async {
+        let partition_clients_b = drain_partition_clients(&processor_b, COLLECT_TIMEOUT).await;
+        assert!(
+            !partition_clients_b.is_empty(),
+            "processor B did not claim any partitions within the collect window"
+        );
+        info!(
+            "Processor B holds {} partition clients; attaching them now.",
+            partition_clients_b.len()
+        );
+        let streams_b = partition_clients_b
+            .iter()
+            .map(|client| client.stream_events().boxed_local());
+        let mut merged_b = select_all(streams_b);
+        while let Some(result) = merged_b.next().await {
+            if let Err(err) = result {
+                warn!(err = ?err, "Processor B stream reported an error.");
+            }
+        }
+        // Park, so the `select!` below never polls a finished future.
+        futures::future::pending::<()>().await
+    };
 
     let race = async {
         loop {
-            match merged.next().await {
+            match merged_a.next().await {
                 Some((_partition_id, Ok(_event))) => continue,
                 Some((partition_id, Err(err))) => return (partition_id, Some(err)),
                 // All streams ended without an error: the bug we guard against.
@@ -508,7 +561,14 @@ async fn second_processor_displaces_first_with_consumer_disconnected(
             }
         }
     };
-    let observed = tokio::time::timeout(STEAL_TIMEOUT, race).await;
+
+    let observed = tokio::time::timeout(STEAL_TIMEOUT, async {
+        tokio::select! {
+            result = race => result,
+            _ = drive_b => unreachable!("the processor B driver parks and never finishes"),
+        }
+    })
+    .await;
 
     // Stop both before asserting so a panic does not leak background tasks.
     running_a.abort();
