@@ -183,7 +183,7 @@ is the point-operation noise floor, measured directly.
 An earlier version of this document claimed binary "never costs latency". Runs 5
 and 6 both contradict that on one workload:
 
-| Run | binary p50 | `bin+text_resp` p50 | binary p95 | text p95 |
+| Run | binary p50 Δ vs text | `bin+text_resp` p50 Δ vs text | binary p95 | text p95 |
 | --- | ---: | ---: | ---: | ---: |
 | 5 (`simple`) | +1.4% | +7.4% | — | — |
 | 6 (`huge`) | **+11.3%** | +3.2% | **89.66 ms** | **57.59 ms** |
@@ -192,12 +192,15 @@ Run 6's p50 is well outside that run's 3.3% floor, and the tail is worse: both
 binary arms land near 89 ms p95 against text's 57.59 ms. Two independent arms
 agreeing makes arm-position noise unlikely.
 
-It is **not** transcoding: client-side work (`p50` minus `http p50`) is 0.21 ms
-on both binary arms, identical. So a 39.5% smaller response is arriving slower,
-which is the opposite of what should happen, and the cause is server- or
-network-side and unknown. Two samples pointing the same way is suggestive, not
-conclusive — **this needs a third before any claim is made about point-read
-latency in either direction.**
+It is **not** the client-side transcode: client-side work (`p50` minus
+`http p50`) is 0.21 ms on both binary arms, identical. But that comparison is
+binary-against-binary, and the phenomenon is binary-against-**text** — binary
+decode is itself client-side work, so these two arms cannot isolate client from
+server. What can be said is that a 39.5% smaller response is arriving slower,
+which is the opposite of what should happen, and **the cause is unknown**. Two
+samples pointing the same way is suggestive, not conclusive — **this needs a
+third, plus the text arm's own `p50 − http p50`, before any claim is made about
+point-read latency in either direction.**
 
 ## 3. RU reduction on queries
 
@@ -237,9 +240,12 @@ The saving tracks response size, so it appears only where the response is large.
 The narrow projection returns little data and its RU is dominated by scan cost
 rather than serialization, hence the flat result in every run.
 
-`TOP` is the one row that refuses to settle: −6.1% in run 5 against −11.6% in
-run 6 — nearly a factor of two — with only two profiles measured and no third
-point to say whether that tracks document size or is spread. It is unresolved.
+`TOP` was previously called unstable. With the phantom third figure removed it is
+not: −6.1% at 464 B and −11.6% at 5347 B is the same direction and comparable
+magnitude as `SELECT *` (−12.5% → −18.9%) and `ORDER BY` (−9.9% → −15.5%), so it
+fits the whole-document pattern above rather than contradicting it. It is a
+bounded window over full documents, which is why it behaves like them and unlike
+the projection.
 
 Writes in runs 1–4 show a consistent but negligible −0.1% to −0.2%. Run 6 does
 not reproduce even that, landing at +0.0% to +0.3% (see section 5). Treat write
@@ -287,7 +293,7 @@ Isolating that — `binary+text_resp` p50 against the `binary` arm, run 5:
 
 | Workload | binary p50 | bin+text_resp p50 | run-5 delta |
 | --- | ---: | ---: | ---: |
-| Point read | 18.63 ms | 19.73 ms | **+5.9%** |
+| Point read | 18.63 ms | 19.73 ms | +5.9% |
 | `SELECT c.id, c.seq` | 416.68 ms | 431.51 ms | +3.6% |
 | `TOP` | 58.01 ms | 59.15 ms | +2.0% |
 | `ORDER BY … OFFSET/LIMIT` | 102.27 ms | 102.19 ms | −0.1% |
@@ -300,19 +306,21 @@ measurable by this harness — it is swamped by the decode the caller would have
 paid anyway.
 
 Point read looked like the exception in run 5 — **+5.9% against binary** (and
-+7.4% against text; see the table above) — on the theory that a single small
-document leaves no large parse for the transcode to hide behind. **Run 6 does
-not reproduce it**: there `binary+text_resp` point read is *faster* than binary
-(37.39 ms vs 40.34 ms). The "consistently positive" reading was drawn from one
-run and does not hold. No row now shows a reproducible transcode cost.
++7.4% against text; see [§2](#point-read-is-slower-on-binary-twice-unexplained))
+— on the theory that a single small document leaves no large parse for the
+transcode to hide behind. **Run 6 does not reproduce it**: there
+`binary+text_resp` point read is *faster* than binary (37.39 ms vs 40.34 ms).
+The "consistently positive" reading was drawn from one run and does not hold. No
+row now shows a reproducible transcode cost.
 
 **Net:** on this harness the flag is close to free — no workload shows a
-reproducible transcode cost — in exchange for keeping the full −40% payload and
-−10% RU saving that it previously threw away. That is a statement about what
-these runs can resolve, not a claim that the transcode is free: it is real work,
-merely smaller than the noise floor here. Its remaining caveat is behavioral
-rather than performance: the transcode re-serializes, so property order and
-number spellings (`1e20` → `1e+20`) are normalized rather than byte-preserved.
+reproducible transcode cost — in exchange for keeping savings it previously threw
+away: payload −32% to −45% and RU −0.4% to −18.9%, both by query shape (see §1
+and §3; neither is a single number). That is a statement about what these runs
+can resolve, not a claim that the transcode is free: it is real work, merely
+smaller than the noise floor here. Its remaining caveat is behavioral rather than
+performance: the transcode re-serializes, so property order and number spellings
+(`1e20` → `1e+20`) are normalized rather than byte-preserved.
 
 ## 4b. Client-synthesized pages (`TOP`, `OFFSET`/`LIMIT`)
 
@@ -333,7 +341,8 @@ text and it is a larger share of a small request count.
 
 The `OFFSET/LIMIT` row is identical to the decimal across an ~11× change in
 document size, which is a strong sign the bounded-window ceiling is structural.
-`TOP` is not stable and is discussed in [§3](#3-ru-reduction-on-queries).
+`TOP`'s RU behavior tracks document size and is discussed in
+[§3](#3-ru-reduction-on-queries).
 
 Both arms agree with each other exactly in both runs, which is the point of
 including them: these are the two paths where a bug in emitted-vs-wire encoding

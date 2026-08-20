@@ -63,10 +63,11 @@ pub(crate) struct SkipTake {
     ///
     /// [`PageAggregator`]: super::query_response::PageAggregator
     emit_binary: bool,
-    /// Set when a page was consumed from the child but could not be encoded,
+    /// Set when a page was consumed from the child but could not be processed,
     /// leaving the window counters and the child's continuation permanently
     /// disagreeing. The node then refuses to produce further pages or a resume
-    /// token — see [`next_page`](Self::next_page)'s encode branch.
+    /// token — see [`process_page`](Self::process_page) for why no error on
+    /// that path is recoverable.
     poisoned: bool,
 }
 
@@ -149,7 +150,8 @@ impl SkipTake {
         self.pending_flush = None;
     }
 
-    /// Emits a final empty page carrying the accumulated suppressed charge and    /// diagnostics, or `None` if nothing is pending. Used when the child drains
+    /// Emits a final empty page carrying the accumulated suppressed charge and
+    /// diagnostics, or `None` if nothing is pending. Used when the child drains
     /// without ever surfacing a terminal page for the fully-skipped tail.
     fn flush_suppressed(&mut self) -> Option<PageResult> {
         let template = self.pending_flush.take()?;
@@ -178,18 +180,98 @@ impl SkipTake {
         })
     }
 
+    /// Applies the window to one page from the child, returning the page to
+    /// emit or `None` when the page was fully skipped and retained for its
+    /// RU/diagnostics.
+    ///
+    /// **Every error out of this method is unrecoverable in place**, which is
+    /// why the caller poisons on all of them rather than on individual steps.
+    /// The child's page is already consumed by the time this runs, so its
+    /// continuation has moved, while `remaining_skip` / `remaining_take` still
+    /// hold their pre-page values until the updates near the end. Resuming from
+    /// that pair would skip the consumed documents (the child resumes past
+    /// them) *and* re-apply the full window to the documents after them —
+    /// silently wrong results. The child's advance cannot be undone from here.
+    ///
+    /// This is deliberately the opposite stance to the sibling ordered merge,
+    /// which on an encode failure emits the successfully encoded prefix and
+    /// leaves its boundary behind the failing row. That node owns per-row
+    /// boundaries and can hold rows back; a `SkipTake` is handed a whole page
+    /// at once and has no way to return part of it, so failing loudly is the
+    /// only option that cannot corrupt a resume.
+    fn process_page(
+        &mut self,
+        response: CosmosResponse,
+        is_terminal: bool,
+    ) -> crate::error::Result<Option<PageResult>> {
+        // Split the child's page into per-document slices. A streaming ordered
+        // merge already hands us pre-split `Items` in the emitted encoding; a
+        // raw backend feed page arrives as `Bytes` and is split here as text,
+        // then re-encoded below; `NoPayload` is a zero-document page.
+        let (items, needs_encode) = match response.body() {
+            ResponseBody::Items(items) => (items.clone(), false),
+            ResponseBody::Bytes(b) => (skip_take_page::split_feed_envelope(b)?, true),
+            ResponseBody::NoPayload => (Vec::new(), false),
+        };
+
+        let outcome =
+            skip_take_page::skip_take_items(items, self.remaining_skip, self.remaining_take);
+
+        // Encode only the survivors, and only once this page's contribution is
+        // known — a document the window discards must not be able to fail the
+        // query.
+        let emitted_items = if needs_encode {
+            skip_take_page::encode_items(outcome.items, self.emit_binary)?
+        } else {
+            outcome.items
+        };
+
+        self.remaining_skip -= outcome.dropped;
+        if let Some(take) = self.remaining_take.as_mut() {
+            *take -= outcome.emitted;
+        }
+
+        let take_exhausted = matches!(self.remaining_take, Some(0));
+        let terminal = is_terminal || take_exhausted;
+
+        // Suppress a page that was fully consumed by the outstanding skip and is
+        // not the child's last page — the caller pulls the next page instead of
+        // surfacing an empty intermediate page. Retain the page's
+        // RU/diagnostics so the next emitted page accounts for them.
+        if outcome.emitted == 0 && !terminal {
+            self.suppress(response);
+            return Ok(None);
+        }
+
+        if take_exhausted {
+            self.exhausted = true;
+        }
+
+        let new_response = self.rebuild(&response, emitted_items, outcome.emitted);
+        Ok(Some(PageResult::Page {
+            response: new_response,
+            is_terminal: terminal,
+        }))
+    }
+
     /// The error a poisoned node returns from every subsequent call.
     ///
-    /// Deliberately the same status as the encode failure that caused it: the
-    /// poison is not an independent fault, it is that fault made durable so a
-    /// caller cannot paper over it by retrying or by resuming from a token.
+    /// Deliberately the same status as the failure that caused it: the poison is
+    /// not an independent fault, it is that fault made durable so a caller
+    /// cannot paper over it by retrying or by resuming from a token.
+    ///
+    /// The cause is deterministic and data-dependent — replaying the same child
+    /// page fails the same way — so the message points at the encoding rather
+    /// than suggesting a retry.
     fn poisoned_error() -> crate::error::CosmosError {
         crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(
                 "skip/take node is unusable: a page was consumed from its child but could not be \
-                 encoded, so the offset/limit window and the child's resume position no longer \
-                 agree; re-issue the query from its last successful continuation token",
+                 processed, so the offset/limit window and the child's resume position no longer \
+                 agree and no continuation token can be minted; the page holds a document the \
+                 negotiated encoding cannot represent, so retrying is futile — re-run the query \
+                 with a text response instead",
             )
             .build()
     }
@@ -240,76 +322,21 @@ impl PipelineNode for SkipTake {
                     response,
                     is_terminal,
                 } => {
-                    // Split the child's page into per-document slices. A
-                    // streaming ordered merge already hands us pre-split
-                    // `Items` in the emitted encoding; a raw backend feed page
-                    // arrives as `Bytes` and is split here as text, then
-                    // re-encoded below; `NoPayload` is a zero-document page.
-                    let (items, needs_encode) = match response.body() {
-                        ResponseBody::Items(items) => (items.clone(), false),
-                        ResponseBody::Bytes(b) => (skip_take_page::split_feed_envelope(b)?, true),
-                        ResponseBody::NoPayload => (Vec::new(), false),
-                    };
-
-                    let outcome = skip_take_page::skip_take_items(
-                        items,
-                        self.remaining_skip,
-                        self.remaining_take,
-                    );
-
-                    // Encode only the survivors, and only once this page's
-                    // contribution is known — a document the window discards
-                    // must not be able to fail the query.
-                    //
-                    // A failure here is **not** recoverable in place. The child
-                    // page was already consumed at the top of this arm, so its
-                    // continuation has moved, while `remaining_skip` /
-                    // `remaining_take` below still hold their pre-page values.
-                    // Resuming from that pair would skip the consumed documents
-                    // (the child resumes past them) *and* re-apply the full
-                    // window to the documents after them — silently wrong
-                    // results. The child's advance cannot be undone from here,
-                    // so the node is poisoned instead: it will not emit another
-                    // page, and it will not mint a resume token.
-                    let emitted_items = if needs_encode {
-                        match skip_take_page::encode_items(outcome.items, self.emit_binary) {
-                            Ok(encoded) => encoded,
-                            Err(err) => {
-                                self.poisoned = true;
-                                return Err(err);
-                            }
+                    // Every fallible step below runs *after* the child handed
+                    // over the page above, so its continuation has already
+                    // advanced. Poison on any error rather than at the
+                    // individual call sites: a future edit that adds a `?`
+                    // inside `process_page` is then covered automatically.
+                    match self.process_page(response, is_terminal) {
+                        Ok(Some(page)) => return Ok(page),
+                        // The page was fully consumed by the outstanding skip
+                        // and retained; pull the next one.
+                        Ok(None) => continue,
+                        Err(err) => {
+                            self.poisoned = true;
+                            return Err(err);
                         }
-                    } else {
-                        outcome.items
-                    };
-
-                    self.remaining_skip -= outcome.dropped;
-                    if let Some(take) = self.remaining_take.as_mut() {
-                        *take -= outcome.emitted;
                     }
-
-                    let take_exhausted = matches!(self.remaining_take, Some(0));
-                    let terminal = is_terminal || take_exhausted;
-
-                    // Suppress a page that was fully consumed by the outstanding
-                    // skip and is not the child's last page — pull the next page
-                    // instead of surfacing an empty intermediate page. Retain the
-                    // page's RU/diagnostics so the next emitted page accounts for
-                    // them.
-                    if outcome.emitted == 0 && !terminal {
-                        self.suppress(response);
-                        continue;
-                    }
-
-                    if take_exhausted {
-                        self.exhausted = true;
-                    }
-
-                    let new_response = self.rebuild(&response, emitted_items, outcome.emitted);
-                    return Ok(PageResult::Page {
-                        response: new_response,
-                        is_terminal: terminal,
-                    });
                 }
             }
         }
@@ -515,9 +542,10 @@ mod tests {
     /// A page whose documents parse as JSON (so the envelope splits) but cannot
     /// be re-encoded to Cosmos binary JSON, forcing `encode_items` to fail.
     fn page_failing_binary_encode(is_terminal: bool) -> crate::error::Result<PageResult> {
-        // `1e999` overflows `f64` to infinity, which has no binary-JSON
-        // representation. `RawValue` keeps it as unparsed text, so the split
-        // above succeeds and only the encode fails.
+        // `1e999` is out of `f64` range, so `transcode_to_binary`'s *parse*
+        // rejects it (the encode step itself is infallible). `RawValue` defers
+        // number parsing, so the envelope split still succeeds and the failure
+        // lands on the re-encode.
         let body = br#"{"Documents":[{"id":1,"n":1e999}],"_count":1}"#.to_vec();
         Ok(PageResult::Page {
             response: response(&body),
@@ -551,14 +579,70 @@ mod tests {
         );
 
         // No further page, even though the child has one left to give.
-        node.next_page(&mut context)
+        let second = node
+            .next_page(&mut context)
             .await
             .expect_err("a poisoned node must not emit another page");
+        assert!(
+            second.to_string().contains("skip/take node is unusable"),
+            "the second failure must be the poison, not an incidental error: {second}",
+        );
 
         // And no resume token, which is the assertion that matters: a token
         // minted here would silently produce wrong results.
-        node.snapshot_state()
+        let snapshot = node
+            .snapshot_state()
             .expect_err("a poisoned node must not mint a resume token");
+        assert!(
+            snapshot.to_string().contains("skip/take node is unusable"),
+            "snapshot must fail with the poison: {snapshot}",
+        );
+    }
+
+    /// A page whose envelope cannot be split at all, failing before the window
+    /// is applied. Reaches `split_feed_envelope` rather than `encode_items`.
+    fn page_failing_envelope_split(is_terminal: bool) -> crate::error::Result<PageResult> {
+        Ok(PageResult::Page {
+            response: response(b"{\"Documents\":[ truncated"),
+            is_terminal,
+        })
+    }
+
+    #[tokio::test]
+    async fn envelope_split_failure_poisons_the_node_too() {
+        // The split runs in the same unrecoverable window as the encode: the
+        // child's page is already consumed, but `remaining_skip` has not moved.
+        // Poisoning must not be specific to the encode step — a token minted
+        // here would carry the pre-page skip against a child that has advanced.
+        let child = MockLeaf::with_pages(vec![
+            page_failing_envelope_split(false),
+            page_result(&[2], true),
+        ]);
+        let mut node = SkipTake::new(Box::new(child), 5, None, false);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        node.next_page(&mut context)
+            .await
+            .expect_err("a malformed envelope must fail");
+
+        let second = node
+            .next_page(&mut context)
+            .await
+            .expect_err("a poisoned node must not emit another page");
+        assert!(
+            second.to_string().contains("skip/take node is unusable"),
+            "the second failure must be the poison: {second}",
+        );
+
+        let snapshot = node
+            .snapshot_state()
+            .expect_err("a poisoned node must not mint a resume token");
+        assert!(
+            snapshot.to_string().contains("skip/take node is unusable"),
+            "snapshot must fail with the poison: {snapshot}",
+        );
     }
 
     /// Builds a query-page response body/charge pair for the RU-accounting tests.

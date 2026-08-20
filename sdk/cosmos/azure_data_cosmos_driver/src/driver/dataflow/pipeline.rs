@@ -113,6 +113,13 @@ impl OperationPlan {
     /// `feed_range` cannot be determined. These errors indicate an internal
     /// pipeline bug rather than user input, and surface as a Cosmos client
     /// error rather than silently producing a lossy continuation token.
+    ///
+    /// Also returns an error when an earlier page failed in a way that left a
+    /// node's progress and its child's resume position disagreeing — a skip/take
+    /// node whose page could not be encoded, for instance. That is neither an
+    /// invariant violation nor an internal bug: it is a genuine failure on the
+    /// data path, reported here because no token minted afterwards could resume
+    /// correctly.
     pub fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken> {
         ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state()?)
     }
