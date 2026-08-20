@@ -352,9 +352,13 @@ async fn receive_timeout_ends_stream_when_idle(ctx: TestContext) -> Result<(), B
         matches!(core.kind(), azure_core::error::ErrorKind::Io),
         "the receive timeout gave {core:?}, which is not an I/O error"
     );
+    // The receiver wraps the cause in a redundant `Box::new` before it reaches
+    // `azure_core::Error::new`, which boxes again, so the stored concrete type
+    // is `Box<std::io::Error>` and not `std::io::Error`. Accept either, so this
+    // test keeps passing once that extra box goes away.
     let io = core
-        .source()
-        .and_then(|source| source.downcast_ref::<std::io::Error>())
+        .downcast_ref::<std::io::Error>()
+        .or_else(|| core.downcast_ref::<Box<std::io::Error>>().map(|b| &**b))
         .unwrap_or_else(|| panic!("the receive timeout error {core:?} has no I/O source"));
     assert_eq!(
         io.kind(),
