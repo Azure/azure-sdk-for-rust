@@ -101,6 +101,149 @@ async fn test_claim_ownership_renewal_rotates_etag_and_timestamp() {
     assert_eq!(*stale.unwrap_err().kind(), AzureErrorKind::Other);
 }
 
+/// A claim that lost the race is a normal outcome. The store must report the
+/// loss with an empty result and keep the winner's record.
+#[tokio::test]
+async fn test_claim_ownership_lost_claim_is_not_an_error() {
+    common::setup();
+    let store = InMemoryCheckpointStore::new();
+    let ownership = Ownership {
+        fully_qualified_namespace: "ns.servicebus.windows.net".to_string(),
+        event_hub_name: "event_hub".to_string(),
+        consumer_group: "consumer_group".to_string(),
+        partition_id: "0".to_string(),
+        owner_id: Some("owner-a".to_string()),
+        ..Default::default()
+    };
+
+    let first = store.claim_ownership(&[ownership]).await.unwrap();
+    assert_eq!(first.len(), 1);
+
+    // A competing renewal rotates the ETag, which makes the first record stale.
+    let second = store.claim_ownership(&[first[0].clone()]).await.unwrap();
+    assert_eq!(second.len(), 1);
+
+    let lost = store.claim_ownership(&[first[0].clone()]).await;
+    assert!(
+        lost.is_ok(),
+        "a lost claim must not be an error, got: {:?}",
+        lost.as_ref().err()
+    );
+    assert!(
+        lost.unwrap().is_empty(),
+        "the losing claim must return no ownership"
+    );
+
+    let ownerships = store
+        .list_ownerships("ns.servicebus.windows.net", "event_hub", "consumer_group")
+        .await
+        .unwrap();
+    assert_eq!(ownerships.len(), 1);
+    assert_eq!(
+        ownerships[0].etag, second[0].etag,
+        "a lost claim must not mutate the record"
+    );
+}
+
+/// One lost claim must not cancel the partitions behind it in the batch. The
+/// stale partition sits in the middle of the batch, so a store that stops at
+/// the first conflict fails this test.
+#[tokio::test]
+async fn test_claim_ownership_continues_past_a_lost_claim() {
+    common::setup();
+    let store = InMemoryCheckpointStore::new();
+    let new_ownership = |partition_id: &str, owner_id: &str| Ownership {
+        fully_qualified_namespace: "ns.servicebus.windows.net".to_string(),
+        event_hub_name: "event_hub".to_string(),
+        consumer_group: "consumer_group".to_string(),
+        partition_id: partition_id.to_string(),
+        owner_id: Some(owner_id.to_string()),
+        ..Default::default()
+    };
+
+    let claimed = store
+        .claim_ownership(&[
+            new_ownership("0", "owner-a"),
+            new_ownership("1", "owner-a"),
+            new_ownership("2", "owner-a"),
+        ])
+        .await
+        .unwrap();
+    assert_eq!(claimed.len(), 3);
+
+    // A second instance takes partition 1 behind the caller's back.
+    let mut rotated = claimed[1].clone();
+    rotated.owner_id = Some("owner-b".to_string());
+    let winner_b = store.claim_ownership(&[rotated]).await.unwrap();
+    assert_eq!(winner_b.len(), 1);
+
+    let result = store
+        .claim_ownership(&[claimed[0].clone(), claimed[1].clone(), claimed[2].clone()])
+        .await;
+    assert!(
+        result.is_ok(),
+        "one lost claim must not cancel the batch, got: {:?}",
+        result.as_ref().err()
+    );
+
+    let kept = result.unwrap();
+    let mut partition_ids = kept
+        .iter()
+        .map(|o| o.partition_id.clone())
+        .collect::<Vec<_>>();
+    partition_ids.sort();
+    assert_eq!(partition_ids, vec!["0".to_string(), "2".to_string()]);
+
+    let kept_zero = kept
+        .iter()
+        .find(|o| o.partition_id == "0")
+        .expect("partition 0 stays with the caller");
+    assert_ne!(
+        kept_zero.etag, claimed[0].etag,
+        "the winner's rotated ETag must reach the caller"
+    );
+    let kept_two = kept
+        .iter()
+        .find(|o| o.partition_id == "2")
+        .expect("partition 2 stays with the caller");
+    assert_ne!(
+        kept_two.etag, claimed[2].etag,
+        "the winner's rotated ETag must reach the caller"
+    );
+
+    let ownerships = store
+        .list_ownerships("ns.servicebus.windows.net", "event_hub", "consumer_group")
+        .await
+        .unwrap();
+    let lost_partition = ownerships
+        .iter()
+        .find(|o| o.partition_id == "1")
+        .expect("partition 1 stays in the store");
+    assert_eq!(
+        lost_partition.etag, winner_b[0].etag,
+        "the loser must not overwrite the winner"
+    );
+    assert_eq!(lost_partition.owner_id, Some("owner-b".to_string()));
+}
+
+/// A validation failure is a different outcome from a lost claim, so
+/// `claim_ownership` must still return an error for a record it cannot use.
+#[tokio::test]
+async fn test_claim_ownership_invalid_ownership_still_errors() {
+    common::setup();
+    let store = InMemoryCheckpointStore::new();
+    let ownership = Ownership {
+        fully_qualified_namespace: "fqdn.servicebus.windows.net".to_string(),
+        partition_id: "partition_id".to_string(),
+        owner_id: Some("owner_id".to_string()),
+        etag: Some("etag".into()),
+        ..Default::default()
+    };
+    let result = store.claim_ownership(&[ownership]).await;
+    assert!(result.is_err(), "a validation failure is not a lost claim");
+    assert_eq!(*result.unwrap_err().kind(), AzureErrorKind::Other);
+}
+
 #[tokio::test]
 async fn test_update_checkpoint() {
     common::setup();
