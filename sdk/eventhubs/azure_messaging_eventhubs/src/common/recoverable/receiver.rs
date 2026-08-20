@@ -41,11 +41,13 @@ impl RecoverableReceiver {
         RecoverableConnection::should_retry_receive_error(e)
     }
 
-    /// Builds the error that a receive timeout produces.
+    /// Builds the error that a receive timeout produces. The cause goes in
+    /// unboxed, because `azure_core::Error::new` boxes its argument and a
+    /// pre-boxed cause defeats `downcast_ref::<std::io::Error>()`.
     fn receive_timeout_error() -> AmqpError {
         AmqpError::from(azure_core::Error::new(
             AzureErrorKind::Io,
-            Box::new(std::io::Error::from(std::io::ErrorKind::TimedOut)),
+            std::io::Error::from(std::io::ErrorKind::TimedOut),
         ))
     }
 
