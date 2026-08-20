@@ -6,7 +6,7 @@ use crate::{
         recoverable::{RecoverableConnection, RecoverableSender},
         ManagementInstance,
     },
-    error::Result,
+    error::{ErrorKind, Result},
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
     EventHubsError, RetryOptions,
 };
@@ -173,6 +173,9 @@ impl ProducerClient {
     /// Note:
     /// - If the event being sent does not have a message ID, a new message ID will be generated.
     /// - If the event options contain a partition ID, the event will be sent to the specified partition.
+    /// - If the encoded event is larger than the maximum the sender link allows,
+    ///   the event is not sent and the error kind is
+    ///   [`ErrorKind::MessageSizeExceeded`].
     ///
     pub async fn send_event(
         &self,
@@ -202,6 +205,10 @@ impl ProducerClient {
     ///
     /// Note:
     /// - The message is sent to the service unmodified.
+    /// - If the encoded message is larger than the maximum the sender link allows,
+    ///   the message is not sent and the error kind is
+    ///   [`ErrorKind::MessageSizeExceeded`].
+    /// - A sender link that reports no maximum is not checked.
     ///
     #[tracing::instrument(
         level = "debug",
@@ -231,6 +238,11 @@ impl ProducerClient {
             target = Url::parse(&target_url).map_err(azure_core::Error::from)?;
         }
         let sender = self.connection.get_sender(target.clone()).await?;
+
+        let message: AmqpMessage = message.into();
+        let link_max_size = sender.max_message_size().await?;
+        let encoded_size = AmqpMessage::serialize(&message)?.len() as u64;
+        Self::check_message_size(encoded_size, link_max_size)?;
 
         let outcome = sender
             .send(
@@ -280,6 +292,26 @@ impl ProducerClient {
                 );
                 Ok(())
             }
+        }
+    }
+
+    /// Makes sure the encoded message fits the maximum the sender link reports.
+    ///
+    /// The boundary is inclusive: a message of exactly the maximum is sent.
+    /// fe2o3-amqp splits an oversized payload across transfer frames instead
+    /// of refusing it, so this client must make the check itself. A link that
+    /// reports no maximum is not checked: AMQP 1.0 gives an unset or zero
+    /// `max-message-size` the meaning "no limit", and fe2o3-amqp maps a zero
+    /// to `None`.
+    pub(crate) fn check_message_size(encoded_size: u64, link_max_size: Option<u64>) -> Result<()> {
+        match link_max_size {
+            Some(max_allowed) if encoded_size > max_allowed => {
+                Err(EventHubsError::from(ErrorKind::MessageSizeExceeded {
+                    requested: encoded_size,
+                    max_allowed,
+                }))
+            }
+            _ => Ok(()),
         }
     }
 

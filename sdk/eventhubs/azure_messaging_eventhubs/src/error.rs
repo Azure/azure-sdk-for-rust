@@ -40,6 +40,20 @@ pub enum ErrorKind {
         max_allowed: u64,
     },
 
+    /// The encoded message is larger than the maximum the sender link
+    /// allows. The message was not sent.
+    ///
+    /// Mirrors the `EventHubsException` with
+    /// `FailureReason.MessageSizeExceeded` that .NET reports for the same
+    /// message. Match on the variant to tell it apart from a transport
+    /// failure: `matches!(err.kind, ErrorKind::MessageSizeExceeded { .. })`.
+    MessageSizeExceeded {
+        /// The encoded size of the message in bytes.
+        requested: u64,
+        /// The largest message size in bytes the sender link allows.
+        max_allowed: u64,
+    },
+
     /// Represents the source of the AMQP error.
     /// This is used to wrap an AMQP error in an Even Hubs error.
     ///
@@ -90,6 +104,15 @@ impl std::fmt::Display for EventHubsError {
                 f,
                 "Invalid maximum batch size: {} bytes. \
                  It must be from 1 to {} bytes, which is the maximum the sender link allows.",
+                requested, max_allowed
+            ),
+            ErrorKind::MessageSizeExceeded {
+                requested,
+                max_allowed,
+            } => write!(
+                f,
+                "The message is {} bytes, which is larger than the {} bytes \
+                 the sender link currently allows.",
                 requested, max_allowed
             ),
             ErrorKind::SendRejected(e) => write!(f, "Send rejected: {:?}", e),
