@@ -420,6 +420,59 @@ fn json_equivalent(a: &Value, b: &Value) -> bool {
     }
 }
 
+/// The largest magnitude at which every integer is exactly representable as an
+/// IEEE-754 double. At or below this, text and binary must agree *exactly*.
+const EXACT_INTEGER_LIMIT: u128 = 1 << 53;
+
+/// Strict comparison for the **text-vs-binary** arms, where tolerance would
+/// defeat the test.
+///
+/// [`json_equivalent`] exists for the *sent → stored* check, where reconciling
+/// `Number` variants is legitimate: Cosmos stores every number as a double, so
+/// an integer we sent can come back as a `Double`. That reasoning does not
+/// transfer here. Both arms read **the same stored documents** over the same
+/// client; the service's own representation is fixed before either query runs.
+/// Any variant difference between them is produced by our encoding path, which
+/// is exactly what this test exists to catch — so reconciling the variants here
+/// would let the integral-double coercion be deleted with the test still green.
+///
+/// The one exception is deliberate and narrow. Past 2^53 an integer is no
+/// longer exactly representable as a double, so the text spelling the service
+/// emits and the value recoverable from its binary token can legitimately
+/// disagree in ways this SDK does not control. That is a known limitation of
+/// wide integers rather than a defect in the pipeline, so such values fall back
+/// to the numeric comparison. Everything at or inside ±2^53 — which is where
+/// the coercion actually claims to work — is compared exactly.
+fn json_identical(a: &Value, b: &Value) -> bool {
+    match (a, b) {
+        (Value::Number(x), Value::Number(y)) => numbers_identical(x, y),
+        (Value::Array(x), Value::Array(y)) => {
+            x.len() == y.len() && x.iter().zip(y).all(|(a, b)| json_identical(a, b))
+        }
+        (Value::Object(x), Value::Object(y)) => {
+            x.len() == y.len()
+                && x.iter()
+                    .all(|(k, v)| y.get(k).is_some_and(|other| json_identical(v, other)))
+        }
+        _ => a == b,
+    }
+}
+
+/// Requires the same [`Number`] variant *and* value, except for integers beyond
+/// ±2^53 — see [`json_identical`] for why that carve-out exists and why it is
+/// the only one.
+fn numbers_identical(x: &Number, y: &Number) -> bool {
+    if x == y {
+        return true;
+    }
+    // The literals differ. Tolerate that only for integers too wide to survive
+    // a double exactly, and only when they still denote the same value.
+    match (integral_value(x), integral_value(y)) {
+        (Some(a), Some(b)) => a == b && a.unsigned_abs() > EXACT_INTEGER_LIMIT,
+        _ => false,
+    }
+}
+
 /// Exact numeric identity across the variants the service may produce.
 ///
 /// Cosmos stores every number as an IEEE-754 double, so one value can come back
@@ -502,6 +555,11 @@ fn render_capped(value: &Value) -> String {
 
 /// Asserts the baseline text run of `spec` and one other encoding arm returned
 /// equivalent results.
+///
+/// Both arms read the same stored documents, so the comparison is **strict**
+/// (see [`json_identical`]): a number that comes back as a different
+/// `serde_json::Number` variant in one arm than the other is a defect in the
+/// encoding path, not something the service is entitled to vary.
 fn assert_encodings_agree(
     spec: &QuerySpec,
     text: &QueryOutcome,
@@ -528,7 +586,7 @@ fn assert_encodings_agree(
 
     for (i, (t, b)) in text_items.iter().zip(&other_items).enumerate() {
         assert!(
-            json_equivalent(t, b),
+            json_identical(t, b),
             "{}: item #{i} (id={}) differs between text and {other_label}\n  text:  {}\n  {other_label}: {}",
             spec.name,
             id_of(t),
@@ -756,4 +814,70 @@ async fn binary_and_text_queries_agree_over_seeded_corpus() -> Result<(), Box<dy
         specs.len()
     );
     Ok(())
+}
+
+/// Offline checks on the comparators. These need no account and no corpus, so
+/// they run on every `cargo test` and pin the property the live comparison
+/// depends on: [`json_identical`] must reject a variant difference that
+/// [`json_equivalent`] is allowed to accept.
+mod comparators {
+    use super::{json_equivalent, json_identical};
+    use serde_json::{json, Number, Value};
+
+    /// The same value as an integer literal and as a double — what the
+    /// integral-double coercion exists to reconcile.
+    fn integer_and_double(value: u64) -> (Value, Value) {
+        (
+            Value::Number(Number::from(value)),
+            Value::Number(Number::from_f64(value as f64).expect("finite")),
+        )
+    }
+
+    #[test]
+    fn strict_comparison_rejects_an_integral_double_the_tolerant_one_accepts() {
+        let (int, double) = integer_and_double(3);
+        // The tolerant comparator must accept this: it is the *sent → stored*
+        // check, and Cosmos really does store `3` as a double.
+        assert!(json_equivalent(&int, &double));
+        // The strict one must not. Both query arms read the same stored
+        // document, so a variant difference here came from our encoding path.
+        // If this ever passes, deleting the coercion no longer fails the live
+        // comparison and the test stops testing anything.
+        assert!(!json_identical(&int, &double));
+    }
+
+    #[test]
+    fn strict_comparison_looks_inside_arrays_and_objects() {
+        let (int, double) = integer_and_double(7);
+        let nested_int = json!({ "a": [ { "b": int } ] });
+        let nested_double = json!({ "a": [ { "b": double } ] });
+        assert!(json_equivalent(&nested_int, &nested_double));
+        assert!(!json_identical(&nested_int, &nested_double));
+    }
+
+    #[test]
+    fn strict_comparison_accepts_matching_values() {
+        let value = json!({ "id": "x", "n": 3, "f": 1.5, "a": [1, 2], "z": null });
+        assert!(json_identical(&value, &value.clone()));
+    }
+
+    #[test]
+    fn wide_integers_keep_the_documented_carve_out() {
+        // Past 2^53 the text spelling and the value recoverable from a binary
+        // token can legitimately disagree, so the variants are reconciled.
+        let (int, double) = integer_and_double(1 << 60);
+        assert!(json_identical(&int, &double));
+
+        // But only just past it: 2^53 itself is exactly representable, so it
+        // stays inside the strict range.
+        let (int, double) = integer_and_double(1 << 53);
+        assert!(!json_identical(&int, &double));
+    }
+
+    #[test]
+    fn strict_comparison_rejects_a_changed_value() {
+        assert!(!json_identical(&json!(3), &json!(4)));
+        assert!(!json_identical(&json!(1.5), &json!(1.5000000000000002)));
+        assert!(!json_identical(&json!("3"), &json!(3)));
+    }
 }
