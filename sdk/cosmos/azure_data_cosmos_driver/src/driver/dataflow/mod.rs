@@ -92,4 +92,51 @@ mod tests {
 
         assert_eq!(page.body_bytes(), b"page");
     }
+
+    /// Builds a plan over a single-page mock leaf. The operation is a
+    /// `read_database`, so minting a token normally fails with the *non-query*
+    /// error — which is what makes it a usable control below.
+    fn plan() -> OperationPlan {
+        let pipeline = Pipeline::new(Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+            response: response(b"page"),
+            is_terminal: true,
+        })])));
+        OperationPlan::new(pipeline, std::sync::Arc::new(operation()))
+    }
+
+    /// A page that advanced the pipeline but never reached the caller leaves
+    /// the plan ahead of what was delivered, so no token minted afterwards can
+    /// resume without skipping it. `execute_plan` poisons the plan when the
+    /// driver-side transcode back to text fails; this pins that a poisoned plan
+    /// refuses to mint rather than silently handing back a token that skips the
+    /// lost page.
+    #[test]
+    fn poisoned_plan_refuses_to_mint_a_continuation_token() {
+        let mut plan = plan();
+        plan.poison_continuation();
+
+        let err = plan
+            .to_continuation_token()
+            .expect_err("a poisoned plan must not mint a token");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            "got: {err}"
+        );
+    }
+
+    /// The control for the test above: without poisoning, the same plan reaches
+    /// the normal minting path and fails for its own unrelated reason. Proves
+    /// the poison check is what produced the error there, not the plan's shape.
+    #[test]
+    fn a_clean_plan_reaches_the_normal_minting_path() {
+        let err = plan()
+            .to_continuation_token()
+            .expect_err("a read_database operation cannot be tokenized");
+        assert_ne!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            "a plan that was never poisoned must not report transcode poisoning; got: {err}"
+        );
+    }
 }
