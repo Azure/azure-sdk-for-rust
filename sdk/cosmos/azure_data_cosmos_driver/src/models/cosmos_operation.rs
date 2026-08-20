@@ -419,7 +419,7 @@ impl CosmosOperation {
     /// Describes the **wire**, not what the caller receives: under
     /// `BinaryEncodingOptions::request_text_response` the wire stays binary
     /// while the driver transcodes the response to text on the way out.
-    pub fn negotiates_binary_response(&self) -> bool {
+    pub(crate) fn negotiates_binary_response(&self) -> bool {
         self.request_headers
             .supported_serialization_formats
             .as_deref()

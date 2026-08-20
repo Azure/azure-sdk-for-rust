@@ -272,7 +272,13 @@ impl ResponseBuilder {
     }
 }
 
-/// Creates a success response with a JSON body.
+/// Creates a success response whose body the emulator authored itself —
+/// control-plane payloads, envelopes, plans. The body is emitted verbatim; see
+/// [`ResponseBuilder::with_json_body`].
+///
+/// Handlers returning a **stored document** must call
+/// [`success_response_with_format`] instead, so the document is normalized (or
+/// binary-encoded) the way the service would render it.
 pub(crate) fn success_response(
     status: StatusCode,
     body: &serde_json::Value,
@@ -280,10 +286,14 @@ pub(crate) fn success_response(
     session_token: &str,
     start: Instant,
 ) -> ResponseBuilder {
-    success_response_with_format(status, body, false, charge, session_token, start)
+    ResponseBuilder::new(status, start)
+        .with_request_charge(charge)
+        .with_session_token(session_token)
+        .with_json_body(body)
 }
 
-/// Like [`success_response`], but encodes the body as Cosmos binary JSON when
+/// Like [`success_response`], but the body is a **stored document**: normalized
+/// as the service renders it in text, or encoded as Cosmos binary JSON when
 /// `binary` is set. Used by the item read/write handlers to honor a client that
 /// negotiated binary responses via `x-ms-cosmos-supported-serialization-formats`.
 pub(crate) fn success_response_with_format(

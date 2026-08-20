@@ -30,7 +30,7 @@ matter more than anything else in this document.
 > `binary+text_resp` arm returned text on the wire; from run 5 on it returns
 > binary and transcodes client-side. Sections that depend on that arm are marked
 > and carry both readings. Payload, RU, and latency figures for the `text` and
-> `binary` arms are unaffected and remain comparable across all five runs.
+> `binary` arms are unaffected and remain comparable across all six runs.
 
 Run 5 seeds a much narrower document distribution than either corpus sample (min
 434 B, p50 464 B, p95 477 B, max 477 B — essentially uniform), so its absolute
@@ -185,7 +185,7 @@ and 6 both contradict that on one workload:
 
 | Run | binary p50 | `bin+text_resp` p50 | binary p95 | text p95 |
 | --- | ---: | ---: | ---: | ---: |
-| 5 (`simple`) | +1.4% | +7.9% | — | — |
+| 5 (`simple`) | +1.4% | +7.4% | — | — |
 | 6 (`huge`) | **+11.3%** | +3.2% | **89.66 ms** | **57.59 ms** |
 
 Run 6's p50 is well outside that run's 3.3% floor, and the tail is worse: both
@@ -237,11 +237,13 @@ The saving tracks response size, so it appears only where the response is large.
 The narrow projection returns little data and its RU is dominated by scan cost
 rather than serialization, hence the flat result in every run.
 
-`TOP` is the one row that refuses to settle: −16.1%, −6.1%, −11.6% across three
-profiles, with no monotonic relationship to document size. It is unresolved.
+`TOP` is the one row that refuses to settle: −6.1% in run 5 against −11.6% in
+run 6 — nearly a factor of two — with only two profiles measured and no third
+point to say whether that tracks document size or is spread. It is unresolved.
 
-Writes show a consistent but negligible −0.1% to −0.2%. This is a direct billing
-reduction, not just bandwidth.
+Writes in runs 1–4 show a consistent but negligible −0.1% to −0.2%. Run 6 does
+not reproduce even that, landing at +0.0% to +0.3% (see section 5). Treat write
+RU as unchanged by encoding — the saving is request bandwidth only.
 
 ## 4. `request_text_response = true` — keeps the wire saving, costs a transcode
 
@@ -283,7 +285,7 @@ between queries and point reads is gone.
 Setting the flag now costs a client-side transcode instead of the wire saving.
 Isolating that — `binary+text_resp` p50 against the `binary` arm, run 5:
 
-| Workload | binary p50 | bin+text_resp p50 | transcode cost |
+| Workload | binary p50 | bin+text_resp p50 | run-5 delta |
 | --- | ---: | ---: | ---: |
 | Point read | 18.63 ms | 19.73 ms | **+5.9%** |
 | `SELECT c.id, c.seq` | 416.68 ms | 431.51 ms | +3.6% |
@@ -297,18 +299,20 @@ inside the ±8–18% floor measured in runs 2–4. On queries the transcode is n
 measurable by this harness — it is swamped by the decode the caller would have
 paid anyway.
 
-Point read looked like the exception in run 5 — **+5.9% against binary, +7.0%
-against text** — on the theory that a single small document leaves no large
-parse for the transcode to hide behind. **Run 6 does not reproduce it**: there
-`binary+text_resp` point read is *faster* than binary (37.39 ms vs 40.34 ms).
-The "consistently positive" reading was drawn from one run and does not hold. No
-row now shows a reproducible transcode cost.
+Point read looked like the exception in run 5 — **+5.9% against binary** (and
++7.4% against text; see the table above) — on the theory that a single small
+document leaves no large parse for the transcode to hide behind. **Run 6 does
+not reproduce it**: there `binary+text_resp` point read is *faster* than binary
+(37.39 ms vs 40.34 ms). The "consistently positive" reading was drawn from one
+run and does not hold. No row now shows a reproducible transcode cost.
 
-**Net:** the flag is now close to free on queries and a small latency tax on
-point reads, in exchange for keeping the full −40% payload and −10% RU saving
-that it previously threw away. Its remaining caveat is behavioral, not
-performance: the transcode re-serializes, so property order and number spellings
-(`1e20` → `1e+20`) are normalized rather than byte-preserved.
+**Net:** on this harness the flag is close to free — no workload shows a
+reproducible transcode cost — in exchange for keeping the full −40% payload and
+−10% RU saving that it previously threw away. That is a statement about what
+these runs can resolve, not a claim that the transcode is free: it is real work,
+merely smaller than the noise floor here. Its remaining caveat is behavioral
+rather than performance: the transcode re-serializes, so property order and
+number spellings (`1e20` → `1e+20`) are normalized rather than byte-preserved.
 
 ## 4b. Client-synthesized pages (`TOP`, `OFFSET`/`LIMIT`)
 
@@ -348,8 +352,8 @@ byte-identical requests in every run, exactly as they should — which is what
 confirms run 1's apparent +2.4% penalty on `binary+text_resp` was the id-length
 artifact described below, not a real effect.
 
-The synthetic profiles save far more, and the saving **shrinks as documents
-grow** — the opposite of the response side:
+The synthetic profiles save far more than the corpus, but the three points do
+**not** order by document size:
 
 | Run | median document | write request delta |
 | --- | ---: | ---: |
@@ -357,10 +361,11 @@ grow** — the opposite of the response side:
 | 5 (`simple`) | 464 B | **−25.9%** |
 | 6 (`huge`) | 5347 B | **−20.3%** |
 
-The corpus figure is a long way below both synthetic ones, so the
-corpus/synthetic difference dominates the size trend here and the three points
-do not form a clean series. Quote the shape of the corpus being written, not a
-single number.
+The saving rises then falls, so no monotonic trend in document size fits. The
+corpus figure is a long way below both synthetic ones, which points at the
+corpus/synthetic difference — real documents repeat fewer property names and
+carry more incompressible string content — dominating whatever size effect
+exists. Quote the shape of the corpus being written, not a single number.
 
 Request-side savings are smaller than response-side because the request carries
 one document while a query response carries a thousand, so per-request fixed
@@ -482,7 +487,7 @@ cargo run --release -p azure_data_cosmos_perf --features binary-ab --bin binary_
 # Run 5 - small uniform documents, exercises TOP and OFFSET/LIMIT
 cargo run --release -p azure_data_cosmos_perf --features binary-ab --bin binary_payload_ab -- `
   --application-region "<region>" `
-  --docs 500 --iterations 40 --rounds 5 --include-text-response-mode
+  --profile simple --docs 500 --iterations 40 --rounds 5 --include-text-response-mode
 
 # Run 6 - large uniform documents (p50 5347 B), the size counterpart to run 5
 cargo run --release -p azure_data_cosmos_perf --features binary-ab --bin binary_payload_ab -- `

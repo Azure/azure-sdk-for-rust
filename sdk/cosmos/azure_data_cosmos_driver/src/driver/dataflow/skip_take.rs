@@ -63,6 +63,11 @@ pub(crate) struct SkipTake {
     ///
     /// [`PageAggregator`]: super::query_response::PageAggregator
     emit_binary: bool,
+    /// Set when a page was consumed from the child but could not be encoded,
+    /// leaving the window counters and the child's continuation permanently
+    /// disagreeing. The node then refuses to produce further pages or a resume
+    /// token — see [`next_page`](Self::next_page)'s encode branch.
+    poisoned: bool,
 }
 
 impl SkipTake {
@@ -91,6 +96,7 @@ impl SkipTake {
             suppressed_diagnostics: Vec::new(),
             pending_flush: None,
             emit_binary,
+            poisoned: false,
         }
     }
 
@@ -143,8 +149,7 @@ impl SkipTake {
         self.pending_flush = None;
     }
 
-    /// Emits a final empty page carrying the accumulated suppressed charge and
-    /// diagnostics, or `None` if nothing is pending. Used when the child drains
+    /// Emits a final empty page carrying the accumulated suppressed charge and    /// diagnostics, or `None` if nothing is pending. Used when the child drains
     /// without ever surfacing a terminal page for the fully-skipped tail.
     fn flush_suppressed(&mut self) -> Option<PageResult> {
         let template = self.pending_flush.take()?;
@@ -172,6 +177,22 @@ impl SkipTake {
             is_terminal: true,
         })
     }
+
+    /// The error a poisoned node returns from every subsequent call.
+    ///
+    /// Deliberately the same status as the encode failure that caused it: the
+    /// poison is not an independent fault, it is that fault made durable so a
+    /// caller cannot paper over it by retrying or by resuming from a token.
+    fn poisoned_error() -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message(
+                "skip/take node is unusable: a page was consumed from its child but could not be \
+                 encoded, so the offset/limit window and the child's resume position no longer \
+                 agree; re-issue the query from its last successful continuation token",
+            )
+            .build()
+    }
 }
 
 #[async_trait]
@@ -180,6 +201,9 @@ impl PipelineNode for SkipTake {
         &mut self,
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult> {
+        if self.poisoned {
+            return Err(Self::poisoned_error());
+        }
         if self.exhausted {
             return Ok(PageResult::Drained);
         }
@@ -235,11 +259,26 @@ impl PipelineNode for SkipTake {
 
                     // Encode only the survivors, and only once this page's
                     // contribution is known — a document the window discards
-                    // must not be able to fail the query. This runs before the
-                    // counter updates below so a failure leaves no row behind
-                    // the resume boundary.
+                    // must not be able to fail the query.
+                    //
+                    // A failure here is **not** recoverable in place. The child
+                    // page was already consumed at the top of this arm, so its
+                    // continuation has moved, while `remaining_skip` /
+                    // `remaining_take` below still hold their pre-page values.
+                    // Resuming from that pair would skip the consumed documents
+                    // (the child resumes past them) *and* re-apply the full
+                    // window to the documents after them — silently wrong
+                    // results. The child's advance cannot be undone from here,
+                    // so the node is poisoned instead: it will not emit another
+                    // page, and it will not mint a resume token.
                     let emitted_items = if needs_encode {
-                        skip_take_page::encode_items(outcome.items, self.emit_binary)?
+                        match skip_take_page::encode_items(outcome.items, self.emit_binary) {
+                            Ok(encoded) => encoded,
+                            Err(err) => {
+                                self.poisoned = true;
+                                return Err(err);
+                            }
+                        }
                     } else {
                         outcome.items
                     };
@@ -282,6 +321,11 @@ impl PipelineNode for SkipTake {
     }
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
+        // A poisoned node's window counters no longer describe the child's
+        // position, so any token minted here would resume incorrectly.
+        if self.poisoned {
+            return Err(Self::poisoned_error());
+        }
         // Once the window is fully satisfied there is nothing left to resume.
         if self.exhausted {
             return Ok(PipelineNodeState::Drained);
@@ -466,6 +510,55 @@ mod tests {
             }
             other => panic!("expected SkipTake snapshot, got {other:?}"),
         }
+    }
+
+    /// A page whose documents parse as JSON (so the envelope splits) but cannot
+    /// be re-encoded to Cosmos binary JSON, forcing `encode_items` to fail.
+    fn page_failing_binary_encode(is_terminal: bool) -> crate::error::Result<PageResult> {
+        // `1e999` overflows `f64` to infinity, which has no binary-JSON
+        // representation. `RawValue` keeps it as unparsed text, so the split
+        // above succeeds and only the encode fails.
+        let body = br#"{"Documents":[{"id":1,"n":1e999}],"_count":1}"#.to_vec();
+        Ok(PageResult::Page {
+            response: response(&body),
+            is_terminal,
+        })
+    }
+
+    #[tokio::test]
+    async fn encode_failure_poisons_the_node_instead_of_resuming_wrong() {
+        // The child page is consumed before `encode_items` runs, so its
+        // continuation has advanced while `remaining_skip` has not been
+        // decremented. Resuming from that pair would skip the consumed
+        // documents *and* re-apply the window to the ones after them. The node
+        // must refuse rather than let that happen.
+        let child = MockLeaf::with_pages(vec![
+            page_failing_binary_encode(false),
+            page_result(&[2], true),
+        ]);
+        let mut node = SkipTake::new(Box::new(child), 0, None, true);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        let error = node
+            .next_page(&mut context)
+            .await
+            .expect_err("re-encoding an infinite number must fail");
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+        );
+
+        // No further page, even though the child has one left to give.
+        node.next_page(&mut context)
+            .await
+            .expect_err("a poisoned node must not emit another page");
+
+        // And no resume token, which is the assertion that matters: a token
+        // minted here would silently produce wrong results.
+        node.snapshot_state()
+            .expect_err("a poisoned node must not mint a resume token");
     }
 
     /// Builds a query-page response body/charge pair for the RU-accounting tests.

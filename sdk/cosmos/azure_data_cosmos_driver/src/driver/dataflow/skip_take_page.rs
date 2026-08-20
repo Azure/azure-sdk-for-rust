@@ -101,9 +101,12 @@ pub(crate) fn split_feed_envelope(body: &Bytes) -> crate::error::Result<Vec<Byte
 /// page the service answered in text on a binary-negotiated query still emits
 /// the same format as every other node in the pipeline.
 ///
-/// Called on the skip/take *survivors* only. Because this runs before the
-/// caller commits its window counters, a failure here leaves no row stranded
-/// behind the resume boundary.
+/// Called on the skip/take *survivors* only, so a document the window discards
+/// cannot fail the query. That is the only property this ordering buys: the
+/// caller has already consumed a page from its child by this point, so a
+/// failure here leaves the window counters and the child's resume position
+/// disagreeing and is not recoverable in place. See the encode branch in
+/// [`SkipTake::next_page`](super::skip_take::SkipTake).
 ///
 /// # Errors
 ///
