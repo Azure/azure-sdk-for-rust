@@ -134,8 +134,10 @@ pub enum PatchOperation {
     /// configured delta.
     ///
     /// Serializes as `"op": "incr"` — the wire tag Cosmos DB expects, which
-    /// does not match the variant name.
-    #[serde(rename = "incr")]
+    /// does not match the variant name. `"increment"` is still accepted on
+    /// input so patch documents persisted by earlier versions of this crate
+    /// keep deserializing.
+    #[serde(rename = "incr", alias = "increment")]
     Increment {
         /// JSON Pointer path (RFC 6901) targeting an existing JSON number.
         path: String,
@@ -284,6 +286,47 @@ mod tests {
             let parsed: PatchOperation = serde_json::from_value(value).unwrap();
             assert_eq!(parsed, op);
         }
+    }
+
+    /// `PatchOperation` is a public `Deserialize` type, so JSON this crate
+    /// emitted before the `incr` fix must keep parsing. Only the input tag is
+    /// accepted — output is always the wire-correct `incr`.
+    #[test]
+    fn legacy_increment_tag_still_deserializes() {
+        let legacy = r#"{"op":"increment","path":"/visits","value":3}"#;
+        let parsed: PatchOperation = serde_json::from_str(legacy).unwrap();
+        assert_eq!(parsed, PatchOperation::increment("/visits", 3i64));
+
+        // Re-serializing upgrades the tag rather than echoing the legacy one.
+        let reserialized = serde_json::to_string(&parsed).unwrap();
+        assert_eq!(reserialized, r#"{"op":"incr","path":"/visits","value":3}"#);
+    }
+
+    #[test]
+    fn legacy_increment_tag_still_deserializes_inside_instructions() {
+        let legacy = concat!(
+            r#"{"operations":["#,
+            r#"{"op":"set","path":"/age","value":31},"#,
+            r#"{"op":"increment","path":"/visits","value":1}"#,
+            r#"]}"#,
+        );
+        let parsed: PatchInstructions = serde_json::from_str(legacy).unwrap();
+        assert_eq!(
+            parsed,
+            PatchInstructions::from(vec![
+                PatchOperation::set("/age", json!(31)),
+                PatchOperation::increment("/visits", 1i64),
+            ])
+        );
+    }
+
+    /// The float half of the alias: `CosmosNumber` picks its variant from the
+    /// JSON number, so the legacy tag must not disturb int/float fidelity.
+    #[test]
+    fn legacy_increment_tag_preserves_float_fidelity() {
+        let parsed: PatchOperation =
+            serde_json::from_str(r#"{"op":"increment","path":"/ratio","value":2.5}"#).unwrap();
+        assert_eq!(parsed, PatchOperation::increment("/ratio", 2.5f64));
     }
 
     #[test]

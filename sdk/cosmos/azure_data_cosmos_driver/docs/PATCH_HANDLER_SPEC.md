@@ -189,6 +189,11 @@ The tags are pinned by `every_op_tag_matches_the_wire_contract` in
 `src/models/patch.rs`. This matters wherever `PatchInstructions` reaches the
 service directly, which today is the distributed-transaction patch operation.
 
+`PatchOperation` is a public `Deserialize` type, so `Increment` additionally
+accepts the legacy `"increment"` tag on **input** (a Serde alias) to keep patch
+documents persisted by earlier versions of this crate parsing. Output is always
+`"incr"` — re-serializing a legacy document upgrades the tag.
+
 `CosmosNumber` is a Rust-only enum (`Int(i64)`, `Float(f64)`) that serializes
 as a JSON number without precision loss.
 
