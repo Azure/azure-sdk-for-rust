@@ -12,6 +12,10 @@
 ### Breaking Changes
 
 - On the receive path, the `amqp:link:stolen` AMQP condition is no longer auto-retried. A receiver displaced by a higher-or-equal-epoch attacher now surfaces the error (translated to `EventHubsError::ConsumerDisconnected` by `EventReceiver::stream_events`) instead of silently re-attaching. Sender, CBS, and management operations retain the historical retry-on-stolen behavior.
+- Event Hubs treats the consumer group as case insensitive, so one deployment that spelled the group `$Default` on one run and `$default` on the next built two disjoint key sets and reprocessed events. ([#5099](https://github.com/Azure/azure-sdk-for-rust/issues/5099))
+- The checkpoint and ownership blob key that `Checkpoint::get_checkpoint_blob_prefix_name`, `Checkpoint::get_checkpoint_blob_name`, `Ownership::get_ownership_prefix_name`, and `Ownership::get_ownership_name` build now folds the fully qualified namespace, the event hub name, and the consumer group to lowercase ASCII. The partition id keeps its case. The .NET, JavaScript, and Python clients fold these three names; the Go and Java clients do not, so this change moves the Rust crate from the second group into the first.
+- The old key `NS.ServiceBus.Windows.Net/My-Hub/$Default/checkpoint/0` becomes `ns.servicebus.windows.net/my-hub/$default/checkpoint/0`. The ownership key changes in the same way.
+- Migration: records that an older Rust client wrote stay at the old key and become unreachable. The change adds no dual read and no fallback lookup. A processor that starts against an existing container resumes from its configured start position.
 
 ### Bugs Fixed
 

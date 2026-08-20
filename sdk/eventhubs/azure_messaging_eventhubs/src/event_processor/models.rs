@@ -4,7 +4,8 @@
 // Note that this module returns azure_core errors, *not* eventhub errors. That is because these structures are used by checkpoint stores which always return azure_core errors.
 use crate::StartPosition;
 use azure_core::{
-    error::ErrorKind as AzureErrorKind, http::Etag, time::OffsetDateTime, Error, Result,
+    error::ErrorKind as AzureErrorKind, fmt::to_ascii_lowercase, http::Etag, time::OffsetDateTime,
+    Error, Result,
 };
 use std::collections::HashMap;
 
@@ -42,6 +43,13 @@ macro_rules! check_non_empty_parameter(
 
 impl Checkpoint {
     /// Returns the prefix for the checkpoint blob name.
+    ///
+    /// The layout is `{namespace}/{event hub}/{consumer group}/checkpoint/`.
+    ///
+    /// The namespace, the event hub name, and the consumer group fold to
+    /// lowercase. The fold applies to ASCII letters only, and it leaves all
+    /// other characters unchanged. Event Hubs treats these three names as
+    /// case insensitive, so the fold keeps one prefix for one Event Hub.
     pub fn get_checkpoint_blob_prefix_name(
         fully_qualified_namespace: &str,
         event_hub_name: &str,
@@ -50,15 +58,22 @@ impl Checkpoint {
         check_non_empty_parameter!(fully_qualified_namespace);
         check_non_empty_parameter!(event_hub_name);
         check_non_empty_parameter!(consumer_group);
-        Ok(fully_qualified_namespace.to_string()
-            + "/"
-            + event_hub_name
-            + "/"
-            + consumer_group
-            + "/checkpoint/")
+        Ok(format!(
+            "{}/{}/{}/checkpoint/",
+            to_ascii_lowercase(fully_qualified_namespace),
+            to_ascii_lowercase(event_hub_name),
+            to_ascii_lowercase(consumer_group)
+        ))
     }
 
     /// Returns the full name of the checkpoint blob.
+    ///
+    /// The layout is
+    /// `{namespace}/{event hub}/{consumer group}/checkpoint/{partition id}`.
+    ///
+    /// The namespace, the event hub name, and the consumer group fold to
+    /// lowercase. The fold applies to ASCII letters only, and it leaves all
+    /// other characters unchanged. The partition id keeps its case.
     pub fn get_checkpoint_blob_name(
         fully_qualified_namespace: &str,
         event_hub_name: &str,
@@ -100,6 +115,13 @@ pub struct Ownership {
 
 impl Ownership {
     /// Returns the prefix for the ownership blob name.
+    ///
+    /// The layout is `{namespace}/{event hub}/{consumer group}/ownership/`.
+    ///
+    /// The namespace, the event hub name, and the consumer group fold to
+    /// lowercase. The fold applies to ASCII letters only, and it leaves all
+    /// other characters unchanged. Event Hubs treats these three names as
+    /// case insensitive, so the fold keeps one prefix for one Event Hub.
     pub fn get_ownership_prefix_name(
         fully_qualified_namespace: &str,
         event_hub_name: &str,
@@ -108,15 +130,22 @@ impl Ownership {
         check_non_empty_parameter!(fully_qualified_namespace);
         check_non_empty_parameter!(event_hub_name);
         check_non_empty_parameter!(consumer_group);
-        Ok(fully_qualified_namespace.to_string()
-            + "/"
-            + event_hub_name
-            + "/"
-            + consumer_group
-            + "/ownership/")
+        Ok(format!(
+            "{}/{}/{}/ownership/",
+            to_ascii_lowercase(fully_qualified_namespace),
+            to_ascii_lowercase(event_hub_name),
+            to_ascii_lowercase(consumer_group)
+        ))
     }
 
     /// Returns the full name of the ownership blob.
+    ///
+    /// The layout is
+    /// `{namespace}/{event hub}/{consumer group}/ownership/{partition id}`.
+    ///
+    /// The namespace, the event hub name, and the consumer group fold to
+    /// lowercase. The fold applies to ASCII letters only, and it leaves all
+    /// other characters unchanged. The partition id keeps its case.
     pub fn get_ownership_name(
         fully_qualified_namespace: &str,
         event_hub_name: &str,
