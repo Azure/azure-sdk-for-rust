@@ -3058,9 +3058,9 @@ impl CosmosDriver {
                     .build());
             }
             // A page that advanced the plan but never reached the caller makes
-            // the plan unusable, not just untokenizable: the next page would be
-            // the one *after* the page that was lost. Refuse it here so the
-            // caller cannot silently step over the gap.
+            // the plan unusable, not merely unable to mint a token: the next
+            // page would be the one *after* the page that was lost. Refuse it
+            // here so the caller cannot silently step over the gap.
             if plan.continuation_poisoned() {
                 return Err(OperationPlan::poisoned_error());
             }
@@ -6828,7 +6828,7 @@ mod tests {
     /// The control: the poison above has to come from the failed transcode,
     /// not from running `execute_plan` at all.
     #[tokio::test]
-    async fn a_page_that_transcodes_cleanly_leaves_the_plan_unpoisoned() {
+    async fn a_page_that_transcodes_cleanly_leaves_the_plan_usable() {
         let driver = transcoding_test_driver().await;
         let mut plan = transcoding_plan(&driver, &[b"{}"]);
 

@@ -61,7 +61,7 @@ FFI hosts set the equivalent flat fields on the C ABI `cosmos_operation_options_
 When `binary_encoding.enabled` is set, the driver owns the wire format both ways — the request side in `execute_operation`, the response side in `execute_plan`:
 
 * **Request** (`apply_request_binary_encoding`) — transcodes a **text** request body to Cosmos binary JSON via `binary_json::transcode_to_binary` (`serde_json::from_slice` → `encode`). An **already-binary** or empty body passes through unchanged, so a caller that pre-encoded pays nothing. Response negotiation is a separate step (`apply_response_negotiation`) and advertises `CosmosBinary`.
-* **Response** (when `request_text_response` is set) — transcodes the binary response back to text JSON via `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire stays binary in both directions. This lives in `execute_plan`, which **every** operation type funnels through — point ops, queries, and change feed alike — so the contract holds uniformly. A page that is already text transcodes as a refcount clone, so plans that never negotiated binary pay nothing.
+* **Response** (when `request_text_response` is set) — transcodes the binary response back to text JSON via `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire stays binary in both directions. This lives in `execute_plan`, which **every** operation type funnels through — point ops, queries, and change feed alike — so the contract holds uniformly. A page that is already text transcodes as a refcount clone, so plans that never negotiated binary pay nothing. Note this is a genuine transcode on the query passthrough path: a plain `SELECT * FROM c` forwards the service's binary page verbatim, so nothing has converted it before `execute_plan` sees it. Only pages the pipeline synthesized (`ORDER BY`, `OFFSET`/`LIMIT`) are already text by then.
 
 This keeps transcoding in the **driver** (not the backend) and, because it is schema-agnostic, lets a text-only FFI host get an efficient binary wire without encoding anything on its side. Note the two transcodes are independently controlled: enabling binary buys the request-side transcode unconditionally, but the host still receives **binary** responses unless it also sets `request_text_response`.
 
@@ -141,6 +141,12 @@ the Rust SDK and FFI hosts set that option; the **driver** owns the wire format
 and the two transcodes. The only difference is *how the request body arrives*:
 the Rust SDK may pre-encode typed `T` to binary (an optimization), while an FFI
 host sends plain text and lets the driver transcode.
+
+The first four diagrams follow a **point operation**, where a single body goes
+out and a single body comes back. [Query](#query-end-to-end-pages-pipeline-and-the-accept-list)
+is diagrammed separately, because its request body never becomes binary, its
+response format is a service *choice* rather than a demand, and a pipeline sits
+between the service page and the caller.
 
 ### End-to-end request + response (both paths, unified)
 
@@ -271,6 +277,70 @@ flowchart TD
     S --> T
 ```
 
+### Query end-to-end (pages, pipeline, and the accept-list)
+
+The request-side gate is absent — a query spec is not a document, so the body
+stays text and only the **response** is negotiated. Three things then vary that a
+point op never has to consider: the service *chooses* the page format, the plan
+shape decides whether a page is reparsed or forwarded untouched, and
+`emits_binary_payload` decides whether pipeline-synthesized pages are re-encoded.
+
+```mermaid
+flowchart TD
+    query_start["query_items::&lt;T&gt;(sql)"] --> query_execute["execute_operation(Query)"]
+    query_execute --> plan_request["query plan request<br/>(TEXT, not negotiated)"]
+    plan_request --> query_enabled{"binary.enabled?"}
+    query_enabled -->|no| query_send
+    query_enabled -->|yes| query_header["advertise JsonText,CosmosBinary<br/>(accept-list, not a demand)"]
+    query_header --> emit_flag["record emits_binary_payload =<br/>negotiates &amp;&amp; !request_text_response"]
+    emit_flag --> query_send["send query"]
+    query_send --> query_service[("Cosmos DB")]
+
+    query_service --> service_choice{"service chose"}
+    service_choice -->|binary| page_binary["page (0x80)"]
+    service_choice -->|text| page_text["page (text)<br/>safety valve — number<br/>fidelity reverts to serde_json"]
+
+    page_binary --> plan_shape
+    page_text --> plan_shape{"plan shape?"}
+    plan_shape -->|"ORDER BY / OFFSET / LIMIT"| normalize["normalize_page_body<br/>(sniffs 0x80 per page)"]
+    plan_shape -->|"plain SELECT (passthrough)"| passthrough["service page forwarded<br/>unchanged — still binary"]
+
+    normalize --> emit_binary{"emit_binary?"}
+    emit_binary -->|true| re_encode["re-encode items to binary"]
+    emit_binary -->|false| keep_text["keep as text"]
+
+    re_encode --> execute_plan
+    keep_text --> execute_plan
+    passthrough --> execute_plan["execute_plan"]
+
+    execute_plan --> text_response{"request_text_response?"}
+    text_response -->|no| raw_items["items returned as-is<br/>SDK sniffs 0x80 per item"]
+    text_response -->|yes| transcode["transcode_body_to_text"]
+
+    transcode --> already_text{"page already text?"}
+    already_text -->|"yes (pipeline-synthesized)"| cheap_clone["refcount clone — no-op"]
+    already_text -->|"no (passthrough, binary)"| real_transcode["real decode + re-serialize"]
+
+    real_transcode --> decode_ok{"decode ok?"}
+    cheap_clone --> feed_page
+    decode_ok -->|yes| feed_page["FeedPage&lt;T&gt;"]
+    decode_ok -->|no| poison["poison_continuation()<br/>plan is spent: execute_plan and<br/>to_continuation_token both refuse"]
+    raw_items --> feed_page
+
+    style query_header fill:#ffe8c0,stroke:#e80
+    style transcode fill:#d0ffd0,stroke:#0a0
+    style real_transcode fill:#d0ffd0,stroke:#0a0
+    style poison fill:#ffd0d0,stroke:#c00
+```
+
+Two edges are worth reading off the diagram directly. `passthrough` &rarr;
+`real_transcode` is the common case a plain `SELECT * FROM c` takes under
+`request_text_response`, and it is a **full** transcode — the "already text, so
+cloning" shortcut applies only to pages the pipeline built. And `page_text` is
+reachable at the service's discretion on any query, so a text page is a normal
+outcome rather than a failure; what it costs is described under
+[What a text answer costs](#negotiation-header).
+
 ---
 
 ## Sequence diagrams
@@ -379,13 +449,40 @@ sequenceDiagram
     else request_text_response = true
         Note over PIPE: emit_binary = false<br/>no re-encode
         PIPE-->>DRV: text items
-        DRV->>Cod: transcode_to_text (no-op: refcount clone)
+        DRV->>Cod: transcode_to_text
+        alt page came from the pipeline (text)
+            Cod-->>DRV: refcount clone (no-op)
+        else passthrough page (still binary)
+            Cod-->>DRV: real decode + re-serialize
+        end
         DRV-->>SDK: text items
         SDK->>Cod: serde_json::from_slice::<T>
     end
 
+    opt transcode fails (undecodable page)
+        Note over DRV: plan advanced but the page<br/>never reached the caller
+        DRV->>DRV: poison_continuation()
+        DRV-->>SDK: Err(SERIALIZATION_RESPONSE_BODY_INVALID)
+        Note over SDK,DRV: plan is now spent — both<br/>execute_plan and to_continuation_token refuse
+    end
+
     SDK-->>App: FeedPage<T>
 ```
+
+**When a page cannot be transcoded.** The failure is specific to queries,
+because only a query has a resume position to lose. By the time
+`transcode_body_to_text` runs, the pipeline has already advanced every node past
+that page. Returning the error alone would leave the plan claiming progress the
+caller never received, so the next page fetched would be the page *after* the
+lost one and a minted token would resume past it — in both cases silently.
+
+The plan therefore poisons itself and closes both exits: `execute_plan` refuses
+to fetch again, and `to_continuation_token` refuses to mint
+(`CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE`). This mirrors `SkipTake`,
+which poisons on the same reasoning one layer down, and it is durable rather
+than per-call: replaying the page fails identically, so retrying is futile. The
+recovery is to re-run from the last token captured successfully, or with binary
+disabled.
 
 The query-plan fetch is a separate text request, which is why `binary%` in the A/B
 harness tops out around 87–94% rather than 100% — expected, not a leak.
