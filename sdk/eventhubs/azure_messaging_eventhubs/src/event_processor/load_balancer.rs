@@ -392,8 +392,10 @@ impl LoadBalancer {
 pub(crate) mod tests {
     use super::*;
     use crate::{
-        event_processor::Ownership, in_memory_checkpoint_store::InMemoryCheckpointStore,
-        models::ConsumerClientDetails, CheckpointStore,
+        event_processor::Ownership,
+        in_memory_checkpoint_store::InMemoryCheckpointStore,
+        models::{Checkpoint, ConsumerClientDetails},
+        CheckpointStore,
     };
     use azure_core::{time::OffsetDateTime, Result};
     use azure_core_test::{recorded, TestContext};
@@ -578,6 +580,90 @@ pub(crate) mod tests {
             consumer_group: TEST_CONSUMER_GROUP.to_string(),
             client_id: client_id.to_string(),
         }
+    }
+
+    /// A checkpoint store that lets a competitor claim the partition first.
+    /// A sequential test cannot reach the race on its own, because
+    /// `get_available_partitions` and `load_balance` have no await point
+    /// between them. The wrapper only orders the two calls.
+    struct LostRaceCheckpointStore {
+        inner: Arc<InMemoryCheckpointStore>,
+        competitor: Mutex<Option<Vec<Ownership>>>,
+    }
+
+    #[async_trait::async_trait]
+    impl CheckpointStore for LostRaceCheckpointStore {
+        async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>> {
+            // Take the competitor in its own statement, so the guard drops before the await.
+            let competitor = self.competitor.lock().unwrap().take();
+            if let Some(competitor) = competitor {
+                self.inner.claim_ownership(&competitor).await?;
+            }
+            self.inner.claim_ownership(ownerships).await
+        }
+
+        async fn list_checkpoints(
+            &self,
+            namespace: &str,
+            event_hub_name: &str,
+            consumer_group: &str,
+        ) -> Result<Vec<Checkpoint>> {
+            self.inner
+                .list_checkpoints(namespace, event_hub_name, consumer_group)
+                .await
+        }
+
+        async fn list_ownerships(
+            &self,
+            namespace: &str,
+            event_hub_name: &str,
+            consumer_group: &str,
+        ) -> Result<Vec<Ownership>> {
+            self.inner
+                .list_ownerships(namespace, event_hub_name, consumer_group)
+                .await
+        }
+
+        async fn update_checkpoint(&self, checkpoint: Checkpoint) -> Result<()> {
+            self.inner.update_checkpoint(checkpoint).await
+        }
+    }
+
+    /// A partition that another instance claimed first must not stop the load
+    /// balancer. The instance that lost the race reports no partition.
+    #[tokio::test]
+    async fn load_balance_survives_a_lost_claim() {
+        let inner = Arc::new(InMemoryCheckpointStore::new());
+        let store = Arc::new(LostRaceCheckpointStore {
+            inner: inner.clone(),
+            competitor: Mutex::new(Some(vec![new_test_ownership("0", "winning-client")])),
+        });
+
+        let load_balancer = LoadBalancer::new(
+            store,
+            new_test_consumer_client_details("losing-client"),
+            ProcessorStrategy::Balanced,
+            Duration::seconds(3600),
+            None,
+        );
+
+        let result = load_balancer.load_balance(&["0"]).await;
+        assert!(
+            result.is_ok(),
+            "a lost claim must not stop the load balancer, got: {:?}",
+            result.as_ref().err()
+        );
+        assert!(
+            result.unwrap().is_empty(),
+            "the losing instance must own no partition"
+        );
+
+        let ownerships = inner
+            .list_ownerships(TEST_EVENTHUB_FQDN, TEST_EVENTHUB_NAME, TEST_CONSUMER_GROUP)
+            .await
+            .unwrap();
+        assert_eq!(ownerships.len(), 1);
+        assert_eq!(ownerships[0].owner_id, Some("winning-client".to_string()));
     }
 
     fn find_common<T: PartialEq>(a: Vec<T>, b: Vec<T>) -> Vec<T> {
