@@ -134,8 +134,10 @@ pub enum PatchOperation {
     /// configured delta.
     ///
     /// Serializes as `"op": "incr"` — the wire tag Cosmos DB expects, which
-    /// does not match the variant name.
-    #[serde(rename = "incr")]
+    /// does not match the variant name. The legacy `"increment"` tag is still
+    /// accepted for deserialization to preserve compatibility with JSON emitted by
+    /// older SDK versions.
+    #[serde(rename = "incr", alias = "increment")]
     Increment {
         /// JSON Pointer path (RFC 6901) targeting an existing JSON number.
         path: String,
@@ -301,6 +303,17 @@ mod tests {
         // No scientific-notation drift on the value.
         assert!(!s.contains("e+"), "actual: {s}");
         assert!(!s.contains("E+"), "actual: {s}");
+    }
+
+    #[test]
+    fn increment_deserializes_legacy_wire_name() {
+        let parsed: PatchOperation = serde_json::from_value(json!({
+            "op": "increment",
+            "path": "/n",
+            "value": 1
+        }))
+        .unwrap();
+        assert_eq!(parsed, PatchOperation::increment("/n", 1i64));
     }
 
     /// Canonical wire JSON for the `PatchInstructions` exercised by the
