@@ -51,6 +51,20 @@ pub enum ErrorKind {
     /// `matches!(err.kind, ErrorKind::ConsumerDisconnected(_))`.
     /// Mirrors `EventHubsException.FailureReason.ConsumerDisconnected` (.NET).
     ConsumerDisconnected(Option<AmqpDescribedError>),
+
+    /// The event carries no offset and no sequence number, so it names no
+    /// position in the partition. A checkpoint built from such an event holds
+    /// no position, and it erases the position the checkpoint store already
+    /// holds.
+    ///
+    /// Mirrors the `InvalidOperationException` that .NET raises for the same
+    /// input ("A checkpoint cannot be created or updated using an empty
+    /// event."). Match on the variant to tell it apart from a store failure:
+    /// `matches!(err.kind, ErrorKind::MissingCheckpointMetadata { .. })`.
+    MissingCheckpointMetadata {
+        /// The identifier of the partition the checkpoint is for.
+        partition_id: String,
+    },
 }
 
 /// Represents an error that can occur in the Event Hubs module.
@@ -102,6 +116,13 @@ impl std::fmt::Display for EventHubsError {
                     e
                 )
             }
+            ErrorKind::MissingCheckpointMetadata { partition_id } => write!(
+                f,
+                "Cannot record a checkpoint for partition {}. \
+                 The event carries no offset and no sequence number, \
+                 so there is nothing to record.",
+                partition_id
+            ),
         }
     }
 }
