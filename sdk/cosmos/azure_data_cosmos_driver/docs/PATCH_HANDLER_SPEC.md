@@ -179,8 +179,15 @@ Supported (`PatchOperation` variants — all use RFC 6901 JSON Pointers):
 | `Set`       | `"set"`       | Same as `Add`; conventional for "create or overwrite" leaf assignment.     |
 | `Replace`   | `"replace"`   | Overwrite an existing leaf; fails if the leaf is missing.                  |
 | `Remove`    | `"remove"`    | Delete a leaf; fails if the leaf is missing or the path is the root.      |
-| `Increment` | `"increment"` | Numeric add; preserves i64 fidelity, promotes i64→f64 on float operand.    |
+| `Increment` | `"incr"`      | Numeric add; preserves i64 fidelity, promotes i64→f64 on float operand.    |
 | `MoveOp`    | `"move"`      | Move a subtree from `from` to `path`; refuses to move into own descendant. |
+
+The `op` tags are the Cosmos DB wire contract
+([REST reference](https://learn.microsoft.com/rest/api/cosmos-db/patch-a-document)),
+not the lowercased Rust variant names — `Increment` serializes as `"incr"`.
+The tags are pinned by `every_op_tag_matches_the_wire_contract` in
+`src/models/patch.rs`. This matters wherever `PatchInstructions` reaches the
+service directly, which today is the distributed-transaction patch operation.
 
 `CosmosNumber` is a Rust-only enum (`Int(i64)`, `Float(f64)`) that serializes
 as a JSON number without precision loss.

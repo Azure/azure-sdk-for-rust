@@ -132,6 +132,10 @@ pub enum PatchOperation {
     },
     /// Increment the integer or floating-point number at `path` by the
     /// configured delta.
+    ///
+    /// Serializes as `"op": "incr"` — the wire tag Cosmos DB expects, which
+    /// does not match the variant name.
+    #[serde(rename = "incr")]
     Increment {
         /// JSON Pointer path (RFC 6901) targeting an existing JSON number.
         path: String,
@@ -255,6 +259,33 @@ mod tests {
         assert_eq!(s, r#"{"op":"add","path":"/a","value":1}"#);
     }
 
+    /// Pins the `op` tag of every variant against the Cosmos DB wire contract.
+    /// See <https://learn.microsoft.com/rest/api/cosmos-db/patch-a-document>.
+    /// Note `Increment` is `incr` on the wire, not the lowercased variant name.
+    #[test]
+    fn every_op_tag_matches_the_wire_contract() {
+        let cases = [
+            (PatchOperation::add("/a", json!(1)), "add"),
+            (PatchOperation::set("/a", json!(1)), "set"),
+            (PatchOperation::replace("/a", json!(1)), "replace"),
+            (PatchOperation::remove("/a"), "remove"),
+            (PatchOperation::increment("/a", 1i64), "incr"),
+            (PatchOperation::move_value("/a", "/b"), "move"),
+        ];
+
+        for (op, expected_tag) in cases {
+            let value = serde_json::to_value(&op).unwrap();
+            assert_eq!(
+                value.get("op").and_then(serde_json::Value::as_str),
+                Some(expected_tag),
+                "unexpected wire tag for {op:?}"
+            );
+            // The tag must also round-trip back to the same variant.
+            let parsed: PatchOperation = serde_json::from_value(value).unwrap();
+            assert_eq!(parsed, op);
+        }
+    }
+
     #[test]
     fn move_value_serializes_as_move() {
         let op = PatchOperation::move_value("/a", "/b");
@@ -280,7 +311,7 @@ mod tests {
     const PATCH_SPEC_WIRE_JSON: &str = concat!(
         r#"{"operations":["#,
         r#"{"op":"set","path":"/age","value":31},"#,
-        r#"{"op":"increment","path":"/visits","value":1},"#,
+        r#"{"op":"incr","path":"/visits","value":1},"#,
         r#"{"op":"add","path":"/tags/-","value":"rust"},"#,
         r#"{"op":"remove","path":"/legacy"},"#,
         r#"{"op":"move","from":"/from","path":"/to"}"#,
