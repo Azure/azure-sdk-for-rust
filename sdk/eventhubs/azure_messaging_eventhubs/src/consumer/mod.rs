@@ -848,15 +848,15 @@ pub mod builders {
 #[cfg(test)]
 pub(crate) mod tests {
     use crate::{
-        common::tests::force_errors, models::EventData, ConsumerClient, EventDataBatchOptions,
-        ProducerClient, Result, StartLocation, StartPosition,
+        common::tests::force_errors, error::ErrorKind, models::EventData, ConsumerClient,
+        EventDataBatchOptions, ProducerClient, Result, StartLocation, StartPosition,
     };
     use azure_core::{sleep::sleep, time::Duration};
     use azure_core_amqp::{error::AmqpErrorKind, AmqpError};
-    use azure_core_test::{recorded, TestContext};
+    use azure_core_test::{credentials::MockCredential, recorded, TestContext};
     use futures::stream::StreamExt;
     use std::{
-        sync::Arc,
+        sync::{Arc, Mutex},
         time::{SystemTime, UNIX_EPOCH},
     };
     use tracing::info;
@@ -1281,5 +1281,140 @@ pub(crate) mod tests {
             )))
         })
         .await
+    }
+    /// Collects the formatted output of a `tracing` subscriber, so a test can
+    /// read the records that the code under test made.
+    #[derive(Clone, Default)]
+    struct LogBuffer(Arc<Mutex<Vec<u8>>>);
+
+    impl LogBuffer {
+        fn contents(&self) -> String {
+            let buffer = self.0.lock().expect("the log buffer lock is poisoned");
+            String::from_utf8_lossy(&buffer).to_string()
+        }
+    }
+
+    impl std::io::Write for LogBuffer {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            let mut buffer = self.0.lock().expect("the log buffer lock is poisoned");
+            buffer.extend_from_slice(buf);
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for LogBuffer {
+        type Writer = LogBuffer;
+
+        fn make_writer(&'a self) -> Self::Writer {
+            self.clone()
+        }
+    }
+
+    /// Installs a log capture and returns it with its guard. The dispatcher is
+    /// thread local, so the test must stay on one thread. Drop the guard
+    /// before you read `contents()`.
+    fn capture_logs() -> (LogBuffer, tracing::subscriber::DefaultGuard) {
+        let buffer = LogBuffer::default();
+        let subscriber = tracing_subscriber::fmt()
+            .with_writer(buffer.clone())
+            .with_max_level(tracing::Level::TRACE)
+            .with_ansi(false)
+            .finish();
+        let guard = tracing::subscriber::set_default(subscriber);
+        (buffer, guard)
+    }
+
+    fn unconnected_consumer() -> ConsumerClient {
+        ConsumerClient::new_unconnected(
+            "example.servicebus.windows.net",
+            "test-eventhub",
+            Arc::new(MockCredential),
+        )
+        .expect("the client must build")
+    }
+
+    fn consumer_with_armed_attach_error() -> ConsumerClient {
+        let consumer = unconnected_consumer();
+        consumer
+            .recoverable_connection()
+            .force_attach_error(AmqpError::with_message("attach failed"))
+            .expect("the attach error must arm");
+        consumer
+    }
+
+    #[test]
+    fn open_receiver_on_partition_logs_a_deferred_attach() {
+        let consumer = unconnected_consumer();
+        let (buffer, guard) = capture_logs();
+        futures::executor::block_on(consumer.open_receiver_on_partition("0".to_string(), None))
+            .expect("the open must succeed without a connection");
+        drop(guard);
+        let logs = buffer.contents();
+
+        assert!(
+            logs.contains(
+                "Created receiver on partition. The AMQP link attaches on the first stream_events() poll."
+            ),
+            "the log must say the link attaches on the first poll, got: {logs}"
+        );
+        assert!(
+            !logs.contains("Receiver attached on partition."),
+            "the log must not claim an attach happened, got: {logs}"
+        );
+    }
+
+    // Pins the lazy contract. An eager
+    // `recoverable_connection.get_receiver(...)` put before the
+    // `Ok(EventReceiver::new(...))` return makes the armed attach error leave
+    // the open, and this test fails.
+    #[tokio::test]
+    async fn open_receiver_on_partition_defers_the_attach_to_the_first_poll() {
+        let consumer = consumer_with_armed_attach_error();
+        let receiver = consumer
+            .open_receiver_on_partition("0".to_string(), None)
+            .await
+            .expect("the open must not attach, so the armed attach error must not surface here");
+
+        let mut stream = std::pin::pin!(receiver.stream_events());
+        let error = stream
+            .next()
+            .await
+            .expect("the stream yields the armed attach failure")
+            .expect_err("the armed attach error must surface on the first poll");
+        assert!(
+            matches!(error.kind, ErrorKind::AmqpError(_)),
+            "expected AmqpError, got {:?}",
+            error.kind
+        );
+    }
+
+    #[tokio::test]
+    async fn open_receiver_on_partition_never_logs_an_attach_that_failed() {
+        let consumer = consumer_with_armed_attach_error();
+        let (buffer, guard) = capture_logs();
+        let receiver = consumer
+            .open_receiver_on_partition("0".to_string(), None)
+            .await
+            .expect("the open must succeed without a connection");
+
+        let mut stream = std::pin::pin!(receiver.stream_events());
+        let _ = stream.next().await;
+        drop(guard);
+        let logs = buffer.contents();
+
+        // The first assertion anchors the capture. An empty capture would make
+        // the second assertion pass for the wrong reason.
+        assert!(
+            logs.contains("Opening receiver on partition."),
+            "the capture must hold the events of the call, got: {logs}"
+        );
+        assert!(
+            !logs.contains("Attached receiver on partition."),
+            "no attach was made, so nothing may record one, got: {logs}"
+        );
     }
 }
