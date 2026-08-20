@@ -642,6 +642,14 @@ impl PipelineNode for StreamingOrderedMerge {
                 Ok(item) => item,
                 Err(err) => {
                     self.children[winner].buffered.push_front(row);
+                    // Nothing has been emitted, so there is no partial page to
+                    // defer the failure behind and `aggregator` is dropped.
+                    // Dropping it is safe only because `ensure_stream_filled`
+                    // commits the merged session token to `self` as each page
+                    // is absorbed, so session progress outlives the page; the
+                    // charge and per-page diagnostics do go with it, which is
+                    // an accounting loss on a path the caller already sees as
+                    // failed.
                     if items.is_empty() {
                         return Err(err);
                     }
@@ -653,6 +661,8 @@ impl PipelineNode for StreamingOrderedMerge {
                 // The boundary was not advanced, so put the row back and let
                 // it be re-emitted on a later attempt.
                 self.children[winner].buffered.push_front(row);
+                // See the encode branch above for why discarding `aggregator`
+                // here does not lose session progress.
                 if items.is_empty() {
                     return Err(err);
                 }
@@ -2639,6 +2649,68 @@ mod tests {
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID
+        );
+    }
+
+    /// The empty-page error branch. When the *first* row fails to encode there
+    /// is nothing to defer the failure behind, so `next_page` returns `Err` and
+    /// drops the `PageAggregator` — which had already absorbed the backend
+    /// page, and with it that page's session token.
+    ///
+    /// Dropping it is nonetheless safe, and this pins why: `ensure_stream_filled`
+    /// commits the merged token to the node as each page is absorbed, so the
+    /// session progress is already durable by the time the encode is attempted.
+    /// Were that commit removed, a retry could issue a read weaker than one the
+    /// session had already satisfied.
+    #[tokio::test]
+    async fn empty_page_encode_failure_keeps_the_absorbed_session_token() {
+        let mut deep = serde_json::json!(1);
+        for _ in 0..(crate::binary_json::reader::MAX_DEPTH + 8) {
+            deep = serde_json::Value::Array(vec![deep]);
+        }
+        // The *only* row fails, so `items` is still empty at the failure.
+        let body = serde_json::json!({
+            "_rid": "",
+            "Documents": [
+                {"_rid": "d1", "orderByItems": [{"item": 1}], "payload": {"id": "d1", "deep": deep}},
+            ],
+            "_count": 1,
+        });
+        let response = mocks::response_with_continuation(&serde_json::to_vec(&body).unwrap(), None);
+        let headers = crate::models::CosmosResponseHeaders {
+            session_token: Some(SessionToken::new("0:1#10")),
+            ..Default::default()
+        };
+        let child = ChildStream::fresh(
+            range("", "FF"),
+            Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                response: crate::models::CosmosResponse::new(
+                    response.body_bytes().to_vec(),
+                    headers,
+                    response.status(),
+                    response.diagnostics(),
+                ),
+                is_terminal: true,
+            })])),
+        );
+        let mut node = merge(vec![child], vec![SortOrder::Ascending]);
+        node.emit_binary = true;
+
+        let mut executor = mocks::NoopRequestExecutor;
+        let mut topology = mocks::NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        let err = node
+            .next_page(&mut context)
+            .await
+            .expect_err("the only row fails to encode, so there is no partial page to emit");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID
+        );
+        assert_eq!(
+            node.session_token.as_ref().map(SessionToken::as_str),
+            Some("0:1#10"),
+            "the absorbed page's session token must outlive the discarded aggregator"
         );
     }
 
