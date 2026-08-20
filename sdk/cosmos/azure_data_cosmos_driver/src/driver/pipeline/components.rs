@@ -206,9 +206,13 @@ pub(crate) struct OperationRetryState {
     /// Partition key range ID resolved from the first response headers.
     /// `None` until the first transport attempt returns headers.
     pub partition_key_range_id: Option<PartitionKeyRangeId>,
-    /// Whether PPAF allows non-idempotent write retries on failover.
+    /// Whether single-master PPAF write-region discovery is active for this
+    /// operation.
     ///
-    /// Allows non-idempotent write retries for single-master PPAF write-region discovery.
+    /// Despite the name this does not gate any retry — write retries are never
+    /// gated on idempotency (see `retry_evaluation`). It defers
+    /// `MarkEndpointUnavailable` until the write definitively reaches a region,
+    /// so discovery probing does not evict endpoints on the way.
     pub ppaf_write_retry_allowed: bool,
     /// Whether the per-partition circuit breaker is active for this account.
     ///

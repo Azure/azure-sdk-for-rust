@@ -1080,6 +1080,22 @@ impl CosmosOperation {
         self.operation_type.is_idempotent()
     }
 
+    /// Returns true if this operation may be retried when the backend outcome
+    /// is ambiguous — that is, when the request may already have been received
+    /// and processed.
+    ///
+    /// Only stored procedure execution returns `false`. Its body is opaque to
+    /// the driver, so re-running it can repeat arbitrary mutations with no way
+    /// to detect the duplicate. Every other data-plane operation is retried,
+    /// because Cosmos DB's conflict detection (409/412) makes the final
+    /// resource state deterministic — see `docs/ErrorCodesAndRetries.md`.
+    ///
+    /// This is deliberately *not* `is_idempotent`: the driver retries
+    /// non-idempotent writes such as `Create` and `Upsert` on purpose.
+    pub fn allows_ambiguous_outcome_retry(&self) -> bool {
+        self.operation_type != OperationType::Execute
+    }
+
     /// Returns true if this operation can be planned with a single-node pipeline.
     ///
     /// An operation is "trivial" when it does not require fan-out across multiple
