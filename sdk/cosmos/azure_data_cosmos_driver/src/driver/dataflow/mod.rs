@@ -92,4 +92,46 @@ mod tests {
 
         assert_eq!(page.body_bytes(), b"page");
     }
+
+    /// Builds a plan over a single-page mock leaf. The operation is a
+    /// `read_database`, so minting a token normally fails with the *non-query*
+    /// error — which is what makes it a usable control below.
+    fn plan() -> OperationPlan {
+        let pipeline = Pipeline::new(Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+            response: response(b"page"),
+            is_terminal: true,
+        })])));
+        OperationPlan::new(pipeline, std::sync::Arc::new(operation()))
+    }
+
+    /// A poisoned plan must refuse to mint rather than hand back a token that
+    /// skips the page the caller never received.
+    #[test]
+    fn poisoned_plan_refuses_to_mint_a_continuation_token() {
+        let mut plan = plan();
+        plan.poison_continuation();
+
+        let err = plan
+            .to_continuation_token()
+            .expect_err("a poisoned plan must not mint a token");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            "got: {err}"
+        );
+    }
+
+    /// Control for the test above: the same plan fails for its own unrelated
+    /// reason, proving the poison check is what produced the error there.
+    #[test]
+    fn a_clean_plan_reaches_the_normal_minting_path() {
+        let err = plan()
+            .to_continuation_token()
+            .expect_err("a read_database operation cannot be tokenized");
+        assert_ne!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            "a plan that was never poisoned must not report transcode poisoning; got: {err}"
+        );
+    }
 }

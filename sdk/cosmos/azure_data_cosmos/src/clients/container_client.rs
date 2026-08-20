@@ -922,6 +922,14 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let query = query.into();
 
+        // Resolve binary encoding so the driver advertises a binary *response*
+        // via the negotiation header. Unlike point item writes, the query
+        // request body stays text (`application/query+json` is a query spec,
+        // not a document), so we do not touch body serialization here — the
+        // driver's request-body gate excludes query.
+        let (operation_options, _binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+
         let container_ref = self.container_ref.clone();
 
         // The first operation to execute in the query items flow.
@@ -948,7 +956,7 @@ impl ContainerClient {
             .driver
             .plan_operation(
                 initial_operation,
-                &options.operation,
+                &operation_options,
                 options.feed.continuation_token.as_ref(),
                 &options.feed.to_plan_options(),
             )
@@ -957,7 +965,7 @@ impl ContainerClient {
             self.context.driver.clone(),
             Some(self.container_ref.clone()),
             plan,
-            options.operation,
+            operation_options,
             self.context.diagnostics_handlers.clone(),
             self.operation_context("query_items"),
         ))

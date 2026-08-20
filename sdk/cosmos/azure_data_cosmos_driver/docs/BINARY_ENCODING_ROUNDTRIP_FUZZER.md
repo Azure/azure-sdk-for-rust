@@ -32,9 +32,25 @@ For each generated document `D`:
    - drive every **body-carrying point op** — `create` → `read` → `replace` →
      `upsert` — each returning a document `R` (writes use content-response so the
      response decode path is exercised too);
+   - **query the item back** — a single-partition `SELECT * FROM c WHERE c.id`
+     plus a full-container `ORDER BY` query that exercises the streaming merge's
+     binary decode path. Both run on **every** config, including `text-control`:
+     a control that exercises a smaller surface than the experiment cannot
+     localize a failure to the encoding;
    - `Hc = hash(canonicalize(strip_system(R)))` for each op's `R`;
    - **assert `Hc == H0`** for every op — otherwise dump the seed + both
      canonical forms.
+
+The pure-`binary` config additionally runs a typed wide-integer probe (a
+`u64 = u64::MAX` document read back both as a point op and through a binary
+`ORDER BY` query) to exercise the native `deserialize_integer` coercion that the
+`Value`-based comparisons do not reach.
+
+> **Merge fan-out caveat.** The fuzzer's container is created with default
+> throughput, i.e. a **single physical partition**, so the `ORDER BY` query drives
+> the streaming merge with one child. It covers the per-page envelope decode and
+> the per-item binary re-encode, but not a true multi-child interleave — that is
+> covered by the 3-partition in-memory emulator tests.
 
 These are exactly the four point operations for which binary encoding is honored
 (`create` / `read` / `replace` / `upsert`); `delete` carries no body, and
@@ -123,7 +139,7 @@ flowchart TD
     NORM0 --> CANON0["json-canon (RFC 8785)\ncanonical string"]
     CANON0 --> HASH0["SHA-256 -> H0\n(expected)"]
 
-    BOUND --> STORE["for each config:\ncreate -> read -> replace -> upsert\n(each returns R)"]
+    BOUND --> STORE["for each config:\ncreate -> read -> replace -> upsert\n+ query back (single-partition + ORDER BY)\n(each returns R)"]
     STORE --> PROJ["project(R, keys(D))\nstrip _rid/_etag/_ts/..."]
     PROJ --> NORM1["normalize_numbers"]
     NORM1 --> CANON1["json-canon"]
@@ -337,7 +353,7 @@ In CI, the harness runs automatically on the **`binary_encoding` live leg**
 `AZURE_COSMOS_CONNECTION_STRING`, so `binary_encoding_roundtrip_fuzz` (and the
 sibling `binary_encoding` item tests) stop being ignored. The per-run iteration
 budget is set by `AZURE_COSMOS_FUZZ_ITERATIONS` in `sdk/cosmos/ci.yml`
-(default 200 there). Live tests only run on the weekly schedule or when a build
+(default 180 there). Live tests only run on the weekly schedule or when a build
 is queued with **Run live tests** enabled.
 
 ```bash
@@ -369,7 +385,7 @@ RUSTFLAGS='--cfg test_category="binary_encoding"' \
 | -------- | ------- | ------- |
 | `AZURE_COSMOS_CONNECTION_STRING` | — (required) | live account (endpoint + key) |
 | `AZURE_COSMOS_ALLOW_INVALID_CERT` | false | accept emulator cert |
-| `AZURE_COSMOS_FUZZ_ITERATIONS` | 200 | number of generated docs |
+| `AZURE_COSMOS_FUZZ_ITERATIONS` | 180 | number of generated docs |
 | `AZURE_COSMOS_FUZZ_SEED` | random | PRNG seed (for reproduction) |
 | `AZURE_COSMOS_FUZZ_MAX_DEPTH` | 6 | max JSON nesting depth |
 | `AZURE_COSMOS_FUZZ_WIDE_NUMBERS` | false | widen numeric range (post-calibration) |
