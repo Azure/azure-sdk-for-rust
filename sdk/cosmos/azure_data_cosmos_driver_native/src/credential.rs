@@ -3,7 +3,14 @@
 
 //! Host-provided token credential support for the native ABI.
 
-use std::{ffi::c_void, fmt, sync::Arc};
+use std::{
+    collections::HashMap,
+    fmt,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc, Mutex as StdMutex, OnceLock, Weak,
+    },
+};
 
 use async_trait::async_trait;
 use azure_core::{
@@ -12,35 +19,32 @@ use azure_core::{
     time::{Duration, OffsetDateTime},
     Error,
 };
-use tokio::sync::{oneshot, RwLock};
+use tokio::{
+    sync::{oneshot, Mutex, RwLock},
+    task::AbortHandle,
+    time::sleep,
+};
 
-// Matches `azure_identity::TokenCache::should_refresh` in
-// sdk/identity/azure_identity/src/cache.rs (300 seconds). Keeping this in sync
-// avoids surprising divergence in when a token is treated as "close enough to
-// expiry" to refresh across the two credential stacks a host can use.
-const TOKEN_REFRESH_SKEW: Duration = Duration::minutes(5);
+use crate::error::{CosmosErrorCode, CosmosStatusCode};
 
-/// Completes an asynchronous host token request.
-///
-/// The host must invoke this callback exactly once after its token-provider
-/// callback returns success. Token and error buffers are borrowed only for the
-/// duration of this call; Rust copies them before returning.
-pub type CosmosTokenCompletion = unsafe extern "C" fn(
-    completion_context: *mut c_void,
-    status: i32,
-    token: *const u8,
-    token_len: usize,
-    expires_on_unix_seconds: i64,
-    error_message: *const u8,
-    error_message_len: usize,
-);
+const TOKEN_REFRESH_RETRY_COUNT: usize = 2;
+const MINIMUM_BACKGROUND_REFRESH_INTERVAL: Duration = Duration::minutes(1);
+
+type TokenResultSender = oneshot::Sender<azure_core::Result<AccessToken>>;
+
+static NEXT_TOKEN_REQUEST_ID: AtomicU64 = AtomicU64::new(1);
+static PENDING_TOKEN_REQUESTS: OnceLock<StdMutex<HashMap<u64, TokenResultSender>>> =
+    OnceLock::new();
+
+fn pending_token_requests() -> &'static StdMutex<HashMap<u64, TokenResultSender>> {
+    PENDING_TOKEN_REQUESTS.get_or_init(|| StdMutex::new(HashMap::new()))
+}
 
 /// Starts asynchronous token acquisition in the host.
 ///
-/// Returning zero transfers ownership of `request.completion_context` to the
-/// host, which must eventually invoke `request.completion`. Returning nonzero
-/// means the request was rejected synchronously and the completion must not be
-/// invoked.
+/// Returning zero accepts the request; the host must eventually call
+/// [`cosmos_token_request_complete`] with `request.request_id`. Returning
+/// nonzero rejects synchronously; the host must not complete the request.
 pub type CosmosTokenProviderCallback =
     unsafe extern "C" fn(user_data: isize, request: *const CosmosTokenRequest) -> i32;
 
@@ -53,14 +57,12 @@ pub type CosmosTokenProviderFree = unsafe extern "C" fn(user_data: isize);
 /// returns. The host must copy it before starting asynchronous work.
 #[repr(C)]
 pub struct CosmosTokenRequest {
+    /// Opaque identifier passed to [`cosmos_token_request_complete`].
+    pub request_id: u64,
     /// UTF-8 token scope bytes.
     pub scope: *const u8,
     /// Number of bytes addressable from `scope`.
     pub scope_len: usize,
-    /// Rust completion callback the host invokes exactly once.
-    pub completion: CosmosTokenCompletion,
-    /// Opaque Rust-owned context passed unchanged to `completion`.
-    pub completion_context: *mut c_void,
 }
 
 /// Host callbacks used to acquire tokens and release host state.
@@ -74,67 +76,49 @@ pub struct CosmosTokenProvider {
     pub user_data_free: Option<unsafe extern "C" fn(user_data: isize)>,
 }
 
-struct PendingTokenRequest {
-    sender: oneshot::Sender<azure_core::Result<AccessToken>>,
+struct HostTokenProvider {
+    provider: CosmosTokenProvider,
+    user_data: isize,
 }
 
 struct CallbackTokenCredential {
-    provider: CosmosTokenProvider,
-    user_data: isize,
-    cached_token: RwLock<Option<AccessToken>>,
+    provider: Arc<HostTokenProvider>,
+    cached_token: Arc<RwLock<Option<AccessToken>>>,
+    refresh_lock: Arc<Mutex<()>>,
+    background_task: StdMutex<Option<AbortHandle>>,
 }
 
 impl CallbackTokenCredential {
     fn new(provider: CosmosTokenProvider, user_data: isize) -> Option<Arc<dyn TokenCredential>> {
         provider.get_token?;
         Some(Arc::new(Self {
-            provider,
-            user_data,
-            cached_token: RwLock::new(None),
+            provider: Arc::new(HostTokenProvider {
+                provider,
+                user_data,
+            }),
+            cached_token: Arc::new(RwLock::new(None)),
+            refresh_lock: Arc::new(Mutex::new(())),
+            background_task: StdMutex::new(None),
         }))
     }
 
-    async fn request_token(&self, scope: &str) -> azure_core::Result<AccessToken> {
-        let (sender, receiver) = oneshot::channel();
-        let completion_context =
-            Box::into_raw(Box::new(PendingTokenRequest { sender })).cast::<c_void>();
-        let status = {
-            let request = CosmosTokenRequest {
-                scope: scope.as_ptr(),
-                scope_len: scope.len(),
-                completion: complete_token_request,
-                completion_context,
-            };
-            // SAFETY: the provider callback is supplied by the host under the C
-            // ABI contract. The request remains valid for the duration of the call.
-            unsafe {
-                (self
-                    .provider
-                    .get_token
-                    .expect("validated when the credential was constructed"))(
-                    self.user_data,
-                    &request,
-                )
-            }
-        };
-        if status != 0 {
-            // The callback rejected the request synchronously, so ownership of
-            // the completion context did not transfer to the host.
-            // SAFETY: this pointer was allocated immediately above and the
-            // nonzero-return contract forbids the host from completing it.
-            unsafe {
-                drop(Box::from_raw(
-                    completion_context.cast::<PendingTokenRequest>(),
-                ));
-            }
-            return Err(credential_error(format!(
-                "host token provider rejected the request with status {status}"
-            )));
+    fn start_background_refresh(&self, scope: String, token: &AccessToken) {
+        let mut background_task = self.background_task.lock().unwrap();
+        if background_task
+            .as_ref()
+            .is_some_and(|task| !task.is_finished())
+        {
+            return;
         }
 
-        receiver.await.map_err(|_| {
-            credential_error("host token provider dropped the token request without completing it")
-        })?
+        let provider = Arc::downgrade(&self.provider);
+        let cached_token = Arc::clone(&self.cached_token);
+        let refresh_lock = Arc::clone(&self.refresh_lock);
+        let expires_on = token.expires_on;
+        let task = tokio::spawn(async move {
+            background_refresh_loop(provider, cached_token, refresh_lock, scope, expires_on).await;
+        });
+        *background_task = Some(task.abort_handle());
     }
 }
 
@@ -148,6 +132,14 @@ impl fmt::Debug for CallbackTokenCredential {
 }
 
 impl Drop for CallbackTokenCredential {
+    fn drop(&mut self) {
+        if let Some(task) = self.background_task.lock().unwrap().take() {
+            task.abort();
+        }
+    }
+}
+
+impl Drop for HostTokenProvider {
     fn drop(&mut self) {
         if let Some(free) = self.provider.user_data_free {
             // SAFETY: `user_data` is the opaque value supplied with this
@@ -172,42 +164,234 @@ impl TokenCredential for CallbackTokenCredential {
             ));
         };
 
-        // Fast path: shared read lock lets concurrent callers hit a warm
-        // cache in parallel. Mirrors `azure_identity::TokenCache` in
-        // sdk/identity/azure_identity/src/cache.rs.
+        // A still-valid cached token remains usable while background refresh
+        // retries transient host failures.
         {
             let cached = self.cached_token.read().await;
-            let now = OffsetDateTime::now_utc();
             if let Some(token) = cached.as_ref() {
-                if token.expires_on > now.saturating_add(TOKEN_REFRESH_SKEW) {
+                if token.expires_on > OffsetDateTime::now_utc() {
                     return Ok(token.clone());
                 }
             }
         }
 
-        // Slow path: exclusive lock single-flights refresh across concurrent
-        // misses. Double-check the cache in case another task refreshed while
-        // we were waiting on the write lock.
-        let mut cached = self.cached_token.write().await;
-        let now = OffsetDateTime::now_utc();
-        if let Some(token) = cached.as_ref() {
-            if token.expires_on > now.saturating_add(TOKEN_REFRESH_SKEW) {
-                return Ok(token.clone());
+        let _refresh_guard = self.refresh_lock.lock().await;
+        {
+            let cached = self.cached_token.read().await;
+            if let Some(token) = cached.as_ref() {
+                if token.expires_on > OffsetDateTime::now_utc() {
+                    return Ok(token.clone());
+                }
             }
         }
 
-        // Cache and return whatever the host handed us, matching
-        // `azure_identity::TokenCache::get_token` (which performs no
-        // post-fetch validation). If the host returns a token whose lifetime
-        // falls inside `TOKEN_REFRESH_SKEW`, the next call will see the
-        // fast-path check miss and re-invoke the host — same behavior a
-        // customer would see from any other Rust SDK credential in the same
-        // situation. Enforcing lifetime here would make this credential
-        // stricter than the rest of the SDK ecosystem.
-        let token = self.request_token(scope).await?;
-        *cached = Some(token.clone());
+        let token = request_token_with_retry(&self.provider, scope).await?;
+        {
+            let mut cached = self.cached_token.write().await;
+            *cached = Some(token.clone());
+        }
+        self.start_background_refresh((*scope).to_owned(), &token);
         Ok(token)
     }
+}
+
+async fn background_refresh_loop(
+    provider: Weak<HostTokenProvider>,
+    cached_token: Arc<RwLock<Option<AccessToken>>>,
+    refresh_lock: Arc<Mutex<()>>,
+    scope: String,
+    mut tracked_expiry: OffsetDateTime,
+) {
+    let mut delay = successful_refresh_delay(tracked_expiry, OffsetDateTime::now_utc());
+
+    loop {
+        sleep(delay).await;
+
+        let Some(provider) = provider.upgrade() else {
+            return;
+        };
+        let _refresh_guard = refresh_lock.lock().await;
+
+        let cached_expiry = {
+            let cached = cached_token.read().await;
+            cached.as_ref().map(|token| token.expires_on)
+        };
+        let Some(cached_expiry) = cached_expiry else {
+            return;
+        };
+
+        if cached_expiry != tracked_expiry {
+            tracked_expiry = cached_expiry;
+            delay = successful_refresh_delay(tracked_expiry, OffsetDateTime::now_utc());
+            continue;
+        }
+
+        match request_token_with_retry(&provider, &scope).await {
+            Ok(token) => {
+                tracked_expiry = token.expires_on;
+                delay = successful_refresh_delay(tracked_expiry, OffsetDateTime::now_utc());
+                *cached_token.write().await = Some(token);
+            }
+            Err(error) => {
+                tracing::warn!(
+                    error = %error,
+                    "background AAD token refresh failed; retaining the cached token"
+                );
+                let Some(retry_delay) =
+                    failed_refresh_retry_delay(tracked_expiry, OffsetDateTime::now_utc())
+                else {
+                    return;
+                };
+                delay = retry_delay;
+            }
+        }
+    }
+}
+
+async fn request_token_with_retry(
+    provider: &HostTokenProvider,
+    scope: &str,
+) -> azure_core::Result<AccessToken> {
+    let mut last_error = None;
+    for _ in 0..TOKEN_REFRESH_RETRY_COUNT {
+        match provider.request_token(scope).await {
+            Ok(token) => return Ok(token),
+            Err(error) => last_error = Some(error),
+        }
+    }
+    Err(last_error.expect("token refresh retry count is nonzero"))
+}
+
+impl HostTokenProvider {
+    async fn request_token(&self, scope: &str) -> azure_core::Result<AccessToken> {
+        let (request_id, receiver, _pending_request) = register_pending_token_request();
+        let status = {
+            let request = CosmosTokenRequest {
+                request_id,
+                scope: scope.as_ptr(),
+                scope_len: scope.len(),
+            };
+            // SAFETY: the provider callback is supplied by the host under the C ABI
+            // contract. The request and scope remain valid for the duration of the call.
+            unsafe {
+                (self
+                    .provider
+                    .get_token
+                    .expect("validated when the credential was constructed"))(
+                    self.user_data,
+                    &request,
+                )
+            }
+        };
+        if status != 0 {
+            return Err(credential_error(format!(
+                "host token provider rejected the request with status {status}"
+            )));
+        }
+
+        receiver.await.map_err(|_| {
+            credential_error("host token provider dropped the token request without completing it")
+        })?
+    }
+}
+
+struct PendingTokenRequestGuard {
+    request_id: u64,
+}
+
+impl Drop for PendingTokenRequestGuard {
+    fn drop(&mut self) {
+        pending_token_requests()
+            .lock()
+            .unwrap()
+            .remove(&self.request_id);
+    }
+}
+
+fn register_pending_token_request() -> (
+    u64,
+    oneshot::Receiver<azure_core::Result<AccessToken>>,
+    PendingTokenRequestGuard,
+) {
+    let (sender, receiver) = oneshot::channel();
+    let mut sender = Some(sender);
+    let request_id = loop {
+        let candidate = NEXT_TOKEN_REQUEST_ID.fetch_add(1, Ordering::Relaxed);
+        if candidate == 0 {
+            continue;
+        }
+        let mut pending = pending_token_requests().lock().unwrap();
+        if let std::collections::hash_map::Entry::Vacant(entry) = pending.entry(candidate) {
+            entry.insert(sender.take().expect("sender is inserted exactly once"));
+            break candidate;
+        }
+    };
+    (
+        request_id,
+        receiver,
+        PendingTokenRequestGuard { request_id },
+    )
+}
+
+fn successful_refresh_delay(
+    expires_on: OffsetDateTime,
+    now: OffsetDateTime,
+) -> std::time::Duration {
+    let half_remaining: Duration = (expires_on - now) / 2_i32;
+    // Match .NET Cosmos: very short-lived tokens use the one-minute floor and
+    // may expire first, in which case foreground acquisition handles refresh.
+    duration_to_std(half_remaining.max(MINIMUM_BACKGROUND_REFRESH_INTERVAL))
+}
+
+fn failed_refresh_retry_delay(
+    expires_on: OffsetDateTime,
+    now: OffsetDateTime,
+) -> Option<std::time::Duration> {
+    let half_remaining: Duration = (expires_on - now) / 2_i32;
+    (half_remaining >= MINIMUM_BACKGROUND_REFRESH_INTERVAL).then(|| duration_to_std(half_remaining))
+}
+
+fn duration_to_std(duration: Duration) -> std::time::Duration {
+    duration
+        .try_into()
+        .expect("refresh intervals are always nonnegative")
+}
+
+/// Completes a pending host token request.
+///
+/// The host calls this function exactly once after accepting `request_id` in
+/// its token-provider callback. Token and error buffers are borrowed only for
+/// this call; Rust copies them before returning. Unknown, cancelled, late, or
+/// duplicate request IDs return `400 / CLIENT_FFI_NULL_ARGUMENT`.
+///
+/// # Safety
+///
+/// Non-NULL buffers must remain readable for their corresponding lengths for
+/// the duration of this call.
+#[no_mangle]
+pub unsafe extern "C" fn cosmos_token_request_complete(
+    request_id: u64,
+    status: i32,
+    token: *const u8,
+    token_len: usize,
+    expires_on_unix_seconds: i64,
+    error_message: *const u8,
+    error_message_len: usize,
+) -> CosmosStatusCode {
+    let Some(sender) = pending_token_requests().lock().unwrap().remove(&request_id) else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+    };
+
+    let result = build_access_token(
+        status,
+        token,
+        token_len,
+        expires_on_unix_seconds,
+        error_message,
+        error_message_len,
+    );
+    let _ = sender.send(result);
+    CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
 }
 
 pub(crate) fn create_token_credential(
@@ -219,33 +403,6 @@ pub(crate) fn create_token_credential(
 
 fn credential_error(message: impl Into<String>) -> Error {
     Error::with_message(ErrorKind::Credential, message.into())
-}
-
-unsafe extern "C" fn complete_token_request(
-    completion_context: *mut c_void,
-    status: i32,
-    token: *const u8,
-    token_len: usize,
-    expires_on_unix_seconds: i64,
-    error_message: *const u8,
-    error_message_len: usize,
-) {
-    if completion_context.is_null() {
-        return;
-    }
-
-    // SAFETY: ownership was transferred to the host only after the provider
-    // callback returned success. The host contract requires exactly one call.
-    let pending = unsafe { Box::from_raw(completion_context.cast::<PendingTokenRequest>()) };
-    let result = build_access_token(
-        status,
-        token,
-        token_len,
-        expires_on_unix_seconds,
-        error_message,
-        error_message_len,
-    );
-    let _ = pending.sender.send(result);
 }
 
 fn build_access_token(
@@ -280,6 +437,11 @@ fn build_access_token(
         OffsetDateTime::from_unix_timestamp(expires_on_unix_seconds).map_err(|_| {
             credential_error("host token provider returned an invalid expiry timestamp")
         })?;
+    if expires_on <= OffsetDateTime::now_utc() {
+        return Err(credential_error(
+            "host token provider returned an expired access token",
+        ));
+    }
     Ok(AccessToken::new(Secret::new(token), expires_on))
 }
 
@@ -327,10 +489,10 @@ mod tests {
         state.calls.fetch_add(1, Ordering::SeqCst);
         let (token, expires_on) = state.tokens.lock().unwrap().remove(0);
         // SAFETY: token bytes remain alive until this synchronous completion
-        // call returns, and the completion copies them.
+        // call returns, and the native function copies them.
         unsafe {
-            (request.completion)(
-                request.completion_context,
+            cosmos_token_request_complete(
+                request.request_id,
                 0,
                 token.as_ptr(),
                 token.len(),
@@ -359,15 +521,13 @@ mod tests {
             .push(String::from_utf8(scope.to_vec()).unwrap());
         state.calls.fetch_add(1, Ordering::SeqCst);
         let (token, expires_on) = state.tokens.lock().unwrap().remove(0);
-        let completion = request.completion;
-        let completion_context = request.completion_context as usize;
+        let request_id = request.request_id;
         std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_millis(20));
-            // SAFETY: the provider returned success, transferring this context
-            // to the host. Token bytes remain live until completion returns.
+            // SAFETY: token bytes remain live until completion returns.
             unsafe {
-                completion(
-                    completion_context as *mut c_void,
+                cosmos_token_request_complete(
+                    request_id,
                     0,
                     token.as_ptr(),
                     token.len(),
@@ -387,14 +547,17 @@ mod tests {
         17
     }
 
-    unsafe extern "C" fn fail_token(_user_data: isize, request: *const CosmosTokenRequest) -> i32 {
+    unsafe extern "C" fn fail_token(user_data: isize, request: *const CosmosTokenRequest) -> i32 {
         const MESSAGE: &[u8] = b"credential unavailable";
+        // SAFETY: tests pass a live `Arc<TestProvider>` raw pointer as user data.
+        let state = unsafe { &*(user_data as *const TestProvider) };
+        state.calls.fetch_add(1, Ordering::SeqCst);
         // SAFETY: the native adapter passes a valid request for this call.
         let request = unsafe { &*request };
         // SAFETY: the message remains live for the duration of completion.
         unsafe {
-            (request.completion)(
-                request.completion_context,
+            cosmos_token_request_complete(
+                request.request_id,
                 1,
                 std::ptr::null(),
                 0,
@@ -402,6 +565,88 @@ mod tests {
                 MESSAGE.as_ptr(),
                 MESSAGE.len(),
             );
+        }
+        0
+    }
+
+    unsafe extern "C" fn get_token_then_fail(
+        user_data: isize,
+        request: *const CosmosTokenRequest,
+    ) -> i32 {
+        // SAFETY: tests pass a live `Arc<TestProvider>` raw pointer as user data.
+        let state = unsafe { &*(user_data as *const TestProvider) };
+        let call = state.calls.fetch_add(1, Ordering::SeqCst);
+        // SAFETY: the native adapter passes a valid request for this call.
+        let request = unsafe { &*request };
+        if call == 0 {
+            let (token, expires_on) = state.tokens.lock().unwrap().remove(0);
+            // SAFETY: token bytes remain alive for this synchronous call.
+            unsafe {
+                cosmos_token_request_complete(
+                    request.request_id,
+                    0,
+                    token.as_ptr(),
+                    token.len(),
+                    expires_on,
+                    std::ptr::null(),
+                    0,
+                );
+            }
+        } else {
+            const MESSAGE: &[u8] = b"credential unavailable";
+            // SAFETY: message bytes remain alive for this synchronous call.
+            unsafe {
+                cosmos_token_request_complete(
+                    request.request_id,
+                    1,
+                    std::ptr::null(),
+                    0,
+                    0,
+                    MESSAGE.as_ptr(),
+                    MESSAGE.len(),
+                );
+            }
+        }
+        0
+    }
+
+    unsafe extern "C" fn fail_once_then_get_token(
+        user_data: isize,
+        request: *const CosmosTokenRequest,
+    ) -> i32 {
+        // SAFETY: tests pass a live `Arc<TestProvider>` raw pointer as user data.
+        let state = unsafe { &*(user_data as *const TestProvider) };
+        let call = state.calls.fetch_add(1, Ordering::SeqCst);
+        // SAFETY: the native adapter passes a valid request for this call.
+        let request = unsafe { &*request };
+        if call == 0 {
+            const MESSAGE: &[u8] = b"transient failure";
+            // SAFETY: message bytes remain alive for this synchronous call.
+            unsafe {
+                cosmos_token_request_complete(
+                    request.request_id,
+                    1,
+                    std::ptr::null(),
+                    0,
+                    0,
+                    MESSAGE.as_ptr(),
+                    MESSAGE.len(),
+                );
+            }
+        } else {
+            let (token, expires_on) = state.tokens.lock().unwrap().remove(0);
+            // SAFETY: token bytes remain alive for this synchronous call.
+            unsafe {
+                cosmos_token_request_complete(
+                    request.request_id,
+                    0,
+                    token.as_ptr(),
+                    token.len(),
+                    expires_on,
+                    std::ptr::null(),
+                    0,
+                );
+            }
         }
         0
     }
@@ -440,7 +685,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn caches_token_until_refresh_window() {
+    async fn uses_valid_cached_token() {
         let expires = OffsetDateTime::now_utc()
             .saturating_add(Duration::minutes(10))
             .unix_timestamp();
@@ -455,13 +700,13 @@ mod tests {
         assert_eq!(state.scopes.lock().unwrap().as_slice(), ["scope"]);
     }
 
-    #[tokio::test]
-    async fn refreshes_token_near_expiry() {
+    #[tokio::test(start_paused = true)]
+    async fn background_refreshes_token_at_half_lifetime() {
         let now = OffsetDateTime::now_utc();
         let (state, credential) = credential(vec![
             (
                 "token-a".to_string(),
-                now.saturating_add(Duration::seconds(30)).unix_timestamp(),
+                now.saturating_add(Duration::minutes(2)).unix_timestamp(),
             ),
             (
                 "token-b".to_string(),
@@ -470,6 +715,14 @@ mod tests {
         ]);
 
         let first = credential.get_token(&["scope"], None).await.unwrap();
+        tokio::task::yield_now().await;
+        tokio::time::advance(std::time::Duration::from_secs(60)).await;
+        for _ in 0..10 {
+            tokio::task::yield_now().await;
+            if state.calls.load(Ordering::SeqCst) == 2 {
+                break;
+            }
+        }
         let second = credential.get_token(&["scope"], None).await.unwrap();
 
         assert_eq!(first.token.secret(), "token-a");
@@ -523,7 +776,7 @@ mod tests {
 
     #[tokio::test]
     async fn propagates_host_completion_error() {
-        let (_state, credential) = credential_with_callback(Vec::new(), fail_token);
+        let (state, credential) = credential_with_callback(Vec::new(), fail_token);
 
         let error = credential.get_token(&["scope"], None).await.unwrap_err();
 
@@ -536,27 +789,158 @@ mod tests {
             message.contains("credential unavailable"),
             "missing host message: {message}"
         );
+        assert_eq!(
+            state.calls.load(Ordering::SeqCst),
+            TOKEN_REFRESH_RETRY_COUNT
+        );
     }
 
     #[tokio::test]
-    async fn returns_short_lived_host_token_verbatim() {
-        // Matches `azure_identity::TokenCache`, which performs no post-fetch
-        // validation of the token lifetime. A host returning a very short
-        // (or already-expired) token gets cached and returned as-is; the
-        // consumer will see refresh thrash on subsequent calls, same as any
-        // other Rust SDK credential would produce in the same situation.
+    async fn retries_token_acquisition_once() {
+        let expires = OffsetDateTime::now_utc()
+            .saturating_add(Duration::minutes(10))
+            .unix_timestamp();
+        let (state, credential) = credential_with_callback(
+            vec![("token-after-retry".to_string(), expires)],
+            fail_once_then_get_token,
+        );
+
+        let token = credential.get_token(&["scope"], None).await.unwrap();
+
+        assert_eq!(token.token.secret(), "token-after-retry");
+        assert_eq!(
+            state.calls.load(Ordering::SeqCst),
+            TOKEN_REFRESH_RETRY_COUNT
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_expired_host_token() {
         let expires = OffsetDateTime::now_utc()
             .saturating_sub(Duration::seconds(1))
             .unix_timestamp();
-        let (state, credential) = credential(vec![("short-lived".to_string(), expires)]);
+        let (state, credential) = credential(vec![
+            ("expired-a".to_string(), expires),
+            ("expired-b".to_string(), expires),
+        ]);
 
-        let token = credential
-            .get_token(&["scope"], None)
-            .await
-            .expect("short-lived tokens should be returned verbatim");
+        let error = credential.get_token(&["scope"], None).await.unwrap_err();
 
-        assert_eq!(token.token.secret(), "short-lived");
-        assert_eq!(state.calls.load(Ordering::SeqCst), 1);
+        assert!(error.to_string().contains("expired access token"));
+        assert_eq!(
+            state.calls.load(Ordering::SeqCst),
+            TOKEN_REFRESH_RETRY_COUNT
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn background_failure_keeps_valid_cached_token() {
+        let expires = OffsetDateTime::now_utc()
+            .saturating_add(Duration::minutes(2))
+            .unix_timestamp();
+        let (state, credential) =
+            credential_with_callback(vec![("token-a".to_string(), expires)], get_token_then_fail);
+
+        let first = credential.get_token(&["scope"], None).await.unwrap();
+        tokio::task::yield_now().await;
+        tokio::time::advance(std::time::Duration::from_secs(60)).await;
+        for _ in 0..10 {
+            tokio::task::yield_now().await;
+            if state.calls.load(Ordering::SeqCst) == 3 {
+                break;
+            }
+        }
+        let second = credential.get_token(&["scope"], None).await.unwrap();
+
+        assert_eq!(first.token.secret(), "token-a");
+        assert_eq!(second.token.secret(), "token-a");
+        assert_eq!(state.calls.load(Ordering::SeqCst), 3);
+    }
+
+    #[test]
+    fn refresh_delays_follow_half_lifetime_policy() {
+        let now = OffsetDateTime::UNIX_EPOCH;
+
+        assert_eq!(
+            successful_refresh_delay(now + Duration::minutes(60), now),
+            std::time::Duration::from_secs(30 * 60)
+        );
+        assert_eq!(
+            successful_refresh_delay(now + Duration::seconds(30), now),
+            std::time::Duration::from_secs(60)
+        );
+        assert_eq!(
+            failed_refresh_retry_delay(now + Duration::minutes(8), now),
+            Some(std::time::Duration::from_secs(4 * 60))
+        );
+        assert_eq!(
+            failed_refresh_retry_delay(now + Duration::seconds(90), now),
+            None
+        );
+    }
+
+    #[tokio::test]
+    async fn completion_rejects_duplicate_and_cancelled_request_ids() {
+        let (request_id, receiver, guard) = register_pending_token_request();
+        let expires = OffsetDateTime::now_utc()
+            .saturating_add(Duration::minutes(10))
+            .unix_timestamp();
+        let token = b"token-a";
+
+        // SAFETY: token bytes remain valid for each synchronous call.
+        let first = unsafe {
+            cosmos_token_request_complete(
+                request_id,
+                0,
+                token.as_ptr(),
+                token.len(),
+                expires,
+                std::ptr::null(),
+                0,
+            )
+        };
+        assert_eq!(
+            first,
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        );
+        assert_eq!(receiver.await.unwrap().unwrap().token.secret(), "token-a");
+
+        // SAFETY: all buffers are empty, so NULL is valid.
+        let duplicate = unsafe {
+            cosmos_token_request_complete(
+                request_id,
+                0,
+                std::ptr::null(),
+                0,
+                expires,
+                std::ptr::null(),
+                0,
+            )
+        };
+        assert_eq!(
+            duplicate,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+        drop(guard);
+
+        let (cancelled_id, _receiver, cancelled_guard) = register_pending_token_request();
+        drop(cancelled_guard);
+        // SAFETY: all buffers are empty, so NULL is valid.
+        let cancelled = unsafe {
+            cosmos_token_request_complete(
+                cancelled_id,
+                0,
+                std::ptr::null(),
+                0,
+                expires,
+                std::ptr::null(),
+                0,
+            )
+        };
+        assert_eq!(
+            cancelled,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
     }
 
     #[tokio::test]

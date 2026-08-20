@@ -33,7 +33,8 @@ for the full design.
 | Capability | Status |
 |---|---|
 | Master-key authentication | ✅ |
-| Token-credential / resource-token authentication | ⏳ follow-up (needs `TokenCredential` FFI bridge) |
+| AAD token-credential authentication | ✅ via host credential bridge |
+| Resource-token authentication | ⏳ follow-up |
 | Sync driver creation (`_blocking`) | ✅ |
 | Async driver creation (`_submit`) | ✅ |
 | Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`) | ⏳ needs driver-side `was_cached` signal |

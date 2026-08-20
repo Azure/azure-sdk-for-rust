@@ -962,27 +962,16 @@ typedef struct cosmos_error_t {
 } cosmos_error_t;
 
 /**
- * Completes an asynchronous host token request.
- *
- * The host must invoke this callback exactly once after its token-provider
- * callback returns success. Token and error buffers are borrowed only for the
- * duration of this call; Rust copies them before returning.
- */
-typedef void (*cosmos_token_completion_t)(void *completion_context,
-                                          int32_t status,
-                                          const uint8_t *token,
-                                          uintptr_t token_len,
-                                          int64_t expires_on_unix_seconds,
-                                          const uint8_t *error_message,
-                                          uintptr_t error_message_len);
-
-/**
  * One asynchronous access-token request passed to the host.
  *
  * `scope` is borrowed and valid only until the token-provider callback
  * returns. The host must copy it before starting asynchronous work.
  */
 typedef struct cosmos_token_request_t {
+  /**
+   * Opaque identifier passed to [`cosmos_token_request_complete`].
+   */
+  uint64_t request_id;
   /**
    * UTF-8 token scope bytes.
    */
@@ -991,14 +980,6 @@ typedef struct cosmos_token_request_t {
    * Number of bytes addressable from `scope`.
    */
   uintptr_t scope_len;
-  /**
-   * Rust completion callback the host invokes exactly once.
-   */
-  cosmos_token_completion_t completion;
-  /**
-   * Opaque Rust-owned context passed unchanged to `completion`.
-   */
-  void *completion_context;
 } cosmos_token_request_t;
 
 /**
@@ -1888,6 +1869,27 @@ cosmos_status_code_t cosmos_driver_resolve_container_blocking(const struct cosmo
                                                               const char *container_id,
                                                               struct cosmos_container_ref_t **out_container,
                                                               struct cosmos_error_t **out_error);
+
+/**
+ * Completes a pending host token request.
+ *
+ * The host calls this function exactly once after accepting `request_id` in
+ * its token-provider callback. Token and error buffers are borrowed only for
+ * this call; Rust copies them before returning. Unknown, cancelled, late, or
+ * duplicate request IDs return `400 / CLIENT_FFI_NULL_ARGUMENT`.
+ *
+ * # Safety
+ *
+ * Non-NULL buffers must remain readable for their corresponding lengths for
+ * the duration of this call.
+ */
+cosmos_status_code_t cosmos_token_request_complete(uint64_t request_id,
+                                                   int32_t status,
+                                                   const uint8_t *token,
+                                                   uintptr_t token_len,
+                                                   int64_t expires_on_unix_seconds,
+                                                   const uint8_t *error_message,
+                                                   uintptr_t error_message_len);
 
 /**
  * Creates a name-based database reference parented to `account`.

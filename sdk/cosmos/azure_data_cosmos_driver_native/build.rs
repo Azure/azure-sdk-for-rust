@@ -101,7 +101,6 @@ fn generate_c_header() {
         ("DriverHandle".into(), "driver_t".into()),
         ("AccountReference".into(), "account_ref_t".into()),
         ("AccountRefHandle".into(), "account_ref_t".into()),
-        ("CosmosTokenCompletion".into(), "token_completion_t".into()),
         ("CosmosTokenRequest".into(), "token_request_t".into()),
         ("CosmosTokenProvider".into(), "token_provider_t".into()),
         ("DatabaseReference".into(), "database_ref_t".into()),
