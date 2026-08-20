@@ -81,6 +81,10 @@ impl PartitionClient {
     /// This method returns a stream of `ReceivedEventData` wrapped in a `Result`.
     /// The stream yields events as they are received from the partition.
     ///
+    /// The partition's AMQP link attaches on the first poll of this stream. An unknown
+    /// consumer group and an unknown partition id are reported here, not from
+    /// [`EventProcessor::run`](crate::EventProcessor::run).
+    ///
     /// # Returns
     /// A stream of `Result<ReceivedEventData>` representing the received events.
     pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
