@@ -346,6 +346,17 @@ mod tests {
         assert!(!s.contains("E+"), "actual: {s}");
     }
 
+    #[test]
+    fn increment_deserializes_legacy_wire_name() {
+        let parsed: PatchOperation = serde_json::from_value(json!({
+            "op": "increment",
+            "path": "/n",
+            "value": 1
+        }))
+        .unwrap();
+        assert_eq!(parsed, PatchOperation::increment("/n", 1i64));
+    }
+
     /// Canonical wire JSON for the `PatchInstructions` exercised by the
     /// serialize/deserialize tests below. Kept as a single source of
     /// truth so the two halves of the (former) round-trip test cannot
