@@ -87,16 +87,10 @@ impl Pipeline {
 pub struct OperationPlan {
     pub(crate) pipeline: Pipeline,
     operation: Arc<CosmosOperation>,
-    /// Set when a page was produced — advancing every node's resume position —
-    /// but could not be handed to the caller, so the plan's progress and what
-    /// the caller actually received have diverged.
-    ///
-    /// Today the only such step is the driver-side transcode back to text in
-    /// [`CosmosDriver::execute_plan`](crate::driver::CosmosDriver::execute_plan),
-    /// which runs after `next_page` has already committed. Once set, no
-    /// continuation token can be minted: any token would resume *past* the lost
-    /// page. The plan is not otherwise disturbed, since the caller's pager has
-    /// already been handed the error and stops.
+    /// Set when a page advanced every node's resume position but could not be
+    /// handed to the caller, so the plan's progress and what the caller
+    /// received have diverged. Once set, no continuation token can be minted:
+    /// any token would resume *past* the lost page.
     ///
     /// Same pattern as `SkipTake`'s `poisoned` flag, at the boundary layer
     /// rather than inside a node.
@@ -114,8 +108,6 @@ impl OperationPlan {
     }
 
     /// Records that a page advanced the pipeline but never reached the caller.
-    ///
-    /// See [`continuation_poisoned`](Self::continuation_poisoned).
     pub(crate) fn poison_continuation(&mut self) {
         self.continuation_poisoned = true;
     }
@@ -144,9 +136,8 @@ impl OperationPlan {
     /// correctly.
     ///
     /// The same applies when a page was produced but could not be delivered to
-    /// the caller — a binary response body that failed to transcode to text,
-    /// for instance. The pipeline advanced past rows the caller never saw, so
-    /// resuming from here would skip them silently. Reported as
+    /// the caller — a binary response body that failed to transcode to text.
+    /// Reported as
     /// [`CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE`](crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE).
     pub fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken> {
         if self.continuation_poisoned {

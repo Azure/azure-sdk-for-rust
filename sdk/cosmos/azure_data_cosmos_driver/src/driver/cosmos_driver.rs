@@ -3075,20 +3075,12 @@ impl CosmosDriver {
             // emitting one encoding while this step applies the other.
             if plan.transcodes_response_to_text() {
                 if let Some(mut response) = response {
-                    // `next_page` above already committed every node's resume
+                    // `next_page` already committed every node's resume
                     // position, so a failure here leaves the plan claiming rows
-                    // the caller never received. The transcode is deliberately
-                    // *not* moved before that commit: this is the single choke
-                    // point for the whole "binary wire, text payload" contract
-                    // (see this function's docs), and pushing it down into the
-                    // pipeline would trade that for one fallible site per node.
-                    // Instead, poison the plan so the divergence cannot be
-                    // silently persisted into a continuation token.
-                    //
-                    // Only a service-produced binary body can fail here: when
-                    // this branch runs, `emits_binary_payload()` is false, so
-                    // every pipeline-synthesized page is already text and
-                    // transcoding it is a refcount clone.
+                    // the caller never received. Poison the plan rather than
+                    // move the transcode: this is the single choke point for
+                    // the binary/text contract, and pushing it into the
+                    // pipeline would mean one fallible site per node.
                     if let Err(err) = response.transcode_body_to_text() {
                         plan.poison_continuation();
                         return Err(err);

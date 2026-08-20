@@ -186,28 +186,22 @@ impl SkipTake {
     ///
     /// **Every error out of this method is unrecoverable in place**, which is
     /// why the caller poisons on all of them rather than on individual steps.
-    /// The child's page is already consumed by the time this runs, so its
-    /// continuation has moved, while `remaining_skip` / `remaining_take` still
-    /// hold their pre-page values until the updates near the end. Resuming from
-    /// that pair would skip the consumed documents (the child resumes past
-    /// them) *and* re-apply the full window to the documents after them —
-    /// silently wrong results. The child's advance cannot be undone from here.
+    /// The child's page is already consumed, so its continuation has moved,
+    /// while `remaining_skip` / `remaining_take` still hold their pre-page
+    /// values. Resuming from that pair would skip the consumed documents *and*
+    /// re-apply the full window to the ones after them.
     ///
-    /// This is deliberately the opposite stance to the sibling ordered merge,
-    /// which on an encode failure emits the successfully encoded prefix and
-    /// leaves its boundary behind the failing row. That node owns per-row
-    /// boundaries and can hold rows back; a `SkipTake` is handed a whole page
-    /// at once and has no way to return part of it, so failing loudly is the
-    /// only option that cannot corrupt a resume.
+    /// The sibling ordered merge takes the opposite stance because it owns
+    /// per-row boundaries and can hold rows back; a `SkipTake` is handed a
+    /// whole page at once and cannot return part of it.
     fn process_page(
         &mut self,
         response: CosmosResponse,
         is_terminal: bool,
     ) -> crate::error::Result<Option<PageResult>> {
-        // Split the child's page into per-document slices. A streaming ordered
-        // merge already hands us pre-split `Items` in the emitted encoding; a
-        // raw backend feed page arrives as `Bytes` and is split here as text,
-        // then re-encoded below; `NoPayload` is a zero-document page.
+        // Split the child's page into per-document slices. An ordered merge
+        // hands us pre-split `Items`; a raw backend feed page arrives as
+        // `Bytes` and is split as text, then re-encoded below.
         let (items, needs_encode) = match response.body() {
             ResponseBody::Items(items) => (items.clone(), false),
             ResponseBody::Bytes(b) => (skip_take_page::split_feed_envelope(b)?, true),
@@ -217,9 +211,8 @@ impl SkipTake {
         let outcome =
             skip_take_page::skip_take_items(items, self.remaining_skip, self.remaining_take);
 
-        // Encode only the survivors, and only once this page's contribution is
-        // known — a document the window discards must not be able to fail the
-        // query.
+        // Encode only the survivors: a document the window discards must not be
+        // able to fail the query.
         let emitted_items = if needs_encode {
             skip_take_page::encode_items(outcome.items, self.emit_binary)?
         } else {
@@ -234,10 +227,8 @@ impl SkipTake {
         let take_exhausted = matches!(self.remaining_take, Some(0));
         let terminal = is_terminal || take_exhausted;
 
-        // Suppress a page that was fully consumed by the outstanding skip and is
-        // not the child's last page — the caller pulls the next page instead of
-        // surfacing an empty intermediate page. Retain the page's
-        // RU/diagnostics so the next emitted page accounts for them.
+        // A page fully consumed by the outstanding skip is retained for its
+        // RU/diagnostics rather than surfaced as an empty intermediate page.
         if outcome.emitted == 0 && !terminal {
             self.suppress(response);
             return Ok(None);
@@ -257,12 +248,9 @@ impl SkipTake {
     /// The error a poisoned node returns from every subsequent call.
     ///
     /// Deliberately the same status as the failure that caused it: the poison is
-    /// not an independent fault, it is that fault made durable so a caller
-    /// cannot paper over it by retrying or by resuming from a token.
-    ///
-    /// The cause is deterministic and data-dependent — replaying the same child
-    /// page fails the same way — so the message points at the encoding rather
-    /// than suggesting a retry.
+    /// not an independent fault, it is that fault made durable. The cause is
+    /// deterministic — replaying the same child page fails the same way — so
+    /// the message points at the encoding rather than suggesting a retry.
     fn poisoned_error() -> crate::error::CosmosError {
         crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
@@ -322,15 +310,12 @@ impl PipelineNode for SkipTake {
                     response,
                     is_terminal,
                 } => {
-                    // Every fallible step below runs *after* the child handed
-                    // over the page above, so its continuation has already
-                    // advanced. Poison on any error rather than at the
-                    // individual call sites: a future edit that adds a `?`
-                    // inside `process_page` is then covered automatically.
+                    // Every fallible step in `process_page` runs *after* the
+                    // child handed over the page, so poison on any error rather
+                    // than at individual call sites.
                     match self.process_page(response, is_terminal) {
                         Ok(Some(page)) => return Ok(page),
-                        // The page was fully consumed by the outstanding skip
-                        // and retained; pull the next one.
+                        // Fully consumed by the outstanding skip; pull the next.
                         Ok(None) => continue,
                         Err(err) => {
                             self.poisoned = true;
@@ -543,9 +528,8 @@ mod tests {
     /// be re-encoded to Cosmos binary JSON, forcing `encode_items` to fail.
     fn page_failing_binary_encode(is_terminal: bool) -> crate::error::Result<PageResult> {
         // `1e999` is out of `f64` range, so `transcode_to_binary`'s *parse*
-        // rejects it (the encode step itself is infallible). `RawValue` defers
-        // number parsing, so the envelope split still succeeds and the failure
-        // lands on the re-encode.
+        // rejects it. `RawValue` defers number parsing, so the envelope split
+        // still succeeds and the failure lands on the re-encode.
         let body = br#"{"Documents":[{"id":1,"n":1e999}],"_count":1}"#.to_vec();
         Ok(PageResult::Page {
             response: response(&body),
@@ -556,10 +540,9 @@ mod tests {
     #[tokio::test]
     async fn encode_failure_poisons_the_node_instead_of_resuming_wrong() {
         // The child page is consumed before `encode_items` runs, so its
-        // continuation has advanced while `remaining_skip` has not been
-        // decremented. Resuming from that pair would skip the consumed
-        // documents *and* re-apply the window to the ones after them. The node
-        // must refuse rather than let that happen.
+        // continuation has advanced while `remaining_skip` has not. Resuming
+        // from that pair would skip the consumed documents *and* re-apply the
+        // window to the ones after them.
         let child = MockLeaf::with_pages(vec![
             page_failing_binary_encode(false),
             page_result(&[2], true),
@@ -588,8 +571,7 @@ mod tests {
             "the second failure must be the poison, not an incidental error: {second}",
         );
 
-        // And no resume token, which is the assertion that matters: a token
-        // minted here would silently produce wrong results.
+        // And no resume token, which is the assertion that matters.
         let snapshot = node
             .snapshot_state()
             .expect_err("a poisoned node must not mint a resume token");
@@ -610,10 +592,8 @@ mod tests {
 
     #[tokio::test]
     async fn envelope_split_failure_poisons_the_node_too() {
-        // The split runs in the same unrecoverable window as the encode: the
-        // child's page is already consumed, but `remaining_skip` has not moved.
-        // Poisoning must not be specific to the encode step — a token minted
-        // here would carry the pre-page skip against a child that has advanced.
+        // The split runs in the same unrecoverable window as the encode, so
+        // poisoning must not be specific to the encode step.
         let child = MockLeaf::with_pages(vec![
             page_failing_envelope_split(false),
             page_result(&[2], true),

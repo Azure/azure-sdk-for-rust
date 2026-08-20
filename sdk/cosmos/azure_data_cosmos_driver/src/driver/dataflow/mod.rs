@@ -104,12 +104,8 @@ mod tests {
         OperationPlan::new(pipeline, std::sync::Arc::new(operation()))
     }
 
-    /// A page that advanced the pipeline but never reached the caller leaves
-    /// the plan ahead of what was delivered, so no token minted afterwards can
-    /// resume without skipping it. `execute_plan` poisons the plan when the
-    /// driver-side transcode back to text fails; this pins that a poisoned plan
-    /// refuses to mint rather than silently handing back a token that skips the
-    /// lost page.
+    /// A poisoned plan must refuse to mint rather than hand back a token that
+    /// skips the page the caller never received.
     #[test]
     fn poisoned_plan_refuses_to_mint_a_continuation_token() {
         let mut plan = plan();
@@ -125,9 +121,8 @@ mod tests {
         );
     }
 
-    /// The control for the test above: without poisoning, the same plan reaches
-    /// the normal minting path and fails for its own unrelated reason. Proves
-    /// the poison check is what produced the error there, not the plan's shape.
+    /// Control for the test above: the same plan fails for its own unrelated
+    /// reason, proving the poison check is what produced the error there.
     #[test]
     fn a_clean_plan_reaches_the_normal_minting_path() {
         let err = plan()

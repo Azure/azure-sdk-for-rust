@@ -642,14 +642,11 @@ impl PipelineNode for StreamingOrderedMerge {
                 Ok(item) => item,
                 Err(err) => {
                     self.children[winner].buffered.push_front(row);
-                    // Nothing has been emitted, so there is no partial page to
-                    // defer the failure behind and `aggregator` is dropped.
-                    // Dropping it is safe only because `ensure_stream_filled`
-                    // commits the merged session token to `self` as each page
-                    // is absorbed, so session progress outlives the page; the
-                    // charge and per-page diagnostics do go with it, which is
-                    // an accounting loss on a path the caller already sees as
-                    // failed.
+                    // No partial page to defer behind, so `aggregator` is
+                    // dropped. Safe only because `ensure_stream_filled` commits
+                    // the merged session token to `self` as each page is
+                    // absorbed; the charge and diagnostics do go with it, an
+                    // accounting loss on an already-failed call.
                     if items.is_empty() {
                         return Err(err);
                     }
@@ -2652,16 +2649,12 @@ mod tests {
         );
     }
 
-    /// The empty-page error branch. When the *first* row fails to encode there
-    /// is nothing to defer the failure behind, so `next_page` returns `Err` and
-    /// drops the `PageAggregator` — which had already absorbed the backend
-    /// page, and with it that page's session token.
-    ///
-    /// Dropping it is nonetheless safe, and this pins why: `ensure_stream_filled`
-    /// commits the merged token to the node as each page is absorbed, so the
-    /// session progress is already durable by the time the encode is attempted.
-    /// Were that commit removed, a retry could issue a read weaker than one the
-    /// session had already satisfied.
+    /// When the *first* row fails to encode there is nothing to defer the
+    /// failure behind, so `next_page` returns `Err` and drops the
+    /// `PageAggregator` along with the absorbed page's session token. That is
+    /// safe because `ensure_stream_filled` already committed the merged token
+    /// to the node; without that commit a retry could issue a read weaker than
+    /// one the session had satisfied.
     #[tokio::test]
     async fn empty_page_encode_failure_keeps_the_absorbed_session_token() {
         let mut deep = serde_json::json!(1);

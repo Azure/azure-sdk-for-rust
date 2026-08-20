@@ -1510,10 +1510,9 @@ impl SubStatusCode {
         SubStatusCode(20215);
 
     /// A continuation token was requested after a page's body failed to
-    /// transcode back to text (20216). The pipeline had already advanced when
-    /// the transcode ran, so any token minted afterwards would resume *past*
-    /// the page the caller never received. Member of the continuation-token
-    /// family — see also 20200, 20203, 20204, 20205, 20213, 20214.
+    /// transcode back to text (20216). The pipeline had already advanced, so
+    /// any token minted afterwards would resume *past* the page the caller
+    /// never received.
     pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: SubStatusCode =
         SubStatusCode(20216);
 

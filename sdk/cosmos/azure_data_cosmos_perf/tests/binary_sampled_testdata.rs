@@ -427,22 +427,15 @@ const EXACT_INTEGER_LIMIT: u128 = 1 << 53;
 /// Strict comparison for the **text-vs-binary** arms, where tolerance would
 /// defeat the test.
 ///
-/// [`json_equivalent`] exists for the *sent → stored* check, where reconciling
-/// `Number` variants is legitimate: Cosmos stores every number as a double, so
-/// an integer we sent can come back as a `Double`. That reasoning does not
-/// transfer here. Both arms read **the same stored documents** over the same
-/// client; the service's own representation is fixed before either query runs.
-/// Any variant difference between them is produced by our encoding path, which
-/// is exactly what this test exists to catch — so reconciling the variants here
-/// would let the integral-double coercion be deleted with the test still green.
+/// [`json_equivalent`] reconciles `Number` variants for the *sent → stored*
+/// check, which is legitimate there because Cosmos stores every number as a
+/// double. It does not transfer here: both arms read the same stored documents,
+/// so any variant difference came from our encoding path — exactly what this
+/// test exists to catch.
 ///
-/// The one exception is deliberate and narrow. Past 2^53 an integer is no
-/// longer exactly representable as a double, so the text spelling the service
-/// emits and the value recoverable from its binary token can legitimately
-/// disagree in ways this SDK does not control. That is a known limitation of
-/// wide integers rather than a defect in the pipeline, so such values fall back
-/// to the numeric comparison. Everything at or inside ±2^53 — which is where
-/// the coercion actually claims to work — is compared exactly.
+/// The one carve-out: past 2^53 an integer is no longer exactly representable
+/// as a double, so the text spelling and the value recoverable from a binary
+/// token can legitimately disagree. Those fall back to numeric comparison.
 fn json_identical(a: &Value, b: &Value) -> bool {
     match (a, b) {
         (Value::Number(x), Value::Number(y)) => numbers_identical(x, y),
@@ -816,8 +809,7 @@ async fn binary_and_text_queries_agree_over_seeded_corpus() -> Result<(), Box<dy
     Ok(())
 }
 
-/// Offline checks on the comparators. These need no account and no corpus, so
-/// they run on every `cargo test` and pin the property the live comparison
+/// Offline checks on the comparators, pinning the property the live comparison
 /// depends on: [`json_identical`] must reject a variant difference that
 /// [`json_equivalent`] is allowed to accept.
 mod comparators {
@@ -836,13 +828,11 @@ mod comparators {
     #[test]
     fn strict_comparison_rejects_an_integral_double_the_tolerant_one_accepts() {
         let (int, double) = integer_and_double(3);
-        // The tolerant comparator must accept this: it is the *sent → stored*
-        // check, and Cosmos really does store `3` as a double.
+        // Tolerant: this is the *sent → stored* check, and Cosmos really does
+        // store `3` as a double.
         assert!(json_equivalent(&int, &double));
-        // The strict one must not. Both query arms read the same stored
-        // document, so a variant difference here came from our encoding path.
-        // If this ever passes, deleting the coercion no longer fails the live
-        // comparison and the test stops testing anything.
+        // Strict must not. If this ever passes, deleting the integral-double
+        // coercion no longer fails the live comparison.
         assert!(!json_identical(&int, &double));
     }
 
