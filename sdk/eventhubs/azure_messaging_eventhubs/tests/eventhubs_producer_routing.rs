@@ -12,6 +12,7 @@
 use azure_core_amqp::{message::AmqpMessageBody, AmqpList};
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{
+    error::ErrorKind,
     models::{AmqpMessage, AmqpSimpleValue, AmqpValue, EventData, ReceivedEventData},
     ConsumerClient, EventDataBatchOptions, EventReceiver, OpenReceiverOptions, ProducerClient,
     SendEventOptions, StartLocation, StartPosition,
@@ -31,7 +32,6 @@ const ROUTED_EVENT_COUNT: usize = 5;
 // ProducerCanSendSingleLargeEventInASet uses new byte[100000] with the comment
 // "Actual limit is 1046520 for a single event".
 const LARGE_BODY_LEN: usize = 100_000;
-const OVERSIZED_BODY_LEN: usize = 2 * 1024 * 1024;
 const SEQUENCE_INT_VALUE: i32 = 1_234_567_890;
 const BINARY_PROPERTY_KEY: &str = "producer-routing-binary";
 const BINARY_PROPERTY_VALUE: [u8; 4] = [0x12, 0x34, 0x56, 0x78];
@@ -41,7 +41,6 @@ const BINARY_PROPERTY_VALUE: [u8; 4] = [0x12, 0x34, 0x56, 0x78];
 // ordering.
 const PARTITION_SWEEP_DEADLINE: Duration = Duration::from_secs(20);
 const READ_DEADLINE: Duration = Duration::from_secs(60);
-const OVERSIZED_SEND_DEADLINE: Duration = Duration::from_secs(45);
 
 /// Returns the label of an event when the event belongs to this run.
 ///
@@ -524,58 +523,72 @@ async fn large_event_body_round_trips_intact(ctx: TestContext) -> Result<(), Box
     Ok(())
 }
 
-/// A single event above the service cap must not send.
+/// A batch refuses an event above the negotiated link maximum.
 ///
-/// The batch half of this behavior lives in the other file:
-/// create_batch_honors_max_size_in_bytes and
-/// create_batch_rejects_size_above_link_maximum in tests/eventhubs_producer.rs
-/// cover the batch refusal. This test covers the send_event path only.
+/// This mirrors the .NET `ProducerCannotSendSetLargerThanMaximumSize`, which
+/// also asserts on a set rather than on one event. The maximum is read from the
+/// `InvalidBatchSize` error rather than hardcoded, so the test holds on every
+/// tier: Basic caps a publication at 256 KB, Standard and Premium at 1 MB, and
+/// Dedicated at 20 MB.
+/// <https://learn.microsoft.com/en-us/azure/event-hubs/event-hubs-quotas>
+///
+/// `ProducerClient::send_event` does NOT enforce this maximum. A live run
+/// against a Standard namespace whose link reported `max_allowed: 1048576`
+/// accepted a 2 MiB single event, returned `Ok(())`, and moved the partition
+/// tail. That divergence between the batch path and the single event path
+/// needs its own issue and its own fix, so no test here pins it.
 #[recorded::test(live)]
-async fn oversized_send_event_does_not_succeed(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    const TEST_NAME: &str = "oversized_send_event_does_not_succeed";
+async fn batch_refuses_event_above_the_link_maximum(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    const TEST_NAME: &str = "batch_refuses_event_above_the_link_maximum";
     const PARTITION: &str = "0";
+    const ABSURD_BATCH_SIZE: u64 = 512 * 1024 * 1024;
 
     let producer = open_producer(&ctx, TEST_NAME).await?;
-    let run_marker = format!("{TEST_NAME}-{}", azure_core::Uuid::new_v4());
-    let body = large_body(OVERSIZED_BODY_LEN);
 
-    // The test asserts nothing about the error kind or the message text. The
-    // error module has no size limit variant, and nothing pins how the fe2o3
-    // link payload error surfaces. Tighten this to the real error after a live
-    // run shows the kind.
-    let outcome = tokio::time::timeout(
-        OVERSIZED_SEND_DEADLINE,
-        producer.send_event(
-            EventData::builder()
-                .with_body(body)
-                .add_property(RUN_MARKER_KEY.to_string(), run_marker.clone())
-                .build(),
-            Some(SendEventOptions {
-                partition_id: Some(PARTITION.to_string()),
-            }),
-        ),
-    )
-    .await;
+    // Ask for a batch far above any link maximum. The error carries the real
+    // maximum, which is the only public way to read it.
+    let error = producer
+        .create_batch(Some(EventDataBatchOptions {
+            max_size_in_bytes: Some(ABSURD_BATCH_SIZE),
+            partition_id: Some(PARTITION.to_string()),
+            ..Default::default()
+        }))
+        .await
+        .err()
+        .expect("a batch above the link maximum must be refused");
 
-    match outcome {
-        Err(_elapsed) => info!(
-            "run {run_marker}: the {OVERSIZED_BODY_LEN} byte send to partition {PARTITION} did not \
-             finish within {OVERSIZED_SEND_DEADLINE:?}, so it did not succeed."
-        ),
-        Ok(Err(err)) => info!(
-            "run {run_marker}: the service rejected the {OVERSIZED_BODY_LEN} byte send to \
-             partition {PARTITION}. {err:?}"
-        ),
-        Ok(Ok(())) => panic!(
-            "run {run_marker}: a {OVERSIZED_BODY_LEN} byte event reached partition {PARTITION} \
-             within {OVERSIZED_SEND_DEADLINE:?}, but the Standard tier caps a single event at \
-             about 1 MB"
-        ),
-    }
+    let max_allowed = match error.kind {
+        ErrorKind::InvalidBatchSize { max_allowed, .. } => max_allowed,
+        other => panic!("expected InvalidBatchSize, got {other:?}"),
+    };
+    info!("{TEST_NAME}: the link reports max_allowed {max_allowed} bytes.");
+    assert!(
+        max_allowed > 0,
+        "the link maximum must be positive, got {max_allowed}"
+    );
 
-    // The oversized send can already have detached the link, so a close error is
-    // not a test failure.
-    let _ = producer.close().await;
+    let batch = producer
+        .create_batch(Some(EventDataBatchOptions {
+            partition_id: Some(PARTITION.to_string()),
+            ..Default::default()
+        }))
+        .await?;
+
+    let oversized = usize::try_from(max_allowed).expect("link maximum must fit in a usize") + 1;
+    let added = batch.try_add_event_data(
+        EventData::builder()
+            .with_body(large_body(oversized))
+            .build(),
+        None,
+    )?;
+    assert!(
+        !added,
+        "a {oversized} byte event must not fit a batch whose maximum is {max_allowed}"
+    );
+
+    producer.close().await?;
     Ok(())
 }
 
