@@ -225,9 +225,15 @@ impl ConsumerClient {
         })
     }
 
-    /// Attaches a message receiver to a specific partition of the Event Hub.
+    /// Creates a message receiver for a specific partition of the Event Hub.
     ///
-    /// This function establishes a connection to the specified partition of the Event Hubs instance and returns a MessageReceiver which can be used to receive messages from it.
+    /// This function opens no AMQP link and does no network I/O. It builds an
+    /// [`EventReceiver`] from `options` and returns it. The AMQP link attaches on
+    /// the first poll of [`EventReceiver::stream_events`].
+    ///
+    /// An unknown consumer group and an unknown partition id are reported from that
+    /// first poll, not from this call. A caller must poll the stream before it can
+    /// trust the receiver.
     ///
     /// # Arguments
     ///
@@ -236,7 +242,7 @@ impl ConsumerClient {
     ///
     /// # Returns
     ///
-    /// A MessageReceiver which can be used to receive messages from the partition.
+    /// An [`EventReceiver`] which can be used to receive messages from the partition.
     ///
     /// Note that by default, a message receiver will receive events starting from the latest event in the partition (in
     /// other words, it will receive new events only). To receive events from another location within the partition you can
@@ -341,7 +347,7 @@ impl ConsumerClient {
             consumer_group = %self.consumer_group,
             eventhub = %self.eventhub,
             source_url = %source_url,
-            "Receiver attached on partition."
+            "Created receiver on partition. The AMQP link attaches on the first stream_events() poll."
         );
         Ok(EventReceiver::new(
             self.recoverable_connection.clone(),
