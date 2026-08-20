@@ -3,12 +3,11 @@
 
 use super::processor::ProcessorConsumersMap;
 use crate::{
-    error::Result,
+    error::{ErrorKind, Result},
     models::{Checkpoint, ConsumerClientDetails, ReceivedEventData},
     processor::CheckpointStore,
     EventHubsError, EventReceiver,
 };
-use azure_core_amqp::{message::AmqpAnnotationKey, AmqpValue};
 use futures::Stream;
 use std::{
     pin::Pin,
@@ -144,45 +143,30 @@ impl PartitionClient {
 
     /// Updates the checkpoint for the current partition.
     ///
-    /// This method extracts the sequence number and offset from the provided `ReceivedEventData`
+    /// This method reads the offset and the sequence number from the provided `ReceivedEventData`
     /// and updates the checkpoint in the `CheckpointStore`.
     ///
     /// # Arguments
-    /// * `event_data` - The event data containing the sequence number and offset to update the checkpoint.
+    /// * `event_data` - The event data that carries the offset and the sequence number to record.
     ///
     /// # Errors
-    /// Returns an error if the sequence number or offset is invalid, or if updating the checkpoint fails.
+    /// Returns [`ErrorKind::MissingCheckpointMetadata`](crate::error::ErrorKind::MissingCheckpointMetadata)
+    /// when the event carries no offset and no sequence number. Such an event names no position in
+    /// the partition, and a checkpoint with both fields empty erases the position the store holds.
+    /// Returns an error also when the checkpoint store fails to write the checkpoint.
     pub async fn update_checkpoint(&self, event_data: &ReceivedEventData) -> Result<()> {
-        let mut offset_option = None;
-        let mut sequence_number_option = None;
-
-        let event_data_message = event_data.raw_amqp_message();
-        let Some(message_annotations) = event_data_message.message_annotations.as_ref() else {
-            // No message annotations. Nothing to do.
-            return Ok(());
-        };
-        for (key, value) in message_annotations.0.iter() {
-            let AmqpAnnotationKey::Symbol(symbol) = key else {
-                continue;
-            };
-
-            if *symbol == "x-opt-offset" {
-                let AmqpValue::String(offset_value) = value else {
-                    continue;
-                };
-                offset_option = Some(offset_value.clone());
-            } else if *symbol == "x-opt-sequence-number" {
-                let AmqpValue::Long(sequence_number_value) = value else {
-                    continue;
-                };
-                sequence_number_option = Some(*sequence_number_value);
-            }
+        let offset = event_data.offset().clone();
+        let sequence_number = event_data.sequence_number();
+        if offset.is_none() && sequence_number.is_none() {
+            return Err(EventHubsError::from(ErrorKind::MissingCheckpointMetadata {
+                partition_id: self.partition_id.clone(),
+            }));
         }
 
         debug!(
             partition_id = %self.partition_id,
-            sequence_number = ?sequence_number_option,
-            offset = ?offset_option,
+            sequence_number = ?sequence_number,
+            offset = ?offset,
             "Updating checkpoint for partition."
         );
         let checkpoint = Checkpoint {
@@ -190,8 +174,8 @@ impl PartitionClient {
             event_hub_name: self.client_details.eventhub_name.clone(),
             consumer_group: self.client_details.consumer_group.clone(),
             partition_id: self.partition_id.clone(),
-            offset: offset_option,
-            sequence_number: sequence_number_option,
+            offset,
+            sequence_number,
         };
         self.checkpoint_store
             .update_checkpoint(checkpoint)
