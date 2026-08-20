@@ -557,7 +557,8 @@ async fn second_processor_displaces_first_with_consumer_disconnected(
                 Some((_partition_id, Ok(_event))) => continue,
                 Some((partition_id, Err(err))) => return (partition_id, Some(err)),
                 // All streams ended without an error: the bug we guard against.
-                None => return (String::new(), None),
+                // No single partition owns this outcome, so name them all.
+                None => return ("(all)".to_string(), None),
             }
         }
     };
