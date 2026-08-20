@@ -23,8 +23,6 @@ use futures::{Stream, StreamExt};
 use std::{sync::LazyLock, time::Duration};
 use tokio::time::timeout;
 
-mod common;
-
 const DEFAULT_GROUP: &str = "$Default";
 const SECOND_GROUP: &str = "defaultGroup";
 const MISSING_GROUP: &str = "ThisIsFake";
@@ -189,7 +187,6 @@ where
 
 #[recorded::test(live)]
 async fn two_consumer_groups_read_the_same_events(ctx: TestContext) -> Result<()> {
-    common::setup();
     let _guard = PARTITION_LOCK.lock().await;
 
     let recording = ctx.recording();
@@ -282,7 +279,6 @@ async fn two_consumer_groups_read_the_same_events(ctx: TestContext) -> Result<()
 #[recorded::test(live)]
 async fn receiver_on_unknown_consumer_group_fails(ctx: TestContext) -> Result<()> {
     const CONTEXT: &str = "receiver on an unknown consumer group";
-    common::setup();
     let _guard = PARTITION_LOCK.lock().await;
 
     let recording = ctx.recording();
@@ -324,7 +320,6 @@ async fn receiver_on_unknown_consumer_group_fails(ctx: TestContext) -> Result<()
 #[recorded::test(live)]
 async fn receiver_on_unknown_partition_fails(ctx: TestContext) -> Result<()> {
     const CONTEXT: &str = "receiver on an unknown partition";
-    common::setup();
     let _guard = PARTITION_LOCK.lock().await;
 
     let recording = ctx.recording();
