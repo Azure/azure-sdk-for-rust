@@ -1092,6 +1092,10 @@ impl CosmosOperation {
     ///
     /// This is deliberately *not* `is_idempotent`: the driver retries
     /// non-idempotent writes such as `Create` and `Upsert` on purpose.
+    ///
+    /// Gates both retry layers so they cannot disagree about the same failure:
+    /// cross-region failover in the operation pipeline, and the same-endpoint
+    /// shard retry in the transport pipeline.
     pub fn allows_ambiguous_outcome_retry(&self) -> bool {
         self.operation_type != OperationType::Execute
     }
@@ -1346,6 +1350,38 @@ mod tests {
 
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());
+    }
+
+    /// Both retry layers consult this one predicate, so a failure the transport
+    /// pipeline declines to retry on another shard cannot then be retried
+    /// cross-region by the operation pipeline — strictly more expensive for
+    /// identical duplicate-execution semantics.
+    #[test]
+    fn ambiguous_outcome_retry_covers_non_idempotent_writes() {
+        let pk = PartitionKey::from("pk1");
+        let item = |op: fn(ItemReference) -> CosmosOperation| {
+            op(ItemReference::from_name(
+                &test_container(),
+                pk.clone(),
+                "doc1",
+            ))
+        };
+
+        for op in [
+            item(CosmosOperation::create_item),
+            item(CosmosOperation::upsert_item),
+            item(CosmosOperation::patch_item),
+            item(CosmosOperation::replace_item),
+            item(CosmosOperation::delete_item),
+            item(CosmosOperation::read_item),
+            CosmosOperation::batch(test_container(), pk.clone()),
+        ] {
+            assert!(
+                op.allows_ambiguous_outcome_retry(),
+                "{:?} must stay eligible for retry after an ambiguous failure",
+                op.operation_type()
+            );
+        }
     }
 
     #[cfg(feature = "preview_dtx")]
