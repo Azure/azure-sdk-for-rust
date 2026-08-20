@@ -763,7 +763,9 @@ pub mod builders {
 #[cfg(test)]
 mod tests {
     use crate::common::tests::force_errors;
-    use crate::{models::EventData, EventDataBatchOptions, ProducerClient, Result};
+    use crate::{
+        error::ErrorKind, models::EventData, EventDataBatchOptions, ProducerClient, Result,
+    };
     use azure_core::time::Duration;
     use azure_core_amqp::error::AmqpErrorKind;
     use azure_core_test::{recorded, TestContext};
@@ -1187,5 +1189,57 @@ mod tests {
         .await?;
 
         Ok(())
+    }
+
+    const LINK_MAX_SIZE: u64 = 1_048_576;
+
+    // An event larger than the sender link allows must be refused before the
+    // send, and the error must name both sizes.
+    #[test]
+    fn message_size_above_the_link_maximum_is_rejected() {
+        let error = ProducerClient::check_message_size(LINK_MAX_SIZE + 1, Some(LINK_MAX_SIZE))
+            .expect_err("a message above the link maximum must be refused");
+        assert!(
+            matches!(
+                error.kind,
+                ErrorKind::MessageSizeExceeded {
+                    requested: 1_048_577,
+                    max_allowed: LINK_MAX_SIZE,
+                }
+            ),
+            "the caller must be able to match on the kind, got: {error:?}"
+        );
+        let message = error.to_string();
+        assert!(
+            message.contains("1048577") && message.contains("1048576"),
+            "the error must name the requested and the allowed size, got: {message}"
+        );
+    }
+
+    // The boundary is inclusive, so the check must use `>` and not `>=`.
+    #[test]
+    fn message_size_equal_to_the_link_maximum_is_allowed() {
+        ProducerClient::check_message_size(LINK_MAX_SIZE, Some(LINK_MAX_SIZE))
+            .expect("a message exactly at the link maximum is still sent");
+    }
+
+    // Every message the link can carry must go, as it does today.
+    #[test]
+    fn message_size_below_the_link_maximum_is_allowed() {
+        ProducerClient::check_message_size(1, Some(LINK_MAX_SIZE))
+            .expect("a message below the link maximum keeps the current behavior");
+        ProducerClient::check_message_size(LINK_MAX_SIZE - 1, Some(LINK_MAX_SIZE))
+            .expect("a message below the link maximum keeps the current behavior");
+    }
+
+    // This differs on purpose from `create_batch`, which treats `None` as an
+    // error. AMQP 1.0 section 2.7.3 gives an unset or zero maximum the meaning
+    // "no limit", so the send path must not invent a limit of its own.
+    #[test]
+    fn message_size_is_not_checked_when_the_link_reports_no_maximum() {
+        ProducerClient::check_message_size(4 * LINK_MAX_SIZE, None)
+            .expect("with no link maximum the check is skipped, per AMQP 1.0 section 2.7.3");
+        ProducerClient::check_message_size(u64::MAX, None)
+            .expect("with no link maximum the check is skipped, per AMQP 1.0 section 2.7.3");
     }
 }
