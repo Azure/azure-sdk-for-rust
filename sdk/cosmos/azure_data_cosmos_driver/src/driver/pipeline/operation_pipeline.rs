@@ -723,7 +723,7 @@ pub(crate) async fn execute_operation_pipeline(
             transport_request,
             &TransportPipelineContext {
                 transport: &selected_transport,
-                allow_sent_transport_retry: operation.is_read_only() || operation.is_idempotent(),
+                allow_sent_transport_retry: operation.allows_ambiguous_outcome_retry(),
                 credential,
                 user_agent,
                 client_id,
@@ -2889,8 +2889,7 @@ async fn perform_single_attempt(
         transport_request,
         &TransportPipelineContext {
             transport: &selected_transport,
-            allow_sent_transport_retry: ctx.operation.is_read_only()
-                || ctx.operation.is_idempotent(),
+            allow_sent_transport_retry: ctx.operation.allows_ambiguous_outcome_retry(),
             credential: ctx.credential,
             user_agent: ctx.user_agent,
             client_id: ctx.client_id,

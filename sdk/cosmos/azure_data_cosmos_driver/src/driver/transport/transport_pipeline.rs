@@ -931,6 +931,54 @@ mod tests {
     static TEST_CLIENT_ID_HEADER: azure_core::http::headers::HeaderName =
         azure_core::http::headers::HeaderName::from_static("x-ms-client-id");
 
+    fn connectivity_failure(request_sent: RequestSentStatus) -> TransportResult {
+        TransportResult {
+            outcome: TransportOutcome::TransportError {
+                status: CosmosStatus::TRANSPORT_IO_FAILED,
+                error: crate::error::CosmosError::builder()
+                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_message("connection reset")
+                    .build(),
+                request_sent,
+            },
+        }
+    }
+
+    /// A request that definitively never left the client is safe to retry for
+    /// every operation type, so the caller's flag is not consulted.
+    #[test]
+    fn unsent_connectivity_failure_retries_regardless_of_caller_flag() {
+        let result = connectivity_failure(RequestSentStatus::NotSent);
+        assert!(should_retry_connectivity_failure(&result, false));
+        assert!(should_retry_connectivity_failure(&result, true));
+    }
+
+    /// Once the request may have reached the backend, the same predicate the
+    /// operation pipeline uses for cross-region failover decides this retry.
+    /// Callers pass `CosmosOperation::allows_ambiguous_outcome_retry`, so the
+    /// two layers cannot disagree about a single failure.
+    #[test]
+    fn possibly_sent_connectivity_failure_defers_to_caller_flag() {
+        for request_sent in [RequestSentStatus::Sent, RequestSentStatus::Unknown] {
+            let result = connectivity_failure(request_sent);
+            assert!(
+                !should_retry_connectivity_failure(&result, false),
+                "{request_sent:?} must not retry when the operation forbids ambiguous retries"
+            );
+            assert!(
+                should_retry_connectivity_failure(&result, true),
+                "{request_sent:?} must retry when the operation allows ambiguous retries"
+            );
+        }
+    }
+
+    /// The retry is bounded to a single extra same-endpoint attempt; widening
+    /// it would multiply duplicate executions for non-idempotent writes.
+    #[test]
+    fn local_connectivity_retries_are_capped_at_one() {
+        assert_eq!(MAX_LOCAL_CONNECTIVITY_RETRIES, 1);
+    }
+
     #[derive(Debug)]
     struct HangingTransportClient {
         delay: Duration,
