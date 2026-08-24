@@ -113,13 +113,15 @@ impl WorkloadIdentityCredential {
         let mut credential_options = options.credential_options;
         if options.enable_azure_proxy {
             let proxy = CustomTokenProxyConfig::from_env(&env)?;
-            #[cfg(test)]
+            #[cfg(all(test, feature = "azure_proxy"))]
             if let Some(transport) = proxy_transport {
                 proxy.configure_with_client(&mut credential_options.client_options, transport)?;
             } else {
                 proxy.configure(&mut credential_options.client_options)?;
             }
-            #[cfg(not(test))]
+            #[cfg(all(test, not(feature = "azure_proxy")))]
+            let _ = proxy_transport;
+            #[cfg(any(not(test), all(test, not(feature = "azure_proxy"))))]
             proxy.configure(&mut credential_options.client_options)?;
         }
         Ok(Arc::new(Self(

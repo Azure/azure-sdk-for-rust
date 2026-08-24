@@ -321,7 +321,8 @@ fn build_client(
                 "contains no certificates",
             ));
         }
-        builder = builder.tls_certs_merge(certificates);
+
+        builder = builder.tls_certs_only(certificates);
     }
     if !resolved_addrs.is_empty() {
         let host = request_url.host_str().ok_or_else(|| {
@@ -743,8 +744,8 @@ uaZPC0VV2qRwbAE=\n\
     #[tokio::test]
     async fn sends_requests_with_custom_ca_and_sni() {
         const SNI_NAME: &str = "cluster.example.com";
-        let (certificate, key) = test_server_certificate(SNI_NAME);
-        let ca_data = String::from_utf8(certificate.to_pem().expect("certificate PEM"))
+        let (certificate, key, ca_certificate) = test_server_certificate(SNI_NAME);
+        let ca_data = String::from_utf8(ca_certificate.to_pem().expect("CA certificate PEM"))
             .expect("PEM is UTF-8");
         let mut acceptor =
             SslAcceptor::mozilla_intermediate_v5(SslMethod::tls_server()).expect("TLS acceptor");
@@ -819,31 +820,89 @@ uaZPC0VV2qRwbAE=\n\
     }
 
     #[cfg(all(feature = "azure_proxy", feature = "client_certificate"))]
-    fn test_server_certificate(name: &str) -> (X509, PKey<openssl::pkey::Private>) {
-        let key = PKey::from_rsa(Rsa::generate(2048).expect("RSA key")).expect("private key");
-        let mut subject = X509NameBuilder::new().expect("subject");
-        subject
-            .append_entry_by_nid(Nid::COMMONNAME, name)
-            .expect("common name");
-        let subject = subject.build();
+    fn test_server_certificate(name: &str) -> (X509, PKey<openssl::pkey::Private>, X509) {
+        let ca_key =
+            PKey::from_rsa(Rsa::generate(2048).expect("CA RSA key")).expect("CA private key");
+        let mut ca_subject = X509NameBuilder::new().expect("CA subject");
+        ca_subject
+            .append_entry_by_nid(Nid::COMMONNAME, "test CA")
+            .expect("CA common name");
+        let ca_subject = ca_subject.build();
         let mut serial = BigNum::new().expect("serial");
         serial
             .rand(128, MsbOption::MAYBE_ZERO, false)
             .expect("random serial");
         let serial = Asn1Integer::from_bn(&serial).expect("ASN.1 serial");
 
-        let mut certificate = X509::builder().expect("certificate builder");
-        certificate.set_version(2).expect("certificate version");
+        let mut ca_certificate = X509::builder().expect("CA certificate builder");
+        ca_certificate
+            .set_version(2)
+            .expect("CA certificate version");
+        ca_certificate
+            .set_serial_number(&serial)
+            .expect("CA certificate serial");
+        ca_certificate
+            .set_subject_name(&ca_subject)
+            .expect("CA certificate subject");
+        ca_certificate
+            .set_issuer_name(&ca_subject)
+            .expect("CA certificate issuer");
+        ca_certificate
+            .set_pubkey(&ca_key)
+            .expect("CA certificate key");
+        ca_certificate
+            .set_not_before(&Asn1Time::days_from_now(0).expect("CA not before"))
+            .expect("CA not before");
+        ca_certificate
+            .set_not_after(&Asn1Time::days_from_now(1).expect("CA not after"))
+            .expect("CA not after");
+        ca_certificate
+            .append_extension(BasicConstraints::new().critical().ca().build().expect("CA"))
+            .expect("CA extension");
+        ca_certificate
+            .append_extension(
+                KeyUsage::new()
+                    .critical()
+                    .key_cert_sign()
+                    .crl_sign()
+                    .build()
+                    .expect("CA key usage"),
+            )
+            .expect("CA key usage extension");
+        ca_certificate
+            .sign(&ca_key, MessageDigest::sha256())
+            .expect("sign CA certificate");
+        let ca_certificate = ca_certificate.build();
+
+        let key = PKey::from_rsa(Rsa::generate(2048).expect("server RSA key"))
+            .expect("server private key");
+        let mut subject = X509NameBuilder::new().expect("server subject");
+        subject
+            .append_entry_by_nid(Nid::COMMONNAME, name)
+            .expect("server common name");
+        let subject = subject.build();
+        let mut serial = BigNum::new().expect("server serial");
+        serial
+            .rand(128, MsbOption::MAYBE_ZERO, false)
+            .expect("random server serial");
+        let serial = Asn1Integer::from_bn(&serial).expect("ASN.1 server serial");
+
+        let mut certificate = X509::builder().expect("server certificate builder");
+        certificate
+            .set_version(2)
+            .expect("server certificate version");
         certificate
             .set_serial_number(&serial)
-            .expect("certificate serial");
+            .expect("server certificate serial");
         certificate
             .set_subject_name(&subject)
-            .expect("certificate subject");
+            .expect("server certificate subject");
         certificate
-            .set_issuer_name(&subject)
-            .expect("certificate issuer");
-        certificate.set_pubkey(&key).expect("certificate key");
+            .set_issuer_name(ca_certificate.subject_name())
+            .expect("server certificate issuer");
+        certificate
+            .set_pubkey(&key)
+            .expect("server certificate key");
         certificate
             .set_not_before(&Asn1Time::days_from_now(0).expect("not before"))
             .expect("not before");
@@ -851,17 +910,23 @@ uaZPC0VV2qRwbAE=\n\
             .set_not_after(&Asn1Time::days_from_now(1).expect("not after"))
             .expect("not after");
         certificate
-            .append_extension(BasicConstraints::new().critical().ca().build().expect("CA"))
-            .expect("CA extension");
+            .append_extension(
+                BasicConstraints::new()
+                    .critical()
+                    .build()
+                    .expect("server constraints"),
+            )
+            .expect("server constraints extension");
         certificate
             .append_extension(
                 KeyUsage::new()
+                    .critical()
                     .digital_signature()
-                    .key_cert_sign()
+                    .key_encipherment()
                     .build()
-                    .expect("key usage"),
+                    .expect("server key usage"),
             )
-            .expect("key usage extension");
+            .expect("server key usage extension");
         certificate
             .append_extension(
                 ExtendedKeyUsage::new()
@@ -878,8 +943,8 @@ uaZPC0VV2qRwbAE=\n\
             .append_extension(subject_alt_name)
             .expect("subject alternative name extension");
         certificate
-            .sign(&key, MessageDigest::sha256())
-            .expect("sign certificate");
-        (certificate.build(), key)
+            .sign(&ca_key, MessageDigest::sha256())
+            .expect("sign server certificate");
+        (certificate.build(), key, ca_certificate)
     }
 }

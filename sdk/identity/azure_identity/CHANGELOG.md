@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added support for Arc-connected servers when using the `ManagedIdentityCredential`.
+- Added opt-in AKS identity binding support to `WorkloadIdentityCredentialOptions` through `enable_azure_proxy`.
 
 ### Breaking Changes
 
