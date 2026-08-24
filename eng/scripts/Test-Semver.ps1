@@ -82,11 +82,6 @@ foreach ($package in $outputPackages) {
     continue
   }
 
-  if ($output -match 'failed to retrieve index of crate versions from registry') {
-    LogWarning "$packageName registry index could not be retrieved and will be ignored"
-    continue
-  }
-
   $finalExitCode = $finalExitCode -bor $LASTEXITCODE
   $output | Write-Host
 }
