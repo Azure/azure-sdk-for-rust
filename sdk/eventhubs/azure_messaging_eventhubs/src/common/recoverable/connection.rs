@@ -1540,6 +1540,91 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn close_stops_owned_authorization_refresh_task() {
+        use azure_core::{
+            credentials::{AccessToken, TokenCredential, TokenRequestOptions},
+            time::OffsetDateTime,
+        };
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use tokio::sync::Notify;
+
+        #[derive(Debug)]
+        struct GatedCredential {
+            requests: AtomicUsize,
+            entered_refresh: Notify,
+            release_refresh: Notify,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for GatedCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                match self.requests.fetch_add(1, Ordering::SeqCst) {
+                    0 => Ok(AccessToken::new(
+                        azure_core::credentials::Secret::new("initial_token"),
+                        OffsetDateTime::now_utc() + Duration::hours(1),
+                    )),
+                    1 => {
+                        self.entered_refresh.notify_one();
+                        self.release_refresh.notified().await;
+                        Ok(AccessToken::new(
+                            azure_core::credentials::Secret::new("refreshed_token"),
+                            OffsetDateTime::now_utc() + Duration::hours(1),
+                        ))
+                    }
+                    request => unreachable!("unexpected token request {request}"),
+                }
+            }
+        }
+
+        let credential = Arc::new(GatedCredential {
+            requests: AtomicUsize::new(0),
+            entered_refresh: Notify::new(),
+            release_refresh: Notify::new(),
+        });
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            credential.clone(),
+            Default::default(),
+            None,
+        );
+        let authorizer = connection.authorizer.clone();
+        authorizer.disable_authorization().unwrap();
+        authorizer
+            .set_token_refresh_bias_for_test(Duration::hours(2))
+            .unwrap();
+
+        let path = Url::parse("amqps://example.com/close_refresh_task").unwrap();
+        authorizer.authorize_path(&connection, &path).await.unwrap();
+
+        // The second request proves that the refresher holds an Arc to the authorizer.
+        credential.entered_refresh.notified().await;
+
+        connection.close_connection().await.unwrap();
+        drop(connection);
+
+        let stopped = tokio::time::timeout(std::time::Duration::from_secs(1), async {
+            loop {
+                if Arc::strong_count(&authorizer) == 1 {
+                    return;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await;
+        assert!(
+            stopped.is_ok(),
+            "authorization refresh task remained alive after close; strong_count={}",
+            Arc::strong_count(&authorizer)
+        );
+    }
+
     // The RecoverableConnection implementation uses a UUID to identify connections unless an application ID is provided.
     // This test verifies that a new recoverable connection uses a UUID for its connection ID when no application ID is specified.
     // It also verifies that the connections aren't initialized during construction - they're created on-demand.

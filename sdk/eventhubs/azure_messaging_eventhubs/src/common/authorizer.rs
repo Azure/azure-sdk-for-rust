@@ -117,7 +117,7 @@ impl Authorizer {
     }
 
     #[cfg(test)]
-    fn disable_authorization(&self) -> Result<()> {
+    pub(crate) fn disable_authorization(&self) -> Result<()> {
         use crate::EventHubsError;
 
         let mut disable_authorization = self
@@ -638,6 +638,17 @@ impl Authorizer {
         })?;
         *token_refresh_bias = refresh_times;
         Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_token_refresh_bias_for_test(&self, bias: Duration) -> Result<()> {
+        self.set_token_refresh_times(TokenRefreshTimes {
+            before_expiration_refresh_time: bias,
+            jitter_min: Duration::milliseconds(0),
+            // The upper bound is exclusive. This range produces zero jitter
+            // while avoiding an empty random range in the refresh loop.
+            jitter_max: Duration::milliseconds(1),
+        })
     }
 }
 
@@ -1426,96 +1437,6 @@ mod tests {
             cached.token.secret(),
             "original_token",
             "a token refreshed during recovery must be discarded, not written back"
-        );
-    }
-
-    #[tokio::test]
-    async fn close_stops_authorization_refresh_task() {
-        use std::sync::atomic::{AtomicUsize, Ordering};
-        use tokio::sync::Notify;
-
-        #[derive(Debug)]
-        struct GatedTokenCredential {
-            requests: AtomicUsize,
-            entered_refresh: Notify,
-            release_refresh: Notify,
-        }
-
-        #[async_trait::async_trait]
-        impl TokenCredential for GatedTokenCredential {
-            async fn get_token(
-                &self,
-                _scopes: &[&str],
-                _options: Option<TokenRequestOptions<'_>>,
-            ) -> Result<AccessToken> {
-                match self.requests.fetch_add(1, Ordering::SeqCst) {
-                    0 => Ok(AccessToken::new(
-                        azure_core::credentials::Secret::new("initial_token"),
-                        OffsetDateTime::now_utc() + Duration::hours(1),
-                    )),
-                    1 => {
-                        self.entered_refresh.notify_one();
-                        self.release_refresh.notified().await;
-                        Ok(AccessToken::new(
-                            azure_core::credentials::Secret::new("refreshed_token"),
-                            OffsetDateTime::now_utc() + Duration::hours(1),
-                        ))
-                    }
-                    request => unreachable!("unexpected token request {request}"),
-                }
-            }
-        }
-
-        let credential = Arc::new(GatedTokenCredential {
-            requests: AtomicUsize::new(0),
-            entered_refresh: Notify::new(),
-            release_refresh: Notify::new(),
-        });
-        let connection = RecoverableConnection::new(
-            Url::parse("amqps://example.com").unwrap(),
-            None,
-            None,
-            credential.clone(),
-            Default::default(),
-            None,
-        );
-
-        let authorizer = Arc::new(Authorizer::new(
-            Arc::downgrade(&connection),
-            credential.clone(),
-            None,
-        ));
-        authorizer.disable_authorization().unwrap();
-        authorizer
-            .set_token_refresh_times(TokenRefreshTimes {
-                before_expiration_refresh_time: Duration::hours(2),
-                jitter_min: Duration::milliseconds(0),
-                jitter_max: Duration::milliseconds(1),
-            })
-            .unwrap();
-
-        let path = Url::parse("amqps://example.com/close_refresh_task").unwrap();
-        authorizer.authorize_path(&connection, &path).await.unwrap();
-
-        // The second request proves that the refresher holds an Arc to the authorizer.
-        credential.entered_refresh.notified().await;
-
-        connection.close_connection().await.unwrap();
-        drop(connection);
-
-        let stopped = tokio::time::timeout(std::time::Duration::from_secs(1), async {
-            loop {
-                if Arc::strong_count(&authorizer) == 1 {
-                    return;
-                }
-                tokio::task::yield_now().await;
-            }
-        })
-        .await;
-        assert!(
-            stopped.is_ok(),
-            "authorization refresh task remained alive after close; strong_count={}",
-            Arc::strong_count(&authorizer)
         );
     }
 }
