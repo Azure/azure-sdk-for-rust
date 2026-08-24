@@ -26,6 +26,7 @@
     "aarch",
     "accountendpoint",
     "accountkey",
+    "addrs",
     "agentic",
     "amqp",
     "asyncoperation",
