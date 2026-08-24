@@ -14,31 +14,36 @@ use crate::{
 #[derive(Debug, Clone, Parser)]
 pub struct StressRunnerOptions<T: StressTestFactory> {
     /// Parallel operations to run.
-    #[arg(long, default_value_t = 1)]
+    #[arg(long, default_value_t = 1, global = true)]
     pub parallel: usize,
 
     /// Duration of the stress test, excluding setup and cleanup.
-    #[arg(long, default_value = "10", value_parser = duration_from_seconds, value_name = "SECONDS")]
+    #[arg(long, default_value = "10", global = true, value_parser = duration_from_seconds, value_name = "SECONDS")]
     pub duration: Duration,
 
     /// Optional timeout for one-time test setup.
-    #[arg(long, value_parser = duration_from_seconds, value_name = "SECONDS")]
+    #[arg(long, global = true, value_parser = duration_from_seconds, value_name = "SECONDS")]
     pub setup_timeout: Option<Duration>,
 
     /// Optional timeout for individual operations during the test.
-    #[arg(long, value_parser = duration_from_seconds, value_name = "SECONDS")]
+    #[arg(long, global = true, value_parser = duration_from_seconds, value_name = "SECONDS")]
     pub operation_timeout: Option<Duration>,
 
     /// Optional timeout for one-time test cleanup.
-    #[arg(long, value_parser = duration_from_seconds, value_name = "SECONDS")]
+    #[arg(long, global = true, value_parser = duration_from_seconds, value_name = "SECONDS")]
     pub cleanup_timeout: Option<Duration>,
 
     /// Path to a json config file for fault injection.
-    #[arg(long = "fault-config", value_name = "FILE", group = "fault injection")]
+    #[arg(
+        long = "fault-config",
+        global = true,
+        value_name = "FILE",
+        group = "fault injection"
+    )]
     pub fault_injection_file: Option<String>,
 
     /// Use a default configuration for fault injection.
-    #[arg(long = "fault-standard", group = "fault injection")]
+    #[arg(long = "fault-standard", global = true, group = "fault injection")]
     pub use_default_fault_injection: bool,
 
     #[command(flatten)]
@@ -129,31 +134,31 @@ impl<T: StressTestFactory> std::fmt::Display for StressRunnerOptions<T> {
 #[group(required = false, multiple = true)]
 pub struct FaultInjectionOverrideOptions {
     /// Override probability for a partial response then hang.
-    #[arg(long = "fault-p", value_name = "PROBABILITY")]
+    #[arg(long = "fault-p", global = true, value_name = "PROBABILITY")]
     pub partial_response_hang: Option<f32>,
 
     /// Override probability for a partial response then close (TCP FIN).
-    #[arg(long = "fault-pc", value_name = "PROBABILITY")]
+    #[arg(long = "fault-pc", global = true, value_name = "PROBABILITY")]
     pub partial_response_close: Option<f32>,
 
     /// Override probability for a partial response then abort (TCP RST).
-    #[arg(long = "fault-pa", value_name = "PROBABILITY")]
+    #[arg(long = "fault-pa", global = true, value_name = "PROBABILITY")]
     pub partial_response_abort: Option<f32>,
 
     /// Override probability for a partial response then graceful finish.
-    #[arg(long = "fault-pn", value_name = "PROBABILITY")]
+    #[arg(long = "fault-pn", global = true, value_name = "PROBABILITY")]
     pub partial_response_normal: Option<f32>,
 
     /// Override probability for no response then hang.
-    #[arg(long = "fault-n", value_name = "PROBABILITY")]
+    #[arg(long = "fault-n", global = true, value_name = "PROBABILITY")]
     pub no_response_hang: Option<f32>,
 
     /// Override probability for no response close (TCP FIN)
-    #[arg(long = "fault-nc", value_name = "PROBABILITY")]
+    #[arg(long = "fault-nc", global = true, value_name = "PROBABILITY")]
     pub no_response_close: Option<f32>,
 
     /// Override probability for no response then abort (TCP RST).
-    #[arg(long = "fault-na", value_name = "PROBABILITY")]
+    #[arg(long = "fault-na", global = true, value_name = "PROBABILITY")]
     pub no_response_abort: Option<f32>,
 }
 
