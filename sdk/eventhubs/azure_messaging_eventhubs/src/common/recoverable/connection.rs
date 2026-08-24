@@ -1500,9 +1500,17 @@ impl Drop for RecoverableConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::http::Url;
+    use azure_core::{
+        credentials::{AccessToken, TokenCredential, TokenRequestOptions},
+        http::Url,
+        time::{Duration, OffsetDateTime},
+    };
     use azure_core_test::credentials::MockCredential;
-    use std::sync::Arc;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+    use tokio::sync::Notify;
 
     // A close does not need exclusive ownership of the connection.
     //
@@ -1544,13 +1552,6 @@ mod tests {
 
     #[tokio::test]
     async fn close_stops_owned_authorization_refresh_task() {
-        use azure_core::{
-            credentials::{AccessToken, TokenCredential, TokenRequestOptions},
-            time::OffsetDateTime,
-        };
-        use std::sync::atomic::{AtomicUsize, Ordering};
-        use tokio::sync::Notify;
-
         #[derive(Debug)]
         struct GatedCredential {
             requests: AtomicUsize,
