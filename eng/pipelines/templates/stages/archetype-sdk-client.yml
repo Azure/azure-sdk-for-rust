@@ -124,6 +124,22 @@ extends:
           - ${{ parameters.AdditionalMatrixConfigs }}
           MatrixFilters: ${{ parameters.MatrixFilters }}
           MatrixReplace: ${{ parameters.MatrixReplace }}
+      - ${{ if eq(variables['System.TeamProject'], 'internal') }}:
+        - template: /eng/pipelines/templates/jobs/ci.tests.yml
+          parameters:
+            UsePlatformContainer: false
+            OSName: linux
+            # ci.tests.yml splices this into `$[ ... ]`, so it must be an expression
+            # fragment (not a JSON literal). `format` builds the single-leg matrix JSON
+            # at runtime with the pool/image variables already resolved. Matrix keys
+            # become job variables, so RUSTUP_EXE points the eng scripts at msrustup.
+            Matrix: format('{{"Linux-MSRust":{{"OSVmImage":"{0}","Pool":"{1}","RustToolchainName":"stable","RUSTUP_EXE":"msrustup"}}}}', variables['LINUXVMIMAGE'], variables['LINUXPOOL'])
+            DependsOn: ''
+            CloudConfig: Public
+            ServiceDirectory: ${{ parameters.ServiceDirectory }}
+            TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+            TestProxy: ${{ parameters.TestProxy }}
+            InstallMsRust: true
 
     # Run live tests for internal only, not public CI builds. This can be triggered manually via an `/azp run` comment.
     - ${{ if and(not(and(eq(parameters.SkipPrValidation, true), eq(variables['Build.Reason'], 'Manual'))), eq(variables['System.TeamProject'], 'internal'), eq(parameters.RunLiveTests, 'true')) }}:
