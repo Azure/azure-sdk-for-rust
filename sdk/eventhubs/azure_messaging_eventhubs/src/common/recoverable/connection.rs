@@ -417,6 +417,8 @@ impl RecoverableConnection {
             "Closing recoverable connection."
         );
 
+        self.authorizer.stop_refresh_task().await;
+
         // Record the close before the teardown starts. A handle that outlives
         // the client, for example an `EventReceiver` that the caller still
         // holds, shares this object, and `ensure_connection` would otherwise

@@ -116,6 +116,13 @@ impl Authorizer {
         scopes.clear();
     }
 
+    pub(crate) async fn stop_refresh_task(&self) {
+        if let Some(task) = self.authorization_refresher.get() {
+            task.abort();
+        }
+        get_async_runtime().yield_now().await;
+    }
+
     #[cfg(test)]
     pub(crate) fn disable_authorization(&self) -> Result<()> {
         use crate::EventHubsError;
