@@ -1,6 +1,6 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.1 (2026-08-25)
 
 ### Features Added
 
@@ -9,6 +9,9 @@
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- Fixed challenge authentication to cache challenge scopes only after challenge resource verification succeeds, preventing
+  rejected challenges from being reused by later requests.
 
 ### Other Changes
 
