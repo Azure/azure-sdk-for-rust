@@ -159,6 +159,11 @@ pub struct CosmosOperation {
     /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
     /// is dispatched exactly like the standalone Read/Replace it is.
     is_patch_sub_operation: bool,
+    /// `false` only for a server-side patch whose operation list would be
+    /// double-applied if the request were resent after an ambiguous failure.
+    /// Resolved once at dispatch and read by
+    /// [`allows_ambiguous_outcome_retry`](Self::allows_ambiguous_outcome_retry).
+    patch_retry_safe: bool,
 }
 
 impl CosmosOperation {
@@ -502,6 +507,15 @@ impl CosmosOperation {
         self.is_patch_sub_operation
     }
 
+    /// Records whether a server-side patch may be resent after an ambiguous
+    /// failure, per [`PatchInstructions::is_retry_safe`].
+    ///
+    /// [`PatchInstructions::is_retry_safe`]: crate::models::PatchInstructions::is_retry_safe
+    pub(crate) fn with_patch_retry_safe(mut self, retry_safe: bool) -> Self {
+        self.patch_retry_safe = retry_safe;
+        self
+    }
+
     // ===== Factory Methods =====
 
     /// Creates a new operation with the specified type, resource reference, and target.
@@ -529,6 +543,7 @@ impl CosmosOperation {
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,
+            patch_retry_safe: true,
         }
     }
 
@@ -1084,11 +1099,16 @@ impl CosmosOperation {
     /// is ambiguous — that is, when the request may already have been received
     /// and processed.
     ///
-    /// Only stored procedure execution returns `false`. Its body is opaque to
-    /// the driver, so re-running it can repeat arbitrary mutations with no way
-    /// to detect the duplicate. Every other data-plane operation is retried,
-    /// because Cosmos DB's conflict detection (409/412) makes the final
-    /// resource state deterministic — see `docs/ErrorCodesAndRetries.md`.
+    /// Two cases return `false`. Stored procedure execution, whose body is
+    /// opaque to the driver, so re-running it can repeat arbitrary mutations
+    /// with no way to detect the duplicate. And a server-side patch whose
+    /// operation list is not retry-safe (see
+    /// [`PatchInstructions::is_retry_safe`]) and which carries no ETag
+    /// precondition to turn the resend into a `412`.
+    ///
+    /// Every other data-plane operation is retried, because Cosmos DB's
+    /// conflict detection (409/412) makes the final resource state
+    /// deterministic — see `docs/ErrorCodesAndRetries.md`.
     ///
     /// This is deliberately *not* `is_idempotent`: the driver retries
     /// non-idempotent writes such as `Create` and `Upsert` on purpose.
@@ -1096,8 +1116,10 @@ impl CosmosOperation {
     /// Gates both retry layers so they cannot disagree about the same failure:
     /// cross-region failover in the operation pipeline, and the same-endpoint
     /// shard retry in the transport pipeline.
+    ///
+    /// [`PatchInstructions::is_retry_safe`]: crate::models::PatchInstructions::is_retry_safe
     pub fn allows_ambiguous_outcome_retry(&self) -> bool {
-        self.operation_type != OperationType::Execute
+        self.operation_type != OperationType::Execute && self.patch_retry_safe
     }
 
     /// Returns true if this operation can be planned with a single-node pipeline.
@@ -1382,6 +1404,32 @@ mod tests {
                 op.operation_type()
             );
         }
+    }
+
+    /// A server-side patch carrying operations that would be double-applied on
+    /// resend opts out of ambiguous-outcome retry. This is the one case besides
+    /// stored procedures where the driver would rather surface the error than
+    /// risk repeating a mutation.
+    #[test]
+    fn unsafe_server_side_patch_opts_out_of_ambiguous_retry() {
+        let patch = || {
+            CosmosOperation::patch_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "doc1",
+            ))
+        };
+
+        assert!(
+            patch().allows_ambiguous_outcome_retry(),
+            "a patch is retry-eligible until dispatch says otherwise"
+        );
+        assert!(patch()
+            .with_patch_retry_safe(true)
+            .allows_ambiguous_outcome_retry());
+        assert!(!patch()
+            .with_patch_retry_safe(false)
+            .allows_ambiguous_outcome_retry());
     }
 
     #[cfg(feature = "preview_dtx")]

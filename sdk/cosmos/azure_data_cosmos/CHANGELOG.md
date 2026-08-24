@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- `ContainerClient::patch_item` can now execute a patch server-side in a single request instead of always running the driver's read-modify-write loop. This halves the round trips and, on a multi-write-region account, lets the service resolve concurrent patches at the path level so two writers touching different properties of the same item both survive. `PatchItemOptions::strategy` selects the path; the default `PatchStrategy::Auto` runs server-side when the operation list is safe to resend and within the service's 10-operation limit, and falls back to the loop otherwise. `PatchItemOptions::max_attempts` continues to apply to the loop only. ([#5111](https://github.com/Azure/azure-sdk-for-rust/pull/5111))
 - Added `ResourceId` and `ResourceIdentity` for addressing Cosmos databases and containers by user-provided name or by RID. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - `CosmosClient::database_client` and `DatabaseClient::container_client` now accept `impl Into<ResourceIdentity>`, so a `&str`/`String` selects name addressing and a `ResourceId` selects RID addressing. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - Added `DatabaseClient::name()` and `DatabaseClient::rid()` to inspect how a database client was addressed. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))

@@ -9,16 +9,24 @@
 //!
 //! ## How PATCH actually works
 //!
-//! Cosmos SQL "patch" is currently implemented by the SDK as a *client-side*
-//! read-modify-write loop:
+//! A patch runs one of two ways, chosen by `PatchItemOptions::with_strategy`:
 //!
-//! 1. The SDK reads the current item (capturing its ETag).
-//! 2. The SDK applies the patch operations locally.
-//! 3. The SDK issues a conditional Replace gated on the ETag from step 1.
-//! 4. On a 412 Precondition Failed (mid-air collision), the SDK retries
-//!    from step 1 up to `PatchItemOptions::with_max_attempts` times.
+//! * **Server-side** — the operation list is sent to the service in a single
+//!   request. One round trip, and on a multi-write-region account the service
+//!   resolves concurrent patches at the *path* level, so two writers touching
+//!   different properties of the same item both survive.
+//! * **Client-side** — the SDK reads the item (capturing its ETag), applies
+//!   the operations locally, and issues a conditional Replace gated on that
+//!   ETag, retrying on 412 up to `with_max_attempts` times.
 //!
-//! See `ContainerClient::patch_item` rustdoc for the idempotency caveats.
+//! The default, `PatchStrategy::Auto`, runs server-side whenever that is safe:
+//! the operation list must survive being resent unchanged (so no `increment`,
+//! `remove`, `move_value`, or array append) and must fit the service's
+//! 10-operation limit. Otherwise it falls back to the client-side loop.
+//!
+//! The patch below deliberately includes `increment` and `move_value`, so
+//! `Auto` resolves it to the client-side loop. See `ContainerClient::patch_item`
+//! rustdoc for the idempotency caveats of each path.
 //!
 //! ## Required setup
 //!
@@ -32,7 +40,7 @@
 //! ```
 
 use azure_data_cosmos::models::{CosmosNumber, PatchInstructions, PatchOperation};
-use azure_data_cosmos::options::PatchItemOptions;
+use azure_data_cosmos::options::{PatchItemOptions, PatchStrategy};
 use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosClient, RoutingStrategy};
 use azure_identity::DeveloperToolsCredential;
 use clap::Parser;
@@ -110,9 +118,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_operation(PatchOperation::move_value("/tags/0", "/headline_tag"));
 
     // ----- Issue the patch. -------------------------------------------------
-    // `with_max_attempts` bounds the SDK's internal RMW retry loop. The
-    // default (3) is fine for most workloads; very contended items may
-    // benefit from a higher cap, but consider re-shaping the workload first.
+    // This list contains `increment` and `move_value`, so `Auto` runs it
+    // client-side; `with_max_attempts` bounds that loop. A list of only
+    // `set`/`replace` ops would instead go to the service in one round trip,
+    // where `max_attempts` has no effect.
     let response = items
         .patch_item(
             "contoso",
@@ -134,6 +143,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // patched item back via `into_model::<T>()` when content-on-write is on.
     let patched: serde_json::Value = response.into_model()?;
     println!("after    {patched:#}");
+
+    // ----- A patch that runs server-side. -----------------------------------
+    // Only `set` and `replace`, so the list survives being resent unchanged and
+    // `Auto` sends it to the service in a single round trip. Pinning
+    // `ServerSide` here makes that explicit and fails loudly if the list ever
+    // grows past the service's 10-operation limit, instead of silently
+    // reverting to two round trips.
+    let server_side = PatchInstructions::new()
+        .with_operation(PatchOperation::set("/status", json!("shipped")))
+        .with_operation(PatchOperation::replace("/priority", json!("high")));
+
+    let response = items
+        .patch_item(
+            "contoso",
+            "o-200",
+            server_side,
+            Some(PatchItemOptions::default().with_strategy(PatchStrategy::ServerSide)),
+        )
+        .await?;
+    println!(
+        "server   status={:?} RU={:?}",
+        response.status(),
+        response.headers().request_charge(),
+    );
 
     Ok(())
 }

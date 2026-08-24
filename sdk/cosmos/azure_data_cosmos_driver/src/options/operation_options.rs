@@ -13,7 +13,8 @@ use crate::{
     models::ThroughputControlGroupName,
     options::{
         AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
-        EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
+        EndToEndOperationLatencyPolicy, ExcludedRegions, PatchStrategy, PriorityLevel,
+        ReadConsistencyStrategy,
     },
 };
 
@@ -45,6 +46,12 @@ pub struct OperationOptions {
     /// inherit the account or runtime default.
     #[option(env = "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY")]
     pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
+
+    /// How patch operations are executed.
+    ///
+    /// `None` inherits from a lower level (default: [`PatchStrategy::Auto`]).
+    #[option(env = "AZURE_COSMOS_PATCH_STRATEGY")]
+    pub patch_strategy: Option<PatchStrategy>,
 
     /// Regions to exclude from request routing.
     ///

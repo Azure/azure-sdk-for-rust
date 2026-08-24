@@ -37,12 +37,11 @@ use super::system_properties::{
     account_properties_to_json, container_to_json, database_to_json, feed_to_json,
     inject_system_properties, offer_to_json, pkranges_to_json,
 };
-#[cfg(feature = "preview_dtx")]
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
-#[cfg(feature = "preview_dtx")]
 use crate::models::PatchInstructions;
 use crate::models::{
     EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue as ModelPartitionKeyValue,
+    MAX_SERVER_SIDE_PATCH_OPERATIONS,
 };
 use crate::query::ast::{
     SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
@@ -231,6 +230,12 @@ pub(crate) async fn handle_operation(
                 return write_forbidden_response(start);
             }
             handle_replace(store, region_name, parsed, request_body, start).await
+        }
+        OperationType::Patch => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_patch(store, region_name, parsed, request_body, start).await
         }
         OperationType::Upsert => {
             if !store.config().is_write_region(region_name) {
@@ -5016,6 +5021,297 @@ async fn handle_replace(
     let _write_guard = write_lock.lock().await;
 
     handle_replace_locked(store, region_name, parsed, request_body, start).await
+}
+
+async fn handle_patch(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
+    handle_patch_locked(store, region_name, parsed, request_body, start).await
+}
+
+/// Server-side single-document PATCH.
+///
+/// Mirrors [`handle_replace_locked`] for lookup, preconditions, throttling and
+/// commit; the difference is that the request body is a list of operations
+/// applied to the stored document rather than a replacement document. The
+/// partition-key guard is applied to the *result* of the patch, since the
+/// operations — not the caller — are what could move the item to another
+/// partition.
+async fn handle_patch_locked(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let coll_id = parsed.coll_id.as_deref().unwrap_or("");
+    let doc_id = parsed.doc_id.as_deref().unwrap_or("");
+
+    if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
+        return resp;
+    }
+
+    let instructions: PatchInstructions = match serde_json::from_slice(request_body) {
+        Ok(value) => value,
+        Err(_) => {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "Invalid JSON patch body",
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+
+    if instructions.operations.is_empty() {
+        return error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            "The patch operation list cannot be empty.",
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    }
+
+    if instructions.operations.len() > MAX_SERVER_SIDE_PATCH_OPERATIONS {
+        return error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            &format!(
+                "The number of patch operations cannot exceed {MAX_SERVER_SIDE_PATCH_OPERATIONS}."
+            ),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    }
+
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+
+    let result = region_ref.with_container(db_id, coll_id, |state| {
+        // The request carries the partition key explicitly; the patch body is
+        // a list of operations, so there is no document to extract it from.
+        let empty_body = serde_json::Value::Null;
+        let (_, epk) = match resolve_partition_key(parsed, &empty_body, &state.metadata) {
+            Ok(v) => v,
+            Err(e) => return Err(bad_partition_key_response(e, start)),
+        };
+
+        let partition = match state.find_partition(&epk) {
+            Some(p) => p,
+            None => {
+                return Err(error_response(
+                    StatusCode::InternalServerError,
+                    None,
+                    "InternalError",
+                    "No partition found for EPK",
+                    1.0,
+                    "",
+                    start,
+                )
+                .build());
+            }
+        };
+
+        if let Some(response) = check_partition_lock(partition, start) {
+            return Err(response);
+        }
+
+        let region_id = store.config().region_id_for(region_name);
+        let token = session_token_for(
+            partition,
+            region_id,
+            incoming_session_for(parsed, partition.id).as_ref(),
+        );
+
+        let charge = store
+            .config()
+            .ru_model()
+            .compute_replace_or_delete_ru(request_body.len(), instructions.operations.len());
+
+        let new_doc = {
+            let mut docs = partition.documents.write().unwrap();
+            let logical = match docs.get_mut(&epk) {
+                Some(logical) => logical,
+                None => return Err(patch_not_found(doc_id, &token, start)),
+            };
+            let current = match logical.get(doc_id).cloned() {
+                Some(current) => current,
+                None => return Err(patch_not_found(doc_id, &token, start)),
+            };
+
+            if let Some(if_match) = &parsed.if_match {
+                if *if_match != current.etag {
+                    return Err(error_response(
+                        StatusCode::PreconditionFailed,
+                        None,
+                        "PreconditionFailed",
+                        "One of the specified pre-condition is not met.",
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+            }
+
+            let mut patched_body = current.body.clone();
+            if let Err(error) = apply_patch_ops(&mut patched_body, &instructions.operations) {
+                return Err(error_response(
+                    StatusCode::BadRequest,
+                    None,
+                    "BadRequest",
+                    &error.to_string(),
+                    1.0,
+                    &token,
+                    start,
+                )
+                .build());
+            }
+
+            // A patch that rewrites a partition-key path would relocate the
+            // item; the service rejects it rather than moving the document.
+            let patched_components = match super::epk::extract_pk_from_body(
+                &patched_body,
+                state.metadata.partition_key.paths(),
+            ) {
+                Ok(v) => v,
+                Err(e) => return Err(bad_partition_key_response(e, start)),
+            };
+            let patched_epk = super::epk::compute_epk(
+                &patched_components,
+                state.metadata.partition_key.kind(),
+                state.metadata.partition_key.version(),
+            );
+            if patched_epk != epk {
+                return Err(error_response(
+                    StatusCode::BadRequest,
+                    None,
+                    "BadRequest",
+                    "The partition key value cannot be changed by a patch operation.",
+                    1.0,
+                    &token,
+                    start,
+                )
+                .build());
+            }
+
+            // Debit only once the patch is known to be applicable.
+            if let Some(response) = check_throttle(
+                partition,
+                charge,
+                store.config().throttling_enabled(),
+                start,
+            ) {
+                return Err(response);
+            }
+
+            let lsn = partition.advance_lsn();
+            partition.advance_local_lsn();
+            let ts = current_timestamp();
+            let etag = new_etag();
+            inject_system_properties(
+                &current.rid,
+                &current.self_link,
+                &etag,
+                ts,
+                &mut patched_body,
+            );
+            let body_size_bytes = serde_json::to_vec(&patched_body).map_or(0, |bytes| bytes.len());
+            let new_doc = StoredDocument {
+                body: patched_body,
+                id: doc_id.to_string(),
+                rid: current.rid,
+                etag: etag.clone(),
+                ts,
+                self_link: current.self_link,
+                lsn,
+                epk: epk.clone(),
+                body_size_bytes,
+                source_region: region_name.to_string(),
+            };
+            logical.insert(doc_id.to_string(), new_doc.clone());
+            new_doc
+        };
+
+        // Recomputed post-commit so the success response reflects the advanced
+        // LSN — see `handle_replace_locked` for the same ordering.
+        let token = session_token_for(
+            partition,
+            region_id,
+            incoming_session_for(parsed, partition.id).as_ref(),
+        );
+        let headers = Some(PointResponseHeaders::from_partition(
+            partition,
+            store.next_transport_request_id(),
+        ));
+
+        Ok((new_doc, token, charge, headers))
+    });
+
+    match result {
+        Some(Ok((doc, token, charge, headers))) => {
+            store.replicate(region_name, db_id, coll_id, &doc, false);
+
+            let builder = if parsed.content_response_on_write {
+                success_response_with_format(
+                    StatusCode::Ok,
+                    &doc.body,
+                    parsed.binary_response,
+                    charge,
+                    &token,
+                    start,
+                )
+                .with_etag(&doc.etag)
+                .with_lsn(doc.lsn)
+            } else {
+                ResponseBuilder::new(StatusCode::Ok, start)
+                    .with_request_charge(charge)
+                    .with_session_token(&token)
+                    .with_etag(&doc.etag)
+                    .with_lsn(doc.lsn)
+            };
+
+            decorate_point_response(builder, headers, Some(doc.lsn)).build()
+        }
+        Some(Err(response)) => response,
+        None => container_not_found(db_id, coll_id, start),
+    }
+}
+
+fn patch_not_found(doc_id: &str, token: &str, start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::NotFound,
+        None,
+        "NotFound",
+        &format!("Entity with the specified id does not exist in the system. ResourceId: {doc_id}"),
+        1.0,
+        token,
+        start,
+    )
+    .build()
 }
 
 async fn handle_replace_locked(

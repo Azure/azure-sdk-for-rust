@@ -364,6 +364,7 @@ pub(crate) mod test_env {
     /// assertion about a single field.
     pub(crate) const OPERATION_ENV_VARS: &[&str] = &[
         "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY",
+        "AZURE_COSMOS_PATCH_STRATEGY",
         "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE",
         "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT",
         "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT",

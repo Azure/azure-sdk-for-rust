@@ -2582,24 +2582,34 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
-        // PATCH is a virtual operation type: dispatch it to the dedicated
-        // Read-Modify-Write handler, which issues its own Read/Replace
-        // operations through this same entry point. `Box::pin` gives the
-        // recursive future a fixed size.
-        if operation.operation_type() == crate::models::OperationType::Patch {
-            let max_attempts = operation.patch_max_attempts();
-            return Box::pin(async {
-                let result = crate::driver::pipeline::patch_handler::execute(
-                    self,
-                    operation,
-                    options,
-                    max_attempts,
-                )
-                .await?;
-                Ok(Some(result))
-            })
-            .await;
-        }
+        // A patch runs either as a single server-side request or as the
+        // driver-side Read-Modify-Write loop. `resolve_patch_strategy` picks;
+        // the client-side arm re-enters this same entry point for its Read and
+        // Replace sub-operations, so `Box::pin` gives that recursive future a
+        // fixed size.
+        let operation = if operation.operation_type() == crate::models::OperationType::Patch {
+            match self.resolve_patch_execution(&operation, &options) {
+                crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide => {
+                    let max_attempts = operation.patch_max_attempts();
+                    return Box::pin(async {
+                        let result = crate::driver::pipeline::patch_handler::execute(
+                            self,
+                            operation,
+                            options,
+                            max_attempts,
+                        )
+                        .await?;
+                        Ok(Some(result))
+                    })
+                    .await;
+                }
+                crate::driver::pipeline::patch_strategy::PatchExecution::ServerSide {
+                    retry_safe,
+                } => operation.with_patch_retry_safe(retry_safe),
+            }
+        } else {
+            operation
+        };
 
         // Resolve binary encoding through the same layered view as every other
         // option, and only honor it for point **item** operations (the resource
@@ -2643,6 +2653,48 @@ impl CosmosDriver {
             }
         }
         Ok(response)
+    }
+
+    /// Decides how a patch operation will execute.
+    ///
+    /// Any body the driver cannot read as a non-empty [`PatchInstructions`] is
+    /// routed to the client-side handler, which owns the canonical validation
+    /// errors for a malformed or empty patch. That keeps a single source of
+    /// those messages and stops a nonsense body from reaching the service.
+    ///
+    /// [`PatchInstructions`]: crate::models::PatchInstructions
+    fn resolve_patch_execution(
+        &self,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::driver::pipeline::patch_strategy::PatchExecution {
+        use crate::driver::pipeline::patch_strategy::{resolve_patch_strategy, PatchExecution};
+
+        let instructions = operation
+            .body()
+            .and_then(|body| serde_json::from_slice::<crate::models::PatchInstructions>(body).ok())
+            .filter(|instructions| !instructions.operations.is_empty());
+        let Some(instructions) = instructions else {
+            return PatchExecution::ClientSide;
+        };
+
+        let requested = self
+            .operation_options_view(options)
+            .patch_strategy()
+            .copied()
+            .unwrap_or_default();
+        let execution = resolve_patch_strategy(requested, &instructions);
+
+        // Tests and operators filter on this to confirm which path a patch
+        // took; keep the fields and message stable.
+        tracing::debug!(
+            requested_patch_strategy = requested.as_str(),
+            patch_execution = execution.as_str(),
+            operation_count = instructions.operations.len(),
+            "patch strategy resolved"
+        );
+
+        execution
     }
 
     /// Whether binary encoding applies to an operation.

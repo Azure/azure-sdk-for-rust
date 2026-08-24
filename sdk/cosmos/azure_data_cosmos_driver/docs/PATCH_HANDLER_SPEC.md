@@ -5,26 +5,114 @@ This document describes the contract for `OperationType::Patch` in
 
 ## Overview
 
-`Patch` is a *virtual* operation type: the Cosmos DB REST endpoint does not
-accept arbitrary JSON-Patch payloads, so the driver synthesizes the result
-of a PATCH by running a **Read-Modify-Write (RMW) loop** entirely
-client-side.
+A patch executes one of two ways:
 
-The handler lives in
-`driver::pipeline::patch_handler` (`src/driver/pipeline/patch_handler.rs`)
-and is dispatched from `CosmosDriver::execute_operation` before any of the
-normal pipeline stages run.
+- **Server-side** — the operation list is sent to the service as a single
+  `PATCH` request (`Content-Type: application/json_patch+json`, RNTBD opcode
+  `0x0002`). One round trip, and on a multi-write-region account the service
+  resolves concurrent patches at the **path** level, so two writers touching
+  different properties of the same item both survive.
+- **Client-side** — a **Read-Modify-Write (RMW) loop** run entirely by the
+  driver: read the item, apply the operations locally, issue an ETag-guarded
+  Replace, restart on `412`. Two round trips minimum, and conflict resolution
+  is document-level last-writer-wins, so a concurrent write to an unrelated
+  property is lost.
+
+`CosmosDriver::execute_operation` picks between them via
+`resolve_patch_strategy` (`src/driver/pipeline/patch_strategy.rs`) before any
+of the normal pipeline stages run. The client-side handler lives in
+`driver::pipeline::patch_handler` (`src/driver/pipeline/patch_handler.rs`).
+
+## Strategy selection
+
+`PatchStrategy` (`src/options/patch_strategy.rs`) is resolved through the same
+layered runtime → account → operation path as `ReadConsistencyStrategy`, and
+can also be set per request via `PatchItemOptions::strategy`.
+
+| Requested | Retry-safe ops, ≤ 10 | Unsafe ops | More than 10 ops |
+| --- | --- | --- | --- |
+| `Auto` (default) | server-side | client-side | client-side |
+| `ClientSide` | client-side | client-side | client-side |
+| `ServerSide` | server-side | server-side, retries disabled | server-side (service returns `400`) |
+
+`Auto` prefers the service because one round trip beats two and path-level
+conflict resolution beats losing a concurrent write. It steps back only where
+the server-side path cannot deliver the same result: an operation list that
+could be double-applied on resend, or one the service would reject outright.
+
+`ServerSide` is never rewritten. An over-long list surfaces the service's own
+`400` rather than silently changing execution mode, and an unsafe list is sent
+with ambiguous-outcome retries disabled (see below) rather than quietly
+switching to the loop.
+
+A body that cannot be parsed as a non-empty `PatchInstructions` always routes
+to the client-side handler, which owns the canonical validation errors.
+
+## Retry safety of an operation list
+
+`PatchInstructions::is_retry_safe` asks whether re-applying the whole list to
+an item it has already been applied to leaves both the item and the response
+status unchanged. It decides whether a server-side patch may be resent after a
+failure that left the outcome unknown.
+
+| Operation | Retry-safe | Why |
+| --- | --- | --- |
+| `Set` | yes | Create-or-replace at an exact path; the second application is a no-op. |
+| `Replace` | yes | Strict replace, deterministic. |
+| `Add` on an object member | yes | Add-or-replace on a key. |
+| `Add` on an array position (`-` or a numeric last token) | no | Append/insert shifts the remaining elements, so a resend inserts a second element. |
+| `Remove` | no | The path is gone on the second pass, so the resend errors; on an array index it deletes a different element. |
+| `Increment` | no | Double-applies the delta. |
+| `Move` | no | `from` no longer exists on the second pass. |
+
+When a server-side patch is dispatched with an unsafe list,
+`CosmosOperation::allows_ambiguous_outcome_retry` returns `false`, which stops
+both retry layers — cross-region failover and the transport pipeline's
+same-endpoint shard retry — from resending it. The operation surfaces the
+underlying error instead. This is the same mechanism stored procedure
+execution uses; see `ErrorCodesAndRetries.md`.
+
+An ETag precondition would make even an unsafe list safe to send, because the
+resend fails with `412` instead of applying twice. Preconditions are not yet
+plumbed through patch, so that relaxation does not apply.
+
+## Equivalence contract
+
+The two paths are an execution-cost trade-off, not a semantic one. For the same
+input they must produce:
+
+- the same resulting document,
+- the same status and Cosmos sub-status, on success **and** on failure,
+- an `etag` on success, and an advanced session token.
+
+`tests/in_memory_emulator_tests/patch_equivalence.rs` asserts this per operation
+type and per error shape, and separately asserts which path actually ran (one
+data-plane request for server-side, two for client-side) so the comparison
+cannot pass vacuously.
+
+Divergences that are inherent to the two designs, and are asserted rather than
+hidden:
+
+- **Request charge** — the client-side loop pays for a read plus a replace.
+- **Conflict resolution** — path-level server-side, document-level client-side.
+- **Response body** — the client-side path always has the post-image to hand;
+  the server-side path honors `content_response_on_write`.
+- **Operation limit** — server-side patch is capped at
+  `MAX_SERVER_SIDE_PATCH_OPERATIONS` (10) per document.
 
 ## Inputs
 
 | Field                                         | Source                                              | Notes                                                             |
 | --------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- |
 | `CosmosOperation` with `OperationType::Patch` | `CosmosOperation::patch_item(ItemReference)`        | Required.                                                         |
-| Body                                          | `with_body(serde_json::to_vec(&PatchInstructions))` | Required. The handler re-parses it as `PatchInstructions`.        |
-| Partition key                                 | `with_partition_key(...)`                           | Required. Used to issue the internal Read.                        |
+| Body                                          | `with_body(serde_json::to_vec(&PatchInstructions))` | Required. Re-parsed as `PatchInstructions`.                       |
+| Partition key                                 | `with_partition_key(...)`                           | Required. Used to route the request.                              |
 | `patch_max_attempts`                          | `with_patch_max_attempts(NonZeroU8)`                | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
 
-## Algorithm
+`patch_max_attempts` bounds the client-side loop only; a server-side patch is a
+single request and ignores it.
+
+## Client-side algorithm
 
 ```text
 1. Pre-flight validation:

@@ -27,7 +27,8 @@ use crate::{
         transport::CosmosTransport,
     },
     models::{
-        cosmos_headers::QUERY_CONTENT_TYPE, effective_partition_key::EffectivePartitionKey,
+        cosmos_headers::{PATCH_CONTENT_TYPE, QUERY_CONTENT_TYPE},
+        effective_partition_key::EffectivePartitionKey,
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
@@ -1799,6 +1800,12 @@ fn build_transport_request(
             headers.insert(
                 HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
                 HeaderValue::from_static("False"),
+            );
+        }
+        OperationType::Patch => {
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(PATCH_CONTENT_TYPE),
             );
         }
         OperationType::Query | OperationType::SqlQuery => {

@@ -216,6 +216,11 @@ pub(crate) mod response_header_names {
 
 pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
 
+/// Content type the service requires on a server-side single-document `PATCH`.
+///
+/// A patch body sent as `application/json` is rejected with `400`.
+pub const PATCH_CONTENT_TYPE: &str = "application/json_patch+json";
+
 /// Header names used by the fault injection framework.
 #[cfg(feature = "fault_injection")]
 pub(crate) mod fault_injection_header_names {

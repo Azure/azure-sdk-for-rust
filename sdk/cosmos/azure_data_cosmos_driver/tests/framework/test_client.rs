@@ -924,18 +924,18 @@ impl DriverTestRunContext {
         Ok(result)
     }
 
-    /// Patches an item using the driver's `OperationType::Patch` RMW loop.
+    /// Patches an item, letting the driver pick the execution path.
     ///
     /// Mirrors [`read_item`](Self::read_item)'s shape but builds the
     /// [`CosmosOperation::patch_item`] body from a
-    /// [`PatchInstructions`](azure_data_cosmos_driver::models::PatchInstructions). The
-    /// returned [`CosmosResponse`] is the synthetic response produced by the
-    /// patch handler — its body is the locally-merged post-image and its
-    /// status/diagnostics are inherited from the underlying conditional
-    /// `Replace`.
+    /// [`PatchInstructions`](azure_data_cosmos_driver::models::PatchInstructions).
+    /// The response comes either from the service (server-side patch) or from
+    /// the read-modify-write handler, in which case its body is the
+    /// locally-merged post-image and its status/diagnostics are inherited from
+    /// the underlying conditional `Replace`.
     ///
     /// If `max_attempts` is `None`, the handler uses
-    /// `DEFAULT_PATCH_MAX_ATTEMPTS` (5).
+    /// `DEFAULT_PATCH_MAX_ATTEMPTS` (5); it only applies to the client-side path.
     pub async fn patch_item(
         &self,
         container: &ContainerReference,
@@ -943,6 +943,25 @@ impl DriverTestRunContext {
         partition_key: impl Into<PartitionKey>,
         patch: &azure_data_cosmos_driver::models::PatchInstructions,
         max_attempts: Option<std::num::NonZeroU8>,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
+        self.patch_item_with_strategy(container, item_id, partition_key, patch, max_attempts, None)
+            .await
+    }
+
+    /// Patches an item, pinning the execution path to `strategy`.
+    ///
+    /// `None` leaves the strategy unset so the layered default
+    /// ([`PatchStrategy::Auto`]) applies — identical to [`patch_item`](Self::patch_item).
+    ///
+    /// [`PatchStrategy::Auto`]: azure_data_cosmos_driver::options::PatchStrategy::Auto
+    pub async fn patch_item_with_strategy(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        patch: &azure_data_cosmos_driver::models::PatchInstructions,
+        max_attempts: Option<std::num::NonZeroU8>,
+        strategy: Option<azure_data_cosmos_driver::options::PatchStrategy>,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
@@ -958,8 +977,11 @@ impl DriverTestRunContext {
             operation = operation.with_patch_max_attempts(n);
         }
 
+        let mut options = OperationOptions::default();
+        options.patch_strategy = strategy;
+
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_operation(operation, options)
             .await?
             .expect("PATCH operation must return a response");
 

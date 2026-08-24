@@ -521,13 +521,17 @@ impl ContainerClient {
         ))
     }
 
-    /// Applies a JSON-PATCH-style update to an item by reading it, applying
-    /// the [`PatchInstructions`] locally, and issuing an ETag-guarded Replace.
+    /// Applies a JSON-PATCH-style update to an item.
     ///
-    /// The handler refuses to PATCH paths that overlap the container's
-    /// partition-key paths: rewriting the partition key would move the
-    /// document to a different physical partition, so such requests are
-    /// rejected by the client.
+    /// The patch either runs server-side as a single request or, when that is
+    /// not safe, as a driver-side read-modify-write loop. Use
+    /// [`PatchItemOptions::strategy`] to pin the choice; the default,
+    /// [`PatchStrategy::Auto`](crate::options::PatchStrategy::Auto), picks the
+    /// server-side path whenever it is safe.
+    ///
+    /// Patching a path that overlaps the container's partition-key paths is
+    /// rejected: rewriting the partition key would move the document to a
+    /// different physical partition.
     ///
     /// # Arguments
     /// * `partition_key` - The partition key of the item to patch.
@@ -554,9 +558,6 @@ impl ContainerClient {
     ///     PatchOperation::set("/displayName", serde_json::json!("New name")),
     ///     PatchOperation::increment("/visits", 1i64),
     /// ]);
-    /// // The post-image of the patched item is always available, regardless of
-    /// // `content_response_on_write`: the driver synthesizes it from the locally
-    /// // merged document.
     /// let updated: Product = container_client
     ///     .patch_item("category1", "product1", patch, None)
     ///     .await?
@@ -567,28 +568,32 @@ impl ContainerClient {
     ///
     /// # Response Body
     ///
-    /// Unlike a wire-level Cosmos PATCH (which honors
-    /// `content_response_on_write`), this method always returns the post-image
-    /// of the patched item. The SDK constructs it locally from the merged
-    /// document it just wrote, so no extra round trip is required to read it
-    /// back. Callers that don't need the body can use
-    /// [`ItemResponse::<serde_json::Value>`] or simply discard the response.
+    /// The client-side path always returns the post-image, because it merged
+    /// the document locally and has it to hand. The server-side path honors
+    /// `content_response_on_write` like any other write, so a caller that
+    /// depends on receiving the body should enable it rather than rely on the
+    /// strategy that happens to run.
     ///
     /// # Failure Semantics
     ///
-    /// PATCH is **not exactly-once** under transport failures. The SDK
-    /// issues the inner Replace as `OperationType::Replace`, which the
-    /// pipeline classifies as idempotent. If a transport-layer error fires
-    /// *after* the inner Replace has been sent but before its response is
-    /// received and the server has already committed the write, the pipeline
-    /// may cross-region retry it. A retry against a replica that has already
-    /// replicated the original commit returns 412, which the RMW loop
-    /// recovers by re-Reading and re-applying. Non-idempotent operations
-    /// (`PatchOperation::increment`, `PatchOperation::add` on an array, `PatchOperation::move`)
-    /// may therefore be applied **more than once** under this scenario.
+    /// PATCH is **not exactly-once** under transport failures.
+    ///
+    /// On the client-side path the inner Replace is classified as idempotent,
+    /// so a transport error after it was sent may be retried across regions. A
+    /// retry against a replica that already replicated the original commit
+    /// returns 412, which the loop recovers by re-Reading and re-applying —
+    /// meaning `increment`, `add` on an array, and `move` may be applied more
+    /// than once.
+    ///
+    /// On the server-side path the driver stops retrying a patch whose
+    /// operations would be double-applied
+    /// ([`PatchInstructions::is_retry_safe`](crate::models::PatchInstructions::is_retry_safe)
+    /// is `false`) and surfaces the error instead. That closes the duplicate
+    /// window but converts it into a visible failure the caller must handle.
+    ///
     /// Callers that require exactly-once semantics for counters or array
     /// appends should either build idempotent ops (`PatchOperation::set` on a
-    /// caller-computed value) or detect duplicate-application via a
+    /// caller-computed value) or detect duplicate application via a
     /// monotonic application-level sequence number.
     pub async fn patch_item(
         &self,
@@ -606,8 +611,8 @@ impl ContainerClient {
             item_id.to_owned(),
         );
 
-        // Build the PATCH operation. The handler reads the PatchInstructions back
-        // out of the body, so we pass it through verbatim.
+        // Build the PATCH operation. Both execution paths read the
+        // PatchInstructions back out of the body, so we pass it through verbatim.
         let mut operation = CosmosOperation::patch_item(item_ref).with_body(body);
         if let Some(max_attempts) = options.max_attempts {
             operation = operation.with_patch_max_attempts(max_attempts);
@@ -616,10 +621,17 @@ impl ContainerClient {
         // session token.
         let operation = apply_item_options(operation, options.session_token, None);
 
+        // A per-request strategy overrides the layered client/account default;
+        // `None` leaves the lower layers to resolve it.
+        let mut operation_options = options.operation;
+        if let Some(strategy) = options.strategy {
+            operation_options.patch_strategy = Some(strategy);
+        }
+
         let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(operation, operation_options)
             .await;
 
         Ok(ItemResponse::new(

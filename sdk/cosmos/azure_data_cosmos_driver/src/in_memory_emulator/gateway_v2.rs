@@ -187,6 +187,7 @@ fn decode_request(
         OperationType::Create | OperationType::Upsert => (Method::Post, false),
         OperationType::Read => (Method::Get, true),
         OperationType::Replace => (Method::Put, true),
+        OperationType::Patch => (Method::Patch, true),
         OperationType::Delete => (Method::Delete, true),
         OperationType::Query
         | OperationType::SqlQuery

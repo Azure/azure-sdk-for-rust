@@ -214,6 +214,49 @@ impl PatchOperation {
             path: path.into(),
         }
     }
+
+    /// Returns `true` when re-applying this operation to an item it has already
+    /// been applied to leaves both the item and the response status unchanged.
+    ///
+    /// This is the safety question for **server-side** patch. If a request fails
+    /// in a way that leaves the outcome unknown, the driver may resend it; an
+    /// operation that is not retry-safe would then be applied twice
+    /// (`Increment`) or fail on the second pass (`Remove`, `Move`).
+    ///
+    /// Array positions are what make `Add` conditional: appending with `-` or
+    /// inserting at an index shifts the remaining elements, so a resend inserts
+    /// a second element. Adding to an object member is add-or-replace and is
+    /// therefore safe.
+    ///
+    /// An ETag precondition makes even an unsafe list safe to send, because the
+    /// resend fails with `412` instead of applying twice — so callers that
+    /// supply one are not subject to this classification.
+    pub fn is_retry_safe(&self) -> bool {
+        match self {
+            // Create-or-replace at an exact path; the second application is a no-op.
+            PatchOperation::Set { .. } | PatchOperation::Replace { .. } => true,
+            PatchOperation::Add { path, .. } => !targets_array_position(path),
+            // Double-applies the delta.
+            PatchOperation::Increment { .. } => false,
+            // The path is gone on the second pass, so the resend errors; on an
+            // array index it would delete a different element.
+            PatchOperation::Remove { .. } => false,
+            // `from` no longer exists on the second pass.
+            PatchOperation::Move { .. } => false,
+        }
+    }
+}
+
+/// Returns `true` when the last JSON Pointer token of `path` addresses an array
+/// position — either the append token `-` or a numeric index.
+///
+/// RFC 6901 escaping never produces a bare `-` or a bare run of digits for an
+/// object key that isn't literally named that, so matching the raw token is
+/// sufficient. A key that genuinely is named `"0"` is treated as an array index
+/// and classified unsafe; that is the conservative direction.
+fn targets_array_position(path: &str) -> bool {
+    let last = path.rsplit('/').next().unwrap_or(path);
+    last == "-" || (!last.is_empty() && last.bytes().all(|b| b.is_ascii_digit()))
 }
 
 /// A set of instructions for a Cosmos DB PATCH operation, consisting of an ordered list of
@@ -240,7 +283,24 @@ impl PatchInstructions {
         self.operations.push(operation);
         self
     }
+
+    /// Returns `true` when every operation is retry-safe, so the whole set can
+    /// be resent after an ambiguous failure without changing the outcome.
+    ///
+    /// An empty set is trivially safe. See [`PatchOperation::is_retry_safe`] for
+    /// the per-operation rules.
+    pub fn is_retry_safe(&self) -> bool {
+        self.operations.iter().all(PatchOperation::is_retry_safe)
+    }
 }
+
+/// Maximum number of operations the service accepts in a single-document patch.
+///
+/// A longer list is rejected with `400`, so [`PatchStrategy::Auto`] falls back
+/// to the client-side loop rather than sending one.
+///
+/// [`PatchStrategy::Auto`]: crate::options::PatchStrategy::Auto
+pub const MAX_SERVER_SIDE_PATCH_OPERATIONS: usize = 10;
 
 impl From<Vec<PatchOperation>> for PatchInstructions {
     /// Builds a [`PatchInstructions`] from an existing list of operations.
@@ -327,6 +387,57 @@ mod tests {
         let parsed: PatchOperation =
             serde_json::from_str(r#"{"op":"increment","path":"/ratio","value":2.5}"#).unwrap();
         assert_eq!(parsed, PatchOperation::increment("/ratio", 2.5f64));
+    }
+
+    /// Pins the retry-safety classification that decides whether `Auto` may run
+    /// a patch server-side. Getting a `false` wrong only costs a round trip;
+    /// getting a `true` wrong double-applies a customer's mutation.
+    #[test]
+    fn retry_safety_matches_the_classification_table() {
+        let cases = [
+            (PatchOperation::set("/a", json!(1)), true),
+            (PatchOperation::replace("/a", json!(1)), true),
+            (PatchOperation::add("/obj/member", json!(1)), true),
+            (PatchOperation::add("/tags/-", json!(1)), false),
+            (PatchOperation::add("/tags/0", json!(1)), false),
+            (PatchOperation::add("/tags/12", json!(1)), false),
+            (PatchOperation::remove("/a"), false),
+            (PatchOperation::increment("/a", 1i64), false),
+            (PatchOperation::increment("/a", 1.5f64), false),
+            (PatchOperation::move_value("/a", "/b"), false),
+        ];
+
+        for (op, expected) in cases {
+            assert_eq!(
+                op.is_retry_safe(),
+                expected,
+                "wrong retry safety for {op:?}"
+            );
+        }
+    }
+
+    /// An array position is only an array position in the *last* token — a
+    /// numeric segment further up the path is just a parent index.
+    #[test]
+    fn only_the_last_token_decides_array_targeting() {
+        assert!(PatchOperation::set("/items/0/name", json!("x")).is_retry_safe());
+        assert!(PatchOperation::add("/items/0/name", json!("x")).is_retry_safe());
+        assert!(!PatchOperation::add("/items/0/tags/-", json!("x")).is_retry_safe());
+    }
+
+    #[test]
+    fn instruction_set_is_safe_only_when_every_op_is() {
+        assert!(PatchInstructions::new().is_retry_safe());
+        assert!(PatchInstructions::from(vec![
+            PatchOperation::set("/a", json!(1)),
+            PatchOperation::replace("/b", json!(2)),
+        ])
+        .is_retry_safe());
+        assert!(!PatchInstructions::from(vec![
+            PatchOperation::set("/a", json!(1)),
+            PatchOperation::increment("/b", 1i64),
+        ])
+        .is_retry_safe());
     }
 
     #[test]

@@ -4,7 +4,7 @@
 //! Options for item-level point reads, writes, and patch operations.
 
 use azure_data_cosmos_driver::models::{Precondition, SessionToken};
-use azure_data_cosmos_driver::options::OperationOptions;
+use azure_data_cosmos_driver::options::{OperationOptions, PatchStrategy};
 
 /// Options for item point-read operations.
 ///
@@ -94,32 +94,38 @@ impl ItemWriteOptions {
 
 /// Options for [`ContainerClient::patch_item()`](crate::clients::ContainerClient::patch_item()).
 ///
-/// PATCH is implemented driver-side as a Read-Modify-Write (RMW) loop:
-/// the driver reads the current item, applies your [`PatchInstructions`](crate::models::PatchInstructions)
-/// locally, and issues an ETag-guarded Replace. If the Replace returns
-/// 412 PreconditionFailed (another writer raced), the loop restarts.
+/// A patch executes one of two ways, selected by [`strategy`](Self::strategy):
 ///
-/// The optional [`max_attempts`](Self::max_attempts) field bounds how many
-/// times that loop may retry; `None` falls back to the driver default (5).
+/// * **Server-side** — the operation list is sent to the service as a single
+///   request. One round trip, and on a multi-write-region account the service
+///   resolves concurrent patches at the *path* level, so two writers touching
+///   different properties of the same item both survive.
+/// * **Client-side** — the driver reads the item, applies the operations
+///   locally, and issues an ETag-guarded Replace, restarting on `412`. Two
+///   round trips minimum, and conflict resolution is document-level
+///   last-writer-wins, so a concurrent write to an unrelated property is lost.
 ///
-/// # Conditions are not exposed
+/// [`PatchStrategy::Auto`] (the default) runs server-side whenever that is
+/// safe and falls back to the client-side loop otherwise — see
+/// [`PatchStrategy`] for what "safe" means.
 ///
-/// PATCH intentionally does **not** expose either flavor of "condition" that
-/// peer SDKs surface on their PATCH options:
+/// [`max_attempts`](Self::max_attempts) bounds the client-side loop only; it
+/// has no effect on a server-side patch.
 ///
-/// * **`Precondition` (`If-Match` / `If-None-Match`).** The handler owns the
-///   `If-Match` precondition on the internal Replace and captures the ETag
-///   off the matching Read; honoring a caller-set value would either shadow
-///   that ETag (silently breaking the RMW guarantee) or require resolving
-///   it against the handler's own ETag (no sensible merge). The driver-side
-///   PATCH handler rejects any caller-set precondition with an error before
-///   issuing any sub-operation.
-/// * **SQL filter predicate** (peer SDKs' `FilterPredicate`). Predicate
-///   evaluation requires either native wire-level PATCH (so the server
-///   evaluates the predicate inside the same transaction) or a client-side
-///   SQL subset evaluator; neither is in scope for this preview. The
-///   driver's [`PatchInstructions`](crate::models::PatchInstructions) has no `condition` field, so
-///   there is no way to attach a predicate to a PATCH request.
+/// # Conditions are not exposed yet
+///
+/// Neither flavor of "condition" that peer SDKs surface on their PATCH options
+/// is available here yet:
+///
+/// * **`Precondition` (`If-Match` / `If-None-Match`).** The client-side handler
+///   owns the `If-Match` on its internal Replace and captures the ETag from the
+///   matching Read; a caller-set value would shadow it. Caller-set
+///   preconditions are rejected before any sub-operation is issued.
+/// * **SQL filter predicate** (peer SDKs' `FilterPredicate`). This requires the
+///   server to evaluate the predicate inside the same transaction, so it is
+///   meaningful only on the server-side path;
+///   [`PatchInstructions`](crate::models::PatchInstructions) has no `condition`
+///   field, so there is no way to attach one.
 ///
 /// The session token lives on the dedicated
 /// [`session_token`](Self::session_token) field (mirroring
@@ -130,18 +136,18 @@ impl ItemWriteOptions {
 ///
 /// # Latency
 ///
-/// Because every PATCH is at minimum a Read followed by a Replace, the
-/// best-case round-trip floor for ``patch_item`` is **2× the single-RTT
-/// cost** of a comparable Read or Replace against the same partition.
-/// Each retry triggered by a 412 PreconditionFailed adds another full
-/// Read+Replace pair to the wall-clock cost.
+/// A server-side patch costs a single round trip, like a Replace. The
+/// client-side loop is at minimum a Read followed by a Replace, so its
+/// best-case floor is **2× the single-RTT cost** of a comparable Read or
+/// Replace against the same partition, and each `412` retry adds another
+/// Read+Replace pair.
 ///
-/// When configuring an end-to-end latency budget via
-/// [`OperationOptions`]'s end-to-end request settings, size the budget
-/// accordingly — a useful rule of thumb is **≥ 2× the p99 single-RTT
-/// budget you would set for a plain Replace**, plus headroom for any
-/// 412 retries you want to tolerate. Setting the budget too low can
-/// cancel the RMW between the Read and the Replace, producing a
+/// When configuring an end-to-end latency budget via [`OperationOptions`],
+/// size it for whichever path can run. If [`PatchStrategy::ClientSide`] is
+/// possible — including via [`PatchStrategy::Auto`]'s fallback — a useful rule
+/// of thumb is **≥ 2× the p99 single-RTT budget you would set for a plain
+/// Replace**, plus headroom for the retries you want to tolerate. Too small a
+/// budget can cancel the loop between the Read and the Replace, producing a
 /// timeout error even when the service is healthy.
 #[derive(Clone, Default)]
 #[non_exhaustive]
@@ -155,7 +161,15 @@ pub struct PatchItemOptions {
 
     /// Maximum number of Read-Modify-Write attempts the driver may make
     /// before surfacing a 412. `None` selects the driver default (5).
+    ///
+    /// Applies to the client-side path only.
     pub max_attempts: Option<std::num::NonZeroU8>,
+
+    /// How this patch should execute.
+    ///
+    /// `None` inherits the client or account default
+    /// ([`PatchStrategy::Auto`]).
+    pub strategy: Option<PatchStrategy>,
 }
 
 impl PatchItemOptions {
@@ -166,8 +180,16 @@ impl PatchItemOptions {
     }
 
     /// Caps the number of Read-Modify-Write attempts the driver may make.
+    ///
+    /// Applies to the client-side path only.
     pub fn with_max_attempts(mut self, max_attempts: std::num::NonZeroU8) -> Self {
         self.max_attempts = Some(max_attempts);
+        self
+    }
+
+    /// Selects how this patch executes.
+    pub fn with_strategy(mut self, strategy: PatchStrategy) -> Self {
+        self.strategy = Some(strategy);
         self
     }
 

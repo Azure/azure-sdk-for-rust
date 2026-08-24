@@ -75,7 +75,9 @@ pub use crate::error::cosmos_status::{CosmosStatus, SubStatusCode};
 pub use effective_partition_key::EffectivePartitionKey;
 pub use feed_range::FeedRange;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
-pub use patch::{CosmosNumber, PatchInstructions, PatchOperation};
+pub use patch::{
+    CosmosNumber, PatchInstructions, PatchOperation, MAX_SERVER_SIDE_PATCH_OPERATIONS,
+};
 pub use precondition::Precondition;
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;

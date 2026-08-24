@@ -15,4 +15,5 @@ pub(crate) mod hedging_eligibility;
 pub(crate) mod operation_pipeline;
 pub(crate) mod patch_eval;
 pub(crate) mod patch_handler;
+pub(crate) mod patch_strategy;
 pub(crate) mod retry_evaluation;
