@@ -90,6 +90,25 @@ function Get-BaselineRevision($package) {
   return $null
 }
 
+$materializedBaselineCommits = @{}
+
+function Initialize-BaselineRevision($baselineRevision) {
+  $commit = Invoke-LoggedCommand "git rev-parse '$baselineRevision^{commit}'" -ExecutePath $RepoRoot
+  if ($materializedBaselineCommits.ContainsKey($commit)) {
+    return
+  }
+
+  $archivePath = [System.IO.Path]::GetTempFileName()
+  try {
+    # Sparse CI clones omit historical objects, which cargo-semver-checks cannot fetch from its local clone.
+    Invoke-LoggedCommand "git archive --format=tar --output='$archivePath' '$baselineRevision'" -ExecutePath $RepoRoot -GroupOutput
+    $materializedBaselineCommits[$commit] = $true
+  }
+  finally {
+    Remove-Item $archivePath -Force -ErrorAction SilentlyContinue
+  }
+}
+
 $packages = Get-CargoPackages
 $outputPackages = Get-OutputPackages $packages
 
@@ -110,6 +129,7 @@ foreach ($package in $outputPackages) {
     continue
   }
 
+  Initialize-BaselineRevision $baselineRevision
   $output = Invoke-LoggedCommand "cargo +$resolvedToolchain semver-checks --manifest-path '$manifestPath' --baseline-rev '$baselineRevision'" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
   if ($output -match 'error: no library targets found in package `(?<name>[\w_]+)`' -and $Matches['name'] -eq $packageName) {
     LogWarning "$packageName base version is a placeholder and will be ignored"
