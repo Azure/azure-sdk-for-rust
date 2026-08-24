@@ -388,7 +388,8 @@ mod tests {
     #[test]
     fn array_order_matters() {
         assert_ne!(h(json!([1, 2])), h(json!([2, 1])));
-        assert_eq!(h(json!([1, 2])), h(json!([1, 2])));
+        // Elements normalize like scalars do: `5` and `5.0` are one value.
+        assert_eq!(h(json!([1, 2])), h(json!([1.0, 2.0])));
     }
 
     /// Java `DistinctHashTest.jsonObjectHash`. Untested in .NET, though its
