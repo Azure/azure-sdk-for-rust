@@ -16,7 +16,6 @@ use std::{
     fs,
     net::{SocketAddr, ToSocketAddrs},
     sync::Arc,
-    time::{Duration, Instant},
 };
 use url::Url;
 
@@ -160,9 +159,6 @@ impl CustomTokenProxyConfig {
 }
 
 #[cfg(feature = "azure_proxy")]
-const CA_REFRESH_INTERVAL: Duration = Duration::from_secs(600);
-
-#[cfg(feature = "azure_proxy")]
 #[derive(Debug)]
 struct CustomTokenProxy {
     proxy_url: Url,
@@ -178,7 +174,6 @@ struct CustomTokenProxy {
 struct ClientCache {
     client: Arc<dyn HttpClient>,
     ca_data: Option<Vec<u8>>,
-    last_read: Instant,
 }
 
 #[cfg(feature = "azure_proxy")]
@@ -211,11 +206,7 @@ impl CustomTokenProxy {
             host_header,
             resolved_addrs,
             ca_file,
-            cache: RwLock::new(ClientCache {
-                client,
-                ca_data,
-                last_read: Instant::now(),
-            }),
+            cache: RwLock::new(ClientCache { client, ca_data }),
         })
     }
 
@@ -230,7 +221,6 @@ impl CustomTokenProxy {
             cache: RwLock::new(ClientCache {
                 client,
                 ca_data: None,
-                last_read: Instant::now(),
             }),
         }
     }
@@ -240,14 +230,6 @@ impl CustomTokenProxy {
         let Some(ca_file) = self.ca_file.as_deref() else {
             return Ok(cache.client.clone());
         };
-        if cache.last_read.elapsed() < CA_REFRESH_INTERVAL {
-            return Ok(cache.client.clone());
-        }
-
-        let mut cache = RwLockUpgradableReadGuard::upgrade(cache).await;
-        if cache.last_read.elapsed() < CA_REFRESH_INTERVAL {
-            return Ok(cache.client.clone());
-        }
         let data = fs::read(ca_file).with_context_fn(ErrorKind::Credential, || {
             format!(
                 "failed to read {AZURE_KUBERNETES_CA_FILE} {}",
@@ -255,10 +237,10 @@ impl CustomTokenProxy {
             )
         })?;
         if data.is_empty() {
-            cache.last_read = Instant::now();
             return Ok(cache.client.clone());
         }
         if data != cache.ca_data.as_deref().unwrap_or_default() {
+            let mut cache = RwLockUpgradableReadGuard::upgrade(cache).await;
             cache.client = build_client(
                 &self.request_url,
                 &self.resolved_addrs,
@@ -266,8 +248,8 @@ impl CustomTokenProxy {
                 Some(ca_file),
             )?;
             cache.ca_data = Some(data);
+            return Ok(cache.client.clone());
         }
-        cache.last_read = Instant::now();
         Ok(cache.client.clone())
     }
 }
@@ -674,12 +656,10 @@ uaZPC0VV2qRwbAE=\n\
         ));
 
         file.write("");
-        proxy.cache.write().await.last_read = Instant::now() - CA_REFRESH_INTERVAL;
         let retained = proxy.client().await.expect("last good client");
         assert!(Arc::ptr_eq(&original, &retained));
 
         file.write(&format!("{TEST_CA}\n"));
-        proxy.cache.write().await.last_read = Instant::now() - CA_REFRESH_INTERVAL;
         let rotated = proxy.client().await.expect("rotated client");
         assert!(!Arc::ptr_eq(&original, &rotated));
     }
@@ -695,7 +675,6 @@ uaZPC0VV2qRwbAE=\n\
         )
         .expect("valid file CA");
         let original = proxy.client().await.expect("cached client");
-        proxy.cache.write().await.last_read = Instant::now() - CA_REFRESH_INTERVAL;
 
         let clients = join_all((0..16).map(|_| proxy.client())).await;
         for client in clients {
@@ -716,13 +695,11 @@ uaZPC0VV2qRwbAE=\n\
         let original = proxy.client().await.expect("cached client");
 
         file.write("not a certificate");
-        proxy.cache.write().await.last_read = Instant::now() - CA_REFRESH_INTERVAL;
         let error = proxy.client().await.expect_err("invalid rotated CA");
         assert!(error.to_string().contains(AZURE_KUBERNETES_CA_FILE));
         assert!(Arc::ptr_eq(&original, &proxy.cache.read().await.client));
 
         fs::remove_file(&file.path).expect("remove CA file");
-        proxy.cache.write().await.last_read = Instant::now() - CA_REFRESH_INTERVAL;
         let error = proxy.client().await.expect_err("missing rotated CA file");
         assert!(error.to_string().contains(AZURE_KUBERNETES_CA_FILE));
         assert!(Arc::ptr_eq(&original, &proxy.cache.read().await.client));
