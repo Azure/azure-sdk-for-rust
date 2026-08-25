@@ -12,10 +12,6 @@ use std::{borrow::Cow, hash::Hash};
 pub(crate) const PARTITION_KEY: HeaderName =
     HeaderName::from_static("x-ms-documentdb-partitionkey");
 
-/// Header name to enable cross-partition queries.
-pub(crate) const QUERY_ENABLE_CROSS_PARTITION: HeaderName =
-    HeaderName::from_static("x-ms-documentdb-query-enablecrosspartition");
-
 // =============================================================================
 // PartitionKeyValue
 // =============================================================================
@@ -326,7 +322,7 @@ impl PartitionKey {
 
 impl AsHeaders for PartitionKey {
     type Error = crate::error::CosmosError;
-    type Iter = std::iter::Once<(HeaderName, HeaderValue)>;
+    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
         // We have to do some manual JSON serialization here.
@@ -334,13 +330,13 @@ impl AsHeaders for PartitionKey {
         // It's not safe to use non-ASCII characters in HTTP headers, and serde_json will not escape non-ASCII characters if they are otherwise valid as UTF-8.
         // So, we do some conversion by hand, with the help of Rust's own `encode_utf16` method which gives us the necessary code points for non-ASCII values, and produces surrogate pairs as needed.
 
-        // Quick shortcut for empty partition keys list, which also prevents a bug when we pop the trailing comma for an empty list.
+        // An empty partition key means "no specific partition" (see
+        // `PartitionKey::EMPTY`), which the driver expresses by targeting
+        // partition key ranges explicitly — so there is no header to emit.
+        // Returning early also keeps the trailing-comma pop below from
+        // stripping the opening '[' and producing a bare ']'.
         if self.0.is_empty() {
-            // An empty partition key means a cross partition query
-            return Ok(std::iter::once((
-                QUERY_ENABLE_CROSS_PARTITION,
-                HeaderValue::from_static("True"),
-            )));
+            return Ok(None.into_iter());
         }
 
         let mut json = String::new();
@@ -411,10 +407,7 @@ impl AsHeaders for PartitionKey {
         json.pop();
         json.push(']');
 
-        Ok(std::iter::once((
-            PARTITION_KEY,
-            HeaderValue::from_cow(json),
-        )))
+        Ok(Some((PARTITION_KEY, HeaderValue::from_cow(json))).into_iter())
     }
 }
 
@@ -500,6 +493,32 @@ mod tests {
         let pk = PartitionKey::EMPTY;
         assert!(pk.is_empty());
         assert_eq!(pk.len(), 0);
+    }
+
+    /// An empty partition key means "no specific partition", which the driver
+    /// expresses by targeting partition key ranges explicitly — so it must emit
+    /// no headers at all.
+    ///
+    /// It previously emitted `x-ms-documentdb-query-enablecrosspartition`,
+    /// which contradicted [`PartitionKey::EMPTY`]'s own contract and was the
+    /// only place that header was ever produced.
+    #[test]
+    fn empty_partition_key_emits_no_headers() {
+        let headers: Vec<_> = PartitionKey::EMPTY.as_headers().unwrap().collect();
+        assert!(
+            headers.is_empty(),
+            "an empty partition key must not put anything on the wire, got {headers:?}"
+        );
+    }
+
+    /// Regression: without the empty-list guard the trailing-comma pop would
+    /// strip the opening `[` and emit a bare `]`.
+    #[test]
+    fn non_empty_partition_key_emits_exactly_the_partition_key_header() {
+        let headers: Vec<_> = PartitionKey::from("test").as_headers().unwrap().collect();
+        assert_eq!(headers.len(), 1);
+        assert_eq!(headers[0].0, PARTITION_KEY);
+        assert_eq!(headers[0].1.as_str(), r#"["test"]"#);
     }
 
     #[test]

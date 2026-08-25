@@ -20,8 +20,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::ChangeFeedStartFrom;
 
+use super::distinct_hash::Hash128;
 use super::order_by::OrderByResumeValue;
-use super::query_plan::SortOrder;
+use super::query_plan::{DistinctType, SortOrder};
 
 /// Serializable snapshot of a [`PipelineNode`](super::PipelineNode) subtree.
 ///
@@ -130,6 +131,29 @@ pub(crate) enum PipelineNodeState {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         query_fingerprint: Option<String>,
         ranges: Vec<OrderByRangeToken>,
+    },
+
+    /// A `DISTINCT` deduplication stage wrapping a cross-partition root.
+    ///
+    /// Only the **ordered** form is ever serialized. `ORDER BY` guarantees
+    /// structurally equal rows arrive adjacently, so `last_hash` — the hash of
+    /// the last row emitted before the checkpoint — is the complete resume
+    /// state: a value the stage has moved past can never reappear. It is
+    /// `None` when the checkpoint was taken before any row was emitted.
+    ///
+    /// An **unordered** `DISTINCT` never reaches this variant: its state is the
+    /// whole set of values seen, which is unbounded and cannot be truncated
+    /// without silently re-emitting duplicates, so
+    /// [`Distinct::snapshot_state`](super::Distinct::snapshot_state) fails
+    /// instead — *unless* the stage has drained, in which case there is no
+    /// state left to lose and it snapshots as [`Drained`](Self::Drained) like
+    /// any other finished node. `distinct_type` is still persisted so a resume
+    /// can reject a token whose shape no longer matches the query plan.
+    Distinct {
+        distinct_type: DistinctType,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        last_hash: Option<Hash128>,
+        child: Box<PipelineNodeState>,
     },
 }
 
@@ -261,6 +285,7 @@ impl PipelineNodeState {
                         PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
                         PipelineNodeState::SkipTake { .. } => "SkipTake",
                         PipelineNodeState::StreamingOrderedMerge { .. } => "StreamingOrderedMerge",
+                        PipelineNodeState::Distinct { .. } => "Distinct",
                     },
                 ))
                 .build()),
