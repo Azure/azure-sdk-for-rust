@@ -106,6 +106,10 @@ impl<T: StressTestFactory> StressRunner<T> {
     ///
     /// * package_dir - The directory containing the package with the tests. Typically `env!("CARGO_PACKAGE_DIR")`
     /// * module_name - The name of the module containing the test, typically `file!()`
+    ///
+    /// # Errors
+    ///
+    /// `clap_builder::derive::Parser::parse()` will exit on error.
     pub fn new(package_dir: &'static str, module_name: &'static str) -> Self {
         let options = StressRunnerOptions::<T>::parse();
         Self {
