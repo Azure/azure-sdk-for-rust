@@ -7,6 +7,7 @@ pub mod account_metadata_refresh;
 pub mod batch;
 pub mod binary_response_format;
 pub mod control_plane;
+pub mod distinct;
 #[cfg(feature = "preview_dtx")]
 pub mod distributed_transaction;
 pub mod dynamic_topology;
@@ -30,6 +31,7 @@ pub mod query;
 pub mod read_feed;
 #[cfg(feature = "fault_injection")]
 pub mod regional_gateway_unreachable;
+pub mod skip_take;
 pub mod split_merge;
 pub mod throttling;
 #[cfg(feature = "fault_injection")]
@@ -264,6 +266,27 @@ pub fn upsert_item_request(
             .insert(CONTENT_RESPONSE.clone(), HeaderValue::from_static("False"));
     }
     req
+}
+
+/// Decodes a query page's documents into JSON values, accepting either a
+/// pre-split `Items` body (as the cross-partition skip/take and streaming
+/// ORDER BY nodes now emit) or a raw `{"Documents":[...]}` envelope in a single
+/// `Bytes` payload (as a single-partition passthrough returns).
+pub fn page_document_values(
+    response: azure_data_cosmos_driver::models::CosmosResponse,
+) -> Vec<serde_json::Value> {
+    use azure_data_cosmos_driver::models::ResponseBody;
+    match response.into_body() {
+        ResponseBody::NoPayload => Vec::new(),
+        ResponseBody::Items(items) => items
+            .iter()
+            .map(|b| serde_json::from_slice(b).unwrap())
+            .collect(),
+        ResponseBody::Bytes(b) => {
+            let value: serde_json::Value = serde_json::from_slice(&b).unwrap();
+            value["Documents"].as_array().cloned().unwrap_or_default()
+        }
+    }
 }
 
 /// Reads the response body as JSON. Consumes the response.

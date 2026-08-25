@@ -93,12 +93,12 @@
 ###########
 # Eng Sys
 ###########
-/eng/                    @danieljurek @heaths @xirzec @RickWinter
+/eng/                    @Azure/azure-sdk-eng @heaths @xirzec @RickWinter @antkmsft
 /eng/common/             @Azure/azure-sdk-eng
 /.github/workflows/      @heaths @xirzec @Azure/azure-sdk-eng
 /.github/CODEOWNERS      @xirzec @RickWinter @Azure/azure-sdk-eng
 /.config/1espt/          @benbp
-/sdk/canary/             @danieljurek
+/sdk/canary/             @Azure/azure-sdk-eng
 
 # Add owners for notifications for specific pipelines
 /eng/common/pipelines/codeowners-linter.yml       @xirzec @rickwinter

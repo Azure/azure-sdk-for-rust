@@ -212,7 +212,7 @@ try {
 
       # Cargo uses different .crate output locations depending on command and version.
       # Prefer the expected layout for the current build mode, but fall back to the
-      # other known location so the pack pipeline works on both 1.92 and newer toolchains.
+      # other known location for compatibility with Cargo's alternate layout.
       $cratePath = Get-CratePath -package $package -ReleaseBuild $Release
 
       $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)

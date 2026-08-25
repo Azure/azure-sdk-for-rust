@@ -17,12 +17,12 @@ normal pipeline stages run.
 
 ## Inputs
 
-| Field                                       | Source                                       | Notes                                                            |
-| ------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------- |
-| `CosmosOperation` with `OperationType::Patch` | `CosmosOperation::patch_item(ItemReference)` | Required.                                                        |
-| Body                                        | `with_body(serde_json::to_vec(&PatchInstructions))`  | Required. The handler re-parses it as `PatchInstructions`.               |
-| Partition key                               | `with_partition_key(...)`                    | Required. Used to issue the internal Read.                       |
-| `patch_max_attempts`                        | `with_patch_max_attempts(NonZeroU8)`         | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
+| Field                                         | Source                                              | Notes                                                             |
+| --------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- |
+| `CosmosOperation` with `OperationType::Patch` | `CosmosOperation::patch_item(ItemReference)`        | Required.                                                         |
+| Body                                          | `with_body(serde_json::to_vec(&PatchInstructions))` | Required. The handler re-parses it as `PatchInstructions`.        |
+| Partition key                                 | `with_partition_key(...)`                           | Required. Used to issue the internal Read.                        |
+| `patch_max_attempts`                          | `with_patch_max_attempts(NonZeroU8)`                | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
 
 ## Algorithm
 
@@ -173,14 +173,26 @@ synthesized response. It is `pub(crate)` and lives in
 
 Supported (`PatchOperation` variants — all use RFC 6901 JSON Pointers):
 
-| Variant     | JSON `op`     | Semantics                                                                  |
-| ----------- | ------------- | -------------------------------------------------------------------------- |
-| `Add`       | `"add"`       | Insert into object or array (`/-` appends).                                |
-| `Set`       | `"set"`       | Same as `Add`; conventional for "create or overwrite" leaf assignment.     |
-| `Replace`   | `"replace"`   | Overwrite an existing leaf; fails if the leaf is missing.                  |
-| `Remove`    | `"remove"`    | Delete a leaf; fails if the leaf is missing or the path is the root.      |
-| `Increment` | `"increment"` | Numeric add; preserves i64 fidelity, promotes i64→f64 on float operand.    |
-| `MoveOp`    | `"move"`      | Move a subtree from `from` to `path`; refuses to move into own descendant. |
+| Variant     | JSON `op`   | Semantics                                                                  |
+| ----------- | ----------- | -------------------------------------------------------------------------- |
+| `Add`       | `"add"`     | Insert into object or array (`/-` appends).                                |
+| `Set`       | `"set"`     | Same as `Add`; conventional for "create or overwrite" leaf assignment.     |
+| `Replace`   | `"replace"` | Overwrite an existing leaf; fails if the leaf is missing.                  |
+| `Remove`    | `"remove"`  | Delete a leaf; fails if the leaf is missing or the path is the root.       |
+| `Increment` | `"incr"`    | Numeric add; preserves i64 fidelity, promotes i64→f64 on float operand.    |
+| `MoveOp`    | `"move"`    | Move a subtree from `from` to `path`; refuses to move into own descendant. |
+
+The `op` tags are the Cosmos DB wire contract
+([REST reference](https://learn.microsoft.com/rest/api/cosmos-db/patch-a-document)),
+not the lowercased Rust variant names — `Increment` serializes as `"incr"`.
+The tags are pinned by `every_op_tag_matches_the_wire_contract` in
+`src/models/patch.rs`. This matters wherever `PatchInstructions` reaches the
+service directly, which today is the distributed-transaction patch operation.
+
+`PatchOperation` is a public `Deserialize` type, so `Increment` additionally
+accepts the legacy `"increment"` tag on **input** (a Serde alias) to keep patch
+documents persisted by earlier versions of this crate parsing. Output is always
+`"incr"` — re-serializing a legacy document upgrades the tag.
 
 `CosmosNumber` is a Rust-only enum (`Int(i64)`, `Float(f64)`) that serializes
 as a JSON number without precision loss.

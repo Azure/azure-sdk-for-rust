@@ -499,6 +499,9 @@ impl SubStatusCode {
             20119 => Some("ClientOrderByComplexValueUnsupported"),
             20120 => Some("ClientInvalidResourceId"),
             20121 => Some("ClientMixedNameRidAddressing"),
+            20122 => Some("ClientQueryRewriteBodyInvalid"),
+            20123 => Some("ClientDistinctValueTooDeeplyNested"),
+            20124 => Some("ClientDistinctContinuationUnsupported"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -517,6 +520,7 @@ impl SubStatusCode {
             20206 => Some("ClientSplitRetriesExhausted"),
             20207 => Some("ClientBuildResponseInvokedOnFailure"),
             20208 => Some("ClientRootNodeCannotRequestSplit"),
+            20217 => Some("ClientDistinctCannotForwardSplit"),
             20209 => Some("ClientCrossPartitionQueryRequiresContainerRef"),
             20210 => Some("ClientSingletonOperationReturnedEmptyPage"),
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
@@ -1374,6 +1378,23 @@ impl SubStatusCode {
     /// RID-addressed container and vice versa.
     pub const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = SubStatusCode(20121);
 
+    /// The query plan's `rewrittenQuery` could not be substituted into the
+    /// per-partition request body because that body was not valid JSON
+    /// (20122). Cross-partition `OFFSET` / `LIMIT` / `TOP` requires rewriting
+    /// each partition's query text.
+    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: SubStatusCode = SubStatusCode(20122);
+
+    /// A `DISTINCT` value nested deeper than the structural hasher's depth
+    /// limit (20123). Cosmos caps document nesting well below that limit, so
+    /// this indicates a hand-crafted or corrupt payload.
+    pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: SubStatusCode = SubStatusCode(20123);
+
+    /// A continuation token was requested for an unordered `DISTINCT` query
+    /// (20124). Resuming would require carrying the entire set of seen values,
+    /// so the token is refused rather than silently re-emitting duplicates.
+    /// Adding a matching `ORDER BY` makes the query resumable.
+    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = SubStatusCode(20124);
+
     // ----- 20150-20199: SDK configuration / setup errors -----
 
     /// Two fault-injection rules registered with the same id (20150).
@@ -1458,6 +1479,13 @@ impl SubStatusCode {
     /// A pipeline root node requested `SplitRequired`; splits must be
     /// handled by a parent node (20208).
     pub const CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT: SubStatusCode = SubStatusCode(20208);
+
+    /// A `DISTINCT` node was asked to forward a partition split (20217).
+    /// `SplitRequired` replaces the node that emits it, which would discard the
+    /// deduplication map and resurrect already-suppressed values, so the split
+    /// is refused here instead of being passed to a parent. Unreachable today:
+    /// the wrapped fan-out node absorbs splits internally.
+    pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: SubStatusCode = SubStatusCode(20217);
 
     /// A cross-partition query plan was attempted without a container
     /// reference (20209).
@@ -2304,6 +2332,35 @@ impl CosmosStatus {
     pub const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_MIXED_NAME_RID_ADDRESSING),
+    };
+
+    /// 400 / 20122 — the query plan's `rewrittenQuery` could not be
+    /// substituted into a per-partition request body because that body was
+    /// not valid JSON.
+    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_REWRITE_BODY_INVALID),
+    };
+
+    /// 400 / 20123 — a `DISTINCT` value nested past the structural hasher's
+    /// depth limit.
+    pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED),
+    };
+
+    /// 400 / 20124 — a continuation token was requested for an unordered
+    /// `DISTINCT` query, which cannot be resumed safely.
+    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED),
+    };
+
+    /// 500 / 20217 — a `DISTINCT` node was asked to forward a partition split,
+    /// which would discard its deduplication state.
+    pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT),
     };
 
     // Configuration / setup (HTTP 400, sub-status 20150-20199)
