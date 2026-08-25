@@ -22,17 +22,25 @@ jobs:
       paths:
       - "/*"
 
+  # Install nightly so doc-rs runs correctly in Analyze-Code.ps1
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: nightly
+
+  # Install the specified version of Rust if invocation is not using 'nightly'
   - ${{ if ne(parameters.Toolchain, 'nightly') }}:
       - template: /eng/pipelines/templates/steps/use-rust.yml@self
         parameters:
-          Toolchain: nightly
-
-  - template: /eng/pipelines/templates/steps/use-rust.yml@self
-    parameters:
-      Toolchain: ${{ parameters.Toolchain }}
+          Toolchain: ${{ parameters.Toolchain }}
+          # Since the registry is configured in the previous run, it does not
+          # need to be configured in this run
+          ConfigureRegistry: false
 
   - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
 
+  # Always skip audit. Audit requires contact with restricted endpoints and is
+  # excluded from use in internal builds. Instead, teams must check on the state
+  # of the Audit in GitHub Actions.
   - task: Powershell@2
     displayName: "Run source analysis"
     inputs:
@@ -42,20 +50,9 @@ jobs:
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
         -Toolchain 'nightly'
         -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
+        -Audit:$false
         -Deny
 
   - template: /eng/common/pipelines/templates/steps/check-spelling.yml
     parameters:
       ContinueOnError: false
-
-  - template: /eng/common/pipelines/templates/steps/verify-links.yml
-    parameters:
-      ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-        Directory: ""
-        Urls: (eng/common/scripts/get-markdown-files-from-changed-files.ps1)
-      ${{ elseif eq(parameters.ServiceDirectory, 'auto') }}:
-        Directory: ""
-      ${{ else }}:
-        Directory: sdk/${{ parameters.ServiceDirectory }}
-      CheckLinkGuidance: $true
-      Condition: succeededOrFailed()

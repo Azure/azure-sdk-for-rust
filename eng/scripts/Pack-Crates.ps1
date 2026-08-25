@@ -16,6 +16,8 @@ param(
   [string] $PackageInfoDirectory,
 
   [switch] $Release,
+  # Temporary testing switch; may be removed in a future version.
+  [switch] $APIReview,
   [switch] $NoVerify,
   [string] $OutBuildOrderFile
 )
@@ -34,6 +36,10 @@ if ($ManifestDir) {
   [string[]] $script:manifestPath = Join-Path $ManifestDir 'Cargo.toml' -Resolve
 }
 
+function Test-IsPublishable($package) {
+  return $null -eq $package.publish
+}
+
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
   [string[]] $outputPackageNames = Get-OutputPackageNames $packages
@@ -50,7 +56,11 @@ function Get-PackagesToBuild() {
     $toProcess = $toProcess -ne $package
 
     foreach ($dependency in $package.UnreleasedDependencies) {
-      if (!$packagesToBuild.Contains($dependency) -and !$toProcess.Contains($dependency)) {
+      if (
+        (Test-IsPublishable $dependency) -and
+        !$packagesToBuild.Contains($dependency) -and
+        !$toProcess.Contains($dependency)
+      ) {
         $packagesToBuild += $dependency
         $toProcess += $dependency
       }
@@ -81,13 +91,19 @@ function Get-OutputPackageNames($packages) {
 
     default {
       LogDebug "Packing all packages in workspace"
-      return $packages.name
+      return $packages.Where({ Test-IsPublishable $_ }).name
     }
   }
 
   foreach ($name in $names) {
-    if (-not $packages.name.Contains($name)) {
-      Write-Error "Package '$name' is not in the workspace or does not publish"
+    $package = $packages | Where-Object -Property name -EQ -Value $name | Select-Object -First 1
+    if (-not $package) {
+      LogError "Package '$name' is not in the workspace"
+      exit 1
+    }
+
+    if (-not (Test-IsPublishable $package)) {
+      LogError "Package '$name' has publish = false and cannot be packed for publishing"
       exit 1
     }
   }
@@ -95,14 +111,49 @@ function Get-OutputPackageNames($packages) {
   return $names
 }
 
-function Create-ApiViewFile($package) {
-  $packageName = $package.name
-  $command = "cargo run --manifest-path $RepoRoot/eng/tools/generate_api_report/Cargo.toml -- --package $packageName"
+function New-ApiFile(
+  $package,
+  [string] $Format,
+  [string] $OutputDirectory
+) {
+  $manifestPath = $package.manifest_path
+  $command = "cargo run --manifest-path `"$RepoRoot/eng/tools/Cargo.toml`" -p generate_api -- --manifest-path `"$manifestPath`" --format $Format --output `"$OutputDirectory`""
   Invoke-LoggedCommand $command -GroupOutput | Out-Host
 
-  $packagePath = Split-Path -Path $package.manifest_path -Parent
+  $fileName = switch ($Format) {
+    'markdown' { 'API.md' }
+    'apiview' { 'apiview.json' }
+    default {
+      LogError "Unsupported API output format '$Format'"
+      exit 1
+    }
+  }
 
-  "$packagePath/review/$packageName.rust.json"
+  return [System.IO.Path]::Combine($OutputDirectory, $fileName)
+}
+
+function Get-CratePath(
+  $package,
+  [bool] $ReleaseBuild
+) {
+  $crateFileName = "$($package.name)-$($package.version).crate"
+  $rootCratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", $crateFileName)
+  $tmpCratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "tmp-crate", $crateFileName)
+  $candidatePaths = if ($ReleaseBuild) {
+    @($tmpCratePath, $rootCratePath)
+  }
+  else {
+    @($rootCratePath, $tmpCratePath)
+  }
+
+  foreach ($candidatePath in $candidatePaths) {
+    if (Test-Path -Path $candidatePath) {
+      return $candidatePath
+    }
+  }
+
+  LogError "Failed to find packaged crate for '$($package.name)'. Checked '$($candidatePaths -join "', '")'."
+  exit 1
 }
 
 $originalLocation = Get-Location
@@ -137,8 +188,20 @@ try {
 
   Write-Host "Finished packing crates"
   if ($LASTEXITCODE) {
+    if ($packResult -match 'cannot update the lock file') {
+      LogWarning "cargo package could not update the lock file. Rebase on the main branch and try again."
+    }
+
     Write-Host "cargo publish failed with exit code $LASTEXITCODE"
     exit $LASTEXITCODE
+  }
+
+  if ($APIReview) {
+    foreach ($package in $packages) {
+      $packagePath = Split-Path -Path $package.manifest_path -Parent
+      Write-Host "Creating API review markdown at '$packagePath'"
+      New-ApiFile -package $package -Format 'markdown' -OutputDirectory $packagePath | Out-Null
+    }
   }
 
   if ($OutputPath) {
@@ -146,6 +209,12 @@ try {
 
     foreach ($package in $packages) {
       $sourcePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "$($package.name)-$($package.version)")
+
+      # Cargo uses different .crate output locations depending on command and version.
+      # Prefer the expected layout for the current build mode, but fall back to the
+      # other known location for compatibility with Cargo's alternate layout.
+      $cratePath = Get-CratePath -package $package -ReleaseBuild $Release
+
       $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)
       $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")
       $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$($package.name).rust.json")
@@ -159,13 +228,16 @@ try {
       Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse
 
       Write-Host "Copying .crate file for '$($package.name)' to '$targetPath'"
-      Copy-Item -Path "$sourcePath.crate" -Destination $targetPath -Force
+      Copy-Item -Path $cratePath -Destination $targetPath -Force
 
-      Write-Host "Creating API review file"
-      $apiReviewFile = Create-ApiViewFile $package
+      if (-not $APIReview) {
+        Write-Host "Creating API review file"
+        $apiReviewFile = New-ApiFile -package $package -Format 'apiview' -OutputDirectory $targetPath
 
-      Write-Host "Copying API review file to '$targetApiReviewFile'"
-      Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
+        Write-Host "Copying API review file to '$targetApiReviewFile'"
+        Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
+        Remove-Item -Path $apiReviewFile -Force
+      }
     }
   }
 

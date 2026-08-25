@@ -1,7 +1,10 @@
 [toolchain]
-channel = "nightly-2025-05-09"
+# This toolchain corresponds to v57 of the rustdoc JSON format.
+channel = "nightly-2026-04-14"
 components = [
   "cargo",
   "rust-docs",
   "rust-std",
+  "rustc-dev",
+  "rustfmt",
 ]

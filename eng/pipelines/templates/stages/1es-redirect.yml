@@ -38,11 +38,11 @@ extends:
       customBuildTags:
         - 1ES.PT.Tag-refs/tags/canary
     settings:
+      networkIsolationPolicy: Permissive, CFSClean
       skipBuildTagsForGitHubPullRequests: true
       # only enable autoBaseline for the internal build of rust-core on main branch
-      ${{ if parameters.AutoBaseline }}:
-        featureFlags:
-          autoBaseline: true
+      featureFlags:
+        autoBaseline: ${{ parameters.AutoBaseline }}
     sdl:
       ${{ if parameters.AutoBaseline }}:
         autobaseline:

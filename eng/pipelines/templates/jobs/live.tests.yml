@@ -66,6 +66,8 @@ jobs:
     parameters:
       Toolchain: $(RustToolchainName)
 
+  - template: /eng/pipelines/templates/steps/nuget-config.yml
+
   - template: /eng/pipelines/templates/steps/vcpkg.yml
 
   - ${{ parameters.PreSteps }}
@@ -159,7 +161,7 @@ jobs:
 
   - task: PublishTestResults@2
     displayName: Publish Test Results
-    condition: and(succeededOrFailed(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
+    condition: and(succeededOrFailed(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'), eq(variables['HasJUnitTestResults'], 'true'))
     inputs:
       testResultsFormat: JUnit
       testResultsFiles: '**/test-results/junit/*.xml'

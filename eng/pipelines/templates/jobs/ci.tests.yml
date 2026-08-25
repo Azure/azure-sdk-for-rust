@@ -25,6 +25,10 @@ jobs:
   condition: and(succeeded(), ne(variables['Skip.Tests'],'true'), ne(${{ parameters.Matrix }}, '{}'))
   timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
   dependsOn: ${{ parameters.DependsOn }}
+  # Allow matrix entries to opt into non-blocking behavior by setting
+  # `ContinueOnError: "true"` as a matrix variable. Defaults to false so
+  # existing matrix entries / consumers see no behavior change.
+  continueOnError: $[ coalesce(variables['ContinueOnError'], 'false') ]
 
   strategy:
     matrix: $[ ${{ parameters.Matrix }} ]
@@ -48,6 +52,8 @@ jobs:
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
       Toolchain: $(RustToolchainName)
+
+  - template: /eng/pipelines/templates/steps/nuget-config.yml
 
   - template: /eng/pipelines/templates/steps/vcpkg.yml
 
@@ -87,7 +93,7 @@ jobs:
 
   - task: PublishTestResults@2
     displayName: Publish Test Results
-    condition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'))
+    condition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'), eq(variables['HasJUnitTestResults'], 'true'))
     inputs:
       testResultsFormat: JUnit
       testResultsFiles: '**/test-results/junit/*.xml'

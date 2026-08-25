@@ -58,6 +58,7 @@ stages:
                 PackageRepository: Crates.io
                 ReleaseSha: $(Build.SourceVersion)
                 WorkingDirectory: $(Pipeline.Workspace)/_work
+                AuthToken: ''
 
         - deployment: PublishPackage
           displayName: "Publish to Crates.io"
@@ -192,9 +193,11 @@ stages:
 
           - template: /eng/common/pipelines/templates/steps/create-pull-request.yml
             parameters:
+              PROwner: 'Azure'
               PRBranchName: increment-package-version-${{parameters.ServiceDirectory}}-$(Build.BuildId)
               CommitMsg: "Increment package version after release of ${{ join(', ', parameters.Artifacts.*.name) }}"
               PRTitle: "Increment versions for ${{parameters.ServiceDirectory}} releases"
               CloseAfterOpenForTesting: '${{parameters.TestPipeline}}'
+              AuthToken: ''
               ${{ if startsWith(variables['Build.SourceBranch'], 'refs/pull/') }}:
                 BaseBranchName: main
