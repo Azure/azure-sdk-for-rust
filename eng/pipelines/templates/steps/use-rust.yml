@@ -15,8 +15,58 @@ parameters:
   - name: SetDefault
     type: boolean
     default: true
+  - name: ConfigureRegistry
+    type: boolean
+    default: true
 
 steps:
+# `variables/rust.yml` may relocate CARGO_HOME off the OS volume. Cargo finds its own
+# subcommands there, but tools invoked directly (taplo, cargo2junit) need it on PATH.
+- pwsh: |
+    $cargoBin = ([System.IO.Path]::Combine($env:CARGO_HOME, 'bin'))
+    New-Item -ItemType Directory -Force -Path $cargoBin | Out-Null
+
+    if (($env:PATH -split [System.IO.Path]::PathSeparator) -notcontains $cargoBin) {
+      Write-Host "##vso[task.prependpath]$cargoBin"
+    }
+  displayName: Add CARGO_HOME/bin to PATH
+  condition: and(succeeded(), ne(variables['CARGO_HOME'], ''))
+
+- ${{ if parameters.ConfigureRegistry }}:
+  # CI builds run under network isolation with no access to public crates.io. Route
+  # crates.io traffic through the azure-sdk-for-rust Azure Artifacts feed defined in
+  # eng/templates/config.toml.template, then authenticate cargo to it.
+  - pwsh: |
+      $cargoHome = $env:CARGO_HOME
+      if (-not $cargoHome) { $cargoHome = ([System.IO.Path]::Combine($HOME, '.cargo')) }
+      New-Item -ItemType Directory -Force -Path $cargoHome | Out-Null
+
+      $configPath = ([System.IO.Path]::Combine($cargoHome, 'config.toml'))
+      Copy-Item `
+        -Path '$(Build.SourcesDirectory)/eng/templates/config.toml.template' `
+        -Destination $configPath `
+        -Force
+
+      Write-Host "Wrote cargo config to $configPath"
+      Get-Content $configPath
+      Write-Host "##vso[task.setvariable variable=CargoConfigPath]$configPath"
+    displayName: Configure cargo to use the azure-sdk-for-rust feed
+
+  # Workaround issue in public pipelines. Revert when root cause issue is fixed:
+  # https://github.com/microsoft/azure-pipelines-tasks/issues/22421
+  # NuGetAuthenticate@1 uses the SYSTEMVSSCONNECTION endpoint token, which Azure
+  # DevOps does deliver to fork builds, and publishes it as VSS_NUGET_ACCESSTOKEN
+  # for later steps.
+  - task: NuGetAuthenticate@1
+    displayName: Acquire an Azure Artifacts token that fork builds can use
+
+  - task: CargoAuthenticate@0
+    displayName: Authenticate cargo to the azure-sdk-for-rust feed
+    inputs:
+      configFile: $(CargoConfigPath)
+    env:
+      SYSTEM_ACCESSTOKEN: $(VSS_NUGET_ACCESSTOKEN)
+
 - pwsh: |
     $Toolchain = '${{ parameters.Toolchain }}'
     $MaxAttempts = ${{ parameters.MaxAttempts }}  
