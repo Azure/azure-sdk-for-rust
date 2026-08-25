@@ -53,8 +53,8 @@ async fn create_container(
 /// then verifies that:
 ///
 /// * the response is HTTP 200 with diagnostics populated,
-/// * the response body is the locally-merged post-image (the driver
-///   synthesizes it regardless of `content_response_on_write`), and
+/// * the response body is the post-image (returned whichever execution path
+///   runs, without configuring `content_response_on_write`), and
 /// * a fresh `read_item` observes the same merged state — i.e. the
 ///   RMW Replace actually landed on the service.
 ///
@@ -113,8 +113,8 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
                 diagnostics.request_count(),
             );
 
-            // The driver always returns the locally-merged post-image —
-            // even though `content_response_on_write` was not enabled.
+            // The post-image is returned without enabling
+            // `content_response_on_write`.
             let post_image: PatchTestItem = patch_response.into_model()?;
             assert_eq!(post_image.id, item_id);
             assert_eq!(post_image.partition_key, pk);

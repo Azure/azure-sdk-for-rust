@@ -223,18 +223,21 @@ impl PatchOperation {
     /// operation that is not retry-safe would then be applied twice
     /// (`Increment`) or fail on the second pass (`Remove`, `Move`).
     ///
-    /// Array positions are what make `Add` conditional: appending with `-` or
-    /// inserting at an index shifts the remaining elements, so a resend inserts
-    /// a second element. Adding to an object member is add-or-replace and is
-    /// therefore safe.
+    /// Array positions are what make `Add` and `Set` conditional: appending
+    /// with `-` or inserting at an index shifts the remaining elements, so a
+    /// resend inserts a second element. Adding to an object member is
+    /// add-or-replace and is therefore safe, as is `Set` at a numeric index,
+    /// which overwrites in place.
     ///
     /// An ETag precondition makes even an unsafe list safe to send, because the
     /// resend fails with `412` instead of applying twice — so callers that
     /// supply one are not subject to this classification.
     pub fn is_retry_safe(&self) -> bool {
         match self {
-            // Create-or-replace at an exact path; the second application is a no-op.
-            PatchOperation::Set { .. } | PatchOperation::Replace { .. } => true,
+            // Create-or-replace at an exact path; the second application is a
+            // no-op — except at `-`, which appends whatever the mode.
+            PatchOperation::Set { path, .. } => !targets_append_token(path),
+            PatchOperation::Replace { .. } => true,
             PatchOperation::Add { path, .. } => !targets_array_position(path),
             // Double-applies the delta.
             PatchOperation::Increment { .. } => false,
@@ -247,6 +250,16 @@ impl PatchOperation {
     }
 }
 
+/// Returns the last JSON Pointer token of `path`.
+fn last_pointer_token(path: &str) -> &str {
+    path.rsplit('/').next().unwrap_or(path)
+}
+
+/// Returns `true` when `path` ends in the RFC 6901 append token.
+fn targets_append_token(path: &str) -> bool {
+    last_pointer_token(path) == "-"
+}
+
 /// Returns `true` when the last JSON Pointer token of `path` addresses an array
 /// position — either the append token `-` or a numeric index.
 ///
@@ -255,7 +268,7 @@ impl PatchOperation {
 /// sufficient. A key that genuinely is named `"0"` is treated as an array index
 /// and classified unsafe; that is the conservative direction.
 fn targets_array_position(path: &str) -> bool {
-    let last = path.rsplit('/').next().unwrap_or(path);
+    let last = last_pointer_token(path);
     last == "-" || (!last.is_empty() && last.bytes().all(|b| b.is_ascii_digit()))
 }
 
@@ -396,6 +409,9 @@ mod tests {
     fn retry_safety_matches_the_classification_table() {
         let cases = [
             (PatchOperation::set("/a", json!(1)), true),
+            (PatchOperation::set("/tags/0", json!(1)), true),
+            // `Set` at `-` appends, exactly like `Add`, so a resend appends twice.
+            (PatchOperation::set("/tags/-", json!(1)), false),
             (PatchOperation::replace("/a", json!(1)), true),
             (PatchOperation::add("/obj/member", json!(1)), true),
             (PatchOperation::add("/tags/-", json!(1)), false),
@@ -422,7 +438,9 @@ mod tests {
     fn only_the_last_token_decides_array_targeting() {
         assert!(PatchOperation::set("/items/0/name", json!("x")).is_retry_safe());
         assert!(PatchOperation::add("/items/0/name", json!("x")).is_retry_safe());
+        assert!(PatchOperation::set("/items/-/name", json!("x")).is_retry_safe());
         assert!(!PatchOperation::add("/items/0/tags/-", json!("x")).is_retry_safe());
+        assert!(!PatchOperation::set("/items/0/tags/-", json!("x")).is_retry_safe());
     }
 
     #[test]

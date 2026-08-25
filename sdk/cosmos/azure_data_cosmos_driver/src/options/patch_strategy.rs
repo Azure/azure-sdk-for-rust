@@ -29,7 +29,8 @@ pub enum PatchStrategy {
     ///
     /// Runs server-side when that is safe — every operation is retry-safe and
     /// the list fits within the service's 10-operation limit — and falls back
-    /// to client-side otherwise. The choice is recorded in diagnostics.
+    /// to client-side otherwise. The resolved path is logged at `DEBUG` under
+    /// the `patch_execution` field.
     #[default]
     Auto,
 

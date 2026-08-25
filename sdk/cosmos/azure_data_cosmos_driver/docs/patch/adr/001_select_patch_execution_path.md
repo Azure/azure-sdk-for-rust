@@ -85,6 +85,28 @@ classification: a retry that changes the observed status code is a behavioral
 difference, and the equivalence contract is easier to defend when the rule is
 "same document and same status" with no exceptions.
 
+**A runtime fallback from server-side to the loop.** Out of scope here. The
+selection is static: it is made from the operation list before the request is
+sent, and a server-side patch that the endpoint rejects surfaces that error
+rather than re-running through the loop. A fallback would have to recognize
+"this deployment does not accept `PATCH`" — an unsupported content type on the
+standard gateway, an unknown opcode on Gateway 2.0 — separately from a genuine
+`400` about the operation list, and cache the negative per endpoint so it costs
+one request rather than one per patch. That is a distinguishable-error problem,
+not a retry problem, and getting it wrong converts a real validation failure
+into a silent double round trip. Callers that need to run against an endpoint
+without native `PATCH` should pin `PatchStrategy::ClientSide`.
+
+## Scope and known limitations
+
+- **Equivalence is asserted against the in-memory emulator**, whose patch
+  handler evaluates the operation list with the same `apply_patch_ops` the
+  client-side path uses. The suite therefore pins that the two *driver* paths
+  agree; it does not verify that either agrees with the real service's
+  evaluator on error shape or sub-status. That parity is unverified and needs a
+  live-service tier.
+- **No runtime fallback**, as above.
+
 ## References
 
 - PATCH handler spec: ../PATCH_HANDLER_SPEC.md

@@ -34,7 +34,9 @@ use azure_data_cosmos_driver::models::{
     AccountReference, ContainerReference, CosmosOperation, CosmosResponse, ItemReference,
     PartitionKey, PatchInstructions, PatchOperation,
 };
-use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, PatchStrategy};
+use azure_data_cosmos_driver::options::{
+    ContentResponseOnWrite, DriverOptions, OperationOptions, OperationOptionsBuilder, PatchStrategy,
+};
 use azure_data_cosmos_driver::CosmosDriver;
 
 use super::host_recorder::HostRecorder;
@@ -193,10 +195,10 @@ async fn run_with_strategy(
 
     let item = ItemReference::from_name(container, PartitionKey::from(PK), ITEM_ID.to_string());
     let operation = CosmosOperation::patch_item(item).with_body(serde_json::to_vec(patch).unwrap());
-    let mut options = OperationOptions::default();
-    options.patch_strategy = Some(strategy);
-    options.content_response_on_write =
-        Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(strategy)
+        .with_content_response_on_write(ContentResponseOnWrite::Enabled)
+        .build();
 
     let outcome = match driver.execute_operation(operation, options).await {
         Ok(Some(response)) => outcome_from(response),
@@ -495,8 +497,9 @@ async fn data_plane_requests_for(strategy: PatchStrategy, patch: &PatchInstructi
 
     let item = ItemReference::from_name(&container, PartitionKey::from(PK), ITEM_ID.to_string());
     let operation = CosmosOperation::patch_item(item).with_body(serde_json::to_vec(patch).unwrap());
-    let mut options = OperationOptions::default();
-    options.patch_strategy = Some(strategy);
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(strategy)
+        .build();
     driver
         .execute_operation(operation, options)
         .await
@@ -556,4 +559,116 @@ async fn auto_uses_the_service_for_safe_operations_and_falls_back_otherwise() {
         2,
         "a list over the service's operation limit must not be sent"
     );
+}
+
+/// `ServerSide` is documented as honored without fallback, so an over-long list
+/// must surface the service's own rejection rather than quietly switching to
+/// the loop.
+#[tokio::test]
+async fn server_side_surfaces_the_service_operation_limit() {
+    let (_emulator, driver) = build_driver().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .expect("container should resolve");
+    seed_item(&driver, &container, &seed_doc()).await;
+
+    let patch = PatchInstructions::from(
+        (0..11)
+            .map(|i| PatchOperation::set(format!("/f{i}"), serde_json::json!(i)))
+            .collect::<Vec<_>>(),
+    );
+    let item = ItemReference::from_name(&container, PartitionKey::from(PK), ITEM_ID.to_string());
+    let operation =
+        CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&patch).unwrap());
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(PatchStrategy::ServerSide)
+        .build();
+
+    let error = driver
+        .execute_operation(operation, options)
+        .await
+        .expect_err("an over-long list must be rejected");
+    assert_eq!(
+        u16::from(error.status().status_code()),
+        400,
+        "expected the service's 400, got {error}"
+    );
+}
+
+// ── Response body ─────────────────────────────────────────────────────
+
+/// The post-image must not depend on which path ran. Before server-side patch
+/// existed, `patch_item` always returned it; leaving `content_response_on_write`
+/// unset must not silently turn that off for a `set`-only list.
+#[tokio::test]
+async fn the_post_image_is_returned_without_configuring_content_response() {
+    for strategy in [
+        None,
+        Some(PatchStrategy::Auto),
+        Some(PatchStrategy::ServerSide),
+        Some(PatchStrategy::ClientSide),
+    ] {
+        let (_emulator, driver) = build_driver().await;
+        let container = driver
+            .resolve_container("testdb", "testcoll")
+            .await
+            .expect("container should resolve");
+        seed_item(&driver, &container, &seed_doc()).await;
+
+        let patch = PatchInstructions::from(vec![PatchOperation::set(
+            "/name",
+            serde_json::json!("after"),
+        )]);
+        let item =
+            ItemReference::from_name(&container, PartitionKey::from(PK), ITEM_ID.to_string());
+        let operation =
+            CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&patch).unwrap());
+        let mut builder = OperationOptionsBuilder::new();
+        if let Some(strategy) = strategy {
+            builder = builder.with_patch_strategy(strategy);
+        }
+
+        let response = driver
+            .execute_operation(operation, builder.build())
+            .await
+            .expect("patch should succeed")
+            .expect("patch must produce a response");
+        assert_eq!(
+            body_json(response)["name"],
+            serde_json::json!("after"),
+            "{strategy:?} returned no post-image with content_response_on_write unset"
+        );
+    }
+}
+
+/// An explicit `Disabled` still opts out, so the default above is a default and
+/// not an override.
+#[tokio::test]
+async fn an_explicit_disable_still_suppresses_the_post_image() {
+    let (_emulator, driver) = build_driver().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .expect("container should resolve");
+    seed_item(&driver, &container, &seed_doc()).await;
+
+    let patch = PatchInstructions::from(vec![PatchOperation::set(
+        "/name",
+        serde_json::json!("after"),
+    )]);
+    let item = ItemReference::from_name(&container, PartitionKey::from(PK), ITEM_ID.to_string());
+    let operation =
+        CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&patch).unwrap());
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(PatchStrategy::ServerSide)
+        .with_content_response_on_write(ContentResponseOnWrite::Disabled)
+        .build();
+
+    let response = driver
+        .execute_operation(operation, options)
+        .await
+        .expect("patch should succeed")
+        .expect("patch must produce a response");
+    assert_eq!(body_json(response), serde_json::Value::Null);
 }

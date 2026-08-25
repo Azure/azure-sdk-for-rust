@@ -672,11 +672,12 @@ fn exhaustion_error(
 
 /// Rejects patches that try to mutate the partition key.
 ///
-/// A PATCH that crosses the partition key path can't be implemented safely by
-/// a client-side RMW loop — mutating the partition key means the item moves
-/// partitions, which can't be done atomically through a Replace. Fail fast
-/// rather than silently produce an inconsistent state.
-fn validate_partition_key_paths(
+/// Rewriting the partition key moves the item to a different physical
+/// partition. The client-side RMW loop cannot do that atomically through a
+/// Replace, and the service rejects it outright, so both paths fail fast here
+/// with the same deterministic error rather than one of them spending a round
+/// trip to learn it.
+pub(crate) fn validate_partition_key_paths(
     ops: &[PatchOperation],
     item_ref: &crate::models::ItemReference,
 ) -> crate::error::Result<()> {
@@ -712,7 +713,7 @@ fn validate_partition_key_paths(
                         ))
                         .with_message(format!(
                             "PATCH op '{path}' overlaps partition key path '{pk_path}'; \
-                             cannot mutate partition key with a client-side Read-Modify-Write"
+                             a patch cannot mutate the partition key"
                         ))
                         .build());
                 }

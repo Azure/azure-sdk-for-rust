@@ -568,11 +568,13 @@ impl ContainerClient {
     ///
     /// # Response Body
     ///
-    /// The client-side path always returns the post-image, because it merged
-    /// the document locally and has it to hand. The server-side path honors
-    /// `content_response_on_write` like any other write, so a caller that
-    /// depends on receiving the body should enable it rather than rely on the
-    /// strategy that happens to run.
+    /// This method returns the post-image of the patched item whichever path
+    /// runs: the client-side loop merged the document locally and has it to
+    /// hand, and the server-side path defaults `content_response_on_write` to
+    /// [`ContentResponseOnWrite::Enabled`](crate::options::ContentResponseOnWrite::Enabled)
+    /// so the body does not depend on the operation list. Set it explicitly to
+    /// [`Disabled`](crate::options::ContentResponseOnWrite::Disabled) to opt out
+    /// on the server-side path.
     ///
     /// # Failure Semantics
     ///

@@ -90,15 +90,26 @@ type and per error shape, and separately asserts which path actually ran (one
 data-plane request for server-side, two for client-side) so the comparison
 cannot pass vacuously.
 
+**What the suite does not cover.** The in-memory emulator evaluates a
+server-side patch with the same `apply_patch_ops` the client-side path uses, so
+the suite pins that the two *driver* paths agree — not that either agrees with
+the real service's evaluator. Sub-status and message parity against the service
+is unverified and needs a live-service test tier.
+
 Divergences that are inherent to the two designs, and are asserted rather than
 hidden:
 
 - **Request charge** — the client-side loop pays for a read plus a replace.
 - **Conflict resolution** — path-level server-side, document-level client-side.
 - **Response body** — the client-side path always has the post-image to hand;
-  the server-side path honors `content_response_on_write`.
+  the server-side path honors `content_response_on_write`, which
+  `CosmosDriver::execute_operation` defaults to `Enabled` for a patch when the
+  caller left it unset, so the body does not depend on which path ran.
 - **Operation limit** — server-side patch is capped at
   `MAX_SERVER_SIDE_PATCH_OPERATIONS` (10) per document.
+- **Caller-set preconditions** — rejected on the client-side path, which owns
+  its internal `If-Match`; the server-side path forwards them. The SDK never
+  sets one, so this is reachable only from the driver crate.
 
 ## Inputs
 

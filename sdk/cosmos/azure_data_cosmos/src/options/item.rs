@@ -110,7 +110,8 @@ impl ItemWriteOptions {
 /// [`PatchStrategy`] for what "safe" means.
 ///
 /// [`max_attempts`](Self::max_attempts) bounds the client-side loop only; it
-/// has no effect on a server-side patch.
+/// has no effect on a server-side patch, so under [`PatchStrategy::Auto`] it
+/// applies only when the fallback runs.
 ///
 /// # Conditions are not exposed yet
 ///

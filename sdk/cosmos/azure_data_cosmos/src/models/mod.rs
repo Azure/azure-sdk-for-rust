@@ -11,7 +11,7 @@
 pub use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosNumber, CosmosStatus, EffectivePartitionKey, PartitionKey,
     PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
-    PatchInstructions, PatchOperation,
+    PatchInstructions, PatchOperation, MAX_SERVER_SIDE_PATCH_OPERATIONS,
 };
 pub use batch_response::BatchResponse;
 pub use change_feed_item::{

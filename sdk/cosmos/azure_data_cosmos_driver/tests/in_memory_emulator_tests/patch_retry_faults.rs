@@ -38,7 +38,9 @@ use azure_data_cosmos_driver::models::{
     AccountReference, ContainerReference, CosmosOperation, ItemReference, PartitionKey,
     PatchInstructions, PatchOperation,
 };
-use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, PatchStrategy};
+use azure_data_cosmos_driver::options::{
+    DriverOptions, OperationOptions, OperationOptionsBuilder, PatchStrategy,
+};
 use azure_data_cosmos_driver::CosmosDriver;
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
@@ -108,7 +110,8 @@ async fn seed(driver: &CosmosDriver) -> ContainerReference {
         .await
         .expect("container should resolve");
     let item = ItemReference::from_name(&container, PartitionKey::from(PK), ITEM_ID.to_string());
-    let body = serde_json::json!({ "id": ITEM_ID, "pk": PK, "visits": 1, "name": "before" });
+    let body =
+        serde_json::json!({ "id": ITEM_ID, "pk": PK, "visits": 1, "name": "before", "tags": [] });
     driver
         .execute_operation(
             CosmosOperation::create_item(item).with_body(body.to_string().into_bytes()),
@@ -127,8 +130,9 @@ async fn patch(
 ) -> Result<(), azure_data_cosmos_driver::error::CosmosError> {
     let item = ItemReference::from_name(container, PartitionKey::from(PK), ITEM_ID.to_string());
     let operation = CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&ops).unwrap());
-    let mut options = OperationOptions::default();
-    options.patch_strategy = Some(strategy);
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(strategy)
+        .build();
     driver
         .execute_operation(operation, options)
         .await
@@ -136,6 +140,19 @@ async fn patch(
 }
 
 async fn stored_visits(driver: &CosmosDriver, container: &ContainerReference) -> i64 {
+    stored_item(driver, container).await["visits"]
+        .as_i64()
+        .expect("visits is an integer")
+}
+
+async fn stored_tag_count(driver: &CosmosDriver, container: &ContainerReference) -> usize {
+    stored_item(driver, container).await["tags"]
+        .as_array()
+        .expect("tags is an array")
+        .len()
+}
+
+async fn stored_item(driver: &CosmosDriver, container: &ContainerReference) -> serde_json::Value {
     let item = ItemReference::from_name(container, PartitionKey::from(PK), ITEM_ID.to_string());
     let response = driver
         .execute_operation(
@@ -146,8 +163,7 @@ async fn stored_visits(driver: &CosmosDriver, container: &ContainerReference) ->
         .expect("read back must succeed")
         .expect("read must return a response");
     let bytes = response.into_body().single().expect("point read body");
-    let doc: serde_json::Value = serde_json::from_slice(&bytes).expect("body is JSON");
-    doc["visits"].as_i64().expect("visits is an integer")
+    serde_json::from_slice(&bytes).expect("body is JSON")
 }
 
 fn increment() -> PatchInstructions {
@@ -158,6 +174,15 @@ fn set_name() -> PatchInstructions {
     PatchInstructions::from(vec![PatchOperation::set(
         "/name",
         serde_json::json!("after"),
+    )])
+}
+
+/// `Set` at the RFC 6901 append token appends, exactly like `Add` — the mode
+/// does not matter at `-`.
+fn append_tag() -> PatchInstructions {
+    PatchInstructions::from(vec![PatchOperation::set(
+        "/tags/-",
+        serde_json::json!("new-tag"),
     )])
 }
 
@@ -307,6 +332,51 @@ async fn auto_sends_safe_patches_to_the_service_and_retries_them() {
     assert!(
         rule.hit_count() > 1,
         "a safe patch under Auto goes to the service and is retried, got {} attempt(s)",
+        rule.hit_count()
+    );
+}
+
+/// Regression guard: `Set` was once classified retry-safe unconditionally, so
+/// `set("/tags/-", ..)` — which appends — would have gone server-side under the
+/// default strategy and been resent after an ambiguous failure, appending twice.
+#[tokio::test]
+async fn auto_keeps_array_append_set_off_the_service_patch_path() {
+    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    patch(&driver, &container, append_tag(), PatchStrategy::Auto)
+        .await
+        .expect("Auto must fall back to the loop and succeed");
+
+    assert_eq!(
+        rule.hit_count(),
+        0,
+        "an append is not retry-safe, so Auto must not send it to the service"
+    );
+    assert_eq!(
+        stored_tag_count(&driver, &container).await,
+        1,
+        "the append must land exactly once"
+    );
+}
+
+/// The same append sent server-side on purpose must not be resent — the first
+/// attempt may already have appended.
+#[tokio::test]
+async fn server_side_array_append_set_is_not_retried_after_ambiguous_failure() {
+    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    let outcome = patch(&driver, &container, append_tag(), PatchStrategy::ServerSide).await;
+
+    assert!(outcome.is_err(), "the failure must be surfaced");
+    assert_eq!(
+        rule.hit_count(),
+        1,
+        "an append must be attempted exactly once; {} attempts means the driver \
+         resent a mutation whose outcome was unknown",
         rule.hit_count()
     );
 }

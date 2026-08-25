@@ -2587,29 +2587,45 @@ impl CosmosDriver {
         // the client-side arm re-enters this same entry point for its Read and
         // Replace sub-operations, so `Box::pin` gives that recursive future a
         // fixed size.
-        let operation = if operation.operation_type() == crate::models::OperationType::Patch {
-            match self.resolve_patch_execution(&operation, &options) {
-                crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide => {
-                    let max_attempts = operation.patch_max_attempts();
-                    return Box::pin(async {
-                        let result = crate::driver::pipeline::patch_handler::execute(
-                            self,
-                            operation,
-                            options,
-                            max_attempts,
-                        )
-                        .await?;
-                        Ok(Some(result))
-                    })
-                    .await;
+        let (operation, options) =
+            if operation.operation_type() == crate::models::OperationType::Patch {
+                match self.resolve_patch_execution(&operation, &options)? {
+                    crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide => {
+                        let max_attempts = operation.patch_max_attempts();
+                        return Box::pin(async {
+                            let result = crate::driver::pipeline::patch_handler::execute(
+                                self,
+                                operation,
+                                options,
+                                max_attempts,
+                            )
+                            .await?;
+                            Ok(Some(result))
+                        })
+                        .await;
+                    }
+                    crate::driver::pipeline::patch_strategy::PatchExecution::ServerSide {
+                        retry_safe,
+                    } => {
+                        let mut options = options;
+                        // A patch has always returned the post-image, because the
+                        // loop had it locally. Keep that contract on the wire path
+                        // so the body does not depend on which strategy ran; an
+                        // explicit `Disabled` still opts out.
+                        if self
+                            .operation_options_view(&options)
+                            .content_response_on_write()
+                            .is_none()
+                        {
+                            options.content_response_on_write =
+                                Some(crate::options::ContentResponseOnWrite::Enabled);
+                        }
+                        (operation.with_patch_retry_safe(retry_safe), options)
+                    }
                 }
-                crate::driver::pipeline::patch_strategy::PatchExecution::ServerSide {
-                    retry_safe,
-                } => operation.with_patch_retry_safe(retry_safe),
-            }
-        } else {
-            operation
-        };
+            } else {
+                (operation, options)
+            };
 
         // Resolve binary encoding through the same layered view as every other
         // option, and only honor it for point **item** operations (the resource
@@ -2662,12 +2678,16 @@ impl CosmosDriver {
     /// errors for a malformed or empty patch. That keeps a single source of
     /// those messages and stops a nonsense body from reaching the service.
     ///
+    /// Rejecting a patch that overlaps a partition-key path happens here rather
+    /// than in the client-side handler so both paths fail the same way, without
+    /// spending a round trip to learn it.
+    ///
     /// [`PatchInstructions`]: crate::models::PatchInstructions
     fn resolve_patch_execution(
         &self,
         operation: &CosmosOperation,
         options: &OperationOptions,
-    ) -> crate::driver::pipeline::patch_strategy::PatchExecution {
+    ) -> crate::error::Result<crate::driver::pipeline::patch_strategy::PatchExecution> {
         use crate::driver::pipeline::patch_strategy::{resolve_patch_strategy, PatchExecution};
 
         let instructions = operation
@@ -2675,8 +2695,19 @@ impl CosmosDriver {
             .and_then(|body| serde_json::from_slice::<crate::models::PatchInstructions>(body).ok())
             .filter(|instructions| !instructions.operations.is_empty());
         let Some(instructions) = instructions else {
-            return PatchExecution::ClientSide;
+            return Ok(PatchExecution::ClientSide);
         };
+
+        if let Some(item_ref) = operation
+            .partition_key()
+            .cloned()
+            .and_then(|pk| operation.resource_reference().try_into_item_reference(pk))
+        {
+            crate::driver::pipeline::patch_handler::validate_partition_key_paths(
+                &instructions.operations,
+                &item_ref,
+            )?;
+        }
 
         let requested = self
             .operation_options_view(options)
@@ -2690,11 +2721,12 @@ impl CosmosDriver {
         tracing::debug!(
             requested_patch_strategy = requested.as_str(),
             patch_execution = execution.as_str(),
+            patch_retry_safe = execution.retry_safe(),
             operation_count = instructions.operations.len(),
             "patch strategy resolved"
         );
 
-        execution
+        Ok(execution)
     }
 
     /// Whether binary encoding applies to an operation.

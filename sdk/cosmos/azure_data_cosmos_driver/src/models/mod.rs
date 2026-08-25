@@ -613,12 +613,10 @@ pub enum OperationType {
     Execute,
     /// Patch an item using a server-style operation list.
     ///
-    /// The driver implements `Patch` as a client-side Read-Modify-Write loop:
-    /// it issues a [`OperationType::Read`] for the target item, applies the
-    /// requested patch operations to the local document, and then issues an
-    /// ETag-guarded [`OperationType::Replace`]. PATCH itself is therefore
-    /// never sent on the wire; the variant is a virtual operation type the
-    /// driver dispatches to a dedicated handler.
+    /// Runs either as a single `PATCH` request to the service or as a
+    /// client-side Read-Modify-Write loop (a [`OperationType::Read`] followed
+    /// by an ETag-guarded [`OperationType::Replace`]), selected per operation
+    /// by [`PatchStrategy`](crate::options::PatchStrategy).
     Patch,
     /// Commit a distributed write transaction.
     #[cfg(feature = "preview_dtx")]
@@ -673,10 +671,6 @@ impl OperationType {
             OperationType::ReadFeed => Method::Get,
             OperationType::Replace => Method::Put,
             OperationType::Head | OperationType::HeadFeed => Method::Head,
-            // `Patch` is a virtual operation; the driver decomposes it into a
-            // Read followed by a Replace, so it never produces wire requests
-            // of its own. Reporting `Patch` keeps `http_method` total for
-            // diagnostics/logging without affecting the transport layer.
             OperationType::Patch => Method::Patch,
         }
     }

@@ -8,30 +8,43 @@ The Rust driver retries writes by default for retryable status codes. This is sa
 
 - **503 (Service Unavailable)**: Cosmos DB intentionally returns 503 when a write was **not processed** — it is always safe to retry.
 - **5xx / 408**: Write retries are safe for CRUD operations because customers can (and should) use ETag preconditions (`If-Match`) to guarantee idempotency on replace and upsert. Create operations are inherently idempotent (a duplicate yields 409 Conflict). Delete operations are inherently idempotent (a duplicate yields 404 Not Found).
-- **Stored Procedure execution**: A stored procedure body is opaque to the driver, so a re-run can repeat arbitrary mutations with no way to detect the duplicate. `OperationType::Execute` is therefore **not** retried when the outcome is ambiguous. It *is* still retried on statuses that prove the backend did not run it — see [Stored procedure retries](#stored-procedure-retries).
+- **Stored Procedure execution**: A stored procedure body is opaque to the driver, so a re-run can repeat arbitrary mutations with no way to detect the duplicate. `OperationType::Execute` is therefore **not** retried when the outcome is ambiguous. It *is* still retried on statuses that prove the backend did not run it — see [Ambiguous-outcome retries](#ambiguous-outcome-retries).
+- **Server-side PATCH with a non-retry-safe operation list**: `Increment`, `Remove`, `Move`, and an array-position `Add`/`Set` change the document differently the second time they are applied, so a resend is a duplicate mutation rather than a no-op. Such a patch is subject to the same gate. `PatchStrategy::Auto` never produces one — it routes those lists to the client-side loop, which re-reads before each attempt — so this is reachable only via an explicit `PatchStrategy::ServerSide`.
 
-### Stored procedure retries
+### Ambiguous-outcome retries
 
-Stored procedure execution is the only data-plane operation that is gated. The
-dividing line is whether the response proves the procedure did not run, not
-whether the operation is idempotent.
+Two data-plane operations are gated: stored procedure execution, and a
+server-side patch whose operation list is not retry-safe. The dividing line is
+whether the response proves the backend did not apply the request, not whether
+the operation is idempotent.
 
-| Outcome | Stored procedure | Why |
-|---------|------------------|-----|
+| Outcome | Gated operation | Why |
+|---------|-----------------|-----|
 | Transport error, request definitely **not sent** | Retry | Never reached the backend |
-| Transport error, **sent** or unknown | **Abort** | May have run to completion |
+| Transport error, **sent** or unknown | **Abort** | May have been applied in full |
 | 408 Request Timeout | **Abort** | Outcome unknown |
 | 500 / 502 / 504 | **Abort** | Outcome unknown |
 | 503 Service Unavailable | Retry | Returned only for unprocessed requests |
 | 410 Gone | Retry | Routing rejection, before execution |
 | 429 / 429-3092 | Retry | Throttled, before execution |
 | 449 Retry With | Retry (in-region) | Request never completed |
+| 404/1002 ReadSessionNotAvailable | Retry | Replica lacks the session; rejected before execution |
 | 403/3, 403/1008 | Retry | Rejected on topology, before execution |
 
+Every "Retry" row is a status the backend returns **before** applying the
+request, which is what makes the retry safe for an operation that must not be
+applied twice.
+
 Enforced by `is_unsafe_retry_after_possible_execution` in
-`src/driver/pipeline/retry_evaluation.rs`, which delegates the operation-type
+`src/driver/pipeline/retry_evaluation.rs`, which delegates the operation
 decision to `CosmosOperation::allows_ambiguous_outcome_retry` in
-`src/models/cosmos_operation.rs`.
+`src/models/cosmos_operation.rs`. An abort caused by this gate still emits its
+routing-state effects, so PPCB counts the failure.
+
+A `Patch` operation that never went through
+`CosmosDriver::execute_operation`'s strategy resolution reports `false`: reaching
+the wire without that analysis means nothing classified the operation list, and
+the conservative direction is to refuse the resend.
 
 ### Idempotency Requirements
 
@@ -46,7 +59,7 @@ For replace and upsert operations, the driver **always retries** regardless of w
 | Replace / Upsert (with ETag) | Yes | 200 OK | 412 Precondition Failed (if concurrent update) | 412 |
 | Replace / Upsert (without ETag) | Yes | 200 OK | 200 OK (silent overwrite — no concurrency control) | — |
 | Patch | Yes | 200 OK | 200 OK (operation-level idempotency) | — |
-| Stored Procedure | **Only when provably not executed** | Varies | N/A — see [Stored procedure retries](#stored-procedure-retries) | N/A |
+| Stored Procedure | **Only when provably not executed** | Varies | N/A — see [Ambiguous-outcome retries](#ambiguous-outcome-retries) | N/A |
 
 ## Status Code Handling
 
@@ -144,9 +157,9 @@ Standard 429 is handled entirely within the transport pipeline — the operation
 |-----------|--------|--------|
 | Reads | Cross-region failover retry | 3 failover attempts |
 | Writes (all) | **Cross-region failover retry** | 3 failover attempts |
-| Stored Procedure execution | **Abort** (except 503) | — |
+| Stored Procedure execution, unsafe server-side PATCH | **Abort** (except 503) | — |
 
-All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signal from Cosmos DB — when the service intentionally returns 503, it guarantees the write was not processed. All other 5xx codes (500, 502, 504) are retried identically because CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). 502/504 may be raised by intermediate proxies, but ETag preconditions (412 on stale ETag) prevent silent overwrites on retry. Stored procedure execution aborts on every 5xx except 503, which alone proves the procedure did not run — see `is_unsafe_retry_after_possible_execution` in `src/driver/pipeline/retry_evaluation.rs`.
+All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signal from Cosmos DB — when the service intentionally returns 503, it guarantees the write was not processed. All other 5xx codes (500, 502, 504) are retried identically because CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). 502/504 may be raised by intermediate proxies, but ETag preconditions (412 on stale ETag) prevent silent overwrites on retry. Stored procedure execution and an unsafe server-side patch abort on every 5xx except 503, which alone proves the request was not applied — see `is_unsafe_retry_after_possible_execution` in `src/driver/pipeline/retry_evaluation.rs`.
 
 **Endpoint marking**: Individual 5xx failures do not mark endpoints as unavailable. Endpoint unavailability is driven by PPCB's per-partition failure thresholds (see [Per-Partition Circuit Breaker](#per-partition-circuit-breaker-ppcb)). Each failure increments the partition's failure counter; only when the configured threshold is crossed does routing shift to the next preferred region.
 
@@ -161,15 +174,15 @@ All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signa
 | **Not sent** (request never left client) | Any | Cross-region failover retry | 3 failover attempts |
 | **Sent** or unknown | Reads | Cross-region failover retry | 3 failover attempts |
 | **Sent** or unknown | Writes (all) | **Cross-region failover retry** | 3 failover attempts |
-| **Sent** or unknown | Stored Procedure execution | **Abort** | — |
+| **Sent** or unknown | Stored Procedure execution, unsafe server-side PATCH | **Abort** | — |
 
 When the request was definitely not sent (connection refused, DNS failure, TLS error), the endpoint itself is unreachable. The driver marks the endpoint as unavailable (affecting all partitions on it) and records a partition-level failure for PPCB tracking, then retries on the next preferred region.
 
 When the request was possibly sent, the endpoint is clearly reachable — only partition-level marking is applied (via PPCB). The endpoint is not marked unavailable since other partitions on it are unaffected. The partition mark is applied whether or not the operation goes on to retry.
 
-For connectivity errors (connection refused, I/O errors), the transport layer performs 1 local retry on a different TCP shard to the same endpoint before escalating to the operation pipeline for cross-region failover. This local retry is gated by `TransportPipelineContext::allow_sent_transport_retry` (declared and consumed in `src/driver/transport/transport_pipeline.rs`, evaluated by `should_retry_connectivity_failure`). The operation pipeline populates it from `CosmosOperation::allows_ambiguous_outcome_retry` (`src/models/cosmos_operation.rs`) at both call sites in `src/driver/pipeline/operation_pipeline.rs`, so it is `false` only for stored procedure execution and the two retry layers cannot disagree about a single failure. Declining it does not abort the operation, it escalates straight to cross-region failover.
+For connectivity errors (connection refused, I/O errors), the transport layer performs 1 local retry on a different TCP shard to the same endpoint before escalating to the operation pipeline for cross-region failover. This local retry is gated by `TransportPipelineContext::allow_sent_transport_retry` (declared and consumed in `src/driver/transport/transport_pipeline.rs`, evaluated by `should_retry_connectivity_failure`). The operation pipeline populates it from `CosmosOperation::allows_ambiguous_outcome_retry` (`src/models/cosmos_operation.rs`) at both call sites in `src/driver/pipeline/operation_pipeline.rs`, so it is `false` only for stored procedure execution and an unsafe server-side patch, and the two retry layers cannot disagree about a single failure. This widened the local retry to `Create`, `Upsert`, and `Batch`, which `is_idempotent` previously excluded. Declining it does not abort the operation, it escalates straight to cross-region failover.
 
-**Note**: The Rust driver retries non-idempotent writes even when the request may have been sent, because CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). Stored procedure execution is excluded.
+**Note**: The Rust driver retries non-idempotent writes even when the request may have been sent, because CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). Stored procedure execution and an unsafe server-side patch are excluded.
 
 ### Deadline Exceeded (Client-Side Timeout)
 
@@ -267,7 +280,8 @@ stays on the generic 3-attempt failover budget with no pacing.
 | Non-idempotent write retry | Gated by `retry_write` | Gated by multi-write | Gated by multi-write | **Always (no gate)** |
 | Transport sent + write | Abort | Abort | Abort | **Retry** |
 | Stored procedure retry | No | No | No | **Only when provably not executed** |
+| Unsafe server-side patch retry | N/A | N/A | N/A | **Only when provably not applied** |
 | PPAF | Yes (single-master) | Yes | Yes | **Yes** |
 | PPCB | Yes | Yes | Yes | **Yes** |
 
-The Rust driver is intentionally more aggressive about retrying writes. This is a deliberate design choice for maximum availability, leveraging Cosmos DB's conflict detection and the use of Etags as the safety net for duplicates and idempotency concerns. Stored procedure execution is the single carve-out, because the driver cannot reason about a procedure body it never sees.
+The Rust driver is intentionally more aggressive about retrying writes. This is a deliberate design choice for maximum availability, leveraging Cosmos DB's conflict detection and the use of Etags as the safety net for duplicates and idempotency concerns. Stored procedure execution and an unsafe server-side patch are the carve-outs, because the driver cannot reason about a procedure body it never sees, and cannot un-apply an operation the service may already have applied.

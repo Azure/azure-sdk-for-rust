@@ -159,11 +159,12 @@ pub struct CosmosOperation {
     /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
     /// is dispatched exactly like the standalone Read/Replace it is.
     is_patch_sub_operation: bool,
-    /// `false` only for a server-side patch whose operation list would be
+    /// `Some(false)` only for a server-side patch whose operation list would be
     /// double-applied if the request were resent after an ambiguous failure.
-    /// Resolved once at dispatch and read by
-    /// [`allows_ambiguous_outcome_retry`](Self::allows_ambiguous_outcome_retry).
-    patch_retry_safe: bool,
+    /// `None` means no patch strategy has been resolved yet, which
+    /// [`allows_ambiguous_outcome_retry`](Self::allows_ambiguous_outcome_retry)
+    /// treats as unsafe.
+    patch_retry_safe: Option<bool>,
 }
 
 impl CosmosOperation {
@@ -512,7 +513,7 @@ impl CosmosOperation {
     ///
     /// [`PatchInstructions::is_retry_safe`]: crate::models::PatchInstructions::is_retry_safe
     pub(crate) fn with_patch_retry_safe(mut self, retry_safe: bool) -> Self {
-        self.patch_retry_safe = retry_safe;
+        self.patch_retry_safe = Some(retry_safe);
         self
     }
 
@@ -543,7 +544,7 @@ impl CosmosOperation {
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,
-            patch_retry_safe: true,
+            patch_retry_safe: None,
         }
     }
 
@@ -1106,6 +1107,11 @@ impl CosmosOperation {
     /// [`PatchInstructions::is_retry_safe`]) and which carries no ETag
     /// precondition to turn the resend into a `412`.
     ///
+    /// A `Patch` that has not been through `CosmosDriver::execute_operation`'s
+    /// strategy resolution is treated as unsafe: reaching the wire without that
+    /// analysis means nothing classified the operation list, and guessing wrong
+    /// here double-applies a customer's mutation.
+    ///
     /// Every other data-plane operation is retried, because Cosmos DB's
     /// conflict detection (409/412) makes the final resource state
     /// deterministic — see `docs/ErrorCodesAndRetries.md`.
@@ -1119,7 +1125,11 @@ impl CosmosOperation {
     ///
     /// [`PatchInstructions::is_retry_safe`]: crate::models::PatchInstructions::is_retry_safe
     pub fn allows_ambiguous_outcome_retry(&self) -> bool {
-        self.operation_type != OperationType::Execute && self.patch_retry_safe
+        match self.operation_type {
+            OperationType::Execute => false,
+            OperationType::Patch => self.patch_retry_safe.unwrap_or(false),
+            _ => true,
+        }
     }
 
     /// Returns true if this operation can be planned with a single-node pipeline.
@@ -1392,7 +1402,6 @@ mod tests {
         for op in [
             item(CosmosOperation::create_item),
             item(CosmosOperation::upsert_item),
-            item(CosmosOperation::patch_item),
             item(CosmosOperation::replace_item),
             item(CosmosOperation::delete_item),
             item(CosmosOperation::read_item),
@@ -1421,8 +1430,10 @@ mod tests {
         };
 
         assert!(
-            patch().allows_ambiguous_outcome_retry(),
-            "a patch is retry-eligible until dispatch says otherwise"
+            !patch().allows_ambiguous_outcome_retry(),
+            "a patch that never went through strategy resolution must fail closed: \
+             `plan_operation`/`execute_plan` are public, so an unclassified patch \
+             can reach the wire"
         );
         assert!(patch()
             .with_patch_retry_safe(true)

@@ -320,6 +320,14 @@ pub(crate) fn evaluate_hedge_leg_effects(
                 try_handle_server_error(operation, endpoint, retry_state, status)
             {
                 eval.effects = effects;
+            } else {
+                eval.effects = ambiguous_abort_effects(
+                    operation,
+                    endpoint,
+                    retry_state,
+                    status,
+                    *request_sent,
+                );
             }
         }
 
@@ -417,7 +425,7 @@ fn evaluate_http_outcome(
         OperationAction::Abort {
             error: build_service_error(&status, &cosmos_headers, &body),
         },
-        Vec::new(),
+        ambiguous_abort_effects(operation, endpoint, retry_state, &status, request_sent),
     )
 }
 
@@ -750,30 +758,6 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
 /// 2. **Request sent** — failover retry with `MarkPartitionUnavailable`
 ///    (and, when not PPCB-managed, `MarkEndpointUnavailable`) so future
 ///    requests benefit from the updated routing state.
-/// Whether retrying `operation` is unsafe because the backend may already have
-/// processed the request.
-///
-/// Only stored procedure execution is affected — see
-/// [`CosmosOperation::allows_ambiguous_outcome_retry`]. `503` stays retryable
-/// because Cosmos DB returns it exclusively for requests it did *not* process;
-/// `408` and the remaining `5xx` codes leave the outcome genuinely unknown, so
-/// the procedure may have run to completion despite the error.
-///
-/// Callers apply this only after ruling out `RequestSentStatus::NotSent`, which
-/// is safe for every operation type.
-fn is_unsafe_retry_after_possible_execution(
-    operation: &CosmosOperation,
-    status: &CosmosStatus,
-) -> bool {
-    if operation.allows_ambiguous_outcome_retry() {
-        return false;
-    }
-    let status_code = status.status_code();
-    status_code == azure_core::http::StatusCode::RequestTimeout
-        || (status_code.is_server_error()
-            && status_code != azure_core::http::StatusCode::ServiceUnavailable)
-}
-
 fn try_handle_retry_trigger_group(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -806,7 +790,9 @@ fn try_handle_retry_trigger_group(
     }
 
     // Declining here falls through to the caller's terminal branch, which
-    // surfaces the service's own error rather than a synthesized one.
+    // surfaces the service's own error rather than a synthesized one. The
+    // routing-state effects are re-derived there so the abort still counts
+    // toward the partition's availability.
     if is_unsafe_retry_after_possible_execution(operation, status) {
         return None;
     }
@@ -817,15 +803,7 @@ fn try_handle_retry_trigger_group(
         UnavailableReason::ServiceUnavailable
     };
 
-    let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-        make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
-    )];
-    if !is_ppcb_managed(operation, retry_state) {
-        effects.push(LocationEffect::MarkEndpointUnavailable {
-            endpoint: endpoint.clone(),
-            reason: unavailable_reason,
-        });
-    }
+    let effects = unavailability_effects(operation, endpoint, retry_state, unavailable_reason);
     Some((
         OperationAction::FailoverRetry {
             new_state: retry_state.clone().advance_failover(),
@@ -833,6 +811,79 @@ fn try_handle_retry_trigger_group(
         },
         effects,
     ))
+}
+
+/// Whether retrying `operation` is unsafe because the backend may already have
+/// processed the request.
+///
+/// Affects stored procedure execution and a server-side patch whose operation
+/// list is not retry-safe — see
+/// [`CosmosOperation::allows_ambiguous_outcome_retry`]. `503` stays retryable
+/// because Cosmos DB returns it exclusively for requests it did *not* process;
+/// `408` and the remaining `5xx` codes leave the outcome genuinely unknown, so
+/// the request may have been applied in full despite the error.
+///
+/// Callers apply this only after ruling out `RequestSentStatus::NotSent`, which
+/// is safe for every operation type.
+fn is_unsafe_retry_after_possible_execution(
+    operation: &CosmosOperation,
+    status: &CosmosStatus,
+) -> bool {
+    if operation.allows_ambiguous_outcome_retry() {
+        return false;
+    }
+    let status_code = status.status_code();
+    status_code == azure_core::http::StatusCode::RequestTimeout
+        || (status_code.is_server_error()
+            && status_code != azure_core::http::StatusCode::ServiceUnavailable)
+}
+
+/// Builds the routing-state effects for a failure this endpoint is responsible
+/// for. Emitted whether the operation goes on to retry or aborts — PPCB counts
+/// failures, not retries, so an operation that refuses to be resent must still
+/// register the failure or a consistently broken partition stays invisible.
+fn unavailability_effects(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    reason: UnavailableReason,
+) -> Vec<LocationEffect> {
+    let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+        make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
+    )];
+    if !is_ppcb_managed(operation, retry_state) {
+        effects.push(LocationEffect::MarkEndpointUnavailable {
+            endpoint: endpoint.clone(),
+            reason,
+        });
+    }
+    effects
+}
+
+/// Effects for an abort caused by [`is_unsafe_retry_after_possible_execution`].
+///
+/// Returns an empty vector when the failure was not gated that way, so the
+/// caller can use it unconditionally on its terminal branch.
+fn ambiguous_abort_effects(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    status: &CosmosStatus,
+    request_sent: RequestSentStatus,
+) -> Vec<LocationEffect> {
+    if request_sent.definitely_not_sent()
+        || !retry_state.can_retry_failover()
+        || !is_unsafe_retry_after_possible_execution(operation, status)
+    {
+        return Vec::new();
+    }
+
+    let reason = if status.status_code() == azure_core::http::StatusCode::RequestTimeout {
+        UnavailableReason::RequestTimeout
+    } else {
+        UnavailableReason::InternalServerError
+    };
+    unavailability_effects(operation, endpoint, retry_state, reason)
 }
 
 /// Handles HTTP 449 RetryWith — the Cosmos backend is signaling a
@@ -911,15 +962,12 @@ fn try_handle_server_error(
         return None;
     }
 
-    let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-        make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
-    )];
-    if !is_ppcb_managed(operation, retry_state) {
-        effects.push(LocationEffect::MarkEndpointUnavailable {
-            endpoint: endpoint.clone(),
-            reason: UnavailableReason::InternalServerError,
-        });
-    }
+    let effects = unavailability_effects(
+        operation,
+        endpoint,
+        retry_state,
+        UnavailableReason::InternalServerError,
+    );
     Some((
         OperationAction::FailoverRetry {
             new_state: retry_state.clone().advance_failover(),
@@ -1820,11 +1868,65 @@ mod tests {
         }
 
         fn evaluate(op: &CosmosOperation, result: TransportResult) -> OperationAction {
+            evaluate_full(op, result).0
+        }
+
+        fn evaluate_full(
+            op: &CosmosOperation,
+            result: TransportResult,
+        ) -> (OperationAction, Vec<LocationEffect>) {
             let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
             let endpoint = CosmosEndpoint::global(
                 url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             );
-            evaluate_transport_result(op, &endpoint, result, &state).0
+            evaluate_transport_result(op, &endpoint, result, &state)
+        }
+
+        /// PPCB counts failures, not retries. A partition that consistently
+        /// `500`s on stored-procedure traffic must still trip the circuit
+        /// breaker even though the operation itself refuses to be resent —
+        /// otherwise the failure is invisible to the availability machinery.
+        #[test]
+        fn ambiguous_abort_still_marks_the_partition() {
+            let op = make_execute_stored_procedure_operation();
+            for status_code in [
+                StatusCode::InternalServerError,
+                StatusCode::BadGateway,
+                StatusCode::GatewayTimeout,
+                StatusCode::RequestTimeout,
+            ] {
+                let (action, effects) = evaluate_full(&op, make_http_error(status_code));
+                assert!(
+                    matches!(action, OperationAction::Abort { .. }),
+                    "{status_code:?} must abort, got {action:?}"
+                );
+                assert!(
+                    effects
+                        .iter()
+                        .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+                    "{status_code:?} abort dropped the partition mark: {effects:?}"
+                );
+            }
+        }
+
+        /// The effects-only walker used for hedged attempts mirrors the action
+        /// path, so it must see the same mark.
+        #[test]
+        fn ambiguous_abort_records_effects_on_the_effects_only_path() {
+            let op = make_execute_stored_procedure_operation();
+            let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+            let endpoint = CosmosEndpoint::global(
+                url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            );
+            let result = make_http_error(StatusCode::InternalServerError);
+            let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+            assert!(
+                eval.effects
+                    .iter()
+                    .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+                "effects-only walk dropped the partition mark: {:?}",
+                eval.effects
+            );
         }
 
         #[test]

@@ -29,6 +29,15 @@ impl PatchExecution {
             Self::ServerSide { .. } => "ServerSide",
         }
     }
+
+    /// Whether the resolved execution may be resent after an ambiguous failure.
+    /// The client-side loop re-reads before every attempt, so it always may.
+    pub(crate) fn retry_safe(&self) -> bool {
+        match self {
+            Self::ClientSide => true,
+            Self::ServerSide { retry_safe } => *retry_safe,
+        }
+    }
 }
 
 /// Resolves `requested` against the supplied `instructions`.
