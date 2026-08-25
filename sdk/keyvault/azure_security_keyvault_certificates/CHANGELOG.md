@@ -1,5 +1,11 @@
 # Release History
 
+## 1.0.1 (2026-08-25)
+
+### Bugs Fixed
+
+- Fixed the challenge authentication policy to cache the challenge scope only after the challenge resource is verified, so that a rejected challenge is not cached and reused by subsequent requests.
+
 ## 1.0.0 (2026-05-12)
 
 ### Features Added
