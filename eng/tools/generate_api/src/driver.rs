@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{cli::Request, diagnostics, extract, model::ApiModel};
-use rustdoc_types::Crate;
+use rustdoc_types::{Crate, FORMAT_VERSION};
 use serde::Deserialize;
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
@@ -210,6 +210,21 @@ impl ModelLoader {
                 rustdoc_json_path.display()
             )
         })?;
+        let format: RustdocFormat = serde_json::from_str(&contents).map_err(|error| {
+            format!(
+                "Failed to read rustdoc JSON format version from '{}': {error}",
+                rustdoc_json_path.display()
+            )
+        })?;
+        if format.format_version != FORMAT_VERSION {
+            return Err(format!(
+                "Unsupported rustdoc JSON format {} in '{}'; expected {}",
+                format.format_version,
+                rustdoc_json_path.display(),
+                FORMAT_VERSION
+            ));
+        }
+
         let krate: Crate = serde_json::from_str(&contents).map_err(|error| {
             format!(
                 "Failed to parse rustdoc JSON '{}': {error}",
@@ -260,6 +275,11 @@ impl extract::WorkspaceResolver for ModelLoader {
         }
         self.load_crate_for_workspace(crate_name).map(Some)
     }
+}
+
+#[derive(Deserialize)]
+struct RustdocFormat {
+    format_version: u32,
 }
 
 #[derive(Debug, Clone)]
