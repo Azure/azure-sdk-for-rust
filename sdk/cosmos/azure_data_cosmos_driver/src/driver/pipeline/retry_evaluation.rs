@@ -6,15 +6,21 @@
 //! Handles all HTTP error cases for the multi-region operation loop:
 //! - Success → Complete
 //! - Transport error (NotSent) → TransportRetry if budget allows
-//! - Transport error (Sent/Unknown, idempotent) → TransportRetry if budget allows
-//! - Transport error (Sent/Unknown, non-idempotent, no PPAF) → Abort
+//! - Transport error (Sent/Unknown) → TransportRetry if budget allows
 //! - 403/3 WriteForbidden → FailoverRetry + refresh + mark unavailable
 //! - 404/1002 ReadSessionNotAvailable → SessionRetry (advances region)
 //! - 408 RequestTimeout → FailoverRetry + mark partition/endpoint unavailable
 //! - 503, 429/3092, 410 → FailoverRetry + mark partition/endpoint unavailable
-//! - 503, 429/3092, 410, 408 (non-idempotent, PPAF) → FailoverRetry (write region discovery)
 //! - 500 (reads only) → FailoverRetry + mark partition/endpoint unavailable
 //! - Other HTTP errors → Abort
+//!
+//! Writes are **not** gated on idempotency: `Create` and `Upsert` are retried
+//! after an ambiguous failure just like `Replace` and `Delete`, because Cosmos
+//! DB's conflict detection makes the final resource state deterministic. The
+//! sole exception is stored procedure execution (`OperationType::Execute`),
+//! whose body is opaque to the driver — it aborts on 408, on 5xx other than
+//! 503, and on a transport error that was not definitively unsent. See
+//! `docs/ErrorCodesAndRetries.md`.
 
 use crate::{
     diagnostics::RequestSentStatus,
@@ -744,6 +750,30 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
 /// 2. **Request sent** — failover retry with `MarkPartitionUnavailable`
 ///    (and, when not PPCB-managed, `MarkEndpointUnavailable`) so future
 ///    requests benefit from the updated routing state.
+/// Whether retrying `operation` is unsafe because the backend may already have
+/// processed the request.
+///
+/// Only stored procedure execution is affected — see
+/// [`CosmosOperation::allows_ambiguous_outcome_retry`]. `503` stays retryable
+/// because Cosmos DB returns it exclusively for requests it did *not* process;
+/// `408` and the remaining `5xx` codes leave the outcome genuinely unknown, so
+/// the procedure may have run to completion despite the error.
+///
+/// Callers apply this only after ruling out `RequestSentStatus::NotSent`, which
+/// is safe for every operation type.
+fn is_unsafe_retry_after_possible_execution(
+    operation: &CosmosOperation,
+    status: &CosmosStatus,
+) -> bool {
+    if operation.allows_ambiguous_outcome_retry() {
+        return false;
+    }
+    let status_code = status.status_code();
+    status_code == azure_core::http::StatusCode::RequestTimeout
+        || (status_code.is_server_error()
+            && status_code != azure_core::http::StatusCode::ServiceUnavailable)
+}
+
 fn try_handle_retry_trigger_group(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -773,6 +803,12 @@ fn try_handle_retry_trigger_group(
             },
             Vec::new(),
         ));
+    }
+
+    // Declining here falls through to the caller's terminal branch, which
+    // surfaces the service's own error rather than a synthesized one.
+    if is_unsafe_retry_after_possible_execution(operation, status) {
+        return None;
     }
 
     let unavailable_reason = if is_request_timeout {
@@ -871,6 +907,10 @@ fn try_handle_server_error(
         return None;
     }
 
+    if is_unsafe_retry_after_possible_execution(operation, status) {
+        return None;
+    }
+
     let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
         make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
     )];
@@ -932,7 +972,9 @@ fn evaluate_transport_layer_outcome(
         make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
     )];
 
-    if retry_state.can_retry_failover() {
+    // A stored procedure may already have run to completion on the far side of
+    // this failure, so the outcome is unknowable and the retry is unsafe.
+    if retry_state.can_retry_failover() && operation.allows_ambiguous_outcome_retry() {
         return (
             OperationAction::FailoverRetry {
                 new_state: retry_state.clone().advance_failover(),
@@ -942,7 +984,7 @@ fn evaluate_transport_layer_outcome(
         );
     }
 
-    // Budget exhausted — no more failover attempts available.
+    // Budget exhausted, or the operation cannot tolerate an ambiguous retry.
     (
         OperationAction::Abort {
             error: build_transport_error(&status, error),
@@ -1691,6 +1733,10 @@ mod tests {
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
+    /// Locks in the driver's deliberate divergence from the other Cosmos SDKs
+    /// (see `docs/ErrorCodesAndRetries.md`): a non-idempotent write is retried
+    /// even when the request may already have been sent. Python/Java/.NET abort
+    /// here.
     #[test]
     fn transport_error_sent_non_idempotent_retries() {
         let op = make_create_operation();
@@ -1709,6 +1755,193 @@ mod tests {
         assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    /// The stored-procedure carve-out must not leak onto ordinary writes: a
+    /// non-idempotent `Create` still retries on the same ambiguous statuses.
+    #[test]
+    fn non_idempotent_write_retries_on_timeout_and_server_errors() {
+        let op = make_create_operation();
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        for status_code in [
+            StatusCode::RequestTimeout,
+            StatusCode::InternalServerError,
+            StatusCode::BadGateway,
+            StatusCode::GatewayTimeout,
+            StatusCode::ServiceUnavailable,
+        ] {
+            let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+            let (action, _) =
+                evaluate_transport_result(&op, &endpoint, make_http_error(status_code), &state);
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "{status_code:?} must still fail over for a non-idempotent write, got {action:?}"
+            );
+        }
+    }
+
+    /// Stored procedure execution is the one data-plane operation the driver
+    /// refuses to retry after an ambiguous failure: the procedure body is
+    /// opaque, so a re-run can repeat arbitrary mutations. The tests below pin
+    /// both halves of that contract — what aborts, and what still retries.
+    mod stored_procedure_retries {
+        use super::*;
+        use crate::models::{FeedRange, OperationType, StoredProcedureReference};
+
+        fn make_execute_stored_procedure_operation() -> CosmosOperation {
+            let account = AccountReference::with_master_key(
+                url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+                "dGVzdA==",
+            );
+            let pk_def: PartitionKeyDefinition =
+                serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+            let props = ContainerProperties {
+                id: "testcontainer".into(),
+                partition_key: pk_def,
+                system_properties: SystemProperties::default(),
+            };
+            let container = ContainerReference::new(
+                account,
+                "testdb",
+                "testdb_rid",
+                "testcontainer",
+                "testcontainer_rid",
+                &props,
+            );
+            let sproc = StoredProcedureReference::from_name(&container, "mysproc");
+            let target = FeedRange::for_partition(
+                PartitionKey::from("pk1"),
+                container.partition_key_definition(),
+            );
+            let resource_ref: crate::models::CosmosResourceReference = sproc.into();
+            CosmosOperation::new(OperationType::Execute, resource_ref, Some(target))
+        }
+
+        fn evaluate(op: &CosmosOperation, result: TransportResult) -> OperationAction {
+            let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+            let endpoint = CosmosEndpoint::global(
+                url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            );
+            evaluate_transport_result(op, &endpoint, result, &state).0
+        }
+
+        #[test]
+        fn execute_does_not_allow_ambiguous_outcome_retry() {
+            assert!(!make_execute_stored_procedure_operation().allows_ambiguous_outcome_retry());
+            // Every other operation type does, including the non-idempotent ones.
+            assert!(make_create_operation().allows_ambiguous_outcome_retry());
+            assert!(make_create_item_operation().allows_ambiguous_outcome_retry());
+            assert!(make_read_operation().allows_ambiguous_outcome_retry());
+        }
+
+        #[test]
+        fn transport_error_sent_aborts() {
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_transport_error(RequestSentStatus::Sent),
+            );
+            assert!(
+                matches!(action, OperationAction::Abort { .. }),
+                "a sent stored procedure must not be retried, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn transport_error_unknown_aborts() {
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_transport_error(RequestSentStatus::Unknown),
+            );
+            assert!(
+                matches!(action, OperationAction::Abort { .. }),
+                "an unknown send status is not proof of non-execution, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn transport_error_not_sent_retries() {
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_transport_error(RequestSentStatus::NotSent),
+            );
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "a definitively unsent stored procedure is safe to retry, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn request_timeout_aborts() {
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_http_error(StatusCode::RequestTimeout),
+            );
+            assert!(
+                matches!(action, OperationAction::Abort { .. }),
+                "408 leaves the outcome unknown, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn internal_server_errors_abort() {
+            for status_code in [
+                StatusCode::InternalServerError,
+                StatusCode::BadGateway,
+                StatusCode::GatewayTimeout,
+            ] {
+                let action = evaluate(
+                    &make_execute_stored_procedure_operation(),
+                    make_http_error(status_code),
+                );
+                assert!(
+                    matches!(action, OperationAction::Abort { .. }),
+                    "{status_code:?} leaves the outcome unknown, got {action:?}"
+                );
+            }
+        }
+
+        #[test]
+        fn service_unavailable_retries() {
+            // Cosmos returns 503 only for requests it did not process, so the
+            // procedure provably did not run.
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_http_error(StatusCode::ServiceUnavailable),
+            );
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "503 proves non-execution and stays retryable, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn gone_retries() {
+            // 410 is a routing rejection — the partition moved before execution.
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_http_error(StatusCode::Gone),
+            );
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "410 is a pre-execution rejection, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn retry_with_still_retries_in_region() {
+            // 449 means the request never completed; aborting it would break
+            // stored procedure execution under ordinary write contention.
+            let action = evaluate(
+                &make_execute_stored_procedure_operation(),
+                make_http_error_status(CosmosStatus::new(StatusCode::from(449_u16))),
+            );
+            assert!(
+                matches!(action, OperationAction::InRegionRetry { .. }),
+                "449 is a pre-execution rejection, got {action:?}"
+            );
+        }
     }
 
     #[test]
