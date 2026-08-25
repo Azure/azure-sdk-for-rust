@@ -11,9 +11,6 @@ param(
   [switch]$IgnoreCgManifestVersion
 )
 
-Write-Host '[SKIP] Skipping semver-checks for now; see https://github.com/Azure/azure-sdk-for-rust/issues/4585'
-exit 0
-
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
@@ -21,20 +18,20 @@ $resolvedToolchain = Get-ResolvedRustToolchain -Toolchain $Toolchain
 
 function Get-OutputPackages($workspacePackages) {
   $packages = @()
+  $requestedPackageNames = @()
   switch ($PsCmdlet.ParameterSetName) {
     'Named' {
       Write-Verbose 'Getting named packages from workspace'
+      $requestedPackageNames = $PackageNames
       $packages = $workspacePackages.Where({ $_.name -in $PackageNames })
     }
 
     'PackageInfo' {
       Write-Verbose "Getting packages from $PackageInfoDirectory"
-      $packages = Get-PackagesFromPackageInfo $PackageInfoDirectory | ForEach-Object {
-        [pscustomobject] @{
-          name = $_.Name
-          manifest_path = [System.IO.Path]::Combine($_.DirectoryPath, 'Cargo.toml')
-        }
-      }
+      $requestedPackageNames = @(
+        Get-PackagesFromPackageInfo $PackageInfoDirectory | Select-Object -ExpandProperty Name
+      )
+      $packages = $workspacePackages.Where({ $_.name -in $requestedPackageNames })
     }
 
     default {
@@ -45,14 +42,72 @@ function Get-OutputPackages($workspacePackages) {
   }
 
   Write-Verbose "Packages: $($packages.name -join ', ')"
-  foreach ($name in $packages.name) {
+  foreach ($name in $requestedPackageNames) {
     if (-not $workspacePackages.name.Contains($name)) {
-      Write-Error "Package '$name' is not in the workspace or does not publish"
+      LogError "Package '$name' is not in the workspace or does not publish"
       exit 1
     }
   }
 
   return $packages
+}
+
+function Get-BaselineRevision($package) {
+  $prefix = "$($package.name)@"
+  $currentVersion = [AzureEngSemanticVersion]::ParseVersionString($package.version)
+  if (!$currentVersion) {
+    LogError "Package '$($package.name)' has invalid version '$($package.version)'"
+    exit 1
+  }
+
+  $tags = @(Invoke-LoggedCommand "git tag -l '$prefix*'" -ExecutePath $RepoRoot)
+  $latestVersion = $null
+  $latestStableVersion = $null
+
+  foreach ($tag in $tags) {
+    $version = [AzureEngSemanticVersion]::ParseVersionString($tag.Substring($prefix.Length))
+    if (!$version -or $version.CompareTo($currentVersion) -gt 0) {
+      continue
+    }
+
+    if (!$latestVersion -or $version.CompareTo($latestVersion) -gt 0) {
+      $latestVersion = $version
+    }
+
+    if (
+      !$version.PrereleaseLabel `
+        -and (!$latestStableVersion -or $version.CompareTo($latestStableVersion) -gt 0)
+    ) {
+      $latestStableVersion = $version
+    }
+  }
+
+  $baselineVersion = if ($latestStableVersion) { $latestStableVersion } else { $latestVersion }
+  if ($baselineVersion) {
+    return "$prefix$($baselineVersion.RawVersion)"
+  }
+
+  return $null
+}
+
+$materializedBaselineCommits = @{}
+
+function Initialize-BaselineRevision($baselineRevision) {
+  $commit = Invoke-LoggedCommand "git rev-parse '$baselineRevision^{commit}'" -ExecutePath $RepoRoot
+  if ($materializedBaselineCommits.ContainsKey($commit)) {
+    return
+  }
+
+  $tempDirectory = if ($env:AGENT_TEMPDIRECTORY) { $env:AGENT_TEMPDIRECTORY } else { [System.IO.Path]::GetTempPath() }
+  $archivePath = [System.IO.Path]::Combine($tempDirectory, [System.IO.Path]::GetRandomFileName())
+  try {
+    # Sparse CI clones omit historical objects, which cargo-semver-checks cannot fetch from its local clone.
+    Invoke-LoggedCommand "git archive --format=tar --output='$archivePath' '$baselineRevision'" -ExecutePath $RepoRoot -GroupOutput
+    $materializedBaselineCommits[$commit] = $true
+  }
+  finally {
+    Remove-Item $archivePath -Force -ErrorAction SilentlyContinue
+  }
 }
 
 $packages = Get-CargoPackages
@@ -69,7 +124,14 @@ $finalExitCode = 0
 foreach ($package in $outputPackages) {
   $packageName = $package.name
   $manifestPath = $package.manifest_path
-  $output = Invoke-LoggedCommand "cargo +$resolvedToolchain semver-checks --manifest-path $manifestPath" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
+  $baselineRevision = Get-BaselineRevision $package
+  if (!$baselineRevision) {
+    LogWarning "$packageName has not been published yet and will be ignored"
+    continue
+  }
+
+  Initialize-BaselineRevision $baselineRevision
+  $output = Invoke-LoggedCommand "cargo +$resolvedToolchain semver-checks --manifest-path '$manifestPath' --baseline-rev '$baselineRevision'" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
   if ($output -match 'error: no library targets found in package `(?<name>[\w_]+)`' -and $Matches['name'] -eq $packageName) {
     LogWarning "$packageName base version is a placeholder and will be ignored"
     continue
@@ -77,11 +139,6 @@ foreach ($package in $outputPackages) {
 
   if ($output -match 'error: no crates with library targets selected') {
     LogWarning "$packageName is not a lib crate and will be ignored"
-    continue
-  }
-
-  if ($output -match 'not found in registry') {
-    LogWarning "$packageName has not been published yet and will be ignored"
     continue
   }
 

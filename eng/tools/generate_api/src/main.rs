@@ -8,6 +8,8 @@ mod extract;
 mod model;
 mod output;
 mod render;
+mod rustdoc_compat;
+mod source_cache;
 
 use std::path::Path;
 
