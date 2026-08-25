@@ -851,14 +851,12 @@ impl ContainerClient {
         ))
     }
 
-    /// Executes a single-partition query against items in the container.
+    /// Executes a query against items in the container.
     ///
     /// The resulting document will be deserialized into the type provided as `T`.
     /// If you want to deserialize the document to a direct representation of the JSON returned, use [`serde_json::Value`] as the target type.
     ///
     /// We recommend using ["turbofish" syntax](https://doc.rust-lang.org/book/appendix-02-operators.html#:~:text=turbofish) (`query_items::<SomeTargetType>(...)`) to specify the target type, as it makes type inference easier.
-    ///
-    /// **NOTE:** Currently, the Azure Cosmos DB SDK for Rust only supports single-partition querying. Cross-partition queries may be supported in the future.
     ///
     /// # Arguments
     ///
@@ -868,11 +866,14 @@ impl ContainerClient {
     ///
     /// # Cross Partition Queries
     ///
-    /// Cross-partition queries are significantly limited in the current version of the Cosmos DB SDK.
-    /// They are run on the gateway and limited to simple projections (`SELECT`) and filtering (`WHERE`).
-    /// Cross-partition `ORDER BY VectorDistance(...)` queries are not yet supported because they
-    /// require a buffered merge across partitions. Scope vector ordering queries to one complete
-    /// logical partition with [`FeedScope::partition()`].
+    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with
+    /// a finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers up to
+    /// [`QueryOptions::max_non_streaming_order_by_buffered_items`] candidate rows before returning
+    /// the first page, so use narrow projections and a small result window. The default safety
+    /// limit is 50,000 candidate rows and can be changed through [`QueryOptions`].
+    ///
+    /// The buffered result can be iterated in pages, but it does not support continuation tokens
+    /// for resuming in another process. Hybrid/full-text vector ranking remains unsupported.
     /// For more details, see [the Cosmos DB documentation page on cross-partition queries](https://learn.microsoft.com/en-us/rest/api/cosmos-db/querying-cosmosdb-resources-using-the-rest-api#queries-that-cannot-be-served-by-gateway).
     ///
     /// # Examples
@@ -916,7 +917,8 @@ impl ContainerClient {
     /// ```
     ///
     /// A raw SQL vector search can bind the query vector as a parameter. Vector ordering must not
-    /// specify `ASC` or `DESC`, and should use `TOP N` to bound request-unit consumption:
+    /// specify `ASC` or `DESC`, and must use `TOP N` or `OFFSET`/`LIMIT` when querying across
+    /// partitions:
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -936,7 +938,7 @@ impl ContainerClient {
     /// )
     /// .with_parameter("@vector", &query_vector)?;
     /// let mut matches = container_client
-    ///     .query_items::<VectorMatch>(query, FeedScope::partition("tenant-1"), None)
+    ///     .query_items::<VectorMatch>(query, FeedScope::full_container(), None)
     ///     .await?;
     ///
     /// while let Some(item) = matches.try_next().await? {
@@ -954,6 +956,7 @@ impl ContainerClient {
         options: Option<QueryOptions>,
     ) -> crate::Result<QueryItemIterator<T>> {
         let options = options.unwrap_or_default();
+        let plan_options = options.to_plan_options();
         let query = query.into();
 
         let container_ref = self.container_ref.clone();
@@ -984,7 +987,7 @@ impl ContainerClient {
                 initial_operation,
                 &options.operation,
                 options.feed.continuation_token.as_ref(),
-                &options.feed.to_plan_options(),
+                &plan_options,
             )
             .await?;
         Ok(QueryItemIterator::new(

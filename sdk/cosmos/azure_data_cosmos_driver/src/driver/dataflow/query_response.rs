@@ -353,8 +353,8 @@ pub(crate) struct PageAggregator {
     diagnostics_sources: Vec<Arc<DiagnosticsContext>>,
     activity_id: Option<ActivityId>,
     session_token: Option<SessionToken>,
-    index_metrics: Option<String>,
-    query_metrics: Option<String>,
+    index_metrics: Vec<String>,
+    query_metrics: Vec<String>,
     status: CosmosStatus,
 }
 
@@ -365,8 +365,8 @@ impl Default for PageAggregator {
             diagnostics_sources: Vec::new(),
             activity_id: None,
             session_token: None,
-            index_metrics: None,
-            query_metrics: None,
+            index_metrics: Vec::new(),
+            query_metrics: Vec::new(),
             status: CosmosStatus::new(azure_core::http::StatusCode::Ok),
         }
     }
@@ -388,9 +388,8 @@ impl PageAggregator {
     /// Folds one consumed backend page's headers/diagnostics/status into
     /// the running aggregate. The *last* absorbed response's activity ID
     /// and status win (matching how a single multi-page fetch already
-    /// surfaces "the most recent" status to callers). Query/index metrics
-    /// retain the latest non-empty service-formatted value; request charge is
-    /// summed across every absorbed response.
+    /// surfaces "the most recent" status to callers). Query/index metrics and
+    /// request charge are accumulated across every absorbed response.
     pub(crate) fn absorb(&mut self, response: &CosmosResponse) -> crate::error::Result<()> {
         let charge = response.headers().request_charge.unwrap_or_default();
         self.request_charge = self.request_charge + charge;
@@ -410,7 +409,7 @@ impl PageAggregator {
             .as_ref()
             .filter(|metrics| !metrics.is_empty())
         {
-            self.index_metrics = Some(metrics.clone());
+            self.index_metrics.push(metrics.clone());
         }
         if let Some(metrics) = response
             .headers()
@@ -418,7 +417,7 @@ impl PageAggregator {
             .as_ref()
             .filter(|metrics| !metrics.is_empty())
         {
-            self.query_metrics = Some(metrics.clone());
+            self.query_metrics.push(metrics.clone());
         }
         self.status = response.status();
         if self.diagnostics_sources.len() >= MAX_RETAINED_DIAGNOSTICS_SOURCES {
@@ -473,8 +472,8 @@ impl PageAggregator {
             request_charge: Some(self.request_charge),
             session_token: self.session_token,
             item_count: Some(payloads.len() as u32),
-            index_metrics: self.index_metrics,
-            query_metrics: self.query_metrics,
+            index_metrics: Self::aggregate_index_metrics(&self.index_metrics),
+            query_metrics: (!self.query_metrics.is_empty()).then(|| self.query_metrics.join(",")),
             // Omitted: `continuation` (owned by
             // `OperationPlan::to_continuation_token`) and `etag` (not
             // meaningful once pages are interleaved).
@@ -487,6 +486,35 @@ impl PageAggregator {
             self.status,
             diagnostics,
         ))
+    }
+
+    fn aggregate_index_metrics(metrics: &[String]) -> Option<String> {
+        let last = metrics.last()?.clone();
+        if metrics.len() == 1 {
+            return Some(last);
+        }
+
+        let mut merged = serde_json::Map::new();
+        for metric in metrics {
+            let Ok(serde_json::Value::Object(source)) =
+                serde_json::from_str::<serde_json::Value>(metric)
+            else {
+                return Some(last);
+            };
+            for (name, value) in source {
+                match (merged.get_mut(&name), value) {
+                    (Some(serde_json::Value::Array(target)), serde_json::Value::Array(source)) => {
+                        target.extend(source);
+                    }
+                    (_, value) => {
+                        merged.insert(name, value);
+                    }
+                }
+            }
+        }
+        serde_json::to_string(&serde_json::Value::Object(merged))
+            .ok()
+            .or(Some(last))
     }
 }
 
@@ -898,7 +926,7 @@ mod tests {
     }
 
     #[test]
-    fn page_aggregator_preserves_latest_non_empty_metrics() {
+    fn page_aggregator_aggregates_non_empty_metrics() {
         fn response_with_metrics(
             index_metrics: Option<&str>,
             query_metrics: Option<&str>,
@@ -926,15 +954,23 @@ mod tests {
         aggregator
             .absorb(&response_with_metrics(Some(""), Some("")))
             .unwrap();
+        aggregator
+            .absorb(&response_with_metrics(
+                Some(r#"{"UtilizedSingleIndexes":["second"]}"#),
+                Some("retrievedDocumentCount=2"),
+            ))
+            .unwrap();
         let page = aggregator.build_page(&[]).unwrap();
 
+        let index_metrics: serde_json::Value =
+            serde_json::from_str(page.headers().index_metrics.as_deref().unwrap()).unwrap();
         assert_eq!(
-            page.headers().index_metrics.as_deref(),
-            Some(r#"{"UtilizedSingleIndexes":["first"]}"#)
+            index_metrics["UtilizedSingleIndexes"],
+            serde_json::json!(["first", "second"])
         );
         assert_eq!(
             page.headers().query_metrics.as_deref(),
-            Some("retrievedDocumentCount=1")
+            Some("retrievedDocumentCount=1,retrievedDocumentCount=2")
         );
     }
 

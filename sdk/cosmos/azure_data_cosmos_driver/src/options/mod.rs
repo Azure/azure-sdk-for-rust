@@ -53,7 +53,9 @@ pub use operation_options::{
     ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
 };
 pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
-pub use plan_options::{PlanOptions, DEFAULT_MAX_FAN_OUT};
+pub use plan_options::{
+    PlanOptions, DEFAULT_MAX_FAN_OUT, DEFAULT_MAX_NON_STREAMING_ORDER_BY_BUFFERED_ITEMS,
+};
 pub use policies::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
     ServerCertificateValidation, TlsBackend,

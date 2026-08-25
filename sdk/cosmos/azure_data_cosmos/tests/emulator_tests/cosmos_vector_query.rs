@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Live single-logical-partition vector query coverage.
+//! Live single- and cross-partition vector query coverage.
 //!
 //! Vector search is unavailable on the classic, vnext, and in-memory emulators,
 //! so this module skips those targets at runtime. Live accounts use the default
@@ -16,8 +16,9 @@ use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
     models::{
-        ContainerProperties, IndexingMode, IndexingPolicy, VectorDataType, VectorDistanceFunction,
-        VectorEmbedding, VectorEmbeddingPolicy, VectorIndex, VectorIndexType,
+        ContainerProperties, CosmosStatus, IndexingMode, IndexingPolicy, VectorDataType,
+        VectorDistanceFunction, VectorEmbedding, VectorEmbeddingPolicy, VectorIndex,
+        VectorIndexType,
     },
     options::{MaxItemCountHint, QueryOptions},
     Query,
@@ -45,7 +46,7 @@ struct VectorMatch {
     score: f64,
 }
 
-fn vector_documents() -> [VectorDocument; 6] {
+fn vector_documents() -> [VectorDocument; 7] {
     [
         VectorDocument {
             id: "origin",
@@ -81,7 +82,13 @@ fn vector_documents() -> [VectorDocument; 6] {
             id: "other-partition-origin",
             partition_key: OTHER_PARTITION,
             active: true,
-            embedding: [0.0, 0.0],
+            embedding: [0.5, 0.0],
+        },
+        VectorDocument {
+            id: "other-partition-near",
+            partition_key: OTHER_PARTITION,
+            active: true,
+            embedding: [1.5, 0.0],
         },
     ]
 }
@@ -147,6 +154,55 @@ fn assert_vector_matches(matches: &[VectorMatch]) {
     }
 }
 
+fn cross_partition_vector_query(
+    is_brute_force: bool,
+    offset_limit: bool,
+) -> azure_data_cosmos::Result<Query> {
+    let brute_force = if is_brute_force { "true" } else { "false" };
+    let window = if offset_limit { "OFFSET 1 LIMIT 3" } else { "" };
+    let top = if offset_limit { "" } else { "TOP 5 " };
+    Query::from(format!(
+        "SELECT {top}c.id, VectorDistance(c.embedding, @queryVector, {brute_force}) AS score \
+         FROM c WHERE c.active = true \
+         ORDER BY VectorDistance(c.embedding, @queryVector, {brute_force}) {window}"
+    ))
+    .with_parameter("@queryVector", QUERY_VECTOR.as_slice())
+}
+
+fn assert_cross_partition_matches(matches: &[VectorMatch], offset_limit: bool) {
+    let expected: &[(&str, f64)] = if offset_limit {
+        &[
+            ("other-partition-origin", 0.5),
+            ("near", 1.0),
+            ("other-partition-near", 1.5),
+        ]
+    } else {
+        &[
+            ("origin", 0.0),
+            ("other-partition-origin", 0.5),
+            ("near", 1.0),
+            ("other-partition-near", 1.5),
+            ("far", 2.0),
+        ]
+    };
+    assert_eq!(matches.len(), expected.len());
+    for (item, (expected_id, expected_score)) in matches.iter().zip(expected) {
+        assert_eq!(&item.id, expected_id);
+        assert!(
+            (item.score - expected_score).abs() <= 1e-6,
+            "unexpected score for {}: expected {expected_score}, got {}",
+            item.id,
+            item.score
+        );
+    }
+    assert!(
+        matches
+            .iter()
+            .any(|item| item.id.starts_with("other-partition-")),
+        "cross-partition vector results must include the second logical partition"
+    );
+}
+
 #[tokio::test]
 #[cfg_attr(
     not(any(
@@ -208,6 +264,73 @@ pub async fn single_partition_vector_search() -> Result<(), Box<dyn Error>> {
             }
             assert_vector_matches(&brute_force_matches);
 
+            Ok(())
+        },
+        Some(TestOptions::default()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+pub async fn cross_partition_vector_search() -> Result<(), Box<dyn Error>> {
+    if framework::targets_emulator() {
+        eprintln!(
+            "skipping vector query test: local Cosmos DB emulators do not support \
+             EnableNoSQLVectorSearch"
+        );
+        return Ok(());
+    }
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = seed_vector_container(run_context, db_client).await?;
+            for (is_brute_force, offset_limit) in [(false, false), (true, false), (false, true)] {
+                let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
+                    NonZeroU32::new(2).expect("page size is non-zero"),
+                ));
+                let mut pages = container
+                    .query_items::<VectorMatch>(
+                        cross_partition_vector_query(is_brute_force, offset_limit)?,
+                        FeedScope::full_container(),
+                        Some(options),
+                    )
+                    .await?
+                    .into_pages();
+                let continuation_error = pages
+                    .to_continuation_token()
+                    .expect_err("buffered vector queries must not mint continuation tokens");
+                assert_eq!(
+                    continuation_error.status(),
+                    CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+                );
+
+                let mut matches = Vec::new();
+                let mut seen_ids = HashSet::new();
+                while let Some(page) = pages.next().await {
+                    let items = page?.into_items();
+                    assert!(
+                        items.len() <= 2,
+                        "buffered vector result page exceeded max_item_count"
+                    );
+                    for item in items {
+                        assert!(
+                            seen_ids.insert(item.id.clone()),
+                            "vector query returned duplicate item {}",
+                            item.id
+                        );
+                        matches.push(item);
+                    }
+                }
+                assert_cross_partition_matches(&matches, offset_limit);
+            }
             Ok(())
         },
         Some(TestOptions::default()),

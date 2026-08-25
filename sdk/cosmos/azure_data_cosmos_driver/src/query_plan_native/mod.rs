@@ -188,8 +188,12 @@ impl NativeQueryPlanProvider {
             _ => native::PartitionKind::Hash,
         };
 
+        let is_pure_vector_order_by =
+            crate::query::is_pure_vector_order_by_query_spec(query_spec_json.as_bytes());
         let options = provider::QueryPlanOptions {
             partition_kind,
+            require_formattable_order_by_query: is_pure_vector_order_by,
+            is_continuation_expected: !is_pure_vector_order_by,
             ..provider::QueryPlanOptions::default()
         };
 

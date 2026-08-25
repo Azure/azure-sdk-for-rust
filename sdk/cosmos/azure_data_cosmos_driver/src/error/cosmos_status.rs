@@ -502,6 +502,9 @@ impl SubStatusCode {
             20122 => Some("ClientQueryRewriteBodyInvalid"),
             20123 => Some("ClientDistinctValueTooDeeplyNested"),
             20124 => Some("ClientDistinctContinuationUnsupported"),
+            20125 => Some("ClientNonStreamingOrderByContinuationUnsupported"),
+            20126 => Some("ClientNonStreamingOrderByRequiresFiniteWindow"),
+            20127 => Some("ClientNonStreamingOrderByBufferLimitExceeded"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1394,6 +1397,22 @@ impl SubStatusCode {
     /// so the token is refused rather than silently re-emitting duplicates.
     /// Adding a matching `ORDER BY` makes the query resumable.
     pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = SubStatusCode(20124);
+
+    /// A continuation token was supplied or requested for a non-streaming
+    /// `ORDER BY` query (20125). Resuming would require serializing the buffered
+    /// result set, so the operation must be drained in-process.
+    pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: SubStatusCode =
+        SubStatusCode(20125);
+
+    /// A non-streaming `ORDER BY` query did not contain a finite `TOP` or
+    /// `OFFSET`/`LIMIT` window (20126).
+    pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: SubStatusCode =
+        SubStatusCode(20126);
+
+    /// A non-streaming `ORDER BY` query's candidate window exceeded the
+    /// caller-configured in-memory item limit (20127).
+    pub const CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED: SubStatusCode =
+        SubStatusCode(20127);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -2354,6 +2373,26 @@ impl CosmosStatus {
     pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED),
+    };
+
+    /// 400 / 20125 — continuation tokens are not supported by non-streaming
+    /// `ORDER BY`.
+    pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED),
+    };
+
+    /// 400 / 20126 — non-streaming `ORDER BY` requires a finite result window.
+    pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW),
+    };
+
+    /// 400 / 20127 — the non-streaming `ORDER BY` candidate window exceeds the
+    /// configured in-memory item limit.
+    pub const CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED),
     };
 
     /// 500 / 20217 — a `DISTINCT` node was asked to forward a partition split,

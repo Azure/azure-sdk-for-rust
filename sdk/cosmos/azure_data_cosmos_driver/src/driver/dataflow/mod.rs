@@ -44,6 +44,7 @@ mod integration_tests;
 #[cfg(test)]
 pub(crate) mod mocks;
 mod node;
+mod non_streaming_ordered_merge;
 pub(crate) mod order_by;
 mod pipeline;
 pub(crate) mod planner;
@@ -66,6 +67,7 @@ pub(crate) use drained::DrainedLeaf;
 pub(crate) use node::{
     split_replacement_invalid, validate_exact_coverage, PageResult, PipelineNode, SplitReplacements,
 };
+pub(crate) use non_streaming_ordered_merge::NonStreamingOrderedMerge;
 pub use pipeline::OperationPlan;
 pub(crate) use pipeline::Pipeline;
 pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};

@@ -3,8 +3,13 @@
 
 //! Feed/query options: paging, query metrics, and continuation tokens.
 
+use std::num::NonZeroU32;
+
 use azure_data_cosmos_driver::models::{MaxItemCountHint, SessionToken};
-use azure_data_cosmos_driver::options::{OperationOptions, PlanOptions, DEFAULT_MAX_FAN_OUT};
+use azure_data_cosmos_driver::options::{
+    OperationOptions, PlanOptions, DEFAULT_MAX_FAN_OUT,
+    DEFAULT_MAX_NON_STREAMING_ORDER_BY_BUFFERED_ITEMS,
+};
 
 use crate::feed::ContinuationToken;
 
@@ -142,6 +147,16 @@ pub struct QueryOptions {
     /// response (`x-ms-documentdb-populatequerymetrics`). Surfaced via
     /// `QueryFeedPage::query_metrics()`.
     pub populate_query_metrics: Option<bool>,
+
+    /// Maximum number of candidate items retained in memory for a
+    /// cross-partition vector `ORDER BY`.
+    ///
+    /// Non-streaming vector ordering must buffer its finite `TOP` or
+    /// `OFFSET`/`LIMIT` window before returning the first page. `None` applies
+    /// [`DEFAULT_MAX_NON_STREAMING_ORDER_BY_BUFFERED_ITEMS`]. This limit counts
+    /// items, not their serialized byte size; use a narrow projection to bound
+    /// memory more tightly.
+    pub max_non_streaming_order_by_buffered_items: Option<NonZeroU32>,
 }
 
 impl QueryOptions {
@@ -194,6 +209,26 @@ impl QueryOptions {
         self.feed = self.feed.with_continuation_token(continuation_token);
         self
     }
+
+    /// Sets the maximum number of candidate items retained in memory for a
+    /// cross-partition vector `ORDER BY`.
+    pub fn with_max_non_streaming_order_by_buffered_items(
+        mut self,
+        max_buffered_items: NonZeroU32,
+    ) -> Self {
+        self.max_non_streaming_order_by_buffered_items = Some(max_buffered_items);
+        self
+    }
+
+    pub(crate) fn to_plan_options(&self) -> PlanOptions {
+        let max_buffered_items = self.max_non_streaming_order_by_buffered_items.map_or(
+            DEFAULT_MAX_NON_STREAMING_ORDER_BY_BUFFERED_ITEMS,
+            NonZeroU32::get,
+        );
+        self.feed
+            .to_plan_options()
+            .with_max_non_streaming_order_by_buffered_items(max_buffered_items)
+    }
 }
 
 #[cfg(test)]
@@ -218,5 +253,26 @@ mod tests {
         let feed = FeedOptions::default().with_max_fan_out(250);
         let plan_options = feed.to_plan_options();
         assert_eq!(plan_options.max_fan_out, 250);
+    }
+
+    #[test]
+    fn query_plan_options_use_default_buffer_limit() {
+        let plan_options = QueryOptions::default().to_plan_options();
+        assert_eq!(
+            plan_options.max_non_streaming_order_by_buffered_items,
+            DEFAULT_MAX_NON_STREAMING_ORDER_BY_BUFFERED_ITEMS
+        );
+    }
+
+    #[test]
+    fn query_plan_options_carry_explicit_buffer_limit() {
+        let options = QueryOptions::default()
+            .with_max_non_streaming_order_by_buffered_items(NonZeroU32::new(123).unwrap());
+        assert_eq!(
+            options
+                .to_plan_options()
+                .max_non_streaming_order_by_buffered_items,
+            123
+        );
     }
 }
