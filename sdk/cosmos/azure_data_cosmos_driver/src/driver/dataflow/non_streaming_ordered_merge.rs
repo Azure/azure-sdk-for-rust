@@ -123,7 +123,7 @@ impl NonStreamingOrderedMerge {
         let ordinal = self.next_ordinal;
         self.next_ordinal = self.next_ordinal.checked_add(1).ok_or_else(|| {
             CosmosError::builder()
-                .with_status(CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED)
+                .with_status(CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
                 .with_message("non-streaming ORDER BY row ordinal overflowed")
                 .build()
         })?;

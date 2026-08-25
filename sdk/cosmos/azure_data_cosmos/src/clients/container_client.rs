@@ -867,10 +867,9 @@ impl ContainerClient {
     /// # Cross Partition Queries
     ///
     /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with
-    /// a finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers up to
-    /// [`QueryOptions::max_non_streaming_order_by_buffered_items`] candidate rows before returning
-    /// the first page, so use narrow projections and a small result window. The default safety
-    /// limit is 50,000 candidate rows and can be changed through [`QueryOptions`].
+    /// a finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers that result window before
+    /// returning the first page, so use narrow projections and choose a result window appropriate
+    /// for the memory available to the application.
     ///
     /// The buffered result can be iterated in pages, but it does not support continuation tokens
     /// for resuming in another process. Hybrid/full-text vector ranking remains unsupported.

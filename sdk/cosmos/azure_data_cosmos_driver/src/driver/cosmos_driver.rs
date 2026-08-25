@@ -3405,7 +3405,6 @@ impl CosmosDriver {
                 &mut topology,
                 &operation,
                 resume_state,
-                plan_options,
             )
             .await?;
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);

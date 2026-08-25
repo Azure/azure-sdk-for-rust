@@ -9,10 +9,6 @@
 /// rejected unless the caller raises [`PlanOptions::max_fan_out`].
 pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
 
-/// Default maximum number of candidate rows retained by a non-streaming
-/// cross-partition `ORDER BY` query.
-pub const DEFAULT_MAX_NON_STREAMING_ORDER_BY_BUFFERED_ITEMS: u32 = 50_000;
-
 /// Options that shape how an operation is planned into a dataflow pipeline.
 ///
 /// Unlike [`OperationOptions`](crate::options::OperationOptions), which controls
@@ -39,24 +35,12 @@ pub struct PlanOptions {
     ///
     /// Defaults to [`DEFAULT_MAX_FAN_OUT`].
     pub max_fan_out: u32,
-
-    /// Maximum number of candidate rows a non-streaming cross-partition
-    /// `ORDER BY` query may retain in memory.
-    ///
-    /// Vector searches require a finite `TOP` or `OFFSET`/`LIMIT` window and
-    /// buffer that window before returning the first page. Planning fails when
-    /// the required candidate count exceeds this value.
-    ///
-    /// Defaults to [`DEFAULT_MAX_NON_STREAMING_ORDER_BY_BUFFERED_ITEMS`].
-    pub max_non_streaming_order_by_buffered_items: u32,
 }
 
 impl Default for PlanOptions {
     fn default() -> Self {
         Self {
             max_fan_out: DEFAULT_MAX_FAN_OUT,
-            max_non_streaming_order_by_buffered_items:
-                DEFAULT_MAX_NON_STREAMING_ORDER_BY_BUFFERED_ITEMS,
         }
     }
 }
@@ -65,16 +49,6 @@ impl PlanOptions {
     /// Sets the maximum fan-out for a fresh cross-partition plan.
     pub fn with_max_fan_out(mut self, max_fan_out: u32) -> Self {
         self.max_fan_out = max_fan_out;
-        self
-    }
-
-    /// Sets the maximum number of candidate rows retained by a non-streaming
-    /// cross-partition `ORDER BY` query.
-    pub fn with_max_non_streaming_order_by_buffered_items(
-        mut self,
-        max_buffered_items: u32,
-    ) -> Self {
-        self.max_non_streaming_order_by_buffered_items = max_buffered_items;
         self
     }
 }

@@ -504,7 +504,7 @@ impl SubStatusCode {
             20124 => Some("ClientDistinctContinuationUnsupported"),
             20125 => Some("ClientNonStreamingOrderByContinuationUnsupported"),
             20126 => Some("ClientNonStreamingOrderByRequiresFiniteWindow"),
-            20127 => Some("ClientNonStreamingOrderByBufferLimitExceeded"),
+            20127 => Some("ClientNonStreamingOrderByWindowTooLarge"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1409,10 +1409,9 @@ impl SubStatusCode {
     pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: SubStatusCode =
         SubStatusCode(20126);
 
-    /// A non-streaming `ORDER BY` query's candidate window exceeded the
-    /// caller-configured in-memory item limit (20127).
-    pub const CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED: SubStatusCode =
-        SubStatusCode(20127);
+    /// A non-streaming `ORDER BY` query's candidate window cannot be represented
+    /// by the current process (20127).
+    pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: SubStatusCode = SubStatusCode(20127);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -2388,11 +2387,11 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW),
     };
 
-    /// 400 / 20127 — the non-streaming `ORDER BY` candidate window exceeds the
-    /// configured in-memory item limit.
-    pub const CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED: CosmosStatus = CosmosStatus {
+    /// 400 / 20127 — the non-streaming `ORDER BY` candidate window cannot be
+    /// represented by the current process.
+    pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED),
+        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE),
     };
 
     /// 500 / 20217 — a `DISTINCT` node was asked to forward a partition split,

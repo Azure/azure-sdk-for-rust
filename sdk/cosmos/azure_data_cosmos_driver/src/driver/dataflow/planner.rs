@@ -347,7 +347,6 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
-    plan_options: &PlanOptions,
 ) -> crate::error::Result<Pipeline> {
     if resume.is_some() {
         return Err(crate::error::CosmosError::builder()
@@ -432,44 +431,25 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     })?;
     let retention_limit = skip.checked_add(take).ok_or_else(|| {
         crate::error::CosmosError::builder()
-            .with_status(
-                crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED,
-            )
+            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
             .with_message("non-streaming ORDER BY OFFSET plus take overflows the supported window")
             .build()
     })?;
-    if retention_limit > u64::from(plan_options.max_non_streaming_order_by_buffered_items) {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(
-                crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED,
-            )
-            .with_message(format!(
-                "non-streaming ORDER BY requires buffering {retention_limit} candidate rows, exceeding the configured limit of {}",
-                plan_options.max_non_streaming_order_by_buffered_items,
-            ))
-            .build());
-    }
     let retention_limit = usize::try_from(retention_limit).map_err(|_| {
         crate::error::CosmosError::builder()
-            .with_status(
-                crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED,
-            )
+            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
             .with_message("non-streaming ORDER BY candidate window does not fit in memory")
             .build()
     })?;
     let skip = usize::try_from(skip).map_err(|_| {
         crate::error::CosmosError::builder()
-            .with_status(
-                crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED,
-            )
+            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
             .with_message("non-streaming ORDER BY OFFSET does not fit in memory")
             .build()
     })?;
     let take = usize::try_from(take).map_err(|_| {
         crate::error::CosmosError::builder()
-            .with_status(
-                crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED,
-            )
+            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
             .with_message("non-streaming ORDER BY take does not fit in memory")
             .build()
     })?;
@@ -3814,15 +3794,9 @@ mod tests {
             rr("80", "FF", "pk-right"),
         ])]);
 
-        let pipeline = build_non_streaming_ordered_merge(
-            &plan,
-            &mut topology,
-            &operation,
-            None,
-            &PlanOptions::default(),
-        )
-        .await
-        .unwrap();
+        let pipeline = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .unwrap();
         let merge = pipeline
             .into_root()
             .downcast::<crate::driver::dataflow::NonStreamingOrderedMerge>()
@@ -3843,15 +3817,9 @@ mod tests {
         plan.query_info.as_mut().unwrap().top = None;
         let mut topology = MockTopologyProvider::new(Vec::new());
 
-        let err = build_non_streaming_ordered_merge(
-            &plan,
-            &mut topology,
-            &operation,
-            None,
-            &PlanOptions::default(),
-        )
-        .await
-        .unwrap_err();
+        let err = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .unwrap_err();
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW
@@ -3859,24 +3827,22 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn build_non_streaming_ordered_merge_enforces_buffer_limit() {
+    async fn build_non_streaming_ordered_merge_accepts_large_finite_window() {
         let operation = Arc::new(vector_order_by_operation());
         let mut plan = vector_order_by_plan();
         let info = plan.query_info.as_mut().unwrap();
         info.top = None;
-        info.offset = Some(8);
+        info.offset = Some(50_000);
         info.limit = Some(3);
-        let mut topology = MockTopologyProvider::new(Vec::new());
-        let options = PlanOptions::default().with_max_non_streaming_order_by_buffered_items(10);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-range")])]);
 
-        let err =
-            build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None, &options)
-                .await
-                .unwrap_err();
-        assert_eq!(
-            err.status(),
-            crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_BUFFER_LIMIT_EXCEEDED
-        );
+        let pipeline = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .expect("finite windows are not capped by the client");
+        assert!(pipeline
+            .into_root()
+            .downcast::<crate::driver::dataflow::NonStreamingOrderedMerge>()
+            .is_some());
     }
 
     #[tokio::test]
@@ -3889,7 +3855,6 @@ mod tests {
             &mut topology,
             &operation,
             Some(PipelineNodeState::Drained),
-            &PlanOptions::default(),
         )
         .await
         .unwrap_err();
@@ -3899,15 +3864,9 @@ mod tests {
         );
 
         let non_vector = Arc::new(order_by_operation());
-        let err = build_non_streaming_ordered_merge(
-            &plan,
-            &mut topology,
-            &non_vector,
-            None,
-            &PlanOptions::default(),
-        )
-        .await
-        .unwrap_err();
+        let err = build_non_streaming_ordered_merge(&plan, &mut topology, &non_vector, None)
+            .await
+            .unwrap_err();
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
@@ -3921,15 +3880,9 @@ mod tests {
         plan.query_info.as_mut().unwrap().distinct_type = DistinctType::Unordered;
         let mut topology = MockTopologyProvider::new(Vec::new());
 
-        let err = build_non_streaming_ordered_merge(
-            &plan,
-            &mut topology,
-            &operation,
-            None,
-            &PlanOptions::default(),
-        )
-        .await
-        .unwrap_err();
+        let err = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .unwrap_err();
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE

@@ -89,7 +89,7 @@ pub(crate) fn is_pure_vector_order_by_query_spec(query_spec_json: &[u8]) -> bool
         ast::SqlScalarExpression::FunctionCall { name, args, is_udf }
             if !is_udf
                 && name.eq_ignore_ascii_case("VectorDistance")
-                && (2..=3).contains(&args.len())
+                && (2..=4).contains(&args.len())
     ) && !query_contains_full_text_function(&program.query)
 }
 
@@ -241,6 +241,10 @@ mod vector_order_by_tests {
         assert!(is_pure_vector_order_by_query_spec(&query_spec(
             "SELECT * FROM c ORDER BY vectordistance(c.embedding, @vector) OFFSET 1 LIMIT 2"
         )));
+        assert!(is_pure_vector_order_by_query_spec(&query_spec(
+            "SELECT TOP 5 * FROM c ORDER BY \
+             VectorDistance(c.embedding, @vector, false, {distanceFunction:'Cosine'})"
+        )));
     }
 
     #[test]
@@ -251,6 +255,8 @@ mod vector_order_by_tests {
             "SELECT TOP 5 * FROM c ORDER BY VectorDistance(c.embedding, @vector), c.id",
             "SELECT TOP 5 * FROM c ORDER BY udf.VectorDistance(c.embedding, @vector)",
             "SELECT TOP 5 * FROM c ORDER BY VectorDistance(c.embedding)",
+            "SELECT TOP 5 * FROM c ORDER BY \
+             VectorDistance(c.embedding, @vector, false, {distanceFunction:'Cosine'}, 1)",
         ] {
             assert!(
                 !is_pure_vector_order_by_query_spec(&query_spec(sql)),

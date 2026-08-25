@@ -30,6 +30,24 @@ use serde::{Deserialize, Serialize};
 const SEARCH_PARTITION: &str = "tenant-a";
 const OTHER_PARTITION: &str = "tenant-b";
 const QUERY_VECTOR: [f32; 2] = [0.0, 0.0];
+const PRECOMPUTED_VECTOR_DIMENSIONS: usize = 300;
+const PRECOMPUTED_VECTOR_TOP: usize = 9;
+const PRECOMPUTED_VECTOR_FIXTURE: &str = include_str!("data/precomputed_vector_query.json");
+const PRECOMPUTED_EXPECTED_ORDER: [&str; PRECOMPUTED_VECTOR_TOP] =
+    ["0", "8", "1", "3", "7", "5", "6", "2", "4"];
+const PRECOMPUTED_EXPECTED_MATCHES: [(&str, &str); PRECOMPUTED_VECTOR_TOP] = [
+    ("0", "sayVERB"),
+    ("8", "know_VERB"),
+    ("1", "go_VERB"),
+    ("3", "get_VERB"),
+    ("7", "take_VERB"),
+    ("5", "see_VERB"),
+    ("6", "time_NOUN"),
+    ("2", "make_VERB"),
+    ("4", "one_NUM"),
+];
+const PRECOMPUTED_FIXTURE_SOURCE: &str = "https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos/tests/Microsoft.Azure.Cosmos.EmulatorTests/Query/NonStreamingOrderByQueryTests.cs";
+const PRECOMPUTED_ADAPTATION_NOTE: &str = "The malformed upstream year_NOUN entry was intentionally omitted because its embedding contains 279 rather than 300 components; all included document embeddings are copied without modification.";
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,6 +62,145 @@ struct VectorDocument {
 struct VectorMatch {
     id: String,
     score: f64,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrecomputedVectorFixture {
+    provenance: PrecomputedVectorProvenance,
+    query_vector: Vec<f32>,
+    expected_order: Vec<String>,
+    documents: Vec<PrecomputedVectorDocument>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrecomputedVectorProvenance {
+    source: String,
+    copyright: String,
+    license: String,
+    adaptation_note: String,
+}
+
+#[derive(Deserialize)]
+struct PrecomputedVectorDocument {
+    id: String,
+    word: String,
+    embedding: Vec<f32>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PrecomputedVectorItem<'a> {
+    id: &'a str,
+    word: &'a str,
+    partition_key: &'static str,
+    euclidean_embedding: &'a [f32],
+    cosine_embedding: &'a [f32],
+    dot_product_embedding: &'a [f32],
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrecomputedVectorMatch {
+    id: String,
+    word: String,
+    partition_key: String,
+    score: f64,
+}
+
+#[derive(Clone, Copy)]
+enum PrecomputedDistance {
+    Euclidean,
+    Cosine,
+    DotProduct,
+}
+
+impl PrecomputedDistance {
+    fn path(self) -> &'static str {
+        match self {
+            Self::Euclidean => "euclideanEmbedding",
+            Self::Cosine => "cosineEmbedding",
+            Self::DotProduct => "dotProductEmbedding",
+        }
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Euclidean => "Euclidean",
+            Self::Cosine => "Cosine",
+            Self::DotProduct => "DotProduct",
+        }
+    }
+
+    fn policy(self) -> VectorDistanceFunction {
+        match self {
+            Self::Euclidean => VectorDistanceFunction::Euclidean,
+            Self::Cosine => VectorDistanceFunction::Cosine,
+            Self::DotProduct => VectorDistanceFunction::DotProduct,
+        }
+    }
+}
+
+fn precomputed_vector_fixture() -> PrecomputedVectorFixture {
+    let fixture: PrecomputedVectorFixture =
+        serde_json::from_str(PRECOMPUTED_VECTOR_FIXTURE).expect("fixture should be valid JSON");
+
+    assert_eq!(fixture.provenance.source, PRECOMPUTED_FIXTURE_SOURCE);
+    assert_eq!(
+        fixture.provenance.copyright,
+        "Copyright (c) Microsoft Corporation. All rights reserved."
+    );
+    assert_eq!(fixture.provenance.license, "MIT License");
+    assert_eq!(
+        fixture.provenance.adaptation_note,
+        PRECOMPUTED_ADAPTATION_NOTE
+    );
+    assert_eq!(fixture.query_vector.len(), PRECOMPUTED_VECTOR_DIMENSIONS);
+    assert!(fixture.query_vector.iter().all(|value| value.is_finite()));
+    assert_eq!(
+        fixture
+            .expected_order
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        PRECOMPUTED_EXPECTED_ORDER
+    );
+    assert_eq!(fixture.documents.len(), PRECOMPUTED_VECTOR_TOP);
+
+    let mut document_ids = HashSet::new();
+    for document in &fixture.documents {
+        assert!(
+            document_ids.insert(document.id.as_str()),
+            "fixture contains duplicate document {}",
+            document.id
+        );
+        assert_eq!(
+            document.embedding.len(),
+            PRECOMPUTED_VECTOR_DIMENSIONS,
+            "fixture document {} has the wrong vector dimensions",
+            document.id
+        );
+        assert!(
+            document.embedding.iter().all(|value| value.is_finite()),
+            "fixture document {} contains a non-finite vector component",
+            document.id
+        );
+    }
+    assert_eq!(
+        document_ids,
+        PRECOMPUTED_EXPECTED_ORDER.into_iter().collect()
+    );
+    for (expected_id, expected_word) in PRECOMPUTED_EXPECTED_MATCHES {
+        let document = fixture
+            .documents
+            .iter()
+            .find(|document| document.id == expected_id)
+            .unwrap_or_else(|| panic!("missing fixture document {expected_id}"));
+        assert_eq!(document.word, expected_word);
+    }
+
+    fixture
 }
 
 fn vector_documents() -> [VectorDocument; 7] {
@@ -124,6 +281,110 @@ async fn seed_vector_container(
             .await?;
     }
     Ok(container)
+}
+
+async fn seed_precomputed_vector_container(
+    run_context: &framework::TestRunContext,
+    db_client: &azure_data_cosmos::clients::DatabaseClient,
+    fixture: &PrecomputedVectorFixture,
+) -> azure_data_cosmos::Result<ContainerClient> {
+    let distances = [
+        PrecomputedDistance::Euclidean,
+        PrecomputedDistance::Cosine,
+        PrecomputedDistance::DotProduct,
+    ];
+    let mut indexing_policy = IndexingPolicy::default()
+        .with_indexing_mode(IndexingMode::Consistent)
+        .with_included_path("/*");
+    let mut embedding_policy = VectorEmbeddingPolicy::default();
+    for distance in distances {
+        let path = format!("/{}", distance.path());
+        indexing_policy = indexing_policy
+            .with_excluded_path(format!("{path}/*"))
+            .with_vector_index(VectorIndex::new(path.clone(), VectorIndexType::Flat));
+        embedding_policy = embedding_policy.with_embedding(VectorEmbedding::new(
+            path,
+            VectorDataType::Float32,
+            PRECOMPUTED_VECTOR_DIMENSIONS as u32,
+            distance.policy(),
+        ));
+    }
+    indexing_policy.automatic = true;
+
+    let properties =
+        ContainerProperties::new("PrecomputedVectorQueryContainer", "/partitionKey".into())
+            .with_vector_embedding_policy(embedding_policy)
+            .with_indexing_policy(indexing_policy);
+    let container = run_context
+        .create_container(db_client, properties, None)
+        .await?;
+
+    for (index, document) in fixture.documents.iter().enumerate() {
+        let partition_key = if index % 2 == 0 {
+            SEARCH_PARTITION
+        } else {
+            OTHER_PARTITION
+        };
+        let item = PrecomputedVectorItem {
+            id: &document.id,
+            word: &document.word,
+            partition_key,
+            euclidean_embedding: &document.embedding,
+            cosine_embedding: &document.embedding,
+            dot_product_embedding: &document.embedding,
+        };
+        container
+            .create_item(partition_key, document.id.as_str(), &item, None)
+            .await?;
+    }
+
+    Ok(container)
+}
+
+fn precomputed_vector_query(
+    distance: PrecomputedDistance,
+    is_brute_force: bool,
+    query_vector: &[f32],
+) -> azure_data_cosmos::Result<Query> {
+    let path = distance.path();
+    let distance_function = distance.name();
+    Query::from(format!(
+        "SELECT TOP {PRECOMPUTED_VECTOR_TOP} c.id, c.word, c.partitionKey, \
+         VectorDistance(c.{path}, @queryVector, {is_brute_force}, \
+         {{distanceFunction:'{distance_function}'}}) AS score \
+         FROM c ORDER BY VectorDistance(c.{path}, @queryVector, {is_brute_force}, \
+         {{distanceFunction:'{distance_function}'}})"
+    ))
+    .with_parameter("@queryVector", query_vector)
+}
+
+fn assert_precomputed_vector_matches(matches: &[PrecomputedVectorMatch]) {
+    let actual: Vec<(&str, &str)> = matches
+        .iter()
+        .map(|item| (item.id.as_str(), item.word.as_str()))
+        .collect();
+    assert_eq!(actual, PRECOMPUTED_EXPECTED_MATCHES);
+
+    let ids: HashSet<&str> = matches.iter().map(|item| item.id.as_str()).collect();
+    assert_eq!(ids.len(), PRECOMPUTED_VECTOR_TOP);
+    assert_eq!(
+        ids,
+        PRECOMPUTED_EXPECTED_ORDER.into_iter().collect(),
+        "vector query returned missing or unexpected documents"
+    );
+    let partitions: HashSet<&str> = matches
+        .iter()
+        .map(|item| item.partition_key.as_str())
+        .collect();
+    assert_eq!(
+        partitions,
+        [SEARCH_PARTITION, OTHER_PARTITION].into_iter().collect(),
+        "vector query results must contain both logical partition keys"
+    );
+    assert!(
+        matches.iter().all(|item| item.score.is_finite()),
+        "vector query returned a non-finite score"
+    );
 }
 
 fn vector_query(is_brute_force: bool) -> azure_data_cosmos::Result<Query> {
@@ -331,6 +592,94 @@ pub async fn cross_partition_vector_search() -> Result<(), Box<dyn Error>> {
                 }
                 assert_cross_partition_matches(&matches, offset_limit);
             }
+            Ok(())
+        },
+        Some(TestOptions::default()),
+    )
+    .await
+}
+
+#[test]
+fn precomputed_vector_fixture_has_expected_shape() {
+    precomputed_vector_fixture();
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+pub async fn precomputed_pure_vector_search() -> Result<(), Box<dyn Error>> {
+    if framework::targets_emulator() {
+        eprintln!(
+            "skipping vector query test: local Cosmos DB emulators do not support \
+             EnableNoSQLVectorSearch"
+        );
+        return Ok(());
+    }
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let fixture = precomputed_vector_fixture();
+            let container =
+                seed_precomputed_vector_container(run_context, db_client, &fixture).await?;
+
+            for distance in [
+                PrecomputedDistance::Euclidean,
+                PrecomputedDistance::Cosine,
+                PrecomputedDistance::DotProduct,
+            ] {
+                for is_brute_force in [false, true] {
+                    let options = QueryOptions::default().with_max_item_count(
+                        MaxItemCountHint::Limit(NonZeroU32::new(3).expect("page size is non-zero")),
+                    );
+                    let mut pages = container
+                        .query_items::<PrecomputedVectorMatch>(
+                            precomputed_vector_query(
+                                distance,
+                                is_brute_force,
+                                &fixture.query_vector,
+                            )?,
+                            FeedScope::full_container(),
+                            Some(options),
+                        )
+                        .await?
+                        .into_pages();
+
+                    let mut matches = Vec::new();
+                    let mut seen_ids = HashSet::new();
+                    let mut page_count = 0;
+                    while let Some(page) = pages.next().await {
+                        page_count += 1;
+                        assert!(
+                            page_count <= PRECOMPUTED_VECTOR_TOP,
+                            "{} vector query emitted too many pages",
+                            distance.name()
+                        );
+                        let items = page?.into_items();
+                        assert!(
+                            items.len() <= 3,
+                            "{} vector result page exceeded max_item_count",
+                            distance.name()
+                        );
+                        for item in items {
+                            assert!(
+                                seen_ids.insert(item.id.clone()),
+                                "{} vector query returned duplicate item {}",
+                                distance.name(),
+                                item.id
+                            );
+                            matches.push(item);
+                        }
+                    }
+                    assert_precomputed_vector_matches(&matches);
+                }
+            }
+
             Ok(())
         },
         Some(TestOptions::default()),
