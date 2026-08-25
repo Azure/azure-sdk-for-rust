@@ -870,6 +870,9 @@ impl ContainerClient {
     ///
     /// Cross-partition queries are significantly limited in the current version of the Cosmos DB SDK.
     /// They are run on the gateway and limited to simple projections (`SELECT`) and filtering (`WHERE`).
+    /// Cross-partition `ORDER BY VectorDistance(...)` queries are not yet supported because they
+    /// require a buffered merge across partitions. Scope vector ordering queries to one complete
+    /// logical partition with [`FeedScope::partition()`].
     /// For more details, see [the Cosmos DB documentation page on cross-partition queries](https://learn.microsoft.com/en-us/rest/api/cosmos-db/querying-cosmosdb-resources-using-the-rest-api#queries-that-cannot-be-served-by-gateway).
     ///
     /// # Examples
@@ -909,6 +912,37 @@ impl ContainerClient {
     ///     .with_parameter("@customer_id", 42)?;
     /// let items = container_client
     ///     .query_items::<Customer>(query, FeedScope::partition("some_partition_key"), None).await?;
+    /// # }
+    /// ```
+    ///
+    /// A raw SQL vector search can bind the query vector as a parameter. Vector ordering must not
+    /// specify `ASC` or `DESC`, and should use `TOP N` to bound request-unit consumption:
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// use azure_data_cosmos::{feed::FeedScope, Query};
+    /// use futures::TryStreamExt;
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// #[derive(serde::Deserialize)]
+    /// struct VectorMatch {
+    ///     id: String,
+    ///     score: f64,
+    /// }
+    ///
+    /// let query_vector = vec![0.1_f32, 0.2, 0.3];
+    /// let query = Query::from(
+    ///     "SELECT TOP 5 c.id, VectorDistance(c.embedding, @vector, false) AS score \
+    ///      FROM c ORDER BY VectorDistance(c.embedding, @vector, false)",
+    /// )
+    /// .with_parameter("@vector", &query_vector)?;
+    /// let mut matches = container_client
+    ///     .query_items::<VectorMatch>(query, FeedScope::partition("tenant-1"), None)
+    ///     .await?;
+    ///
+    /// while let Some(item) = matches.try_next().await? {
+    ///     println!("{}: {}", item.id, item.score);
+    /// }
+    /// # Ok(())
     /// # }
     /// ```
     ///

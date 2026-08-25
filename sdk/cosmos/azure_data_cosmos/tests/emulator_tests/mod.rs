@@ -18,6 +18,7 @@ mod cosmos_query;
 mod cosmos_query_features;
 mod cosmos_response_metadata;
 mod cosmos_rid_addressing;
+mod cosmos_vector_query;
 
 #[path = "../framework/mod.rs"]
 mod framework;
