@@ -1,0 +1,46 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directories:
+      - "/"
+      - "/eng/tools"
+      - "/samples/*"
+      - "/sdk/core/typespec_macros/tests/data/safe-debug-tests"
+      - "/sdk/identity/azure_identity/tests/tools/deployed_live_test"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "npm"
+    # eng/emitter-package.json is maintained separately and intentionally omitted.
+    directories:
+      - "/.github/skills/lint-markdown"
+      - "/eng/common/scripts/eval"
+      - "/eng/common/spelling"
+      - "/eng/common/tsp-client"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+      exclude:
+        # Allow immediate updates of self-owned packages.
+        - "@azure-tools/*"
+        - "@autorest/*"
+        - "@azure/*"
+        - "@microsoft.azure/*"
+        - "@typespec/*"
+        - "oav"
+    versioning-strategy: increase-if-necessary
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+    exclude-paths:
+      - ".github/workflows/*.lock.{yaml,yml}"
