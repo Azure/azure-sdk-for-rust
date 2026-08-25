@@ -193,7 +193,23 @@ foreach ($acct in $definition.accounts) {
         }
     }
     else {
-        Write-Info "Cosmos account '$accountName' already exists (selector=$selector); leaving configuration as-is"
+        Write-Info "Cosmos account '$accountName' already exists (selector=$selector); reconciling capabilities"
+        $required = @('EnableNoSQLVectorSearch', 'EnableNoSQLFullTextSearch')
+        $current = @()
+        if ($existing.Capabilities) {
+            $current = @($existing.Capabilities | ForEach-Object { $_.Name })
+        }
+        $missing = @($required | Where-Object { $current -notcontains $_ })
+        if ($missing.Count -gt 0) {
+            $target = @(($current + $missing) | Select-Object -Unique | ForEach-Object { @{ name = $_ } })
+            if ($PSCmdlet.ShouldProcess($accountName, "Update capabilities: add $($missing -join ', ')")) {
+                Write-Info "Adding missing capabilities on '$accountName': $($missing -join ', ')"
+                $null = Update-AzCosmosDBAccount -ResourceGroupName $ResourceGroupName -Name $accountName -Capabilities $target
+            }
+        }
+        else {
+            Write-Info "Capabilities on '$accountName' already include: $($required -join ', ')"
+        }
     }
 
     # Ensure the shared test database exists (mirrors the `database` resource that
