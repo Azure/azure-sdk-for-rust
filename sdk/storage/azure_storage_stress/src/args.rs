@@ -5,13 +5,14 @@ use std::time::Duration;
 
 use azure_core::Result;
 use clap::{Args, Parser};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     fault_injection::FaultInjectionProbabilities, value_parsers::duration_from_seconds, StressTest,
     StressTestFactory,
 };
 
-#[derive(Debug, Clone, Parser)]
+#[derive(Debug, Clone, Parser, Serialize)]
 pub struct StressRunnerOptions<T: StressTestFactory> {
     /// Parallel operations to run.
     #[arg(long, default_value_t = 1, global = true)]
@@ -32,6 +33,14 @@ pub struct StressRunnerOptions<T: StressTestFactory> {
     /// Optional timeout for one-time test cleanup.
     #[arg(long, global = true, value_parser = duration_from_seconds, value_name = "SECONDS")]
     pub cleanup_timeout: Option<Duration>,
+
+    /// How often to log the running results. A value of 0 disables logging.
+    #[arg(long, default_value_t = 100, global = true, value_name = "NUM RESULTS")]
+    pub results_log_frequency: usize,
+
+    /// Whether to pretty-print log output.
+    #[arg(long, global = true)]
+    pub log_pretty: bool,
 
     /// Path to a json config file for fault injection.
     #[arg(
@@ -108,29 +117,20 @@ impl<T: StressTestFactory> StressRunnerOptions<T> {
 
 impl<T: StressTestFactory> std::fmt::Display for StressRunnerOptions<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "=== Stress Runner Configuration ===")?;
-        writeln!(f, "duration: {}", self.duration.as_secs())?;
-        writeln!(f, "parallel: {}", self.parallel)?;
         writeln!(
             f,
-            "operation_timeout: {:?}",
-            self.operation_timeout.map(|t| t.as_secs())
-        )?;
-        writeln!(
-            f,
-            "setup_timeout: {:?}",
-            self.setup_timeout.map(|t| t.as_secs())
-        )?;
-        writeln!(
-            f,
-            "cleanup_timeout: {:?}",
-            self.cleanup_timeout.map(|t| t.as_secs())
-        )?;
-        std::fmt::Display::fmt(&self.command, f)
+            "{}",
+            if self.log_pretty {
+                serde_json::to_string_pretty(self)
+            } else {
+                serde_json::to_string(self)
+            }
+            .map_err(|_| std::fmt::Error)?
+        )
     }
 }
 
-#[derive(Args, serde::Deserialize, Clone, Debug)]
+#[derive(Args, Clone, Debug, Deserialize, Serialize)]
 #[group(required = false, multiple = true)]
 pub struct FaultInjectionOverrideOptions {
     /// Override probability for a partial response then hang.

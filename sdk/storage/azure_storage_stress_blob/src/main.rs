@@ -10,15 +10,19 @@ use azure_storage_stress::{
     args::StressRunnerOptions, Result, StressRunner, StressTest, StressTestFactory,
 };
 use clap::Subcommand;
-use log::error;
+use log::{error, info};
+use serde::Serialize;
 
 use crate::roundtrip_test::RoundtripBlobsTestArgs;
 
 #[tokio::main]
 async fn main() {
+    println!("Azure Storage Blobs Stress Test");
     init_logger();
 
     let runner = StressRunner::<StressTests>::new(env!("CARGO_MANIFEST_DIR"), file!());
+
+    info!("Runner options: {}", runner.options());
 
     if let Err(e) = runner.run().await {
         error!("{}", e);
@@ -26,7 +30,7 @@ async fn main() {
     }
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Serialize, Subcommand)]
 enum StressTests {
     /// Continuously upload then download blobs.
     Roundtrip(RoundtripBlobsTestArgs),

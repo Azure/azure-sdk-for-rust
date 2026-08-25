@@ -26,11 +26,12 @@ use clap::{Args, ValueEnum};
 use crc_fast::{CrcAlgorithm, Digest};
 use futures::{channel::mpsc::UnboundedSender, SinkExt, TryStreamExt};
 use log::{debug, info};
+use serde::Serialize;
 use uuid::Uuid;
 
 const CRC_ALGORITHM: CrcAlgorithm = CrcAlgorithm::Crc64Nvme;
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Serialize)]
 pub(crate) struct RoundtripBlobsTestArgs {
     /// Concurrency value for transfer options.
     #[arg(long, default_value_t = NonZero::new(2).unwrap(), value_parser = non_zero_usize, value_name = "NUM WORKERS")]
@@ -49,7 +50,7 @@ pub(crate) struct RoundtripBlobsTestArgs {
     data_source: DataSourceType,
 }
 
-#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, ValueEnum)]
+#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, ValueEnum)]
 enum DataSourceType {
     /// A stream which uploads in-memory data through a stream interface.
     GeneratedStream,
@@ -158,7 +159,7 @@ impl StressTest for RoundtripBlobsTest {
                 ..Default::default()
             }))
             .await?;
-        info!("Deleting created.");
+        info!("Container deleted.");
         Ok(())
     }
 }

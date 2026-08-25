@@ -1077,6 +1077,7 @@ dependencies = [
  "log",
  "rand 0.10.2",
  "reqwest",
+ "serde",
  "tokio",
  "uuid",
 ]

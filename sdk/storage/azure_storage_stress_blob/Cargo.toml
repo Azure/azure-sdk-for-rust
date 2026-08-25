@@ -22,6 +22,7 @@ futures.workspace = true
 log = "0.4.29"
 rand.workspace = true
 reqwest = { workspace = true, features = ["rustls"] }
+serde.workspace = true
 tokio = { workspace = true, features = ["rt"] }
 uuid.workspace = true
 

@@ -26,7 +26,7 @@ use crate::{args::StressRunnerOptions, futures_ext::OptionalTimeoutFutureExt};
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// A [Subcommand] specifier capable of instancing the code for the selected subcommand.
-pub trait StressTestFactory: Subcommand + Debug + std::fmt::Display {
+pub trait StressTestFactory: Subcommand + Debug + serde::Serialize {
     fn build_test(options: &StressRunnerOptions<Self>) -> Result<Box<dyn StressTest>>;
 }
 
@@ -141,21 +141,23 @@ impl<T: StressTestFactory> StressRunner<T> {
         })
     }
 
+    pub fn options(&self) -> &StressRunnerOptions<T> {
+        &self.options
+    }
+
     pub async fn run(&self) -> Result<()> {
         let stress_test = self.options.build_test()?;
         let mut totals = StressRunCounts::default();
 
-        info!("{}", self.options);
-
         // Catch all Err returns of setup and test run, ensuring we always run cleanup.
         let setup_and_run_result: Result<()> = async {
-            info!("=== Global Setup ===");
+            info!("Begin global setup");
             stress_test
                 .global_setup()
                 .timeout(self.options.setup_timeout)
                 .await??;
 
-            info!("=== Begin Stress ===");
+            info!("Begin stress test");
             // Race an infinite loop of parallel tests against a timeout.
             // Note that each individual test is spawned into a different worker, and therefore
             // will NOT cease when the stress loop future is dropped.
@@ -194,13 +196,13 @@ impl<T: StressTestFactory> StressRunner<T> {
 
         info!(
             "Final results: {}",
-            serde_json::to_string_pretty(&totals).with_context(
+            serialize(&totals, self.options.log_pretty).with_context(
                 ErrorKind::DataConversion,
                 "Failed to serialize test results to JSON.",
             )?
         );
 
-        info!("=== Begin Cleanup ===");
+        info!("Begin cleanup");
         stress_test
             .global_cleanup()
             .timeout(self.options.cleanup_timeout)
@@ -217,7 +219,7 @@ async fn infinite_stress_loop<T: StressTestFactory>(
     let (tx, mut rx) = mpsc::unbounded();
 
     for iteration in 1usize.. {
-        debug!("Start operation {}", iteration);
+        debug!("Begin operation {}", iteration);
 
         join_handles.push(get_async_runtime().spawn(operation_wrapper(
             stress_test.get_operation().await?,
@@ -243,28 +245,41 @@ async fn infinite_stress_loop<T: StressTestFactory>(
                 StressRunOutput::GracefulError(_error) => totals.loops_graceful_error += 1,
                 StressRunOutput::Timeout => totals.loops_timeout += 1,
                 StressRunOutput::DataCorruption => totals.loops_data_corruption += 1,
-                StressRunOutput::Panic(_panic_msg) => {}
+                StressRunOutput::Panic(_panic_msg) => totals.loops_panic += 1,
             }
-            match msg {
+            match &msg {
                 StressRunOutput::Success | StressRunOutput::GracefulError(_) => {
-                    if iteration % 100 == 0 {
+                    if options.results_log_frequency > 0
+                        && iteration % options.results_log_frequency == 0
+                    {
                         info!(
                             "{}",
-                            serde_json::to_string_pretty(&totals)
-                                .unwrap_or("Failed to serialize test results to JSON.".to_string())
+                            serialize(&totals, options.log_pretty).with_context(
+                                ErrorKind::DataConversion,
+                                "Failed to serialize test results to JSON."
+                            )?
                         )
                     }
                 }
-                _ => warn!(
-                    "{}",
-                    serde_json::to_string_pretty(&totals)
-                        .unwrap_or("Failed to serialize test results to JSON.".to_string())
-                ),
+                StressRunOutput::Panic(panic_msg) => warn!("Library panicked. {panic_msg}"),
+                StressRunOutput::Timeout => warn!("Operation timed out."),
+                StressRunOutput::DataCorruption => warn!("Data integrity check failed."),
             }
         }
     }
 
     Ok(())
+}
+
+fn serialize<T: Serialize>(
+    value: &T,
+    pretty: bool,
+) -> std::result::Result<String, serde_json::Error> {
+    if pretty {
+        serde_json::to_string_pretty(value)
+    } else {
+        serde_json::to_string(value)
+    }
 }
 
 fn operation_wrapper(
