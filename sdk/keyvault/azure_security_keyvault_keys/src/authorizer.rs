@@ -120,10 +120,6 @@ impl OnChallenge for KeyVaultAuthorizer {
     ) -> Result<()> {
         let challenge = headers.get_str(&WWW_AUTHENTICATE)?;
         let scope = KeyVaultAuthorizer::parse_scope_from_challenge(challenge)?;
-        {
-            let mut cached_scope = self.scope.write().await;
-            *cached_scope = scope.clone();
-        }
         if self.verify_challenge_resource {
             // the challenge resource's host must match the requested domain's host
             let challenge_url = Url::parse(&scope).map_err(|_| {
@@ -152,6 +148,10 @@ impl OnChallenge for KeyVaultAuthorizer {
                             "challenge resource '{scope}' doesn't match the requested domain '{request_host}'. Set verify_challenge_resource in client options to disable this validation if necessary. See https://aka.ms/azsdk/blog/vault-uri for more information`"
                 )));
             }
+        }
+        {
+            let mut cached_scope = self.scope.write().await;
+            *cached_scope = scope.clone();
         }
         if let Some(saved_body) = context.value::<Body>() {
             request.set_body(saved_body);
@@ -409,6 +409,82 @@ mod tests {
             }
             _ => panic!("unexpected error kind: {err:?}"),
         }
+    }
+
+    #[tokio::test]
+    async fn rejected_challenge_is_not_cached() {
+        let mock_credential = Arc::new(MockCredential::new(
+            vec![AccessToken {
+                token: Secret::new("token".to_string()),
+                expires_on: OffsetDateTime::now_utc() + Duration::seconds(3600),
+            }],
+            "https://a.b/.default".to_string(),
+        ));
+        let requests = Arc::new(AtomicUsize::new(0));
+        let transport = Transport::new(Arc::new(MockHttpClient::new({
+            let requests = Arc::clone(&requests);
+            move |req| {
+                let requests = Arc::clone(&requests);
+                async move {
+                    requests.fetch_add(1, Ordering::SeqCst);
+                    assert!(
+                        req.headers()
+                            .get_str(&HeaderName::from_static("authorization"))
+                            .is_err(),
+                        "rejected challenge must not authorize later requests"
+                    );
+                    assert_eq!(req.body().is_empty(), Some(true), "request body should be stripped");
+
+                    let mut headers = Headers::new();
+                    headers.insert(WWW_AUTHENTICATE, r#"Bearer authorization="https://login.microsoftonline.com/tenant", resource="https://a.b""#);
+                    Ok(AsyncRawResponse::from_bytes(
+                        StatusCode::Unauthorized,
+                        headers,
+                        Bytes::new(),
+                    ))
+                }
+                .boxed()
+            }
+        })));
+        let client_options = azure_core::http::ClientOptions {
+            transport: Some(transport),
+            ..Default::default()
+        };
+
+        let authorizer = KeyVaultAuthorizer::new(true);
+        let auth_policy: Arc<dyn Policy> = Arc::new(
+            BearerTokenAuthorizationPolicy::new(mock_credential.clone(), Vec::<String>::new())
+                .with_on_request(authorizer.clone())
+                .with_on_challenge(authorizer),
+        );
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            client_options,
+            Vec::default(),
+            vec![auth_policy],
+            None,
+        );
+
+        for _ in 0..2 {
+            let mut request = Request::new(
+                Url::parse("https://vault.c.d/keys/foo").unwrap(),
+                Method::Put,
+            );
+            request.insert_header("content-type", "application/json");
+            request.set_body(Bytes::from_static(b"{\"value\":\"secret\"}"));
+            pipeline
+                .send(&Context::default(), &mut request, None)
+                .await
+                .expect_err("challenge resource validation should fail");
+        }
+
+        assert_eq!(requests.load(Ordering::SeqCst), 2);
+        assert_eq!(
+            mock_credential.call_count(),
+            0,
+            "credential should not be called for rejected challenges"
+        );
     }
 
     #[tokio::test]
