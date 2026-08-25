@@ -98,7 +98,8 @@ function Initialize-BaselineRevision($baselineRevision) {
     return
   }
 
-  $archivePath = [System.IO.Path]::GetTempFileName()
+  $tempDirectory = if ($env:AGENT_TEMPDIRECTORY) { $env:AGENT_TEMPDIRECTORY } else { [System.IO.Path]::GetTempPath() }
+  $archivePath = [System.IO.Path]::Combine($tempDirectory, [System.IO.Path]::GetRandomFileName())
   try {
     # Sparse CI clones omit historical objects, which cargo-semver-checks cannot fetch from its local clone.
     Invoke-LoggedCommand "git archive --format=tar --output='$archivePath' '$baselineRevision'" -ExecutePath $RepoRoot -GroupOutput
