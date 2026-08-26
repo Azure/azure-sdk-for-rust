@@ -345,55 +345,6 @@ fn parse_envelope_item(
 /// folded at this size instead of only at `build_page`.
 const MAX_RETAINED_DIAGNOSTICS_SOURCES: usize = 32;
 
-/// Bounds raw metrics retained while assembling one output page. Metrics are
-/// service-provided strings without a stable schema, so the aggregator retains
-/// a bounded prefix and explicitly marks the output if later values are dropped.
-const MAX_RETAINED_METRICS_ENTRIES: usize = 32;
-const MAX_RETAINED_METRICS_BYTES: usize = 64 * 1024;
-const QUERY_METRICS_TRUNCATION_MARKER: &str = "clientMetricsTruncated=true";
-const INDEX_METRICS_TRUNCATION_MARKER: &str = "_clientMetricsTruncated";
-
-#[derive(Default)]
-struct BoundedMetrics {
-    entries: Vec<String>,
-    retained_bytes: usize,
-    truncated: bool,
-}
-
-impl BoundedMetrics {
-    fn absorb(&mut self, metrics: &str) {
-        if metrics.is_empty() {
-            return;
-        }
-
-        let retained_bytes = self.retained_bytes.saturating_add(metrics.len());
-        if self.entries.len() >= MAX_RETAINED_METRICS_ENTRIES
-            || retained_bytes > MAX_RETAINED_METRICS_BYTES
-        {
-            self.truncated = true;
-            return;
-        }
-
-        self.entries.push(metrics.to_owned());
-        self.retained_bytes = retained_bytes;
-    }
-
-    fn aggregate_query_metrics(&self) -> Option<String> {
-        if self.entries.is_empty() && !self.truncated {
-            return None;
-        }
-
-        let mut aggregated = self.entries.join(",");
-        if self.truncated {
-            if !aggregated.is_empty() {
-                aggregated.push(',');
-            }
-            aggregated.push_str(QUERY_METRICS_TRUNCATION_MARKER);
-        }
-        Some(aggregated)
-    }
-}
-
 /// Accumulates request charge and diagnostics across every backend page
 /// consumed while assembling one emitted output page, then reconstructs a
 /// single [`CosmosResponse`] carrying only the raw payload items.
@@ -402,8 +353,8 @@ pub(crate) struct PageAggregator {
     diagnostics_sources: Vec<Arc<DiagnosticsContext>>,
     activity_id: Option<ActivityId>,
     session_token: Option<SessionToken>,
-    index_metrics: BoundedMetrics,
-    query_metrics: BoundedMetrics,
+    index_metrics: Option<String>,
+    query_metrics: Option<String>,
     status: CosmosStatus,
 }
 
@@ -414,8 +365,8 @@ impl Default for PageAggregator {
             diagnostics_sources: Vec::new(),
             activity_id: None,
             session_token: None,
-            index_metrics: BoundedMetrics::default(),
-            query_metrics: BoundedMetrics::default(),
+            index_metrics: None,
+            query_metrics: None,
             status: CosmosStatus::new(azure_core::http::StatusCode::Ok),
         }
     }
@@ -437,9 +388,9 @@ impl PageAggregator {
     /// Folds one consumed backend page's headers/diagnostics/status into
     /// the running aggregate. The *last* absorbed response's activity ID
     /// and status win (matching how a single multi-page fetch already
-    /// surfaces "the most recent" status to callers). Request charge is
-    /// accumulated across every response; query/index metrics retain a bounded
-    /// prefix and carry an explicit truncation marker if the cap is exceeded.
+    /// surfaces "the most recent" status to callers). Query/index metrics
+    /// retain the latest non-empty service-formatted value; request charge is
+    /// summed across every absorbed response.
     pub(crate) fn absorb(&mut self, response: &CosmosResponse) -> crate::error::Result<()> {
         let charge = response.headers().request_charge.unwrap_or_default();
         self.request_charge = self.request_charge + charge;
@@ -459,7 +410,7 @@ impl PageAggregator {
             .as_ref()
             .filter(|metrics| !metrics.is_empty())
         {
-            self.index_metrics.absorb(metrics);
+            self.index_metrics = Some(metrics.clone());
         }
         if let Some(metrics) = response
             .headers()
@@ -467,7 +418,7 @@ impl PageAggregator {
             .as_ref()
             .filter(|metrics| !metrics.is_empty())
         {
-            self.query_metrics.absorb(metrics);
+            self.query_metrics = Some(metrics.clone());
         }
         self.status = response.status();
         if self.diagnostics_sources.len() >= MAX_RETAINED_DIAGNOSTICS_SOURCES {
@@ -522,8 +473,8 @@ impl PageAggregator {
             request_charge: Some(self.request_charge),
             session_token: self.session_token,
             item_count: Some(payloads.len() as u32),
-            index_metrics: Self::aggregate_index_metrics(&self.index_metrics),
-            query_metrics: self.query_metrics.aggregate_query_metrics(),
+            index_metrics: self.index_metrics,
+            query_metrics: self.query_metrics,
             // Omitted: `continuation` (owned by
             // `OperationPlan::to_continuation_token`) and `etag` (not
             // meaningful once pages are interleaved).
@@ -536,49 +487,6 @@ impl PageAggregator {
             self.status,
             diagnostics,
         ))
-    }
-
-    fn aggregate_index_metrics(metrics: &BoundedMetrics) -> Option<String> {
-        let Some(last) = metrics.entries.last().cloned() else {
-            return metrics
-                .truncated
-                .then(|| format!(r#"{{"{INDEX_METRICS_TRUNCATION_MARKER}":true}}"#));
-        };
-        if metrics.entries.len() == 1 && !metrics.truncated {
-            return Some(last);
-        }
-
-        let mut merged = serde_json::Map::new();
-        for metric in &metrics.entries {
-            let Ok(serde_json::Value::Object(source)) =
-                serde_json::from_str::<serde_json::Value>(metric)
-            else {
-                return if metrics.truncated {
-                    Some(format!(r#"{{"{INDEX_METRICS_TRUNCATION_MARKER}":true}}"#))
-                } else {
-                    Some(last)
-                };
-            };
-            for (name, value) in source {
-                match (merged.get_mut(&name), value) {
-                    (Some(serde_json::Value::Array(target)), serde_json::Value::Array(source)) => {
-                        target.extend(source);
-                    }
-                    (_, value) => {
-                        merged.insert(name, value);
-                    }
-                }
-            }
-        }
-        if metrics.truncated {
-            merged.insert(
-                INDEX_METRICS_TRUNCATION_MARKER.to_owned(),
-                serde_json::Value::Bool(true),
-            );
-        }
-        serde_json::to_string(&serde_json::Value::Object(merged))
-            .ok()
-            .or(Some(last))
     }
 }
 
@@ -989,25 +897,25 @@ mod tests {
         );
     }
 
-    fn response_with_metrics(
-        index_metrics: Option<&str>,
-        query_metrics: Option<&str>,
-    ) -> CosmosResponse {
-        let headers = CosmosResponseHeaders {
-            index_metrics: index_metrics.map(str::to_owned),
-            query_metrics: query_metrics.map(str::to_owned),
-            ..Default::default()
-        };
-        CosmosResponse::new(
-            ResponseBody::NoPayload,
-            headers,
-            CosmosStatus::new(azure_core::http::StatusCode::Ok),
-            empty_diagnostics(),
-        )
-    }
-
     #[test]
-    fn page_aggregator_aggregates_non_empty_metrics() {
+    fn page_aggregator_preserves_latest_non_empty_metrics() {
+        fn response_with_metrics(
+            index_metrics: Option<&str>,
+            query_metrics: Option<&str>,
+        ) -> CosmosResponse {
+            let headers = CosmosResponseHeaders {
+                index_metrics: index_metrics.map(str::to_owned),
+                query_metrics: query_metrics.map(str::to_owned),
+                ..Default::default()
+            };
+            CosmosResponse::new(
+                ResponseBody::NoPayload,
+                headers,
+                CosmosStatus::new(azure_core::http::StatusCode::Ok),
+                empty_diagnostics(),
+            )
+        }
+
         let mut aggregator = PageAggregator::new();
         aggregator
             .absorb(&response_with_metrics(
@@ -1018,96 +926,15 @@ mod tests {
         aggregator
             .absorb(&response_with_metrics(Some(""), Some("")))
             .unwrap();
-        aggregator
-            .absorb(&response_with_metrics(
-                Some(r#"{"UtilizedSingleIndexes":["second"]}"#),
-                Some("retrievedDocumentCount=2"),
-            ))
-            .unwrap();
         let page = aggregator.build_page(&[]).unwrap();
 
-        let index_metrics: serde_json::Value =
-            serde_json::from_str(page.headers().index_metrics.as_deref().unwrap()).unwrap();
         assert_eq!(
-            index_metrics["UtilizedSingleIndexes"],
-            serde_json::json!(["first", "second"])
+            page.headers().index_metrics.as_deref(),
+            Some(r#"{"UtilizedSingleIndexes":["first"]}"#)
         );
         assert_eq!(
             page.headers().query_metrics.as_deref(),
-            Some("retrievedDocumentCount=1,retrievedDocumentCount=2")
-        );
-    }
-
-    #[test]
-    fn page_aggregator_bounds_metrics_and_marks_truncation() {
-        let mut aggregator = PageAggregator::new();
-        for index in 0..(MAX_RETAINED_METRICS_ENTRIES * 4) {
-            let index_metrics = format!(r#"{{"UtilizedSingleIndexes":["{index}"]}}"#);
-            let query_metrics = format!("retrievedDocumentCount={index}");
-            aggregator
-                .absorb(&response_with_metrics(
-                    Some(&index_metrics),
-                    Some(&query_metrics),
-                ))
-                .unwrap();
-        }
-
-        assert_eq!(
-            aggregator.index_metrics.entries.len(),
-            MAX_RETAINED_METRICS_ENTRIES
-        );
-        assert_eq!(
-            aggregator.query_metrics.entries.len(),
-            MAX_RETAINED_METRICS_ENTRIES
-        );
-        assert!(aggregator.index_metrics.truncated);
-        assert!(aggregator.query_metrics.truncated);
-        assert!(aggregator.index_metrics.retained_bytes <= MAX_RETAINED_METRICS_BYTES);
-        assert!(aggregator.query_metrics.retained_bytes <= MAX_RETAINED_METRICS_BYTES);
-
-        let page = aggregator.build_page(&[]).unwrap();
-        let index_metrics: serde_json::Value =
-            serde_json::from_str(page.headers().index_metrics.as_deref().unwrap()).unwrap();
-        assert_eq!(
-            index_metrics["UtilizedSingleIndexes"]
-                .as_array()
-                .unwrap()
-                .len(),
-            MAX_RETAINED_METRICS_ENTRIES
-        );
-        assert_eq!(
-            index_metrics[INDEX_METRICS_TRUNCATION_MARKER],
-            serde_json::Value::Bool(true)
-        );
-
-        let query_metrics = page.headers().query_metrics.as_deref().unwrap();
-        assert!(query_metrics.ends_with(QUERY_METRICS_TRUNCATION_MARKER));
-        assert!(
-            query_metrics.len()
-                <= MAX_RETAINED_METRICS_BYTES
-                    + MAX_RETAINED_METRICS_ENTRIES
-                    + QUERY_METRICS_TRUNCATION_MARKER.len()
-        );
-    }
-
-    #[test]
-    fn page_aggregator_drops_oversized_metrics_with_explicit_marker() {
-        let oversized = "x".repeat(MAX_RETAINED_METRICS_BYTES + 1);
-        let mut aggregator = PageAggregator::new();
-        aggregator
-            .absorb(&response_with_metrics(Some(&oversized), Some(&oversized)))
-            .unwrap();
-        let page = aggregator.build_page(&[]).unwrap();
-
-        let index_metrics: serde_json::Value =
-            serde_json::from_str(page.headers().index_metrics.as_deref().unwrap()).unwrap();
-        assert_eq!(
-            index_metrics[INDEX_METRICS_TRUNCATION_MARKER],
-            serde_json::Value::Bool(true)
-        );
-        assert_eq!(
-            page.headers().query_metrics.as_deref(),
-            Some(QUERY_METRICS_TRUNCATION_MARKER)
+            Some("retrievedDocumentCount=1")
         );
     }
 
