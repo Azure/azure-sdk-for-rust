@@ -28,6 +28,7 @@ pub mod point_operations;
 pub mod ppaf_dynamic_enablement;
 pub mod query;
 pub mod read_feed;
+pub mod region_online_offline;
 #[cfg(feature = "fault_injection")]
 pub mod regional_gateway_unreachable;
 pub mod skip_take;

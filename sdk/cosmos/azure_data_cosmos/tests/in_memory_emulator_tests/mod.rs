@@ -24,6 +24,7 @@ pub mod partition_key_equality;
 pub mod partition_range_drain;
 pub mod query_comparison;
 pub mod session_token;
+pub mod topology_parity;
 pub mod user_agent;
 pub mod validation;
 
