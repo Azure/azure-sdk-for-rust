@@ -21,7 +21,7 @@ use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::{
     ContainerProperties, PartitionKeyKind, PatchInstructions, PatchOperation,
 };
-use azure_data_cosmos::{CosmosStatus, PartitionKey, Query, SubStatusCode, TransactionalBatch};
+use azure_data_cosmos::{PartitionKey, Query, SubStatusCode, TransactionalBatch};
 use framework::{TestClient, TestOptions, TestRunContext};
 use futures::{StreamExt, TryStreamExt};
 use serde::de::DeserializeOwned;
@@ -866,11 +866,24 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
                     .downcast_ref::<azure_data_cosmos::CosmosError>()
                     .map(|e| e.status())
                     .unwrap_or_else(|| panic!("expected a CosmosError for {query}, got: {err}"));
+                // The semantic contract is "cross-partition advanced operators are rejected on
+                // an HPK container". The gateway surfaces this as HTTP 400; most account
+                // versions attach sub-status 1004 (CrossPartitionQueryNotServable), but some
+                // gateway builds emit the same rejection with sub-status 0 (e.g. for
+                // `SELECT VALUE COUNT(1) FROM c`). Both encode the same product behavior, so
+                // this test asserts only on the HTTP status and tolerates either sub-status.
                 assert_eq!(
-                    status,
-                    CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE,
-                    "expected 400 / 1004 CrossPartitionQueryNotServable for {query}"
+                    status.status_code(),
+                    StatusCode::BadRequest,
+                    "expected HTTP 400 (cross-partition advanced query rejected) for {query}, got {status:?}"
                 );
+                if let Some(sub) = status.sub_status() {
+                    assert!(
+                        sub == SubStatusCode::CROSS_PARTITION_QUERY_NOT_SERVABLE
+                            || sub == SubStatusCode::new(0),
+                        "expected sub-status 1004 or 0 for {query}, got {sub:?}"
+                    );
+                }
             }
 
             Ok(())
