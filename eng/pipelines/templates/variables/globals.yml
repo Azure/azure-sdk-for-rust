@@ -3,5 +3,3 @@ variables:
   # Disable CodeQL injections except for where we specifically enable it
   Codeql.SkipTaskAutoInjection: true
   ComponentDetection.Timeout: 1200
-  # Exclude non-shipping samples and tests.
-  ComponentDetection.DirectoryExclusionPatterns: '$(Build.SourcesDirectory)/samples/**;$(Build.SourcesDirectory)/**/tests/**'
