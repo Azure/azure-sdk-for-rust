@@ -1001,7 +1001,7 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2(
 
         let v1_container = gateway_v1
             .database_client(&db_name)
-            .container_client(&container_name)
+            .container_client(&container_name, None)
             .await?;
         let v2_ids = drain_order_by_with_transport(&v2_container, TransportKind::GatewayV2).await?;
         let v1_ids = drain_order_by_with_transport(&v1_container, TransportKind::Gateway).await?;

@@ -1424,6 +1424,7 @@ impl CosmosDriver {
     async fn fetch_container_by_rid(
         &self,
         container_rid: &str,
+        operation_options: OperationOptions,
     ) -> crate::error::Result<ContainerReference> {
         // A container RID decodes to exactly 8 bytes: the first 4 identify the
         // parent database, the next 4 the container. A shorter value (e.g. a
@@ -1452,8 +1453,6 @@ impl CosmosDriver {
             crate::models::resource_id::encode_rid(&decoded[0..4]),
         );
 
-        let options = OperationOptions::default();
-
         let container_result = self
             .execute_singleton_operation(
                 CosmosOperation::read_container_by_rid(
@@ -1461,7 +1460,7 @@ impl CosmosDriver {
                     db_rid.as_str().to_owned(),
                     container_rid.to_owned(),
                 ),
-                options,
+                operation_options,
             )
             .await?;
         let container_headers = container_result.headers().clone();
@@ -3186,6 +3185,7 @@ impl CosmosDriver {
     pub async fn resolve_container_by_rid(
         &self,
         container_rid: &str,
+        operation_options: OperationOptions,
     ) -> crate::error::Result<ContainerReference> {
         let endpoint = self.account().endpoint().as_str().to_owned();
         let container_rid_owned = container_rid.to_owned();
@@ -3194,7 +3194,7 @@ impl CosmosDriver {
             .runtime
             .container_cache()
             .get_or_fetch_by_rid(&endpoint, container_rid, || async move {
-                self.fetch_container_by_rid(&container_rid_owned)
+                self.fetch_container_by_rid(&container_rid_owned, operation_options)
                     .await
                     .map_err(|err| {
                         crate::error::CosmosErrorBuilder::from_error(err)
@@ -4070,7 +4070,10 @@ mod tests {
 
         for byte_len in [4usize, 16] {
             let rid = crate::models::resource_id::encode_rid(&vec![0u8; byte_len]);
-            let err = match driver.resolve_container_by_rid(&rid).await {
+            let err = match driver
+                .resolve_container_by_rid(&rid, OperationOptions::default())
+                .await
+            {
                 Ok(_) => panic!("a {byte_len}-byte RID must not resolve as a container"),
                 Err(e) => e,
             };

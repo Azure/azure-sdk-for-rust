@@ -70,7 +70,7 @@ impl ContainerClient {
             (ResourceIdentity::Rid(db_rid), ResourceIdentity::Rid(container_rid)) => {
                 let resolved = context
                     .driver
-                    .resolve_container_by_rid(container_rid.as_str())
+                    .resolve_container_by_rid(container_rid.as_str(), options.operation)
                     .await
                     .map_err(|e| {
                         azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
