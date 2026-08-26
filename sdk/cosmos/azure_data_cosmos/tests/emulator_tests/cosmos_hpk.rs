@@ -358,6 +358,7 @@ pub async fn hpk_item_delete_full_key() -> Result<(), Box<dyn Error>> {
 }
 
 /// A5: patch a field on an item addressed by a full 2-level key.
+#[cfg(feature = "preview_patch")]
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),

@@ -12,6 +12,10 @@ jobs:
 - job: Pack
   displayName: "Pack Crates"
   timeoutInMinutes: 90
+  variables:
+    ComponentDetection.SourcePath: $(Build.SourcesDirectory)
+    # Exclude non-shipping samples and tests.
+    ComponentDetection.DirectoryExclusionPatterns: '$(Build.SourcesDirectory)/samples/**;$(Build.SourcesDirectory)/**/tests/**'
 
   pool:
     name: $(LINUXPOOL)
