@@ -126,6 +126,7 @@ features = [
   "key_auth",
   "metrics",
   "native_tls",
+  "preview_patch",
   "rustls",
 ]
 

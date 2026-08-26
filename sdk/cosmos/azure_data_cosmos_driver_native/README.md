@@ -31,7 +31,7 @@ for the full design.
 ### Capability matrix (current)
 
 | Capability | Status |
-|---|---|
+| --- | --- |
 | Master-key authentication | ✅ |
 | Token-credential / resource-token authentication | ⏳ follow-up (needs `TokenCredential` FFI bridge) |
 | Sync driver creation (`_blocking`) | ✅ |
@@ -39,7 +39,8 @@ for the full design.
 | Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`) | ⏳ needs driver-side `was_cached` signal |
 | Sync + async `resolve_container` | ✅ |
 | Single + hierarchical partition keys | ✅ |
-| Item-CRUD operations (read / create / upsert / replace / delete / patch) | ✅ |
+| Item-CRUD operations (read / create / upsert / replace / delete) | ✅ |
+| Item PATCH | Preview; requires the `preview_patch` Cargo feature |
 | Container-CRUD operations (read / replace / delete) | ✅ |
 | Database + account-scope operations | ✅ |
 | `cosmos_submit_singleton_operation` (point ops) | ✅ |
@@ -57,6 +58,9 @@ for the full design.
 ```bash
 # Rust side (produces the cdylib / staticlib and regenerates the header).
 cargo build --release -p azure_data_cosmos_driver_native
+
+# Include the preview PATCH request path.
+cargo build --release -p azure_data_cosmos_driver_native --features preview_patch
 
 # C test harness (requires CMake ≥ 3.20 and a C compiler).
 cmake -B build sdk/cosmos/azure_data_cosmos_driver_native
@@ -149,6 +153,10 @@ below for the production-shape guidance.
 > - `cosmos_submit_operation` — feed/paginated operations
 >   (queries, read-all, change feed); resumes from and surfaces a continuation
 >   token.
+>
+> Item PATCH and `patch_max_attempts` require a native library built with the
+> `preview_patch` Cargo feature. Without that feature, a PATCH request returns
+> `400` / `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (`20356`).
 >
 > Both take `(driver, const cosmos_CosmosOperationRequest *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.

@@ -36,7 +36,10 @@
 
 use std::collections::HashMap;
 use std::ffi::{c_char, CStr};
-use std::num::{NonZeroU32, NonZeroU8};
+use std::num::NonZeroU32;
+
+#[cfg(feature = "preview_patch")]
+use std::num::NonZeroU8;
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::Etag;
@@ -898,7 +901,12 @@ unsafe fn build_operation(
         K::CosmosOperationKindUpsertItem => CosmosOperation::upsert_item(require_item_ref(req)?),
         K::CosmosOperationKindReplaceItem => CosmosOperation::replace_item(require_item_ref(req)?),
         K::CosmosOperationKindDeleteItem => CosmosOperation::delete_item(require_item_ref(req)?),
+        #[cfg(feature = "preview_patch")]
         K::CosmosOperationKindPatchItem => CosmosOperation::patch_item(require_item_ref(req)?),
+        #[cfg(not(feature = "preview_patch"))]
+        K::CosmosOperationKindPatchItem => {
+            return Err(CosmosErrorCode::CosmosErrorCodeUnsupportedOperation)
+        }
     };
 
     // SAFETY: caller contract on the request's pointer fields.
@@ -969,9 +977,15 @@ unsafe fn apply_inline_mutators(
 
     // Patch attempts (`0` = unset).
     if req.patch_max_attempts > 0 {
-        let n = NonZeroU8::new(req.patch_max_attempts)
-            .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)?;
-        op = op.with_patch_max_attempts(n);
+        #[cfg(not(feature = "preview_patch"))]
+        return Err(CosmosErrorCode::CosmosErrorCodeUnsupportedOperation);
+
+        #[cfg(feature = "preview_patch")]
+        {
+            let n = NonZeroU8::new(req.patch_max_attempts)
+                .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)?;
+            op = op.with_patch_max_attempts(n);
+        }
     }
 
     // Metrics flags (tri-state bools).

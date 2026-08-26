@@ -50,6 +50,8 @@ tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macr
 cbindgen = "0.29.2"
 
 [features]
+# Enables the preview PATCH request kind and forwards the gate to the driver.
+preview_patch = ["azure_data_cosmos_driver/preview_patch"]
 # Compiles the `__test_only_*` C-ABI helpers that back the `c_tests/`
 # end-to-end suite. Off by default — production `cdylib` / `staticlib`
 # builds do not expose these symbols. Enabled by the CMake C-test build

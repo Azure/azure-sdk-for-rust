@@ -115,6 +115,7 @@ __tls = []
 features = [
   "fault_injection",
   "native_tls",
+  "preview_patch",
   "rustls",
   "tokio",
 ]

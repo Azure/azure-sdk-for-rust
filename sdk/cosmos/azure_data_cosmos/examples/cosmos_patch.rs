@@ -19,8 +19,9 @@
 //! 1. The SDK reads the current item (capturing its ETag).
 //! 2. The SDK applies the patch operations locally.
 //! 3. The SDK issues a conditional Replace gated on the ETag from step 1.
-//! 4. On a 412 Precondition Failed (mid-air collision), the SDK retries
-//!    from step 1 up to `PatchItemOptions::with_max_attempts` times.
+//! 4. On a 412 Precondition Failed (mid-air collision), the SDK starts another
+//!    attempt from step 1 until the total `PatchItemOptions::with_max_attempts`
+//!    budget, including the initial attempt, is exhausted.
 //!
 //! See `ContainerClient::patch_item` rustdoc for the idempotency caveats.
 //!
@@ -114,9 +115,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_operation(PatchOperation::move_value("/tags/0", "/headline_tag"));
 
     // ----- Issue the patch. -------------------------------------------------
-    // `with_max_attempts` bounds the SDK's internal RMW retry loop. The
-    // default (3) is fine for most workloads; very contended items may
-    // benefit from a higher cap, but consider re-shaping the workload first.
+    // `with_max_attempts` bounds the total number of RMW attempts, including
+    // the initial attempt. The default is 5; this example sets it explicitly.
+    // Very contended items may benefit from a higher cap, but consider
+    // re-shaping the workload first.
     let response = items
         .patch_item(
             "contoso",
@@ -134,8 +136,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         response.headers().request_charge(),
     );
 
-    // The response is the standard `ItemResponse` shape, so we can read the
-    // patched item back via `into_model::<T>()` when content-on-write is on.
+    // The response always contains the post-image: the handler uses the
+    // service body when present and otherwise synthesizes it from the locally
+    // merged document, so `into_model::<T>()` does not require content-on-write.
     let patched: serde_json::Value = response.into_model()?;
     println!("after    {patched:#}");
 

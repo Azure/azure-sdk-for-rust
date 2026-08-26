@@ -211,18 +211,21 @@ as a JSON number without precision loss.
 
 ## Errors
 
-- All sub-operation errors are surfaced verbatim — including the
-  `DiagnosticsContext` and request-tracking info from the internal Read or
-  Replace.
+- Sub-operation errors preserve the failing error's status, sub-status, raw
+  response, and source. The attached diagnostics are re-stamped with the
+  virtual PATCH operation's `patch_item` name before the error is surfaced.
+- A non-412 failure after earlier sub-operations carries an aggregated
+  `DiagnosticsContext` containing those prior contexts plus the failing
+  sub-operation's context, in dispatch order. When the first sub-operation
+  fails, its context is retained with only the operation name rewritten.
 - The handler never retries beyond `max_attempts` and never converts a 412
   into success; the final outcome is whichever of "internal sub-op error",
   "successful PATCH", or "exhausted RMW attempts (412)" terminated the
   loop.
-- The aggregated `DiagnosticsContext` described in "Response Synthesis"
-  applies to the *successful* path. On error paths the surfaced
-  `DiagnosticsContext` is whatever the failing sub-op already carried —
-  the handler does not synthesize an aggregated context for partial
-  failures.
+- When 412 retries exhaust `max_attempts`, the final error carries an
+  aggregated `DiagnosticsContext` containing every accumulated Read and
+  failed Replace context. Thus both successful and failed PATCH operations
+  follow the "one PATCH operation = one `DiagnosticsContext`" contract.
 
 ## Why Driver-Side?
 

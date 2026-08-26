@@ -217,8 +217,8 @@ pub enum CosmosSubStatus {
     /// `CLIENT_FFI_PRECONDITION_ALREADY_SET` (20355). Reserved: mirrors the
     /// driver constant but no current wrapper path produces it.
     CosmosSubStatusClientFfiPreconditionAlreadySet = 20355,
-    /// `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356). Reserved: mirrors
-    /// the driver constant but no current wrapper path produces it.
+    /// `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356). Returned when a
+    /// request uses an operation that is unavailable in this wrapper build.
     CosmosSubStatusClientFfiUnsupportedOperationForMutator = 20356,
     /// `CLIENT_FFI_FEED_EXHAUSTED` (20357).
     CosmosSubStatusClientFfiFeedExhausted = 20357,
@@ -379,6 +379,9 @@ pub(crate) enum CosmosErrorCode {
     CosmosErrorCodeInvalidHeader,
     /// A builder setter was passed a value outside its documented range.
     CosmosErrorCodeInvalidOptionValue,
+    /// A request uses an operation that is unavailable in this wrapper build.
+    #[cfg(not(feature = "preview_patch"))]
+    CosmosErrorCodeUnsupportedOperation,
     /// A partition-key builder produced an empty / inconsistent key.
     CosmosErrorCodeInvalidPartitionKey,
     /// A partition key was supplied with more components than the driver's
@@ -420,6 +423,11 @@ impl CosmosErrorCode {
             Self::CosmosErrorCodeInvalidOptionValue => (
                 StatusCode::BadRequest,
                 SubStatusCode::CLIENT_FFI_INVALID_OPTION_VALUE,
+            ),
+            #[cfg(not(feature = "preview_patch"))]
+            Self::CosmosErrorCodeUnsupportedOperation => (
+                StatusCode::BadRequest,
+                SubStatusCode::CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR,
             ),
             Self::CosmosErrorCodeInvalidPartitionKey => (
                 StatusCode::BadRequest,
@@ -737,6 +745,8 @@ mod tests {
                 Ec::CosmosErrorCodeInvalidUtf8 => (400, 20351), // CLIENT_FFI_INVALID_UTF8
                 Ec::CosmosErrorCodeInvalidHeader => (400, 20352), // CLIENT_FFI_INVALID_HEADER
                 Ec::CosmosErrorCodeInvalidOptionValue => (400, 20353), // CLIENT_FFI_INVALID_OPTION_VALUE
+                #[cfg(not(feature = "preview_patch"))]
+                Ec::CosmosErrorCodeUnsupportedOperation => (400, 20356), // CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR
                 Ec::CosmosErrorCodeInvalidPartitionKey => (400, 20100), // CLIENT_PARTITION_KEY_EMPTY
                 Ec::CosmosErrorCodeTooManyPartitionKeyComponents => (400, 20101), // CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
                 Ec::CosmosErrorCodeInvalidAccountReference => (400, 20108), // CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
@@ -755,6 +765,8 @@ mod tests {
             Ec::CosmosErrorCodeInvalidUtf8,
             Ec::CosmosErrorCodeInvalidHeader,
             Ec::CosmosErrorCodeInvalidOptionValue,
+            #[cfg(not(feature = "preview_patch"))]
+            Ec::CosmosErrorCodeUnsupportedOperation,
             Ec::CosmosErrorCodeInvalidPartitionKey,
             Ec::CosmosErrorCodeTooManyPartitionKeyComponents,
             Ec::CosmosErrorCodeInvalidAccountReference,
