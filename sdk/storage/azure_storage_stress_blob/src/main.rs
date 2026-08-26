@@ -46,14 +46,6 @@ impl StressTestFactory for StressTests {
     }
 }
 
-impl std::fmt::Display for StressTests {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Roundtrip(args) => args.fmt(f),
-        }
-    }
-}
-
 fn init_logger() {
     env_logger::Builder::from_default_env()
         .target(env_logger::Target::Stdout)
