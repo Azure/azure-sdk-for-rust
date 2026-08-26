@@ -246,6 +246,74 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
         .into()
 }
 
+/// Data-plane readiness probe used after container creation on AAD legs.
+///
+/// A `container.read(...)` on both clients confirms the collection is
+/// metadata-visible, but Cosmos authorizes metadata (5301) and name-based data
+/// (5302) on separate RBAC paths — so the first data-plane request on a fresh
+/// container can race and return `403/5302 RbacUnauthorizedNameBasedDataRequest`
+/// before the name→RID mapping is cached on that client's data-plane
+/// connection. Under key auth this is invisible because the master key bypasses
+/// RBAC entirely.
+///
+/// The probe deletes an id that cannot exist: it mutates nothing on success
+/// (the delete answers a bare 404), reuses the same `items/*` grant tests need,
+/// and returns as soon as the data path answers with a normal not-found. It
+/// tolerates `5302` and `collection_create_in_progress` as retryable while the
+/// name registers on this client.
+async fn probe_data_plane_ready(
+    label: &str,
+    client: &CosmosClient,
+    db_id: &azure_data_cosmos::ResourceIdentity,
+    container_id: &str,
+) -> azure_data_cosmos::Result<()> {
+    const MAX_ATTEMPTS: usize = 20;
+    const RETRY_DELAY: Duration = Duration::from_millis(500);
+
+    let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
+    for attempt in 1..=MAX_ATTEMPTS {
+        let container = client
+            .database_client(db_id.clone())
+            .container_client(container_id)
+            .await?;
+        let outcome = container
+            .delete_item(
+                PartitionKey::from(probe_id.clone()),
+                probe_id.as_str(),
+                None,
+            )
+            .await;
+
+        let error = match outcome {
+            Ok(_) => {
+                return Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                    .with_status(CosmosStatus::new(StatusCode::InternalServerError))
+                    .with_message(format!(
+                        "data-plane readiness probe deleted {probe_id} on {label}, which cannot exist"
+                    ))
+                    .build()
+                    .into());
+            }
+            Err(error) => error,
+        };
+
+        if item_not_found(&error) {
+            return Ok(());
+        }
+
+        let retryable =
+            rbac_name_based_data_not_ready(&error) || collection_create_in_progress(&error);
+        if !retryable || attempt == MAX_ATTEMPTS {
+            return Err(error);
+        }
+
+        println!("waiting for data-plane readiness on {label}: {error}");
+        tokio::time::sleep(RETRY_DELAY).await;
+    }
+
+    unreachable!("data-plane readiness attempts are non-zero")
+}
+
 /// Options for configuring test execution.
 #[derive(Default)]
 pub struct TestOptions {
@@ -1213,6 +1281,8 @@ impl TestRunContext {
                 .await?
                 .into_model()?;
             let container_id = created.id;
+            let probe_container_id = container_id.clone();
+            let probe_db_id = db_client.id().clone();
 
             let original_db_client = db_client;
             let original_container_id = container_id.clone();
@@ -1259,6 +1329,39 @@ impl TestRunContext {
             );
 
             let (container, _) = tokio::try_join!(original_readiness, fault_readiness)?;
+
+            // Metadata (5301) and name-based data (5302) authorize through
+            // separate RBAC paths, so a `container.read(...)` succeeding on both
+            // clients does not guarantee the next item request is authorized on
+            // either connection. Under AAD this races and shows up as
+            // `403/5302 RbacUnauthorizedNameBasedDataRequest` on the first
+            // data-plane call — commonly on the fault client, whose token and
+            // connection pool are separate from the original client's. Probe the
+            // data-plane on both clients before returning so tests never see
+            // that transient state.
+            let auth_mode = AuthMode::from_env();
+            if auth_mode == AuthMode::Aad {
+                let fault_client_for_probe = self
+                    .fault_client
+                    .clone()
+                    .expect("fault-injection client must be configured");
+                let primary_client_for_probe = self.client().clone();
+                probe_data_plane_ready(
+                    "original client",
+                    &primary_client_for_probe,
+                    &probe_db_id,
+                    &probe_container_id,
+                )
+                .await?;
+                probe_data_plane_ready(
+                    "fault-injection client",
+                    &fault_client_for_probe,
+                    &probe_db_id,
+                    &probe_container_id,
+                )
+                .await?;
+            }
+
             Ok(container)
         })
     }
