@@ -58,13 +58,13 @@ fn test_to_ascii_lowercase() {
 }
 
 #[test]
-fn test_to_ascii_lowercase_multibyte_before_ascii_uppercase_two_byte_char() {
+fn multibyte_two_byte_char_before_ascii_uppercase() {
     let actual = to_ascii_lowercase("éA");
     assert!(matches!(actual, Cow::Owned(expected) if expected == "éa"));
 }
 
 #[test]
-fn test_to_ascii_lowercase_multibyte_before_ascii_uppercase_three_byte_char() {
+fn multibyte_three_byte_char_before_ascii_uppercase() {
     let actual = to_ascii_lowercase("日本X");
     assert!(matches!(actual, Cow::Owned(expected) if expected == "日本x"));
 }
