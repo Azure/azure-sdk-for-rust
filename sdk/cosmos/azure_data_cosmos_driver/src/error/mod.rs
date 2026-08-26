@@ -334,7 +334,6 @@ impl CosmosError {
     /// `None` for `Synthetic` errors. Used by internal pipeline code
     /// that needs to inspect the wire body / headers regardless of
     /// whether diagnostics finalization has happened yet.
-    #[cfg_attr(not(feature = "preview_patch"), allow(dead_code))]
     pub(crate) fn wire_payload(&self) -> Option<&CosmosResponsePayload> {
         match &self.inner.context {
             ErrorContext::WirePending { payload } => Some(payload),

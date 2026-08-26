@@ -3,17 +3,17 @@
 This document describes the contract for `OperationType::Patch` in
 `azure_data_cosmos_driver`.
 
-## Status: preview, not production-ready
+## Known limitation and SDK exposure
 
-PATCH is gated behind the **`preview_patch`** Cargo feature in both
-`azure_data_cosmos_driver` and `azure_data_cosmos`. It is off by default and
-is not part of either crate's supported surface.
+The core driver always includes PATCH. Consuming SDKs decide whether and how
+to expose it as preview using conventions appropriate to each language. The
+Rust SDK, `azure_data_cosmos`, gates its public PATCH API behind the
+**`preview_patch`** Cargo feature, which is off by default.
 
-The gate exists because the handler does not deliver exactly-once semantics
-under transport failures: an interrupted patch may re-apply non-idempotent
-operations (`Increment`, `Add` on an array, `Move`). See
-[Invariants](#invariants) for the exact interleaving. The feature will stay
-gated until that hole is closed.
+The handler does not deliver exactly-once semantics under transport failures:
+an interrupted patch may re-apply non-idempotent operations (`Increment`,
+`Add` on an array, `Move`). See [Invariants](#invariants) for the exact
+interleaving. The Rust SDK API will stay gated until that hole is closed.
 
 ## Overview
 
@@ -265,11 +265,12 @@ as a JSON number without precision loss.
   already replicated the original commit returns 412, which the RMW loop
   treats as a normal race-lost and recovers by re-Reading and re-applying.
   Non-idempotent ops (`Increment`, `Add` on an array, `Move`) may therefore
-  be applied **more than once** under this scenario. This is the reason the
-  whole feature is gated behind `preview_patch`. Closing the hole requires
-  the RMW loop to be able to *recognize its own committed write* rather than
-  mistaking it for a concurrent writer — i.e. stamping each attempt with a
-  marker the loop can look for on the verification read. Until then, callers
-  needing exactly-once should either use idempotent ops (`Set` on a
-  caller-computed value) or detect duplicate-application via a monotonic
-  application-level sequence number.
+  be applied **more than once** under this scenario. This is why the Rust SDK
+  treats PATCH as preview and gates it behind `preview_patch`; other consuming
+  SDKs choose their own exposure policy. Closing the hole requires the RMW loop
+  to be able to *recognize its own committed write* rather than mistaking it
+  for a concurrent writer — i.e. stamping each attempt with a marker the loop
+  can look for on the verification read. Until then, callers needing
+  exactly-once should either use idempotent ops (`Set` on a caller-computed
+  value) or detect duplicate-application via a monotonic application-level
+  sequence number.

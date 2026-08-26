@@ -40,7 +40,7 @@ for the full design.
 | Sync + async `resolve_container` | ✅ |
 | Single + hierarchical partition keys | ✅ |
 | Item-CRUD operations (read / create / upsert / replace / delete) | ✅ |
-| Item PATCH | Preview; requires the `preview_patch` Cargo feature |
+| Item PATCH | ✅ (preview exposure is controlled by the consuming SDK) |
 | Container-CRUD operations (read / replace / delete) | ✅ |
 | Database + account-scope operations | ✅ |
 | `cosmos_submit_singleton_operation` (point ops) | ✅ |
@@ -58,9 +58,6 @@ for the full design.
 ```bash
 # Rust side (produces the cdylib / staticlib and regenerates the header).
 cargo build --release -p azure_data_cosmos_driver_native
-
-# Include the preview PATCH request path.
-cargo build --release -p azure_data_cosmos_driver_native --features preview_patch
 
 # C test harness (requires CMake ≥ 3.20 and a C compiler).
 cmake -B build sdk/cosmos/azure_data_cosmos_driver_native
@@ -154,9 +151,9 @@ below for the production-shape guidance.
 >   (queries, read-all, change feed); resumes from and surfaces a continuation
 >   token.
 >
-> Item PATCH and `patch_max_attempts` require a native library built with the
-> `preview_patch` Cargo feature. Without that feature, a PATCH request returns
-> `400` / `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (`20356`).
+> Item PATCH and `patch_max_attempts` are always available through the native
+> driver ABI. Consuming language SDKs decide whether and how to expose PATCH as
+> preview using conventions appropriate to that language.
 >
 > Both take `(driver, const cosmos_CosmosOperationRequest *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.

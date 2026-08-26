@@ -2586,7 +2586,6 @@ impl CosmosDriver {
         // Read-Modify-Write handler, which issues its own Read/Replace
         // operations through this same entry point. `Box::pin` gives the
         // recursive future a fixed size.
-        #[cfg(feature = "preview_patch")]
         if operation.operation_type() == crate::models::OperationType::Patch {
             let max_attempts = operation.patch_max_attempts();
             return Box::pin(async {

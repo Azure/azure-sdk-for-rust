@@ -82,7 +82,6 @@ rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = []
 preview_dtx = [] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
-preview_patch = [] # Enables the preview PATCH API. Disabled by default and not production-ready: an interrupted patch may re-apply non-idempotent operations. See docs/PATCH_HANDLER_SPEC.md.
 # `__internal_in_memory_emulator` exposes the in-memory query evaluator
 # (`crate::query::eval`, `crate::query::value`) used by the in-memory Cosmos DB
 # emulator. The evaluator intentionally trades full Cosmos parity for emulator
@@ -115,7 +114,6 @@ __tls = []
 features = [
   "fault_injection",
   "native_tls",
-  "preview_patch",
   "rustls",
   "tokio",
 ]

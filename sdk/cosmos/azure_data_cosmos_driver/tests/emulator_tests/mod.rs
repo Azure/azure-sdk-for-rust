@@ -6,7 +6,6 @@
 mod driver_backup_endpoints;
 mod driver_hedging_kill_switch;
 mod driver_item_operations;
-#[cfg(feature = "preview_patch")]
 mod driver_patch;
 mod hosted_emulator_ci;
 

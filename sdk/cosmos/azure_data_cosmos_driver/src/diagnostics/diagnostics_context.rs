@@ -2382,7 +2382,6 @@ impl DiagnosticsContext {
     /// `replace_item` for a PATCH's final Replace) instead of the virtual
     /// operation's own name (`patch_item`). Consumes `self` before it is shared
     /// via `Arc`, preserving the type's immutability contract.
-    #[cfg_attr(not(feature = "preview_patch"), allow(dead_code))]
     pub(crate) fn with_operation_name(mut self, operation_name: Option<Arc<str>>) -> Self {
         self.requests = Self::preserve_request_operation_names(
             &self.requests,
@@ -2408,7 +2407,6 @@ impl DiagnosticsContext {
     /// context that was itself an aggregate). When the name is unchanged, or
     /// there is no displaced name to record, the existing `Arc` is shared
     /// rather than the request list being cloned.
-    #[cfg_attr(not(feature = "preview_patch"), allow(dead_code))]
     fn preserve_request_operation_names(
         requests: &Arc<Vec<RequestDiagnostics>>,
         previous: Option<&Arc<str>>,
@@ -2446,7 +2444,6 @@ impl DiagnosticsContext {
     /// need to re-stamp the identity without taking ownership. The JSON caches
     /// are intentionally not carried over: they may already have been rendered
     /// with the old name.
-    #[cfg_attr(not(feature = "preview_patch"), allow(dead_code))]
     pub(crate) fn clone_with_operation_name(&self, operation_name: Option<Arc<str>>) -> Self {
         DiagnosticsContext {
             activity_id: self.activity_id.clone(),
