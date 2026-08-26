@@ -52,62 +52,30 @@ function Get-OutputPackages($workspacePackages) {
   return $packages
 }
 
-function Get-BaselineRevision($package) {
-  $prefix = "$($package.name)@"
+function Get-BaselineVersion($package) {
   $currentVersion = [AzureEngSemanticVersion]::ParseVersionString($package.version)
   if (!$currentVersion) {
     LogError "Package '$($package.name)' has invalid version '$($package.version)'"
     exit 1
   }
 
-  $tags = @(Invoke-LoggedCommand "git tag -l '$prefix*'" -ExecutePath $RepoRoot)
-  $latestVersion = $null
-  $latestStableVersion = $null
-
-  foreach ($tag in $tags) {
-    $version = [AzureEngSemanticVersion]::ParseVersionString($tag.Substring($prefix.Length))
-    if (!$version -or $version.CompareTo($currentVersion) -gt 0) {
+  $manifestPath = [System.IO.Path]::GetRelativePath($RepoRoot, $package.manifest_path).Replace('\', '/')
+  # Ignore the current commit so a patch release can bypass a newer prerelease already on main.
+  $manifestHistory = @(
+    Invoke-LoggedCommand "git log --follow --format= -p -G '^version = ' HEAD^ -- '$manifestPath'" -ExecutePath $RepoRoot
+  )
+  foreach ($line in $manifestHistory) {
+    if ($line -notmatch '^\+version = "(?<version>[^"]+)"') {
       continue
     }
 
-    if (!$latestVersion -or $version.CompareTo($latestVersion) -gt 0) {
-      $latestVersion = $version
+    $version = [AzureEngSemanticVersion]::ParseVersionString($Matches['version'])
+    if ($version -and $version.CompareTo($currentVersion) -le 0) {
+      return $version.RawVersion
     }
-
-    if (
-      !$version.PrereleaseLabel `
-        -and (!$latestStableVersion -or $version.CompareTo($latestStableVersion) -gt 0)
-    ) {
-      $latestStableVersion = $version
-    }
-  }
-
-  $baselineVersion = if ($latestStableVersion) { $latestStableVersion } else { $latestVersion }
-  if ($baselineVersion) {
-    return "$prefix$($baselineVersion.RawVersion)"
   }
 
   return $null
-}
-
-$materializedBaselineCommits = @{}
-
-function Initialize-BaselineRevision($baselineRevision) {
-  $commit = Invoke-LoggedCommand "git rev-parse '$baselineRevision^{commit}'" -ExecutePath $RepoRoot
-  if ($materializedBaselineCommits.ContainsKey($commit)) {
-    return
-  }
-
-  $tempDirectory = if ($env:AGENT_TEMPDIRECTORY) { $env:AGENT_TEMPDIRECTORY } else { [System.IO.Path]::GetTempPath() }
-  $archivePath = [System.IO.Path]::Combine($tempDirectory, [System.IO.Path]::GetRandomFileName())
-  try {
-    # Sparse CI clones omit historical objects, which cargo-semver-checks cannot fetch from its local clone.
-    Invoke-LoggedCommand "git archive --format=tar --output='$archivePath' '$baselineRevision'" -ExecutePath $RepoRoot -GroupOutput
-    $materializedBaselineCommits[$commit] = $true
-  }
-  finally {
-    Remove-Item $archivePath -Force -ErrorAction SilentlyContinue
-  }
 }
 
 $packages = Get-CargoPackages
@@ -124,14 +92,13 @@ $finalExitCode = 0
 foreach ($package in $outputPackages) {
   $packageName = $package.name
   $manifestPath = $package.manifest_path
-  $baselineRevision = Get-BaselineRevision $package
-  if (!$baselineRevision) {
+  $baselineVersion = Get-BaselineVersion $package
+  if (!$baselineVersion) {
     LogWarning "$packageName has not been published yet and will be ignored"
     continue
   }
 
-  Initialize-BaselineRevision $baselineRevision
-  $output = Invoke-LoggedCommand "cargo +$resolvedToolchain semver-checks --manifest-path '$manifestPath' --baseline-rev '$baselineRevision'" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
+  $output = Invoke-LoggedCommand "cargo +$resolvedToolchain semver-checks --manifest-path '$manifestPath' --baseline-version '$baselineVersion'" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
   if ($output -match 'error: no library targets found in package `(?<name>[\w_]+)`' -and $Matches['name'] -eq $packageName) {
     LogWarning "$packageName base version is a placeholder and will be ignored"
     continue
