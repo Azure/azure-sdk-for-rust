@@ -137,7 +137,7 @@ impl FeedScope {
 /// )
 /// .with_parameter("@vector", &query_vector).unwrap();
 /// # let serialized = serde_json::to_value(&query).unwrap();
-/// # assert_eq!(serialized["parameters"][0]["value"], serde_json::json!([0.1, 0.2, 0.3]));
+/// # assert_eq!(serialized["parameters"][0]["value"], serde_json::to_value(&query_vector).unwrap());
 /// ```
 #[derive(Clone, Debug, Serialize)]
 pub struct Query {
