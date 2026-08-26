@@ -217,8 +217,8 @@ pub enum CosmosSubStatus {
     /// `CLIENT_FFI_PRECONDITION_ALREADY_SET` (20355). Reserved: mirrors the
     /// driver constant but no current wrapper path produces it.
     CosmosSubStatusClientFfiPreconditionAlreadySet = 20355,
-    /// `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356). Reserved: mirrors
-    /// the driver constant but no current wrapper path produces it.
+    /// `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356). Returned when a
+    /// request uses an operation that is unavailable in this wrapper build.
     CosmosSubStatusClientFfiUnsupportedOperationForMutator = 20356,
     /// `CLIENT_FFI_FEED_EXHAUSTED` (20357).
     CosmosSubStatusClientFfiFeedExhausted = 20357,

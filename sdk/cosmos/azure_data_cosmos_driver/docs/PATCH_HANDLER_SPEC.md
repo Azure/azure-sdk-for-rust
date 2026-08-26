@@ -3,6 +3,18 @@
 This document describes the contract for `OperationType::Patch` in
 `azure_data_cosmos_driver`.
 
+## Known limitation and SDK exposure
+
+The core driver always includes PATCH. Consuming SDKs decide whether and how
+to expose it as preview using conventions appropriate to each language. The
+Rust SDK, `azure_data_cosmos`, gates its public PATCH API behind the
+**`preview_patch`** Cargo feature, which is off by default.
+
+The handler does not deliver exactly-once semantics under transport failures:
+an interrupted patch may re-apply non-idempotent operations (`Increment`,
+`Add` on an array, `Move`). See [Invariants](#invariants) for the exact
+interleaving. The Rust SDK API will stay gated until that hole is closed.
+
 ## Overview
 
 `Patch` is a *virtual* operation type: the Cosmos DB REST endpoint does not
@@ -199,18 +211,21 @@ as a JSON number without precision loss.
 
 ## Errors
 
-- All sub-operation errors are surfaced verbatim — including the
-  `DiagnosticsContext` and request-tracking info from the internal Read or
-  Replace.
+- Sub-operation errors preserve the failing error's status, sub-status, raw
+  response, and source. The attached diagnostics are re-stamped with the
+  virtual PATCH operation's `patch_item` name before the error is surfaced.
+- A non-412 failure after earlier sub-operations carries an aggregated
+  `DiagnosticsContext` containing those prior contexts plus the failing
+  sub-operation's context, in dispatch order. When the first sub-operation
+  fails, its context is retained with only the operation name rewritten.
 - The handler never retries beyond `max_attempts` and never converts a 412
   into success; the final outcome is whichever of "internal sub-op error",
   "successful PATCH", or "exhausted RMW attempts (412)" terminated the
   loop.
-- The aggregated `DiagnosticsContext` described in "Response Synthesis"
-  applies to the *successful* path. On error paths the surfaced
-  `DiagnosticsContext` is whatever the failing sub-op already carried —
-  the handler does not synthesize an aggregated context for partial
-  failures.
+- When 412 retries exhaust `max_attempts`, the final error carries an
+  aggregated `DiagnosticsContext` containing every accumulated Read and
+  failed Replace context. Thus both successful and failed PATCH operations
+  follow the "one PATCH operation = one `DiagnosticsContext`" contract.
 
 ## Why Driver-Side?
 
@@ -250,10 +265,12 @@ as a JSON number without precision loss.
   already replicated the original commit returns 412, which the RMW loop
   treats as a normal race-lost and recovers by re-Reading and re-applying.
   Non-idempotent ops (`Increment`, `Add` on an array, `Move`) may therefore
-  be applied **more than once** under this scenario. Lifting this caveat
-  requires marking the internal Replace as non-idempotent for retry
-  purposes (e.g. a per-op idempotency override on `CosmosOperation`); that
-  is tracked as a follow-up because it interacts with PPAF write-retry
-  semantics. Callers needing exactly-once should either use idempotent ops
-  (`Set` on a caller-computed value) or detect duplicate-application via a
-  monotonic application-level sequence number.
+  be applied **more than once** under this scenario. This is why the Rust SDK
+  treats PATCH as preview and gates it behind `preview_patch`; other consuming
+  SDKs choose their own exposure policy. Closing the hole requires the RMW loop
+  to be able to *recognize its own committed write* rather than mistaking it
+  for a concurrent writer — i.e. stamping each attempt with a marker the loop
+  can look for on the verification read. Until then, callers needing
+  exactly-once should either use idempotent ops (`Set` on a caller-computed
+  value) or detect duplicate-application via a monotonic application-level
+  sequence number.

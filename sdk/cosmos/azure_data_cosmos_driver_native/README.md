@@ -31,7 +31,7 @@ for the full design.
 ### Capability matrix (current)
 
 | Capability | Status |
-|---|---|
+| --- | --- |
 | Master-key authentication | ✅ |
 | Token-credential / resource-token authentication | ⏳ follow-up (needs `TokenCredential` FFI bridge) |
 | Sync driver creation (`_blocking`) | ✅ |
@@ -39,7 +39,8 @@ for the full design.
 | Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`) | ⏳ needs driver-side `was_cached` signal |
 | Sync + async `resolve_container` | ✅ |
 | Single + hierarchical partition keys | ✅ |
-| Item-CRUD operations (read / create / upsert / replace / delete / patch) | ✅ |
+| Item-CRUD operations (read / create / upsert / replace / delete) | ✅ |
+| Item PATCH | ✅ (preview exposure is controlled by the consuming SDK) |
 | Container-CRUD operations (read / replace / delete) | ✅ |
 | Database + account-scope operations | ✅ |
 | `cosmos_submit_singleton_operation` (point ops) | ✅ |
@@ -149,6 +150,10 @@ below for the production-shape guidance.
 > - `cosmos_submit_operation` — feed/paginated operations
 >   (queries, read-all, change feed); resumes from and surfaces a continuation
 >   token.
+>
+> Item PATCH and `patch_max_attempts` are always available through the native
+> driver ABI. Consuming language SDKs decide whether and how to expose PATCH as
+> preview using conventions appropriate to that language.
 >
 > Both take `(driver, const cosmos_CosmosOperationRequest *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.
