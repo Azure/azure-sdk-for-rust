@@ -9,7 +9,7 @@ use std::error::Error;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{
     future,
-    sync::{Arc, Mutex},
+    sync::{Arc, Condvar, Mutex},
     task::{Context, Poll, Waker},
     thread,
 };
@@ -166,7 +166,7 @@ impl AsyncRuntime for StdRuntime {
     /// implementation is available by using the `tokio` crate feature.
     fn sleep(&self, duration: Duration) -> TaskFuture {
         Box::pin(Sleep {
-            signal: None,
+            state: None,
             duration,
         })
     }
@@ -179,31 +179,142 @@ impl AsyncRuntime for StdRuntime {
 
 #[derive(Debug)]
 struct Sleep {
-    signal: Option<Arc<AtomicBool>>,
+    state: Option<Arc<SleepState>>,
     duration: Duration,
+}
+
+#[derive(Debug, Default)]
+struct SleepState {
+    completed: AtomicBool,
+    canceled: AtomicBool,
+    thread_waker: Mutex<Option<Waker>>,
+    wait_lock: Mutex<()>,
+    wait_condvar: Condvar,
 }
 
 impl Future for Sleep {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if let Some(signal) = &self.signal {
-            if signal.load(Ordering::Acquire) {
+        if let Some(state) = &self.state {
+            if state.completed.load(Ordering::Acquire) {
                 Poll::Ready(())
             } else {
+                if let Ok(mut waker) = state.thread_waker.lock() {
+                    *waker = Some(cx.waker().clone());
+                }
                 Poll::Pending
             }
         } else {
-            let signal = Arc::new(AtomicBool::new(false));
-            let waker = cx.waker().clone();
+            let state = Arc::new(SleepState::default());
+            if let Ok(mut waker) = state.thread_waker.lock() {
+                *waker = Some(cx.waker().clone());
+            }
             let duration = self.duration;
-            self.get_mut().signal = Some(signal.clone());
+            self.get_mut().state = Some(state.clone());
             thread::spawn(move || {
-                thread::sleep(duration.try_into().expect("Duration conversion failed"));
-                signal.store(true, Ordering::Release);
-                waker.wake();
+                #[cfg(test)]
+                sleep_thread_started_for_test();
+
+                #[cfg(test)]
+                let _thread_count_guard = SleepThreadCounterGuard::new();
+
+                let wait_result = state.wait_lock.lock().ok().and_then(|wait_guard| {
+                    state
+                        .wait_condvar
+                        .wait_timeout_while(
+                            wait_guard,
+                            duration.try_into().expect("Duration conversion failed"),
+                            |_| !state.canceled.load(Ordering::Acquire),
+                        )
+                        .ok()
+                });
+
+                // If the mutex was poisoned we still complete the sleep to avoid hanging.
+                if wait_result.is_none() {
+                    state.canceled.store(true, Ordering::Release);
+                }
+
+                state.completed.store(true, Ordering::Release);
+                if let Ok(mut waker) = state.thread_waker.lock() {
+                    if let Some(waker) = waker.take() {
+                        waker.wake();
+                    }
+                }
             });
             Poll::Pending
         }
+    }
+}
+
+impl Drop for Sleep {
+    fn drop(&mut self) {
+        if let Some(state) = &self.state {
+            state.canceled.store(true, Ordering::Release);
+            state.wait_condvar.notify_one();
+        }
+    }
+}
+
+#[cfg(test)]
+static ACTIVE_SLEEP_THREADS: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(0);
+
+#[cfg(test)]
+fn sleep_thread_started_for_test() {
+    ACTIVE_SLEEP_THREADS.fetch_add(1, Ordering::SeqCst);
+}
+
+#[cfg(test)]
+struct SleepThreadCounterGuard;
+
+#[cfg(test)]
+impl SleepThreadCounterGuard {
+    fn new() -> Self {
+        Self
+    }
+}
+
+#[cfg(test)]
+impl Drop for SleepThreadCounterGuard {
+    fn drop(&mut self) {
+        ACTIVE_SLEEP_THREADS.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{Duration as StdDuration, Instant};
+
+    #[test]
+    fn dropped_sleep_cancels_thread() {
+        let runtime = StdRuntime;
+        let baseline_threads = ACTIVE_SLEEP_THREADS.load(Ordering::SeqCst);
+        let mut sleep = runtime.sleep(Duration::seconds(30));
+        let waker = futures::task::noop_waker();
+        let mut cx = Context::from_waker(&waker);
+        assert!(matches!(sleep.as_mut().poll(&mut cx), Poll::Pending));
+
+        let wait_for_spawn = Instant::now() + StdDuration::from_secs(1);
+        while ACTIVE_SLEEP_THREADS.load(Ordering::SeqCst) <= baseline_threads
+            && Instant::now() < wait_for_spawn
+        {
+            std::thread::sleep(StdDuration::from_millis(1));
+        }
+        assert!(ACTIVE_SLEEP_THREADS.load(Ordering::SeqCst) > baseline_threads);
+
+        drop(sleep);
+
+        let wait_for_exit = Instant::now() + StdDuration::from_secs(1);
+        while ACTIVE_SLEEP_THREADS.load(Ordering::SeqCst) > baseline_threads
+            && Instant::now() < wait_for_exit
+        {
+            std::thread::sleep(StdDuration::from_millis(1));
+        }
+        assert_eq!(
+            ACTIVE_SLEEP_THREADS.load(Ordering::SeqCst),
+            baseline_threads
+        );
     }
 }
