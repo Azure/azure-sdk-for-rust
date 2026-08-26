@@ -389,7 +389,7 @@ pub struct ItemReadOptions {
 
 ### 5.2 `ItemWriteOptions`
 
-Options for item write operations (`create_item`, `replace_item`, `upsert_item`, `delete_item`, `patch_item`).
+Options for item write operations (`create_item`, `replace_item`, `upsert_item`, `delete_item`).
 
 ```rust
 #[derive(Clone, Default)]

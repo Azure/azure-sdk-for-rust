@@ -157,6 +157,7 @@ impl CosmosResourceReference {
     /// with both a container and a resource identifier — i.e. the kind of
     /// reference the patch handler can faithfully translate into an internal
     /// Read/Replace pair.
+    #[cfg_attr(not(feature = "preview_patch"), allow(dead_code))]
     pub(crate) fn try_into_item_reference(
         &self,
         partition_key: crate::models::PartitionKey,

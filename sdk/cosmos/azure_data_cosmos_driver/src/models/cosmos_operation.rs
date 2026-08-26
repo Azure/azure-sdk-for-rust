@@ -143,6 +143,7 @@ pub struct CosmosOperation {
     /// Maximum number of Read-Modify-Write attempts the PATCH handler may
     /// make. Only consulted when `operation_type == OperationType::Patch`;
     /// ignored for every other op. `None` selects the handler default (5).
+    #[cfg_attr(not(feature = "preview_patch"), allow(dead_code))]
     patch_max_attempts: Option<std::num::NonZeroU8>,
     /// `true` when this operation is a change feed read. Set explicitly by
     /// [`change_feed`](Self::change_feed) rather than inferred from a header,
@@ -474,12 +475,14 @@ impl CosmosOperation {
     /// Only consulted when [`operation_type`](Self::operation_type) is
     /// [`OperationType::Patch`]; otherwise the value is ignored. `None`
     /// (the default) selects the handler default (5).
+    #[cfg(feature = "preview_patch")]
     pub fn with_patch_max_attempts(mut self, max_attempts: std::num::NonZeroU8) -> Self {
         self.patch_max_attempts = Some(max_attempts);
         self
     }
 
     /// Returns the cap on PATCH Read-Modify-Write attempts, if one was set.
+    #[cfg(feature = "preview_patch")]
     pub fn patch_max_attempts(&self) -> Option<std::num::NonZeroU8> {
         self.patch_max_attempts
     }
@@ -491,6 +494,7 @@ impl CosmosOperation {
     /// which then reports `patch_read_item` / `patch_replace_item` instead of
     /// `read_item` / `replace_item`. Routing, retries, and the wire request are
     /// unchanged — a PATCH sub-op *is* an ordinary point Read or Replace.
+    #[cfg(feature = "preview_patch")]
     pub(crate) fn as_patch_sub_operation(mut self) -> Self {
         self.is_patch_sub_operation = true;
         self
@@ -886,6 +890,10 @@ impl CosmosOperation {
     /// the operation body (via [`with_body`](Self::with_body)) — the patch
     /// handler deserializes it before issuing the underlying transport
     /// operations.
+    ///
+    /// Requires the `preview_patch` feature. An interrupted patch may re-apply
+    /// non-idempotent operations — see `docs/PATCH_HANDLER_SPEC.md`.
+    #[cfg(feature = "preview_patch")]
     pub fn patch_item(item: ItemReference) -> Self {
         Self::for_item(OperationType::Patch, item)
     }
@@ -1370,6 +1378,7 @@ mod tests {
         for op in [
             item(CosmosOperation::create_item),
             item(CosmosOperation::upsert_item),
+            #[cfg(feature = "preview_patch")]
             item(CosmosOperation::patch_item),
             item(CosmosOperation::replace_item),
             item(CosmosOperation::delete_item),
@@ -1473,12 +1482,14 @@ mod tests {
             CosmosOperation::delete_item(item()).db_operation_name(),
             Some("delete_item")
         );
+        #[cfg(feature = "preview_patch")]
         assert_eq!(
             CosmosOperation::patch_item(item()).db_operation_name(),
             Some("patch_item")
         );
     }
 
+    #[cfg(feature = "preview_patch")]
     #[test]
     fn db_operation_name_distinguishes_patch_sub_operations() {
         let item =
@@ -1510,6 +1521,7 @@ mod tests {
         assert!(!CosmosOperation::patch_item(item()).is_patch_sub_operation());
     }
 
+    #[cfg(feature = "preview_patch")]
     #[test]
     fn patch_sub_operation_marker_is_off_by_default() {
         let item =
@@ -1522,6 +1534,7 @@ mod tests {
             .is_patch_sub_operation());
     }
 
+    #[cfg(feature = "preview_patch")]
     #[test]
     fn patch_sub_operation_marker_only_renames_read_and_replace() {
         let item =

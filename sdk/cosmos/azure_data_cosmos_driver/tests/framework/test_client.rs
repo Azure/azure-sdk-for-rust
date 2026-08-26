@@ -936,6 +936,7 @@ impl DriverTestRunContext {
     ///
     /// If `max_attempts` is `None`, the handler uses
     /// `DEFAULT_PATCH_MAX_ATTEMPTS` (5).
+    #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,
         container: &ContainerReference,

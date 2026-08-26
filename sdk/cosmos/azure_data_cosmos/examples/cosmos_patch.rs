@@ -3,6 +3,10 @@
 
 //! Partial updates with PATCH.
 //!
+//! **Preview.** Requires the `preview_patch` feature. PATCH is not
+//! production-ready: an interrupted patch may re-apply non-idempotent
+//! operations. See `ContainerClient::patch_item` rustdoc.
+//!
 //! Demonstrates `ContainerClient::patch_item` and the `PatchInstructions`
 //! builder, exercising every variant of `PatchOperation` (`set`, `add`,
 //! `replace`, `remove`, `increment`, `move_value`).
@@ -27,7 +31,7 @@
 //! ## Running
 //!
 //! ```text
-//! cargo run --example cosmos_patch -- \
+//! cargo run --features preview_patch --example cosmos_patch -- \
 //!     https://<account>.documents.azure.com:443/ --region "East US" --use-entra
 //! ```
 
