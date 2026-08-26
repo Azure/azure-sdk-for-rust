@@ -1123,8 +1123,7 @@ impl EmulatorStore {
     /// failover.
     ///
     /// On a live account the corresponding `onlineRegion` operation is gated
-    /// behind an account capability that is off by default; see
-    /// [`super::config::VirtualAccountConfig::set_region_online`].
+    /// behind an account capability that is off by default.
     pub fn set_region_online(&self, region_name: &str) -> crate::error::Result<()> {
         self.config.set_region_online(region_name)
     }
