@@ -457,6 +457,26 @@ async fn offlining_the_write_region_fails_over() {
     );
 }
 
+/// An offlined hub moves to the end of failover priority, so bringing it back
+/// does not make it the next promotion candidate.
+#[tokio::test]
+async fn offline_failover_renumbers_priorities_before_the_next_failover() {
+    let recorder = HostRecorder::new();
+    let emulator = build_emulator(vec![east(), west(), central()], WriteMode::Single, recorder);
+    let store = emulator.store();
+
+    store.set_region_offline("East US").unwrap();
+    assert_eq!(store.config().write_region_name(), "West US");
+
+    store.set_region_online("East US").unwrap();
+    store.set_region_offline("West US").unwrap();
+    assert_eq!(
+        store.config().write_region_name(),
+        "Central US",
+        "the restored former hub must remain behind the next surviving priority"
+    );
+}
+
 /// Offlining the only remaining online region is refused.
 ///
 /// Guard rather than observed behavior: an account with every region offline
@@ -947,8 +967,6 @@ async fn priority_promotion_clears_an_in_flight_failover() {
     );
 }
 
-/// Failing over to an offline region is refused: it is not advertised at all, so
-/// promoting it would produce an account with no reachable write region.
 /// The **leading edge** of a failover: both regions advertised, the outgoing one
 /// still accepting writes.
 ///
@@ -1059,6 +1077,8 @@ async fn announcing_a_failover_to_an_unusable_region_is_refused() {
     assert_eq!(draining.status().status_code(), StatusCode::BadRequest);
 }
 
+/// Failing over to an offline region is refused: it is not advertised at all, so
+/// promoting it would produce an account with no reachable write region.
 #[tokio::test]
 async fn failover_to_an_offline_region_is_refused() {
     let recorder = HostRecorder::new();
@@ -1533,6 +1553,127 @@ async fn delayed_region_remains_advertised_during_buildout() {
     assert!(
         names(&during, "readableLocations").contains(&"West US".to_string()),
         "Delayed intentionally advertises before catch-up"
+    );
+}
+
+/// A mutation already pending at enrollment stays out of a `Delayed` region
+/// until its catch-up timer fires.
+#[tokio::test(start_paused = true)]
+async fn delayed_region_defers_preexisting_pending_replay_until_catch_up() {
+    let recorder = HostRecorder::new();
+    let emulator = build_emulator_with_replication(
+        vec![east(), central()],
+        WriteMode::Multi,
+        ConsistencyLevel::Session,
+        ReplicationConfig::fixed(Duration::from_secs(120)),
+        recorder,
+    );
+
+    let mut create = Request::new(
+        Url::parse(&format!("{CENTRAL_URL}/dbs/testdb/colls/testcoll/docs")).unwrap(),
+        Method::Post,
+    );
+    create.set_body(serde_json::json!({"id": "delayed-pending", "pk": "pk1"}).to_string());
+    create.headers_mut().insert(
+        super::PARTITION_KEY.clone(),
+        azure_core::http::headers::HeaderValue::from_static("[\"pk1\"]"),
+    );
+    let (status, _, _) = collect_response(emulator.execute_request(&create).await.unwrap()).await;
+    assert_eq!(status, StatusCode::Created);
+
+    emulator
+        .store()
+        .add_region(west(), SeedingPolicy::Delayed(Duration::from_secs(60)))
+        .unwrap();
+
+    let mut read = Request::new(
+        Url::parse(&format!(
+            "{WEST_URL}/dbs/testdb/colls/testcoll/docs/delayed-pending"
+        ))
+        .unwrap(),
+        Method::Get,
+    );
+    read.headers_mut().insert(
+        super::PARTITION_KEY.clone(),
+        azure_core::http::headers::HeaderValue::from_static("[\"pk1\"]"),
+    );
+    let (status, _, _) = collect_response(emulator.execute_request(&read).await.unwrap()).await;
+    assert_eq!(
+        status,
+        StatusCode::NotFound,
+        "pending enrollment replay must not populate Delayed before its timer"
+    );
+
+    tokio::time::sleep(Duration::from_secs(61)).await;
+    let (status, _, _) = collect_response(emulator.execute_request(&read).await.unwrap()).await;
+    assert_eq!(
+        status,
+        StatusCode::Ok,
+        "pending enrollment replay must apply after delayed catch-up"
+    );
+}
+
+/// A delete committed during delayed buildout supersedes a create that was
+/// already pending at enrollment; catch-up must not resurrect the document.
+#[tokio::test(start_paused = true)]
+async fn delayed_region_journal_preserves_delete_after_pending_create() {
+    let recorder = HostRecorder::new();
+    let emulator = build_emulator_with_replication(
+        vec![east(), central()],
+        WriteMode::Multi,
+        ConsistencyLevel::Session,
+        ReplicationConfig::fixed(Duration::from_secs(120)),
+        recorder,
+    );
+
+    let mut create = Request::new(
+        Url::parse(&format!("{CENTRAL_URL}/dbs/testdb/colls/testcoll/docs")).unwrap(),
+        Method::Post,
+    );
+    create.set_body(serde_json::json!({"id": "journal-delete", "pk": "pk1"}).to_string());
+    create.headers_mut().insert(
+        super::PARTITION_KEY.clone(),
+        azure_core::http::headers::HeaderValue::from_static("[\"pk1\"]"),
+    );
+    let (status, _, _) = collect_response(emulator.execute_request(&create).await.unwrap()).await;
+    assert_eq!(status, StatusCode::Created);
+
+    emulator
+        .store()
+        .add_region(west(), SeedingPolicy::Delayed(Duration::from_secs(60)))
+        .unwrap();
+
+    let mut delete = Request::new(
+        Url::parse(&format!(
+            "{CENTRAL_URL}/dbs/testdb/colls/testcoll/docs/journal-delete"
+        ))
+        .unwrap(),
+        Method::Delete,
+    );
+    delete.headers_mut().insert(
+        super::PARTITION_KEY.clone(),
+        azure_core::http::headers::HeaderValue::from_static("[\"pk1\"]"),
+    );
+    let (status, _, _) = collect_response(emulator.execute_request(&delete).await.unwrap()).await;
+    assert_eq!(status, StatusCode::NoContent);
+
+    tokio::time::sleep(Duration::from_secs(61)).await;
+    let mut read = Request::new(
+        Url::parse(&format!(
+            "{WEST_URL}/dbs/testdb/colls/testcoll/docs/journal-delete"
+        ))
+        .unwrap(),
+        Method::Get,
+    );
+    read.headers_mut().insert(
+        super::PARTITION_KEY.clone(),
+        azure_core::http::headers::HeaderValue::from_static("[\"pk1\"]"),
+    );
+    let (status, _, _) = collect_response(emulator.execute_request(&read).await.unwrap()).await;
+    assert_eq!(
+        status,
+        StatusCode::NotFound,
+        "the buildout journal must replay create then delete without resurrection"
     );
 }
 

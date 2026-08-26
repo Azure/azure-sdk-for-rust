@@ -679,6 +679,17 @@ impl VirtualAccountConfig {
         if topology.active.iter().any(|r| r.name == region.name) {
             return Err(already_present(&region.name));
         }
+        let add_operation_id = if hidden_until_ready {
+            let operation_id = topology.next_add_operation_id;
+            if operation_id == u64::MAX {
+                return Err(bad_request(
+                    "region add operation ID space is exhausted".to_string(),
+                ));
+            }
+            Some(operation_id)
+        } else {
+            None
+        };
 
         let mut region = region;
         if let Some(idx) = topology.retired.iter().position(|r| r.name == region.name) {
@@ -710,23 +721,12 @@ impl VirtualAccountConfig {
         }
 
         topology.active.push(region.clone());
-        let add_operation_id = if hidden_until_ready {
-            let operation_id = topology.next_add_operation_id;
-            if operation_id == u64::MAX {
-                topology.active.pop();
-                return Err(bad_request(
-                    "region add operation ID space is exhausted".to_string(),
-                ));
-            }
+        if let Some(operation_id) = add_operation_id {
             topology.next_add_operation_id = operation_id + 1;
             topology.adding.insert(region.name.clone(), operation_id);
-            Some(operation_id)
-        } else {
-            None
-        };
+        }
         if !topology.priority_order.contains(&region.name) {
-            // A newly added region has the lowest priority; a re-added one
-            // regains its previous position.
+            // A newly added or re-added region has the lowest priority.
             topology.priority_order.push(region.name.clone());
         }
         Ok((region, add_operation_id))
@@ -994,6 +994,11 @@ impl VirtualAccountConfig {
 
         if topology.write_region == region_name {
             topology.write_region = next_online;
+            // The service renumbers priorities during an offline-triggered
+            // failover: surviving regions move up and the offlined former hub
+            // moves to the lowest-priority position.
+            topology.priority_order.retain(|name| name != region_name);
+            topology.priority_order.push(region_name.to_string());
             // No `failing_over_from`: the outgoing region is offline, and an
             // offline region is filtered out of the advertised lists entirely,
             // so advertising it as writable is not representable.
@@ -1722,6 +1727,28 @@ mod tests {
             error.status().status_code(),
             azure_core::http::StatusCode::BadRequest
         );
+    }
+
+    #[test]
+    fn rejected_hidden_readd_preserves_retired_region_id() {
+        let config = VirtualAccountConfig::new(vec![region("East"), region("West")]).unwrap();
+        let original_id = config.region_id_for("West");
+        config.remove_region("West").unwrap();
+        config.topology.write().unwrap().next_add_operation_id = u64::MAX;
+
+        let error = config.add_region(region("West"), true).unwrap_err();
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+
+        let topology = config.topology.read().unwrap();
+        let retired = topology
+            .retired
+            .iter()
+            .find(|region| region.name() == "West")
+            .expect("rejected re-add must preserve the retired region");
+        assert_eq!(retired.region_id(), original_id);
     }
 
     #[test]
