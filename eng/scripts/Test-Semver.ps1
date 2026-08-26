@@ -53,29 +53,27 @@ function Get-OutputPackages($workspacePackages) {
 }
 
 function Get-BaselineVersion($package) {
-  $currentVersion = [AzureEngSemanticVersion]::ParseVersionString($package.version)
-  if (!$currentVersion) {
+  $prefix = "$($package.name)@"
+  if (![AzureEngSemanticVersion]::ParseVersionString($package.version)) {
     LogError "Package '$($package.name)' has invalid version '$($package.version)'"
     exit 1
   }
 
-  $manifestPath = [System.IO.Path]::GetRelativePath($RepoRoot, $package.manifest_path).Replace('\', '/')
-  # Ignore the current commit so a patch release can bypass a newer prerelease already on main.
-  $manifestHistory = @(
-    Invoke-LoggedCommand "git log --follow --format= -p -G '^version = ' HEAD^ -- '$manifestPath'" -ExecutePath $RepoRoot
-  )
-  foreach ($line in $manifestHistory) {
-    if ($line -notmatch '^\+version = "(?<version>[^"]+)"') {
-      continue
-    }
-
-    $version = [AzureEngSemanticVersion]::ParseVersionString($Matches['version'])
-    if ($version -and $version.CompareTo($currentVersion) -le 0) {
-      return $version.RawVersion
-    }
+  $baselineTag = Invoke-LoggedCommand "git describe --tags --match '$prefix*' --abbrev=0 HEAD" `
+    -ExecutePath $RepoRoot `
+    -DoNotExitOnFailedExitCode
+  if ($LASTEXITCODE) {
+    return $null
   }
 
-  return $null
+  $baselineTag = $baselineTag | Select-Object -First 1
+  $baselineVersion = [AzureEngSemanticVersion]::ParseVersionString($baselineTag.Substring($prefix.Length))
+  if (!$baselineVersion) {
+    LogError "Package '$($package.name)' has invalid baseline tag '$baselineTag'"
+    exit 1
+  }
+
+  return $baselineVersion.RawVersion
 }
 
 $packages = Get-CargoPackages
@@ -87,6 +85,7 @@ if (!$IgnoreCgManifestVersion) {
 }
 
 Invoke-LoggedCommand "cargo install cargo-semver-checks --locked $($versionParams -join ' ')" -GroupOutput
+Invoke-LoggedCommand "git fetch '$GithubUri' --tags" -ExecutePath $RepoRoot -GroupOutput
 
 $finalExitCode = 0
 foreach ($package in $outputPackages) {
