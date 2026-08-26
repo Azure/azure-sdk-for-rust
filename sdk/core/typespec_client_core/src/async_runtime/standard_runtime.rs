@@ -217,7 +217,7 @@ impl Future for Sleep {
                 sleep_thread_started_for_test();
 
                 #[cfg(test)]
-                let _thread_count_guard = SleepThreadCounterGuard::new();
+                let _thread_count_guard = SleepThreadCounterGuard;
 
                 let wait_result = state.wait_lock.lock().ok().and_then(|wait_guard| {
                     state
@@ -231,9 +231,7 @@ impl Future for Sleep {
                 });
 
                 // If the mutex was poisoned we still complete the sleep to avoid hanging.
-                if wait_result.is_none() {
-                    state.canceled.store(true, Ordering::Release);
-                }
+                let _ = wait_result;
 
                 state.completed.store(true, Ordering::Release);
                 if let Ok(mut waker) = state.thread_waker.lock() {
@@ -267,13 +265,6 @@ fn sleep_thread_started_for_test() {
 
 #[cfg(test)]
 struct SleepThreadCounterGuard;
-
-#[cfg(test)]
-impl SleepThreadCounterGuard {
-    fn new() -> Self {
-        Self
-    }
-}
 
 #[cfg(test)]
 impl Drop for SleepThreadCounterGuard {
