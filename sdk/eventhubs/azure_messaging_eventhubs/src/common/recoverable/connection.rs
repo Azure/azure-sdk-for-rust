@@ -417,14 +417,14 @@ impl RecoverableConnection {
             "Closing recoverable connection."
         );
 
-        self.authorizer.stop_refresh_task().await;
-
         // Record the close before the teardown starts. A handle that outlives
         // the client, for example an `EventReceiver` that the caller still
         // holds, shares this object, and `ensure_connection` would otherwise
         // open a second connection to the service after the application closed
         // the client.
         self.closed.store(true, Ordering::Release);
+
+        self.authorizer.stop_refresh_task().await;
 
         // Swap the cell out under the write lock, then detach without holding
         // it. The guard is a separate binding so the lock scope is visible and
@@ -1610,21 +1610,88 @@ mod tests {
         credential.entered_refresh.notified().await;
 
         connection.close_connection().await.unwrap();
+        assert_eq!(
+            Arc::strong_count(&authorizer),
+            2,
+            "the connection and test authorizer references must remain after close"
+        );
         drop(connection);
-
-        let stopped = tokio::time::timeout(std::time::Duration::from_secs(1), async {
-            loop {
-                if Arc::strong_count(&authorizer) == 1 {
-                    return;
-                }
-                tokio::task::yield_now().await;
-            }
-        })
-        .await;
-        assert!(
-            stopped.is_ok(),
+        assert_eq!(
+            Arc::strong_count(&authorizer),
+            1,
             "authorization refresh task remained alive after close; strong_count={}",
             Arc::strong_count(&authorizer)
+        );
+    }
+
+    #[tokio::test]
+    async fn close_racing_first_authorization_does_not_start_refresher() {
+        #[derive(Debug)]
+        struct GatedCredential {
+            requests: AtomicUsize,
+            entered: Notify,
+            release: Notify,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for GatedCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                if self.requests.fetch_add(1, Ordering::SeqCst) == 0 {
+                    self.entered.notify_one();
+                    self.release.notified().await;
+                }
+                Ok(AccessToken::new(
+                    azure_core::credentials::Secret::new("initial_token"),
+                    OffsetDateTime::now_utc() + Duration::hours(1),
+                ))
+            }
+        }
+
+        let credential = Arc::new(GatedCredential {
+            requests: AtomicUsize::new(0),
+            entered: Notify::new(),
+            release: Notify::new(),
+        });
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            credential.clone(),
+            Default::default(),
+            None,
+        );
+        let authorizer = connection.authorizer.clone();
+        authorizer.disable_authorization().unwrap();
+
+        let path = Url::parse("amqps://example.com/close_first_authorization").unwrap();
+        let authorization = {
+            let authorizer = authorizer.clone();
+            let connection = connection.clone();
+            tokio::spawn(async move { authorizer.authorize_path(&connection, &path).await })
+        };
+
+        credential.entered.notified().await;
+        connection.close_connection().await.unwrap();
+        credential.release.notify_one();
+        authorization
+            .await
+            .expect("authorize_path task panicked")
+            .expect("authorize_path returned an error");
+
+        assert_eq!(
+            credential.requests.load(Ordering::SeqCst),
+            1,
+            "the first authorization must make one token request"
+        );
+        drop(connection);
+        assert_eq!(
+            Arc::strong_count(&authorizer),
+            1,
+            "authorization refresh task must not start after close"
         );
     }
 
