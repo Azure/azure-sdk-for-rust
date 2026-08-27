@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-//! Live regression test for memory retained across repeated producer lifecycles.
+//! Live regression test for memory retained across repeated producer life cycles.
 //!
 //! The custom global allocator tracks bytes that the Rust allocator currently
 //! owns. Each sample is taken after a producer has opened, sent an event, and
@@ -130,7 +130,7 @@ async fn producer_lifecycle_send_close_has_no_sustained_heap_trend() -> Result<(
     }
 
     // Fit an ordinary least-squares line to the block medians. Its slope is the
-    // estimated retained-byte change per block of producer lifecycles.
+    // estimated retained-byte change per block of producer life cycles.
     let x_mean = (BLOCK_COUNT - 1) as f64 / 2.0;
     let y_mean = medians.iter().sum::<f64>() / BLOCK_COUNT as f64;
     let sum_squared_x_deviations = (0..BLOCK_COUNT)
