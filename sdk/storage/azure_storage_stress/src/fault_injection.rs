@@ -130,7 +130,7 @@ impl TryFrom<FaultInjectionProbabilities> for Vec<(f32, &'static str)> {
     fn try_from(value: FaultInjectionProbabilities) -> Result<Self, Self::Error> {
         let mut vec = Vec::new();
         let non_negative = |value: f32, name: &str| {
-            if value < 0.0 {
+            if !value.is_finite() || value < 0.0 {
                 Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     format!("{name} must be a non-negative value."),

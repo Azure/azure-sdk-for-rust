@@ -1,6 +1,7 @@
 [package]
 name = "azure_storage_stress"
 version = "0.1.0"
+publish = false
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -13,9 +14,9 @@ azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", feature
 azure_core_test = { path = "../../core/azure_core_test", features = ["tracing"] }
 bytes.workspace = true
 clap = { workspace = true, features = ["derive"] }
-crc-fast = "1.9.0"
+crc-fast.workspace = true
 futures.workspace = true
-log = "0.4.33"
+log.workspace = true
 pin-project.workspace = true
 rand.workspace = true
 serde.workspace = true

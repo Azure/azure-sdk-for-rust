@@ -80,7 +80,7 @@ impl<T: StressTestFactory> StressRunnerOptions<T> {
                 azure_core::Error::with_error(
                     azure_core_test::ErrorKind::DataConversion,
                     e,
-                    "Failed to serialize file contents.",
+                    "Failed to deserialize file contents.",
                 )
             })?
         } else if self.use_default_fault_injection {
