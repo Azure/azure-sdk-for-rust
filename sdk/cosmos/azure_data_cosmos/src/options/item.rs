@@ -94,6 +94,10 @@ impl ItemWriteOptions {
 
 /// Options for [`ContainerClient::patch_item()`](crate::clients::ContainerClient::patch_item()).
 ///
+/// **Preview.** Requires the `preview_patch` feature. PATCH is not
+/// production-ready: an interrupted patch may re-apply non-idempotent
+/// operations. See [Failure Semantics](crate::clients::ContainerClient::patch_item()).
+///
 /// PATCH is implemented driver-side as a Read-Modify-Write (RMW) loop:
 /// the driver reads the current item, applies your [`PatchInstructions`](crate::models::PatchInstructions)
 /// locally, and issues an ETag-guarded Replace. If the Replace returns
@@ -143,6 +147,7 @@ impl ItemWriteOptions {
 /// 412 retries you want to tolerate. Setting the budget too low can
 /// cancel the RMW between the Read and the Replace, producing a
 /// timeout error even when the service is healthy.
+#[cfg(feature = "preview_patch")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct PatchItemOptions {
@@ -158,6 +163,7 @@ pub struct PatchItemOptions {
     pub max_attempts: Option<std::num::NonZeroU8>,
 }
 
+#[cfg(feature = "preview_patch")]
 impl PatchItemOptions {
     /// Sets the session token for this request.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {

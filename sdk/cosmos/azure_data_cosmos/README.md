@@ -107,7 +107,6 @@ container metadata read the SDK already performs internally.
 ```rust
 use serde::{Serialize, Deserialize};
 use azure_data_cosmos::CosmosClient;
-use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
 
 #[derive(Serialize, Deserialize)]
 struct Item {
@@ -137,20 +136,38 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
     // Replace an item
     container.replace_item("partition1", "1", item, None).await?;
 
-    let patch = PatchInstructions::from(vec![
-        PatchOperation::set("/value", serde_json::json!("4")),
-    ]);
-    let patched: Item = container
-        .patch_item("partition1", "1", patch, None)
-        .await?
-        .into_model()?;
-    println!("patched value = {}", patched.value);
-
     // Delete an item
     container.delete_item("partition1", "1", None).await?;
     Ok(())
 }
 ```
+
+### Partial updates with PATCH (preview)
+
+`ContainerClient::patch_item()` applies JSON-Patch-style operations to a single item. It is
+gated behind the `preview_patch` feature and is **not production-ready**:
+
+```sh
+cargo add azure_data_cosmos --features preview_patch
+```
+
+```rust,ignore
+use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
+
+let patch = PatchInstructions::from(vec![
+    PatchOperation::set("/value", serde_json::json!("4")),
+]);
+let patched: Item = container
+    .patch_item("partition1", "1", patch, None)
+    .await?
+    .into_model()?;
+```
+
+PATCH is implemented client-side as a read, a local merge, and an ETag-guarded replace. If the
+replace is interrupted after the service commits it, the pipeline may retry it and the
+read-modify-write loop may re-apply the patch. Non-idempotent operations
+(`increment`, `add` on an array, `move`) can therefore be applied **more than once**. Use
+idempotent operations such as `set` with a caller-computed value until this limitation is fixed.
 
 ## Next steps
 

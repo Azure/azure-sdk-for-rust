@@ -106,6 +106,7 @@ metrics = [
 preview_dtx = [
   "azure_data_cosmos_driver/preview_dtx",
 ] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
+preview_patch = [] # Enables the preview PATCH API. Disabled by default and not production-ready: an interrupted patch may re-apply non-idempotent operations.
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",
@@ -123,6 +124,7 @@ features = [
   "key_auth",
   "metrics",
   "native_tls",
+  "preview_patch",
   "rustls",
 ]
 
@@ -172,3 +174,10 @@ required-features = ["__internal_in_memory_emulator"]
 name = "cosmos"
 path = "examples/cosmos/main.rs"
 required-features = ["control_plane"]
+
+# The PATCH example calls the preview `patch_item` API, which only exists
+# when `preview_patch` is enabled.
+[[example]]
+name = "cosmos_patch"
+path = "examples/cosmos_patch.rs"
+required-features = ["preview_patch"]

@@ -20,6 +20,7 @@ if ($env:AZURE_COSMOS_DEFAULT_FEATURE_CHECK_COMPLETE -eq 'true') {
 $packages = @(
   'azure_data_cosmos'
   'azure_data_cosmos_driver'
+  'azure_data_cosmos_driver_native'
 )
 $packageArgs = '--package ' + ($packages -join ' --package ')
 

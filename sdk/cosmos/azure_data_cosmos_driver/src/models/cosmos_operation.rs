@@ -886,6 +886,9 @@ impl CosmosOperation {
     /// the operation body (via [`with_body`](Self::with_body)) — the patch
     /// handler deserializes it before issuing the underlying transport
     /// operations.
+    ///
+    /// An interrupted patch may re-apply non-idempotent operations — see
+    /// `docs/PATCH_HANDLER_SPEC.md`.
     pub fn patch_item(item: ItemReference) -> Self {
         Self::for_item(OperationType::Patch, item)
     }
