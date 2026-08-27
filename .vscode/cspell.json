@@ -55,6 +55,7 @@
     "eventhub",
     "eventhubs",
     "execdir",
+    "faultinjector",
     "finalizer",
     "fips",
     "hmac",
