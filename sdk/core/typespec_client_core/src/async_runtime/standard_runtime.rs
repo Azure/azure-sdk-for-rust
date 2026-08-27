@@ -6,10 +6,9 @@ use crate::async_runtime::AbortableTask;
 use crate::time::Duration;
 use futures::{executor::LocalPool, task::SpawnExt};
 use std::error::Error;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::{
     future,
-    sync::{Arc, Condvar, Mutex},
+    sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError},
     task::{Context, Poll, Waker},
     thread,
 };
@@ -185,11 +184,25 @@ struct Sleep {
 
 #[derive(Debug, Default)]
 struct SleepState {
-    completed: AtomicBool,
-    canceled: AtomicBool,
-    thread_waker: Mutex<Option<Waker>>,
-    wait_lock: Mutex<()>,
-    wait_condvar: Condvar,
+    inner: Mutex<SleepInner>,
+    condvar: Condvar,
+}
+
+#[derive(Debug, Default)]
+struct SleepInner {
+    completed: bool,
+    canceled: bool,
+    waker: Option<Waker>,
+}
+
+impl SleepState {
+    /// Locks the shared state, recovering from a poisoned mutex.
+    ///
+    /// A panic while the lock is held cannot leave the state inconsistent,
+    /// and failing to lock would either hang the future or leak the thread.
+    fn lock(&self) -> MutexGuard<'_, SleepInner> {
+        self.inner.lock().unwrap_or_else(PoisonError::into_inner)
+    }
 }
 
 impl Future for Sleep {
@@ -197,66 +210,61 @@ impl Future for Sleep {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(state) = &self.state {
-            if state.completed.load(Ordering::Acquire) {
-                Poll::Ready(())
-            } else {
-                if let Ok(mut waker) = state.thread_waker.lock() {
-                    *waker = Some(cx.waker().clone());
-                }
-                Poll::Pending
+            // Holding the lock while checking and registering the waker
+            // guarantees the worker either sees the current waker or has
+            // already marked the sleep completed.
+            let mut inner = state.lock();
+            if inner.completed {
+                return Poll::Ready(());
             }
-        } else {
-            let state = Arc::new(SleepState::default());
-            if let Ok(mut waker) = state.thread_waker.lock() {
-                *waker = Some(cx.waker().clone());
-            }
-            let duration = self.duration;
-            self.get_mut().state = Some(state.clone());
-            thread::spawn(move || {
-                #[cfg(test)]
-                sleep_thread_started_for_test();
-
-                #[cfg(test)]
-                let _thread_count_guard = SleepThreadCounterGuard;
-
-                let wait_result = state.wait_lock.lock().ok().and_then(|wait_guard| {
-                    state
-                        .wait_condvar
-                        .wait_timeout_while(
-                            wait_guard,
-                            duration.try_into().expect("Duration conversion failed"),
-                            |_| !state.canceled.load(Ordering::Acquire),
-                        )
-                        .ok()
-                });
-
-                // If the mutex was poisoned we still complete the sleep to avoid hanging.
-                let _ = wait_result;
-
-                state.completed.store(true, Ordering::Release);
-                if let Ok(mut waker) = state.thread_waker.lock() {
-                    if let Some(waker) = waker.take() {
-                        waker.wake();
-                    }
-                }
-            });
-            Poll::Pending
+            inner.waker = Some(cx.waker().clone());
+            return Poll::Pending;
         }
+
+        let state = Arc::new(SleepState::default());
+        state.lock().waker = Some(cx.waker().clone());
+
+        let duration = self.duration;
+        self.get_mut().state = Some(state.clone());
+        thread::spawn(move || {
+            #[cfg(test)]
+            sleep_thread_started_for_test();
+
+            #[cfg(test)]
+            let _thread_count_guard = SleepThreadCounterGuard;
+
+            let duration = duration.try_into().unwrap_or(std::time::Duration::ZERO);
+            let (mut inner, _) = state
+                .condvar
+                .wait_timeout_while(state.lock(), duration, |inner| !inner.canceled)
+                .unwrap_or_else(PoisonError::into_inner);
+
+            inner.completed = true;
+            let waker = inner.waker.take();
+            drop(inner);
+
+            if let Some(waker) = waker {
+                waker.wake();
+            }
+        });
+        Poll::Pending
     }
 }
 
 impl Drop for Sleep {
     fn drop(&mut self) {
         if let Some(state) = &self.state {
-            state.canceled.store(true, Ordering::Release);
-            state.wait_condvar.notify_one();
+            state.lock().canceled = true;
+            state.condvar.notify_one();
         }
     }
 }
 
 #[cfg(test)]
-static ACTIVE_SLEEP_THREADS: std::sync::atomic::AtomicUsize =
-    std::sync::atomic::AtomicUsize::new(0);
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+#[cfg(test)]
+static ACTIVE_SLEEP_THREADS: AtomicUsize = AtomicUsize::new(0);
 
 #[cfg(test)]
 fn sleep_thread_started_for_test() {
