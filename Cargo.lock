@@ -417,7 +417,7 @@ dependencies = [
  "fe2o3-amqp-management",
  "fe2o3-amqp-types",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.14.1",
  "serde_bytes",
  "tokio",
  "tracing",
@@ -437,7 +437,7 @@ dependencies = [
  "fe2o3-amqp-management",
  "fe2o3-amqp-types",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.17.0",
  "serde_bytes",
  "serde_json",
  "tokio",
@@ -1669,7 +1669,7 @@ dependencies = [
  "parking_lot",
  "pin-project-lite",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.14.1",
  "serde_bytes",
  "slab",
  "thiserror",
@@ -1701,7 +1701,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6362c13b91a80dca77360eecdfbe85425e6dff1523f16c3a79fac541c47cf27d"
 dependencies = [
  "fe2o3-amqp-types",
- "serde_amqp",
+ "serde_amqp 0.14.1",
 ]
 
 [[package]]
@@ -1724,7 +1724,7 @@ checksum = "8bcc8d13ed13fbb2fb664a6df114bcc32f8ca85c9cb6b89d4e7576c47f583706"
 dependencies = [
  "ordered-float",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.14.1",
  "serde_bytes",
  "serde_repr",
 ]
@@ -3631,6 +3631,21 @@ dependencies = [
  "ordered-float",
  "serde",
  "serde_amqp_derive",
+ "serde_bytes",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
+name = "serde_amqp"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "102dfb47c5b2e26b775e69cff62d8d83289288de2a4e8796145842cd3905e780"
+dependencies = [
+ "bytes",
+ "indexmap 2.14.0",
+ "ordered-float",
+ "serde",
  "serde_bytes",
  "thiserror",
  "uuid",
