@@ -300,6 +300,7 @@ pub(crate) async fn execute_operation_pipeline(
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<ResolvedThroughputControl>,
     pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
+    partition_key_range_cache_enabled: bool,
     hedge_budget: &HedgeBudget,
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
@@ -343,7 +344,8 @@ pub(crate) async fn execute_operation_pipeline(
         .unwrap_or(ReadConsistencyStrategy::Default);
     let effective_consistency =
         resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
-    let session_consistency_active = !session_capturing_disabled
+    let session_consistency_active = partition_key_range_cache_enabled
+        && !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
 
     // Rule 4 (RCS validation): GlobalStrong is

@@ -99,6 +99,7 @@ pub struct CosmosClientBuilder {
     backup_endpoints: Vec<azure_core::http::Url>,
     /// Options to use for per-partition failover (PPAF, PPCB)
     partition_failover_options: Option<PartitionFailoverOptions>,
+    partition_key_range_cache_enabled: Option<bool>,
 }
 
 impl CosmosClientBuilder {
@@ -152,6 +153,17 @@ impl CosmosClientBuilder {
     /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE=false`.
     pub fn with_partition_failover_options(mut self, options: PartitionFailoverOptions) -> Self {
         self.partition_failover_options = Some(options);
+        self
+    }
+
+    /// Enables or disables partition key range topology caching for this client.
+    ///
+    /// When disabled, the client never requests `/pkranges`. Cross-partition
+    /// queries, change feed reads, and physical feed-range APIs are unavailable.
+    /// Automatic session token management is disabled, but user-provided session
+    /// tokens are still sent unchanged.
+    pub fn with_partition_key_range_cache_enabled(mut self, enabled: bool) -> Self {
+        self.partition_key_range_cache_enabled = Some(enabled);
         self
     }
 
@@ -318,6 +330,7 @@ impl CosmosClientBuilder {
             self.options.operation,
             self.options.user_agent_suffix,
             self.partition_failover_options,
+            self.partition_key_range_cache_enabled.unwrap_or(true),
             #[cfg(feature = "fault_injection")]
             self.fault_injection_rules,
             self.throughput_control_groups,
@@ -345,12 +358,16 @@ impl CosmosClientBuilder {
 ///   a warning and falls back to an empty list, which causes the driver to use
 ///   the account's own region order.
 /// - [`RoutingStrategy::PreferredRegions`] passes the caller's list through unchanged.
+// The inputs originate from distinct public builder concerns and are kept
+// separate so this internal adapter does not expose driver implementation types.
+#[allow(clippy::too_many_arguments)]
 fn build_driver_options(
     account: azure_data_cosmos_driver::models::AccountReference,
     strategy: RoutingStrategy,
     operation_options: OperationOptions,
     user_agent_suffix: Option<UserAgentSuffix>,
     partition_failover_options: Option<PartitionFailoverOptions>,
+    partition_key_range_cache_enabled: bool,
     #[cfg(feature = "fault_injection")] fault_injection_rules: Vec<
         Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
     >,
@@ -371,7 +388,8 @@ fn build_driver_options(
     };
     let mut builder = azure_data_cosmos_driver::options::DriverOptions::builder(account)
         .with_preferred_regions(preferred_regions)
-        .with_operation_options(operation_options);
+        .with_operation_options(operation_options)
+        .with_partition_key_range_cache_enabled(partition_key_range_cache_enabled);
     if let Some(suffix) = user_agent_suffix {
         builder = builder.with_user_agent_suffix(suffix);
     }
@@ -510,6 +528,7 @@ mod tests {
             OperationOptions::default(),
             None,
             None,
+            true,
             #[cfg(feature = "fault_injection")]
             Vec::new(),
             Vec::new(),
@@ -533,6 +552,7 @@ mod tests {
             OperationOptions::default(),
             None,
             None,
+            true,
             #[cfg(feature = "fault_injection")]
             Vec::new(),
             Vec::new(),
@@ -554,6 +574,7 @@ mod tests {
             OperationOptions::default(),
             None,
             None,
+            true,
             #[cfg(feature = "fault_injection")]
             Vec::new(),
             Vec::new(),
@@ -573,6 +594,7 @@ mod tests {
             OperationOptions::default(),
             Some(suffix.clone()),
             None,
+            true,
             #[cfg(feature = "fault_injection")]
             Vec::new(),
             Vec::new(),
@@ -597,6 +619,7 @@ mod tests {
             OperationOptions::default(),
             None,
             Some(pfo),
+            true,
             #[cfg(feature = "fault_injection")]
             Vec::new(),
             Vec::new(),
@@ -624,6 +647,7 @@ mod tests {
             OperationOptions::default(),
             None,
             None,
+            true,
             #[cfg(feature = "fault_injection")]
             Vec::new(),
             Vec::new(),
@@ -634,5 +658,23 @@ mod tests {
             opts.partition_failover_options().circuit_breaker_enabled(),
             PartitionFailoverOptions::default().circuit_breaker_enabled(),
         );
+    }
+
+    #[test]
+    fn partition_key_range_cache_option_flows_to_driver_options() {
+        let opts = build_driver_options(
+            test_account(),
+            RoutingStrategy::PreferredRegions(Vec::new()),
+            OperationOptions::default(),
+            None,
+            None,
+            false,
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
+
+        assert!(!opts.partition_key_range_cache_enabled());
     }
 }

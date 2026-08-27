@@ -99,6 +99,11 @@ impl OperationPlan {
         }
     }
 
+    /// Returns whether executing this plan can require physical partition topology.
+    pub(crate) fn requires_partition_key_range_topology(&self) -> bool {
+        !self.operation.is_trivial()
+    }
+
     /// Snapshots this plan into a [`ContinuationToken`] suitable for cross-process
     /// resumption.
     ///

@@ -281,7 +281,7 @@ pub struct CosmosDriver {
     /// Cache for partition key range routing maps.
     /// Used to pre-resolve partition key range IDs for PPAF/PPCB
     /// before the first request attempt.
-    pk_range_cache: PartitionKeyRangeCache,
+    pk_range_cache: Option<PartitionKeyRangeCache>,
     /// Region pins protecting the change-feed continuations held by
     /// `pk_range_cache`. See [`PkRangeRegionPins`].
     pk_range_region_pins: PkRangeRegionPins,
@@ -1735,6 +1735,9 @@ impl CosmosDriver {
         // Read the hedge ceiling once, here: it is fixed for the driver's
         // lifetime, and `options` is moved into `Self` below.
         let hedge_budget = HedgeBudget::new(options.hedging_options());
+        let pk_range_cache = options
+            .partition_key_range_cache_enabled()
+            .then(PartitionKeyRangeCache::new);
 
         Ok(Self {
             runtime,
@@ -1746,7 +1749,7 @@ impl CosmosDriver {
                 any(test, feature = "__internal_in_memory_emulator")
             ))]
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
-            pk_range_cache: PartitionKeyRangeCache::new(),
+            pk_range_cache,
             pk_range_region_pins: Mutex::new(HashMap::new()),
             hedge_budget,
             session_manager: SessionManager::new(),
@@ -1765,6 +1768,17 @@ impl CosmosDriver {
     /// Returns the account reference.
     pub fn account(&self) -> &AccountReference {
         self.options.account()
+    }
+
+    fn partition_key_range_cache(&self) -> crate::error::Result<&PartitionKeyRangeCache> {
+        self.pk_range_cache.as_ref().ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_DISABLED)
+                .with_message(
+                    "the partition key range cache is disabled, but this operation requires partition topology",
+                )
+                .build()
+        })
     }
 
     /// **Internal test hook -- not part of the public API.**
@@ -2423,7 +2437,9 @@ impl CosmosDriver {
         &self,
         operation: &CosmosOperation,
         overrides: &OperationOverrides,
+        automatic_session_management_active: bool,
     ) -> Option<PartitionKeyRangeId> {
+        let cache = self.pk_range_cache.as_ref()?;
         // Only pre-resolve for partitioned data plane operations.
         if !operation
             .resource_type()
@@ -2452,7 +2468,8 @@ impl CosmosDriver {
         // session token to a single partition and feeds PPAF/PPCB routing.
         // Resolve it whenever any consumer needs it:
         //   * PPAF or PPCB is enabled (for failure attribution / routing), OR
-        //   * the client may route over Gateway 2.0 (thin-client), whose
+        //   * automatic session token management is active and the client may
+        //     route over Gateway 2.0 (thin-client), whose
         //     backend rejects a multi-range composite session token on a
         //     partition-scoped request ("Session token specified is invalid.").
         //
@@ -2465,7 +2482,9 @@ impl CosmosDriver {
         let partition_state = snapshot.partitions.as_ref();
         if !partition_state.per_partition_automatic_failover_enabled
             && !partition_state.per_partition_circuit_breaker_enabled
-            && !self.location_state_store.gateway_v2_enabled()
+            && !(automatic_session_management_active
+                && operation.request_headers().session_token.is_none()
+                && self.location_state_store.gateway_v2_enabled())
         {
             return None;
         }
@@ -2480,8 +2499,7 @@ impl CosmosDriver {
             .as_ref()
             .or_else(|| operation.target().and_then(|t| t.partition_key()));
         if let Some(partition_key) = partition_key {
-            return self
-                .pk_range_cache
+            return cache
                 .resolve_partition_key_range_id(
                     container,
                     partition_key,
@@ -2507,7 +2525,7 @@ impl CosmosDriver {
             .feed_range
             .as_ref()
             .or_else(|| operation.target())?;
-        self.pk_range_cache
+        cache
             .resolve_single_overlapping_range_id(
                 container,
                 target.min_inclusive()..target.max_exclusive(),
@@ -2766,7 +2784,8 @@ impl CosmosDriver {
                     self.fetch_account_properties(self.options.account())
                 })
                 .await?;
-            !session_capturing_disabled
+            self.pk_range_cache.is_some()
+                && !session_capturing_disabled
                 && read_consistency_strategy.is_session_effective(
                     account_properties
                         .user_consistency_policy
@@ -2856,12 +2875,16 @@ impl CosmosDriver {
                 outer_deadline,
             );
             let Some(retry_delay) = retry_delay else {
-                self.session_manager
-                    .merge_distributed_transaction_session_tokens(
-                        &response,
-                        &request.operations,
-                        is_session_consistency,
-                    )?;
+                // Cache-disabled mode disables automatic session management.
+                // Explicit per-operation tokens remain in the request unchanged.
+                if is_session_consistency {
+                    self.session_manager
+                        .merge_distributed_transaction_session_tokens(
+                            &response,
+                            &request.operations,
+                            is_session_consistency,
+                        )?;
+                }
 
                 return Ok(response);
             };
@@ -2892,7 +2915,9 @@ impl CosmosDriver {
                     &operation.target.partition_key,
                     false,
                 )
-                .await;
+                .await
+                .ok()
+                .flatten();
             let range = ranges.as_deref().and_then(|ranges| match ranges {
                 [single] => Some(single),
                 _ => None,
@@ -2932,13 +2957,19 @@ impl CosmosDriver {
             }
             tracing::debug!("plan execution started");
 
+            if plan.requires_partition_key_range_topology() {
+                self.partition_key_range_cache()?;
+            }
+
             let mut executor = DriverRequestExecutor {
                 driver: self,
                 options: &options,
             };
 
-            let mut topology = container.map(|c| {
-                CachedTopologyProvider::new(&self.pk_range_cache, c, self.pk_range_page_fetcher())
+            let mut topology = container.and_then(|c| {
+                self.pk_range_cache
+                    .as_ref()
+                    .map(|cache| CachedTopologyProvider::new(cache, c, self.pk_range_page_fetcher()))
             });
 
             let mut context = PipelineContext::new(
@@ -3010,6 +3041,21 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
+        let automatic_session_management_active = self.pk_range_cache.is_some()
+            && !effective_options
+                .session_capturing_disabled()
+                .copied()
+                .unwrap_or(false)
+            && effective_options
+                .read_consistency_strategy()
+                .copied()
+                .unwrap_or(crate::options::ReadConsistencyStrategy::Default)
+                .is_session_effective(
+                    account_properties
+                        .user_consistency_policy
+                        .default_consistency_level,
+                );
+
         // Step 5: Pre-resolve partition key range ID for PPAF/PPCB.
         // When partition-level failover is enabled, resolving the range ID
         // before the first attempt lets the pipeline apply partition overrides
@@ -3017,7 +3063,11 @@ impl CosmosDriver {
         // Pass the overrides so dataflow-stamped routing (PK range ID, partition
         // key, EPK range) is honored ahead of the operation's own target.
         let pre_resolved_pk_range_id = self
-            .pre_resolve_partition_key_range_id(operation, &overrides)
+            .pre_resolve_partition_key_range_id(
+                operation,
+                &overrides,
+                automatic_session_management_active,
+            )
             .await;
 
         // Step 6: Select the adaptive transport context for the chosen pipeline
@@ -3083,6 +3133,7 @@ impl CosmosDriver {
                 .default_consistency_level,
             effective_throughput_control,
             pre_resolved_pk_range_id,
+            self.pk_range_cache.is_some(),
             &self.hedge_budget,
         )
         .await
@@ -3334,6 +3385,7 @@ impl CosmosDriver {
         //    needed). Children are polled round-robin and never evicted on
         //    304 so the stream is infinite.
         if operation.is_change_feed() {
+            let cache = self.partition_key_range_cache()?;
             let container = operation.container().ok_or_else(|| {
                 crate::error::CosmosError::builder()
                     .with_status(
@@ -3344,11 +3396,8 @@ impl CosmosDriver {
             })?;
             let feed_range = operation.target().cloned().unwrap_or_else(FeedRange::full);
             let container_ref = container.clone();
-            let mut topology = CachedTopologyProvider::new(
-                &self.pk_range_cache,
-                container_ref,
-                self.pk_range_page_fetcher(),
-            );
+            let mut topology =
+                CachedTopologyProvider::new(cache, container_ref, self.pk_range_page_fetcher());
             let pipeline = planner::build_unordered_merge(
                 &feed_range,
                 &mut topology,
@@ -3371,17 +3420,16 @@ impl CosmosDriver {
                 .build()
         })?;
 
+        let cache = self.partition_key_range_cache()?;
+
         // `Box::pin` keeps `plan_operation`'s future small. Inlined, it grows to
         // 17,288 bytes and trips `clippy::large_futures` at five caller sites.
         let query_plan = Box::pin(self.resolve_query_plan(container, &operation, options)).await?;
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
-        let mut topology = CachedTopologyProvider::new(
-            &self.pk_range_cache,
-            container_ref,
-            self.pk_range_page_fetcher(),
-        );
+        let mut topology =
+            CachedTopologyProvider::new(cache, container_ref, self.pk_range_page_fetcher());
 
         // Route streaming ORDER BY queries to the k-way merge instead of
         // the natural-order sequential drain.
@@ -3538,24 +3586,34 @@ impl CosmosDriver {
     ///
     /// Uses the driver's internal `PartitionKeyRangeCache`. When `force_refresh`
     /// is `true`, the cached routing map is refreshed from the service before
-    /// returning results. Returns `None` if the routing map cannot be resolved.
+    /// returning results.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_DISABLED`]
+    /// when partition key range caching is disabled.
     pub async fn resolve_all_partition_key_ranges(
         &self,
         container: &ContainerReference,
         force_refresh: bool,
-    ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+    ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
+    {
         let routing_map = self
-            .pk_range_cache
+            .partition_key_range_cache()?
             .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
-            .await?;
+            .await;
+
+        let Some(routing_map) = routing_map else {
+            return Ok(None);
+        };
 
         let ranges = routing_map.ranges();
         if ranges.is_empty() {
             // A valid container always has at least one partition key range.
             // An empty routing map indicates a service/parse failure.
-            return None;
+            return Ok(None);
         }
-        Some(ranges.to_vec())
+        Ok(Some(ranges.to_vec()))
     }
 
     /// Returns the partition key ranges covering the given partition key.
@@ -3563,17 +3621,24 @@ impl CosmosDriver {
     /// Handles both full keys (single range via point lookup) and prefix keys
     /// on MultiHash containers (multiple ranges via overlapping range lookup).
     ///
-    /// Returns `None` if the partition key is empty or the routing map cannot
-    /// be resolved. When `force_refresh` is `true`, the cached routing map is
-    /// refreshed from the service before lookup.
+    /// Returns `Ok(None)` if the partition key is empty or the routing map
+    /// cannot be resolved. When `force_refresh` is `true`, the cached routing
+    /// map is refreshed from the service before lookup.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_DISABLED`]
+    /// when partition key range caching is disabled.
     pub async fn resolve_partition_key_ranges_for_key(
         &self,
         container: &ContainerReference,
         partition_key: &PartitionKey,
         force_refresh: bool,
-    ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+    ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
+    {
+        let cache = self.partition_key_range_cache()?;
         if partition_key.is_empty() {
-            return None;
+            return Ok(None);
         }
 
         let pk_def = container.partition_key_definition();
@@ -3581,35 +3646,37 @@ impl CosmosDriver {
             Ok(range) => range,
             Err(e) => {
                 tracing::warn!("EPK computation failed for partition key: {e}");
-                return None;
+                return Ok(None);
             }
         };
 
         if epk_range.start == epk_range.end {
             // Full key — point lookup
-            let routing_map = self
-                .pk_range_cache
+            let routing_map = cache
                 .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
-                .await?;
+                .await;
+            let Some(routing_map) = routing_map else {
+                return Ok(None);
+            };
             if routing_map.ranges().is_empty() {
-                return None;
+                return Ok(None);
             }
-            Some(
+            Ok(Some(
                 routing_map
                     .get_range_by_effective_partition_key(&epk_range.start)
                     .cloned()
                     .map_or_else(Vec::new, |r| vec![r]),
-            )
+            ))
         } else {
             // Prefix key — overlapping range lookup
-            self.pk_range_cache
+            Ok(cache
                 .resolve_overlapping_ranges(
                     container,
                     &epk_range.start..&epk_range.end,
                     force_refresh,
                     self.pk_range_page_fetcher(),
                 )
-                .await
+                .await)
         }
     }
 }
@@ -6236,6 +6303,29 @@ mod tests {
                 not_modified: false,
             })
         }
+    }
+
+    #[tokio::test]
+    async fn disabled_partition_key_range_cache_rejects_topology_resolution() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = CosmosDriver::new(
+            runtime,
+            DriverOptions::builder(test_account())
+                .with_partition_key_range_cache_enabled(false)
+                .build(),
+        )
+        .unwrap();
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        let error = driver
+            .resolve_all_partition_key_ranges(&container, false)
+            .await
+            .expect_err("disabled cache must reject topology resolution");
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_DISABLED
+        );
     }
 
     #[tokio::test]

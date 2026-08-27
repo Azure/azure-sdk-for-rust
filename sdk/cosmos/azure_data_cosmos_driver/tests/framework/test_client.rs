@@ -985,7 +985,7 @@ impl DriverTestRunContext {
             .await?;
         Ok(driver
             .resolve_all_partition_key_ranges(container, force_refresh)
-            .await)
+            .await?)
     }
 
     /// Creates a single long-lived driver that the caller holds for the
