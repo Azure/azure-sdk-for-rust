@@ -1,5 +1,9 @@
 {
-  "displayNames": {},
+  "displayNames": {
+    "TestFeatureSet": {
+      "Default": "Default Features"
+    }
+  },
   "matrix": {
     "Agent": {
       "ubuntu": {
@@ -37,6 +41,20 @@
     {
       "OSVmImage": "env:WINDOWSVMIMAGE",
       "RustToolchainName": "nightly"
+    }
+  ],
+  "include": [
+    {
+      "OSVmImage": "env:LINUXVMIMAGE",
+      "Pool": "env:LINUXPOOL",
+      "RustToolchainName": "stable",
+      "TestFeatureSet": "Default"
+    },
+    {
+      "OSVmImage": "env:MACVMIMAGEM1",
+      "Pool": "env:MACPOOL",
+      "RustToolchainName": "stable",
+      "TestFeatureSet": "Default"
     }
   ]
 }
