@@ -218,7 +218,7 @@ pub(crate) struct OperationRetryState {
     pub shared_hub_region_latch: Option<Arc<AtomicBool>>,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
-    /// Writer endpoints already abandoned by this PATCH verification read.
+    /// Endpoints already abandoned by this PATCH verification read.
     ///
     /// Operation-local so a sent/unknown partition failure can move to the
     /// next writer without marking an otherwise healthy region unavailable
