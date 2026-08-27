@@ -17,8 +17,8 @@
 //! 6. Issue an internal ETag-guarded [`OperationType::Replace`].
 //! 7. On `412 Precondition Failed`, restart from step 3 — up to
 //!    `max_attempts` (default 5) total tries. Each Read is a write-region
-//!    `LatestCommitted` read and therefore deliberately carries no session
-//!    token.
+//!    `LatestCommitted` read without a session token unless write routing is
+//!    unavailable, in which case normal read routing uses session consistency.
 //! 8. Synthesize a [`CosmosResponse`] from the locally-merged body plus the
 //!    transport headers/status of the final Replace and an aggregated
 //!    [`DiagnosticsContext`] that concatenates every successful sub-op's
@@ -205,8 +205,9 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 
     for _ in 0..attempts {
         // Read the current item from the write endpoint at LatestCommitted.
-        // LatestCommitted is deliberately outside the session lane, so this
-        // sub-operation carries no caller or prior-attempt session token.
+        // LatestCommitted is deliberately outside the session lane. If routing
+        // degrades to a reader, the operation pipeline restores account-default
+        // consistency and resolves the effective session token for that attempt.
         let read_op = build_read_sub_op(item_ref.clone());
 
         // Any non-2xx Read response is mapped by the driver pipeline into

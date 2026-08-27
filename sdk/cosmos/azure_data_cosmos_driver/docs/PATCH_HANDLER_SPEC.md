@@ -56,8 +56,8 @@ normal pipeline stages run.
 
 2. Clone the caller's operation options for the Read and override its
   consistency strategy with `LatestCommitted`. The caller's session token is
-  intentionally not copied to the Read; `LatestCommitted` is not
-  session-effective.
+  intentionally not copied while the Read is routed to a write endpoint;
+  `LatestCommitted` is not session-effective.
 
 loop up to max_attempts times:
     3. read = execute_operation(Read, read_options) with:
@@ -66,8 +66,8 @@ loop up to max_attempts times:
        - hedging suppressed, including environment-enabled hedging; and
        - no session token.
        If every preferred write endpoint is unavailable or excluded, use
-       normal read routing and record a `routing_fallback` request event
-       with detail
+      normal read routing with the account-default consistency and effective
+      session token. Record a `routing_fallback` request event with detail
       `patch_verification_read_write_endpoint_unavailable_or_excluded`.
        The driver pipeline returns Err(ErrorKind::HttpResponse { .. })
        for any non-2xx Read response; the patch handler propagates that
@@ -134,34 +134,49 @@ one exists, then the account's write endpoint list. On multi-write accounts,
 retries skip endpoints already abandoned by this operation and continue through
 that write list; failed attempts are keyed by the stable regional gateway URL,
 so a Gateway 2.0 metadata refresh cannot make the same writer look new. The set
-is operation-local and does not mark a region unhealthy for unrelated work. A
-persisted PPAF writer is resolved to the current account endpoint before use;
-an unavailable or excluded override is skipped before considering account
-writers. This is stricter than ordinary session-retry routing: after a Replace
-commits but its response is lost, the client has no response session token
-proving that commit. A nearest-region Session read may therefore miss the write
-and make a future marker check incorrectly conclude that the Replace did not
-land.
+is operation-local and does not mark a region unhealthy for unrelated work.
+Persisted PPAF endpoints are resolved to the current account endpoint before
+both reads and writes use them, so a Gateway 2.0 URL refresh applies across
+operations and between the Read and Replace. An unavailable or excluded
+override is skipped before considering account writers.
+
+On a multi-write account, a write endpoint's regional quorum may still lag a
+write accepted in another region. Because the verification Read deliberately
+does not carry the caller's session token, it can observe an older image or a
+plain 404 during that replication window. The subsequent Replace carries the
+Read response's token and ETag; if it routes to a region that has not reached
+that view it can return 404/1002 and session-retry, while a newer image produces
+412 and restarts the RMW loop. These extra attempts are an accepted trade-off:
+regional quorum narrows the contention window but cannot eliminate concurrent
+multi-write conflicts.
+
+A PPAF `current_endpoint` is the next candidate not known to have failed, not
+proof that a successful write landed there. A verification Read may therefore
+probe a stale candidate. The following Replace can discover that the candidate
+is not writable and fail over, or reject a stale ETag with 412 and restart the
+RMW loop. This is likewise an accepted availability/contention trade-off; the
+candidate avoids always returning to a known-stale account writer after
+partition-level failover.
 
 The read also forces `ReadConsistencyStrategy::LatestCommitted` and suppresses
 both pre-attempt and retry-upgrade hedging. A hedge winner from another region
 would reintroduce the stale-observation window even when the primary targets the
 write region. Partition-level read circuit-breaker overrides likewise do not
-replace active write-region routing. Retry evaluation disables PPCB management
-for these reads as well, and the operation pipeline removes
-`MarkPartitionUnavailable` effects before they reach routing state. HTTP
-failures can still create endpoint state that the write-route selector consumes;
-ambiguous transport failures advance through the operation-local failed-URL
-set. Neither path updates a breaker the resolver deliberately ignores.
+replace active write-region routing. Retry evaluation keeps PPCB classification
+active, while the operation pipeline removes both `MarkPartitionUnavailable`
+and `MarkEndpointUnavailable` effects before they reach shared routing state.
+Failures advance through the operation-local failed-URL set instead of changing
+routing for unrelated operations.
 
 When all preferred write endpoints are unavailable or excluded, the operation
-falls back to normal read routing instead of targeting a known-unhealthy
-endpoint. The selected request carries a `routing_fallback` diagnostic event so
-the degraded guarantee is observable. This fallback preserves availability but
-cannot provide the same marker-observation guarantee as a write-region read;
-the marker protocol must account for that when attributing an ambiguous
-Replace. PPCB overrides stay disabled on the fallback path so routing and retry
-classification remain symmetric.
+falls back to normal read routing with account-default consistency and the
+effective session token. This prevents a lagging reader from supplying a stale
+image to the Replace: 404/1002 session-retries instead, and an already-present
+stale item cannot satisfy the token. A request that ultimately uses a reader
+carries a `routing_fallback` diagnostic event; last-resort selection of a writer
+does not. The fallback preserves read-your-writes but cannot provide the same
+marker-observation guarantee as a write-region quorum read, so the marker
+protocol must account for that when attributing an ambiguous Replace.
 
 ## Response Synthesis
 
@@ -289,8 +304,9 @@ as a JSON number without precision loss.
   RMW retry is internal and never depends on the global policy.
 - Every internal Read prefers the PPAF partition writer or account write
   endpoints, forces `LatestCommitted`, strips session-token headers, and
-  suppresses hedging. Normal read routing is used only when no preferred write
-  endpoint is usable, and that fallback is recorded in request diagnostics.
+  suppresses hedging. Normal read routing with account-default/session
+  consistency is used only when no preferred write endpoint is usable, and a
+  fallback that ultimately uses a reader is recorded in request diagnostics.
 - **PATCH is not exactly-once under transport failures.** The internal
   Replace is `OperationType::Replace`, which the pipeline classifies as
   idempotent (`OperationType::is_idempotent`). If a transport-layer error

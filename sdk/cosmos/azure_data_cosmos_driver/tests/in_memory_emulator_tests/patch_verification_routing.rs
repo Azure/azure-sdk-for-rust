@@ -313,11 +313,8 @@ async fn patch_read_falls_back_to_normal_routing_with_diagnostics() {
     );
     assert_eq!(requests[0].method, Method::Get);
     assert_eq!(requests[0].host, WEST_HOST);
-    assert_eq!(
-        requests[0].read_consistency_strategy.as_deref(),
-        Some("LatestCommitted")
-    );
-    assert_eq!(requests[0].session_token, None);
+    assert_eq!(requests[0].read_consistency_strategy, None);
+    assert!(requests[0].session_token.is_some());
     assert_eq!(requests[1].method, Method::Put);
     assert_eq!(requests[1].host, EAST_HOST);
     assert_eq!(
@@ -445,7 +442,7 @@ async fn real_write_region_failures_fall_back_with_ppcb_enabled() {
         );
         let fixture = build_fault_fixture(
             vec![Arc::clone(&rule)],
-            vec![Region::WEST_US, Region::EAST_US],
+            vec![Region::EAST_US, Region::WEST_US],
             true,
         )
         .await;
@@ -470,7 +467,94 @@ async fn real_write_region_failures_fall_back_with_ppcb_enabled() {
             fallback.details(),
             Some("patch_verification_read_write_endpoint_unavailable_or_excluded")
         );
+
+        fixture.recorder.clear();
+        let item = ItemReference::from_name(&fixture.container, PartitionKey::from(PK), "item1");
+        fixture
+            .driver
+            .execute_singleton_operation(
+                CosmosOperation::read_item(item),
+                OperationOptions::default(),
+            )
+            .await
+            .expect("unrelated read succeeds");
+        assert_eq!(
+            fixture.recorder.requests()[0].host,
+            EAST_HOST,
+            "a PATCH verification failure must not mark East unavailable for unrelated reads"
+        );
     }
+}
+
+#[tokio::test]
+async fn stale_fallback_session_retries_before_increment_replace() {
+    let fixture = build_fixture().await;
+    fixture._emulator.store().pause_replication("West US");
+
+    let item = ItemReference::from_name(&fixture.container, PartitionKey::from(PK), "item1");
+    fixture
+        .driver
+        .execute_singleton_operation(
+            CosmosOperation::replace_item(item.clone()).with_body(
+                serde_json::json!({
+                    "id": "item1",
+                    "pk": PK,
+                    "value": "newer-east-value",
+                    "counter": 1,
+                    "preserved": "east-only"
+                })
+                .to_string()
+                .into_bytes(),
+            ),
+            OperationOptions::default(),
+        )
+        .await
+        .expect("East update succeeds while West replication is paused");
+    fixture.recorder.clear();
+    assert!(fixture
+        .driver
+        .mark_region_endpoint_unavailable_for_testing(&Region::EAST_US));
+
+    let patch = PatchInstructions::from(vec![PatchOperation::increment("/counter", 1_i64)]);
+    let response = fixture
+        .driver
+        .execute_singleton_operation(
+            CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&patch).unwrap()),
+            aggressive_hedging_options(),
+        )
+        .await
+        .expect("session retry reaches the writer and PATCH succeeds");
+
+    let requests = fixture.recorder.requests();
+    assert_eq!(
+        requests
+            .iter()
+            .map(|request| (request.method, request.host.as_str()))
+            .collect::<Vec<_>>(),
+        vec![
+            (Method::Get, WEST_HOST),
+            (Method::Get, EAST_HOST),
+            (Method::Put, EAST_HOST),
+        ],
+        "the stale fallback must session-retry before issuing the Replace"
+    );
+    assert!(requests[0].session_token.is_some());
+    assert_eq!(requests[0].read_consistency_strategy, None);
+    assert_eq!(
+        requests[1].read_consistency_strategy.as_deref(),
+        Some("LatestCommitted")
+    );
+    assert_eq!(requests[1].session_token, None);
+
+    let body: serde_json::Value = serde_json::from_slice(
+        &response
+            .into_body()
+            .single()
+            .expect("PATCH response has a body"),
+    )
+    .unwrap();
+    assert_eq!(body["counter"], 2);
+    assert_eq!(body["preserved"], "east-only");
 }
 
 #[cfg(feature = "fault_injection")]
