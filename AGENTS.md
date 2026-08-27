@@ -276,6 +276,7 @@ Additional specialized instructions for specific workflows can be found in:
   - `create-perf-test` - Generate a new performance test
   - `create-recorded-test` - Generate a new recorded integration test
   - `lint-markdown` - Check and fix formatting in markdown files using markdownlint-cli2
+- Before changing GitHub Agentic Workflows, run `gh extension upgrade aw`. For repository-wide upgrades, run `gh aw upgrade`; after any workflow change, run `gh aw compile` to update all workflow lock files.
 - Keep local AGENTS terse: add only deltas, use short imperative bullets, and link instead of repeating detail.
 
 ## Cross-References
