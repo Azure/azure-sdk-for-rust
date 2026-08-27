@@ -1,6 +1,14 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+//! Live regression test for memory retained across repeated producer lifecycles.
+//!
+//! The custom global allocator tracks bytes that the Rust allocator currently
+//! owns. Each sample is taken after a producer has opened, sent an event, and
+//! closed. Other allocations in the test process add noise, so the test groups
+//! samples into blocks, uses each block's median, and checks the trend across
+//! those medians instead of comparing individual samples.
+
 use azure_core_test::recorded;
 use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ProducerClient;
@@ -13,11 +21,16 @@ use std::{
 
 struct LiveByteAllocator;
 
+// This counter is process-wide because Rust permits only one global allocator.
+// Relaxed ordering is sufficient because the test needs approximate snapshots,
+// not synchronization with the threads that allocate or release memory.
 static LIVE_BYTES: AtomicUsize = AtomicUsize::new(0);
 
 #[global_allocator]
 static ALLOCATOR: LiveByteAllocator = LiveByteAllocator;
 
+// Forward each operation to the system allocator and mirror successful size
+// changes in LIVE_BYTES. A failed allocation leaves the count intact.
 unsafe impl GlobalAlloc for LiveByteAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let pointer = unsafe { System.alloc(layout) };
@@ -59,10 +72,14 @@ unsafe impl GlobalAlloc for LiveByteAllocator {
 
 #[recorded::test(live)]
 async fn producer_lifecycle_send_close_has_no_sustained_heap_trend() -> Result<(), Box<dyn Error>> {
+    // A requested live run must fail when its configuration is incomplete. It
+    // must not report success without exercising a producer lifecycle.
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENT_HUB_NAME").or_else(|_| env::var("EVENTHUB_NAME"))?;
     let credential = DeveloperToolsCredential::new(None)?;
 
+    // Warmup absorbs one-time client and runtime initialization. The remaining
+    // 95 cycles form 19 blocks of 5 samples for the trend calculation.
     const WARMUP_CYCLES: usize = 5;
     const MEASURED_CYCLES: usize = 95;
     const BLOCK_SIZE: usize = 5;
@@ -71,6 +88,8 @@ async fn producer_lifecycle_send_close_has_no_sustained_heap_trend() -> Result<(
 
     let mut samples = [0usize; MEASURED_CYCLES];
     for cycle in 0..TOTAL_CYCLES {
+        // Recreate the full producer lifecycle on every cycle. Sampling after
+        // close exposes memory that the client failed to release during close.
         let client = match ProducerClient::builder()
             .with_application_id(
                 "producer_lifecycle_send_close_has_no_sustained_heap_trend".to_string(),
@@ -99,6 +118,8 @@ async fn producer_lifecycle_send_close_has_no_sustained_heap_trend() -> Result<(
         }
     }
 
+    // Use the median of each block to reduce the effect of temporary runtime,
+    // transport, and credential allocations on any one sample.
     let mut medians = [0.0; BLOCK_COUNT];
     for (block_index, median) in medians.iter_mut().enumerate() {
         let start = block_index * BLOCK_SIZE;
@@ -108,6 +129,8 @@ async fn producer_lifecycle_send_close_has_no_sustained_heap_trend() -> Result<(
         *median = block[BLOCK_SIZE / 2] as f64;
     }
 
+    // Fit an ordinary least-squares line to the block medians. Its slope is the
+    // estimated retained-byte change per block of producer lifecycles.
     let x_mean = (BLOCK_COUNT - 1) as f64 / 2.0;
     let y_mean = medians.iter().sum::<f64>() / BLOCK_COUNT as f64;
     let sum_squared_x_deviations = (0..BLOCK_COUNT)
@@ -131,6 +154,10 @@ async fn producer_lifecycle_send_close_has_no_sustained_heap_trend() -> Result<(
             residual * residual
         })
         .sum::<f64>();
+
+    // Estimate slope uncertainty from the regression residuals. The test fails
+    // only when the three-standard-error lower bound is positive. This identifies
+    // a sustained upward trend while tolerating normal allocator noise.
     let noise = (residual_sum_of_squares / (BLOCK_COUNT - 2) as f64).sqrt();
     let slope_standard_error = noise / sum_squared_x_deviations.sqrt();
     let lower_bound = slope - 3.0 * slope_standard_error;
