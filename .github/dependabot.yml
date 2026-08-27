@@ -8,6 +8,10 @@ updates:
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
+    groups:
+      cargo:
+        patterns:
+          - "*"
     cooldown:
       default-days: 7
       exclude:
@@ -20,6 +24,10 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      github-actions:
+        patterns:
+          - "*"
     cooldown:
       default-days: 7
     exclude-paths:
