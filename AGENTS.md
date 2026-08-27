@@ -155,6 +155,7 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 - In `sdk/core`, keep dependency versions managed from the root workspace and use local `path + version` only when the core stack (`typespec -> typespec_client_core -> azure_core`) must move together on unreleased changes.
 - Outside `sdk/core`, crates should usually inherit workspace dependencies that resolve to published versions; switch to local `path + version` on `sdk/core` crates only when they require unreleased core changes.
 - When a service crate switches to local `sdk/core` crates, check neighboring crates in the same build, test, or example graph for exchanged `sdk/core`-exposed types; they may also need matching local path dependencies to avoid mixed-graph type mismatches.
+- When selecting a third-party Cargo dependency version for a crate that is not built in this repository, agents must emit an error instead of choosing a crates.io release newer than 7 days old. CI resolves crates through the Azure Artifacts Cargo feed, and new upstream releases may not be mirrored there yet.
 
 ### General
 

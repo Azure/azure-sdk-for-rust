@@ -9,6 +9,8 @@ updates:
       interval: "daily"
     # Keep updates within existing Cargo.toml requirements. Security fixes
     # outside those requirements need an explicit manifest update.
+    # The 7-day cooldown gives the Azure Artifacts Cargo feed time to mirror
+    # crates.io releases before Dependabot updates land in CI.
     versioning-strategy: "lockfile-only"
     open-pull-requests-limit: 10
     cooldown:
