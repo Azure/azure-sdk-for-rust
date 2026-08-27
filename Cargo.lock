@@ -413,11 +413,11 @@ dependencies = [
  "azure_core 1.1.0",
  "fe2o3-amqp",
  "fe2o3-amqp-cbs",
- "fe2o3-amqp-ext",
+ "fe2o3-amqp-ext 0.14.0",
  "fe2o3-amqp-management",
- "fe2o3-amqp-types",
+ "fe2o3-amqp-types 0.14.0",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.14.1",
  "serde_bytes",
  "tokio",
  "tracing",
@@ -433,11 +433,11 @@ dependencies = [
  "azure_core 1.2.0-beta.1",
  "fe2o3-amqp",
  "fe2o3-amqp-cbs",
- "fe2o3-amqp-ext",
+ "fe2o3-amqp-ext 0.17.0",
  "fe2o3-amqp-management",
- "fe2o3-amqp-types",
+ "fe2o3-amqp-types 0.14.0",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.14.1",
  "serde_bytes",
  "serde_json",
  "tokio",
@@ -1377,9 +1377,9 @@ dependencies = [
 
 [[package]]
 name = "convert_case"
-version = "0.6.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
+checksum = "affbf0190ed2caf063e3def54ff444b449371d55c58e513a95ab98eca50adb49"
 dependencies = [
  "unicode-segmentation",
 ]
@@ -1515,9 +1515,9 @@ dependencies = [
 
 [[package]]
 name = "darling"
-version = "0.20.11"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc7f46116c46ff9ab3eb1597a45688b6715c6e628b5c133e288e709a29bcb4ee"
+checksum = "ed17f5901b6630b993ca003def43f2f8ef4014fc13b047b57aad617ff32bc2ec"
 dependencies = [
  "darling_core",
  "darling_macro",
@@ -1525,27 +1525,26 @@ dependencies = [
 
 [[package]]
 name = "darling_core"
-version = "0.20.11"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d00b9596d185e565c2207a0b01f8bd1a135483d02d9b7b0a54b11da8d53412e"
+checksum = "6837e2cf7485aaae18f86181d2f0e9a7ed297a025e220aeabf63fdebd3a2ddff"
 dependencies = [
- "fnv",
  "ident_case",
  "proc-macro2",
  "quote",
  "strsim",
- "syn 2.0.119",
+ "syn 3.0.2",
 ]
 
 [[package]]
 name = "darling_macro"
-version = "0.20.11"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc34b93ccb385b40dc71c6fceac4b2ad23662c7eeb248cf10d529b7e055b6ead"
+checksum = "2ac7135c3ef02b2f7833bbeb1be5ba7f966dcde8a87c6b87f65a778d71a02785"
 dependencies = [
  "darling_core",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.2",
 ]
 
 [[package]]
@@ -1662,14 +1661,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a579ef4f1fb186f04bcdc9caf0c335adedebe879227c96d56876d473aa3d20a"
 dependencies = [
  "bytes",
- "fe2o3-amqp-types",
+ "fe2o3-amqp-types 0.14.0",
  "futures-util",
  "getrandom 0.3.4",
  "native-tls",
  "parking_lot",
  "pin-project-lite",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.14.1",
  "serde_bytes",
  "slab",
  "thiserror",
@@ -1700,8 +1699,18 @@ version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6362c13b91a80dca77360eecdfbe85425e6dff1523f16c3a79fac541c47cf27d"
 dependencies = [
- "fe2o3-amqp-types",
- "serde_amqp",
+ "fe2o3-amqp-types 0.14.0",
+ "serde_amqp 0.14.1",
+]
+
+[[package]]
+name = "fe2o3-amqp-ext"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2c715361339e030e88b4dc2867d718ac14e1750fbe560c0d3c307c59d668042"
+dependencies = [
+ "fe2o3-amqp-types 0.17.0",
+ "serde_amqp 0.17.0",
 ]
 
 [[package]]
@@ -1711,7 +1720,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0582084762bdf022540c37868a0808e9f54dbcc51fe56f6212da59c167569cda"
 dependencies = [
  "fe2o3-amqp",
- "fe2o3-amqp-types",
+ "fe2o3-amqp-types 0.14.0",
  "serde",
  "thiserror",
 ]
@@ -1724,7 +1733,20 @@ checksum = "8bcc8d13ed13fbb2fb664a6df114bcc32f8ca85c9cb6b89d4e7576c47f583706"
 dependencies = [
  "ordered-float",
  "serde",
- "serde_amqp",
+ "serde_amqp 0.14.1",
+ "serde_bytes",
+ "serde_repr",
+]
+
+[[package]]
+name = "fe2o3-amqp-types"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3909c772bb7f9a7bf1af25277fa8fa8f9da8df417ddfd6c8a729a738aa1fe6c5"
+dependencies = [
+ "ordered-float",
+ "serde",
+ "serde_amqp 0.17.0",
  "serde_bytes",
  "serde_repr",
 ]
@@ -3637,16 +3659,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_amqp_derive"
-version = "0.3.0"
+name = "serde_amqp"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22da57ecf44834259b4416250608e11da620750be91305bf6ae5d398954ddc6d"
+checksum = "102dfb47c5b2e26b775e69cff62d8d83289288de2a4e8796145842cd3905e780"
+dependencies = [
+ "bytes",
+ "indexmap 2.14.0",
+ "ordered-float",
+ "serde",
+ "serde_amqp_derive",
+ "serde_bytes",
+ "thiserror",
+]
+
+[[package]]
+name = "serde_amqp_derive"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec5a0471f6a9293ba027112967613234cf71a3f738cbfb1584ae45f9a1297cd9"
 dependencies = [
  "convert_case",
  "darling",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.2",
 ]
 
 [[package]]
