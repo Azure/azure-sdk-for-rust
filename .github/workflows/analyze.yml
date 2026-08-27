@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Both toolchains are required. Analyze-Code.ps1 runs `cargo +nightly docs-rs`
       # per package, and eng/scripts/verify-*.rs are cargo scripts whose shebangs
