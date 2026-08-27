@@ -186,6 +186,10 @@ struct Sleep {
 struct SleepState {
     inner: Mutex<SleepInner>,
     condvar: Condvar,
+    #[cfg(test)]
+    thread_started: std::sync::atomic::AtomicBool,
+    #[cfg(test)]
+    thread_exited: std::sync::atomic::AtomicBool,
 }
 
 #[derive(Debug, Default)]
@@ -228,10 +232,12 @@ impl Future for Sleep {
         self.get_mut().state = Some(state.clone());
         thread::spawn(move || {
             #[cfg(test)]
-            sleep_thread_started_for_test();
+            state.thread_started.store(true, Ordering::SeqCst);
 
             #[cfg(test)]
-            let _thread_count_guard = SleepThreadCounterGuard;
+            let _thread_exit_guard = SleepThreadExitGuard {
+                state: state.clone(),
+            };
 
             let duration = duration.try_into().unwrap_or(std::time::Duration::ZERO);
             let (mut inner, _) = state
@@ -264,56 +270,87 @@ impl Drop for Sleep {
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[cfg(test)]
-static ACTIVE_SLEEP_THREADS: AtomicUsize = AtomicUsize::new(0);
-
-#[cfg(test)]
-fn sleep_thread_started_for_test() {
-    ACTIVE_SLEEP_THREADS.fetch_add(1, Ordering::SeqCst);
+struct SleepThreadExitGuard {
+    state: Arc<SleepState>,
 }
 
 #[cfg(test)]
-struct SleepThreadCounterGuard;
-
-#[cfg(test)]
-impl Drop for SleepThreadCounterGuard {
+impl Drop for SleepThreadExitGuard {
     fn drop(&mut self) {
-        ACTIVE_SLEEP_THREADS.fetch_sub(1, Ordering::SeqCst);
+        self.state.thread_exited.store(true, Ordering::SeqCst);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use futures::task::{waker, ArcWake};
     use std::time::{Duration as StdDuration, Instant};
+
+    #[derive(Default)]
+    struct CountingWaker {
+        wake_count: AtomicUsize,
+    }
+
+    impl ArcWake for CountingWaker {
+        fn wake_by_ref(arc_self: &Arc<Self>) {
+            arc_self.wake_count.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    fn wait_until(mut predicate: impl FnMut() -> bool) {
+        let deadline = Instant::now() + StdDuration::from_secs(1);
+        while !predicate() && Instant::now() < deadline {
+            std::thread::sleep(StdDuration::from_millis(1));
+        }
+        assert!(predicate());
+    }
 
     #[test]
     fn dropped_sleep_cancels_thread() {
-        let runtime = StdRuntime;
-        let baseline_threads = ACTIVE_SLEEP_THREADS.load(Ordering::SeqCst);
-        let mut sleep = runtime.sleep(Duration::seconds(30));
+        let mut sleep = Box::pin(Sleep {
+            state: None,
+            duration: Duration::seconds(30),
+        });
         let waker = futures::task::noop_waker();
         let mut cx = Context::from_waker(&waker);
         assert!(matches!(sleep.as_mut().poll(&mut cx), Poll::Pending));
 
-        let wait_for_spawn = Instant::now() + StdDuration::from_secs(1);
-        while ACTIVE_SLEEP_THREADS.load(Ordering::SeqCst) <= baseline_threads
-            && Instant::now() < wait_for_spawn
-        {
-            std::thread::sleep(StdDuration::from_millis(1));
-        }
-        assert!(ACTIVE_SLEEP_THREADS.load(Ordering::SeqCst) > baseline_threads);
+        let state = sleep.state.as_ref().unwrap().clone();
+        wait_until(|| state.thread_started.load(Ordering::SeqCst));
 
         drop(sleep);
 
-        let wait_for_exit = Instant::now() + StdDuration::from_secs(1);
-        while ACTIVE_SLEEP_THREADS.load(Ordering::SeqCst) > baseline_threads
-            && Instant::now() < wait_for_exit
-        {
-            std::thread::sleep(StdDuration::from_millis(1));
-        }
-        assert_eq!(
-            ACTIVE_SLEEP_THREADS.load(Ordering::SeqCst),
-            baseline_threads
-        );
+        wait_until(|| state.thread_exited.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn completed_sleep_wakes_latest_waker() {
+        let duration = StdDuration::from_millis(50);
+        let mut sleep = Box::pin(Sleep {
+            state: None,
+            duration: duration.try_into().unwrap(),
+        });
+        let first = Arc::new(CountingWaker::default());
+        let first_waker = waker(first.clone());
+        let mut first_cx = Context::from_waker(&first_waker);
+        let started = Instant::now();
+        assert!(matches!(sleep.as_mut().poll(&mut first_cx), Poll::Pending));
+
+        let state = sleep.state.as_ref().unwrap().clone();
+        let latest = Arc::new(CountingWaker::default());
+        let latest_waker = waker(latest.clone());
+        let mut latest_cx = Context::from_waker(&latest_waker);
+        assert!(matches!(sleep.as_mut().poll(&mut latest_cx), Poll::Pending));
+
+        wait_until(|| latest.wake_count.load(Ordering::SeqCst) > 0);
+
+        assert_eq!(first.wake_count.load(Ordering::SeqCst), 0);
+        assert!(started.elapsed() >= duration);
+        assert!(matches!(
+            sleep.as_mut().poll(&mut latest_cx),
+            Poll::Ready(())
+        ));
+        wait_until(|| state.thread_exited.load(Ordering::SeqCst));
     }
 }
