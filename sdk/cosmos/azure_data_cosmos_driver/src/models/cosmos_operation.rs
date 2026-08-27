@@ -159,13 +159,13 @@ pub struct CosmosOperation {
     /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
     /// is dispatched exactly like the standalone Read/Replace it is.
     is_patch_sub_operation: bool,
-    /// Internal routing constraint for reads whose correctness depends on
-    /// observing the write region rather than the nearest read replica.
-    internal_read_routing: InternalReadRouting,
+    /// Routing strategy for reads whose correctness depends on observing the
+    /// write region rather than the nearest read replica.
+    read_routing_strategy: ReadRoutingStrategy,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-enum InternalReadRouting {
+enum ReadRoutingStrategy {
     #[default]
     Default,
     PreferredWriteEndpointsNoHedging,
@@ -512,23 +512,23 @@ impl CosmosOperation {
     /// from another region may not yet contain the write being verified.
     pub(crate) fn as_patch_read_sub_operation(mut self) -> Self {
         self.is_patch_sub_operation = true;
-        self.internal_read_routing = InternalReadRouting::PreferredWriteEndpointsNoHedging;
+        self.read_routing_strategy = ReadRoutingStrategy::PreferredWriteEndpointsNoHedging;
         self
     }
 
     /// Returns whether this internal read should start at preferred write endpoints.
     pub(crate) fn prefers_write_endpoints_for_read(&self) -> bool {
         matches!(
-            self.internal_read_routing,
-            InternalReadRouting::PreferredWriteEndpointsNoHedging
+            self.read_routing_strategy,
+            ReadRoutingStrategy::PreferredWriteEndpointsNoHedging
         )
     }
 
     /// Returns whether correctness requires hedging to remain disabled.
     pub(crate) fn suppresses_hedging(&self) -> bool {
         matches!(
-            self.internal_read_routing,
-            InternalReadRouting::PreferredWriteEndpointsNoHedging
+            self.read_routing_strategy,
+            ReadRoutingStrategy::PreferredWriteEndpointsNoHedging
         )
     }
 
@@ -565,7 +565,7 @@ impl CosmosOperation {
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,
-            internal_read_routing: InternalReadRouting::Default,
+            read_routing_strategy: ReadRoutingStrategy::Default,
         }
     }
 

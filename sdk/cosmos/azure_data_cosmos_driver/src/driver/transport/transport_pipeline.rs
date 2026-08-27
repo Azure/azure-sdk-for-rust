@@ -1438,14 +1438,14 @@ mod tests {
 
     #[tokio::test]
     async fn routing_fallback_is_recorded_in_request_diagnostics() {
-        use crate::driver::pipeline::components::RoutingFallback;
+        use crate::driver::pipeline::components::RoutingFallbackReason;
 
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
         let mut request = test_request(None);
         request.routing_fallback =
-            Some(RoutingFallback::PatchVerificationReadWriteEndpointUnavailableOrExcluded);
+            Some(RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded);
         let client = AdaptiveTransport::Gateway(Arc::new(SuccessfulTransportClient));
         let mut diagnostics = DiagnosticsContextBuilder::new(
             ActivityId::from_string("routing-fallback".to_owned()),

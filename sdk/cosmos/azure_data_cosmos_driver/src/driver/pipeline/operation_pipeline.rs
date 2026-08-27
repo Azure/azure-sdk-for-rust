@@ -416,7 +416,7 @@ pub(crate) async fn execute_operation_pipeline(
         .partitions
         .per_partition_circuit_breaker_enabled
         && location_snapshot.account.preferred_read_endpoints.len() > 1;
-    apply_internal_read_routing_hint(
+    apply_read_routing_strategy(
         &mut retry_state,
         operation.prefers_write_endpoints_for_read(),
     );
@@ -1191,7 +1191,7 @@ fn hedging_suppressed_for_attempt(
     overrides.hedging_suppressed() || operation.suppresses_hedging()
 }
 
-fn apply_internal_read_routing_hint(
+fn apply_read_routing_strategy(
     retry_state: &mut OperationRetryState,
     prefer_write_endpoints_for_read: bool,
 ) {
@@ -1424,7 +1424,7 @@ fn resolve_endpoint(
                 endpoint_unavailability_ttl,
             ),
             Some(
-                crate::driver::pipeline::components::RoutingFallback::PatchVerificationReadWriteEndpointUnavailableOrExcluded,
+                crate::driver::pipeline::components::RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded,
             ),
         )
     } else {
@@ -2477,7 +2477,7 @@ fn advance_to_next_attempt(
     let next_location = location_state_store.snapshot();
     let mut new_state = new_state;
     let prefer_write_endpoints_for_read = operation.prefers_write_endpoints_for_read();
-    apply_internal_read_routing_hint(&mut new_state, prefer_write_endpoints_for_read);
+    apply_read_routing_strategy(&mut new_state, prefer_write_endpoints_for_read);
     if prefer_write_endpoints_for_read
         && !new_state
             .patch_verification_failed_endpoint_urls
@@ -4514,7 +4514,7 @@ mod tests {
         );
         state.ppcb_active = true;
 
-        super::apply_internal_read_routing_hint(&mut state, true);
+        super::apply_read_routing_strategy(&mut state, true);
 
         assert_eq!(
             state.session_retry_routing,
@@ -5249,7 +5249,7 @@ mod tests {
 
     #[test]
     fn patch_verification_read_falls_back_when_write_endpoint_is_unavailable() {
-        use crate::driver::pipeline::components::RoutingFallback;
+        use crate::driver::pipeline::components::RoutingFallbackReason;
 
         let write_endpoint = CosmosEndpoint::regional(
             "eastus".into(),
@@ -5302,7 +5302,9 @@ mod tests {
             assert_eq!(routing.endpoint, read_endpoint);
             assert_eq!(
                 routing.routing_fallback,
-                Some(RoutingFallback::PatchVerificationReadWriteEndpointUnavailableOrExcluded)
+                Some(
+                    RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded
+                )
             );
         }
     }
@@ -5339,7 +5341,7 @@ mod tests {
             3,
             2,
         );
-        super::apply_internal_read_routing_hint(&mut retry_state, true);
+        super::apply_read_routing_strategy(&mut retry_state, true);
 
         let routing = super::resolve_endpoint(
             &operation,
@@ -5356,7 +5358,7 @@ mod tests {
 
     #[test]
     fn patch_verification_read_falls_back_when_write_endpoint_is_excluded() {
-        use crate::driver::pipeline::components::RoutingFallback;
+        use crate::driver::pipeline::components::RoutingFallbackReason;
 
         let write_endpoint = CosmosEndpoint::regional(
             "eastus".into(),
@@ -5384,7 +5386,7 @@ mod tests {
             3,
             2,
         );
-        super::apply_internal_read_routing_hint(&mut retry_state, true);
+        super::apply_read_routing_strategy(&mut retry_state, true);
 
         let routing = super::resolve_endpoint(
             &operation,
@@ -5398,7 +5400,7 @@ mod tests {
         assert_eq!(routing.endpoint, read_endpoint);
         assert_eq!(
             routing.routing_fallback,
-            Some(RoutingFallback::PatchVerificationReadWriteEndpointUnavailableOrExcluded)
+            Some(RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded)
         );
     }
 
@@ -5432,7 +5434,7 @@ mod tests {
         )
         .advance_failover()
         .advance_location(2, 0);
-        super::apply_internal_read_routing_hint(&mut retry_state, true);
+        super::apply_read_routing_strategy(&mut retry_state, true);
 
         let routing = super::resolve_endpoint(
             &operation,
@@ -5505,7 +5507,7 @@ mod tests {
             2,
         );
         retry_state.partition_key_range_id = Some("0".parse().unwrap());
-        super::apply_internal_read_routing_hint(&mut retry_state, true);
+        super::apply_read_routing_strategy(&mut retry_state, true);
 
         let routing = super::resolve_endpoint(
             &operation,
@@ -5582,7 +5584,7 @@ mod tests {
             2,
         );
         retry_state.partition_key_range_id = Some("0".parse().unwrap());
-        super::apply_internal_read_routing_hint(&mut retry_state, true);
+        super::apply_read_routing_strategy(&mut retry_state, true);
 
         let routing = super::resolve_endpoint(
             &operation,
@@ -5632,7 +5634,7 @@ mod tests {
         retry_state
             .patch_verification_failed_endpoint_urls
             .push(west.url().clone());
-        super::apply_internal_read_routing_hint(&mut retry_state, true);
+        super::apply_read_routing_strategy(&mut retry_state, true);
 
         let routing = super::resolve_endpoint(
             &operation,
@@ -5649,7 +5651,7 @@ mod tests {
 
     #[test]
     fn patch_verification_fallback_ignores_ppcb_override() {
-        use crate::driver::pipeline::components::RoutingFallback;
+        use crate::driver::pipeline::components::RoutingFallbackReason;
         use crate::driver::routing::partition_endpoint_state::{
             HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
         };
@@ -5710,7 +5712,7 @@ mod tests {
             2,
         );
         retry_state.partition_key_range_id = Some("0".parse().unwrap());
-        super::apply_internal_read_routing_hint(&mut retry_state, true);
+        super::apply_read_routing_strategy(&mut retry_state, true);
 
         let routing = super::resolve_endpoint(
             &operation,
@@ -5724,7 +5726,7 @@ mod tests {
         assert_eq!(routing.endpoint, normal_read);
         assert_eq!(
             routing.routing_fallback,
-            Some(RoutingFallback::PatchVerificationReadWriteEndpointUnavailableOrExcluded)
+            Some(RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded)
         );
     }
 
