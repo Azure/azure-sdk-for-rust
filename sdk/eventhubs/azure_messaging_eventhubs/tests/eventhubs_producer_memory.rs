@@ -59,21 +59,9 @@ unsafe impl GlobalAlloc for LiveByteAllocator {
 
 #[recorded::test(live)]
 async fn producer_lifecycle_send_close_has_no_sustained_heap_trend() -> Result<(), Box<dyn Error>> {
-    let host = match env::var("EVENTHUBS_HOST") {
-        Ok(host) if !host.is_empty() => host,
-        _ => return Ok(()),
-    };
-    let eventhub = match env::var("EVENT_HUB_NAME") {
-        Ok(eventhub) if !eventhub.is_empty() => eventhub,
-        _ => match env::var("EVENTHUB_NAME") {
-            Ok(eventhub) if !eventhub.is_empty() => eventhub,
-            _ => return Ok(()),
-        },
-    };
-    let credential = match DeveloperToolsCredential::new(None) {
-        Ok(credential) => credential,
-        Err(_) => return Ok(()),
-    };
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENT_HUB_NAME").or_else(|_| env::var("EVENTHUB_NAME"))?;
+    let credential = DeveloperToolsCredential::new(None)?;
 
     const WARMUP_CYCLES: usize = 5;
     const MEASURED_CYCLES: usize = 95;
