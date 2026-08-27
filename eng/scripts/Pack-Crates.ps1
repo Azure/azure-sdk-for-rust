@@ -1,5 +1,8 @@
 #!/usr/bin/env pwsh
 
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 #Requires -Version 7.0
 [CmdletBinding(DefaultParameterSetName = 'ManifestDir')]
 param(
@@ -25,16 +28,17 @@ param(
 $ErrorActionPreference = 'Stop'
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
-. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'common.ps1'))
 
 Write-Host @"
 Packing crates with
     RUSTFLAGS: '${env:RUSTFLAGS}'
 "@
 
-if ($ManifestDir) {
-  [string[]] $script:manifestPath = Join-Path $ManifestDir 'Cargo.toml' -Resolve
-}
+[string[]] $script:manifestPath = Get-CargoManifestPaths `
+  -PackageName $PackageName `
+  -ManifestDir $ManifestDir `
+  -PackageInfoDirectory $PackageInfoDirectory
 
 function Test-IsPublishable($package) {
   return $null -eq $package.publish
@@ -76,17 +80,14 @@ function Get-OutputPackageNames($packages) {
     # Falls through to default case if empty.
     { $ManifestDir } {
       LogDebug "Packing manifest(s) '$( $manifestPath -join "', '" )' and dependencies"
-      $names = $packages.Where({ $_.manifest_path -in $manifestPath }).name
     }
 
     'PackageName' {
       LogDebug "Packing package(s) '$( $PackageName -join "', '" )' and dependencies"
-      $names = $PackageName
     }
 
     'PackageInfo' {
       LogDebug "Packing packages from '$PackageInfoDirectory'"
-      $names = Get-PackageNamesFromPackageInfo $PackageInfoDirectory
     }
 
     default {
@@ -94,6 +95,8 @@ function Get-OutputPackageNames($packages) {
       return $packages.Where({ Test-IsPublishable $_ }).name
     }
   }
+
+  $names = (Get-CargoPackagesFromManifestPaths -ManifestPath $manifestPath -WorkspacePackages $packages).name
 
   foreach ($name in $names) {
     $package = $packages | Where-Object -Property name -EQ -Value $name | Select-Object -First 1
@@ -117,7 +120,8 @@ function New-ApiFile(
   [string] $OutputDirectory
 ) {
   $manifestPath = $package.manifest_path
-  $command = "cargo run --manifest-path `"$RepoRoot/eng/tools/Cargo.toml`" -p generate_api -- --manifest-path `"$manifestPath`" --format $Format --output `"$OutputDirectory`""
+  $generateApiManifestPath = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'generate_api', 'Cargo.toml')
+  $command = "cargo run --manifest-path `"$generateApiManifestPath`" -- --manifest-path `"$manifestPath`" --format $Format --output `"$OutputDirectory`""
   Invoke-LoggedCommand $command -GroupOutput | Out-Host
 
   $fileName = switch ($Format) {
@@ -161,7 +165,7 @@ try {
   Set-Location $RepoRoot
 
   [array]$packages = Get-PackagesToBuild
-  $packageParams = @()
+  $packageParams = @("--manifest-path", ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')))
   foreach ($package in $packages) {
     $packageParams += "--package", $package.name
   }
