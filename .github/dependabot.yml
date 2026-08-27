@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directories:
+      - "/"
+      - "/eng/tools"
+      - "/samples/*"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+      exclude:
+        - "azure*"
+        - "autorest*"
+        - "typespec*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+    exclude-paths:
+      - ".github/workflows/*.lock.yaml"
+      - ".github/workflows/*.lock.yml"
