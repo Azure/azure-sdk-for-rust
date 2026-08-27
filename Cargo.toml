@@ -101,7 +101,7 @@ backtrace = "0.3"
 bytes = "1.11.1"
 cargo_metadata = "0.23.1"
 clap = { version = "4.5.58", features = ["derive"] }
-console-subscriber = "0.4"
+console-subscriber = "0.5"
 criterion = { version = "0.8", features = ["async_tokio"] }
 crossbeam = { version = "0.8", default-features = false }
 crossbeam-epoch = { version = "0.9", default-features = false }
