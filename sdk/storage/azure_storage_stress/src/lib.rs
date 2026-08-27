@@ -21,7 +21,10 @@ use log::{debug, error, info, warn};
 use serde::Serialize;
 use std::{fmt::Debug, future::Future, mem, pin::Pin, time::Duration};
 
-use crate::{args::StressRunnerOptions, futures_ext::OptionalTimeoutFutureExt};
+use crate::{
+    args::StressRunnerOptions,
+    futures_ext::{OptionalFlatTimeoutFutureExt, OptionalTimeoutFutureExt},
+};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -149,14 +152,21 @@ impl<T: StressTestFactory> StressRunner<T> {
         let stress_test = self.options.build_test()?;
         let mut totals = StressRunCounts::default();
 
-        // Catch all Err returns of setup and test run, ensuring we always run cleanup.
-        let setup_and_run_result: Result<()> = async {
-            info!("Begin global setup");
-            stress_test
-                .global_setup()
-                .timeout(self.options.setup_timeout)
-                .await??;
+        info!("Begin global setup");
+        let setup_failure = stress_test
+            .global_setup()
+            .flat_timeout(self.options.setup_timeout)
+            .await
+            .inspect_err(|err| match err {
+                future::Either::Left(setup_error) => error!("Setup failed. {setup_error}"),
+                future::Either::Right(timeout) => error!("Setup timed out. {timeout}"),
+            })
+            .is_err();
 
+        let test_failure = if setup_failure {
+            // don't run tests if setup failed
+            false
+        } else {
             info!("Begin stress test");
             // Race an infinite loop of parallel tests against a timeout.
             // Note that each individual test is spawned into a different worker, and therefore
@@ -164,35 +174,16 @@ impl<T: StressTestFactory> StressRunner<T> {
             // This is acceptable, as the next steps are to execute test cleanup and exit application.
             // If the runs absolutely must be stopped, the [StressTest] implementor can signal to
             // individual test runs in global cleanup.
-            match infinite_stress_loop(stress_test.as_ref(), &mut totals, &self.options)
+            infinite_stress_loop(stress_test.as_ref(), &mut totals, &self.options)
                 .timeout(Some(self.options.duration))
                 .await
-            {
-                // Test duration completed. This is the expected path.
-                Err(_timeout_error) => {}
-
-                // Infinite run loop exited due to an error managing tests.
-                Ok(stress_result) => match stress_result {
-                    Ok(()) => Err(Error::with_message(
-                        ErrorKind::Other,
-                        "Infinite stress loop exited with success. This is a bug.",
-                    ))?,
-                    Err(e) => Err(e)?,
-                },
-            }
-
-            Ok(())
-        }
-        .await;
-        if let Err(e) = setup_and_run_result {
-            let error_message = e.to_string();
-            let inner_error_message = if let Ok(inner) = e.into_inner() {
-                format!("\n{inner}")
-            } else {
-                "".to_string()
-            };
-            error!("Stress runner failure.\n{error_message}{inner_error_message}");
-        }
+                // Err is a timeout. That's what we want. Treat Ok as a failure.
+                .inspect(|loop_result| match loop_result {
+                    Ok(()) => error!("Infinite stress loop exited with success. This is a bug."),
+                    Err(e) => error!("Error running stress tests. {e}"),
+                })
+                .is_ok()
+        };
 
         info!(
             "Final results: {}",
@@ -203,10 +194,23 @@ impl<T: StressTestFactory> StressRunner<T> {
         );
 
         info!("Begin cleanup");
-        stress_test
+        let cleanup_failure = stress_test
             .global_cleanup()
-            .timeout(self.options.cleanup_timeout)
-            .await?
+            .flat_timeout(self.options.cleanup_timeout)
+            .await
+            .inspect_err(|err| match err {
+                future::Either::Left(cleanup_error) => error!("Cleanup failed. {cleanup_error}"),
+                future::Either::Right(timeout) => error!("Cleanup timed out. {timeout}"),
+            })
+            .is_err();
+
+        match (setup_failure, test_failure, cleanup_failure) {
+            (false, false, false) => Ok(()),
+            _ => Err(Error::with_message(
+                ErrorKind::Other,
+                "Error running stress tests.",
+            )),
+        }
     }
 }
 
