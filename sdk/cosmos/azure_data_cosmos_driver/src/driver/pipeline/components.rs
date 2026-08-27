@@ -60,15 +60,15 @@ pub(crate) struct RoutingDecision {
     /// The transport mode for this attempt.
     pub transport_mode: TransportMode,
     /// Why normal routing replaced the operation's preferred route.
-    pub routing_fallback: Option<RoutingFallback>,
+    pub routing_fallback: Option<RoutingFallbackReason>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum RoutingFallback {
+pub(crate) enum RoutingFallbackReason {
     PatchVerificationReadWriteEndpointUnavailableOrExcluded,
 }
 
-impl RoutingFallback {
+impl RoutingFallbackReason {
     pub(crate) const fn as_str(self) -> &'static str {
         match self {
             Self::PatchVerificationReadWriteEndpointUnavailableOrExcluded => {
@@ -218,7 +218,7 @@ pub(crate) struct OperationRetryState {
     pub shared_hub_region_latch: Option<Arc<AtomicBool>>,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
-    /// Writer endpoints already abandoned by this PATCH verification read.
+    /// Endpoints already abandoned by this PATCH verification read.
     ///
     /// Operation-local so a sent/unknown partition failure can move to the
     /// next writer without marking an otherwise healthy region unavailable
@@ -636,7 +636,7 @@ pub(crate) struct TransportRequest {
     /// The execution context (Initial/Retry/Hedging/Failover).
     pub execution_context: ExecutionContext,
     /// Why this request fell back from its operation-specific route.
-    pub routing_fallback: Option<RoutingFallback>,
+    pub routing_fallback: Option<RoutingFallbackReason>,
     /// End-to-end deadline for the overall operation.
     pub deadline: Option<Instant>,
 }
