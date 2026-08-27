@@ -194,6 +194,11 @@ function Get-CargoPackagesFromManifestPaths(
 
   $workspaceManifestPath = Get-NormalizedCargoManifestPath `
     -ManifestPath ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
+  $packagesByManifestPath = @{}
+  foreach ($workspacePackage in $WorkspacePackages) {
+    $normalizedPackagePath = Get-NormalizedCargoManifestPath -ManifestPath $workspacePackage.manifest_path
+    $packagesByManifestPath[$normalizedPackagePath] = $workspacePackage
+  }
   $packages = @()
 
   foreach ($path in $ManifestPath) {
@@ -203,11 +208,7 @@ function Get-CargoPackagesFromManifestPaths(
       continue
     }
 
-    $package = $WorkspacePackages `
-    | Where-Object {
-      (Get-NormalizedCargoManifestPath -ManifestPath $_.manifest_path) -eq $normalizedPath
-    } `
-    | Select-Object -First 1
+    $package = $packagesByManifestPath[$normalizedPath]
     if (!$package) {
       throw "Manifest '$path' is not a package in the workspace."
     }
