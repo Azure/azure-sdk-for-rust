@@ -31,6 +31,80 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::{num::NonZeroU16, time::Duration};
+use uuid::Uuid;
+
+/// Reserved item property used to persist PATCH tracking entries.
+pub const PATCH_TRACKING_PROPERTY: &str = "_azsdkPatchTracking";
+
+/// Minimum time PATCH tracking entries remain protected from pruning.
+///
+/// A matching entry is honored for as long as it remains on the item, but a
+/// later PATCH may prune it after this interval has elapsed.
+pub const PATCH_TRACKING_RETENTION: Duration = Duration::from_secs(15 * 60);
+
+/// Default maximum number of idempotency markers retained on one item.
+pub const DEFAULT_PATCH_TRACKING_CAPACITY: NonZeroU16 =
+    NonZeroU16::new(1024).expect("default PATCH tracking capacity is non-zero");
+
+/// Stable identity for an unsafe client-side PATCH operation.
+///
+/// Reuse the same ID when retrying the same logical operation across process
+/// restarts. When no ID is supplied, the driver generates one for the current
+/// invocation, which protects only retries made within that invocation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct PatchTrackingId(Uuid);
+
+impl PatchTrackingId {
+    /// Generates a new random tracking ID.
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    /// Returns the underlying UUID.
+    pub fn as_uuid(&self) -> Uuid {
+        self.0
+    }
+}
+
+impl From<Uuid> for PatchTrackingId {
+    fn from(value: Uuid) -> Self {
+        Self(value)
+    }
+}
+
+impl std::fmt::Display for PatchTrackingId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl std::str::FromStr for PatchTrackingId {
+    type Err = uuid::Error;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        value.parse::<Uuid>().map(Self)
+    }
+}
+
+impl Serialize for PatchTrackingId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for PatchTrackingId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        value.parse().map_err(serde::de::Error::custom)
+    }
+}
 
 /// A typed numeric increment delta for [`PatchOperation::Increment`].
 ///
@@ -240,6 +314,53 @@ impl PatchInstructions {
         self.operations.push(operation);
         self
     }
+
+    /// Returns whether applying these instructions more than once converges on
+    /// the same document state.
+    ///
+    /// `Replace` and non-append `Set` operations assign a fixed value and are
+    /// retry-safe. Every other operation is conservatively treated as unsafe:
+    /// `Add` can insert into an array, `Increment` accumulates, and `Remove` /
+    /// `Move` change their own preconditions after the first application.
+    /// `Set` at the RFC 6901 `-` array token appends and is therefore unsafe.
+    /// A list of otherwise-safe operations is also unsafe when one path is an
+    /// ancestor of another: an earlier operation may no longer satisfy its
+    /// preconditions after the complete list has committed.
+    pub fn is_retry_safe(&self) -> bool {
+        let operations_are_safe = self.operations.iter().all(|operation| match operation {
+            PatchOperation::Replace { .. } => true,
+            PatchOperation::Set { path, .. } => !path.ends_with("/-"),
+            PatchOperation::Add { .. }
+            | PatchOperation::Remove { .. }
+            | PatchOperation::Increment { .. }
+            | PatchOperation::Move { .. } => false,
+        });
+        operations_are_safe
+            && !self.operations.iter().enumerate().any(|(index, left)| {
+                self.operations[index + 1..]
+                    .iter()
+                    .any(|right| paths_have_strict_ancestor_overlap(left.path(), right.path()))
+            })
+    }
+}
+
+fn paths_have_strict_ancestor_overlap(left: &str, right: &str) -> bool {
+    if left != right && (left.is_empty() || right.is_empty()) {
+        return true;
+    }
+
+    fn normalized(path: &str) -> String {
+        if path.starts_with('/') {
+            path.to_owned()
+        } else {
+            format!("/{path}")
+        }
+    }
+
+    let left = normalized(left);
+    let right = normalized(right);
+    left != right
+        && (right.starts_with(&format!("{left}/")) || left.starts_with(&format!("{right}/")))
 }
 
 impl From<Vec<PatchOperation>> for PatchInstructions {
@@ -259,6 +380,53 @@ mod tests {
         let op = PatchOperation::add("/a", json!(1));
         let s = serde_json::to_string(&op).unwrap();
         assert_eq!(s, r#"{"op":"add","path":"/a","value":1}"#);
+    }
+
+    #[test]
+    fn tracking_id_round_trips_as_uuid_string() {
+        let id = PatchTrackingId::from(Uuid::from_u128(42));
+        assert_eq!(id.to_string().parse::<PatchTrackingId>().unwrap(), id);
+        assert_eq!(serde_json::to_string(&id).unwrap(), format!("\"{id}\""));
+    }
+
+    #[test]
+    fn retry_safety_is_conservative_for_non_convergent_operations() {
+        let safe = PatchInstructions::from(vec![
+            PatchOperation::set("/name", json!("updated")),
+            PatchOperation::replace("/status", json!("complete")),
+        ]);
+        assert!(safe.is_retry_safe());
+
+        for operation in [
+            PatchOperation::add("/tags/0", json!("tag")),
+            PatchOperation::set("/tags/-", json!("tag")),
+            PatchOperation::remove("/obsolete"),
+            PatchOperation::increment("/visits", 1i64),
+            PatchOperation::move_value("/from", "/to"),
+        ] {
+            assert!(
+                !PatchInstructions::from(vec![operation]).is_retry_safe(),
+                "non-convergent operation must require tracking"
+            );
+        }
+
+        let overlapping_paths = PatchInstructions::from(vec![
+            PatchOperation::replace("/a/b", json!(1)),
+            PatchOperation::set("/a", json!({})),
+        ]);
+        assert!(
+            !overlapping_paths.is_retry_safe(),
+            "an ancestor write can invalidate an earlier operation on replay"
+        );
+
+        let root_and_child = PatchInstructions::from(vec![
+            PatchOperation::replace("/a", json!(1)),
+            PatchOperation::set("", json!({})),
+        ]);
+        assert!(
+            !root_and_child.is_retry_safe(),
+            "the JSON Pointer root is an ancestor of every child path"
+        );
     }
 
     /// Pins the `op` tag of every variant against the Cosmos DB wire contract.

@@ -1588,6 +1588,29 @@ typedef struct cosmos_operation_request_t {
   const struct cosmos_operation_options_t *options;
 } cosmos_operation_request_t;
 
+/**
+ * Version 2 operation request with bounded PATCH tracking controls.
+ *
+ * The v1 request is embedded unchanged so existing hosts and submit symbols
+ * remain binary compatible. Use the `_v2` submit functions with this type.
+ */
+typedef struct cosmos_operation_request_v2_t {
+  /**
+   * The complete version 1 request.
+   */
+  struct cosmos_operation_request_t base;
+  /**
+   * Stable PATCH tracking UUID (NUL-terminated UTF-8). NULL = generate one
+   * for this invocation.
+   */
+  const char *patch_tracking_id;
+  /**
+   * Maximum number of unexpired PATCH tracking entries retained on the
+   * item. `0` = use the driver default.
+   */
+  uint16_t patch_tracking_capacity;
+} cosmos_operation_request_v2_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -2206,6 +2229,15 @@ struct cosmos_operation_handle_t *cosmos_submit_operation(const struct cosmos_dr
                                                           cosmos_status_code_t *out_pre_error);
 
 /**
+ * Version 2 of [`cosmos_submit_operation`], accepting PATCH tracking fields.
+ */
+struct cosmos_operation_handle_t *cosmos_submit_operation_v2(const struct cosmos_driver_t *driver,
+                                                             const struct cosmos_operation_request_v2_t *request,
+                                                             struct cosmos_completion_queue_t *queue,
+                                                             intptr_t user_data,
+                                                             cosmos_status_code_t *out_pre_error);
+
+/**
  * Submits a singleton (single-result) operation for asynchronous
  * execution, binding to [`CosmosDriver::execute_singleton_operation`].
  *
@@ -2231,6 +2263,15 @@ struct cosmos_operation_handle_t *cosmos_submit_singleton_operation(const struct
                                                                     struct cosmos_completion_queue_t *queue,
                                                                     intptr_t user_data,
                                                                     cosmos_status_code_t *out_pre_error);
+
+/**
+ * Version 2 of [`cosmos_submit_singleton_operation`], accepting PATCH tracking fields.
+ */
+struct cosmos_operation_handle_t *cosmos_submit_singleton_operation_v2(const struct cosmos_driver_t *driver,
+                                                                       const struct cosmos_operation_request_v2_t *request,
+                                                                       struct cosmos_completion_queue_t *queue,
+                                                                       intptr_t user_data,
+                                                                       cosmos_status_code_t *out_pre_error);
 
 /**
  * Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].

@@ -579,22 +579,30 @@ impl ContainerClient {
     /// back. Callers that don't need the body can use
     /// [`ItemResponse::<serde_json::Value>`] or simply discard the response.
     ///
-    /// # Failure Semantics
+    /// # Retry Semantics
     ///
-    /// PATCH is **not exactly-once** under transport failures. The SDK
-    /// issues the inner Replace as `OperationType::Replace`, which the
-    /// pipeline classifies as idempotent. If a transport-layer error fires
-    /// *after* the inner Replace has been sent but before its response is
-    /// received and the server has already committed the write, the pipeline
-    /// may cross-region retry it. A retry against a replica that has already
-    /// replicated the original commit returns 412, which the RMW loop
-    /// recovers by re-Reading and re-applying. Non-idempotent operations
-    /// (`PatchOperation::increment`, `PatchOperation::add` on an array, `PatchOperation::move`)
-    /// may therefore be applied **more than once** under this scenario.
-    /// Callers that require exactly-once semantics for counters or array
-    /// appends should either build idempotent ops (`PatchOperation::set` on a
-    /// caller-computed value) or detect duplicate-application via a
-    /// monotonic application-level sequence number.
+    /// Non-overlapping instruction lists containing only `Replace` and
+    /// non-append `Set` operations are safe to reapply. For every other list,
+    /// the driver writes a tracking entry under
+    /// [`PATCH_TRACKING_PROPERTY`](crate::models::PATCH_TRACKING_PROPERTY) in
+    /// the same ETag-guarded Replace as the mutation. If that Replace commits
+    /// but its response is lost, the next verification Read observes the entry
+    /// and returns success without applying the instructions again.
+    ///
+    /// By default the tracking ID protects retries only within this method
+    /// call. To extend duplicate suppression across application retries or
+    /// process restarts, persist a [`PatchTrackingId`](crate::models::PatchTrackingId)
+    /// and pass the same value through [`PatchItemOptions`]. Reuse an ID only
+    /// for the same logical operation against the same item; reusing it for a
+    /// different operation suppresses that operation.
+    ///
+    /// The guarantee is bounded. Entries are protected from pruning for
+    /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION)
+    /// and the per-item list has a configurable capacity. PATCH returns an
+    /// error rather than evicting unexpired evidence. All writers that replace
+    /// these items must preserve the reserved property unchanged. The property
+    /// is visible in stored and returned JSON and counts toward item size and
+    /// indexing costs.
     #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,
@@ -614,10 +622,10 @@ impl ContainerClient {
 
         // Build the PATCH operation. The handler reads the PatchInstructions back
         // out of the body, so we pass it through verbatim.
-        let mut operation = CosmosOperation::patch_item(item_ref).with_body(body);
-        if let Some(max_attempts) = options.max_attempts {
-            operation = operation.with_patch_max_attempts(max_attempts);
-        }
+        let operation = apply_patch_options(
+            CosmosOperation::patch_item(item_ref).with_body(body),
+            &options,
+        );
         // PATCH manages its own If-Match internally — we only forward the
         // session token.
         let operation = apply_item_options(operation, options.session_token, None);
@@ -1489,6 +1497,23 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
     operation
 }
 
+#[cfg(feature = "preview_patch")]
+fn apply_patch_options(
+    mut operation: CosmosOperation,
+    options: &PatchItemOptions,
+) -> CosmosOperation {
+    if let Some(max_attempts) = options.max_attempts {
+        operation = operation.with_patch_max_attempts(max_attempts);
+    }
+    if let Some(tracking_id) = options.tracking_id {
+        operation = operation.with_patch_tracking_id(tracking_id.into_driver());
+    }
+    if let Some(capacity) = options.tracking_capacity {
+        operation = operation.with_patch_tracking_capacity(capacity);
+    }
+    operation
+}
+
 fn should_force_refresh_feed_ranges<T>(ranges: Option<&[T]>, force_refresh: bool) -> bool {
     !force_refresh && ranges.is_none_or(<[T]>::is_empty)
 }
@@ -1524,6 +1549,32 @@ mod tests {
     //! tests.
     use super::*;
     use serde_json::json;
+
+    #[cfg(feature = "preview_patch")]
+    #[test]
+    fn patch_options_forward_to_driver_operation() {
+        let account = azure_data_cosmos_driver::models::AccountReference::with_master_key(
+            azure_core::http::Url::parse("https://localhost").unwrap(),
+            "test-key",
+        );
+        let operation = CosmosOperation::read_all_databases(account);
+        let tracking_id = "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f"
+            .parse::<crate::models::PatchTrackingId>()
+            .unwrap();
+        let options = PatchItemOptions::default()
+            .with_max_attempts(std::num::NonZeroU8::new(7).unwrap())
+            .with_tracking_id(tracking_id)
+            .with_tracking_capacity(std::num::NonZeroU16::new(19).unwrap());
+
+        let operation = apply_patch_options(operation, &options);
+
+        assert_eq!(operation.patch_max_attempts().unwrap().get(), 7);
+        assert_eq!(
+            operation.patch_tracking_id().unwrap().to_string(),
+            tracking_id.to_string()
+        );
+        assert_eq!(operation.patch_tracking_capacity().unwrap().get(), 19);
+    }
 
     #[test]
     fn serialize_item_body_text_matches_serde_to_vec() {

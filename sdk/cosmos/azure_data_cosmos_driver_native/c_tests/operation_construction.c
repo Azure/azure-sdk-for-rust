@@ -110,9 +110,30 @@ static int test_submit_null_out_error_is_safe(void)
     return result;
 }
 
+static int test_patch_tracking_fields_can_be_populated(void)
+{
+    int result = TEST_PASS;
+    cosmos_operation_request_v2_t req = {0};
+    req.base.kind = COSMOS_OPERATION_KIND_PATCH_ITEM;
+    req.base.max_item_count = -1;
+    req.patch_tracking_id = "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f";
+    req.patch_tracking_capacity = 64;
+
+    ASSERT(req.base.kind == COSMOS_OPERATION_KIND_PATCH_ITEM,
+           "v1 request is embedded as the v2 prefix");
+    ASSERT(strcmp(req.patch_tracking_id,
+                  "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f") == 0,
+           "tracking id round-trips through request struct");
+    ASSERT(req.patch_tracking_capacity == 64,
+           "tracking capacity round-trips (=%u)",
+           (unsigned)req.patch_tracking_capacity);
+    return result;
+}
+
 TEST_SUITE_BEGIN("Operation request + options construction")
 TEST_REGISTER(options_default_is_all_unset)
 TEST_REGISTER(singleton_submit_rejects_null_driver)
 TEST_REGISTER(feed_submit_rejects_null_driver)
 TEST_REGISTER(submit_null_out_error_is_safe)
+TEST_REGISTER(patch_tracking_fields_can_be_populated)
 TEST_SUITE_END("Operation request + options construction")

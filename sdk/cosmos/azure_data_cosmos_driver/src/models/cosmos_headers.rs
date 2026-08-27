@@ -159,6 +159,7 @@ pub(crate) const DTX_RESOURCE_TYPE_HEADER_VALUE: &str = "DistributedTransactionB
 /// Standard Cosmos DB response header names.
 // cspell:ignore activityid acked llsn gatewayversion serviceversion
 pub(crate) mod response_header_names {
+    pub const DATE: &str = "date";
     pub const ACTIVITY_ID: &str = "x-ms-activity-id";
     pub const REQUEST_CHARGE: &str = "x-ms-request-charge";
     pub const SESSION_TOKEN: &str = "x-ms-session-token";
@@ -515,6 +516,9 @@ pub struct AutoscaleThroughputPolicy {
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct CosmosResponseHeaders {
+    /// Service response time from the standard HTTP `date` header.
+    pub(crate) response_date: Option<time::OffsetDateTime>,
+
     /// Activity ID for request correlation (`x-ms-activity-id`).
     pub activity_id: Option<ActivityId>,
 
@@ -701,6 +705,9 @@ impl CosmosResponseHeaders {
         let mut result = Self::default();
         for (name, value) in headers.iter() {
             match name.as_str() {
+                response_header_names::DATE => {
+                    result.response_date = azure_core::time::parse_rfc7231(value.as_str()).ok();
+                }
                 response_header_names::ACTIVITY_ID => {
                     result.activity_id = Some(ActivityId::from_string(value.as_str().to_owned()));
                 }
@@ -901,6 +908,13 @@ impl CosmosResponseHeaders {
             }
         };
         let bool_to_wire = |b: bool| if b { "True" } else { "False" };
+
+        put_str(
+            response_header_names::DATE,
+            self.response_date
+                .as_ref()
+                .map(azure_core::time::to_rfc7231),
+        );
 
         put_str(
             response_header_names::ACTIVITY_ID,
@@ -1599,6 +1613,9 @@ mod tests {
     #[test]
     fn to_raw_headers_round_trips_through_from_headers() {
         let original = CosmosResponseHeaders {
+            response_date: Some(
+                azure_core::time::parse_rfc7231("Mon, 01 Jan 2024 00:00:00 GMT").unwrap(),
+            ),
             activity_id: Some(ActivityId::from_string("abc-123".into())),
             request_charge: Some(RequestCharge::new(5.67)),
             session_token: Some(SessionToken::new("0:1#100")),
@@ -1681,6 +1698,7 @@ mod tests {
         );
 
         let round_tripped = CosmosResponseHeaders::from_headers(&raw);
+        assert_eq!(round_tripped.response_date, original.response_date);
         assert_eq!(
             round_tripped.activity_id.as_ref().map(|a| a.as_str()),
             original.activity_id.as_ref().map(|a| a.as_str())

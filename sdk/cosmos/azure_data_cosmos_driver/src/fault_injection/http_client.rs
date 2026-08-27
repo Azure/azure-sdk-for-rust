@@ -6,7 +6,7 @@
 //! HTTP client wrapper that evaluates fault injection rules on each request.
 
 use super::result::FaultInjectionResult;
-use super::rule::FaultInjectionRule;
+use super::rule::{FaultInjectionHitReservation, FaultInjectionRule};
 use super::FaultInjectionErrorType;
 use super::FaultInjectionEvaluation;
 use super::FaultOperationType;
@@ -26,6 +26,11 @@ use std::time::{Duration, Instant};
 enum ApplyResult {
     /// Fault was injected — return this response/error to the caller.
     Injected(Result<HttpResponse, TransportError>),
+    /// Forward the request, then discard a successful service response.
+    ResponseTimeoutAfterService {
+        reservation: FaultInjectionHitReservation,
+        rule_id: String,
+    },
     /// Rule matched but the probability check failed.
     ProbabilityMiss,
     /// Rule had no error_type and no custom_response — effectively no-op.
@@ -184,14 +189,33 @@ impl FaultClient {
             }
         }
 
-        // Probability check passed — count this as a hit.
-        rule.increment_hit_count();
+        // Probability passed. Reserve the hit atomically so concurrent
+        // requests cannot exceed the rule's limit.
+        let Some(reservation) = rule.try_reserve_hit() else {
+            evaluations.push(FaultInjectionEvaluation::HitLimitExhausted {
+                rule_id: rule.id().to_owned(),
+                hit_count: rule.hit_count(),
+                hit_limit: rule
+                    .hit_limit()
+                    .expect("reservation only fails with a hit limit"),
+            });
+            return ApplyResult::NoEffect;
+        };
+        let mut reservation = Some(reservation);
         let rule_id = rule.id();
 
-        // Record that the rule was applied before serializing evaluations.
-        evaluations.push(FaultInjectionEvaluation::Applied {
-            rule_id: rule_id.to_owned(),
-        });
+        let deferred = server_error.custom_response().is_none()
+            && server_error.error_type()
+                == Some(FaultInjectionErrorType::ResponseTimeoutAfterService);
+        if !deferred {
+            evaluations.push(FaultInjectionEvaluation::Applied {
+                rule_id: rule_id.to_owned(),
+            });
+            reservation
+                .take()
+                .expect("ordinary fault retains its reservation")
+                .commit();
+        }
 
         // Apply delay if configured (only when fault is actually injected).
         if let Some(delay) = server_error.delay() {
@@ -240,6 +264,14 @@ impl FaultClient {
                     cosmos_err,
                     RequestSentStatus::Unknown,
                 )));
+            }
+            FaultInjectionErrorType::ResponseTimeoutAfterService => {
+                return ApplyResult::ResponseTimeoutAfterService {
+                    reservation: reservation
+                        .take()
+                        .expect("deferred fault retains its reservation"),
+                    rule_id: rule_id.to_owned(),
+                };
             }
             FaultInjectionErrorType::InternalServerError => (
                 StatusCode::InternalServerError,
@@ -340,23 +372,27 @@ impl TransportClient for FaultClient {
         // Apply the fault if we found a matching rule.
         // `apply_fault` pushes the Applied evaluation; all evaluations are then
         // written into the request's evaluation collector.
-        let fault_response = if let Some(ref rule) = matched_rule {
+        let (fault_response, timeout_after_service) = if let Some(ref rule) = matched_rule {
             match self
                 .apply_fault(rule.result(), rule, &mut evaluations)
                 .await
             {
-                ApplyResult::Injected(response) => Some(response),
+                ApplyResult::Injected(response) => (Some(response), None),
+                ApplyResult::ResponseTimeoutAfterService {
+                    reservation,
+                    rule_id,
+                } => (None, Some((reservation, rule_id))),
                 ApplyResult::ProbabilityMiss => {
                     evaluations.push(FaultInjectionEvaluation::ProbabilityMiss {
                         rule_id: rule.id().to_owned(),
                         probability: rule.result().probability(),
                     });
-                    None
+                    (None, None)
                 }
-                ApplyResult::NoEffect => None,
+                ApplyResult::NoEffect => (None, None),
             }
         } else {
-            None
+            (None, None)
         };
 
         // Write evaluations into the collector and log them.
@@ -389,8 +425,28 @@ impl TransportClient for FaultClient {
                 evaluation_collector: None,
             };
 
-            // No fault injection, proceed with actual request
-            self.inner.send(&clean_request).await
+            // No pre-service fault injection: proceed with the actual request.
+            let response = self.inner.send(&clean_request).await;
+            let successful_response = response
+                .as_ref()
+                .is_ok_and(|response| (200..300).contains(&response.status));
+            if let Some((reservation, rule_id)) =
+                timeout_after_service.filter(|_| successful_response)
+            {
+                let mut applied = vec![FaultInjectionEvaluation::Applied { rule_id }];
+                tracing::trace!(evaluations = ?applied, "fault injection rule evaluation");
+                if let Some(ref collector) = request.evaluation_collector {
+                    collector.push_all(&mut applied);
+                }
+                reservation.commit();
+                let error = crate::error::CosmosError::builder()
+                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_message("Injected fault: response timeout after service execution")
+                    .build();
+                Err(TransportError::new(error, RequestSentStatus::Unknown))
+            } else {
+                response
+            }
         }
     }
 }
@@ -438,7 +494,7 @@ mod tests {
     use crate::options::Region;
     use async_trait::async_trait;
     use azure_core::http::{headers::Headers, Method, StatusCode, Url};
-    use std::sync::atomic::{AtomicU32, Ordering};
+    use std::sync::atomic::{AtomicU16, AtomicU32, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
 
@@ -446,13 +502,26 @@ mod tests {
     #[derive(Debug)]
     struct MockTransportClient {
         call_count: AtomicU32,
+        status: AtomicU16,
     }
 
     impl MockTransportClient {
         fn new() -> Self {
             Self {
                 call_count: AtomicU32::new(0),
+                status: AtomicU16::new(200),
             }
+        }
+
+        fn with_status(status: StatusCode) -> Self {
+            Self {
+                call_count: AtomicU32::new(0),
+                status: AtomicU16::new(status.into()),
+            }
+        }
+
+        fn set_status(&self, status: StatusCode) {
+            self.status.store(status.into(), Ordering::SeqCst);
         }
 
         fn call_count(&self) -> u32 {
@@ -467,7 +536,7 @@ mod tests {
 
             // Return a minimal valid response
             Ok(HttpResponse {
-                status: 200,
+                status: self.status.load(Ordering::SeqCst),
                 headers: Headers::new(),
                 body: vec![],
             })
@@ -862,6 +931,84 @@ mod tests {
             "response timeout should map to TRANSPORT_IO_FAILED"
         );
         assert_eq!(mock_client.call_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_forwards_then_produces_io_error() {
+        let mock_client = Arc::new(MockTransportClient::new());
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("post-service-timeout", error).build();
+
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
+        let (request, _collector) = create_test_request();
+
+        let err = fault_client.send(&request).await.unwrap_err();
+        assert_eq!(
+            err.error.status().sub_status(),
+            Some(crate::models::SubStatusCode::TRANSPORT_IO_FAILED)
+        );
+        assert_eq!(
+            err.request_sent,
+            crate::diagnostics::RequestSentStatus::Unknown
+        );
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_preserves_service_error() {
+        let mock_client = Arc::new(MockTransportClient::with_status(
+            StatusCode::PreconditionFailed,
+        ));
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("post-service-timeout", error).build();
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
+        let (request, _collector) = create_test_request();
+
+        let response = fault_client.send(&request).await.unwrap();
+
+        assert_eq!(response.status, u16::from(StatusCode::PreconditionFailed));
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_consumes_hit_only_on_success() {
+        let mock_client = Arc::new(MockTransportClient::with_status(
+            StatusCode::PreconditionFailed,
+        ));
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .build();
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new("post-service-timeout", error)
+                .with_hit_limit(1)
+                .build(),
+        );
+        let fault_client = FaultClient::new(mock_client.clone(), vec![rule.clone()], None);
+        let (request, collector) = create_test_request();
+
+        let first = fault_client.send(&request).await.unwrap();
+        assert_eq!(first.status, u16::from(StatusCode::PreconditionFailed));
+        assert_eq!(rule.hit_count(), 0);
+        assert!(collector
+            .clone()
+            .take()
+            .iter()
+            .all(|evaluation| !matches!(evaluation, FaultInjectionEvaluation::Applied { .. })));
+
+        mock_client.set_status(StatusCode::Ok);
+        let second = fault_client.send(&request).await;
+        assert!(second.is_err(), "the successful response must be discarded");
+        assert_eq!(rule.hit_count(), 1);
+        assert!(collector
+            .take()
+            .iter()
+            .any(|evaluation| matches!(evaluation, FaultInjectionEvaluation::Applied { .. })));
+        assert_eq!(mock_client.call_count(), 2);
     }
 
     #[tokio::test]

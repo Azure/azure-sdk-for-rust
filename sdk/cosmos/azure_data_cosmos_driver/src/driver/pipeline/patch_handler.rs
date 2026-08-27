@@ -35,9 +35,12 @@
 //! [`apply_patch_ops`]: super::patch_eval::apply_patch_ops
 //! [`DiagnosticsContext`]: crate::diagnostics::DiagnosticsContext
 
-use crate::diagnostics::DiagnosticsContext;
+use crate::diagnostics::{DiagnosticsContext, RequestEventType};
 use crate::driver::pipeline::from_local_body::from_local_body_and_driver_headers;
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
+use crate::driver::pipeline::patch_tracking::{
+    prepare_tracking_marker, TrackingMarkerOutcome, PATCH_TRACKING_POINTER,
+};
 use crate::driver::CosmosDriver;
 use crate::models::{
     CosmosOperation, CosmosResponse, PartitionKeyKind, PatchInstructions, PatchOperation,
@@ -179,6 +182,21 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 
     validate_partition_key_paths(&spec.operations, &item_ref)?;
 
+    let requires_tracking = !spec.is_retry_safe();
+    if requires_tracking {
+        validate_tracking_partition_key_paths(&item_ref)?;
+    }
+    let tracking = requires_tracking.then(|| {
+        (
+            operation
+                .patch_tracking_id()
+                .unwrap_or_else(crate::models::PatchTrackingId::new),
+            operation
+                .patch_tracking_capacity()
+                .unwrap_or(crate::models::DEFAULT_PATCH_TRACKING_CAPACITY),
+        )
+    });
+
     let attempts = max_attempts
         .map(|n| n.get())
         .unwrap_or(DEFAULT_PATCH_MAX_ATTEMPTS);
@@ -224,27 +242,11 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             .map_err(|err| {
                 stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
             })?;
-        sub_op_diagnostics.push(read_resp.diagnostics());
-        let etag = read_resp
-            .headers()
-            .etag
-            .clone()
-            .ok_or_else(|| {
-                crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
-                    .with_message("PATCH cannot proceed: the Read response did not include an ETag")
-                    .build()
-            })
-            .map_err(|err| {
-                stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
-            })?;
-        // R3-DRIVER: forward the session token returned by the Read on the
-        // Replace, so the write commits against the same replica view we
-        // just read from. This is what mitigates SE-004 (session token
-        // TOCTOU across read->write).
-        let read_session_token = read_resp.headers().session_token.clone();
+        let read_headers = read_resp.headers().clone();
+        let read_status = read_resp.status();
+        let read_diagnostics = read_resp.diagnostics();
+        let routing_fallback = terminal_request_used_routing_fallback(&read_diagnostics);
+        sub_op_diagnostics.push(read_diagnostics);
         // Locally apply the patch ops. These failures are synthesized here
         // rather than returned by the pipeline, so they carry no diagnostics of
         // their own; hand them the PATCH-identified aggregate of the sub-ops
@@ -275,6 +277,65 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             .map_err(|err| {
                 stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
             })?;
+
+        if let Some((tracking_id, capacity)) = tracking {
+            let service_time = read_headers
+                .response_date
+                .map(|date| date.unix_timestamp())
+                .filter(|timestamp| *timestamp >= 0);
+            let marker_outcome = prepare_tracking_marker(
+                &mut value,
+                tracking_id.as_uuid(),
+                service_time,
+                capacity,
+                !routing_fallback,
+            )
+            .map_err(|err| {
+                stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
+            })?;
+
+            match marker_outcome {
+                TrackingMarkerOutcome::AlreadyApplied => {
+                    let diagnostics =
+                        aggregate_patch_diagnostics(&sub_op_diagnostics, operation_name.clone());
+                    return Ok(from_local_body_and_driver_headers(
+                        read_body_bytes.to_vec(),
+                        read_headers,
+                        read_status,
+                        diagnostics,
+                    ));
+                }
+                TrackingMarkerOutcome::Missing => {
+                    return Err(stamp_patch_identity(
+                        inconclusive_tracking_verification_error(tracking_id),
+                        operation_name.clone(),
+                        &sub_op_diagnostics,
+                    ));
+                }
+                TrackingMarkerOutcome::Added => {}
+            }
+        }
+
+        let etag = read_headers
+            .etag
+            .clone()
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message("PATCH cannot proceed: the Read response did not include an ETag")
+                    .build()
+            })
+            .map_err(|err| {
+                stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
+            })?;
+        // R3-DRIVER: forward the session token returned by the Read on the
+        // Replace, so the write commits against the same replica view we
+        // just read from. This is what mitigates SE-004 (session token
+        // TOCTOU across read->write).
+        let read_session_token = read_headers.session_token.clone();
+
         apply_patch_ops(&mut value, &spec.operations).map_err(|err| {
             stamp_patch_identity(err.into(), operation_name.clone(), &sub_op_diagnostics)
         })?;
@@ -330,14 +391,8 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                 // Replace's own diagnostics if aggregation somehow fails
                 // (e.g. an empty source slice — which can't happen here, but
                 // we keep the safe fallback for forward-compat).
-                let diagnostics = DiagnosticsContext::aggregate_sub_operations(&sub_op_diagnostics)
-                    .map(|ctx| Arc::new(ctx.with_operation_name(operation_name.clone())))
-                    .unwrap_or_else(|| {
-                        sub_op_diagnostics
-                            .last()
-                            .cloned()
-                            .expect("sub_op_diagnostics is non-empty after a successful Replace")
-                    });
+                let diagnostics =
+                    aggregate_patch_diagnostics(&sub_op_diagnostics, operation_name.clone());
                 // Reconcile the locally-merged body's system properties with
                 // the Replace response. The merged document still carries
                 // `_etag`/`_ts` from the *Read* (it is the Read body with
@@ -442,6 +497,42 @@ fn stamp_patch_identity(
     };
     crate::error::CosmosErrorBuilder::from_error(err)
         .with_diagnostics(stamped)
+        .build()
+}
+
+fn aggregate_patch_diagnostics(
+    sub_operations: &[Arc<DiagnosticsContext>],
+    operation_name: Option<Arc<str>>,
+) -> Arc<DiagnosticsContext> {
+    DiagnosticsContext::aggregate_sub_operations(sub_operations)
+        .map(|context| Arc::new(context.with_operation_name(operation_name)))
+        .unwrap_or_else(|| {
+            sub_operations
+                .last()
+                .cloned()
+                .expect("PATCH diagnostics are non-empty after a successful sub-operation")
+        })
+}
+
+fn terminal_request_used_routing_fallback(diagnostics: &DiagnosticsContext) -> bool {
+    diagnostics.requests().last().is_some_and(|request| {
+        request
+            .events()
+            .iter()
+            .any(|event| event.event_type() == &RequestEventType::RoutingFallback)
+    })
+}
+
+fn inconclusive_tracking_verification_error(
+    tracking_id: crate::models::PatchTrackingId,
+) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            StatusCode::ServiceUnavailable,
+        ))
+        .with_message(format!(
+            "PATCH tracking verification for '{tracking_id}' was routed away from every usable write endpoint and did not observe the marker; refusing to apply because absence is inconclusive"
+        ))
         .build()
 }
 
@@ -644,6 +735,17 @@ fn validate_partition_key_paths(
             _ => None,
         };
         for path in std::iter::once(dest).chain(from) {
+            if path_overlaps_partition_key(path, PATCH_TRACKING_POINTER) {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message(format!(
+                        "PATCH op '{path}' overlaps reserved tracking path \
+                         '{PATCH_TRACKING_POINTER}'"
+                    ))
+                    .build());
+            }
             for pk_path in &pk_paths {
                 if path_overlaps_partition_key(path, pk_path) {
                     return Err(crate::error::CosmosError::builder()
@@ -657,6 +759,28 @@ fn validate_partition_key_paths(
                         .build());
                 }
             }
+        }
+    }
+    Ok(())
+}
+
+/// Rejects marker-backed PATCH when the reserved tracking property overlaps a
+/// partition-key path. Adding or pruning markers would otherwise mutate the
+/// item's partition key on every unsafe operation.
+fn validate_tracking_partition_key_paths(
+    item_ref: &crate::models::ItemReference,
+) -> crate::error::Result<()> {
+    for pk_path in item_ref.container().partition_key_definition().paths() {
+        if path_overlaps_partition_key(PATCH_TRACKING_POINTER, pk_path) {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
+                    "unsafe PATCH requires reserved tracking path '{PATCH_TRACKING_POINTER}', \
+                     which overlaps partition key path '{pk_path}'"
+                ))
+                .build());
         }
     }
     Ok(())
@@ -953,6 +1077,32 @@ mod tests {
         );
     }
 
+    #[test]
+    fn tracking_guard_rejects_overlapping_partition_key_paths() {
+        for pk_path in ["/_azsdkPatchTracking", "/_azsdkPatchTracking/tenant", "/"] {
+            let props = ContainerProperties {
+                id: "tracking_pk_container".into(),
+                partition_key: test_partition_key_definition(pk_path),
+                system_properties: SystemProperties::default(),
+            };
+            let container = ContainerReference::new(
+                test_account(),
+                "testdb",
+                "testdb_rid",
+                "tracking_pk_container",
+                "tracking_pk_container_rid",
+                &props,
+            );
+            let item_ref = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+
+            let err = validate_tracking_partition_key_paths(&item_ref)
+                .expect_err("tracking and partition-key paths must not overlap");
+
+            assert_eq!(err.status().status_code(), StatusCode::BadRequest);
+            assert!(err.to_string().contains("reserved tracking path"));
+        }
+    }
+
     // ====== exhaustion_error coverage ======
 
     #[test]
@@ -1154,6 +1304,11 @@ mod tests {
             session_token: Option<&'static str>,
             status: StatusCode,
         },
+        OkWithRoutingFallback {
+            body: Vec<u8>,
+            etag: Option<&'static str>,
+            status: StatusCode,
+        },
         Err(crate::error::CosmosError),
     }
 
@@ -1167,6 +1322,10 @@ mod tests {
                 session_token: None,
                 status,
             }
+        }
+
+        fn fallback(body: Vec<u8>, etag: Option<&'static str>, status: StatusCode) -> Self {
+            Self::OkWithRoutingFallback { body, etag, status }
         }
     }
 
@@ -1188,6 +1347,7 @@ mod tests {
         /// headers, if any. Captured so tests can pin the cross-attempt
         /// session-token carry-forward behavior.
         session_token: Option<SessionToken>,
+        body: Option<Vec<u8>>,
         read_consistency_strategy: Option<ReadConsistencyStrategy>,
         prefers_write_endpoints_for_read: bool,
         suppresses_hedging: bool,
@@ -1221,6 +1381,7 @@ mod tests {
                 op_type: operation.operation_type(),
                 if_match_etag: if_match,
                 session_token: operation.request_headers().session_token.clone(),
+                body: operation.body().map(<[u8]>::to_vec),
                 read_consistency_strategy: options.read_consistency_strategy,
                 prefers_write_endpoints_for_read: operation.prefers_write_endpoints_for_read(),
                 suppresses_hedging: operation.suppresses_hedging(),
@@ -1238,31 +1399,57 @@ mod tests {
                     etag,
                     session_token,
                     status,
-                } => {
-                    let mut headers = CosmosResponseHeaders::new();
-                    if let Some(tag) = etag {
-                        headers.etag = Some(Etag::from(tag));
-                    }
-                    if let Some(token) = session_token {
-                        headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
-                    }
-                    headers.request_charge = Some(RequestCharge::new(1.0));
-                    let diagnostics = Arc::new(
-                        DiagnosticsContextBuilder::new(
-                            ActivityId::new_uuid(),
-                            Arc::new(DiagnosticsOptions::default()),
-                        )
-                        .complete(),
-                    );
-                    Ok(from_local_body_and_driver_headers(
-                        body,
-                        headers,
-                        CosmosStatus::from_parts(status, None),
-                        diagnostics,
-                    ))
+                } => scripted_response(body, etag, session_token, status, false),
+                ScriptedReply::OkWithRoutingFallback { body, etag, status } => {
+                    scripted_response(body, etag, None, status, true)
                 }
             }
         }
+    }
+
+    fn scripted_response(
+        body: Vec<u8>,
+        etag: Option<&'static str>,
+        session_token: Option<&'static str>,
+        status: StatusCode,
+        routing_fallback: bool,
+    ) -> crate::error::Result<CosmosResponse> {
+        let mut headers = CosmosResponseHeaders::new();
+        if let Some(tag) = etag {
+            headers.etag = Some(Etag::from(tag));
+        }
+        if let Some(token) = session_token {
+            headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
+        }
+        headers.request_charge = Some(RequestCharge::new(1.0));
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::new_uuid(),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+        if routing_fallback {
+            let endpoint = crate::driver::routing::CosmosEndpoint::global(
+                Url::parse("https://fallback.documents.azure.com/").unwrap(),
+            );
+            let handle = diagnostics.start_request(
+                crate::diagnostics::ExecutionContext::Initial,
+                crate::diagnostics::PipelineType::DataPlane,
+                crate::diagnostics::TransportSecurity::Secure,
+                crate::diagnostics::TransportKind::Gateway,
+                crate::diagnostics::TransportHttpVersion::Http11,
+                &endpoint,
+            );
+            diagnostics.add_event(
+                handle,
+                crate::diagnostics::RequestEvent::new(RequestEventType::RoutingFallback),
+            );
+            diagnostics.complete_request(handle, status, None);
+        }
+        Ok(from_local_body_and_driver_headers(
+            body,
+            headers,
+            CosmosStatus::from_parts(status, None),
+            Arc::new(diagnostics.complete()),
+        ))
     }
 
     /// Builds a real cosmos `CosmosError::service_from_parts` for a non-2xx HTTP
@@ -1326,6 +1513,312 @@ mod tests {
             test_item_ref(),
             vec![PatchOperation::increment("/visits", 1i64)],
         )
+    }
+
+    fn tracking_id(value: u128) -> crate::models::PatchTrackingId {
+        crate::models::PatchTrackingId::from(uuid::Uuid::from_u128(value))
+    }
+
+    fn marker_entry(id: crate::models::PatchTrackingId, attempted_at: i64) -> serde_json::Value {
+        serde_json::json!({
+            "trackingId": id.to_string(),
+            "attemptedAt": attempted_at,
+        })
+    }
+
+    fn dispatched_body(call: &DispatchedCall) -> serde_json::Value {
+        serde_json::from_slice(call.body.as_deref().expect("call must carry a body"))
+            .expect("dispatched body must be JSON")
+    }
+
+    fn marker_ids(document: &serde_json::Value) -> Vec<&str> {
+        document[crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY]
+            .as_array()
+            .expect("tracking property must be an array")
+            .iter()
+            .map(|entry| {
+                entry["trackingId"]
+                    .as_str()
+                    .expect("trackingId must be a string")
+            })
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn committed_replace_with_lost_response_is_applied_once() {
+        let id = tracking_id(1);
+        let committed = serde_json::json!({
+            "id": "doc1",
+            "pk": "pk1",
+            "visits": 1,
+            crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY: [
+                marker_entry(id, 1)
+            ]
+        });
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            // Models the retry of a committed Replace returning 412 after the
+            // original response was lost.
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost response")),
+            ScriptedReply::ok(
+                serde_json::to_vec(&committed).unwrap(),
+                Some("\"v2\""),
+                StatusCode::Ok,
+            ),
+        ]);
+
+        let response = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op().with_patch_tracking_id(id),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect("verification read must recognize the committed Replace");
+
+        let body: serde_json::Value = response.into_body().into_single().unwrap();
+        assert_eq!(body["visits"], 1);
+        assert_eq!(dispatcher.calls().len(), 3, "no second Replace is allowed");
+        let first_replace = dispatched_body(&dispatcher.calls()[1]);
+        assert_eq!(first_replace["visits"], 1);
+        assert_eq!(marker_ids(&first_replace), vec![id.to_string()]);
+    }
+
+    #[tokio::test]
+    async fn genuine_concurrent_writer_reapplies_once_and_preserves_markers() {
+        let id = tracking_id(1);
+        let other_id = tracking_id(2);
+        let now = time::OffsetDateTime::now_utc().unix_timestamp();
+        let concurrent = serde_json::json!({
+            "id": "doc1",
+            "pk": "pk1",
+            "visits": 10,
+            crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY: [
+                marker_entry(other_id, now)
+            ]
+        });
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::Err(http_error(
+                StatusCode::PreconditionFailed,
+                "concurrent writer",
+            )),
+            ScriptedReply::ok(
+                serde_json::to_vec(&concurrent).unwrap(),
+                Some("\"v2\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(Vec::new(), Some("\"v3\""), StatusCode::Ok),
+        ]);
+
+        let response = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op().with_patch_tracking_id(id),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect("marker absence on a write-region read proves a genuine race");
+
+        let body: serde_json::Value = response.into_body().into_single().unwrap();
+        assert_eq!(body["visits"], 11);
+        let second_replace = dispatched_body(&dispatcher.calls()[3]);
+        assert_eq!(second_replace["visits"], 11);
+        assert_eq!(
+            marker_ids(&second_replace),
+            vec![other_id.to_string(), id.to_string()]
+        );
+    }
+
+    #[tokio::test]
+    async fn cooperating_writer_on_top_does_not_hide_committed_marker() {
+        let id = tracking_id(1);
+        let other_id = tracking_id(2);
+        let current = serde_json::json!({
+            "id": "doc1",
+            "pk": "pk1",
+            "visits": 1,
+            "name": "changed-after-commit",
+            crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY: [
+                marker_entry(id, 1),
+                marker_entry(other_id, 2)
+            ]
+        });
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost response")),
+            ScriptedReply::ok(
+                serde_json::to_vec(&current).unwrap(),
+                Some("\"v3\""),
+                StatusCode::Ok,
+            ),
+        ]);
+
+        let response = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op().with_patch_tracking_id(id),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect("our marker must survive a cooperating writer");
+
+        let body: serde_json::Value = response.into_body().into_single().unwrap();
+        assert_eq!(body["visits"], 1);
+        assert_eq!(body["name"], "changed-after-commit");
+        assert_eq!(dispatcher.calls().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn generated_tracking_id_is_stable_across_rmw_attempts() {
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "race")),
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":10}"#.to_vec(),
+                Some("\"v2\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(Vec::new(), Some("\"v3\""), StatusCode::Ok),
+        ]);
+
+        execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op(),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .unwrap();
+
+        let calls = dispatcher.calls();
+        let first = marker_ids(&dispatched_body(&calls[1]))[0].to_owned();
+        let second = marker_ids(&dispatched_body(&calls[3]))[0].to_owned();
+        assert_eq!(first, second);
+    }
+
+    #[tokio::test]
+    async fn full_unexpired_marker_list_fails_before_replace() {
+        let id = tracking_id(3);
+        let now = time::OffsetDateTime::now_utc().unix_timestamp();
+        let document = serde_json::json!({
+            "id": "doc1",
+            "pk": "pk1",
+            "visits": 0,
+            crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY: [
+                marker_entry(tracking_id(1), now),
+                marker_entry(tracking_id(2), now)
+            ]
+        });
+        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
+            serde_json::to_vec(&document).unwrap(),
+            Some("\"v1\""),
+            StatusCode::Ok,
+        )]);
+
+        let error = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op()
+                .with_patch_tracking_id(id)
+                .with_patch_tracking_capacity(std::num::NonZeroU16::new(2).unwrap()),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect_err("capacity exhaustion must fail rather than evict evidence");
+
+        assert_eq!(error.status().status_code(), StatusCode::Conflict);
+        assert_eq!(dispatcher.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn retry_safe_patch_does_not_write_tracking_property() {
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","name":"before"}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok),
+        ]);
+        let operation = patch_op_for(
+            test_item_ref(),
+            vec![PatchOperation::set("/name", serde_json::json!("after"))],
+        )
+        .with_patch_tracking_id(tracking_id(1));
+
+        execute_with_dispatcher(&dispatcher, operation, OperationOptions::default(), None)
+            .await
+            .unwrap();
+
+        let replace = dispatched_body(&dispatcher.calls()[1]);
+        assert_eq!(replace["name"], "after");
+        assert!(replace
+            .get(crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY)
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn fallback_read_requires_positive_marker_proof() {
+        let id = tracking_id(1);
+        let missing = ScriptedDispatcher::new(vec![ScriptedReply::fallback(
+            br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+            Some("\"v1\""),
+            StatusCode::Ok,
+        )]);
+
+        let error = execute_with_dispatcher(
+            &missing,
+            canonical_patch_op().with_patch_tracking_id(id),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect_err("marker absence on degraded routing is inconclusive");
+        assert_eq!(error.status().status_code(), StatusCode::ServiceUnavailable);
+        assert_eq!(missing.calls().len(), 1);
+
+        let present_document = serde_json::json!({
+            "id": "doc1",
+            "pk": "pk1",
+            "visits": 1,
+            crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY: [
+                marker_entry(id, 1)
+            ]
+        });
+        let present = ScriptedDispatcher::new(vec![ScriptedReply::fallback(
+            serde_json::to_vec(&present_document).unwrap(),
+            Some("\"v2\""),
+            StatusCode::Ok,
+        )]);
+
+        let response = execute_with_dispatcher(
+            &present,
+            canonical_patch_op().with_patch_tracking_id(id),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect("marker presence remains conclusive on degraded routing");
+        let body: serde_json::Value = response.into_body().into_single().unwrap();
+        assert_eq!(body["visits"], 1);
+        assert_eq!(present.calls().len(), 1);
     }
 
     #[tokio::test]

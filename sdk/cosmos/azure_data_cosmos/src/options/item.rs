@@ -3,6 +3,8 @@
 
 //! Options for item-level point reads, writes, and patch operations.
 
+#[cfg(feature = "preview_patch")]
+use crate::models::PatchTrackingId;
 use azure_data_cosmos_driver::models::{Precondition, SessionToken};
 use azure_data_cosmos_driver::options::OperationOptions;
 
@@ -94,9 +96,9 @@ impl ItemWriteOptions {
 
 /// Options for [`ContainerClient::patch_item()`](crate::clients::ContainerClient::patch_item()).
 ///
-/// **Preview.** Requires the `preview_patch` feature. PATCH is not
-/// production-ready: an interrupted patch may re-apply non-idempotent
-/// operations. See [Failure Semantics](crate::clients::ContainerClient::patch_item()).
+/// **Preview.** Requires the `preview_patch` feature. Unsafe instruction lists
+/// use persisted tracking entries to suppress duplicate application after an
+/// ambiguous transport failure. See [Retry Semantics](crate::clients::ContainerClient::patch_item()).
 ///
 /// PATCH is implemented driver-side as a Read-Modify-Write (RMW) loop:
 /// the driver reads the current item, applies your [`PatchInstructions`](crate::models::PatchInstructions)
@@ -161,6 +163,18 @@ pub struct PatchItemOptions {
     /// Maximum number of Read-Modify-Write attempts the driver may make
     /// before surfacing a 412. `None` selects the driver default (5).
     pub max_attempts: Option<std::num::NonZeroU8>,
+
+    /// Stable identity for application-level retries of the same logical
+    /// unsafe PATCH. When omitted, the driver generates an ID for this call.
+    /// Persist and reuse this value across process restarts; never reuse it for
+    /// a different operation.
+    pub tracking_id: Option<PatchTrackingId>,
+
+    /// Maximum number of unexpired PATCH tracking entries retained on the
+    /// item. `None` selects
+    /// [`DEFAULT_PATCH_TRACKING_CAPACITY`](crate::models::DEFAULT_PATCH_TRACKING_CAPACITY).
+    /// A full list fails with 409 rather than evicting protected evidence.
+    pub tracking_capacity: Option<std::num::NonZeroU16>,
 }
 
 #[cfg(feature = "preview_patch")]
@@ -174,6 +188,20 @@ impl PatchItemOptions {
     /// Caps the number of Read-Modify-Write attempts the driver may make.
     pub fn with_max_attempts(mut self, max_attempts: std::num::NonZeroU8) -> Self {
         self.max_attempts = Some(max_attempts);
+        self
+    }
+
+    /// Sets the stable identity for this logical PATCH operation.
+    ///
+    /// Reuse it only when retrying the same operation against the same item.
+    pub fn with_tracking_id(mut self, tracking_id: PatchTrackingId) -> Self {
+        self.tracking_id = Some(tracking_id);
+        self
+    }
+
+    /// Sets the maximum number of unexpired tracking entries retained on an item.
+    pub fn with_tracking_capacity(mut self, capacity: std::num::NonZeroU16) -> Self {
+        self.tracking_capacity = Some(capacity);
         self
     }
 

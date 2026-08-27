@@ -8,20 +8,20 @@
 //! again only if doing so cannot change the result. These tests exercise that
 //! claim end to end rather than asserting it on a predicate.
 //!
-//! The fault is [`FaultInjectionErrorType::ResponseTimeout`], which the
-//! framework injects with [`RequestSentStatus::Unknown`] — the request may
-//! already have reached the backend. That is the exact condition
-//! `CosmosOperation::allows_ambiguous_outcome_retry` governs.
+//! Most resend-decision tests use [`FaultInjectionErrorType::ResponseTimeout`],
+//! which fails before the request reaches the emulator but reports
+//! [`RequestSentStatus::Unknown`]. The exactly-once test uses
+//! [`FaultInjectionErrorType::ResponseTimeoutAfterService`] instead: the
+//! emulator commits the Replace and then the fault client discards its
+//! response.
 //!
 //! `rule.hit_count()` counts how many times a request reached the fault, so it
 //! is the attempt count: `1` means the driver gave up immediately, `> 1` means
 //! it resent.
 //!
-//! **Scope note.** Injection short-circuits above the emulator store, so the
-//! mutation never lands and these tests cannot observe a literal double-apply
-//! on the failing attempt. What they do cover is the decision the driver
-//! actually owns — whether to resend — plus, on the recovery tests, that a
-//! successful retry applies the operation exactly once.
+//! That post-service case observes the literal failure mode the tracking
+//! protocol protects: a committed mutation whose response never reaches the
+//! caller.
 
 use std::sync::Arc;
 
@@ -36,11 +36,9 @@ use azure_data_cosmos_driver::in_memory_emulator::{
 };
 use azure_data_cosmos_driver::models::{
     AccountReference, ContainerReference, CosmosOperation, ItemReference, PartitionKey,
-    PatchInstructions, PatchOperation,
+    PatchInstructions, PatchOperation, PatchTrackingId,
 };
-use azure_data_cosmos_driver::options::{
-    DriverOptions, OperationOptions, OperationOptionsBuilder, PatchStrategy,
-};
+use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions};
 use azure_data_cosmos_driver::CosmosDriver;
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
@@ -66,6 +64,21 @@ fn ambiguous_failure_rule(
         builder = builder.with_hit_limit(limit);
     }
     Arc::new(builder.build())
+}
+
+fn post_service_timeout_rule(id: &str) -> Arc<FaultInjectionRule> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReplaceItem)
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+        .build();
+    Arc::new(
+        FaultInjectionRuleBuilder::new(id, result)
+            .with_condition(condition)
+            .with_hit_limit(1)
+            .build(),
+    )
 }
 
 async fn build_driver(rules: Vec<Arc<FaultInjectionRule>>) -> Arc<CosmosDriver> {
@@ -110,8 +123,14 @@ async fn seed(driver: &CosmosDriver) -> ContainerReference {
         .await
         .expect("container should resolve");
     let item = ItemReference::from_name(&container, PartitionKey::from(PK), ITEM_ID.to_string());
-    let body =
-        serde_json::json!({ "id": ITEM_ID, "pk": PK, "visits": 1, "name": "before", "tags": [] });
+    let body = serde_json::json!({
+        "id": ITEM_ID,
+        "pk": PK,
+        "visits": 1,
+        "name": "before",
+        "tags": [],
+        "a": { "b": 0 },
+    });
     driver
         .execute_operation(
             CosmosOperation::create_item(item).with_body(body.to_string().into_bytes()),
@@ -126,30 +145,37 @@ async fn patch(
     driver: &CosmosDriver,
     container: &ContainerReference,
     ops: PatchInstructions,
-    strategy: PatchStrategy,
 ) -> Result<(), azure_data_cosmos_driver::error::CosmosError> {
-    let item = ItemReference::from_name(container, PartitionKey::from(PK), ITEM_ID.to_string());
-    let operation = CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&ops).unwrap());
-    let options = OperationOptionsBuilder::new()
-        .with_patch_strategy(strategy)
-        .build();
-    driver
-        .execute_operation(operation, options)
+    execute_patch(driver, container, ops, None)
         .await
         .map(|_| ())
+}
+
+async fn execute_patch(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    ops: PatchInstructions,
+    tracking_id: Option<PatchTrackingId>,
+) -> Result<
+    azure_data_cosmos_driver::models::CosmosResponse,
+    azure_data_cosmos_driver::error::CosmosError,
+> {
+    let item = ItemReference::from_name(container, PartitionKey::from(PK), ITEM_ID.to_string());
+    let mut operation =
+        CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&ops).unwrap());
+    if let Some(tracking_id) = tracking_id {
+        operation = operation.with_patch_tracking_id(tracking_id);
+    }
+    let response = driver
+        .execute_operation(operation, OperationOptions::default())
+        .await?;
+    Ok(response.expect("PATCH must return a singleton response"))
 }
 
 async fn stored_visits(driver: &CosmosDriver, container: &ContainerReference) -> i64 {
     stored_item(driver, container).await["visits"]
         .as_i64()
         .expect("visits is an integer")
-}
-
-async fn stored_tag_count(driver: &CosmosDriver, container: &ContainerReference) -> usize {
-    stored_item(driver, container).await["tags"]
-        .as_array()
-        .expect("tags is an array")
-        .len()
 }
 
 async fn stored_item(driver: &CosmosDriver, container: &ContainerReference) -> serde_json::Value {
@@ -170,105 +196,28 @@ fn increment() -> PatchInstructions {
     PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)])
 }
 
-fn set_name() -> PatchInstructions {
-    PatchInstructions::from(vec![PatchOperation::set(
-        "/name",
-        serde_json::json!("after"),
-    )])
+fn overlapping_replace_then_set() -> PatchInstructions {
+    PatchInstructions::from(vec![
+        PatchOperation::replace("/a/b", serde_json::json!(1)),
+        PatchOperation::set("/a", serde_json::json!({})),
+    ])
 }
-
-/// `Set` at the RFC 6901 append token appends, exactly like `Add` — the mode
-/// does not matter at `-`.
-fn append_tag() -> PatchInstructions {
-    PatchInstructions::from(vec![PatchOperation::set(
-        "/tags/-",
-        serde_json::json!("new-tag"),
-    )])
-}
-
-// ── Server-side: the operation list decides whether a resend happens ──
-
-/// The core safety property. An `increment` sent to the service and lost to an
-/// ambiguous failure must not be resent — the first attempt may already have
-/// applied it, and a second would double it.
-#[tokio::test]
-async fn server_side_unsafe_patch_is_not_retried_after_ambiguous_failure() {
-    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
-    let driver = build_driver(vec![Arc::clone(&rule)]).await;
-    let container = seed(&driver).await;
-
-    let outcome = patch(&driver, &container, increment(), PatchStrategy::ServerSide).await;
-
-    assert!(
-        outcome.is_err(),
-        "the operation must surface the failure rather than silently retrying"
-    );
-    assert_eq!(
-        rule.hit_count(),
-        1,
-        "an unsafe server-side patch must be attempted exactly once; \
-         {} attempts means the driver resent a mutation whose outcome was unknown",
-        rule.hit_count()
-    );
-}
-
-/// The counterpart: the block is a property of the operations, not of
-/// server-side patch as such. A `set` is safe to resend, so the driver still
-/// spends its failover budget on it.
-#[tokio::test]
-async fn server_side_safe_patch_is_retried_after_ambiguous_failure() {
-    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
-    let driver = build_driver(vec![Arc::clone(&rule)]).await;
-    let container = seed(&driver).await;
-
-    let outcome = patch(&driver, &container, set_name(), PatchStrategy::ServerSide).await;
-
-    assert!(outcome.is_err(), "every attempt was faulted, so it fails");
-    assert!(
-        rule.hit_count() > 1,
-        "a retry-safe server-side patch must still be retried, got {} attempt(s)",
-        rule.hit_count()
-    );
-}
-
-/// A transient blip should not be fatal: when only the first attempt fails, the
-/// retry succeeds and the value is applied once, not twice.
-#[tokio::test]
-async fn server_side_safe_patch_recovers_when_only_the_first_attempt_fails() {
-    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, Some(1));
-    let driver = build_driver(vec![Arc::clone(&rule)]).await;
-    let container = seed(&driver).await;
-
-    patch(&driver, &container, set_name(), PatchStrategy::ServerSide)
-        .await
-        .expect("the retry must recover from a single transient failure");
-
-    assert_eq!(rule.hit_count(), 1, "only the first attempt was faulted");
-    assert_eq!(
-        stored_visits(&driver, &container).await,
-        1,
-        "a `set` retry must not disturb unrelated fields"
-    );
-}
-
-// ── Client-side and Auto keep retrying unsafe operations ─────────────
 
 /// The read-modify-write loop re-reads before each attempt, so an `increment`
-/// is safe to retry there. This is the behavior that existed before
-/// server-side patch and must be preserved.
+/// keeps retrying when every inner Replace fails before reaching the service.
 #[tokio::test]
-async fn client_side_unsafe_patch_is_still_retried_after_ambiguous_failure() {
+async fn unsafe_patch_is_retried_after_ambiguous_failure() {
     // The loop's mutation is an inner Replace, so that is what to fault.
     let rule = ambiguous_failure_rule("replace-timeout", FaultOperationType::ReplaceItem, None);
     let driver = build_driver(vec![Arc::clone(&rule)]).await;
     let container = seed(&driver).await;
 
-    let outcome = patch(&driver, &container, increment(), PatchStrategy::ClientSide).await;
+    let outcome = patch(&driver, &container, increment()).await;
 
     assert!(outcome.is_err(), "every attempt was faulted, so it fails");
     assert!(
         rule.hit_count() > 1,
-        "the client-side loop must keep retrying an increment, got {} attempt(s)",
+        "the RMW loop must keep retrying an increment, got {} attempt(s)",
         rule.hit_count()
     );
 }
@@ -276,12 +225,12 @@ async fn client_side_unsafe_patch_is_still_retried_after_ambiguous_failure() {
 /// End-to-end proof that the client-side path applies an increment exactly once
 /// when it recovers — the duplicate this whole design is guarding against.
 #[tokio::test]
-async fn client_side_unsafe_patch_applies_once_when_it_recovers() {
+async fn unsafe_patch_applies_once_when_it_recovers() {
     let rule = ambiguous_failure_rule("replace-timeout", FaultOperationType::ReplaceItem, Some(1));
     let driver = build_driver(vec![Arc::clone(&rule)]).await;
     let container = seed(&driver).await;
 
-    patch(&driver, &container, increment(), PatchStrategy::ClientSide)
+    patch(&driver, &container, increment())
         .await
         .expect("the loop must recover from a single transient failure");
 
@@ -293,102 +242,67 @@ async fn client_side_unsafe_patch_applies_once_when_it_recovers() {
     );
 }
 
-/// `Auto` routes an increment to the client-side loop, so a fault armed on the
-/// service's patch endpoint never fires at all — the request is not sent there.
-/// This is what makes `Auto` safe by default without disabling retries.
+/// A Replace can commit even when its response is lost. The persisted marker
+/// lets the RMW loop attribute the following 412 to its own prior commit, and
+/// lets an application retry with the same token complete with only a Read.
 #[tokio::test]
-async fn auto_keeps_unsafe_patches_off_the_service_patch_path() {
-    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
+async fn unsafe_patch_commits_once_when_response_is_lost() {
+    let rule = post_service_timeout_rule("replace-post-service-timeout");
     let driver = build_driver(vec![Arc::clone(&rule)]).await;
     let container = seed(&driver).await;
+    let tracking_id = "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f"
+        .parse::<PatchTrackingId>()
+        .unwrap();
 
-    patch(&driver, &container, increment(), PatchStrategy::Auto)
+    execute_patch(&driver, &container, increment(), Some(tracking_id))
         .await
-        .expect("Auto must fall back to the loop and succeed");
+        .expect("the marker must prove that the timed-out Replace committed");
 
+    assert_eq!(rule.hit_count(), 1, "one committed response was discarded");
+    let after_lost_response = stored_item(&driver, &container).await;
+    assert_eq!(after_lost_response["visits"], 2);
     assert_eq!(
-        rule.hit_count(),
-        0,
-        "Auto must not send an unsafe patch to the service patch endpoint"
+        after_lost_response["_azsdkPatchTracking"][0]["trackingId"],
+        tracking_id.to_string()
     );
-    assert_eq!(
-        stored_visits(&driver, &container).await,
-        2,
-        "the increment must land exactly once"
-    );
-}
+    let committed_etag = after_lost_response["_etag"].clone();
 
-/// `Auto` with safe operations does use the service, so the same fault fires
-/// and — because the list is retry-safe — is retried.
-#[tokio::test]
-async fn auto_sends_safe_patches_to_the_service_and_retries_them() {
-    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
-    let driver = build_driver(vec![Arc::clone(&rule)]).await;
-    let container = seed(&driver).await;
-
-    let outcome = patch(&driver, &container, set_name(), PatchStrategy::Auto).await;
-
-    assert!(outcome.is_err(), "every attempt was faulted, so it fails");
-    assert!(
-        rule.hit_count() > 1,
-        "a safe patch under Auto goes to the service and is retried, got {} attempt(s)",
-        rule.hit_count()
-    );
-}
-
-/// Regression guard: `Set` was once classified retry-safe unconditionally, so
-/// `set("/tags/-", ..)` — which appends — would have gone server-side under the
-/// default strategy and been resent after an ambiguous failure, appending twice.
-#[tokio::test]
-async fn auto_keeps_array_append_set_off_the_service_patch_path() {
-    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
-    let driver = build_driver(vec![Arc::clone(&rule)]).await;
-    let container = seed(&driver).await;
-
-    patch(&driver, &container, append_tag(), PatchStrategy::Auto)
+    let retry_response = execute_patch(&driver, &container, increment(), Some(tracking_id))
         .await
-        .expect("Auto must fall back to the loop and succeed");
+        .expect("reusing the tracking ID must recognize the committed operation");
 
     assert_eq!(
-        rule.hit_count(),
-        0,
-        "an append is not retry-safe, so Auto must not send it to the service"
-    );
-    assert_eq!(
-        stored_tag_count(&driver, &container).await,
+        retry_response.diagnostics().request_count(),
         1,
-        "the append must land exactly once"
+        "the application retry must perform only the verification Read"
     );
+    let after_application_retry = stored_item(&driver, &container).await;
+    assert_eq!(after_application_retry["visits"], 2);
+    assert_eq!(after_application_retry["_etag"], committed_etag);
 }
 
-/// The same append sent server-side on purpose must not be resent — the first
-/// attempt may already have appended.
 #[tokio::test]
-async fn server_side_array_append_set_is_not_retried_after_ambiguous_failure() {
-    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
+async fn overlapping_safe_ops_use_tracking_when_response_is_lost() {
+    let rule = post_service_timeout_rule("overlapping-ops-post-service-timeout");
     let driver = build_driver(vec![Arc::clone(&rule)]).await;
     let container = seed(&driver).await;
 
-    let outcome = patch(&driver, &container, append_tag(), PatchStrategy::ServerSide).await;
+    execute_patch(&driver, &container, overlapping_replace_then_set(), None)
+        .await
+        .expect("the marker must prevent replay after the committed response is lost");
 
-    assert!(outcome.is_err(), "the failure must be surfaced");
-    assert_eq!(
-        rule.hit_count(),
-        1,
-        "an append must be attempted exactly once; {} attempts means the driver \
-         resent a mutation whose outcome was unknown",
-        rule.hit_count()
-    );
+    assert_eq!(rule.hit_count(), 1);
+    let stored = stored_item(&driver, &container).await;
+    assert_eq!(stored["a"], serde_json::json!({}));
+    assert!(stored.get("_azsdkPatchTracking").is_some());
 }
 
 /// A failure that definitively never left the client is safe for every
-/// operation type, so even an unsafe server-side patch is retried. This
-/// separates "unsafe to resend" from "never retry", which are different
-/// claims — only the ambiguous case is blocked.
+/// operation type, so the inner Replace is retried.
 #[tokio::test]
-async fn server_side_unsafe_patch_is_retried_when_the_request_was_never_sent() {
+async fn unsafe_patch_is_retried_when_the_replace_was_never_sent() {
     let condition = FaultInjectionConditionBuilder::new()
-        .with_operation_type(FaultOperationType::PatchItem)
+        .with_operation_type(FaultOperationType::ReplaceItem)
         .build();
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ConnectionError)
@@ -403,7 +317,7 @@ async fn server_side_unsafe_patch_is_retried_when_the_request_was_never_sent() {
     let driver = build_driver(vec![Arc::clone(&rule)]).await;
     let container = seed(&driver).await;
 
-    let outcome = patch(&driver, &container, increment(), PatchStrategy::ServerSide).await;
+    let outcome = patch(&driver, &container, increment()).await;
 
     assert!(outcome.is_err(), "every attempt was faulted, so it fails");
     assert!(

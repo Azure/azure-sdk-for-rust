@@ -144,6 +144,10 @@ pub struct CosmosOperation {
     /// make. Only consulted when `operation_type == OperationType::Patch`;
     /// ignored for every other op. `None` selects the handler default (5).
     patch_max_attempts: Option<std::num::NonZeroU8>,
+    /// Stable identity used to detect a previously committed unsafe PATCH.
+    patch_tracking_id: Option<crate::models::PatchTrackingId>,
+    /// Maximum number of protected PATCH markers retained on the item.
+    patch_tracking_capacity: Option<std::num::NonZeroU16>,
     /// `true` when this operation is a change feed read. Set explicitly by
     /// [`change_feed`](Self::change_feed) rather than inferred from a header,
     /// so future change feed modes can be added without ambiguity.
@@ -494,6 +498,35 @@ impl CosmosOperation {
         self.patch_max_attempts
     }
 
+    /// Sets a stable tracking ID for an unsafe client-side PATCH.
+    ///
+    /// Reuse the same ID for application-level retries of the same logical
+    /// operation. If omitted, the driver generates an ID for this invocation.
+    pub fn with_patch_tracking_id(mut self, tracking_id: crate::models::PatchTrackingId) -> Self {
+        self.patch_tracking_id = Some(tracking_id);
+        self
+    }
+
+    /// Returns the caller-supplied PATCH tracking ID, if any.
+    pub fn patch_tracking_id(&self) -> Option<crate::models::PatchTrackingId> {
+        self.patch_tracking_id
+    }
+
+    /// Sets the maximum number of protected PATCH tracking entries retained on
+    /// one item.
+    ///
+    /// When every entry is still protected and the cap is reached, PATCH fails
+    /// rather than evicting evidence and risking duplicate application.
+    pub fn with_patch_tracking_capacity(mut self, capacity: std::num::NonZeroU16) -> Self {
+        self.patch_tracking_capacity = Some(capacity);
+        self
+    }
+
+    /// Returns the configured PATCH tracking capacity, if any.
+    pub fn patch_tracking_capacity(&self) -> Option<std::num::NonZeroU16> {
+        self.patch_tracking_capacity
+    }
+
     /// Marks this operation as an internal sub-operation of a PATCH's
     /// Read-Modify-Write loop.
     ///
@@ -562,6 +595,8 @@ impl CosmosOperation {
             request_headers: CosmosRequestHeaders::new(),
             body: None,
             patch_max_attempts: None,
+            patch_tracking_id: None,
+            patch_tracking_capacity: None,
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,

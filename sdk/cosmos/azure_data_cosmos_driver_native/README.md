@@ -30,8 +30,8 @@ for the full design.
 
 ### Capability matrix (current)
 
-| Capability                                                                      | Status                                                                                  |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Capability                                                                      | Status                                                                                   |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | Master-key authentication                                                       | ✅                                                                                       |
 | Token-credential / resource-token authentication                                | ⏳ follow-up (needs `TokenCredential` FFI bridge)                                        |
 | Sync driver creation (`_blocking`)                                              | ✅                                                                                       |
@@ -139,10 +139,10 @@ below for the production-shape guidance.
 > (`cosmos_operation_create_item`, `cosmos_operation_with_body`,
 > `cosmos_operation_options_builder_*`, `cosmos_driver_submit`, …) has been
 > **removed**. Operations are now described by a single flat,
-> self-describing `cosmos_CosmosOperationRequest` struct (kind-tagged via
+> self-describing `cosmos_operation_request_t` struct (kind-tagged via
 > `cosmos_CosmosOperationKind`, with per-call settings on the tri-state
 > `cosmos_CosmosOperationOptions` seeded by `cosmos_operation_options_default`)
-> and executed through exactly two entry points:
+> and executed through two v1 entry points plus their v2 counterparts:
 >
 > - `cosmos_submit_singleton_operation` — point operations
 >   (create / read / replace / delete / patch item, database & container CRUD,
@@ -150,12 +150,22 @@ below for the production-shape guidance.
 > - `cosmos_submit_operation` — feed/paginated operations
 >   (queries, read-all, change feed); resumes from and surfaces a continuation
 >   token.
+> - `cosmos_submit_singleton_operation_v2` / `cosmos_submit_operation_v2` —
+>   identical execution contracts accepting the versioned PATCH tracking
+>   request.
 >
-> Item PATCH and `patch_max_attempts` are always available through the native
-> driver ABI. Consuming language SDKs decide whether and how to expose PATCH as
-> preview using conventions appropriate to that language.
+> Item PATCH and `patch_max_attempts` remain available through the v1 native
+> request ABI. Bounded tracking uses `cosmos_operation_request_v2_t` with
+> `cosmos_submit_operation_v2` / `cosmos_submit_singleton_operation_v2`, leaving
+> the v1 struct and symbols binary compatible. Consuming language SDKs decide
+> whether and how to expose PATCH as preview. For unsafe instruction lists, the
+> driver stores `_azsdkPatchTracking` on the item. Passing NULL for
+> `patch_tracking_id` protects internal retries in one invocation; persist and
+> reuse the same UUID for application retries. Entries are protected for 15
+> minutes, the default capacity is 1024, and a full unexpired list fails rather
+> than evicting evidence. Every writer must preserve the reserved property.
 >
-> Both take `(driver, const cosmos_CosmosOperationRequest *request, queue,
+> The v1 functions take `(driver, const cosmos_operation_request_t *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.
 > The checked-in [header](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/include/azurecosmosdriver.h) is the authoritative
 > source for the struct field layout and the 25 operation kinds. The C#
@@ -254,12 +264,21 @@ internal static class Cosmos
         public IntPtr    activity_id;              // char*
         public IntPtr    continuation_token;       // char*
         public int       max_item_count;           // < 0 = unset
+        public uint      max_fan_out;               // 0 = unset
         public byte      patch_max_attempts;       // 0 = unset
         public sbyte     populate_index_metrics;   // tri-state bool (0/1/2)
         public sbyte     populate_query_metrics;   // tri-state bool (0/1/2)
         public int       precondition_kind;        // 0 = none
         public IntPtr    precondition_etag;        // char*
         public IntPtr    options;                  // cosmos_operation_options_t*
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct OpRequestV2
+    {
+        public OpRequest base_request;
+        public IntPtr    patch_tracking_id;       // UUID char*, NULL = generate
+        public ushort    patch_tracking_capacity; // 0 = driver default
     }
 
     // A drained completion. All pointers are borrowed until free_completions.
@@ -295,6 +314,8 @@ internal static class Cosmos
     // The two — and only two — execution entry points.
     [DllImport(Lib)] public static extern IntPtr cosmos_submit_singleton_operation(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
     [DllImport(Lib)] public static extern IntPtr cosmos_submit_operation(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
+    [DllImport(Lib)] public static extern IntPtr cosmos_submit_singleton_operation_v2(IntPtr drv, ref OpRequestV2 req, IntPtr q, IntPtr ud, out int preErr);
+    [DllImport(Lib)] public static extern IntPtr cosmos_submit_operation_v2(IntPtr drv, ref OpRequestV2 req, IntPtr q, IntPtr ud, out int preErr);
     [DllImport(Lib)] public static extern void   cosmos_operation_handle_free(IntPtr h);
     [DllImport(Lib)] public static extern void   cosmos_error_free(IntPtr e);
 
@@ -477,6 +498,7 @@ public final class CosmosSample {
     static final MethodHandle PK_CREATE        = h("cosmos_partition_key_create", FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_LONG, ADDRESS));
     static final MethodHandle PK_FREE          = h("cosmos_partition_key_free", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle SUBMIT_SINGLETON = h("cosmos_submit_singleton_operation", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS, JAVA_LONG, ADDRESS));
+    static final MethodHandle SUBMIT_SINGLETON_V2 = h("cosmos_submit_singleton_operation_v2", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS, JAVA_LONG, ADDRESS));
     static final MethodHandle OP_HND_FREE      = h("cosmos_operation_handle_free", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle ERR_FREE         = h("cosmos_error_free", FunctionDescriptor.ofVoid(ADDRESS));
 
@@ -515,14 +537,20 @@ public final class CosmosSample {
         ADDRESS.withName("activity_id"),
         ADDRESS.withName("continuation_token"),
         JAVA_INT.withName("max_item_count"),
+        JAVA_INT.withName("max_fan_out"),
         JAVA_BYTE.withName("patch_max_attempts"),
         JAVA_BYTE.withName("populate_index_metrics"),
         JAVA_BYTE.withName("populate_query_metrics"),
         MemoryLayout.paddingLayout(1),
         JAVA_INT.withName("precondition_kind"),
-        MemoryLayout.paddingLayout(4),
         ADDRESS.withName("precondition_etag"),
         ADDRESS.withName("options"));
+
+    static final GroupLayout REQUEST_V2 = MemoryLayout.structLayout(
+        REQUEST.withName("base"),
+        ADDRESS.withName("patch_tracking_id"),
+        JAVA_SHORT.withName("patch_tracking_capacity"),
+        MemoryLayout.paddingLayout(6));
 
     // Layout of cosmos_completion_t. Pointers and intptr_t/uintptr_t are 8 bytes.
     static final GroupLayout COMPLETION = MemoryLayout.structLayout(
@@ -1032,12 +1060,21 @@ class CosmosOperationRequest(ctypes.Structure):
         ("activity_id", c_char_p),
         ("continuation_token", c_char_p),
         ("max_item_count", ctypes.c_int32),
+        ("max_fan_out", ctypes.c_uint32),
         ("patch_max_attempts", ctypes.c_uint8),
         ("populate_index_metrics", ctypes.c_int8),
         ("populate_query_metrics", ctypes.c_int8),
         ("precondition_kind", ctypes.c_int32),
         ("precondition_etag", c_char_p),
         ("options", void_p),
+    ]
+
+
+class CosmosOperationRequestV2(ctypes.Structure):
+    _fields_ = [
+        ("base", CosmosOperationRequest),
+        ("patch_tracking_id", c_char_p),
+        ("patch_tracking_capacity", ctypes.c_uint16),
     ]
 
 
@@ -1072,6 +1109,7 @@ class CosmosCompletion(ctypes.Structure):
 
 
 req_p = ctypes.POINTER(CosmosOperationRequest)
+req_v2_p = ctypes.POINTER(CosmosOperationRequestV2)
 comp_p = ctypes.POINTER(CosmosCompletion)
 component_p = ctypes.POINTER(CosmosPartitionKeyComponent)
 
@@ -1090,6 +1128,7 @@ _container_free        = _decl("cosmos_container_ref_free", [void_p], None)
 _pk_create             = _decl("cosmos_partition_key_create", [component_p, size_t, ctypes.POINTER(void_p)], ctypes.c_int32)
 _pk_free               = _decl("cosmos_partition_key_free", [void_p], None)
 _submit_singleton      = _decl("cosmos_submit_singleton_operation", [void_p, req_p, void_p, intptr_t, ctypes.POINTER(ctypes.c_int32)], void_p)
+_submit_singleton_v2   = _decl("cosmos_submit_singleton_operation_v2", [void_p, req_v2_p, void_p, intptr_t, ctypes.POINTER(ctypes.c_int32)], void_p)
 _op_hnd_free           = _decl("cosmos_operation_handle_free", [void_p], None)
 _error_free            = _decl("cosmos_error_free", [void_p], None)
 

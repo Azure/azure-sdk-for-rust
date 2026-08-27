@@ -3,17 +3,19 @@
 This document describes the contract for `OperationType::Patch` in
 `azure_data_cosmos_driver`.
 
-## Known limitation and SDK exposure
+## SDK exposure and bounded duplicate suppression
 
 The core driver always includes PATCH. Consuming SDKs decide whether and how
 to expose it as preview using conventions appropriate to each language. The
 Rust SDK, `azure_data_cosmos`, gates its public PATCH API behind the
 **`preview_patch`** Cargo feature, which is off by default.
 
-The handler does not deliver exactly-once semantics under transport failures:
-an interrupted patch may re-apply non-idempotent operations (`Increment`,
-`Add` on an array, `Move`). See [Invariants](#invariants) for the exact
-interleaving. The Rust SDK API will stay gated until that hole is closed.
+For instruction lists that are not safe to reapply, the handler persists a
+tracking entry in the item as part of the same ETag-guarded Replace as the
+mutation. A verification Read that observes the same tracking ID returns
+success without applying the instructions again. This closes the
+commit-succeeded/response-lost duplicate-application hole within the bounded
+protocol described in [Tracking protocol](#tracking-protocol).
 
 ## Overview
 
@@ -35,6 +37,8 @@ normal pipeline stages run.
 | Body                                          | `with_body(serde_json::to_vec(&PatchInstructions))` | Required. The handler re-parses it as `PatchInstructions`.        |
 | Partition key                                 | `with_partition_key(...)`                           | Required. Used to issue the internal Read.                        |
 | `patch_max_attempts`                          | `with_patch_max_attempts(NonZeroU8)`                | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
+| `patch_tracking_id`                           | `with_patch_tracking_id(PatchTrackingId)`           | Optional. Generated once per invocation for unsafe instructions.  |
+| `patch_tracking_capacity`                     | `with_patch_tracking_capacity(NonZeroU16)`          | Optional. Defaults to 1024 unexpired entries per item.            |
 
 ## Algorithm
 
@@ -52,40 +56,56 @@ normal pipeline stages run.
    - reject ops whose path overlaps any partition-key path (we cannot
      move a document between physical partitions). For MoveOp this
      covers BOTH the source (`from`) and the destination (`path`).
+  - reject every op that overlaps the reserved tracking path.
    - reject empty op lists.
 
-2. Clone the caller's operation options for the Read and override its
-  consistency strategy with `LatestCommitted`. The caller's session token is
+2. Classify the instruction list. A list is retry-safe when it contains only
+  Replace and non-append Set operations and no operation path is a strict
+  ancestor or descendant of another. Every other list requires tracking.
+  Resolve one stable tracking ID and the capacity before entering the loop.
+  If the reserved tracking path overlaps a container partition-key path,
+  reject a tracked PATCH before dispatching any sub-operation.
+
+3. Clone the caller's operation options for the Read and override its
+  consistency strategy with LatestCommitted. The caller's session token is
   intentionally not copied while the Read is routed to a write endpoint;
-  `LatestCommitted` is not session-effective.
+  LatestCommitted is not session-effective.
 
 loop up to max_attempts times:
-    3. read = execute_operation(Read, read_options) with:
+   4. read = execute_operation(Read, read_options) with:
        - ReadConsistencyStrategy::LatestCommitted forced in read_options;
        - preferred-write-endpoint routing;
        - hedging suppressed, including environment-enabled hedging; and
        - no session token.
        If every preferred write endpoint is unavailable or excluded, use
-      normal read routing with the account-default consistency and effective
-      session token. Record a `routing_fallback` request event with detail
-      `patch_verification_read_write_endpoint_unavailable_or_excluded`.
+     normal read routing with the account-default consistency and effective
+     session token. Record a routing_fallback request event with detail
+     patch_verification_read_write_endpoint_unavailable_or_excluded.
        The driver pipeline returns Err(ErrorKind::HttpResponse { .. })
        for any non-2xx Read response; the patch handler propagates that
        error verbatim (with its raw_response and diagnostics intact).
        if read.headers().etag is None: return Other("no ETag, cannot RMW").
-    4. value = serde_json::from_slice(read.body())
+   5. value = serde_json::from_slice(read.body())
+     For an unsafe instruction list:
+     - if the tracking ID is already present, return the Read as success
+      without applying the instructions;
+     - if routing fell back to a reader and the ID is absent, fail with 503
+      because absence is inconclusive;
+     - otherwise validate the reserved array, prune entries whose retention
+      window elapsed, fail with 409 if the capacity remains full, and append
+      {trackingId, attemptedAt}.
        apply_patch_ops(&mut value, &spec.operations)
        merged_bytes = serde_json::to_vec(&value)
-    5. replace = execute_operation(Replace(merged_bytes,
+   6. replace = execute_operation(Replace(merged_bytes,
                                            Precondition::IfMatch(etag)),
                                    caller_options) with the
        Read RESPONSE's session token overriding any caller-supplied
        value (this is the SE-004 TOCTOU mitigation; see below).
        match replace result:
-         Ok(_)                                            -> succeed, see step 6
+          Ok(_)                                            -> succeed, see step 7
          Err(HttpResponse{ status: PreconditionFailed })  -> remember and continue the loop
          Err(_)                                           -> return error verbatim
-    6. return CosmosResponse::new(merged_bytes,
+        7. return CosmosResponse::new(merged_bytes,
                                   replace.headers(),
                                   replace.status(),
                                   aggregated_diagnostics)
@@ -96,6 +116,36 @@ loop up to max_attempts times:
 if loop exhausted: return ErrorKind::HttpResponse{ status:
 PreconditionFailed, .. } with the last 412 chained as the source.
 ```
+
+## Tracking protocol
+
+The reserved `_azsdkPatchTracking` property is an array of objects with a UUID
+`trackingId` and non-negative Unix timestamp `attemptedAt`. It is visible user
+JSON and counts toward item size, request units, and indexing. Existing marker
+state is validated and never silently overwritten.
+
+Entries are protected from pruning for 15 minutes. A matching ID is honored for
+as long as it remains present, even after that interval; expiration only makes
+an entry eligible for pruning by a later unsafe PATCH. The default capacity is
+1024 entries per item. When every entry is still protected and the capacity is
+full, PATCH returns 409 rather than evicting evidence and risking a duplicate.
+Pruning uses the service's standard HTTP `Date` response header, never the
+client wall clock. When no authoritative service time is available, PATCH does
+not prune; entries may therefore live longer and reach the configured capacity.
+The item's service-generated `_ts` clamps impossible future timestamps and
+promotes the newest entry to at least the timestamp of its committing write.
+
+The generated ID protects all internal retries in one invocation. A consuming
+SDK may accept a caller-supplied ID to extend duplicate suppression across
+application retries and process restarts. The caller must persist and reuse the
+ID only for the same logical operation and item. Reusing an ID for a different
+operation causes that operation to be treated as already committed.
+
+All writers that replace a participating item must preserve the reserved
+property and its unknown entry fields. A writer that removes, rewrites, or
+fails to round-trip it breaks the guarantee. A malformed reserved property
+causes PATCH to fail with 400. Tracked PATCH is rejected when the reserved path
+overlaps a container partition-key path.
 
 ### Read/Replace consistency and the SE-004 TOCTOU mitigation
 
@@ -177,6 +227,9 @@ carries a `routing_fallback` diagnostic event; last-resort selection of a writer
 does not. The fallback preserves read-your-writes but cannot provide the same
 marker-observation guarantee as a write-region quorum read, so the marker
 protocol must account for that when attributing an ambiguous Replace.
+For a tracked PATCH, finding its ID on such a fallback remains positive proof
+of a commit. Not finding it is inconclusive, so the handler returns 503 rather
+than risk applying the mutation again.
 
 ## Response Synthesis
 
@@ -196,6 +249,10 @@ contains, the handler builds the returned `CosmosResponse` from:
   (`activity_id`, options, `cpu_monitor`, `machine_id`, status) are
   inherited from the final Replace's context; total `duration` is the
   sum of all sources' durations (sub-ops are sequential).
+
+When a verification Read finds the operation's tracking ID, that Read's body,
+headers, and status are returned as the committed post-image. Its diagnostics
+are aggregated with all prior sub-operations from the same invocation.
 
 ### System-property reconciliation on the synthesized body
 
@@ -264,10 +321,13 @@ as a JSON number without precision loss.
   `DiagnosticsContext` containing those prior contexts plus the failing
   sub-operation's context, in dispatch order. When the first sub-operation
   fails, its context is retained with only the operation name rewritten.
-- The handler never retries beyond `max_attempts` and never converts a 412
-  into success; the final outcome is whichever of "internal sub-op error",
-  "successful PATCH", or "exhausted RMW attempts (412)" terminated the
-  loop.
+- The handler never retries beyond `max_attempts`. A 412 causes another
+  verification Read; observing this operation's marker then proves its prior
+  Replace committed and returns success. A missing marker is treated as a
+  genuine race and the instructions are reapplied to the new image.
+- A missing marker on degraded reader routing returns 503 because absence is
+  inconclusive. Malformed tracking state returns 400, and an exhausted
+  unexpired marker list returns 409 without eviction.
 - When 412 retries exhaust `max_attempts`, the final error carries an
   aggregated `DiagnosticsContext` containing every accumulated Read and
   failed Replace context. Thus both successful and failed PATCH operations
@@ -307,21 +367,10 @@ as a JSON number without precision loss.
   suppresses hedging. Normal read routing with account-default/session
   consistency is used only when no preferred write endpoint is usable, and a
   fallback that ultimately uses a reader is recorded in request diagnostics.
-- **PATCH is not exactly-once under transport failures.** The internal
-  Replace is `OperationType::Replace`, which the pipeline classifies as
-  idempotent (`OperationType::is_idempotent`). If a transport-layer error
-  fires after the inner Replace has been sent but before its response is
-  received, and the server has already committed the write, the pipeline
-  will cross-region retry the Replace. A retry against a replica that has
-  already replicated the original commit returns 412, which the RMW loop
-  treats as a normal race-lost and recovers by re-Reading and re-applying.
-  Non-idempotent ops (`Increment`, `Add` on an array, `Move`) may therefore
-  be applied **more than once** under this scenario. This is why the Rust SDK
-  treats PATCH as preview and gates it behind `preview_patch`; other consuming
-  SDKs choose their own exposure policy. Closing the hole requires the RMW loop
-  to be able to *recognize its own committed write* rather than mistaking it
-  for a concurrent writer — i.e. stamping each attempt with a marker the loop
-  can look for on the verification read. Until then, callers needing
-  exactly-once should either use idempotent ops (`Set` on a caller-computed
-  value) or detect duplicate-application via a monotonic application-level
-  sequence number.
+- Unsafe PATCH instructions are applied at most once within the tracking
+  protocol's retention, capacity, routing, and cooperating-writer contract.
+  The marker is committed atomically with the mutation, so a later Read can
+  distinguish the operation's own committed Replace from a concurrent writer.
+  Generated IDs cover one invocation; cross-process retries require callers to
+  persist and reuse the same ID. The Rust SDK continues to gate PATCH behind
+  `preview_patch`; other consuming SDKs choose their own exposure policy.

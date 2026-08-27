@@ -37,7 +37,9 @@ use crate::completion::{
 use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
-use crate::op_request::{build_request, CosmosOperationRequest};
+use crate::op_request::{
+    build_request, build_request_v2, CosmosOperationRequest, CosmosOperationRequestV2,
+};
 use crate::runtime::RuntimeContext;
 
 /// Send-safe encoding of the opaque `user_data` cookie round-tripped
@@ -324,6 +326,34 @@ pub extern "C" fn cosmos_submit_operation(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    submit_operation_with_builder(driver, queue, user_data, out_pre_error, || {
+        // SAFETY: caller guarantees the v1 request fields follow their contracts.
+        unsafe { build_request(request) }
+    })
+}
+
+/// Version 2 of [`cosmos_submit_operation`], accepting PATCH tracking fields.
+#[no_mangle]
+pub extern "C" fn cosmos_submit_operation_v2(
+    driver: *const DriverHandle,
+    request: *const CosmosOperationRequestV2,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+) -> *mut OperationHandle {
+    submit_operation_with_builder(driver, queue, user_data, out_pre_error, || {
+        // SAFETY: caller guarantees the v2 request fields follow their contracts.
+        unsafe { build_request_v2(request) }
+    })
+}
+
+fn submit_operation_with_builder(
+    driver: *const DriverHandle,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+    build: impl FnOnce() -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
+) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
@@ -341,9 +371,7 @@ pub extern "C" fn cosmos_submit_operation(
 
     // Build the driver operation + options + inbound continuation from the
     // flat request. Validation failures abort before we spend a spawn.
-    // SAFETY: caller guarantees `request`'s pointer fields per the struct
-    // contract.
-    let built = match unsafe { build_request(request) } {
+    let built = match build() {
         Ok(b) => b,
         Err(code) => {
             write_err(code);
@@ -434,6 +462,34 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, || {
+        // SAFETY: caller guarantees the v1 request fields follow their contracts.
+        unsafe { build_request(request) }
+    })
+}
+
+/// Version 2 of [`cosmos_submit_singleton_operation`], accepting PATCH tracking fields.
+#[no_mangle]
+pub extern "C" fn cosmos_submit_singleton_operation_v2(
+    driver: *const DriverHandle,
+    request: *const CosmosOperationRequestV2,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+) -> *mut OperationHandle {
+    submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, || {
+        // SAFETY: caller guarantees the v2 request fields follow their contracts.
+        unsafe { build_request_v2(request) }
+    })
+}
+
+fn submit_singleton_operation_with_builder(
+    driver: *const DriverHandle,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+    build: impl FnOnce() -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
+) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
@@ -449,9 +505,7 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     };
     let driver_arc: Arc<CosmosDriver> = Arc::clone(&driver_inner.inner);
 
-    // SAFETY: caller guarantees `request`'s pointer fields per the struct
-    // contract.
-    let built = match unsafe { build_request(request) } {
+    let built = match build() {
         Ok(b) => b,
         Err(code) => {
             write_err(code);
@@ -671,6 +725,17 @@ mod tests {
     }
 
     #[test]
+    fn execute_operation_v2_submit_rejects_null_driver() {
+        let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
+        let h = cosmos_submit_operation_v2(ptr::null(), ptr::null(), ptr::null_mut(), 0, &mut err);
+        assert!(h.is_null());
+        assert_eq!(
+            err,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+    }
+
+    #[test]
     fn panic_payload_message_extracts_str_string_and_falls_back() {
         // `&'static str` payload (string-literal panic).
         let p: Box<dyn Any + Send> = Box::new("boom");
@@ -687,6 +752,23 @@ mod tests {
     fn execute_singleton_operation_submit_rejects_null_driver() {
         let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_submit_singleton_operation(
+            ptr::null(),
+            ptr::null(),
+            ptr::null_mut(),
+            0,
+            &mut err,
+        );
+        assert!(h.is_null());
+        assert_eq!(
+            err,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+    }
+
+    #[test]
+    fn execute_singleton_operation_v2_submit_rejects_null_driver() {
+        let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
+        let h = cosmos_submit_singleton_operation_v2(
             ptr::null(),
             ptr::null(),
             ptr::null_mut(),
