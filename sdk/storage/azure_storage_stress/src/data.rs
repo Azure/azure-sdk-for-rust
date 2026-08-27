@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{cmp::min, iter::Cycle, ops::Range, pin::Pin, task::Poll};
+use std::{cmp::min, iter::Cycle, num::NonZero, ops::Range, pin::Pin, task::Poll};
 
 use azure_core::{
     http::{Body, NoFormat, RequestContent},
@@ -58,17 +58,17 @@ pub struct GeneratedStream<I> {
     /// Stream length.
     len: u64,
     /// The maximum number of bytes to return in a single poll.
-    chunk: usize,
+    chunk: NonZero<usize>,
 }
 
 impl GeneratedStream<Range<u8>> {
-    pub fn new(len: u64, chunk: Option<usize>) -> GeneratedStream<Range<u8>> {
+    pub fn new(len: u64, chunk: Option<NonZero<usize>>) -> GeneratedStream<Range<u8>> {
         GeneratedStream {
             generator: (0..u8::MAX).cycle(),
             generator_reset_src: (0..u8::MAX).cycle(),
             cursor: 0,
             len,
-            chunk: chunk.unwrap_or(usize::MAX),
+            chunk: chunk.unwrap_or(NonZero::new(usize::MAX).unwrap()),
         }
     }
 }
@@ -78,13 +78,13 @@ where
     I: Iterator<Item = u8> + Clone,
 {
     #[allow(clippy::should_implement_trait)]
-    pub fn from_iter(iter: I, len: u64, chunk: Option<usize>) -> Self {
+    pub fn from_iter(iter: I, len: u64, chunk: Option<NonZero<usize>>) -> Self {
         GeneratedStream {
             generator: iter.clone().cycle(),
             generator_reset_src: iter.cycle(),
             cursor: 0,
             len,
-            chunk: chunk.unwrap_or(1024),
+            chunk: chunk.unwrap_or(NonZero::new(usize::MAX).unwrap()),
         }
     }
 }
@@ -143,7 +143,7 @@ where
         }
 
         let remaining_bytes = self_mut.len - self_mut.cursor;
-        let bytes_to_read = std::cmp::min(remaining_bytes, self_mut.chunk as u64);
+        let bytes_to_read = std::cmp::min(remaining_bytes, self_mut.chunk.get() as u64);
 
         let chunk: Vec<u8> = (0..bytes_to_read)
             .map(|_| {

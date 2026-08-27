@@ -235,6 +235,7 @@ async fn infinite_stress_loop<T: StressTestFactory>(
         while join_handles.len() >= options.parallel.get() {
             let join_result;
             (join_result, _, join_handles) = future::select_all(mem::take(&mut join_handles)).await;
+            totals.total_loops += 1;
             if let Err(join_error) = join_result {
                 totals.loops_panic += 1;
                 warn!("{}", join_error);
@@ -243,7 +244,6 @@ async fn infinite_stress_loop<T: StressTestFactory>(
 
         // non-blocking process run result(s)
         while let Ok(msg) = rx.try_recv() {
-            totals.total_loops += 1;
             match &msg {
                 StressRunOutput::Success => totals.loops_success += 1,
                 StressRunOutput::GracefulError(_error) => totals.loops_graceful_error += 1,
@@ -254,7 +254,7 @@ async fn infinite_stress_loop<T: StressTestFactory>(
             match &msg {
                 StressRunOutput::Success | StressRunOutput::GracefulError(_) => {
                     if options.results_log_frequency > 0
-                        && iteration % options.results_log_frequency == 0
+                        && totals.total_loops % options.results_log_frequency == 0
                     {
                         info!(
                             "{}",
