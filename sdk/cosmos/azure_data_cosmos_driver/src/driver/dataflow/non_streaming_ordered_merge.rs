@@ -4,6 +4,7 @@
 //! Buffered merge for finite, non-streaming ORDER BY queries.
 
 use super::{
+    binary_heap,
     order_by::compare_key_tuples,
     query_plan::SortOrder,
     query_response::{parse_envelope_page, EnvelopeRow, PageAggregator},
@@ -81,44 +82,6 @@ impl NonStreamingOrderedMerge {
         .then_with(|| left.ordinal.cmp(&right.ordinal))
     }
 
-    fn push_heap(&mut self, row: RetainedRow) {
-        self.retained.push(row);
-        let mut index = self.retained.len() - 1;
-        while index > 0 {
-            let parent = (index - 1) / 2;
-            if self.compare_rows(&self.retained[index], &self.retained[parent]) != Ordering::Greater
-            {
-                break;
-            }
-            self.retained.swap(index, parent);
-            index = parent;
-        }
-    }
-
-    fn sift_down(&mut self, mut index: usize) {
-        loop {
-            let left = index * 2 + 1;
-            if left >= self.retained.len() {
-                return;
-            }
-            let right = left + 1;
-            let larger = if right < self.retained.len()
-                && self.compare_rows(&self.retained[right], &self.retained[left])
-                    == Ordering::Greater
-            {
-                right
-            } else {
-                left
-            };
-            if self.compare_rows(&self.retained[larger], &self.retained[index]) != Ordering::Greater
-            {
-                return;
-            }
-            self.retained.swap(index, larger);
-            index = larger;
-        }
-    }
-
     fn retain(&mut self, row: EnvelopeRow) -> crate::error::Result<()> {
         let ordinal = self.next_ordinal;
         self.next_ordinal = self.next_ordinal.checked_add(1).ok_or_else(|| {
@@ -134,10 +97,19 @@ impl NonStreamingOrderedMerge {
 
         let candidate = RetainedRow { row, ordinal };
         if self.retained.len() < self.retention_limit {
-            self.push_heap(candidate);
+            let directions = &self.directions;
+            binary_heap::push_by(&mut self.retained, candidate, |left, right| {
+                compare_key_tuples(left.row.keys.as_ref(), right.row.keys.as_ref(), directions)
+                    .then_with(|| left.ordinal.cmp(&right.ordinal))
+                    == Ordering::Greater
+            });
         } else if self.compare_rows(&candidate, &self.retained[0]) == Ordering::Less {
-            self.retained[0] = candidate;
-            self.sift_down(0);
+            let directions = &self.directions;
+            binary_heap::replace_root_by(&mut self.retained, candidate, |left, right| {
+                compare_key_tuples(left.row.keys.as_ref(), right.row.keys.as_ref(), directions)
+                    .then_with(|| left.ordinal.cmp(&right.ordinal))
+                    == Ordering::Greater
+            });
         }
         Ok(())
     }

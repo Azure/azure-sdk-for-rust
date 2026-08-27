@@ -34,6 +34,7 @@
 //! pipeline (paged operations, split recovery, continuation tokens, planned
 //! cross-partition strategies).
 
+mod binary_heap;
 mod context;
 mod distinct;
 pub(crate) mod distinct_hash;

@@ -866,14 +866,20 @@ impl ContainerClient {
     ///
     /// # Cross Partition Queries
     ///
-    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with
-    /// a finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers that result window before
+    /// When `scope` spans multiple partitions, the SDK obtains a query plan and composes the
+    /// client-side pipeline needed to execute it. Supported features include ordinary projections
+    /// and filters, `TOP`, `OFFSET`/`LIMIT`, streaming single- and multiple-column `ORDER BY`, and
+    /// ordered or unordered `DISTINCT`.
+    ///
+    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with a
+    /// finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers that result window before
     /// returning the first page, so use narrow projections and choose a result window appropriate
     /// for the memory available to the application.
     ///
     /// The buffered result can be iterated in pages, but it does not support continuation tokens
-    /// for resuming in another process. Hybrid/full-text vector ranking remains unsupported.
-    /// For more details, see [the Cosmos DB documentation page on cross-partition queries](https://learn.microsoft.com/en-us/rest/api/cosmos-db/querying-cosmosdb-resources-using-the-rest-api#queries-that-cannot-be-served-by-gateway).
+    /// for resuming in another process. Aggregates, `GROUP BY`, and hybrid/full-text ranking remain
+    /// unsupported when their query plans require client-side stages that have not been
+    /// implemented.
     ///
     /// # Examples
     ///
