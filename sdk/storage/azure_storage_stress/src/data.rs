@@ -49,10 +49,15 @@ pub fn random_data_memory_with_checksum(len: usize, algorithm: CrcAlgorithm) -> 
 /// Implements a [`Stream`] over an endless cycle of bytes.
 #[derive(Clone)]
 pub struct GeneratedStream<I> {
+    /// Generator for bytes in the stream.
     generator: Cycle<I>,
+    /// Initial state of the generator, used to reset the stream.
     generator_reset_src: Cycle<I>,
-    bytes_read: u64,
+    /// Position in the stream, in bytes.
+    cursor: u64,
+    /// Stream length.
     len: u64,
+    /// The maximum number of bytes to return in a single poll.
     chunk: usize,
 }
 
@@ -61,9 +66,9 @@ impl GeneratedStream<Range<u8>> {
         GeneratedStream {
             generator: (0..u8::MAX).cycle(),
             generator_reset_src: (0..u8::MAX).cycle(),
-            bytes_read: 0,
+            cursor: 0,
             len,
-            chunk: chunk.unwrap_or(1024),
+            chunk: chunk.unwrap_or(usize::MAX),
         }
     }
 }
@@ -77,7 +82,7 @@ where
         GeneratedStream {
             generator: iter.clone().cycle(),
             generator_reset_src: iter.cycle(),
-            bytes_read: 0,
+            cursor: 0,
             len,
             chunk: chunk.unwrap_or(1024),
         }
@@ -87,7 +92,7 @@ where
 impl<I> std::fmt::Debug for GeneratedStream<I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("GeneratedStream")
-            .field("bytes_read", &self.bytes_read)
+            .field("bytes_read", &self.cursor)
             .finish_non_exhaustive()
     }
 }
@@ -104,16 +109,16 @@ where
     ) -> Poll<std::io::Result<usize>> {
         let self_mut = self.get_mut();
 
-        if self_mut.bytes_read >= self_mut.len {
+        if self_mut.cursor >= self_mut.len {
             return Poll::Ready(Ok(0));
         }
 
-        let remaining_bytes = self_mut.len - self_mut.bytes_read;
+        let remaining_bytes = self_mut.len - self_mut.cursor;
         let bytes_to_read = std::cmp::min(remaining_bytes, buf.len() as u64) as usize;
 
         for byte_slot in buf.iter_mut().take(bytes_to_read) {
             *byte_slot = self_mut.generator.next().unwrap();
-            self_mut.bytes_read += 1;
+            self_mut.cursor += 1;
         }
 
         Poll::Ready(Ok(bytes_to_read))
@@ -133,16 +138,16 @@ where
     ) -> Poll<Option<Self::Item>> {
         let self_mut = self.get_mut();
 
-        if self_mut.bytes_read >= self_mut.len {
+        if self_mut.cursor >= self_mut.len {
             return Poll::Ready(None);
         }
 
-        let remaining_bytes = self_mut.len - self_mut.bytes_read;
+        let remaining_bytes = self_mut.len - self_mut.cursor;
         let bytes_to_read = std::cmp::min(remaining_bytes, self_mut.chunk as u64);
 
         let chunk: Vec<u8> = (0..bytes_to_read)
             .map(|_| {
-                self_mut.bytes_read += 1;
+                self_mut.cursor += 1;
                 self_mut.generator.next().unwrap()
             })
             .collect();
@@ -158,7 +163,7 @@ where
     Cycle<I>: Iterator<Item = u8> + Unpin,
 {
     async fn reset(&mut self) -> azure_core::Result<()> {
-        self.bytes_read = 0;
+        self.cursor = 0;
         self.generator = self.generator_reset_src.clone();
         Ok(())
     }
@@ -185,5 +190,35 @@ where
 {
     fn from(stream: GeneratedStream<I>) -> Self {
         Body::from(stream).into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use futures::TryStreamExt;
+
+    use super::*;
+    #[tokio::test]
+    async fn generated_stream_as_stream() -> azure_core::Result<()> {
+        for buf_len in [1, 100, 256, 9999] {
+            for stream_len in [buf_len, buf_len - 1, buf_len + 1, buf_len * 10, buf_len / 2] {
+                let mut buf = vec![0u8; buf_len];
+                for b in buf.iter_mut() {
+                    *b = random();
+                }
+
+                let mut stream =
+                    GeneratedStream::from_iter(buf.into_iter(), stream_len as u64, None);
+
+                assert_eq!(stream.len(), Some(stream_len as u64));
+                let streamed_data_1 = (&mut stream).try_concat().await?;
+                assert_eq!(streamed_data_1.len(), stream_len);
+
+                stream.reset().await?;
+                let streamed_data_2 = stream.try_concat().await?;
+                assert_eq!(streamed_data_1, streamed_data_2);
+            }
+        }
+        Ok(())
     }
 }
