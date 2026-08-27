@@ -254,7 +254,9 @@ async fn infinite_stress_loop<T: StressTestFactory>(
             match &msg {
                 StressRunOutput::Success | StressRunOutput::GracefulError(_) => {
                     if options.results_log_frequency > 0
-                        && totals.total_loops % options.results_log_frequency == 0
+                        && totals
+                            .total_loops
+                            .is_multiple_of(options.results_log_frequency)
                     {
                         info!(
                             "{}",
