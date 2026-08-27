@@ -244,6 +244,14 @@ pub(crate) async fn execute_transport_pipeline(
             &request.endpoint,
         );
 
+        if let Some(fallback) = request.routing_fallback {
+            diagnostics.add_event(
+                request_handle,
+                RequestEvent::new(RequestEventType::RoutingFallback)
+                    .with_details(fallback.as_str()),
+            );
+        }
+
         for failed_transport_shard in prior_failed_transport_shards.iter().cloned() {
             diagnostics.add_failed_transport_shard(request_handle, failed_transport_shard);
         }
@@ -984,6 +992,20 @@ mod tests {
         delay: Duration,
     }
 
+    #[derive(Debug)]
+    struct SuccessfulTransportClient;
+
+    #[async_trait]
+    impl TransportClient for SuccessfulTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            Ok(HttpResponse {
+                status: 200,
+                headers: azure_core::http::headers::Headers::new(),
+                body: Vec::new(),
+            })
+        }
+    }
+
     #[async_trait]
     impl TransportClient for HangingTransportClient {
         async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
@@ -1371,6 +1393,7 @@ mod tests {
                 "",
             ),
             execution_context: ExecutionContext::Initial,
+            routing_fallback: None,
             deadline: Some(Instant::now() + Duration::from_millis(100)),
         };
         let client = AdaptiveTransport::Gateway(Arc::new(HangingTransportClient {
@@ -1411,6 +1434,60 @@ mod tests {
         let requests = completed.requests();
         assert_eq!(requests.len(), 1);
         assert!(requests[0].timed_out());
+    }
+
+    #[tokio::test]
+    async fn routing_fallback_is_recorded_in_request_diagnostics() {
+        use crate::driver::pipeline::components::RoutingFallback;
+
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let mut request = test_request(None);
+        request.routing_fallback =
+            Some(RoutingFallback::PatchVerificationReadWriteEndpointUnavailableOrExcluded);
+        let client = AdaptiveTransport::Gateway(Arc::new(SuccessfulTransportClient));
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("routing-fallback".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+
+        let result = execute_transport_pipeline(
+            request,
+            &TransportPipelineContext {
+                transport: &client,
+                allow_sent_transport_retry: false,
+                credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
+                pipeline_type: PipelineType::DataPlane,
+                transport_security: TransportSecurity::Secure,
+                endpoint_key: endpoint.endpoint_key(),
+                account_name: None,
+                collection_rid: None,
+                max_throttle_attempts: 0,
+                max_throttle_wait_time: Duration::ZERO,
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
+            },
+            &mut diagnostics,
+        )
+        .await;
+
+        assert!(matches!(result.outcome, TransportOutcome::Success { .. }));
+        let completed = diagnostics.complete();
+        let requests = completed.requests();
+        assert_eq!(requests.len(), 1);
+        let fallback = requests[0]
+            .events()
+            .iter()
+            .find(|event| {
+                event.event_type() == &crate::diagnostics::RequestEventType::RoutingFallback
+            })
+            .expect("routing fallback event must be recorded");
+        assert_eq!(
+            fallback.details(),
+            Some("patch_verification_read_write_endpoint_unavailable_or_excluded")
+        );
     }
 
     #[tokio::test]
@@ -1922,6 +1999,7 @@ mod tests {
                 "",
             ),
             execution_context: ExecutionContext::Initial,
+            routing_fallback: None,
             deadline,
         }
     }
@@ -2281,6 +2359,7 @@ mod tests {
                 "dbs/db1/colls/coll1/docs/doc1",
             ),
             execution_context: ExecutionContext::Initial,
+            routing_fallback: None,
             deadline: None,
         }
     }

@@ -904,6 +904,9 @@ pub struct RequestHandle(usize);
 #[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum RequestEventType {
+    /// Normal routing replaced an operation-specific preferred route.
+    RoutingFallback,
+
     /// Request sent to transport - we're now waiting for the HTTP client.
     /// From here, reqwest handles DNS, connection, TLS, and sending internally.
     /// We cannot distinguish these phases with reqwest's current API.
@@ -928,6 +931,7 @@ impl RequestEventType {
     /// Returns the string representation of the event type.
     pub fn as_str(&self) -> &str {
         match self {
+            Self::RoutingFallback => "routing_fallback",
             Self::TransportStart => "transport_start",
             Self::ResponseHeadersReceived => "response_headers_received",
             Self::TransportComplete => "transport_complete",
