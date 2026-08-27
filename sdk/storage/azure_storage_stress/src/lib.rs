@@ -219,7 +219,7 @@ async fn infinite_stress_loop<T: StressTestFactory>(
     totals: &mut StressRunCounts,
     options: &StressRunnerOptions<T>,
 ) -> Result<()> {
-    let mut join_handles = Vec::with_capacity(options.parallel);
+    let mut join_handles = Vec::with_capacity(options.parallel.get());
     let (tx, mut rx) = mpsc::unbounded();
 
     for iteration in 1usize.. {
@@ -232,7 +232,7 @@ async fn infinite_stress_loop<T: StressTestFactory>(
         )));
 
         // block until free parallel slot
-        while join_handles.len() >= options.parallel {
+        while join_handles.len() >= options.parallel.get() {
             let join_result;
             (join_result, _, join_handles) = future::select_all(mem::take(&mut join_handles)).await;
             if let Err(join_error) = join_result {

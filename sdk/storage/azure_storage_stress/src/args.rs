@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::time::Duration;
+use std::{num::NonZero, time::Duration};
 
 use azure_core::Result;
 use clap::{Args, Parser};
@@ -15,8 +15,8 @@ use crate::{
 #[derive(Debug, Clone, Parser, Serialize)]
 pub struct StressRunnerOptions<T: StressTestFactory> {
     /// Parallel operations to run.
-    #[arg(long, default_value_t = 1, global = true)]
-    pub parallel: usize,
+    #[arg(long, default_value_t = NonZero::new(1).unwrap(), global = true)]
+    pub parallel: NonZero<usize>,
 
     /// Duration of the stress test, excluding setup and cleanup.
     #[arg(long, default_value = "10", global = true, value_parser = duration_from_seconds, value_name = "SECONDS")]

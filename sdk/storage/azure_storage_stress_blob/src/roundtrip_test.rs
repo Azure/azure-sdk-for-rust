@@ -19,7 +19,6 @@ use azure_storage_stress::{
     data,
     fault_injection::{self, FaultInjectionProbabilities},
     futures_ext::OptionalTimeoutFutureExt,
-    value_parsers::{non_zero_u64, non_zero_usize},
     StressRunOutput, StressTest, StressTestOperation,
 };
 use clap::{Args, ValueEnum};
@@ -34,11 +33,11 @@ const CRC_ALGORITHM: CrcAlgorithm = CrcAlgorithm::Crc64Nvme;
 #[derive(Args, Debug, Serialize)]
 pub(crate) struct RoundtripBlobsTestArgs {
     /// Concurrency value for transfer options.
-    #[arg(long, default_value_t = NonZero::new(2).unwrap(), value_parser = non_zero_usize, value_name = "NUM WORKERS")]
+    #[arg(long, default_value_t = NonZero::new(2).unwrap(), value_name = "NUM WORKERS")]
     concurrency: NonZero<usize>,
 
     /// Block length for transfer options.
-    #[arg(long, default_value_t = NonZero::new(4 << 20).unwrap(), value_parser = non_zero_u64, value_name = "BYTES")]
+    #[arg(long, default_value_t = NonZero::new(4 << 20).unwrap(), value_name = "BYTES")]
     block_len: NonZero<u64>,
 
     /// Data length of blob(s) to transfer.
