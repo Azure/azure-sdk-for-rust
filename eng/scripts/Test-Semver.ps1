@@ -123,6 +123,13 @@ Invoke-LoggedCommand "cargo install cargo-semver-checks --locked $($versionParam
 $finalExitCode = 0
 foreach ($package in $outputPackages) {
   $packageName = $package.name
+
+  # BUG: Skip checking Key Vault secrets and certificates because of a symlink until a fix is merged upstream (https://github.com/Azure/azure-sdk-for-rust/issues/5143).
+  if ($packageName -in @('azure_security_keyvault_secrets', 'azure_security_keyvault_certificates')) {
+    LogWarning "Skipping $packageName due to a bug in ``cargo-semver-checks`` (https://github.com/Azure/azure-sdk-for-rust/issues/5143)"
+    continue
+  }
+
   $manifestPath = $package.manifest_path
   $baselineRevision = Get-BaselineRevision $package
   if (!$baselineRevision) {
