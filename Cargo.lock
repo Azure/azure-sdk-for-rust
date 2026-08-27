@@ -477,7 +477,7 @@ version = "1.1.0-beta.1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.2",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -570,7 +570,7 @@ version = "0.2.0"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.2",
 ]
 
 [[package]]
@@ -706,7 +706,7 @@ version = "0.3.0"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.2",
  "tracing",
 ]
 
@@ -4557,7 +4557,7 @@ dependencies = [
  "rustc_version",
  "serde",
  "serde_json",
- "syn 2.0.119",
+ "syn 3.0.2",
  "tokio",
  "typespec_client_core 1.2.0-beta.1",
 ]
