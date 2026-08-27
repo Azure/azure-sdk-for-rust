@@ -7,6 +7,9 @@ updates:
       - "/samples/*"
     schedule:
       interval: "daily"
+    # Keep updates within existing Cargo.toml requirements. Security fixes
+    # outside those requirements need an explicit manifest update.
+    versioning-strategy: "lockfile-only"
     open-pull-requests-limit: 10
     cooldown:
       default-days: 7
