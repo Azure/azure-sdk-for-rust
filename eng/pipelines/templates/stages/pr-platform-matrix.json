@@ -1,8 +1,7 @@
 {
   "displayNames": {
-    "TestFeatureSet": {
-      "Default": "Default Features"
-    }
+    "All": "AllFeatures",
+    "Default": "DefaultFeatures"
   },
   "matrix": {
     "Agent": {
@@ -23,6 +22,9 @@
       "stable",
       "msrv",
       "nightly"
+    ],
+    "TestFeatureSet": [
+      "All"
     ]
   },
   "exclude": [
@@ -45,14 +47,22 @@
   ],
   "include": [
     {
-      "OSVmImage": "env:LINUXVMIMAGE",
-      "Pool": "env:LINUXPOOL",
+      "Agent": {
+        "ubuntu": {
+          "OSVmImage": "env:LINUXVMIMAGE",
+          "Pool": "env:LINUXPOOL"
+        }
+      },
       "RustToolchainName": "stable",
       "TestFeatureSet": "Default"
     },
     {
-      "OSVmImage": "env:MACVMIMAGEM1",
-      "Pool": "env:MACPOOL",
+      "Agent": {
+        "macos": {
+          "OSVmImage": "env:MACVMIMAGEM1",
+          "Pool": "env:MACPOOL"
+        }
+      },
       "RustToolchainName": "stable",
       "TestFeatureSet": "Default"
     }
