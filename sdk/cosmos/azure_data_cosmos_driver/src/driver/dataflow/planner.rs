@@ -341,7 +341,7 @@ pub(crate) fn is_non_streaming_order_by(info: &QueryInfo) -> bool {
     info.has_non_streaming_order_by
 }
 
-/// Builds a bounded, fully buffered merge for a finite pure-vector ORDER BY query.
+/// Builds a bounded, fully buffered merge for a finite non-streaming ORDER BY query.
 pub(crate) async fn build_non_streaming_ordered_merge(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
@@ -359,11 +359,6 @@ pub(crate) async fn build_non_streaming_ordered_merge(
             .build());
     }
 
-    if !crate::query::is_pure_vector_order_by_query_spec(operation.body().unwrap_or_default()) {
-        return Err(unsupported_feature(
-            "non-streaming ORDER BY is currently supported only for pure VectorDistance ordering",
-        ));
-    }
     if query_plan.hybrid_search_query_info.is_some() {
         return Err(unsupported_feature(
             "hybrid search combined with non-streaming ORDER BY",
@@ -385,22 +380,22 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     }
     if info.distinct_type != DistinctType::None {
         return Err(unsupported_feature(
-            "DISTINCT combined with non-streaming vector ORDER BY",
+            "DISTINCT combined with non-streaming ORDER BY",
         ));
     }
     if !info.aggregates.is_empty() {
         return Err(unsupported_feature(
-            "aggregates combined with non-streaming vector ORDER BY",
+            "aggregates combined with non-streaming ORDER BY",
         ));
     }
     if !info.group_by_expressions.is_empty() {
         return Err(unsupported_feature(
-            "GROUP BY combined with non-streaming vector ORDER BY",
+            "GROUP BY combined with non-streaming ORDER BY",
         ));
     }
-    if info.order_by.len() != 1 {
+    if info.order_by.is_empty() {
         return Err(unsupported_feature(
-            "non-streaming vector ORDER BY requires exactly one sort key",
+            "non-streaming ORDER BY requires at least one sort key",
         ));
     }
     if info
@@ -425,7 +420,7 @@ pub(crate) async fn build_non_streaming_ordered_merge(
                 crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW,
             )
             .with_message(
-                "cross-partition vector ORDER BY requires a finite TOP or OFFSET/LIMIT window",
+                "cross-partition non-streaming ORDER BY requires a finite TOP or OFFSET/LIMIT window",
             )
             .build()
     })?;
@@ -3758,23 +3753,22 @@ mod tests {
         assert!(is_non_streaming_order_by(&non_streaming));
     }
 
-    fn vector_order_by_operation() -> CosmosOperation {
+    fn non_streaming_order_by_operation() -> CosmosOperation {
         CosmosOperation::query_items(test_container(), Some(FeedRange::full())).with_body(
-            br#"{"query":"SELECT TOP 5 c.id FROM c ORDER BY VectorDistance(c.embedding, @vector, false)","parameters":[{"name":"@vector","value":[0.0,0.0]}]}"#.to_vec(),
+            br#"{"query":"SELECT TOP 5 c.id FROM c ORDER BY c.rank, c.tie DESC","parameters":[]}"#
+                .to_vec(),
         )
     }
 
-    fn vector_order_by_plan() -> QueryPlan {
+    fn non_streaming_order_by_plan() -> QueryPlan {
         QueryPlan {
             partitioned_query_execution_info_version: 2,
             query_info: Some(QueryInfo {
                 top: Some(5),
-                order_by: vec![SortOrder::Ascending],
-                order_by_expressions: vec![
-                    "VectorDistance(c.embedding, @vector, false)".to_owned(),
-                ],
+                order_by: vec![SortOrder::Ascending, SortOrder::Descending],
+                order_by_expressions: vec!["c.rank".to_owned(), "c.tie".to_owned()],
                 rewritten_query: Some(
-                    "SELECT c._rid, [{\"item\": VectorDistance(c.embedding, @vector, false)}] AS orderByItems, c.id AS payload FROM c"
+                    "SELECT c._rid, [{\"item\": c.rank}, {\"item\": c.tie}] AS orderByItems, c.id AS payload FROM c ORDER BY c.rank, c.tie DESC"
                         .to_owned(),
                 ),
                 has_non_streaming_order_by: true,
@@ -3786,9 +3780,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn build_non_streaming_ordered_merge_builds_buffered_root() {
-        let operation = Arc::new(vector_order_by_operation());
-        let plan = vector_order_by_plan();
+    async fn build_non_streaming_ordered_merge_trusts_plan_metadata() {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let plan = non_streaming_order_by_plan();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
             rr("", "80", "pk-left"),
             rr("80", "FF", "pk-right"),
@@ -3812,8 +3806,8 @@ mod tests {
 
     #[tokio::test]
     async fn build_non_streaming_ordered_merge_requires_finite_window() {
-        let operation = Arc::new(vector_order_by_operation());
-        let mut plan = vector_order_by_plan();
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let mut plan = non_streaming_order_by_plan();
         plan.query_info.as_mut().unwrap().top = None;
         let mut topology = MockTopologyProvider::new(Vec::new());
 
@@ -3828,8 +3822,8 @@ mod tests {
 
     #[tokio::test]
     async fn build_non_streaming_ordered_merge_accepts_large_finite_window() {
-        let operation = Arc::new(vector_order_by_operation());
-        let mut plan = vector_order_by_plan();
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let mut plan = non_streaming_order_by_plan();
         let info = plan.query_info.as_mut().unwrap();
         info.top = None;
         info.offset = Some(50_000);
@@ -3846,9 +3840,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn build_non_streaming_ordered_merge_rejects_resume_and_non_vector_shape() {
-        let operation = Arc::new(vector_order_by_operation());
-        let plan = vector_order_by_plan();
+    async fn build_non_streaming_ordered_merge_rejects_resume_and_streaming_plan() {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let plan = non_streaming_order_by_plan();
         let mut topology = MockTopologyProvider::new(Vec::new());
         let err = build_non_streaming_ordered_merge(
             &plan,
@@ -3863,10 +3857,16 @@ mod tests {
             crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
         );
 
-        let non_vector = Arc::new(order_by_operation());
-        let err = build_non_streaming_ordered_merge(&plan, &mut topology, &non_vector, None)
-            .await
-            .unwrap_err();
+        let mut streaming_plan = non_streaming_order_by_plan();
+        streaming_plan
+            .query_info
+            .as_mut()
+            .unwrap()
+            .has_non_streaming_order_by = false;
+        let err =
+            build_non_streaming_ordered_merge(&streaming_plan, &mut topology, &operation, None)
+                .await
+                .unwrap_err();
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
@@ -3875,8 +3875,8 @@ mod tests {
 
     #[tokio::test]
     async fn build_non_streaming_ordered_merge_rejects_distinct() {
-        let operation = Arc::new(vector_order_by_operation());
-        let mut plan = vector_order_by_plan();
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let mut plan = non_streaming_order_by_plan();
         plan.query_info.as_mut().unwrap().distinct_type = DistinctType::Unordered;
         let mut topology = MockTopologyProvider::new(Vec::new());
 
