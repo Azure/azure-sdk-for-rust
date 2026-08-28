@@ -24,6 +24,18 @@ updates:
         - "autorest*"
         - "typespec*"
 
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      npm:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
