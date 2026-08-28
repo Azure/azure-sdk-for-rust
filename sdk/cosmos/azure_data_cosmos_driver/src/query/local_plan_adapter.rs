@@ -16,6 +16,8 @@
 //!   advanced query shapes the emulator needs but production must never
 //!   fabricate.
 
+// cspell:ignore FULLTEXTSCORE VECTORDISTANCE
+
 use crate::driver::dataflow::query_plan::{self as dataflow, QueryRange};
 use crate::error::{CosmosError, CosmosStatus};
 use crate::models::{EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue};
