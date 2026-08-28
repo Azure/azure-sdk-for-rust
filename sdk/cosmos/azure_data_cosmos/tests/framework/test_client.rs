@@ -261,21 +261,15 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
 /// and returns as soon as the data path answers with a normal not-found. It
 /// tolerates `5302` and `collection_create_in_progress` as retryable while the
 /// name registers on this client.
-async fn probe_data_plane_ready(
+pub async fn probe_data_plane_ready(
     label: &str,
-    client: &CosmosClient,
-    db_id: &azure_data_cosmos::ResourceIdentity,
-    container_id: &str,
+    container: &ContainerClient,
 ) -> azure_data_cosmos::Result<()> {
     const MAX_ATTEMPTS: usize = 20;
     const RETRY_DELAY: Duration = Duration::from_millis(500);
 
     let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
     for attempt in 1..=MAX_ATTEMPTS {
-        let container = client
-            .database_client(db_id.clone())
-            .container_client(container_id)
-            .await?;
         let outcome = container
             .delete_item(
                 PartitionKey::from(probe_id.clone()),
@@ -439,7 +433,7 @@ enum CosmosTestMode {
 
 /// Selects which credential the primary (data-plane) test client uses.
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Default)]
-enum AuthMode {
+pub enum AuthMode {
     /// Authenticate every operation with the account key (default).
     #[default]
     Key,
@@ -456,7 +450,7 @@ impl AuthMode {
     /// than `key` or `aad` (case-insensitive) panics, so a misconfigured CI leg
     /// fails loudly instead of silently falling back to key auth and skipping
     /// AAD coverage.
-    fn from_env() -> Self {
+    pub fn from_env() -> Self {
         match std::env::var(AUTH_MODE_ENV_VAR) {
             Err(_) => AuthMode::Key,
             Ok(v) => match v.to_lowercase().as_str() {
@@ -1346,20 +1340,16 @@ impl TestRunContext {
                     .clone()
                     .expect("fault-injection client must be configured");
                 let primary_client_for_probe = self.client().clone();
-                probe_data_plane_ready(
-                    "original client",
-                    &primary_client_for_probe,
-                    &probe_db_id,
-                    &probe_container_id,
-                )
-                .await?;
-                probe_data_plane_ready(
-                    "fault-injection client",
-                    &fault_client_for_probe,
-                    &probe_db_id,
-                    &probe_container_id,
-                )
-                .await?;
+                let primary_container = primary_client_for_probe
+                    .database_client(probe_db_id.clone())
+                    .container_client(&*probe_container_id)
+                    .await?;
+                probe_data_plane_ready("original client", &primary_container).await?;
+                let fault_container = fault_client_for_probe
+                    .database_client(probe_db_id.clone())
+                    .container_client(&*probe_container_id)
+                    .await?;
+                probe_data_plane_ready("fault-injection client", &fault_container).await?;
             }
 
             Ok(container)
@@ -1478,6 +1468,27 @@ impl TestRunContext {
             #[cfg(test_category = "multi_write")]
             self.wait_for_satellite_data_plane_readiness(&db_id, &container_id)
                 .await?;
+
+            // Under AAD, RBAC authorizes metadata (5301) and name-based data
+            // (5302) on separate paths, so `container.read(...)` succeeding
+            // does not guarantee the next data-plane call is authorized. Probe
+            // the data path once here so tests that immediately create/read
+            // items after container creation don't race with `403/5302
+            // RbacUnauthorizedNameBasedDataRequest` and burn their per-test
+            // budget on driver retries. If a fault-injection client was
+            // configured, probe it too — its token and connection pool are
+            // separate, and tests commonly follow up with a fault-client read
+            // that would otherwise hit the same race.
+            if !targets_emulator() && AuthMode::from_env() == AuthMode::Aad {
+                probe_data_plane_ready("original client", &container).await?;
+                if let Some(fault_client) = self.fault_client.clone() {
+                    let fault_container = fault_client
+                        .database_client(db_client.id().clone())
+                        .container_client(&*container_id)
+                        .await?;
+                    probe_data_plane_ready("fault-injection client", &fault_container).await?;
+                }
+            }
 
             Ok(container)
         })
