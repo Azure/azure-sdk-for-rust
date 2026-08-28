@@ -45,7 +45,10 @@ mutation. A retry that observes the same marker returns success without
 reapplying the instructions. This duplicate suppression is bounded by the
 configurable whole-second retention window (5 minutes by default), per-item marker capacity, authoritative
 verification-read routing, and cooperating writers preserving the reserved
-`_azsdkPatchTracking` property.
+`_azsdkPatchTracking` property and marker order. A full marker list evicts its
+oldest entry, so suppression is bounded by the earlier of retention expiry or
+FIFO eviction. One absolute end-to-end deadline covers the complete logical
+PATCH, including all internal Reads, Replaces, retries, and verification.
 
 | Operation                       | Retried?                            | Initial attempt | On retry (duplicate)                                            | App must handle |
 | ------------------------------- | ----------------------------------- | --------------- | --------------------------------------------------------------- | --------------- |
@@ -229,10 +232,10 @@ PPAF is an **opt-in** feature for **single-master write accounts only**. When en
 
 PPCB is an **opt-out** feature (enabled by default) that provides partition-level health tracking and routing:
 
-| Account Type | Reads          | Writes                                   |
-| ------------ | -------------- | ---------------------------------------- |
-| Single-write | ✅ PPCB-managed| ❌ Not PPCB-managed (PPAF handles writes)|
-| Multi-write  | ✅ PPCB-managed| ✅ PPCB-managed                          |
+| Account Type | Reads           | Writes                                    |
+| ------------ | --------------- | ----------------------------------------- |
+| Single-write | ✅ PPCB-managed | ❌ Not PPCB-managed (PPAF handles writes) |
+| Multi-write  | ✅ PPCB-managed | ✅ PPCB-managed                           |
 
 ### Behavior
 

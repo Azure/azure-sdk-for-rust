@@ -93,6 +93,54 @@ impl CosmosResponse {
 
     /// Deserializes the response body into a model type.
     pub(crate) fn into_model<T: DeserializeOwned>(self) -> crate::Result<T> {
-        self.body.into_single()
+        #[cfg(feature = "preview_patch")]
+        let tracking_id = self.patch_tracking_id();
+        let diagnostics = self.diagnostics;
+        self.body.into_single().map_err(|error| {
+            let error = error.with_diagnostics(diagnostics);
+            #[cfg(feature = "preview_patch")]
+            if let Some(tracking_id) = tracking_id {
+                return error.with_patch_tracking_id(tracking_id);
+            }
+            error
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::http::StatusCode;
+    use azure_data_cosmos_driver::{
+        diagnostics::DiagnosticsContext,
+        models::{ActivityId, CosmosStatus, ResponseBody as DriverResponseBody},
+    };
+    use serde::Deserialize;
+
+    #[derive(Debug, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct StrictItem {
+        #[allow(dead_code)]
+        id: String,
+    }
+
+    #[test]
+    fn model_decode_error_preserves_response_diagnostics() {
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid()));
+        let response = CosmosResponse::from_driver_parts(
+            DriverResponseBody::from_bytes(br#"{"id":"item","unexpected":true}"#.to_vec()).into(),
+            ResponseHeaders::default(),
+            CosmosStatus::new(StatusCode::Ok),
+            Arc::clone(&diagnostics),
+        );
+
+        let error = response
+            .into_model::<StrictItem>()
+            .expect_err("strict model must reject the reserved/unknown field");
+
+        assert_eq!(
+            error.diagnostics().unwrap().activity_id(),
+            diagnostics.activity_id()
+        );
     }
 }

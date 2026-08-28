@@ -445,18 +445,12 @@ impl TransportClient for FaultClient {
 
             // No pre-service fault injection: proceed with the actual request.
             let response = self.inner.send(&clean_request).await;
-            let successful_response = response
-                .as_ref()
-                .is_ok_and(|response| self.is_successful_service_response(response));
-            if let Some((reservation, rule_id, delay)) =
-                timeout_after_service.filter(|_| successful_response)
-            {
-                if let Some(delay) = delay {
-                    if delay > Duration::ZERO {
-                        let delay = azure_core::time::Duration::try_from(delay)
-                            .unwrap_or(azure_core::time::Duration::ZERO);
-                        azure_core::sleep(delay).await;
-                    }
+            if let Some((reservation, rule_id, delay)) = timeout_after_service {
+                if !response
+                    .as_ref()
+                    .is_ok_and(|response| self.is_successful_service_response(response))
+                {
+                    return response;
                 }
                 let mut applied = vec![FaultInjectionEvaluation::Applied { rule_id }];
                 tracing::trace!(evaluations = ?applied, "fault injection rule evaluation");
@@ -464,6 +458,13 @@ impl TransportClient for FaultClient {
                     collector.push_all(&mut applied);
                 }
                 reservation.commit();
+                if let Some(delay) = delay {
+                    if delay > Duration::ZERO {
+                        let delay = azure_core::time::Duration::try_from(delay)
+                            .unwrap_or(azure_core::time::Duration::ZERO);
+                        azure_core::sleep(delay).await;
+                    }
+                }
                 let error = crate::error::CosmosError::builder()
                     .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
                     .with_message("Injected fault: response timeout after service execution")
@@ -1009,9 +1010,13 @@ mod tests {
             .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
             .with_delay(Duration::from_millis(200))
             .build();
-        let rule = FaultInjectionRuleBuilder::new("delayed-post-service-timeout", error).build();
-        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
-        let (request, _collector) = create_test_request();
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new("delayed-post-service-timeout", error)
+                .with_hit_limit(1)
+                .build(),
+        );
+        let fault_client = FaultClient::new(mock_client.clone(), vec![rule.clone()], None);
+        let (request, collector) = create_test_request();
 
         let result =
             tokio::time::timeout(Duration::from_millis(50), fault_client.send(&request)).await;
@@ -1025,6 +1030,15 @@ mod tests {
             1,
             "the request must reach the service before the configured delay"
         );
+        assert_eq!(
+            rule.hit_count(),
+            1,
+            "the effective fault must consume its hit"
+        );
+        assert!(collector
+            .take()
+            .iter()
+            .any(|evaluation| matches!(evaluation, FaultInjectionEvaluation::Applied { .. })));
     }
 
     #[tokio::test]

@@ -67,6 +67,14 @@ impl CosmosError {
         self.0.diagnostics()
     }
 
+    pub(crate) fn with_diagnostics(self, diagnostics: Arc<DiagnosticsContext>) -> Self {
+        Self(
+            azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(self.0)
+                .with_diagnostics(diagnostics)
+                .build(),
+        )
+    }
+
     /// Returns the effective duplicate-suppression identity for a tracked PATCH.
     ///
     /// This includes IDs generated internally by the driver and remains
@@ -75,6 +83,15 @@ impl CosmosError {
     #[cfg(feature = "preview_patch")]
     pub fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
         self.0.patch_tracking_id().map(PatchTrackingId::from_driver)
+    }
+
+    #[cfg(feature = "preview_patch")]
+    pub(crate) fn with_patch_tracking_id(self, tracking_id: PatchTrackingId) -> Self {
+        Self(
+            azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(self.0)
+                .with_patch_tracking_id(tracking_id.into_driver())
+                .build(),
+        )
     }
 }
 
@@ -303,6 +320,20 @@ mod tests {
             .into();
 
         assert_eq!(cosmos.patch_tracking_id(), Some(id));
+    }
+
+    #[cfg(feature = "preview_patch")]
+    #[test]
+    fn patch_tracking_id_can_decorate_existing_error() {
+        let id = crate::models::PatchTrackingId::from(uuid::Uuid::from_u128(42));
+        let error: CosmosError = serde_json::from_slice::<serde_json::Value>(b"{")
+            .unwrap_err()
+            .into();
+
+        let error = error.with_patch_tracking_id(id);
+
+        assert_eq!(error.patch_tracking_id(), Some(id));
+        assert!(error.source().is_some());
     }
 
     #[test]

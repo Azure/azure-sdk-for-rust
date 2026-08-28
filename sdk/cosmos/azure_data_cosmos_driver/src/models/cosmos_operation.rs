@@ -10,7 +10,7 @@ use crate::models::{
 };
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Instant};
 use time::OffsetDateTime;
 
 /// Which change feed mode a factory should configure.
@@ -168,6 +168,9 @@ pub struct CosmosOperation {
     /// Internal routing constraint for reads whose correctness depends on
     /// observing the write region rather than the nearest read replica.
     internal_read_routing: InternalReadRouting,
+    /// Absolute deadline inherited by internal sub-operations that belong to
+    /// one logical operation, such as PATCH Read-Modify-Write.
+    absolute_deadline: Option<Instant>,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -503,7 +506,8 @@ impl CosmosOperation {
     /// Sets a stable tracking ID for an unsafe client-side PATCH.
     ///
     /// Reuse the same ID for application-level retries of the same logical
-    /// operation. If omitted, the driver generates an ID for this invocation.
+    /// operation. Prefer a random, unpredictable ID. If omitted, the driver
+    /// generates an ID for this invocation. Retry-safe lists do not use it.
     pub fn with_patch_tracking_id(mut self, tracking_id: crate::models::PatchTrackingId) -> Self {
         self.patch_tracking_id = Some(tracking_id);
         self
@@ -514,11 +518,10 @@ impl CosmosOperation {
         self.patch_tracking_id
     }
 
-    /// Sets the maximum number of protected PATCH tracking entries retained on
-    /// one item.
+    /// Sets the maximum number of PATCH tracking entries retained on one item.
     ///
-    /// When every entry is still protected and the cap is reached, PATCH fails
-    /// rather than evicting evidence and risking duplicate application.
+    /// When the cap is reached after age-based pruning, PATCH evicts the first
+    /// entry before appending the new marker.
     pub fn with_patch_tracking_capacity(mut self, capacity: std::num::NonZeroU16) -> Self {
         self.patch_tracking_capacity = Some(capacity);
         self
@@ -529,7 +532,7 @@ impl CosmosOperation {
         self.patch_tracking_capacity
     }
 
-    /// Sets the minimum number of whole seconds PATCH tracking entries remain protected.
+    /// Sets the age-based retention window for PATCH tracking entries.
     pub fn with_patch_tracking_retention_seconds(
         mut self,
         retention_seconds: std::num::NonZeroU32,
@@ -581,6 +584,18 @@ impl CosmosOperation {
         )
     }
 
+    /// Applies an absolute deadline shared by a logical operation's internal
+    /// sub-operations.
+    pub(crate) fn with_absolute_deadline(mut self, deadline: Option<Instant>) -> Self {
+        self.absolute_deadline = deadline;
+        self
+    }
+
+    /// Returns the absolute deadline inherited from the logical operation.
+    pub(crate) fn absolute_deadline(&self) -> Option<Instant> {
+        self.absolute_deadline
+    }
+
     /// Returns `true` when this operation is an internal sub-operation of a
     /// PATCH's Read-Modify-Write loop.
     pub fn is_patch_sub_operation(&self) -> bool {
@@ -618,6 +633,7 @@ impl CosmosOperation {
             change_feed_start: None,
             is_patch_sub_operation: false,
             internal_read_routing: InternalReadRouting::Default,
+            absolute_deadline: None,
         }
     }
 

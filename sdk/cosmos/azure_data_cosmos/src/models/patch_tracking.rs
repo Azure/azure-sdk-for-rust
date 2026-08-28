@@ -8,13 +8,15 @@ use uuid::Uuid;
 /// Reserved item property used to persist PATCH tracking entries.
 pub const PATCH_TRACKING_PROPERTY: &str = "_azsdkPatchTracking";
 
-/// Minimum time PATCH tracking entries remain protected from pruning.
+/// Time PATCH tracking entries remain protected from age-based pruning.
 ///
 /// A matching entry is honored for as long as it remains on the item, but a
-/// later PATCH may prune it after this interval has elapsed.
+/// later PATCH may prune it after this interval has elapsed or evict it earlier
+/// when the marker array reaches capacity.
 pub const PATCH_TRACKING_RETENTION: std::time::Duration = std::time::Duration::from_secs(5 * 60);
 
 /// Default maximum number of PATCH tracking entries retained on one item.
+/// The oldest entry is evicted when this capacity is reached.
 pub const DEFAULT_PATCH_TRACKING_CAPACITY: NonZeroU16 =
     NonZeroU16::new(1024).expect("default PATCH tracking capacity is non-zero");
 
@@ -26,7 +28,7 @@ pub const DEFAULT_PATCH_TRACKING_CAPACITY: NonZeroU16 =
 pub struct PatchTrackingId(Uuid);
 
 impl PatchTrackingId {
-    /// Generates a new random tracking ID.
+    /// Generates a new random, unpredictable tracking ID.
     pub fn new() -> Self {
         Self(Uuid::new_v4())
     }

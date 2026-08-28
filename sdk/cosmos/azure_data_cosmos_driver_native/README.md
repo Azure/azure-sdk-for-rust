@@ -30,28 +30,28 @@ for the full design.
 
 ### Capability matrix (current)
 
-| Capability                                                                      | Status                                                                                  |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Master-key authentication                                                       | ✅                                                                                      |
-| Token-credential / resource-token authentication                                | ⏳ follow-up (needs `TokenCredential` FFI bridge)                                       |
-| Sync driver creation (`_blocking`)                                              | ✅                                                                                      |
-| Async driver creation (`_submit`)                                               | ✅                                                                                      |
-| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`)                        | ⏳ needs driver-side `was_cached` signal                                                |
-| Sync + async `resolve_container`                                                | ✅                                                                                      |
-| Single + hierarchical partition keys                                            | ✅                                                                                      |
-| Item-CRUD operations (read / create / upsert / replace / delete)                | ✅                                                                                      |
-| Item PATCH                                                                      | ✅ (preview exposure is controlled by the consuming SDK)                                |
-| Container-CRUD operations (read / replace / delete)                             | ✅                                                                                      |
-| Database + account-scope operations                                             | ✅                                                                                      |
-| `cosmos_submit_singleton_operation` (point ops)                                 | ✅                                                                                      |
-| `cosmos_submit_operation` (feeds + pagination)                                  | ✅                                                                                      |
-| Response status / RU / body / activity-id / session-token / etag / continuation | ✅                                                                                      |
-| Pagination (read-feeds + query result sets)                                     | ⏳ planned                                                                              |
-| Multi-part response body iteration                                              | ⏳ planned                                                                              |
-| Diagnostics accessors                                                           | ⏳ planned                                                                              |
-| Patch instruction builder                                                       | ⏳ planned                                                                              |
-| Transactional batch sub-operation builder                                       | ⏳ planned                                                                              |
-| Custom per-operation request headers                                            | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`)|
+| Capability                                                                      | Status                                                                                   |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Master-key authentication                                                       | ✅                                                                                       |
+| Token-credential / resource-token authentication                                | ⏳ follow-up (needs `TokenCredential` FFI bridge)                                        |
+| Sync driver creation (`_blocking`)                                              | ✅                                                                                       |
+| Async driver creation (`_submit`)                                               | ✅                                                                                       |
+| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`)                        | ⏳ needs driver-side `was_cached` signal                                                 |
+| Sync + async `resolve_container`                                                | ✅                                                                                       |
+| Single + hierarchical partition keys                                            | ✅                                                                                       |
+| Item-CRUD operations (read / create / upsert / replace / delete)                | ✅                                                                                       |
+| Item PATCH                                                                      | ✅ (preview exposure is controlled by the consuming SDK)                                 |
+| Container-CRUD operations (read / replace / delete)                             | ✅                                                                                       |
+| Database + account-scope operations                                             | ✅                                                                                       |
+| `cosmos_submit_singleton_operation` (point ops)                                 | ✅                                                                                       |
+| `cosmos_submit_operation` (feeds + pagination)                                  | ✅                                                                                       |
+| Response status / RU / body / activity-id / session-token / etag / continuation | ✅                                                                                       |
+| Pagination (read-feeds + query result sets)                                     | ⏳ planned                                                                               |
+| Multi-part response body iteration                                              | ⏳ planned                                                                               |
+| Diagnostics accessors                                                           | ⏳ planned                                                                               |
+| Patch instruction builder                                                       | ⏳ planned                                                                               |
+| Transactional batch sub-operation builder                                       | ⏳ planned                                                                               |
+| Custom per-operation request headers                                            | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 
 ## Building
 
@@ -142,7 +142,7 @@ below for the production-shape guidance.
 > self-describing `cosmos_operation_request_t` struct (kind-tagged via
 > `cosmos_CosmosOperationKind`, with per-call settings on the tri-state
 > `cosmos_CosmosOperationOptions` seeded by `cosmos_operation_options_default`)
-> and executed through two v1 entry points plus their v2 counterparts:
+> and executed through two entry points:
 >
 > - `cosmos_submit_singleton_operation` — point operations
 >   (create / read / replace / delete / patch item, database & container CRUD,
@@ -150,22 +150,20 @@ below for the production-shape guidance.
 > - `cosmos_submit_operation` — feed/paginated operations
 >   (queries, read-all, change feed); resumes from and surfaces a continuation
 >   token.
-> - `cosmos_submit_singleton_operation_v2` / `cosmos_submit_operation_v2` —
->   identical execution contracts accepting the versioned PATCH tracking
->   request.
 >
-> Item PATCH and `patch_max_attempts` remain available through the v1 native
-> request ABI. Bounded tracking uses `cosmos_operation_request_v2_t` with
-> `cosmos_submit_operation_v2` / `cosmos_submit_singleton_operation_v2`, leaving
-> the v1 struct and symbols binary compatible. Consuming language SDKs decide
+> Item PATCH, `patch_max_attempts`, and bounded tracking are fields on the
+> canonical `cosmos_operation_request_t`. Consuming language SDKs decide
 > whether and how to expose PATCH as preview. For unsafe instruction lists, the
 > driver stores `_azsdkPatchTracking` on the item. Passing NULL for
 > `patch_tracking_id` generates an ID for the invocation. Retrieve the effective
 > UUID from `cosmos_completion_patch_tracking_id`, then persist and reuse it for
-> application retries. Entries are protected for 5 minutes by default;
+> application retries. Cancelled completions also expose the resolved ID because
+> the wrapper generates it before starting the driver operation. Entries use a
+> 5-minute retention window by default;
 > `patch_tracking_retention_seconds` configures a positive whole-second window.
-> The default capacity is 1024, and a full unexpired list fails rather than
-> evicting evidence. Every writer must preserve the reserved property.
+> The default capacity is 1024; when full, the oldest entry is evicted. Duplicate
+> suppression is bounded by the earlier of retention expiry or FIFO eviction.
+> Every writer must preserve the reserved property and marker order.
 >
 > The v1 functions take `(driver, const cosmos_operation_request_t *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.
@@ -273,12 +271,6 @@ internal static class Cosmos
         public int       precondition_kind;        // 0 = none
         public IntPtr    precondition_etag;        // char*
         public IntPtr    options;                  // cosmos_operation_options_t*
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct OpRequestV2
-    {
-        public OpRequest base_request;
         public IntPtr    patch_tracking_id;                // UUID char*, NULL = generate
         public ushort    patch_tracking_capacity;          // 0 = driver default
         public uint      patch_tracking_retention_seconds; // 0 = driver default
@@ -317,8 +309,6 @@ internal static class Cosmos
     // The two — and only two — execution entry points.
     [DllImport(Lib)] public static extern IntPtr cosmos_submit_singleton_operation(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
     [DllImport(Lib)] public static extern IntPtr cosmos_submit_operation(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
-    [DllImport(Lib)] public static extern IntPtr cosmos_submit_singleton_operation_v2(IntPtr drv, ref OpRequestV2 req, IntPtr q, IntPtr ud, out int preErr);
-    [DllImport(Lib)] public static extern IntPtr cosmos_submit_operation_v2(IntPtr drv, ref OpRequestV2 req, IntPtr q, IntPtr ud, out int preErr);
     [DllImport(Lib)] public static extern void   cosmos_operation_handle_free(IntPtr h);
     [DllImport(Lib)] public static extern void   cosmos_error_free(IntPtr e);
 
@@ -501,7 +491,6 @@ public final class CosmosSample {
     static final MethodHandle PK_CREATE        = h("cosmos_partition_key_create", FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_LONG, ADDRESS));
     static final MethodHandle PK_FREE          = h("cosmos_partition_key_free", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle SUBMIT_SINGLETON = h("cosmos_submit_singleton_operation", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS, JAVA_LONG, ADDRESS));
-    static final MethodHandle SUBMIT_SINGLETON_V2 = h("cosmos_submit_singleton_operation_v2", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS, JAVA_LONG, ADDRESS));
     static final MethodHandle OP_HND_FREE      = h("cosmos_operation_handle_free", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle ERR_FREE         = h("cosmos_error_free", FunctionDescriptor.ofVoid(ADDRESS));
 
@@ -547,10 +536,7 @@ public final class CosmosSample {
         MemoryLayout.paddingLayout(1),
         JAVA_INT.withName("precondition_kind"),
         ADDRESS.withName("precondition_etag"),
-        ADDRESS.withName("options"));
-
-    static final GroupLayout REQUEST_V2 = MemoryLayout.structLayout(
-        REQUEST.withName("base"),
+        ADDRESS.withName("options"),
         ADDRESS.withName("patch_tracking_id"),
         JAVA_SHORT.withName("patch_tracking_capacity"),
         MemoryLayout.paddingLayout(2),
@@ -1071,12 +1057,6 @@ class CosmosOperationRequest(ctypes.Structure):
         ("precondition_kind", ctypes.c_int32),
         ("precondition_etag", c_char_p),
         ("options", void_p),
-    ]
-
-
-class CosmosOperationRequestV2(ctypes.Structure):
-    _fields_ = [
-        ("base", CosmosOperationRequest),
         ("patch_tracking_id", c_char_p),
         ("patch_tracking_capacity", ctypes.c_uint16),
         ("patch_tracking_retention_seconds", ctypes.c_uint32),
@@ -1114,7 +1094,6 @@ class CosmosCompletion(ctypes.Structure):
 
 
 req_p = ctypes.POINTER(CosmosOperationRequest)
-req_v2_p = ctypes.POINTER(CosmosOperationRequestV2)
 comp_p = ctypes.POINTER(CosmosCompletion)
 component_p = ctypes.POINTER(CosmosPartitionKeyComponent)
 
@@ -1133,7 +1112,6 @@ _container_free        = _decl("cosmos_container_ref_free", [void_p], None)
 _pk_create             = _decl("cosmos_partition_key_create", [component_p, size_t, ctypes.POINTER(void_p)], ctypes.c_int32)
 _pk_free               = _decl("cosmos_partition_key_free", [void_p], None)
 _submit_singleton      = _decl("cosmos_submit_singleton_operation", [void_p, req_p, void_p, intptr_t, ctypes.POINTER(ctypes.c_int32)], void_p)
-_submit_singleton_v2   = _decl("cosmos_submit_singleton_operation_v2", [void_p, req_v2_p, void_p, intptr_t, ctypes.POINTER(ctypes.c_int32)], void_p)
 _op_hnd_free           = _decl("cosmos_operation_handle_free", [void_p], None)
 _error_free            = _decl("cosmos_error_free", [void_p], None)
 

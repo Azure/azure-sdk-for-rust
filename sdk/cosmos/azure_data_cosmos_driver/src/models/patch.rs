@@ -37,13 +37,15 @@ use uuid::Uuid;
 /// Reserved item property used to persist PATCH tracking entries.
 pub const PATCH_TRACKING_PROPERTY: &str = "_azsdkPatchTracking";
 
-/// Minimum time PATCH tracking entries remain protected from pruning.
+/// Time PATCH tracking entries remain protected from age-based pruning.
 ///
 /// A matching entry is honored for as long as it remains on the item, but a
-/// later PATCH may prune it after this interval has elapsed.
+/// later PATCH may prune it after this interval has elapsed or evict it earlier
+/// when the marker array reaches capacity.
 pub const PATCH_TRACKING_RETENTION: Duration = Duration::from_secs(5 * 60);
 
 /// Default maximum number of idempotency markers retained on one item.
+/// The oldest entry is evicted when this capacity is reached.
 pub const DEFAULT_PATCH_TRACKING_CAPACITY: NonZeroU16 =
     NonZeroU16::new(1024).expect("default PATCH tracking capacity is non-zero");
 
@@ -56,10 +58,13 @@ pub const DEFAULT_PATCH_TRACKING_CAPACITY: NonZeroU16 =
 pub struct PatchTrackingId(Uuid);
 
 impl PatchTrackingId {
-    /// Generates a new tracking ID from cryptographically secure OS entropy.
+    /// Generates a new tracking ID from cryptographically secure OS entropy,
+    /// falling back to the UUID crate's generator if OS entropy is unavailable.
     pub fn new() -> Self {
         let mut bytes = [0_u8; 16];
-        getrandom::fill(&mut bytes).expect("operating system randomness is unavailable");
+        if getrandom::fill(&mut bytes).is_err() {
+            return Self(Uuid::new_v4());
+        }
         bytes[6] = (bytes[6] & 0x0f) | 0x40;
         bytes[8] = (bytes[8] & 0x3f) | 0x80;
         Self(Uuid::from_bytes(bytes))

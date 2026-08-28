@@ -669,6 +669,7 @@ dependencies = [
  "azure_data_cosmos_driver",
  "cbindgen",
  "futures",
+ "serde_json",
  "tokio",
  "tracing",
  "url",

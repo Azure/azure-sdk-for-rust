@@ -38,7 +38,7 @@ normal pipeline stages run.
 | Partition key                                 | `with_partition_key(...)`                           | Required. Used to issue the internal Read.                        |
 | `patch_max_attempts`                          | `with_patch_max_attempts(NonZeroU8)`                | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
 | `patch_tracking_id`                           | `with_patch_tracking_id(PatchTrackingId)`           | Optional. Generated once per invocation for unsafe instructions.  |
-| `patch_tracking_capacity`                     | `with_patch_tracking_capacity(NonZeroU16)`          | Optional. Defaults to 1024 unexpired entries per item.            |
+| `patch_tracking_capacity`                     | `with_patch_tracking_capacity(NonZeroU16)`          | Optional. Defaults to 1024 entries; oldest is evicted when full.  |
 | `patch_tracking_retention_seconds`            | `with_patch_tracking_retention_seconds(NonZeroU32)` | Optional. Defaults to 300 seconds; whole-second granularity.      |
 
 ## Algorithm
@@ -98,9 +98,9 @@ loop up to max_attempts times:
     - if routing fell back to a reader and the ID is absent, allow insertion
      only for a driver-generated ID before this invocation dispatches its
      first Replace; otherwise fail with 503 because absence is inconclusive;
-     - otherwise validate the reserved array, prune entries whose retention
-      window elapsed, fail with 409 if the capacity remains full, and append
-      {trackingId, attemptedAt}.
+    - otherwise validate the reserved array, prune entries whose retention
+     window elapsed, evict the first entry if the capacity remains full, and
+     append {trackingId, attemptedAt, retentionSeconds}.
        apply_patch_ops(&mut value, &spec.operations)
        merged_bytes = serde_json::to_vec(&value)
    6. replace = execute_operation(Replace(merged_bytes,
@@ -111,10 +111,12 @@ loop up to max_attempts times:
        match replace result:
           Ok(_)                                            -> succeed, see step 7
          Err(HttpResponse{ status: PreconditionFailed })  -> remember and continue the loop
-           Err(_)                                           -> for a tracked PATCH whose request may
-                                                               have been sent, perform one verification
-                                                               Read; return success only if it finds the
-                                                               marker, otherwise return the error verbatim
+           Err(_)                                           -> for a tracked PATCH where any Replace
+                                                               attempt may have been sent, perform one
+                                                               verification Read; return success if it
+                                                               finds the marker, return 503 on fallback
+                                                               absence, propagate malformed state, and
+                                                               otherwise preserve the original error
         7. return CosmosResponse::new(merged_bytes,
                                   replace.headers(),
                                   replace.status(),
@@ -129,6 +131,10 @@ ErrorKind::HttpResponse{ status: PreconditionFailed, .. } with the last 412
 chained as the source.
 ```
 
+The caller's end-to-end timeout is captured once before the RMW loop. Every
+Read, Replace, retry, and terminal verification uses that same absolute
+deadline; internal sub-operations never receive a fresh timeout budget.
+
 ## Tracking protocol
 
 The reserved `_azsdkPatchTracking` property is an array of objects with a UUID
@@ -142,6 +148,10 @@ The effective tracking ID, including a driver-generated ID, is exposed on
 successful responses and errors and captured as `patch_tracking_id` in the
 operation diagnostics. Callers can persist that value and reuse it for an
 application or process retry of the same logical PATCH.
+Caller-supplied IDs should be random and unpredictable as well as unique to the
+logical operation and item. Cooperating writers are trusted not to forge marker
+entries. Retry-safe instruction lists do not create markers, so a supplied ID
+is unused and is not returned for those lists.
 
 Each entry is protected from pruning for its configured positive number of
 whole seconds (300 seconds by default). Persisting the window on each marker
@@ -149,8 +159,10 @@ prevents a later PATCH with a shorter setting from pruning longer-lived
 evidence early. A matching ID is honored for as long as it remains present,
 even after that interval; expiration only makes an entry eligible for pruning
 by a later unsafe PATCH. The default capacity is 1024 entries per item. When
-every entry is still protected and the capacity is full, PATCH returns 409
-rather than evicting evidence and risking a duplicate.
+the capacity is full after time-based pruning, PATCH removes the first entry
+and appends the new marker. Duplicate suppression is therefore bounded by the
+earlier of the entry's retention window and FIFO eviction under capacity
+pressure. Cooperating writers must preserve marker array order.
 Pruning uses only the item's service-generated `_ts`; the HTTP `Date` header is
 reserved for authentication and is not a PATCH protocol clock. Marker
 insertion requires a non-negative integer `_ts`. Because `_ts` has second-level
@@ -276,7 +288,8 @@ contains, the handler builds the returned `CosmosResponse` from:
 
 - **Body**: the locally-merged JSON it just sent in the successful Replace
   (the Replace's response body is *not* required to be present).
-- **Headers / status**: those of the successful Replace.
+- **Headers / status**: those of the successful Replace, with request charge
+  replaced by the total charge of the logical PATCH.
 - **Diagnostics**: an *aggregated* `DiagnosticsContext` synthesized via
   `DiagnosticsContext::aggregate_sub_operations`, concatenating in
   dispatch order the per-request `RequestDiagnostics` of every
@@ -288,7 +301,9 @@ contains, the handler builds the returned `CosmosResponse` from:
   inherited from the final Replace's context; total `duration` is the
   sum of all sources' durations (sub-ops are sequential).
 
-When a verification Read finds the operation's tracking ID, that Read's body,
+Every successful logical PATCH reports the aggregate request charge for all
+Read, Replace, and verification sub-operations. When a verification Read finds
+the operation's tracking ID, that Read's body,
 headers, and status are returned as the committed post-image, except that the
 request-charge header is replaced with the exact total charge from the
 aggregated operation diagnostics. Its diagnostics are aggregated with all
@@ -366,9 +381,13 @@ as a JSON number without precision loss.
   `DiagnosticsContext` containing those prior contexts plus the failing
   sub-operation's context, in dispatch order. When the first sub-operation
   fails, its context is retained with only the operation name rewritten. For
-  a tracked PATCH whose terminal Replace may have been sent, one
-  verification-only Read returns success when it finds the marker; otherwise
-  the original error is preserved.
+  a tracked PATCH where any terminal Replace attempt may have been sent, one
+  verification-only Read returns success when it finds the marker. Authoritative
+  absence preserves the original error, fallback absence returns 503, malformed
+  state returns its validation error, and a failed verification Read preserves
+  the original error while contributing its diagnostics. Finalized 400, 401,
+  403, and 413 rejection responses skip verification because they prove the
+  Replace did not commit.
 - The handler never retries beyond `max_attempts`. A 412 causes another
   verification Read; observing this operation's marker then proves its prior
   Replace committed and returns success. A missing marker is treated as a
@@ -376,8 +395,8 @@ as a JSON number without precision loss.
 - A missing marker on degraded reader routing returns 503 when the ID was
   caller-supplied or any Replace was already dispatched because absence is
   inconclusive. A fresh driver-generated ID may proceed from its first
-  fallback Read. Malformed tracking state returns 400, and an exhausted
-  unexpired marker list returns 409 without eviction.
+  fallback Read. Malformed tracking state returns 400. A full marker list
+  evicts its first entry before appending the new marker.
 - When 412 retries exhaust `max_attempts`, the final error carries an
   aggregated `DiagnosticsContext` containing every accumulated Read and
   failed Replace context plus the final verification Read when its marker is

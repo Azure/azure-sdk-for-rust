@@ -440,7 +440,9 @@ pub(crate) async fn execute_operation_pipeline(
     // duration) into `evaluate_hedge_eligibility` / `maybe_upgrade_to_hedge`
     // below so the threshold stays stable across retry-driven upgrades.
     let configured_request_timeout = options.end_to_end_latency_policy().map(|p| p.timeout());
-    let deadline = configured_request_timeout.map(|t| Instant::now() + t);
+    let deadline = operation
+        .absolute_deadline()
+        .or_else(|| configured_request_timeout.map(|t| Instant::now() + t));
 
     loop {
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────

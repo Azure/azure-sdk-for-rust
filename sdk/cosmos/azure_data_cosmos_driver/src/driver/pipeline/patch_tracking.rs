@@ -105,14 +105,8 @@ pub(crate) fn prepare_tracking_marker(
         }
     }
 
-    if entries.len() >= usize::from(capacity.get()) {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::new(StatusCode::Conflict))
-            .with_message(format!(
-                "PATCH tracking capacity {} is exhausted by unexpired entries in reserved property '{PATCH_TRACKING_PROPERTY}'; increase the tracking capacity or retry after the retention window",
-                capacity.get()
-            ))
-            .build());
+    while entries.len() >= usize::from(capacity.get()) {
+        entries.remove(0);
     }
 
     entries.push(new_entry(
@@ -361,25 +355,33 @@ mod tests {
     }
 
     #[test]
-    fn full_unexpired_list_fails_without_evicting_an_entry() {
+    fn full_unexpired_list_evicts_oldest_entry() {
         let mut document = json!({
             "_ts": NOW,
             PATCH_TRACKING_PROPERTY: [entry(id(1), NOW), entry(id(2), NOW)]
         });
-        let before = document.clone();
-
-        let error = prepare_tracking_marker(
+        let outcome = prepare_tracking_marker(
             &mut document,
             id(3),
             NonZeroU16::new(2).unwrap(),
             default_retention_seconds(),
             true,
         )
-        .unwrap_err();
+        .unwrap();
 
-        assert_eq!(error.status().status_code(), StatusCode::Conflict);
-        assert!(error.to_string().contains("capacity 2 is exhausted"));
-        assert_eq!(document, before);
+        assert_eq!(outcome, TrackingMarkerOutcome::Added);
+        let entries = document[PATCH_TRACKING_PROPERTY].as_array().unwrap();
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0][TRACKING_ID_FIELD], id(2).to_string());
+        assert_eq!(entries[1][TRACKING_ID_FIELD], id(3).to_string());
+    }
+
+    #[test]
+    fn tracking_pointer_matches_reserved_property() {
+        assert_eq!(
+            PATCH_TRACKING_POINTER,
+            format!("/{PATCH_TRACKING_PROPERTY}")
+        );
     }
 
     #[test]

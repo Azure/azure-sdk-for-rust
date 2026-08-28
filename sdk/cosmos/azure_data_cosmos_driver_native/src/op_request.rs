@@ -47,8 +47,8 @@ use azure_data_cosmos_driver::options::{
 use azure_data_cosmos_driver::{
     models::{
         ActivityId, ContainerReference, ContinuationToken, CosmosOperation, ItemReference,
-        MaxItemCountHint, OperationType, PartitionKey, PatchTrackingId, Precondition, SessionToken,
-        ThroughputControlGroupName,
+        MaxItemCountHint, OperationType, PartitionKey, PatchInstructions, PatchTrackingId,
+        Precondition, SessionToken, ThroughputControlGroupName,
     },
     options::PlanOptions,
 };
@@ -734,24 +734,14 @@ pub struct CosmosOperationRequest {
 
     /// Per-call options. NULL = use driver/runtime defaults.
     pub options: *const CosmosOperationOptions,
-}
-
-/// Version 2 operation request with bounded PATCH tracking controls.
-///
-/// The v1 request is embedded unchanged so existing hosts and submit symbols
-/// remain binary compatible. Use the `_v2` submit functions with this type.
-#[repr(C)]
-pub struct CosmosOperationRequestV2 {
-    /// The complete version 1 request.
-    pub base: CosmosOperationRequest,
     /// Stable PATCH tracking UUID (NUL-terminated UTF-8). NULL = generate one
     /// for this invocation.
     pub patch_tracking_id: *const c_char,
-    /// Maximum number of unexpired PATCH tracking entries retained on the
-    /// item. `0` = use the driver default.
+    /// Maximum number of PATCH tracking entries retained on the item. The
+    /// oldest entry is evicted when full. `0` = use the driver default.
     pub patch_tracking_capacity: u16,
-    /// Minimum number of whole seconds PATCH tracking entries remain
-    /// protected from pruning. `0` = use the driver default.
+    /// Age-based retention window in whole seconds. Capacity pressure can
+    /// evict an entry earlier. `0` = use the driver default.
     pub patch_tracking_retention_seconds: u32,
 }
 
@@ -763,6 +753,7 @@ pub struct CosmosOperationRequestV2 {
 pub(crate) struct BuiltRequest {
     pub(crate) operation: CosmosOperation,
     pub(crate) options: OperationOptions,
+    pub(crate) patch_tracking_id: Option<PatchTrackingId>,
     /// Inbound continuation token (if the host supplied one). Threaded into
     /// [`azure_data_cosmos_driver::driver::CosmosDriver::plan_operation`] by
     /// the feed submit entry point; ignored by the singleton entry point.
@@ -791,6 +782,13 @@ pub(crate) unsafe fn build_request(
     let req = unsafe { &*request };
 
     let operation = unsafe { build_operation(req)? };
+    let operation = apply_patch_tracking_fields(
+        operation,
+        req.patch_tracking_id,
+        req.patch_tracking_capacity,
+        req.patch_tracking_retention_seconds,
+    )?;
+    let (operation, patch_tracking_id) = resolve_patch_tracking_id(operation);
 
     let options = if req.options.is_null() {
         OperationOptions::default()
@@ -813,34 +811,31 @@ pub(crate) unsafe fn build_request(
     Ok(BuiltRequest {
         operation,
         options,
+        patch_tracking_id,
         continuation,
         plan_options,
     })
 }
 
-/// Validates and builds a version 2 request.
-///
-/// # Safety
-///
-/// See [`build_request`]; the same pointer requirements apply to `base`, and
-/// `patch_tracking_id` must be a valid NUL-terminated UTF-8 string when set.
-pub(crate) unsafe fn build_request_v2(
-    request: *const CosmosOperationRequestV2,
-) -> Result<BuiltRequest, CosmosErrorCode> {
-    if request.is_null() {
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+fn resolve_patch_tracking_id(
+    mut operation: CosmosOperation,
+) -> (CosmosOperation, Option<PatchTrackingId>) {
+    if operation.operation_type() != OperationType::Patch {
+        return (operation, None);
     }
-    // SAFETY: non-NULL checked; caller guarantees a valid v2 request.
-    let request = unsafe { &*request };
-    // SAFETY: `base` is embedded in the caller-validated v2 request.
-    let mut built = unsafe { build_request(&request.base) }?;
-    built.operation = apply_patch_tracking_fields(
-        built.operation,
-        request.patch_tracking_id,
-        request.patch_tracking_capacity,
-        request.patch_tracking_retention_seconds,
-    )?;
-    Ok(built)
+    let requires_tracking = operation
+        .body()
+        .and_then(|body| serde_json::from_slice::<PatchInstructions>(body).ok())
+        .is_some_and(|instructions| !instructions.is_retry_safe());
+    if !requires_tracking {
+        return (operation, None);
+    }
+
+    let tracking_id = operation
+        .patch_tracking_id()
+        .unwrap_or_else(PatchTrackingId::new);
+    operation = operation.with_patch_tracking_id(tracking_id);
+    (operation, Some(tracking_id))
 }
 
 /// Builds just the [`CosmosOperation`] (factory + inline mutators) from a
@@ -1221,7 +1216,7 @@ mod tests {
     fn operation_request_abi_layout_is_stable() {
         use std::mem::{offset_of, size_of};
 
-        assert_eq!(size_of::<CosmosOperationRequest>(), 152);
+        assert_eq!(size_of::<CosmosOperationRequest>(), 168);
         assert_eq!(offset_of!(CosmosOperationRequest, kind), 0);
         assert_eq!(offset_of!(CosmosOperationRequest, account), 8);
         assert_eq!(offset_of!(CosmosOperationRequest, database), 16);
@@ -1254,16 +1249,13 @@ mod tests {
         assert_eq!(offset_of!(CosmosOperationRequest, precondition_kind), 132);
         assert_eq!(offset_of!(CosmosOperationRequest, precondition_etag), 136);
         assert_eq!(offset_of!(CosmosOperationRequest, options), 144);
-
-        assert_eq!(size_of::<CosmosOperationRequestV2>(), 168);
-        assert_eq!(offset_of!(CosmosOperationRequestV2, base), 0);
-        assert_eq!(offset_of!(CosmosOperationRequestV2, patch_tracking_id), 152);
+        assert_eq!(offset_of!(CosmosOperationRequest, patch_tracking_id), 152);
         assert_eq!(
-            offset_of!(CosmosOperationRequestV2, patch_tracking_capacity),
+            offset_of!(CosmosOperationRequest, patch_tracking_capacity),
             160
         );
         assert_eq!(
-            offset_of!(CosmosOperationRequestV2, patch_tracking_retention_seconds),
+            offset_of!(CosmosOperationRequest, patch_tracking_retention_seconds),
             164
         );
     }

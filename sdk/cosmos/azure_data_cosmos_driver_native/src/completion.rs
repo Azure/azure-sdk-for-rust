@@ -23,7 +23,7 @@
 use std::collections::VecDeque;
 use std::ffi::{c_char, c_void, CString};
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
@@ -149,6 +149,7 @@ pub(crate) struct OperationInner {
     /// task starting to wait is still observed (the permit is consumed on the
     /// first poll of `notified()`).
     pub(crate) cancel_notify: tokio::sync::Notify,
+    patch_tracking_id: OnceLock<CString>,
 }
 
 impl OperationInner {
@@ -159,7 +160,18 @@ impl OperationInner {
             ),
             cancel_requested: AtomicBool::new(false),
             cancel_notify: tokio::sync::Notify::new(),
+            patch_tracking_id: OnceLock::new(),
         }
+    }
+
+    pub(crate) fn set_patch_tracking_id(&self, tracking_id: String) {
+        if let Some(tracking_id) = to_cstring(tracking_id) {
+            let _ = self.patch_tracking_id.set(tracking_id);
+        }
+    }
+
+    fn patch_tracking_id(&self) -> Option<CString> {
+        self.patch_tracking_id.get().cloned()
     }
 }
 
@@ -402,6 +414,7 @@ impl PendingCompletion {
         user_data: isize,
         op_inner: Arc<OperationInner>,
     ) -> Self {
+        let patch_tracking_id = op_inner.patch_tracking_id();
         Self {
             outcome,
             status,
@@ -412,7 +425,7 @@ impl PendingCompletion {
             message: None,
             next_continuation: None,
             backtrace: None,
-            patch_tracking_id: None,
+            patch_tracking_id,
             headers: OwnedResponseHeaders::empty(),
             response: None,
             driver: None,
@@ -648,6 +661,8 @@ impl CosmosCompletion {
 /// The returned NUL-terminated UTF-8 string is borrowed from `completion` and
 /// remains valid until that completion is freed. Returns NULL for non-PATCH
 /// operations, retry-safe PATCH operations, or an invalid completion pointer.
+/// For unsafe PATCH operations, the ID is also available on cancelled
+/// completions because it is resolved before execution begins.
 #[no_mangle]
 pub extern "C" fn cosmos_completion_patch_tracking_id(
     completion: *const CosmosCompletion,

@@ -1262,7 +1262,7 @@ cosmos_status_code_t cosmos_partition_key_clone(
 
 This is the heart of the new wrapper. All data-plane work flows through a
 single flat `cosmos_operation_request_t` that the host fills out in its own
-language and hands to one of the two v1 submit entry points in §4.7. There is
+language and hands to one of the two submit entry points in §4.7. There is
 **no** per-operation factory or mutator surface: the operation kind, resource
 references, ids, partition key, feed range, body, per-call tweaks, and a
 pointer to `cosmos_operation_options_t` all ride on the one request struct.
@@ -1274,11 +1274,11 @@ partition-key and feed-range handles) remain opaque handles, not flat data:
 they wrap `Arc`-shared Rust state that cannot be safely round-tripped as plain
 `#[repr(C)]` bytes.
 
-PATCH tracking controls are an ABI-v2 extension. The original 152-byte v1
-request and submit symbols remain unchanged; `cosmos_operation_request_v2_t`
-embeds v1 as its first field and is accepted only by the `_v2` submit symbols.
+PATCH tracking controls are fields on the canonical 168-byte request. The
+native crate is still internal and pre-release, so no versioned request variant
+is retained for its earlier 152-byte development layout.
 
-#### 4.6.1 `cosmos_operation_request_t`, v2, and `cosmos_operation_kind_t`
+#### 4.6.1 `cosmos_operation_request_t` and `cosmos_operation_kind_t`
 
 The host fills out a single `#[repr(C)]` request struct. The `kind` field
 (a validated `cosmos_operation_kind_t` discriminant, stored as a raw `int32`
@@ -1323,21 +1323,20 @@ typedef struct cosmos_operation_request_t {
     const char *precondition_etag;      /* required iff precondition_kind != None */
 
     const cosmos_operation_options_t *options;  /* NULL = driver/runtime defaults */
-} cosmos_operation_request_t;
-
-typedef struct cosmos_operation_request_v2_t {
-    cosmos_operation_request_t base;     /* unchanged v1 prefix */
     const char *patch_tracking_id;       /* UUID; NULL = generate per invocation */
     uint16_t patch_tracking_capacity;    /* 0 = driver default (1024) */
     uint32_t patch_tracking_retention_seconds; /* 0 = driver default (300) */
-} cosmos_operation_request_v2_t;
+} cosmos_operation_request_t;
 ```
 
-The v2 tracking fields are valid only when `base.kind` is `PatchItem`; setting
+The tracking fields are valid only when `kind` is `PatchItem`; setting
 either field for another operation is rejected during preflight. Unsafe PATCH
 instructions persist the tracking ID under `_azsdkPatchTracking`. Language
 SDKs retrieve the effective ID, including a generated ID, from
-`cosmos_completion_patch_tracking_id` on successful or failed completions.
+`cosmos_completion_patch_tracking_id` on successful, failed, or cancelled
+completions. The wrapper resolves generated IDs before spawning the operation,
+so cancellation cannot lose the retry identity even when an in-flight write
+may still commit.
 Those that retry across calls or process restarts must persist and reuse the
 same UUID for the same logical operation and item.
 
@@ -1438,7 +1437,7 @@ per-operation mutator.
 
 #### 4.6.3 Submission and completion lifecycle — *normative*
 
-The request struct is **borrowed**, not consumed: all v1 and v2 submit entry
+The request struct is **borrowed**, not consumed: both submit entry
 points read everything they need from the matching request (copying owned bytes
 and strings, cloning reference handles) before returning, so the host may free
 or reuse the request and all its inputs immediately after submit returns. There
@@ -1459,19 +1458,6 @@ cosmos_operation_handle_t *cosmos_submit_operation(
     intptr_t user_data,
     cosmos_status_code_t *out_pre_error);
 
-cosmos_operation_handle_t *cosmos_submit_singleton_operation_v2(
-    const cosmos_driver_t *driver,
-    const cosmos_operation_request_v2_t *request,
-    cosmos_completion_queue_t *queue,
-    intptr_t user_data,
-    cosmos_status_code_t *out_pre_error);
-
-cosmos_operation_handle_t *cosmos_submit_operation_v2(
-    const cosmos_driver_t *driver,
-    const cosmos_operation_request_v2_t *request,
-    cosmos_completion_queue_t *queue,
-    intptr_t user_data,
-    cosmos_status_code_t *out_pre_error);
 ```
 
 The contract (shared by both entry points; full response / accessor surface in §4.7):
@@ -1537,7 +1523,7 @@ If a host SDK needs to resume a query from a continuation token (the typical EPK
 
 ### 4.7 Submission + response (`src/handles/response.rs`)
 
-All data-plane work flows through the v1/v2 submit entry points from §4.6.3.
+All data-plane work flows through the two submit entry points from §4.6.3.
 Each takes the matching request version (no per-operation factory/mutator
 surface) and posts exactly one completion to the queue.
 
@@ -1593,22 +1579,6 @@ cosmos_operation_handle_t *cosmos_submit_singleton_operation(
 cosmos_operation_handle_t *cosmos_submit_operation(
     const cosmos_driver_t *driver,
     const cosmos_operation_request_t *request,    /* borrowed for the call only */
-    cosmos_completion_queue_t *queue,
-    intptr_t user_data,
-    cosmos_status_code_t *out_pre_error);
-
-/* The `_v2` forms have identical lifecycle/completion semantics and accept
- * cosmos_operation_request_v2_t, including PATCH tracking controls. */
-cosmos_operation_handle_t *cosmos_submit_singleton_operation_v2(
-    const cosmos_driver_t *driver,
-    const cosmos_operation_request_v2_t *request,
-    cosmos_completion_queue_t *queue,
-    intptr_t user_data,
-    cosmos_status_code_t *out_pre_error);
-
-cosmos_operation_handle_t *cosmos_submit_operation_v2(
-    const cosmos_driver_t *driver,
-    const cosmos_operation_request_v2_t *request,
     cosmos_completion_queue_t *queue,
     intptr_t user_data,
     cosmos_status_code_t *out_pre_error);
@@ -1751,12 +1721,12 @@ The wrapper's contract is shaped by that decision:
 
 ### 6.1 Return-type mapping
 
-- `cosmos_submit_singleton_operation` (and its `_v2` form) binds to `CosmosDriver::execute_singleton_operation`, which returns `Result<CosmosResponse>` by collapsing the `Option<CosmosResponse>` returned by `execute_operation`. The submission returns a `cosmos_operation_handle_t*`; the eventual completion delivers one of three outcomes:
+- `cosmos_submit_singleton_operation` binds to `CosmosDriver::execute_singleton_operation`, which returns `Result<CosmosResponse>` by collapsing the `Option<CosmosResponse>` returned by `execute_operation`. The submission returns a `cosmos_operation_handle_t*`; the eventual completion delivers one of three outcomes:
   - **`Ok(CosmosResponse)`** → completion outcome = OK, `cosmos_completion_take_response` returns the populated `cosmos_response_t`. The response may itself carry a Cosmos non-success HTTP status (404, 409, 412, 429, ...) only when the driver's policy explicitly does not error on it — see §6.2 below.
   - **`Err(CosmosError)`** → completion outcome = ERROR, `cosmos_completion_status` returns the packed `cosmos_status_code_t` (see §6.3), `cosmos_completion_take_error` returns the structured `cosmos_error_t`.
   - **`execute_singleton_operation` is never expected to surface the `Ok(None)` case**; if the underlying operation is mis-categorized and the driver hands back `None`, the wrapper surfaces a `CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE`-shaped error rather than fabricating an empty response.
 
-- `cosmos_submit_operation` (and its `_v2` form) is the feed-capable / paginated path and binds to `plan_operation` + `execute_plan`. It resumes from an inbound request continuation token and surfaces the next-page token via `cosmos_response_next_continuation`. Host SDKs paginate by re-submitting the same request with `continuation_token` set to the previous response's next-continuation, stopping once no next token is returned.
+- `cosmos_submit_operation` is the feed-capable / paginated path and binds to `plan_operation` + `execute_plan`. It resumes from an inbound request continuation token and surfaces the next-page token via `cosmos_response_next_continuation`. Host SDKs paginate by re-submitting the same request with `continuation_token` set to the previous response's next-continuation, stopping once no next token is returned.
 
 ### 6.2 Service errors vs. successful "non-2xx" responses
 
@@ -1901,8 +1871,8 @@ Each phase is independently shippable, has explicit acceptance criteria, and end
     partition key, paging inputs, and per-operation fields in one borrowed value.
 - `cosmos_operation_options_t` carries layered operation options and is seeded
     with `cosmos_operation_options_default()`.
-- `cosmos_operation_request_v2_t` adds PATCH tracking without changing the v1
-    layout or symbols.
+- `cosmos_operation_request_t` includes PATCH tracking controls in its canonical
+    168-byte layout.
 - `cosmos_feed_range_*` and partition-key helpers provide the opaque handles
     referenced by a request.
 
@@ -1912,9 +1882,8 @@ the same `CosmosOperation` fields as native Rust callers.
 
 ### Phase 6 — Execute + response *(Goal: end-to-end CRUD)*
 
-- `cosmos_submit_singleton_operation` and its `_v2` form bind to
-    `execute_singleton_operation`; `cosmos_submit_operation` and its `_v2` form
-    bind to the feed planner.
+- `cosmos_submit_singleton_operation` binds to `execute_singleton_operation`;
+    `cosmos_submit_operation` binds to the feed planner.
 - Flat completions expose status, body, response headers, continuation, and
     rich error details with one queue drain.
 - `c_tests/item_crud.c`: create / read / replace / upsert / delete / patch against the emulator, driven by a single shared `cosmos_cq_t` and a dedicated receive-loop helper thread that translates completions into per-call C condition-variable signals.
@@ -1945,9 +1914,9 @@ the same `CosmosOperation` fields as native Rust callers.
 
 ### Phase 9 — Patch & transactional batch *(Goal: parity with the driver's specialty operations)*
 
-- Patch uses the flat request body for caller-serialized instructions,
-  `patch_max_attempts` on the v1 prefix, and the v2 request/submit symbols for
-  stable tracking IDs and capacity. There is no operation factory or mutator.
+- Patch uses the flat request body for caller-serialized instructions and the
+    canonical request's attempt, stable tracking ID, capacity, and retention
+    fields. There is no operation factory or mutator.
 - TransactionalBatch: opaque builder (`cosmos_batch_t`) + per-op append + `cosmos_driver_submit_batch` (async submit; result delivered as a completion). Body marshalling is bytes-only, consistent with §3.3.
 
 **Done when:** Emulator-backed C tests pass for: add/remove/replace/set/incr patch ops, and a 5-operation batch (create + replace + delete) with both success and 412-precondition-failed batch outcomes.

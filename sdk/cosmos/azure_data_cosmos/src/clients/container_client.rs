@@ -485,6 +485,13 @@ impl ContainerClient {
     ///     .into_body().into_single::<Product>()?;
     /// # }
     /// ```
+    ///
+    /// # Tracked PATCH Items
+    ///
+    /// If the item participates in client-side tracked PATCH, this full-document
+    /// replacement must preserve `_azsdkPatchTracking` and its array order.
+    /// Models that do not explicitly represent the property should capture
+    /// unknown fields with `#[serde(flatten)]` and round-trip them unchanged.
     pub async fn replace_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -596,7 +603,7 @@ impl ContainerClient {
     /// on failure. Persist and pass it through [`PatchItemOptions`] to extend
     /// duplicate suppression across application retries or process restarts.
     /// Callers may instead provide a [`PatchTrackingId`](crate::models::PatchTrackingId)
-    /// up front. Reuse an ID only for the same logical operation against the
+    /// up front. Use a random, unpredictable ID and reuse it only for the same logical operation against the
     /// same item; reusing it for a different operation suppresses that
     /// operation.
     ///
@@ -604,10 +611,13 @@ impl ContainerClient {
     /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION) by
     /// default; [`PatchItemOptions::with_tracking_retention_seconds`] can
     /// configure a positive whole-second window. The per-item list has a
-    /// configurable capacity. PATCH returns an error rather than evicting
-    /// unexpired evidence. All writers that replace these items must preserve
-    /// the reserved property unchanged. The property is visible in stored and
-    /// returned JSON and counts toward item size and indexing costs.
+    /// configurable capacity. When capacity is full, the oldest entry is
+    /// evicted, so suppression is bounded by the earlier of retention expiry or
+    /// FIFO eviction. All writers that replace these items must preserve the
+    /// reserved property and its array order. The property is visible in stored
+    /// and returned JSON and counts toward item size and indexing costs.
+    /// Model-deserialization errors retain the response diagnostics and effective
+    /// tracking ID so callers can safely reconcile a committed PATCH.
     #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,
@@ -617,7 +627,7 @@ impl ContainerClient {
         options: Option<PatchItemOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&patch)?;
+        let body = serde_json::to_vec(&patch).map_err(crate::error::convert_json_encode_error)?;
 
         let item_ref = ItemReference::from_name(
             &self.container_ref,
@@ -715,6 +725,14 @@ impl ContainerClient {
     ///     .into_body().into_single::<Product>()?;
     /// Ok(())
     /// # }
+    /// ```
+    ///
+    /// # Tracked PATCH Items
+    ///
+    /// When upsert replaces an item that participates in client-side tracked
+    /// PATCH, it must preserve `_azsdkPatchTracking` and its array order.
+    /// Models that do not explicitly represent the property should capture
+    /// unknown fields with `#[serde(flatten)]` and round-trip them unchanged.
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
