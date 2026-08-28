@@ -116,7 +116,9 @@ pub enum FaultInjectionErrorType {
     /// response and reports a response timeout with sent status `Unknown`.
     ///
     /// Intended for tests that must exercise an ambiguous outcome after the
-    /// backend mutation has actually committed.
+    /// backend mutation has actually committed. On Gateway 2.0, success is
+    /// determined from the wrapped RNTBD backend status rather than the outer
+    /// proxy HTTP status.
     ResponseTimeoutAfterService,
 }
 

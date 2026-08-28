@@ -589,12 +589,16 @@ impl ContainerClient {
     /// but its response is lost, the next verification Read observes the entry
     /// and returns success without applying the instructions again.
     ///
-    /// By default the tracking ID protects retries only within this method
-    /// call. To extend duplicate suppression across application retries or
-    /// process restarts, persist a [`PatchTrackingId`](crate::models::PatchTrackingId)
-    /// and pass the same value through [`PatchItemOptions`]. Reuse an ID only
-    /// for the same logical operation against the same item; reusing it for a
-    /// different operation suppresses that operation.
+    /// By default the driver generates a tracking ID for this method call. The
+    /// effective ID is available from [`ItemResponse::patch_tracking_id`]
+    /// (including successful lost-response recovery) and
+    /// [`CosmosError::patch_tracking_id`](crate::CosmosError::patch_tracking_id)
+    /// on failure. Persist and pass it through [`PatchItemOptions`] to extend
+    /// duplicate suppression across application retries or process restarts.
+    /// Callers may instead provide a [`PatchTrackingId`](crate::models::PatchTrackingId)
+    /// up front. Reuse an ID only for the same logical operation against the
+    /// same item; reusing it for a different operation suppresses that
+    /// operation.
     ///
     /// The guarantee is bounded. Entries are protected from pruning for
     /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION)

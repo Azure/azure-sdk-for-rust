@@ -30,8 +30,8 @@ for the full design.
 
 ### Capability matrix (current)
 
-| Capability                                                                      | Status                                                                                   |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Capability                                                                      | Status                                                                                  |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Master-key authentication                                                       | ✅                                                                                       |
 | Token-credential / resource-token authentication                                | ⏳ follow-up (needs `TokenCredential` FFI bridge)                                        |
 | Sync driver creation (`_blocking`)                                              | ✅                                                                                       |
@@ -160,10 +160,11 @@ below for the production-shape guidance.
 > the v1 struct and symbols binary compatible. Consuming language SDKs decide
 > whether and how to expose PATCH as preview. For unsafe instruction lists, the
 > driver stores `_azsdkPatchTracking` on the item. Passing NULL for
-> `patch_tracking_id` protects internal retries in one invocation; persist and
-> reuse the same UUID for application retries. Entries are protected for 15
-> minutes, the default capacity is 1024, and a full unexpired list fails rather
-> than evicting evidence. Every writer must preserve the reserved property.
+> `patch_tracking_id` generates an ID for the invocation. Retrieve the effective
+> UUID from `cosmos_completion_patch_tracking_id`, then persist and reuse it for
+> application retries. Entries are protected for 5 minutes, the default
+> capacity is 1024, and a full unexpired list fails rather than evicting
+> evidence. Every writer must preserve the reserved property.
 >
 > The v1 functions take `(driver, const cosmos_operation_request_t *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.

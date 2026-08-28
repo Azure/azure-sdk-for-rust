@@ -22,14 +22,14 @@ The `azure_data_cosmos_driver` crate was explicitly designed (see [`ARCHITECTURE
 
 ### 1.2 Goals
 
-| # | Goal |
-| --- | --- |
-| G1 | Expose every primitive a language SDK needs to build a fully-featured Cosmos DB client: account, runtime, driver, operations, partition keys, options, responses, diagnostics. |
-| G2 | Stay **schema-agnostic**: bodies are `const uint8_t*`/`size_t` in, `const uint8_t*`/`size_t` out. No JSON parsing inside the wrapper. |
-| G3 | Map cleanly to the driver's Rust API. A C function should correspond to a single driver method or a small, mechanical builder step. |
-| G4 | Be **ABI-stable enough** for `corrosion` / `cmake` consumers; breaking changes only on documented driver minor bumps. |
-| G5 | Be **runtime-agnostic at the ABI** (Tokio is an implementation detail behind the `cosmos_runtime_builder_*` family) so a future runtime swap doesn't break C consumers. |
-| G6 | Provide first-class **diagnostics** access (request charge, activity id, status, headers, regions contacted, retry attempts). |
+| #   | Goal                                                                                                                                                                           |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| G1  | Expose every primitive a language SDK needs to build a fully-featured Cosmos DB client: account, runtime, driver, operations, partition keys, options, responses, diagnostics. |
+| G2  | Stay **schema-agnostic**: bodies are `const uint8_t*`/`size_t` in, `const uint8_t*`/`size_t` out. No JSON parsing inside the wrapper.                                          |
+| G3  | Map cleanly to the driver's Rust API. A C function should correspond to a single driver method or a small, mechanical builder step.                                            |
+| G4  | Be **ABI-stable enough** for `corrosion` / `cmake` consumers; breaking changes only on documented driver minor bumps.                                                          |
+| G5  | Be **runtime-agnostic at the ABI** (Tokio is an implementation detail behind the `cosmos_runtime_builder_*` family) so a future runtime swap doesn't break C consumers.        |
+| G6  | Provide first-class **diagnostics** access (request charge, activity id, status, headers, regions contacted, retry attempts).                                                  |
 
 ### 1.3 Non-goals
 
@@ -106,24 +106,24 @@ sdk/cosmos/azure_data_cosmos_driver_native/
 
 ### 2.2 Naming conventions
 
-| Rust type | C type | C function prefix |
-| --- | --- | --- |
-| `RuntimeContext` (wrapper) | `cosmos_runtime_t` | `cosmos_runtime_*` |
-| `CosmosDriver` | `cosmos_driver_t` | `cosmos_driver_*` |
-| `AccountReference` | `cosmos_account_ref_t` | `cosmos_account_ref_*` |
-| `DatabaseReference` | `cosmos_database_ref_t` | `cosmos_database_ref_*` |
-| `ContainerReference` | `cosmos_container_ref_t` | `cosmos_container_ref_*` |
-| `PartitionKey` | `cosmos_partition_key_t` | `cosmos_partition_key_*` |
-| `CosmosOperation` | `cosmos_operation_t` | `cosmos_operation_*` |
-| `CosmosResponse` | `cosmos_response_t` | `cosmos_response_*` |
-| `DiagnosticsContext` | `cosmos_diagnostics_t` | `cosmos_diagnostics_*` |
-| `DriverOptions` / `OperationOptions` / `RuntimeOptions` | `cosmos_*_options_t` | `cosmos_*_options_*` |
-| `CompletionQueue` (wrapper) | `cosmos_cq_t` | `cosmos_cq_*` |
-| `OperationHandle` (wrapper) | `cosmos_operation_handle_t` | `cosmos_operation_handle_*` |
-| `Completion` (wrapper) | `cosmos_completion_t` | `cosmos_completion_*` |
-| `CosmosError` | `cosmos_error_t` | `cosmos_error_*` |
-| `CosmosStatusCode` (packed `i32` newtype) | `cosmos_status_code_t` | returned by every fallible fn; decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB` |
-| `CosmosSubStatus` | `cosmos_sub_status_t` | enum variants `COSMOS_SUB_STATUS_*` |
+| Rust type                                               | C type                      | C function prefix                                                                     |
+| ------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------- |
+| `RuntimeContext` (wrapper)                              | `cosmos_runtime_t`          | `cosmos_runtime_*`                                                                    |
+| `CosmosDriver`                                          | `cosmos_driver_t`           | `cosmos_driver_*`                                                                     |
+| `AccountReference`                                      | `cosmos_account_ref_t`      | `cosmos_account_ref_*`                                                                |
+| `DatabaseReference`                                     | `cosmos_database_ref_t`     | `cosmos_database_ref_*`                                                               |
+| `ContainerReference`                                    | `cosmos_container_ref_t`    | `cosmos_container_ref_*`                                                              |
+| `PartitionKey`                                          | `cosmos_partition_key_t`    | `cosmos_partition_key_*`                                                              |
+| `CosmosOperation`                                       | `cosmos_operation_t`        | `cosmos_operation_*`                                                                  |
+| `CosmosResponse`                                        | `cosmos_response_t`         | `cosmos_response_*`                                                                   |
+| `DiagnosticsContext`                                    | `cosmos_diagnostics_t`      | `cosmos_diagnostics_*`                                                                |
+| `DriverOptions` / `OperationOptions` / `RuntimeOptions` | `cosmos_*_options_t`        | `cosmos_*_options_*`                                                                  |
+| `CompletionQueue` (wrapper)                             | `cosmos_cq_t`               | `cosmos_cq_*`                                                                         |
+| `OperationHandle` (wrapper)                             | `cosmos_operation_handle_t` | `cosmos_operation_handle_*`                                                           |
+| `Completion` (wrapper)                                  | `cosmos_completion_t`       | `cosmos_completion_*`                                                                 |
+| `CosmosError`                                           | `cosmos_error_t`            | `cosmos_error_*`                                                                      |
+| `CosmosStatusCode` (packed `i32` newtype)               | `cosmos_status_code_t`      | returned by every fallible fn; decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB` |
+| `CosmosSubStatus`                                       | `cosmos_sub_status_t`       | enum variants `COSMOS_SUB_STATUS_*`                                                   |
 
 All exported symbols start with `cosmos_`. The names in the **C type** column are normative — generated cbindgen output **must** match them exactly.
 
@@ -537,22 +537,22 @@ Rationale:
 
 ### 3.4 Handle ownership rules
 
-| Handle | Created by | Freed by | Cloneable? |
-| --- | --- | --- | --- |
-| `cosmos_runtime_t*` | `cosmos_runtime_builder_build` | `cosmos_runtime_free` | No (use one per process; see §4.1) |
-| `cosmos_driver_t*` | `cosmos_driver_get_or_create` | `cosmos_driver_free` | Internally `Arc`; FFI handle is a single owner |
-| `cosmos_cq_t*` | `cosmos_cq_create(runtime, options)` | `cosmos_cq_free` (blocks until drained — call `cosmos_cq_shutdown` first for non-blocking) | No |
-| `cosmos_operation_handle_t*` | every `cosmos_*_submit` | `cosmos_operation_handle_free` (independent of completion lifetime — see §3.6.2) | No |
-| `cosmos_completion_t*` | `cosmos_cq_wait` / `cosmos_cq_try_wait` | `cosmos_completion_free` (response/error obtained via `_take_*` remain owned by caller) | No |
-| `cosmos_account_ref_t*` | `cosmos_account_ref_with_*` | `cosmos_account_ref_free` | Yes, via `cosmos_account_ref_clone` (cheap; new strong handle to the same `Arc`) |
-| `cosmos_database_ref_t*` / `cosmos_container_ref_t*` | `cosmos_*_ref_create` from parent | matching `_free` | Yes, via `cosmos_*_ref_clone` (cheap) |
-| `cosmos_partition_key_t*` | `cosmos_partition_key_builder_build` / `cosmos_partition_key_from_string` | `cosmos_partition_key_free` | Yes, via `cosmos_partition_key_clone` (cheap) |
-| `cosmos_feed_range_t*` | `cosmos_feed_range_full` / `cosmos_feed_range_for_partition_key` | `cosmos_feed_range_free` | Yes, via `cosmos_feed_range_clone` (cheap; small `enum FeedRange` copy) |
-| `cosmos_operation_t*` | `cosmos_operation_*` factory | `cosmos_operation_free` (always safe — see §4.6 "Execute consumption" subsection) | No (move semantics on `execute`) |
-| `cosmos_response_t*` | `cosmos_completion_take_response` | `cosmos_response_free` | No |
-| `cosmos_bytes_t*` | `cosmos_response_into_body` / `cosmos_diagnostics_to_json` | `cosmos_bytes_free(bytes)` (single-owner heap allocation; see §3.3) | No (the underlying `bytes::Bytes` is internally refcounted but the FFI handle is single-owner) |
-| `cosmos_diagnostics_t*` | `cosmos_response_diagnostics` / `cosmos_error_diagnostics` | `cosmos_diagnostics_free` (drops `Arc`) | Internally `Arc`; each accessor returns a new strong handle the caller must free |
-| `cosmos_error_t*` | `cosmos_completion_take_error` (async failures), or a synchronous factory `out_error` slot (§4.3 / §4.5) | `cosmos_error_free` (borrowed via `cosmos_completion_error` is owned by the completion — do NOT free) | No |
+| Handle                                               | Created by                                                                                               | Freed by                                                                                              | Cloneable?                                                                                     |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `cosmos_runtime_t*`                                  | `cosmos_runtime_builder_build`                                                                           | `cosmos_runtime_free`                                                                                 | No (use one per process; see §4.1)                                                             |
+| `cosmos_driver_t*`                                   | `cosmos_driver_get_or_create`                                                                            | `cosmos_driver_free`                                                                                  | Internally `Arc`; FFI handle is a single owner                                                 |
+| `cosmos_cq_t*`                                       | `cosmos_cq_create(runtime, options)`                                                                     | `cosmos_cq_free` (blocks until drained — call `cosmos_cq_shutdown` first for non-blocking)            | No                                                                                             |
+| `cosmos_operation_handle_t*`                         | every `cosmos_*_submit`                                                                                  | `cosmos_operation_handle_free` (independent of completion lifetime — see §3.6.2)                      | No                                                                                             |
+| `cosmos_completion_t*`                               | `cosmos_cq_wait` / `cosmos_cq_try_wait`                                                                  | `cosmos_completion_free` (response/error obtained via `_take_*` remain owned by caller)               | No                                                                                             |
+| `cosmos_account_ref_t*`                              | `cosmos_account_ref_with_*`                                                                              | `cosmos_account_ref_free`                                                                             | Yes, via `cosmos_account_ref_clone` (cheap; new strong handle to the same `Arc`)               |
+| `cosmos_database_ref_t*` / `cosmos_container_ref_t*` | `cosmos_*_ref_create` from parent                                                                        | matching `_free`                                                                                      | Yes, via `cosmos_*_ref_clone` (cheap)                                                          |
+| `cosmos_partition_key_t*`                            | `cosmos_partition_key_builder_build` / `cosmos_partition_key_from_string`                                | `cosmos_partition_key_free`                                                                           | Yes, via `cosmos_partition_key_clone` (cheap)                                                  |
+| `cosmos_feed_range_t*`                               | `cosmos_feed_range_full` / `cosmos_feed_range_for_partition_key`                                         | `cosmos_feed_range_free`                                                                              | Yes, via `cosmos_feed_range_clone` (cheap; small `enum FeedRange` copy)                        |
+| `cosmos_operation_t*`                                | `cosmos_operation_*` factory                                                                             | `cosmos_operation_free` (always safe — see §4.6 "Execute consumption" subsection)                     | No (move semantics on `execute`)                                                               |
+| `cosmos_response_t*`                                 | `cosmos_completion_take_response`                                                                        | `cosmos_response_free`                                                                                | No                                                                                             |
+| `cosmos_bytes_t*`                                    | `cosmos_response_into_body` / `cosmos_diagnostics_to_json`                                               | `cosmos_bytes_free(bytes)` (single-owner heap allocation; see §3.3)                                   | No (the underlying `bytes::Bytes` is internally refcounted but the FFI handle is single-owner) |
+| `cosmos_diagnostics_t*`                              | `cosmos_response_diagnostics` / `cosmos_error_diagnostics`                                               | `cosmos_diagnostics_free` (drops `Arc`)                                                               | Internally `Arc`; each accessor returns a new strong handle the caller must free               |
+| `cosmos_error_t*`                                    | `cosmos_completion_take_error` (async failures), or a synchronous factory `out_error` slot (§4.3 / §4.5) | `cosmos_error_free` (borrowed via `cosmos_completion_error` is owned by the completion — do NOT free) | No                                                                                             |
 
 `cosmos_driver_t` is **the** unit of cardinality. Each call to `cosmos_driver_get_or_create` for the same account endpoint returns the same underlying driver instance (the runtime caches them — see the cache-key discussion in §4.4). The FFI handle, however, is a distinct `Box<Arc<CosmosDriver>>` — freeing it only drops one `Arc` strong count.
 
@@ -591,20 +591,20 @@ Hosts decode with the macros emitted in the header: `COSMOS_STATUS_HTTP(code) = 
 
 **Pure-FFI / pre-flight failures speak the same language.** A failure that never reached the wire (a NULL argument, invalid UTF-8, a shut-down queue) still packs a *real* HTTP status paired with a driver `CLIENT_FFI_*` (or `CLIENT_*`) sub-status, so it fits the identical integer as a service error. The internal condition set that performs this mapping lives in `CosmosErrorCode` in [`src/error.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/src/error.rs); it is `pub(crate)` and is **never** exported to the header. The pre-flight / plumbing conditions and the packed status each maps to are:
 
-  | HTTP | Sub-status constant | Meaning |
-    | --- | --- | --- |
-  | 400 | `COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT` | A required pointer argument was `NULL`. |
-  | 400 | `COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_UTF8` | A `*const c_char` argument was not valid UTF-8. |
-  | 400 | `COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_HEADER` | A `cosmos_operation_with_request_header` name / value was non-ASCII / control. |
-  | 400 | `COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE` | A builder setter was passed a value outside its documented range. The builder is left unchanged. |
-  | 400 | `COSMOS_SUB_STATUS_CLIENT_INVALID_ACCOUNT_ENDPOINT_URL` | Account endpoint URL or credential could not be parsed. |
-  | 400 | `COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_EMPTY` | A `PartitionKey` builder produced an empty / inconsistent key. |
-  | 404 | `COSMOS_SUB_STATUS_CLIENT_FFI_FEED_EXHAUSTED` | A single-shot submit of a feed-style operation yielded no further page. |
-  | 408 | `COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED` | An operation was cancelled (explicit cancel or queue shutdown). Surfaced on the `COSMOS_COMPLETION_OUTCOME_CANCELLED` completion's status. |
-  | 503 | `COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN` | A submit targeted a `cosmos_cq_t` already shut down. Pre-flight rejection — no completion is posted. |
-  | 503 | `COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_FULL` | A submit targeted a `cosmos_cq_t` already at its hard capacity. Pre-flight rejection. Default configuration sets no hard cap; only fires when the host opts in. See §3.1.2. |
-  | 500 | `COSMOS_SUB_STATUS_CLIENT_FFI_RUNTIME_BUILD_FAILED` | `cosmos_runtime_builder_build` could not construct the underlying `CosmosDriverRuntime`. The rich `cosmos_error_t` carries the inner cause. |
-  | 500 | `COSMOS_SUB_STATUS_CLIENT_FFI_PANIC` | A driver future spawned by the wrapper panicked; the panic firewall synthesized a failure so the host continuation is released rather than leaked. |
+  | HTTP | Sub-status constant                                     | Meaning                                                                                                                                                                     |
+  | ---- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | 400  | `COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT`            | A required pointer argument was `NULL`.                                                                                                                                     |
+  | 400  | `COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_UTF8`             | A `*const c_char` argument was not valid UTF-8.                                                                                                                             |
+  | 400  | `COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_HEADER`           | A `cosmos_operation_with_request_header` name / value was non-ASCII / control.                                                                                              |
+  | 400  | `COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE`     | A builder setter was passed a value outside its documented range. The builder is left unchanged.                                                                            |
+  | 400  | `COSMOS_SUB_STATUS_CLIENT_INVALID_ACCOUNT_ENDPOINT_URL` | Account endpoint URL or credential could not be parsed.                                                                                                                     |
+  | 400  | `COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_EMPTY`          | A `PartitionKey` builder produced an empty / inconsistent key.                                                                                                              |
+  | 404  | `COSMOS_SUB_STATUS_CLIENT_FFI_FEED_EXHAUSTED`           | A single-shot submit of a feed-style operation yielded no further page.                                                                                                     |
+  | 408  | `COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED`      | An operation was cancelled (explicit cancel or queue shutdown). Surfaced on the `COSMOS_COMPLETION_OUTCOME_CANCELLED` completion's status.                                  |
+  | 503  | `COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN`           | A submit targeted a `cosmos_cq_t` already shut down. Pre-flight rejection — no completion is posted.                                                                        |
+  | 503  | `COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_FULL`               | A submit targeted a `cosmos_cq_t` already at its hard capacity. Pre-flight rejection. Default configuration sets no hard cap; only fires when the host opts in. See §3.1.2. |
+  | 500  | `COSMOS_SUB_STATUS_CLIENT_FFI_RUNTIME_BUILD_FAILED`     | `cosmos_runtime_builder_build` could not construct the underlying `CosmosDriverRuntime`. The rich `cosmos_error_t` carries the inner cause.                                 |
+  | 500  | `COSMOS_SUB_STATUS_CLIENT_FFI_PANIC`                    | A driver future spawned by the wrapper panicked; the panic firewall synthesized a failure so the host continuation is released rather than leaked.                          |
 
   These sub-status values occupy the driver's `20350..=20399` "native FFI wrapper" band (defined once on `SubStatusCode`, added in [#4696](https://github.com/Azure/azure-sdk-for-rust/issues/4696)); the `CLIENT_*` codes reused above (partition-key, account-endpoint URL) are pre-existing driver client-side codes. Hosts should treat an unrecognized non-zero status as fatal-but-recoverable (log + propagate) rather than panic.
 
@@ -1335,39 +1335,41 @@ typedef struct cosmos_operation_request_v2_t {
 The v2 tracking fields are valid only when `base.kind` is `PatchItem`; setting
 either field for another operation is rejected during preflight. Unsafe PATCH
 instructions persist the tracking ID under `_azsdkPatchTracking`. Language
-SDKs that retry across calls or process restarts must persist and reuse the
+SDKs retrieve the effective ID, including a generated ID, from
+`cosmos_completion_patch_tracking_id` on successful or failed completions.
+Those that retry across calls or process restarts must persist and reuse the
 same UUID for the same logical operation and item.
 
 `cosmos_operation_kind_t` is an append-only enum (new kinds get new trailing
 discriminants so the ABI stays stable). `0` (`Invalid`) is always rejected.
 The kinds and their required fields:
 
-| Kind (value) | Driver `CosmosOperation` | Required fields |
-| --- | --- | --- |
-| `CreateDatabase` (1) | `create_database` | `account` + body |
-| `ReadAllDatabases` (2) | `read_all_databases` | `account` |
-| `QueryDatabases` (3) | `query_databases` | `account` + body |
-| `QueryOffers` (4) | `query_offers` | `account` + body |
-| `ReadOffer` (5) | `read_offer` | `account` + `resource_link` |
-| `ReplaceOffer` (6) | `replace_offer` | `account` + `resource_link` + body |
-| `ReadDatabase` (7) | `read_database` | `database` |
-| `DeleteDatabase` (8) | `delete_database` | `database` |
-| `CreateContainer` (9) | `create_container` | `database` + body |
-| `ReadAllContainers` (10) | `read_all_containers` | `database` |
-| `QueryContainers` (11) | `query_containers` | `database` + body |
-| `ReadContainer` (12) | `read_container` | `container` |
-| `ReplaceContainer` (13) | `replace_container` | `container` + body |
-| `DeleteContainer` (14) | `delete_container` | `container` |
-| `ReadAllItems` (15) | `read_all_items` | `container` + `partition_key` |
-| `ReadAllItemsCrossPartition` (16) | `read_all_items_cross_partition` | `container` |
-| `QueryItems` (17) | `query_items` | `container` + body; `feed_range` optional |
-| `Batch` (18) | `batch` | `container` + `partition_key` + body |
-| `CreateItem` (19) | `create_item` | `container` + `partition_key` + body |
-| `ReadItem` (20) | `read_item` | `container` + `partition_key` + `item_id` |
-| `UpsertItem` (21) | `upsert_item` | `container` + `partition_key` + body |
-| `ReplaceItem` (22) | `replace_item` | `container` + `partition_key` + `item_id` + body |
-| `DeleteItem` (23) | `delete_item` | `container` + `partition_key` + `item_id` |
-| `PatchItem` (24) | `patch_item` | `container` + `partition_key` + `item_id` + body |
+| Kind (value)                      | Driver `CosmosOperation`         | Required fields                                  |
+| --------------------------------- | -------------------------------- | ------------------------------------------------ |
+| `CreateDatabase` (1)              | `create_database`                | `account` + body                                 |
+| `ReadAllDatabases` (2)            | `read_all_databases`             | `account`                                        |
+| `QueryDatabases` (3)              | `query_databases`                | `account` + body                                 |
+| `QueryOffers` (4)                 | `query_offers`                   | `account` + body                                 |
+| `ReadOffer` (5)                   | `read_offer`                     | `account` + `resource_link`                      |
+| `ReplaceOffer` (6)                | `replace_offer`                  | `account` + `resource_link` + body               |
+| `ReadDatabase` (7)                | `read_database`                  | `database`                                       |
+| `DeleteDatabase` (8)              | `delete_database`                | `database`                                       |
+| `CreateContainer` (9)             | `create_container`               | `database` + body                                |
+| `ReadAllContainers` (10)          | `read_all_containers`            | `database`                                       |
+| `QueryContainers` (11)            | `query_containers`               | `database` + body                                |
+| `ReadContainer` (12)              | `read_container`                 | `container`                                      |
+| `ReplaceContainer` (13)           | `replace_container`              | `container` + body                               |
+| `DeleteContainer` (14)            | `delete_container`               | `container`                                      |
+| `ReadAllItems` (15)               | `read_all_items`                 | `container` + `partition_key`                    |
+| `ReadAllItemsCrossPartition` (16) | `read_all_items_cross_partition` | `container`                                      |
+| `QueryItems` (17)                 | `query_items`                    | `container` + body; `feed_range` optional        |
+| `Batch` (18)                      | `batch`                          | `container` + `partition_key` + body             |
+| `CreateItem` (19)                 | `create_item`                    | `container` + `partition_key` + body             |
+| `ReadItem` (20)                   | `read_item`                      | `container` + `partition_key` + `item_id`        |
+| `UpsertItem` (21)                 | `upsert_item`                    | `container` + `partition_key` + body             |
+| `ReplaceItem` (22)                | `replace_item`                   | `container` + `partition_key` + `item_id` + body |
+| `DeleteItem` (23)                 | `delete_item`                    | `container` + `partition_key` + `item_id`        |
+| `PatchItem` (24)                  | `patch_item`                     | `container` + `partition_key` + `item_id` + body |
 
 The query text / parameters for the `Query*` kinds live in `body` as JSON of
 shape `{ "query": "SELECT * FROM c WHERE c.foo = @p", "parameters": [...] }`,
@@ -1772,13 +1774,13 @@ Hosts dispatch by decoding the packed status:
 - `COSMOS_STATUS_HTTP(code)` yields the HTTP status — switch on it for the common `429` / `404` / `409` / `412` / `408` / `410` / `401` / `403` / `400` / `503` branches (`is_from_wire(err) == true` distinguishes a gateway `404` from a synthetic one).
 - `COSMOS_STATUS_SUB(code)` yields the sub-status; compare it against the named `COSMOS_SUB_STATUS_*` constants to recognize synthetic client / transport / serialization / auth categories that never reached the wire. Representative synthetic cases:
 
-  | Condition | Packed status decodes to |
-    | --- | --- |
-  | `is_from_wire == false`, authentication bootstrap failure | HTTP + `COSMOS_SUB_STATUS_AUTHENTICATION_TOKEN_ACQUISITION_FAILED` (`20402`) |
-  | `is_from_wire == false`, transport-synthesized (`20003`, `20010..=20015`) | e.g. `503` + `COSMOS_SUB_STATUS_TRANSPORT_*` |
-  | `is_from_wire == false`, client deadline | `408` + `COSMOS_SUB_STATUS_CLIENT_OPERATION_TIMEOUT` (`20008`) |
-  | `is_from_wire == false`, response body decode | `COSMOS_SUB_STATUS_SERIALIZATION_RESPONSE_BODY_INVALID` (`20020`) |
-  | pure-FFI / pre-flight rejection | real HTTP + a `COSMOS_SUB_STATUS_CLIENT_FFI_*` code (§3.5.1) |
+  | Condition                                                                 | Packed status decodes to                                                     |
+  | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+  | `is_from_wire == false`, authentication bootstrap failure                 | HTTP + `COSMOS_SUB_STATUS_AUTHENTICATION_TOKEN_ACQUISITION_FAILED` (`20402`) |
+  | `is_from_wire == false`, transport-synthesized (`20003`, `20010..=20015`) | e.g. `503` + `COSMOS_SUB_STATUS_TRANSPORT_*`                                 |
+  | `is_from_wire == false`, client deadline                                  | `408` + `COSMOS_SUB_STATUS_CLIENT_OPERATION_TIMEOUT` (`20008`)               |
+  | `is_from_wire == false`, response body decode                             | `COSMOS_SUB_STATUS_SERIALIZATION_RESPONSE_BODY_INVALID` (`20020`)            |
+  | pure-FFI / pre-flight rejection                                           | real HTTP + a `COSMOS_SUB_STATUS_CLIENT_FFI_*` code (§3.5.1)                 |
 
 All structured detail — message, activity id, retry-after, diagnostics, the full sub-status — always lives on the rich `cosmos_error_t` and is the source of truth; the packed status is only for the common dispatch path. Because the wrapper never invents its own error taxonomy, there is no configuration-vs-client distinction to maintain: configuration-time failures (invalid endpoint URL, missing credential parts, etc.) surface as the pre-flight `400 + CLIENT_*` / `500 + CLIENT_FFI_*` statuses from §3.5.1 plus the rich `cosmos_error_t` with `is_from_wire == false`.
 
@@ -2147,17 +2149,17 @@ Each item below is independent; ship as feature-gated when ready.
 
 For anyone consulting the deleted `azure_data_cosmos_native` crate as a reference:
 
-| Old (`azure_data_cosmos_native`) | New (`azure_data_cosmos_driver_native`) |
-| --- | --- |
-| `cosmos_client_create_with_key` | `cosmos_account_ref_with_master_key` + `cosmos_driver_get_or_create_submit` (or `_blocking` for startup-init) |
-| `cosmos_client_database_client` | `cosmos_database_ref_create` (no network call) |
-| `cosmos_database_create_container` | Fill `cosmos_operation_request_t` with `CREATE_CONTAINER`, `database`, and `body`; call `cosmos_submit_singleton_operation`; drain completion on `queue` |
-| `cosmos_container_create_item(pk, json_data)` | Fill `cosmos_operation_request_t` with `CREATE_ITEM`, `container`, partition key, and `body`; call `cosmos_submit_singleton_operation`; drain completion on `queue` |
-| Returned `out_json` (NUL-terminated `const char*`) | Returns `cosmos_response_t*` via `cosmos_completion_take_response`; body via `cosmos_response_into_body(response, &cosmos_bytes_t_handle)` (caller frees with `cosmos_bytes_free`) |
-| HTTP errors packed into `cosmos_status_code_t` | Surfaced as a completion with `outcome = ERROR` carrying a rich `cosmos_error_t` retrievable via `cosmos_completion_take_error(c)` / `cosmos_completion_error(c)` (see §3.5.2, §3.6, §6) |
-| Synchronous return code per call | Asynchronous submit returns `cosmos_operation_handle_t*`; completion delivered on caller-owned `cosmos_cq_t` (see §3.1, §3.6) |
-| One `ContainerClient` per container | Cheap `cosmos_container_ref_t` value handles (`_clone` is a refcount bump) |
-| Tokio runtime hidden inside `CosmosClient` | Tokio runtime explicit on `cosmos_runtime_t` (one per process; see §4.1) |
-| No diagnostics access | Full `cosmos_diagnostics_*` surface (`cosmos_response_diagnostics`, `cosmos_error_diagnostics`, `cosmos_diagnostics_to_json` → `cosmos_bytes_t**`) |
+| Old (`azure_data_cosmos_native`)                   | New (`azure_data_cosmos_driver_native`)                                                                                                                                                  |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cosmos_client_create_with_key`                    | `cosmos_account_ref_with_master_key` + `cosmos_driver_get_or_create_submit` (or `_blocking` for startup-init)                                                                            |
+| `cosmos_client_database_client`                    | `cosmos_database_ref_create` (no network call)                                                                                                                                           |
+| `cosmos_database_create_container`                 | Fill `cosmos_operation_request_t` with `CREATE_CONTAINER`, `database`, and `body`; call `cosmos_submit_singleton_operation`; drain completion on `queue`                                 |
+| `cosmos_container_create_item(pk, json_data)`      | Fill `cosmos_operation_request_t` with `CREATE_ITEM`, `container`, partition key, and `body`; call `cosmos_submit_singleton_operation`; drain completion on `queue`                      |
+| Returned `out_json` (NUL-terminated `const char*`) | Returns `cosmos_response_t*` via `cosmos_completion_take_response`; body via `cosmos_response_into_body(response, &cosmos_bytes_t_handle)` (caller frees with `cosmos_bytes_free`)       |
+| HTTP errors packed into `cosmos_status_code_t`     | Surfaced as a completion with `outcome = ERROR` carrying a rich `cosmos_error_t` retrievable via `cosmos_completion_take_error(c)` / `cosmos_completion_error(c)` (see §3.5.2, §3.6, §6) |
+| Synchronous return code per call                   | Asynchronous submit returns `cosmos_operation_handle_t*`; completion delivered on caller-owned `cosmos_cq_t` (see §3.1, §3.6)                                                            |
+| One `ContainerClient` per container                | Cheap `cosmos_container_ref_t` value handles (`_clone` is a refcount bump)                                                                                                               |
+| Tokio runtime hidden inside `CosmosClient`         | Tokio runtime explicit on `cosmos_runtime_t` (one per process; see §4.1)                                                                                                                 |
+| No diagnostics access                              | Full `cosmos_diagnostics_*` surface (`cosmos_response_diagnostics`, `cosmos_error_diagnostics`, `cosmos_diagnostics_to_json` → `cosmos_bytes_t**`)                                       |
 
 The new model is a **lower-level, more explicit, more powerful** API. Convenience and ergonomics belong in each host-language SDK that consumes these bindings.

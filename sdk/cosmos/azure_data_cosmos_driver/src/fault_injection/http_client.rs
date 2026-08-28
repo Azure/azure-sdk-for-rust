@@ -30,6 +30,7 @@ enum ApplyResult {
     ResponseTimeoutAfterService {
         reservation: FaultInjectionHitReservation,
         rule_id: String,
+        delay: Option<Duration>,
     },
     /// Rule matched but the probability check failed.
     ProbabilityMiss,
@@ -162,6 +163,19 @@ impl FaultClient {
         None // Condition matches
     }
 
+    fn is_successful_service_response(&self, response: &HttpResponse) -> bool {
+        if self.transport_kind != Some(TransportKind::GatewayV2) {
+            return (200..300).contains(&response.status);
+        }
+
+        crate::driver::transport::unwrap_response_for_gateway_v2(HttpResponse {
+            status: response.status,
+            headers: response.headers.clone(),
+            body: response.body.clone(),
+        })
+        .is_ok_and(|unwrapped| (200..300).contains(&unwrapped.status))
+    }
+
     /// Applies the fault injection result and returns an error or modifies the response.
     ///
     /// This method handles the full fault lifecycle: probability check, delay application,
@@ -217,12 +231,14 @@ impl FaultClient {
                 .commit();
         }
 
-        // Apply delay if configured (only when fault is actually injected).
-        if let Some(delay) = server_error.delay() {
-            if delay > Duration::ZERO {
-                let delay = azure_core::time::Duration::try_from(delay)
-                    .unwrap_or(azure_core::time::Duration::ZERO);
-                azure_core::sleep(delay).await;
+        // Deferred faults apply their delay only after the service succeeds.
+        if !deferred {
+            if let Some(delay) = server_error.delay() {
+                if delay > Duration::ZERO {
+                    let delay = azure_core::time::Duration::try_from(delay)
+                        .unwrap_or(azure_core::time::Duration::ZERO);
+                    azure_core::sleep(delay).await;
+                }
             }
         }
 
@@ -271,6 +287,7 @@ impl FaultClient {
                         .take()
                         .expect("deferred fault retains its reservation"),
                     rule_id: rule_id.to_owned(),
+                    delay: server_error.delay(),
                 };
             }
             FaultInjectionErrorType::InternalServerError => (
@@ -381,7 +398,8 @@ impl TransportClient for FaultClient {
                 ApplyResult::ResponseTimeoutAfterService {
                     reservation,
                     rule_id,
-                } => (None, Some((reservation, rule_id))),
+                    delay,
+                } => (None, Some((reservation, rule_id, delay))),
                 ApplyResult::ProbabilityMiss => {
                     evaluations.push(FaultInjectionEvaluation::ProbabilityMiss {
                         rule_id: rule.id().to_owned(),
@@ -429,10 +447,17 @@ impl TransportClient for FaultClient {
             let response = self.inner.send(&clean_request).await;
             let successful_response = response
                 .as_ref()
-                .is_ok_and(|response| (200..300).contains(&response.status));
-            if let Some((reservation, rule_id)) =
+                .is_ok_and(|response| self.is_successful_service_response(response));
+            if let Some((reservation, rule_id, delay)) =
                 timeout_after_service.filter(|_| successful_response)
             {
+                if let Some(delay) = delay {
+                    if delay > Duration::ZERO {
+                        let delay = azure_core::time::Duration::try_from(delay)
+                            .unwrap_or(azure_core::time::Duration::ZERO);
+                        azure_core::sleep(delay).await;
+                    }
+                }
                 let mut applied = vec![FaultInjectionEvaluation::Applied { rule_id }];
                 tracing::trace!(evaluations = ?applied, "fault injection rule evaluation");
                 if let Some(ref collector) = request.evaluation_collector {
@@ -480,7 +505,7 @@ fn host_matches_region(url: &url::Url, region: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{host_matches_region, FaultClient};
-    use crate::diagnostics::TransportKind;
+    use crate::diagnostics::{RequestSentStatus, TransportKind};
     use crate::driver::transport::cosmos_transport_client::{
         HttpRequest, HttpResponse, TransportClient, TransportError,
     };
@@ -490,7 +515,7 @@ mod tests {
         FaultInjectionRuleBuilder, FaultOperationType,
     };
     use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-    use crate::models::SubStatusCode;
+    use crate::models::{CosmosStatus, SubStatusCode};
     use crate::options::Region;
     use async_trait::async_trait;
     use azure_core::http::{headers::Headers, Method, StatusCode, Url};
@@ -503,6 +528,7 @@ mod tests {
     struct MockTransportClient {
         call_count: AtomicU32,
         status: AtomicU16,
+        body: Vec<u8>,
     }
 
     impl MockTransportClient {
@@ -510,6 +536,7 @@ mod tests {
             Self {
                 call_count: AtomicU32::new(0),
                 status: AtomicU16::new(200),
+                body: Vec::new(),
             }
         }
 
@@ -517,6 +544,15 @@ mod tests {
             Self {
                 call_count: AtomicU32::new(0),
                 status: AtomicU16::new(status.into()),
+                body: Vec::new(),
+            }
+        }
+
+        fn with_response(status: StatusCode, body: Vec<u8>) -> Self {
+            Self {
+                call_count: AtomicU32::new(0),
+                status: AtomicU16::new(status.into()),
+                body,
             }
         }
 
@@ -538,9 +574,17 @@ mod tests {
             Ok(HttpResponse {
                 status: self.status.load(Ordering::SeqCst),
                 headers: Headers::new(),
-                body: vec![],
+                body: self.body.clone(),
             })
         }
+    }
+
+    fn gateway_v2_response_frame(status: StatusCode) -> Vec<u8> {
+        let mut frame = Vec::with_capacity(24);
+        frame.extend_from_slice(&24_u32.to_le_bytes());
+        frame.extend_from_slice(&u32::from(u16::from(status)).to_le_bytes());
+        frame.extend_from_slice(&[0; 16]);
+        frame
     }
 
     fn create_test_request() -> (HttpRequest, EvaluationCollector) {
@@ -958,6 +1002,32 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn response_timeout_after_service_delays_after_forwarding() {
+        let mock_client = Arc::new(MockTransportClient::new());
+
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .with_delay(Duration::from_millis(200))
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("delayed-post-service-timeout", error).build();
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
+        let (request, _collector) = create_test_request();
+
+        let result =
+            tokio::time::timeout(Duration::from_millis(50), fault_client.send(&request)).await;
+
+        assert!(
+            result.is_err(),
+            "the post-service delay should still be pending"
+        );
+        assert_eq!(
+            mock_client.call_count(),
+            1,
+            "the request must reach the service before the configured delay"
+        );
+    }
+
+    #[tokio::test]
     async fn response_timeout_after_service_preserves_service_error() {
         let mock_client = Arc::new(MockTransportClient::with_status(
             StatusCode::PreconditionFailed,
@@ -973,6 +1043,60 @@ mod tests {
 
         assert_eq!(response.status, u16::from(StatusCode::PreconditionFailed));
         assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_preserves_gateway_v2_backend_error() {
+        let mock_client = Arc::new(MockTransportClient::with_response(
+            StatusCode::Ok,
+            gateway_v2_response_frame(StatusCode::PreconditionFailed),
+        ));
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .build();
+        let rule = Arc::new(FaultInjectionRuleBuilder::new("post-service-timeout", error).build());
+        let fault_client = FaultClient::new(
+            mock_client.clone(),
+            vec![rule.clone()],
+            Some(TransportKind::GatewayV2),
+        );
+        let (request, collector) = create_test_request();
+
+        let response = fault_client.send(&request).await.unwrap();
+
+        assert_eq!(response.status, u16::from(StatusCode::Ok));
+        assert_eq!(
+            response.body,
+            gateway_v2_response_frame(StatusCode::PreconditionFailed)
+        );
+        assert_eq!(rule.hit_count(), 0);
+        assert!(collector
+            .take()
+            .iter()
+            .all(|evaluation| !matches!(evaluation, FaultInjectionEvaluation::Applied { .. })));
+    }
+
+    #[tokio::test]
+    async fn response_timeout_after_service_discards_gateway_v2_backend_success() {
+        let mock_client = Arc::new(MockTransportClient::with_response(
+            StatusCode::Ok,
+            gateway_v2_response_frame(StatusCode::Ok),
+        ));
+        let error = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("post-service-timeout", error).build();
+        let fault_client = FaultClient::new(
+            mock_client,
+            vec![Arc::new(rule)],
+            Some(TransportKind::GatewayV2),
+        );
+        let (request, _collector) = create_test_request();
+
+        let error = fault_client.send(&request).await.unwrap_err();
+
+        assert_eq!(error.error.status(), CosmosStatus::TRANSPORT_IO_FAILED);
+        assert_eq!(error.request_sent, RequestSentStatus::Unknown);
     }
 
     #[tokio::test]

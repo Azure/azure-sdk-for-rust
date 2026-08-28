@@ -985,30 +985,6 @@ typedef struct cosmos_bytes_t {
 } cosmos_bytes_t;
 
 /**
- * Layout of the `cosmos_completion_queue_options_t` struct as it appears at
- * the C ABI boundary. Caller-owned, pass-by-value (per section 3.1.2 the
- * layout is published for inputs).
- *
- * The Rust representation does **not** derive `Copy` — nor is it materialized
- * by value from a caller-supplied pointer — because `include_error_details`
- * is declared as `bool` in the emitted C header. Materializing an
- * arbitrary caller byte through a Rust `bool` would be undefined behavior,
- * so `cqoptions_from_ptr` reads each field byte-by-byte via
- * [`std::ptr::addr_of!`] and inspects the boolean byte as a raw `u8`.
- */
-typedef struct cosmos_completion_queue_options_t {
-  uint32_t capacity_hint;
-  uint32_t max_capacity;
-  /**
-   * Whether to capture rich error payloads. Emitted as a C `bool`; the
-   * wrapper reads the underlying byte via a raw pointer and treats any
-   * non-zero value as `true`, so an arbitrary host-written byte cannot
-   * produce an invalid Rust `bool` (which would be undefined behavior).
-   */
-  bool include_error_details;
-} cosmos_completion_queue_options_t;
-
-/**
  * Payload half of the [`CosmosValue`] tagged union. Only the field selected
  * by the sibling `kind` discriminant may be read; reading any other field is
  * undefined behavior.
@@ -1218,6 +1194,30 @@ typedef struct cosmos_completion_t {
    */
   struct cosmos_completion_backing_t *backing;
 } cosmos_completion_t;
+
+/**
+ * Layout of the `cosmos_completion_queue_options_t` struct as it appears at
+ * the C ABI boundary. Caller-owned, pass-by-value (per section 3.1.2 the
+ * layout is published for inputs).
+ *
+ * The Rust representation does **not** derive `Copy` — nor is it materialized
+ * by value from a caller-supplied pointer — because `include_error_details`
+ * is declared as `bool` in the emitted C header. Materializing an
+ * arbitrary caller byte through a Rust `bool` would be undefined behavior,
+ * so `cqoptions_from_ptr` reads each field byte-by-byte via
+ * [`std::ptr::addr_of!`] and inspects the boolean byte as a raw `u8`.
+ */
+typedef struct cosmos_completion_queue_options_t {
+  uint32_t capacity_hint;
+  uint32_t max_capacity;
+  /**
+   * Whether to capture rich error payloads. Emitted as a C `bool`; the
+   * wrapper reads the underlying byte via a raw pointer and treats any
+   * non-zero value as `true`, so an arbitrary host-written byte cannot
+   * produce an invalid Rust `bool` (which would be undefined behavior).
+   */
+  bool include_error_details;
+} cosmos_completion_queue_options_t;
 
 /**
  * A single custom request/operation header. Both pointers are
@@ -1684,6 +1684,15 @@ void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
  * undefined behavior.
  */
 void cosmos_bytes_free(struct cosmos_bytes_t bytes);
+
+/**
+ * Returns the effective PATCH tracking UUID carried by a completion.
+ *
+ * The returned NUL-terminated UTF-8 string is borrowed from `completion` and
+ * remains valid until that completion is freed. Returns NULL for non-PATCH
+ * operations, retry-safe PATCH operations, or an invalid completion pointer.
+ */
+const char *cosmos_completion_patch_tracking_id(const struct cosmos_completion_t *completion);
 
 /**
  * Create a completion queue bound to `runtime`. Returns NULL if `runtime`

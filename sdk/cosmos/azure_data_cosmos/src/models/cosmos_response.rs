@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::diagnostics::DiagnosticsContext;
 use crate::models::CosmosStatus;
-use crate::models::{ResponseBody, ResponseHeaders};
+use crate::models::{PatchTrackingId, ResponseBody, ResponseHeaders};
 use azure_data_cosmos_driver::models::CosmosResponse as DriverResponse;
 use serde::de::DeserializeOwned;
 
@@ -79,6 +79,13 @@ impl CosmosResponse {
     /// Returns a cloned [`Arc`] handle to the diagnostics for this operation.
     pub(crate) fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         Arc::clone(&self.diagnostics)
+    }
+
+    /// Returns the effective duplicate-suppression identity for a tracked PATCH.
+    pub(crate) fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
+        self.diagnostics
+            .patch_tracking_id()
+            .map(PatchTrackingId::from_driver)
     }
 
     /// Deserializes the response body into a model type.

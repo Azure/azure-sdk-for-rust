@@ -67,20 +67,25 @@ normal pipeline stages run.
   reject a tracked PATCH before dispatching any sub-operation.
 
 3. Clone the caller's operation options for the Read and override its
-  consistency strategy with LatestCommitted. The caller's session token is
-  intentionally not copied while the Read is routed to a write endpoint;
-  LatestCommitted is not session-effective.
+  consistency strategy with LatestCommitted. Copy the caller's explicit
+  session token onto the Read so reader fallback can preserve an external
+  session; writer routing removes it before transport because LatestCommitted
+  is not session-effective.
 
 loop up to max_attempts times:
    4. read = execute_operation(Read, read_options) with:
        - ReadConsistencyStrategy::LatestCommitted forced in read_options;
        - preferred-write-endpoint routing;
        - hedging suppressed, including environment-enabled hedging; and
-       - no session token.
+       - the caller's session token retained for possible reader fallback but
+         stripped before transport when a preferred writer is selected.
        If every preferred write endpoint is unavailable or excluded, use
      normal read routing with the account-default consistency and effective
      session token. Record a routing_fallback request event with detail
      patch_verification_read_write_endpoint_unavailable_or_excluded.
+    The operation pipeline also records fallback directly on the internal
+    `CosmosResponse`; the PATCH handler uses that explicit flag for marker safety.
+    The diagnostic event is observability-only and is not a correctness input.
        The driver pipeline returns Err(ErrorKind::HttpResponse { .. })
        for any non-2xx Read response; the patch handler propagates that
        error verbatim (with its raw_response and diagnostics intact).
@@ -89,8 +94,9 @@ loop up to max_attempts times:
      For an unsafe instruction list:
      - if the tracking ID is already present, return the Read as success
       without applying the instructions;
-     - if routing fell back to a reader and the ID is absent, fail with 503
-      because absence is inconclusive;
+    - if routing fell back to a reader and the ID is absent, allow insertion
+     only for a driver-generated ID before this invocation dispatches its
+     first Replace; otherwise fail with 503 because absence is inconclusive;
      - otherwise validate the reserved array, prune entries whose retention
       window elapsed, fail with 409 if the capacity remains full, and append
       {trackingId, attemptedAt}.
@@ -104,7 +110,10 @@ loop up to max_attempts times:
        match replace result:
           Ok(_)                                            -> succeed, see step 7
          Err(HttpResponse{ status: PreconditionFailed })  -> remember and continue the loop
-         Err(_)                                           -> return error verbatim
+           Err(_)                                           -> for a tracked PATCH whose request may
+                                                               have been sent, perform one verification
+                                                               Read; return success only if it finds the
+                                                               marker, otherwise return the error verbatim
         7. return CosmosResponse::new(merged_bytes,
                                   replace.headers(),
                                   replace.status(),
@@ -113,8 +122,10 @@ loop up to max_attempts times:
        order, of every successful sub-op's per-request diagnostics —
        see "Response Synthesis" below.
 
-if loop exhausted: return ErrorKind::HttpResponse{ status:
-PreconditionFailed, .. } with the last 412 chained as the source.
+if loop exhausted: for a tracked PATCH, perform one verification Read and
+return success only if it finds the marker; otherwise return
+ErrorKind::HttpResponse{ status: PreconditionFailed, .. } with the last 412
+chained as the source.
 ```
 
 ## Tracking protocol
@@ -124,22 +135,38 @@ The reserved `_azsdkPatchTracking` property is an array of objects with a UUID
 JSON and counts toward item size, request units, and indexing. Existing marker
 state is validated and never silently overwritten.
 
-Entries are protected from pruning for 15 minutes. A matching ID is honored for
+The effective tracking ID, including a driver-generated ID, is exposed on
+successful responses and errors and captured as `patch_tracking_id` in the
+operation diagnostics. Callers can persist that value and reuse it for an
+application or process retry of the same logical PATCH.
+
+Entries are protected from pruning for 5 minutes. A matching ID is honored for
 as long as it remains present, even after that interval; expiration only makes
 an entry eligible for pruning by a later unsafe PATCH. The default capacity is
 1024 entries per item. When every entry is still protected and the capacity is
 full, PATCH returns 409 rather than evicting evidence and risking a duplicate.
-Pruning uses the service's standard HTTP `Date` response header, never the
-client wall clock. When no authoritative service time is available, PATCH does
-not prune; entries may therefore live longer and reach the configured capacity.
-The item's service-generated `_ts` clamps impossible future timestamps and
-promotes the newest entry to at least the timestamp of its committing write.
+Pruning uses only the item's service-generated `_ts`; the HTTP `Date` header is
+reserved for authentication and is not a PATCH protocol clock. Marker
+insertion requires a non-negative integer `_ts`. Because `_ts` has second-level
+precision, pruning uses a strict cutoff: an entry is eligible only when
+`attemptedAt < _ts - retention`. This guarantees the complete retention window
+has elapsed even when the marker committed near the end of its timestamp
+second.
 
-The generated ID protects all internal retries in one invocation. A consuming
-SDK may accept a caller-supplied ID to extend duplicate suppression across
-application retries and process restarts. The caller must persist and reuse the
-ID only for the same logical operation and item. Reusing an ID for a different
-operation causes that operation to be treated as already committed.
+Each marker persists its own `attemptedAt`. A newly committed marker initially
+carries the `_ts` of the image read before its Replace; the next successful
+tracked PATCH promotes only that newest marker to the document `_ts` that now
+contains it. Older marker timestamps are never refreshed. If a later write or
+multi-master conflict resolution advances `_ts` before that promotion, the
+newest marker may be retained conservatively for longer, but it cannot be
+pruned early.
+
+The generated ID uses cryptographically secure operating-system entropy and
+protects all internal retries in one invocation. A consuming SDK may accept a
+caller-supplied ID to extend duplicate suppression across application retries
+and process restarts. The caller must persist and reuse the ID only for the
+same logical operation and item. Reusing an ID for a different operation
+causes that operation to be treated as already committed.
 
 All writers that replace a participating item must preserve the reserved
 property and its unknown entry fields. A writer that removes, rewrites, or
@@ -160,12 +187,14 @@ read. To close that window:
   **and** to the internal Replace. The Read's consistency strategy is
   deliberately overridden with `LatestCommitted`; other options are
   preserved.
-2. `LatestCommitted` deliberately bypasses the session lane. The internal
-  Read therefore does **not** carry the caller's session token or a token
-  from a prior attempt. Freshness comes from the write-region quorum read,
-  not session-token resolution. The pipeline removes
-  `x-ms-session-token` after all custom-header layers are resolved, so a
-  runtime/account/operation custom header cannot reintroduce it.
+2. `LatestCommitted` deliberately bypasses the session lane on preferred
+  writer routing. The internal Read carries the caller's explicit session
+  token so a reader fallback can preserve a session established by another
+  client or process, but it never carries a token from a prior RMW attempt.
+  On writer routing, freshness comes from the write-region quorum read rather
+  than session-token resolution. The pipeline removes `x-ms-session-token`
+  after all custom-header layers are resolved, so a custom header cannot
+  reintroduce it on that route.
 3. The Replace's session token is **overridden** with the session token
    returned on the Read's response — see `build_replace_sub_op`. This
    pins the Replace to the same replica view we just read from. Any
@@ -173,9 +202,9 @@ read. To close that window:
    intentionally discarded for the Replace; the Read's response token
    is by definition fresher.
 4. After a 412, the next attempt repeats the write-region
-  `LatestCommitted` Read. A session token from the failed Replace is retained
-  on the surfaced error if retries exhaust, but is not attached to the next
-  Read.
+  `LatestCommitted` Read with the original caller token available only for
+  fallback. A session token from the failed Replace is retained on the
+  surfaced error if retries exhaust, but is not attached to the next Read.
 
 ### Verification-read routing and consistency
 
@@ -191,13 +220,13 @@ operations and between the Read and Replace. An unavailable or excluded
 override is skipped before considering account writers.
 
 On a multi-write account, a write endpoint's regional quorum may still lag a
-write accepted in another region. Because the verification Read deliberately
-does not carry the caller's session token, it can observe an older image or a
-plain 404 during that replication window. The subsequent Replace carries the
-Read response's token and ETag; if it routes to a region that has not reached
-that view it can return 404/1002 and session-retry, while a newer image produces
-412 and restarts the RMW loop. These extra attempts are an accepted trade-off:
-regional quorum narrows the contention window but cannot eliminate concurrent
+write accepted in another region. Preferred-writer routing strips the caller's
+session token, so that Read can observe an older image or a plain 404 during
+the replication window. The subsequent Replace carries the Read response's
+token and ETag; if it routes to a region that has not reached that view it can
+return 404/1002 and session-retry, while a newer image produces 412 and
+restarts the RMW loop. These extra attempts are an accepted trade-off: regional
+quorum narrows the contention window but cannot eliminate concurrent
 multi-write conflicts.
 
 A PPAF `current_endpoint` is the next candidate not known to have failed, not
@@ -228,7 +257,10 @@ does not. The fallback preserves read-your-writes but cannot provide the same
 marker-observation guarantee as a write-region quorum read, so the marker
 protocol must account for that when attributing an ambiguous Replace.
 For a tracked PATCH, finding its ID on such a fallback remains positive proof
-of a commit. Not finding it is inconclusive, so the handler returns 503 rather
+of a commit. Before the first Replace, absence is also conclusive for a fresh
+driver-generated ID because that ID cannot have committed yet. The handler may
+therefore insert that marker and proceed. For caller-supplied IDs, or after any
+Replace dispatch, absence is inconclusive, so the handler returns 503 rather
 than risk applying the mutation again.
 
 ## Response Synthesis
@@ -251,8 +283,10 @@ contains, the handler builds the returned `CosmosResponse` from:
   sum of all sources' durations (sub-ops are sequential).
 
 When a verification Read finds the operation's tracking ID, that Read's body,
-headers, and status are returned as the committed post-image. Its diagnostics
-are aggregated with all prior sub-operations from the same invocation.
+headers, and status are returned as the committed post-image, except that the
+request-charge header is replaced with the exact total charge from the
+aggregated operation diagnostics. Its diagnostics are aggregated with all
+prior sub-operations from the same invocation.
 
 ### System-property reconciliation on the synthesized body
 
@@ -288,6 +322,11 @@ synthesized response. It is `pub(crate)` and lives in
 
 Supported (`PatchOperation` variants — all use RFC 6901 JSON Pointers):
 
+When a pointer token addresses an array, it follows RFC 6902 index syntax and
+cannot contain leading zeros except for the index `0`. The same token, such as
+`01`, remains valid when its parent is an object because it is then a property
+name rather than an array index.
+
 | Variant     | JSON `op`   | Semantics                                                                  |
 | ----------- | ----------- | -------------------------------------------------------------------------- |
 | `Add`       | `"add"`     | Insert into object or array (`/-` appends).                                |
@@ -320,18 +359,25 @@ as a JSON number without precision loss.
 - A non-412 failure after earlier sub-operations carries an aggregated
   `DiagnosticsContext` containing those prior contexts plus the failing
   sub-operation's context, in dispatch order. When the first sub-operation
-  fails, its context is retained with only the operation name rewritten.
+  fails, its context is retained with only the operation name rewritten. For
+  a tracked PATCH whose terminal Replace may have been sent, one
+  verification-only Read returns success when it finds the marker; otherwise
+  the original error is preserved.
 - The handler never retries beyond `max_attempts`. A 412 causes another
   verification Read; observing this operation's marker then proves its prior
   Replace committed and returns success. A missing marker is treated as a
   genuine race and the instructions are reapplied to the new image.
-- A missing marker on degraded reader routing returns 503 because absence is
-  inconclusive. Malformed tracking state returns 400, and an exhausted
+- A missing marker on degraded reader routing returns 503 when the ID was
+  caller-supplied or any Replace was already dispatched because absence is
+  inconclusive. A fresh driver-generated ID may proceed from its first
+  fallback Read. Malformed tracking state returns 400, and an exhausted
   unexpired marker list returns 409 without eviction.
 - When 412 retries exhaust `max_attempts`, the final error carries an
   aggregated `DiagnosticsContext` containing every accumulated Read and
-  failed Replace context. Thus both successful and failed PATCH operations
-  follow the "one PATCH operation = one `DiagnosticsContext`" contract.
+  failed Replace context plus the final verification Read when its marker is
+  absent. If that Read finds the marker, the handler returns success instead.
+  Thus both successful and failed PATCH operations follow the "one PATCH
+  operation = one `DiagnosticsContext`" contract.
 
 ## Why Driver-Side?
 
@@ -363,10 +409,12 @@ as a JSON number without precision loss.
 - 412 stays non-retryable in the global retry-evaluation policy. PATCH's
   RMW retry is internal and never depends on the global policy.
 - Every internal Read prefers the PPAF partition writer or account write
-  endpoints, forces `LatestCommitted`, strips session-token headers, and
-  suppresses hedging. Normal read routing with account-default/session
-  consistency is used only when no preferred write endpoint is usable, and a
-  fallback that ultimately uses a reader is recorded in request diagnostics.
+  endpoints, forces `LatestCommitted`, and suppresses hedging. It carries the
+  caller's explicit session token for possible fallback, but preferred-writer
+  routing strips session-token headers before transport. Normal read routing
+  with account-default/session consistency retains the token only when no
+  preferred write endpoint is usable, and a fallback that ultimately uses a
+  reader is recorded in request diagnostics.
 - Unsafe PATCH instructions are applied at most once within the tracking
   protocol's retention, capacity, routing, and cooperating-writer contract.
   The marker is committed atomically with the mutation, so a later Read can

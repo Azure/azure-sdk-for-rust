@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `PatchTrackingId`, `PatchItemOptions::with_tracking_id`, `PatchItemOptions::with_tracking_capacity`, and public PATCH tracking property, retention, and default-capacity constants for bounded duplicate suppression across application retries.
+- Added `PatchTrackingId`, `PatchItemOptions::with_tracking_id`, `PatchItemOptions::with_tracking_capacity`, `ItemResponse::patch_tracking_id`, `CosmosError::patch_tracking_id`, and public PATCH tracking property, retention, and default-capacity constants for bounded duplicate suppression across application retries. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
 - Added `ResourceId` and `ResourceIdentity` for addressing Cosmos databases and containers by user-provided name or by RID. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - `CosmosClient::database_client` and `DatabaseClient::container_client` now accept `impl Into<ResourceIdentity>`, so a `&str`/`String` selects name addressing and a `ResourceId` selects RID addressing. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - Added `DatabaseClient::name()` and `DatabaseClient::rid()` to inspect how a database client was addressed. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
@@ -34,7 +34,7 @@
 
 ### Bugs Fixed
 
-- Unsafe client-side PATCH operations now persist a bounded marker with the mutation, preventing duplicate increments, array edits, removes, and moves when a Replace commits but its response is lost.
+- Unsafe client-side PATCH operations now persist a bounded marker with the mutation, preventing duplicate increments, array edits, removes, and moves when a Replace commits but its response is lost. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
 - `PatchOperation::Increment` now serializes with the `incr` wire tag the Cosmos DB service expects, instead of `increment`. This is observable where patch instructions reach the service directly — today the distributed-transaction patch operation, whose increments were rejected. `ContainerClient::patch_item` is unaffected, as its read-modify-write loop never puts the instructions on the wire. Deserialization stays backward compatible: `increment` is still accepted on input, so persisted patch documents keep parsing, and re-serializing upgrades them to `incr`. ([#5087](https://github.com/Azure/azure-sdk-for-rust/pull/5087))
 - `ContainerProperties`, `IndexingPolicy`, `VectorEmbeddingPolicy`, and `VectorEmbedding` now preserve container configuration this SDK version does not model. `ContainerClient::replace` serializes these types verbatim, so a read-modify-replace previously stripped anything unrecognized from containers created by another SDK or the portal. Unknown fields are now captured on read and written back on replace. ([#5034](https://github.com/Azure/azure-sdk-for-rust/pull/5034))
 - `DatabaseClient::read_throughput` and `begin_replace_throughput` now reject a non-database RID (for example a container RID) with `CLIENT_INVALID_RESOURCE_ID` instead of silently reading or replacing that resource's throughput offer. Throughput offers are keyed only by `offerResourceId`, so a `DatabaseClient` addressed by a container RID would otherwise operate on the container's offer. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))

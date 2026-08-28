@@ -341,6 +341,7 @@ pub struct CosmosCompletionBacking {
     message: Option<CString>,
     next_continuation: Option<CString>,
     backtrace: Option<CString>,
+    patch_tracking_id: Option<CString>,
 }
 
 /// Internal queue item: owns every allocation a completion needs before it is
@@ -356,6 +357,7 @@ pub(crate) struct PendingCompletion {
     message: Option<CString>,
     next_continuation: Option<CString>,
     backtrace: Option<CString>,
+    patch_tracking_id: Option<CString>,
     headers: OwnedResponseHeaders,
     response: Option<CosmosResponse>,
     driver: Option<Arc<DriverHandle>>,
@@ -410,6 +412,7 @@ impl PendingCompletion {
             message: None,
             next_continuation: None,
             backtrace: None,
+            patch_tracking_id: None,
             headers: OwnedResponseHeaders::empty(),
             response: None,
             driver: None,
@@ -441,6 +444,9 @@ impl PendingCompletion {
         );
         p.next_continuation = next_continuation.and_then(to_cstring);
         if let Some(resp) = response {
+            p.patch_tracking_id = resp
+                .patch_tracking_id()
+                .and_then(|id| to_cstring(id.to_string()));
             p.http_status_code = u16::from(resp.status().status_code());
             // Overlay the status-level sub-status onto a clone of the wire
             // headers before synthesis — mirrors the error path. Keeps the
@@ -505,6 +511,9 @@ impl PendingCompletion {
             user_data,
             op_inner,
         );
+        p.patch_tracking_id = err
+            .patch_tracking_id()
+            .and_then(|id| to_cstring(id.to_string()));
         if include_details {
             p.http_status_code = u16::from(err.status().status_code());
             p.is_from_wire = err.is_from_wire();
@@ -577,6 +586,7 @@ impl PendingCompletion {
             message: self.message,
             next_continuation: self.next_continuation,
             backtrace: self.backtrace,
+            patch_tracking_id: self.patch_tracking_id,
         });
 
         // Borrowed pointers into the (now heap-stable) backing box.
@@ -631,6 +641,30 @@ impl CosmosCompletion {
             self.backing = std::ptr::null_mut();
         }
     }
+}
+
+/// Returns the effective PATCH tracking UUID carried by a completion.
+///
+/// The returned NUL-terminated UTF-8 string is borrowed from `completion` and
+/// remains valid until that completion is freed. Returns NULL for non-PATCH
+/// operations, retry-safe PATCH operations, or an invalid completion pointer.
+#[no_mangle]
+pub extern "C" fn cosmos_completion_patch_tracking_id(
+    completion: *const CosmosCompletion,
+) -> *const c_char {
+    if completion.is_null() {
+        return std::ptr::null();
+    }
+    // SAFETY: the caller guarantees `completion` points to a live value
+    // returned by the completion queue.
+    let completion = unsafe { &*completion };
+    if completion.backing.is_null() {
+        return std::ptr::null();
+    }
+    // SAFETY: `backing` is owned by this live completion and remains valid
+    // until `cosmos_completion_queue_free_completions` reclaims it.
+    let backing = unsafe { &*completion.backing };
+    cstr_ptr(&backing.patch_tracking_id)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1464,7 +1498,28 @@ pub extern "C" fn __test_only_enqueue_ok_completion_with_all_value_kinds(
 mod tests {
     use super::*;
     use crate::runtime::__test_only_create_default_runtime;
+    use std::ffi::CStr;
     use std::mem::MaybeUninit;
+
+    #[test]
+    fn patch_tracking_id_accessor_surfaces_error_identity_without_rich_details() {
+        let id = "00000000-0000-0000-0000-00000000002a"
+            .parse::<azure_data_cosmos_driver::models::PatchTrackingId>()
+            .unwrap();
+        let error = DriverCosmosError::builder()
+            .with_patch_tracking_id(id)
+            .build();
+        let pending = PendingCompletion::error(0, Arc::new(OperationInner::new()), error, false);
+        let mut completion = pending.into_ffi();
+
+        let pointer = cosmos_completion_patch_tracking_id(&completion);
+        assert!(!pointer.is_null());
+        // SAFETY: the pointer is borrowed from the live completion backing.
+        let text = unsafe { CStr::from_ptr(pointer) }.to_str().unwrap();
+        assert_eq!(text, id.to_string());
+
+        cosmos_completion_queue_free_completions(&mut completion, 1);
+    }
 
     fn fresh_queue(max_capacity: u32, include_error_details: bool) -> *mut CompletionQueue {
         let rt = __test_only_create_default_runtime();

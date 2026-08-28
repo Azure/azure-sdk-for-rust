@@ -901,7 +901,11 @@ pub(crate) async fn execute_operation_pipeline(
                     }
                 }
 
-                return build_cosmos_response(result, diagnostics);
+                return build_cosmos_response(
+                    result,
+                    diagnostics,
+                    routing.routing_fallback.is_some(),
+                );
             }
             OperationAction::FailoverRetry { new_state, delay } => {
                 tracing::debug!(
@@ -2217,6 +2221,7 @@ fn effective_partition_key_for_request(
 fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
+    routing_fallback: bool,
 ) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         TransportOutcome::Success {
@@ -2228,12 +2233,10 @@ fn build_cosmos_response(
 
             let diagnostics_ctx = Arc::new(diagnostics.complete());
 
-            Ok(CosmosResponse::new(
-                body,
-                cosmos_headers,
-                status,
-                diagnostics_ctx,
-            ))
+            Ok(
+                CosmosResponse::new(body, cosmos_headers, status, diagnostics_ctx)
+                    .with_routing_fallback(routing_fallback),
+            )
         }
         _ => {
             // This should only be called with a Complete(Success) result.
@@ -2896,7 +2899,7 @@ fn finalize_hedge_attempt(
 ) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         outcome @ TransportOutcome::Success { .. } => {
-            build_cosmos_response(Box::new(TransportResult { outcome }), diagnostics)
+            build_cosmos_response(Box::new(TransportResult { outcome }), diagnostics, false)
         }
         TransportOutcome::HttpError {
             status,

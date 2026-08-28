@@ -12,7 +12,7 @@ pub const PATCH_TRACKING_PROPERTY: &str = "_azsdkPatchTracking";
 ///
 /// A matching entry is honored for as long as it remains on the item, but a
 /// later PATCH may prune it after this interval has elapsed.
-pub const PATCH_TRACKING_RETENTION: std::time::Duration = std::time::Duration::from_secs(15 * 60);
+pub const PATCH_TRACKING_RETENTION: std::time::Duration = std::time::Duration::from_secs(5 * 60);
 
 /// Default maximum number of PATCH tracking entries retained on one item.
 pub const DEFAULT_PATCH_TRACKING_CAPACITY: NonZeroU16 =
@@ -38,6 +38,10 @@ impl PatchTrackingId {
 
     pub(crate) fn into_driver(self) -> azure_data_cosmos_driver::models::PatchTrackingId {
         self.0.into()
+    }
+
+    pub(crate) fn from_driver(value: azure_data_cosmos_driver::models::PatchTrackingId) -> Self {
+        Self(value.as_uuid())
     }
 }
 

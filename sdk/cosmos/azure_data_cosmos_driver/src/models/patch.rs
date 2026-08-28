@@ -41,7 +41,7 @@ pub const PATCH_TRACKING_PROPERTY: &str = "_azsdkPatchTracking";
 ///
 /// A matching entry is honored for as long as it remains on the item, but a
 /// later PATCH may prune it after this interval has elapsed.
-pub const PATCH_TRACKING_RETENTION: Duration = Duration::from_secs(15 * 60);
+pub const PATCH_TRACKING_RETENTION: Duration = Duration::from_secs(5 * 60);
 
 /// Default maximum number of idempotency markers retained on one item.
 pub const DEFAULT_PATCH_TRACKING_CAPACITY: NonZeroU16 =
@@ -56,9 +56,13 @@ pub const DEFAULT_PATCH_TRACKING_CAPACITY: NonZeroU16 =
 pub struct PatchTrackingId(Uuid);
 
 impl PatchTrackingId {
-    /// Generates a new random tracking ID.
+    /// Generates a new tracking ID from cryptographically secure OS entropy.
     pub fn new() -> Self {
-        Self(Uuid::new_v4())
+        let mut bytes = [0_u8; 16];
+        getrandom::fill(&mut bytes).expect("operating system randomness is unavailable");
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        Self(Uuid::from_bytes(bytes))
     }
 
     /// Returns the underlying UUID.
@@ -387,6 +391,15 @@ mod tests {
         let id = PatchTrackingId::from(Uuid::from_u128(42));
         assert_eq!(id.to_string().parse::<PatchTrackingId>().unwrap(), id);
         assert_eq!(serde_json::to_string(&id).unwrap(), format!("\"{id}\""));
+    }
+
+    #[test]
+    fn generated_tracking_id_is_rfc_4122_version_4() {
+        let id = PatchTrackingId::new();
+        let bytes = id.as_uuid().into_bytes();
+
+        assert_eq!(bytes[6] & 0xf0, 0x40);
+        assert_eq!(bytes[8] & 0xc0, 0x80);
     }
 
     #[test]

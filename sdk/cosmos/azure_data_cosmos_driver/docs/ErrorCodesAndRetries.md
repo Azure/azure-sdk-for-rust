@@ -43,7 +43,7 @@ PATCH is a client-side Read-Modify-Write operation. Non-convergent instruction
 lists persist a tracking marker in the same ETag-guarded Replace as the
 mutation. A retry that observes the same marker returns success without
 reapplying the instructions. This duplicate suppression is bounded by the
-15-minute retention window, per-item marker capacity, authoritative
+5-minute retention window, per-item marker capacity, authoritative
 verification-read routing, and cooperating writers preserving the reserved
 `_azsdkPatchTracking` property.
 
