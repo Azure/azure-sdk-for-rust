@@ -61,7 +61,7 @@ pub struct WorkloadIdentityCredentialOptions {
     /// requests tokens directly from Microsoft Entra ID. See the
     /// [AKS identity bindings documentation](https://learn.microsoft.com/azure/aks/identity-bindings-concepts)
     /// for guidance about enabling this option.
-    pub enable_azure_proxy: bool,
+    pub enable_proxy: bool,
 
     #[cfg(test)]
     pub(crate) env: Env,
@@ -74,7 +74,7 @@ impl fmt::Debug for WorkloadIdentityCredentialOptions {
         f.debug_struct(type_name::<Self>())
             .field("tenant_id", &self.tenant_id)
             .field("client_id", &self.client_id)
-            .field("enable_azure_proxy", &self.enable_azure_proxy)
+            .field("enable_proxy", &self.enable_proxy)
             .finish_non_exhaustive()
     }
 }
@@ -111,17 +111,17 @@ impl WorkloadIdentityCredential {
             })?
         };
         let mut credential_options = options.credential_options;
-        if options.enable_azure_proxy {
+        if options.enable_proxy {
             let proxy = CustomTokenProxyConfig::from_env(&env)?;
-            #[cfg(all(test, feature = "azure_proxy"))]
+            #[cfg(all(test, feature = "proxy"))]
             if let Some(transport) = proxy_transport {
                 proxy.configure_with_client(&mut credential_options.client_options, transport)?;
             } else {
                 proxy.configure(&mut credential_options.client_options)?;
             }
-            #[cfg(all(test, not(feature = "azure_proxy")))]
+            #[cfg(all(test, not(feature = "proxy")))]
             let _ = proxy_transport;
-            #[cfg(any(not(test), all(test, not(feature = "azure_proxy"))))]
+            #[cfg(any(not(test), all(test, not(feature = "proxy"))))]
             proxy.configure(&mut credential_options.client_options)?;
         }
         Ok(Arc::new(Self(
@@ -442,7 +442,7 @@ mod tests {
             .expect("direct Entra transport should remain configured");
     }
 
-    #[cfg(feature = "azure_proxy")]
+    #[cfg(feature = "proxy")]
     #[tokio::test]
     async fn enabled_proxy_redirects_token_request_after_caller_policies() {
         let temp_file = TempFile::new(FAKE_ASSERTION);
@@ -468,7 +468,7 @@ mod tests {
             client_id: Some(FAKE_CLIENT_ID.to_string()),
             tenant_id: Some(FAKE_TENANT_ID.to_string()),
             token_file_path: Some(temp_file.path.clone()),
-            enable_azure_proxy: true,
+            enable_proxy: true,
             credential_options: ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
                     per_call_policies: vec![Arc::new(AddHeaderPolicy)],
@@ -499,7 +499,7 @@ mod tests {
             client_id: Some(FAKE_CLIENT_ID.to_string()),
             tenant_id: Some(FAKE_TENANT_ID.to_string()),
             token_file_path: Some(temp_file.path.clone()),
-            enable_azure_proxy: true,
+            enable_proxy: true,
             env: Env::from(
                 &[(
                     "AZURE_KUBERNETES_TOKEN_PROXY",
@@ -599,7 +599,7 @@ mod tests {
                     ),
                 ][..],
             ),
-            enable_azure_proxy: false,
+            enable_proxy: false,
             proxy_transport: None,
         }))
         .expect("valid credential");
