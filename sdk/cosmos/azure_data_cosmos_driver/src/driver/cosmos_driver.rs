@@ -3438,8 +3438,9 @@ impl CosmosDriver {
         options: &OperationOptions,
     ) -> crate::error::Result<QueryPlan> {
         // Advertise exactly the query-rewrite features implemented by the
-        // production dataflow pipeline (`OrderBy,MultipleOrderBy`). The value
-        // must remain non-empty so Gateway V2 accepts the QueryPlan request.
+        // production dataflow pipeline (see `query::SUPPORTED_QUERY_FEATURES`).
+        // The value must remain non-empty so Gateway V2 accepts the QueryPlan
+        // request.
         let query_plan_operation = CosmosOperation::query_plan(
             container.clone(),
             std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),

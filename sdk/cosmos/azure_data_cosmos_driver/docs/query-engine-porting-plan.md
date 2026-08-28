@@ -10,7 +10,7 @@ A subset of the C++ query engine has been ported to Rust, enabling:
 
 The implementation lives entirely inside the `azure_data_cosmos_driver` crate. In normal builds the query subsystem remains crate-private; test builds and the `__internal_testing` feature expose temporary validation entry points (`query` and `__test_only_generate_query_plan_for_pk_paths`) so parity tests can exercise the local planner without making it part of the supported surface.
 
-The supported SDK query path now integrates the local planner as a pre-Gateway optimization in `CosmosDriver::resolve_query_plan`. For eligible query shapes (simple `SELECT`/`WHERE`, `SELECT VALUE`, `TOP`-only), the local planner produces a query plan without a Gateway roundtrip. Ineligible shapes (e.g., `ORDER BY`, `OFFSET/LIMIT`, `DISTINCT`, aggregates, `GROUP BY`, `JOIN`, subquery, UDF) fall back to the Gateway. Contradictory partition key filters (provably empty results) short-circuit to an empty `DrainedLeaf` pipeline, skipping both the Gateway and backend. The in-memory emulator uses an extended variant of the same adapter that also synthesizes rewrite metadata. See `src/query/local_plan_adapter.rs` for the production/emulator split.
+The supported SDK query path now integrates the local planner as a pre-Gateway optimization in `CosmosDriver::resolve_query_plan`. The local planner covers every query family backed by the current dataflow pipeline: plain queries (including JOIN, subquery, and UDF shapes), TOP, OFFSET/LIMIT, streaming ORDER BY, and DISTINCT compositions. It reproduces the service rewrites those stages require and falls back for unsupported aggregate, GROUP BY, DCOUNT, non-streaming ORDER BY, and hybrid-search metadata. Contradictory partition key filters (provably empty results) short-circuit to an empty `DrainedLeaf` pipeline, skipping both the Gateway and backend. See `src/query/local_plan_adapter.rs` for the production adapter and shared emulator conversion.
 
 ---
 
@@ -147,6 +147,9 @@ intentionally trades full Cosmos parity for emulator usability — see
 - **Inline unit tests** in each module (lexer, parser, plan, eval, value), including typed `GatewayQueryPlan` deserialization coverage in `gateway_plan.rs`
 - **Live Gateway validation tests** in `tests/gateway_query_plan_comparison.rs`, behind `__internal_testing`, comparing local plans against Gateway responses using `CosmosOperation::query_plan`
 - **Provider-selection integration tests** against the in-memory emulator, proving eligible and contradictory queries avoid Gateway query-plan requests while rewrite-required queries retain Gateway behavior.
+- **Production-adapter live tests** compare locally generated structural fields,
+  rewrite presence, and canonical query ranges with Gateway plans, then execute
+  representative supported shapes against a live account.
 
 ## Production provider and fallback contract
 
@@ -162,10 +165,12 @@ When `__internal_native_query_plan` is enabled, the existing native-first behavi
 3. Gateway query-plan endpoint.
 
 The local provider accepts plain `SELECT`/`WHERE`, projections, `SELECT VALUE`,
-partition-key equality/`IN`, and TOP-only queries. It declines any shape that
-requires service-generated rewrites or metadata, including ORDER BY,
-OFFSET/LIMIT, DISTINCT, aggregates, GROUP BY, DCOUNT, hybrid search, JOINs,
-subqueries, and UDFs.
+JOINs, subqueries, UDFs, partition-key equality/`IN`, TOP, OFFSET/LIMIT,
+streaming ORDER BY, and DISTINCT combinations. ORDER BY and result-window
+rewrites follow the service's ordering: ORDER BY first, then OFFSET/LIMIT, then
+TOP, with partial DISTINCT results kept below the global window. It declines
+aggregates, GROUP BY, DCOUNT, non-streaming ORDER BY, hybrid search, and any
+projection whose required rewrite cannot be generated safely.
 
 Local equality and `IN` filters are converted to canonical EPK ranges with the
 container's partition-key definition. This includes hierarchical partition-key

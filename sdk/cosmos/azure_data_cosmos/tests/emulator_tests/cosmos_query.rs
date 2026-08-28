@@ -327,6 +327,173 @@ pub async fn cross_partition_query_with_order_by() -> Result<(), Box<dyn Error>>
     .await
 }
 
+/// Unordered cross-partition `DISTINCT`: every partition contributes the same
+/// partition-key value ten times, so only global client-side deduplication can
+/// collapse them to one row each.
+///
+/// Mirrors .NET `DistinctQueryTests.TestDistinct_ExecuteNextAsync` and Java
+/// `DistinctQueryTests.queryDocuments`.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn cross_partition_query_with_unordered_distinct() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(10, 10);
+            let container_client =
+                test_data::create_container_with_items(db_client, items, None).await?;
+
+            let mut pages = container_client
+                .query_items::<String>(
+                    "select distinct value c.partitionKey from c",
+                    FeedScope::full_container(),
+                    Some(
+                        QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
+                            std::num::NonZeroU32::new(3).unwrap(),
+                        )),
+                    ),
+                )
+                .await?
+                .into_pages();
+
+            let mut actual = Vec::new();
+            while let Some(page) = pages.next().await {
+                actual.extend(page?.into_items());
+            }
+            actual.sort();
+
+            let mut expected: Vec<String> = (0..10).map(|i| format!("partition{i}")).collect();
+            expected.sort();
+            assert_eq!(
+                actual, expected,
+                "each partition key must appear exactly once across the whole feed"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// Ordered cross-partition `DISTINCT` is the resumable form: the sort key
+/// matches the projection, so the merge groups equal values into runs and a
+/// single retained hash carries across a continuation token.
+///
+/// Mirrors .NET `DistinctQueryTests.TestDistinct_ContinuationTokenSupportAsync`
+/// and Java `DistinctQueryTests.queryDocumentsWithOrderBy` (the matched-ORDER BY
+/// half of `queryWithOrderByProvider`).
+///
+/// The `VALUE` form is load-bearing: the service reports `distinctType: Ordered`
+/// only for `SELECT DISTINCT VALUE <path> … ORDER BY <same path>`, and only an
+/// `Ordered` plan is resumable. Rewriting this query into the list form
+/// (`select distinct c.partitionKey …`) would plan as `Unordered` and the
+/// continuation would be refused.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn cross_partition_query_with_ordered_distinct_resumes() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(10, 10);
+            let mut expected: Vec<String> = (0..10).map(|i| format!("partition{i}")).collect();
+            expected.sort();
+
+            execute_query_test(
+                db_client,
+                items,
+                "select distinct value c.partitionKey from c order by c.partitionKey",
+                FeedScope::full_container(),
+                expected,
+                QueryTestOptions {
+                    max_item_count: Some(3),
+                    use_continuation_token_resume: true,
+                },
+            )
+            .await?;
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// Unordered `DISTINCT` cannot be resumed without carrying every value seen, so
+/// asking for a continuation token fails loudly instead of handing back one
+/// whose resume would re-emit rows. .NET blocks the token at the stage
+/// (`DisallowContinuationTokenMessages.Distinct`) and Java rejects it on parse.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(10, 10);
+            let container_client =
+                test_data::create_container_with_items(db_client, items, None).await?;
+
+            let mut pages = container_client
+                .query_items::<String>(
+                    "select distinct value c.partitionKey from c",
+                    FeedScope::full_container(),
+                    Some(
+                        QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
+                            std::num::NonZeroU32::new(1).unwrap(),
+                        )),
+                    ),
+                )
+                .await?
+                .into_pages();
+
+            let _ = pages.next().await.expect("expected at least one page")?;
+
+            let error = pages
+                .to_continuation_token()
+                .expect_err("an unordered DISTINCT query must not be resumable");
+            let message = error.to_string();
+            assert!(
+                message.contains("ORDER BY"),
+                "the refusal must tell the caller how to make the query resumable: {message}"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
 #[tokio::test]
 #[cfg_attr(
     not(any(
@@ -854,6 +1021,224 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             }
 
             assert_eq!(expected, actual);
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// Live counterparts for the `DISTINCT` scenarios that otherwise run only
+/// against the in-memory emulator.
+///
+/// Those scenarios assert behavior the emulator *simulates* — its own per-
+/// partition dedup and its local query-plan generator — so on their own they
+/// are partly self-referential: they would pass even if the service disagreed.
+/// This test re-checks the same shapes against a real account.
+///
+/// Covers `select_star_whole_document`,
+/// `select_value_constant_with_from_still_deduplicates`,
+/// `filters_and_parameters_apply_before_distinct`, and
+/// `single_logical_partition_scope` from `distinct_scenarios.json`.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            // 4 partitions x 3 items: `partitionKey` repeats within a
+            // partition, `id` is unique across the container.
+            let items = test_data::generate_mock_items(4, 3);
+            let container = test_data::create_container_with_items(db_client, items, None).await?;
+
+            async fn count(
+                container: &ContainerClient,
+                query: impl Into<Query>,
+                scope: FeedScope,
+            ) -> Result<usize, Box<dyn Error>> {
+                let mut pages = container
+                    .query_items::<serde_json::Value>(query, scope, None)
+                    .await?
+                    .into_pages();
+                let mut n = 0;
+                while let Some(page) = pages.next().await {
+                    n += page?.into_items().len();
+                }
+                Ok(n)
+            }
+
+            // `SELECT DISTINCT *` dedups whole documents; every document is
+            // unique, so nothing collapses and the passthrough stays intact.
+            assert_eq!(
+                count(
+                    &container,
+                    "select distinct * from c",
+                    FeedScope::full_container()
+                )
+                .await?,
+                12,
+                "DISTINCT over unique whole documents must not drop any"
+            );
+
+            // A constant projection *with* a FROM clause yields one row per
+            // document, all identical, so exactly one survives. (Without a FROM
+            // the service collapses DISTINCT away entirely — see
+            // `plan::distinct_is_ordered`'s sibling constant-collapse rule.)
+            assert_eq!(
+                count(
+                    &container,
+                    "select distinct value 1 from c",
+                    FeedScope::full_container()
+                )
+                .await?,
+                1,
+                "a constant projection over N documents must collapse to one row"
+            );
+
+            // A parameterized WHERE narrows the rows before deduplication.
+            assert_eq!(
+                count(
+                    &container,
+                    Query::from(
+                        "select distinct value c.partitionKey from c where c.mergeOrder >= @m"
+                    )
+                    .with_parameter("@m", 0)?,
+                    FeedScope::full_container()
+                )
+                .await?,
+                4,
+                "expected one row per distinct partition key"
+            );
+
+            // Scoped to a single logical partition, DISTINCT still dedups; it
+            // just never fans out.
+            assert_eq!(
+                count(
+                    &container,
+                    "select distinct value c.partitionKey from c",
+                    FeedScope::partition("partition0")
+                )
+                .await?,
+                1,
+                "a single-partition scope must yield that partition's one key"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// Live counterpart for the `unsupported_combination_*` scenarios.
+///
+/// Those scenarios assert the driver rejects `DISTINCT` combined with a stage
+/// it has no pipeline for. That rejection is only half the story: because the
+/// SDK advertises just the features it implements (`SUPPORTED_QUERY_FEATURES`),
+/// the *service* refuses these plans first, with 400 / 1004
+/// CrossPartitionQueryNotServable. Pinning that here means adding a new feature
+/// token without its pipeline stage cannot silently start serving a query the
+/// driver would then mishandle.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn distinct_combined_with_unsupported_stages_is_rejected() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(4, 3);
+            let container = test_data::create_container_with_items(db_client, items, None).await?;
+
+            // Each of these needs a composition stage the driver does not have
+            // yet: GROUP BY and aggregates. `TOP` and `OFFSET`/`LIMIT` are no
+            // longer here — `SkipTake` composes above `DISTINCT`, so those
+            // shapes are servable and are asserted positively below.
+            let unsupported = [
+                "select distinct c.partitionKey, count(1) as n from c group by c.partitionKey",
+                "select distinct value max(c.mergeOrder) from c",
+            ];
+
+            for query in unsupported {
+                let outcome = container
+                    .query_items::<serde_json::Value>(query, FeedScope::full_container(), None)
+                    .await;
+                let error = match outcome {
+                    Err(error) => error,
+                    Ok(pager) => {
+                        // Some shapes fail while draining rather than at setup.
+                        let mut pages = pager.into_pages();
+                        let mut drain_error = None;
+                        while let Some(page) = pages.next().await {
+                            if let Err(error) = page {
+                                drain_error = Some(error);
+                                break;
+                            }
+                        }
+                        drain_error.unwrap_or_else(|| {
+                            panic!("expected `{query}` to be rejected, but it drained cleanly")
+                        })
+                    }
+                };
+                assert_eq!(
+                    error.status().status_code(),
+                    azure_core::http::StatusCode::BadRequest,
+                    "expected 400 for `{query}`, got {error}"
+                );
+            }
+
+            // `DISTINCT` composed under a row window is servable, and the window
+            // counts *deduplicated* values: 4 partition keys over 12 items, so
+            // `TOP 2` yields 2 and `OFFSET 1 LIMIT 2` yields 2. Applying the
+            // window before deduplication would return fewer.
+            for (query, expected) in [
+                ("select distinct top 2 value c.partitionKey from c", 2usize),
+                (
+                    "select distinct value c.partitionKey from c offset 1 limit 2",
+                    2usize,
+                ),
+            ] {
+                let mut pages = container
+                    .query_items::<serde_json::Value>(query, FeedScope::full_container(), None)
+                    .await?
+                    .into_pages();
+                let mut values = Vec::new();
+                while let Some(page) = pages.next().await {
+                    values.extend(page?.into_items());
+                }
+                assert_eq!(
+                    values.len(),
+                    expected,
+                    "`{query}` must apply its window to deduplicated values, got {values:?}"
+                );
+                let mut deduped = values.clone();
+                deduped.sort_by_key(|v| v.to_string());
+                deduped.dedup_by_key(|v| v.to_string());
+                assert_eq!(
+                    deduped.len(),
+                    values.len(),
+                    "`{query}` returned duplicate values: {values:?}"
+                );
+            }
+
             Ok(())
         },
         Some(TestOptions::for_emulator()),

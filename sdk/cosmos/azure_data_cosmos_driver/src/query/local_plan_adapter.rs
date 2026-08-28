@@ -8,13 +8,11 @@
 //!
 //! - **Shared PK-filter → EPK-range conversion** used by both the production
 //!   driver path and the in-memory emulator.
-//! - **Production eligibility checks** that reject query shapes requiring
-//!   Gateway-only metadata (ORDER BY rewrites, OFFSET/LIMIT, DISTINCT,
-//!   aggregates, GROUP BY, DCOUNT, etc.).
-//! - **Emulator-only rewrite helpers** (gated by `cfg(any(test, feature =
-//!   "__internal_in_memory_emulator"))`) that synthesize `rewrittenQuery` for
-//!   advanced query shapes the emulator needs but production must never
-//!   fabricate.
+//! - **Production eligibility checks** that accept every query family backed by
+//!   the current dataflow pipeline and reject shapes requiring unsupported
+//!   Gateway-only metadata (aggregates, GROUP BY, DCOUNT, hybrid search, etc.).
+//! - **Shared rewrite helpers** that reproduce the service transformations
+//!   needed by ORDER BY, OFFSET/LIMIT, TOP, and DISTINCT pipelines.
 
 // cspell:ignore FULLTEXTSCORE VECTORDISTANCE
 
@@ -139,28 +137,58 @@ pub(crate) fn local_sort_order_to_dataflow(so: plan::SortOrder) -> dataflow::Sor
     }
 }
 
-/// Converts a [`plan::LocalQueryInfo`] into a production-safe dataflow
-/// [`QueryInfo`](dataflow::QueryInfo).
-///
-/// This is the **production** conversion: it must never synthesize
-/// `rewrittenQuery` or any Gateway-only metadata. Callers must verify
-/// eligibility via [`check_production_eligibility`] *before* calling this.
-fn production_query_info_to_dataflow(info: &plan::LocalQueryInfo) -> dataflow::QueryInfo {
-    dataflow::QueryInfo {
+/// Converts locally-derived query information into the production dataflow
+/// shape, synthesizing only rewrites required by supported pipeline stages.
+fn production_query_info_to_dataflow(
+    info: &plan::LocalQueryInfo,
+    original_query: &str,
+) -> Result<dataflow::QueryInfo, LocalPlanFallbackReason> {
+    let rewritten_query = if !info.order_by.is_empty() {
+        Some(
+            synthesize_order_by_rewritten_query(original_query, &info.order_by_expressions)
+                .ok_or(LocalPlanFallbackReason::OrderByRewriteUnavailable)?,
+        )
+    } else if info.distinct_type != plan::DistinctType::None
+        && (info.top.is_some() || info.limit.is_some())
+    {
+        Some(
+            synthesize_distinct_window_rewritten_query(
+                original_query,
+                info.top.is_some(),
+                info.limit.is_some(),
+            )
+            .ok_or(LocalPlanFallbackReason::DistinctRewriteUnavailable)?,
+        )
+    } else if let Some(limit) = info.limit {
+        synthesize_offset_limit_rewritten_query(
+            original_query,
+            info.offset.unwrap_or(0) as u64,
+            limit as u64,
+        )
+    } else {
+        None
+    };
+
+    Ok(dataflow::QueryInfo {
         distinct_type: local_distinct_type_to_dataflow(info.distinct_type),
         top: info.top.map(|v| v as u64),
-        offset: None,
-        limit: None,
-        order_by: Vec::new(),
-        order_by_expressions: Vec::new(),
+        offset: info.offset.map(|v| v as u64),
+        limit: info.limit.map(|v| v as u64),
+        order_by: info
+            .order_by
+            .iter()
+            .copied()
+            .map(local_sort_order_to_dataflow)
+            .collect(),
+        order_by_expressions: info.order_by_expressions.clone(),
         group_by_expressions: Vec::new(),
         group_by_aliases: Vec::new(),
         aggregates: Vec::new(),
         group_by_alias_to_aggregate_type: std::collections::HashMap::new(),
-        rewritten_query: None,
+        rewritten_query,
         has_select_value: info.has_select_value,
         has_non_streaming_order_by: false,
-    }
+    })
 }
 
 /// Converts a [`plan::LocalQueryInfo`] into a dataflow [`QueryInfo`] for the
@@ -213,7 +241,6 @@ pub(crate) fn emulator_query_info_to_dataflow(
 
 /// Synthesizes the per-partition `rewrittenQuery` envelope the real Gateway
 /// returns for `ORDER BY` queries.
-#[cfg(any(test, feature = "__internal_in_memory_emulator"))]
 pub(crate) fn synthesize_order_by_rewritten_query(
     original_query: &str,
     order_by_expressions: &[String],
@@ -260,17 +287,42 @@ pub(crate) fn synthesize_order_by_rewritten_query(
     let mut payload_idx = select_idx + 1;
     if tokens
         .get(payload_idx)
+        .is_some_and(|token| token.kind == TokenKind::Distinct)
+    {
+        payload_idx += 1;
+    }
+    if tokens
+        .get(payload_idx)
         .is_some_and(|t| t.kind == TokenKind::Top)
     {
         payload_idx += 2;
     }
-    let payload = match tokens.get(payload_idx)? {
-        token if token.kind == TokenKind::Star => alias.to_owned(),
-        token if token.kind == TokenKind::Value => original_query
-            [token.span.end..tokens[from_idx].span.start]
-            .trim()
-            .to_owned(),
-        _ => return None,
+    let parsed = crate::query::parse(original_query).ok()?;
+    let (payload, select_value) = match &parsed.query.select.spec {
+        crate::query::ast::SqlSelectSpec::Star => (alias.to_owned(), false),
+        crate::query::ast::SqlSelectSpec::Value(_) => {
+            let token = tokens.get(payload_idx)?;
+            if token.kind != TokenKind::Value {
+                return None;
+            }
+            (
+                original_query[token.span.end..tokens[from_idx].span.start]
+                    .trim()
+                    .to_owned(),
+                true,
+            )
+        }
+        crate::query::ast::SqlSelectSpec::List(items) => (
+            select_list_payload(
+                original_query,
+                &tokens,
+                &top_level,
+                payload_idx,
+                from_idx,
+                items,
+            )?,
+            false,
+        ),
     };
 
     let order_idx = top_level.iter().copied().find(|&i| {
@@ -305,13 +357,16 @@ pub(crate) fn synthesize_order_by_rewritten_query(
         .map(|i| tokens[i].span.start)
         .unwrap_or(clause_end);
     let from_text = original_query[tokens[from_idx].span.start..from_end].trim();
-    let where_clause = match where_idx {
-        Some(i) => {
-            let predicate = original_query[tokens[i].span.end..clause_end].trim();
-            format!("WHERE ({predicate}) AND {ORDER_BY_FILTER_PLACEHOLDER}")
-        }
-        None => format!("WHERE {ORDER_BY_FILTER_PLACEHOLDER}"),
-    };
+    let mut predicates = Vec::with_capacity(3);
+    if let Some(i) = where_idx {
+        let predicate = original_query[tokens[i].span.end..clause_end].trim();
+        predicates.push(format!("({predicate})"));
+    }
+    predicates.push(ORDER_BY_FILTER_PLACEHOLDER.to_owned());
+    if select_value {
+        predicates.push(format!("IS_DEFINED({payload})"));
+    }
+    let where_clause = format!("WHERE {}", predicates.join(" AND "));
 
     let order_by_items: Vec<String> = order_by_expressions
         .iter()
@@ -328,9 +383,77 @@ pub(crate) fn synthesize_order_by_rewritten_query(
     ))
 }
 
+fn select_list_payload(
+    original_query: &str,
+    tokens: &[crate::query::lexer::Token<'_>],
+    top_level: &[usize],
+    first_item: usize,
+    from: usize,
+    items: &[crate::query::ast::SqlSelectItem],
+) -> Option<String> {
+    use crate::query::{ast::SqlScalarExpression, lexer::TokenKind};
+
+    let commas: Vec<_> = top_level
+        .iter()
+        .copied()
+        .filter(|index| *index >= first_item && *index < from)
+        .filter(|index| tokens[*index].kind == TokenKind::Comma)
+        .collect();
+    if commas.len() + 1 != items.len() {
+        return None;
+    }
+
+    let mut starts = Vec::with_capacity(items.len());
+    starts.push(first_item);
+    starts.extend(commas.iter().map(|comma| comma + 1));
+    let ends = commas
+        .iter()
+        .map(|comma| tokens[*comma].span.start)
+        .chain(std::iter::once(tokens[from].span.start));
+
+    let mut unnamed = 0_u32;
+    let properties = items
+        .iter()
+        .zip(starts)
+        .zip(ends)
+        .map(|((item, start), end)| {
+            let as_token = top_level.iter().copied().find(|index| {
+                *index >= start
+                    && *index < from
+                    && tokens[*index].span.start < end
+                    && tokens[*index].kind == TokenKind::As
+            });
+            let expression_end = as_token
+                .map(|index| tokens[index].span.start)
+                .unwrap_or(end);
+            let expression = original_query[tokens[start].span.start..expression_end].trim();
+            if expression.is_empty() {
+                return None;
+            }
+
+            let name = item.alias.clone().or_else(|| match &item.expression {
+                SqlScalarExpression::MemberRef { member, .. } => Some(member.clone()),
+                SqlScalarExpression::MemberIndexer { index, .. } => match index.as_ref() {
+                    SqlScalarExpression::Literal(crate::query::ast::SqlLiteral::String(value)) => {
+                        Some(value.clone())
+                    }
+                    _ => None,
+                },
+                _ => None,
+            });
+            let name = name.unwrap_or_else(|| {
+                unnamed += 1;
+                format!("${unnamed}")
+            });
+            let quoted_name = serde_json::to_string(&name).ok()?;
+            Some(format!("{quoted_name}: {expression}"))
+        })
+        .collect::<Option<Vec<_>>>()?;
+    Some(format!("{{{}}}", properties.join(", ")))
+}
+
 /// Synthesizes the per-partition `rewrittenQuery` for `OFFSET`/`LIMIT`
 /// without `ORDER BY`.
-#[cfg(any(test, feature = "__internal_in_memory_emulator"))]
 pub(crate) fn synthesize_offset_limit_rewritten_query(
     original_query: &str,
     offset: u64,
@@ -364,6 +487,63 @@ pub(crate) fn synthesize_offset_limit_rewritten_query(
     Some(format!("{prefix} OFFSET 0 LIMIT {combined}"))
 }
 
+/// Removes top-level TOP and OFFSET/LIMIT clauses from a DISTINCT query.
+///
+/// The service does not push a result window below DISTINCT because each
+/// partition produces only partial deduplication results. The client applies
+/// DISTINCT first and the global window afterward.
+fn synthesize_distinct_window_rewritten_query(
+    original_query: &str,
+    remove_top: bool,
+    remove_offset_limit: bool,
+) -> Option<String> {
+    use crate::query::lexer::{Lexer, TokenKind};
+
+    let tokens = Lexer::tokenize(original_query);
+    let mut removals = Vec::with_capacity(2);
+    if remove_top {
+        let select = tokens
+            .iter()
+            .position(|token| token.kind == TokenKind::Select)?;
+        let mut top = select + 1;
+        if tokens.get(top)?.kind == TokenKind::Distinct {
+            top += 1;
+        }
+        if tokens.get(top)?.kind != TokenKind::Top {
+            return None;
+        }
+        let end = tokens.get(top + 1)?.span.end;
+        removals.push(tokens[top].span.start..end);
+    }
+
+    if remove_offset_limit {
+        let mut depth = 0_u32;
+        let offset = tokens.iter().enumerate().find_map(|(index, token)| {
+            match token.kind {
+                TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => depth += 1,
+                TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
+                    depth = depth.saturating_sub(1);
+                }
+                TokenKind::Offset
+                    if depth == 0 && (index == 0 || tokens[index - 1].kind != TokenKind::Dot) =>
+                {
+                    return Some(token.span.start);
+                }
+                _ => {}
+            }
+            None
+        })?;
+        removals.push(offset..original_query.len());
+    }
+
+    removals.sort_by_key(|range| range.start);
+    let mut rewritten = original_query.to_owned();
+    for range in removals.into_iter().rev() {
+        rewritten.replace_range(range, "");
+    }
+    Some(rewritten.trim().to_owned())
+}
+
 // ─── Production local-plan eligibility and conversion ───────────────────────
 
 /// Bounded, static fallback-reason codes. Display never includes query text,
@@ -380,22 +560,14 @@ pub(crate) enum LocalPlanFallbackReason {
     ParseFailed,
     /// The local planner could not produce a plan.
     PlanFailed,
-    /// Query uses ORDER BY (requires rewrittenQuery).
-    OrderBy,
-    /// Query uses OFFSET/LIMIT (requires rewrittenQuery).
-    OffsetLimit,
-    /// Query uses DISTINCT (requires authoritative metadata).
-    Distinct,
+    /// The local adapter cannot safely synthesize this ORDER BY projection.
+    OrderByRewriteUnavailable,
+    /// The local adapter cannot safely remove a DISTINCT result window.
+    DistinctRewriteUnavailable,
     /// Query uses aggregates (COUNT, SUM, AVG, MIN, MAX).
     Aggregates,
     /// Query uses GROUP BY (requires aliases/aggregate mapping).
     GroupBy,
-    /// Query uses JOIN (conservative safety — declined).
-    Join,
-    /// Query uses subqueries (conservative safety — declined).
-    Subquery,
-    /// Query references UDFs (conservative safety — declined).
-    Udf,
     /// Query uses DCOUNT metadata that only the Gateway/native providers expose.
     DCount,
     /// Query uses hybrid/vector ranking metadata.
@@ -414,14 +586,10 @@ impl std::fmt::Display for LocalPlanFallbackReason {
             Self::BlankQuery => f.write_str("blank_query"),
             Self::ParseFailed => f.write_str("parse_failed"),
             Self::PlanFailed => f.write_str("plan_failed"),
-            Self::OrderBy => f.write_str("order_by"),
-            Self::OffsetLimit => f.write_str("offset_limit"),
-            Self::Distinct => f.write_str("distinct"),
+            Self::OrderByRewriteUnavailable => f.write_str("order_by_rewrite_unavailable"),
+            Self::DistinctRewriteUnavailable => f.write_str("distinct_rewrite_unavailable"),
             Self::Aggregates => f.write_str("aggregates"),
             Self::GroupBy => f.write_str("group_by"),
-            Self::Join => f.write_str("join"),
-            Self::Subquery => f.write_str("subquery"),
-            Self::Udf => f.write_str("udf"),
             Self::DCount => f.write_str("dcount"),
             Self::HybridSearch => f.write_str("hybrid_search"),
             Self::UnresolvablePkFilter => f.write_str("unresolvable_pk_filter"),
@@ -462,34 +630,17 @@ fn has_unresolvable_pk_values(filter: &PartitionKeyFilter) -> bool {
 /// Checks whether the local plan's query info is eligible for production
 /// execution without Gateway-only metadata.
 ///
-/// Rejects ORDER BY, OFFSET/LIMIT, DISTINCT, aggregates, GROUP BY, JOIN,
-/// subqueries, and UDFs. Accepts TOP-only and plain SELECT/WHERE queries.
+/// Rejects features without a production dataflow stage. ORDER BY,
+/// OFFSET/LIMIT, DISTINCT, TOP, JOIN, subqueries, and UDFs are executable by
+/// the current driver and remain eligible.
 fn check_production_eligibility(
     info: &plan::LocalQueryInfo,
 ) -> Result<(), LocalPlanFallbackReason> {
-    if !info.order_by.is_empty() {
-        return Err(LocalPlanFallbackReason::OrderBy);
-    }
-    if info.offset.is_some() || info.limit.is_some() {
-        return Err(LocalPlanFallbackReason::OffsetLimit);
-    }
-    if info.distinct_type != plan::DistinctType::None {
-        return Err(LocalPlanFallbackReason::Distinct);
-    }
     if !info.aggregates.is_empty() {
         return Err(LocalPlanFallbackReason::Aggregates);
     }
     if !info.group_by_expressions.is_empty() {
         return Err(LocalPlanFallbackReason::GroupBy);
-    }
-    if info.has_join {
-        return Err(LocalPlanFallbackReason::Join);
-    }
-    if info.has_subquery {
-        return Err(LocalPlanFallbackReason::Subquery);
-    }
-    if info.has_udf {
-        return Err(LocalPlanFallbackReason::Udf);
     }
     Ok(())
 }
@@ -569,7 +720,7 @@ pub(crate) fn try_local_plan(
         .map_err(|_| LocalPlanFallbackReason::EpkConversionFailed)?;
 
     // 8. Convert LocalQueryInfo to production-safe dataflow QueryInfo.
-    let query_info = production_query_info_to_dataflow(&local_plan.query_info);
+    let query_info = production_query_info_to_dataflow(&local_plan.query_info, &query_text)?;
 
     Ok(ProviderResolution::Plan(Box::new(dataflow::QueryPlan {
         partitioned_query_execution_info_version: 2,
@@ -577,6 +728,22 @@ pub(crate) fn try_local_plan(
         query_ranges,
         hybrid_search_query_info: None,
     })))
+}
+
+/// Generates the exact production local-plan shape for live parity tests.
+#[cfg(any(test, feature = "__internal_testing"))]
+#[doc(hidden)]
+pub fn __test_only_generate_production_query_plan(
+    query_spec_json: &[u8],
+    pk_definition: &PartitionKeyDefinition,
+) -> Result<serde_json::Value, String> {
+    match try_local_plan(Some(query_spec_json), pk_definition) {
+        Ok(ProviderResolution::Plan(plan)) => {
+            serde_json::to_value(plan).map_err(|_| "serialize".to_owned())
+        }
+        Ok(ProviderResolution::Empty) => Ok(serde_json::json!({"empty": true})),
+        Err(reason) => Err(reason.to_string()),
+    }
 }
 
 /// Minimal query-spec JSON parser for the production local-plan path.
@@ -776,30 +943,40 @@ mod tests {
     }
 
     #[test]
-    fn order_by_rejected() {
+    fn order_by_is_accepted_with_rewritten_query() {
         let body = br#"{"query": "SELECT * FROM c ORDER BY c.name ASC"}"#;
-        assert_eq!(
-            try_local_plan(Some(body), &single_pk_def()).unwrap_err(),
-            LocalPlanFallbackReason::OrderBy
-        );
+        let ProviderResolution::Plan(plan) = try_local_plan(Some(body), &single_pk_def()).unwrap()
+        else {
+            panic!("expected local plan");
+        };
+        let info = plan.query_info.unwrap();
+        assert_eq!(info.order_by, vec![dataflow::SortOrder::Ascending]);
+        assert!(info.rewritten_query.unwrap().contains("orderByItems"));
     }
 
     #[test]
-    fn offset_limit_rejected() {
-        let body = br#"{"query": "SELECT * FROM c OFFSET 0 LIMIT 10"}"#;
-        assert_eq!(
-            try_local_plan(Some(body), &single_pk_def()).unwrap_err(),
-            LocalPlanFallbackReason::OffsetLimit
-        );
+    fn offset_limit_is_accepted_with_rewritten_query() {
+        let body = br#"{"query": "SELECT * FROM c OFFSET 5 LIMIT 10"}"#;
+        let ProviderResolution::Plan(plan) = try_local_plan(Some(body), &single_pk_def()).unwrap()
+        else {
+            panic!("expected local plan");
+        };
+        let info = plan.query_info.unwrap();
+        assert_eq!(info.offset, Some(5));
+        assert_eq!(info.limit, Some(10));
+        assert!(info.rewritten_query.unwrap().ends_with("OFFSET 0 LIMIT 15"));
     }
 
     #[test]
-    fn distinct_rejected() {
+    fn distinct_is_accepted() {
         let body = br#"{"query": "SELECT DISTINCT c.name FROM c"}"#;
-        assert_eq!(
-            try_local_plan(Some(body), &single_pk_def()).unwrap_err(),
-            LocalPlanFallbackReason::Distinct
-        );
+        let ProviderResolution::Plan(plan) = try_local_plan(Some(body), &single_pk_def()).unwrap()
+        else {
+            panic!("expected local plan");
+        };
+        let info = plan.query_info.unwrap();
+        assert_eq!(info.distinct_type, dataflow::DistinctType::Unordered);
+        assert!(info.rewritten_query.is_none());
     }
 
     #[test]
@@ -827,25 +1004,77 @@ mod tests {
     }
 
     #[test]
-    fn join_rejected() {
+    fn join_is_accepted() {
         let body = br#"{"query": "SELECT * FROM c JOIN t IN c.tags"}"#;
-        assert_eq!(
-            try_local_plan(Some(body), &single_pk_def()).unwrap_err(),
-            LocalPlanFallbackReason::Join
-        );
+        assert!(matches!(
+            try_local_plan(Some(body), &single_pk_def()),
+            Ok(ProviderResolution::Plan(_))
+        ));
     }
 
     #[test]
-    fn subquery_rejected() {
+    fn subquery_is_accepted() {
+        let body = br#"{"query": "SELECT (SELECT VALUE 1) AS x FROM c"}"#;
+        assert!(matches!(
+            try_local_plan(Some(body), &single_pk_def()),
+            Ok(ProviderResolution::Plan(_))
+        ));
+    }
+
+    #[test]
+    fn udf_is_accepted() {
+        let body = br#"{"query": "SELECT VALUE udf.transform(c.data) FROM c"}"#;
+        assert!(matches!(
+            try_local_plan(Some(body), &single_pk_def()),
+            Ok(ProviderResolution::Plan(_))
+        ));
+    }
+
+    #[test]
+    fn distinct_windows_are_removed_from_partition_query() {
+        for (query, absent) in [
+            ("SELECT DISTINCT TOP 5 c.name FROM c", "TOP 5"),
+            ("SELECT DISTINCT c.name FROM c OFFSET 2 LIMIT 3", "OFFSET 2"),
+        ] {
+            let body = serde_json::to_vec(&serde_json::json!({"query": query})).unwrap();
+            let ProviderResolution::Plan(plan) =
+                try_local_plan(Some(&body), &single_pk_def()).unwrap()
+            else {
+                panic!("expected local plan");
+            };
+            let rewritten = plan.query_info.unwrap().rewritten_query.unwrap();
+            assert!(!rewritten.contains(absent), "{rewritten}");
+            assert!(rewritten.contains("SELECT DISTINCT"), "{rewritten}");
+        }
+    }
+
+    #[test]
+    fn order_by_select_value_adds_is_defined_filter() {
+        let body = br#"{"query": "SELECT VALUE c.name FROM c ORDER BY c.name"}"#;
+        let ProviderResolution::Plan(plan) = try_local_plan(Some(body), &single_pk_def()).unwrap()
+        else {
+            panic!("expected local plan");
+        };
+        assert!(plan
+            .query_info
+            .unwrap()
+            .rewritten_query
+            .unwrap()
+            .contains("IS_DEFINED(c.name)"));
+    }
+
+    #[test]
+    fn order_by_select_list_builds_object_payload() {
         let body =
-            br#"{"query": "SELECT * FROM c WHERE c.pk IN (SELECT VALUE t FROM t IN c.tags)"}"#;
-        let reason = try_local_plan(Some(body), &single_pk_def()).unwrap_err();
-        // The local parser may not support subquery syntax and return ParseFailed.
-        assert!(
-            reason == LocalPlanFallbackReason::Subquery
-                || reason == LocalPlanFallbackReason::ParseFailed,
-            "expected Subquery or ParseFailed, got {reason}"
-        );
+            br#"{"query": "SELECT c.name, c.age AS years, c.score + 1 FROM c ORDER BY c.name"}"#;
+        let ProviderResolution::Plan(plan) = try_local_plan(Some(body), &single_pk_def()).unwrap()
+        else {
+            panic!("expected local plan");
+        };
+        let rewritten = plan.query_info.unwrap().rewritten_query.unwrap();
+        assert!(rewritten.contains(r#""name": c.name"#), "{rewritten}");
+        assert!(rewritten.contains(r#""years": c.age"#), "{rewritten}");
+        assert!(rewritten.contains(r#""$1": c.score + 1"#), "{rewritten}");
     }
 
     // ── PK filter → EPK range conversion ────────────────────────────────

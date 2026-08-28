@@ -7,6 +7,7 @@ pub mod account_metadata_refresh;
 pub mod batch;
 pub mod binary_response_format;
 pub mod control_plane;
+pub mod distinct;
 #[cfg(feature = "preview_dtx")]
 pub mod distributed_transaction;
 pub mod dynamic_topology;
@@ -25,6 +26,7 @@ pub mod metadata_hedging_stress;
 pub mod multi_region;
 pub mod offers;
 pub mod order_by;
+pub mod patch_verification_routing;
 pub mod point_operations;
 pub mod ppaf_dynamic_enablement;
 pub mod query;

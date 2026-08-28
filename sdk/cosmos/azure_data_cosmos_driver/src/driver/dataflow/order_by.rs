@@ -163,7 +163,7 @@ pub(crate) enum OrderByNumber {
 impl OrderByNumber {
     /// Classifies a `serde_json::Number` into the widest lossless variant:
     /// signed integer, else unsigned integer, else finite float.
-    fn from_json_number(n: &serde_json::Number) -> Self {
+    pub(crate) fn from_json_number(n: &serde_json::Number) -> Self {
         if let Some(i) = n.as_i64() {
             Self::I64(i)
         } else if let Some(u) = n.as_u64() {

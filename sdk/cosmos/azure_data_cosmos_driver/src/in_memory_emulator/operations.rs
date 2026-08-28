@@ -5688,12 +5688,13 @@ mod tests {
     }
 
     #[test]
-    fn order_by_rewrite_rejects_unsupported_select_list() {
-        assert!(synthesize_order_by_rewritten_query(
+    fn order_by_rewrite_builds_select_list_payload() {
+        let rewritten = synthesize_order_by_rewritten_query(
             "SELECT c.id FROM c ORDER BY c.rank",
             &["c.rank".to_owned()],
         )
-        .is_none());
+        .unwrap();
+        assert!(rewritten.contains(r#""payload": {"id": c.id}"#));
     }
 
     #[test]

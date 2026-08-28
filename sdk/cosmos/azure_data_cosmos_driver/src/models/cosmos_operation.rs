@@ -159,6 +159,16 @@ pub struct CosmosOperation {
     /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
     /// is dispatched exactly like the standalone Read/Replace it is.
     is_patch_sub_operation: bool,
+    /// Routing strategy for reads whose correctness depends on observing the
+    /// write region rather than the nearest read replica.
+    read_routing_strategy: ReadRoutingStrategy,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum ReadRoutingStrategy {
+    #[default]
+    Default,
+    PreferredWriteEndpointsNoHedging,
 }
 
 impl CosmosOperation {
@@ -496,6 +506,32 @@ impl CosmosOperation {
         self
     }
 
+    /// Marks this operation as the Read half of PATCH's Read-Modify-Write loop.
+    ///
+    /// The read prefers write endpoints and cannot be hedged because a response
+    /// from another region may not yet contain the write being verified.
+    pub(crate) fn as_patch_read_sub_operation(mut self) -> Self {
+        self.is_patch_sub_operation = true;
+        self.read_routing_strategy = ReadRoutingStrategy::PreferredWriteEndpointsNoHedging;
+        self
+    }
+
+    /// Returns whether this internal read should start at preferred write endpoints.
+    pub(crate) fn prefers_write_endpoints_for_read(&self) -> bool {
+        matches!(
+            self.read_routing_strategy,
+            ReadRoutingStrategy::PreferredWriteEndpointsNoHedging
+        )
+    }
+
+    /// Returns whether correctness requires hedging to remain disabled.
+    pub(crate) fn suppresses_hedging(&self) -> bool {
+        matches!(
+            self.read_routing_strategy,
+            ReadRoutingStrategy::PreferredWriteEndpointsNoHedging
+        )
+    }
+
     /// Returns `true` when this operation is an internal sub-operation of a
     /// PATCH's Read-Modify-Write loop.
     pub fn is_patch_sub_operation(&self) -> bool {
@@ -529,6 +565,7 @@ impl CosmosOperation {
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,
+            read_routing_strategy: ReadRoutingStrategy::Default,
         }
     }
 
@@ -886,6 +923,9 @@ impl CosmosOperation {
     /// the operation body (via [`with_body`](Self::with_body)) — the patch
     /// handler deserializes it before issuing the underlying transport
     /// operations.
+    ///
+    /// An interrupted patch may re-apply non-idempotent operations — see
+    /// `docs/PATCH_HANDLER_SPEC.md`.
     pub fn patch_item(item: ItemReference) -> Self {
         Self::for_item(OperationType::Patch, item)
     }
@@ -1078,6 +1118,26 @@ impl CosmosOperation {
     /// Returns true if this operation is idempotent.
     pub fn is_idempotent(&self) -> bool {
         self.operation_type.is_idempotent()
+    }
+
+    /// Returns true if this operation may be retried when the backend outcome
+    /// is ambiguous — that is, when the request may already have been received
+    /// and processed.
+    ///
+    /// Only stored procedure execution returns `false`. Its body is opaque to
+    /// the driver, so re-running it can repeat arbitrary mutations with no way
+    /// to detect the duplicate. Every other data-plane operation is retried,
+    /// because Cosmos DB's conflict detection (409/412) makes the final
+    /// resource state deterministic — see `docs/ErrorCodesAndRetries.md`.
+    ///
+    /// This is deliberately *not* `is_idempotent`: the driver retries
+    /// non-idempotent writes such as `Create` and `Upsert` on purpose.
+    ///
+    /// Gates both retry layers so they cannot disagree about the same failure:
+    /// cross-region failover in the operation pipeline, and the same-endpoint
+    /// shard retry in the transport pipeline.
+    pub fn allows_ambiguous_outcome_retry(&self) -> bool {
+        self.operation_type != OperationType::Execute
     }
 
     /// Returns true if this operation can be planned with a single-node pipeline.
@@ -1332,6 +1392,38 @@ mod tests {
         assert!(!op.is_idempotent());
     }
 
+    /// Both retry layers consult this one predicate, so a failure the transport
+    /// pipeline declines to retry on another shard cannot then be retried
+    /// cross-region by the operation pipeline — strictly more expensive for
+    /// identical duplicate-execution semantics.
+    #[test]
+    fn ambiguous_outcome_retry_covers_non_idempotent_writes() {
+        let pk = PartitionKey::from("pk1");
+        let item = |op: fn(ItemReference) -> CosmosOperation| {
+            op(ItemReference::from_name(
+                &test_container(),
+                pk.clone(),
+                "doc1",
+            ))
+        };
+
+        for op in [
+            item(CosmosOperation::create_item),
+            item(CosmosOperation::upsert_item),
+            item(CosmosOperation::patch_item),
+            item(CosmosOperation::replace_item),
+            item(CosmosOperation::delete_item),
+            item(CosmosOperation::read_item),
+            CosmosOperation::batch(test_container(), pk.clone()),
+        ] {
+            assert!(
+                op.allows_ambiguous_outcome_retry(),
+                "{:?} must stay eligible for retry after an ambiguous failure",
+                op.operation_type()
+            );
+        }
+    }
+
     #[cfg(feature = "preview_dtx")]
     #[test]
     fn distributed_write_transaction_is_idempotent() {
@@ -1465,9 +1557,19 @@ mod tests {
 
         assert!(!CosmosOperation::read_item(item()).is_patch_sub_operation());
         assert!(!CosmosOperation::replace_item(item()).is_patch_sub_operation());
+        assert!(!CosmosOperation::read_item(item()).prefers_write_endpoints_for_read());
+        assert!(!CosmosOperation::read_item(item()).suppresses_hedging());
         assert!(CosmosOperation::read_item(item())
             .as_patch_sub_operation()
             .is_patch_sub_operation());
+        assert!(!CosmosOperation::read_item(item())
+            .as_patch_sub_operation()
+            .prefers_write_endpoints_for_read());
+
+        let patch_read = CosmosOperation::read_item(item()).as_patch_read_sub_operation();
+        assert!(patch_read.is_patch_sub_operation());
+        assert!(patch_read.prefers_write_endpoints_for_read());
+        assert!(patch_read.suppresses_hedging());
     }
 
     #[test]

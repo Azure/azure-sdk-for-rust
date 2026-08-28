@@ -5,14 +5,16 @@ use crate::{
     clients::ClientContext,
     diagnostics::CosmosOperationContext,
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
-    models::{BatchResponse, ChangeFeedItem, ItemResponse, PatchInstructions, TransactionalBatch},
+    models::{BatchResponse, ChangeFeedItem, ItemResponse, TransactionalBatch},
     options::{
         BatchOptions, BinaryEncodingOptions, ChangeFeedMode, ChangeFeedOptions,
-        ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, PatchItemOptions,
-        Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, SessionToken,
+        ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, Precondition,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, SessionToken,
     },
     PartitionKey, Query, ResourceIdentity,
 };
+#[cfg(feature = "preview_patch")]
+use crate::{models::PatchInstructions, options::PatchItemOptions};
 
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
@@ -524,6 +526,9 @@ impl ContainerClient {
     /// Applies a JSON-PATCH-style update to an item by reading it, applying
     /// the [`PatchInstructions`] locally, and issuing an ETag-guarded Replace.
     ///
+    /// **Preview.** Requires the `preview_patch` feature. This API is not
+    /// production-ready — see [Failure Semantics](#failure-semantics) below.
+    ///
     /// The handler refuses to PATCH paths that overlap the container's
     /// partition-key paths: rewriting the partition key would move the
     /// document to a different physical partition, so such requests are
@@ -590,6 +595,7 @@ impl ContainerClient {
     /// appends should either build idempotent ops (`PatchOperation::set` on a
     /// caller-computed value) or detect duplicate-application via a
     /// monotonic application-level sequence number.
+    #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -1500,9 +1506,13 @@ fn _assert_futures_are_send() {
     let client: &ContainerClient = todo!();
     let partition_key: PartitionKey = todo!();
     let item_id: &str = todo!();
-    let patch: PatchInstructions = todo!();
-    let options: Option<PatchItemOptions> = todo!();
-    assert_send(client.patch_item(partition_key, item_id, patch, options));
+    assert_send(client.read_item(partition_key.clone(), item_id, None));
+    #[cfg(feature = "preview_patch")]
+    {
+        let patch: PatchInstructions = todo!();
+        let options: Option<PatchItemOptions> = todo!();
+        assert_send(client.patch_item(partition_key, item_id, patch, options));
+    }
 }
 
 #[cfg(test)]

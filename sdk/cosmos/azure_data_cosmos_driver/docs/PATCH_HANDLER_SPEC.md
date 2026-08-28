@@ -3,6 +3,18 @@
 This document describes the contract for `OperationType::Patch` in
 `azure_data_cosmos_driver`.
 
+## Known limitation and SDK exposure
+
+The core driver always includes PATCH. Consuming SDKs decide whether and how
+to expose it as preview using conventions appropriate to each language. The
+Rust SDK, `azure_data_cosmos`, gates its public PATCH API behind the
+**`preview_patch`** Cargo feature, which is off by default.
+
+The handler does not deliver exactly-once semantics under transport failures:
+an interrupted patch may re-apply non-idempotent operations (`Increment`,
+`Add` on an array, `Move`). See [Invariants](#invariants) for the exact
+interleaving. The Rust SDK API will stay gated until that hole is closed.
+
 ## Overview
 
 `Patch` is a *virtual* operation type: the Cosmos DB REST endpoint does not
@@ -17,12 +29,12 @@ normal pipeline stages run.
 
 ## Inputs
 
-| Field                                       | Source                                       | Notes                                                            |
-| ------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------- |
-| `CosmosOperation` with `OperationType::Patch` | `CosmosOperation::patch_item(ItemReference)` | Required.                                                        |
-| Body                                        | `with_body(serde_json::to_vec(&PatchInstructions))`  | Required. The handler re-parses it as `PatchInstructions`.               |
-| Partition key                               | `with_partition_key(...)`                    | Required. Used to issue the internal Read.                       |
-| `patch_max_attempts`                        | `with_patch_max_attempts(NonZeroU8)`         | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
+| Field                                         | Source                                              | Notes                                                             |
+| --------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- |
+| `CosmosOperation` with `OperationType::Patch` | `CosmosOperation::patch_item(ItemReference)`        | Required.                                                         |
+| Body                                          | `with_body(serde_json::to_vec(&PatchInstructions))` | Required. The handler re-parses it as `PatchInstructions`.        |
+| Partition key                                 | `with_partition_key(...)`                           | Required. Used to issue the internal Read.                        |
+| `patch_max_attempts`                          | `with_patch_max_attempts(NonZeroU8)`                | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
 
 ## Algorithm
 
@@ -42,21 +54,25 @@ normal pipeline stages run.
      covers BOTH the source (`from`) and the destination (`path`).
    - reject empty op lists.
 
-2. Capture the caller's session token (if any) from the outer PATCH
-   operation's request headers as the loop's *effective* session token —
-   see "Session-token threading" below.
+2. Clone the caller's operation options for the Read and override its
+  consistency strategy with `LatestCommitted`. The caller's session token is
+  intentionally not copied while the Read is routed to a write endpoint;
+  `LatestCommitted` is not session-effective.
 
 loop up to max_attempts times:
-    3. read = execute_operation(Read, caller_options) with the loop's
-       *effective* session token applied to the Read sub-op (caller's
-       on attempt 1; carried-forward on subsequent attempts).
+    3. read = execute_operation(Read, read_options) with:
+       - ReadConsistencyStrategy::LatestCommitted forced in read_options;
+       - preferred-write-endpoint routing;
+       - hedging suppressed, including environment-enabled hedging; and
+       - no session token.
+       If every preferred write endpoint is unavailable or excluded, use
+      normal read routing with the account-default consistency and effective
+      session token. Record a `routing_fallback` request event with detail
+      `patch_verification_read_write_endpoint_unavailable_or_excluded`.
        The driver pipeline returns Err(ErrorKind::HttpResponse { .. })
        for any non-2xx Read response; the patch handler propagates that
        error verbatim (with its raw_response and diagnostics intact).
        if read.headers().etag is None: return Other("no ETag, cannot RMW").
-       advance the *effective* session token to read.headers().session_token
-       so the next attempt's Read never observes a strictly older session
-       view.
     4. value = serde_json::from_slice(read.body())
        apply_patch_ops(&mut value, &spec.operations)
        merged_bytes = serde_json::to_vec(&value)
@@ -81,7 +97,7 @@ if loop exhausted: return ErrorKind::HttpResponse{ status:
 PreconditionFailed, .. } with the last 412 chained as the source.
 ```
 
-### Session-token threading and the SE-004 TOCTOU mitigation
+### Read/Replace consistency and the SE-004 TOCTOU mitigation
 
 The RMW loop crosses two service round-trips (Read → Replace). Without
 care, the Read could be served by one replica's view of the data and the
@@ -89,36 +105,78 @@ Replace could commit against a stale view on a *different* replica —
 silently undoing recent writes the original caller would otherwise have
 read. To close that window:
 
-1. The caller-provided `OperationOptions` (consistency, end-to-end
-   latency budget, throughput control, etc.) are threaded through to
-   the internal Read **and** to the internal Replace.
-2. The **caller's** session token (if any) seeds the loop's
-   *effective* session token, which is applied to the first attempt's
-   Read via `build_read_sub_op`, so the Read observes a session-
-   consistent view of the item.
+1. The caller-provided `OperationOptions` (end-to-end latency budget,
+  throughput control, etc.) are threaded through to the internal Read
+  **and** to the internal Replace. The Read's consistency strategy is
+  deliberately overridden with `LatestCommitted`; other options are
+  preserved.
+2. `LatestCommitted` deliberately bypasses the session lane. The internal
+  Read therefore does **not** carry the caller's session token or a token
+  from a prior attempt. Freshness comes from the write-region quorum read,
+  not session-token resolution. The pipeline removes
+  `x-ms-session-token` after all custom-header layers are resolved, so a
+  runtime/account/operation custom header cannot reintroduce it.
 3. The Replace's session token is **overridden** with the session token
    returned on the Read's response — see `build_replace_sub_op`. This
    pins the Replace to the same replica view we just read from. Any
    further client-supplied session token on the outer PATCH is
    intentionally discarded for the Replace; the Read's response token
    is by definition fresher.
-4. Across RMW attempts the loop monotonically advances the *effective*
-   session token to the freshest one observed:
-   - the Read's response token on every attempt;
-   - the final Replace's response token on the successful attempt;
-   - **the failed Replace's response token on every 412** (folded in
-     via `SessionToken::merge`) — a 412 response carries a token that
-     is strictly fresher than the Read we just performed (it was
-     produced by a replica that already saw the conflicting writer's
-     commit). Attempt N's Read therefore never regresses to a strictly
-     older session view than attempt N-1 already saw, *including the
-     failed-Replace's view of the post-conflict world*.
+4. After a 412, the next attempt repeats the write-region
+  `LatestCommitted` Read. A session token from the failed Replace is retained
+  on the surfaced error if retries exhaust, but is not attached to the next
+  Read.
 
-This matters most for `Session` consistency, but is correct for
-`Eventual` too (a no-op there). For `Strong` / `BoundedStaleness` the
-service-side replica selection already provides the guarantee, but the
-handler still propagates the tokens so diagnostics surface them
-end-to-end.
+### Verification-read routing and consistency
+
+PATCH verification reads first use the partition's persisted PPAF writer when
+one exists, then the account's write endpoint list. On multi-write accounts,
+retries skip endpoints already abandoned by this operation and continue through
+that write list; failed attempts are keyed by the stable regional gateway URL,
+so a Gateway 2.0 metadata refresh cannot make the same writer look new. The set
+is operation-local and does not mark a region unhealthy for unrelated work.
+Persisted PPAF endpoints are resolved to the current account endpoint before
+both reads and writes use them, so a Gateway 2.0 URL refresh applies across
+operations and between the Read and Replace. An unavailable or excluded
+override is skipped before considering account writers.
+
+On a multi-write account, a write endpoint's regional quorum may still lag a
+write accepted in another region. Because the verification Read deliberately
+does not carry the caller's session token, it can observe an older image or a
+plain 404 during that replication window. The subsequent Replace carries the
+Read response's token and ETag; if it routes to a region that has not reached
+that view it can return 404/1002 and session-retry, while a newer image produces
+412 and restarts the RMW loop. These extra attempts are an accepted trade-off:
+regional quorum narrows the contention window but cannot eliminate concurrent
+multi-write conflicts.
+
+A PPAF `current_endpoint` is the next candidate not known to have failed, not
+proof that a successful write landed there. A verification Read may therefore
+probe a stale candidate. The following Replace can discover that the candidate
+is not writable and fail over, or reject a stale ETag with 412 and restart the
+RMW loop. This is likewise an accepted availability/contention trade-off; the
+candidate avoids always returning to a known-stale account writer after
+partition-level failover.
+
+The read also forces `ReadConsistencyStrategy::LatestCommitted` and suppresses
+both pre-attempt and retry-upgrade hedging. A hedge winner from another region
+would reintroduce the stale-observation window even when the primary targets the
+write region. Partition-level read circuit-breaker overrides likewise do not
+replace active write-region routing. Retry evaluation keeps PPCB classification
+active, while the operation pipeline removes both `MarkPartitionUnavailable`
+and `MarkEndpointUnavailable` effects before they reach shared routing state.
+Failures advance through the operation-local failed-URL set instead of changing
+routing for unrelated operations.
+
+When all preferred write endpoints are unavailable or excluded, the operation
+falls back to normal read routing with account-default consistency and the
+effective session token. This prevents a lagging reader from supplying a stale
+image to the Replace: 404/1002 session-retries instead, and an already-present
+stale item cannot satisfy the token. A request that ultimately uses a reader
+carries a `routing_fallback` diagnostic event; last-resort selection of a writer
+does not. The fallback preserves read-your-writes but cannot provide the same
+marker-observation guarantee as a write-region quorum read, so the marker
+protocol must account for that when attributing an ambiguous Replace.
 
 ## Response Synthesis
 
@@ -173,32 +231,47 @@ synthesized response. It is `pub(crate)` and lives in
 
 Supported (`PatchOperation` variants — all use RFC 6901 JSON Pointers):
 
-| Variant     | JSON `op`     | Semantics                                                                  |
-| ----------- | ------------- | -------------------------------------------------------------------------- |
-| `Add`       | `"add"`       | Insert into object or array (`/-` appends).                                |
-| `Set`       | `"set"`       | Same as `Add`; conventional for "create or overwrite" leaf assignment.     |
-| `Replace`   | `"replace"`   | Overwrite an existing leaf; fails if the leaf is missing.                  |
-| `Remove`    | `"remove"`    | Delete a leaf; fails if the leaf is missing or the path is the root.      |
-| `Increment` | `"increment"` | Numeric add; preserves i64 fidelity, promotes i64→f64 on float operand.    |
-| `MoveOp`    | `"move"`      | Move a subtree from `from` to `path`; refuses to move into own descendant. |
+| Variant     | JSON `op`   | Semantics                                                                  |
+| ----------- | ----------- | -------------------------------------------------------------------------- |
+| `Add`       | `"add"`     | Insert into object or array (`/-` appends).                                |
+| `Set`       | `"set"`     | Same as `Add`; conventional for "create or overwrite" leaf assignment.     |
+| `Replace`   | `"replace"` | Overwrite an existing leaf; fails if the leaf is missing.                  |
+| `Remove`    | `"remove"`  | Delete a leaf; fails if the leaf is missing or the path is the root.       |
+| `Increment` | `"incr"`    | Numeric add; preserves i64 fidelity, promotes i64→f64 on float operand.    |
+| `MoveOp`    | `"move"`    | Move a subtree from `from` to `path`; refuses to move into own descendant. |
+
+The `op` tags are the Cosmos DB wire contract
+([REST reference](https://learn.microsoft.com/rest/api/cosmos-db/patch-a-document)),
+not the lowercased Rust variant names — `Increment` serializes as `"incr"`.
+The tags are pinned by `every_op_tag_matches_the_wire_contract` in
+`src/models/patch.rs`. This matters wherever `PatchInstructions` reaches the
+service directly, which today is the distributed-transaction patch operation.
+
+`PatchOperation` is a public `Deserialize` type, so `Increment` additionally
+accepts the legacy `"increment"` tag on **input** (a Serde alias) to keep patch
+documents persisted by earlier versions of this crate parsing. Output is always
+`"incr"` — re-serializing a legacy document upgrades the tag.
 
 `CosmosNumber` is a Rust-only enum (`Int(i64)`, `Float(f64)`) that serializes
 as a JSON number without precision loss.
 
 ## Errors
 
-- All sub-operation errors are surfaced verbatim — including the
-  `DiagnosticsContext` and request-tracking info from the internal Read or
-  Replace.
+- Sub-operation errors preserve the failing error's status, sub-status, raw
+  response, and source. The attached diagnostics are re-stamped with the
+  virtual PATCH operation's `patch_item` name before the error is surfaced.
+- A non-412 failure after earlier sub-operations carries an aggregated
+  `DiagnosticsContext` containing those prior contexts plus the failing
+  sub-operation's context, in dispatch order. When the first sub-operation
+  fails, its context is retained with only the operation name rewritten.
 - The handler never retries beyond `max_attempts` and never converts a 412
   into success; the final outcome is whichever of "internal sub-op error",
   "successful PATCH", or "exhausted RMW attempts (412)" terminated the
   loop.
-- The aggregated `DiagnosticsContext` described in "Response Synthesis"
-  applies to the *successful* path. On error paths the surfaced
-  `DiagnosticsContext` is whatever the failing sub-op already carried —
-  the handler does not synthesize an aggregated context for partial
-  failures.
+- When 412 retries exhaust `max_attempts`, the final error carries an
+  aggregated `DiagnosticsContext` containing every accumulated Read and
+  failed Replace context. Thus both successful and failed PATCH operations
+  follow the "one PATCH operation = one `DiagnosticsContext`" contract.
 
 ## Why Driver-Side?
 
@@ -229,6 +302,11 @@ as a JSON number without precision loss.
   attached to a PATCH request in this preview.
 - 412 stays non-retryable in the global retry-evaluation policy. PATCH's
   RMW retry is internal and never depends on the global policy.
+- Every internal Read prefers the PPAF partition writer or account write
+  endpoints, forces `LatestCommitted`, strips session-token headers, and
+  suppresses hedging. Normal read routing with account-default/session
+  consistency is used only when no preferred write endpoint is usable, and a
+  fallback that ultimately uses a reader is recorded in request diagnostics.
 - **PATCH is not exactly-once under transport failures.** The internal
   Replace is `OperationType::Replace`, which the pipeline classifies as
   idempotent (`OperationType::is_idempotent`). If a transport-layer error
@@ -238,10 +316,12 @@ as a JSON number without precision loss.
   already replicated the original commit returns 412, which the RMW loop
   treats as a normal race-lost and recovers by re-Reading and re-applying.
   Non-idempotent ops (`Increment`, `Add` on an array, `Move`) may therefore
-  be applied **more than once** under this scenario. Lifting this caveat
-  requires marking the internal Replace as non-idempotent for retry
-  purposes (e.g. a per-op idempotency override on `CosmosOperation`); that
-  is tracked as a follow-up because it interacts with PPAF write-retry
-  semantics. Callers needing exactly-once should either use idempotent ops
-  (`Set` on a caller-computed value) or detect duplicate-application via a
-  monotonic application-level sequence number.
+  be applied **more than once** under this scenario. This is why the Rust SDK
+  treats PATCH as preview and gates it behind `preview_patch`; other consuming
+  SDKs choose their own exposure policy. Closing the hole requires the RMW loop
+  to be able to *recognize its own committed write* rather than mistaking it
+  for a concurrent writer — i.e. stamping each attempt with a marker the loop
+  can look for on the verification read. Until then, callers needing
+  exactly-once should either use idempotent ops (`Set` on a caller-computed
+  value) or detect duplicate-application via a monotonic application-level
+  sequence number.

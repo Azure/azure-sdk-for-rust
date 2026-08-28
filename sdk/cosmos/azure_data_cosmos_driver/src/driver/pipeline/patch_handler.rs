@@ -16,10 +16,9 @@
 //!    using [`apply_patch_ops`], and re-serialize.
 //! 6. Issue an internal ETag-guarded [`OperationType::Replace`].
 //! 7. On `412 Precondition Failed`, restart from step 3 — up to
-//!    `max_attempts` (default 5) total tries. Across attempts the loop
-//!    monotonically advances the session token it threads into the next
-//!    Read so attempt N never observes a strictly older session view than
-//!    attempt N-1.
+//!    `max_attempts` (default 5) total tries. Each Read is a write-region
+//!    `LatestCommitted` read without a session token unless write routing is
+//!    unavailable, in which case normal read routing uses session consistency.
 //! 8. Synthesize a [`CosmosResponse`] from the locally-merged body plus the
 //!    transport headers/status of the final Replace and an aggregated
 //!    [`DiagnosticsContext`] that concatenates every successful sub-op's
@@ -42,9 +41,9 @@ use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::driver::CosmosDriver;
 use crate::models::{
     CosmosOperation, CosmosResponse, PartitionKeyKind, PatchInstructions, PatchOperation,
-    Precondition, SessionToken,
+    Precondition,
 };
-use crate::options::{BinaryEncodingOptions, OperationOptions};
+use crate::options::{BinaryEncodingOptions, OperationOptions, ReadConsistencyStrategy};
 use async_trait::async_trait;
 use azure_core::http::{Etag, StatusCode};
 use std::num::NonZeroU8;
@@ -115,6 +114,8 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     // `None` would inherit a lower layer (e.g. an account/client that enabled
     // binary), which would then flow into the internal Read/Replace sub-ops.
     options.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(false));
+    let mut read_options = options.clone();
+    read_options.read_consistency_strategy = Some(ReadConsistencyStrategy::LatestCommitted);
 
     // -- 1. Reject caller-set preconditions --
     //
@@ -182,20 +183,6 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .map(|n| n.get())
         .unwrap_or(DEFAULT_PATCH_MAX_ATTEMPTS);
 
-    // Capture the caller's session token (if any). The PATCH outer
-    // CosmosOperation carries it on its request headers because the SDK
-    // wrapper applies it via `apply_item_options`. We propagate it to the
-    // internal Read so we get a session-consistent view of the current item,
-    // then override with the Read's response session token on the Replace —
-    // closing the SE-004 TOCTOU window.
-    //
-    // Across RMW attempts we monotonically advance `effective_session_token`
-    // to the freshest one we observe (Read response on every attempt;
-    // Replace response on the final successful attempt). That way attempt
-    // N's Read does not regress to a strictly older session view than
-    // attempt N-1 already saw.
-    let mut effective_session_token = operation.request_headers().session_token.clone();
-
     // -- 3..7. RMW loop --
     let mut last_412: Option<crate::error::CosmosError> = None;
     // Aggregated diagnostics across every successful sub-op the loop
@@ -217,10 +204,11 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     let operation_name: Option<Arc<str>> = operation.db_operation_name().map(Arc::from);
 
     for _ in 0..attempts {
-        // Read the current item, propagating the freshest session token we
-        // have observed so far (caller's on attempt 1; carried-forward on
-        // subsequent attempts).
-        let read_op = build_read_sub_op(item_ref.clone(), effective_session_token.clone());
+        // Read the current item from the write endpoint at LatestCommitted.
+        // LatestCommitted is deliberately outside the session lane. If routing
+        // degrades to a reader, the operation pipeline restores account-default
+        // consistency and resolves the effective session token for that attempt.
+        let read_op = build_read_sub_op(item_ref.clone());
 
         // Any non-2xx Read response is mapped by the driver pipeline into
         // `Err(ErrorKind::HttpResponse { .. })` (see retry_evaluation.rs's
@@ -231,7 +219,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         // PATCH operation's identity so the failure reports the same
         // `db.operation.name` as its success and retry-exhaustion counterparts.
         let read_resp = dispatcher
-            .execute_operation(read_op, options.clone())
+            .execute_operation(read_op, read_options.clone())
             .await
             .map_err(|err| {
                 stamp_patch_identity(err, operation_name.clone(), &sub_op_diagnostics)
@@ -257,13 +245,6 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         // just read from. This is what mitigates SE-004 (session token
         // TOCTOU across read->write).
         let read_session_token = read_resp.headers().session_token.clone();
-        // Carry the Read response's session token into the next attempt's
-        // Read so a subsequent retry never regresses to a strictly older
-        // session view.
-        if let Some(token) = read_session_token.clone() {
-            effective_session_token = Some(token);
-        }
-
         // Locally apply the patch ops. These failures are synthesized here
         // rather than returned by the pipeline, so they carry no diagnostics of
         // their own; hand them the PATCH-identified aggregate of the sub-ops
@@ -387,26 +368,6 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             }
             Err(err) if is_precondition_failed(&err) => {
                 // 412 — someone raced us.
-                //
-                // A 412 response carries a session token that is strictly
-                // fresher than the Read we just performed (it was produced
-                // by a replica that already saw the conflicting writer's
-                // commit). Fold it into `effective_session_token` — using
-                // `merge` to preserve segments from previously observed
-                // tokens for other partition-key ranges — so the next
-                // attempt's Read can't regress to an older session view.
-                // Falls back to the carry-forward from the Read response
-                // we already advanced above when the 412 carries no
-                // session token header (e.g. unit-test errors built
-                // without a populated response).
-                if let Some(token_412) = session_token_from_error(&err) {
-                    effective_session_token = Some(
-                        effective_session_token
-                            .as_ref()
-                            .and_then(|prev| prev.merge(&token_412).ok())
-                            .unwrap_or(token_412),
-                    );
-                }
                 // Stash the real service error so exhaustion_error can
                 // chain it as the underlying cause. Also capture the
                 // failed sub-op's diagnostics into the aggregated list so
@@ -519,22 +480,6 @@ fn is_precondition_failed(err: &crate::error::CosmosError) -> bool {
     err.wire_payload().is_some() && err.status().is_precondition_failed()
 }
 
-/// Extracts the `x-ms-session-token` from a service-built cosmos error's
-/// parsed response headers, if present.
-///
-/// The driver pipeline mints every non-2xx response into a typed
-/// service error with the wire-level [`CosmosResponsePayload`] (body +
-/// parsed [`CosmosResponseHeaders`]) attached, so the session-token
-/// header on a 412 is already accessible via the [`CosmosResponse`] returned
-/// by [`CosmosError::response`].
-/// Returns `None` for non-service errors or service errors whose response
-/// carried no session-token header (e.g. accounts not configured for
-/// Session consistency).
-fn session_token_from_error(err: &crate::error::CosmosError) -> Option<SessionToken> {
-    err.wire_payload()
-        .and_then(|p| p.headers().session_token.clone())
-}
-
 /// Reconciles the locally-merged post-image JSON with the Replace response so
 /// the response body the customer deserializes carries the server's
 /// authoritative system properties (`_etag` in particular) instead of the
@@ -580,17 +525,12 @@ fn synthesize_post_image_body(
     serde_json::to_vec(&value).unwrap_or(merged_bytes)
 }
 
-/// Builds the internal Read sub-operation used by the RMW loop, propagating
-/// the caller's session token so the read sees a session-consistent view.
-fn build_read_sub_op(
-    item_ref: crate::models::ItemReference,
-    caller_session_token: Option<crate::models::SessionToken>,
-) -> CosmosOperation {
-    let mut op = CosmosOperation::read_item(item_ref).as_patch_sub_operation();
-    if let Some(token) = caller_session_token {
-        op = op.with_session_token(token);
-    }
-    op
+/// Builds the internal Read sub-operation used by the RMW loop. The operation
+/// hint prefers write endpoints and suppresses hedging.
+/// `execute_with_dispatcher` separately forces `LatestCommitted`, which is not
+/// session-effective, so the operation deliberately carries no session token.
+fn build_read_sub_op(item_ref: crate::models::ItemReference) -> CosmosOperation {
+    CosmosOperation::read_item(item_ref).as_patch_read_sub_operation()
 }
 
 /// Builds the internal Replace sub-operation used by the RMW loop. The
@@ -837,22 +777,8 @@ mod tests {
     }
 
     #[test]
-    fn read_sub_op_propagates_caller_session_token() {
-        // R3-DRIVER / SE-004: caller's session token must reach the internal Read so
-        // we get a session-consistent view of the current item.
-        let caller_token = SessionToken(Cow::Owned("0:1#42".into()));
-        let op = build_read_sub_op(test_item_ref(), Some(caller_token.clone()));
-
-        assert_eq!(op.operation_type(), OperationType::Read);
-        assert_eq!(
-            op.request_headers().session_token.as_ref(),
-            Some(&caller_token)
-        );
-    }
-
-    #[test]
-    fn read_sub_op_omits_token_when_caller_has_none() {
-        let op = build_read_sub_op(test_item_ref(), None);
+    fn read_sub_op_omits_session_token_for_latest_committed() {
+        let op = build_read_sub_op(test_item_ref());
 
         assert_eq!(op.operation_type(), OperationType::Read);
         assert!(op.request_headers().session_token.is_none());
@@ -904,7 +830,7 @@ mod tests {
         // issued directly. The `patch_` prefix keeps them attributable to the
         // PATCH while still naming which half of the read-modify-write they
         // are.
-        let read = build_read_sub_op(test_item_ref(), None);
+        let read = build_read_sub_op(test_item_ref());
         assert!(read.is_patch_sub_operation());
         assert_eq!(read.db_operation_name(), Some("patch_read_item"));
 
@@ -1262,6 +1188,9 @@ mod tests {
         /// headers, if any. Captured so tests can pin the cross-attempt
         /// session-token carry-forward behavior.
         session_token: Option<SessionToken>,
+        read_consistency_strategy: Option<ReadConsistencyStrategy>,
+        prefers_write_endpoints_for_read: bool,
+        suppresses_hedging: bool,
     }
 
     impl ScriptedDispatcher {
@@ -1282,7 +1211,7 @@ mod tests {
         async fn execute_operation(
             &self,
             operation: CosmosOperation,
-            _options: OperationOptions,
+            options: OperationOptions,
         ) -> crate::error::Result<CosmosResponse> {
             let if_match = match operation.precondition() {
                 Some(Precondition::IfMatch(tag)) => Some(tag.as_ref().to_string()),
@@ -1292,6 +1221,9 @@ mod tests {
                 op_type: operation.operation_type(),
                 if_match_etag: if_match,
                 session_token: operation.request_headers().session_token.clone(),
+                read_consistency_strategy: options.read_consistency_strategy,
+                prefers_write_endpoints_for_read: operation.prefers_write_endpoints_for_read(),
+                suppresses_hedging: operation.suppresses_hedging(),
             });
 
             let reply =
@@ -1343,17 +1275,8 @@ mod tests {
         cosmos_service_error(status, msg, None, &[])
     }
 
-    /// Same as [`http_error`], but populates the cosmos response headers
-    /// with the given session token so the patch handler can recover it
-    /// via `session_token_from_error`.
-    fn http_error_with_session_token(
-        status: StatusCode,
-        msg: &'static str,
-        session_token: &'static str,
-    ) -> crate::error::CosmosError {
-        cosmos_service_error(status, msg, Some(session_token), &[])
-    }
-
+    /// Same as [`http_error`], optionally populating response headers and body
+    /// for tests that verify service-error payload preservation.
     fn cosmos_service_error(
         status: StatusCode,
         msg: &'static str,
@@ -1452,11 +1375,26 @@ mod tests {
             "expected exactly Read,Replace,Read,Replace; got: {calls:?}"
         );
         assert_eq!(calls[0].op_type, OperationType::Read);
+        assert_eq!(
+            calls[0].read_consistency_strategy,
+            Some(ReadConsistencyStrategy::LatestCommitted)
+        );
+        assert!(calls[0].prefers_write_endpoints_for_read);
+        assert!(calls[0].suppresses_hedging);
         assert_eq!(calls[1].op_type, OperationType::Replace);
+        assert_eq!(calls[1].read_consistency_strategy, None);
+        assert!(!calls[1].prefers_write_endpoints_for_read);
+        assert!(!calls[1].suppresses_hedging);
         // Each Replace MUST be If-Match guarded — the ETag guard is the
         // entire reason the RMW is safe under concurrent writers.
         assert_eq!(calls[1].if_match_etag.as_deref(), Some("\"v1\""));
         assert_eq!(calls[2].op_type, OperationType::Read);
+        assert_eq!(
+            calls[2].read_consistency_strategy,
+            Some(ReadConsistencyStrategy::LatestCommitted)
+        );
+        assert!(calls[2].prefers_write_endpoints_for_read);
+        assert!(calls[2].suppresses_hedging);
         assert_eq!(calls[3].op_type, OperationType::Replace);
         // The second Replace MUST use the *new* ETag returned by the second
         // Read — not stash the old one.
@@ -1748,12 +1686,8 @@ mod tests {
         // the Replace inherits the ETag captured from the Read, and the
         // post-image is produced from the locally-merged document.
         //
-        // Cross-attempt session-token carry-forward is covered by
-        // `rmw_carries_session_token_forward_across_412_retries`; the
-        // single-attempt caller→Read / Read-response→Replace wire-up is
-        // covered by the per-builder unit tests
-        // `read_sub_op_propagates_caller_session_token` and
-        // `replace_sub_op_uses_read_response_session_token`.
+        // LatestCommitted Read token behavior and Read-response→Replace
+        // token wiring are covered by the per-builder and multi-attempt tests.
         let dispatcher = ScriptedDispatcher::new(vec![
             ScriptedReply::ok(
                 br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
@@ -1768,7 +1702,7 @@ mod tests {
         ]);
 
         let caller_token = SessionToken(Cow::Owned("0:1#7".into()));
-        let op = canonical_patch_op().with_session_token(caller_token.clone());
+        let op = canonical_patch_op().with_session_token(caller_token);
 
         let _resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
             .await
@@ -1783,15 +1717,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn rmw_carries_session_token_forward_across_412_retries() {
-        // The loop must monotonically advance the session token it threads
-        // into the next attempt's Read: attempt 2's Read should observe
-        // attempt 1's Read response token, not regress to the caller's
-        // (potentially older) token. This guards against a future
-        // regression that resets `effective_session_token` to the caller's
-        // value at the top of every iteration — which would silently
-        // weaken the session-consistency guarantees the PATCH handler
-        // promises after the first 412.
+    async fn rmw_latest_committed_reads_omit_tokens_across_412_retries() {
+        // LatestCommitted deliberately bypasses the session lane. Neither the
+        // caller's token nor a prior attempt's response token may be attached
+        // to a Read; each Replace still uses the token from its own Read.
         let dispatcher = ScriptedDispatcher::new(vec![
             // Attempt 1
             ScriptedReply::Ok {
@@ -1817,7 +1746,7 @@ mod tests {
         ]);
 
         let caller_token = SessionToken(Cow::Owned("0:1#1".into()));
-        let op = canonical_patch_op().with_session_token(caller_token.clone());
+        let op = canonical_patch_op().with_session_token(caller_token);
 
         let _resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
             .await
@@ -1826,9 +1755,9 @@ mod tests {
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 4);
 
-        // Attempt 1, Read: uses caller's session token.
+        // Attempt 1 Read omits the caller's token.
         assert_eq!(calls[0].op_type, OperationType::Read);
-        assert_eq!(calls[0].session_token.as_ref(), Some(&caller_token));
+        assert!(calls[0].session_token.is_none());
 
         // Attempt 1, Replace: uses Attempt 1 Read's response token (TOCTOU
         // mitigation, unchanged behavior).
@@ -1838,83 +1767,15 @@ mod tests {
             Some("0:1#100")
         );
 
-        // Attempt 2, Read: MUST use the freshest observed token (Attempt 1
-        // Read's `0:1#100`), NOT the caller's stale `0:1#1`. This is the
-        // cross-attempt carry-forward.
+        // Attempt 2 Read also omits all prior tokens.
         assert_eq!(calls[2].op_type, OperationType::Read);
-        assert_eq!(
-            calls[2].session_token.as_ref().map(|t| t.0.as_ref()),
-            Some("0:1#100"),
-            "attempt 2 Read must use the carried-forward session token \
-             from attempt 1's Read response, not the caller's stale token"
-        );
+        assert!(calls[2].session_token.is_none());
 
         // Attempt 2, Replace: uses Attempt 2 Read's response token.
         assert_eq!(calls[3].op_type, OperationType::Replace);
         assert_eq!(
             calls[3].session_token.as_ref().map(|t| t.0.as_ref()),
             Some("0:1#200")
-        );
-    }
-
-    #[tokio::test]
-    async fn rmw_folds_412_response_session_token_into_carry_forward() {
-        // When a 412 carries a session-token header (the replica that
-        // rejected our Replace had already seen the conflicting writer's
-        // commit), it is strictly fresher than the Read response we just
-        // observed. The PATCH handler must fold it into
-        // `effective_session_token` so attempt 2's Read uses the freshest
-        // possible view — matching .NET's behavior and minimizing the
-        // chance of an avoidable second 412.
-        //
-        // Script: Read#1 token=0:1#100 -> Replace#1 412 with token=0:1#300
-        // -> Read#2 token=0:1#301 -> Replace#2 ok.
-        let dispatcher = ScriptedDispatcher::new(vec![
-            // Attempt 1
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                etag: Some("\"v1\""),
-                session_token: Some("0:1#100"),
-                status: StatusCode::Ok,
-            },
-            ScriptedReply::Err(http_error_with_session_token(
-                StatusCode::PreconditionFailed,
-                "lost the race",
-                "0:1#300",
-            )),
-            // Attempt 2
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
-                etag: Some("\"v2\""),
-                session_token: Some("0:1#301"),
-                status: StatusCode::Ok,
-            },
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":2}"#.to_vec(),
-                etag: Some("\"v3\""),
-                session_token: Some("0:1#302"),
-                status: StatusCode::Ok,
-            },
-        ]);
-
-        let op = canonical_patch_op();
-        let _resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
-            .await
-            .expect("PATCH should succeed");
-
-        let calls = dispatcher.calls();
-        assert_eq!(calls.len(), 4);
-
-        // Attempt 2 Read MUST use the 412's session token (0:1#300), not
-        // the Read#1's older 0:1#100. SessionToken::merge picks the
-        // higher version per partition-key range, so the carry-forward
-        // strictly advances.
-        assert_eq!(calls[2].op_type, OperationType::Read);
-        assert_eq!(
-            calls[2].session_token.as_ref().map(|t| t.0.as_ref()),
-            Some("0:1#300"),
-            "attempt 2 Read must use the 412's session token (freshest), \
-             not Read#1's older token"
         );
     }
 

@@ -25,6 +25,12 @@ static int test_options_default_is_all_unset(void)
     int result = TEST_PASS;
     cosmos_operation_options_t opts = cosmos_operation_options_default();
 
+    ASSERT(COSMOS_READ_CONSISTENCY_STRATEGY_GLOBAL_STRONG == 4,
+           "global strong ABI value (=%d)",
+           COSMOS_READ_CONSISTENCY_STRATEGY_GLOBAL_STRONG);
+    ASSERT(COSMOS_READ_CONSISTENCY_STRATEGY_LATEST_COMMITTED == 5,
+           "latest committed ABI value (=%d)",
+           COSMOS_READ_CONSISTENCY_STRATEGY_LATEST_COMMITTED);
     ASSERT(opts.read_consistency_strategy == 0,
            "read_consistency unset (=%d)", opts.read_consistency_strategy);
     ASSERT(opts.content_response_on_write == 0,

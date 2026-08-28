@@ -134,7 +134,7 @@ async fn contradictory_query_short_circuits_all_query_io() {
 }
 
 #[tokio::test]
-async fn rewrite_required_query_uses_gateway_query_plan() {
+async fn supported_order_by_skips_gateway_query_plan() {
     let (_emulator, recorder, driver) = setup().await;
     let container = driver
         .resolve_container("testdb", "testcoll")
@@ -142,14 +142,49 @@ async fn rewrite_required_query_uses_gateway_query_plan() {
         .unwrap();
     recorder.clear();
 
-    driver
+    let mut plan = driver
         .plan_operation(
-            query(&container, "SELECT * FROM c ORDER BY c.pk"),
+            query(
+                &container,
+                "SELECT c.pk, c.id AS itemId FROM c ORDER BY c.pk",
+            ),
             &OperationOptions::default(),
             None,
             &PlanOptions::default(),
         )
         .await
         .unwrap();
+    assert_eq!(recorder.query_plan_count(), 0);
+    while driver
+        .execute_plan(
+            &mut plan,
+            Some(container.clone()),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap()
+        .is_some()
+    {}
+    assert_eq!(recorder.query_plan_count(), 0);
+}
+
+#[tokio::test]
+async fn unsupported_aggregate_uses_gateway_query_plan() {
+    let (_emulator, recorder, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .unwrap();
+    recorder.clear();
+
+    let result = driver
+        .plan_operation(
+            query(&container, "SELECT VALUE COUNT(1) FROM c"),
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        )
+        .await;
+    assert!(result.is_err());
     assert_eq!(recorder.query_plan_count(), 1);
 }

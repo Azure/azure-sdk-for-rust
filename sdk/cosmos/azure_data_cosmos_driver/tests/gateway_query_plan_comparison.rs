@@ -30,10 +30,10 @@ use tokio::sync::OnceCell;
 
 use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
 use azure_data_cosmos_driver::models::{
-    ContainerReference, CosmosOperation, PartitionKeyDefinition,
+    ContainerReference, CosmosOperation, FeedRange, PartitionKeyDefinition,
 };
 use azure_data_cosmos_driver::options::DriverOptions;
-use azure_data_cosmos_driver::options::OperationOptions;
+use azure_data_cosmos_driver::options::{OperationOptions, PlanOptions};
 use azure_data_cosmos_driver::CosmosDriver;
 
 use framework::resolve_test_env;
@@ -178,13 +178,19 @@ async fn fetch_gateway_plan(
 fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Value) {
     let gw_rewritten = gw.get("rewrittenQuery").and_then(|v| v.as_str());
 
-    // ── distinctType ─────────────────────────────────────────────────────────
-    // Carve-out: Gateway downgrades `Ordered` → `Unordered` whenever it emits a
-    // `rewrittenQuery`. This is because the rewritten plan uses an explicit ORDER
-    // BY in the per-partition queries, so the cross-partition aggregation no longer
-    // needs to preserve order at the DISTINCT layer. Local AST analysis does not
-    // perform that rewrite, so it correctly reports `Ordered`. This is consistent
-    // with how the .NET / Java SDKs treat the field.
+    // ── distinctType (no carve-out) ──────────────────────────────────────────
+    // This previously carried a carve-out tolerating `local = Ordered` against
+    // `gw = Unordered` whenever the Gateway emitted a `rewrittenQuery`, on the
+    // theory that the rewrite made ordering unnecessary at the DISTINCT layer.
+    // That explanation was too broad: measured against a live account with
+    // production's `SUPPORTED_QUERY_FEATURES`, the service keeps `Ordered` for
+    // `SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name ASC` *and* emits a
+    // 172-character `rewrittenQuery`. What it actually downgrades is every
+    // other shape — see `gw_distinct` below and `plan::distinct_is_ordered`.
+    //
+    // The local generator now encodes that rule, so it agrees with the service
+    // on every query in this file and the tolerance is unreachable — verified
+    // by instrumenting the branch and running the full suite live (zero hits).
     let local_dt = local
         .get("distinctType")
         .and_then(|v| v.as_str())
@@ -193,9 +199,7 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         .get("distinctType")
         .and_then(|v| v.as_str())
         .unwrap_or("None");
-    if !(local_dt == gw_dt
-        || (local_dt == "Ordered" && gw_dt == "Unordered" && gw_rewritten.is_some()))
-    {
+    if local_dt != gw_dt {
         panic!("[distinctType] sql={sql}\n  local={local_dt}  gw={gw_dt}");
     }
 
@@ -439,6 +443,104 @@ async fn validate_with_params(
     let gw_qi = &gw_plan["queryInfo"];
 
     compare_query_info(sql, local_qi, gw_qi);
+}
+
+fn query_spec_body(sql: &str, parameters: &[(&str, serde_json::Value)]) -> Vec<u8> {
+    let parameters: Vec<_> = parameters
+        .iter()
+        .map(|(name, value)| {
+            serde_json::json!({
+                "name": if name.starts_with('@') {
+                    (*name).to_owned()
+                } else {
+                    format!("@{name}")
+                },
+                "value": value,
+            })
+        })
+        .collect();
+    serde_json::to_vec(&serde_json::json!({
+        "query": sql,
+        "parameters": parameters,
+    }))
+    .unwrap()
+}
+
+async fn validate_production_local_plan(
+    sql: &str,
+    parameters: &[(&str, serde_json::Value)],
+    execute: bool,
+) {
+    let (driver, container) = require_driver_and(get_driver().await, c_pk().await);
+    let body = query_spec_body(sql, parameters);
+    let local = azure_data_cosmos_driver::query::__test_only_generate_production_query_plan(
+        &body,
+        container.partition_key_definition(),
+    )
+    .unwrap_or_else(|reason| {
+        panic!("production local plan unexpectedly declined '{sql}': {reason}")
+    });
+    let gateway = fetch_gateway_plan(driver, container, sql, parameters)
+        .await
+        .unwrap_or_else(|error| panic!("Gateway query plan failed for '{sql}': {error}"));
+
+    compare_query_info(sql, &local["queryInfo"], &gateway["queryInfo"]);
+    let local_rewritten = local["queryInfo"]["rewrittenQuery"]
+        .as_str()
+        .is_some_and(|query| !query.is_empty());
+    let gateway_rewritten = gateway["queryInfo"]["rewrittenQuery"]
+        .as_str()
+        .is_some_and(|query| !query.is_empty());
+    assert_eq!(
+        local_rewritten, gateway_rewritten,
+        "rewritten-query presence differs for '{sql}'"
+    );
+    let ranges = |plan: &serde_json::Value| {
+        let mut ranges: Vec<_> = plan["queryRanges"]
+            .as_array()?
+            .iter()
+            .map(|range| {
+                Some((
+                    range["min"].as_str()?.to_owned(),
+                    range["max"].as_str()?.to_owned(),
+                    range["isMinInclusive"].as_bool()?,
+                    range["isMaxInclusive"].as_bool()?,
+                ))
+            })
+            .collect::<Option<_>>()?;
+        ranges.sort();
+        Some(ranges)
+    };
+    if let (Some(local_ranges), Some(gateway_ranges)) = (ranges(&local), ranges(&gateway)) {
+        assert_eq!(
+            local_ranges, gateway_ranges,
+            "query ranges differ for '{sql}'"
+        );
+    }
+
+    if execute {
+        let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+            .with_body(body);
+        let mut plan = driver
+            .plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("local plan failed for '{sql}': {error}"));
+        while driver
+            .execute_plan(
+                &mut plan,
+                Some(container.clone()),
+                OperationOptions::default(),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("local execution failed for '{sql}': {error}"))
+            .is_some()
+        {}
+    }
 }
 
 /// Validate that the Gateway rejects the given SQL with HTTP 400.
@@ -792,6 +894,23 @@ async fn gw_distinct() {
     validate_pk("SELECT DISTINCT VALUE null").await;
     validate_pk("SELECT DISTINCT VALUE 1").await;
     validate_pk("SELECT DISTINCT VALUE 'a'").await;
+
+    // `Ordered` vs `Unordered` decides whether the DISTINCT stage may
+    // deduplicate by adjacency and hand back a continuation token, so pin the
+    // boundary the service actually draws: the `VALUE` form whose ORDER BY is
+    // exactly the projected path is the only shape that stays `Ordered`.
+    validate_pk("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name ASC").await;
+    validate_pk("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name DESC").await;
+    validate_pk("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.other ASC").await;
+    validate_pk("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name, c.other").await;
+    validate_pk("SELECT DISTINCT c.name, c.city FROM c ORDER BY c.name ASC").await;
+
+    // Constant DISTINCT collapses to `None` only *without* a FROM clause; with
+    // one the query yields a row per document, so deduplication is real work
+    // and the service reports `Unordered`.
+    validate_pk("SELECT DISTINCT VALUE 1 FROM c").await;
+    validate_pk("SELECT DISTINCT VALUE null FROM c").await;
+    validate_pk("SELECT DISTINCT 1 AS p FROM c").await;
 }
 
 #[tokio::test]
@@ -890,6 +1009,33 @@ async fn gw_functions() {
     validate_pk("SELECT * FROM c WHERE CONTAINS(c.name, 'test')").await;
     validate_pk("SELECT * FROM c WHERE c.pk = 'x' AND STARTSWITH(c.name, 'A')").await;
     validate_pk("SELECT * FROM c WHERE IS_DEFINED(c.optional)").await;
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+async fn gw_production_local_plan_supported_surface() {
+    for sql in [
+        "SELECT * FROM c",
+        "SELECT TOP 5 * FROM c",
+        "SELECT * FROM c OFFSET 2 LIMIT 3",
+        "SELECT * FROM c ORDER BY c.name",
+        "SELECT VALUE c.name FROM c ORDER BY c.name",
+        "SELECT c.name, c.age AS years FROM c ORDER BY c.name",
+        "SELECT DISTINCT c.name FROM c",
+        "SELECT DISTINCT TOP 5 c.name FROM c",
+        "SELECT DISTINCT c.name FROM c OFFSET 2 LIMIT 3",
+        "SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name",
+        "SELECT * FROM c JOIN t IN c.tags",
+        "SELECT (SELECT VALUE 1) AS x FROM c",
+        "SELECT * FROM c WHERE c.pk = 'production-local-plan'",
+    ] {
+        validate_production_local_plan(sql, &[], true).await;
+    }
+
+    validate_production_local_plan("SELECT VALUE udf.transform(c.data) FROM c", &[], false).await;
 }
 
 #[tokio::test]
