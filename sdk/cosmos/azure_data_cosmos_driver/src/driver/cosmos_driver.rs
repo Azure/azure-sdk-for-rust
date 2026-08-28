@@ -13,8 +13,8 @@ use crate::{
         dataflow::{
             planner,
             query_plan::{QueryPlan, RawQueryPlan},
-            CachedTopologyProvider, OperationPlan, PartitionRoutingRefresh, PipelineContext,
-            PipelineNodeState, RequestExecutor, RequestTarget, TopologyProvider,
+            CachedTopologyProvider, DrainedLeaf, OperationPlan, PartitionRoutingRefresh, Pipeline,
+            PipelineContext, PipelineNodeState, RequestExecutor, RequestTarget, TopologyProvider,
         },
         pipeline::components::{
             ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
@@ -332,6 +332,25 @@ pub struct CosmosDriver {
     /// first use; returns errors if unavailable.
     #[cfg(feature = "__internal_native_query_plan")]
     native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider,
+}
+
+/// Result of resolving a query plan from any provider.
+enum ResolvedQueryPlan {
+    /// A plan ready for topology/pipeline construction.
+    Plan(Box<QueryPlan>),
+    /// Contradictory filters — provably empty result set.
+    Empty,
+}
+
+impl From<crate::query::local_plan_adapter::ProviderResolution> for ResolvedQueryPlan {
+    fn from(r: crate::query::local_plan_adapter::ProviderResolution) -> Self {
+        match r {
+            crate::query::local_plan_adapter::ProviderResolution::Plan(p) => {
+                ResolvedQueryPlan::Plan(p)
+            }
+            crate::query::local_plan_adapter::ProviderResolution::Empty => ResolvedQueryPlan::Empty,
+        }
+    }
 }
 
 impl CosmosDriver {
@@ -3368,7 +3387,17 @@ impl CosmosDriver {
 
         // `Box::pin` keeps `plan_operation`'s future small. Inlined, it grows to
         // 17,288 bytes and trips `clippy::large_futures` at five caller sites.
-        let query_plan = Box::pin(self.resolve_query_plan(container, &operation, options)).await?;
+        let resolved = Box::pin(self.resolve_query_plan(container, &operation, options)).await?;
+
+        // A contradictory PK filter means the query provably returns nothing.
+        // Build a DrainedLeaf plan directly without topology or backend I/O.
+        let query_plan = match resolved {
+            ResolvedQueryPlan::Empty => {
+                let pipeline = Pipeline::new(Box::new(DrainedLeaf));
+                return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+            }
+            ResolvedQueryPlan::Plan(plan) => *plan,
+        };
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
@@ -3449,15 +3478,15 @@ impl CosmosDriver {
         Ok(query_plan)
     }
 
-    /// Resolves a query plan, trying the native FFI provider first and
-    /// falling back to the Gateway if unavailable or if generation fails.
+    /// Resolves a query plan, trying the native FFI provider first, then the
+    /// local Rust planner, and finally falling back to the Gateway.
     #[cfg(feature = "__internal_native_query_plan")]
     async fn resolve_query_plan(
         &self,
         container: &ContainerReference,
         operation: &CosmosOperation,
         options: &OperationOptions,
-    ) -> crate::error::Result<QueryPlan> {
+    ) -> crate::error::Result<ResolvedQueryPlan> {
         // Fetch the query engine configuration from the account metadata cache.
         let account = operation.resource_reference().account();
         let account_endpoint = AccountEndpoint::from(account);
@@ -3476,35 +3505,96 @@ impl CosmosDriver {
 
         match native_result {
             Some(Ok(plan)) => {
-                tracing::debug!("using native FFI query plan");
-                Ok(plan)
+                tracing::debug!(provider = "native_ffi", "using native FFI query plan");
+                return Ok(ResolvedQueryPlan::Plan(Box::new(plan)));
             }
             Some(Err(crate::query_plan_native::error::QueryPlanError::LibraryNotAvailable {
                 ..
             })) => {
-                tracing::debug!("native query plan library not available, falling back to gateway");
-                self.gateway_query_plan(container, operation, options).await
+                tracing::debug!(
+                    provider = "native_ffi",
+                    fallback_reason = "library_not_available",
+                    "native query plan library not available, trying local Rust planner"
+                );
             }
-            Some(Err(e)) => {
-                tracing::warn!(error = %e, "native query plan generation failed, falling back to gateway");
-                self.gateway_query_plan(container, operation, options).await
+            Some(Err(error)) => {
+                tracing::warn!(
+                    provider = "native_ffi",
+                    fallback_reason = error.diagnostic_code(),
+                    hresult = ?error.hresult(),
+                    "native query plan generation failed, trying local Rust planner"
+                );
             }
             None => {
-                tracing::debug!("using gateway query plan");
-                self.gateway_query_plan(container, operation, options).await
+                tracing::debug!(
+                    provider = "native_ffi",
+                    fallback_reason = "no_body",
+                    "no body for native plan, trying local Rust planner"
+                );
             }
         }
+
+        // Try the local Rust planner before going to the Gateway.
+        match crate::query::local_plan_adapter::try_local_plan(
+            operation.body(),
+            container.partition_key_definition(),
+        ) {
+            Ok(resolution) => {
+                tracing::debug!(
+                    provider = "local_rust",
+                    outcome = match &resolution {
+                        crate::query::local_plan_adapter::ProviderResolution::Plan(_) => "plan",
+                        crate::query::local_plan_adapter::ProviderResolution::Empty => "empty",
+                    },
+                    "using local Rust query plan"
+                );
+                return Ok(resolution.into());
+            }
+            Err(reason) => {
+                tracing::debug!(provider = "local_rust", fallback_reason = %reason, "local plan ineligible, falling back to gateway");
+            }
+        }
+
+        let plan = self
+            .gateway_query_plan(container, operation, options)
+            .await?;
+        tracing::debug!(provider = "gateway", "using Gateway query plan");
+        Ok(ResolvedQueryPlan::Plan(Box::new(plan)))
     }
 
-    /// Resolves a query plan from the Gateway backend.
+    /// Resolves a query plan, trying the local Rust planner first and
+    /// falling back to the Gateway if the local plan is ineligible.
     #[cfg(not(feature = "__internal_native_query_plan"))]
     async fn resolve_query_plan(
         &self,
         container: &ContainerReference,
         operation: &CosmosOperation,
         options: &OperationOptions,
-    ) -> crate::error::Result<QueryPlan> {
-        self.gateway_query_plan(container, operation, options).await
+    ) -> crate::error::Result<ResolvedQueryPlan> {
+        match crate::query::local_plan_adapter::try_local_plan(
+            operation.body(),
+            container.partition_key_definition(),
+        ) {
+            Ok(resolution) => {
+                tracing::debug!(
+                    provider = "local_rust",
+                    outcome = match &resolution {
+                        crate::query::local_plan_adapter::ProviderResolution::Plan(_) => "plan",
+                        crate::query::local_plan_adapter::ProviderResolution::Empty => "empty",
+                    },
+                    "using local Rust query plan"
+                );
+                return Ok(resolution.into());
+            }
+            Err(reason) => {
+                tracing::debug!(provider = "local_rust", fallback_reason = %reason, "local plan ineligible, falling back to gateway");
+            }
+        }
+        let plan = self
+            .gateway_query_plan(container, operation, options)
+            .await?;
+        tracing::debug!(provider = "gateway", "using Gateway query plan");
+        Ok(ResolvedQueryPlan::Plan(Box::new(plan)))
     }
 
     /// Attempts to generate a query plan using the native FFI provider.

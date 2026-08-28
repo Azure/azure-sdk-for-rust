@@ -14,6 +14,7 @@ pub(crate) mod common;
 pub(crate) mod eval;
 pub(crate) mod gateway_plan;
 pub(crate) mod lexer;
+pub(crate) mod local_plan_adapter;
 pub(crate) mod parser;
 pub(crate) mod plan;
 #[cfg(any(test, feature = "__internal_in_memory_emulator"))]

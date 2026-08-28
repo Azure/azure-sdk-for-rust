@@ -5,7 +5,6 @@
 
 // cspell:ignore acked hexdigit llsn
 
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -39,11 +38,9 @@ use super::system_properties::{
 };
 #[cfg(feature = "preview_dtx")]
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
+use crate::models::PartitionKeyDefinition;
 #[cfg(feature = "preview_dtx")]
 use crate::models::PatchInstructions;
-use crate::models::{
-    EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue as ModelPartitionKeyValue,
-};
 use crate::query::ast::{
     SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
 };
@@ -3285,371 +3282,35 @@ fn handle_query_items(
     }
 }
 
-fn local_distinct_type_to_dataflow(
-    distinct_type: crate::query::plan::DistinctType,
-) -> crate::driver::dataflow::query_plan::DistinctType {
-    match distinct_type {
-        crate::query::plan::DistinctType::None => {
-            crate::driver::dataflow::query_plan::DistinctType::None
-        }
-        crate::query::plan::DistinctType::Ordered => {
-            crate::driver::dataflow::query_plan::DistinctType::Ordered
-        }
-        crate::query::plan::DistinctType::Unordered => {
-            crate::driver::dataflow::query_plan::DistinctType::Unordered
-        }
-    }
-}
-
-fn local_sort_order_to_dataflow(
-    sort_order: crate::query::plan::SortOrder,
-) -> crate::driver::dataflow::query_plan::SortOrder {
-    match sort_order {
-        crate::query::plan::SortOrder::Ascending => {
-            crate::driver::dataflow::query_plan::SortOrder::Ascending
-        }
-        crate::query::plan::SortOrder::Descending => {
-            crate::driver::dataflow::query_plan::SortOrder::Descending
-        }
-    }
-}
-
 fn local_query_info_to_dataflow(
     info: crate::query::plan::LocalQueryInfo,
     original_query: &str,
 ) -> crate::driver::dataflow::query_plan::QueryInfo {
-    // Compute the per-partition `rewrittenQuery` the real Gateway returns.
-    //
-    // - `ORDER BY` (with or without `OFFSET`/`LIMIT`): synthesize the order-by
-    //   envelope so each partition streams globally-ordered rows. The client's
-    //   `SkipTake` applies any `OFFSET`/`LIMIT`/`TOP` window *on top of* the
-    //   ordered merge, so the window is not pushed per-partition here.
-    // - `OFFSET`/`LIMIT` without ordering: each partition yields `offset +
-    //   limit` documents from the top (no per-partition skip); the client then
-    //   applies the single *global* skip/take. Without this rewrite a
-    //   cross-partition `OFFSET x LIMIT y` would skip `x` in every partition
-    //   *and* again in the client's `SkipTake`, dropping rows.
-    // - `TOP`-only (and everything else): no rewrite. A per-partition `TOP n`
-    //   combined with the client's global `TOP n` is already correct, so the
-    //   empty (no-op) rewritten query is kept.
-    let rewritten_query = if !info.order_by.is_empty() {
-        synthesize_order_by_rewritten_query(original_query, &info.order_by_expressions)
-    } else if let Some(limit) = info.limit {
-        synthesize_offset_limit_rewritten_query(
-            original_query,
-            info.offset.unwrap_or(0) as u64,
-            limit as u64,
-        )
-    } else {
-        Some(String::new())
-    };
-    crate::driver::dataflow::query_plan::QueryInfo {
-        distinct_type: local_distinct_type_to_dataflow(info.distinct_type),
-        top: info.top.map(|v| v as u64),
-        offset: info.offset.map(|v| v as u64),
-        limit: info.limit.map(|v| v as u64),
-        order_by: info
-            .order_by
-            .into_iter()
-            .map(local_sort_order_to_dataflow)
-            .collect(),
-        order_by_expressions: info.order_by_expressions,
-        group_by_expressions: info.group_by_expressions,
-        group_by_aliases: Vec::new(),
-        aggregates: info
-            .aggregates
-            .into_iter()
-            .map(|a| format!("{a:?}"))
-            .collect(),
-        group_by_alias_to_aggregate_type: HashMap::new(),
-        rewritten_query,
-        has_select_value: info.has_select_value,
-        has_non_streaming_order_by: false,
-    }
+    crate::query::local_plan_adapter::emulator_query_info_to_dataflow(info, original_query)
 }
 
-/// Synthesizes the per-partition `rewrittenQuery` the real Gateway returns for
-/// `OFFSET`/`LIMIT`: the original query with its trailing `OFFSET <x> LIMIT
-/// <y>` replaced by `OFFSET 0 LIMIT <x + y>`. Each partition then returns the
-/// first `x + y` documents (no per-partition skip) and the client applies the
-/// single global skip/take (see `driver::dataflow::SkipTake`).
-///
-/// The clause boundary is located by lexing rather than string-matching so a
-/// property path such as `c.offset` cannot be mistaken for the keyword. Returns
-/// `Some(String::new())` (no rewrite) if the query carries no `OFFSET` token,
-/// which shouldn't happen for a plan whose `LocalQueryInfo` reports a limit.
-///
-/// Only the *outer* trailing `OFFSET` clause is rewritten: the grammar places it
-/// after any `SELECT`/`WHERE`/`ORDER BY` at bracket depth zero, so a `SELECT`
-/// list containing a subquery with its own `OFFSET`/`LIMIT` (e.g.
-/// `SELECT (SELECT VALUE x FROM x OFFSET 1 LIMIT 2) ... OFFSET 5 LIMIT 10`) is
-/// left intact. We therefore track parenthesis / bracket / brace nesting and
-/// select the *last* `OFFSET` token seen at depth zero rather than the first
-/// token anywhere.
-///
-/// This rewrite is only used for cross-partition `OFFSET`/`LIMIT` *without*
-/// `ORDER BY`. When a query also has `ORDER BY`, `local_query_info_to_dataflow`
-/// synthesizes the order-by envelope instead and the client's `SkipTake`
-/// applies the `OFFSET`/`LIMIT` window on top of the ordered merge, so the two
-/// rewrites never combine into a single per-partition query.
+#[cfg(test)]
 fn synthesize_offset_limit_rewritten_query(
     original_query: &str,
     offset: u64,
     limit: u64,
 ) -> Option<String> {
-    use crate::query::lexer::{Lexer, TokenKind};
-
-    let tokens = Lexer::tokenize(original_query);
-    let mut depth: u32 = 0;
-    let mut outer_offset_idx: Option<usize> = None;
-    for (idx, token) in tokens.iter().enumerate() {
-        match token.kind {
-            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => depth += 1,
-            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
-                depth = depth.saturating_sub(1);
-            }
-            TokenKind::Offset if depth == 0 => {
-                // Skip an `OFFSET` that is really a property access such as
-                // `c.offset`; the keyword only starts a clause when it is not
-                // immediately preceded by a member-access dot.
-                let is_property_access = idx > 0 && tokens[idx - 1].kind == TokenKind::Dot;
-                if !is_property_access {
-                    outer_offset_idx = Some(idx);
-                }
-            }
-            _ => {}
-        }
-    }
-    let Some(offset_idx) = outer_offset_idx else {
-        return Some(String::new());
-    };
-    let prefix = original_query[..tokens[offset_idx].span.start].trim_end();
-    let combined = offset.saturating_add(limit);
-    Some(format!("{prefix} OFFSET 0 LIMIT {combined}"))
+    crate::query::local_plan_adapter::synthesize_offset_limit_rewritten_query(
+        original_query,
+        offset,
+        limit,
+    )
 }
 
-/// Synthesizes a single-level rewritten `ORDER BY` envelope query, mirroring
-/// what the real Gateway/native query-plan engine returns in
-/// `rewrittenQuery`:
-///
-/// ```text
-/// SELECT VALUE {"_rid": <alias>._rid, "orderByItems": [{"item": <expr0>}, ...], "payload": <alias>}
-/// <original FROM clause, sliced verbatim>
-/// WHERE [(<original predicate>) AND] {documentdb-formattableorderbyquery-filter}
-/// <original ORDER BY clause, sliced verbatim>
-/// ```
-///
-/// The placeholder is substituted in place by the client with `true`
-/// (fresh start) or a scalar `_rid`-aware resume filter (see
-/// `driver::dataflow::query_response`) — no outer subquery wrapper, so the
-/// result stays flat and directly evaluable.
-///
-/// Supports `SELECT *` and `SELECT VALUE <expression>`. Other projection
-/// shapes return `None` rather than synthesizing the wrong payload.
+#[cfg(test)]
 fn synthesize_order_by_rewritten_query(
     original_query: &str,
     order_by_expressions: &[String],
 ) -> Option<String> {
-    use crate::query::lexer::{Lexer, TokenKind};
-
-    // Kept in sync with `driver::dataflow::query_response`'s
-    // `ORDER_BY_FILTER_PLACEHOLDER` (this authors it; that substitutes it).
-    const ORDER_BY_FILTER_PLACEHOLDER: &str = "{documentdb-formattableorderbyquery-filter}";
-
-    let tokens = Lexer::tokenize(original_query);
-    let mut depth = 0_usize;
-    let mut top_level = Vec::new();
-    for (index, token) in tokens.iter().enumerate() {
-        if matches!(
-            token.kind,
-            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace
-        ) {
-            depth = depth.saturating_sub(1);
-        }
-        if depth == 0 {
-            top_level.push(index);
-        }
-        if matches!(
-            token.kind,
-            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace
-        ) {
-            depth += 1;
-        }
-    }
-    let is_clause_keyword = |index: usize| index == 0 || tokens[index - 1].kind != TokenKind::Dot;
-    let select_idx = top_level
-        .iter()
-        .copied()
-        .find(|&i| tokens[i].kind == TokenKind::Select)?;
-    let from_idx = top_level
-        .iter()
-        .copied()
-        .find(|&i| tokens[i].kind == TokenKind::From && is_clause_keyword(i))?;
-    let collection_token = tokens.get(from_idx + 1)?;
-    let alias = match tokens.get(from_idx + 2) {
-        Some(t) if t.kind == TokenKind::As => tokens.get(from_idx + 3)?.text,
-        Some(t) if t.kind == TokenKind::Identifier => t.text,
-        _ => collection_token.text,
-    };
-    // Skip a leading `TOP <n>` / `TOP @param`: the global TOP is applied by the
-    // client's `SkipTake` over the merged stream, so the per-partition envelope
-    // must not carry it (a per-partition TOP would drop rows a later partition
-    // needs for the global ordering).
-    let mut payload_idx = select_idx + 1;
-    if tokens
-        .get(payload_idx)
-        .is_some_and(|t| t.kind == TokenKind::Top)
-    {
-        payload_idx += 2;
-    }
-    let payload = match tokens.get(payload_idx)? {
-        token if token.kind == TokenKind::Star => alias.to_owned(),
-        token if token.kind == TokenKind::Value => original_query
-            [token.span.end..tokens[from_idx].span.start]
-            .trim()
-            .to_owned(),
-        _ => return None,
-    };
-
-    let order_idx = top_level.iter().copied().find(|&i| {
-        tokens[i].kind == TokenKind::Order
-            && tokens
-                .get(i + 1)
-                .is_some_and(|token| token.kind == TokenKind::By)
-    });
-    let clause_end = order_idx
-        .map(|i| tokens[i].span.start)
-        .unwrap_or(original_query.len());
-    // The per-partition ORDER BY clause stops before any top-level OFFSET/LIMIT:
-    // the window is applied once, globally, by the client's `SkipTake`. Pushing
-    // it per partition would skip/limit locally and again on the client.
-    let order_by_end = order_idx.and_then(|oi| {
-        top_level
-            .iter()
-            .copied()
-            .find(|&i| i > oi && tokens[i].kind == TokenKind::Offset && is_clause_keyword(i))
-            .map(|i| tokens[i].span.start)
-    });
-    let order_by_text = order_idx.map(|i| {
-        let end = order_by_end.unwrap_or(original_query.len());
-        original_query[tokens[i].span.start..end].trim()
-    })?;
-
-    // FROM is emitted verbatim; the placeholder is ANDed into WHERE
-    // (creating one if absent) — the slot every rewritten query carries.
-    let where_bound = order_idx.unwrap_or(tokens.len());
-    let where_idx = top_level.iter().copied().find(|&i| {
-        i > from_idx
-            && i < where_bound
-            && tokens[i].kind == TokenKind::Where
-            && is_clause_keyword(i)
-    });
-    let from_end = where_idx
-        .map(|i| tokens[i].span.start)
-        .unwrap_or(clause_end);
-    let from_text = original_query[tokens[from_idx].span.start..from_end].trim();
-    let where_clause = match where_idx {
-        Some(i) => {
-            let predicate = original_query[tokens[i].span.end..clause_end].trim();
-            format!("WHERE ({predicate}) AND {ORDER_BY_FILTER_PLACEHOLDER}")
-        }
-        None => format!("WHERE {ORDER_BY_FILTER_PLACEHOLDER}"),
-    };
-
-    let order_by_items: Vec<String> = order_by_expressions
-        .iter()
-        .map(|expr| format!(r#"{{"item": {expr}}}"#))
-        .collect();
-
-    Some(format!(
-        r#"SELECT VALUE {{"_rid": {alias}._rid, "orderByItems": [{items}], "payload": {payload}}} {from_text} {where_clause} {order_by}"#,
-        items = order_by_items.join(", "),
-        payload = payload,
-        from_text = from_text,
-        where_clause = where_clause,
-        order_by = order_by_text,
-    ))
-}
-
-fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
-    crate::driver::dataflow::query_plan::QueryRange {
-        min: Epk::MIN.to_hex(),
-        max: Epk::MAX.to_hex(),
-        is_min_inclusive: true,
-        is_max_inclusive: false,
-    }
-}
-
-fn epk_range_to_query_range(
-    range: std::ops::Range<EffectivePartitionKey>,
-) -> crate::driver::dataflow::query_plan::QueryRange {
-    crate::driver::dataflow::query_plan::QueryRange {
-        min: range.start.to_hex(),
-        max: range.end.to_hex(),
-        is_min_inclusive: true,
-        is_max_inclusive: true,
-    }
-}
-
-fn model_partition_key_values(
-    values: &[crate::query::plan::PartitionKeyValue],
-) -> crate::error::Result<Vec<ModelPartitionKeyValue>> {
-    values
-        .iter()
-        .map(|value| match value {
-            crate::query::plan::PartitionKeyValue::String(s) => {
-                Ok(ModelPartitionKeyValue::from(s.clone()))
-            }
-            crate::query::plan::PartitionKeyValue::Number(n) => {
-                Ok(ModelPartitionKeyValue::from(*n))
-            }
-            crate::query::plan::PartitionKeyValue::Bool(b) => Ok(ModelPartitionKeyValue::from(*b)),
-            crate::query::plan::PartitionKeyValue::Null => Ok(ModelPartitionKeyValue::NULL),
-            crate::query::plan::PartitionKeyValue::Undefined => {
-                Ok(ModelPartitionKeyValue::UNDEFINED)
-            }
-            crate::query::plan::PartitionKeyValue::UnboundParameter(name) => {
-                Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
-                    .with_message(format!(
-                        "query plan partition key filter references unbound parameter @{name}"
-                    ))
-                    .build())
-            }
-            crate::query::plan::PartitionKeyValue::InvalidParameter { name, reason } => {
-                Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
-                    .with_message(format!(
-                        "query plan partition key filter parameter @{name} is invalid: {reason}"
-                    ))
-                    .build())
-            }
-        })
-        .collect()
-}
-
-fn query_ranges_from_pk_filter(
-    filter: &crate::query::plan::PartitionKeyFilter,
-    pk_definition: &PartitionKeyDefinition,
-) -> crate::error::Result<Vec<crate::driver::dataflow::query_plan::QueryRange>> {
-    match filter {
-        crate::query::plan::PartitionKeyFilter::Equality(values) => {
-            let values = model_partition_key_values(values)?;
-            let range = EffectivePartitionKey::compute_range(&values, pk_definition)?;
-            Ok(vec![epk_range_to_query_range(range)])
-        }
-        crate::query::plan::PartitionKeyFilter::InList(value_sets) => value_sets
-            .iter()
-            .map(|values| {
-                let values = model_partition_key_values(values)?;
-                EffectivePartitionKey::compute_range(&values, pk_definition)
-                    .map(epk_range_to_query_range)
-            })
-            .collect(),
-        crate::query::plan::PartitionKeyFilter::Contradictory => Ok(Vec::new()),
-        crate::query::plan::PartitionKeyFilter::Unconstrained
-        | crate::query::plan::PartitionKeyFilter::NotEvaluated => Ok(vec![full_query_range()]),
-    }
+    crate::query::local_plan_adapter::synthesize_order_by_rewritten_query(
+        original_query,
+        order_by_expressions,
+    )
 }
 
 fn handle_query_plan(
@@ -3726,7 +3387,7 @@ fn handle_query_plan(
         }
     };
 
-    let query_ranges = match query_ranges_from_pk_filter(
+    let query_ranges = match crate::query::local_plan_adapter::query_ranges_from_pk_filter(
         &local_plan.pk_filters,
         &container.metadata.partition_key,
     ) {
