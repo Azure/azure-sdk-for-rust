@@ -30,8 +30,8 @@ for the full design.
 
 ### Capability matrix (current)
 
-| Capability                                                                      | Status                                                                                   |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Capability                                                                      | Status                                                                                  |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Master-key authentication                                                       | ✅                                                                                       |
 | Token-credential / resource-token authentication                                | ⏳ follow-up (needs `TokenCredential` FFI bridge)                                        |
 | Sync driver creation (`_blocking`)                                              | ✅                                                                                       |

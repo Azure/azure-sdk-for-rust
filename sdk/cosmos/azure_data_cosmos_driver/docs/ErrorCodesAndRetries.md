@@ -232,8 +232,8 @@ PPAF is an **opt-in** feature for **single-master write accounts only**. When en
 
 PPCB is an **opt-out** feature (enabled by default) that provides partition-level health tracking and routing:
 
-| Account Type | Reads           | Writes                                    |
-| ------------ | --------------- | ----------------------------------------- |
+| Account Type | Reads          | Writes                                   |
+| ------------ | -------------- | ---------------------------------------- |
 | Single-write | ✅ PPCB-managed | ❌ Not PPCB-managed (PPAF handles writes) |
 | Multi-write  | ✅ PPCB-managed | ✅ PPCB-managed                           |
 
