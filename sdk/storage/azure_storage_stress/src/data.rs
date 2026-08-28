@@ -195,28 +195,77 @@ where
 
 #[cfg(test)]
 mod tests {
-    use futures::TryStreamExt;
-
     use super::*;
+    use futures::{AsyncReadExt, TryStreamExt};
+
     #[tokio::test]
     async fn generated_stream_as_stream() -> azure_core::Result<()> {
         for buf_len in [1, 100, 256, 9999] {
             for stream_len in [buf_len, buf_len - 1, buf_len + 1, buf_len * 10, buf_len / 2] {
-                let mut buf = vec![0u8; buf_len];
-                for b in buf.iter_mut() {
+                let mut src_buf = vec![0u8; buf_len];
+                for b in src_buf.iter_mut() {
                     *b = random();
                 }
 
-                let mut stream =
-                    GeneratedStream::from_iter(buf.into_iter(), stream_len as u64, None);
+                let mut stream = GeneratedStream::from_iter(
+                    src_buf.clone().into_iter(),
+                    stream_len as u64,
+                    None,
+                );
 
                 assert_eq!(stream.len(), Some(stream_len as u64));
                 let streamed_data_1 = (&mut stream).try_concat().await?;
                 assert_eq!(streamed_data_1.len(), stream_len);
 
                 stream.reset().await?;
+
                 let streamed_data_2 = stream.try_concat().await?;
                 assert_eq!(streamed_data_1, streamed_data_2);
+
+                let mut remaining = &streamed_data_1[..];
+                while !remaining.is_empty() {
+                    let min_len = min(src_buf.len(), remaining.len());
+                    assert_eq!(src_buf[..min_len], remaining[..min_len]);
+                    remaining = &remaining[min_len..];
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn generated_stream_as_read() -> azure_core::Result<()> {
+        for buf_len in [1, 100, 256, 9999] {
+            for stream_len in [buf_len, buf_len - 1, buf_len + 1, buf_len * 10, buf_len / 2] {
+                let mut src_buf = vec![0u8; buf_len];
+                for b in src_buf.iter_mut() {
+                    *b = random();
+                }
+
+                let mut stream = GeneratedStream::from_iter(
+                    src_buf.clone().into_iter(),
+                    stream_len as u64,
+                    None,
+                );
+                let buf_1 = &mut vec![0u8; stream_len];
+                let buf_2 = &mut vec![0u8; stream_len];
+
+                assert_eq!(stream.len(), Some(stream_len as u64));
+                stream.read_exact(buf_1).await?;
+                assert_eq!(0, stream.read(&mut [0; 1024]).await?);
+
+                stream.reset().await?;
+
+                stream.read_exact(buf_2).await?;
+                assert_eq!(0, stream.read(&mut [0; 1024]).await?);
+                assert_eq!(buf_1, buf_2);
+
+                let mut remaining = &buf_1[..];
+                while !remaining.is_empty() {
+                    let min_len = min(src_buf.len(), remaining.len());
+                    assert_eq!(src_buf[..min_len], remaining[..min_len]);
+                    remaining = &remaining[min_len..];
+                }
             }
         }
         Ok(())
