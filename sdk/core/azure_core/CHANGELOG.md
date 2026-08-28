@@ -11,6 +11,8 @@
 
 ### Bugs Fixed
 
+- Updated `typespec_client_core` so dropping a sleep future created by the standard (non-`tokio`) async runtime promptly cancels its worker thread.
+
 ### Other Changes
 
 - Added `azure-deprecating` to the default allowed HTTP header list so shared debug and logging paths stop redacting it.

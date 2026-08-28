@@ -35,6 +35,7 @@
     "checkpointstore",
     "clippy",
     "codeowners",
+    "condvar",
     "contoso",
     "cplusplus",
     "cpptools",

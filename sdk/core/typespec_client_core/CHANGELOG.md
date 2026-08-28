@@ -11,6 +11,8 @@
 
 ### Bugs Fixed
 
+- Dropping a sleep future created by the standard (non-`tokio`) async runtime now cancels its worker thread immediately instead of leaving it blocked until the original deadline.
+
 ### Other Changes
 
 <!-- cspell:disable-next-line -->
