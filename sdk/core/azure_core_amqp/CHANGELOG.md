@@ -4,14 +4,14 @@
 
 ### Features Added
 
-- Added `AmqpTransport` and an `AmqpConnectionOptions::transport` field to select the connection transport. `AmqpTransport::WebSocket` tunnels AMQP over secure WebSockets (`wss://`, port 443) for networks that block the native AMQP ports.
-- Added the `fe2o3_amqp_ws` and `fe2o3_amqp_ws_rustls` features. `fe2o3_amqp_ws` is the base feature and turns on the WebSocket transport code, and `fe2o3_amqp_ws_rustls` adds the TLS stack that the rest of `sdk/core` uses, rustls with the aws-lc-rs provider. This is the shape that `azure_core` uses for HTTP, where `reqwest` is the base and `reqwest_rustls` adds the stack. The `default` feature selects both. To build the transport on another TLS stack, turn off the default features, name `fe2o3_amqp_ws`, and take a direct dependency on `fe2o3-amqp-ws` with the stack you want; Cargo unifies the features. One stack must be selected somewhere in the graph, and a build that selects none still compiles and reports the missing stack when the connection opens. A build without `fe2o3_amqp_ws` still accepts `AmqpTransport::WebSocket`, and the connection then returns an error when it opens.
-- Added the `fe2o3_amqp_rustls` feature, which adds the TLS stack for AMQP framed directly on TCP (`amqps://`, port 5671) on top of the `fe2o3_amqp` base feature. It is rustls with the aws-lc-rs provider, the stack that the rest of `sdk/core` uses, and `default` selects it in place of the `fe2o3-amqp/native-tls` entry that `default` named before. The connection supplies a TLS connector built on `rustls-platform-verifier`, so the handshake reads the trust store of the operating system and trusts the same roots as `reqwest/rustls` on the HTTP side. The default connector of `fe2o3-amqp` instead fills its root store from `webpki-roots`, a compiled-in copy of the Mozilla root set, which would drop the roots that an operator installs in the operating system. There is no native-tls feature on this crate, because `fe2o3-amqp` accepts one TLS stack only, and two features that cannot both be on would break `--all-features`. ([#4189](https://github.com/Azure/azure-sdk-for-rust/issues/4189))
+- Added `AmqpTransport` and `AmqpConnectionOptions::transport` to support AMQP over secure WebSockets.
+- Added the `fe2o3_amqp_ws` and `fe2o3_amqp_ws_rustls` features for AMQP over WebSockets. Both are enabled by default.
+- Added the `fe2o3_amqp_rustls` feature for AMQP over TCP with rustls and the aws-lc-rs provider. It is enabled by default. ([#4189](https://github.com/Azure/azure-sdk-for-rust/issues/4189))
 
 ### Breaking Changes
 
-- Added the `transport` field to `AmqpConnectionOptions`. The struct is not `#[non_exhaustive]`, so an existing struct literal that names every field no longer compiles. Add `..Default::default()` to the initializer, and put `#[allow(clippy::needless_update)]` on it. The workspace allows the `constructible_struct_adds_field` semver lint for this reason, so `cargo semver-checks` does not report the addition.
-- The `default` feature now selects `fe2o3_amqp_rustls`, so AMQP framed directly on TCP (`amqps://`, port 5671) runs on rustls with the aws-lc-rs provider where it ran on native-tls. Both stacks read the trust store of the operating system, so a broker behind a private or an enterprise certificate authority keeps working. The stacks read that store through different platform APIs, and a deployment that tunes native-tls directly, such as one that sets OpenSSL environment variables, can still see a difference. To keep native-tls, turn off the default features, name `fe2o3_amqp`, and take a direct dependency on `fe2o3-amqp` with its `native-tls` feature. ([#4189](https://github.com/Azure/azure-sdk-for-rust/issues/4189))
+- Added the `transport` field to `AmqpConnectionOptions`. Use struct update syntax with `Default::default()` when initializing the struct.
+- The default AMQP-over-TCP TLS backend changed from native-tls to rustls with the aws-lc-rs provider. The TLS connector uses the operating system trust store. ([#4189](https://github.com/Azure/azure-sdk-for-rust/issues/4189))
 
 ### Bugs Fixed
 
@@ -20,7 +20,7 @@
 
 ### Other Changes
 
-- Updated the `fe2o3-amqp` family of dependencies from 0.14 to 0.16. The rustls backend of 0.16 is built on aws-lc-rs, where 0.14 was built on `ring`, which `deny.toml` bans. This is what makes `fe2o3_amqp_rustls` possible. The update needed no source change.
+- Updated the `fe2o3-amqp` family of dependencies from 0.14 to 0.16.
 
 ## 1.1.0 (2026-07-09)
 

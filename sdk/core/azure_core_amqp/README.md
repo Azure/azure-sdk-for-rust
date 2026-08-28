@@ -6,6 +6,40 @@ Azure AMQP crate for consumption of AMQP based packages in the Azure SDK for Rus
 
 This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 
+## Features
+
+The default features enable AMQP over TCP and secure WebSockets with rustls and the aws-lc-rs provider. The TCP TLS connector reads the trust store of the operating system, including roots installed by an operator.
+
+- `fe2o3_amqp` (default): enables AMQP over TCP.
+- `fe2o3_amqp_rustls` (default): enables rustls for AMQP over TCP.
+- `fe2o3_amqp_ws` (default): enables AMQP over secure WebSockets.
+- `fe2o3_amqp_ws_rustls` (default): enables rustls for AMQP over secure WebSockets.
+
+### Selecting a TLS stack
+
+The crate does not provide a `native-tls` feature. To use another TLS stack, disable the default features, enable the base transport features, and add direct dependencies on the AMQP crates with the TLS features you need. Cargo unifies the dependency features. A TLS stack must be selected somewhere in the dependency graph. If no stack is selected, the crate compiles but opening a connection returns an error.
+
+For AMQP over TCP with `native-tls`:
+
+```toml
+[dependencies]
+azure_core_amqp = { version = "1.2.0-beta.1", default-features = false, features = [
+    "fe2o3_amqp",
+] }
+fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
+```
+
+For AMQP over secure WebSockets with `native-tls`, also enable `fe2o3_amqp_ws` and add `fe2o3-amqp-ws`:
+
+```toml
+[dependencies]
+azure_core_amqp = { version = "1.2.0-beta.1", default-features = false, features = [
+    "fe2o3_amqp_ws",
+] }
+fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
+fe2o3-amqp-ws = { version = "0.16", features = ["native-tls"] }
+```
+
 ## Testing the AMQP Client
 
 The AMQP package is tested using the standard `cargo test` command line:
