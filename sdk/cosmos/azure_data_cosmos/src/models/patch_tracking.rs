@@ -45,6 +45,12 @@ impl PatchTrackingId {
     }
 }
 
+impl Default for PatchTrackingId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl From<Uuid> for PatchTrackingId {
     fn from(value: Uuid) -> Self {
         Self(value)
