@@ -256,34 +256,64 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
 /// connection. Under key auth this is invisible because the master key bypasses
 /// RBAC entirely.
 ///
-/// The probe deletes an id that cannot exist: it mutates nothing on success
-/// (the delete answers a bare 404), reuses the same `items/*` grant tests need,
-/// and returns as soon as the data path answers with a normal not-found. It
-/// tolerates `5302` and `collection_create_in_progress` as retryable while the
-/// name registers on this client.
+/// The probe issues a delete and a read against an id that cannot exist:
+/// each mutates nothing on success (both answer with a bare 404), together
+/// they exercise both `items/delete` and `items/read` — the two RBAC actions
+/// most tests need first — and each returns as soon as the corresponding data
+/// path answers with a normal not-found. Both phases tolerate `5302` and
+/// `collection_create_in_progress` as retryable while the name registers on
+/// this client, and both use their own retry budgets so a slow one does not
+/// starve the other.
+///
+/// Warming both actions matters because the RBAC name→RID cache is
+/// authorized per data-plane action on the server: after a delete succeeds,
+/// the first read on a fresh `ContainerClient` can still race a 5302 until
+/// the read path is warmed too.
 pub async fn probe_data_plane_ready(
     label: &str,
     container: &ContainerClient,
 ) -> azure_data_cosmos::Result<()> {
+    probe_data_plane_ready_action(label, "delete", container, |c, id| {
+        Box::pin(async move {
+            let pk = PartitionKey::from(id.clone());
+            c.delete_item(pk, id.as_str(), None).await.map(|_| ())
+        })
+    })
+    .await?;
+
+    probe_data_plane_ready_action(label, "read", container, |c, id| {
+        Box::pin(async move {
+            let pk = PartitionKey::from(id.clone());
+            c.read_item(pk, id.as_str(), None).await.map(|_| ())
+        })
+    })
+    .await
+}
+
+async fn probe_data_plane_ready_action<F>(
+    label: &str,
+    action: &str,
+    container: &ContainerClient,
+    mut probe: F,
+) -> azure_data_cosmos::Result<()>
+where
+    F: for<'a> FnMut(
+        &'a ContainerClient,
+        String,
+    )
+        -> Pin<Box<dyn Future<Output = azure_data_cosmos::Result<()>> + Send + 'a>>,
+{
     const MAX_ATTEMPTS: usize = 20;
     const RETRY_DELAY: Duration = Duration::from_millis(500);
 
     let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
     for attempt in 1..=MAX_ATTEMPTS {
-        let outcome = container
-            .delete_item(
-                PartitionKey::from(probe_id.clone()),
-                probe_id.as_str(),
-                None,
-            )
-            .await;
-
-        let error = match outcome {
-            Ok(_) => {
+        let error = match probe(container, probe_id.clone()).await {
+            Ok(()) => {
                 return Err(azure_data_cosmos_driver::error::CosmosError::builder()
                     .with_status(CosmosStatus::new(StatusCode::InternalServerError))
                     .with_message(format!(
-                        "data-plane readiness probe deleted {probe_id} on {label}, which cannot exist"
+                        "data-plane readiness {action} probe found {probe_id} on {label}, which cannot exist"
                     ))
                     .build()
                     .into());
@@ -301,7 +331,7 @@ pub async fn probe_data_plane_ready(
             return Err(error);
         }
 
-        println!("waiting for data-plane readiness on {label}: {error}");
+        println!("waiting for data-plane {action} readiness on {label}: {error}");
         tokio::time::sleep(RETRY_DELAY).await;
     }
 
@@ -1101,6 +1131,22 @@ impl TestRunContext {
                 Err(e) if e.status().status_code() == StatusCode::NotFound => {
                     println!(
                         "Read item failed with {:?}: {}. Retrying after {:?}...",
+                        e.status().status_code(),
+                        e,
+                        backoff
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(MAX_BACKOFF);
+                }
+                // AAD-only: the very first read on a fresh `ContainerClient` can
+                // race the server-side RBAC name→RID mapping for `items/read`
+                // and return `403/5302 RbacUnauthorizedNameBasedDataRequest`,
+                // even after `probe_data_plane_ready` has warmed `items/delete`
+                // on the container that was used to create the item. Retry with
+                // the same backoff so we do not spuriously fail the test.
+                Err(e) if rbac_name_based_data_not_ready(&e) => {
+                    println!(
+                        "Read item hit RBAC name-based data race ({:?}): {}. Retrying after {:?}...",
                         e.status().status_code(),
                         e,
                         backoff
