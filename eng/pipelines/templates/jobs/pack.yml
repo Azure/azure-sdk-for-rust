@@ -125,7 +125,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
-        arguments: -PackageNames $(PackageNames)
+        arguments: -PackageName $(PackageNames)
 
     - task: Powershell@2
       displayName: Pack Crates
@@ -135,7 +135,7 @@ jobs:
         filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
         arguments: >
           -OutputPath '$(Build.ArtifactStagingDirectory)'
-          -PackageNames $(PackageNames)
+          -PackageName $(PackageNames)
           -OutBuildOrderFile '$(Build.ArtifactStagingDirectory)/release-order.json'
           $(AdditionalPackageParams)
 
@@ -148,7 +148,7 @@ jobs:
         ${{ if or(eq('auto', parameters.ServiceDirectory), endsWith(variables['Build.DefinitionName'], 'weekly')) }}:
           arguments: -Workspace
         ${{ else }}:
-          arguments: -PackageNames '$(PackageNames)'
+          arguments: -PackageName '$(PackageNames)'
 
   - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
     parameters:
