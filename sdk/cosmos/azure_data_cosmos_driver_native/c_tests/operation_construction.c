@@ -118,6 +118,7 @@ static int test_patch_tracking_fields_can_be_populated(void)
     req.base.max_item_count = -1;
     req.patch_tracking_id = "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f";
     req.patch_tracking_capacity = 64;
+       req.patch_tracking_retention_seconds = 90;
 
     ASSERT(req.base.kind == COSMOS_OPERATION_KIND_PATCH_ITEM,
            "v1 request is embedded as the v2 prefix");
@@ -127,6 +128,9 @@ static int test_patch_tracking_fields_can_be_populated(void)
     ASSERT(req.patch_tracking_capacity == 64,
            "tracking capacity round-trips (=%u)",
            (unsigned)req.patch_tracking_capacity);
+    ASSERT(req.patch_tracking_retention_seconds == 90,
+           "tracking retention round-trips (=%u seconds)",
+           (unsigned)req.patch_tracking_retention_seconds);
     return result;
 }
 

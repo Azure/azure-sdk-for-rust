@@ -7,13 +7,14 @@ pub(crate) use crate::models::PATCH_TRACKING_PROPERTY;
 use crate::models::PATCH_TRACKING_RETENTION;
 use azure_core::http::StatusCode;
 use serde_json::{Map, Value};
-use std::num::NonZeroU16;
+use std::num::{NonZeroU16, NonZeroU32};
 use uuid::Uuid;
 
 pub(crate) const PATCH_TRACKING_POINTER: &str = "/_azsdkPatchTracking";
 
 const TRACKING_ID_FIELD: &str = "trackingId";
 const ATTEMPTED_AT_FIELD: &str = "attemptedAt";
+const RETENTION_SECONDS_FIELD: &str = "retentionSeconds";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum TrackingMarkerOutcome {
@@ -28,12 +29,13 @@ pub(crate) enum TrackingMarkerOutcome {
 /// when its timestamp is old: expiration only makes an entry eligible for
 /// pruning by a later operation; it never weakens a marker that is still
 /// present. When insertion is allowed, entries at least
-/// [`PATCH_TRACKING_RETENTION`] old are removed before enforcing `capacity`,
-/// using the item's service-managed `_ts` as the clock.
+/// `retention_seconds` old are removed before enforcing `capacity`, using the
+/// item's service-managed `_ts` as the clock.
 pub(crate) fn prepare_tracking_marker(
     document: &mut Value,
     tracking_id: Uuid,
     capacity: NonZeroU16,
+    retention_seconds: NonZeroU32,
     allow_insert: bool,
 ) -> crate::error::Result<TrackingMarkerOutcome> {
     let document_timestamp = document
@@ -51,7 +53,11 @@ pub(crate) fn prepare_tracking_marker(
         let marker_timestamp = document_timestamp.ok_or_else(missing_document_timestamp_error)?;
         object.insert(
             PATCH_TRACKING_PROPERTY.to_owned(),
-            Value::Array(vec![new_entry(tracking_id, marker_timestamp)]),
+            Value::Array(vec![new_entry(
+                tracking_id,
+                marker_timestamp,
+                retention_seconds,
+            )]),
         );
         return Ok(TrackingMarkerOutcome::Added);
     };
@@ -88,13 +94,12 @@ pub(crate) fn prepare_tracking_marker(
         }
     }
 
-    let retention_seconds = i64::try_from(PATCH_TRACKING_RETENTION.as_secs())
-        .expect("PATCH tracking retention fits in i64 seconds");
-    let cutoff = document_timestamp.saturating_sub(retention_seconds);
     for index in (0..entries.len()).rev() {
         // `_ts` has second-level precision. A strict comparison guarantees
         // the full retention interval elapsed even when the marker committed
         // near the end of its timestamp second.
+        let cutoff =
+            document_timestamp.saturating_sub(i64::from(parsed[index].retention_seconds.get()));
         if parsed[index].attempted_at < cutoff {
             entries.remove(index);
         }
@@ -110,13 +115,18 @@ pub(crate) fn prepare_tracking_marker(
             .build());
     }
 
-    entries.push(new_entry(tracking_id, document_timestamp));
+    entries.push(new_entry(
+        tracking_id,
+        document_timestamp,
+        retention_seconds,
+    ));
     Ok(TrackingMarkerOutcome::Added)
 }
 
 struct ParsedEntry {
     tracking_id: Uuid,
     attempted_at: i64,
+    retention_seconds: NonZeroU32,
 }
 
 fn parse_entry((index, value): (usize, &Value)) -> crate::error::Result<ParsedEntry> {
@@ -148,21 +158,45 @@ fn parse_entry((index, value): (usize, &Value)) -> crate::error::Result<ParsedEn
                 "entry {index} in reserved PATCH tracking property '{PATCH_TRACKING_PROPERTY}' must contain a non-negative integer '{ATTEMPTED_AT_FIELD}'"
             ))
         })?;
+    let retention_seconds = match object.get(RETENTION_SECONDS_FIELD) {
+        Some(value) => value
+            .as_u64()
+            .and_then(|value| u32::try_from(value).ok())
+            .and_then(NonZeroU32::new)
+            .ok_or_else(|| {
+                invalid_property_error(format!(
+                    "entry {index} in reserved PATCH tracking property '{PATCH_TRACKING_PROPERTY}' must contain a positive integer '{RETENTION_SECONDS_FIELD}' no greater than {}",
+                    u32::MAX
+                ))
+            })?,
+        None => default_retention_seconds(),
+    };
 
     Ok(ParsedEntry {
         tracking_id,
         attempted_at,
+        retention_seconds,
     })
 }
 
-fn new_entry(tracking_id: Uuid, attempted_at: i64) -> Value {
+fn new_entry(tracking_id: Uuid, attempted_at: i64, retention_seconds: NonZeroU32) -> Value {
     let mut entry = Map::new();
     entry.insert(
         TRACKING_ID_FIELD.to_owned(),
         Value::String(tracking_id.to_string()),
     );
     entry.insert(ATTEMPTED_AT_FIELD.to_owned(), Value::from(attempted_at));
+    entry.insert(
+        RETENTION_SECONDS_FIELD.to_owned(),
+        Value::from(retention_seconds.get()),
+    );
     Value::Object(entry)
+}
+
+fn default_retention_seconds() -> NonZeroU32 {
+    let seconds = u32::try_from(PATCH_TRACKING_RETENTION.as_secs())
+        .expect("default PATCH tracking retention fits in u32 seconds");
+    NonZeroU32::new(seconds).expect("default PATCH tracking retention is non-zero")
 }
 
 fn set_attempted_at(entry: &mut Value, attempted_at: i64) {
@@ -202,6 +236,14 @@ mod tests {
         })
     }
 
+    fn entry_with_retention(tracking_id: Uuid, attempted_at: i64, retention_seconds: u32) -> Value {
+        json!({
+            TRACKING_ID_FIELD: tracking_id.to_string(),
+            ATTEMPTED_AT_FIELD: attempted_at,
+            RETENTION_SECONDS_FIELD: retention_seconds,
+        })
+    }
+
     #[test]
     fn inserts_marker_and_detects_it_without_duplication() {
         let tracking_id = id(1);
@@ -212,6 +254,7 @@ mod tests {
                 &mut document,
                 tracking_id,
                 DEFAULT_PATCH_TRACKING_CAPACITY,
+                default_retention_seconds(),
                 true,
             )
             .unwrap(),
@@ -223,6 +266,7 @@ mod tests {
                 &mut document,
                 tracking_id,
                 DEFAULT_PATCH_TRACKING_CAPACITY,
+                default_retention_seconds(),
                 true,
             )
             .unwrap(),
@@ -237,8 +281,14 @@ mod tests {
         let before = document.clone();
 
         assert_eq!(
-            prepare_tracking_marker(&mut document, id(1), DEFAULT_PATCH_TRACKING_CAPACITY, false,)
-                .unwrap(),
+            prepare_tracking_marker(
+                &mut document,
+                id(1),
+                DEFAULT_PATCH_TRACKING_CAPACITY,
+                default_retention_seconds(),
+                false,
+            )
+            .unwrap(),
             TrackingMarkerOutcome::Missing
         );
         assert_eq!(document, before);
@@ -264,7 +314,14 @@ mod tests {
             ]
         });
 
-        prepare_tracking_marker(&mut document, id(4), NonZeroU16::new(4).unwrap(), true).unwrap();
+        prepare_tracking_marker(
+            &mut document,
+            id(4),
+            NonZeroU16::new(4).unwrap(),
+            default_retention_seconds(),
+            true,
+        )
+        .unwrap();
 
         let entries = document[PATCH_TRACKING_PROPERTY].as_array().unwrap();
         assert_eq!(entries.len(), 4);
@@ -277,6 +334,33 @@ mod tests {
     }
 
     #[test]
+    fn configurable_retention_uses_whole_seconds() {
+        let mut document = json!({
+            "_ts": NOW,
+            PATCH_TRACKING_PROPERTY: [
+                entry_with_retention(id(1), NOW - 15, 10),
+                entry_with_retention(id(2), NOW - 15, 20),
+                entry(id(3), NOW),
+            ]
+        });
+        prepare_tracking_marker(
+            &mut document,
+            id(4),
+            NonZeroU16::new(4).unwrap(),
+            NonZeroU32::new(30).unwrap(),
+            true,
+        )
+        .unwrap();
+
+        let entries = document[PATCH_TRACKING_PROPERTY].as_array().unwrap();
+        assert_eq!(entries.len(), 3);
+        assert_eq!(entries[0][TRACKING_ID_FIELD], id(2).to_string());
+        assert_eq!(entries[1][TRACKING_ID_FIELD], id(3).to_string());
+        assert_eq!(entries[2][TRACKING_ID_FIELD], id(4).to_string());
+        assert_eq!(entries[2][RETENTION_SECONDS_FIELD], 30);
+    }
+
+    #[test]
     fn full_unexpired_list_fails_without_evicting_an_entry() {
         let mut document = json!({
             "_ts": NOW,
@@ -284,9 +368,14 @@ mod tests {
         });
         let before = document.clone();
 
-        let error =
-            prepare_tracking_marker(&mut document, id(3), NonZeroU16::new(2).unwrap(), true)
-                .unwrap_err();
+        let error = prepare_tracking_marker(
+            &mut document,
+            id(3),
+            NonZeroU16::new(2).unwrap(),
+            default_retention_seconds(),
+            true,
+        )
+        .unwrap_err();
 
         assert_eq!(error.status().status_code(), StatusCode::Conflict);
         assert!(error.to_string().contains("capacity 2 is exhausted"));
@@ -305,6 +394,7 @@ mod tests {
                 &mut document,
                 tracking_id,
                 NonZeroU16::new(1).unwrap(),
+                default_retention_seconds(),
                 true,
             )
             .unwrap(),
@@ -319,12 +409,18 @@ mod tests {
             json!(["not-an-object"]),
             json!([{TRACKING_ID_FIELD: "not-a-uuid", ATTEMPTED_AT_FIELD: NOW}]),
             json!([{TRACKING_ID_FIELD: id(1).to_string(), ATTEMPTED_AT_FIELD: -1}]),
+            json!([{
+                TRACKING_ID_FIELD: id(1).to_string(),
+                ATTEMPTED_AT_FIELD: NOW,
+                RETENTION_SECONDS_FIELD: 0
+            }]),
         ] {
             let mut document = json!({PATCH_TRACKING_PROPERTY: property});
             let error = prepare_tracking_marker(
                 &mut document,
                 id(2),
                 DEFAULT_PATCH_TRACKING_CAPACITY,
+                default_retention_seconds(),
                 true,
             )
             .unwrap_err();
@@ -339,7 +435,14 @@ mod tests {
             PATCH_TRACKING_PROPERTY: [entry(id(1), NOW + 365 * 24 * 60 * 60)]
         });
 
-        prepare_tracking_marker(&mut document, id(2), NonZeroU16::new(2).unwrap(), true).unwrap();
+        prepare_tracking_marker(
+            &mut document,
+            id(2),
+            NonZeroU16::new(2).unwrap(),
+            default_retention_seconds(),
+            true,
+        )
+        .unwrap();
 
         let entries = document[PATCH_TRACKING_PROPERTY].as_array().unwrap();
         assert_eq!(entries.len(), 2);
@@ -355,7 +458,14 @@ mod tests {
             PATCH_TRACKING_PROPERTY: [entry(id(1), 0)]
         });
 
-        prepare_tracking_marker(&mut document, id(2), NonZeroU16::new(2).unwrap(), true).unwrap();
+        prepare_tracking_marker(
+            &mut document,
+            id(2),
+            NonZeroU16::new(2).unwrap(),
+            default_retention_seconds(),
+            true,
+        )
+        .unwrap();
 
         let entries = document[PATCH_TRACKING_PROPERTY].as_array().unwrap();
         assert_eq!(entries.len(), 2);
@@ -374,7 +484,14 @@ mod tests {
             ]
         });
 
-        prepare_tracking_marker(&mut document, id(3), NonZeroU16::new(3).unwrap(), true).unwrap();
+        prepare_tracking_marker(
+            &mut document,
+            id(3),
+            NonZeroU16::new(3).unwrap(),
+            default_retention_seconds(),
+            true,
+        )
+        .unwrap();
 
         let entries = document[PATCH_TRACKING_PROPERTY].as_array().unwrap();
         assert_eq!(entries[0][ATTEMPTED_AT_FIELD], older_timestamp);
@@ -389,7 +506,14 @@ mod tests {
             PATCH_TRACKING_PROPERTY: [entry(id(1), 0), entry(id(2), NOW)]
         });
 
-        prepare_tracking_marker(&mut document, id(3), NonZeroU16::new(2).unwrap(), true).unwrap();
+        prepare_tracking_marker(
+            &mut document,
+            id(3),
+            NonZeroU16::new(2).unwrap(),
+            default_retention_seconds(),
+            true,
+        )
+        .unwrap();
 
         let entries = document[PATCH_TRACKING_PROPERTY].as_array().unwrap();
         assert_eq!(entries.len(), 2);
@@ -401,9 +525,14 @@ mod tests {
     fn insertion_requires_document_timestamp() {
         let mut document = json!({"id": "item"});
 
-        let error =
-            prepare_tracking_marker(&mut document, id(1), DEFAULT_PATCH_TRACKING_CAPACITY, true)
-                .unwrap_err();
+        let error = prepare_tracking_marker(
+            &mut document,
+            id(1),
+            DEFAULT_PATCH_TRACKING_CAPACITY,
+            default_retention_seconds(),
+            true,
+        )
+        .unwrap_err();
 
         assert_eq!(error.status().status_code(), StatusCode::BadRequest);
         assert!(error.to_string().contains("'_ts'"));

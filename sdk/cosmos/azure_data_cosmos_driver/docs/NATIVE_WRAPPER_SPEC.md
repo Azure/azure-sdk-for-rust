@@ -1329,6 +1329,7 @@ typedef struct cosmos_operation_request_v2_t {
     cosmos_operation_request_t base;     /* unchanged v1 prefix */
     const char *patch_tracking_id;       /* UUID; NULL = generate per invocation */
     uint16_t patch_tracking_capacity;    /* 0 = driver default (1024) */
+    uint32_t patch_tracking_retention_seconds; /* 0 = driver default (300) */
 } cosmos_operation_request_v2_t;
 ```
 

@@ -32,26 +32,26 @@ for the full design.
 
 | Capability                                                                      | Status                                                                                  |
 | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Master-key authentication                                                       | ✅                                                                                       |
-| Token-credential / resource-token authentication                                | ⏳ follow-up (needs `TokenCredential` FFI bridge)                                        |
-| Sync driver creation (`_blocking`)                                              | ✅                                                                                       |
-| Async driver creation (`_submit`)                                               | ✅                                                                                       |
-| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`)                        | ⏳ needs driver-side `was_cached` signal                                                 |
-| Sync + async `resolve_container`                                                | ✅                                                                                       |
-| Single + hierarchical partition keys                                            | ✅                                                                                       |
-| Item-CRUD operations (read / create / upsert / replace / delete)                | ✅                                                                                       |
-| Item PATCH                                                                      | ✅ (preview exposure is controlled by the consuming SDK)                                 |
-| Container-CRUD operations (read / replace / delete)                             | ✅                                                                                       |
-| Database + account-scope operations                                             | ✅                                                                                       |
-| `cosmos_submit_singleton_operation` (point ops)                                 | ✅                                                                                       |
-| `cosmos_submit_operation` (feeds + pagination)                                  | ✅                                                                                       |
-| Response status / RU / body / activity-id / session-token / etag / continuation | ✅                                                                                       |
-| Pagination (read-feeds + query result sets)                                     | ⏳ planned                                                                               |
-| Multi-part response body iteration                                              | ⏳ planned                                                                               |
-| Diagnostics accessors                                                           | ⏳ planned                                                                               |
-| Patch instruction builder                                                       | ⏳ planned                                                                               |
-| Transactional batch sub-operation builder                                       | ⏳ planned                                                                               |
-| Custom per-operation request headers                                            | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
+| Master-key authentication                                                       | ✅                                                                                      |
+| Token-credential / resource-token authentication                                | ⏳ follow-up (needs `TokenCredential` FFI bridge)                                       |
+| Sync driver creation (`_blocking`)                                              | ✅                                                                                      |
+| Async driver creation (`_submit`)                                               | ✅                                                                                      |
+| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`)                        | ⏳ needs driver-side `was_cached` signal                                                |
+| Sync + async `resolve_container`                                                | ✅                                                                                      |
+| Single + hierarchical partition keys                                            | ✅                                                                                      |
+| Item-CRUD operations (read / create / upsert / replace / delete)                | ✅                                                                                      |
+| Item PATCH                                                                      | ✅ (preview exposure is controlled by the consuming SDK)                                |
+| Container-CRUD operations (read / replace / delete)                             | ✅                                                                                      |
+| Database + account-scope operations                                             | ✅                                                                                      |
+| `cosmos_submit_singleton_operation` (point ops)                                 | ✅                                                                                      |
+| `cosmos_submit_operation` (feeds + pagination)                                  | ✅                                                                                      |
+| Response status / RU / body / activity-id / session-token / etag / continuation | ✅                                                                                      |
+| Pagination (read-feeds + query result sets)                                     | ⏳ planned                                                                              |
+| Multi-part response body iteration                                              | ⏳ planned                                                                              |
+| Diagnostics accessors                                                           | ⏳ planned                                                                              |
+| Patch instruction builder                                                       | ⏳ planned                                                                              |
+| Transactional batch sub-operation builder                                       | ⏳ planned                                                                              |
+| Custom per-operation request headers                                            | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`)|
 
 ## Building
 
@@ -162,9 +162,10 @@ below for the production-shape guidance.
 > driver stores `_azsdkPatchTracking` on the item. Passing NULL for
 > `patch_tracking_id` generates an ID for the invocation. Retrieve the effective
 > UUID from `cosmos_completion_patch_tracking_id`, then persist and reuse it for
-> application retries. Entries are protected for 5 minutes, the default
-> capacity is 1024, and a full unexpired list fails rather than evicting
-> evidence. Every writer must preserve the reserved property.
+> application retries. Entries are protected for 5 minutes by default;
+> `patch_tracking_retention_seconds` configures a positive whole-second window.
+> The default capacity is 1024, and a full unexpired list fails rather than
+> evicting evidence. Every writer must preserve the reserved property.
 >
 > The v1 functions take `(driver, const cosmos_operation_request_t *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.
@@ -278,8 +279,9 @@ internal static class Cosmos
     public struct OpRequestV2
     {
         public OpRequest base_request;
-        public IntPtr    patch_tracking_id;       // UUID char*, NULL = generate
-        public ushort    patch_tracking_capacity; // 0 = driver default
+        public IntPtr    patch_tracking_id;                // UUID char*, NULL = generate
+        public ushort    patch_tracking_capacity;          // 0 = driver default
+        public uint      patch_tracking_retention_seconds; // 0 = driver default
     }
 
     // A drained completion. All pointers are borrowed until free_completions.
@@ -551,7 +553,8 @@ public final class CosmosSample {
         REQUEST.withName("base"),
         ADDRESS.withName("patch_tracking_id"),
         JAVA_SHORT.withName("patch_tracking_capacity"),
-        MemoryLayout.paddingLayout(6));
+        MemoryLayout.paddingLayout(2),
+        JAVA_INT.withName("patch_tracking_retention_seconds"));
 
     // Layout of cosmos_completion_t. Pointers and intptr_t/uintptr_t are 8 bytes.
     static final GroupLayout COMPLETION = MemoryLayout.structLayout(
@@ -1076,6 +1079,7 @@ class CosmosOperationRequestV2(ctypes.Structure):
         ("base", CosmosOperationRequest),
         ("patch_tracking_id", c_char_p),
         ("patch_tracking_capacity", ctypes.c_uint16),
+        ("patch_tracking_retention_seconds", ctypes.c_uint32),
     ]
 
 

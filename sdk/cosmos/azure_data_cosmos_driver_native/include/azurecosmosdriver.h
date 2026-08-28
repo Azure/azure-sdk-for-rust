@@ -1609,6 +1609,11 @@ typedef struct cosmos_operation_request_v2_t {
    * item. `0` = use the driver default.
    */
   uint16_t patch_tracking_capacity;
+  /**
+   * Minimum number of whole seconds PATCH tracking entries remain
+   * protected from pruning. `0` = use the driver default.
+   */
+  uint32_t patch_tracking_retention_seconds;
 } cosmos_operation_request_v2_t;
 
 #ifdef __cplusplus

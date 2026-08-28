@@ -148,6 +148,8 @@ pub struct CosmosOperation {
     patch_tracking_id: Option<crate::models::PatchTrackingId>,
     /// Maximum number of protected PATCH markers retained on the item.
     patch_tracking_capacity: Option<std::num::NonZeroU16>,
+    /// Minimum number of whole seconds PATCH markers remain protected.
+    patch_tracking_retention_seconds: Option<std::num::NonZeroU32>,
     /// `true` when this operation is a change feed read. Set explicitly by
     /// [`change_feed`](Self::change_feed) rather than inferred from a header,
     /// so future change feed modes can be added without ambiguity.
@@ -527,6 +529,20 @@ impl CosmosOperation {
         self.patch_tracking_capacity
     }
 
+    /// Sets the minimum number of whole seconds PATCH tracking entries remain protected.
+    pub fn with_patch_tracking_retention_seconds(
+        mut self,
+        retention_seconds: std::num::NonZeroU32,
+    ) -> Self {
+        self.patch_tracking_retention_seconds = Some(retention_seconds);
+        self
+    }
+
+    /// Returns the configured PATCH tracking retention in whole seconds, if any.
+    pub fn patch_tracking_retention_seconds(&self) -> Option<std::num::NonZeroU32> {
+        self.patch_tracking_retention_seconds
+    }
+
     /// Marks this operation as an internal sub-operation of a PATCH's
     /// Read-Modify-Write loop.
     ///
@@ -597,6 +613,7 @@ impl CosmosOperation {
             patch_max_attempts: None,
             patch_tracking_id: None,
             patch_tracking_capacity: None,
+            patch_tracking_retention_seconds: None,
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,

@@ -195,9 +195,12 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             operation
                 .patch_tracking_capacity()
                 .unwrap_or(crate::models::DEFAULT_PATCH_TRACKING_CAPACITY),
+            operation
+                .patch_tracking_retention_seconds()
+                .unwrap_or_else(default_patch_tracking_retention_seconds),
         )
     });
-    let tracking_id = tracking.map(|(id, _)| id);
+    let tracking_id = tracking.map(|(id, _, _)| id);
 
     let attempts = max_attempts
         .map(|n| n.get())
@@ -298,11 +301,12 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                 )
             })?;
 
-        if let Some((tracking_id, capacity)) = tracking {
+        if let Some((tracking_id, capacity, retention_seconds)) = tracking {
             let marker_outcome = prepare_tracking_marker(
                 &mut value,
                 tracking_id.as_uuid(),
                 capacity,
+                retention_seconds,
                 !routing_fallback || (!caller_supplied_tracking_id && !replace_dispatched),
             )
             .map_err(|err| {
@@ -616,7 +620,11 @@ async fn verify_committed_patch<D: SubOperationDispatcher + ?Sized>(
     dispatcher: &D,
     item_ref: &crate::models::ItemReference,
     read_options: &OperationOptions,
-    tracking: (crate::models::PatchTrackingId, std::num::NonZeroU16),
+    tracking: (
+        crate::models::PatchTrackingId,
+        std::num::NonZeroU16,
+        std::num::NonZeroU32,
+    ),
     caller_session_token: Option<crate::models::SessionToken>,
     operation_name: Option<Arc<str>>,
     sub_op_diagnostics: &mut Vec<Arc<DiagnosticsContext>>,
@@ -633,8 +641,14 @@ async fn verify_committed_patch<D: SubOperationDispatcher + ?Sized>(
     sub_op_diagnostics.push(response.diagnostics());
     let body = response.into_body().single().ok()?;
     let mut value = serde_json::from_slice::<serde_json::Value>(&body).ok()?;
-    let outcome =
-        prepare_tracking_marker(&mut value, tracking.0.as_uuid(), tracking.1, false).ok()?;
+    let outcome = prepare_tracking_marker(
+        &mut value,
+        tracking.0.as_uuid(),
+        tracking.1,
+        tracking.2,
+        false,
+    )
+    .ok()?;
     if outcome != TrackingMarkerOutcome::AlreadyApplied {
         return None;
     }
@@ -648,6 +662,12 @@ async fn verify_committed_patch<D: SubOperationDispatcher + ?Sized>(
         status,
         diagnostics,
     ))
+}
+
+fn default_patch_tracking_retention_seconds() -> std::num::NonZeroU32 {
+    let seconds = u32::try_from(crate::models::PATCH_TRACKING_RETENTION.as_secs())
+        .expect("default PATCH tracking retention fits in u32 seconds");
+    std::num::NonZeroU32::new(seconds).expect("default PATCH tracking retention is non-zero")
 }
 
 fn terminal_error_may_have_been_sent(err: &crate::error::CosmosError) -> bool {
@@ -1971,6 +1991,35 @@ mod tests {
 
         assert_eq!(error.status().status_code(), StatusCode::Conflict);
         assert_eq!(dispatcher.calls().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn custom_tracking_retention_is_persisted_on_marker() {
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok),
+        ]);
+
+        execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op()
+                .with_patch_tracking_retention_seconds(std::num::NonZeroU32::new(17).unwrap()),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect("PATCH with custom marker retention succeeds");
+
+        let replace = dispatched_body(&dispatcher.calls()[1]);
+        assert_eq!(
+            replace[crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY][0]
+                ["retentionSeconds"],
+            17
+        );
     }
 
     #[tokio::test]

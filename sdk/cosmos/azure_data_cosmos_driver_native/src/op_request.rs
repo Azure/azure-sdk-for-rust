@@ -750,6 +750,9 @@ pub struct CosmosOperationRequestV2 {
     /// Maximum number of unexpired PATCH tracking entries retained on the
     /// item. `0` = use the driver default.
     pub patch_tracking_capacity: u16,
+    /// Minimum number of whole seconds PATCH tracking entries remain
+    /// protected from pruning. `0` = use the driver default.
+    pub patch_tracking_retention_seconds: u32,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -835,6 +838,7 @@ pub(crate) unsafe fn build_request_v2(
         built.operation,
         request.patch_tracking_id,
         request.patch_tracking_capacity,
+        request.patch_tracking_retention_seconds,
     )?;
     Ok(built)
 }
@@ -1036,28 +1040,40 @@ fn apply_patch_tracking_fields(
     mut operation: CosmosOperation,
     tracking_id: *const c_char,
     tracking_capacity: u16,
+    tracking_retention_seconds: u32,
 ) -> Result<CosmosOperation, CosmosErrorCode> {
-    if tracking_id.is_null() && tracking_capacity == 0 {
+    if tracking_id.is_null() && tracking_capacity == 0 && tracking_retention_seconds == 0 {
         return Ok(operation);
     }
     if operation.operation_type() != OperationType::Patch {
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
     }
-    let (tracking_id, tracking_capacity) =
-        parse_patch_tracking_fields(tracking_id, tracking_capacity)?;
-    if let Some(tracking_id) = tracking_id {
+    let fields =
+        parse_patch_tracking_fields(tracking_id, tracking_capacity, tracking_retention_seconds)?;
+    if let Some(tracking_id) = fields.tracking_id {
         operation = operation.with_patch_tracking_id(tracking_id);
     }
-    if let Some(capacity) = tracking_capacity {
+    if let Some(capacity) = fields.tracking_capacity {
         operation = operation.with_patch_tracking_capacity(capacity);
     }
+    if let Some(retention_seconds) = fields.tracking_retention_seconds {
+        operation = operation.with_patch_tracking_retention_seconds(retention_seconds);
+    }
     Ok(operation)
+}
+
+#[derive(Debug)]
+struct ParsedPatchTrackingFields {
+    tracking_id: Option<PatchTrackingId>,
+    tracking_capacity: Option<NonZeroU16>,
+    tracking_retention_seconds: Option<std::num::NonZeroU32>,
 }
 
 fn parse_patch_tracking_fields(
     tracking_id: *const c_char,
     tracking_capacity: u16,
-) -> Result<(Option<PatchTrackingId>, Option<NonZeroU16>), CosmosErrorCode> {
+    tracking_retention_seconds: u32,
+) -> Result<ParsedPatchTrackingFields, CosmosErrorCode> {
     let tracking_id = if tracking_id.is_null() {
         None
     } else {
@@ -1067,7 +1083,11 @@ fn parse_patch_tracking_fields(
                 .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)?,
         )
     };
-    Ok((tracking_id, NonZeroU16::new(tracking_capacity)))
+    Ok(ParsedPatchTrackingFields {
+        tracking_id,
+        tracking_capacity: NonZeroU16::new(tracking_capacity),
+        tracking_retention_seconds: std::num::NonZeroU32::new(tracking_retention_seconds),
+    })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1155,20 +1175,23 @@ mod tests {
     fn patch_tracking_fields_map_to_driver_operation() {
         let tracking_id = std::ffi::CString::new("7f5241c9-d7c2-4071-97a3-43bdebf6ef8f").unwrap();
 
-        let (parsed_id, parsed_capacity) =
-            parse_patch_tracking_fields(tracking_id.as_ptr(), 17).unwrap();
+        let parsed = parse_patch_tracking_fields(tracking_id.as_ptr(), 17, 23).unwrap();
 
         assert_eq!(
-            parsed_id.unwrap().to_string(),
+            parsed.tracking_id.unwrap().to_string(),
             "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f"
         );
-        assert_eq!(parsed_capacity, NonZeroU16::new(17));
+        assert_eq!(parsed.tracking_capacity, NonZeroU16::new(17));
+        assert_eq!(
+            parsed.tracking_retention_seconds,
+            std::num::NonZeroU32::new(23)
+        );
     }
 
     #[test]
     fn invalid_patch_tracking_id_is_rejected() {
         let tracking_id = std::ffi::CString::new("not-a-uuid").unwrap();
-        let result = parse_patch_tracking_fields(tracking_id.as_ptr(), 0);
+        let result = parse_patch_tracking_fields(tracking_id.as_ptr(), 0, 0);
 
         assert_eq!(
             result.unwrap_err(),
@@ -1185,7 +1208,7 @@ mod tests {
             ),
         );
 
-        let result = apply_patch_tracking_fields(operation, std::ptr::null(), 17);
+        let result = apply_patch_tracking_fields(operation, std::ptr::null(), 17, 0);
 
         assert_eq!(
             result.unwrap_err(),
@@ -1238,6 +1261,10 @@ mod tests {
         assert_eq!(
             offset_of!(CosmosOperationRequestV2, patch_tracking_capacity),
             160
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationRequestV2, patch_tracking_retention_seconds),
+            164
         );
     }
 

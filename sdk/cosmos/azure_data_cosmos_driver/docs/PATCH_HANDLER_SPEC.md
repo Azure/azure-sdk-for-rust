@@ -39,6 +39,7 @@ normal pipeline stages run.
 | `patch_max_attempts`                          | `with_patch_max_attempts(NonZeroU8)`                | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
 | `patch_tracking_id`                           | `with_patch_tracking_id(PatchTrackingId)`           | Optional. Generated once per invocation for unsafe instructions.  |
 | `patch_tracking_capacity`                     | `with_patch_tracking_capacity(NonZeroU16)`          | Optional. Defaults to 1024 unexpired entries per item.            |
+| `patch_tracking_retention_seconds`            | `with_patch_tracking_retention_seconds(NonZeroU32)` | Optional. Defaults to 300 seconds; whole-second granularity.      |
 
 ## Algorithm
 
@@ -131,20 +132,25 @@ chained as the source.
 ## Tracking protocol
 
 The reserved `_azsdkPatchTracking` property is an array of objects with a UUID
-`trackingId` and non-negative Unix timestamp `attemptedAt`. It is visible user
-JSON and counts toward item size, request units, and indexing. Existing marker
-state is validated and never silently overwritten.
+`trackingId`, non-negative Unix timestamp `attemptedAt`, and positive integer
+`retentionSeconds`. It is visible user JSON and counts toward item size,
+request units, and indexing. Existing marker state is validated and never
+silently overwritten. Entries created before `retentionSeconds` was introduced
+use the 300-second default.
 
 The effective tracking ID, including a driver-generated ID, is exposed on
 successful responses and errors and captured as `patch_tracking_id` in the
 operation diagnostics. Callers can persist that value and reuse it for an
 application or process retry of the same logical PATCH.
 
-Entries are protected from pruning for 5 minutes. A matching ID is honored for
-as long as it remains present, even after that interval; expiration only makes
-an entry eligible for pruning by a later unsafe PATCH. The default capacity is
-1024 entries per item. When every entry is still protected and the capacity is
-full, PATCH returns 409 rather than evicting evidence and risking a duplicate.
+Each entry is protected from pruning for its configured positive number of
+whole seconds (300 seconds by default). Persisting the window on each marker
+prevents a later PATCH with a shorter setting from pruning longer-lived
+evidence early. A matching ID is honored for as long as it remains present,
+even after that interval; expiration only makes an entry eligible for pruning
+by a later unsafe PATCH. The default capacity is 1024 entries per item. When
+every entry is still protected and the capacity is full, PATCH returns 409
+rather than evicting evidence and risking a duplicate.
 Pruning uses only the item's service-generated `_ts`; the HTTP `Date` header is
 reserved for authentication and is not a PATCH protocol clock. Marker
 insertion requires a non-negative integer `_ts`. Because `_ts` has second-level

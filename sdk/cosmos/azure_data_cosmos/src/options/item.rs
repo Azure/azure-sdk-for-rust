@@ -175,6 +175,11 @@ pub struct PatchItemOptions {
     /// [`DEFAULT_PATCH_TRACKING_CAPACITY`](crate::models::DEFAULT_PATCH_TRACKING_CAPACITY).
     /// A full list fails with 409 rather than evicting protected evidence.
     pub tracking_capacity: Option<std::num::NonZeroU16>,
+
+    /// Minimum number of whole seconds PATCH tracking entries remain
+    /// protected from pruning. `None` selects
+    /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION).
+    pub tracking_retention_seconds: Option<std::num::NonZeroU32>,
 }
 
 #[cfg(feature = "preview_patch")]
@@ -202,6 +207,15 @@ impl PatchItemOptions {
     /// Sets the maximum number of unexpired tracking entries retained on an item.
     pub fn with_tracking_capacity(mut self, capacity: std::num::NonZeroU16) -> Self {
         self.tracking_capacity = Some(capacity);
+        self
+    }
+
+    /// Sets the minimum number of whole seconds tracking entries remain protected.
+    pub fn with_tracking_retention_seconds(
+        mut self,
+        retention_seconds: std::num::NonZeroU32,
+    ) -> Self {
+        self.tracking_retention_seconds = Some(retention_seconds);
         self
     }
 

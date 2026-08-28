@@ -601,12 +601,13 @@ impl ContainerClient {
     /// operation.
     ///
     /// The guarantee is bounded. Entries are protected from pruning for
-    /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION)
-    /// and the per-item list has a configurable capacity. PATCH returns an
-    /// error rather than evicting unexpired evidence. All writers that replace
-    /// these items must preserve the reserved property unchanged. The property
-    /// is visible in stored and returned JSON and counts toward item size and
-    /// indexing costs.
+    /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION) by
+    /// default; [`PatchItemOptions::with_tracking_retention_seconds`] can
+    /// configure a positive whole-second window. The per-item list has a
+    /// configurable capacity. PATCH returns an error rather than evicting
+    /// unexpired evidence. All writers that replace these items must preserve
+    /// the reserved property unchanged. The property is visible in stored and
+    /// returned JSON and counts toward item size and indexing costs.
     #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,
@@ -1515,6 +1516,9 @@ fn apply_patch_options(
     if let Some(capacity) = options.tracking_capacity {
         operation = operation.with_patch_tracking_capacity(capacity);
     }
+    if let Some(retention_seconds) = options.tracking_retention_seconds {
+        operation = operation.with_patch_tracking_retention_seconds(retention_seconds);
+    }
     operation
 }
 
@@ -1568,7 +1572,8 @@ mod tests {
         let options = PatchItemOptions::default()
             .with_max_attempts(std::num::NonZeroU8::new(7).unwrap())
             .with_tracking_id(tracking_id)
-            .with_tracking_capacity(std::num::NonZeroU16::new(19).unwrap());
+            .with_tracking_capacity(std::num::NonZeroU16::new(19).unwrap())
+            .with_tracking_retention_seconds(std::num::NonZeroU32::new(23).unwrap());
 
         let operation = apply_patch_options(operation, &options);
 
@@ -1578,6 +1583,10 @@ mod tests {
             tracking_id.to_string()
         );
         assert_eq!(operation.patch_tracking_capacity().unwrap().get(), 19);
+        assert_eq!(
+            operation.patch_tracking_retention_seconds().unwrap().get(),
+            23
+        );
     }
 
     #[test]
