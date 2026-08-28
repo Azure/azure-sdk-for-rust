@@ -14,11 +14,15 @@ use uuid::Uuid;
 
 use crate::models::effective_partition_key::prefix_range_end_hex;
 use crate::{
-    driver::transport::rntbd::{
-        tokens::{RntbdRequestToken, TokenValue},
-        RntbdRequestFrame, RntbdResponse,
+    driver::transport::{
+        cosmos_headers::READ_CONSISTENCY_STRATEGY,
+        rntbd::{
+            tokens::{RntbdRequestToken, TokenValue},
+            RntbdRequestFrame, RntbdResponse,
+        },
     },
     models::{CosmosStatus, OperationType, ResourceType},
+    options::ReadConsistencyStrategy,
 };
 
 use super::{ConsistencyLevel, InMemoryEmulatorHttpClient};
@@ -127,13 +131,16 @@ fn decode_request(
             "RNTBD request cannot contain both ConsistencyLevel and ReadConsistencyStrategy",
         ));
     }
-    if let Some(value) = metadata.read_consistency_strategy {
-        if !matches!(value, 0x01..=0x04) {
-            return Err(gateway_v2_bad_request(
-                "RNTBD request contains an unknown ReadConsistencyStrategy value",
-            ));
-        }
-    }
+    let read_consistency_strategy = metadata
+        .read_consistency_strategy
+        .map(|value| {
+            ReadConsistencyStrategy::from_rntbd_wire_byte(value).ok_or_else(|| {
+                gateway_v2_bad_request(
+                    "RNTBD request contains an unknown ReadConsistencyStrategy value",
+                )
+            })
+        })
+        .transpose()?;
     if let Some(value) = metadata.consistency_level {
         if !matches!(value, 0x00..=0x04) {
             return Err(gateway_v2_bad_request(
@@ -241,6 +248,12 @@ fn decode_request(
         "x-ms-activity-id",
         HeaderValue::from(frame.activity_id.to_string()),
     );
+    if let Some(strategy) = read_consistency_strategy {
+        request.headers_mut().insert(
+            READ_CONSISTENCY_STRATEGY,
+            HeaderValue::from(strategy.as_str()),
+        );
+    }
     if let Some(value) = metadata.partition_key {
         request
             .headers_mut()
@@ -933,27 +946,39 @@ mod tests {
     }
 
     #[test]
-    fn latest_committed_read_consistency_strategy_is_accepted() {
-        let frame = RntbdRequestFrame {
-            resource_type: ResourceType::Document,
-            operation_type: OperationType::ReadFeed,
-            activity_id: Uuid::new_v4(),
-            metadata: vec![
-                Token::database_name("db".to_owned()),
-                Token::collection_name("coll".to_owned()),
-                Token::read_consistency_strategy(
-                    crate::options::ReadConsistencyStrategy::LatestCommitted,
-                ),
-                Token::payload_present(false),
-            ],
-            body: None,
-        };
+    fn read_consistency_strategy_is_forwarded() {
         let outer = Request::new(
             Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
             Method::Post,
         );
 
-        decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
+        for (strategy, expected) in [
+            (ReadConsistencyStrategy::Eventual, "Eventual"),
+            (ReadConsistencyStrategy::Session, "Session"),
+            (ReadConsistencyStrategy::LatestCommitted, "LatestCommitted"),
+            (ReadConsistencyStrategy::GlobalStrong, "GlobalStrong"),
+        ] {
+            let frame = RntbdRequestFrame {
+                resource_type: ResourceType::Document,
+                operation_type: OperationType::ReadFeed,
+                activity_id: Uuid::new_v4(),
+                metadata: vec![
+                    Token::database_name("db".to_owned()),
+                    Token::collection_name("coll".to_owned()),
+                    Token::read_consistency_strategy(strategy),
+                    Token::payload_present(false),
+                ],
+                body: None,
+            };
+
+            let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
+            assert_eq!(
+                request
+                    .headers()
+                    .get_optional_str(&READ_CONSISTENCY_STRATEGY),
+                Some(expected)
+            );
+        }
     }
 
     #[test]

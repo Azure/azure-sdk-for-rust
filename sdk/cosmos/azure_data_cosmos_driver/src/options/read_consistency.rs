@@ -121,6 +121,18 @@ impl ReadConsistencyStrategy {
         }
     }
 
+    /// Parses the wire byte for an RNTBD `ReadConsistencyStrategy` token.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    pub(crate) fn from_rntbd_wire_byte(value: u8) -> Option<Self> {
+        match value {
+            0x01 => Some(Self::Eventual),
+            0x02 => Some(Self::Session),
+            0x03 => Some(Self::LatestCommitted),
+            0x04 => Some(Self::GlobalStrong),
+            _ => None,
+        }
+    }
+
     /// Returns `true` if session consistency is effective for this strategy
     /// given the account's default consistency level.
     ///
