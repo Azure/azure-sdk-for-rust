@@ -122,10 +122,17 @@ fn decode_request(
             "hosted Gateway V2 does not yet support AllowTentativeWrites",
         ));
     }
-    if metadata.read_consistency_strategy.is_some() {
+    if metadata.consistency_level.is_some() && metadata.read_consistency_strategy.is_some() {
         return Err(gateway_v2_bad_request(
-            "hosted Gateway V2 does not yet support non-default ReadConsistencyStrategy",
+            "RNTBD request cannot contain both ConsistencyLevel and ReadConsistencyStrategy",
         ));
+    }
+    if let Some(value) = metadata.read_consistency_strategy {
+        if !matches!(value, 0x01..=0x04) {
+            return Err(gateway_v2_bad_request(
+                "RNTBD request contains an unknown ReadConsistencyStrategy value",
+            ));
+        }
     }
     if let Some(value) = metadata.consistency_level {
         if !matches!(value, 0x00..=0x04) {
@@ -923,6 +930,87 @@ mod tests {
 
         let error = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap_err();
         assert!(error.to_string().contains("AllowTentativeWrites"));
+    }
+
+    #[test]
+    fn latest_committed_read_consistency_strategy_is_accepted() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::ReadFeed,
+            activity_id: Uuid::new_v4(),
+            metadata: vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::read_consistency_strategy(
+                    crate::options::ReadConsistencyStrategy::LatestCommitted,
+                ),
+                Token::payload_present(false),
+            ],
+            body: None,
+        };
+        let outer = Request::new(
+            Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+
+        decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
+    }
+
+    #[test]
+    fn unknown_read_consistency_strategy_is_rejected() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::ReadFeed,
+            activity_id: Uuid::new_v4(),
+            metadata: vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::new(
+                    RntbdRequestToken::ReadConsistencyStrategy,
+                    TokenValue::Byte(0x05),
+                ),
+                Token::payload_present(false),
+            ],
+            body: None,
+        };
+        let outer = Request::new(
+            Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+
+        let error = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap_err();
+        assert!(error.to_string().contains("ReadConsistencyStrategy"));
+    }
+
+    #[test]
+    fn consistency_level_and_read_consistency_strategy_are_rejected() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::ReadFeed,
+            activity_id: Uuid::new_v4(),
+            metadata: vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::new(
+                    RntbdRequestToken::ConsistencyLevel,
+                    TokenValue::Byte(consistency_wire_byte(ConsistencyLevel::Session)),
+                ),
+                Token::read_consistency_strategy(
+                    crate::options::ReadConsistencyStrategy::LatestCommitted,
+                ),
+                Token::payload_present(false),
+            ],
+            body: None,
+        };
+        let outer = Request::new(
+            Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+
+        let error = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("both ConsistencyLevel and ReadConsistencyStrategy"));
     }
 
     #[test]
