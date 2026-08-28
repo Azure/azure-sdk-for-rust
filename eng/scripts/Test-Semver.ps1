@@ -1,10 +1,16 @@
 #!/usr/bin/env pwsh
 
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 #Requires -Version 7.0
 [CmdletBinding(DefaultParameterSetName = "none")]
 param(
   [Parameter(ParameterSetName = 'Named')]
-  [string[]]$PackageNames,
+  [Alias('PackageNames')]
+  [string[]]$PackageName,
+  [Parameter(ParameterSetName = 'ManifestDir')]
+  [string[]]$ManifestDir,
   [Parameter(ParameterSetName = 'PackageInfo')]
   [string]$PackageInfoDirectory,
   [string]$Toolchain = 'stable',
@@ -12,44 +18,32 @@ param(
 )
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
-. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'common.ps1'))
 
 $resolvedToolchain = Get-ResolvedRustToolchain -Toolchain $Toolchain
 
 function Get-OutputPackages($workspacePackages) {
-  $packages = @()
-  $requestedPackageNames = @()
-  switch ($PsCmdlet.ParameterSetName) {
+  switch ($PSCmdlet.ParameterSetName) {
     'Named' {
       Write-Verbose 'Getting named packages from workspace'
-      $requestedPackageNames = $PackageNames
-      $packages = $workspacePackages.Where({ $_.name -in $PackageNames })
+      return Get-CargoSelectedPackages -PackageName $PackageName
+    }
+
+    'ManifestDir' {
+      Write-Verbose 'Getting packages from manifest directories'
+      return Get-CargoSelectedPackages -ManifestDir $ManifestDir
     }
 
     'PackageInfo' {
       Write-Verbose "Getting packages from $PackageInfoDirectory"
-      $requestedPackageNames = @(
-        Get-PackagesFromPackageInfo $PackageInfoDirectory | Select-Object -ExpandProperty Name
-      )
-      $packages = $workspacePackages.Where({ $_.name -in $requestedPackageNames })
+      return Get-CargoSelectedPackages -PackageInfoDirectory $PackageInfoDirectory
     }
 
     default {
       Write-Verbose 'Getting all workspace packages'
       return $workspacePackages
-
     }
   }
-
-  Write-Verbose "Packages: $($packages.name -join ', ')"
-  foreach ($name in $requestedPackageNames) {
-    if (-not $workspacePackages.name.Contains($name)) {
-      LogError "Package '$name' is not in the workspace or does not publish"
-      exit 1
-    }
-  }
-
-  return $packages
 }
 
 function Get-BaselineRevision($package) {
