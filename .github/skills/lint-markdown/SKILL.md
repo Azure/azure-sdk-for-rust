@@ -10,7 +10,7 @@ Check markdown files for common mistakes.
 ## Installation and usage
 
 Find the nearest `package.json` in the current directory or an ancestor through the
-repository root that lists `markdownlint-cli2` in `devDependencies`. Run `npm install`
+repository root that lists `markdownlint-cli2` in `devDependencies`. Run `npm ci`
 from that directory, then run `npx markdownlint-cli2 <command>` from the current
 directory.
 
