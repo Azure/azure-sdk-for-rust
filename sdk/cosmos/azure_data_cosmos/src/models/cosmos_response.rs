@@ -7,7 +7,9 @@ use std::sync::Arc;
 
 use crate::diagnostics::DiagnosticsContext;
 use crate::models::CosmosStatus;
-use crate::models::{PatchTrackingId, ResponseBody, ResponseHeaders};
+#[cfg(feature = "preview_patch")]
+use crate::models::PatchTrackingId;
+use crate::models::{ResponseBody, ResponseHeaders};
 use azure_data_cosmos_driver::models::CosmosResponse as DriverResponse;
 use serde::de::DeserializeOwned;
 
@@ -82,6 +84,7 @@ impl CosmosResponse {
     }
 
     /// Returns the effective duplicate-suppression identity for a tracked PATCH.
+    #[cfg(feature = "preview_patch")]
     pub(crate) fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
         self.diagnostics
             .patch_tracking_id()

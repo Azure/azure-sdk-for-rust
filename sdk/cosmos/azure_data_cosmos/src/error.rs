@@ -18,7 +18,9 @@ use std::sync::Arc;
 use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 use azure_data_cosmos_driver::models::CosmosResponse;
 
-use crate::{diagnostics::DiagnosticsContext, models::PatchTrackingId};
+use crate::diagnostics::DiagnosticsContext;
+#[cfg(feature = "preview_patch")]
+use crate::models::PatchTrackingId;
 
 /// Typed Cosmos status (HTTP status code + optional sub-status) — type
 /// alias re-exporting the driver definition so SDK-only callers can stay
@@ -70,6 +72,7 @@ impl CosmosError {
     /// This includes IDs generated internally by the driver and remains
     /// available on ambiguous failures so the same logical PATCH can be retried
     /// without generating a new identity.
+    #[cfg(feature = "preview_patch")]
     pub fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
         self.0.patch_tracking_id().map(PatchTrackingId::from_driver)
     }
@@ -289,6 +292,7 @@ mod tests {
     use super::*;
     use azure_core::error::ErrorKind as CoreErrorKind;
 
+    #[cfg(feature = "preview_patch")]
     #[test]
     fn patch_tracking_id_converts_to_sdk_model() {
         let id = crate::models::PatchTrackingId::from(uuid::Uuid::from_u128(42));
