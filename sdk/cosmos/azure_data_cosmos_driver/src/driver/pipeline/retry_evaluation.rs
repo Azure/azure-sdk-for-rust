@@ -2032,6 +2032,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -2996,6 +2997,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
