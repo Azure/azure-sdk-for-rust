@@ -391,7 +391,7 @@ fn select_list_payload(
     from: usize,
     items: &[crate::query::ast::SqlSelectItem],
 ) -> Option<String> {
-    use crate::query::{ast::SqlScalarExpression, lexer::TokenKind};
+    use crate::query::lexer::TokenKind;
 
     let commas: Vec<_> = top_level
         .iter()
@@ -411,12 +411,12 @@ fn select_list_payload(
         .map(|comma| tokens[*comma].span.start)
         .chain(std::iter::once(tokens[from].span.start));
 
-    let mut unnamed = 0_u32;
     let properties = items
         .iter()
+        .enumerate()
         .zip(starts)
         .zip(ends)
-        .map(|((item, start), end)| {
+        .map(|(((position, item), start), end)| {
             let as_token = top_level.iter().copied().find(|index| {
                 *index >= start
                     && *index < from
@@ -431,19 +431,8 @@ fn select_list_payload(
                 return None;
             }
 
-            let name = item.alias.clone().or_else(|| match &item.expression {
-                SqlScalarExpression::MemberRef { member, .. } => Some(member.clone()),
-                SqlScalarExpression::MemberIndexer { index, .. } => match index.as_ref() {
-                    SqlScalarExpression::Literal(crate::query::ast::SqlLiteral::String(value)) => {
-                        Some(value.clone())
-                    }
-                    _ => None,
-                },
-                _ => None,
-            });
-            let name = name.unwrap_or_else(|| {
-                unnamed += 1;
-                format!("${unnamed}")
+            let name = item.alias.clone().unwrap_or_else(|| {
+                crate::query::common::infer_property_name(&item.expression, position + 1)
             });
             let quoted_name = serde_json::to_string(&name).ok()?;
             Some(format!("{quoted_name}: {expression}"))
@@ -659,6 +648,9 @@ fn check_gateway_only_functions(query_text: &str) -> Result<(), LocalPlanFallbac
 
         match token.text.to_ascii_uppercase().as_str() {
             "DCOUNT" => return Err(LocalPlanFallbackReason::DCount),
+            "COUNTIF" | "ARRAY_AGG" | "MAKELIST" | "MAKESET" => {
+                return Err(LocalPlanFallbackReason::Aggregates);
+            }
             "RRF" | "FULLTEXTSCORE" | "VECTORDISTANCE" => {
                 return Err(LocalPlanFallbackReason::HybridSearch);
             }
@@ -1074,7 +1066,50 @@ mod tests {
         let rewritten = plan.query_info.unwrap().rewritten_query.unwrap();
         assert!(rewritten.contains(r#""name": c.name"#), "{rewritten}");
         assert!(rewritten.contains(r#""years": c.age"#), "{rewritten}");
-        assert!(rewritten.contains(r#""$1": c.score + 1"#), "{rewritten}");
+        assert!(rewritten.contains(r#""$3": c.score + 1"#), "{rewritten}");
+    }
+
+    #[test]
+    fn order_by_projection_names_match_query_evaluator() {
+        for (query, expected) in [
+            ("SELECT c FROM c ORDER BY c.name", r#""c": c"#),
+            (
+                "SELECT UPPER(c.name) FROM c ORDER BY c.name",
+                r#""UPPER": UPPER(c.name)"#,
+            ),
+            (
+                "SELECT c.a, c.b + 1 FROM c ORDER BY c.name",
+                r#""$2": c.b + 1"#,
+            ),
+        ] {
+            let body = serde_json::to_vec(&serde_json::json!({"query": query})).unwrap();
+            let ProviderResolution::Plan(plan) =
+                try_local_plan(Some(&body), &single_pk_def()).unwrap()
+            else {
+                panic!("expected local plan");
+            };
+            let rewritten = plan.query_info.unwrap().rewritten_query.unwrap();
+            assert!(rewritten.contains(expected), "{rewritten}");
+        }
+    }
+
+    #[test]
+    fn unsupported_aggregate_functions_fall_back() {
+        for function in [
+            "COUNTIF(c.age > 21)",
+            "ARRAY_AGG(c.name)",
+            "MAKELIST(c.name)",
+            "MAKESET(c.name)",
+        ] {
+            let body = serde_json::to_vec(
+                &serde_json::json!({"query": format!("SELECT VALUE {function} FROM c")}),
+            )
+            .unwrap();
+            assert_eq!(
+                try_local_plan(Some(&body), &single_pk_def()).unwrap_err(),
+                LocalPlanFallbackReason::Aggregates
+            );
+        }
     }
 
     // ── PK filter → EPK range conversion ────────────────────────────────

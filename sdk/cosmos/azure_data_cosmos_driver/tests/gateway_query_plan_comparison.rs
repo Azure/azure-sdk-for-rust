@@ -511,12 +511,14 @@ async fn validate_production_local_plan(
         ranges.sort();
         Some(ranges)
     };
-    if let (Some(local_ranges), Some(gateway_ranges)) = (ranges(&local), ranges(&gateway)) {
-        assert_eq!(
-            local_ranges, gateway_ranges,
-            "query ranges differ for '{sql}'"
-        );
-    }
+    let local_ranges =
+        ranges(&local).unwrap_or_else(|| panic!("local query ranges are malformed for '{sql}'"));
+    let gateway_ranges = ranges(&gateway)
+        .unwrap_or_else(|| panic!("Gateway query ranges are malformed for '{sql}'"));
+    assert_eq!(
+        local_ranges, gateway_ranges,
+        "query ranges differ for '{sql}'"
+    );
 
     if execute {
         let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
@@ -1028,7 +1030,7 @@ async fn gw_production_local_plan_supported_surface() {
         "SELECT DISTINCT TOP 5 c.name FROM c",
         "SELECT DISTINCT c.name FROM c OFFSET 2 LIMIT 3",
         "SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name",
-        "SELECT * FROM c JOIN t IN c.tags",
+        "SELECT VALUE t FROM c JOIN t IN c.tags",
         "SELECT (SELECT VALUE 1) AS x FROM c",
         "SELECT * FROM c WHERE c.pk = 'production-local-plan'",
     ] {

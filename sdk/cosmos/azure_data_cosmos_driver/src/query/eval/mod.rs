@@ -15,7 +15,7 @@ use crate::query::ast::{
     SqlOrderByClause, SqlPathSegment, SqlQuery, SqlScalarExpression, SqlSelectSpec, SqlSortOrder,
     SqlTopSpec, SqlUnaryOp, SqlWhereClause,
 };
-use crate::query::common::get_root_alias;
+use crate::query::common::{get_root_alias, infer_property_name};
 use crate::query::value::CosmosValue;
 
 // (#16) Built-in scalar function dispatch lives in a sibling file to keep
@@ -1617,16 +1617,6 @@ fn like_match_dp(text: &[char], pattern: &[char], escape: Option<char>) -> bool 
         }
     }
     dp[0][0]
-}
-
-/// Infer a property name from a select expression for unnamed columns.
-fn infer_property_name(expr: &SqlScalarExpression, position: usize) -> String {
-    match expr {
-        SqlScalarExpression::PropertyRef(name) => name.clone(),
-        SqlScalarExpression::MemberRef { member, .. } => member.clone(),
-        SqlScalarExpression::FunctionCall { name, .. } => name.clone(),
-        _ => format!("${position}"),
-    }
 }
 
 fn project_star_row(doc: &serde_json::Value) -> serde_json::Value {
