@@ -130,7 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Generating SAS URLs
 
-Use the [`azure_storage_sas`] crate to create a user delegation SAS. Obtain a `UserDelegationKey` from `BlobServiceClient::get_user_delegation_key`, build the token with `SasBuilder`, then set it as the query string on the resource URL.
+Use the [`azure_storage_sas`] crate to create a user delegation SAS. Obtain a `UserDelegationKey` from `BlobServiceClient::get_user_delegation_key`, build the token with `SasTokenBuilder`, then set it as the query string on the resource URL.
 
 ```rust no_run
 use azure_core::{
@@ -138,7 +138,7 @@ use azure_core::{
     time::OffsetDateTime,
 };
 use azure_storage_blob::{models::KeyInfo, BlobServiceClient};
-use azure_storage_sas::SasBuilder;
+use azure_storage_sas::SasTokenBuilder;
 use azure_identity::DeveloperToolsCredential;
 use time::Duration;
 
@@ -169,7 +169,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .into_model()?;
 
     // Build a read-only SAS token for a single blob, then set it on the blob URL.
-    let token = SasBuilder::new(storage_account_name, &udk, now + Duration::hours(1))?
+    let token = SasTokenBuilder::new(storage_account_name, &udk, now + Duration::hours(1))?
         .blob(container_name, blob_name)
         .read()
         .build();
