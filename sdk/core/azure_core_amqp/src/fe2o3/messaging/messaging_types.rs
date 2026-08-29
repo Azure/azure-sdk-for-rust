@@ -75,6 +75,10 @@ impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpOutcome {
             fe2o3_amqp_types::messaging::Outcome::Released(_) => AmqpOutcome::Released,
             fe2o3_amqp_types::messaging::Outcome::Rejected(_) => AmqpOutcome::Rejected,
             fe2o3_amqp_types::messaging::Outcome::Modified(_) => AmqpOutcome::Modified,
+            #[cfg(feature = "transaction")]
+            fe2o3_amqp_types::messaging::Outcome::Declared(declared) => {
+                AmqpOutcome::Declared(declared.txn_id.into_vec())
+            }
         }
     }
 }
@@ -98,18 +102,27 @@ impl From<AmqpOutcome> for fe2o3_amqp_types::messaging::Outcome {
                     message_annotations: None,
                 },
             ),
+            #[cfg(feature = "transaction")]
+            AmqpOutcome::Declared(txn_id) => fe2o3_amqp_types::messaging::Outcome::Declared(
+                fe2o3_amqp_types::transaction::Declared {
+                    txn_id: serde_bytes::ByteBuf::from(txn_id),
+                },
+            ),
         }
     }
 }
 
 #[test]
 fn test_outcome_round_trip() {
-    let outcomes = vec![
+    #[cfg_attr(not(feature = "transaction"), allow(unused_mut))]
+    let mut outcomes = vec![
         AmqpOutcome::Accepted,
         AmqpOutcome::Released,
         AmqpOutcome::Rejected,
         AmqpOutcome::Modified,
     ];
+    #[cfg(feature = "transaction")]
+    outcomes.push(AmqpOutcome::Declared(vec![1, 2, 3, 4]));
 
     for outcome in outcomes {
         let fe2o3_outcome: fe2o3_amqp_types::messaging::Outcome = outcome.clone().into();

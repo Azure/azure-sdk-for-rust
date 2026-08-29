@@ -51,7 +51,10 @@ fn build_sender_link(
     target: AmqpTarget,
     options: Option<AmqpSenderOptions>,
 ) -> Fe2o3SenderBuilder {
-    let mut builder = fe2o3_amqp::Sender::builder().name(name).target(target);
+    let fe2o3_target = super::messaging::message_target::to_fe2o3_target(target);
+    let mut builder = fe2o3_amqp::Sender::builder()
+        .name(name)
+        .target(fe2o3_target);
 
     if let Some(options) = options {
         if let Some(sender_settle_mode) = options.sender_settle_mode {
@@ -192,6 +195,10 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             fe2o3_amqp_types::messaging::Outcome::Modified(ref m) => {
                 AmqpSendOutcome::Modified(m.into())
             }
+            #[cfg(feature = "transaction")]
+            fe2o3_amqp_types::messaging::Outcome::Declared(declared) => {
+                AmqpSendOutcome::Declared(declared.txn_id.into_vec())
+            }
         })
     }
 }
@@ -248,8 +255,15 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
             | fe2o3_amqp::link::SenderAttachError::IllegalState => {
                 AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
-            fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented
-            | fe2o3_amqp::link::SenderAttachError::DuplicatedLinkName
+            #[cfg(feature = "transaction")]
+            fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented => {
+                AmqpErrorKind::TransactionsNotSupported(Box::new(e)).into()
+            }
+            #[cfg(not(feature = "transaction"))]
+            fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented => {
+                AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
+            }
+            fe2o3_amqp::link::SenderAttachError::DuplicatedLinkName
             | fe2o3_amqp::link::SenderAttachError::NonAttachFrameReceived
             | fe2o3_amqp::link::SenderAttachError::ExpectImmediateDetach
             | fe2o3_amqp::link::SenderAttachError::IncomingTargetIsNone
@@ -258,6 +272,10 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
             | fe2o3_amqp::link::SenderAttachError::TargetAddressIsNoneWhenDynamicIsTrue
             | fe2o3_amqp::link::SenderAttachError::SourceAddressIsSomeWhenDynamicIsTrue
             | fe2o3_amqp::link::SenderAttachError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse => {
+                AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
+            }
+            #[cfg(feature = "transaction")]
+            fe2o3_amqp::link::SenderAttachError::DesireTxnCapabilitiesNotSupported => {
                 AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
             }
         }
@@ -296,5 +314,50 @@ mod tests {
             )),
             Some(&fe2o3_amqp_types::primitives::Value::Long(3))
         );
+    }
+
+    #[test]
+    fn sender_link_keeps_target_capabilities() {
+        let target = AmqpTarget::builder()
+            .with_address("amqps://example.servicebus.windows.net/eh".to_string())
+            .with_capabilities(vec![AmqpValue::Symbol(AmqpSymbol::from("capability"))])
+            .build();
+
+        let builder = build_sender_link("test-sender".into(), target, None);
+
+        let target = builder
+            .target
+            .as_ref()
+            .expect("target must be set on builder");
+        let capabilities = target
+            .capabilities
+            .as_ref()
+            .expect("target capabilities must survive the builder chain");
+        assert_eq!(
+            capabilities.as_slice(),
+            &[fe2o3_amqp_types::primitives::Symbol::from("capability")]
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "transaction")]
+    fn test_coordinator_is_not_implemented_maps_to_transactions_not_supported() {
+        let fe2o3_err = fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented;
+        let err: AmqpError = fe2o3_err.into();
+        assert!(matches!(
+            err.kind(),
+            AmqpErrorKind::TransactionsNotSupported(_)
+        ));
+    }
+
+    #[test]
+    #[cfg(not(feature = "transaction"))]
+    fn test_coordinator_is_not_implemented_maps_to_transport_implementation_error() {
+        let fe2o3_err = fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented;
+        let err: AmqpError = fe2o3_err.into();
+        assert!(matches!(
+            err.kind(),
+            AmqpErrorKind::TransportImplementationError(_)
+        ));
     }
 }
