@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::clients::{ClientContext, ContainerClient};
-use crate::{ResourceId, ResourceIdentity};
 use crate::options::ContainerClientOptions;
+use crate::{ResourceId, ResourceIdentity};
 #[cfg(feature = "control_plane")]
 use azure_data_cosmos_driver::models::DatabaseReference;
 

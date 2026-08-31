@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = create_client(&args).await?;
     let items = client
         .database_client(&args.database)
-        .container_client(&args.container)
+        .container_client(&args.container, None)
         .await?;
 
     // Seed an item with a shape rich enough to exercise every PatchOperation.

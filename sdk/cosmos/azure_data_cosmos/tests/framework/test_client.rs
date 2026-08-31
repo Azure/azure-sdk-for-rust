@@ -1135,8 +1135,9 @@ impl TestRunContext {
                 }
                 Err(e) if e.status().status_code() == StatusCode::Conflict => {
                     // Container already exists, delete and recreate it, then return a client
-                    let container_client =
-                        db_client.container_client(properties.id.as_ref(), None).await?;
+                    let container_client = db_client
+                        .container_client(properties.id.as_ref(), None)
+                        .await?;
                     container_client.delete(None).await?;
 
                     // recreate
@@ -1165,7 +1166,7 @@ impl TestRunContext {
         const POLL_INTERVAL: Duration = Duration::from_millis(500);
 
         for attempt in 0..MAX_ATTEMPTS {
-            let error = match db_client.container_client(container_id).await {
+            let error = match db_client.container_client(container_id, None).await {
                 Ok(container_client) => match container_client.read(None).await {
                     Ok(_) => return Ok(container_client),
                     Err(error) => error,
@@ -1413,7 +1414,7 @@ impl TestRunContext {
             let probe = async {
                 let container = probe_client
                     .database_client(db_id.clone())
-                    .container_client(container_id)
+                    .container_client(container_id, None)
                     .await?;
                 container.read(Some(options.clone())).await
             };
@@ -1481,7 +1482,7 @@ impl TestRunContext {
             let probe = async {
                 let container = probe_client
                     .database_client(db_id.clone())
-                    .container_client(container_id)
+                    .container_client(container_id, None)
                     .await?;
                 container
                     .delete_item(

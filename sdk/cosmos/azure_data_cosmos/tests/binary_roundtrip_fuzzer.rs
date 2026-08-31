@@ -2043,7 +2043,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
         for (config_idx, (label, client)) in clients.iter().enumerate() {
             let container = client
                 .database_client(&database_name)
-                .container_client(&container_name)
+                .container_client(&container_name, None)
                 .await?;
 
             // Deterministic id per (seed, iteration, config) — derived without
@@ -2320,7 +2320,7 @@ async fn run_calibration() -> Result<(), Box<dyn Error>> {
         )
         .await,
     )?;
-    let container = db.container_client(&container_name).await?;
+    let container = db.container_client(&container_name, None).await?;
 
     println!(
         "{:<26} {:<24} {:<24} {:<24} {}",
