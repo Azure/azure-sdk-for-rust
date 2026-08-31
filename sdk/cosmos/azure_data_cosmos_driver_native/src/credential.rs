@@ -19,11 +19,7 @@ use azure_core::{
     time::{Duration, OffsetDateTime},
     Error,
 };
-use tokio::{
-    sync::{oneshot, Mutex, RwLock},
-    task::AbortHandle,
-    time::sleep,
-};
+use tokio::{sync::oneshot, task::AbortHandle, time::sleep};
 
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
 
@@ -31,6 +27,13 @@ const TOKEN_REFRESH_RETRY_COUNT: usize = 2;
 const MINIMUM_BACKGROUND_REFRESH_INTERVAL: Duration = Duration::minutes(1);
 
 type TokenResultSender = oneshot::Sender<azure_core::Result<AccessToken>>;
+type RefreshResult = Result<AccessToken, String>;
+type RefreshWaiter = oneshot::Sender<RefreshResult>;
+
+enum RefreshPolicy {
+    UseValidCache,
+    RefreshCachedToken { expected_expiry: OffsetDateTime },
+}
 
 static NEXT_TOKEN_REQUEST_ID: AtomicU64 = AtomicU64::new(1);
 static PENDING_TOKEN_REQUESTS: OnceLock<StdMutex<HashMap<u64, TokenResultSender>>> =
@@ -81,10 +84,15 @@ struct HostTokenProvider {
     user_data: isize,
 }
 
+#[derive(Default)]
+struct CredentialState {
+    cached_token: Option<AccessToken>,
+    refresh_waiters: Option<Vec<RefreshWaiter>>,
+}
+
 struct CallbackTokenCredential {
     provider: Arc<HostTokenProvider>,
-    cached_token: Arc<RwLock<Option<AccessToken>>>,
-    refresh_lock: Arc<Mutex<()>>,
+    state: Arc<StdMutex<CredentialState>>,
     background_task: StdMutex<Option<AbortHandle>>,
 }
 
@@ -96,8 +104,7 @@ impl CallbackTokenCredential {
                 provider,
                 user_data,
             }),
-            cached_token: Arc::new(RwLock::new(None)),
-            refresh_lock: Arc::new(Mutex::new(())),
+            state: Arc::new(StdMutex::new(CredentialState::default())),
             background_task: StdMutex::new(None),
         }))
     }
@@ -112,11 +119,10 @@ impl CallbackTokenCredential {
         }
 
         let provider = Arc::downgrade(&self.provider);
-        let cached_token = Arc::clone(&self.cached_token);
-        let refresh_lock = Arc::clone(&self.refresh_lock);
+        let state = Arc::clone(&self.state);
         let expires_on = token.expires_on;
         let task = tokio::spawn(async move {
-            background_refresh_loop(provider, cached_token, refresh_lock, scope, expires_on).await;
+            background_refresh_loop(provider, state, scope, expires_on).await;
         });
         *background_task = Some(task.abort_handle());
     }
@@ -164,32 +170,13 @@ impl TokenCredential for CallbackTokenCredential {
             ));
         };
 
-        // A still-valid cached token remains usable while background refresh
-        // retries transient host failures.
-        {
-            let cached = self.cached_token.read().await;
-            if let Some(token) = cached.as_ref() {
-                if token.expires_on > OffsetDateTime::now_utc() {
-                    return Ok(token.clone());
-                }
-            }
-        }
-
-        let _refresh_guard = self.refresh_lock.lock().await;
-        {
-            let cached = self.cached_token.read().await;
-            if let Some(token) = cached.as_ref() {
-                if token.expires_on > OffsetDateTime::now_utc() {
-                    return Ok(token.clone());
-                }
-            }
-        }
-
-        let token = request_token_with_retry(&self.provider, scope).await?;
-        {
-            let mut cached = self.cached_token.write().await;
-            *cached = Some(token.clone());
-        }
+        let token = get_or_start_refresh(
+            Arc::clone(&self.provider),
+            Arc::clone(&self.state),
+            (*scope).to_owned(),
+            RefreshPolicy::UseValidCache,
+        )
+        .await?;
         self.start_background_refresh((*scope).to_owned(), &token);
         Ok(token)
     }
@@ -197,8 +184,7 @@ impl TokenCredential for CallbackTokenCredential {
 
 async fn background_refresh_loop(
     provider: Weak<HostTokenProvider>,
-    cached_token: Arc<RwLock<Option<AccessToken>>>,
-    refresh_lock: Arc<Mutex<()>>,
+    state: Arc<StdMutex<CredentialState>>,
     scope: String,
     mut tracked_expiry: OffsetDateTime,
 ) {
@@ -210,27 +196,20 @@ async fn background_refresh_loop(
         let Some(provider) = provider.upgrade() else {
             return;
         };
-        let _refresh_guard = refresh_lock.lock().await;
 
-        let cached_expiry = {
-            let cached = cached_token.read().await;
-            cached.as_ref().map(|token| token.expires_on)
-        };
-        let Some(cached_expiry) = cached_expiry else {
-            return;
-        };
-
-        if cached_expiry != tracked_expiry {
-            tracked_expiry = cached_expiry;
-            delay = successful_refresh_delay(tracked_expiry, OffsetDateTime::now_utc());
-            continue;
-        }
-
-        match request_token_with_retry(&provider, &scope).await {
+        match get_or_start_refresh(
+            provider,
+            Arc::clone(&state),
+            scope.clone(),
+            RefreshPolicy::RefreshCachedToken {
+                expected_expiry: tracked_expiry,
+            },
+        )
+        .await
+        {
             Ok(token) => {
                 tracked_expiry = token.expires_on;
                 delay = successful_refresh_delay(tracked_expiry, OffsetDateTime::now_utc());
-                *cached_token.write().await = Some(token);
             }
             Err(error) => {
                 tracing::warn!(
@@ -246,6 +225,84 @@ async fn background_refresh_loop(
             }
         }
     }
+}
+
+async fn get_or_start_refresh(
+    provider: Arc<HostTokenProvider>,
+    state: Arc<StdMutex<CredentialState>>,
+    scope: String,
+    policy: RefreshPolicy,
+) -> azure_core::Result<AccessToken> {
+    let (receiver, start_refresh) = {
+        let mut state = state.lock().unwrap();
+        match policy {
+            RefreshPolicy::UseValidCache => {
+                if let Some(token) = valid_cached_token(&state, OffsetDateTime::now_utc()) {
+                    return Ok(token);
+                }
+            }
+            RefreshPolicy::RefreshCachedToken { expected_expiry } => {
+                let Some(token) = state.cached_token.as_ref() else {
+                    return Err(credential_error(
+                        "cached token unavailable for background refresh",
+                    ));
+                };
+                if token.expires_on != expected_expiry {
+                    return Ok(token.clone());
+                }
+            }
+        }
+
+        let (sender, receiver) = oneshot::channel();
+        if let Some(waiters) = state.refresh_waiters.as_mut() {
+            waiters.push(sender);
+            (receiver, false)
+        } else {
+            state.refresh_waiters = Some(vec![sender]);
+            (receiver, true)
+        }
+    };
+
+    if start_refresh {
+        let refresh_state = Arc::clone(&state);
+        tokio::spawn(async move {
+            let result = request_token_with_retry(&provider, &scope)
+                .await
+                .map_err(|error| error.to_string());
+            let waiters = {
+                let mut state = refresh_state.lock().unwrap();
+                if let Ok(token) = &result {
+                    state.cached_token = Some(token.clone());
+                }
+                let Some(waiters) = state.refresh_waiters.take() else {
+                    tracing::error!("active token refresh lost its waiter list");
+                    return;
+                };
+                waiters
+            };
+
+            for waiter in waiters {
+                let waiter_result = match &result {
+                    Ok(token) => Ok(token.clone()),
+                    Err(message) => Err(message.clone()),
+                };
+                let _ = waiter.send(waiter_result);
+            }
+        });
+    }
+
+    receiver
+        .await
+        .map_err(|_| credential_error("host token refresh task ended without a result"))?
+        .map_err(credential_error)
+}
+
+fn valid_cached_token(state: &CredentialState, now: OffsetDateTime) -> Option<AccessToken> {
+    state
+        .cached_token
+        .as_ref()
+        .filter(|token| token.expires_on > now)
+        .cloned()
 }
 
 async fn request_token_with_retry(
@@ -472,6 +529,7 @@ mod tests {
         frees: AtomicUsize,
         tokens: StdMutex<Vec<(String, i64)>>,
         scopes: StdMutex<Vec<String>>,
+        pending_request_ids: StdMutex<Vec<u64>>,
     }
 
     unsafe extern "C" fn get_token(user_data: isize, request: *const CosmosTokenRequest) -> i32 {
@@ -537,6 +595,30 @@ mod tests {
                 );
             }
         });
+        0
+    }
+
+    unsafe extern "C" fn capture_token_request(
+        user_data: isize,
+        request: *const CosmosTokenRequest,
+    ) -> i32 {
+        // SAFETY: tests pass a live `Arc<TestProvider>` raw pointer as user data.
+        let state = unsafe { &*(user_data as *const TestProvider) };
+        // SAFETY: the native adapter passes a valid request for this call.
+        let request = unsafe { &*request };
+        // SAFETY: scope bytes are valid for the duration of this callback.
+        let scope = unsafe { std::slice::from_raw_parts(request.scope, request.scope_len) };
+        state
+            .scopes
+            .lock()
+            .unwrap()
+            .push(String::from_utf8(scope.to_vec()).unwrap());
+        state
+            .pending_request_ids
+            .lock()
+            .unwrap()
+            .push(request.request_id);
+        state.calls.fetch_add(1, Ordering::SeqCst);
         0
     }
 
@@ -671,6 +753,7 @@ mod tests {
             frees: AtomicUsize::new(0),
             tokens: StdMutex::new(tokens),
             scopes: StdMutex::new(Vec::new()),
+            pending_request_ids: StdMutex::new(Vec::new()),
         });
         let user_data = Arc::into_raw(Arc::clone(&state)) as isize;
         let credential = create_token_credential(
@@ -682,6 +765,16 @@ mod tests {
         )
         .unwrap();
         (state, credential)
+    }
+
+    async fn wait_for_call_count(state: &TestProvider, expected: usize) {
+        for _ in 0..20 {
+            if state.calls.load(Ordering::SeqCst) == expected {
+                return;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(state.calls.load(Ordering::SeqCst), expected);
     }
 
     #[tokio::test]
@@ -763,6 +856,118 @@ mod tests {
             assert_eq!(token.unwrap().token.secret(), "token-a");
         }
         assert_eq!(state.calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn cancelling_initiator_keeps_refresh_single_flight() {
+        let (state, credential) = credential_with_callback(Vec::new(), capture_token_request);
+        let first_credential = Arc::clone(&credential);
+        let first = tokio::spawn(async move { first_credential.get_token(&["scope"], None).await });
+        wait_for_call_count(&state, 1).await;
+
+        first.abort();
+        assert!(first.await.unwrap_err().is_cancelled());
+
+        let second_credential = Arc::clone(&credential);
+        let second =
+            tokio::spawn(async move { second_credential.get_token(&["scope"], None).await });
+        for _ in 0..10 {
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(state.calls.load(Ordering::SeqCst), 1);
+
+        let request_id = state.pending_request_ids.lock().unwrap()[0];
+        let token = b"token-after-cancellation";
+        let expires = OffsetDateTime::now_utc()
+            .saturating_add(Duration::minutes(10))
+            .unix_timestamp();
+        // SAFETY: token bytes remain valid for this synchronous call.
+        let status = unsafe {
+            cosmos_token_request_complete(
+                request_id,
+                0,
+                token.as_ptr(),
+                token.len(),
+                expires,
+                std::ptr::null(),
+                0,
+            )
+        };
+
+        assert_eq!(
+            status,
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        );
+        assert_eq!(
+            second.await.unwrap().unwrap().token.secret(),
+            "token-after-cancellation"
+        );
+        assert_eq!(state.calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn accepted_refresh_retains_provider_after_waiter_cancellation() {
+        let (state, credential) = credential_with_callback(Vec::new(), capture_token_request);
+        let task_credential = Arc::clone(&credential);
+        let waiter = tokio::spawn(async move { task_credential.get_token(&["scope"], None).await });
+        wait_for_call_count(&state, 1).await;
+
+        waiter.abort();
+        assert!(waiter.await.unwrap_err().is_cancelled());
+        drop(credential);
+        assert_eq!(state.frees.load(Ordering::SeqCst), 0);
+
+        let request_id = state.pending_request_ids.lock().unwrap()[0];
+        let token = b"token-after-drop";
+        let expires = OffsetDateTime::now_utc()
+            .saturating_add(Duration::minutes(10))
+            .unix_timestamp();
+        // SAFETY: token bytes remain valid for this synchronous call.
+        let status = unsafe {
+            cosmos_token_request_complete(
+                request_id,
+                0,
+                token.as_ptr(),
+                token.len(),
+                expires,
+                std::ptr::null(),
+                0,
+            )
+        };
+        assert_eq!(
+            status,
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        );
+
+        for _ in 0..20 {
+            if state.frees.load(Ordering::SeqCst) == 1 {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(state.frees.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn concurrent_waiters_receive_same_refresh_error() {
+        let (state, credential) = credential_with_callback(Vec::new(), fail_token);
+
+        let (a, b, c) = tokio::join!(
+            credential.get_token(&["scope"], None),
+            credential.get_token(&["scope"], None),
+            credential.get_token(&["scope"], None),
+        );
+
+        for result in [a, b, c] {
+            assert!(result
+                .unwrap_err()
+                .to_string()
+                .contains("credential unavailable"));
+        }
+        assert_eq!(
+            state.calls.load(Ordering::SeqCst),
+            TOKEN_REFRESH_RETRY_COUNT
+        );
     }
 
     #[tokio::test]
