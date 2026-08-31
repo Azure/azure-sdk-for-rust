@@ -560,7 +560,7 @@ async fn content_response_on_write_disabled_suppresses_both_strategy_bodies() {
 }
 
 #[tokio::test]
-async fn caller_tracking_id_requires_client_side_path() {
+async fn caller_tracking_id_influences_auto_but_not_explicit_server_side() {
     let recorder = MethodRecorder::new();
     let (driver, container) = build_driver(Some(recorder.clone())).await;
     create_item(&driver, &container, &seed_document()).await;
@@ -588,13 +588,15 @@ async fn caller_tracking_id_requires_client_side_path() {
     let options = OperationOptionsBuilder::new()
         .with_patch_strategy(PatchStrategy::ServerSide)
         .build();
-    let error = driver
+    let response = driver
         .execute_singleton_operation(operation, options)
         .await
-        .expect_err("ServerSide cannot silently discard a caller tracking ID");
+        .expect("explicit ServerSide must be honored when a tracking ID is present");
     assert_eq!(
-        error.status().status_code(),
-        azure_core::http::StatusCode::BadRequest
+        recorder.data_plane_methods(),
+        vec![Method::Patch],
+        "explicit ServerSide must send one PATCH rather than entering tracked RMW"
     );
-    assert!(recorder.data_plane_methods().is_empty());
+    assert_eq!(response.patch_tracking_id(), None);
+    assert_eq!(read_stored(&driver, &container).await["field0"], 0);
 }

@@ -2606,6 +2606,7 @@ impl CosmosDriver {
                                 options,
                                 max_attempts,
                                 absolute_deadline,
+                                !suppress_response_body,
                             )
                             .await?;
                             if suppress_response_body {
@@ -3311,6 +3312,18 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        if operation.operation_type() == crate::models::OperationType::Patch
+            && !operation.patch_strategy_is_resolved()
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message(
+                    "PATCH operations must be executed with CosmosDriver::execute_operation so \
+                     the PATCH strategy can be resolved",
+                )
+                .build());
+        }
+
         // Reject mixed name/RID addressing before any IO work is done. The
         // service classifies a request as name-based or RID-based from its `dbs`
         // segment alone, so a reference that mixes a name-addressed parent with
@@ -4129,6 +4142,40 @@ mod tests {
             err.status(),
             crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_unresolved_patch() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let operation = CosmosOperation::patch_item(crate::models::ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ))
+        .with_body(
+            serde_json::to_vec(&crate::models::PatchInstructions::from(vec![
+                crate::models::PatchOperation::increment("/count", 1),
+            ]))
+            .unwrap(),
+        );
+
+        let err = match Box::pin(driver.plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        ))
+        .await
+        {
+            Ok(_) => panic!("unresolved PATCH must be rejected before planning"),
+            Err(err) => err,
+        };
+
+        assert_eq!(err.status(), crate::error::CosmosStatus::CLIENT_BAD_REQUEST);
     }
 
     #[tokio::test]

@@ -64,8 +64,10 @@ the B2 marker protocol.
 
 A caller-supplied tracking ID requests marker-backed duplicate suppression even
 for a retry-safe list. `Auto` therefore selects client-side RMW when an ID is
-present. Combining a caller tracking ID with explicit `ServerSide` is rejected
-with HTTP 400 rather than silently ignoring either setting.
+present. Explicit `ServerSide` remains authoritative when an ID is present: the
+ID may be retained by the caller as correlation metadata, but the service does
+not persist the client's marker and the request receives no marker-backed
+duplicate suppression.
 
 ## Client-side RMW algorithm
 

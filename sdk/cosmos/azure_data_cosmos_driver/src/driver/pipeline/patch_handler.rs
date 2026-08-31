@@ -46,7 +46,9 @@ use crate::models::{
     CosmosOperation, CosmosResponse, PartitionKeyKind, PatchInstructions, PatchOperation,
     Precondition,
 };
-use crate::options::{BinaryEncodingOptions, OperationOptions, ReadConsistencyStrategy};
+use crate::options::{
+    BinaryEncodingOptions, ContentResponseOnWrite, OperationOptions, ReadConsistencyStrategy,
+};
 use async_trait::async_trait;
 use azure_core::http::{Etag, StatusCode};
 use std::num::NonZeroU8;
@@ -102,6 +104,7 @@ pub(crate) async fn execute(
     options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
     absolute_deadline: Option<Instant>,
+    return_response_body: bool,
 ) -> crate::error::Result<CosmosResponse> {
     execute_with_dispatcher_and_deadline(
         driver,
@@ -109,6 +112,7 @@ pub(crate) async fn execute(
         options,
         max_attempts,
         absolute_deadline,
+        return_response_body,
     )
     .await
 }
@@ -127,12 +131,17 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .end_to_end_latency_policy
         .as_ref()
         .map(|policy| Instant::now() + policy.timeout());
+    let return_response_body = !matches!(
+        options.content_response_on_write,
+        Some(ContentResponseOnWrite::Disabled)
+    );
     execute_with_dispatcher_and_deadline(
         dispatcher,
         operation,
         options,
         max_attempts,
         absolute_deadline,
+        return_response_body,
     )
     .await
 }
@@ -143,6 +152,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     mut options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
     absolute_deadline: Option<Instant>,
+    return_response_body: bool,
 ) -> crate::error::Result<CosmosResponse> {
     // PATCH is excluded from binary encoding. Force it off *explicitly*:
     // `None` would inherit a lower layer (e.g. an account/client that enabled
@@ -150,6 +160,12 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     options.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(false));
     let mut read_options = options.clone();
     read_options.read_consistency_strategy = Some(ReadConsistencyStrategy::LatestCommitted);
+    let mut replace_options = options.clone();
+    replace_options.content_response_on_write = Some(if return_response_body {
+        ContentResponseOnWrite::Enabled
+    } else {
+        ContentResponseOnWrite::Disabled
+    });
 
     // -- 1. Reject caller-set preconditions --
     //
@@ -445,7 +461,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         // to inspect.
         replace_dispatched = true;
         match dispatcher
-            .execute_operation(replace_op, options.clone())
+            .execute_operation(replace_op, replace_options.clone())
             .await
         {
             Ok(replace_resp) => {
@@ -858,11 +874,9 @@ fn is_precondition_failed(err: &crate::error::CosmosError) -> bool {
 ///    `content_response_on_write`), and that body is the source of truth.
 /// 2. Otherwise, parse `merged_bytes` as a JSON object and overwrite its
 ///    `_etag` member with `replace_etag` (the value the Replace minted).
-///    Other system properties (`_rid`, `_self`, `_attachments`) are stable
-///    across edits of the same item, so the Read's values remain correct.
-///    `_ts` is not exposed on the Replace response header path, so the
-///    Read's `_ts` is left intact; it may lag the true post-image by the
-///    Read→Replace round-trip but never goes backwards.
+///    This is a defensive fallback for explicitly bodyless or anomalously
+///    empty Replace responses. The outer driver discards it when the caller
+///    disabled response content.
 /// 3. If `merged_bytes` is not a JSON object, or `replace_etag` is `None`,
 ///    or any serde step fails, the merged bytes are returned unchanged —
 ///    the body in that case is no worse than what the previous
@@ -1705,6 +1719,7 @@ mod tests {
         session_token: Option<SessionToken>,
         body: Option<Vec<u8>>,
         read_consistency_strategy: Option<ReadConsistencyStrategy>,
+        content_response_on_write: Option<ContentResponseOnWrite>,
         prefers_write_endpoints_for_read: bool,
         suppresses_hedging: bool,
         absolute_deadline: Option<Instant>,
@@ -1741,6 +1756,7 @@ mod tests {
                 session_token: operation.request_headers().session_token.clone(),
                 body: operation.body().map(<[u8]>::to_vec),
                 read_consistency_strategy: options.read_consistency_strategy,
+                content_response_on_write: options.content_response_on_write,
                 prefers_write_endpoints_for_read: operation.prefers_write_endpoints_for_read(),
                 suppresses_hedging: operation.suppresses_hedging(),
                 absolute_deadline: operation.absolute_deadline(),
@@ -3087,8 +3103,8 @@ mod tests {
         // If-Match precondition.
         //
         // Script: Read returns body with _etag=\"v1\" + etag header \"v1\";
-        // Replace returns empty body (content_response_on_write=false
-        // semantics) + etag header \"v2\".
+        // Replace returns an explicitly requested empty body + etag header
+        // \"v2\".
         let dispatcher = ScriptedDispatcher::new(vec![
             ScriptedReply::ok(
                 br#"{"id":"doc1","pk":"pk1","visits":0,"_etag":"\"v1\""}"#.to_vec(),
@@ -3099,9 +3115,19 @@ mod tests {
         ]);
 
         let op = canonical_patch_op();
-        let resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+        let options = OperationOptions {
+            content_response_on_write: Some(ContentResponseOnWrite::Disabled),
+            ..OperationOptions::default()
+        };
+        let resp = execute_with_dispatcher(&dispatcher, op, options, None)
             .await
             .expect("PATCH should succeed");
+
+        assert_eq!(
+            dispatcher.calls()[1].content_response_on_write,
+            Some(ContentResponseOnWrite::Disabled),
+            "bodyless client-side PATCH must keep the inner Replace bodyless"
+        );
 
         // Header carries the Replace's new etag (existing behavior).
         assert_eq!(
@@ -3148,6 +3174,12 @@ mod tests {
         let resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
             .await
             .expect("PATCH should succeed");
+
+        assert_eq!(
+            dispatcher.calls()[1].content_response_on_write,
+            Some(ContentResponseOnWrite::Enabled),
+            "default client-side PATCH must request the authoritative Replace post-image"
+        );
 
         let body_bytes = resp
             .into_body()

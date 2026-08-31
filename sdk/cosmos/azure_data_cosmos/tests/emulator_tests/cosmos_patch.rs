@@ -32,14 +32,28 @@ struct PatchTestItem {
     deleted: bool,
 }
 
+fn strip_system_properties(mut value: serde_json::Value) -> serde_json::Value {
+    if let Some(object) = value.as_object_mut() {
+        object.retain(|name, _| !name.starts_with('_'));
+    }
+    value
+}
+
 async fn create_container(
     run_context: &TestRunContext,
 ) -> azure_data_cosmos::Result<ContainerClient> {
     let db_client = run_context.create_db().await?;
+    create_container_in_database(run_context, &db_client).await
+}
+
+async fn create_container_in_database(
+    run_context: &TestRunContext,
+    db_client: &azure_data_cosmos::clients::DatabaseClient,
+) -> azure_data_cosmos::Result<ContainerClient> {
     let container_id = format!("Container-{}", Uuid::new_v4());
     run_context
         .create_container(
-            &db_client,
+            db_client,
             ContainerProperties::new(container_id.clone(), "/partition_key".into()),
             None,
         )
@@ -358,6 +372,169 @@ pub async fn patch_strategy_obeys_service_instruction_limit() -> Result<(), Box<
                 .await
                 .expect_err("explicit ServerSide must surface the service limit");
             assert_eq!(error.status().status_code(), StatusCode::BadRequest);
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+pub async fn patch_item_auto_commits_safe_list_server_side() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+            let item_id = format!("patch-auto-server-{unique_id}");
+            let pk = format!("pk-{unique_id}");
+            let initial = PatchTestItem {
+                id: item_id.clone(),
+                partition_key: pk.clone(),
+                display_name: "before".into(),
+                visits: 0,
+                deleted: false,
+            };
+            container_client
+                .create_item(&pk, &item_id, &initial, None)
+                .await?;
+
+            let response = container_client
+                .patch_item(
+                    &pk,
+                    &item_id,
+                    PatchInstructions::from(vec![
+                        PatchOperation::set("/deleted", serde_json::json!(true)),
+                        PatchOperation::replace("/display_name", serde_json::json!("after")),
+                    ]),
+                    None,
+                )
+                .await?;
+
+            assert_eq!(response.status(), StatusCode::Ok);
+            assert_eq!(
+                response.diagnostics().request_count(),
+                1,
+                "safe Auto PATCH must use one server-side request"
+            );
+            let post_image: PatchTestItem = response.into_model()?;
+            assert_eq!(post_image.display_name, "after");
+            assert!(post_image.deleted);
+
+            let stored: PatchTestItem = container_client
+                .read_item(&pk, &item_id, None)
+                .await?
+                .into_model()?;
+            assert_eq!(stored, post_image);
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+pub async fn patch_item_server_and_client_strategies_match_service_results(
+) -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, db_client| {
+            let client_container = create_container_in_database(run_context, db_client).await?;
+            let server_container = create_container_in_database(run_context, db_client).await?;
+            let client_options =
+                PatchItemOptions::default().with_strategy(PatchStrategy::ClientSide);
+            let server_options =
+                PatchItemOptions::default().with_strategy(PatchStrategy::ServerSide);
+
+            let cases = [
+                (
+                    "set",
+                    PatchOperation::set("/deleted", serde_json::json!(true)),
+                ),
+                (
+                    "replace",
+                    PatchOperation::replace("/display_name", serde_json::json!("after")),
+                ),
+                (
+                    "add",
+                    PatchOperation::add("/tags/-", serde_json::json!("beta")),
+                ),
+                ("remove", PatchOperation::remove("/deleted")),
+                ("increment", PatchOperation::increment("/visits", 2i64)),
+                (
+                    "move",
+                    PatchOperation::move_value("/source", "/destination"),
+                ),
+            ];
+
+            for (case_name, operation) in cases {
+                let unique_id = Uuid::new_v4().to_string();
+                let item_id = format!("patch-equivalence-{case_name}-{unique_id}");
+                let pk = format!("pk-{unique_id}");
+                let initial = serde_json::json!({
+                    "id": item_id,
+                    "partition_key": pk,
+                    "display_name": "before",
+                    "visits": 1,
+                    "deleted": false,
+                    "tags": ["alpha"],
+                    "source": "move-me"
+                });
+
+                client_container
+                    .create_item(&pk, &item_id, &initial, None)
+                    .await?;
+                server_container
+                    .create_item(&pk, &item_id, &initial, None)
+                    .await?;
+
+                client_container
+                    .patch_item(
+                        &pk,
+                        &item_id,
+                        PatchInstructions::from(vec![operation.clone()]),
+                        Some(client_options.clone()),
+                    )
+                    .await?;
+                server_container
+                    .patch_item(
+                        &pk,
+                        &item_id,
+                        PatchInstructions::from(vec![operation]),
+                        Some(server_options.clone()),
+                    )
+                    .await?;
+
+                let client_stored: serde_json::Value = client_container
+                    .read_item(&pk, &item_id, None)
+                    .await?
+                    .into_model()?;
+                let server_stored: serde_json::Value = server_container
+                    .read_item(&pk, &item_id, None)
+                    .await?
+                    .into_model()?;
+                assert_eq!(
+                    strip_system_properties(client_stored),
+                    strip_system_properties(server_stored),
+                    "client-side and server-side PATCH differ for {case_name}"
+                );
+            }
 
             Ok(())
         },

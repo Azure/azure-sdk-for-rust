@@ -63,8 +63,9 @@ impl PatchExecution {
 /// deliberately does *not* fall back: an over-long list
 /// surfaces the service's own `400` rather than silently changing execution
 /// mode, and an unsafe list is sent with `retry_safe: false` so the retry layers
-/// stop rather than repeat a mutation. A caller tracking ID conflicts with
-/// explicit server execution and is rejected.
+/// stop rather than repeat a mutation. A tracking ID does not override explicit
+/// server execution; the service does not persist the client's tracking marker,
+/// so the ID provides no duplicate suppression on that path.
 pub(crate) fn resolve_patch_strategy(
     requested: PatchStrategy,
     instructions: Option<&PatchInstructions>,
@@ -72,16 +73,6 @@ pub(crate) fn resolve_patch_strategy(
 ) -> crate::error::Result<PatchExecution> {
     Ok(match requested {
         PatchStrategy::ClientSide => PatchExecution::ClientSide,
-        PatchStrategy::ServerSide if tracking_requested => {
-            return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
-                .with_message(
-                    "a caller-supplied PATCH tracking ID requires Auto or ClientSide strategy",
-                )
-                .build())
-        }
         PatchStrategy::ServerSide => PatchExecution::ServerSide {
             retry_safe: instructions.is_some_and(PatchInstructions::is_retry_safe),
         },
@@ -197,7 +188,7 @@ mod tests {
     }
 
     #[test]
-    fn caller_tracking_requires_client_side_execution() {
+    fn caller_tracking_influences_auto_but_not_explicit_strategies() {
         assert_eq!(
             resolve_patch_strategy(PatchStrategy::Auto, Some(&safe_ops(1)), true).unwrap(),
             PatchExecution::ClientSide
@@ -206,11 +197,9 @@ mod tests {
             resolve_patch_strategy(PatchStrategy::ClientSide, Some(&safe_ops(1)), true).unwrap(),
             PatchExecution::ClientSide
         );
-        let error = resolve_patch_strategy(PatchStrategy::ServerSide, Some(&safe_ops(1)), true)
-            .unwrap_err();
         assert_eq!(
-            error.status().status_code(),
-            azure_core::http::StatusCode::BadRequest
+            resolve_patch_strategy(PatchStrategy::ServerSide, Some(&safe_ops(1)), true).unwrap(),
+            PatchExecution::ServerSide { retry_safe: true }
         );
     }
 }

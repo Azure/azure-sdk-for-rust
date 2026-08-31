@@ -580,6 +580,11 @@ impl CosmosOperation {
         self
     }
 
+    /// Returns whether PATCH strategy resolution classified this operation.
+    pub(crate) fn patch_strategy_is_resolved(&self) -> bool {
+        self.patch_retry_safe.is_some()
+    }
+
     /// Returns whether this internal read should start at preferred write endpoints.
     pub(crate) fn prefers_write_endpoints_for_read(&self) -> bool {
         matches!(

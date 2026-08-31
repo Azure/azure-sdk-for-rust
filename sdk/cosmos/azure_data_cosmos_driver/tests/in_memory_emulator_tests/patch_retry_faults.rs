@@ -12,7 +12,7 @@
 //! which fails before the request reaches the emulator but reports
 //! [`RequestSentStatus::Unknown`]. The exactly-once test uses
 //! [`FaultInjectionErrorType::ResponseTimeoutAfterService`] instead: the
-//! emulator commits the Replace and then the fault client discards its
+//! emulator commits the matching write and then the fault client discards its
 //! response.
 //!
 //! `rule.hit_count()` counts how many times a request reached the fault, so it
@@ -68,9 +68,9 @@ fn ambiguous_failure_rule(
     Arc::new(builder.build())
 }
 
-fn post_service_timeout_rule(id: &str) -> Arc<FaultInjectionRule> {
+fn post_service_timeout_rule(id: &str, operation: FaultOperationType) -> Arc<FaultInjectionRule> {
     let condition = FaultInjectionConditionBuilder::new()
-        .with_operation_type(FaultOperationType::ReplaceItem)
+        .with_operation_type(operation)
         .build();
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
@@ -269,6 +269,68 @@ async fn safe_server_side_patch_is_retried_after_ambiguous_failure() {
 }
 
 #[tokio::test]
+async fn unsafe_server_side_patch_commits_once_when_response_is_lost() {
+    let rule = post_service_timeout_rule(
+        "unsafe-patch-post-service-timeout",
+        FaultOperationType::PatchItem,
+    );
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    let outcome = execute_patch_with_strategy(
+        &driver,
+        &container,
+        increment(),
+        None,
+        PatchStrategy::ServerSide,
+    )
+    .await;
+
+    assert!(
+        outcome.is_err(),
+        "an unsafe server PATCH must surface ambiguous committed response loss"
+    );
+    assert_eq!(
+        rule.hit_count(),
+        1,
+        "unsafe server PATCH must not be resent"
+    );
+    assert_eq!(
+        stored_visits(&driver, &container).await,
+        2,
+        "the committed increment must be applied exactly once"
+    );
+}
+
+#[tokio::test]
+async fn safe_server_side_patch_retries_after_committed_response_is_lost() {
+    let rule = post_service_timeout_rule(
+        "safe-patch-post-service-timeout",
+        FaultOperationType::PatchItem,
+    );
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    let response = execute_patch_with_strategy(
+        &driver,
+        &container,
+        set_name(),
+        None,
+        PatchStrategy::ServerSide,
+    )
+    .await
+    .expect("retry-safe server PATCH must recover from committed response loss");
+
+    assert_eq!(rule.hit_count(), 1, "only the first response is discarded");
+    assert_eq!(
+        response.diagnostics().request_count(),
+        2,
+        "safe server PATCH must include the faulted request and successful retry"
+    );
+    assert_eq!(stored_item(&driver, &container).await["name"], "after");
+}
+
+#[tokio::test]
 async fn auto_keeps_unsafe_patch_off_the_server_endpoint() {
     let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
     let driver = build_driver(vec![Arc::clone(&rule)]).await;
@@ -326,7 +388,10 @@ async fn unsafe_patch_applies_once_when_it_recovers() {
 /// lets an application retry with the same token complete with only a Read.
 #[tokio::test]
 async fn unsafe_patch_commits_once_when_response_is_lost() {
-    let rule = post_service_timeout_rule("replace-post-service-timeout");
+    let rule = post_service_timeout_rule(
+        "replace-post-service-timeout",
+        FaultOperationType::ReplaceItem,
+    );
     let driver = build_driver(vec![Arc::clone(&rule)]).await;
     let container = seed(&driver).await;
     let tracking_id = "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f"
@@ -390,7 +455,10 @@ async fn unsafe_patch_commits_once_when_response_is_lost() {
 
 #[tokio::test]
 async fn overlapping_safe_ops_use_tracking_when_response_is_lost() {
-    let rule = post_service_timeout_rule("overlapping-ops-post-service-timeout");
+    let rule = post_service_timeout_rule(
+        "overlapping-ops-post-service-timeout",
+        FaultOperationType::ReplaceItem,
+    );
     let driver = build_driver(vec![Arc::clone(&rule)]).await;
     let container = seed(&driver).await;
 
