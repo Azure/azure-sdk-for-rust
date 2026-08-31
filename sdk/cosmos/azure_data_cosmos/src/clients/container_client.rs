@@ -531,7 +531,9 @@ impl ContainerClient {
     }
 
     /// Applies a JSON-PATCH-style update to an item using either one
-    /// server-side PATCH request or a tracked client-side Read-Modify-Write.
+    /// server-side PATCH request or client-side Read-Modify-Write. The
+    /// client-side path persists a tracking marker only when required for
+    /// duplicate suppression.
     ///
     /// **Preview.** Requires the `preview_patch` feature. This API is not
     /// production-ready — see [Retry Semantics](#retry-semantics) below.

@@ -49,9 +49,18 @@ authoritative verification routing, and cooperating writers preserving the
 reserved property and marker order.
 
 `PatchStrategy::Auto` sends only retry-safe lists of at most 10 instructions
-server-side; unsafe or longer lists use tracked RMW. Explicit `ServerSide`
-never falls back: more than 10 instructions receive service `400`, and unsafe
-instructions stop on ambiguous outcomes rather than risk duplicate execution.
+server-side; unsafe or longer lists use client-side RMW. Non-retry-safe
+client-side lists persist a tracking marker, while retry-safe over-limit lists
+do not need one. Explicit `ServerSide` never falls back: more than 10
+instructions receive service `400`, and unsafe instructions stop on ambiguous
+outcomes rather than risk duplicate execution.
+
+`AZURE_COSMOS_PATCH_STRATEGY=ServerSide` selects that behavior process-wide
+unless a higher-priority runtime, account, or operation option overrides it.
+This can move unsafe PATCHes from marker-backed client-side RMW to server-side
+execution. Client-side-only settings such as tracking ID, maximum attempts,
+tracking capacity, and retention are ignored whenever strategy resolution uses
+the server path.
 
 | Operation                       | Retried?                            | Initial attempt | On retry (duplicate)                                            | App must handle |
 | ------------------------------- | ----------------------------------- | --------------- | --------------------------------------------------------------- | --------------- |
@@ -59,7 +68,8 @@ instructions stop on ambiguous outcomes rather than risk duplicate execution.
 | Delete                          | Yes                                 | 204 No Content  | 404 Not Found                                                   | 404             |
 | Replace / Upsert (with ETag)    | Yes                                 | 200 OK          | 412 Precondition Failed (if concurrent update)                  | 412             |
 | Replace / Upsert (without ETag) | Yes                                 | 200 OK          | 200 OK (silent overwrite — no concurrency control)              | —               |
-| PATCH, client-side RMW          | Yes                                 | 200 OK          | 200 OK (matching marker suppresses duplicate application)       | Reuse ID        |
+| PATCH, tracked client-side RMW  | Yes                                 | 200 OK          | 200 OK (matching marker suppresses duplicate application)       | Reuse ID        |
+| PATCH, retry-safe client-side   | Yes                                 | 200 OK          | 200 OK (instruction list converges)                             | —               |
 | PATCH, retry-safe server-side   | Yes                                 | 200 OK          | 200 OK (instruction list converges)                             | —               |
 | PATCH, unsafe server-side       | **Only when provably not executed** | 200 OK          | N/A — ambiguous outcomes surface                                | Reconcile       |
 | Stored Procedure                | **Only when provably not executed** | Varies          | N/A — see [Stored procedure retries](#stored-procedure-retries) | N/A             |

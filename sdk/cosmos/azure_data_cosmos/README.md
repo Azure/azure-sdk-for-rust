@@ -165,8 +165,9 @@ let patched: Item = container
 
 The default `PatchStrategy::Auto` uses one server-side request for retry-safe
 lists containing at most 10 instructions. Unsafe or longer lists use the
-tracked client-side read-modify-write path. Explicit `ServerSide` never falls
-back and Cosmos DB rejects more than 10 instructions with HTTP 400.
+client-side read-modify-write path. Marker-backed tracking is used only for
+non-retry-safe lists. Explicit `ServerSide` never falls back and Cosmos DB
+rejects more than 10 instructions with HTTP 400.
 
 ## Next steps
 

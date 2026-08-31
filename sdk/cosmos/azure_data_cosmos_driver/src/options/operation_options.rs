@@ -43,6 +43,11 @@ pub struct OperationOptions {
     /// How PATCH operations are executed.
     ///
     /// `None` inherits from a lower layer (default: [`PatchStrategy::Auto`]).
+    /// `AZURE_COSMOS_PATCH_STRATEGY=ServerSide` therefore applies process-wide
+    /// unless a higher-priority runtime, account, or operation value overrides
+    /// it. Unsafe server-side PATCH does not persist a tracking marker and is
+    /// not retried after an ambiguous outcome; client-side-only settings are
+    /// ignored whenever the resolved strategy uses the server path.
     #[option(env = "AZURE_COSMOS_PATCH_STRATEGY")]
     pub patch_strategy: Option<PatchStrategy>,
 

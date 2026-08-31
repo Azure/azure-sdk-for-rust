@@ -25,8 +25,9 @@ Expose `PatchStrategy` with three values:
 - `Auto` is the default. It selects server-side PATCH only when the complete
   instruction list is retry-safe and contains at most 10 instructions. It uses
   client-side read-modify-write otherwise.
-- `ClientSide` always uses the tracked read-modify-write path and accepts more
-  than 10 instructions.
+- `ClientSide` always uses the read-modify-write path and accepts more than 10
+  instructions. It persists a tracking marker for non-retry-safe lists or when
+  the caller supplies a tracking ID.
 - `ServerSide` always sends one PATCH request. More than 10 instructions surface
   the service's HTTP 400 response rather than falling back. Unsafe lists disable
   retries after ambiguous outcomes.
@@ -43,8 +44,9 @@ network span.
 ## Consequences
 
 `Auto` gives retry-safe, service-sized patches the lower latency and finer
-conflict resolution of server execution. Unsafe and over-limit requests retain
-client-side duplicate suppression. Explicit `ServerSide` lets callers avoid the
+conflict resolution of server execution. Unsafe requests retain marker-backed
+client-side duplicate suppression; retry-safe over-limit requests use
+client-side RMW without a marker. Explicit `ServerSide` lets callers avoid the
 tracking property, but they accept at-most-once behavior for unsafe lists and a
 hard failure above 10 instructions.
 
