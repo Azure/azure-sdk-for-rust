@@ -2597,6 +2597,74 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn timeout_before_verification_exposes_id_for_safe_application_retry() {
+        let timeout_error = || {
+            crate::error::CosmosError::builder()
+                .with_status(CosmosStatus::from_parts(
+                    StatusCode::RequestTimeout,
+                    Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                ))
+                .with_message("end-to-end operation timeout exceeded")
+                .build()
+        };
+        let first_dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::Err(timeout_error()),
+            ScriptedReply::Err(timeout_error()),
+        ]);
+
+        let error = execute_with_dispatcher(
+            &first_dispatcher,
+            canonical_patch_op(),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect_err("timeout before verification leaves an ambiguous result");
+
+        assert_eq!(error.status().status_code(), StatusCode::RequestTimeout);
+        assert_eq!(
+            error.status().sub_status(),
+            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+        );
+        let effective_id = error
+            .patch_tracking_id()
+            .expect("ambiguous timeout must expose the generated tracking ID");
+        assert_eq!(first_dispatcher.calls().len(), 3);
+
+        let committed = serde_json::json!({
+            "id": "doc1",
+            "pk": "pk1",
+            "visits": 1,
+            crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY: [
+                marker_entry(effective_id, 1)
+            ]
+        });
+        let retry_dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
+            serde_json::to_vec(&committed).unwrap(),
+            Some("\"v2\""),
+            StatusCode::Ok,
+        )]);
+
+        let response = execute_with_dispatcher(
+            &retry_dispatcher,
+            canonical_patch_op().with_patch_tracking_id(effective_id),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect("retry with the timeout error's ID must recognize the commit");
+
+        let body: serde_json::Value = response.into_body().into_single().unwrap();
+        assert_eq!(body["visits"], 1);
+        assert_eq!(retry_dispatcher.calls().len(), 1, "retry must not Replace");
+    }
+
+    #[tokio::test]
     async fn terminal_replace_error_returns_success_when_verification_finds_marker() {
         let id = tracking_id(1);
         let committed = serde_json::json!({

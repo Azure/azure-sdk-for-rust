@@ -134,6 +134,11 @@ chained as the source.
 The caller's end-to-end timeout is captured once before the RMW loop. Every
 Read, Replace, retry, and terminal verification uses that same absolute
 deadline; internal sub-operations never receive a fresh timeout budget.
+If the deadline expires after a Replace may have committed but before its
+verification Read completes, the handler does not continue past the deadline
+or reapply the mutation. It returns the ambiguous timeout/error stamped with
+the effective tracking ID. An application retry must reuse that ID; finding
+the committed marker then returns success without issuing another Replace.
 
 ## Tracking protocol
 

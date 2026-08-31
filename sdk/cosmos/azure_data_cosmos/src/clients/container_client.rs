@@ -602,6 +602,11 @@ impl ContainerClient {
     /// [`CosmosError::patch_tracking_id`](crate::CosmosError::patch_tracking_id)
     /// on failure. Persist and pass it through [`PatchItemOptions`] to extend
     /// duplicate suppression across application retries or process restarts.
+    /// If the end-to-end deadline expires after the Replace may have committed
+    /// but before verification completes, the timeout error still carries this
+    /// effective ID. Retry the same logical PATCH with
+    /// [`PatchItemOptions::with_tracking_id`]; do not generate a new ID.
+    /// Verification does not continue beyond the configured deadline.
     /// Callers may instead provide a [`PatchTrackingId`](crate::models::PatchTrackingId)
     /// up front. Use a random, unpredictable ID and reuse it only for the same logical operation against the
     /// same item; reusing it for a different operation suppresses that
