@@ -28,5 +28,3 @@ extends:
         Path: eng/pipelines/templates/stages/pr-platform-matrix.json
         Selection: all
         GenerateVMJobs: true
-    AdditionalBuildJobs:
-      - template: /sdk/cosmos/azure_data_cosmos_driver_native/pipeline/native-driver-pr-validation.yml

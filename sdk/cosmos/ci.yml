@@ -10,6 +10,17 @@ trigger:
     include:
     - sdk/cosmos/
 
+pr:
+  branches:
+    include:
+    - main
+    - feature/*
+    - hotfix/*
+    - release/*
+  paths:
+    include:
+    - sdk/cosmos/azure_data_cosmos_driver_native/pipeline/
+
 parameters:
 - name: RunLiveTests
   displayName: Run live tests
@@ -32,6 +43,8 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: cosmos
+    AdditionalBuildJobs:
+      - template: /sdk/cosmos/azure_data_cosmos_driver_native/pipeline/native-driver-pr-validation.yml
     # macOS/Windows live-test legs need ~63-65 min; raise from the 60-min default
     # so they finish instead of being cancelled at the agent cap.
     TestTimeoutInMinutes: 90
