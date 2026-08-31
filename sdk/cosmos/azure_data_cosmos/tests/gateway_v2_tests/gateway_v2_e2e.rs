@@ -181,21 +181,20 @@ async fn build_client_ppcb_disabled(
 ///
 /// - `404 / 1013 CollectionCreateInProgress` while the service finishes
 ///   provisioning the collection, and
-/// - `404 / 1003 OwnerResourceNotFound` while the Gateway 2.0 proxy's routing
-///   table catches up so the freshly-created collection becomes routable.
+/// - `404 / 1003 OwnerResourceNotFound` while the metadata path's routing
+///   caches catch up so the freshly-created collection becomes resolvable.
 ///
-/// Crucially, a freshly-created collection can resolve at the metadata gateway
-/// (so `container_client(..)` and a container `read` both succeed) while the
-/// Gateway 2.0 *data plane* still routes to nothing — meaning the caller's very
-/// first item write/query is the request that races the `404 / 1003` window and
-/// fails. Gating on metadata alone is therefore not enough: this helper also
-/// drives one page of a read-only full-container query so a data-plane
-/// `404 / 1003` surfaces *here* (and is retried) rather than in the caller.
+/// Readiness is gated on the metadata path only (`container_client(..)` +
+/// container `read`). Firing a real data-plane query here to also warm the
+/// Gateway 2.0 proxy's routing table was found to reliably race the proxy's
+/// collection-key propagation window on freshly-created containers and
+/// surface downstream as `401 / MAC signature mismatch` on the caller's very
+/// next `POST /docs`; the caller is now expected to tolerate the residual
+/// `404 / 1003` window on its first data-plane request instead.
 ///
-/// It keeps retrying container resolution, the metadata `read`, and the
-/// data-plane query probe until all succeed, until an error outside those two
-/// transient conditions surfaces, or until the bounded poll budget is
-/// exhausted.
+/// It keeps retrying container resolution and the metadata `read` until both
+/// succeed, until an error outside those two transient conditions surfaces,
+/// or until the bounded poll budget is exhausted.
 async fn wait_for_container_ready(
     db_client: &azure_data_cosmos::clients::DatabaseClient,
     container_name: &str,
@@ -205,8 +204,8 @@ async fn wait_for_container_ready(
 
     // A freshly-created collection is still "becoming ready" when the service
     // reports `404 / 1013 CollectionCreateInProgress` (create not finished) or
-    // the Gateway 2.0 proxy reports `404 / 1003 OwnerResourceNotFound` (routing
-    // table not yet propagated). Both are transient; anything else is fatal.
+    // the metadata path reports `404 / 1003 OwnerResourceNotFound` (routing
+    // caches not yet propagated). Both are transient; anything else is fatal.
     fn is_transient_not_ready(status: &azure_data_cosmos::CosmosStatus) -> bool {
         status.status_code() == StatusCode::NotFound
             && matches!(
@@ -218,38 +217,22 @@ async fn wait_for_container_ready(
             )
     }
 
-    // A single end-to-end readiness attempt: resolve the container, read its
-    // metadata, and drive one page of a read-only full-container query so the
-    // Gateway 2.0 proxy's collection routing is proven resolvable on the data
-    // plane before the caller issues its first item operation. The query scope
-    // is partition-key-shape agnostic (works for flat and hierarchical keys)
-    // and read-only, so it is safe on the just-created empty collection.
     async fn probe_ready(
         db_client: &azure_data_cosmos::clients::DatabaseClient,
         container_name: &str,
     ) -> azure_data_cosmos::Result<azure_data_cosmos::clients::ContainerClient> {
         let container_client = db_client.container_client(container_name).await?;
         container_client.read(None).await?;
-        let mut pages = container_client
-            .query_items::<serde_json::Value>(
-                Query::from("SELECT * FROM c"),
-                FeedScope::full_container(),
-                None,
-            )
-            .await?
-            .into_pages();
-        if let Some(page) = pages.next().await {
-            page?;
-        }
         Ok(container_client)
     }
 
     for attempt in 0..MAX_ATTEMPTS {
-        let last_err = match probe_ready(db_client, container_name).await {
-            Ok(container_client) => return Ok(container_client),
-            Err(e) if is_transient_not_ready(&e.status()) => e,
-            Err(e) => return Err(Box::new(e)),
-        };
+        let last_err: Box<dyn std::error::Error> =
+            match probe_ready(db_client, container_name).await {
+                Ok(container_client) => return Ok(container_client),
+                Err(e) if is_transient_not_ready(&e.status()) => Box::new(e),
+                Err(e) => return Err(Box::new(e)),
+            };
 
         if attempt + 1 == MAX_ATTEMPTS {
             return Err(format!(
