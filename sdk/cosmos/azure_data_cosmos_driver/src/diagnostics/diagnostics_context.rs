@@ -9,7 +9,10 @@
 
 use crate::{
     driver::{pipeline::hedging_diagnostics::HedgeDiagnostics, routing::CosmosEndpoint},
-    models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge, SubStatusCode},
+    models::{
+        ActivityId, CosmosResponseHeaders, CosmosStatus, PatchTrackingId, RequestCharge,
+        SubStatusCode,
+    },
     options::{DiagnosticsOptions, DiagnosticsThresholds, DiagnosticsVerbosity, Region},
     system::CpuMemoryMonitor,
 };
@@ -1183,6 +1186,8 @@ enum DiagnosticsPayload<'a> {
 #[derive(Serialize)]
 struct DiagnosticsOutput<'a> {
     activity_id: &'a ActivityId,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    patch_tracking_id: Option<&'a PatchTrackingId>,
     total_duration_ms: u64,
     total_request_charge: RequestCharge,
     request_count: usize,
@@ -1252,6 +1257,8 @@ struct DeduplicatedGroup {
 #[derive(Serialize)]
 struct TruncatedOutput<'a> {
     activity_id: &'a ActivityId,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    patch_tracking_id: Option<&'a PatchTrackingId>,
     total_duration_ms: u64,
     request_count: usize,
     truncated: bool,
@@ -1810,6 +1817,7 @@ impl DiagnosticsContextBuilder {
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
             operation_name: self.operation_name,
+            patch_tracking_id: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: self.fault_injection_enabled,
             #[cfg(not(feature = "fault_injection"))]
@@ -1913,6 +1921,9 @@ pub struct DiagnosticsContext {
     /// [`CosmosOperation::db_operation_name`](crate::models::CosmosOperation::db_operation_name);
     /// it stays `None` for operations without a canonical name.
     operation_name: Option<Arc<str>>,
+
+    /// Effective duplicate-suppression identity for a tracked PATCH operation.
+    patch_tracking_id: Option<PatchTrackingId>,
 
     /// Whether fault injection was enabled when this operation executed.
     fault_injection_enabled: bool,
@@ -2075,6 +2086,7 @@ impl DiagnosticsContext {
             cpu_monitor: None,
             machine_id: None,
             operation_name: operation_name.map(Arc::from),
+            patch_tracking_id: None,
             fault_injection_enabled: false,
             hedge_diagnostics: None,
             #[cfg(test)]
@@ -2224,6 +2236,7 @@ impl DiagnosticsContext {
             cpu_monitor: last.cpu_monitor.clone(),
             machine_id: last.machine_id.clone(),
             operation_name: last.operation_name.clone(),
+            patch_tracking_id: last.patch_tracking_id,
             fault_injection_enabled: sources.iter().any(|c| c.fault_injection_enabled),
             hedge_diagnostics: None,
             compaction,
@@ -2378,6 +2391,19 @@ impl DiagnosticsContext {
         self.operation_name.as_deref()
     }
 
+    /// Returns the effective duplicate-suppression identity for this PATCH.
+    pub fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
+        self.patch_tracking_id
+    }
+
+    /// Returns this context stamped with the effective PATCH tracking identity.
+    pub(crate) fn with_patch_tracking_id(mut self, id: PatchTrackingId) -> Self {
+        self.patch_tracking_id = Some(id);
+        self.cached_json_detailed = OnceLock::new();
+        self.cached_json_summary = OnceLock::new();
+        self
+    }
+
     /// Returns this context with its canonical `db.operation.name` replaced.
     ///
     /// Used by aggregating callers (notably the PATCH handler) that build a
@@ -2464,6 +2490,7 @@ impl DiagnosticsContext {
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
             operation_name,
+            patch_tracking_id: self.patch_tracking_id,
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: self.hedge_diagnostics.clone(),
             #[cfg(test)]
@@ -2619,6 +2646,7 @@ impl DiagnosticsContext {
         let system_usage = self.resolve_system_usage();
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
+            patch_tracking_id: self.patch_tracking_id.as_ref(),
             total_duration_ms,
             total_request_charge: self.total_request_charge(),
             request_count: self.request_count(),
@@ -2656,6 +2684,7 @@ impl DiagnosticsContext {
 
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
+            patch_tracking_id: self.patch_tracking_id.as_ref(),
             total_duration_ms,
             total_request_charge: self.total_request_charge(),
             request_count: self.request_count(),
@@ -2677,6 +2706,7 @@ impl DiagnosticsContext {
             // Return a truncated indicator
             let truncated = TruncatedOutput {
                 activity_id: &self.activity_id,
+                patch_tracking_id: self.patch_tracking_id.as_ref(),
                 total_duration_ms,
                 request_count: self.request_count(),
                 truncated: true,
@@ -2703,6 +2733,7 @@ impl Clone for DiagnosticsContext {
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
             operation_name: self.operation_name.clone(),
+            patch_tracking_id: self.patch_tracking_id,
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: self.hedge_diagnostics.clone(),
             compaction: self.compaction.clone(),
@@ -2741,6 +2772,7 @@ impl PartialEq for DiagnosticsContext {
             && self.status == other.status
             && self.options == other.options
             && self.operation_name == other.operation_name
+            && self.patch_tracking_id == other.patch_tracking_id
             && self.hedge_diagnostics == other.hedge_diagnostics
             && self.compaction == other.compaction
     }
@@ -5033,6 +5065,29 @@ mod tests {
     fn operation_name_defaults_to_none() {
         let ctx = make_context_with(ActivityId::new_uuid(), |_| {});
         assert_eq!(ctx.operation_name(), None);
+    }
+
+    #[test]
+    fn patch_tracking_id_is_accessible_serialized_and_preserved_by_restamping() {
+        let id = PatchTrackingId::from(uuid::Uuid::from_u128(42));
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.set_operation_name("patch_read_item");
+        })
+        .with_patch_tracking_id(id)
+        .with_operation_name(Some(Arc::from("patch_item")));
+
+        assert_eq!(ctx.patch_tracking_id(), Some(id));
+        for verbosity in [
+            DiagnosticsVerbosity::Detailed,
+            DiagnosticsVerbosity::Summary,
+        ] {
+            let json: serde_json::Value =
+                serde_json::from_str(ctx.to_json_string(Some(verbosity))).unwrap();
+            assert_eq!(json["patch_tracking_id"], id.to_string());
+        }
+
+        let cloned = ctx.clone_with_operation_name(Some(Arc::from("patch_item")));
+        assert_eq!(cloned.patch_tracking_id(), Some(id));
     }
 
     #[test]

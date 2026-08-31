@@ -2588,12 +2588,17 @@ impl CosmosDriver {
         // recursive future a fixed size.
         if operation.operation_type() == crate::models::OperationType::Patch {
             let max_attempts = operation.patch_max_attempts();
+            let absolute_deadline = self
+                .operation_options_view(&options)
+                .end_to_end_latency_policy()
+                .map(|policy| std::time::Instant::now() + policy.timeout());
             return Box::pin(async {
                 let result = crate::driver::pipeline::patch_handler::execute(
                     self,
                     operation,
                     options,
                     max_attempts,
+                    absolute_deadline,
                 )
                 .await?;
                 Ok(Some(result))

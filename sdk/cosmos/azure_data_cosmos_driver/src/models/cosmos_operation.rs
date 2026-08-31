@@ -10,7 +10,7 @@ use crate::models::{
 };
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Instant};
 use time::OffsetDateTime;
 
 /// Which change feed mode a factory should configure.
@@ -144,6 +144,12 @@ pub struct CosmosOperation {
     /// make. Only consulted when `operation_type == OperationType::Patch`;
     /// ignored for every other op. `None` selects the handler default (5).
     patch_max_attempts: Option<std::num::NonZeroU8>,
+    /// Stable identity used to detect a previously committed unsafe PATCH.
+    patch_tracking_id: Option<crate::models::PatchTrackingId>,
+    /// Maximum number of protected PATCH markers retained on the item.
+    patch_tracking_capacity: Option<std::num::NonZeroU16>,
+    /// Minimum number of whole seconds PATCH markers remain protected.
+    patch_tracking_retention_seconds: Option<std::num::NonZeroU32>,
     /// `true` when this operation is a change feed read. Set explicitly by
     /// [`change_feed`](Self::change_feed) rather than inferred from a header,
     /// so future change feed modes can be added without ambiguity.
@@ -159,13 +165,16 @@ pub struct CosmosOperation {
     /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
     /// is dispatched exactly like the standalone Read/Replace it is.
     is_patch_sub_operation: bool,
-    /// Routing strategy for reads whose correctness depends on observing the
-    /// write region rather than the nearest read replica.
-    read_routing_strategy: ReadRoutingStrategy,
+    /// Internal routing constraint for reads whose correctness depends on
+    /// observing the write region rather than the nearest read replica.
+    internal_read_routing: InternalReadRouting,
+    /// Absolute deadline inherited by internal sub-operations that belong to
+    /// one logical operation, such as PATCH Read-Modify-Write.
+    absolute_deadline: Option<Instant>,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-enum ReadRoutingStrategy {
+enum InternalReadRouting {
     #[default]
     Default,
     PreferredWriteEndpointsNoHedging,
@@ -494,6 +503,50 @@ impl CosmosOperation {
         self.patch_max_attempts
     }
 
+    /// Sets a stable tracking ID for a client-side PATCH.
+    ///
+    /// Reuse the same ID for application-level retries of the same logical
+    /// operation. Prefer a random, unpredictable ID. Supplying an ID opts even
+    /// a retry-safe instruction list into marker-based duplicate suppression.
+    /// If omitted, the driver generates an ID only for unsafe lists.
+    pub fn with_patch_tracking_id(mut self, tracking_id: crate::models::PatchTrackingId) -> Self {
+        self.patch_tracking_id = Some(tracking_id);
+        self
+    }
+
+    /// Returns the caller-supplied PATCH tracking ID, if any.
+    pub fn patch_tracking_id(&self) -> Option<crate::models::PatchTrackingId> {
+        self.patch_tracking_id
+    }
+
+    /// Sets the maximum number of PATCH tracking entries retained on one item.
+    ///
+    /// When the cap is reached after age-based pruning, PATCH evicts the first
+    /// entry before appending the new marker.
+    pub fn with_patch_tracking_capacity(mut self, capacity: std::num::NonZeroU16) -> Self {
+        self.patch_tracking_capacity = Some(capacity);
+        self
+    }
+
+    /// Returns the configured PATCH tracking capacity, if any.
+    pub fn patch_tracking_capacity(&self) -> Option<std::num::NonZeroU16> {
+        self.patch_tracking_capacity
+    }
+
+    /// Sets the age-based retention window for PATCH tracking entries.
+    pub fn with_patch_tracking_retention_seconds(
+        mut self,
+        retention_seconds: std::num::NonZeroU32,
+    ) -> Self {
+        self.patch_tracking_retention_seconds = Some(retention_seconds);
+        self
+    }
+
+    /// Returns the configured PATCH tracking retention in whole seconds, if any.
+    pub fn patch_tracking_retention_seconds(&self) -> Option<std::num::NonZeroU32> {
+        self.patch_tracking_retention_seconds
+    }
+
     /// Marks this operation as an internal sub-operation of a PATCH's
     /// Read-Modify-Write loop.
     ///
@@ -512,24 +565,36 @@ impl CosmosOperation {
     /// from another region may not yet contain the write being verified.
     pub(crate) fn as_patch_read_sub_operation(mut self) -> Self {
         self.is_patch_sub_operation = true;
-        self.read_routing_strategy = ReadRoutingStrategy::PreferredWriteEndpointsNoHedging;
+        self.internal_read_routing = InternalReadRouting::PreferredWriteEndpointsNoHedging;
         self
     }
 
     /// Returns whether this internal read should start at preferred write endpoints.
     pub(crate) fn prefers_write_endpoints_for_read(&self) -> bool {
         matches!(
-            self.read_routing_strategy,
-            ReadRoutingStrategy::PreferredWriteEndpointsNoHedging
+            self.internal_read_routing,
+            InternalReadRouting::PreferredWriteEndpointsNoHedging
         )
     }
 
     /// Returns whether correctness requires hedging to remain disabled.
     pub(crate) fn suppresses_hedging(&self) -> bool {
         matches!(
-            self.read_routing_strategy,
-            ReadRoutingStrategy::PreferredWriteEndpointsNoHedging
+            self.internal_read_routing,
+            InternalReadRouting::PreferredWriteEndpointsNoHedging
         )
+    }
+
+    /// Applies an absolute deadline shared by a logical operation's internal
+    /// sub-operations.
+    pub(crate) fn with_absolute_deadline(mut self, deadline: Option<Instant>) -> Self {
+        self.absolute_deadline = deadline;
+        self
+    }
+
+    /// Returns the absolute deadline inherited from the logical operation.
+    pub(crate) fn absolute_deadline(&self) -> Option<Instant> {
+        self.absolute_deadline
     }
 
     /// Returns `true` when this operation is an internal sub-operation of a
@@ -562,10 +627,14 @@ impl CosmosOperation {
             request_headers: CosmosRequestHeaders::new(),
             body: None,
             patch_max_attempts: None,
+            patch_tracking_id: None,
+            patch_tracking_capacity: None,
+            patch_tracking_retention_seconds: None,
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,
-            read_routing_strategy: ReadRoutingStrategy::Default,
+            internal_read_routing: InternalReadRouting::Default,
+            absolute_deadline: None,
         }
     }
 

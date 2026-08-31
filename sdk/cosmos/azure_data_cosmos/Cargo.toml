@@ -28,6 +28,7 @@ serde_json = { workspace = true, features = ["raw_value"] }
 time.workspace = true
 tracing.workspace = true
 url.workspace = true
+uuid = { workspace = true, optional = true, features = ["v4", "fast-rng"] }
 
 # NOTE: Cargo does not support feature-gating dev-dependencies. The `serde` and
 # `tokio test-util` entries below merge into existing features and add no
@@ -106,7 +107,7 @@ metrics = [
 preview_dtx = [
   "azure_data_cosmos_driver/preview_dtx",
 ] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
-preview_patch = [] # Enables the preview PATCH API. Disabled by default and not production-ready: an interrupted patch may re-apply non-idempotent operations.
+preview_patch = ["dep:uuid"] # Enables the preview PATCH API with bounded duplicate suppression. Disabled by default.
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",
