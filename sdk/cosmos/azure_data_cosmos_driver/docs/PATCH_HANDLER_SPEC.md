@@ -117,8 +117,8 @@ loop up to max_attempts times:
        error verbatim (with its raw_response and diagnostics intact).
        if read.headers().etag is None: return Other("no ETag, cannot RMW").
       Evaluate any caller Precondition against read.headers().etag:
-      - IfMatch succeeds only when the values match (or the value is `*`);
-      - IfNoneMatch succeeds only when the values differ and the value is not `*`.
+      - IfMatch succeeds only when the values match (or the value is `*`).
+      - IfNoneMatch is rejected before dispatch because PATCH is a write.
       Return 412 before Replace when the condition is not met. Repeat this
       evaluation after every Read when a 412 race restarts the loop.
    5. value = serde_json::from_slice(read.body())

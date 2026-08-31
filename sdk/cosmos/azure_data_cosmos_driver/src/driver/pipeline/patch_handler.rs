@@ -165,6 +165,16 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         ContentResponseOnWrite::Disabled
     });
 
+    if operation
+        .precondition()
+        .is_some_and(Precondition::is_if_none_match)
+    {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+            .with_message("PATCH supports If-Match preconditions; If-None-Match is read-only")
+            .build());
+    }
+
     // -- 1. Parse and validate the patch spec --
     let body = operation
         .body()
@@ -828,7 +838,7 @@ fn validate_caller_precondition(
     };
     let satisfied = match precondition {
         Precondition::IfMatch(expected) => expected.as_ref() == "*" || expected == current_etag,
-        Precondition::IfNoneMatch(expected) => expected.as_ref() != "*" && expected != current_etag,
+        Precondition::IfNoneMatch(_) => false,
     };
     if satisfied {
         return Ok(());
@@ -2989,31 +2999,45 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn mismatching_caller_preconditions_fail_after_read() {
-        for precondition in [
-            Precondition::if_match(Etag::from("\"other\"")),
-            Precondition::if_none_match(Etag::from("\"v1\"")),
-            Precondition::if_none_match(Etag::from("*")),
-        ] {
-            let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            )]);
-            let op = patch_op_for(
-                test_item_ref(),
-                vec![PatchOperation::increment("/visits", 1i64)],
-            )
-            .with_precondition(precondition);
+    async fn mismatching_caller_if_match_fails_after_read() {
+        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
+            br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+            Some("\"v1\""),
+            StatusCode::Ok,
+        )]);
+        let op = patch_op_for(
+            test_item_ref(),
+            vec![PatchOperation::increment("/visits", 1i64)],
+        )
+        .with_precondition(Precondition::if_match(Etag::from("\"other\"")));
 
-            let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
-                .await
-                .expect_err("a failed caller precondition must stop before Replace");
+        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect_err("a failed caller If-Match must stop before Replace");
 
-            assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed);
-            assert_eq!(dispatcher.calls().len(), 1);
-            assert_eq!(dispatcher.calls()[0].op_type, OperationType::Read);
-        }
+        assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed);
+        assert_eq!(dispatcher.calls().len(), 1);
+        assert_eq!(dispatcher.calls()[0].op_type, OperationType::Read);
+    }
+
+    #[tokio::test]
+    async fn caller_if_none_match_is_rejected_before_read() {
+        let dispatcher = ScriptedDispatcher::new(vec![]);
+        let op = patch_op_for(
+            test_item_ref(),
+            vec![PatchOperation::increment("/visits", 1i64)],
+        )
+        .with_precondition(Precondition::if_none_match(Etag::from("\"v1\"")));
+
+        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect_err("PATCH If-None-Match must be rejected before I/O");
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+        );
+        assert!(dispatcher.calls().is_empty());
     }
 
     #[tokio::test]

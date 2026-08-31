@@ -249,8 +249,8 @@ PPCB is an **opt-out** feature (enabled by default) that provides partition-leve
 
 | Account Type | Reads          | Writes                                   |
 | ------------ | -------------- | ---------------------------------------- |
-| Single-write | ✅ PPCB-managed | ❌ Not PPCB-managed (PPAF handles writes) |
-| Multi-write  | ✅ PPCB-managed | ✅ PPCB-managed                           |
+| Single-write | ✅ PPCB-managed| ❌ Not PPCB-managed (PPAF handles writes)|
+| Multi-write  | ✅ PPCB-managed| ✅ PPCB-managed                          |
 
 ### Behavior
 

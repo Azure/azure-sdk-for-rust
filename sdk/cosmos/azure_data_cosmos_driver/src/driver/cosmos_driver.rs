@@ -2692,6 +2692,16 @@ impl CosmosDriver {
             .body()
             .and_then(|body| serde_json::from_slice::<crate::models::PatchInstructions>(body).ok());
 
+        if operation
+            .precondition()
+            .is_some_and(|condition| condition.is_if_none_match())
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message("PATCH supports If-Match preconditions; If-None-Match is read-only")
+                .build());
+        }
+
         let item_ref = operation
             .partition_key()
             .cloned()

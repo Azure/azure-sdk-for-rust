@@ -315,9 +315,7 @@ impl CosmosTransport {
             return Ok(transport);
         }
 
-        match transport_mode {
-            _ => Ok(self.dataplane_gateway_transport.clone()),
-        }
+        Ok(self.dataplane_gateway_transport.clone())
     }
 }
 

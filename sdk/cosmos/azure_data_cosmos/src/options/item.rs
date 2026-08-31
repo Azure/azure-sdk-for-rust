@@ -118,10 +118,11 @@ impl ItemWriteOptions {
 ///
 /// PATCH exposes ETag preconditions but not SQL filter predicates:
 ///
-/// * **`Precondition` (`If-Match` / `If-None-Match`).** Server-side PATCH sends
-///   the condition to Cosmos DB. Client-side PATCH evaluates it against each
-///   write-region `LatestCommitted` Read, then uses that Read's ETag as the
-///   internal Replace concurrency guard.
+/// * **`Precondition::IfMatch`.** Server-side PATCH sends the condition to
+///   Cosmos DB. Client-side PATCH evaluates it against each write-region
+///   `LatestCommitted` Read, then uses that Read's ETag as the internal Replace
+///   concurrency guard. `IfNoneMatch` is a read condition and is rejected for
+///   PATCH.
 /// * **SQL filter predicate** (peer SDKs' `FilterPredicate`). Predicate
 ///   evaluation requires either native wire-level PATCH (so the server
 ///   evaluates the predicate inside the same transaction) or a client-side
@@ -171,7 +172,7 @@ pub struct PatchItemOptions {
     /// Session token for session-consistent writes.
     pub session_token: Option<SessionToken>,
 
-    /// Conditional ETag check applied to the item before PATCH commits.
+    /// `If-Match` ETag check applied to the item before PATCH commits.
     pub precondition: Option<Precondition>,
 
     /// Maximum number of client-side Read-Modify-Write attempts the driver may
@@ -208,7 +209,7 @@ impl PatchItemOptions {
         self
     }
 
-    /// Sets a conditional ETag check for this PATCH.
+    /// Sets an `If-Match` ETag check for this PATCH.
     pub fn with_precondition(mut self, precondition: Precondition) -> Self {
         self.precondition = Some(precondition);
         self

@@ -4,10 +4,7 @@
 // Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
 use super::framework;
 
-use azure_core::{
-    http::{Etag, StatusCode},
-    Uuid,
-};
+use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::diagnostics::TransportKind;
 use azure_data_cosmos::fault_injection::{
@@ -688,49 +685,6 @@ pub async fn patch_preconditions_match_across_strategies() -> Result<(), Box<dyn
                     StatusCode::PreconditionFailed,
                     "{strategy} stale If-Match"
                 );
-
-                let current_etag = container_client
-                    .read_item(&pk, &item_id, None)
-                    .await?
-                    .headers()
-                    .etag()
-                    .expect("read must return an ETag")
-                    .clone();
-                let equal_none_match = PatchItemOptions::default()
-                    .with_strategy(strategy)
-                    .with_precondition(Precondition::if_none_match(current_etag));
-                let error = container_client
-                    .patch_item(
-                        &pk,
-                        &item_id,
-                        PatchInstructions::from(vec![PatchOperation::set(
-                            "/deleted",
-                            serde_json::json!(true),
-                        )]),
-                        Some(equal_none_match),
-                    )
-                    .await
-                    .expect_err("equal If-None-Match must reject PATCH");
-                assert_eq!(
-                    error.status().status_code(),
-                    StatusCode::PreconditionFailed,
-                    "{strategy} equal If-None-Match"
-                );
-
-                let different_none_match = PatchItemOptions::default()
-                    .with_strategy(strategy)
-                    .with_precondition(Precondition::if_none_match(Etag::from("\"different\"")));
-                container_client
-                    .patch_item(
-                        &pk,
-                        &item_id,
-                        PatchInstructions::from(vec![PatchOperation::set(
-                            "/deleted",
-                            serde_json::json!(true),
-                        )]),
-                        Some(different_none_match),
-                    )
-                    .await?;
             }
 
             Ok(())

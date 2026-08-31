@@ -660,6 +660,7 @@ pub(crate) async fn handle_operation(
             if_none_match: operation.if_none_match.clone(),
             if_modified_since: None,
             session_token: operation.session_token.clone(),
+            read_consistency_strategy: None,
             activity_id: None,
             content_response_on_write: true,
             offer_throughput: None,
@@ -1468,6 +1469,7 @@ pub(crate) async fn handle_operation(
             if_none_match: operation.if_none_match.clone(),
             if_modified_since: None,
             session_token: operation.session_token.clone(),
+            read_consistency_strategy: None,
             activity_id: None,
             content_response_on_write: true,
             offer_throughput: None,
@@ -4855,7 +4857,18 @@ fn handle_read(
         // a token that the partition trivially satisfies and treat the
         // failure as transient. Echoing back what they asked for makes the
         // mismatch visible.
-        if store.config().consistency().is_session() {
+        let session_consistency_active = match parsed.read_consistency_strategy {
+            Some(crate::options::ReadConsistencyStrategy::Session) => true,
+            Some(crate::options::ReadConsistencyStrategy::Default) | None => {
+                store.config().consistency().is_session()
+            }
+            Some(
+                crate::options::ReadConsistencyStrategy::Eventual
+                | crate::options::ReadConsistencyStrategy::LatestCommitted
+                | crate::options::ReadConsistencyStrategy::GlobalStrong,
+            ) => false,
+        };
+        if session_consistency_active {
             if let Some(session_header) = &parsed.session_token {
                 let tokens = match super::session::parse_composite_session_token(session_header) {
                     Ok(tokens) => tokens,
@@ -5147,12 +5160,8 @@ async fn handle_patch_locked(
             region_id,
             incoming_session_for(parsed, partition.id).as_ref(),
         );
-        let charge = store
-            .config()
-            .ru_model()
-            .compute_replace_or_delete_ru(request_body.len(), instructions.operations.len());
 
-        let new_document = {
+        let (new_document, charge) = {
             let mut documents = partition.documents.write().unwrap();
             let logical_partition = match documents.get_mut(&epk) {
                 Some(logical_partition) => logical_partition,
@@ -5162,6 +5171,10 @@ async fn handle_patch_locked(
                 Some(current) => current,
                 None => return Err(patch_not_found(doc_id, &token, start)),
             };
+            let charge = store.config().ru_model().compute_replace_or_delete_ru(
+                current.body_size_bytes,
+                instructions.operations.len(),
+            );
 
             if parsed
                 .if_match
@@ -5267,7 +5280,7 @@ async fn handle_patch_locked(
                 source_region: region_name.to_string(),
             };
             logical_partition.insert(doc_id.to_string(), new_document.clone());
-            new_document
+            (new_document, charge)
         };
 
         let token = session_token_for(

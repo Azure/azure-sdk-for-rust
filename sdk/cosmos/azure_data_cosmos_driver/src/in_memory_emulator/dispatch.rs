@@ -8,6 +8,8 @@ use azure_core::http::headers::HeaderName;
 use azure_core::http::Request;
 use percent_encoding::percent_decode_str;
 
+use crate::options::ReadConsistencyStrategy;
+
 /// The type of operation resolved from an HTTP request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum OperationType {
@@ -68,6 +70,9 @@ pub(crate) struct ParsedRequest {
     /// reject) point-in-time starts.
     pub if_modified_since: Option<String>,
     pub session_token: Option<String>,
+    /// Explicit read consistency strategy forwarded by Gateway V1 or decoded
+    /// from the Gateway V2 RNTBD token.
+    pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
     pub activity_id: Option<String>,
     pub content_response_on_write: bool,
     /// Provisioned RU/s parsed from the `x-ms-offer-throughput` request header.
@@ -118,6 +123,8 @@ static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
 static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 static IF_MODIFIED_SINCE: HeaderName = HeaderName::from_static("if-modified-since");
 static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
+static READ_CONSISTENCY_STRATEGY: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-read-consistency-strategy");
 static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
 static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
@@ -160,6 +167,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let session_token = headers
         .get_optional_str(&SESSION_TOKEN)
         .map(|s| s.to_string());
+    let read_consistency_strategy = headers
+        .get_optional_str(&READ_CONSISTENCY_STRATEGY)
+        .and_then(|value| value.parse().ok());
     let activity_id = headers
         .get_optional_str(&ACTIVITY_ID)
         .map(|s| s.to_string());
@@ -287,6 +297,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         if_none_match,
         if_modified_since,
         session_token,
+        read_consistency_strategy,
         activity_id,
         content_response_on_write,
         offer_throughput,
