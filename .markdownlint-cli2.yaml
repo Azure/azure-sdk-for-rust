@@ -1,4 +1,4 @@
-$schema: https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/v0.21.0/schema/markdownlint-cli2-config-schema.json
+$schema: https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/v0.23.2/schema/markdownlint-cli2-config-schema.json
 gitignore: true
 ignores:
   - eng/common/
