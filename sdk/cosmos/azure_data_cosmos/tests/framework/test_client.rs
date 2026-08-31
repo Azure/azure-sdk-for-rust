@@ -1632,7 +1632,7 @@ impl TestRunContext {
         // Now that we have a list of databases created by this test, we delete them.
         // We COULD choose not to delete them and instead validate that they were deleted, but this is what I've gone with for now.
         for id in ids {
-            println!("Deleting left-over database: {}", &id);
+            println!("Deleting left-over database: {}", id);
             self.management_client()
                 .database_client(&id)
                 .delete(None)

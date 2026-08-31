@@ -205,7 +205,7 @@ async fn create_and_read_item_through_driver() {
 )]
 async fn create_database_and_container_through_driver() {
     let backend = DualBackend::setup().await.unwrap();
-    let db_name = format!("dual-cp-{}", &backend.run_id);
+    let db_name = format!("dual-cp-{}", backend.run_id);
     let container_name = "drivercoll";
 
     // ── Create database ──────────────────────────────────────────
