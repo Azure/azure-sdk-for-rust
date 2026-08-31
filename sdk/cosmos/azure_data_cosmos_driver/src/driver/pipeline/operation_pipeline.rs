@@ -482,7 +482,8 @@ pub(crate) async fn execute_operation_pipeline(
             attempt_read_consistency_strategy,
             account_default_consistency,
         );
-        let attempt_session_consistency_active = !session_capturing_disabled
+        let attempt_session_consistency_active = partition_key_range_cache_enabled
+            && !session_capturing_disabled
             && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
 
         // Emit one structured debug record per attempt with the chosen
