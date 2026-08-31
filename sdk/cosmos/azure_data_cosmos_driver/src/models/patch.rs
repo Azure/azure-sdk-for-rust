@@ -308,6 +308,9 @@ impl PatchOperation {
 /// A set of instructions for a Cosmos DB PATCH operation, consisting of an ordered list of
 /// [`PatchOperation`] values representing the individual operations to apply to an item.
 ///
+/// Server-side PATCH accepts at most 10 operations. Lists with more than 10
+/// operations require client-side PATCH execution.
+///
 /// [`PatchOperation`]: crate::models::PatchOperation
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[non_exhaustive]
@@ -350,32 +353,35 @@ impl PatchInstructions {
             | PatchOperation::Increment { .. }
             | PatchOperation::Move { .. } => false,
         });
-        operations_are_safe
-            && !self.operations.iter().enumerate().any(|(index, left)| {
-                self.operations[index + 1..]
-                    .iter()
-                    .any(|right| paths_have_strict_ancestor_overlap(left.path(), right.path()))
-            })
+        if !operations_are_safe {
+            return false;
+        }
+
+        let mut paths: Vec<&str> = self.operations.iter().map(PatchOperation::path).collect();
+        // Segment ordering keeps each descendant range immediately after its
+        // ancestor, so any strict ancestor pair appears in adjacent windows.
+        paths.sort_unstable_by(|left, right| path_segments(left).cmp(path_segments(right)));
+        !paths
+            .windows(2)
+            .any(|paths| path_is_strict_ancestor(paths[0], paths[1]))
     }
 }
 
-fn paths_have_strict_ancestor_overlap(left: &str, right: &str) -> bool {
-    if left != right && (left.is_empty() || right.is_empty()) {
-        return true;
-    }
+fn path_segments(path: &str) -> impl Iterator<Item = &str> {
+    path.strip_prefix('/')
+        .unwrap_or(path)
+        .split('/')
+        .skip(usize::from(path.is_empty()))
+}
 
-    fn normalized(path: &str) -> String {
-        if path.starts_with('/') {
-            path.to_owned()
-        } else {
-            format!("/{path}")
+fn path_is_strict_ancestor(ancestor: &str, descendant: &str) -> bool {
+    let mut descendant_segments = path_segments(descendant);
+    for ancestor_segment in path_segments(ancestor) {
+        if descendant_segments.next() != Some(ancestor_segment) {
+            return false;
         }
     }
-
-    let left = normalized(left);
-    let right = normalized(right);
-    left != right
-        && (right.starts_with(&format!("{left}/")) || left.starts_with(&format!("{right}/")))
+    descendant_segments.next().is_some()
 }
 
 impl From<Vec<PatchOperation>> for PatchInstructions {
@@ -451,6 +457,82 @@ mod tests {
             !root_and_child.is_retry_safe(),
             "the JSON Pointer root is an ancestor of every child path"
         );
+
+        let lexically_interleaved = PatchInstructions::from(vec![
+            PatchOperation::set("/a", json!(1)),
+            PatchOperation::set("/a-", json!(2)),
+            PatchOperation::set("/a/b", json!(3)),
+        ]);
+        assert!(
+            !lexically_interleaved.is_retry_safe(),
+            "segment sorting must keep descendants adjacent to their ancestor"
+        );
+
+        let duplicate_paths = PatchInstructions::from(vec![
+            PatchOperation::set("a", json!(1)),
+            PatchOperation::replace("/a", json!(2)),
+        ]);
+        assert!(
+            duplicate_paths.is_retry_safe(),
+            "equal normalized paths are not strict ancestors"
+        );
+
+        let long_safe_list = PatchInstructions::from(
+            (0..20)
+                .map(|index| PatchOperation::set(format!("/field{index}"), json!(index)))
+                .collect::<Vec<_>>(),
+        );
+        assert!(
+            long_safe_list.is_retry_safe(),
+            "client-side PATCH supports instruction lists above the service limit"
+        );
+    }
+
+    #[test]
+    fn sorted_overlap_detection_matches_pairwise_reference() {
+        fn reference_overlap(left: &str, right: &str) -> bool {
+            if left != right && (left.is_empty() || right.is_empty()) {
+                return true;
+            }
+            let normalize = |path: &str| {
+                if path.starts_with('/') {
+                    path.to_owned()
+                } else {
+                    format!("/{path}")
+                }
+            };
+            let left = normalize(left);
+            let right = normalize(right);
+            left != right
+                && (right.starts_with(&format!("{left}/"))
+                    || left.starts_with(&format!("{right}/")))
+        }
+
+        let paths = [
+            "", "/", "a", "/a", "/a-", "/a/b", "/a/b/c", "/a//b", "//", "//a", "/b", "/b/a", "/~1",
+            "/a~1b",
+        ];
+        for first in paths {
+            for second in paths {
+                for third in paths {
+                    let list = [first, second, third];
+                    let expected_safe = !(0..list.len()).any(|left| {
+                        (left + 1..list.len())
+                            .any(|right| reference_overlap(list[left], list[right]))
+                    });
+                    let instructions = PatchInstructions::from(
+                        list.into_iter()
+                            .map(|path| PatchOperation::set(path, json!(1)))
+                            .collect::<Vec<_>>(),
+                    );
+                    assert_eq!(
+                        instructions.is_retry_safe(),
+                        expected_safe,
+                        "overlap result differed for {list:?}"
+                    );
+                }
+            }
+        }
     }
 
     /// Pins the `op` tag of every variant against the Cosmos DB wire contract.
