@@ -4,10 +4,11 @@
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
 use crate::{
-    arrow_decode::{decode_next_marker, AutoFormat},
+    arrow::decode_next_marker,
     models::{
-        BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
-        ListBlobsHierarchicalResponse, ListBlobsResponse, StorageErrorCode,
+        AutoFormat, BlobContainerClientListBlobsHierarchicalOptions,
+        BlobContainerClientListBlobsOptions, ListBlobsHierarchicalResponse, ListBlobsResponse,
+        StorageErrorCode,
     },
     BlobClient,
 };
@@ -125,15 +126,10 @@ impl BlobContainerClient {
 
     /// Returns a list of the blobs in the specified container.
     ///
-    /// Apache Arrow is requested by default, with automatic XML fallback. To require XML, set
-    /// [`BlobContainerClientListBlobsOptions::response_format`] to
-    /// [`StorageResponseFormat::Xml`](crate::models::StorageResponseFormat::Xml). See
-    /// [`StorageResponseFormat`](crate::models::StorageResponseFormat) for the available response
-    /// formats.
-    ///
-    /// Over Apache Arrow the service returns only the blob rows and next marker, so the response
-    /// envelope fields (`container_name`, `marker`, `max_results`, `prefix`, `service_endpoint`)
-    /// are `None`; request XML to populate them.
+    /// The response format defaults to
+    /// [`StorageResponseFormat::Arrow`](crate::models::StorageResponseFormat::Arrow); see
+    /// [`StorageResponseFormat`](crate::models::StorageResponseFormat) for the available formats
+    /// and how to select one.
     ///
     /// # Arguments
     ///
@@ -189,14 +185,10 @@ impl BlobContainerClient {
     /// Returns a list of the blobs in the specified container, grouping blobs under virtual
     /// directories using `delimiter`.
     ///
-    /// Apache Arrow is requested by default, with automatic XML fallback, matching
-    /// [`list_blobs`](Self::list_blobs). Virtual directories are returned as
-    /// [`BlobPrefix`](crate::models::BlobPrefix) entries on the page's
-    /// [`hierarchical_list`](crate::models::BlobHierarchyList).
-    ///
-    /// Over Apache Arrow the service returns only the blob rows, prefixes, and next marker, so the
-    /// response envelope fields (including `delimiter`, `container_name`, and `prefix`) are `None`;
-    /// request XML to populate them.
+    /// Virtual directories are returned as [`BlobPrefix`](crate::models::BlobPrefix) entries on the
+    /// page's [`hierarchical_list`](crate::models::BlobHierarchyList). The response format defaults
+    /// to [`StorageResponseFormat::Arrow`](crate::models::StorageResponseFormat::Arrow); see
+    /// [`StorageResponseFormat`](crate::models::StorageResponseFormat) for details.
     ///
     /// # Arguments
     ///

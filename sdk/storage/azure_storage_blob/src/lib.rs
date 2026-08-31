@@ -7,7 +7,7 @@
 #![allow(dead_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-mod arrow_decode;
+mod arrow;
 pub(crate) mod buffers;
 pub mod clients;
 #[allow(unused_imports)]

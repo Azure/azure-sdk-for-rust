@@ -240,33 +240,22 @@ pub async fn create_test_blob(
     }
 }
 
-pub async fn list_blobs_page(
-    container_client: &BlobContainerClient,
-    accept: StorageResponseFormat,
-    include: Option<Vec<ListBlobsIncludeItem>>,
-) -> Result<Vec<BlobItem>> {
-    let page = container_client
-        .list_blobs(Some(BlobContainerClientListBlobsOptions {
-            response_format: Some(accept),
-            include,
-            ..Default::default()
-        }))?
-        .into_pages()
-        .try_next()
-        .await?
-        .expect("list_blobs returned at least one page")
-        .into_model()?;
-    Ok(page.blob_items)
-}
-
-/// Lists blobs in `container_client` using the Apache Arrow accept format and returns the
-/// decoded blob items from the first page. Used by Arrow field-mapping tests to verify
-/// listed properties over the wire.
+/// Lists blobs in `container_client` using the Apache Arrow accept format and returns every
+/// decoded blob item across all pages. Used by Arrow field-mapping tests to verify listed
+/// properties over the wire.
 pub async fn list_blobs_arrow(
     container_client: &BlobContainerClient,
     include: Option<Vec<ListBlobsIncludeItem>>,
 ) -> Result<Vec<BlobItem>> {
-    list_blobs_page(container_client, StorageResponseFormat::Arrow, include).await
+    let items = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            response_format: Some(StorageResponseFormat::Arrow),
+            include,
+            ..Default::default()
+        }))?
+        .try_collect()
+        .await?;
+    Ok(items)
 }
 
 pub trait ClientOptionsExt {

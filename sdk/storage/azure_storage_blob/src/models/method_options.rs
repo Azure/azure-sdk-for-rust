@@ -111,10 +111,17 @@ impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptio
     }
 }
 
-/// The response format requested by [`BlobContainerClient::list_blobs`](crate::BlobContainerClient::list_blobs).
+/// The response format requested by
+/// [`BlobContainerClient::list_blobs`](crate::BlobContainerClient::list_blobs) and
+/// [`BlobContainerClient::list_blobs_hierarchical`](crate::BlobContainerClient::list_blobs_hierarchical).
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum StorageResponseFormat {
     /// Prefer Apache Arrow and allow the service to fall back to XML.
+    ///
+    /// Over Apache Arrow the service returns only the blob rows (and prefixes, for a hierarchical
+    /// listing) plus the next marker, so the response envelope fields (such as `container_name`,
+    /// `marker`, `max_results`, `prefix`, and `service_endpoint`) are `None`. Request
+    /// [`Xml`](Self::Xml) to populate them.
     #[default]
     Arrow,
 

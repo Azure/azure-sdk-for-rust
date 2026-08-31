@@ -18,58 +18,21 @@ use azure_core::{
     error::{Error, ErrorKind},
     http::{
         headers::{self, Headers},
-        response::ResponseBody,
-        DeserializeWith, Etag, Format, RawResponse,
+        Etag,
     },
     time::OffsetDateTime,
     Result,
 };
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::Deserialize;
 
 const NEXT_MARKER_KEY: &str = "NextMarker";
 const ARROW_CONTENT_TYPE: &str = "application/vnd.apache.arrow.stream";
 const XML_CONTENT_TYPE: &str = "application/xml";
 
 #[derive(Clone, Copy)]
-enum WireFormat {
+pub(crate) enum WireFormat {
     Arrow,
     Xml,
-}
-
-/// Selects the list blobs deserializer from the response `Content-Type`.
-#[derive(Debug, Clone)]
-pub struct AutoFormat;
-
-impl Format for AutoFormat {
-    fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> Result<T> {
-        azure_core::xml::from_xml(body.as_ref())
-    }
-}
-
-impl DeserializeWith<AutoFormat> for ListBlobsResponse {
-    fn deserialize_with(body: ResponseBody) -> Result<Self> {
-        body.xml()
-    }
-
-    fn deserialize_from(response: RawResponse) -> Result<Self> {
-        match wire_format(response.headers())? {
-            WireFormat::Arrow => decode_arrow_list_blobs(response.body()),
-            WireFormat::Xml => azure_core::xml::from_xml(response.body()),
-        }
-    }
-}
-
-impl DeserializeWith<AutoFormat> for ListBlobsHierarchicalResponse {
-    fn deserialize_with(body: ResponseBody) -> Result<Self> {
-        body.xml()
-    }
-
-    fn deserialize_from(response: RawResponse) -> Result<Self> {
-        match wire_format(response.headers())? {
-            WireFormat::Arrow => decode_arrow_list_blobs_hierarchy(response.body()),
-            WireFormat::Xml => azure_core::xml::from_xml(response.body()),
-        }
-    }
 }
 
 pub(crate) fn decode_next_marker(headers: &Headers, bytes: &[u8]) -> Result<Option<String>> {
@@ -88,7 +51,7 @@ pub(crate) fn decode_next_marker(headers: &Headers, bytes: &[u8]) -> Result<Opti
     }
 }
 
-fn wire_format(headers: &Headers) -> Result<WireFormat> {
+pub(crate) fn wire_format(headers: &Headers) -> Result<WireFormat> {
     let Some(content_type) = headers.get_optional_str(&headers::CONTENT_TYPE) else {
         return Ok(WireFormat::Xml);
     };
@@ -135,7 +98,7 @@ where
     Ok(next_marker)
 }
 
-fn decode_arrow_list_blobs(bytes: &[u8]) -> Result<ListBlobsResponse> {
+pub(crate) fn decode_arrow_list_blobs(bytes: &[u8]) -> Result<ListBlobsResponse> {
     let mut blob_items = Vec::new();
     let next_marker = read_arrow_rows(bytes, |batch, row| {
         blob_items.push(row_to_blob_item(batch, row));
@@ -147,7 +110,9 @@ fn decode_arrow_list_blobs(bytes: &[u8]) -> Result<ListBlobsResponse> {
     })
 }
 
-fn decode_arrow_list_blobs_hierarchy(bytes: &[u8]) -> Result<ListBlobsHierarchicalResponse> {
+pub(crate) fn decode_arrow_list_blobs_hierarchy(
+    bytes: &[u8],
+) -> Result<ListBlobsHierarchicalResponse> {
     let mut blob_items = Vec::new();
     let mut blob_prefixes = Vec::new();
     // Virtual-directory rows are marked with ResourceType == "blobprefix" and carry only a Name.
