@@ -318,12 +318,12 @@ flowchart TD
 
 | Metric                      | Java SDK (Reactor Netty) | Rust SDK (reqwest)     |
 | --------------------------- | ------------------------ | ---------------------- |
-| DNS resolution time         | ✅ Separate event        | ❌ Bundled in transport|
-| Connection pool acquisition | ✅ Separate event        | ❌ Not exposed         |
-| New connection vs reused    | ✅ Separate event        | ❌ Not exposed         |
-| TLS handshake time          | ✅ Separate event        | ❌ Not exposed         |
-| Time to first byte          | ✅ Separate event        | ❌ Not exposed         |
-| Request body sent           | ✅ Separate event        | ❌ Not exposed         |
+| DNS resolution time         | ✅ Separate event         | ❌ Bundled in transport |
+| Connection pool acquisition | ✅ Separate event         | ❌ Not exposed          |
+| New connection vs reused    | ✅ Separate event         | ❌ Not exposed          |
+| TLS handshake time          | ✅ Separate event         | ❌ Not exposed          |
+| Time to first byte          | ✅ Separate event         | ❌ Not exposed          |
+| Request body sent           | ✅ Separate event         | ❌ Not exposed          |
 
 #### What We **Can** Track
 
