@@ -10,7 +10,6 @@ use azure_storage_stress::{
     args::StressRunnerOptions, Result, StressRunner, StressTest, StressTestFactory,
 };
 use clap::Subcommand;
-use log::{error, info};
 use serde::Serialize;
 
 use crate::roundtrip_test::RoundtripBlobsTestArgs;
@@ -22,10 +21,10 @@ async fn main() {
 
     let runner = StressRunner::<StressTests>::new(env!("CARGO_MANIFEST_DIR"), file!());
 
-    info!("Runner options: {}", runner.options());
+    println!("Runner options: {}", runner.options());
 
     if let Err(e) = runner.run().await {
-        error!("{}", e);
+        println!("{}", e);
         exit(1);
     }
 }
@@ -47,7 +46,6 @@ impl StressTestFactory for StressTests {
 }
 
 fn init_logger() {
-    env_logger::Builder::from_default_env()
-        .target(env_logger::Target::Stdout)
-        .init();
+    let subscriber = tracing_subscriber::FmtSubscriber::new();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 }

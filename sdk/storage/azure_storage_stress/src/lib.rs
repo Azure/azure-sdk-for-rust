@@ -17,9 +17,9 @@ use futures::{
     channel::mpsc::{self, UnboundedSender},
     future,
 };
-use log::{debug, error, info, warn};
 use serde::Serialize;
 use std::{fmt::Debug, future::Future, mem, pin::Pin, time::Duration};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     args::StressRunnerOptions,

@@ -18,13 +18,16 @@ azure_storage_stress.path = "../azure_storage_stress"
 bytes.workspace = true
 clap = { workspace = true, features = ["derive"] }
 crc-fast.workspace = true
-env_logger.workspace = true
 futures.workspace = true
-log.workspace = true
 rand.workspace = true
 reqwest = { workspace = true, features = ["rustls"] }
 serde.workspace = true
 tokio = { workspace = true, features = ["rt"] }
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = [
+  "env-filter",
+  "fmt",
+]}
 uuid.workspace = true
 
 [lints]
