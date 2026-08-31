@@ -3,6 +3,7 @@
 
 use crate::env::Env;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
+use azure_core::http::Url;
 use azure_core::{error::ErrorKind, http::ClientOptions, Error};
 use azure_core::{
     error::ResultExt,
@@ -14,7 +15,6 @@ use std::{
     net::{SocketAddr, ToSocketAddrs},
     sync::Arc,
 };
-use url::Url;
 
 const AZURE_KUBERNETES_CA_DATA: &str = "AZURE_KUBERNETES_CA_DATA";
 const AZURE_KUBERNETES_CA_FILE: &str = "AZURE_KUBERNETES_CA_FILE";
