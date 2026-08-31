@@ -105,9 +105,9 @@ pub(crate) fn prepare_tracking_marker(
         }
     }
 
-    while entries.len() >= usize::from(capacity.get()) {
-        entries.remove(0);
-    }
+    let retained_before_insert = usize::from(capacity.get()) - 1;
+    let eviction_count = entries.len().saturating_sub(retained_before_insert);
+    entries.drain(..eviction_count);
 
     entries.push(new_entry(
         tracking_id,
@@ -355,14 +355,19 @@ mod tests {
     }
 
     #[test]
-    fn full_unexpired_list_evicts_oldest_entry() {
+    fn over_capacity_list_evicts_oldest_entries_in_one_prefix() {
         let mut document = json!({
             "_ts": NOW,
-            PATCH_TRACKING_PROPERTY: [entry(id(1), NOW), entry(id(2), NOW)]
+            PATCH_TRACKING_PROPERTY: [
+                entry(id(1), NOW),
+                entry(id(2), NOW),
+                entry(id(3), NOW),
+                entry(id(4), NOW),
+            ]
         });
         let outcome = prepare_tracking_marker(
             &mut document,
-            id(3),
+            id(5),
             NonZeroU16::new(2).unwrap(),
             default_retention_seconds(),
             true,
@@ -372,8 +377,8 @@ mod tests {
         assert_eq!(outcome, TrackingMarkerOutcome::Added);
         let entries = document[PATCH_TRACKING_PROPERTY].as_array().unwrap();
         assert_eq!(entries.len(), 2);
-        assert_eq!(entries[0][TRACKING_ID_FIELD], id(2).to_string());
-        assert_eq!(entries[1][TRACKING_ID_FIELD], id(3).to_string());
+        assert_eq!(entries[0][TRACKING_ID_FIELD], id(4).to_string());
+        assert_eq!(entries[1][TRACKING_ID_FIELD], id(5).to_string());
     }
 
     #[test]
