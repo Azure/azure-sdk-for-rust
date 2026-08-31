@@ -13,7 +13,7 @@ use azure_data_cosmos::fault_injection::{
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::models::ItemResponse;
 use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
-use azure_data_cosmos::options::PatchItemOptions;
+use azure_data_cosmos::options::{PatchItemOptions, PatchStrategy};
 use framework::TestClient;
 use framework::TestOptions;
 use framework::TestRunContext;
@@ -238,6 +238,66 @@ pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error
             assert_eq!(response.status(), StatusCode::Ok);
             let merged: PatchTestItem = response.into_model()?;
             assert_eq!(merged.visits, 1);
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+pub async fn patch_strategy_obeys_service_instruction_limit() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+            let item_id = format!("patch-limit-{unique_id}");
+            let pk = format!("pk-{unique_id}");
+            let initial = PatchTestItem {
+                id: item_id.clone(),
+                partition_key: pk.clone(),
+                display_name: "before".into(),
+                visits: 0,
+                deleted: false,
+            };
+            container_client
+                .create_item(&pk, &item_id, &initial, None)
+                .await?;
+
+            let instructions = PatchInstructions::from(
+                (0..11)
+                    .map(|index| {
+                        PatchOperation::set(format!("/field{index}"), serde_json::json!(index))
+                    })
+                    .collect::<Vec<_>>(),
+            );
+
+            let auto_response = container_client
+                .patch_item(&pk, &item_id, instructions.clone(), None)
+                .await?;
+            assert_eq!(auto_response.status(), StatusCode::Ok);
+            assert_eq!(
+                auto_response.diagnostics().request_count(),
+                2,
+                "Auto must use client-side Read+Replace for 11 instructions"
+            );
+
+            let server_options =
+                PatchItemOptions::default().with_strategy(PatchStrategy::ServerSide);
+            let error = container_client
+                .patch_item(&pk, &item_id, instructions, Some(server_options))
+                .await
+                .expect_err("explicit ServerSide must surface the service limit");
+            assert_eq!(error.status().status_code(), StatusCode::BadRequest);
 
             Ok(())
         },

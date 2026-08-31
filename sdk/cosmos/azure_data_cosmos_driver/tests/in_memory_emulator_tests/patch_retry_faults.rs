@@ -38,7 +38,9 @@ use azure_data_cosmos_driver::models::{
     AccountReference, ContainerReference, CosmosOperation, ItemReference, PartitionKey,
     PatchInstructions, PatchOperation, PatchTrackingId,
 };
-use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions};
+use azure_data_cosmos_driver::options::{
+    DriverOptions, OperationOptions, OperationOptionsBuilder, PatchStrategy,
+};
 use azure_data_cosmos_driver::CosmosDriver;
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
@@ -160,15 +162,29 @@ async fn execute_patch(
     azure_data_cosmos_driver::models::CosmosResponse,
     azure_data_cosmos_driver::error::CosmosError,
 > {
+    execute_patch_with_strategy(driver, container, ops, tracking_id, PatchStrategy::Auto).await
+}
+
+async fn execute_patch_with_strategy(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    ops: PatchInstructions,
+    tracking_id: Option<PatchTrackingId>,
+    strategy: PatchStrategy,
+) -> Result<
+    azure_data_cosmos_driver::models::CosmosResponse,
+    azure_data_cosmos_driver::error::CosmosError,
+> {
     let item = ItemReference::from_name(container, PartitionKey::from(PK), ITEM_ID.to_string());
     let mut operation =
         CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&ops).unwrap());
     if let Some(tracking_id) = tracking_id {
         operation = operation.with_patch_tracking_id(tracking_id);
     }
-    let response = driver
-        .execute_operation(operation, OperationOptions::default())
-        .await?;
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(strategy)
+        .build();
+    let response = driver.execute_operation(operation, options).await?;
     Ok(response.expect("PATCH must return a singleton response"))
 }
 
@@ -196,11 +212,74 @@ fn increment() -> PatchInstructions {
     PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)])
 }
 
+fn set_name() -> PatchInstructions {
+    PatchInstructions::from(vec![PatchOperation::set(
+        "/name",
+        serde_json::json!("after"),
+    )])
+}
+
 fn overlapping_replace_then_set() -> PatchInstructions {
     PatchInstructions::from(vec![
         PatchOperation::replace("/a/b", serde_json::json!(1)),
         PatchOperation::set("/a", serde_json::json!({})),
     ])
+}
+
+#[tokio::test]
+async fn unsafe_server_side_patch_is_not_retried_after_ambiguous_failure() {
+    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    let outcome = execute_patch_with_strategy(
+        &driver,
+        &container,
+        increment(),
+        None,
+        PatchStrategy::ServerSide,
+    )
+    .await;
+
+    assert!(outcome.is_err());
+    assert_eq!(
+        rule.hit_count(),
+        1,
+        "unsafe server PATCH must not be resent"
+    );
+}
+
+#[tokio::test]
+async fn safe_server_side_patch_is_retried_after_ambiguous_failure() {
+    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    let outcome = execute_patch_with_strategy(
+        &driver,
+        &container,
+        set_name(),
+        None,
+        PatchStrategy::ServerSide,
+    )
+    .await;
+
+    assert!(outcome.is_err(), "every attempt is faulted");
+    assert!(rule.hit_count() > 1, "retry-safe server PATCH should retry");
+}
+
+#[tokio::test]
+async fn auto_keeps_unsafe_patch_off_the_server_endpoint() {
+    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    execute_patch_with_strategy(&driver, &container, increment(), None, PatchStrategy::Auto)
+        .await
+        .expect("Auto should use tracked RMW");
+
+    assert_eq!(rule.hit_count(), 0);
+    assert_eq!(stored_visits(&driver, &container).await, 2);
 }
 
 /// The read-modify-write loop re-reads before each attempt, so an `increment`
@@ -254,9 +333,28 @@ async fn unsafe_patch_commits_once_when_response_is_lost() {
         .parse::<PatchTrackingId>()
         .unwrap();
 
-    execute_patch(&driver, &container, increment(), Some(tracking_id))
+    let recovered_response = execute_patch(&driver, &container, increment(), Some(tracking_id))
         .await
         .expect("the marker must prove that the timed-out Replace committed");
+
+    assert_eq!(
+        recovered_response.diagnostics().operation_name(),
+        Some("patch_item")
+    );
+    let recovered_requests = recovered_response.diagnostics().requests();
+    assert_eq!(
+        recovered_requests
+            .iter()
+            .map(|request| request.operation_name())
+            .collect::<Vec<_>>(),
+        vec![
+            Some("patch_read_item"),
+            Some("patch_replace_item"),
+            Some("patch_replace_item"),
+            Some("patch_read_item"),
+        ],
+        "response-loss recovery must name both Replace attempts and the verification Read"
+    );
 
     assert_eq!(rule.hit_count(), 1, "one committed response was discarded");
     let after_lost_response = stored_item(&driver, &container).await;
@@ -275,6 +373,15 @@ async fn unsafe_patch_commits_once_when_response_is_lost() {
         retry_response.diagnostics().request_count(),
         1,
         "the application retry must perform only the verification Read"
+    );
+    assert_eq!(
+        retry_response.diagnostics().operation_name(),
+        Some("patch_item")
+    );
+    assert_eq!(
+        retry_response.diagnostics().requests()[0].operation_name(),
+        Some("patch_read_item"),
+        "marker recognition is local, so the only helper span is the verification Read"
     );
     let after_application_retry = stored_item(&driver, &container).await;
     assert_eq!(after_application_retry["visits"], 2);

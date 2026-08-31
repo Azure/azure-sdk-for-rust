@@ -9,12 +9,14 @@ The Rust driver retries writes by default for retryable status codes. This is sa
 - **503 (Service Unavailable)**: Cosmos DB intentionally returns 503 when a write was **not processed** — it is always safe to retry.
 - **5xx / 408**: Write retries are safe for CRUD operations because customers can (and should) use ETag preconditions (`If-Match`) to guarantee idempotency on replace and upsert. Create operations are inherently idempotent (a duplicate yields 409 Conflict). Delete operations are inherently idempotent (a duplicate yields 404 Not Found).
 - **Stored Procedure execution**: A stored procedure body is opaque to the driver, so a re-run can repeat arbitrary mutations with no way to detect the duplicate. `OperationType::Execute` is therefore **not** retried when the outcome is ambiguous. It *is* still retried on statuses that prove the backend did not run it — see [Stored procedure retries](#stored-procedure-retries).
+- **Unsafe server-side PATCH**: An explicit `PatchStrategy::ServerSide` can send
+  non-convergent instructions. It follows the same ambiguous-outcome gate as a
+  stored procedure: retry only when the result proves the request did not run.
 
 ### Stored procedure retries
 
-Stored procedure execution is the only data-plane operation that is gated. The
-dividing line is whether the response proves the procedure did not run, not
-whether the operation is idempotent.
+Stored procedure execution and unsafe explicit server-side PATCH are gated. The
+dividing line is whether the response proves the operation did not run.
 
 | Outcome                                          | Stored procedure  | Why                                    |
 | ------------------------------------------------ | ----------------- | -------------------------------------- |
@@ -39,16 +41,17 @@ Write retries are not strictly idempotent — the initial attempt and a retry ma
 
 For replace and upsert operations, the driver **always retries** regardless of whether an ETag precondition is provided. If the application developer has concerns about idempotency or wants optimistic locking, ETag preconditions (`If-Match` headers) are the appropriate mitigation. Without ETags, there is no concurrency control — concurrent writers or retried writes can silently overwrite each other.
 
-PATCH is a client-side Read-Modify-Write operation. Non-convergent instruction
+Client-side PATCH is a Read-Modify-Write operation. Non-convergent instruction
 lists persist a tracking marker in the same ETag-guarded Replace as the
-mutation. A retry that observes the same marker returns success without
-reapplying the instructions. This duplicate suppression is bounded by the
-configurable whole-second retention window (5 minutes by default), per-item marker capacity, authoritative
-verification-read routing, and cooperating writers preserving the reserved
-`_azsdkPatchTracking` property and marker order. A full marker list evicts its
-oldest entry, so suppression is bounded by the earlier of retention expiry or
-FIFO eviction. One absolute end-to-end deadline covers the complete logical
-PATCH, including all internal Reads, Replaces, retries, and verification.
+mutation. A retry that observes the marker returns success without reapplying
+the instructions. Duplicate suppression is bounded by retention, capacity,
+authoritative verification routing, and cooperating writers preserving the
+reserved property and marker order.
+
+`PatchStrategy::Auto` sends only retry-safe lists of at most 10 instructions
+server-side; unsafe or longer lists use tracked RMW. Explicit `ServerSide`
+never falls back: more than 10 instructions receive service `400`, and unsafe
+instructions stop on ambiguous outcomes rather than risk duplicate execution.
 
 | Operation                       | Retried?                            | Initial attempt | On retry (duplicate)                                            | App must handle |
 | ------------------------------- | ----------------------------------- | --------------- | --------------------------------------------------------------- | --------------- |
@@ -56,7 +59,9 @@ PATCH, including all internal Reads, Replaces, retries, and verification.
 | Delete                          | Yes                                 | 204 No Content  | 404 Not Found                                                   | 404             |
 | Replace / Upsert (with ETag)    | Yes                                 | 200 OK          | 412 Precondition Failed (if concurrent update)                  | 412             |
 | Replace / Upsert (without ETag) | Yes                                 | 200 OK          | 200 OK (silent overwrite — no concurrency control)              | —               |
-| Patch                           | Yes, inside tracked RMW             | 200 OK          | 200 OK (matching marker suppresses duplicate application)       | Reuse ID        |
+| PATCH, client-side RMW          | Yes                                 | 200 OK          | 200 OK (matching marker suppresses duplicate application)       | Reuse ID        |
+| PATCH, retry-safe server-side   | Yes                                 | 200 OK          | 200 OK (instruction list converges)                             | —               |
+| PATCH, unsafe server-side       | **Only when provably not executed** | 200 OK          | N/A — ambiguous outcomes surface                                | Reconcile       |
 | Stored Procedure                | **Only when provably not executed** | Varies          | N/A — see [Stored procedure retries](#stored-procedure-retries) | N/A             |
 
 ## Status Code Handling
@@ -234,8 +239,8 @@ PPCB is an **opt-out** feature (enabled by default) that provides partition-leve
 
 | Account Type | Reads          | Writes                                   |
 | ------------ | -------------- | ---------------------------------------- |
-| Single-write | ✅ PPCB-managed | ❌ Not PPCB-managed (PPAF handles writes) |
-| Multi-write  | ✅ PPCB-managed | ✅ PPCB-managed                           |
+| Single-write | ✅ PPCB-managed| ❌ Not PPCB-managed (PPAF handles writes)|
+| Multi-write  | ✅ PPCB-managed| ✅ PPCB-managed                          |
 
 ### Behavior
 

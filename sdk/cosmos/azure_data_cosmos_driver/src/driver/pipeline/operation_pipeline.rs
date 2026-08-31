@@ -27,7 +27,8 @@ use crate::{
         transport::CosmosTransport,
     },
     models::{
-        cosmos_headers::QUERY_CONTENT_TYPE, effective_partition_key::EffectivePartitionKey,
+        cosmos_headers::{PATCH_CONTENT_TYPE, QUERY_CONTENT_TYPE},
+        effective_partition_key::EffectivePartitionKey,
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
@@ -2049,6 +2050,12 @@ fn build_transport_request(
             headers.insert(
                 HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
                 HeaderValue::from_static("False"),
+            );
+        }
+        OperationType::Patch => {
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(PATCH_CONTENT_TYPE),
             );
         }
         OperationType::Query | OperationType::SqlQuery => {
@@ -9562,6 +9569,39 @@ mod tests {
         let op = CosmosOperation::query_offers(test_account())
             .with_body(br#"{"query":"SELECT * FROM root"}"#.to_vec());
         assert_query_headers_present(&op, "query_offers");
+    }
+
+    #[test]
+    fn build_transport_request_sets_patch_content_type() {
+        let operation = CosmosOperation::patch_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ))
+        .with_body(br#"{"operations":[]}"#.to_vec());
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+        let context = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &context)
+                .expect("PATCH request should build");
+
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&azure_core::http::headers::CONTENT_TYPE),
+            Some(crate::models::cosmos_headers::PATCH_CONTENT_TYPE)
+        );
     }
 
     /// Helper: builds a transport request from `op` and asserts the two

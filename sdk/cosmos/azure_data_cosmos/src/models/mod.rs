@@ -32,8 +32,8 @@ pub use indexing_policy::{
 pub use item_response::ItemResponse;
 #[cfg(feature = "preview_patch")]
 pub use patch_tracking::{
-    PatchTrackingId, DEFAULT_PATCH_TRACKING_CAPACITY, PATCH_TRACKING_PROPERTY,
-    PATCH_TRACKING_RETENTION,
+    PatchTrackingId, DEFAULT_PATCH_TRACKING_CAPACITY, MAX_SERVER_SIDE_PATCH_OPERATIONS,
+    PATCH_TRACKING_PROPERTY, PATCH_TRACKING_RETENTION,
 };
 pub use resource_response::ResourceResponse;
 pub use response_body::ResponseBody;

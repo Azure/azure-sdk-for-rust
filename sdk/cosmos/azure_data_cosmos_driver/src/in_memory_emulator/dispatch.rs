@@ -27,6 +27,7 @@ pub(crate) enum OperationType {
     Create,
     Read,
     Replace,
+    Patch,
     Upsert,
     Delete,
     QueryItems,
@@ -450,6 +451,11 @@ fn resolve_operation(
         // PUT /dbs/{db}/colls/{coll}/docs/{doc} → Replace
         ("PUT", 6) if segments[0] == "dbs" && segments[2] == "colls" && segments[4] == "docs" => {
             OperationType::Replace
+        }
+
+        // PATCH /dbs/{db}/colls/{coll}/docs/{doc} → Patch
+        ("PATCH", 6) if segments[0] == "dbs" && segments[2] == "colls" && segments[4] == "docs" => {
+            OperationType::Patch
         }
 
         // DELETE /dbs/{db}/colls/{coll}/docs/{doc} → Delete

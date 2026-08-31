@@ -77,7 +77,8 @@ pub use feed_range::FeedRange;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
 pub use patch::{
     CosmosNumber, PatchInstructions, PatchOperation, PatchTrackingId,
-    DEFAULT_PATCH_TRACKING_CAPACITY, PATCH_TRACKING_PROPERTY, PATCH_TRACKING_RETENTION,
+    DEFAULT_PATCH_TRACKING_CAPACITY, MAX_SERVER_SIDE_PATCH_OPERATIONS, PATCH_TRACKING_PROPERTY,
+    PATCH_TRACKING_RETENTION,
 };
 pub use precondition::Precondition;
 pub use request_charge::RequestCharge;
@@ -614,12 +615,9 @@ pub enum OperationType {
     Execute,
     /// Patch an item using a server-style operation list.
     ///
-    /// The driver implements `Patch` as a client-side Read-Modify-Write loop:
-    /// it issues a [`OperationType::Read`] for the target item, applies the
-    /// requested patch operations to the local document, and then issues an
-    /// ETag-guarded [`OperationType::Replace`]. PATCH itself is therefore
-    /// never sent on the wire; the variant is a virtual operation type the
-    /// driver dispatches to a dedicated handler.
+    /// Depending on [`crate::options::PatchStrategy`], the driver sends PATCH
+    /// to the service or decomposes it into a tracked [`OperationType::Read`]
+    /// and ETag-guarded [`OperationType::Replace`].
     Patch,
     /// Commit a distributed write transaction.
     #[cfg(feature = "preview_dtx")]
@@ -674,10 +672,6 @@ impl OperationType {
             OperationType::ReadFeed => Method::Get,
             OperationType::Replace => Method::Put,
             OperationType::Head | OperationType::HeadFeed => Method::Head,
-            // `Patch` is a virtual operation; the driver decomposes it into a
-            // Read followed by a Replace, so it never produces wire requests
-            // of its own. Reporting `Patch` keeps `http_method` total for
-            // diagnostics/logging without affecting the transport layer.
             OperationType::Patch => Method::Patch,
         }
     }

@@ -7,6 +7,8 @@
 use crate::models::PatchTrackingId;
 use azure_data_cosmos_driver::models::{Precondition, SessionToken};
 use azure_data_cosmos_driver::options::OperationOptions;
+#[cfg(feature = "preview_patch")]
+use azure_data_cosmos_driver::options::PatchStrategy;
 
 /// Options for item point-read operations.
 ///
@@ -100,13 +102,17 @@ impl ItemWriteOptions {
 /// use persisted tracking entries to suppress duplicate application after an
 /// ambiguous transport failure. See [Retry Semantics](crate::clients::ContainerClient::patch_item()).
 ///
-/// PATCH is implemented driver-side as a Read-Modify-Write (RMW) loop:
-/// the driver reads the current item, applies your [`PatchInstructions`](crate::models::PatchInstructions)
-/// locally, and issues an ETag-guarded Replace. If the Replace returns
-/// 412 PreconditionFailed (another writer raced), the loop restarts.
+/// PATCH can execute server-side as one request or through the tracked
+/// client-side Read-Modify-Write (RMW) loop. [`PatchStrategy::Auto`] is the
+/// default: it uses server-side PATCH for retry-safe lists containing at most
+/// 10 instructions, and client-side RMW for unsafe or longer lists.
 ///
-/// The optional [`max_attempts`](Self::max_attempts) field bounds how many
-/// times that loop may retry; `None` falls back to the driver default (5).
+/// Explicit [`PatchStrategy::ServerSide`] never falls back. Cosmos DB rejects
+/// more than 10 instructions with HTTP 400. [`PatchStrategy::ClientSide`] has
+/// no corresponding instruction-count limit.
+///
+/// The optional [`max_attempts`](Self::max_attempts) field bounds only the
+/// client-side loop; `None` falls back to the driver default (5).
 ///
 /// # Conditions are not exposed
 ///
@@ -136,21 +142,17 @@ impl ItemWriteOptions {
 ///
 /// # Latency
 ///
-/// Because every PATCH is at minimum a Read followed by a Replace, the
-/// best-case round-trip floor for ``patch_item`` is **2× the single-RTT
-/// cost** of a comparable Read or Replace against the same partition.
-/// Each retry triggered by a 412 PreconditionFailed adds another full
-/// Read+Replace pair to the wall-clock cost.
+/// Server-side PATCH has a one-request latency floor. Client-side PATCH is at
+/// minimum a Read followed by a Replace, and each 412 retry adds another full
+/// Read+Replace pair.
 ///
 /// When configuring an end-to-end latency budget via
 /// [`OperationOptions`]'s end-to-end request settings, the budget applies once
 /// to the complete logical PATCH, including every Read, Replace, retry, and
 /// terminal verification. Size the budget
-/// accordingly — a useful rule of thumb is **≥ 2× the p99 single-RTT
-/// budget you would set for a plain Replace**, plus headroom for any
-/// 412 retries you want to tolerate. Setting the budget too low can
-/// cancel the RMW between the Read and the Replace, producing a
-/// timeout error even when the service is healthy.
+/// accordingly when `ClientSide` is possible, including through `Auto`
+/// fallback. A useful rule of thumb is **≥ 2× the p99 single-RTT budget for a
+/// plain Replace**, plus headroom for 412 retries.
 #[cfg(feature = "preview_patch")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
@@ -159,11 +161,21 @@ pub struct PatchItemOptions {
     /// See [`OperationOptions`] for available settings and layered resolution behavior.
     pub operation: OperationOptions,
 
+    /// How this PATCH should execute.
+    ///
+    /// `None` inherits the layered default, which resolves to
+    /// [`PatchStrategy::Auto`]. A caller-supplied tracking ID forces `Auto` to
+    /// client-side RMW and is incompatible with explicit `ServerSide`. When
+    /// both this field and [`operation.patch_strategy`](OperationOptions::patch_strategy)
+    /// are set, this field takes precedence.
+    pub strategy: Option<PatchStrategy>,
+
     /// Session token for session-consistent writes.
     pub session_token: Option<SessionToken>,
 
-    /// Maximum number of Read-Modify-Write attempts the driver may make
-    /// before surfacing a 412. `None` selects the driver default (5).
+    /// Maximum number of client-side Read-Modify-Write attempts the driver may
+    /// make before surfacing a 412. Ignored by server-side PATCH. `None`
+    /// selects the driver default (5).
     pub max_attempts: Option<std::num::NonZeroU8>,
 
     /// Stable identity for application-level retries of the same logical
@@ -198,6 +210,12 @@ impl PatchItemOptions {
     /// Caps the number of Read-Modify-Write attempts the driver may make.
     pub fn with_max_attempts(mut self, max_attempts: std::num::NonZeroU8) -> Self {
         self.max_attempts = Some(max_attempts);
+        self
+    }
+
+    /// Selects how this PATCH executes.
+    pub fn with_strategy(mut self, strategy: PatchStrategy) -> Self {
+        self.strategy = Some(strategy);
         self
     }
 

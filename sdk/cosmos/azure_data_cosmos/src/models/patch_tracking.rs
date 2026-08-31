@@ -5,6 +5,10 @@ use serde::{Deserialize, Serialize};
 use std::num::NonZeroU16;
 use uuid::Uuid;
 
+/// Maximum number of instructions accepted by one server-side PATCH request.
+/// Client-side read-modify-write PATCH has no corresponding limit.
+pub const MAX_SERVER_SIDE_PATCH_OPERATIONS: usize = 10;
+
 /// Reserved item property used to persist PATCH tracking entries.
 pub const PATCH_TRACKING_PROPERTY: &str = "_azsdkPatchTracking";
 
@@ -125,6 +129,10 @@ mod tests {
         assert_eq!(
             DEFAULT_PATCH_TRACKING_CAPACITY,
             azure_data_cosmos_driver::models::DEFAULT_PATCH_TRACKING_CAPACITY
+        );
+        assert_eq!(
+            MAX_SERVER_SIDE_PATCH_OPERATIONS,
+            azure_data_cosmos_driver::models::MAX_SERVER_SIDE_PATCH_OPERATIONS
         );
     }
 }

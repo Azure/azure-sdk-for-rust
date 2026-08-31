@@ -1002,7 +1002,7 @@ fn exhaustion_error(
 /// a client-side RMW loop — mutating the partition key means the item moves
 /// partitions, which can't be done atomically through a Replace. Fail fast
 /// rather than silently produce an inconsistent state.
-fn validate_partition_key_paths(
+pub(crate) fn validate_partition_key_paths(
     ops: &[PatchOperation],
     item_ref: &crate::models::ItemReference,
 ) -> crate::error::Result<()> {

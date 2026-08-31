@@ -13,7 +13,8 @@ use crate::{
     models::ThroughputControlGroupName,
     options::{
         AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
-        EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
+        EndToEndOperationLatencyPolicy, ExcludedRegions, PatchStrategy, PriorityLevel,
+        ReadConsistencyStrategy,
     },
 };
 
@@ -39,6 +40,12 @@ use crate::{
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct OperationOptions {
+    /// How PATCH operations are executed.
+    ///
+    /// `None` inherits from a lower layer (default: [`PatchStrategy::Auto`]).
+    #[option(env = "AZURE_COSMOS_PATCH_STRATEGY")]
+    pub patch_strategy: Option<PatchStrategy>,
+
     /// Read consistency strategy for this request.
     ///
     /// Controls the consistency guarantee for read operations. Set to `None` to
@@ -279,6 +286,7 @@ mod tests {
     #[test]
     fn default_operation_options() {
         let options = OperationOptions::default();
+        assert!(options.patch_strategy.is_none());
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
         assert!(options.content_response_on_write.is_none());
@@ -294,6 +302,7 @@ mod tests {
             .with_max_retry_wait_time(Duration::from_secs(12))
             .build();
         let options = OperationOptionsBuilder::new()
+            .with_patch_strategy(PatchStrategy::ClientSide)
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
             .with_max_failover_retry_count(5)
@@ -301,6 +310,7 @@ mod tests {
             .with_throttling_retry_options(throttling)
             .build();
 
+        assert_eq!(options.patch_strategy, Some(PatchStrategy::ClientSide));
         assert_eq!(
             options.content_response_on_write,
             Some(ContentResponseOnWrite::Disabled)
@@ -326,6 +336,7 @@ mod tests {
         use std::sync::Arc;
 
         let env = Arc::new(OperationOptions {
+            patch_strategy: Some(PatchStrategy::ServerSide),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
             max_failover_retry_count: Some(3),
             ..Default::default()
@@ -343,6 +354,7 @@ mod tests {
         });
 
         let operation = OperationOptions {
+            patch_strategy: Some(PatchStrategy::ClientSide),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Session),
             ..Default::default()
         };
@@ -350,6 +362,8 @@ mod tests {
         let view =
             OperationOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
 
+        // Operation overrides env
+        assert_eq!(view.patch_strategy(), Some(&PatchStrategy::ClientSide));
         // Operation overrides env
         assert_eq!(
             view.read_consistency_strategy(),
@@ -396,6 +410,7 @@ mod tests {
     #[test]
     fn from_env_vars_parses_known_vars() {
         let options = OperationOptions::from_env_vars(|key| match key {
+            "AZURE_COSMOS_PATCH_STRATEGY" => Ok("ServerSide".to_string()),
             "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY" => Ok("Session".to_string()),
             "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE" => Ok("true".to_string()),
             "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT" => Ok("7".to_string()),
@@ -404,6 +419,7 @@ mod tests {
             _ => Err(std::env::VarError::NotPresent),
         });
 
+        assert_eq!(options.patch_strategy, Some(PatchStrategy::ServerSide));
         assert_eq!(
             options.read_consistency_strategy,
             Some(ReadConsistencyStrategy::Session)
@@ -440,6 +456,7 @@ mod tests {
     fn from_env_vars_returns_none_for_missing_vars() {
         let options = OperationOptions::from_env_vars(|_| Err(std::env::VarError::NotPresent));
 
+        assert!(options.patch_strategy.is_none());
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.content_response_on_write.is_none());
         assert!(options.excluded_regions.is_none());
@@ -799,6 +816,7 @@ mod real_env_tests {
         // With no variables set, the env layer contributes nothing.
         with_scoped_env(OPERATION_ENV_VARS, &[], || {
             let o = OperationOptions::from_env();
+            assert!(o.patch_strategy.is_none());
             assert!(o.read_consistency_strategy.is_none());
             assert!(o.content_response_on_write.is_none());
             assert!(o.max_failover_retry_count.is_none());
@@ -809,13 +827,17 @@ mod real_env_tests {
 
     #[test]
     fn real_env_value_flows_through() {
-        // A real `AZURE_COSMOS_READ_CONSISTENCY_STRATEGY` flows through
-        // `from_env`, proving the production accessor is connected.
+        // Real strategy and consistency values flow through `from_env`,
+        // proving the production accessor is connected.
         with_scoped_env(
             OPERATION_ENV_VARS,
-            &[("AZURE_COSMOS_READ_CONSISTENCY_STRATEGY", "Session")],
+            &[
+                ("AZURE_COSMOS_PATCH_STRATEGY", "ClientSide"),
+                ("AZURE_COSMOS_READ_CONSISTENCY_STRATEGY", "Session"),
+            ],
             || {
                 let o = OperationOptions::from_env();
+                assert_eq!(o.patch_strategy, Some(PatchStrategy::ClientSide));
                 assert_eq!(
                     o.read_consistency_strategy,
                     Some(ReadConsistencyStrategy::Session)

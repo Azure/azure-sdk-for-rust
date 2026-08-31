@@ -102,12 +102,10 @@ The driver currently:
 - ✅ Uses typed metadata models internally for cache resolution (`DatabaseProperties`, `ContainerProperties`)
 - ✅ Returns raw bytes for all data plane  and metadata operations
 
-#### Exception: PATCH (driver-side Read-Modify-Write)
+#### Exception: client-side PATCH Read-Modify-Write
 
-`OperationType::Patch` is the one data plane operation where the driver
-*must* deserialize a response body — the Cosmos DB service does not
-support arbitrary JSON-patch semantics natively, so the driver implements
-PATCH as a Read-Modify-Write loop. The dedicated patch handler
+Client-side `OperationType::Patch` is the one data-plane path where the driver
+must deserialize an item response body. The dedicated patch handler
 (`driver::pipeline::patch_handler`) is the **only** code path allowed
 to parse a data plane body:
 
@@ -123,6 +121,11 @@ selection, diagnostics — continues to treat bodies as opaque
 `Vec<u8>` payloads. The opaque-body invariant is preserved in spirit
 by scoping the exception to a single, isolated handler that runs
 *before* the main pipeline and re-enters it for each internal sub-op.
+
+Server-side PATCH forwards the serialized instruction envelope through the
+normal pipeline without inspecting item data. `PatchStrategy::Auto` uses that
+path for retry-safe lists of at most 10 instructions and client-side RMW
+otherwise.
 
 ---
 
@@ -315,12 +318,12 @@ flowchart TD
 
 | Metric                      | Java SDK (Reactor Netty) | Rust SDK (reqwest)     |
 | --------------------------- | ------------------------ | ---------------------- |
-| DNS resolution time         | ✅ Separate event         | ❌ Bundled in transport |
-| Connection pool acquisition | ✅ Separate event         | ❌ Not exposed          |
-| New connection vs reused    | ✅ Separate event         | ❌ Not exposed          |
-| TLS handshake time          | ✅ Separate event         | ❌ Not exposed          |
-| Time to first byte          | ✅ Separate event         | ❌ Not exposed          |
-| Request body sent           | ✅ Separate event         | ❌ Not exposed          |
+| DNS resolution time         | ✅ Separate event        | ❌ Bundled in transport|
+| Connection pool acquisition | ✅ Separate event        | ❌ Not exposed         |
+| New connection vs reused    | ✅ Separate event        | ❌ Not exposed         |
+| TLS handshake time          | ✅ Separate event        | ❌ Not exposed         |
+| Time to first byte          | ✅ Separate event        | ❌ Not exposed         |
+| Request body sent           | ✅ Separate event        | ❌ Not exposed         |
 
 #### What We **Can** Track
 

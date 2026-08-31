@@ -159,7 +159,7 @@ fn decode_request(
     }
     if matches!(
         frame.operation_type,
-        OperationType::Read | OperationType::Replace | OperationType::Delete
+        OperationType::Read | OperationType::Replace | OperationType::Patch | OperationType::Delete
     ) && metadata.partition_key.is_none()
         && metadata.effective_partition_key.is_some()
     {
@@ -187,6 +187,7 @@ fn decode_request(
         OperationType::Create | OperationType::Upsert => (Method::Post, false),
         OperationType::Read => (Method::Get, true),
         OperationType::Replace => (Method::Put, true),
+        OperationType::Patch => (Method::Patch, true),
         OperationType::Delete => (Method::Delete, true),
         OperationType::Query
         | OperationType::SqlQuery
