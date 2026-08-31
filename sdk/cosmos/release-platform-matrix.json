@@ -19,6 +19,9 @@
       "stable",
       "msrv",
       "nightly"
+    ],
+    "TestFeatureSet": [
+      "All"
     ]
   },
   "exclude": [

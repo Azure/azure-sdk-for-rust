@@ -13,6 +13,9 @@
     "RustToolchainName": [
       "stable"
     ],
+    "TestFeatureSet": [
+      "All"
+    ],
     "AZURE_COSMOS_EMULATOR_FLAVOR": [
       "inmemory-v1",
       "inmemory-v2"
