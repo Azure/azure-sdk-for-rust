@@ -16,11 +16,11 @@ use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
     models::{
-        ContainerProperties, CosmosStatus, IndexingMode, IndexingPolicy, VectorDataType,
-        VectorDistanceFunction, VectorEmbedding, VectorEmbeddingPolicy, VectorIndex,
-        VectorIndexType,
+        ContainerProperties, CosmosStatus, IndexingMode, IndexingPolicy, ThroughputProperties,
+        VectorDataType, VectorDistanceFunction, VectorEmbedding, VectorEmbeddingPolicy,
+        VectorIndex, VectorIndexType,
     },
-    options::{MaxItemCountHint, QueryOptions},
+    options::{CreateContainerOptions, MaxItemCountHint, QueryOptions},
     Query,
 };
 use framework::{TestClient, TestOptions};
@@ -29,6 +29,7 @@ use serde::{Deserialize, Serialize};
 
 const SEARCH_PARTITION: &str = "tenant-a";
 const OTHER_PARTITION: &str = "tenant-b";
+const CROSS_PARTITION_THROUGHPUT: usize = 11_000;
 const QUERY_VECTOR: [f32; 2] = [0.0, 0.0];
 const PRECOMPUTED_VECTOR_DIMENSIONS: usize = 300;
 const PRECOMPUTED_VECTOR_TOP: usize = 9;
@@ -253,6 +254,7 @@ fn vector_documents() -> [VectorDocument; 7] {
 async fn seed_vector_container(
     run_context: &framework::TestRunContext,
     db_client: &azure_data_cosmos::clients::DatabaseClient,
+    throughput: Option<usize>,
 ) -> azure_data_cosmos::Result<ContainerClient> {
     let mut indexing_policy = IndexingPolicy::default()
         .with_indexing_mode(IndexingMode::Consistent)
@@ -272,8 +274,11 @@ async fn seed_vector_container(
         ))
         .with_indexing_policy(indexing_policy);
 
+    let options = throughput.map(|throughput| {
+        CreateContainerOptions::default().with_throughput(ThroughputProperties::manual(throughput))
+    });
     let container = run_context
-        .create_container(db_client, properties, None)
+        .create_container(db_client, properties, options)
         .await?;
     for document in vector_documents() {
         container
@@ -315,8 +320,10 @@ async fn seed_precomputed_vector_container(
         ContainerProperties::new("PrecomputedVectorQueryContainer", "/partitionKey".into())
             .with_vector_embedding_policy(embedding_policy)
             .with_indexing_policy(indexing_policy);
+    let options = CreateContainerOptions::default()
+        .with_throughput(ThroughputProperties::manual(CROSS_PARTITION_THROUGHPUT));
     let container = run_context
-        .create_container(db_client, properties, None)
+        .create_container(db_client, properties, Some(options))
         .await?;
 
     for (index, document) in fixture.documents.iter().enumerate() {
@@ -339,6 +346,63 @@ async fn seed_precomputed_vector_container(
     }
 
     Ok(container)
+}
+
+async fn assert_seeded_across_physical_partitions(
+    container: &ContainerClient,
+    expected_item_count: usize,
+) -> azure_data_cosmos::Result<()> {
+    let ranges = container.read_feed_ranges(None).await?;
+    assert_eq!(
+        ranges.len(),
+        2,
+        "expected exactly two physical partitions with {CROSS_PARTITION_THROUGHPUT} RU/s"
+    );
+
+    let search_ranges = container
+        .feed_range_from_partition_key(SEARCH_PARTITION, None)
+        .await?;
+    let other_ranges = container
+        .feed_range_from_partition_key(OTHER_PARTITION, None)
+        .await?;
+    assert_eq!(search_ranges.len(), 1);
+    assert_eq!(other_ranges.len(), 1);
+    assert_ne!(
+        search_ranges[0], other_ranges[0],
+        "test logical partition keys must map to different physical partitions"
+    );
+
+    let mut seen_ids = HashSet::new();
+    for range in ranges {
+        let mut pages = container
+            .query_items::<String>(
+                Query::from("SELECT VALUE c.id FROM c"),
+                FeedScope::range(range),
+                None,
+            )
+            .await?
+            .into_pages();
+        let mut range_item_count = 0;
+        while let Some(page) = pages.next().await {
+            for id in page?.into_items() {
+                assert!(
+                    seen_ids.insert(id.clone()),
+                    "item {id} was returned by more than one physical partition"
+                );
+                range_item_count += 1;
+            }
+        }
+        assert!(
+            range_item_count > 0,
+            "each physical partition must contain seeded vector documents"
+        );
+    }
+    assert_eq!(
+        seen_ids.len(),
+        expected_item_count,
+        "physical-partition queries must return every seeded vector document"
+    );
+    Ok(())
 }
 
 fn precomputed_vector_query(
@@ -484,7 +548,7 @@ pub async fn single_partition_vector_search() -> Result<(), Box<dyn Error>> {
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let container = seed_vector_container(run_context, db_client).await?;
+            let container = seed_vector_container(run_context, db_client, None).await?;
             let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
                 NonZeroU32::new(1).expect("page size is non-zero"),
             ));
@@ -552,7 +616,10 @@ pub async fn cross_partition_vector_search() -> Result<(), Box<dyn Error>> {
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
-            let container = seed_vector_container(run_context, db_client).await?;
+            let container =
+                seed_vector_container(run_context, db_client, Some(CROSS_PARTITION_THROUGHPUT))
+                    .await?;
+            assert_seeded_across_physical_partitions(&container, vector_documents().len()).await?;
             for (is_brute_force, offset_limit) in [(false, false), (true, false), (false, true)] {
                 let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
                     NonZeroU32::new(2).expect("page size is non-zero"),
@@ -627,6 +694,7 @@ pub async fn precomputed_pure_vector_search() -> Result<(), Box<dyn Error>> {
             let fixture = precomputed_vector_fixture();
             let container =
                 seed_precomputed_vector_container(run_context, db_client, &fixture).await?;
+            assert_seeded_across_physical_partitions(&container, fixture.documents.len()).await?;
 
             for distance in [
                 PrecomputedDistance::Euclidean,
