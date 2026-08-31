@@ -7,6 +7,8 @@ use std::sync::Arc;
 
 use crate::diagnostics::DiagnosticsContext;
 use crate::models::CosmosStatus;
+#[cfg(feature = "preview_patch")]
+use crate::models::PatchTrackingId;
 use crate::models::{CosmosResponse, ResponseBody, ResponseHeaders};
 use azure_core::fmt::SafeDebug;
 use serde::de::DeserializeOwned;
@@ -56,6 +58,17 @@ impl ItemResponse {
     /// regions contacted, RU charges, status, etc.).
     pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         self.response.diagnostics()
+    }
+
+    /// Returns the effective duplicate-suppression identity for a tracked PATCH.
+    ///
+    /// This includes IDs generated internally by the driver. Persist and reuse
+    /// it when retrying the same logical PATCH after an ambiguous application-
+    /// level failure. Returns `None` for operations that do not require PATCH
+    /// tracking.
+    #[cfg(feature = "preview_patch")]
+    pub fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
+        self.response.patch_tracking_id()
     }
 
     /// Deserializes the response body into a model type.
