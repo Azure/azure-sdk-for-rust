@@ -1,6 +1,6 @@
 # Cosmos DB Rust Driver — Retry Mechanisms and Error Code Handling
 
-This document describes the target retry behavior for the Azure Cosmos DB Rust driver (`azure_data_cosmos_driver`). It serves as the authoritative specification for how the driver handles errors, retries, and cross-region failover.
+This document describes the implemented retry behavior for the Azure Cosmos DB Rust driver (`azure_data_cosmos_driver`). It serves as the authoritative specification for how the driver handles errors, retries, and cross-region failover.
 
 ## Design Philosophy
 
@@ -64,11 +64,18 @@ These are deterministic client errors. No retry will change the outcome.
 
 ### 449 — Retry With
 
-| Operation | Action          | Budget |
-| --------- | --------------- | ------ |
-| Any       | SDK-owned retry | TBD    |
+| Operation | Action                    | Budget                                          |
+| --------- | ------------------------- | ----------------------------------------------- |
+| Any       | Same-region delayed retry | 30s cumulative wait; 1s maximum per retry delay |
 
-449 indicates the request must be retried with a modified configuration (e.g., after a collection recreate or partition split). Gateway V1 can handle 449 retries internally, but the Rust SDK always disables Gateway-side 449 retries and owns them in the SDK. This is required for Gateway V2, where all 449 retries must be handled by the SDK.
+449 indicates a transient server-side concurrency conflict. The driver retries in
+the same region, starting at 10ms plus a random salt in `[0ms, 5ms)`, doubling
+the delay on each retry, and capping each delay at 1s. The retry stops before
+the next delay would exceed the 30s cumulative wait budget. This dedicated
+budget does not consume the cross-region failover budget.
+
+Gateway V1 retries are disabled so the SDK owns this policy consistently for
+both Gateway V1 and Gateway V2.
 
 ### 403 — Forbidden
 
@@ -118,25 +125,37 @@ For single-write accounts, retry cycles through the available endpoint(s). For m
 
 ### 410 — Gone
 
-| Operation    | Action                          | Budget              |
-| ------------ | ------------------------------- | ------------------- |
-| Reads        | Cross-region failover retry     | 3 failover attempts |
-| Writes (all) | **Cross-region failover retry** | 3 failover attempts |
+| Context                  | Action                          | Budget              |
+| ------------------------ | ------------------------------- | ------------------- |
+| Partition topology       | Dataflow routing-map refresh    | Dataflow retry limit|
+| Other 410 response       | Cross-region failover retry     | 3 failover attempts |
 
-410 indicates the partition has moved or is undergoing a split/merge. All operations retry, regardless of idempotency.
+Partition topology changes are handled by the dataflow layer, which refreshes
+the partition-key-range cache and repairs the affected request node. Other 410
+responses use the ordinary cross-region failover path.
 
 ### 429 — Too Many Requests (Throttling)
 
-| Substatus              | Action                      | Budget                 |
-| ---------------------- | --------------------------- | ---------------------- |
-| — (standard)           | Local retry with backoff    | 9 attempts / 30s total |
-| 3092 (global throttle) | Cross-region failover retry | 3 failover attempts    |
+| Request class | Substatus | Action                                        | Default local budget                                   |
+| ------------- | --------- | --------------------------------------------- | ------------------------------------------------------ |
+| Data plane    | Any       | Local retry with backoff                      | 18 retries / 270s cumulative wait / 15s per retry      |
+| Metadata      | Any       | Local retry with backoff                      | 9 retries / 30s cumulative wait / 5s per retry         |
+| Any           | 3092      | Fail over after local budget is exhausted     | 3 failover retries after the local budget is exhausted |
 
-Standard 429 is handled entirely within the transport pipeline — the operation pipeline never sees it. The transport layer respects `x-ms-retry-after-ms` headers and falls back to exponential backoff (5ms base, 5s cap per attempt).
+The transport pipeline first applies the local throttle policy to every 429,
+including 3092. It honors `x-ms-retry-after-ms`; when that header is absent it
+uses exponential backoff from 5ms with ±25% jitter. The request-class cap
+applies to both service-provided and fallback delays.
 
-429/3092 indicates a global/partition-level throttle that cannot be resolved locally. It is escalated to the operation pipeline and treated identically to 503 (cross-region failover).
+The count and cumulative-wait values can be overridden with
+`ThrottlingRetryOptions`. The local budget is scoped to one transport-pipeline
+invocation, so each operation-level failover leg starts a fresh throttle
+budget. If the wait budget is exhausted before the count budget, the driver
+may make one final retry while the operation deadline still permits it.
 
-**No cross-region retry for standard 429.** Throttling is account-wide; moving to another region would not help.
+After local retries are exhausted, a standard 429 is surfaced. A 429/3092 is
+instead escalated to the operation pipeline and treated like 503, including
+cross-region failover and location-health effects.
 
 ### 5xx — Server Errors (500, 502, 503, 504)
 
@@ -148,11 +167,13 @@ Standard 429 is handled entirely within the transport pipeline — the operation
 
 All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signal from Cosmos DB — when the service intentionally returns 503, it guarantees the write was not processed. All other 5xx codes (500, 502, 504) are retried identically because CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). 502/504 may be raised by intermediate proxies, but ETag preconditions (412 on stale ETag) prevent silent overwrites on retry. Stored procedure execution aborts on every 5xx except 503, which alone proves the procedure did not run — see `is_unsafe_retry_after_possible_execution` in `src/driver/pipeline/retry_evaluation.rs`.
 
-**Endpoint marking**: Individual 5xx failures do not mark endpoints as unavailable. Endpoint unavailability is driven by PPCB's per-partition failure thresholds (see [Per-Partition Circuit Breaker](#per-partition-circuit-breaker-ppcb)). Each failure increments the partition's failure counter; only when the configured threshold is crossed does routing shift to the next preferred region.
+**Location marking**: Each eligible 5xx records a partition failure. When PPCB
+owns the route, endpoint-level marking is suppressed and PPCB shifts traffic
+only after its per-partition threshold is crossed. When PPCB does not own the
+route, the driver also marks the endpoint unavailable immediately.
 
-**This is the key divergence from other SDKs**: Python gates write retries behind `retry_write`; Java/.NET only retry for multi-write accounts. The Rust driver always retries.
-
-**Note on in-region retries**: Other SDKs (Python, .NET) typically perform 1 local/in-region retry with a delay for 503/500 before escalating to cross-region failover. The Rust driver currently skips this step and goes straight to cross-region failover on the first failure. This may be worth revisiting — a single in-region retry could resolve transient issues without the latency cost of switching regions.
+The driver goes directly to the next failover route on the first 5xx; it does
+not first repeat the HTTP-status retry in the same region.
 
 ### Transport Errors (Connection Failures)
 
@@ -163,11 +184,20 @@ All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signa
 | **Sent** or unknown                      | Writes (all)               | **Cross-region failover retry** | 3 failover attempts |
 | **Sent** or unknown                      | Stored Procedure execution | **Abort**                       | —                   |
 
-When the request was definitely not sent (connection refused, DNS failure, TLS error), the endpoint itself is unreachable. The driver marks the endpoint as unavailable (affecting all partitions on it) and records a partition-level failure for PPCB tracking, then retries on the next preferred region.
+When the request was definitely not sent (for example, connection or DNS
+failure), the driver marks only the endpoint unavailable and retries on the
+next preferred region. It does not increment PPCB's partition counter because
+the failure is endpoint-wide rather than partition-specific.
 
 When the request was possibly sent, the endpoint is clearly reachable — only partition-level marking is applied (via PPCB). The endpoint is not marked unavailable since other partitions on it are unaffected. The partition mark is applied whether or not the operation goes on to retry.
 
-For connectivity errors (connection refused, I/O errors), the transport layer performs 1 local retry on a different TCP shard to the same endpoint before escalating to the operation pipeline for cross-region failover. This local retry is gated by `TransportPipelineContext::allow_sent_transport_retry` (declared and consumed in `src/driver/transport/transport_pipeline.rs`, evaluated by `should_retry_connectivity_failure`). The operation pipeline populates it from `CosmosOperation::allows_ambiguous_outcome_retry` (`src/models/cosmos_operation.rs`) at both call sites in `src/driver/pipeline/operation_pipeline.rs`, so it is `false` only for stored procedure execution and the two retry layers cannot disagree about a single failure. Declining it does not abort the operation, it escalates straight to cross-region failover.
+For connectivity errors, the transport layer performs at most one local retry
+on a different TCP shard for the same endpoint before escalating to the
+operation pipeline. A definitely-not-sent request is always eligible. A
+sent-or-unknown request is eligible only when
+`CosmosOperation::allows_ambiguous_outcome_retry` is true, which excludes
+stored procedure execution. If no different shard is available, the failure
+escalates without a local retry.
 
 **Note**: The Rust driver retries non-idempotent writes even when the request may have been sent, because CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). Stored procedure execution is excluded.
 
@@ -223,8 +253,8 @@ PPCB is an **opt-out** feature (enabled by default) that provides partition-leve
 
 | Account Type | Reads          | Writes                                   |
 | ------------ | -------------- | ---------------------------------------- |
-| Single-write | ✅ PPCB-managed | ❌ Not PPCB-managed (PPAF handles writes) |
-| Multi-write  | ✅ PPCB-managed | ✅ PPCB-managed                           |
+| Single-write | ✅ PPCB-managed| ❌ Not PPCB-managed (PPAF handles writes)|
+| Multi-write  | ✅ PPCB-managed| ✅ PPCB-managed                          |
 
 ### Behavior
 
@@ -246,7 +276,8 @@ Without PPCB, the driver marks entire endpoints as unavailable when errors occur
 
 | Layer                                                      | Budget                                                                           | Scope                       |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------- |
-| Transport (429)                                            | 9 attempts or 30s                                                                | Per-request, local only     |
+| Transport 429 (data plane)                                 | 18 retries, 270s wait, 15s per retry                                             | Per transport invocation    |
+| Transport 429 (metadata)                                   | 9 retries, 30s wait, 5s per retry                                                | Per transport invocation    |
 | Operation failover (generic — 5xx, 408, 410, transport)    | 3 attempts                                                                       | Per-operation, cross-region |
 | Backend-failover (403/1008) — single-write and multi-write | **5s cumulative delay**, immediate first retry then exponential backoff + jitter | Per-operation, cross-region |
 | Backend-failover (403/3) — single-write and multi-write    | **5s cumulative delay**, immediate first retry then exponential backoff + jitter | Per-operation, cross-region |
@@ -255,19 +286,3 @@ Without PPCB, the driver marks entire endpoints as unavailable when errors occur
 The 403/3 hub-region discovery branch is the one exception: a 403/3 on a read
 with the `hub_region_processing_only` latch rotates the cached hub endpoint and
 stays on the generic 3-attempt failover budget with no pacing.
-
-## Comparison with Other SDKs
-
-| Behavior                   | Python                  | Java                 | .NET                 | **Rust (Target)**                   |
-| -------------------------- | ----------------------- | -------------------- | -------------------- | ----------------------------------- |
-| 503 write retry            | Always (no gate)        | Multi-write only     | Multi-write only     | **Always**                          |
-| 500 write retry            | Only with `retry_write` | No                   | No                   | **Always**                          |
-| 408 write retry            | Only with `retry_write` | No                   | No                   | **Always**                          |
-| 502/504 write retry        | Only with `retry_write` | No                   | No                   | **Always**                          |
-| Non-idempotent write retry | Gated by `retry_write`  | Gated by multi-write | Gated by multi-write | **Always (no gate)**                |
-| Transport sent + write     | Abort                   | Abort                | Abort                | **Retry**                           |
-| Stored procedure retry     | No                      | No                   | No                   | **Only when provably not executed** |
-| PPAF                       | Yes (single-master)     | Yes                  | Yes                  | **Yes**                             |
-| PPCB                       | Yes                     | Yes                  | Yes                  | **Yes**                             |
-
-The Rust driver is intentionally more aggressive about retrying writes. This is a deliberate design choice for maximum availability, leveraging Cosmos DB's conflict detection and the use of Etags as the safety net for duplicates and idempotency concerns. Stored procedure execution is the single carve-out, because the driver cannot reason about a procedure body it never sees.
