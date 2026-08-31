@@ -4,6 +4,7 @@
 //! Persisted idempotency markers for client-side PATCH operations.
 
 pub(crate) use crate::models::PATCH_TRACKING_PROPERTY;
+#[cfg(test)]
 use crate::models::PATCH_TRACKING_RETENTION;
 use azure_core::http::StatusCode;
 use serde_json::{Map, Value};
@@ -154,19 +155,17 @@ fn parse_entry((index, value): (usize, &Value)) -> crate::error::Result<ParsedEn
                 "entry {index} in reserved PATCH tracking property '{PATCH_TRACKING_PROPERTY}' must contain a non-negative integer '{ATTEMPTED_AT_FIELD}'"
             ))
         })?;
-    let retention_seconds = match object.get(RETENTION_SECONDS_FIELD) {
-        Some(value) => value
-            .as_u64()
-            .and_then(|value| u32::try_from(value).ok())
-            .and_then(NonZeroU32::new)
-            .ok_or_else(|| {
-                invalid_property_error(format!(
-                    "entry {index} in reserved PATCH tracking property '{PATCH_TRACKING_PROPERTY}' must contain a positive integer '{RETENTION_SECONDS_FIELD}' no greater than {}",
-                    u32::MAX
-                ))
-            })?,
-        None => default_retention_seconds(),
-    };
+    let retention_seconds = object
+        .get(RETENTION_SECONDS_FIELD)
+        .and_then(Value::as_u64)
+        .and_then(|value| u32::try_from(value).ok())
+        .and_then(NonZeroU32::new)
+        .ok_or_else(|| {
+            invalid_property_error(format!(
+                "entry {index} in reserved PATCH tracking property '{PATCH_TRACKING_PROPERTY}' must contain a positive integer '{RETENTION_SECONDS_FIELD}' no greater than {}",
+                u32::MAX
+            ))
+        })?;
 
     Ok(ParsedEntry {
         tracking_id,
@@ -189,6 +188,7 @@ fn new_entry(tracking_id: Uuid, attempted_at: i64, retention_seconds: NonZeroU32
     Value::Object(entry)
 }
 
+#[cfg(test)]
 fn default_retention_seconds() -> NonZeroU32 {
     let seconds = u32::try_from(PATCH_TRACKING_RETENTION.as_secs())
         .expect("default PATCH tracking retention fits in u32 seconds");
@@ -229,6 +229,7 @@ mod tests {
         json!({
             TRACKING_ID_FIELD: tracking_id.to_string(),
             ATTEMPTED_AT_FIELD: attempted_at,
+            RETENTION_SECONDS_FIELD: default_retention_seconds().get(),
         })
     }
 
@@ -418,6 +419,10 @@ mod tests {
             json!(["not-an-object"]),
             json!([{TRACKING_ID_FIELD: "not-a-uuid", ATTEMPTED_AT_FIELD: NOW}]),
             json!([{TRACKING_ID_FIELD: id(1).to_string(), ATTEMPTED_AT_FIELD: -1}]),
+            json!([{
+                TRACKING_ID_FIELD: id(1).to_string(),
+                ATTEMPTED_AT_FIELD: NOW
+            }]),
             json!([{
                 TRACKING_ID_FIELD: id(1).to_string(),
                 ATTEMPTED_AT_FIELD: NOW,

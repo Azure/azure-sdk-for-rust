@@ -167,11 +167,11 @@ pub struct PatchItemOptions {
     pub max_attempts: Option<std::num::NonZeroU8>,
 
     /// Stable identity for application-level retries of the same logical
-    /// unsafe PATCH. When omitted, the driver generates an ID for this call.
-    /// Persist and reuse this value across process restarts; never reuse it for
-    /// a different operation. Use a random, unpredictable ID. Retry-safe
-    /// instruction lists do not create markers, so this value is unused for
-    /// those lists.
+    /// PATCH. Persist and reuse this value across process restarts; never reuse
+    /// it for a different operation. Use a random, unpredictable ID. Supplying
+    /// an ID opts even a retry-safe instruction list into marker-based
+    /// duplicate suppression. When omitted, the driver generates an ID only
+    /// for unsafe lists.
     pub tracking_id: Option<PatchTrackingId>,
 
     /// Maximum number of PATCH tracking entries retained on the

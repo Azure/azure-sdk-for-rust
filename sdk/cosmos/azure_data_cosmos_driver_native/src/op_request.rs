@@ -823,10 +823,13 @@ fn resolve_patch_tracking_id(
     if operation.operation_type() != OperationType::Patch {
         return (operation, None);
     }
-    let requires_tracking = operation
+    let instructions = operation
         .body()
-        .and_then(|body| serde_json::from_slice::<PatchInstructions>(body).ok())
-        .is_some_and(|instructions| !instructions.is_retry_safe());
+        .and_then(|body| serde_json::from_slice::<PatchInstructions>(body).ok());
+    let requires_tracking = patch_requires_tracking(
+        operation.patch_tracking_id().is_some(),
+        instructions.as_ref(),
+    );
     if !requires_tracking {
         return (operation, None);
     }
@@ -836,6 +839,14 @@ fn resolve_patch_tracking_id(
         .unwrap_or_else(PatchTrackingId::new);
     operation = operation.with_patch_tracking_id(tracking_id);
     (operation, Some(tracking_id))
+}
+
+fn patch_requires_tracking(
+    caller_supplied_tracking_id: bool,
+    instructions: Option<&PatchInstructions>,
+) -> bool {
+    caller_supplied_tracking_id
+        || instructions.is_some_and(|instructions| !instructions.is_retry_safe())
 }
 
 /// Builds just the [`CosmosOperation`] (factory + inline mutators) from a
@@ -1165,6 +1176,16 @@ fn require_cstr<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_data_cosmos_driver::models::PatchOperation;
+
+    #[test]
+    fn supplied_id_opts_retry_safe_patch_into_tracking() {
+        let instructions = PatchInstructions::new()
+            .with_operation(PatchOperation::set("/name", serde_json::json!("after")));
+
+        assert!(!patch_requires_tracking(false, Some(&instructions)));
+        assert!(patch_requires_tracking(true, Some(&instructions)));
+    }
 
     #[test]
     fn patch_tracking_fields_map_to_driver_operation() {

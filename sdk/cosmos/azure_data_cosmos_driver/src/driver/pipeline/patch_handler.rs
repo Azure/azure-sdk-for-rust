@@ -213,11 +213,11 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
 
     validate_partition_key_paths(&spec.operations, &item_ref)?;
 
-    let requires_tracking = !spec.is_retry_safe();
+    let caller_supplied_tracking_id = operation.patch_tracking_id().is_some();
+    let requires_tracking = caller_supplied_tracking_id || !spec.is_retry_safe();
     if requires_tracking {
         validate_tracking_partition_key_paths(&item_ref)?;
     }
-    let caller_supplied_tracking_id = operation.patch_tracking_id().is_some();
     let tracking = requires_tracking.then(|| {
         (
             operation
@@ -1909,6 +1909,7 @@ mod tests {
         serde_json::json!({
             "trackingId": id.to_string(),
             "attemptedAt": attempted_at,
+            "retentionSeconds": crate::models::PATCH_TRACKING_RETENTION.as_secs(),
         })
     }
 
@@ -2197,8 +2198,7 @@ mod tests {
         let operation = patch_op_for(
             test_item_ref(),
             vec![PatchOperation::set("/name", serde_json::json!("after"))],
-        )
-        .with_patch_tracking_id(tracking_id(1));
+        );
 
         execute_with_dispatcher(&dispatcher, operation, OperationOptions::default(), None)
             .await
@@ -2209,6 +2209,66 @@ mod tests {
         assert!(replace
             .get(crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY)
             .is_none());
+    }
+
+    #[tokio::test]
+    async fn caller_supplied_id_tracks_retry_safe_patch() {
+        let tracking_id = tracking_id(1);
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","name":"before"}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok),
+        ]);
+        let operation = patch_op_for(
+            test_item_ref(),
+            vec![PatchOperation::set("/name", serde_json::json!("after"))],
+        )
+        .with_patch_tracking_id(tracking_id);
+
+        let response =
+            execute_with_dispatcher(&dispatcher, operation, OperationOptions::default(), None)
+                .await
+                .expect("explicit ID opts a retry-safe PATCH into tracking");
+
+        let replace = dispatched_body(&dispatcher.calls()[1]);
+        assert_eq!(replace["name"], "after");
+        assert_eq!(marker_ids(&replace), vec![tracking_id.to_string()]);
+        assert_eq!(response.patch_tracking_id(), Some(tracking_id));
+    }
+
+    #[tokio::test]
+    async fn caller_supplied_id_deduplicates_retry_safe_patch() {
+        let tracking_id = tracking_id(1);
+        let document = serde_json::json!({
+            "id": "doc1",
+            "pk": "pk1",
+            "name": "after",
+            "_ts": 10_000,
+            crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY: [
+                marker_entry(tracking_id, 10_000)
+            ]
+        });
+        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
+            serde_json::to_vec(&document).unwrap(),
+            Some("\"v2\""),
+            StatusCode::Ok,
+        )]);
+        let operation = patch_op_for(
+            test_item_ref(),
+            vec![PatchOperation::set("/name", serde_json::json!("after"))],
+        )
+        .with_patch_tracking_id(tracking_id);
+
+        let response =
+            execute_with_dispatcher(&dispatcher, operation, OperationOptions::default(), None)
+                .await
+                .expect("existing explicit marker suppresses an application retry");
+
+        assert_eq!(dispatcher.calls().len(), 1);
+        assert_eq!(response.patch_tracking_id(), Some(tracking_id));
     }
 
     #[tokio::test]

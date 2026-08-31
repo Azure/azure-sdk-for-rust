@@ -660,8 +660,8 @@ impl CosmosCompletion {
 ///
 /// The returned NUL-terminated UTF-8 string is borrowed from `completion` and
 /// remains valid until that completion is freed. Returns NULL for non-PATCH
-/// operations, retry-safe PATCH operations, or an invalid completion pointer.
-/// For unsafe PATCH operations, the ID is also available on cancelled
+/// operations, untracked retry-safe PATCH operations, or an invalid completion
+/// pointer. For tracked PATCH operations, the ID is also available on cancelled
 /// completions because it is resolved before execution begins.
 #[no_mangle]
 pub extern "C" fn cosmos_completion_patch_tracking_id(

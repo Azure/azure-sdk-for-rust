@@ -596,8 +596,9 @@ impl ContainerClient {
     /// but its response is lost, the next verification Read observes the entry
     /// and returns success without applying the instructions again.
     ///
-    /// By default the driver generates a tracking ID for this method call. The
-    /// effective ID is available from [`ItemResponse::patch_tracking_id`]
+    /// By default the driver generates a tracking ID for instruction lists that
+    /// are not safe to reapply. The effective ID is available from
+    /// [`ItemResponse::patch_tracking_id`]
     /// (including successful lost-response recovery) and
     /// [`CosmosError::patch_tracking_id`](crate::CosmosError::patch_tracking_id)
     /// on failure. Persist and pass it through [`PatchItemOptions`] to extend
@@ -608,9 +609,10 @@ impl ContainerClient {
     /// [`PatchItemOptions::with_tracking_id`]; do not generate a new ID.
     /// Verification does not continue beyond the configured deadline.
     /// Callers may instead provide a [`PatchTrackingId`](crate::models::PatchTrackingId)
-    /// up front. Use a random, unpredictable ID and reuse it only for the same logical operation against the
-    /// same item; reusing it for a different operation suppresses that
-    /// operation.
+    /// up front. Doing so opts even a retry-safe instruction list into marker-based
+    /// duplicate suppression. Use a random, unpredictable ID and reuse it only
+    /// for the same logical operation against the same item; reusing it for a
+    /// different operation suppresses that operation.
     ///
     /// The guarantee is bounded. Entries are protected from pruning for
     /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION) by

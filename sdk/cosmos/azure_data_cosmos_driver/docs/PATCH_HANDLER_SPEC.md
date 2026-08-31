@@ -62,8 +62,9 @@ normal pipeline stages run.
 
 2. Classify the instruction list. A list is retry-safe when it contains only
   Replace and non-append Set operations and no operation path is a strict
-  ancestor or descendant of another. Every other list requires tracking.
-  Resolve one stable tracking ID and the capacity before entering the loop.
+  ancestor or descendant of another. A caller-supplied ID opts any list into
+  tracking; without one, every other list requires tracking. Resolve one stable
+  tracking ID and the capacity before entering the loop.
   If the reserved tracking path overlaps a container partition-key path,
   reject a tracked PATCH before dispatching any sub-operation.
 
@@ -92,7 +93,7 @@ loop up to max_attempts times:
        error verbatim (with its raw_response and diagnostics intact).
        if read.headers().etag is None: return Other("no ETag, cannot RMW").
    5. value = serde_json::from_slice(read.body())
-     For an unsafe instruction list:
+    For a tracked PATCH:
      - if the tracking ID is already present, return the Read as success
       without applying the instructions;
     - if routing fell back to a reader and the ID is absent, allow insertion
@@ -146,8 +147,7 @@ The reserved `_azsdkPatchTracking` property is an array of objects with a UUID
 `trackingId`, non-negative Unix timestamp `attemptedAt`, and positive integer
 `retentionSeconds`. It is visible user JSON and counts toward item size,
 request units, and indexing. Existing marker state is validated and never
-silently overwritten. Entries created before `retentionSeconds` was introduced
-use the 300-second default.
+silently overwritten. Every entry must contain all three fields.
 
 The effective tracking ID, including a driver-generated ID, is exposed on
 successful responses and errors and captured as `patch_tracking_id` in the
@@ -155,15 +155,16 @@ operation diagnostics. Callers can persist that value and reuse it for an
 application or process retry of the same logical PATCH.
 Caller-supplied IDs should be random and unpredictable as well as unique to the
 logical operation and item. Cooperating writers are trusted not to forge marker
-entries. Retry-safe instruction lists do not create markers, so a supplied ID
-is unused and is not returned for those lists.
+entries. Supplying an ID opts any instruction list into marker-based duplicate
+suppression, including a list the driver classifies as retry-safe. Without a
+supplied ID, retry-safe instruction lists do not create markers or return an ID.
 
 Each entry is protected from pruning for its configured positive number of
 whole seconds (300 seconds by default). Persisting the window on each marker
 prevents a later PATCH with a shorter setting from pruning longer-lived
 evidence early. A matching ID is honored for as long as it remains present,
 even after that interval; expiration only makes an entry eligible for pruning
-by a later unsafe PATCH. The default capacity is 1024 entries per item. When
+by a later tracked PATCH. The default capacity is 1024 entries per item. When
 the capacity is full after time-based pruning, PATCH removes the first entry
 and appends the new marker. Duplicate suppression is therefore bounded by the
 earlier of the entry's retention window and FIFO eviction under capacity
@@ -445,7 +446,7 @@ as a JSON number without precision loss.
   with account-default/session consistency retains the token only when no
   preferred write endpoint is usable, and a fallback that ultimately uses a
   reader is recorded in request diagnostics.
-- Unsafe PATCH instructions are applied at most once within the tracking
+- Tracked PATCH instructions are applied at most once within the tracking
   protocol's retention, capacity, routing, and cooperating-writer contract.
   The marker is committed atomically with the mutation, so a later Read can
   distinguish the operation's own committed Replace from a concurrent writer.
