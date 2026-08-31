@@ -37,7 +37,7 @@ use uuid::Uuid;
 /// Maximum number of instructions accepted by one server-side PATCH request.
 ///
 /// Client-side read-modify-write PATCH does not have this service limit.
-pub const MAX_SERVER_SIDE_PATCH_OPERATIONS: usize = 10;
+pub(crate) const MAX_SERVER_SIDE_PATCH_OPERATIONS: usize = 10;
 
 /// Reserved item property used to persist PATCH tracking entries.
 pub const PATCH_TRACKING_PROPERTY: &str = "_azsdkPatchTracking";

@@ -75,10 +75,10 @@ pub use crate::error::cosmos_status::{CosmosStatus, SubStatusCode};
 pub use effective_partition_key::EffectivePartitionKey;
 pub use feed_range::FeedRange;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
+pub(crate) use patch::MAX_SERVER_SIDE_PATCH_OPERATIONS;
 pub use patch::{
     CosmosNumber, PatchInstructions, PatchOperation, PatchTrackingId,
-    DEFAULT_PATCH_TRACKING_CAPACITY, MAX_SERVER_SIDE_PATCH_OPERATIONS, PATCH_TRACKING_PROPERTY,
-    PATCH_TRACKING_RETENTION,
+    DEFAULT_PATCH_TRACKING_CAPACITY, PATCH_TRACKING_PROPERTY, PATCH_TRACKING_RETENTION,
 };
 pub use precondition::Precondition;
 pub use request_charge::RequestCharge;

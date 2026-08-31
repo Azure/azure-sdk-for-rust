@@ -13,7 +13,6 @@ use azure_data_cosmos_driver::in_memory_emulator::{
 use azure_data_cosmos_driver::models::{
     AccountReference, ContainerReference, CosmosOperation, CosmosResponse, ItemReference,
     PartitionKey, PatchInstructions, PatchOperation, PatchTrackingId,
-    MAX_SERVER_SIDE_PATCH_OPERATIONS,
 };
 use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, DriverOptions, OperationOptions, OperationOptionsBuilder, PatchStrategy,
@@ -380,7 +379,7 @@ async fn explicit_server_side_rejects_more_than_ten_instructions() {
     let error = execute_patch(
         &driver,
         &container,
-        &set_operations(MAX_SERVER_SIDE_PATCH_OPERATIONS + 1),
+        &set_operations(11),
         PatchStrategy::ServerSide,
     )
     .await
