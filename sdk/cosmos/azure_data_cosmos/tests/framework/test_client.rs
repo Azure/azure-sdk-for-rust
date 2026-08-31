@@ -256,64 +256,37 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
 /// connection. Under key auth this is invisible because the master key bypasses
 /// RBAC entirely.
 ///
-/// The probe issues a delete and a read against an id that cannot exist:
-/// each mutates nothing on success (both answer with a bare 404), together
-/// they exercise both `items/delete` and `items/read` — the two RBAC actions
-/// most tests need first — and each returns as soon as the corresponding data
-/// path answers with a normal not-found. Both phases tolerate `5302` and
-/// `collection_create_in_progress` as retryable while the name registers on
-/// this client, and both use their own retry budgets so a slow one does not
-/// starve the other.
-///
-/// Warming both actions matters because the RBAC name→RID cache is
-/// authorized per data-plane action on the server: after a delete succeeds,
-/// the first read on a fresh `ContainerClient` can still race a 5302 until
-/// the read path is warmed too.
+/// The probe deletes an id that cannot exist: it mutates nothing on success
+/// (the delete answers a bare 404), reuses the same `items/*` grant tests need,
+/// and returns as soon as the data path answers with a normal not-found. It
+/// tolerates `5302` and `collection_create_in_progress` as retryable while the
+/// name registers on this client. Read-path races that leak past this probe
+/// are absorbed by `TestClient::read_item`'s 5302 retry loop; probing reads
+/// here as well would spuriously trip fault-injection assertions that count
+/// retries on the fault client.
 pub async fn probe_data_plane_ready(
     label: &str,
     container: &ContainerClient,
 ) -> azure_data_cosmos::Result<()> {
-    probe_data_plane_ready_action(label, "delete", container, |c, id| {
-        Box::pin(async move {
-            let pk = PartitionKey::from(id.clone());
-            c.delete_item(pk, id.as_str(), None).await.map(|_| ())
-        })
-    })
-    .await?;
-
-    probe_data_plane_ready_action(label, "read", container, |c, id| {
-        Box::pin(async move {
-            let pk = PartitionKey::from(id.clone());
-            c.read_item(pk, id.as_str(), None).await.map(|_| ())
-        })
-    })
-    .await
-}
-
-async fn probe_data_plane_ready_action<F>(
-    label: &str,
-    action: &str,
-    container: &ContainerClient,
-    mut probe: F,
-) -> azure_data_cosmos::Result<()>
-where
-    F: for<'a> FnMut(
-        &'a ContainerClient,
-        String,
-    )
-        -> Pin<Box<dyn Future<Output = azure_data_cosmos::Result<()>> + Send + 'a>>,
-{
     const MAX_ATTEMPTS: usize = 20;
     const RETRY_DELAY: Duration = Duration::from_millis(500);
 
     let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
     for attempt in 1..=MAX_ATTEMPTS {
-        let error = match probe(container, probe_id.clone()).await {
-            Ok(()) => {
+        let outcome = container
+            .delete_item(
+                PartitionKey::from(probe_id.clone()),
+                probe_id.as_str(),
+                None,
+            )
+            .await;
+
+        let error = match outcome {
+            Ok(_) => {
                 return Err(azure_data_cosmos_driver::error::CosmosError::builder()
                     .with_status(CosmosStatus::new(StatusCode::InternalServerError))
                     .with_message(format!(
-                        "data-plane readiness {action} probe found {probe_id} on {label}, which cannot exist"
+                        "data-plane readiness probe deleted {probe_id} on {label}, which cannot exist"
                     ))
                     .build()
                     .into());
@@ -331,7 +304,7 @@ where
             return Err(error);
         }
 
-        println!("waiting for data-plane {action} readiness on {label}: {error}");
+        println!("waiting for data-plane readiness on {label}: {error}");
         tokio::time::sleep(RETRY_DELAY).await;
     }
 
@@ -1371,31 +1344,28 @@ impl TestRunContext {
             let (container, _) = tokio::try_join!(original_readiness, fault_readiness)?;
 
             // Metadata (5301) and name-based data (5302) authorize through
-            // separate RBAC paths, so a `container.read(...)` succeeding on both
-            // clients does not guarantee the next item request is authorized on
-            // either connection. Under AAD this races and shows up as
-            // `403/5302 RbacUnauthorizedNameBasedDataRequest` on the first
-            // data-plane call — commonly on the fault client, whose token and
-            // connection pool are separate from the original client's. Probe the
-            // data-plane on both clients before returning so tests never see
-            // that transient state.
+            // separate RBAC paths, so a `container.read(...)` succeeding on
+            // the primary client does not guarantee the next item request is
+            // authorized on that connection. Under AAD this races and shows
+            // up as `403/5302 RbacUnauthorizedNameBasedDataRequest` on the
+            // first data-plane call. Probe the primary client's data path
+            // once to warm it up.
+            //
+            // Deliberately do NOT probe the fault-injection client: the
+            // probe issues a DELETE, which would trip fault-injection rules
+            // targeting DeleteItem (or consume fault-injection budget) and
+            // cause false-positive failures in fault-injection retry tests.
+            // The residual 5302 race on the fault client is absorbed by
+            // `TestClient::read_item`'s 5302 retry loop for tests that go
+            // through the framework helper.
             let auth_mode = AuthMode::from_env();
             if auth_mode == AuthMode::Aad {
-                let fault_client_for_probe = self
-                    .fault_client
-                    .clone()
-                    .expect("fault-injection client must be configured");
                 let primary_client_for_probe = self.client().clone();
                 let primary_container = primary_client_for_probe
                     .database_client(probe_db_id.clone())
                     .container_client(&*probe_container_id)
                     .await?;
                 probe_data_plane_ready("original client", &primary_container).await?;
-                let fault_container = fault_client_for_probe
-                    .database_client(probe_db_id.clone())
-                    .container_client(&*probe_container_id)
-                    .await?;
-                probe_data_plane_ready("fault-injection client", &fault_container).await?;
             }
 
             Ok(container)
@@ -1521,19 +1491,18 @@ impl TestRunContext {
             // the data path once here so tests that immediately create/read
             // items after container creation don't race with `403/5302
             // RbacUnauthorizedNameBasedDataRequest` and burn their per-test
-            // budget on driver retries. If a fault-injection client was
-            // configured, probe it too — its token and connection pool are
-            // separate, and tests commonly follow up with a fault-client read
-            // that would otherwise hit the same race.
+            // budget on driver retries.
+            //
+            // Deliberately do NOT probe the fault-injection client here: the
+            // probe issues a DELETE, which would trip
+            // fault-injection rules targeting DeleteItem (or otherwise
+            // consume fault-injection budget) and cause false-positive
+            // failures in emulator/multi-write fault-injection tests. The
+            // residual read-path 5302 race on the fault client is absorbed by
+            // `TestClient::read_item`'s 5302 retry loop for tests that go
+            // through the framework helper.
             if !targets_emulator() && AuthMode::from_env() == AuthMode::Aad {
                 probe_data_plane_ready("original client", &container).await?;
-                if let Some(fault_client) = self.fault_client.clone() {
-                    let fault_container = fault_client
-                        .database_client(db_client.id().clone())
-                        .container_client(&*container_id)
-                        .await?;
-                    probe_data_plane_ready("fault-injection client", &fault_container).await?;
-                }
             }
 
             Ok(container)
