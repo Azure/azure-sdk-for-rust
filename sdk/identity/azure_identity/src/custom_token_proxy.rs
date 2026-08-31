@@ -3,16 +3,16 @@
 
 use crate::env::Env;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
-use azure_core::http::Url;
-use azure_core::{error::ErrorKind, http::ClientOptions, Error};
+
 use azure_core::{
-    error::ResultExt,
-    http::{AsyncRawResponse, HttpClient, Request, Transport},
+    error::{Error, ErrorKind, ResultExt},
+    http::{AsyncRawResponse, ClientOptions, HttpClient, Request, Transport, Url},
 };
-use std::path::PathBuf;
 use std::{
+    fmt::Debug,
     fs,
     net::{SocketAddr, ToSocketAddrs},
+    path::PathBuf,
     sync::Arc,
 };
 
@@ -28,7 +28,6 @@ pub(crate) struct CustomTokenProxyConfig {
     pub sni_name: Option<String>,
 }
 
-#[cfg_attr(not(feature = "proxy"), allow(dead_code))]
 #[derive(Debug)]
 pub(crate) enum CertificateAuthority {
     Data(String),
@@ -117,44 +116,48 @@ impl CustomTokenProxyConfig {
         })
     }
 
-    pub(crate) fn configure(self, options: &mut ClientOptions) -> azure_core::Result<()> {
-        let Some(proxy_url) = self.proxy_url else {
-            return Ok(());
-        };
-
-        #[cfg(feature = "proxy")]
-        {
-            let transport = CustomTokenProxy::new(proxy_url, self.sni_name, self.ca)?;
-            options.transport = Some(Transport::new(Arc::new(transport)));
-            Ok(())
-        }
-
-        #[cfg(not(feature = "proxy"))]
-        {
-            let _ = (proxy_url, self.sni_name, self.ca, options);
-            Err(Error::with_message(
-                ErrorKind::Credential,
-                "AKS identity binding support requires the proxy feature",
-            ))
-        }
-    }
-
-    #[cfg(all(test, feature = "proxy"))]
-    pub(crate) fn configure_with_client(
+    pub(crate) fn configure(
         self,
         options: &mut ClientOptions,
-        client: Arc<dyn HttpClient>,
+        client: Option<Arc<dyn TokenProxyClient>>,
     ) -> azure_core::Result<()> {
         let Some(proxy_url) = self.proxy_url else {
             return Ok(());
         };
-        let transport = CustomTokenProxy::new_with_client(proxy_url, client);
+        let client = match client {
+            Some(client) => client,
+            None => default_token_proxy_client()?,
+        };
+        let transport = CustomTokenProxy::new(proxy_url, self.sni_name, self.ca, client)?;
         options.transport = Some(Transport::new(Arc::new(transport)));
         Ok(())
     }
 }
 
-#[cfg(feature = "proxy")]
+/// Options for constructing an HTTP client used by the AKS identity binding token proxy.
+#[derive(Debug)]
+pub struct TokenProxyClientOptions<'a> {
+    /// The exclusive PEM-encoded certificate authority roots, if configured.
+    pub certificate_authority: Option<&'a [u8]>,
+
+    /// The TLS server name used to connect to the proxy.
+    pub server_name: &'a str,
+
+    /// Addresses to use instead of resolving `server_name`, if configured.
+    pub resolved_addresses: &'a [SocketAddr],
+}
+
+/// Constructs HTTP clients for the AKS identity binding token proxy.
+///
+/// Implement this trait to use an HTTP stack other than the built-in `reqwest` client.
+pub trait TokenProxyClient: Debug + Send + Sync {
+    /// Creates an HTTP client with the supplied TLS and name resolution options.
+    fn create(
+        &self,
+        options: TokenProxyClientOptions<'_>,
+    ) -> azure_core::Result<Arc<dyn HttpClient>>;
+}
+
 #[derive(Debug)]
 struct CustomTokenProxy {
     proxy_url: Url,
@@ -162,22 +165,22 @@ struct CustomTokenProxy {
     host_header: Option<String>,
     resolved_addrs: Vec<SocketAddr>,
     ca_file: Option<PathBuf>,
+    client_factory: Arc<dyn TokenProxyClient>,
     cache: RwLock<ClientCache>,
 }
 
-#[cfg(feature = "proxy")]
 #[derive(Debug)]
 struct ClientCache {
     client: Arc<dyn HttpClient>,
     ca_data: Option<Vec<u8>>,
 }
 
-#[cfg(feature = "proxy")]
 impl CustomTokenProxy {
     fn new(
         proxy_url: Url,
         sni_name: Option<String>,
         ca: Option<CertificateAuthority>,
+        client_factory: Arc<dyn TokenProxyClient>,
     ) -> azure_core::Result<Self> {
         let (request_url, host_header, resolved_addrs) =
             prepare_sni_target(&proxy_url, sni_name.as_deref())?;
@@ -190,10 +193,17 @@ impl CustomTokenProxy {
             None => (None, None),
         };
         let client = build_client(
+            client_factory.as_ref(),
             &request_url,
             &resolved_addrs,
             ca_data.as_deref(),
-            ca_file.as_deref(),
+            if ca_file.is_some() {
+                Some(AZURE_KUBERNETES_CA_FILE)
+            } else if ca_data.is_some() {
+                Some(AZURE_KUBERNETES_CA_DATA)
+            } else {
+                None
+            },
         )?;
 
         Ok(Self {
@@ -202,23 +212,9 @@ impl CustomTokenProxy {
             host_header,
             resolved_addrs,
             ca_file,
+            client_factory,
             cache: RwLock::new(ClientCache { client, ca_data }),
         })
-    }
-
-    #[cfg(test)]
-    fn new_with_client(proxy_url: Url, client: Arc<dyn HttpClient>) -> Self {
-        Self {
-            request_url: proxy_url.clone(),
-            proxy_url,
-            host_header: None,
-            resolved_addrs: Vec::new(),
-            ca_file: None,
-            cache: RwLock::new(ClientCache {
-                client,
-                ca_data: None,
-            }),
-        }
     }
 
     async fn client(&self) -> azure_core::Result<Arc<dyn HttpClient>> {
@@ -238,10 +234,11 @@ impl CustomTokenProxy {
         if data != cache.ca_data.as_deref().unwrap_or_default() {
             let mut cache = RwLockUpgradableReadGuard::upgrade(cache).await;
             cache.client = build_client(
+                self.client_factory.as_ref(),
                 &self.request_url,
                 &self.resolved_addrs,
                 Some(&data),
-                Some(ca_file),
+                Some(AZURE_KUBERNETES_CA_FILE),
             )?;
             cache.ca_data = Some(data);
             return Ok(cache.client.clone());
@@ -250,7 +247,6 @@ impl CustomTokenProxy {
     }
 }
 
-#[cfg(feature = "proxy")]
 #[async_trait::async_trait]
 impl HttpClient for CustomTokenProxy {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
@@ -269,55 +265,82 @@ impl HttpClient for CustomTokenProxy {
     }
 }
 
-#[cfg(feature = "proxy")]
 fn build_client(
+    factory: &dyn TokenProxyClient,
     request_url: &Url,
     resolved_addrs: &[SocketAddr],
     ca_data: Option<&[u8]>,
-    ca_file: Option<&std::path::Path>,
+    ca_variable: Option<&'static str>,
 ) -> azure_core::Result<Arc<dyn HttpClient>> {
-    let mut builder = reqwest::Client::builder()
-        .tls_backend_rustls()
-        .https_only(true)
-        .redirect(reqwest::redirect::Policy::none());
-    if let Some(data) = ca_data {
-        let certificates = reqwest::tls::Certificate::from_pem_bundle(data).map_err(|err| {
-            let variable = if ca_file.is_some() {
-                AZURE_KUBERNETES_CA_FILE
-            } else {
-                AZURE_KUBERNETES_CA_DATA
-            };
-            invalid_configuration(variable, format!("failed to parse certificate: {err}"))
-        })?;
-        if certificates.is_empty() {
-            return Err(invalid_configuration(
-                if ca_file.is_some() {
-                    AZURE_KUBERNETES_CA_FILE
-                } else {
-                    AZURE_KUBERNETES_CA_DATA
-                },
-                "contains no certificates",
-            ));
-        }
-
-        builder = builder.tls_certs_only(certificates);
-    }
-    if !resolved_addrs.is_empty() {
-        let host = request_url.host_str().ok_or_else(|| {
-            invalid_configuration(AZURE_KUBERNETES_SNI_NAME, "is not a valid host name")
-        })?;
-        builder = builder.resolve_to_addrs(host, resolved_addrs);
-    }
-    builder
-        .build()
-        .map(|client| Arc::new(client) as Arc<dyn HttpClient>)
-        .with_context(
-            ErrorKind::Credential,
-            "failed to create AKS identity binding HTTP client",
-        )
+    let server_name = request_url.host_str().ok_or_else(|| {
+        invalid_configuration(AZURE_KUBERNETES_SNI_NAME, "is not a valid host name")
+    })?;
+    factory
+        .create(TokenProxyClientOptions {
+            certificate_authority: ca_data,
+            server_name,
+            resolved_addresses: resolved_addrs,
+        })
+        .with_context_fn(ErrorKind::Credential, || {
+            ca_variable
+                .map(|name| format!("invalid {name}"))
+                .unwrap_or_else(|| "failed to create token proxy client".to_string())
+        })
 }
 
-#[cfg(feature = "proxy")]
+#[cfg(feature = "reqwest")]
+impl TokenProxyClient for reqwest::Client {
+    fn create(
+        &self,
+        options: TokenProxyClientOptions<'_>,
+    ) -> azure_core::Result<Arc<dyn HttpClient>> {
+        let mut builder = reqwest::Client::builder()
+            .tls_backend_rustls()
+            .https_only(true)
+            .redirect(reqwest::redirect::Policy::none());
+        if let Some(data) = options.certificate_authority {
+            let certificates = reqwest::tls::Certificate::from_pem_bundle(data).map_err(|err| {
+                Error::with_error(
+                    ErrorKind::Credential,
+                    err,
+                    "failed to parse token proxy certificate authority",
+                )
+            })?;
+            if certificates.is_empty() {
+                return Err(Error::with_message(
+                    ErrorKind::Credential,
+                    "token proxy certificate authority contains no certificates",
+                ));
+            }
+
+            builder = builder.tls_certs_only(certificates);
+        }
+        if !options.resolved_addresses.is_empty() {
+            builder = builder.resolve_to_addrs(options.server_name, options.resolved_addresses);
+        }
+        builder
+            .build()
+            .map(|client| Arc::new(client) as Arc<dyn HttpClient>)
+            .with_context(
+                ErrorKind::Credential,
+                "failed to create AKS identity binding HTTP client",
+            )
+    }
+}
+
+#[cfg(feature = "reqwest")]
+fn default_token_proxy_client() -> azure_core::Result<Arc<dyn TokenProxyClient>> {
+    Ok(Arc::new(reqwest::Client::new()))
+}
+
+#[cfg(not(feature = "reqwest"))]
+fn default_token_proxy_client() -> azure_core::Result<Arc<dyn TokenProxyClient>> {
+    Err(Error::with_message(
+        ErrorKind::Credential,
+        "the `reqwest` feature is required to use the default token proxy client; enable `reqwest` or provide a custom `TokenProxyClient` implementation",
+    ))
+}
+
 fn prepare_sni_target(
     proxy_url: &Url,
     sni_name: Option<&str>,
@@ -352,7 +375,6 @@ fn prepare_sni_target(
     Ok((request_url, Some(host_header), resolved_addrs))
 }
 
-#[cfg(feature = "proxy")]
 fn read_ca_file(path: &std::path::Path) -> azure_core::Result<Vec<u8>> {
     let data = fs::read(path).with_context_fn(ErrorKind::Credential, || {
         format!(
@@ -369,7 +391,6 @@ fn read_ca_file(path: &std::path::Path) -> azure_core::Result<Vec<u8>> {
     Ok(data)
 }
 
-#[cfg(feature = "proxy")]
 fn rewrite_proxy_url(proxy_url: &Url, request_url: &Url) -> azure_core::Result<Url> {
     let proxy_path = proxy_url.path().trim_end_matches('/');
     let request_path = request_url.path().trim_start_matches('/');
@@ -406,9 +427,9 @@ fn invalid_configuration(name: &'static str, message: impl Into<String>) -> Erro
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     use futures::future::join_all;
-    #[cfg(all(feature = "proxy", feature = "client_certificate"))]
+    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
     use openssl::{
         asn1::{Asn1Integer, Asn1Time},
         bn::{BigNum, MsbOption},
@@ -422,17 +443,17 @@ mod tests {
             X509NameBuilder, X509,
         },
     };
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     use std::{
         env,
         fs::File,
         io::Write,
         sync::atomic::{AtomicUsize, Ordering},
     };
-    #[cfg(all(feature = "proxy", feature = "client_certificate"))]
+    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
     use std::{io::Read, net::TcpListener, sync::mpsc, thread};
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     const TEST_CA: &str = "-----BEGIN CERTIFICATE-----\n\
 MIIDZzCCAk+gAwIBAgIUPXdgRBlS4T18QnYJ/+yPV70GOEEwDQYJKoZIhvcNAQEL\n\
 BQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI2MDcyMTIwNTYxOVoXDTI3MDcy\n\
@@ -455,15 +476,15 @@ CesVElsCj5WckSkJ23gnTkzIAAeWjNnf+sOwaMgfsqh/XtKzYluV8MtbBljuOz0G\n\
 uaZPC0VV2qRwbAE=\n\
 -----END CERTIFICATE-----\n";
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     static TEMP_FILE_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     struct TempFile {
         path: PathBuf,
     }
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     impl TempFile {
         fn new(content: &str) -> Self {
             let id = TEMP_FILE_COUNTER.fetch_add(1, Ordering::SeqCst);
@@ -487,7 +508,7 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     impl Drop for TempFile {
         fn drop(&mut self) {
             let _ = fs::remove_file(&self.path);
@@ -561,7 +582,6 @@ uaZPC0VV2qRwbAE=\n\
         assert!(error.to_string().contains(AZURE_KUBERNETES_CA_DATA));
     }
 
-    #[cfg(feature = "proxy")]
     #[test]
     fn rewrites_request_url() {
         for (proxy, request, expected) in [
@@ -590,7 +610,7 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     #[test]
     fn rejects_missing_and_invalid_ca_files() {
         for path in ["/file/does/not/exist", file!()] {
@@ -598,13 +618,14 @@ uaZPC0VV2qRwbAE=\n\
                 Url::parse("https://proxy.example.com").expect("proxy URL"),
                 None,
                 Some(CertificateAuthority::File(path.into())),
+                Arc::new(reqwest::Client::new()),
             )
             .expect_err("CA file should be invalid");
             assert!(error.to_string().contains(AZURE_KUBERNETES_CA_FILE));
         }
     }
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     #[test]
     fn rejects_invalid_inline_ca_without_exposing_data() {
         let ca_data = "not a certificate";
@@ -612,19 +633,21 @@ uaZPC0VV2qRwbAE=\n\
             Url::parse("https://proxy.example.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::Data(ca_data.to_string())),
+            Arc::new(reqwest::Client::new()),
         )
         .expect_err("CA data should be invalid");
         assert!(error.to_string().contains(AZURE_KUBERNETES_CA_DATA));
         assert!(!error.to_string().contains(ca_data));
     }
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     #[test]
     fn accepts_inline_and_file_ca() {
         CustomTokenProxy::new(
             Url::parse("https://proxy.example.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::Data(TEST_CA.to_string())),
+            Arc::new(reqwest::Client::new()),
         )
         .expect("valid inline CA");
 
@@ -633,11 +656,12 @@ uaZPC0VV2qRwbAE=\n\
             Url::parse("https://proxy.example.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
+            Arc::new(reqwest::Client::new()),
         )
         .expect("valid file CA");
     }
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     #[tokio::test]
     async fn reuses_and_rotates_file_ca_client() {
         let file = TempFile::new(TEST_CA);
@@ -645,6 +669,7 @@ uaZPC0VV2qRwbAE=\n\
             Url::parse("https://proxy.example.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
+            Arc::new(reqwest::Client::new()),
         )
         .expect("valid file CA");
         let original = proxy.client().await.expect("cached client");
@@ -662,7 +687,7 @@ uaZPC0VV2qRwbAE=\n\
         assert!(!Arc::ptr_eq(&original, &rotated));
     }
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     #[tokio::test]
     async fn serializes_concurrent_file_ca_refresh() {
         let file = TempFile::new(TEST_CA);
@@ -670,6 +695,7 @@ uaZPC0VV2qRwbAE=\n\
             Url::parse("https://proxy.example.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
+            Arc::new(reqwest::Client::new()),
         )
         .expect("valid file CA");
         let original = proxy.client().await.expect("cached client");
@@ -680,7 +706,7 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(feature = "proxy")]
+    #[cfg(feature = "reqwest")]
     #[tokio::test]
     async fn surfaces_file_ca_refresh_errors_without_replacing_client() {
         let file = TempFile::new(TEST_CA);
@@ -688,6 +714,7 @@ uaZPC0VV2qRwbAE=\n\
             Url::parse("https://proxy.example.com").expect("proxy URL"),
             None,
             Some(CertificateAuthority::File(file.path.clone())),
+            Arc::new(reqwest::Client::new()),
         )
         .expect("valid file CA");
         let original = proxy.client().await.expect("cached client");
@@ -703,7 +730,6 @@ uaZPC0VV2qRwbAE=\n\
         assert!(Arc::ptr_eq(&original, &proxy.cache.read().await.client));
     }
 
-    #[cfg(feature = "proxy")]
     #[test]
     fn prepares_custom_sni_target() {
         let proxy_url = Url::parse("https://127.0.0.1:8443/base").expect("proxy URL");
@@ -715,7 +741,7 @@ uaZPC0VV2qRwbAE=\n\
         assert_eq!(resolved_addrs, vec!["127.0.0.1:8443".parse().unwrap()]);
     }
 
-    #[cfg(all(feature = "proxy", feature = "client_certificate"))]
+    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
     #[tokio::test]
     async fn sends_requests_with_custom_ca_and_sni() {
         const SNI_NAME: &str = "cluster.example.com";
@@ -760,6 +786,7 @@ uaZPC0VV2qRwbAE=\n\
             proxy_url.clone(),
             Some(SNI_NAME.to_string()),
             Some(CertificateAuthority::Data(ca_data.clone())),
+            Arc::new(reqwest::Client::new()),
         )
         .expect("proxy transport");
         let request = Request::new(
@@ -777,6 +804,7 @@ uaZPC0VV2qRwbAE=\n\
             proxy_url,
             Some(SNI_NAME.to_string()),
             Some(CertificateAuthority::File(ca_file.path.clone())),
+            Arc::new(reqwest::Client::new()),
         )
         .expect("proxy transport");
         let response = file_proxy
@@ -794,7 +822,7 @@ uaZPC0VV2qRwbAE=\n\
         }
     }
 
-    #[cfg(all(feature = "proxy", feature = "client_certificate"))]
+    #[cfg(all(feature = "reqwest", feature = "client_certificate"))]
     fn test_server_certificate(name: &str) -> (X509, PKey<openssl::pkey::Private>, X509) {
         let ca_key =
             PKey::from_rsa(Rsa::generate(2048).expect("CA RSA key")).expect("CA private key");

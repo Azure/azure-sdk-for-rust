@@ -15,7 +15,6 @@ mod client_assertion_credential;
 #[cfg(feature = "client_certificate")]
 mod client_certificate_credential;
 mod client_secret_credential;
-#[cfg(feature = "proxy")]
 mod custom_token_proxy;
 mod developer_tools_credential;
 mod env;
@@ -32,6 +31,7 @@ pub use client_assertion_credential::*;
 #[cfg(feature = "client_certificate")]
 pub use client_certificate_credential::*;
 pub use client_secret_credential::*;
+pub use custom_token_proxy::{TokenProxyClient, TokenProxyClientOptions};
 pub use developer_tools_credential::*;
 pub use managed_identity_credential::*;
 pub use process::{new_executor, Executor};
