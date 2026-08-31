@@ -55,6 +55,13 @@ impl RequestObserver for MethodRecorder {
 async fn build_driver(
     recorder: Option<Arc<MethodRecorder>>,
 ) -> (Arc<CosmosDriver>, ContainerReference) {
+    build_driver_with_defaults(recorder, OperationOptions::default()).await
+}
+
+async fn build_driver_with_defaults(
+    recorder: Option<Arc<MethodRecorder>>,
+    default_options: OperationOptions,
+) -> (Arc<CosmosDriver>, ContainerReference) {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
@@ -88,7 +95,11 @@ async fn build_driver(
     let account =
         AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
     let driver = runtime
-        .create_driver(DriverOptions::builder(account).build())
+        .create_driver(
+            DriverOptions::builder(account)
+                .with_operation_options(default_options)
+                .build(),
+        )
         .await
         .expect("driver should initialize");
     let container = driver
@@ -485,6 +496,7 @@ async fn content_response_on_write_disabled_suppresses_both_strategy_bodies() {
             set_operations(1),
             vec![Method::Get, Method::Put],
         ),
+        (PatchStrategy::Auto, set_operations(1), vec![Method::Patch]),
         (
             PatchStrategy::Auto,
             PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]),
@@ -507,8 +519,20 @@ async fn content_response_on_write_disabled_suppresses_both_strategy_bodies() {
             .await
             .expect("PATCH should succeed");
 
-        assert!(response.body().is_empty(), "{strategy} must suppress its body");
-        assert_eq!(recorder.data_plane_methods(), expected_methods, "{strategy}");
+        assert_eq!(
+            response.status().status_code(),
+            azure_core::http::StatusCode::Ok
+        );
+        assert_eq!(response.diagnostics().operation_name(), Some("patch_item"));
+        assert!(
+            response.body().is_empty(),
+            "{strategy} must suppress its body"
+        );
+        assert_eq!(
+            recorder.data_plane_methods(),
+            expected_methods,
+            "{strategy}"
+        );
         let stored = read_stored(&driver, &container).await;
         assert_ne!(
             stored,
@@ -516,6 +540,24 @@ async fn content_response_on_write_disabled_suppresses_both_strategy_bodies() {
             "{strategy} must still commit the mutation"
         );
     }
+
+    let mut defaults = OperationOptions::default();
+    defaults.content_response_on_write = Some(ContentResponseOnWrite::Disabled);
+    let (driver, container) = build_driver_with_defaults(None, defaults).await;
+    create_item(&driver, &container, &seed_document()).await;
+    let operation = CosmosOperation::patch_item(item(&container))
+        .with_body(serde_json::to_vec(&set_operations(1)).unwrap());
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(PatchStrategy::ClientSide)
+        .build();
+    let response = driver
+        .execute_singleton_operation(operation, options)
+        .await
+        .expect("PATCH should inherit the disabled content response default");
+    assert!(
+        response.body().is_empty(),
+        "driver-level Disabled must suppress the client-side PATCH body"
+    );
 }
 
 #[tokio::test]

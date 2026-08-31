@@ -13,7 +13,9 @@ use azure_data_cosmos::fault_injection::{
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::models::ItemResponse;
 use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
-use azure_data_cosmos::options::{PatchItemOptions, PatchStrategy};
+use azure_data_cosmos::options::{
+    ContentResponseOnWrite, OperationOptions, PatchItemOptions, PatchStrategy,
+};
 use framework::TestClient;
 use framework::TestOptions;
 use framework::TestRunContext;
@@ -53,8 +55,7 @@ async fn create_container(
 /// then verifies that:
 ///
 /// * the response is HTTP 200 with diagnostics populated,
-/// * the response body is the locally-merged post-image (the driver
-///   synthesizes it regardless of `content_response_on_write`), and
+/// * the default response body is the locally-merged post-image, and
 /// * a fresh `read_item` observes the same merged state — i.e. the
 ///   RMW Replace actually landed on the service.
 ///
@@ -120,8 +121,7 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
                 Some(effective_tracking_id.as_uuid())
             );
 
-            // The driver always returns the locally-merged post-image —
-            // even though `content_response_on_write` was not enabled.
+            // PATCH defaults to returning the locally-merged post-image.
             let post_image: PatchTestItem = patch_response.into_model()?;
             assert_eq!(post_image.id, item_id);
             assert_eq!(post_image.partition_key, pk);
@@ -135,6 +135,66 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
             assert_eq!(read_response.status(), StatusCode::Ok);
             let read_item: PatchTestItem = read_response.into_model()?;
             assert_eq!(read_item, post_image);
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// `content_response_on_write = Disabled` suppresses the public SDK response
+/// body for client-side RMW while still committing the mutation.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+pub async fn patch_item_honors_disabled_content_response() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+            let item_id = format!("patch-no-content-{unique_id}");
+            let pk = format!("pk-{unique_id}");
+            let initial = PatchTestItem {
+                id: item_id.clone(),
+                partition_key: pk.clone(),
+                display_name: "before".into(),
+                visits: 0,
+                deleted: false,
+            };
+            container_client
+                .create_item(&pk, &item_id, &initial, None)
+                .await?;
+
+            let mut operation = OperationOptions::default();
+            operation.content_response_on_write = Some(ContentResponseOnWrite::Disabled);
+            let options = PatchItemOptions::default()
+                .with_strategy(PatchStrategy::ClientSide)
+                .with_operation_options(operation);
+            let response = container_client
+                .patch_item(
+                    &pk,
+                    &item_id,
+                    PatchInstructions::from(vec![PatchOperation::set(
+                        "/display_name",
+                        serde_json::json!("after"),
+                    )]),
+                    Some(options),
+                )
+                .await?;
+
+            assert!(response.into_body().is_empty());
+            let stored: PatchTestItem = container_client
+                .read_item(&pk, &item_id, None)
+                .await?
+                .into_model()?;
+            assert_eq!(stored.display_name, "after");
 
             Ok(())
         },

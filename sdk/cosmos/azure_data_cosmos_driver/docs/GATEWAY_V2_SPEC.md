@@ -10,7 +10,7 @@
 
 1. [Overview](#1-overview)
 2. [Motivation](#2-motivation)
-3. [Gating, Configuration & Override](#3-gating-configuration--override)
+3. [Gating & Configuration](#3-gating--configuration)
 4. [Retry Behavior](#4-retry-behavior)
    - 4.1 [HTTP 449 (Retry-With)](#41-http-449-retry-with--dedicated-policy-separate-from-410gone)
    - 4.2 [HTTP 404/1002 (READ_SESSION_NOT_AVAILABLE)](#42-http-404-not-found-with-sub-status-1002-read_session_not_available)
@@ -359,9 +359,10 @@ Wire-format and resolution semantics MUST match the proxy-side contract so that 
 | Transport | Wire carrier for the resolved value | Encoding |
 | --- | --- | --- |
 | Standard Gateway (V1, HTTP) | HTTP request header `x-ms-cosmos-read-consistency-strategy` | String, exact case-sensitive values: `"Eventual"`, `"Session"`, `"LatestCommitted"`, `"GlobalStrong"`. Header is omitted entirely when the resolved RCS is `Default`. |
-| Gateway 2.0 (RNTBD) | RNTBD metadata token ID `0x00FE` | **Byte** type — `Eventual = 0x01`, `Session = 0x02`, `LatestCommitted = 0x03`, `GlobalStrong = 0x04`. The token MUST be Byte-encoded; an earlier String-typed prototype caused the proxy to hang. The token is omitted entirely when the resolved RCS is `Default`. |
+| Gateway 2.0 (RNTBD over HTTP/2) | RNTBD metadata token ID `0x00FE` | **Byte** type — `Eventual = 0x01`, `Session = 0x02`, `LatestCommitted = 0x03`, `GlobalStrong = 0x04`. The token MUST be Byte-encoded; an earlier String-typed prototype caused the proxy to hang. The token is omitted entirely when the resolved RCS is `Default`. |
+| Direct (RNTBD over TCP; not implemented by this Rust driver) | RNTBD metadata token ID `0x00FE` | The same byte values as Gateway 2.0. This row records protocol compatibility, not a customer-facing Rust Direct transport. |
 
-The byte values are pinned against the proxy's C++ enum. The RNTBD token catalog (§5.3) carries a row for `ReadConsistencyStrategy = 0x00FE (Byte)` enumerating the four byte values.
+The byte values are pinned against the proxy's C++ enum. The RNTBD token catalog (§5.3) carries a row for `ReadConsistencyStrategy = 0x00FE (Byte)` enumerating the four byte values. `LatestCommitted` is never downgraded during transport selection: V1 sends the exact string header, Gateway 2.0 sends `0x00FE = 0x03`, and a Direct implementation sends the same RNTBD token. The Gateway 2.0 proxy MUST preserve that strategy when dispatching to its backend replicas.
 
 ##### Resolution precedence
 
@@ -551,7 +552,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Action | File | Purpose |
 | --- | --- | --- |
 | EDIT | `sdk/cosmos/ci.yml` | Add a second `LiveTestMatrixConfigs` entry (`Cosmos_gateway_v2_live_test`) that points at `live-gateway_v2-matrix.json`, plus an `EnvVars` block that injects `AZURE_COSMOS_GW_V2_ENDPOINT` / `AZURE_COSMOS_GW_V2_KEY` from the `azure-sdk-tests-cosmos` service connection. |
-| NEW  | `sdk/cosmos/live-gateway_v2-matrix.json` | Gateway 2.0 live test matrix (single-region + multi-region; `testCategory` = `gateway_v2` / `gateway_v2_multi_region`). The pre-provisioned account is supplied via the env vars above; the matrix's `ArmTemplateParameters` block is preserved so the deploy step still runs even though the per-run account is unused. |
+| NEW | `sdk/cosmos/live-gateway_v2-matrix.json` | Gateway 2.0 live test matrix (single-region + multi-region; `testCategory` = `gateway_v2` / `gateway_v2_multi_region`). The pre-provisioned account is supplied via the env vars above; the matrix's `ArmTemplateParameters` block is preserved so the deploy step still runs even though the per-run account is unused. |
 | EDIT | `sdk/cosmos/live-platform-matrix.json` | Add gateway 2.0 test matrix entry |
 
 #### Test Coverage Matrix
@@ -596,7 +597,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 
 ## 6. Open Questions
 
-- **Q1 — HTTP/2 prior knowledge vs ALPN**: _Resolved_. Gateway 2.0 always uses HTTP/2; the proxy does not accept HTTP/1.x. Rust uses HTTP/2 with prior knowledge on the Gateway 2.0 transport (no ALPN fallback to HTTP/1.x). The broader ALPN default in `TRANSPORT_PIPELINE_SPEC.md` does **not** apply to Gateway 2.0; if HTTP/2 negotiation fails, the request fails and the existing retry policies handle it.
-- **Q2 — Live test account provisioning**: Cosmos DB account configuration flags required to enable Gateway 2.0 endpoints are not part of the standard Bicep templates. _Resolution_: hardcode a dedicated, pre-provisioned Gateway 2.0 account for the gateway 2.0 live tests pipeline and reuse it across runs (rather than provisioning per-run via Bicep). Account name and credentials stored in pipeline secrets (`AZURE_COSMOS_GW_V2_ENDPOINT`, `AZURE_COSMOS_GW_V2_KEY`); pipeline reads endpoint from environment variables.
-- **Q3 — EPK range header names**: _Resolved_. The Gateway 2.0 proxy requires the header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max`. The Gateway 2.0 path introduces new constants (`GATEWAY_V2_RANGE_MIN`, `GATEWAY_V2_RANGE_MAX`); the existing `START_EPK` / `END_EPK` (`x-ms-start-epk` / `x-ms-end-epk`) constants remain for any non-Gateway-2.0 callers but are **not** emitted on Gateway 2.0 requests.
+- **Q1 — HTTP/2 prior knowledge vs ALPN**: *Resolved*. Gateway 2.0 always uses HTTP/2; the proxy does not accept HTTP/1.x. Rust uses HTTP/2 with prior knowledge on the Gateway 2.0 transport (no ALPN fallback to HTTP/1.x). The broader ALPN default in `TRANSPORT_PIPELINE_SPEC.md` does **not** apply to Gateway 2.0; if HTTP/2 negotiation fails, the request fails and the existing retry policies handle it.
+- **Q2 — Live test account provisioning**: Cosmos DB account configuration flags required to enable Gateway 2.0 endpoints are not part of the standard Bicep templates. *Resolution*: hardcode a dedicated, pre-provisioned Gateway 2.0 account for the gateway 2.0 live tests pipeline and reuse it across runs (rather than provisioning per-run via Bicep). Account name and credentials stored in pipeline secrets (`AZURE_COSMOS_GW_V2_ENDPOINT`, `AZURE_COSMOS_GW_V2_KEY`); pipeline reads endpoint from environment variables.
+- **Q3 — EPK range header names**: *Resolved*. The Gateway 2.0 proxy requires the header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max`. The Gateway 2.0 path introduces new constants (`GATEWAY_V2_RANGE_MIN`, `GATEWAY_V2_RANGE_MAX`); the existing `START_EPK` / `END_EPK` (`x-ms-start-epk` / `x-ms-end-epk`) constants remain for any non-Gateway-2.0 callers but are **not** emitted on Gateway 2.0 requests.
 - **Q4 — Connectivity-failure handling (G2 → G1)**: Decision is **fail-fast**: when all G2 endpoints fail with connectivity-class errors, the operation surfaces the standard transport error without auto-fallback. Recovery may be server-driven through the connectivity probe/account advertisement, or operator-driven through the runtime disable override. See §4.3.

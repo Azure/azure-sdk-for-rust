@@ -331,7 +331,8 @@ impl Token {
         )
     }
 
-    /// `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`).
+    /// `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`) shared by
+    /// Gateway 2.0 and Direct RNTBD requests.
     ///
     /// Server requires this token in place of `ConsistencyLevel` when the caller
     /// specifies a non-`Default` read consistency strategy on a read request.
@@ -1178,8 +1179,9 @@ mod tests {
     #[test]
     fn read_consistency_strategy_token_byte_mapping() {
         // The RNTBD `ReadConsistencyStrategy` token has id `0x00FE`, `Byte`
-        // type, and these exact byte values. A drift here means the SDK and
-        // the gateway disagree about what consistency the caller requested.
+        // type, and these exact byte values in both Gateway 2.0 and Direct
+        // mode. A drift here means the SDK and backend disagree about what
+        // consistency the caller requested.
         let cases = [
             (ReadConsistencyStrategy::Eventual, 0x01u8),
             (ReadConsistencyStrategy::Session, 0x02u8),

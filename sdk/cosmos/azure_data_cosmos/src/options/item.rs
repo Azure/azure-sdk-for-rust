@@ -138,7 +138,9 @@ impl ItemWriteOptions {
 /// [`ItemReadOptions`] / [`ItemWriteOptions`]). All other general-purpose
 /// settings (custom headers, content response behavior, excluded regions,
 /// etc.) are configured via [`with_operation_options`](Self::with_operation_options) — see
-/// [`OperationOptions`] for details.
+/// [`OperationOptions`] for details. In particular, an explicit
+/// `content_response_on_write = Disabled` suppresses the PATCH response body
+/// for both server-side and client-side execution.
 ///
 /// # Latency
 ///

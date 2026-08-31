@@ -138,9 +138,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         response.headers().request_charge(),
     );
 
-    // The response always contains the post-image: the handler uses the
-    // service body when present and otherwise synthesizes it from the locally
-    // merged document, so `into_model::<T>()` does not require content-on-write.
+    // PATCH returns the post-image by default. Setting
+    // `content_response_on_write` to Disabled suppresses it for either path.
     let patched: serde_json::Value = response.into_model()?;
     println!("after    {patched:#}");
 

@@ -100,6 +100,12 @@ with HTTP 400 rather than silently ignoring either setting.
   session; writer routing removes it before transport because LatestCommitted
   is not session-effective.
 
+   Transport selection MUST preserve `LatestCommitted`: Gateway V1 sends
+   `x-ms-cosmos-read-consistency-strategy: LatestCommitted`; Gateway 2.0 sends
+   RNTBD token `0x00FE = 0x03` and the proxy passes that strategy through to
+   its backend read; Direct mode uses the same RNTBD token. The Rust driver
+   currently implements Gateway V1 and Gateway 2.0, not Direct connectivity.
+
 loop up to max_attempts times:
    4. read = execute_operation(Read, read_options) with:
        - ReadConsistencyStrategy::LatestCommitted forced in read_options;
@@ -334,11 +340,13 @@ than risk applying the mutation again.
 
 ## Response Synthesis
 
-Because the post-image of a PATCH must reflect what the server *now*
-contains, the handler builds the returned `CosmosResponse` from:
+Unless `content_response_on_write` is explicitly disabled, the post-image of a
+PATCH must reflect what the server *now* contains. The handler builds the
+returned `CosmosResponse` from:
 
-- **Body**: the locally-merged JSON it just sent in the successful Replace
-  (the Replace's response body is *not* required to be present).
+- **Body**: the locally-merged JSON it just sent in the successful Replace (the
+  Replace's response body is *not* required to be present), or `NoPayload` when
+  content response on write is disabled.
 - **Headers / status**: those of the successful Replace, with request charge
   replaced by the total charge of the logical PATCH.
 - **Diagnostics**: an *aggregated* `DiagnosticsContext` synthesized via
