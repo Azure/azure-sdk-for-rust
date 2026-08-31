@@ -10,7 +10,7 @@ use crate::models::{
 };
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Instant};
 use time::OffsetDateTime;
 
 /// Which change feed mode a factory should configure.
@@ -144,6 +144,12 @@ pub struct CosmosOperation {
     /// make. Only consulted when `operation_type == OperationType::Patch`;
     /// ignored for every other op. `None` selects the handler default (5).
     patch_max_attempts: Option<std::num::NonZeroU8>,
+    /// Stable identity used to detect a previously committed unsafe PATCH.
+    patch_tracking_id: Option<crate::models::PatchTrackingId>,
+    /// Maximum number of protected PATCH markers retained on the item.
+    patch_tracking_capacity: Option<std::num::NonZeroU16>,
+    /// Minimum number of whole seconds PATCH markers remain protected.
+    patch_tracking_retention_seconds: Option<std::num::NonZeroU32>,
     /// `true` when this operation is a change feed read. Set explicitly by
     /// [`change_feed`](Self::change_feed) rather than inferred from a header,
     /// so future change feed modes can be added without ambiguity.
@@ -166,6 +172,19 @@ pub struct CosmosOperation {
     /// *emitted* format — see
     /// [`emits_binary_payload`](Self::emits_binary_payload).
     transcodes_response_to_text: bool,
+    /// Internal routing constraint for reads whose correctness depends on
+    /// observing the write region rather than the nearest read replica.
+    internal_read_routing: InternalReadRouting,
+    /// Absolute deadline inherited by internal sub-operations that belong to
+    /// one logical operation, such as PATCH Read-Modify-Write.
+    absolute_deadline: Option<Instant>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum InternalReadRouting {
+    #[default]
+    Default,
+    PreferredWriteEndpointsNoHedging,
 }
 
 impl CosmosOperation {
@@ -537,6 +556,50 @@ impl CosmosOperation {
         self.patch_max_attempts
     }
 
+    /// Sets a stable tracking ID for a client-side PATCH.
+    ///
+    /// Reuse the same ID for application-level retries of the same logical
+    /// operation. Prefer a random, unpredictable ID. Supplying an ID opts even
+    /// a retry-safe instruction list into marker-based duplicate suppression.
+    /// If omitted, the driver generates an ID only for unsafe lists.
+    pub fn with_patch_tracking_id(mut self, tracking_id: crate::models::PatchTrackingId) -> Self {
+        self.patch_tracking_id = Some(tracking_id);
+        self
+    }
+
+    /// Returns the caller-supplied PATCH tracking ID, if any.
+    pub fn patch_tracking_id(&self) -> Option<crate::models::PatchTrackingId> {
+        self.patch_tracking_id
+    }
+
+    /// Sets the maximum number of PATCH tracking entries retained on one item.
+    ///
+    /// When the cap is reached after age-based pruning, PATCH evicts the first
+    /// entry before appending the new marker.
+    pub fn with_patch_tracking_capacity(mut self, capacity: std::num::NonZeroU16) -> Self {
+        self.patch_tracking_capacity = Some(capacity);
+        self
+    }
+
+    /// Returns the configured PATCH tracking capacity, if any.
+    pub fn patch_tracking_capacity(&self) -> Option<std::num::NonZeroU16> {
+        self.patch_tracking_capacity
+    }
+
+    /// Sets the age-based retention window for PATCH tracking entries.
+    pub fn with_patch_tracking_retention_seconds(
+        mut self,
+        retention_seconds: std::num::NonZeroU32,
+    ) -> Self {
+        self.patch_tracking_retention_seconds = Some(retention_seconds);
+        self
+    }
+
+    /// Returns the configured PATCH tracking retention in whole seconds, if any.
+    pub fn patch_tracking_retention_seconds(&self) -> Option<std::num::NonZeroU32> {
+        self.patch_tracking_retention_seconds
+    }
+
     /// Marks this operation as an internal sub-operation of a PATCH's
     /// Read-Modify-Write loop.
     ///
@@ -547,6 +610,44 @@ impl CosmosOperation {
     pub(crate) fn as_patch_sub_operation(mut self) -> Self {
         self.is_patch_sub_operation = true;
         self
+    }
+
+    /// Marks this operation as the Read half of PATCH's Read-Modify-Write loop.
+    ///
+    /// The read prefers write endpoints and cannot be hedged because a response
+    /// from another region may not yet contain the write being verified.
+    pub(crate) fn as_patch_read_sub_operation(mut self) -> Self {
+        self.is_patch_sub_operation = true;
+        self.internal_read_routing = InternalReadRouting::PreferredWriteEndpointsNoHedging;
+        self
+    }
+
+    /// Returns whether this internal read should start at preferred write endpoints.
+    pub(crate) fn prefers_write_endpoints_for_read(&self) -> bool {
+        matches!(
+            self.internal_read_routing,
+            InternalReadRouting::PreferredWriteEndpointsNoHedging
+        )
+    }
+
+    /// Returns whether correctness requires hedging to remain disabled.
+    pub(crate) fn suppresses_hedging(&self) -> bool {
+        matches!(
+            self.internal_read_routing,
+            InternalReadRouting::PreferredWriteEndpointsNoHedging
+        )
+    }
+
+    /// Applies an absolute deadline shared by a logical operation's internal
+    /// sub-operations.
+    pub(crate) fn with_absolute_deadline(mut self, deadline: Option<Instant>) -> Self {
+        self.absolute_deadline = deadline;
+        self
+    }
+
+    /// Returns the absolute deadline inherited from the logical operation.
+    pub(crate) fn absolute_deadline(&self) -> Option<Instant> {
+        self.absolute_deadline
     }
 
     /// Returns `true` when this operation is an internal sub-operation of a
@@ -579,10 +680,15 @@ impl CosmosOperation {
             request_headers: CosmosRequestHeaders::new(),
             body: None,
             patch_max_attempts: None,
+            patch_tracking_id: None,
+            patch_tracking_capacity: None,
+            patch_tracking_retention_seconds: None,
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,
             transcodes_response_to_text: false,
+            internal_read_routing: InternalReadRouting::Default,
+            absolute_deadline: None,
         }
     }
 
@@ -940,6 +1046,9 @@ impl CosmosOperation {
     /// the operation body (via [`with_body`](Self::with_body)) — the patch
     /// handler deserializes it before issuing the underlying transport
     /// operations.
+    ///
+    /// An interrupted patch may re-apply non-idempotent operations — see
+    /// `docs/PATCH_HANDLER_SPEC.md`.
     pub fn patch_item(item: ItemReference) -> Self {
         Self::for_item(OperationType::Patch, item)
     }
@@ -1132,6 +1241,26 @@ impl CosmosOperation {
     /// Returns true if this operation is idempotent.
     pub fn is_idempotent(&self) -> bool {
         self.operation_type.is_idempotent()
+    }
+
+    /// Returns true if this operation may be retried when the backend outcome
+    /// is ambiguous — that is, when the request may already have been received
+    /// and processed.
+    ///
+    /// Only stored procedure execution returns `false`. Its body is opaque to
+    /// the driver, so re-running it can repeat arbitrary mutations with no way
+    /// to detect the duplicate. Every other data-plane operation is retried,
+    /// because Cosmos DB's conflict detection (409/412) makes the final
+    /// resource state deterministic — see `docs/ErrorCodesAndRetries.md`.
+    ///
+    /// This is deliberately *not* `is_idempotent`: the driver retries
+    /// non-idempotent writes such as `Create` and `Upsert` on purpose.
+    ///
+    /// Gates both retry layers so they cannot disagree about the same failure:
+    /// cross-region failover in the operation pipeline, and the same-endpoint
+    /// shard retry in the transport pipeline.
+    pub fn allows_ambiguous_outcome_retry(&self) -> bool {
+        self.operation_type != OperationType::Execute
     }
 
     /// Returns true if this operation can be planned with a single-node pipeline.
@@ -1386,6 +1515,38 @@ mod tests {
         assert!(!op.is_idempotent());
     }
 
+    /// Both retry layers consult this one predicate, so a failure the transport
+    /// pipeline declines to retry on another shard cannot then be retried
+    /// cross-region by the operation pipeline — strictly more expensive for
+    /// identical duplicate-execution semantics.
+    #[test]
+    fn ambiguous_outcome_retry_covers_non_idempotent_writes() {
+        let pk = PartitionKey::from("pk1");
+        let item = |op: fn(ItemReference) -> CosmosOperation| {
+            op(ItemReference::from_name(
+                &test_container(),
+                pk.clone(),
+                "doc1",
+            ))
+        };
+
+        for op in [
+            item(CosmosOperation::create_item),
+            item(CosmosOperation::upsert_item),
+            item(CosmosOperation::patch_item),
+            item(CosmosOperation::replace_item),
+            item(CosmosOperation::delete_item),
+            item(CosmosOperation::read_item),
+            CosmosOperation::batch(test_container(), pk.clone()),
+        ] {
+            assert!(
+                op.allows_ambiguous_outcome_retry(),
+                "{:?} must stay eligible for retry after an ambiguous failure",
+                op.operation_type()
+            );
+        }
+    }
+
     #[cfg(feature = "preview_dtx")]
     #[test]
     fn distributed_write_transaction_is_idempotent() {
@@ -1519,9 +1680,19 @@ mod tests {
 
         assert!(!CosmosOperation::read_item(item()).is_patch_sub_operation());
         assert!(!CosmosOperation::replace_item(item()).is_patch_sub_operation());
+        assert!(!CosmosOperation::read_item(item()).prefers_write_endpoints_for_read());
+        assert!(!CosmosOperation::read_item(item()).suppresses_hedging());
         assert!(CosmosOperation::read_item(item())
             .as_patch_sub_operation()
             .is_patch_sub_operation());
+        assert!(!CosmosOperation::read_item(item())
+            .as_patch_sub_operation()
+            .prefers_write_endpoints_for_read());
+
+        let patch_read = CosmosOperation::read_item(item()).as_patch_read_sub_operation();
+        assert!(patch_read.is_patch_sub_operation());
+        assert!(patch_read.prefers_write_endpoints_for_read());
+        assert!(patch_read.suppresses_hedging());
     }
 
     #[test]

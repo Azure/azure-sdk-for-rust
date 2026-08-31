@@ -27,6 +27,7 @@ base64.workspace = true
 bytes.workspace = true
 crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
+getrandom.workspace = true
 h2 = { workspace = true, optional = true }
 percent-encoding = { workspace = true, optional = true }
 rand.workspace = true

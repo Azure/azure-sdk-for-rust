@@ -2594,12 +2594,17 @@ impl CosmosDriver {
         // recursive future a fixed size.
         if operation.operation_type() == crate::models::OperationType::Patch {
             let max_attempts = operation.patch_max_attempts();
+            let absolute_deadline = self
+                .operation_options_view(&options)
+                .end_to_end_latency_policy()
+                .map(|policy| std::time::Instant::now() + policy.timeout());
             return Box::pin(async {
                 let result = crate::driver::pipeline::patch_handler::execute(
                     self,
                     operation,
                     options,
                     max_attempts,
+                    absolute_deadline,
                 )
                 .await?;
                 Ok(Some(result))
@@ -3605,8 +3610,9 @@ impl CosmosDriver {
         options: &OperationOptions,
     ) -> crate::error::Result<QueryPlan> {
         // Advertise exactly the query-rewrite features implemented by the
-        // production dataflow pipeline (`OrderBy,MultipleOrderBy`). The value
-        // must remain non-empty so Gateway V2 accepts the QueryPlan request.
+        // production dataflow pipeline (see `query::SUPPORTED_QUERY_FEATURES`).
+        // The value must remain non-empty so Gateway V2 accepts the QueryPlan
+        // request.
         let query_plan_operation = CosmosOperation::query_plan(
             container.clone(),
             std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),

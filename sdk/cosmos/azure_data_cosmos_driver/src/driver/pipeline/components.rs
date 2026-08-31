@@ -59,6 +59,23 @@ pub(crate) struct RoutingDecision {
     pub endpoint_key: EndpointKey,
     /// The transport mode for this attempt.
     pub transport_mode: TransportMode,
+    /// Why normal routing replaced the operation's preferred route.
+    pub routing_fallback: Option<RoutingFallbackReason>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum RoutingFallbackReason {
+    PatchVerificationReadWriteEndpointUnavailableOrExcluded,
+}
+
+impl RoutingFallbackReason {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::PatchVerificationReadWriteEndpointUnavailableOrExcluded => {
+                "patch_verification_read_write_endpoint_unavailable_or_excluded"
+            }
+        }
+    }
 }
 
 impl std::fmt::Display for RoutingDecision {
@@ -201,14 +218,24 @@ pub(crate) struct OperationRetryState {
     pub shared_hub_region_latch: Option<Arc<AtomicBool>>,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
+    /// Endpoints already abandoned by this PATCH verification read.
+    ///
+    /// Operation-local so a sent/unknown partition failure can move to the
+    /// next writer without marking an otherwise healthy region unavailable
+    /// for unrelated operations.
+    pub patch_verification_failed_endpoint_urls: Vec<Url>,
     /// Session-retry routing override for read operations.
     pub session_retry_routing: SessionRetryRouting,
     /// Partition key range ID resolved from the first response headers.
     /// `None` until the first transport attempt returns headers.
     pub partition_key_range_id: Option<PartitionKeyRangeId>,
-    /// Whether PPAF allows non-idempotent write retries on failover.
+    /// Whether single-master PPAF write-region discovery is active for this
+    /// operation.
     ///
-    /// Allows non-idempotent write retries for single-master PPAF write-region discovery.
+    /// Despite the name this does not gate any retry — write retries are never
+    /// gated on idempotency (see `retry_evaluation`). It defers
+    /// `MarkEndpointUnavailable` until the write definitively reaches a region,
+    /// so discovery probing does not evict endpoints on the way.
     pub ppaf_write_retry_allowed: bool,
     /// Whether the per-partition circuit breaker is active for this account.
     ///
@@ -271,6 +298,7 @@ impl OperationRetryState {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions,
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
             ppaf_write_retry_allowed: false,
@@ -607,6 +635,8 @@ pub(crate) struct TransportRequest {
     pub auth_context: AuthorizationContext,
     /// The execution context (Initial/Retry/Hedging/Failover).
     pub execution_context: ExecutionContext,
+    /// Why this request fell back from its operation-specific route.
+    pub routing_fallback: Option<RoutingFallbackReason>,
     /// End-to-end deadline for the overall operation.
     pub deadline: Option<Instant>,
 }

@@ -24,12 +24,13 @@ use crate::{
 };
 
 use super::{
+    distinct_hash::Hash128,
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan, SortOrder},
     query_response,
     snapshot::{OrderByRangeToken, ValueBoundary},
-    streaming_ordered_merge, DrainedLeaf, OperationPlan, PartitionRoutingRefresh, Pipeline,
-    PipelineNode, PipelineNodeState, RangedToken, Request, RequestTarget, ResolvedRange,
+    streaming_ordered_merge, Distinct, DrainedLeaf, OperationPlan, PartitionRoutingRefresh,
+    Pipeline, PipelineNode, PipelineNodeState, RangedToken, Request, RequestTarget, ResolvedRange,
     SequentialDrain, SkipTake, StreamingOrderedMerge, TopologyProvider, UnorderedMerge,
 };
 
@@ -195,6 +196,15 @@ pub(crate) async fn build_sequential_drain(
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
+    build_sequential_drain_inner(query_plan, topology_provider, operation, resume).await
+}
+
+async fn build_sequential_drain_inner(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
     validate_query_plan(query_plan)?;
 
     // Global OFFSET / LIMIT / TOP window derived from the query plan.
@@ -237,6 +247,13 @@ pub(crate) async fn build_sequential_drain(
         }
         other => other,
     };
+
+    // `DISTINCT` sits *inside* the skip/take window (SQL applies OFFSET /
+    // LIMIT / TOP to the deduplicated stream), so its token state nests one
+    // level below `SkipTake`'s and is peeled second.
+    let distinct_type = plan_distinct_type(query_plan);
+    let (inner_resume, last_hash) = peel_distinct_resume(inner_resume, distinct_type)?;
+    let resumed_drained = matches!(inner_resume, Some(PipelineNodeState::Drained));
 
     let needs_skip_take = skip > 0 || take.is_some();
 
@@ -297,18 +314,28 @@ pub(crate) async fn build_sequential_drain(
     // the single Request with multiple Requests.
     let fanout: Box<dyn PipelineNode> = Box::new(SequentialDrain::new(request_nodes));
 
+    // `DISTINCT` deduplicates the fan-out stream first; the global skip/take
+    // window then counts deduplicated rows, matching SQL semantics.
+    let deduped = apply_distinct(
+        fanout,
+        distinct_type,
+        last_hash,
+        resumed_drained,
+        operation.emits_binary_payload(),
+    );
+
     // Cross-partition OFFSET / LIMIT / TOP applies a global skip/take over the
     // fan-out's EPK-ordered stream. When none is present the fan-out is the
     // pipeline root directly.
     let root: Box<dyn PipelineNode> = if needs_skip_take {
         Box::new(SkipTake::new(
-            fanout,
+            deduped,
             skip,
             take,
             operation.emits_binary_payload(),
         ))
     } else {
-        fanout
+        deduped
     };
     Ok(Pipeline::new(root))
 }
@@ -329,6 +356,15 @@ pub(crate) fn is_streaming_order_by(info: &QueryInfo) -> bool {
 /// rebuilds it via [`streaming_ordered_merge::build_children`], the same
 /// path a live split uses.
 pub(crate) async fn build_streaming_ordered_merge(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
+    build_streaming_ordered_merge_inner(query_plan, topology_provider, operation, resume).await
+}
+
+async fn build_streaming_ordered_merge_inner(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
@@ -394,6 +430,13 @@ pub(crate) async fn build_streaming_ordered_merge(
         }
         other => other,
     };
+
+    // `DISTINCT` sits *inside* the skip/take window (SQL applies OFFSET /
+    // LIMIT / TOP to the deduplicated stream), so its token state nests one
+    // level below `SkipTake`'s and is peeled second.
+    let distinct_type = plan_distinct_type(query_plan);
+    let (resume, last_hash) = peel_distinct_resume(resume, distinct_type)?;
+    let resumed_drained = matches!(resume, Some(PipelineNodeState::Drained));
 
     let query_from_beginning = query_response::rewritten_query_from_beginning(rewritten_query)?;
     let plain_body = query_response::rewrite_query_body(operation.body(), &query_from_beginning)?;
@@ -520,13 +563,23 @@ pub(crate) async fn build_streaming_ordered_merge(
         query_fingerprint,
     ));
 
+    // `DISTINCT` deduplicates the ordered stream first; the global skip/take
+    // window then counts deduplicated rows, matching SQL semantics.
+    let deduped = apply_distinct(
+        ordered_root,
+        distinct_type,
+        last_hash,
+        resumed_drained,
+        emit_binary,
+    );
+
     // Apply the global OFFSET / LIMIT / TOP window over the ordered stream. When
     // the query carries none, the ordered merge is the pipeline root directly.
     let needs_skip_take = skip > 0 || take.is_some();
     let root: Box<dyn PipelineNode> = if needs_skip_take {
-        Box::new(SkipTake::new(ordered_root, skip, take, emit_binary))
+        Box::new(SkipTake::new(deduped, skip, take, emit_binary))
     } else {
-        ordered_root
+        deduped
     };
     Ok(Pipeline::new(root))
 }
@@ -1277,6 +1330,7 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
         PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
         PipelineNodeState::SkipTake { .. } => "SkipTake",
         PipelineNodeState::StreamingOrderedMerge { .. } => "StreamingOrderedMerge",
+        PipelineNodeState::Distinct { .. } => "Distinct",
     }
 }
 
@@ -1330,6 +1384,119 @@ fn validate_unordered_merge_tokens(
     Ok(parsed)
 }
 
+/// The kind of deduplication this query plan asks for, or
+/// [`DistinctType::None`] when it asks for none.
+fn plan_distinct_type(plan: &QueryPlan) -> DistinctType {
+    plan.query_info
+        .as_ref()
+        .map(|info| info.distinct_type)
+        .unwrap_or_default()
+}
+
+/// Wraps `pipeline`'s root in a [`Distinct`] stage when the plan calls for
+/// deduplication, leaving it untouched otherwise.
+///
+/// `DISTINCT` composes *above* the fan-out root, matching .NET's
+/// `PipelineFactory` and Java's `PipelinedDocumentQueryExecutionContext`:
+/// merge/`ORDER BY` -> aggregate -> **DISTINCT** -> `GROUP BY` ->
+/// `OFFSET`/`LIMIT`/`TOP`.
+/// Wraps `node` in a [`Distinct`] stage when the plan calls for one.
+///
+/// `DISTINCT` deduplicates *before* any `OFFSET` / `LIMIT` / `TOP` window is
+/// applied, so callers must wrap the fan-out with this first and only then
+/// apply [`SkipTake`]; otherwise the window would count duplicate rows.
+fn apply_distinct(
+    node: Box<dyn PipelineNode>,
+    distinct_type: DistinctType,
+    last_hash: Option<Hash128>,
+    resumed_drained: bool,
+    emit_binary: bool,
+) -> Box<dyn PipelineNode> {
+    if distinct_type == DistinctType::None {
+        return node;
+    }
+    // A fully-drained resume needs no deduplication stage: the inner pipeline
+    // is a `DrainedLeaf` and will emit nothing. Wrapping it would leave a
+    // `Distinct` whose `exhausted` is still `false`, so an unordered query
+    // would refuse to re-snapshot a token it had just accepted.
+    if resumed_drained {
+        return node;
+    }
+    Box::new(Distinct::with_last_hash(
+        node,
+        distinct_type,
+        last_hash,
+        emit_binary,
+    ))
+}
+
+/// Splits a resume state into the inner (fan-out) state and the `DISTINCT`
+/// stage's saved `last_hash`, rejecting any token whose shape or distinct kind
+/// does not match the current query plan.
+///
+/// A token minted before DISTINCT support (or for a non-DISTINCT query) has no
+/// `Distinct` layer; resuming it into a DISTINCT plan would silently skip
+/// deduplication, so it is rejected rather than reinterpreted. The mirror case
+/// — a `Distinct` token resumed into a non-DISTINCT plan — falls through to the
+/// inner builders, which reject the unexpected shape.
+fn peel_distinct_resume(
+    resume: Option<PipelineNodeState>,
+    distinct_type: DistinctType,
+) -> crate::error::Result<(Option<PipelineNodeState>, Option<Hash128>)> {
+    match resume {
+        Some(PipelineNodeState::Distinct {
+            distinct_type: saved,
+            last_hash,
+            child,
+        }) => {
+            if saved != distinct_type {
+                return Err(distinct_token_mismatch(saved, distinct_type));
+            }
+            if saved != DistinctType::Ordered {
+                // We never mint one, so this is a hand-crafted or corrupted
+                // token. Resuming would re-emit every value seen before the
+                // checkpoint.
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED,
+                    )
+                    .with_message(
+                        "continuation token carries unordered DISTINCT state, which cannot be \
+                         resumed; add a matching ORDER BY to make the query resumable",
+                    )
+                    .build());
+            }
+            Ok((Some(*child), last_hash))
+        }
+        // `Drained` is shape-agnostic: the whole pipeline, DISTINCT included,
+        // finished.
+        Some(PipelineNodeState::Drained) => Ok((Some(PipelineNodeState::Drained), None)),
+        Some(other) if distinct_type != DistinctType::None => {
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(format!(
+                    "continuation token shape {} does not match a DISTINCT query",
+                    snapshot_kind(&other)
+                ))
+                .build())
+        }
+        other => Ok((other, None)),
+    }
+}
+
+fn distinct_token_mismatch(
+    saved: DistinctType,
+    expected: DistinctType,
+) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        .with_message(format!(
+            "continuation token was minted for {saved:?} DISTINCT but the query plan reports \
+             {expected:?}"
+        ))
+        .build()
+}
+
 /// Validates that the query plan does not require features we don't yet support.
 fn validate_query_plan(plan: &QueryPlan) -> crate::error::Result<()> {
     if plan.hybrid_search_query_info.is_some() {
@@ -1352,9 +1519,6 @@ fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
     }
     if !info.group_by_expressions.is_empty() {
         return Err(unsupported_feature("GROUP BY in cross-partition queries"));
-    }
-    if info.distinct_type != DistinctType::None {
-        return Err(unsupported_feature("DISTINCT in cross-partition queries"));
     }
     Ok(())
 }
@@ -1467,11 +1631,6 @@ fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error:
     if !info.group_by_expressions.is_empty() {
         return Err(unsupported_feature(
             "GROUP BY combined with ORDER BY in cross-partition queries",
-        ));
-    }
-    if info.distinct_type != DistinctType::None {
-        return Err(unsupported_feature(
-            "DISTINCT combined with ORDER BY in cross-partition queries",
         ));
     }
     Ok(())
@@ -3493,7 +3652,7 @@ mod tests {
     }
 
     #[test]
-    fn validate_query_plan_for_streaming_order_by_rejects_aggregates_group_by_distinct() {
+    fn validate_query_plan_for_streaming_order_by_rejects_aggregates_and_group_by() {
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().aggregates = vec!["Count".to_owned()];
         assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
@@ -3501,10 +3660,176 @@ mod tests {
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().group_by_expressions = vec!["c.a".to_owned()];
         assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
 
+    /// DISTINCT is now composed as a stage above the merge rather than
+    /// rejected, so plan validation must accept it in both forms.
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_accepts_distinct() {
+        for distinct_type in [DistinctType::Ordered, DistinctType::Unordered] {
+            let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+            plan.query_info.as_mut().unwrap().distinct_type = distinct_type;
+            assert!(
+                validate_query_plan_for_streaming_order_by(&plan).is_ok(),
+                "{distinct_type:?} DISTINCT must be accepted alongside ORDER BY"
+            );
+        }
+    }
+
+    // ── DISTINCT continuation-token validation ───────────────────────────
+    //
+    // The catalog scenarios `malformed_token_rejected`,
+    // `token_shape_mismatch_rejected`, and
+    // `distinct_type_mismatch_on_resume_rejected` are pinned here, since they
+    // are about token shape rather than page contents.
+
+    fn distinct_state(distinct_type: DistinctType) -> PipelineNodeState {
+        PipelineNodeState::Distinct {
+            distinct_type,
+            last_hash: None,
+            child: Box::new(PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk: String::new(),
+                active_tokens: Vec::new(),
+            }),
+        }
+    }
+
+    #[test]
+    fn peel_distinct_resume_unwraps_a_matching_ordered_token() {
+        let (inner, last_hash) = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Ordered)),
+            DistinctType::Ordered,
+        )
+        .expect("a matching ordered token resumes");
+        assert!(matches!(
+            inner,
+            Some(PipelineNodeState::SequentialDrain { .. })
+        ));
+        assert_eq!(last_hash, None);
+    }
+
+    /// Catalog: `distinct_type_mismatch_on_resume_rejected`. Reinterpreting an
+    /// ordered token as unordered would apply adjacency deduplication to an
+    /// unsorted stream.
+    #[test]
+    fn peel_distinct_resume_rejects_a_distinct_type_mismatch() {
+        let err = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Ordered)),
+            DistinctType::Unordered,
+        )
+        .expect_err("an ordered token must not resume an unordered plan");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
+        assert!(err.to_string().contains("minted for"));
+    }
+
+    /// We never mint an unordered DISTINCT token, so one can only be
+    /// hand-crafted or corrupted — and resuming it would re-emit every value
+    /// seen before the checkpoint.
+    #[test]
+    fn peel_distinct_resume_rejects_a_hand_crafted_unordered_token() {
+        let err = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Unordered)),
+            DistinctType::Unordered,
+        )
+        .expect_err("an unordered DISTINCT token is never resumable");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED)
+        );
+        assert!(err.to_string().contains("ORDER BY"));
+    }
+
+    /// Catalog: `token_shape_mismatch_rejected`. A token minted before DISTINCT
+    /// support (or for a non-DISTINCT query) has no `Distinct` layer; resuming
+    /// it would silently skip deduplication for every remaining page.
+    #[test]
+    fn peel_distinct_resume_rejects_a_token_without_a_distinct_layer() {
+        let err = peel_distinct_resume(
+            Some(PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk: String::new(),
+                active_tokens: Vec::new(),
+            }),
+            DistinctType::Unordered,
+        )
+        .expect_err("a non-DISTINCT token must not resume a DISTINCT plan");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
+        assert!(err.to_string().contains("does not match a DISTINCT query"));
+    }
+
+    /// The mirror case: a `Distinct` token handed to a plan that no longer asks
+    /// for deduplication is rejected rather than reinterpreted.
+    #[test]
+    fn peel_distinct_resume_rejects_a_distinct_token_for_a_plain_plan() {
+        let err = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Ordered)),
+            DistinctType::None,
+        )
+        .expect_err("a DISTINCT token cannot resume a plain plan");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
+    }
+
+    /// `Drained` is shape-agnostic: the whole pipeline, DISTINCT included,
+    /// finished, so it must resume for any plan shape.
+    #[test]
+    fn peel_distinct_resume_passes_drained_through_unchanged() {
+        for distinct_type in [
+            DistinctType::None,
+            DistinctType::Ordered,
+            DistinctType::Unordered,
+        ] {
+            let (inner, last_hash) =
+                peel_distinct_resume(Some(PipelineNodeState::Drained), distinct_type)
+                    .expect("a drained token resumes for any shape");
+            assert!(matches!(inner, Some(PipelineNodeState::Drained)));
+            assert_eq!(last_hash, None);
+        }
+    }
+
+    #[test]
+    fn peel_distinct_resume_passes_a_fresh_start_through() {
+        let (inner, last_hash) = peel_distinct_resume(None, DistinctType::Unordered)
+            .expect("a fresh start needs no token");
+        assert!(inner.is_none());
+        assert_eq!(last_hash, None);
+    }
+
+    /// Catalog: `malformed_token_rejected`. Wrapping the fan-out state in a
+    /// `Distinct` layer must not bypass the inner state's own validation — a
+    /// malformed child is still rejected rather than silently restarting the
+    /// query (which would re-emit every row).
+    #[tokio::test]
+    async fn distinct_token_with_a_malformed_child_is_still_rejected() {
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().distinct_type = DistinctType::Ordered;
-        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+        let operation = Arc::new(order_by_operation());
+        let mut topology = MockTopologyProvider::new(vec![]);
+
+        // A `SequentialDrain` child is the wrong shape under a streaming
+        // ORDER BY plan, and the inner builder must say so.
+        let malformed = PipelineNodeState::Distinct {
+            distinct_type: DistinctType::Ordered,
+            last_hash: None,
+            child: Box::new(PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk: String::new(),
+                active_tokens: Vec::new(),
+            }),
+        };
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &operation, Some(malformed))
+            .await
+            .expect_err("a malformed inner state must not resume");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
     }
 
     #[test]

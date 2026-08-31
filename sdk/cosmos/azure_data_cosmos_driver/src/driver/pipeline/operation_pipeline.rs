@@ -392,7 +392,6 @@ pub(crate) async fn execute_operation_pipeline(
         max_failover_retries,
         max_session_retries,
     );
-
     // Seed the partition key range ID from pre-resolution (PK range cache).
     // This enables PPAF/PPCB partition-level overrides from the very first attempt
     // instead of only after the first retry captures it from response headers.
@@ -417,6 +416,10 @@ pub(crate) async fn execute_operation_pipeline(
         .partitions
         .per_partition_circuit_breaker_enabled
         && location_snapshot.account.preferred_read_endpoints.len() > 1;
+    apply_read_routing_strategy(
+        &mut retry_state,
+        operation.prefers_write_endpoints_for_read(),
+    );
 
     // HUB_REGION_PROCESSING_HEADER_SPEC.md §1.5: gate the
     // `x-ms-cosmos-hub-region-processing-only` latch on data-plane scope
@@ -437,7 +440,9 @@ pub(crate) async fn execute_operation_pipeline(
     // duration) into `evaluate_hedge_eligibility` / `maybe_upgrade_to_hedge`
     // below so the threshold stays stable across retry-driven upgrades.
     let configured_request_timeout = options.end_to_end_latency_policy().map(|p| p.timeout());
-    let deadline = configured_request_timeout.map(|t| Instant::now() + t);
+    let deadline = operation
+        .absolute_deadline()
+        .or_else(|| configured_request_timeout.map(|t| Instant::now() + t));
 
     loop {
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
@@ -465,6 +470,18 @@ pub(crate) async fn execute_operation_pipeline(
                 location_state_store.endpoint_unavailability_ttl(),
             ),
         };
+        let attempt_read_consistency_strategy =
+            if operation.prefers_write_endpoints_for_read() && routing.routing_fallback.is_some() {
+                ReadConsistencyStrategy::Default
+            } else {
+                read_consistency_strategy
+            };
+        let attempt_effective_consistency = resolve_effective_consistency(
+            attempt_read_consistency_strategy,
+            account_default_consistency,
+        );
+        let attempt_session_consistency_active = !session_capturing_disabled
+            && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -504,13 +521,18 @@ pub(crate) async fn execute_operation_pipeline(
         //   option that `AZURE_COSMOS_HEDGING_ENABLED=true` can override; a
         //   correctness constraint must not be something configuration can
         //   turn off.
+        // * **Correctness-constrained internal reads** — PATCH verification
+        //   reads must observe the write region. A hedge winner from another
+        //   region could miss the write being verified, so the operation's
+        //   internal hint suppresses hedging regardless of customer or
+        //   environment configuration.
         // * **An exhausted hedge concurrency budget** — see [`HedgeBudget`].
         //   The permit is held for the lifetime of the race and released when it
         //   ends, so a refusal here means the client already has as many hedge
         //   races open as it is allowed.
         if retry_state.failover_retry_count == 0
             && retry_state.session_token_retry_count == 0
-            && !overrides.hedging_suppressed()
+            && !hedging_suppressed_for_attempt(operation, &overrides)
         {
             let admitted = evaluate_hedge_eligibility(
                 operation,
@@ -654,13 +676,13 @@ pub(crate) async fn execute_operation_pipeline(
             activity_id,
             execution_context,
             deadline,
-            effective_consistency,
+            effective_consistency: attempt_effective_consistency,
             read_consistency_strategy: if operation.is_read_only() {
-                read_consistency_strategy
+                attempt_read_consistency_strategy
             } else {
                 ReadConsistencyStrategy::Default
             },
-            resolved_session_token: session_consistency_active
+            resolved_session_token: attempt_session_consistency_active
                 .then(|| {
                     // Scope the session token to the target partition-key-range
                     // only for thin-client (Gateway 2.0) requests: the RNTBD
@@ -723,7 +745,7 @@ pub(crate) async fn execute_operation_pipeline(
             transport_request,
             &TransportPipelineContext {
                 transport: &selected_transport,
-                allow_sent_transport_retry: operation.is_read_only() || operation.is_idempotent(),
+                allow_sent_transport_retry: operation.allows_ambiguous_outcome_retry(),
                 credential,
                 user_agent,
                 client_id,
@@ -763,7 +785,7 @@ pub(crate) async fn execute_operation_pipeline(
         // Abort, or a retry action. 409/412 map to Abort, and the Abort
         // variant does not carry headers — capturing after evaluation
         // would silently drop tokens from those responses.
-        if session_consistency_active {
+        if attempt_session_consistency_active {
             if let Some(cosmos_headers) = result.cosmos_headers() {
                 if should_capture_session_token_from_status(
                     cosmos_headers.substatus.as_ref(),
@@ -801,22 +823,25 @@ pub(crate) async fn execute_operation_pipeline(
         // upgraded: it carries a region-affine continuation token, so racing
         // (or failing over) to another region would send that token somewhere
         // it is not meaningful. This mirrors the STAGE 2b suppression above.
-        let (action, _hedge_permit) =
-            if retry_state.hedge_already_fired || overrides.hedging_suppressed() {
-                (action, None)
-            } else {
-                maybe_upgrade_to_hedge(
-                    action,
-                    operation,
-                    options,
-                    &location.account,
-                    &routing,
-                    configured_request_timeout,
-                    hedge_budget,
-                    pipeline_type,
-                    activity_id,
-                )
-            };
+        // PATCH verification reads are also never upgraded: their write-region
+        // routing is a correctness constraint, not an availability preference.
+        let (action, _hedge_permit) = if retry_state.hedge_already_fired
+            || hedging_suppressed_for_attempt(operation, &overrides)
+        {
+            (action, None)
+        } else {
+            maybe_upgrade_to_hedge(
+                action,
+                operation,
+                options,
+                &location.account,
+                &routing,
+                configured_request_timeout,
+                hedge_budget,
+                pipeline_type,
+                activity_id,
+            )
+        };
 
         // ── STAGE 6: Apply location effects ────────────────────────────
         // Single-master write effects are deferred into
@@ -830,6 +855,7 @@ pub(crate) async fn execute_operation_pipeline(
         // unavailable would force an unnecessary cross-region failover.
         // Read-path and multi-master write effects are applied immediately
         // so PPCB counters can drive threshold-based failover.
+        let effects = location_effects_for_operation(operation, effects);
         let (immediate_effects, deferred_effects) = partition_effects_for_deferral(
             operation.is_read_only(),
             retry_state.can_use_multiple_write_locations,
@@ -877,7 +903,11 @@ pub(crate) async fn execute_operation_pipeline(
                     }
                 }
 
-                return build_cosmos_response(result, diagnostics);
+                return build_cosmos_response(
+                    result,
+                    diagnostics,
+                    routing.routing_fallback.is_some(),
+                );
             }
             OperationAction::FailoverRetry { new_state, delay } => {
                 tracing::debug!(
@@ -893,9 +923,8 @@ pub(crate) async fn execute_operation_pipeline(
                     &mut retry_state,
                     new_state,
                     location_state_store,
-                    operation.is_read_only(),
-                    operation.operation_type().routes_to_write_endpoints(),
-                    is_distributed_transaction_operation(operation),
+                    operation,
+                    &routing.endpoint,
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
@@ -931,9 +960,8 @@ pub(crate) async fn execute_operation_pipeline(
                     &mut retry_state,
                     new_state,
                     location_state_store,
-                    operation.is_read_only(),
-                    operation.operation_type().routes_to_write_endpoints(),
-                    is_distributed_transaction_operation(operation),
+                    operation,
+                    &routing.endpoint,
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
@@ -1018,9 +1046,8 @@ pub(crate) async fn execute_operation_pipeline(
                     &mut retry_state,
                     new_state,
                     location_state_store,
-                    operation.is_read_only(),
-                    operation.operation_type().routes_to_write_endpoints(),
-                    is_distributed_transaction_operation(operation),
+                    operation,
+                    &routing.endpoint,
                 );
                 // Re-resolve the primary routing against the advanced
                 // retry_state and freshly snapshotted location. The
@@ -1163,6 +1190,42 @@ pub(crate) async fn execute_operation_pipeline(
     }
 }
 
+fn hedging_suppressed_for_attempt(
+    operation: &CosmosOperation,
+    overrides: &OperationOverrides,
+) -> bool {
+    overrides.hedging_suppressed() || operation.suppresses_hedging()
+}
+
+fn apply_read_routing_strategy(
+    retry_state: &mut OperationRetryState,
+    prefer_write_endpoints_for_read: bool,
+) {
+    if prefer_write_endpoints_for_read {
+        retry_state.session_retry_routing =
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints;
+    }
+}
+
+fn location_effects_for_operation(
+    operation: &CosmosOperation,
+    effects: Vec<LocationEffect>,
+) -> Vec<LocationEffect> {
+    if !operation.prefers_write_endpoints_for_read() {
+        return effects;
+    }
+    effects
+        .into_iter()
+        .filter(|effect| {
+            !matches!(
+                effect,
+                LocationEffect::MarkPartitionUnavailable(_)
+                    | LocationEffect::MarkEndpointUnavailable { .. }
+            )
+        })
+        .collect()
+}
+
 /// Drains `retry_state.pending_write_effects` and applies the subset that is
 /// not already reflected in the current routing state.
 ///
@@ -1286,6 +1349,7 @@ fn routing_decision_for_pinned_endpoint(
         transport_mode,
         endpoint_key,
         endpoint: pinned.clone(),
+        routing_fallback: None,
     }
 }
 
@@ -1332,14 +1396,52 @@ fn resolve_endpoint(
         route_to_write_endpoints,
         is_distributed_transaction_operation(operation),
     );
-    let selected = try_select_endpoint(
-        operation,
-        retry_state,
-        account,
-        primary,
-        &in_flight_failed,
-        endpoint_unavailability_ttl,
-    );
+    // PATCH verification reads first consult the per-partition PPAF writer,
+    // then the account write list. Unlike ordinary reads, every active
+    // unavailability reason (including WriteForbidden) makes a write endpoint
+    // unusable: a reachable endpoint that is not the writer cannot verify a
+    // committed Replace. Selection returns `None` instead of falling back to
+    // a known-unavailable writer.
+    let selected = if operation.prefers_write_endpoints_for_read() {
+        select_patch_verification_write_endpoint(retry_state, location, endpoint_unavailability_ttl)
+    } else {
+        try_select_endpoint(
+            operation,
+            retry_state,
+            account,
+            primary,
+            &in_flight_failed,
+            endpoint_unavailability_ttl,
+        )
+    };
+
+    let (selected, attempted_routing_fallback) = if operation.prefers_write_endpoints_for_read()
+        && selected.is_none()
+    {
+        tracing::debug!(
+            routing_fallback = "patch_verification_read_write_endpoint_unavailable_or_excluded",
+            "PATCH verification read falling back to normal read routing"
+        );
+        (
+            select_patch_verification_fallback_read_endpoint(
+                operation,
+                retry_state,
+                account,
+                endpoint_unavailability_ttl,
+            ),
+            Some(
+                crate::driver::pipeline::components::RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded,
+            ),
+        )
+    } else {
+        (selected, None)
+    };
+
+    let fallback_primary = if attempted_routing_fallback.is_some() {
+        account.preferred_endpoints(read_only)
+    } else {
+        primary
+    };
 
     // If every region in the primary list has been attempted (or excluded),
     // fall back to the standard selection ignoring the in-flight skip set so
@@ -1349,7 +1451,7 @@ fn resolve_endpoint(
             operation,
             retry_state,
             account,
-            primary,
+            fallback_primary,
             &[],
             endpoint_unavailability_ttl,
         )
@@ -1406,6 +1508,12 @@ fn resolve_endpoint(
                 .expect("preferred_write_endpoints is always non-empty")
                 .clone()
         })
+    });
+    let routing_fallback = attempted_routing_fallback.filter(|_| {
+        !account
+            .preferred_write_endpoints
+            .iter()
+            .any(|endpoint| endpoint_matches_region_or_url(endpoint, &selected))
     });
     debug_assert!(
         !selected.is_global(),
@@ -1467,6 +1575,7 @@ fn resolve_endpoint(
                 },
                 endpoint_key: ep_endpoint_key,
                 endpoint: ep,
+                routing_fallback,
             }
         };
 
@@ -1547,7 +1656,11 @@ fn resolve_endpoint(
             }
         }
 
-        if !hub_latch_active && is_eligible_for_ppcb(partitions, account, is_read, is_partitioned) {
+        let patch_verification_read = operation.prefers_write_endpoints_for_read();
+        if !hub_latch_active
+            && !patch_verification_read
+            && is_eligible_for_ppcb(partitions, account, is_read, is_partitioned)
+        {
             if let Some(entry) = partitions.circuit_breaker_overrides.get(pk_range_id) {
                 if entry.health_status == HealthStatus::ProbeCandidate
                     && !ppcb_should_skip(&entry.first_failed_endpoint)
@@ -1568,8 +1681,11 @@ fn resolve_endpoint(
                 //
                 // PPAF defers marks until success, so skip only override targets
                 // already failed by this operation.
-                if !ppaf_should_skip(&entry.current_endpoint) {
-                    return make_partition_routing(entry.current_endpoint.clone());
+                if let Some(current_endpoint) =
+                    current_account_endpoint(account, &entry.current_endpoint)
+                        .filter(|endpoint| !ppaf_should_skip(endpoint))
+                {
+                    return make_partition_routing(current_endpoint.clone());
                 }
             }
         }
@@ -1580,6 +1696,7 @@ fn resolve_endpoint(
         endpoint: selected,
         endpoint_key,
         transport_mode,
+        routing_fallback,
     }
 }
 
@@ -1698,6 +1815,139 @@ fn endpoint_is_available(
 
             now.saturating_duration_since(*marked_at) < endpoint_unavailability_ttl
         })
+}
+
+fn endpoint_matches_region_or_url(left: &CosmosEndpoint, right: &CosmosEndpoint) -> bool {
+    match (left.region(), right.region()) {
+        (Some(left), Some(right)) => left == right,
+        _ => left.url() == right.url(),
+    }
+}
+
+fn current_account_endpoint<'a>(
+    account: &'a AccountEndpointState,
+    endpoint: &CosmosEndpoint,
+) -> Option<&'a CosmosEndpoint> {
+    account
+        .preferred_read_endpoints
+        .iter()
+        .chain(account.preferred_write_endpoints.iter())
+        .find(|candidate| endpoint_matches_region_or_url(candidate, endpoint))
+}
+
+fn select_patch_verification_write_endpoint(
+    retry_state: &OperationRetryState,
+    location: &LocationSnapshot,
+    endpoint_unavailability_ttl: Duration,
+) -> Option<CosmosEndpoint> {
+    let account = location.account.as_ref();
+    let now = Instant::now();
+    let is_usable = |endpoint: &CosmosEndpoint| {
+        let region = endpoint.region();
+        let excluded = region.is_some_and(|region| {
+            retry_state
+                .excluded_regions
+                .iter()
+                .any(|excluded| excluded == region)
+        });
+        let known = region.is_none()
+            || account
+                .preferred_read_endpoints
+                .iter()
+                .chain(account.preferred_write_endpoints.iter())
+                .any(|known| known.region() == region);
+        let unavailable = account
+            .unavailable_endpoints
+            .get(endpoint.url())
+            .is_some_and(|(marked_at, _)| {
+                now.saturating_duration_since(*marked_at) < endpoint_unavailability_ttl
+            });
+        !excluded
+            && known
+            && !unavailable
+            && !retry_state
+                .patch_verification_failed_endpoint_urls
+                .contains(endpoint.url())
+    };
+
+    // A persisted PPAF override is the authoritative writer for this physical
+    // partition and takes precedence over the account-level write region.
+    if !account.multiple_write_locations_enabled
+        && location.partitions.per_partition_automatic_failover_enabled
+    {
+        if let Some(entry) = retry_state
+            .partition_key_range_id
+            .as_ref()
+            .and_then(|id| location.partitions.failover_overrides.get(id))
+        {
+            let current_endpoint = current_account_endpoint(account, &entry.current_endpoint);
+            if let Some(current_endpoint) = current_endpoint.filter(|endpoint| is_usable(endpoint))
+            {
+                return Some(current_endpoint.clone());
+            }
+        }
+    }
+
+    let endpoints = &account.preferred_write_endpoints;
+    if endpoints.is_empty() {
+        return None;
+    }
+    let base_index = if retry_state.location.is_current(account.generation) {
+        retry_state.location.index()
+    } else {
+        0
+    };
+    (0..endpoints.len())
+        .map(|offset| &endpoints[(base_index + offset) % endpoints.len()])
+        .find(|endpoint| is_usable(endpoint))
+        .cloned()
+}
+
+fn select_patch_verification_fallback_read_endpoint(
+    operation: &CosmosOperation,
+    retry_state: &OperationRetryState,
+    account: &AccountEndpointState,
+    endpoint_unavailability_ttl: Duration,
+) -> Option<CosmosEndpoint> {
+    let endpoints = account.preferred_endpoints(true);
+    if endpoints.is_empty() {
+        return None;
+    }
+    let base_index = if retry_state.location.is_current(account.generation) {
+        retry_state.location.index()
+    } else {
+        0
+    };
+    let now = Instant::now();
+    let mut first_unavailable = None;
+    for offset in 0..endpoints.len() {
+        let candidate = &endpoints[(base_index + offset) % endpoints.len()];
+        let excluded = candidate.region().is_some_and(|region| {
+            retry_state
+                .excluded_regions
+                .iter()
+                .any(|excluded| excluded == region)
+        });
+        let already_failed = retry_state
+            .patch_verification_failed_endpoint_urls
+            .contains(candidate.url());
+        if excluded || already_failed {
+            continue;
+        }
+        if endpoint_is_available(
+            operation,
+            candidate,
+            account,
+            now,
+            endpoint_unavailability_ttl,
+        ) {
+            return Some(candidate.clone());
+        }
+        if first_unavailable.is_none() {
+            first_unavailable = Some(candidate.clone());
+        }
+    }
+    first_unavailable
 }
 
 /// Parameters resolved per-attempt for building a transport request.
@@ -1925,6 +2175,7 @@ fn build_transport_request(
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,
         execution_context: ctx.execution_context,
+        routing_fallback: ctx.routing.routing_fallback,
         deadline: ctx.deadline,
     })
 }
@@ -1972,6 +2223,7 @@ fn effective_partition_key_for_request(
 fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
+    routing_fallback: bool,
 ) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         TransportOutcome::Success {
@@ -1983,12 +2235,10 @@ fn build_cosmos_response(
 
             let diagnostics_ctx = Arc::new(diagnostics.complete());
 
-            Ok(CosmosResponse::new(
-                body,
-                cosmos_headers,
-                status,
-                diagnostics_ctx,
-            ))
+            Ok(
+                CosmosResponse::new(body, cosmos_headers, status, diagnostics_ctx)
+                    .with_routing_fallback(routing_fallback),
+            )
         }
         _ => {
             // This should only be called with a Complete(Success) result.
@@ -2186,6 +2436,16 @@ fn apply_optional_request_headers(
             }
         }
     }
+
+    if operation.prefers_write_endpoints_for_read() && transport_request.routing_fallback.is_none()
+    {
+        // LatestCommitted is not session-effective. Enforce that invariant
+        // after every custom-header layer so callers cannot reintroduce a
+        // session token behind the operation pipeline's resolution logic.
+        transport_request
+            .headers
+            .remove(request_header_names::SESSION_TOKEN);
+    }
 }
 
 /// Sleeps for the failover-retry delay if one was requested.
@@ -2216,17 +2476,28 @@ fn advance_to_next_attempt(
     retry_state: &mut OperationRetryState,
     new_state: OperationRetryState,
     location_state_store: &LocationStateStore,
-    is_read_only: bool,
-    route_to_write_endpoints: bool,
-    is_distributed_transaction: bool,
+    operation: &CosmosOperation,
+    attempted_endpoint: &CosmosEndpoint,
 ) {
     let next_location = location_state_store.snapshot();
+    let mut new_state = new_state;
+    let prefer_write_endpoints_for_read = operation.prefers_write_endpoints_for_read();
+    apply_read_routing_strategy(&mut new_state, prefer_write_endpoints_for_read);
+    if prefer_write_endpoints_for_read
+        && !new_state
+            .patch_verification_failed_endpoint_urls
+            .contains(attempted_endpoint.url())
+    {
+        new_state
+            .patch_verification_failed_endpoint_urls
+            .push(attempted_endpoint.url().clone());
+    }
     let endpoints_len = preferred_endpoints_for_attempt(
         next_location.account.as_ref(),
         &new_state,
-        is_read_only,
-        route_to_write_endpoints,
-        is_distributed_transaction,
+        operation.is_read_only(),
+        operation.operation_type().routes_to_write_endpoints(),
+        is_distributed_transaction_operation(operation),
     )
     .len();
     let pending = std::mem::take(&mut retry_state.pending_write_effects);
@@ -2630,7 +2901,7 @@ fn finalize_hedge_attempt(
 ) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         outcome @ TransportOutcome::Success { .. } => {
-            build_cosmos_response(Box::new(TransportResult { outcome }), diagnostics)
+            build_cosmos_response(Box::new(TransportResult { outcome }), diagnostics, false)
         }
         TransportOutcome::HttpError {
             status,
@@ -2889,8 +3160,7 @@ async fn perform_single_attempt(
         transport_request,
         &TransportPipelineContext {
             transport: &selected_transport,
-            allow_sent_transport_retry: ctx.operation.is_read_only()
-                || ctx.operation.is_idempotent(),
+            allow_sent_transport_retry: ctx.operation.allows_ambiguous_outcome_retry(),
             credential: ctx.credential,
             user_agent: ctx.user_agent,
             client_id: ctx.client_id,
@@ -4214,6 +4484,88 @@ mod tests {
         )
     }
 
+    #[test]
+    fn patch_verification_read_suppresses_both_hedging_entry_points() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let ordinary_read = CosmosOperation::read_item(item.clone());
+        let patch_read = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let overrides = OperationOverrides::default();
+
+        assert!(!super::hedging_suppressed_for_attempt(
+            &ordinary_read,
+            &overrides
+        ));
+        assert!(super::hedging_suppressed_for_attempt(
+            &patch_read,
+            &overrides
+        ));
+    }
+
+    #[test]
+    fn patch_read_routing_hint_is_restored_after_generic_failover_reset() {
+        use crate::driver::pipeline::components::SessionRetryRouting;
+
+        let mut state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        )
+        .advance_failover();
+        assert_eq!(
+            state.session_retry_routing,
+            SessionRetryRouting::PreferredEndpoints
+        );
+        state.ppcb_active = true;
+
+        super::apply_read_routing_strategy(&mut state, true);
+
+        assert_eq!(
+            state.session_retry_routing,
+            SessionRetryRouting::PreferredWriteEndpoints
+        );
+        assert!(state.ppcb_active);
+    }
+
+    #[test]
+    fn patch_verification_read_suppresses_shared_location_effects() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let patch_read = CosmosOperation::read_item(item.clone()).as_patch_read_sub_operation();
+        let ordinary_read = CosmosOperation::read_item(item);
+        let endpoint = make_endpoint("eastus");
+        let effects = vec![
+            LocationEffect::MarkPartitionUnavailable(
+                crate::driver::routing::UnavailablePartition {
+                    partition_key_range_id: Some("0".parse().unwrap()),
+                    region: Some("eastus".into()),
+                    is_read: true,
+                    is_partitioned_resource: true,
+                },
+            ),
+            LocationEffect::MarkEndpointUnavailable {
+                endpoint,
+                reason: crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            },
+            LocationEffect::RefreshAccountProperties,
+        ];
+
+        let patch_effects = super::location_effects_for_operation(&patch_read, effects.clone());
+        assert_eq!(patch_effects.len(), 1);
+        assert!(matches!(
+            patch_effects[0],
+            LocationEffect::RefreshAccountProperties
+        ));
+
+        let ordinary_effects = super::location_effects_for_operation(&ordinary_read, effects);
+        assert!(ordinary_effects
+            .iter()
+            .any(|effect| matches!(effect, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(ordinary_effects
+            .iter()
+            .any(|effect| matches!(effect, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
     /// Supplying more partition-key components than the container's single-path
     /// definition declares must surface as a `BadRequest` from the EPK
     /// precomputation, never silently hash the extras into a broken EPK. This
@@ -4259,6 +4611,7 @@ mod tests {
             endpoint_key: endpoint.endpoint_key(),
             endpoint,
             transport_mode: TransportMode::Gateway,
+            routing_fallback: None,
         }
     }
 
@@ -4686,6 +5039,7 @@ mod tests {
             endpoint_key: EndpointKey::try_from(&selected_url).unwrap(),
             selected_url,
             transport_mode: TransportMode::GatewayV2,
+            routing_fallback: None,
         };
 
         let activity_id = ActivityId::from_string("default-activity".to_string());
@@ -4720,6 +5074,7 @@ mod tests {
             endpoint_key: endpoint.endpoint_key(),
             endpoint,
             transport_mode: TransportMode::Gateway,
+            routing_fallback: None,
         };
 
         let activity_id = ActivityId::from_string("default-activity".to_string());
@@ -4741,6 +5096,54 @@ mod tests {
             request.url.as_str(),
             "https://test.documents.azure.com/dbs/mydb"
         );
+    }
+
+    #[test]
+    fn patch_verification_read_strips_custom_session_token_headers() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("patch-read-headers".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::LatestCommitted,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let session_header = HeaderName::from_static(request_header_names::SESSION_TOKEN);
+        let custom_headers = std::collections::HashMap::from([(
+            session_header.clone(),
+            azure_core::http::headers::HeaderValue::from_static("0:1#42"),
+        )]);
+
+        // Dataflow-supplied custom headers are inserted while the request is built.
+        let mut request = build_transport_request(
+            &operation,
+            &OperationOverrides::default(),
+            Some(&custom_headers),
+            &ctx,
+        )
+        .expect("request should build");
+        super::apply_optional_request_headers(
+            &mut request,
+            &operation,
+            &crate::options::OperationOptionsView::new(None, None, None, None),
+        );
+        assert!(request.headers.get_optional_str(&session_header).is_none());
+
+        // Layered runtime/account/operation custom headers are applied afterward.
+        let mut options = crate::options::OperationOptions::default();
+        options.custom_headers = Some(custom_headers);
+        let view = crate::options::OperationOptionsView::new(None, None, None, Some(&options));
+        let mut request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
+        super::apply_optional_request_headers(&mut request, &operation, &view);
+        assert!(request.headers.get_optional_str(&session_header).is_none());
     }
 
     #[test]
@@ -4784,6 +5187,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
             partition_key_range_id: None,
@@ -4802,6 +5206,609 @@ mod tests {
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, write_endpoint);
+    }
+
+    #[test]
+    fn resolve_endpoint_uses_write_region_for_patch_verification_read() {
+        let write_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint].into(),
+            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+            account_write_endpoints: vec![write_endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: write_endpoint.clone(),
+        }));
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.session_retry_routing =
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.endpoint, write_endpoint);
+        assert_eq!(routing.routing_fallback, None);
+    }
+
+    #[test]
+    fn patch_verification_read_falls_back_when_write_endpoint_is_unavailable() {
+        use crate::driver::pipeline::components::RoutingFallbackReason;
+
+        let write_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.session_retry_routing =
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints;
+
+        for reason in [
+            crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            crate::driver::routing::UnavailableReason::WriteForbidden,
+        ] {
+            let mut unavailable = std::collections::HashMap::new();
+            unavailable.insert(
+                write_endpoint.url().clone(),
+                (std::time::Instant::now(), reason),
+            );
+            let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+                generation: 0,
+                preferred_read_endpoints: vec![read_endpoint.clone()].into(),
+                preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+                account_write_endpoints: vec![write_endpoint.clone()].into(),
+                unavailable_endpoints: unavailable,
+                multiple_write_locations_enabled: false,
+                default_endpoint: read_endpoint.clone(),
+            }));
+
+            let routing = super::resolve_endpoint(
+                &operation,
+                &retry_state,
+                &location,
+                false,
+                true,
+                Duration::from_secs(60),
+            );
+
+            assert_eq!(routing.endpoint, read_endpoint);
+            assert_eq!(
+                routing.routing_fallback,
+                Some(
+                    RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded
+                )
+            );
+        }
+    }
+
+    #[test]
+    fn patch_verification_read_recycled_writer_is_not_reported_as_fallback() {
+        let write_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            write_endpoint.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![write_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+            account_write_endpoints: vec![write_endpoint.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: write_endpoint.clone(),
+        }));
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        super::apply_read_routing_strategy(&mut retry_state, true);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.endpoint, write_endpoint);
+        assert_eq!(routing.routing_fallback, None);
+    }
+
+    #[test]
+    fn patch_verification_read_falls_back_when_write_endpoint_is_excluded() {
+        use crate::driver::pipeline::components::RoutingFallbackReason;
+
+        let write_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+            account_write_endpoints: vec![write_endpoint].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: read_endpoint.clone(),
+        }));
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            vec![crate::options::Region::EAST_US],
+            3,
+            2,
+        );
+        super::apply_read_routing_strategy(&mut retry_state, true);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.endpoint, read_endpoint);
+        assert_eq!(
+            routing.routing_fallback,
+            Some(RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded)
+        );
+    }
+
+    #[test]
+    fn patch_verification_read_rotates_across_multi_write_endpoints() {
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let west = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone(), west.clone()].into(),
+            preferred_write_endpoints: vec![east.clone(), west.clone()].into(),
+            account_write_endpoints: vec![east.clone(), west.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: true,
+            default_endpoint: east,
+        }));
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            true,
+            Vec::new(),
+            3,
+            2,
+        )
+        .advance_failover()
+        .advance_location(2, 0);
+        super::apply_read_routing_strategy(&mut retry_state, true);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.endpoint, west);
+        assert_eq!(routing.routing_fallback, None);
+    }
+
+    #[test]
+    fn patch_verification_read_uses_ppaf_partition_writer() {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
+        };
+
+        let account_writer = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let partition_gateway =
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap();
+        let partition_writer = CosmosEndpoint::regional_with_gateway_v2(
+            "westus2".into(),
+            partition_gateway.clone(),
+            Url::parse("https://current-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+        let stale_partition_writer = CosmosEndpoint::regional_with_gateway_v2(
+            "westus2".into(),
+            partition_gateway,
+            Url::parse("https://stale-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+        let account = Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![account_writer.clone(), partition_writer.clone()].into(),
+            preferred_write_endpoints: vec![account_writer.clone()].into(),
+            account_write_endpoints: vec![account_writer.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: account_writer,
+        });
+        let mut partitions = PartitionEndpointState::default();
+        partitions.per_partition_automatic_failover_enabled = true;
+        partitions.failover_overrides.insert(
+            "0".parse().unwrap(),
+            PartitionFailoverEntry {
+                current_endpoint: stale_partition_writer.clone(),
+                first_failed_endpoint: stale_partition_writer,
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+        let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.partition_key_range_id = Some("0".parse().unwrap());
+        super::apply_read_routing_strategy(&mut retry_state, true);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.endpoint, partition_writer);
+        assert_eq!(routing.routing_fallback, None);
+    }
+
+    #[test]
+    fn patch_verification_read_skips_unusable_ppaf_writer_for_account_writer() {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
+        };
+
+        let account_writer = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let unavailable_partition_writer = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            unavailable_partition_writer.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+        let account = Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![
+                account_writer.clone(),
+                unavailable_partition_writer.clone(),
+            ]
+            .into(),
+            preferred_write_endpoints: vec![account_writer.clone()].into(),
+            account_write_endpoints: vec![account_writer.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: account_writer.clone(),
+        });
+        let mut partitions = PartitionEndpointState::default();
+        partitions.per_partition_automatic_failover_enabled = true;
+        partitions.failover_overrides.insert(
+            "0".parse().unwrap(),
+            PartitionFailoverEntry {
+                current_endpoint: unavailable_partition_writer,
+                first_failed_endpoint: account_writer.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+        let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.partition_key_range_id = Some("0".parse().unwrap());
+        super::apply_read_routing_strategy(&mut retry_state, true);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.endpoint, account_writer);
+        assert_eq!(routing.routing_fallback, None);
+    }
+
+    #[test]
+    fn patch_verification_read_skips_failed_writer_after_excluded_head() {
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let west = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let central = CosmosEndpoint::regional(
+            "centralus".into(),
+            Url::parse("https://test-centralus.documents.azure.com:443/").unwrap(),
+        );
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone(), west.clone(), central.clone()].into(),
+            preferred_write_endpoints: vec![east.clone(), west.clone(), central.clone()].into(),
+            account_write_endpoints: vec![east, west.clone(), central.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: true,
+            default_endpoint: west.clone(),
+        }));
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            true,
+            vec![crate::options::Region::EAST_US],
+            3,
+            2,
+        );
+        retry_state
+            .patch_verification_failed_endpoint_urls
+            .push(west.url().clone());
+        super::apply_read_routing_strategy(&mut retry_state, true);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.endpoint, central);
+        assert_eq!(routing.routing_fallback, None);
+    }
+
+    #[test]
+    fn patch_verification_fallback_ignores_ppcb_override() {
+        use crate::driver::pipeline::components::RoutingFallbackReason;
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
+        };
+
+        let unavailable_writer = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let normal_read = CosmosEndpoint::regional(
+            "centralus".into(),
+            Url::parse("https://test-centralus.documents.azure.com:443/").unwrap(),
+        );
+        let ppcb_override = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            unavailable_writer.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+        let account = Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![normal_read.clone(), ppcb_override.clone()].into(),
+            preferred_write_endpoints: vec![unavailable_writer.clone()].into(),
+            account_write_endpoints: vec![unavailable_writer.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: unavailable_writer.clone(),
+        });
+        let mut partitions = PartitionEndpointState::default();
+        partitions.per_partition_circuit_breaker_enabled = true;
+        partitions.circuit_breaker_overrides.insert(
+            "0".parse().unwrap(),
+            PartitionFailoverEntry {
+                current_endpoint: ppcb_override,
+                first_failed_endpoint: unavailable_writer,
+                failed_endpoints: Default::default(),
+                read_failure_count: i32::MAX,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+        let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.partition_key_range_id = Some("0".parse().unwrap());
+        super::apply_read_routing_strategy(&mut retry_state, true);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.endpoint, normal_read);
+        assert_eq!(
+            routing.routing_fallback,
+            Some(RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded)
+        );
+    }
+
+    #[test]
+    fn patch_verification_write_routing_wins_over_ppcb_read_override() {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
+        };
+
+        let write_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let ppcb_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let account = Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![write_endpoint.clone(), ppcb_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+            account_write_endpoints: vec![write_endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: write_endpoint.clone(),
+        });
+        let mut partitions = PartitionEndpointState::default();
+        partitions.per_partition_circuit_breaker_enabled = true;
+        partitions.circuit_breaker_overrides.insert(
+            "0".parse().unwrap(),
+            PartitionFailoverEntry {
+                current_endpoint: ppcb_endpoint.clone(),
+                first_failed_endpoint: write_endpoint.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: i32::MAX,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+        let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let ordinary_read = CosmosOperation::read_item(item.clone());
+        let patch_read = CosmosOperation::read_item(item).as_patch_read_sub_operation();
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.partition_key_range_id = Some("0".parse().unwrap());
+
+        let ordinary_routing = super::resolve_endpoint(
+            &ordinary_read,
+            &retry_state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(ordinary_routing.endpoint, ppcb_endpoint);
+
+        retry_state.session_retry_routing =
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints;
+        let patch_routing = super::resolve_endpoint(
+            &patch_read,
+            &retry_state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(patch_routing.endpoint, write_endpoint);
+        assert_eq!(patch_routing.routing_fallback, None);
     }
 
     #[cfg(feature = "preview_dtx")]
@@ -4951,6 +5958,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -5019,6 +6027,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -5099,6 +6108,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -5212,6 +6222,7 @@ mod tests {
             hub_region_processing_only: true,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
             partition_key_range_id: Some(pk_range_id.parse().unwrap()),
@@ -6056,6 +7067,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: vec!["westus2".into(), "eastus".into()],
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -6123,6 +7135,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: vec!["westus2".into()],
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -6193,6 +7206,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: vec!["westus2".into(), "eastus".into()],
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -6276,6 +7290,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: vec!["westus2".into()],
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -6372,6 +7387,7 @@ mod tests {
             // Caller excludes the hub region — they want isolation to
             // WestUS2 only.
             excluded_regions: vec!["eastus".into()],
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -7172,7 +8188,7 @@ mod tests {
     }
 
     #[test]
-    fn resolve_endpoint_ppaf_override_honored_when_current_endpoint_not_failed() {
+    fn resolve_endpoint_ppaf_override_refreshes_current_endpoint_url() {
         // Counterpart to the regression test above: when the override's
         // current_endpoint is NOT in the in-flight skip set, the PPAF
         // override MUST be honored (otherwise prior failover decisions
@@ -7184,9 +8200,15 @@ mod tests {
             "northcentralus".into(),
             Url::parse("https://test-northcentralus.documents.azure.com:443/").unwrap(),
         );
-        let central = CosmosEndpoint::regional(
+        let central = CosmosEndpoint::regional_with_gateway_v2(
             "centralus".into(),
             Url::parse("https://test-centralus.documents.azure.com:443/").unwrap(),
+            Url::parse("https://current-centralus-thin.documents.azure.com:444/").unwrap(),
+        );
+        let stale_central = CosmosEndpoint::regional_with_gateway_v2(
+            "centralus".into(),
+            Url::parse("https://test-centralus.documents.azure.com:443/").unwrap(),
+            Url::parse("https://stale-centralus-thin.documents.azure.com:444/").unwrap(),
         );
 
         let account = Arc::new(AccountEndpointState {
@@ -7209,7 +8231,7 @@ mod tests {
         partitions.failover_overrides.insert(
             pk_range_id.clone(),
             PartitionFailoverEntry {
-                current_endpoint: central.clone(),
+                current_endpoint: stale_central,
                 first_failed_endpoint: north.clone(),
                 failed_endpoints: Default::default(),
                 read_failure_count: 0,
@@ -9642,6 +10664,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,

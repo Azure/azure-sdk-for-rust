@@ -12,7 +12,7 @@ azure_core = { version = "1.1.0", default-features = false, features = [
   "reqwest",
   "tokio",
 ] }
-azure_data_cosmos = { path = "../../sdk/cosmos/azure_data_cosmos", default-features = false, features = [
+azure_data_cosmos = { path = "../../../sdk/cosmos/azure_data_cosmos", default-features = false, features = [
   "hmac_rust",
   "reqwest",
   "native_tls",

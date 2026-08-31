@@ -33,12 +33,12 @@ This document specifies the configuration option types for the Rust SDK (`azure_
 
 Configuration values resolve from highest to lowest priority:
 
-| Layer | Scope | Lifetime | Priority |
-| --- | --- | --- | --- |
-| **Operation** | Per request | Single call | Highest |
-| **Account** | Per `CosmosClient` | Client lifetime | ↑ |
-| **Runtime** | Application-global | App lifetime | ↑ |
-| **Environment** | Process-wide | Static (read once) | Lowest |
+| Layer           | Scope              | Lifetime           | Priority |
+| --------------- | ------------------ | ------------------ | -------- |
+| **Operation**   | Per request        | Single call        | Highest  |
+| **Account**     | Per `CosmosClient` | Client lifetime    | ↑        |
+| **Runtime**     | Application-global | App lifetime       | ↑        |
+| **Environment** | Process-wide       | Static (read once) | Lowest   |
 
 An **option group** is a `#[non_exhaustive]` struct whose fields are all `Option<T>`. The same struct type is reused at every explicit layer (runtime, account, operation) it participates in. Resolution walks from the highest-priority layer downward, returning the first `Some` value.
 
@@ -85,10 +85,10 @@ incidents — flipping a feature off (or on) fleet-wide without a code change or
 redeploy — and should normally be left unset. Today the following options expose
 an override:
 
-| Base env var | Kill switch | Effect when set |
-| --- | --- | --- |
-| `AZURE_COSMOS_HEDGING_ENABLED` | `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` | Forces cross-region read hedging on/off regardless of any programmatic `AvailabilityStrategy` or per-request value. |
-| `AZURE_COSMOS_PPCB_ENABLED` | `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` | Forces the per-partition circuit breaker (PPCB) on/off regardless of the `PartitionFailoverOptions` setting **and** the account property `enable_per_partition_failover_behavior`. |
+| Base env var                                       | Kill switch                                                 | Effect when set                                                                                                                                                                                   |
+| -------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AZURE_COSMOS_HEDGING_ENABLED`                     | `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE`                     | Forces cross-region read hedging on/off regardless of any programmatic `AvailabilityStrategy` or per-request value.                                                                               |
+| `AZURE_COSMOS_PPCB_ENABLED`                        | `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`                        | Forces the per-partition circuit breaker (PPCB) on/off regardless of the `PartitionFailoverOptions` setting **and** the account property `enable_per_partition_failover_behavior`.                |
 | `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED` | `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED_OVERRIDE` | Forces the runtime to allow or suppress Gateway V2 regardless of the normal `ConnectionPoolOptions` value. It cannot bypass HTTP/2 availability, endpoint advertisement, or connectivity probing. |
 
 > **Note on the PPCB kill switch.** Unlike the hedging switch, PPCB enablement
@@ -201,14 +201,14 @@ Cross-layer options that apply to individual service requests. This is the most 
 pub struct OperationOptions { /* fields below */ }
 ```
 
-| Option | Type | Env Var | Notes |
-| --- | --- | --- | --- |
-| `read_consistency_strategy` | `Option<ReadConsistencyStrategy>` | `AZURE_COSMOS_READ_CONSISTENCY_STRATEGY` | Read consistency for the operation. Replaces the legacy `consistency_level` field. The SDK enforces weakening-only semantics relative to the account default. |
-| `excluded_regions` | `Option<Vec<RegionName>>` | `AZURE_COSMOS_EXCLUDED_REGIONS` | Regions to exclude from routing. `None` inherits from a lower layer; `Some(vec![])` explicitly clears exclusions. Env var is comma-separated (e.g. `"West US,East US"`). |
-| `content_response_on_write` | `Option<bool>` | `AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE` | Whether write operations return the resource body in the response. Only applicable to write operations; ignored by reads and queries. Cascades from runtime → account → operation, matching .NET/Java/Go behavior. |
-| `hedging_enabled` | `Option<bool>` | `AZURE_COSMOS_HEDGING_ENABLED` | Master switch for cross-region read hedging. `None` (unset) means **no env override**: resolution defers to the programmatic `AvailabilityStrategy` (which may explicitly disable hedging). Only when neither the env switch nor a programmatic strategy is set does the driver default to hedging **on**, using the built-in default threshold of `min(1000ms, request_timeout / 2)`. When set, it is the **source of truth** and takes precedence over the programmatic `AvailabilityStrategy` in both directions: `false` disables hedging even when an explicit `AvailabilityStrategy::Hedging(..)` is configured, and `true` enables hedging even when an explicit `AvailabilityStrategy::Disabled` is configured (a programmatic `Hedging(..)` still supplies its custom threshold). Also recognizes the `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` kill switch (see [`_OVERRIDE` kill switches](#_override-kill-switches)), which wins over every layer including a per-request value. |
-| `throttling_retry_options.max_retry_count` | `Option<u32>` | `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT` | Maximum number of retries when a request is throttled (HTTP 429, rate-limited) before the error surfaces to the caller. Field of the nested `ThrottlingRetryOptions` group. Analogous to .NET's `MaxRetryAttemptsOnRateLimitedRequests`. Defaults to `9` when unset; `0` disables throttle retries entirely. **Scope**: applies per transport-pipeline invocation, not per logical operation — an operation that fans out across regions (failover, hedging) gets a fresh budget per leg. Use `end_to_end_latency_policy` to bound total per-operation time. Settable client-wide via [`CosmosClientBuilder::with_default_operation_options`]. |
-| `throttling_retry_options.max_retry_wait_time` | `Option<Duration>` | — | Maximum cumulative time to spend waiting across throttle (HTTP 429) retries before the error surfaces. Field of the nested `ThrottlingRetryOptions` group. Analogous to .NET's `MaxRetryWaitTimeOnRateLimitedRequests`. Defaults to `30s` when unset. No env var because `Duration` is not parseable from a single string. **Scope**: same per-invocation scope as `max_retry_count` — not a per-operation cap. Settable client-wide via [`CosmosClientBuilder::with_default_operation_options`]. |
+| Option                                         | Type                              | Env Var                                  | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------- | --------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `read_consistency_strategy`                    | `Option<ReadConsistencyStrategy>` | `AZURE_COSMOS_READ_CONSISTENCY_STRATEGY` | Read consistency for the operation. Replaces the legacy `consistency_level` field. The SDK enforces weakening-only semantics relative to the account default.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `excluded_regions`                             | `Option<Vec<RegionName>>`         | `AZURE_COSMOS_EXCLUDED_REGIONS`          | Regions to exclude from routing. `None` inherits from a lower layer; `Some(vec![])` explicitly clears exclusions. Env var is comma-separated (e.g. `"West US,East US"`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `content_response_on_write`                    | `Option<bool>`                    | `AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE` | Whether write operations return the resource body in the response. Only applicable to write operations; ignored by reads and queries. Cascades from runtime → account → operation, matching .NET/Java/Go behavior.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `hedging_enabled`                              | `Option<bool>`                    | `AZURE_COSMOS_HEDGING_ENABLED`           | Master switch for cross-region read hedging. `None` (unset) means **no env override**: resolution defers to the programmatic `AvailabilityStrategy` (which may explicitly disable hedging). Only when neither the env switch nor a programmatic strategy is set does the driver default to hedging **on**, using the built-in default threshold of `min(1000ms, request_timeout / 2)`. When set, it is the **source of truth** and takes precedence over the programmatic `AvailabilityStrategy` in both directions: `false` disables hedging even when an explicit `AvailabilityStrategy::Hedging(..)` is configured, and `true` enables hedging even when an explicit `AvailabilityStrategy::Disabled` is configured (a programmatic `Hedging(..)` still supplies its custom threshold). Also recognizes the `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` kill switch (see [`_OVERRIDE` kill switches](#_override-kill-switches)), which wins over every layer including a per-request value. |
+| `throttling_retry_options.max_retry_count`     | `Option<u32>`                     | `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`  | Maximum number of retries when a request is throttled (HTTP 429, rate-limited) before the error surfaces to the caller. Field of the nested `ThrottlingRetryOptions` group. Analogous to .NET's `MaxRetryAttemptsOnRateLimitedRequests`. Defaults to `9` when unset; `0` disables throttle retries entirely. **Scope**: applies per transport-pipeline invocation, not per logical operation — an operation that fans out across regions (failover, hedging) gets a fresh budget per leg. Use `end_to_end_latency_policy` to bound total per-operation time. Settable client-wide via [`CosmosClientBuilder::with_default_operation_options`].                                                                                                                                                                                                                                                                                                                                             |
+| `throttling_retry_options.max_retry_wait_time` | `Option<Duration>`                | —                                        | Maximum cumulative time to spend waiting across throttle (HTTP 429) retries before the error surfaces. Field of the nested `ThrottlingRetryOptions` group. Analogous to .NET's `MaxRetryWaitTimeOnRateLimitedRequests`. Defaults to `30s` when unset. No env var because `Duration` is not parseable from a single string. **Scope**: same per-invocation scope as `max_retry_count` — not a per-operation cap. Settable client-wide via [`CosmosClientBuilder::with_default_operation_options`].                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ### 3.2 `ConnectionOptions`
 
@@ -222,10 +222,10 @@ Options controlling network connection behavior. Not available at the operation 
 pub struct ConnectionOptions { /* fields below */ }
 ```
 
-| Option | Type | Env Var | Notes |
-| --- | --- | --- | --- |
-| `request_timeout` | `Option<Duration>` | `AZURE_COSMOS_REQUEST_TIMEOUT` | Per-request network timeout. |
-| `connection_pool` | `Option<ConnectionPoolOptions>` | — | Nested group for connection pool tuning. Marked `#[option(nested)]`. |
+| Option            | Type                            | Env Var                        | Notes                                                                |
+| ----------------- | ------------------------------- | ------------------------------ | -------------------------------------------------------------------- |
+| `request_timeout` | `Option<Duration>`              | `AZURE_COSMOS_REQUEST_TIMEOUT` | Per-request network timeout.                                         |
+| `connection_pool` | `Option<ConnectionPoolOptions>` | —                              | Nested group for connection pool tuning. Marked `#[option(nested)]`. |
 
 ### 3.3 `ConnectionPoolOptions`
 
@@ -239,11 +239,11 @@ Fine-grained connection pool tuning. Nested via `#[option(nested)]` on `Connecti
 pub struct ConnectionPoolOptions { /* fields below */ }
 ```
 
-| Option | Type | Env Var | Notes |
-| --- | --- | --- | --- |
-| `idle_timeout` | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_TIMEOUT` | How long idle connections are kept alive. |
-| `max_connections` | `Option<usize>` | `AZURE_COSMOS_POOL_MAX_CONNECTIONS` | Maximum number of connections in the pool. |
-| `gateway_v2_disabled` | `bool` | `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED` | Runtime-scoped Gateway V2 opt-out configured with `ConnectionPoolOptionsBuilder::with_gateway_v2_disabled`; defaults to `false`. The generated `_OVERRIDE` variant is authoritative over the builder and base environment value, but cannot bypass HTTP/2 or server eligibility when set to `false`. |
+| Option                | Type               | Env Var                                            | Notes                                                                                                                                                                                                                                                                                                |
+| --------------------- | ------------------ | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `idle_timeout`        | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_TIMEOUT`                   | How long idle connections are kept alive.                                                                                                                                                                                                                                                            |
+| `max_connections`     | `Option<usize>`    | `AZURE_COSMOS_POOL_MAX_CONNECTIONS`                | Maximum number of connections in the pool.                                                                                                                                                                                                                                                           |
+| `gateway_v2_disabled` | `bool`             | `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED` | Runtime-scoped Gateway V2 opt-out configured with `ConnectionPoolOptionsBuilder::with_gateway_v2_disabled`; defaults to `false`. The generated `_OVERRIDE` variant is authoritative over the builder and base environment value, but cannot bypass HTTP/2 or server eligibility when set to `false`. |
 
 ### 3.4 `RegionOptions`
 
@@ -257,8 +257,8 @@ Options controlling region selection and routing. Not available at the operation
 pub struct RegionOptions { /* fields below */ }
 ```
 
-| Option | Type | Env Var | Notes |
-| --- | --- | --- | --- |
+| Option               | Type                 | Env Var                           | Notes                                                                                                                                                                                                                                                  |
+| -------------------- | -------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `application_region` | `Option<RegionName>` | `AZURE_COSMOS_APPLICATION_REGION` | The region where the application is running. The SDK and backend negotiate optimal region ordering from this location. Only one of `application_region` should be set (the old `preferred_regions` / `application_preferred_regions` list is removed). |
 
 ### 3.5 `RetryOptions`
@@ -273,9 +273,9 @@ Options controlling retry behavior. Not available at the operation layer because
 pub struct RetryOptions { /* fields below */ }
 ```
 
-| Option | Type | Env Var | Notes |
-| --- | --- | --- | --- |
-| `session_retry` | `Option<SessionRetryOptions>` | — | Nested group for session-consistency retry behavior on 404/1002 errors. Marked `#[option(nested)]`. |
+| Option          | Type                          | Env Var | Notes                                                                                               |
+| --------------- | ----------------------------- | ------- | --------------------------------------------------------------------------------------------------- |
+| `session_retry` | `Option<SessionRetryOptions>` | —       | Nested group for session-consistency retry behavior on 404/1002 errors. Marked `#[option(nested)]`. |
 
 ### 3.6 `SessionRetryOptions`
 
@@ -289,10 +289,10 @@ Controls retry behavior for 404/1002 (session not found) errors. Nested via `#[o
 pub struct SessionRetryOptions { /* fields below */ }
 ```
 
-| Option | Type | Env Var | Notes |
-| --- | --- | --- | --- |
-| `min_in_region_retry_time` | `Option<Duration>` | `AZURE_COSMOS_SESSION_RETRY_MIN_IN_REGION_TIME` | Minimum time spent retrying within the local region before considering a cross-region retry. |
-| `max_in_region_retry_count` | `Option<usize>` | `AZURE_COSMOS_SESSION_RETRY_MAX_IN_REGION_COUNT` | Maximum number of retries within the local region. |
+| Option                      | Type               | Env Var                                          | Notes                                                                                        |
+| --------------------------- | ------------------ | ------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `min_in_region_retry_time`  | `Option<Duration>` | `AZURE_COSMOS_SESSION_RETRY_MIN_IN_REGION_TIME`  | Minimum time spent retrying within the local region before considering a cross-region retry. |
+| `max_in_region_retry_count` | `Option<usize>`    | `AZURE_COSMOS_SESSION_RETRY_MAX_IN_REGION_COUNT` | Maximum number of retries within the local region.                                           |
 
 > **Migration note:** The current `SessionRetryOptions` struct has non-`Option` fields with concrete defaults (`min_in_region_retry_time: Duration`, etc.). In the new model, all fields become `Option<T>` to support layered resolution. The concrete defaults are applied at resolution time when all layers yield `None`.
 
@@ -308,11 +308,11 @@ Per-account settings that don't fit other groups. Not available at the operation
 pub struct CosmosAccountOptions { /* fields below */ }
 ```
 
-| Option | Type | Env Var | Notes |
-| --- | --- | --- | --- |
-| `user_agent_suffix` | `Option<String>` | `AZURE_COSMOS_USER_AGENT_SUFFIX` | Application identifier appended to the User-Agent header for telemetry. |
-| `account_initialization_custom_endpoints` | `Option<HashSet<Url>>` | `AZURE_COSMOS_CUSTOM_ENDPOINTS` | Custom endpoints for initial account discovery (private endpoints, etc.). Env var is comma-separated. |
-| `custom_headers` | `Option<HashMap<HeaderName, HeaderValue>>` | — | **Best-effort only.** Additional HTTP headers injected into outgoing requests. Intended for proxies, gateways, or external telemetry systems — **not** for setting Cosmos DB backend headers. The SDK may use non-standard transports (e.g., custom framing over TCP) where HTTP headers do not apply; in those cases custom headers are silently ignored. The SDK reserves the right to override any header that conflicts with its internal protocol. `None` inherits from a lower layer; `Some(map)` replaces (does not merge) the inherited value. No environment variable — headers are not representable as a single string. |
+| Option                                    | Type                                       | Env Var                          | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------------------------- | ------------------------------------------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `user_agent_suffix`                       | `Option<String>`                           | `AZURE_COSMOS_USER_AGENT_SUFFIX` | Application identifier appended to the User-Agent header for telemetry.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `account_initialization_custom_endpoints` | `Option<HashSet<Url>>`                     | `AZURE_COSMOS_CUSTOM_ENDPOINTS`  | Custom endpoints for initial account discovery (private endpoints, etc.). Env var is comma-separated.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `custom_headers`                          | `Option<HashMap<HeaderName, HeaderValue>>` | —                                | **Best-effort only.** Additional HTTP headers injected into outgoing requests. Intended for proxies, gateways, or external telemetry systems — **not** for setting Cosmos DB backend headers. The SDK may use non-standard transports (e.g., custom framing over TCP) where HTTP headers do not apply; in those cases custom headers are silently ignored. The SDK reserves the right to override any header that conflicts with its internal protocol. `None` inherits from a lower layer; `Some(map)` replaces (does not merge) the inherited value. No environment variable — headers are not representable as a single string. |
 
 ---
 
@@ -381,15 +381,15 @@ pub struct ItemReadOptions {
 }
 ```
 
-| Option | Type | Notes |
-| --- | --- | --- |
-| `operation` | `OperationOptions` | Layered group; fields resolve through Operation → Account → Runtime → Env. |
-| `session_token` | `Option<SessionToken>` | Session token for session-consistent reads. Operation-only. |
-| `precondition` | `Option<Precondition>` | Conditional ETag check. For reads, typically `IfNoneMatch` (returns 304 Not Modified if unchanged). Operation-only. |
+| Option          | Type                   | Notes                                                                                                               |
+| --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `operation`     | `OperationOptions`     | Layered group; fields resolve through Operation → Account → Runtime → Env.                                          |
+| `session_token` | `Option<SessionToken>` | Session token for session-consistent reads. Operation-only.                                                         |
+| `precondition`  | `Option<Precondition>` | Conditional ETag check. For reads, typically `IfNoneMatch` (returns 304 Not Modified if unchanged). Operation-only. |
 
 ### 5.2 `ItemWriteOptions`
 
-Options for item write operations (`create_item`, `replace_item`, `upsert_item`, `delete_item`, `patch_item`).
+Options for item write operations (`create_item`, `replace_item`, `upsert_item`, `delete_item`).
 
 ```rust
 #[derive(Clone, Default)]
@@ -404,11 +404,11 @@ pub struct ItemWriteOptions {
 }
 ```
 
-| Option | Type | Notes |
-| --- | --- | --- |
-| `operation` | `OperationOptions` | Layered group; `content_response_on_write` is resolved here and applied to write responses. |
-| `session_token` | `Option<SessionToken>` | Session token for session-consistent writes. Operation-only. |
-| `precondition` | `Option<Precondition>` | Conditional ETag check. For writes, typically `IfMatch` (optimistic concurrency). Operation-only. |
+| Option          | Type                   | Notes                                                                                             |
+| --------------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
+| `operation`     | `OperationOptions`     | Layered group; `content_response_on_write` is resolved here and applied to write responses.       |
+| `session_token` | `Option<SessionToken>` | Session token for session-consistent writes. Operation-only.                                      |
+| `precondition`  | `Option<Precondition>` | Conditional ETag check. For writes, typically `IfMatch` (optimistic concurrency). Operation-only. |
 
 ### 5.3 `QueryOptions`
 
@@ -429,13 +429,13 @@ pub struct QueryOptions {
 }
 ```
 
-| Option | Type | Notes |
-| --- | --- | --- |
-| `operation` | `OperationOptions` | Layered group; `content_response_on_write` is ignored for queries. |
-| `session_token` | `Option<SessionToken>` | Session token for session-consistent queries. Operation-only. |
-| `enable_scan_if_no_index` | `Option<bool>` | If the query can't be served by indexes because the relevant paths are not indexed, setting this permits the query engine to perform a full container scan. Operation-only. |
-| `populate_index_metrics` | `Option<bool>` | If set to `true`, the response will contain metrics regarding indexes used. Operation-only. |
-| `populate_query_advice` | `Option<bool>` | If set to `true`, the response will include query optimization suggestions from the query advisor. Operation-only. |
+| Option                    | Type                   | Notes                                                                                                                                                                       |
+| ------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `operation`               | `OperationOptions`     | Layered group; `content_response_on_write` is ignored for queries.                                                                                                          |
+| `session_token`           | `Option<SessionToken>` | Session token for session-consistent queries. Operation-only.                                                                                                               |
+| `enable_scan_if_no_index` | `Option<bool>`         | If the query can't be served by indexes because the relevant paths are not indexed, setting this permits the query engine to perform a full container scan. Operation-only. |
+| `populate_index_metrics`  | `Option<bool>`         | If set to `true`, the response will contain metrics regarding indexes used. Operation-only.                                                                                 |
+| `populate_query_advice`   | `Option<bool>`         | If set to `true`, the response will include query optimization suggestions from the query advisor. Operation-only.                                                          |
 
 ### 5.4 `TransactionalBatchOptions`
 
@@ -453,10 +453,10 @@ pub struct TransactionalBatchOptions {
 }
 ```
 
-| Option | Type | Notes |
-| --- | --- | --- |
-| `operation` | `OperationOptions` | Layered group; `content_response_on_write` controls whether batch responses include resource bodies. `read_consistency_strategy` and `excluded_regions` cascade. |
-| `session_token` | `Option<SessionToken>` | Session token for the batch. Operation-only. |
+| Option          | Type                   | Notes                                                                                                                                                            |
+| --------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `operation`     | `OperationOptions`     | Layered group; `content_response_on_write` controls whether batch responses include resource bodies. `read_consistency_strategy` and `excluded_regions` cascade. |
+| `session_token` | `Option<SessionToken>` | Session token for the batch. Operation-only.                                                                                                                     |
 
 ### 5.5 `TransactionalBatchItemOptions`
 
@@ -471,10 +471,10 @@ pub struct TransactionalBatchItemOptions {
 }
 ```
 
-| Option | Type | Notes |
-| --- | --- | --- |
-| `precondition` | `Option<Precondition>` | Conditional ETag check on this batch item. Typically `IfMatch` for optimistic concurrency. |
-| `filter_predicate` | `Option<String>` | SQL-like filter predicate for conditional patch operations within the batch. Only applicable to patch operations; ignored for other operation types. |
+| Option             | Type                   | Notes                                                                                                                                                |
+| ------------------ | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `precondition`     | `Option<Precondition>` | Conditional ETag check on this batch item. Typically `IfMatch` for optimistic concurrency.                                                           |
+| `filter_predicate` | `Option<String>`       | SQL-like filter predicate for conditional patch operations within the batch. Only applicable to patch operations; ignored for other operation types. |
 
 **Usage example:**
 
@@ -506,18 +506,18 @@ container.execute_transactional_batch(batch, Some(batch_opts)).await?;
 
 Metadata operations (database and container CRUD, throughput management) remain simple structs with operation-specific fields. They do **not** currently include `OperationOptions` for cross-layer resolution, but all are `#[non_exhaustive]` so option groups can be added later without breaking changes.
 
-| Type | Fields | Notes |
-| --- | --- | --- |
-| `CreateContainerOptions` | `throughput: Option<ThroughputProperties>` | Provision throughput on creation. |
-| `ReplaceContainerOptions` | *(none)* | |
-| `DeleteContainerOptions` | *(none)* | |
-| `ReadContainerOptions` | *(none)* | |
-| `CreateDatabaseOptions` | `throughput: Option<ThroughputProperties>` | Provision throughput on creation. |
-| `DeleteDatabaseOptions` | *(none)* | |
-| `ReadDatabaseOptions` | *(none)* | |
-| `QueryContainersOptions` | *(none)* | |
-| `QueryDatabasesOptions` | *(none)* | |
-| `ThroughputOptions` | *(none)* | Read or replace throughput settings. |
+| Type                      | Fields                                     | Notes                                |
+| ------------------------- | ------------------------------------------ | ------------------------------------ |
+| `CreateContainerOptions`  | `throughput: Option<ThroughputProperties>` | Provision throughput on creation.    |
+| `ReplaceContainerOptions` | *(none)*                                   |                                      |
+| `DeleteContainerOptions`  | *(none)*                                   |                                      |
+| `ReadContainerOptions`    | *(none)*                                   |                                      |
+| `CreateDatabaseOptions`   | `throughput: Option<ThroughputProperties>` | Provision throughput on creation.    |
+| `DeleteDatabaseOptions`   | *(none)*                                   |                                      |
+| `ReadDatabaseOptions`     | *(none)*                                   |                                      |
+| `QueryContainersOptions`  | *(none)*                                   |                                      |
+| `QueryDatabasesOptions`   | *(none)*                                   |                                      |
+| `ThroughputOptions`       | *(none)*                                   | Read or replace throughput settings. |
 
 ---
 
@@ -571,28 +571,28 @@ The Cosmos SDK manages its own transport, retry, and telemetry pipeline internal
 
 ## 7. Migration from Current Types
 
-| Current Field | Current Location | New Location | Change |
-| --- | --- | --- | --- |
-| `user_agent_suffix` | `CosmosClientOptions` | `CosmosAccountOptions.user_agent_suffix` | Moved to option group |
-| `application_region` | `CosmosClientOptions` | `RegionOptions.application_region` | Moved to option group |
-| `application_preferred_regions` | `CosmosClientOptions` | — | **Removed** |
-| `excluded_regions` | `CosmosClientOptions` | `OperationOptions.excluded_regions` | Moved; now `Option<Vec<_>>` for layered resolution |
-| `account_initialization_custom_endpoints` | `CosmosClientOptions` | `CosmosAccountOptions.account_initialization_custom_endpoints` | Moved to option group |
-| `consistency_level` | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | `OperationOptions.read_consistency_strategy` | **Replaced** with `ReadConsistencyStrategy` |
-| `request_timeout` | `CosmosClientOptions` | `ConnectionOptions.request_timeout` | Moved to option group |
-| `enable_remote_region_preferred_for_session_retry` | `CosmosClientOptions` | — | **Removed**; remote-region-preferred is now always-on behavior |
-| `enable_partition_level_circuit_breaker` | `CosmosClientOptions` | — | **Removed**; partition-level circuit breaker is always enabled |
-| `disable_partition_level_failover` | `CosmosClientOptions` | — | **Removed**; disabling PPAF degrades availability |
-| `enable_upgrade_consistency_to_local_quorum` | `CosmosClientOptions` | — | **Removed**; use `ReadConsistencyStrategy::LatestCommitted` instead |
-| `throughput_bucket` | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | — | **Deferred** to throughput control follow-up spec |
-| `session_retry_options` | `CosmosClientOptions` | `RetryOptions.session_retry` | Nested; fields become `Option<T>` |
-| `priority` | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | — | **Deferred** to throughput control follow-up spec |
-| `custom_headers` | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | `CosmosAccountOptions.custom_headers` | Moved to option group; best-effort only (see §6.3) |
-| `pre_triggers` | `ItemOptions` | — | **Removed** (§6.5) |
-| `post_triggers` | `ItemOptions` | — | **Removed** (§6.5) |
-| `session_token` | `ItemOptions`, `QueryOptions` | Operation-only on each type | Duplicated across read/write/query/batch |
-| `indexing_directive` | `ItemOptions` | — | **Removed** (§6.4) |
-| `if_match_etag` | `ItemOptions` | `ItemWriteOptions.precondition` | Replaced by `Precondition::IfMatch(Etag)` |
-| `content_response_on_write_enabled` | `ItemOptions` | `OperationOptions.content_response_on_write` | Moved to layered group; renamed; now `Option<bool>` |
-| `excluded_regions` | `ItemOptions` | `OperationOptions.excluded_regions` | Consolidated into layered group |
-| `ItemOptions` (unified) | — | `ItemReadOptions` / `ItemWriteOptions` | **Split** into separate read and write types |
+| Current Field                                      | Current Location                                     | New Location                                                   | Change                                                              |
+| -------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `user_agent_suffix`                                | `CosmosClientOptions`                                | `CosmosAccountOptions.user_agent_suffix`                       | Moved to option group                                               |
+| `application_region`                               | `CosmosClientOptions`                                | `RegionOptions.application_region`                             | Moved to option group                                               |
+| `application_preferred_regions`                    | `CosmosClientOptions`                                | —                                                              | **Removed**                                                         |
+| `excluded_regions`                                 | `CosmosClientOptions`                                | `OperationOptions.excluded_regions`                            | Moved; now `Option<Vec<_>>` for layered resolution                  |
+| `account_initialization_custom_endpoints`          | `CosmosClientOptions`                                | `CosmosAccountOptions.account_initialization_custom_endpoints` | Moved to option group                                               |
+| `consistency_level`                                | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | `OperationOptions.read_consistency_strategy`                   | **Replaced** with `ReadConsistencyStrategy`                         |
+| `request_timeout`                                  | `CosmosClientOptions`                                | `ConnectionOptions.request_timeout`                            | Moved to option group                                               |
+| `enable_remote_region_preferred_for_session_retry` | `CosmosClientOptions`                                | —                                                              | **Removed**; remote-region-preferred is now always-on behavior      |
+| `enable_partition_level_circuit_breaker`           | `CosmosClientOptions`                                | —                                                              | **Removed**; partition-level circuit breaker is always enabled      |
+| `disable_partition_level_failover`                 | `CosmosClientOptions`                                | —                                                              | **Removed**; disabling PPAF degrades availability                   |
+| `enable_upgrade_consistency_to_local_quorum`       | `CosmosClientOptions`                                | —                                                              | **Removed**; use `ReadConsistencyStrategy::LatestCommitted` instead |
+| `throughput_bucket`                                | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | —                                                              | **Deferred** to throughput control follow-up spec                   |
+| `session_retry_options`                            | `CosmosClientOptions`                                | `RetryOptions.session_retry`                                   | Nested; fields become `Option<T>`                                   |
+| `priority`                                         | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | —                                                              | **Deferred** to throughput control follow-up spec                   |
+| `custom_headers`                                   | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | `CosmosAccountOptions.custom_headers`                          | Moved to option group; best-effort only (see §6.3)                  |
+| `pre_triggers`                                     | `ItemOptions`                                        | —                                                              | **Removed** (§6.5)                                                  |
+| `post_triggers`                                    | `ItemOptions`                                        | —                                                              | **Removed** (§6.5)                                                  |
+| `session_token`                                    | `ItemOptions`, `QueryOptions`                        | Operation-only on each type                                    | Duplicated across read/write/query/batch                            |
+| `indexing_directive`                               | `ItemOptions`                                        | —                                                              | **Removed** (§6.4)                                                  |
+| `if_match_etag`                                    | `ItemOptions`                                        | `ItemWriteOptions.precondition`                                | Replaced by `Precondition::IfMatch(Etag)`                           |
+| `content_response_on_write_enabled`                | `ItemOptions`                                        | `OperationOptions.content_response_on_write`                   | Moved to layered group; renamed; now `Option<bool>`                 |
+| `excluded_regions`                                 | `ItemOptions`                                        | `OperationOptions.excluded_regions`                            | Consolidated into layered group                                     |
+| `ItemOptions` (unified)                            | —                                                    | `ItemReadOptions` / `ItemWriteOptions`                         | **Split** into separate read and write types                        |

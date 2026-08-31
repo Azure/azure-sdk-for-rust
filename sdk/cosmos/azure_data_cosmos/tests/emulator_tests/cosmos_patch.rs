@@ -99,6 +99,9 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
                 .patch_item(&pk, &item_id, patch, None)
                 .await?;
             assert_eq!(patch_response.status(), StatusCode::Ok);
+            let effective_tracking_id = patch_response
+                .patch_tracking_id()
+                .expect("unsafe PATCH exposes its generated tracking ID");
 
             // Diagnostics must be populated — the handler tracks the
             // sub-requests (Read + Replace) under one operation.
@@ -111,6 +114,10 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
                 diagnostics.request_count() >= 1,
                 "expected at least one tracked sub-request, got {}",
                 diagnostics.request_count(),
+            );
+            assert_eq!(
+                diagnostics.patch_tracking_id().map(|id| id.as_uuid()),
+                Some(effective_tracking_id.as_uuid())
             );
 
             // The driver always returns the locally-merged post-image —

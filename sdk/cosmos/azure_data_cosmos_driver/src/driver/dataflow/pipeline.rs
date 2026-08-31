@@ -56,9 +56,10 @@ impl Pipeline {
             PageResult::Page { response, .. } => Ok(Some(response)),
             PageResult::Drained => Ok(None),
             // Defensive: today the root is always a `Request`, `SequentialDrain`,
-            // or `DrainedLeaf`, none of which can bubble `SplitRequired` up past
-            // their parent. If a future node type ever does, surfacing it as an
-            // explicit error is preferable to silently dropping the page.
+            // `Distinct`, or `DrainedLeaf`, none of which can bubble
+            // `SplitRequired` up past their parent. If a future node type ever
+            // does, surfacing it as an explicit error is preferable to silently
+            // dropping the page.
             PageResult::SplitRequired { .. } => Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT)
                 .with_message(
