@@ -6,12 +6,10 @@
 //! See `docs/PATCH_HANDLER_SPEC.md` for the full behavior contract. The
 //! short version:
 //!
-//! 1. Reject any caller-set [`Precondition`] on the outer PATCH operation —
-//!    the handler manages `If-Match` internally, so honoring a caller's
-//!    value would silently break the RMW guarantee.
-//! 2. Validate the patch spec (no ops that target partition-key paths).
-//! 3. Issue an internal [`OperationType::Read`] for the target item.
-//! 4. Capture the response ETag (refuse to RMW if there isn't one).
+//! 1. Validate the patch spec (no ops that target partition-key paths).
+//! 2. Issue an internal [`OperationType::Read`] for the target item.
+//! 3. Capture the response ETag and evaluate any caller precondition against it.
+//! 4. Refuse to RMW if the Read did not return an ETag.
 //! 5. Parse the JSON body into a [`serde_json::Value`], apply the ops locally
 //!    using [`apply_patch_ops`], and re-serialize.
 //! 6. Issue an internal ETag-guarded [`OperationType::Replace`].
@@ -167,31 +165,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         ContentResponseOnWrite::Disabled
     });
 
-    // -- 1. Reject caller-set preconditions --
-    //
-    // PATCH manages its own `If-Match` precondition internally — the handler
-    // captures the current item's ETag on the internal Read and threads it
-    // into the internal Replace. Honoring a caller-set `Precondition` would
-    // either shadow that ETag (silently breaking the RMW guarantees) or
-    // require resolving it against the handler's own ETag (no sensible
-    // merge). The SDK's `ContainerClient::patch_item` already drops any
-    // precondition before reaching this layer; this guard fail-fasts on any
-    // driver-level user that constructed
-    // `CosmosOperation::patch_item(..).with_precondition(..)` directly,
-    // instead of silently ignoring it.
-    if operation.precondition().is_some() {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::new(
-                azure_core::http::StatusCode::BadRequest,
-            ))
-            .with_message(
-                "PATCH does not support caller-set preconditions; \
-             the handler manages If-Match internally",
-            )
-            .build());
-    }
-
-    // -- 2. Parse and validate the patch spec --
+    // -- 1. Parse and validate the patch spec --
     let body = operation
         .body()
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchInstructions body"))?;
@@ -274,6 +248,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     // decomposition stays visible underneath the aggregate.
     let operation_name: Option<Arc<str>> = operation.db_operation_name().map(Arc::from);
     let caller_session_token = operation.request_headers().session_token.clone();
+    let caller_precondition = operation.precondition().cloned();
 
     for _ in 0..attempts {
         // Read the current item from the write endpoint at LatestCommitted.
@@ -413,6 +388,14 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                     &sub_op_diagnostics,
                 )
             })?;
+        validate_caller_precondition(caller_precondition.as_ref(), &etag).map_err(|err| {
+            stamp_patch_identity(
+                err,
+                operation_name.clone(),
+                tracking_id,
+                &sub_op_diagnostics,
+            )
+        })?;
         // R3-DRIVER: forward the session token returned by the Read on the
         // Replace, so the write commits against the same replica view we
         // just read from. This is what mitigates SE-004 (session token
@@ -834,6 +817,28 @@ fn missing_body_error(msg: &'static str) -> crate::error::CosmosError {
         ))
         .with_message(msg)
         .build()
+}
+
+fn validate_caller_precondition(
+    precondition: Option<&Precondition>,
+    current_etag: &Etag,
+) -> crate::error::Result<()> {
+    let Some(precondition) = precondition else {
+        return Ok(());
+    };
+    let satisfied = match precondition {
+        Precondition::IfMatch(expected) => expected.as_ref() == "*" || expected == current_etag,
+        Precondition::IfNoneMatch(expected) => expected.as_ref() != "*" && expected != current_etag,
+    };
+    if satisfied {
+        return Ok(());
+    }
+    Err(crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            StatusCode::PreconditionFailed,
+        ))
+        .with_message("One of the specified pre-conditions is not met.")
+        .build())
 }
 
 /// Returns `true` if `err` is the driver pipeline's representation of a
@@ -2953,32 +2958,102 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn caller_set_precondition_is_rejected_before_any_sub_op() {
-        // PATCH manages its own If-Match internally — letting a caller-set
-        // precondition through would either shadow the handler's ETag
-        // (silently breaking RMW) or require resolving against it (no
-        // sensible merge). The guard must fail fast before issuing any
-        // sub-operation so a misuse never makes it onto the wire.
-        let dispatcher = ScriptedDispatcher::new(vec![]);
+    async fn matching_caller_precondition_uses_read_etag_for_replace() {
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                Some("\"v2\""),
+                StatusCode::Ok,
+            ),
+        ]);
         let op = patch_op_for(
             test_item_ref(),
-            vec![PatchOperation::set("/x", serde_json::json!(1))],
+            vec![PatchOperation::increment("/visits", 1i64)],
         )
-        .with_precondition(Precondition::if_match(Etag::from("\"abc\"")));
+        .with_precondition(Precondition::if_match(Etag::from("\"v1\"")));
 
-        let err = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+        execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
             .await
-            .expect_err("PATCH with caller-set precondition must be rejected");
+            .expect("matching caller If-Match must allow the PATCH");
 
-        let msg = format!("{err}").to_ascii_lowercase();
-        assert!(
-            msg.contains("precondition"),
-            "error should mention the precondition rejection: {err}"
+        let calls = dispatcher.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].op_type, OperationType::Read);
+        assert_eq!(calls[1].op_type, OperationType::Replace);
+        assert_eq!(calls[1].if_match_etag.as_deref(), Some("\"v1\""));
+    }
+
+    #[tokio::test]
+    async fn mismatching_caller_preconditions_fail_after_read() {
+        for precondition in [
+            Precondition::if_match(Etag::from("\"other\"")),
+            Precondition::if_none_match(Etag::from("\"v1\"")),
+            Precondition::if_none_match(Etag::from("*")),
+        ] {
+            let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            )]);
+            let op = patch_op_for(
+                test_item_ref(),
+                vec![PatchOperation::increment("/visits", 1i64)],
+            )
+            .with_precondition(precondition);
+
+            let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+                .await
+                .expect_err("a failed caller precondition must stop before Replace");
+
+            assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed);
+            assert_eq!(dispatcher.calls().len(), 1);
+            assert_eq!(dispatcher.calls()[0].op_type, OperationType::Read);
+        }
+    }
+
+    #[tokio::test]
+    async fn caller_if_match_is_reevaluated_after_replace_race() {
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "race")),
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":4}"#.to_vec(),
+                Some("\"v2\""),
+                StatusCode::Ok,
+            ),
+        ]);
+        let op = patch_op_for(
+            test_item_ref(),
+            vec![PatchOperation::increment("/visits", 1i64)],
         );
-        assert!(
-            dispatcher.calls().is_empty(),
-            "precondition rejection must issue zero sub-operations; got: {:?}",
-            dispatcher.calls()
+        let op = op.with_precondition(Precondition::if_match(Etag::from("\"v1\"")));
+
+        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect_err("the caller If-Match must fail after a concurrent update");
+
+        assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed);
+        assert_eq!(
+            dispatcher
+                .calls()
+                .iter()
+                .map(|call| call.op_type)
+                .collect::<Vec<_>>(),
+            vec![
+                OperationType::Read,
+                OperationType::Replace,
+                OperationType::Read
+            ],
+            "the changed ETag must stop the retry before a second Replace"
         );
     }
 

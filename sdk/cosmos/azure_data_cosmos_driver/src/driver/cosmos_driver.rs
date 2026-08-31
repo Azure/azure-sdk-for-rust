@@ -2692,21 +2692,34 @@ impl CosmosDriver {
             .body()
             .and_then(|body| serde_json::from_slice::<crate::models::PatchInstructions>(body).ok());
 
+        let item_ref = operation
+            .partition_key()
+            .cloned()
+            .and_then(|partition_key| {
+                operation
+                    .resource_reference()
+                    .try_into_item_reference(partition_key)
+            })
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                    .with_message(
+                        "PATCH dispatch requires an item-level operation with a partition key",
+                    )
+                    .build()
+            })?;
+
         if let Some(instructions) = instructions.as_ref() {
-            if let Some(item_ref) = operation
-                .partition_key()
-                .cloned()
-                .and_then(|partition_key| {
-                    operation
-                        .resource_reference()
-                        .try_into_item_reference(partition_key)
-                })
-            {
-                crate::driver::pipeline::patch_handler::validate_partition_key_paths(
-                    &instructions.operations,
-                    &item_ref,
-                )?;
+            if instructions.operations.is_empty() {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                    .with_message("PATCH operation must include at least one PatchOperation")
+                    .build());
             }
+            crate::driver::pipeline::patch_handler::validate_partition_key_paths(
+                &instructions.operations,
+                &item_ref,
+            )?;
         }
 
         let requested = self
@@ -2714,11 +2727,7 @@ impl CosmosDriver {
             .patch_strategy()
             .copied()
             .unwrap_or_default();
-        let execution = resolve_patch_strategy(
-            requested,
-            instructions.as_ref(),
-            operation.patch_tracking_id().is_some(),
-        )?;
+        let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
         tracing::debug!(
             requested_patch_strategy = requested.as_str(),
             patch_execution = execution.as_str(),

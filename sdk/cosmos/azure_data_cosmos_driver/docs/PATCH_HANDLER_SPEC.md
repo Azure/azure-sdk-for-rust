@@ -62,26 +62,16 @@ silently rewritten and surfaces the server rejection. Explicit unsafe
 error rather than risking duplicate application. Client-side unsafe PATCH uses
 the B2 marker protocol.
 
-A caller-supplied tracking ID requests marker-backed duplicate suppression even
-for a retry-safe list. `Auto` therefore selects client-side RMW when an ID is
-present. Explicit `ServerSide` remains authoritative when an ID is present: the
-ID may be retained by the caller as correlation metadata, but the service does
-not persist the client's marker and the request receives no marker-backed
-duplicate suppression.
+Tracking ID, maximum-attempt, capacity, and retention settings apply only when
+strategy resolution selects client-side RMW. `Auto` ignores those settings when
+the instruction list is eligible for server-side PATCH. Explicit `ServerSide`
+does the same; the service does not persist the client's marker and the request
+receives no marker-backed duplicate suppression.
 
 ## Client-side RMW algorithm
 
 ```text
 1. Pre-flight validation:
-   - reject any caller-set Precondition on the outer PATCH operation. The
-     handler owns the If-Match precondition on the internal Replace and
-     captures the ETag off the matching Read; honoring a caller-set value
-     would either shadow that ETag (silently breaking the RMW guarantee)
-     or require resolving it against the handler's own ETag (no sensible
-     merge). The SDK wrapper already drops any Precondition before
-     reaching this layer; the guard fail-fasts a driver-level user that
-     constructed `CosmosOperation::patch_item(..).with_precondition(..)`
-     directly.
    - reject ops whose path overlaps any partition-key path (we cannot
      move a document between physical partitions). For MoveOp this
      covers BOTH the source (`from`) and the destination (`path`).
@@ -126,6 +116,11 @@ loop up to max_attempts times:
        for any non-2xx Read response; the patch handler propagates that
        error verbatim (with its raw_response and diagnostics intact).
        if read.headers().etag is None: return Other("no ETag, cannot RMW").
+      Evaluate any caller Precondition against read.headers().etag:
+      - IfMatch succeeds only when the values match (or the value is `*`);
+      - IfNoneMatch succeeds only when the values differ and the value is not `*`.
+      Return 412 before Replace when the condition is not met. Repeat this
+      evaluation after every Read when a 412 race restarts the loop.
    5. value = serde_json::from_slice(read.body())
     For a tracked PATCH:
      - if the tracking ID is already present, return the Read as success
@@ -508,9 +503,10 @@ as a JSON number without precision loss.
   Read and Replace operations re-enter normally. Server-side PATCH enters the
   standard retry/routing/throttling pipeline directly.
 - The handler owns the `If-Match` precondition on the internal Replace.
-  A caller-set `Precondition` on the outer PATCH `CosmosOperation` is
-  rejected by the pre-flight guard before any sub-operation is dispatched.
-  Likewise, the PATCH wire format (`PatchInstructions`) has no `condition` field,
+  A caller-set ETag `Precondition` is evaluated against every authoritative
+  Read before the handler applies operations; the internal Replace still uses
+  the corresponding Read ETag as its lost-update guard. The PATCH wire format
+  (`PatchInstructions`) has no SQL `condition` field,
   so a SQL filter predicate (peer SDKs' `FilterPredicate`) cannot be
   attached to a PATCH request in this preview.
 - 412 stays non-retryable in the global retry-evaluation policy. PATCH's

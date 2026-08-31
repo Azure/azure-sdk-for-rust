@@ -20,8 +20,8 @@ pub enum PatchStrategy {
     /// Let the driver choose (default).
     ///
     /// Uses server-side PATCH for retry-safe lists containing at most 10
-    /// instructions, and client-side PATCH otherwise. A caller-supplied
-    /// tracking ID also selects client-side PATCH.
+    /// instructions, and client-side PATCH otherwise. Settings that apply only
+    /// to client-side RMW do not influence this selection.
     #[default]
     Auto,
 
@@ -32,8 +32,8 @@ pub enum PatchStrategy {
     ///
     /// Lists exceeding 10 instructions fail instead of falling back. For an
     /// unsafe list, ambiguous-outcome retries are disabled to avoid applying
-    /// an instruction twice. Combining this strategy with a caller-supplied
-    /// tracking ID is rejected.
+    /// an instruction twice. A caller-supplied tracking ID does not override
+    /// this strategy and provides no marker-backed duplicate suppression.
     ServerSide,
 }
 

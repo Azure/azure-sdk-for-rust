@@ -55,9 +55,7 @@ impl PatchExecution {
 /// - the operation list is not retry-safe, so resending after an ambiguous
 ///   failure could double-apply it, or
 /// - the list exceeds the service's per-document operation limit, which would
-///   simply be rejected, or
-/// - the caller supplied a tracking ID and therefore requested marker-backed
-///   duplicate suppression.
+///   simply be rejected.
 ///
 /// The explicit strategies are honored as written. [`PatchStrategy::ServerSide`]
 /// deliberately does *not* fall back: an over-long list
@@ -69,7 +67,6 @@ impl PatchExecution {
 pub(crate) fn resolve_patch_strategy(
     requested: PatchStrategy,
     instructions: Option<&PatchInstructions>,
-    tracking_requested: bool,
 ) -> crate::error::Result<PatchExecution> {
     Ok(match requested {
         PatchStrategy::ClientSide => PatchExecution::ClientSide,
@@ -81,7 +78,7 @@ pub(crate) fn resolve_patch_strategy(
                 instructions.is_retry_safe()
                     && instructions.operations.len() <= MAX_SERVER_SIDE_PATCH_OPERATIONS
             });
-            if server_eligible && !tracking_requested {
+            if server_eligible {
                 PatchExecution::ServerSide { retry_safe: true }
             } else {
                 PatchExecution::ClientSide
@@ -112,8 +109,7 @@ mod tests {
     fn client_side_is_honored_whatever_the_operations() {
         for instructions in [safe_ops(1), unsafe_ops(), safe_ops(50)] {
             assert_eq!(
-                resolve_patch_strategy(PatchStrategy::ClientSide, Some(&instructions), false)
-                    .unwrap(),
+                resolve_patch_strategy(PatchStrategy::ClientSide, Some(&instructions)).unwrap(),
                 PatchExecution::ClientSide
             );
         }
@@ -122,7 +118,7 @@ mod tests {
     #[test]
     fn auto_prefers_the_service_for_safe_operations() {
         assert_eq!(
-            resolve_patch_strategy(PatchStrategy::Auto, Some(&safe_ops(1)), false).unwrap(),
+            resolve_patch_strategy(PatchStrategy::Auto, Some(&safe_ops(1))).unwrap(),
             PatchExecution::ServerSide { retry_safe: true }
         );
     }
@@ -130,7 +126,7 @@ mod tests {
     #[test]
     fn auto_falls_back_to_client_side_for_unsafe_operations() {
         assert_eq!(
-            resolve_patch_strategy(PatchStrategy::Auto, Some(&unsafe_ops()), false).unwrap(),
+            resolve_patch_strategy(PatchStrategy::Auto, Some(&unsafe_ops())).unwrap(),
             PatchExecution::ClientSide
         );
     }
@@ -141,7 +137,6 @@ mod tests {
             resolve_patch_strategy(
                 PatchStrategy::Auto,
                 Some(&safe_ops(MAX_SERVER_SIDE_PATCH_OPERATIONS)),
-                false,
             )
             .unwrap(),
             PatchExecution::ServerSide { retry_safe: true },
@@ -151,7 +146,6 @@ mod tests {
             resolve_patch_strategy(
                 PatchStrategy::Auto,
                 Some(&safe_ops(MAX_SERVER_SIDE_PATCH_OPERATIONS + 1)),
-                false,
             )
             .unwrap(),
             PatchExecution::ClientSide
@@ -164,13 +158,12 @@ mod tests {
             resolve_patch_strategy(
                 PatchStrategy::ServerSide,
                 Some(&safe_ops(MAX_SERVER_SIDE_PATCH_OPERATIONS + 1)),
-                false,
             )
             .unwrap(),
             PatchExecution::ServerSide { retry_safe: true }
         );
         assert_eq!(
-            resolve_patch_strategy(PatchStrategy::ServerSide, Some(&unsafe_ops()), false).unwrap(),
+            resolve_patch_strategy(PatchStrategy::ServerSide, Some(&unsafe_ops())).unwrap(),
             PatchExecution::ServerSide { retry_safe: false }
         );
     }
@@ -178,27 +171,19 @@ mod tests {
     #[test]
     fn unknown_server_side_payload_is_sent_fail_closed() {
         assert_eq!(
-            resolve_patch_strategy(PatchStrategy::ServerSide, None, false).unwrap(),
+            resolve_patch_strategy(PatchStrategy::ServerSide, None).unwrap(),
             PatchExecution::ServerSide { retry_safe: false }
         );
         assert_eq!(
-            resolve_patch_strategy(PatchStrategy::Auto, None, false).unwrap(),
+            resolve_patch_strategy(PatchStrategy::Auto, None).unwrap(),
             PatchExecution::ClientSide
         );
     }
 
     #[test]
-    fn caller_tracking_influences_auto_but_not_explicit_strategies() {
+    fn explicit_rmw_options_do_not_influence_strategy_resolution() {
         assert_eq!(
-            resolve_patch_strategy(PatchStrategy::Auto, Some(&safe_ops(1)), true).unwrap(),
-            PatchExecution::ClientSide
-        );
-        assert_eq!(
-            resolve_patch_strategy(PatchStrategy::ClientSide, Some(&safe_ops(1)), true).unwrap(),
-            PatchExecution::ClientSide
-        );
-        assert_eq!(
-            resolve_patch_strategy(PatchStrategy::ServerSide, Some(&safe_ops(1)), true).unwrap(),
+            resolve_patch_strategy(PatchStrategy::Auto, Some(&safe_ops(1))).unwrap(),
             PatchExecution::ServerSide { retry_safe: true }
         );
     }

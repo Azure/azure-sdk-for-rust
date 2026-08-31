@@ -114,18 +114,14 @@ impl ItemWriteOptions {
 /// The optional [`max_attempts`](Self::max_attempts) field bounds only the
 /// client-side loop; `None` falls back to the driver default (5).
 ///
-/// # Conditions are not exposed
+/// # Conditions
 ///
-/// PATCH intentionally does **not** expose either flavor of "condition" that
-/// peer SDKs surface on their PATCH options:
+/// PATCH exposes ETag preconditions but not SQL filter predicates:
 ///
-/// * **`Precondition` (`If-Match` / `If-None-Match`).** The handler owns the
-///   `If-Match` precondition on the internal Replace and captures the ETag
-///   off the matching Read; honoring a caller-set value would either shadow
-///   that ETag (silently breaking the RMW guarantee) or require resolving
-///   it against the handler's own ETag (no sensible merge). The driver-side
-///   PATCH handler rejects any caller-set precondition with an error before
-///   issuing any sub-operation.
+/// * **`Precondition` (`If-Match` / `If-None-Match`).** Server-side PATCH sends
+///   the condition to Cosmos DB. Client-side PATCH evaluates it against each
+///   write-region `LatestCommitted` Read, then uses that Read's ETag as the
+///   internal Replace concurrency guard.
 /// * **SQL filter predicate** (peer SDKs' `FilterPredicate`). Predicate
 ///   evaluation requires either native wire-level PATCH (so the server
 ///   evaluates the predicate inside the same transaction) or a client-side
@@ -166,14 +162,17 @@ pub struct PatchItemOptions {
     /// How this PATCH should execute.
     ///
     /// `None` inherits the layered default, which resolves to
-    /// [`PatchStrategy::Auto`]. A caller-supplied tracking ID forces `Auto` to
-    /// client-side RMW and is incompatible with explicit `ServerSide`. When
-    /// both this field and [`operation.patch_strategy`](OperationOptions::patch_strategy)
-    /// are set, this field takes precedence.
+    /// [`PatchStrategy::Auto`]. Client-side-only settings do not influence
+    /// strategy resolution. When both this field and
+    /// [`operation.patch_strategy`](OperationOptions::patch_strategy) are set,
+    /// this field takes precedence.
     pub strategy: Option<PatchStrategy>,
 
     /// Session token for session-consistent writes.
     pub session_token: Option<SessionToken>,
+
+    /// Conditional ETag check applied to the item before PATCH commits.
+    pub precondition: Option<Precondition>,
 
     /// Maximum number of client-side Read-Modify-Write attempts the driver may
     /// make before surfacing a 412. Ignored by server-side PATCH. `None`
@@ -206,6 +205,12 @@ impl PatchItemOptions {
     /// Sets the session token for this request.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
         self.session_token = Some(session_token.into());
+        self
+    }
+
+    /// Sets a conditional ETag check for this PATCH.
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.precondition = Some(precondition);
         self
     }
 

@@ -395,43 +395,69 @@ async fn explicit_server_side_rejects_more_than_ten_instructions() {
 }
 
 #[tokio::test]
-async fn explicit_server_side_sends_invalid_bodies_to_the_service() {
+async fn empty_patch_is_rejected_before_strategy_dispatch() {
     let recorder = MethodRecorder::new();
     let (driver, container) = build_driver(Some(recorder.clone())).await;
     create_item(&driver, &container, &seed_document()).await;
-    let options = OperationOptionsBuilder::new()
-        .with_patch_strategy(PatchStrategy::ServerSide)
-        .build();
 
-    for (scenario, body) in [
-        ("empty list", br#"{"operations":[]}"#.to_vec()),
-        ("malformed body", b"not-json".to_vec()),
+    for strategy in [
+        PatchStrategy::Auto,
+        PatchStrategy::ClientSide,
+        PatchStrategy::ServerSide,
     ] {
         recorder.clear();
+        let options = OperationOptionsBuilder::new()
+            .with_patch_strategy(strategy)
+            .build();
         let error = driver
             .execute_singleton_operation(
-                CosmosOperation::patch_item(item(&container)).with_body(body),
-                options.clone(),
+                CosmosOperation::patch_item(item(&container))
+                    .with_body(br#"{"operations":[]}"#.to_vec()),
+                options,
             )
             .await
-            .expect_err("explicit ServerSide must not fall back to RMW");
+            .expect_err("an empty PATCH must fail before strategy dispatch");
 
         assert_eq!(
             error.status().status_code(),
             azure_core::http::StatusCode::BadRequest,
-            "{scenario}"
+            "{strategy}"
         );
         assert_eq!(
             recorder.data_plane_methods(),
-            vec![Method::Patch],
-            "{scenario}"
-        );
-        assert_eq!(
-            read_stored(&driver, &container).await,
-            without_system_properties(seed_document()),
-            "{scenario}: item must remain unchanged"
+            Vec::<Method>::new(),
+            "{strategy} must not issue a data-plane request"
         );
     }
+}
+
+#[tokio::test]
+async fn explicit_server_side_sends_malformed_body_to_the_service() {
+    let recorder = MethodRecorder::new();
+    let (driver, container) = build_driver(Some(recorder.clone())).await;
+    create_item(&driver, &container, &seed_document()).await;
+    recorder.clear();
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(PatchStrategy::ServerSide)
+        .build();
+
+    let error = driver
+        .execute_singleton_operation(
+            CosmosOperation::patch_item(item(&container)).with_body(b"not-json".to_vec()),
+            options,
+        )
+        .await
+        .expect_err("explicit ServerSide must forward malformed wire bodies");
+
+    assert_eq!(
+        error.status().status_code(),
+        azure_core::http::StatusCode::BadRequest
+    );
+    assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
+    assert_eq!(
+        read_stored(&driver, &container).await,
+        without_system_properties(seed_document())
+    );
 }
 
 #[tokio::test]
@@ -560,7 +586,7 @@ async fn content_response_on_write_disabled_suppresses_both_strategy_bodies() {
 }
 
 #[tokio::test]
-async fn caller_tracking_id_influences_auto_but_not_explicit_server_side() {
+async fn tracking_id_does_not_override_auto_or_explicit_server_side() {
     let recorder = MethodRecorder::new();
     let (driver, container) = build_driver(Some(recorder.clone())).await;
     create_item(&driver, &container, &seed_document()).await;
@@ -574,12 +600,9 @@ async fn caller_tracking_id_influences_auto_but_not_explicit_server_side() {
     let response = driver
         .execute_singleton_operation(operation, OperationOptions::default())
         .await
-        .expect("Auto with a tracking ID should use RMW");
-    assert_eq!(
-        recorder.data_plane_methods(),
-        vec![Method::Get, Method::Put]
-    );
-    assert_eq!(response.patch_tracking_id(), Some(tracking_id));
+        .expect("Auto should ignore client-side tracking settings on the server path");
+    assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
+    assert_eq!(response.patch_tracking_id(), None);
 
     recorder.clear();
     let operation = CosmosOperation::patch_item(item(&container))

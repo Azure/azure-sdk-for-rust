@@ -4,8 +4,12 @@
 // Use the shared test framework declared in `tests/emulator_tests/mod.rs`.
 use super::framework;
 
-use azure_core::{http::StatusCode, Uuid};
+use azure_core::{
+    http::{Etag, StatusCode},
+    Uuid,
+};
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::diagnostics::TransportKind;
 use azure_data_cosmos::fault_injection::{
     CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
     FaultInjectionRuleBuilder, FaultOperationType,
@@ -14,7 +18,7 @@ use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::models::ItemResponse;
 use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
 use azure_data_cosmos::options::{
-    ContentResponseOnWrite, OperationOptions, PatchItemOptions, PatchStrategy,
+    ContentResponseOnWrite, OperationOptions, PatchItemOptions, PatchStrategy, Precondition,
 };
 use framework::TestClient;
 use framework::TestOptions;
@@ -444,6 +448,78 @@ pub async fn patch_item_auto_commits_safe_list_server_side() -> Result<(), Box<d
 
 #[tokio::test]
 #[cfg_attr(
+    not(test_category = "emulator_inmemory_gateway_v2"),
+    ignore = "requires hosted in-memory emulator with Gateway V2 enabled"
+)]
+pub async fn patch_item_server_side_round_trips_over_gateway_v2() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+
+            for (content_response, expect_body) in [
+                (ContentResponseOnWrite::Enabled, true),
+                (ContentResponseOnWrite::Disabled, false),
+            ] {
+                let unique_id = Uuid::new_v4().to_string();
+                let item_id = format!("patch-gateway-v2-{expect_body}-{unique_id}");
+                let pk = format!("pk-{unique_id}");
+                let initial = PatchTestItem {
+                    id: item_id.clone(),
+                    partition_key: pk.clone(),
+                    display_name: "before".into(),
+                    visits: 0,
+                    deleted: false,
+                };
+                let create_response = container_client
+                    .create_item(&pk, &item_id, &initial, None)
+                    .await?;
+                for request in create_response.diagnostics().requests().iter() {
+                    assert_eq!(
+                        request.transport_kind(),
+                        TransportKind::GatewayV2,
+                        "hosted Gateway V2 fixture must route the seed Create over Gateway V2"
+                    );
+                }
+
+                let mut operation_options = OperationOptions::default();
+                operation_options.content_response_on_write = Some(content_response);
+                let options = PatchItemOptions::default()
+                    .with_strategy(PatchStrategy::ServerSide)
+                    .with_operation_options(operation_options);
+                let response = container_client
+                    .patch_item(
+                        &pk,
+                        &item_id,
+                        PatchInstructions::from(vec![PatchOperation::set(
+                            "/display_name",
+                            serde_json::json!("after"),
+                        )]),
+                        Some(options),
+                    )
+                    .await?;
+
+                assert_eq!(response.diagnostics().request_count(), 1);
+                for request in response.diagnostics().requests().iter() {
+                    assert_eq!(request.transport_kind(), TransportKind::GatewayV2);
+                }
+                assert_eq!(response.into_body().is_empty(), !expect_body);
+
+                let stored: PatchTestItem = container_client
+                    .read_item(&pk, &item_id, None)
+                    .await?
+                    .into_model()?;
+                assert_eq!(stored.display_name, "after");
+            }
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
     not(any(
         test_category = "emulator",
         test_category = "emulator_vnext",
@@ -534,6 +610,127 @@ pub async fn patch_item_server_and_client_strategies_match_service_results(
                     strip_system_properties(server_stored),
                     "client-side and server-side PATCH differ for {case_name}"
                 );
+            }
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+pub async fn patch_preconditions_match_across_strategies() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+
+            for strategy in [PatchStrategy::ClientSide, PatchStrategy::ServerSide] {
+                let unique_id = Uuid::new_v4().to_string();
+                let item_id = format!("patch-precondition-{strategy}-{unique_id}");
+                let pk = format!("pk-{unique_id}");
+                let initial = PatchTestItem {
+                    id: item_id.clone(),
+                    partition_key: pk.clone(),
+                    display_name: "before".into(),
+                    visits: 0,
+                    deleted: false,
+                };
+                let create_response = container_client
+                    .create_item(&pk, &item_id, &initial, None)
+                    .await?;
+                let initial_etag = create_response
+                    .headers()
+                    .etag()
+                    .expect("create must return an ETag")
+                    .clone();
+
+                let matching = PatchItemOptions::default()
+                    .with_strategy(strategy)
+                    .with_precondition(Precondition::if_match(initial_etag.clone()));
+                container_client
+                    .patch_item(
+                        &pk,
+                        &item_id,
+                        PatchInstructions::from(vec![PatchOperation::set(
+                            "/display_name",
+                            serde_json::json!("matched"),
+                        )]),
+                        Some(matching),
+                    )
+                    .await?;
+
+                let stale = PatchItemOptions::default()
+                    .with_strategy(strategy)
+                    .with_precondition(Precondition::if_match(initial_etag));
+                let error = container_client
+                    .patch_item(
+                        &pk,
+                        &item_id,
+                        PatchInstructions::from(vec![PatchOperation::set(
+                            "/deleted",
+                            serde_json::json!(true),
+                        )]),
+                        Some(stale),
+                    )
+                    .await
+                    .expect_err("stale If-Match must reject PATCH");
+                assert_eq!(
+                    error.status().status_code(),
+                    StatusCode::PreconditionFailed,
+                    "{strategy} stale If-Match"
+                );
+
+                let current_etag = container_client
+                    .read_item(&pk, &item_id, None)
+                    .await?
+                    .headers()
+                    .etag()
+                    .expect("read must return an ETag")
+                    .clone();
+                let equal_none_match = PatchItemOptions::default()
+                    .with_strategy(strategy)
+                    .with_precondition(Precondition::if_none_match(current_etag));
+                let error = container_client
+                    .patch_item(
+                        &pk,
+                        &item_id,
+                        PatchInstructions::from(vec![PatchOperation::set(
+                            "/deleted",
+                            serde_json::json!(true),
+                        )]),
+                        Some(equal_none_match),
+                    )
+                    .await
+                    .expect_err("equal If-None-Match must reject PATCH");
+                assert_eq!(
+                    error.status().status_code(),
+                    StatusCode::PreconditionFailed,
+                    "{strategy} equal If-None-Match"
+                );
+
+                let different_none_match = PatchItemOptions::default()
+                    .with_strategy(strategy)
+                    .with_precondition(Precondition::if_none_match(Etag::from("\"different\"")));
+                container_client
+                    .patch_item(
+                        &pk,
+                        &item_id,
+                        PatchInstructions::from(vec![PatchOperation::set(
+                            "/deleted",
+                            serde_json::json!(true),
+                        )]),
+                        Some(different_none_match),
+                    )
+                    .await?;
             }
 
             Ok(())

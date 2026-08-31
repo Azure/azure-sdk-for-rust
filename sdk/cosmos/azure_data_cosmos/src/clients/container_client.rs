@@ -588,8 +588,10 @@ impl ContainerClient {
     /// more than 10 instructions. Unsafe or longer lists use tracked
     /// client-side RMW. Explicit server-side PATCH with more than 10
     /// instructions fails with HTTP 400 rather than falling back.
-    /// A caller-supplied tracking ID forces `Auto` to client-side RMW and is
-    /// rejected when combined with explicit `ServerSide`.
+    /// Tracking IDs and other client-side-only settings do not influence
+    /// `Auto`; they are ignored when the instruction list selects server-side
+    /// PATCH. Explicit `ServerSide` likewise provides no marker-backed
+    /// duplicate suppression.
     ///
     /// For unsafe client-side lists, the driver writes a tracking entry under
     /// [`PATCH_TRACKING_PROPERTY`](crate::models::PATCH_TRACKING_PROPERTY) in
@@ -652,8 +654,6 @@ impl ContainerClient {
             CosmosOperation::patch_item(item_ref).with_body(body),
             &options,
         );
-        // PATCH manages its own If-Match internally — we only forward the
-        // session token.
         let operation = apply_item_options(operation, options.session_token, None);
 
         let operation_options = apply_patch_operation_options(options.operation, options.strategy);
@@ -1538,6 +1538,9 @@ fn apply_patch_options(
     mut operation: CosmosOperation,
     options: &PatchItemOptions,
 ) -> CosmosOperation {
+    if let Some(precondition) = options.precondition.clone() {
+        operation = operation.with_precondition(precondition);
+    }
     if let Some(max_attempts) = options.max_attempts {
         operation = operation.with_patch_max_attempts(max_attempts);
     }
@@ -1613,6 +1616,9 @@ mod tests {
             .unwrap();
         let options = PatchItemOptions::default()
             .with_strategy(crate::options::PatchStrategy::ClientSide)
+            .with_precondition(Precondition::if_match(azure_core::http::Etag::from(
+                "\"etag\"",
+            )))
             .with_max_attempts(std::num::NonZeroU8::new(7).unwrap())
             .with_tracking_id(tracking_id)
             .with_tracking_capacity(std::num::NonZeroU16::new(19).unwrap())
@@ -1626,6 +1632,12 @@ mod tests {
             tracking_id.to_string()
         );
         assert_eq!(operation.patch_tracking_capacity().unwrap().get(), 19);
+        assert_eq!(
+            operation.precondition(),
+            Some(&Precondition::if_match(azure_core::http::Etag::from(
+                "\"etag\""
+            )))
+        );
         assert_eq!(
             operation.patch_tracking_retention_seconds().unwrap().get(),
             23

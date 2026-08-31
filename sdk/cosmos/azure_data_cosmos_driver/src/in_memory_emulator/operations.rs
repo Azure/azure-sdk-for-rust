@@ -5166,7 +5166,23 @@ async fn handle_patch_locked(
             if parsed
                 .if_match
                 .as_ref()
-                .is_some_and(|if_match| if_match != &current.etag)
+                .is_some_and(|if_match| if_match != "*" && if_match != &current.etag)
+            {
+                return Err(error_response(
+                    StatusCode::PreconditionFailed,
+                    None,
+                    "PreconditionFailed",
+                    "One of the specified pre-condition is not met.",
+                    1.0,
+                    &token,
+                    start,
+                )
+                .build());
+            }
+            if parsed
+                .if_none_match
+                .as_ref()
+                .is_some_and(|if_none_match| if_none_match == "*" || if_none_match == &current.etag)
             {
                 return Err(error_response(
                     StatusCode::PreconditionFailed,
