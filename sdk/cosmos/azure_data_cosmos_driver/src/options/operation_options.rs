@@ -77,8 +77,10 @@ pub struct OperationOptions {
     /// Disables automatic session token management.
     ///
     /// When `None` or `Some(false)`, session tokens are captured from responses
-    /// and sent on subsequent requests for session consistency.
-    /// Set to `Some(true)` to disable this behavior.
+    /// and sent on subsequent requests for session consistency. Set to `Some(true)`
+    /// to disable both automatic capture and automatic resolution. User-provided
+    /// session tokens are unaffected. This setting cannot enable automatic session
+    /// token management when the driver's partition key range cache is disabled.
     pub session_capturing_disabled: Option<bool>,
 
     /// Maximum number of session-consistency retries on 404/1002 errors.

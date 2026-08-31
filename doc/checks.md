@@ -8,6 +8,18 @@ The Engineering System provides a set of [standard checks](https://dev.azure.com
 
 ## Rust-specific checks
 
+### Pull request Cargo feature coverage
+
+The pull request test matrix validates changed packages with all Cargo features on
+the existing platform and toolchain legs. It also has stable-toolchain legs for
+Linux amd64 and macOS arm64 that validate Cargo's default feature set. Those two
+legs omit `--all-features` from the package build, doctest, target test, and
+benchmark test commands.
+
+Source analysis remains a separate Linux job and continues to run check, Clippy,
+dependency policy, and documentation commands with all features enabled. The
+default-feature matrix legs do not duplicate source analysis.
+
 ### Checks included in `cargo`
 
 The following checks are included in the Rust toolchain or are part of cargo.

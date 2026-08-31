@@ -1,0 +1,52 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directories:
+      - "/"
+      - "/eng/tools"
+      - "/samples/*/*"
+    schedule:
+      interval: "daily"
+    # Keep updates within existing Cargo.toml requirements. Security fixes
+    # outside those requirements need an explicit manifest update.
+    # The 7-day cooldown gives the Azure Artifacts Cargo feed time to mirror
+    # crates.io releases before Dependabot updates land in CI.
+    versioning-strategy: "lockfile-only"
+    open-pull-requests-limit: 10
+    groups:
+      cargo:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
+      exclude:
+        - "azure*"
+        - "autorest*"
+        - "typespec*"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      npm:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
+    exclude-paths:
+      - ".github/workflows/*.lock.yaml"
+      - ".github/workflows/*.lock.yml"

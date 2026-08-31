@@ -166,6 +166,10 @@ fn generate_c_header() {
             "CosmosOperationRequest".into(),
             "operation_request_t".into(),
         ),
+        (
+            "CosmosOperationRequestV2".into(),
+            "operation_request_v2_t".into(),
+        ),
         ("CosmosRuntimeOptions".into(), "runtime_options_t".into()),
         (
             "CosmosDriverOptionsConfig".into(),

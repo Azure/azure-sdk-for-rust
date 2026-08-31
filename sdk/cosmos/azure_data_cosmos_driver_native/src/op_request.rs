@@ -36,7 +36,7 @@
 
 use std::collections::HashMap;
 use std::ffi::{c_char, CStr};
-use std::num::{NonZeroU32, NonZeroU8};
+use std::num::{NonZeroU16, NonZeroU32, NonZeroU8};
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::Etag;
@@ -47,7 +47,8 @@ use azure_data_cosmos_driver::options::{
 use azure_data_cosmos_driver::{
     models::{
         ActivityId, ContainerReference, ContinuationToken, CosmosOperation, ItemReference,
-        MaxItemCountHint, PartitionKey, Precondition, SessionToken, ThroughputControlGroupName,
+        MaxItemCountHint, OperationType, PartitionKey, PatchInstructions, PatchTrackingId,
+        Precondition, SessionToken, ThroughputControlGroupName,
     },
     options::PlanOptions,
 };
@@ -135,6 +136,8 @@ pub enum CosmosReadConsistencyStrategy {
     CosmosReadConsistencyStrategySession = 3,
     /// Read the latest version across all regions (single-master / Strong).
     CosmosReadConsistencyStrategyGlobalStrong = 4,
+    /// Read the latest committed version using a quorum read.
+    CosmosReadConsistencyStrategyLatestCommitted = 5,
 }
 
 impl CosmosReadConsistencyStrategy {
@@ -153,6 +156,7 @@ impl CosmosReadConsistencyStrategy {
             2 => Self::CosmosReadConsistencyStrategyEventual,
             3 => Self::CosmosReadConsistencyStrategySession,
             4 => Self::CosmosReadConsistencyStrategyGlobalStrong,
+            5 => Self::CosmosReadConsistencyStrategyLatestCommitted,
             _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
         })
     }
@@ -165,6 +169,9 @@ impl CosmosReadConsistencyStrategy {
             Self::CosmosReadConsistencyStrategySession => Some(ReadConsistencyStrategy::Session),
             Self::CosmosReadConsistencyStrategyGlobalStrong => {
                 Some(ReadConsistencyStrategy::GlobalStrong)
+            }
+            Self::CosmosReadConsistencyStrategyLatestCommitted => {
+                Some(ReadConsistencyStrategy::LatestCommitted)
             }
         })
     }
@@ -727,6 +734,15 @@ pub struct CosmosOperationRequest {
 
     /// Per-call options. NULL = use driver/runtime defaults.
     pub options: *const CosmosOperationOptions,
+    /// Stable PATCH tracking UUID (NUL-terminated UTF-8). NULL = generate one
+    /// for this invocation.
+    pub patch_tracking_id: *const c_char,
+    /// Maximum number of PATCH tracking entries retained on the item. The
+    /// oldest entry is evicted when full. `0` = use the driver default.
+    pub patch_tracking_capacity: u16,
+    /// Age-based retention window in whole seconds. Capacity pressure can
+    /// evict an entry earlier. `0` = use the driver default.
+    pub patch_tracking_retention_seconds: u32,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -737,6 +753,7 @@ pub struct CosmosOperationRequest {
 pub(crate) struct BuiltRequest {
     pub(crate) operation: CosmosOperation,
     pub(crate) options: OperationOptions,
+    pub(crate) patch_tracking_id: Option<PatchTrackingId>,
     /// Inbound continuation token (if the host supplied one). Threaded into
     /// [`azure_data_cosmos_driver::driver::CosmosDriver::plan_operation`] by
     /// the feed submit entry point; ignored by the singleton entry point.
@@ -765,6 +782,13 @@ pub(crate) unsafe fn build_request(
     let req = unsafe { &*request };
 
     let operation = unsafe { build_operation(req)? };
+    let operation = apply_patch_tracking_fields(
+        operation,
+        req.patch_tracking_id,
+        req.patch_tracking_capacity,
+        req.patch_tracking_retention_seconds,
+    )?;
+    let (operation, patch_tracking_id) = resolve_patch_tracking_id(operation);
 
     let options = if req.options.is_null() {
         OperationOptions::default()
@@ -787,9 +811,42 @@ pub(crate) unsafe fn build_request(
     Ok(BuiltRequest {
         operation,
         options,
+        patch_tracking_id,
         continuation,
         plan_options,
     })
+}
+
+fn resolve_patch_tracking_id(
+    mut operation: CosmosOperation,
+) -> (CosmosOperation, Option<PatchTrackingId>) {
+    if operation.operation_type() != OperationType::Patch {
+        return (operation, None);
+    }
+    let instructions = operation
+        .body()
+        .and_then(|body| serde_json::from_slice::<PatchInstructions>(body).ok());
+    let requires_tracking = patch_requires_tracking(
+        operation.patch_tracking_id().is_some(),
+        instructions.as_ref(),
+    );
+    if !requires_tracking {
+        return (operation, None);
+    }
+
+    let tracking_id = operation
+        .patch_tracking_id()
+        .unwrap_or_else(PatchTrackingId::new);
+    operation = operation.with_patch_tracking_id(tracking_id);
+    (operation, Some(tracking_id))
+}
+
+fn patch_requires_tracking(
+    caller_supplied_tracking_id: bool,
+    instructions: Option<&PatchInstructions>,
+) -> bool {
+    caller_supplied_tracking_id
+        || instructions.is_some_and(|instructions| !instructions.is_retry_safe())
 }
 
 /// Builds just the [`CosmosOperation`] (factory + inline mutators) from a
@@ -985,6 +1042,60 @@ unsafe fn apply_inline_mutators(
     Ok(op)
 }
 
+fn apply_patch_tracking_fields(
+    mut operation: CosmosOperation,
+    tracking_id: *const c_char,
+    tracking_capacity: u16,
+    tracking_retention_seconds: u32,
+) -> Result<CosmosOperation, CosmosErrorCode> {
+    if tracking_id.is_null() && tracking_capacity == 0 && tracking_retention_seconds == 0 {
+        return Ok(operation);
+    }
+    if operation.operation_type() != OperationType::Patch {
+        return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+    }
+    let fields =
+        parse_patch_tracking_fields(tracking_id, tracking_capacity, tracking_retention_seconds)?;
+    if let Some(tracking_id) = fields.tracking_id {
+        operation = operation.with_patch_tracking_id(tracking_id);
+    }
+    if let Some(capacity) = fields.tracking_capacity {
+        operation = operation.with_patch_tracking_capacity(capacity);
+    }
+    if let Some(retention_seconds) = fields.tracking_retention_seconds {
+        operation = operation.with_patch_tracking_retention_seconds(retention_seconds);
+    }
+    Ok(operation)
+}
+
+#[derive(Debug)]
+struct ParsedPatchTrackingFields {
+    tracking_id: Option<PatchTrackingId>,
+    tracking_capacity: Option<NonZeroU16>,
+    tracking_retention_seconds: Option<std::num::NonZeroU32>,
+}
+
+fn parse_patch_tracking_fields(
+    tracking_id: *const c_char,
+    tracking_capacity: u16,
+    tracking_retention_seconds: u32,
+) -> Result<ParsedPatchTrackingFields, CosmosErrorCode> {
+    let tracking_id = if tracking_id.is_null() {
+        None
+    } else {
+        Some(
+            require_cstr(tracking_id)?
+                .parse::<PatchTrackingId>()
+                .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)?,
+        )
+    };
+    Ok(ParsedPatchTrackingFields {
+        tracking_id,
+        tracking_capacity: NonZeroU16::new(tracking_capacity),
+        tracking_retention_seconds: std::num::NonZeroU32::new(tracking_retention_seconds),
+    })
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Strict-scope reference accessors
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1065,6 +1176,110 @@ fn require_cstr<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_data_cosmos_driver::models::PatchOperation;
+
+    #[test]
+    fn supplied_id_opts_retry_safe_patch_into_tracking() {
+        let instructions = PatchInstructions::new()
+            .with_operation(PatchOperation::set("/name", serde_json::json!("after")));
+
+        assert!(!patch_requires_tracking(false, Some(&instructions)));
+        assert!(patch_requires_tracking(true, Some(&instructions)));
+    }
+
+    #[test]
+    fn patch_tracking_fields_map_to_driver_operation() {
+        let tracking_id = std::ffi::CString::new("7f5241c9-d7c2-4071-97a3-43bdebf6ef8f").unwrap();
+
+        let parsed = parse_patch_tracking_fields(tracking_id.as_ptr(), 17, 23).unwrap();
+
+        assert_eq!(
+            parsed.tracking_id.unwrap().to_string(),
+            "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f"
+        );
+        assert_eq!(parsed.tracking_capacity, NonZeroU16::new(17));
+        assert_eq!(
+            parsed.tracking_retention_seconds,
+            std::num::NonZeroU32::new(23)
+        );
+    }
+
+    #[test]
+    fn invalid_patch_tracking_id_is_rejected() {
+        let tracking_id = std::ffi::CString::new("not-a-uuid").unwrap();
+        let result = parse_patch_tracking_fields(tracking_id.as_ptr(), 0, 0);
+
+        assert_eq!(
+            result.unwrap_err(),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+        );
+    }
+
+    #[test]
+    fn patch_tracking_fields_are_rejected_for_non_patch_operation() {
+        let operation = CosmosOperation::read_all_databases(
+            azure_data_cosmos_driver::models::AccountReference::with_master_key(
+                azure_core::http::Url::parse("https://localhost").unwrap(),
+                "test-key",
+            ),
+        );
+
+        let result = apply_patch_tracking_fields(operation, std::ptr::null(), 17, 0);
+
+        assert_eq!(
+            result.unwrap_err(),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+        );
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    #[test]
+    fn operation_request_abi_layout_is_stable() {
+        use std::mem::{offset_of, size_of};
+
+        assert_eq!(size_of::<CosmosOperationRequest>(), 168);
+        assert_eq!(offset_of!(CosmosOperationRequest, kind), 0);
+        assert_eq!(offset_of!(CosmosOperationRequest, account), 8);
+        assert_eq!(offset_of!(CosmosOperationRequest, database), 16);
+        assert_eq!(offset_of!(CosmosOperationRequest, container), 24);
+        assert_eq!(offset_of!(CosmosOperationRequest, item_id), 32);
+        assert_eq!(offset_of!(CosmosOperationRequest, resource_link), 40);
+        assert_eq!(offset_of!(CosmosOperationRequest, partition_key), 48);
+        assert_eq!(
+            offset_of!(CosmosOperationRequest, partition_key_components),
+            56
+        );
+        assert_eq!(offset_of!(CosmosOperationRequest, partition_key_len), 64);
+        assert_eq!(offset_of!(CosmosOperationRequest, feed_range), 72);
+        assert_eq!(offset_of!(CosmosOperationRequest, body), 80);
+        assert_eq!(offset_of!(CosmosOperationRequest, body_len), 88);
+        assert_eq!(offset_of!(CosmosOperationRequest, session_token), 96);
+        assert_eq!(offset_of!(CosmosOperationRequest, activity_id), 104);
+        assert_eq!(offset_of!(CosmosOperationRequest, continuation_token), 112);
+        assert_eq!(offset_of!(CosmosOperationRequest, max_item_count), 120);
+        assert_eq!(offset_of!(CosmosOperationRequest, max_fan_out), 124);
+        assert_eq!(offset_of!(CosmosOperationRequest, patch_max_attempts), 128);
+        assert_eq!(
+            offset_of!(CosmosOperationRequest, populate_index_metrics),
+            129
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationRequest, populate_query_metrics),
+            130
+        );
+        assert_eq!(offset_of!(CosmosOperationRequest, precondition_kind), 132);
+        assert_eq!(offset_of!(CosmosOperationRequest, precondition_etag), 136);
+        assert_eq!(offset_of!(CosmosOperationRequest, options), 144);
+        assert_eq!(offset_of!(CosmosOperationRequest, patch_tracking_id), 152);
+        assert_eq!(
+            offset_of!(CosmosOperationRequest, patch_tracking_capacity),
+            160
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationRequest, patch_tracking_retention_seconds),
+            164
+        );
+    }
 
     #[test]
     fn tristate_bool_decodes_sentinels() {
@@ -1156,6 +1371,10 @@ mod tests {
             S::CosmosReadConsistencyStrategyGlobalStrong.to_driver(),
             Ok(Some(ReadConsistencyStrategy::GlobalStrong))
         );
+        assert_eq!(
+            S::CosmosReadConsistencyStrategyLatestCommitted.to_driver(),
+            Ok(Some(ReadConsistencyStrategy::LatestCommitted))
+        );
     }
 
     #[test]
@@ -1185,6 +1404,10 @@ mod tests {
         );
         assert_eq!(
             S::from_i32(5),
+            Ok(S::CosmosReadConsistencyStrategyLatestCommitted)
+        );
+        assert_eq!(
+            S::from_i32(6),
             Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
         assert_eq!(
