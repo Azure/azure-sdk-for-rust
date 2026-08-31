@@ -118,6 +118,7 @@ resource accountName_roleDefinitionId 'Microsoft.DocumentDB/databaseAccounts/sql
         dataActions: [
           'Microsoft.DocumentDB/databaseAccounts/readMetadata'
           'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/*'
+          'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/executeQuery'
           'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/items/*'
         ]
       }
