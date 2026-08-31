@@ -14,7 +14,7 @@
 //! - **Shared rewrite helpers** that reproduce the service transformations
 //!   needed by ORDER BY, OFFSET/LIMIT, TOP, and DISTINCT pipelines.
 
-// cspell:ignore FULLTEXTSCORE VECTORDISTANCE
+// cspell:ignore COUNTIF FULLTEXTSCORE VECTORDISTANCE
 
 use crate::driver::dataflow::query_plan::{self as dataflow, QueryRange};
 use crate::error::{CosmosError, CosmosStatus};
