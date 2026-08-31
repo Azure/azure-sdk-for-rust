@@ -1773,7 +1773,7 @@ impl CosmosDriver {
     fn partition_key_range_cache(&self) -> crate::error::Result<&PartitionKeyRangeCache> {
         self.pk_range_cache.as_ref().ok_or_else(|| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_DISABLED)
+                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED)
                 .with_message(
                     "the partition key range cache is disabled, but this operation requires partition topology",
                 )
@@ -2480,9 +2480,9 @@ impl CosmosDriver {
         // none of these apply, skip the cache work.
         let snapshot = self.location_state_store.snapshot();
         let partition_state = snapshot.partitions.as_ref();
-        if !partition_state.per_partition_automatic_failover_enabled
-            && !partition_state.per_partition_circuit_breaker_enabled
-            && !(automatic_session_management_active
+        if !(partition_state.per_partition_automatic_failover_enabled
+            || partition_state.per_partition_circuit_breaker_enabled
+            || automatic_session_management_active
                 && operation.request_headers().session_token.is_none()
                 && self.location_state_store.gateway_v2_enabled())
         {
@@ -3590,7 +3590,7 @@ impl CosmosDriver {
     ///
     /// # Errors
     ///
-    /// Returns [`crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_DISABLED`]
+    /// Returns [`crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED`]
     /// when partition key range caching is disabled.
     pub async fn resolve_all_partition_key_ranges(
         &self,
@@ -3627,7 +3627,7 @@ impl CosmosDriver {
     ///
     /// # Errors
     ///
-    /// Returns [`crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_DISABLED`]
+    /// Returns [`crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED`]
     /// when partition key range caching is disabled.
     pub async fn resolve_partition_key_ranges_for_key(
         &self,
@@ -4116,6 +4116,69 @@ mod tests {
             err.status(),
             crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
+    }
+
+    fn cache_disabled_test_driver(runtime: Arc<CosmosDriverRuntime>) -> CosmosDriver {
+        let driver = CosmosDriver::new(
+            runtime,
+            DriverOptions::builder(test_account())
+                .with_partition_key_range_cache_enabled(false)
+                .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+        driver.initialized.store(true, Ordering::Release);
+        driver
+    }
+
+    #[tokio::test]
+    async fn cache_disabled_change_feed_planning_distinguishes_logical_from_full() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = cache_disabled_test_driver(runtime);
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let logical_range = FeedRange::for_partition(
+            PartitionKey::from("pk1"),
+            container.partition_key_definition(),
+        );
+
+        driver
+            .plan_operation(
+                CosmosOperation::change_feed(container.clone(), Some(logical_range)),
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            )
+            .await
+            .expect("logical-partition change feed should use the trivial plan");
+
+        let error = match driver
+            .plan_operation(
+                CosmosOperation::change_feed(container, Some(FeedRange::full())),
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            )
+            .await
+        {
+            Ok(_) => panic!("full-container change feed should require physical topology"),
+            Err(error) => error,
+        };
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
+        );
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+        assert_eq!(error.status().sub_status().map(|s| s.value()), Some(20159));
+        assert_eq!(
+            error.status().name(),
+            Some("ClientPartitionKeyRangeCacheRequired")
+        );
+
+        // Both outcomes are decided without installing a topology provider or
+        // issuing a replacement lookup against a cache.
+        assert!(driver.pk_range_cache.is_none());
     }
 
     #[tokio::test]
@@ -6324,7 +6387,7 @@ mod tests {
 
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_DISABLED
+            crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
         );
     }
 

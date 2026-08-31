@@ -170,8 +170,8 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientImdsHttpClientConstructionFailed = 20157,
     /// `CLIENT_IMDS_REQWEST_FEATURE_REQUIRED` (20158).
     CosmosSubStatusClientImdsReqwestFeatureRequired = 20158,
-    /// `CLIENT_PARTITION_KEY_RANGE_CACHE_DISABLED` (20159).
-    CosmosSubStatusClientPartitionKeyRangeCacheDisabled = 20159,
+    /// `CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED` (20159).
+    CosmosSubStatusClientPartitionKeyRangeCacheRequired = 20159,
     /// `CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT` (20200).
     CosmosSubStatusClientContinuationTokenFetchInFlight = 20200,
     /// `CLIENT_TOPOLOGY_PROVIDER_MISSING` (20201).
@@ -319,7 +319,7 @@ const _: () = {
         CosmosSubStatusClientRequestUrlMissingKnownPort => CLIENT_REQUEST_URL_MISSING_KNOWN_PORT,
         CosmosSubStatusClientImdsHttpClientConstructionFailed => CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED,
         CosmosSubStatusClientImdsReqwestFeatureRequired => CLIENT_IMDS_REQWEST_FEATURE_REQUIRED,
-        CosmosSubStatusClientPartitionKeyRangeCacheDisabled => CLIENT_PARTITION_KEY_RANGE_CACHE_DISABLED,
+        CosmosSubStatusClientPartitionKeyRangeCacheRequired => CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED,
         CosmosSubStatusClientContinuationTokenFetchInFlight => CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT,
         CosmosSubStatusClientTopologyProviderMissing => CLIENT_TOPOLOGY_PROVIDER_MISSING,
         CosmosSubStatusClientDriverNotInitialized => CLIENT_DRIVER_NOT_INITIALIZED,

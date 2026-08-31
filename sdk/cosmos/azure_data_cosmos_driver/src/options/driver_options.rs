@@ -97,9 +97,10 @@ pub struct DriverOptions {
     /// Whether the driver may fetch and retain partition key range topology.
     ///
     /// Disabling this prevents all `/pkranges` requests. Operations that require
-    /// physical partition topology, including cross-partition queries and change
-    /// feed reads, fail with a client error. Automatic session token management is
-    /// also disabled; user-provided session tokens are still sent unchanged.
+    /// physical partition topology, including cross-partition queries and
+    /// topology-dependent change-feed reads, fail with a client error. Automatic
+    /// session token management is also disabled; user-provided session tokens are
+    /// still sent unchanged.
     partition_key_range_cache_enabled: bool,
     /// Driver-level limits on simultaneous cross-region attempts.
     ///
@@ -218,9 +219,10 @@ impl DriverOptionsBuilder {
     /// Enables or disables partition key range topology caching.
     ///
     /// When disabled, the driver never requests `/pkranges`. Cross-partition
-    /// queries, change feed reads, and physical feed-range APIs are unavailable.
-    /// Automatic session token management is disabled, but user-provided session
-    /// tokens are still sent unchanged.
+    /// queries, change-feed reads requiring physical topology, and physical
+    /// feed-range APIs are unavailable. Logical-partition change-feed reads remain
+    /// available. Automatic session token management is disabled, but user-provided
+    /// session tokens are still sent unchanged.
     pub fn with_partition_key_range_cache_enabled(mut self, enabled: bool) -> Self {
         self.partition_key_range_cache_enabled = enabled;
         self
