@@ -65,6 +65,7 @@ impl PatchTrackingId {
         if getrandom::fill(&mut bytes).is_err() {
             return Self(Uuid::new_v4());
         }
+        // Mark the random bytes as an RFC 4122 variant, version 4 UUID.
         bytes[6] = (bytes[6] & 0x0f) | 0x40;
         bytes[8] = (bytes[8] & 0x3f) | 0x80;
         Self(Uuid::from_bytes(bytes))
