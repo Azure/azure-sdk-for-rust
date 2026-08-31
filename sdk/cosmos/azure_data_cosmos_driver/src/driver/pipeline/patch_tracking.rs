@@ -42,6 +42,8 @@ pub(crate) fn prepare_tracking_marker(
         .get("_ts")
         .and_then(Value::as_i64)
         .filter(|timestamp| *timestamp >= 0);
+    let require_document_timestamp =
+        || document_timestamp.ok_or_else(missing_document_timestamp_error);
     let object = document.as_object_mut().ok_or_else(|| {
         invalid_property_error("PATCH tracking requires the item body to be a JSON object")
     })?;
@@ -50,7 +52,7 @@ pub(crate) fn prepare_tracking_marker(
         if !allow_insert {
             return Ok(TrackingMarkerOutcome::Missing);
         }
-        let marker_timestamp = document_timestamp.ok_or_else(missing_document_timestamp_error)?;
+        let marker_timestamp = require_document_timestamp()?;
         object.insert(
             PATCH_TRACKING_PROPERTY.to_owned(),
             Value::Array(vec![new_entry(
@@ -80,7 +82,7 @@ pub(crate) fn prepare_tracking_marker(
         return Ok(TrackingMarkerOutcome::Missing);
     }
 
-    let document_timestamp = document_timestamp.ok_or_else(missing_document_timestamp_error)?;
+    let document_timestamp = require_document_timestamp()?;
     for (entry, parsed_entry) in entries.iter_mut().zip(&mut parsed) {
         if parsed_entry.attempted_at > document_timestamp {
             set_attempted_at(entry, document_timestamp);
