@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `PatchTrackingId`, `PatchInstructions::is_retry_safe`, `PatchItemOptions::with_tracking_id`, `PatchItemOptions::with_tracking_capacity`, `PatchItemOptions::with_tracking_retention_seconds`, `ItemResponse::patch_tracking_id`, `CosmosError::patch_tracking_id`, `FaultInjectionErrorType::ResponseTimeoutAfterService`, and public PATCH tracking property, retention, and default-capacity constants for bounded duplicate suppression across application retries. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
+- Added `CosmosClientBuilder::with_partition_key_range_cache_enabled` to disable partition topology caching and `/pkranges` requests when only topology-independent operations are needed. ([#5174](https://github.com/Azure/azure-sdk-for-rust/pull/5174))
 - Added `ResourceId` and `ResourceIdentity` for addressing Cosmos databases and containers by user-provided name or by RID. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - `CosmosClient::database_client` and `DatabaseClient::container_client` now accept `impl Into<ResourceIdentity>`, so a `&str`/`String` selects name addressing and a `ResourceId` selects RID addressing. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - Added `DatabaseClient::name()` and `DatabaseClient::rid()` to inspect how a database client was addressed. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))

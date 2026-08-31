@@ -1,5 +1,5 @@
 {
   "devDependencies": {
-    "markdownlint-cli2": "0.21.0"
+    "markdownlint-cli2": "0.23.2"
   }
 }
