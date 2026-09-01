@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -104,6 +105,42 @@ class StableTagTests(unittest.TestCase):
             "refs/tags/azure_identity@*",
         )
 
+    @mock.patch.object(CREATE_HOTFIX, "run")
+    def test_excludes_non_publishable_workspace_crates(self, run):
+        root = Path("/repo")
+        run.return_value = json.dumps(
+            {
+                "workspace_members": ["publishable", "private"],
+                "packages": [
+                    {
+                        "id": "publishable",
+                        "name": "azure_identity",
+                        "version": "1.0.0",
+                        "manifest_path": "/repo/sdk/identity/azure_identity/Cargo.toml",
+                        "publish": None,
+                    },
+                    {
+                        "id": "private",
+                        "name": "azure_core_test",
+                        "version": "0.1.0",
+                        "manifest_path": "/repo/sdk/core/azure_core_test/Cargo.toml",
+                        "publish": [],
+                    },
+                ],
+            }
+        )
+
+        self.assertEqual(
+            [
+                {
+                    "name": "azure_identity",
+                    "path": "sdk/identity/azure_identity",
+                    "version": "1.0.0",
+                }
+            ],
+            CREATE_HOTFIX.workspace_crates(root),
+        )
+
 
 class ConflictTests(unittest.TestCase):
     def test_resolves_cargo_lock_and_returns_other_conflicts(self):
@@ -147,6 +184,21 @@ class ConflictTests(unittest.TestCase):
                 CREATE_HOTFIX.CommandError, "no cherry-pick is in progress"
             ):
                 CREATE_HOTFIX.continue_cherry_pick(args)
+
+    def test_cherry_pick_rejects_an_active_sequence(self):
+        args = mock.Mock(commits=["abc"])
+        with (
+            mock.patch.object(
+                CREATE_HOTFIX, "current_branch", return_value="hotfix/fixture"
+            ),
+            mock.patch.object(
+                CREATE_HOTFIX, "cherry_pick_in_progress", return_value=True
+            ),
+        ):
+            with self.assertRaisesRegex(
+                CREATE_HOTFIX.CommandError, "use the continue command"
+            ):
+                CREATE_HOTFIX.cherry_pick(args)
 
     def test_advance_stops_on_non_conflict_failure(self):
         result = CREATE_HOTFIX.subprocess.CompletedProcess(

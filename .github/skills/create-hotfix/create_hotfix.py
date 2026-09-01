@@ -54,7 +54,7 @@ def workspace_crates(root: Path) -> list[dict[str, str]]:
     crates = []
 
     for package in metadata["packages"]:
-        if package["id"] not in workspace_members:
+        if package["id"] not in workspace_members or package["publish"] == []:
             continue
 
         manifest = Path(package["manifest_path"]).resolve()
@@ -285,15 +285,17 @@ def summarize_files(files: list[dict[str, object]]) -> str:
     return ", ".join(summaries)
 
 
-def candidate_commits(base_tag: str, crate_path: str) -> list[dict[str, object]]:
+def candidate_commits(crate_path: str) -> list[dict[str, object]]:
     output = run(
         "git",
         "log",
         "--no-color",
         "--reverse",
         "--no-merges",
+        "--cherry-pick",
+        "--right-only",
         "--format=%H%x09%s",
-        f"{base_tag}..FETCH_HEAD",
+        "HEAD...FETCH_HEAD",
         "--",
         crate_path,
     )
@@ -327,7 +329,7 @@ def prepare(args: argparse.Namespace) -> dict[str, object]:
     run("git", "fetch", UPSTREAM_URL)
     if run("git", "rev-parse", "FETCH_HEAD").strip() != upstream_main_commit():
         raise CommandError(f"{UPSTREAM_URL} HEAD does not point to main")
-    commits = candidate_commits(base_tag, crate["path"])
+    commits = candidate_commits(crate["path"])
     return {
         "crate": crate,
         "base_tag": base_tag,
@@ -358,10 +360,12 @@ def cherry_pick(args: argparse.Namespace) -> dict[str, object]:
     branch = current_branch()
     if not branch.startswith("hotfix/"):
         raise CommandError("cherry-pick must run from a hotfix/ branch")
+    if cherry_pick_in_progress():
+        raise CommandError(
+            "a cherry-pick is already in progress; use the continue command"
+        )
 
-    if not cherry_pick_in_progress():
-        lock_conflict_marker().unlink(missing_ok=True)
-
+    lock_conflict_marker().unlink(missing_ok=True)
     command = ("git", "cherry-pick", *args.commits)
     result = run_process(*command)
     if result.returncode == 0:
