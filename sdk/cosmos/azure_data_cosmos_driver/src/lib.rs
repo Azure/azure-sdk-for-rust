@@ -58,7 +58,7 @@ pub(crate) mod query;
 pub(crate) mod query_plan_native;
 pub(crate) mod system;
 #[cfg(feature = "__internal_mocking")]
-pub mod testing;
+pub mod test;
 
 // Re-export key types at crate root
 pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};

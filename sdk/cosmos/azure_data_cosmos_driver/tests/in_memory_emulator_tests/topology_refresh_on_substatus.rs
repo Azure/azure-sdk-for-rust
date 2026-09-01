@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use azure_core::http::Url;
 
-use azure_data_cosmos_driver::diagnostics::PipelineType;
+use azure_data_cosmos_driver::diagnostics::PipelineKind;
 use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
@@ -392,7 +392,7 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
         .requests()
         .iter()
         .filter(|request| {
-            request.pipeline_type() == PipelineType::DataPlane
+            request.pipeline_type() == PipelineKind::DataPlane
                 && request.status().is_database_account_not_found()
         })
         .count();
@@ -554,7 +554,7 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
         .requests()
         .iter()
         .filter(|request| {
-            request.pipeline_type() == PipelineType::DataPlane
+            request.pipeline_type() == PipelineKind::DataPlane
                 && request.status().is_write_forbidden()
         })
         .count();

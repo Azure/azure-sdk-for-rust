@@ -27,7 +27,7 @@ use super::response::headers::{ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS};
 use super::response::{
     error_response, success_response, success_response_with_format, ResponseBuilder,
 };
-use super::ru_model::RuChargingModel;
+use super::ru_model::RequestUnitChargingModel;
 use super::session::SessionToken;
 use super::store::{
     current_timestamp, new_etag, ContainerMetadata, EmulatorStore, PhysicalPartition,
@@ -4665,7 +4665,7 @@ async fn handle_create_locked(
         // read-lock probe means concurrent conflicts (returning 1.0 RU) would
         // mismatch the bucket debit, producing non-deterministic
         // RU-budget assertions in throttling tests.
-        let num_props = RuChargingModel::count_properties(&body);
+        let num_props = RequestUnitChargingModel::count_properties(&body);
         let charge = store
             .config()
             .ru_model()
@@ -5216,7 +5216,7 @@ async fn handle_replace_locked(
         // operation would otherwise have committed. Without this,
         // a throttled-and-then-NotFound replace would still have charged
         // the per-second budget for work that never landed.
-        let num_props = RuChargingModel::count_properties(&body);
+        let num_props = RequestUnitChargingModel::count_properties(&body);
         let charge = store
             .config()
             .ru_model()
@@ -5464,7 +5464,7 @@ async fn handle_upsert_locked(
         //
         // RID allocation is deferred to the write lock so we don't burn a
         // monotonic counter slot on a path that turns out to be a replace.
-        let num_props = RuChargingModel::count_properties(&body);
+        let num_props = RequestUnitChargingModel::count_properties(&body);
         let (new_doc, status, charge) = {
             let mut docs = partition.documents.write().unwrap();
             let logical = docs.entry(epk.clone()).or_default();
@@ -5700,7 +5700,7 @@ async fn handle_delete_locked(
         // Compute RU charge eagerly. Throttle debit is deferred to the
         // post-precondition write-lock window so a 429 only fires when the
         // operation would otherwise have committed.
-        let num_props = RuChargingModel::count_properties(&existing.body);
+        let num_props = RequestUnitChargingModel::count_properties(&existing.body);
         let body_size = existing.body_size_bytes;
         let charge = store
             .config()

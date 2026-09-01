@@ -5,7 +5,7 @@
 
 use crate::{
     diagnostics::{
-        DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestSentStatus,
+        DiagnosticsContextBuilder, ExecutionContext, PipelineKind, RequestSentStatus,
         TransportHttpVersion, TransportSecurity,
     },
     driver::{
@@ -753,7 +753,7 @@ impl CosmosDriver {
         let (response, cosmos_headers, status_code, sub_status, cosmos_status) = loop {
             let request_handle = diagnostics.start_request(
                 execution_context,
-                PipelineType::Metadata,
+                PipelineKind::Metadata,
                 transport_security,
                 transport.diagnostics_kind(),
                 transport.diagnostics_http_version(),
@@ -3103,9 +3103,9 @@ impl CosmosDriver {
         }
 
         let pipeline_type = if is_dataplane {
-            PipelineType::DataPlane
+            PipelineKind::DataPlane
         } else {
-            PipelineType::Metadata
+            PipelineKind::Metadata
         };
 
         let user_agent =

@@ -5,7 +5,7 @@
 
 /// Configurable RU charging rates.
 #[derive(Clone, Debug)]
-pub struct RuChargingModel {
+pub struct RequestUnitChargingModel {
     /// Base RU for a 1KB read.
     pub read_base_ru: f64,
     /// Base RU for a 1KB create.
@@ -16,7 +16,7 @@ pub struct RuChargingModel {
     pub indexing_ru_per_property: f64,
 }
 
-impl Default for RuChargingModel {
+impl Default for RequestUnitChargingModel {
     fn default() -> Self {
         Self {
             read_base_ru: 1.0,
@@ -27,7 +27,7 @@ impl Default for RuChargingModel {
     }
 }
 
-impl RuChargingModel {
+impl RequestUnitChargingModel {
     /// Returns the size bucket multiplier (doubling from 1KB).
     ///
     /// Real Cosmos DB limits documents to 2 MB, so the input never approaches
@@ -73,25 +73,25 @@ mod tests {
 
     #[test]
     fn default_read_1kb() {
-        let model = RuChargingModel::default();
+        let model = RequestUnitChargingModel::default();
         assert!((model.compute_read_ru(512) - 1.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn read_2kb() {
-        let model = RuChargingModel::default();
+        let model = RequestUnitChargingModel::default();
         assert!((model.compute_read_ru(1025) - 2.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn read_4kb() {
-        let model = RuChargingModel::default();
+        let model = RequestUnitChargingModel::default();
         assert!((model.compute_read_ru(3000) - 4.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn create_1kb_5_props() {
-        let model = RuChargingModel::default();
+        let model = RequestUnitChargingModel::default();
         let ru = model.compute_create_ru(512, 5);
         let expected = 5.8 + 0.3 * 5.0;
         assert!((ru - expected).abs() < f64::EPSILON);
@@ -99,7 +99,7 @@ mod tests {
 
     #[test]
     fn replace_1kb_5_props() {
-        let model = RuChargingModel::default();
+        let model = RequestUnitChargingModel::default();
         let ru = model.compute_replace_or_delete_ru(512, 5);
         let expected = 5.8 * 1.5 + 0.3 * 5.0;
         assert!((ru - expected).abs() < f64::EPSILON);

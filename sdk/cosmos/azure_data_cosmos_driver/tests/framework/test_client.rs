@@ -9,7 +9,7 @@ use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
 #[cfg(feature = "__internal_testing")]
 use azure_data_cosmos_driver::CosmosDriver;
 use azure_data_cosmos_driver::{
-    diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
+    diagnostics::{DiagnosticsContext, PipelineKind, TransportSecurity},
     driver::CosmosDriverRuntime,
     error::CosmosError,
     models::{
@@ -1080,7 +1080,7 @@ impl DriverTestRunContext {
         let first_request = &requests[0];
         assert_eq!(
             first_request.pipeline_type(),
-            PipelineType::DataPlane,
+            PipelineKind::DataPlane,
             "Should use data plane pipeline for item operations"
         );
 

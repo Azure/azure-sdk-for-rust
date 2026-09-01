@@ -115,7 +115,7 @@ impl std::fmt::Display for ExecutionContext {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
 #[non_exhaustive]
-pub enum PipelineType {
+pub enum PipelineKind {
     /// Metadata pipeline for control plane operations.
     ///
     /// Used for database, container, throughput, and other management operations.
@@ -130,33 +130,33 @@ pub enum PipelineType {
     DataPlane,
 }
 
-impl PipelineType {
+impl PipelineKind {
     /// Returns the string representation of this pipeline type.
     pub fn as_str(self) -> &'static str {
         match self {
-            PipelineType::Metadata => "metadata",
-            PipelineType::DataPlane => "data_plane",
+            PipelineKind::Metadata => "metadata",
+            PipelineKind::DataPlane => "data_plane",
         }
     }
 
     /// Returns true if this is a metadata (control plane) pipeline.
     pub fn is_metadata(self) -> bool {
-        matches!(self, PipelineType::Metadata)
+        matches!(self, PipelineKind::Metadata)
     }
 
     /// Returns true if this is a data plane pipeline.
     pub fn is_data_plane(self) -> bool {
-        matches!(self, PipelineType::DataPlane)
+        matches!(self, PipelineKind::DataPlane)
     }
 }
 
-impl std::fmt::Display for PipelineType {
+impl std::fmt::Display for PipelineKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl AsRef<str> for PipelineType {
+impl AsRef<str> for PipelineKind {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
@@ -415,7 +415,7 @@ pub struct RequestDiagnostics {
     operation_name: Option<Arc<str>>,
 
     /// The pipeline type used for this request.
-    pipeline_type: PipelineType,
+    pipeline_type: PipelineKind,
 
     /// The transport security mode used for this request.
     transport_security: TransportSecurity,
@@ -502,7 +502,7 @@ impl RequestDiagnostics {
     /// Creates a new request diagnostics entry for a request being started.
     pub(crate) fn new(
         execution_context: ExecutionContext,
-        pipeline_type: PipelineType,
+        pipeline_type: PipelineKind,
         transport_security: TransportSecurity,
         transport_kind: TransportKind,
         transport_http_version: TransportHttpVersion,
@@ -561,7 +561,7 @@ impl RequestDiagnostics {
         Self {
             execution_context: ExecutionContext::Initial,
             operation_name: None,
-            pipeline_type: PipelineType::DataPlane,
+            pipeline_type: PipelineKind::DataPlane,
             transport_security: TransportSecurity::Secure,
             transport_kind: TransportKind::Gateway,
             transport_http_version: TransportHttpVersion::Http2,
@@ -740,7 +740,7 @@ impl RequestDiagnostics {
     }
 
     /// Returns the pipeline type used for this request.
-    pub fn pipeline_type(&self) -> PipelineType {
+    pub fn pipeline_type(&self) -> PipelineKind {
         self.pipeline_type
     }
 
@@ -1579,7 +1579,7 @@ impl DiagnosticsContextBuilder {
     pub(crate) fn start_request(
         &mut self,
         execution_context: ExecutionContext,
-        pipeline_type: PipelineType,
+        pipeline_type: PipelineKind,
         transport_security: TransportSecurity,
         transport_kind: TransportKind,
         transport_http_version: TransportHttpVersion,
@@ -2973,7 +2973,7 @@ mod tests {
             };
             self.start_request(
                 execution_context,
-                PipelineType::DataPlane,
+                PipelineKind::DataPlane,
                 TransportSecurity::Secure,
                 TransportKind::Gateway,
                 TransportHttpVersion::Http11,
@@ -4196,10 +4196,10 @@ mod tests {
 
     #[test]
     fn pipeline_type_classification() {
-        assert!(PipelineType::Metadata.is_metadata());
-        assert!(!PipelineType::Metadata.is_data_plane());
-        assert!(PipelineType::DataPlane.is_data_plane());
-        assert!(!PipelineType::DataPlane.is_metadata());
+        assert!(PipelineKind::Metadata.is_metadata());
+        assert!(!PipelineKind::Metadata.is_data_plane());
+        assert!(PipelineKind::DataPlane.is_data_plane());
+        assert!(!PipelineKind::DataPlane.is_metadata());
     }
 
     #[test]
@@ -4239,11 +4239,11 @@ mod tests {
     #[test]
     fn pipeline_type_serialization() {
         assert_eq!(
-            serde_json::to_string(&PipelineType::Metadata).unwrap(),
+            serde_json::to_string(&PipelineKind::Metadata).unwrap(),
             "\"metadata\""
         );
         assert_eq!(
-            serde_json::to_string(&PipelineType::DataPlane).unwrap(),
+            serde_json::to_string(&PipelineKind::DataPlane).unwrap(),
             "\"data_plane\""
         );
     }

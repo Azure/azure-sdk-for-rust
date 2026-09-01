@@ -20,17 +20,17 @@
 
 mod compaction;
 mod diagnostics_context;
-mod proxy_configuration;
+mod proxy_config;
 
 pub use compaction::{CompactedRun, CompactionInfo};
 pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
 pub use diagnostics_context::{
-    DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
+    DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineKind,
     RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
     ThresholdBreach, TransportHttpVersion, TransportKind, TransportSecurity,
     TransportShardDiagnostics,
 };
-pub use proxy_configuration::ProxyConfiguration;
+pub use proxy_config::ProxyConfig;
 
 pub use crate::driver::pipeline::hedging_diagnostics::{
     HedgeDiagnostics, HedgeTerminalState, HedgingStrategyConfig,
