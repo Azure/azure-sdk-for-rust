@@ -5,13 +5,13 @@
 //!
 //! Handles all HTTP error cases for the multi-region operation loop:
 //! - Success → Complete
-//! - Transport error (NotSent) → TransportRetry if budget allows
-//! - Transport error (Sent/Unknown) → TransportRetry if budget allows
+//! - Transport error (NotSent) → FailoverRetry if budget allows
+//! - Transport error (Sent/Unknown) → FailoverRetry if the operation allows it
 //! - 403/3 WriteForbidden → FailoverRetry + refresh + mark unavailable
 //! - 404/1002 ReadSessionNotAvailable → SessionRetry (advances region)
 //! - 408 RequestTimeout → FailoverRetry + mark partition/endpoint unavailable
-//! - 503, 429/3092, 410 → FailoverRetry + mark partition/endpoint unavailable
-//! - 500 (reads only) → FailoverRetry + mark partition/endpoint unavailable
+//! - 503, 429/3092, non-topology 410 → FailoverRetry + mark unavailable
+//! - Other 5xx → FailoverRetry + mark unavailable when the operation allows it
 //! - Other HTTP errors → Abort
 //!
 //! Writes are **not** gated on idempotency: `Create` and `Upsert` are retried
