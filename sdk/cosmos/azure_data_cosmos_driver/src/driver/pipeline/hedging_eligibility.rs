@@ -293,6 +293,7 @@ pub(crate) fn evaluate_hedge_eligibility(
         transport_mode,
         endpoint_key: secondary_endpoint_key,
         endpoint: secondary_ep,
+        routing_fallback: None,
     };
 
     // Metadata cache reads use a fixed threshold (see METADATA_HEDGE_THRESHOLD),
@@ -895,6 +896,7 @@ mod tests {
             transport_mode: TransportMode::Gateway,
             endpoint_key,
             endpoint: ep,
+            routing_fallback: None,
         }
     }
 
@@ -915,6 +917,7 @@ mod tests {
             transport_mode: TransportMode::Gateway,
             endpoint_key,
             endpoint: ep,
+            routing_fallback: None,
         }
     }
 
@@ -1100,6 +1103,7 @@ mod tests {
             endpoint_key: EndpointKey::try_from(primary_ep.selected_url(true))
                 .expect("valid proxy url"),
             endpoint: primary_ep,
+            routing_fallback: None,
         };
 
         let op = read_item_operation();

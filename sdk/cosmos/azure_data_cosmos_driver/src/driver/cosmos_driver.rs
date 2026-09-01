@@ -73,18 +73,16 @@ const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
 
-/// Serialization formats advertised (`x-ms-cosmos-supported-serialization-formats`)
-/// on point operations when binary encoding is enabled. Point operations
-/// advertise `CosmosBinary` only — matching the .NET SDK's point-op default
-/// (`RequestInvokerHandler` sets `BinarySerializationFormat =
-/// SupportedSerializationFormats.CosmosBinary`) — so the service is required to
-/// reply in binary, preserving the read-side RU/COGS benefit the caller opted
-/// into. When the caller also asked for a text payload
-/// (`request_text_response`), the driver transcodes the guaranteed-binary
-/// response back to text after receiving it, keeping the wire binary in both
-/// directions. (The broader `JsonText,CosmosBinary` negotiation applies to
-/// query/feed, which is not yet wired.)
-const BINARY_NEGOTIATION_FORMATS: &str = "CosmosBinary";
+/// Formats advertised (`x-ms-cosmos-supported-serialization-formats`) for
+/// **point item ops** when binary encoding is enabled, matching .NET's point-op
+/// default. A point response is a single body with no pipeline behind it, so
+/// there is nothing to gain from letting the service choose text.
+const BINARY_NEGOTIATION_FORMATS_POINT: &str = "CosmosBinary";
+
+/// Format advertised for query and read-feed responses when binary encoding is
+/// enabled. Live service probes confirm that the header alone negotiates binary
+/// pages while the query specification remains text.
+const BINARY_NEGOTIATION_FORMATS_QUERY: &str = "CosmosBinary";
 
 fn should_retry_account_properties_connectivity_error(
     error: &crate::error::CosmosError,
@@ -281,7 +279,7 @@ pub struct CosmosDriver {
     /// Cache for partition key range routing maps.
     /// Used to pre-resolve partition key range IDs for PPAF/PPCB
     /// before the first request attempt.
-    pk_range_cache: PartitionKeyRangeCache,
+    pk_range_cache: Option<PartitionKeyRangeCache>,
     /// Region pins protecting the change-feed continuations held by
     /// `pk_range_cache`. See [`PkRangeRegionPins`].
     pk_range_region_pins: PkRangeRegionPins,
@@ -1735,6 +1733,9 @@ impl CosmosDriver {
         // Read the hedge ceiling once, here: it is fixed for the driver's
         // lifetime, and `options` is moved into `Self` below.
         let hedge_budget = HedgeBudget::new(options.hedging_options());
+        let pk_range_cache = options
+            .partition_key_range_cache_enabled()
+            .then(PartitionKeyRangeCache::new);
 
         Ok(Self {
             runtime,
@@ -1746,7 +1747,7 @@ impl CosmosDriver {
                 any(test, feature = "__internal_in_memory_emulator")
             ))]
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
-            pk_range_cache: PartitionKeyRangeCache::new(),
+            pk_range_cache,
             pk_range_region_pins: Mutex::new(HashMap::new()),
             hedge_budget,
             session_manager: SessionManager::new(),
@@ -1765,6 +1766,17 @@ impl CosmosDriver {
     /// Returns the account reference.
     pub fn account(&self) -> &AccountReference {
         self.options.account()
+    }
+
+    fn partition_key_range_cache(&self) -> crate::error::Result<&PartitionKeyRangeCache> {
+        self.pk_range_cache.as_ref().ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED)
+                .with_message(
+                    "the partition key range cache is disabled, but this operation requires partition topology",
+                )
+                .build()
+        })
     }
 
     /// **Internal test hook -- not part of the public API.**
@@ -2423,7 +2435,9 @@ impl CosmosDriver {
         &self,
         operation: &CosmosOperation,
         overrides: &OperationOverrides,
+        automatic_session_management_active: bool,
     ) -> Option<PartitionKeyRangeId> {
+        let cache = self.pk_range_cache.as_ref()?;
         // Only pre-resolve for partitioned data plane operations.
         if !operation
             .resource_type()
@@ -2452,7 +2466,8 @@ impl CosmosDriver {
         // session token to a single partition and feeds PPAF/PPCB routing.
         // Resolve it whenever any consumer needs it:
         //   * PPAF or PPCB is enabled (for failure attribution / routing), OR
-        //   * the client may route over Gateway 2.0 (thin-client), whose
+        //   * automatic session token management is active and the client may
+        //     route over Gateway 2.0 (thin-client), whose
         //     backend rejects a multi-range composite session token on a
         //     partition-scoped request ("Session token specified is invalid.").
         //
@@ -2463,9 +2478,11 @@ impl CosmosDriver {
         // none of these apply, skip the cache work.
         let snapshot = self.location_state_store.snapshot();
         let partition_state = snapshot.partitions.as_ref();
-        if !partition_state.per_partition_automatic_failover_enabled
-            && !partition_state.per_partition_circuit_breaker_enabled
-            && !self.location_state_store.gateway_v2_enabled()
+        if !(partition_state.per_partition_automatic_failover_enabled
+            || partition_state.per_partition_circuit_breaker_enabled
+            || automatic_session_management_active
+                && operation.request_headers().session_token.is_none()
+                && self.location_state_store.gateway_v2_enabled())
         {
             return None;
         }
@@ -2480,8 +2497,7 @@ impl CosmosDriver {
             .as_ref()
             .or_else(|| operation.target().and_then(|t| t.partition_key()));
         if let Some(partition_key) = partition_key {
-            return self
-                .pk_range_cache
+            return cache
                 .resolve_partition_key_range_id(
                     container,
                     partition_key,
@@ -2507,7 +2523,7 @@ impl CosmosDriver {
             .feed_range
             .as_ref()
             .or_else(|| operation.target())?;
-        self.pk_range_cache
+        cache
             .resolve_single_overlapping_range_id(
                 container,
                 target.min_inclusive()..target.max_exclusive(),
@@ -2588,12 +2604,17 @@ impl CosmosDriver {
         // recursive future a fixed size.
         if operation.operation_type() == crate::models::OperationType::Patch {
             let max_attempts = operation.patch_max_attempts();
+            let absolute_deadline = self
+                .operation_options_view(&options)
+                .end_to_end_latency_policy()
+                .map(|policy| std::time::Instant::now() + policy.timeout());
             return Box::pin(async {
                 let result = crate::driver::pipeline::patch_handler::execute(
                     self,
                     operation,
                     options,
                     max_attempts,
+                    absolute_deadline,
                 )
                 .await?;
                 Ok(Some(result))
@@ -2601,49 +2622,179 @@ impl CosmosDriver {
             .await;
         }
 
+        // Resolve binary encoding through the same layered view as every other
+        // option. Two independent gates apply:
+        //   * request-body transcoding — only point **item** operations whose
+        //     body is a document (create/read/replace/upsert on a `Document`);
+        //   * response negotiation — the same point item ops **plus** query,
+        //     which advertises a binary response but keeps a text request body.
+        // The options are resolved whenever either gate could fire.
+        let resource_type = operation.resource_type();
+        let operation_type = operation.operation_type();
+        let encodes_request_body = Self::binary_encodes_request_body(resource_type, operation_type);
+        let negotiates_response = Self::binary_negotiates_response(&operation);
+        let binary = if encodes_request_body || negotiates_response {
+            self.operation_options_view(&options)
+                .binary_encoding()
+                .cloned()
+                .unwrap_or_default()
+        } else {
+            crate::options::BinaryEncodingOptions::default()
+        };
+        let operation = if binary.enabled && encodes_request_body {
+            Self::apply_request_binary_encoding(operation)?
+        } else {
+            operation
+        };
+
         // TODO: This boxing is a temporary fix to avoid a large future.
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
-        let response = Box::pin(async {
+        // `execute_plan` applies the text-response transcode for every plan, so
+        // there is nothing further to do here.
+        Box::pin(async {
             let container = operation.container().cloned();
             let mut plan = self
-                .plan_operation(operation, &options, None, &PlanOptions::default())
+                .plan_operation_resolved(
+                    operation,
+                    &options,
+                    None,
+                    &PlanOptions::default(),
+                    // Reuse the `binary` already resolved above so the shared
+                    // `apply_response_negotiation` choke point does not re-resolve
+                    // the same layered view for this operation.
+                    Some(binary),
+                )
                 .await?;
             self.execute_plan(&mut plan, container, options).await
         })
-        .await?;
-
-        Ok(response)
+        .await
     }
 
-    /// Whether binary encoding applies to an operation.
+    /// Whether an operation's **request body** should be transcoded to Cosmos
+    /// binary JSON.
     ///
-    /// Honored only for document operations with JSON bodies or feed pages.
-    fn binary_encoding_applies(operation: &CosmosOperation) -> bool {
+    /// Honored only for point item operations: the resource must be a
+    /// [`ResourceType::Document`] and the operation one of create/read/replace/
+    /// upsert. Control-plane resources share those operation types but must
+    /// never be binary encoded (some carry JSON bodies). Query is excluded — a
+    /// query body is a `application/query+json` spec, not a document.
+    fn binary_encodes_request_body(
+        resource_type: crate::models::ResourceType,
+        operation_type: crate::models::OperationType,
+    ) -> bool {
+        resource_type == crate::models::ResourceType::Document
+            && operation_type.supports_binary_request_body()
+    }
+
+    /// Whether an operation may advertise a binary **response** via the
+    /// `x-ms-cosmos-supported-serialization-formats` header.
+    ///
+    /// This is a superset of [`binary_encodes_request_body`]: the point item
+    /// ops plus query and document read-feed operations. Change feed uses the
+    /// same `ReadFeed` operation type but is explicitly excluded.
+    ///
+    /// [`binary_encodes_request_body`]: CosmosDriver::binary_encodes_request_body
+    fn binary_negotiates_response(operation: &CosmosOperation) -> bool {
         operation.resource_type() == crate::models::ResourceType::Document
-            && operation.operation_type().supports_binary_encoding()
+            && operation.operation_type().supports_binary_response()
             && !operation.is_change_feed()
     }
 
-    /// Whether a feed pipeline requested binary output after text normalization.
-    /// Text fallback pages are encoded too, preserving one format across a mixed rollout.
-    fn binary_feed_response_restore_applies(operation: &CosmosOperation) -> bool {
-        Self::binary_encoding_applies(operation) && operation.operation_type().is_feed()
+    /// Advertises a binary response via the
+    /// `x-ms-cosmos-supported-serialization-formats` header when the operation
+    /// negotiates one ([`binary_negotiates_response`]) and binary encoding is
+    /// enabled. The request body is untouched — this is response negotiation
+    /// only, so it is safe for query (whose text `application/query+json` body
+    /// must never be transcoded).
+    ///
+    /// One guard: a caller-set header is never overwritten.
+    ///
+    /// `request_text_response` deliberately does **not** suppress negotiation.
+    /// That flag describes the payload the caller wants handed back, not the
+    /// encoding on the wire — the wire stays binary and
+    /// [`execute_plan`](CosmosDriver::execute_plan) transcodes the response
+    /// before returning it. Suppressing negotiation here would silently forfeit
+    /// the bandwidth saving that is the entire point of enabling binary.
+    ///
+    /// [`binary_negotiates_response`]: CosmosDriver::binary_negotiates_response
+    fn apply_response_negotiation(
+        &self,
+        operation: CosmosOperation,
+        options: &OperationOptions,
+        resolved_binary: Option<crate::options::BinaryEncodingOptions>,
+    ) -> CosmosOperation {
+        if !Self::binary_negotiates_response(&operation) {
+            return operation;
+        }
+        // Reuse a caller-resolved value when available (the `execute_operation`
+        // path already resolved it for the request-body gate); otherwise resolve
+        // it here — the query path reaches `plan_operation` directly without a
+        // prior resolution.
+        let binary = resolved_binary.unwrap_or_else(|| {
+            self.operation_options_view(options)
+                .binary_encoding()
+                .cloned()
+                .unwrap_or_default()
+        });
+        if !binary.enabled {
+            return operation;
+        }
+        // Record the text hand-back BEFORE the caller-set-header guard below.
+        // The two decisions are independent: the header is a *wire* choice,
+        // `request_text_response` is a *payload-shape* choice. Recording it
+        // after the guard would let a caller who sets the header themselves and
+        // asks for text silently receive `0x80` bytes, because
+        // `emits_binary_payload()` would still be true and `execute_plan` would
+        // skip the transcode.
+        let operation = if binary.request_text_response {
+            operation.transcoding_response_to_text()
+        } else {
+            operation
+        };
+        // Never clobber a header a caller already set.
+        if operation
+            .request_headers()
+            .supported_serialization_formats
+            .is_some()
+        {
+            return operation;
+        }
+        // Queries and read feeds keep text request bodies but negotiate binary
+        // responses. Point item operations use the same binary-only value.
+        let formats = if matches!(
+            operation.operation_type(),
+            crate::models::OperationType::Query
+                | crate::models::OperationType::SqlQuery
+                | crate::models::OperationType::ReadFeed
+        ) {
+            BINARY_NEGOTIATION_FORMATS_QUERY
+        } else {
+            BINARY_NEGOTIATION_FORMATS_POINT
+        };
+        operation.with_supported_serialization_formats(formats)
     }
 
-    /// Applies request-side binary encoding to an operation and advertises
-    /// binary responses via the supported-serialization-formats header.
+    /// Transcodes an operation's **text** request body to Cosmos binary JSON.
     ///
-    /// Query specifications remain text because the negotiation header alone
-    /// produces binary query pages; item bodies retain the schema-agnostic
-    /// text-to-binary transcode.
+    /// Only the request body is touched — response negotiation (the
+    /// `x-ms-cosmos-supported-serialization-formats` header) is owned solely by
+    /// [`apply_response_negotiation`], which every operation reaches through
+    /// `plan_operation`. A body that is already binary (the SDK's typed fast
+    /// path) or empty is left in place — no clone.
+    ///
+    /// This is schema-agnostic — it operates on the raw body bytes — so a
+    /// caller that deals only in text JSON gets a binary wire without encoding
+    /// anything itself.
+    ///
+    /// [`apply_response_negotiation`]: CosmosDriver::apply_response_negotiation
     fn apply_request_binary_encoding(
         operation: CosmosOperation,
     ) -> crate::error::Result<CosmosOperation> {
-        let encode_body = !matches!(
-            operation.operation_type(),
-            crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
-        );
-        let transcoded = match operation.body().filter(|_| encode_body) {
+        if !Self::binary_encodes_request_body(operation.resource_type(), operation.operation_type())
+        {
+            return Ok(operation);
+        }
+        let transcoded = match operation.body() {
             Some(body) if !body.is_empty() && !crate::binary_json::is_binary(body) => {
                 Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
                     crate::error::CosmosError::builder()
@@ -2657,11 +2808,10 @@ impl CosmosDriver {
             }
             _ => None,
         };
-        let operation = match transcoded {
+        Ok(match transcoded {
             Some(bytes) => operation.with_body(bytes),
             None => operation,
-        };
-        Ok(operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS))
+        })
     }
 
     fn query_plan_request_body(
@@ -2748,7 +2898,8 @@ impl CosmosDriver {
                     self.fetch_account_properties(self.options.account())
                 })
                 .await?;
-            !session_capturing_disabled
+            self.pk_range_cache.is_some()
+                && !session_capturing_disabled
                 && read_consistency_strategy.is_session_effective(
                     account_properties
                         .user_consistency_policy
@@ -2838,12 +2989,16 @@ impl CosmosDriver {
                 outer_deadline,
             );
             let Some(retry_delay) = retry_delay else {
-                self.session_manager
-                    .merge_distributed_transaction_session_tokens(
-                        &response,
-                        &request.operations,
-                        is_session_consistency,
-                    )?;
+                // Cache-disabled mode disables automatic session management.
+                // Explicit per-operation tokens remain in the request unchanged.
+                if is_session_consistency {
+                    self.session_manager
+                        .merge_distributed_transaction_session_tokens(
+                            &response,
+                            &request.operations,
+                            is_session_consistency,
+                        )?;
+                }
 
                 return Ok(response);
             };
@@ -2874,7 +3029,9 @@ impl CosmosDriver {
                     &operation.target.partition_key,
                     false,
                 )
-                .await;
+                .await
+                .ok()
+                .flatten();
             let range = ranges.as_deref().and_then(|ranges| match ranges {
                 [single] => Some(single),
                 _ => None,
@@ -2895,6 +3052,31 @@ impl CosmosDriver {
     /// (e.g. topology repairs, advancing page state, etc.).
     /// After this returns, the plan may be executed again to fetch the next page of results, if any.
     /// Once this returns `None`, there are no more pages to fetch, and the operation is complete.
+    ///
+    /// # Binary encoding
+    ///
+    /// This is the single choke point for
+    /// [`BinaryEncodingOptions::request_text_response`](crate::options::BinaryEncodingOptions):
+    /// every operation the driver runs — point ops, queries, and change feed
+    /// alike — funnels through here, so the "binary wire, text payload" contract
+    /// holds uniformly rather than per operation type. Transcoding a body that
+    /// is already text is a refcount clone, so plans that never negotiated
+    /// binary (change feed, or binary disabled) pay nothing.
+    ///
+    /// The decision comes from the **plan**, not from `options`. Binary
+    /// encoding is fixed when the plan is built, so changing
+    /// `request_text_response` in the `options` passed to a later page has no
+    /// effect: the request header is already sent and the pipeline nodes are
+    /// already built to emit one encoding. To switch, build a new plan.
+    ///
+    /// # Errors
+    ///
+    /// Once a page has advanced the plan without reaching the caller — a
+    /// response body that failed to transcode to text — the plan is spent, and
+    /// every later call fails with
+    /// [`SERIALIZATION_RESPONSE_BODY_INVALID`](crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID).
+    /// Returning the following page instead would hand back the page *after*
+    /// the one that was lost, with nothing to signal the gap.
     pub async fn execute_plan(
         &self,
         plan: &mut OperationPlan,
@@ -2912,15 +3094,28 @@ impl CosmosDriver {
                     ))
                     .build());
             }
+            // A page that advanced the plan but never reached the caller makes
+            // the plan unusable, not merely unable to mint a token: the next
+            // page would be the one *after* the page that was lost. Refuse it
+            // here so the caller cannot silently step over the gap.
+            if plan.continuation_poisoned() {
+                return Err(OperationPlan::poisoned_error());
+            }
             tracing::debug!("plan execution started");
+
+            if plan.requires_partition_key_range_topology() {
+                self.partition_key_range_cache()?;
+            }
 
             let mut executor = DriverRequestExecutor {
                 driver: self,
                 options: &options,
             };
 
-            let mut topology = container.map(|c| {
-                CachedTopologyProvider::new(&self.pk_range_cache, c, self.pk_range_page_fetcher())
+            let mut topology = container.and_then(|c| {
+                self.pk_range_cache
+                    .as_ref()
+                    .map(|cache| CachedTopologyProvider::new(cache, c, self.pk_range_page_fetcher()))
             });
 
             let mut context = PipelineContext::new(
@@ -2928,16 +3123,28 @@ impl CosmosDriver {
                 topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
             );
 
-            let binary_enabled = plan.binary_encoding().enabled;
-            let request_text_response = plan.binary_encoding().request_text_response;
-            let mut response = plan.pipeline.next_page(&mut context).await?;
-            if binary_enabled {
-                if let Some(response) = response.as_mut() {
-                    if request_text_response {
-                        response.transcode_body_to_text()?;
-                    } else if Self::binary_feed_response_restore_applies(plan.operation()) {
-                        response.transcode_body_to_binary()?;
+            let response = plan.pipeline.next_page(&mut context).await?;
+
+            // Driver-side transcoding: hand back text while the wire stayed
+            // binary. Read from the plan, not from this call's `options`: the
+            // decision was made once by `apply_response_negotiation` — the same
+            // place that set the request header and the `emit_binary` flag on
+            // the pipeline nodes. Re-deriving it per page would let a caller
+            // who varies `request_text_response` between pages get nodes
+            // emitting one encoding while this step applies the other.
+            if plan.transcodes_response_to_text() {
+                if let Some(mut response) = response {
+                    // `next_page` already committed every node's resume
+                    // position, so a failure here leaves the plan claiming rows
+                    // the caller never received. Poison the plan rather than
+                    // move the transcode: this is the single choke point for
+                    // the binary/text contract, and pushing it into the
+                    // pipeline would mean one fallible site per node.
+                    if let Err(err) = response.transcode_body_to_text() {
+                        plan.poison_continuation();
+                        return Err(err);
                     }
+                    return Ok(Some(response));
                 }
             }
             Ok(response)
@@ -3004,6 +3211,21 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
+        let automatic_session_management_active = self.pk_range_cache.is_some()
+            && !effective_options
+                .session_capturing_disabled()
+                .copied()
+                .unwrap_or(false)
+            && effective_options
+                .read_consistency_strategy()
+                .copied()
+                .unwrap_or(crate::options::ReadConsistencyStrategy::Default)
+                .is_session_effective(
+                    account_properties
+                        .user_consistency_policy
+                        .default_consistency_level,
+                );
+
         // Step 5: Pre-resolve partition key range ID for PPAF/PPCB.
         // When partition-level failover is enabled, resolving the range ID
         // before the first attempt lets the pipeline apply partition overrides
@@ -3011,7 +3233,11 @@ impl CosmosDriver {
         // Pass the overrides so dataflow-stamped routing (PK range ID, partition
         // key, EPK range) is honored ahead of the operation's own target.
         let pre_resolved_pk_range_id = self
-            .pre_resolve_partition_key_range_id(operation, &overrides)
+            .pre_resolve_partition_key_range_id(
+                operation,
+                &overrides,
+                automatic_session_management_active,
+            )
             .await;
 
         // Step 6: Select the adaptive transport context for the chosen pipeline
@@ -3077,6 +3303,7 @@ impl CosmosDriver {
                 .default_consistency_level,
             effective_throughput_control,
             pre_resolved_pk_range_id,
+            self.pk_range_cache.is_some(),
             &self.hedge_budget,
         )
         .await
@@ -3225,6 +3452,24 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        // `None` resolves the binary options lazily at the negotiation choke
+        // point. Boxed to keep this wrapper's future pointer-sized.
+        Box::pin(self.plan_operation_resolved(operation, options, continuation, plan_options, None))
+            .await
+    }
+
+    /// [`plan_operation`](Self::plan_operation) with an optional caller-resolved
+    /// [`BinaryEncodingOptions`](crate::options::BinaryEncodingOptions), so
+    /// `execute_operation` need not re-resolve what it already resolved for the
+    /// request-body gate. `None` resolves lazily at the negotiation choke point.
+    async fn plan_operation_resolved(
+        &self,
+        operation: CosmosOperation,
+        options: &OperationOptions,
+        continuation: Option<&ContinuationToken>,
+        plan_options: &PlanOptions,
+        resolved_binary: Option<crate::options::BinaryEncodingOptions>,
+    ) -> crate::error::Result<OperationPlan> {
         // Reject mixed name/RID addressing before any IO work is done. The
         // service classifies a request as name-based or RID-based from its `dbs`
         // segment alone, so a reference that mixes a name-addressed parent with
@@ -3245,19 +3490,6 @@ impl CosmosDriver {
             crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
         )
         .then(|| planner::streaming_query_fingerprint(&operation));
-        let binary = if Self::binary_encoding_applies(&operation) {
-            self.operation_options_view(options)
-                .binary_encoding()
-                .cloned()
-                .unwrap_or_default()
-        } else {
-            crate::options::BinaryEncodingOptions::default()
-        };
-        let operation = if binary.enabled {
-            Self::apply_request_binary_encoding(operation)?
-        } else {
-            operation
-        };
 
         // Planning holds the whole pipeline-builder state across several await
         // points, which makes it one of the largest futures in the driver —
@@ -3265,19 +3497,18 @@ impl CosmosDriver {
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        let mut plan = Box::pin(async move {
+        Box::pin(async move {
             self.plan_operation_inner(
                 operation,
                 options,
                 continuation,
                 plan_options,
                 query_fingerprint,
+                resolved_binary,
             )
             .await
         })
-        .await?;
-        plan.set_binary_encoding(binary);
-        Ok(plan)
+        .await
     }
 
     async fn plan_operation_inner(
@@ -3287,6 +3518,7 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
         query_fingerprint: Option<String>,
+        resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
@@ -3300,6 +3532,14 @@ impl CosmosDriver {
         }
 
         tracing::debug!(operation_type = ?operation.operation_type(), resource_type = ?operation.resource_type(), resource_reference = ?operation.resource_reference(), "planning operation");
+
+        // Advertise a binary response when negotiation applies (point item ops
+        // and query). This is the single choke point every operation passes
+        // through — including every per-page query request — so the header is
+        // owned here alone. `execute_operation` resolves the binary options once
+        // and forwards them via `resolved_binary` to avoid a second resolution;
+        // the query path passes `None` and resolves lazily.
+        let operation = self.apply_response_negotiation(operation, options, resolved_binary);
 
         // Share the operation across every Request node in the resulting plan.
         // Per-Request differences are layered on at execution time via
@@ -3355,6 +3595,7 @@ impl CosmosDriver {
         //    needed). Children are polled round-robin and never evicted on
         //    304 so the stream is infinite.
         if operation.is_change_feed() {
+            let cache = self.partition_key_range_cache()?;
             let container = operation.container().ok_or_else(|| {
                 crate::error::CosmosError::builder()
                     .with_status(
@@ -3365,11 +3606,8 @@ impl CosmosDriver {
             })?;
             let feed_range = operation.target().cloned().unwrap_or_else(FeedRange::full);
             let container_ref = container.clone();
-            let mut topology = CachedTopologyProvider::new(
-                &self.pk_range_cache,
-                container_ref,
-                self.pk_range_page_fetcher(),
-            );
+            let mut topology =
+                CachedTopologyProvider::new(cache, container_ref, self.pk_range_page_fetcher());
             let pipeline = planner::build_unordered_merge(
                 &feed_range,
                 &mut topology,
@@ -3392,17 +3630,16 @@ impl CosmosDriver {
                 .build()
         })?;
 
+        let cache = self.partition_key_range_cache()?;
+
         // `Box::pin` keeps `plan_operation`'s future small. Inlined, it grows to
         // 17,288 bytes and trips `clippy::large_futures` at five caller sites.
         let query_plan = Box::pin(self.resolve_query_plan(container, &operation, options)).await?;
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
-        let mut topology = CachedTopologyProvider::new(
-            &self.pk_range_cache,
-            container_ref,
-            self.pk_range_page_fetcher(),
-        );
+        let mut topology =
+            CachedTopologyProvider::new(cache, container_ref, self.pk_range_page_fetcher());
 
         // Route streaming ORDER BY queries to the k-way merge instead of
         // the natural-order sequential drain.
@@ -3572,24 +3809,34 @@ impl CosmosDriver {
     ///
     /// Uses the driver's internal `PartitionKeyRangeCache`. When `force_refresh`
     /// is `true`, the cached routing map is refreshed from the service before
-    /// returning results. Returns `None` if the routing map cannot be resolved.
+    /// returning results.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED`]
+    /// when partition key range caching is disabled.
     pub async fn resolve_all_partition_key_ranges(
         &self,
         container: &ContainerReference,
         force_refresh: bool,
-    ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+    ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
+    {
         let routing_map = self
-            .pk_range_cache
+            .partition_key_range_cache()?
             .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
-            .await?;
+            .await;
+
+        let Some(routing_map) = routing_map else {
+            return Ok(None);
+        };
 
         let ranges = routing_map.ranges();
         if ranges.is_empty() {
             // A valid container always has at least one partition key range.
             // An empty routing map indicates a service/parse failure.
-            return None;
+            return Ok(None);
         }
-        Some(ranges.to_vec())
+        Ok(Some(ranges.to_vec()))
     }
 
     /// Returns the partition key ranges covering the given partition key.
@@ -3597,17 +3844,24 @@ impl CosmosDriver {
     /// Handles both full keys (single range via point lookup) and prefix keys
     /// on MultiHash containers (multiple ranges via overlapping range lookup).
     ///
-    /// Returns `None` if the partition key is empty or the routing map cannot
-    /// be resolved. When `force_refresh` is `true`, the cached routing map is
-    /// refreshed from the service before lookup.
+    /// Returns `Ok(None)` if the partition key is empty or the routing map
+    /// cannot be resolved. When `force_refresh` is `true`, the cached routing
+    /// map is refreshed from the service before lookup.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED`]
+    /// when partition key range caching is disabled.
     pub async fn resolve_partition_key_ranges_for_key(
         &self,
         container: &ContainerReference,
         partition_key: &PartitionKey,
         force_refresh: bool,
-    ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+    ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
+    {
+        let cache = self.partition_key_range_cache()?;
         if partition_key.is_empty() {
-            return None;
+            return Ok(None);
         }
 
         let pk_def = container.partition_key_definition();
@@ -3615,35 +3869,37 @@ impl CosmosDriver {
             Ok(range) => range,
             Err(e) => {
                 tracing::warn!("EPK computation failed for partition key: {e}");
-                return None;
+                return Ok(None);
             }
         };
 
         if epk_range.start == epk_range.end {
             // Full key — point lookup
-            let routing_map = self
-                .pk_range_cache
+            let routing_map = cache
                 .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
-                .await?;
+                .await;
+            let Some(routing_map) = routing_map else {
+                return Ok(None);
+            };
             if routing_map.ranges().is_empty() {
-                return None;
+                return Ok(None);
             }
-            Some(
+            Ok(Some(
                 routing_map
                     .get_range_by_effective_partition_key(&epk_range.start)
                     .cloned()
                     .map_or_else(Vec::new, |r| vec![r]),
-            )
+            ))
         } else {
             // Prefix key — overlapping range lookup
-            self.pk_range_cache
+            Ok(cache
                 .resolve_overlapping_ranges(
                     container,
                     &epk_range.start..&epk_range.end,
                     force_refresh,
                     self.pk_range_page_fetcher(),
                 )
-                .await
+                .await)
         }
     }
 }
@@ -4098,6 +4354,69 @@ mod tests {
             err.status(),
             crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
+    }
+
+    fn cache_disabled_test_driver(runtime: Arc<CosmosDriverRuntime>) -> CosmosDriver {
+        let driver = CosmosDriver::new(
+            runtime,
+            DriverOptions::builder(test_account())
+                .with_partition_key_range_cache_enabled(false)
+                .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+        driver.initialized.store(true, Ordering::Release);
+        driver
+    }
+
+    #[tokio::test]
+    async fn cache_disabled_change_feed_planning_distinguishes_logical_from_full() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = cache_disabled_test_driver(runtime);
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let logical_range = FeedRange::for_partition(
+            PartitionKey::from("pk1"),
+            container.partition_key_definition(),
+        );
+
+        driver
+            .plan_operation(
+                CosmosOperation::change_feed(container.clone(), Some(logical_range)),
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            )
+            .await
+            .expect("logical-partition change feed should use the trivial plan");
+
+        let error = match driver
+            .plan_operation(
+                CosmosOperation::change_feed(container, Some(FeedRange::full())),
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            )
+            .await
+        {
+            Ok(_) => panic!("full-container change feed should require physical topology"),
+            Err(error) => error,
+        };
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
+        );
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+        assert_eq!(error.status().sub_status().map(|s| s.value()), Some(20159));
+        assert_eq!(
+            error.status().name(),
+            Some("ClientPartitionKeyRangeCacheRequired")
+        );
+
+        // Both outcomes are decided without installing a topology provider or
+        // issuing a replacement lookup against a cache.
+        assert!(driver.pk_range_cache.is_none());
     }
 
     #[tokio::test]
@@ -6288,6 +6607,29 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn disabled_partition_key_range_cache_rejects_topology_resolution() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = CosmosDriver::new(
+            runtime,
+            DriverOptions::builder(test_account())
+                .with_partition_key_range_cache_enabled(false)
+                .build(),
+        )
+        .unwrap();
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        let error = driver
+            .resolve_all_partition_key_ranges(&container, false)
+            .await
+            .expect_err("disabled cache must reject topology resolution");
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
+        );
+    }
+
+    #[tokio::test]
     async fn epk_range_owned_by_single_partition_resolves_to_that_range() {
         use crate::driver::cache::PartitionKeyRangeCache;
         use crate::models::effective_partition_key::EffectivePartitionKey;
@@ -6362,46 +6704,34 @@ mod tests {
     // ── apply_request_binary_encoding (schema-agnostic request-side encode) ──
 
     #[test]
-    fn binary_encoding_request_and_feed_restore_predicates_agree() {
+    fn binary_encodes_request_body_only_for_document_item_ops() {
         use crate::models::{OperationType, ResourceType};
 
-        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
-        for (op, request_applies, feed_restore_applies) in [
-            (OperationType::Create, true, false),
-            (OperationType::Read, true, false),
-            (OperationType::ReadFeed, true, true),
-            (OperationType::Replace, true, false),
-            (OperationType::Delete, false, false),
-            (OperationType::Upsert, true, false),
-            (OperationType::Query, true, true),
-            (OperationType::SqlQuery, true, true),
-            (OperationType::QueryPlan, false, false),
-            (OperationType::Batch, false, false),
-            (OperationType::Head, false, false),
-            (OperationType::HeadFeed, false, false),
-            (OperationType::Execute, false, false),
-            (OperationType::Patch, false, false),
-            #[cfg(feature = "preview_dtx")]
-            (OperationType::CommitDistributedTransaction, false, false),
-            #[cfg(feature = "preview_dtx")]
-            (OperationType::ReadDistributedTransaction, false, false),
+        // Point item ops on `Document` are the only combinations whose request
+        // body qualifies for binary encoding.
+        for op in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::Replace,
+            OperationType::Upsert,
         ] {
-            let operation = CosmosOperation::new(
-                op,
-                crate::models::CosmosResourceReference::from(container.clone())
-                    .with_resource_type(ResourceType::Document)
-                    .into_feed_reference(),
-                Some(crate::models::FeedRange::full()),
+            assert!(
+                CosmosDriver::binary_encodes_request_body(ResourceType::Document, op),
+                "Document + {op:?} should be binary-encodable",
             );
-            assert_eq!(
-                CosmosDriver::binary_encoding_applies(&operation),
-                request_applies,
-                "unexpected request-side binary eligibility for Document + {op:?}",
-            );
-            assert_eq!(
-                CosmosDriver::binary_feed_response_restore_applies(&operation),
-                feed_restore_applies,
-                "request/restore binary eligibility diverged for Document + {op:?}",
+        }
+
+        // Non-item operation types on `Document` are excluded from body
+        // encoding (query/feed/delete/patch).
+        for op in [
+            OperationType::Delete,
+            OperationType::Query,
+            OperationType::ReadFeed,
+            OperationType::Patch,
+        ] {
+            assert!(
+                !CosmosDriver::binary_encodes_request_body(ResourceType::Document, op),
+                "Document + {op:?} must not have its body binary-encoded",
             );
         }
 
@@ -6421,30 +6751,178 @@ mod tests {
                 OperationType::Replace,
                 OperationType::Upsert,
             ] {
-                let operation = CosmosOperation::new(
-                    op,
-                    crate::models::CosmosResourceReference::from(container.clone())
-                        .with_resource_type(rt)
-                        .into_feed_reference(),
-                    None,
-                );
                 assert!(
-                    !CosmosDriver::binary_encoding_applies(&operation),
+                    !CosmosDriver::binary_encodes_request_body(rt, op),
                     "{rt:?} + {op:?} must not be binary-encoded (control plane)",
                 );
-                assert!(
-                    !CosmosDriver::binary_feed_response_restore_applies(&operation),
-                    "{rt:?} + {op:?} must not restore binary feed responses",
-                );
             }
+        }
+    }
+
+    #[test]
+    fn binary_negotiates_response_covers_item_query_and_read_feed_ops() {
+        use crate::models::{OperationType, ResourceType};
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        for op in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::ReadFeed,
+            OperationType::Replace,
+            OperationType::Upsert,
+            OperationType::Query,
+            OperationType::SqlQuery,
+        ] {
+            let operation = CosmosOperation::new(
+                op,
+                crate::models::CosmosResourceReference::from(container.clone())
+                    .with_resource_type(ResourceType::Document)
+                    .into_feed_reference(),
+                Some(crate::models::FeedRange::full()),
+            );
+            assert!(
+                CosmosDriver::binary_negotiates_response(&operation),
+                "Document + {op:?} should negotiate a binary response",
+            );
+        }
+
+        for op in [OperationType::Delete, OperationType::Patch] {
+            let operation = CosmosOperation::new(
+                op,
+                crate::models::CosmosResourceReference::from(container.clone())
+                    .with_resource_type(ResourceType::Document)
+                    .into_feed_reference(),
+                Some(crate::models::FeedRange::full()),
+            );
+            assert!(
+                !CosmosDriver::binary_negotiates_response(&operation),
+                "Document + {op:?} must not negotiate a binary response",
+            );
+        }
+
+        for op in [OperationType::Query, OperationType::Read] {
+            let operation = CosmosOperation::new(
+                op,
+                crate::models::CosmosResourceReference::from(container.clone())
+                    .with_resource_type(ResourceType::Database)
+                    .into_feed_reference(),
+                None,
+            );
+            assert!(
+                !CosmosDriver::binary_negotiates_response(&operation),
+                "Database + {op:?} must not negotiate a binary response (control plane)",
+            );
         }
 
         let change_feed =
             CosmosOperation::change_feed(container, Some(crate::models::FeedRange::full()));
-        assert!(!CosmosDriver::binary_encoding_applies(&change_feed));
-        assert!(!CosmosDriver::binary_feed_response_restore_applies(
-            &change_feed
-        ));
+        assert!(!CosmosDriver::binary_negotiates_response(&change_feed));
+    }
+
+    /// A query plan is service metadata (`{"partitionedQueryExecutionInfo":…}`),
+    /// not documents, and the pipeline parses it as text JSON with no binary
+    /// branch. Negotiating binary for it would hand the parser bytes it cannot
+    /// read, so the exclusion is load-bearing rather than incidental.
+    #[test]
+    fn query_plan_does_not_negotiate_a_binary_response() {
+        use crate::models::{OperationType, ResourceType};
+
+        assert!(
+            !CosmosDriver::binary_negotiates_response(&CosmosOperation::new(
+                OperationType::QueryPlan,
+                crate::models::CosmosResourceReference::from(epk_test_container(
+                    r#"{"paths":["/pk"],"version":2}"#,
+                ))
+                .with_resource_type(ResourceType::Document)
+                .into_feed_reference(),
+                None,
+            )),
+            "a query plan must be fetched as text; its parser has no binary path",
+        );
+        assert!(
+            !OperationType::QueryPlan.supports_binary_response(),
+            "the operation-level gate must exclude QueryPlan too, not just the driver gate",
+        );
+    }
+
+    /// A caller that set `x-ms-cosmos-supported-serialization-formats` itself
+    /// has stated the formats it can decode. Overwriting it would hand that
+    /// caller a format it never agreed to, so the driver defers even when its
+    /// own binary encoding is enabled.
+    #[tokio::test]
+    async fn response_negotiation_never_clobbers_a_caller_set_header() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+
+        let caller_set = binary_encoding_test_operation(b"{}".to_vec())
+            .with_supported_serialization_formats("JsonText");
+        let negotiated = driver.apply_response_negotiation(caller_set, &options, None);
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("JsonText"),
+            "a caller-set negotiation header must survive untouched",
+        );
+
+        // Control: without a caller-set header the driver does advertise binary,
+        // so the assertion above reflects the guard and not an inert path.
+        let untouched = binary_encoding_test_operation(b"{}".to_vec());
+        let negotiated = driver.apply_response_negotiation(untouched, &options, None);
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some(BINARY_NEGOTIATION_FORMATS_POINT),
+        );
+    }
+
+    /// Queries and point operations both request `CosmosBinary`; query request
+    /// bodies remain text and only the response negotiation is shared.
+    #[tokio::test]
+    async fn query_and_point_op_request_binary_responses() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let query = CosmosOperation::query_items(container, Some(crate::models::FeedRange::full()))
+            .with_body(
+                serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap(),
+            );
+        let negotiated = driver.apply_response_negotiation(query, &options, None);
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some(BINARY_NEGOTIATION_FORMATS_QUERY),
+            "queries request binary responses while keeping their request bodies text",
+        );
+        assert!(negotiated.negotiates_binary_response());
+
+        let point = binary_encoding_test_operation(b"{}".to_vec());
+        let negotiated = driver.apply_response_negotiation(point, &options, None);
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+            "point ops force binary — there is no page pipeline to protect",
+        );
     }
 
     fn binary_encoding_test_operation(body: Vec<u8>) -> CosmosOperation {
@@ -6454,11 +6932,235 @@ mod tests {
         CosmosOperation::create_item(item).with_body(body)
     }
 
+    /// `request_text_response` is a *payload-shape* decision; the negotiation
+    /// header is a *wire* decision. A caller who makes the wire decision itself
+    /// must still get the payload it asked for — otherwise it silently receives
+    /// `0x80` bytes, because `emits_binary_payload()` stays true and
+    /// `execute_plan` skips the transcode.
+    #[tokio::test]
+    async fn caller_set_header_still_honors_request_text_response() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(
+                crate::options::BinaryEncodingOptions::new()
+                    .with_enabled(true)
+                    .with_request_text_response(true),
+            )
+            .build();
+
+        let caller_set = binary_encoding_test_operation(b"{}".to_vec())
+            .with_supported_serialization_formats("CosmosBinary");
+        let negotiated = driver.apply_response_negotiation(caller_set, &options, None);
+
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+            "the caller-set header must still survive untouched",
+        );
+        assert!(
+            !negotiated.emits_binary_payload(),
+            "request_text_response must be recorded even when the caller set the header",
+        );
+
+        // Control: the same operation without `request_text_response` does emit
+        // binary, so the assertion above reflects the flag and not a dead path.
+        let binary_only = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+        let caller_set = binary_encoding_test_operation(b"{}".to_vec())
+            .with_supported_serialization_formats("CosmosBinary");
+        let negotiated = driver.apply_response_negotiation(caller_set, &binary_only, None);
+        assert!(negotiated.emits_binary_payload());
+    }
+
+    /// Pins the poison *wiring*, not just the flag. The tests in `dataflow`
+    /// call `poison_continuation` by hand, so they stay green if the call site
+    /// here is deleted — and a deleted call site is exactly the silent failure
+    /// the poison exists to prevent: the page is lost and a later token
+    /// resumes past it.
+    #[tokio::test]
+    async fn a_failed_transcode_poisons_the_plan_for_continuation_tokens() {
+        let driver = transcoding_test_driver().await;
+        // A lone preamble is a truncated binary buffer: `next_page` hands it
+        // back as a page, and the transcode in `execute_plan` fails on it.
+        let mut plan = transcoding_plan(&driver, &[&[crate::binary_json::PREAMBLE]]);
+
+        let err = driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect_err("a page that cannot be transcoded must not be returned");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "got: {err}",
+        );
+
+        let err = plan
+            .to_continuation_token()
+            .expect_err("the plan advanced past a page the caller never received");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            "got: {err}",
+        );
+    }
+
+    /// The token exit is the loud one; this is the quiet one. A caller that
+    /// keeps pulling pages rather than minting a token would otherwise receive
+    /// the page *after* the lost one and never learn a page went missing.
+    #[tokio::test]
+    async fn a_poisoned_plan_refuses_to_deliver_the_next_page() {
+        let driver = transcoding_test_driver().await;
+        // Two pages: the first fails to transcode, and the second is the one a
+        // caller would silently receive in its place if the plan kept going.
+        let mut plan = transcoding_plan(
+            &driver,
+            &[&[crate::binary_json::PREAMBLE], br#"{"id":"page-2"}"#],
+        );
+
+        driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect_err("the first page cannot be transcoded");
+
+        let err = driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect_err("a poisoned plan must not hand back the page after the lost one");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "got: {err}",
+        );
+        assert!(
+            err.to_string().contains("this plan is unusable"),
+            "the refusal must come from the plan's poison, not a second transcode failure; got: {err}",
+        );
+    }
+
+    /// The control: the poison above has to come from the failed transcode,
+    /// not from running `execute_plan` at all.
+    #[tokio::test]
+    async fn a_page_that_transcodes_cleanly_leaves_the_plan_usable() {
+        let driver = transcoding_test_driver().await;
+        let mut plan = transcoding_plan(&driver, &[b"{}"]);
+
+        driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect("a text page transcodes to itself");
+
+        let err = plan
+            .to_continuation_token()
+            .expect_err("a create_item operation cannot be tokenized");
+        assert_ne!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            "a plan whose page was delivered must not report transcode poisoning; got: {err}",
+        );
+    }
+
+    /// A driver marked initialized so `execute_plan` reaches the pipeline. No
+    /// request ever leaves it: the plans below are backed by a mock leaf.
+    async fn transcoding_test_driver() -> CosmosDriver {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build())
+            .expect("CosmosDriver::new should succeed in tests");
+        driver.initialized.store(true, Ordering::Release);
+        driver
+    }
+
+    /// A plan whose mock leaf yields one page per entry in `bodies`, over an
+    /// operation negotiated to hand the caller text — the only configuration in
+    /// which `execute_plan` transcodes.
+    fn transcoding_plan(driver: &CosmosDriver, bodies: &[&[u8]]) -> OperationPlan {
+        use crate::driver::dataflow::mocks::{response, MockLeaf};
+        use crate::driver::dataflow::{PageResult, Pipeline};
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(
+                crate::options::BinaryEncodingOptions::new()
+                    .with_enabled(true)
+                    .with_request_text_response(true),
+            )
+            .build();
+        let operation = driver.apply_response_negotiation(
+            binary_encoding_test_operation(b"{}".to_vec()),
+            &options,
+            None,
+        );
+        assert!(
+            operation.transcodes_response_to_text(),
+            "the fixture must select the transcoding path",
+        );
+
+        let last = bodies.len() - 1;
+        let pages = bodies
+            .iter()
+            .enumerate()
+            .map(|(i, body)| {
+                Ok(PageResult::Page {
+                    response: response(body),
+                    is_terminal: i == last,
+                })
+            })
+            .collect();
+        OperationPlan::new(
+            Pipeline::new(Box::new(MockLeaf::with_pages(pages))),
+            std::sync::Arc::new(operation),
+        )
+    }
+
+    /// `OperationType::supports_binary_response` admits `SqlQuery` alongside
+    /// `Query`, so the format picker must treat them alike. Gating on `Query`
+    /// alone would hand a query the point-op *demand* (`CosmosBinary`),
+    /// removing the service's text safety valve.
+    #[tokio::test]
+    async fn sql_query_advertises_the_query_accept_list() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        // Mirrors `CosmosOperation::query_items`, which points the reference at
+        // `Document` — the resource type `binary_negotiates_response` gates
+        // on — but with `SqlQuery` as the operation type.
+        let resource_ref = crate::models::CosmosResourceReference::from(container)
+            .with_resource_type(crate::models::ResourceType::Document)
+            .into_feed_reference();
+        let query = CosmosOperation::new(
+            crate::models::OperationType::SqlQuery,
+            resource_ref,
+            Some(crate::models::FeedRange::full()),
+        )
+        .with_body(serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap());
+        let negotiated = driver.apply_response_negotiation(query, &options, None);
+        assert_eq!(
+            negotiated
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some(BINARY_NEGOTIATION_FORMATS_QUERY),
+            "SqlQuery must use the same response negotiation as Query",
+        );
+    }
+
     #[test]
     fn apply_request_binary_encoding_transcodes_text_body_to_binary() {
         // A caller (e.g. FFI) hands a TEXT JSON body; the driver transcodes it
-        // to Cosmos binary JSON and advertises binary responses. The caller
-        // never encoded binary itself.
+        // to Cosmos binary JSON. The caller never encoded binary itself. Response
+        // negotiation is a separate concern owned by `apply_response_negotiation`.
         let text = serde_json::to_vec(&serde_json::json!({ "id": "doc1", "n": 7 })).unwrap();
         assert!(!crate::binary_json::is_binary(&text));
 
@@ -6475,13 +7177,6 @@ mod tests {
             crate::binary_json::decode(body).unwrap(),
             serde_json::json!({ "id": "doc1", "n": 7 }),
         );
-        // Advertises binary responses.
-        assert_eq!(
-            op.request_headers()
-                .supported_serialization_formats
-                .as_deref(),
-            Some("CosmosBinary"),
-        );
     }
 
     #[test]
@@ -6494,12 +7189,6 @@ mod tests {
         let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
 
         assert_eq!(op.body().unwrap(), binary.as_slice());
-        assert_eq!(
-            op.request_headers()
-                .supported_serialization_formats
-                .as_deref(),
-            Some("CosmosBinary"),
-        );
     }
 
     #[test]
@@ -6523,13 +7212,6 @@ mod tests {
             let operation = CosmosDriver::apply_request_binary_encoding(operation).unwrap();
 
             assert_eq!(operation.body(), Some(text.as_slice()));
-            assert_eq!(
-                operation
-                    .request_headers()
-                    .supported_serialization_formats
-                    .as_deref(),
-                Some("CosmosBinary"),
-            );
         }
     }
 
@@ -6542,6 +7224,142 @@ mod tests {
         assert_eq!(
             err.status().sub_status(),
             Some(crate::error::SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
+        );
+    }
+
+    #[tokio::test]
+    async fn query_negotiates_binary_response_without_transcoding_its_body() {
+        use crate::models::FeedRange;
+
+        // Build a driver with binary encoding enabled and run a real query
+        // operation through the actual negotiation step
+        // (`apply_response_negotiation`, the sole header owner that every query
+        // reaches via `plan_operation`). The behavioral invariant: a query
+        // advertises a binary *response* while its `application/query+json`
+        // request body stays text — the body is a query spec, not a document.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let query_body =
+            serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap();
+        let op = CosmosOperation::query_items(container, Some(FeedRange::full()))
+            .with_body(query_body.clone());
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+        let op = driver.apply_response_negotiation(op, &options, None);
+
+        // Body is unchanged text — never transcoded to binary.
+        assert_eq!(op.body().unwrap(), query_body.as_slice());
+        assert!(
+            !crate::binary_json::is_binary(op.body().unwrap()),
+            "query body must remain text on the wire",
+        );
+        // Still advertises a binary response; per-page decode remains tolerant
+        // of a text response during mixed rollout.
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some(BINARY_NEGOTIATION_FORMATS_QUERY),
+        );
+    }
+
+    /// `request_text_response` describes the payload handed back, not the
+    /// encoding on the wire — so it must **not** suppress negotiation for any
+    /// operation type. Both queries and point ops keep the wire binary and rely
+    /// on `execute_plan` to transcode. Pins both halves so neither drifts back
+    /// to the old asymmetry, where a query silently forfeited the bandwidth
+    /// saving that enabling binary was meant to buy.
+    #[tokio::test]
+    async fn request_text_response_still_negotiates_binary_for_query_and_point_ops() {
+        use crate::models::FeedRange;
+
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(
+                crate::options::BinaryEncodingOptions::new()
+                    .with_enabled(true)
+                    .with_request_text_response(true),
+            )
+            .build();
+
+        let query = CosmosOperation::query_items(
+            epk_test_container(r#"{"paths":["/pk"],"version":2}"#),
+            Some(FeedRange::full()),
+        )
+        .with_body(serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap());
+        let query = driver.apply_response_negotiation(query, &options, None);
+        assert_eq!(
+            query
+                .request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some(BINARY_NEGOTIATION_FORMATS_QUERY),
+            "a query keeps the wire binary and lets `execute_plan` transcode the \
+             page back to text, so it must still negotiate binary",
+        );
+
+        let read = CosmosOperation::read_item(crate::models::ItemReference::from_name(
+            &epk_test_container(r#"{"paths":["/pk"],"version":2}"#),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let read = driver.apply_response_negotiation(read, &options, None);
+        assert_eq!(
+            read.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+            "a point op keeps the wire binary and transcodes back to text, so \
+             it still negotiates binary",
+        );
+
+        // The wire and the emitted payload must disagree here: that divergence
+        // is what stops pipeline nodes re-encoding items to binary only for
+        // `execute_plan` to decode them straight back.
+        for op in [&query, &read] {
+            assert!(op.negotiates_binary_response(), "the wire must stay binary",);
+            assert!(
+                !op.emits_binary_payload(),
+                "synthesized pages must emit text when the driver transcodes",
+            );
+        }
+    }
+
+    /// Without `request_text_response` the two formats agree, so a synthesized
+    /// page emits binary and the caller decodes it. Guards against a change
+    /// that makes `emits_binary_payload` unconditionally false.
+    #[tokio::test]
+    async fn binary_without_text_request_emits_binary_payload() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+
+        let query = CosmosOperation::query_items(
+            epk_test_container(r#"{"paths":["/pk"],"version":2}"#),
+            Some(crate::models::FeedRange::full()),
+        )
+        .with_body(serde_json::to_vec(&serde_json::json!({ "query": "SELECT * FROM c" })).unwrap());
+        let query = driver.apply_response_negotiation(query, &options, None);
+
+        assert!(query.negotiates_binary_response());
+        assert!(
+            query.emits_binary_payload(),
+            "with no text request the emitted format follows the wire",
         );
     }
 }

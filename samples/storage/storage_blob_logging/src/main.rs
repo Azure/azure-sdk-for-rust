@@ -35,7 +35,7 @@
 //!
 //! ```bash
 //! az login
-//! cargo run --manifest-path samples/storage_blob_logging/Cargo.toml -- <ACCOUNT_NAME>
+//! cargo run --manifest-path samples/storage/storage_blob_logging/Cargo.toml -- <ACCOUNT_NAME>
 //! ```
 //!
 //! The `<ACCOUNT_NAME>` argument can also be provided via the `AZURE_STORAGE_ACCOUNT_NAME`
@@ -44,7 +44,7 @@
 //! To enable OpenTelemetry tracing (outputs spans to stdout):
 //!
 //! ```bash
-//! cargo run --manifest-path samples/storage_blob_logging/Cargo.toml -- <ACCOUNT_NAME> --otel
+//! cargo run --manifest-path samples/storage/storage_blob_logging/Cargo.toml -- <ACCOUNT_NAME> --otel
 //! ```
 
 use azure_core::{

@@ -30,27 +30,29 @@ for the full design.
 
 ### Capability matrix (current)
 
-| Capability | Status |
-|---|---|
-| Master-key authentication | ✅ |
-| Token-credential / resource-token authentication | ⏳ follow-up (needs `TokenCredential` FFI bridge) |
-| Sync driver creation (`_blocking`) | ✅ |
-| Async driver creation (`_submit`) | ✅ |
-| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`) | ⏳ needs driver-side `was_cached` signal |
-| Sync + async `resolve_container` | ✅ |
-| Single + hierarchical partition keys | ✅ |
-| Item-CRUD operations (read / create / upsert / replace / delete / patch) | ✅ |
-| Container-CRUD operations (read / replace / delete) | ✅ |
-| Database + account-scope operations | ✅ |
-| `cosmos_submit_singleton_operation` (point ops) | ✅ |
-| `cosmos_submit_operation` (feeds + pagination) | ✅ |
-| Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
-| Pagination (read-feeds + query result sets) | ⏳ planned |
-| Multi-part response body iteration | ⏳ planned |
-| Diagnostics accessors | ⏳ planned |
-| Patch instruction builder | ⏳ planned |
-| Transactional batch sub-operation builder | ⏳ planned |
-| Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
+| Capability                                                                      | Status                                                                                  |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Master-key authentication                                                       | ✅                                                                                       |
+| AAD token-credential authentication                                             | ✅ via host credential bridge                                                            |
+| Resource-token authentication                                                   | ⏳ follow-up                                                                              |
+| Sync driver creation (`_blocking`)                                              | ✅                                                                                       |
+| Async driver creation (`_submit`)                                               | ✅                                                                                       |
+| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`)                        | ⏳ needs driver-side `was_cached` signal                                                 |
+| Sync + async `resolve_container`                                                | ✅                                                                                       |
+| Single + hierarchical partition keys                                            | ✅                                                                                       |
+| Item-CRUD operations (read / create / upsert / replace / delete)                | ✅                                                                                       |
+| Item PATCH                                                                      | ✅ (preview exposure is controlled by the consuming SDK)                                 |
+| Container-CRUD operations (read / replace / delete)                             | ✅                                                                                       |
+| Database + account-scope operations                                             | ✅                                                                                       |
+| `cosmos_submit_singleton_operation` (point ops)                                 | ✅                                                                                       |
+| `cosmos_submit_operation` (feeds + pagination)                                  | ✅                                                                                       |
+| Response status / RU / body / activity-id / session-token / etag / continuation | ✅                                                                                       |
+| Pagination (read-feeds + query result sets)                                     | ⏳ planned                                                                               |
+| Multi-part response body iteration                                              | ⏳ planned                                                                               |
+| Diagnostics accessors                                                           | ⏳ planned                                                                               |
+| Patch instruction builder                                                       | ⏳ planned                                                                               |
+| Transactional batch sub-operation builder                                       | ⏳ planned                                                                               |
+| Custom per-operation request headers                                            | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 
 ## Building
 
@@ -138,10 +140,10 @@ below for the production-shape guidance.
 > (`cosmos_operation_create_item`, `cosmos_operation_with_body`,
 > `cosmos_operation_options_builder_*`, `cosmos_driver_submit`, …) has been
 > **removed**. Operations are now described by a single flat,
-> self-describing `cosmos_CosmosOperationRequest` struct (kind-tagged via
+> self-describing `cosmos_operation_request_t` struct (kind-tagged via
 > `cosmos_CosmosOperationKind`, with per-call settings on the tri-state
 > `cosmos_CosmosOperationOptions` seeded by `cosmos_operation_options_default`)
-> and executed through exactly two entry points:
+> and executed through two entry points:
 >
 > - `cosmos_submit_singleton_operation` — point operations
 >   (create / read / replace / delete / patch item, database & container CRUD,
@@ -150,7 +152,21 @@ below for the production-shape guidance.
 >   (queries, read-all, change feed); resumes from and surfaces a continuation
 >   token.
 >
-> Both take `(driver, const cosmos_CosmosOperationRequest *request, queue,
+> Item PATCH, `patch_max_attempts`, and bounded tracking are fields on the
+> canonical `cosmos_operation_request_t`. Consuming language SDKs decide
+> whether and how to expose PATCH as preview. For unsafe instruction lists, the
+> driver stores `_azsdkPatchTracking` on the item. Passing NULL for
+> `patch_tracking_id` generates an ID for the invocation. Retrieve the effective
+> UUID from `cosmos_completion_patch_tracking_id`, then persist and reuse it for
+> application retries. Cancelled completions also expose the resolved ID because
+> the wrapper generates it before starting the driver operation. Entries use a
+> 5-minute retention window by default;
+> `patch_tracking_retention_seconds` configures a positive whole-second window.
+> The default capacity is 1024; when full, the oldest entry is evicted. Duplicate
+> suppression is bounded by the earlier of retention expiry or FIFO eviction.
+> Every writer must preserve the reserved property and marker order.
+>
+> The v1 functions take `(driver, const cosmos_operation_request_t *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.
 > The checked-in [header](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/include/azurecosmosdriver.h) is the authoritative
 > source for the struct field layout and the 25 operation kinds. The C#
@@ -158,7 +174,7 @@ below for the production-shape guidance.
 > examples that follow are pending migration and currently show the **old**
 > factory flow — translate them field-for-field from the C# example and the
 > header until they are updated.
-
+>
 > **Minimizing FFI round-trips.** Two parts of the surface let a host avoid
 > chatty per-field calls:
 >
@@ -249,12 +265,16 @@ internal static class Cosmos
         public IntPtr    activity_id;              // char*
         public IntPtr    continuation_token;       // char*
         public int       max_item_count;           // < 0 = unset
+        public uint      max_fan_out;               // 0 = unset
         public byte      patch_max_attempts;       // 0 = unset
         public sbyte     populate_index_metrics;   // tri-state bool (0/1/2)
         public sbyte     populate_query_metrics;   // tri-state bool (0/1/2)
         public int       precondition_kind;        // 0 = none
         public IntPtr    precondition_etag;        // char*
         public IntPtr    options;                  // cosmos_operation_options_t*
+        public IntPtr    patch_tracking_id;                // UUID char*, NULL = generate
+        public ushort    patch_tracking_capacity;          // 0 = driver default
+        public uint      patch_tracking_retention_seconds; // 0 = driver default
     }
 
     // A drained completion. All pointers are borrowed until free_completions.
@@ -510,14 +530,18 @@ public final class CosmosSample {
         ADDRESS.withName("activity_id"),
         ADDRESS.withName("continuation_token"),
         JAVA_INT.withName("max_item_count"),
+        JAVA_INT.withName("max_fan_out"),
         JAVA_BYTE.withName("patch_max_attempts"),
         JAVA_BYTE.withName("populate_index_metrics"),
         JAVA_BYTE.withName("populate_query_metrics"),
         MemoryLayout.paddingLayout(1),
         JAVA_INT.withName("precondition_kind"),
-        MemoryLayout.paddingLayout(4),
         ADDRESS.withName("precondition_etag"),
-        ADDRESS.withName("options"));
+        ADDRESS.withName("options"),
+        ADDRESS.withName("patch_tracking_id"),
+        JAVA_SHORT.withName("patch_tracking_capacity"),
+        MemoryLayout.paddingLayout(2),
+        JAVA_INT.withName("patch_tracking_retention_seconds"));
 
     // Layout of cosmos_completion_t. Pointers and intptr_t/uintptr_t are 8 bytes.
     static final GroupLayout COMPLETION = MemoryLayout.structLayout(
@@ -1027,12 +1051,16 @@ class CosmosOperationRequest(ctypes.Structure):
         ("activity_id", c_char_p),
         ("continuation_token", c_char_p),
         ("max_item_count", ctypes.c_int32),
+        ("max_fan_out", ctypes.c_uint32),
         ("patch_max_attempts", ctypes.c_uint8),
         ("populate_index_metrics", ctypes.c_int8),
         ("populate_query_metrics", ctypes.c_int8),
         ("precondition_kind", ctypes.c_int32),
         ("precondition_etag", c_char_p),
         ("options", void_p),
+        ("patch_tracking_id", c_char_p),
+        ("patch_tracking_capacity", ctypes.c_uint16),
+        ("patch_tracking_retention_seconds", ctypes.c_uint32),
     ]
 
 
@@ -1274,11 +1302,11 @@ The earlier `azure_data_cosmos_native` crate (removed in
 commit `ccf43caae`) shipped a handful of files that have **not** been
 reintroduced in this crate; their content now lives elsewhere:
 
-| Old file | New location |
-|---|---|
-| `azurecosmos.pc.in` (pkg-config template) | This crate ships a sibling `azurecosmosdriver.pc.in` with the same shape but a new package name. |
-| `docs/next_generation_sdks_design_principles.md` | Folded into [NATIVE_WRAPPER_SPEC.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md). |
-| `c_tests/test_common.h` runtime / client / database fixtures | Re-added incrementally as the corresponding C entry points land. |
+| Old file                                                     | New location                                                                                                                                                           |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `azurecosmos.pc.in` (pkg-config template)                    | This crate ships a sibling `azurecosmosdriver.pc.in` with the same shape but a new package name.                                                                       |
+| `docs/next_generation_sdks_design_principles.md`             | Folded into [NATIVE_WRAPPER_SPEC.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md). |
+| `c_tests/test_common.h` runtime / client / database fixtures | Re-added incrementally as the corresponding C entry points land.                                                                                                       |
 
 If you are spelunking the git history of the old crate looking for a behavior
 or test that "should be here", that table is the first place to check.

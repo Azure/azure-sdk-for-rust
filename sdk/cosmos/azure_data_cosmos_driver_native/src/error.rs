@@ -170,6 +170,8 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientImdsHttpClientConstructionFailed = 20157,
     /// `CLIENT_IMDS_REQWEST_FEATURE_REQUIRED` (20158).
     CosmosSubStatusClientImdsReqwestFeatureRequired = 20158,
+    /// `CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED` (20159).
+    CosmosSubStatusClientPartitionKeyRangeCacheRequired = 20159,
     /// `CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT` (20200).
     CosmosSubStatusClientContinuationTokenFetchInFlight = 20200,
     /// `CLIENT_TOPOLOGY_PROVIDER_MISSING` (20201).
@@ -190,8 +192,8 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientSingletonOperationReturnedEmptyPage = 20210,
     /// `CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED` (20213).
     CosmosSubStatusClientContinuationTokenSavedRangeUnhonored = 20213,
-    /// `CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING` (20216).
-    CosmosSubStatusClientStreamingOrderByFingerprintMissing = 20216,
+    /// `CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING` (20218).
+    CosmosSubStatusClientStreamingOrderByFingerprintMissing = 20218,
     /// `CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE` (20301).
     CosmosSubStatusClientNoThroughputOfferForResource = 20301,
     /// `CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES` (20302).
@@ -219,8 +221,8 @@ pub enum CosmosSubStatus {
     /// `CLIENT_FFI_PRECONDITION_ALREADY_SET` (20355). Reserved: mirrors the
     /// driver constant but no current wrapper path produces it.
     CosmosSubStatusClientFfiPreconditionAlreadySet = 20355,
-    /// `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356). Reserved: mirrors
-    /// the driver constant but no current wrapper path produces it.
+    /// `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356). Returned when a
+    /// request uses an operation that is unavailable in this wrapper build.
     CosmosSubStatusClientFfiUnsupportedOperationForMutator = 20356,
     /// `CLIENT_FFI_FEED_EXHAUSTED` (20357).
     CosmosSubStatusClientFfiFeedExhausted = 20357,
@@ -319,6 +321,7 @@ const _: () = {
         CosmosSubStatusClientRequestUrlMissingKnownPort => CLIENT_REQUEST_URL_MISSING_KNOWN_PORT,
         CosmosSubStatusClientImdsHttpClientConstructionFailed => CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED,
         CosmosSubStatusClientImdsReqwestFeatureRequired => CLIENT_IMDS_REQWEST_FEATURE_REQUIRED,
+        CosmosSubStatusClientPartitionKeyRangeCacheRequired => CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED,
         CosmosSubStatusClientContinuationTokenFetchInFlight => CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT,
         CosmosSubStatusClientTopologyProviderMissing => CLIENT_TOPOLOGY_PROVIDER_MISSING,
         CosmosSubStatusClientDriverNotInitialized => CLIENT_DRIVER_NOT_INITIALIZED,

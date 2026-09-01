@@ -1,5 +1,8 @@
 #!/usr/bin/env pwsh
 
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 #Requires -Version 7.0
 [CmdletBinding(DefaultParameterSetName = 'ManifestDir')]
 param(
@@ -10,20 +13,21 @@ param(
 $ErrorActionPreference = 'Stop'
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
-. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'common.ps1'))
 
 Write-Host @"
 Building crates with
     RUSTFLAGS: '${env:RUSTFLAGS}'
 "@
 
-[string[]] $manifestPath = if ($ManifestDir) {
-  Join-Path $ManifestDir 'Cargo.toml' -Resolve
+[string[]] $manifestPath = Get-CargoManifestPaths -ManifestDir $ManifestDir
+if ($ManifestDir) {
   LogDebug "Building manifest(s) '$( $manifestPath -join "'. '" )' and dependencies"
-} else {
-  "$RepoRoot/Cargo.toml"
+}
+else {
   LogDebug "Building all packages in workspace"
 }
 
-$manifestArgs = '--manifest-path ' + ($manifestPath -join ' --manifest-path ')
-Invoke-LoggedCommand "cargo build --keep-going --all-features $manifestArgs" -GroupOutput
+foreach ($path in $manifestPath) {
+  Invoke-LoggedCommand "cargo build --manifest-path '$path' --keep-going --all-features" -GroupOutput
+}

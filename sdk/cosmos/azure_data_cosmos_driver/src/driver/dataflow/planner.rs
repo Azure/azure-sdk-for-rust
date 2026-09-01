@@ -316,13 +316,24 @@ async fn build_sequential_drain_inner(
 
     // `DISTINCT` deduplicates the fan-out stream first; the global skip/take
     // window then counts deduplicated rows, matching SQL semantics.
-    let deduped = apply_distinct(fanout, distinct_type, last_hash, resumed_drained);
+    let deduped = apply_distinct(
+        fanout,
+        distinct_type,
+        last_hash,
+        resumed_drained,
+        operation.emits_binary_payload(),
+    );
 
     // Cross-partition OFFSET / LIMIT / TOP applies a global skip/take over the
     // fan-out's EPK-ordered stream. When none is present the fan-out is the
     // pipeline root directly.
     let root: Box<dyn PipelineNode> = if needs_skip_take {
-        Box::new(SkipTake::new(deduped, skip, take))
+        Box::new(SkipTake::new(
+            deduped,
+            skip,
+            take,
+            operation.emits_binary_payload(),
+        ))
     } else {
         deduped
     };
@@ -569,6 +580,7 @@ async fn build_streaming_ordered_merge_inner(
             .build());
     }
 
+    let emit_binary = plain_operation.emits_binary_payload();
     let ordered_root: Box<dyn PipelineNode> = Box::new(StreamingOrderedMerge::new(
         plain_operation,
         directions,
@@ -578,13 +590,19 @@ async fn build_streaming_ordered_merge_inner(
 
     // `DISTINCT` deduplicates the ordered stream first; the global skip/take
     // window then counts deduplicated rows, matching SQL semantics.
-    let deduped = apply_distinct(ordered_root, distinct_type, last_hash, resumed_drained);
+    let deduped = apply_distinct(
+        ordered_root,
+        distinct_type,
+        last_hash,
+        resumed_drained,
+        emit_binary,
+    );
 
     // Apply the global OFFSET / LIMIT / TOP window over the ordered stream. When
     // the query carries none, the ordered merge is the pipeline root directly.
     let needs_skip_take = skip > 0 || take.is_some();
     let root: Box<dyn PipelineNode> = if needs_skip_take {
-        Box::new(SkipTake::new(deduped, skip, take))
+        Box::new(SkipTake::new(deduped, skip, take, emit_binary))
     } else {
         deduped
     };
@@ -1417,6 +1435,7 @@ fn apply_distinct(
     distinct_type: DistinctType,
     last_hash: Option<Hash128>,
     resumed_drained: bool,
+    emit_binary: bool,
 ) -> Box<dyn PipelineNode> {
     if distinct_type == DistinctType::None {
         return node;
@@ -1428,7 +1447,12 @@ fn apply_distinct(
     if resumed_drained {
         return node;
     }
-    Box::new(Distinct::with_last_hash(node, distinct_type, last_hash))
+    Box::new(Distinct::with_last_hash(
+        node,
+        distinct_type,
+        last_hash,
+        emit_binary,
+    ))
 }
 
 /// Splits a resume state into the inner (fan-out) state and the `DISTINCT`

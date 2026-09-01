@@ -8,7 +8,10 @@
 param(
   [Parameter(Mandatory, ParameterSetName = 'PackageNames')]
   [ValidateNotNullOrEmpty()]
-  [string] $PackageNames,
+  [Alias('PackageNames')]
+  [string[]] $PackageName,
+  [Parameter(Mandatory, ParameterSetName = 'ManifestDir')]
+  [string[]] $ManifestDir,
 
   [Parameter(Mandatory, ParameterSetName = 'Workspace')]
   [switch] $Workspace
@@ -18,7 +21,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
-. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'common.ps1'))
 
 $nightlyToolchain = Get-ResolvedRustToolchain -Toolchain 'nightly'
 $stableToolchain = Get-ResolvedRustToolchain -Toolchain 'stable'
@@ -31,11 +34,22 @@ $stableRustc = (
     Select-Object -First 1
 ).Trim()
 
-$packageArgs = if ($Workspace) {
-  '--workspace'
+$manifestPaths = Get-CargoManifestPaths `
+  -PackageName $PackageName `
+  -ManifestDir $ManifestDir `
+  -Workspace:$Workspace
+$workspaceManifestPath = [System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')
+$packageArgs = @('--manifest-path', "'$workspaceManifestPath'")
+if ($Workspace) {
+  $packageArgs += '--workspace'
 }
 else {
-  '--package ' + (($PackageNames -split ',') -join ' --package ')
+  $packages = Get-CargoSelectedPackages `
+    -PackageName $PackageName `
+    -ManifestDir $ManifestDir
+  foreach ($package in $packages) {
+    $packageArgs += '--package', $package.name
+  }
 }
 
 # Cargo owns SBOM generation, so nightly Cargo can drive the stable compiler without
@@ -45,11 +59,11 @@ $env:RUSTC = $stableRustc
 $env:RUSTUP_TOOLCHAIN = $stableToolchain
 
 Invoke-LoggedCommand `
-  "& `"$nightlyCargo`" -Z sbom build --locked --all-features --keep-going $packageArgs" `
+  "& `"$nightlyCargo`" -Z sbom build --locked --all-features --keep-going $($packageArgs -join ' ')" `
   -GroupOutput
 
 $metadata = Invoke-LoggedCommand `
-  "& `"$nightlyCargo`" metadata --no-deps --format-version 1 --locked" |
+  "& `"$nightlyCargo`" metadata --manifest-path '$workspaceManifestPath' --no-deps --format-version 1 --locked" |
     ConvertFrom-Json
 $sbomFiles = Get-ChildItem `
   -Path $metadata.target_directory `
