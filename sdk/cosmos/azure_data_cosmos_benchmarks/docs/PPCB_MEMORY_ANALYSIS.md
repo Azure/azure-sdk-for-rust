@@ -228,10 +228,10 @@ dhat = { workspace = true, optional = true }
 PPCB's data structures are crate-private in production
 (`pub(crate) mod partition_endpoint_state`). The benchmark accesses them
 through the existing `__internal_testing` re-export pattern documented
-in `azure_data_cosmos_driver/src/testing.rs`:
+in `azure_data_cosmos_driver/src/test.rs`:
 
 ```rust
-// In azure_data_cosmos_driver/src/testing.rs (only compiled when
+// In azure_data_cosmos_driver/src/test.rs (only compiled when
 // __internal_testing feature is enabled).
 pub use crate::driver::routing::endpoint::CosmosEndpoint;
 pub use crate::driver::routing::partition_endpoint_state::{

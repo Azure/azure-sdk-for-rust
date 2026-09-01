@@ -929,10 +929,10 @@ Writes add `0.3 RU × (number of top-level JSON properties)`.
 
 ### Configurability
 
-`RuChargingModel` struct with customizable base rates:
+`RequestUnitChargingModel` struct with customizable base rates:
 
 ```rust
-RuChargingModel {
+RequestUnitChargingModel {
     read_base_ru: 1.0,
     create_base_ru: 5.8,
     write_multiplier: 1.5,
@@ -1527,7 +1527,7 @@ src/in_memory_emulator/
 ├── operations.rs           # Point operation implementations
 ├── response.rs             # EmulatorResponseBuilder, error_body, header generation
 ├── session.rs              # SessionState, LSN tracking, token parsing/formatting
-├── ru_model.rs             # RuChargingModel, size bucket computation
+├── ru_model.rs             # RequestUnitChargingModel, size bucket computation
 └── system_properties.rs    # _rid, _self, _ts, _etag generation, JSON injection
 
 tests/
@@ -1638,10 +1638,10 @@ store.merge_partitions("testdb", "testcoll", 0, 1, Duration::from_millis(100));
 ### Custom RU Charging
 
 ```rust
-use azure_data_cosmos_driver::in_memory_emulator::RuChargingModel;
+use azure_data_cosmos_driver::in_memory_emulator::RequestUnitChargingModel;
 
 let config = VirtualAccountConfig::new(regions)
-    .with_ru_model(RuChargingModel {
+    .with_ru_model(RequestUnitChargingModel {
         read_base_ru: 1.0,
         create_base_ru: 5.8,
         write_multiplier: 1.5,
@@ -1678,7 +1678,7 @@ All public types are exported from `azure_data_cosmos_driver::in_memory_emulator
 | `WriteMode`              | `Single` (one write region) or `Multi` (all regions write)                 |
 | `ConsistencyLevel`       | `Session`, `Strong`, `BoundedStaleness`, `Eventual`                        |
 | `ReplicationConfig`      | Replication delay: `immediate()`, `fixed(d)`, `range(min,max)`             |
-| `RuChargingModel`        | Configurable RU rates per operation type and document size                 |
+| `RequestUnitChargingModel` | Configurable RU rates per operation type and document size               |
 | `ContainerConfig`        | Per-container overrides (partition count, throughput)                      |
 | `PartitionKeyDefinition` | Partition key paths, kind, version                                         |
 
