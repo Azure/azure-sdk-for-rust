@@ -151,7 +151,7 @@ pub struct Config {
 
     /// Throughput (RU/s) to provision when creating the container.
     #[arg(long, default_value_t = 100000)]
-    pub throughput: usize,
+    pub throughput: u32,
 
     /// Container name for storing perf results as JSON documents.
     ///

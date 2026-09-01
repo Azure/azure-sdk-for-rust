@@ -180,11 +180,12 @@ pub struct PatchItemOptions {
     /// When full after time-based pruning, the oldest entry is evicted.
     pub tracking_capacity: Option<std::num::NonZeroU16>,
 
-    /// Number of whole seconds PATCH tracking entries remain eligible for
-    /// duplicate suppression unless FIFO capacity pressure evicts them first.
-    /// `None` selects
+    /// Duration PATCH tracking entries remain eligible for duplicate
+    /// suppression unless FIFO capacity pressure evicts them first. Rounded
+    /// down to the nearest whole second — the wire granularity the driver
+    /// supports — with a minimum of one second. `None` selects
     /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION).
-    pub tracking_retention_seconds: Option<std::num::NonZeroU32>,
+    pub tracking_retention: Option<std::time::Duration>,
 }
 
 #[cfg(feature = "preview_patch")]
@@ -218,11 +219,11 @@ impl PatchItemOptions {
     }
 
     /// Sets the retention window used when pruning tracking entries by age.
-    pub fn with_tracking_retention_seconds(
-        mut self,
-        retention_seconds: std::num::NonZeroU32,
-    ) -> Self {
-        self.tracking_retention_seconds = Some(retention_seconds);
+    ///
+    /// Rounded down to the nearest whole second, with a minimum of one
+    /// second.
+    pub fn with_tracking_retention(mut self, retention: std::time::Duration) -> Self {
+        self.tracking_retention = Some(retention);
         self
     }
 

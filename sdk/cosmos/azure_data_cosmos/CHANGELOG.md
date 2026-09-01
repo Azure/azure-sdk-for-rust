@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `PatchTrackingId`, `PatchInstructions::is_retry_safe`, `PatchItemOptions::with_tracking_id`, `PatchItemOptions::with_tracking_capacity`, `PatchItemOptions::with_tracking_retention_seconds`, `ItemResponse::patch_tracking_id`, `CosmosError::patch_tracking_id`, `FaultInjectionErrorType::ResponseTimeoutAfterService`, and public PATCH tracking property, retention, and default-capacity constants for bounded duplicate suppression across application retries. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
+- Added `PatchTrackingId`, `PatchInstructions::is_retry_safe`, `PatchItemOptions::with_tracking_id`, `PatchItemOptions::with_tracking_capacity`, `PatchItemOptions::with_tracking_retention`, `ItemResponse::patch_tracking_id`, `CosmosError::patch_tracking_id`, `FaultInjectionErrorType::ResponseTimeoutAfterService`, and public PATCH tracking property, retention, and default-capacity constants for bounded duplicate suppression across application retries. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
 - Added `CosmosClientBuilder::with_partition_key_range_cache_enabled` to disable partition topology caching and `/pkranges` requests when only topology-independent operations are needed. ([#5174](https://github.com/Azure/azure-sdk-for-rust/pull/5174))
 - Added `ResourceId` and `ResourceIdentity` for addressing Cosmos databases and containers by user-provided name or by RID. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - `CosmosClient::database_client` and `DatabaseClient::container_client` now accept `impl Into<ResourceIdentity>`, so a `&str`/`String` selects name addressing and a `ResourceId` selects RID addressing. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
@@ -27,6 +27,7 @@
 
 ### Breaking Changes
 
+- Reviewed public API type consistency for time durations and integer sizes. `TimeToLive::Seconds` now holds a `std::time::Duration` instead of a raw `u32`. `ResponseHeaders::server_duration_ms()` and `retry_after_ms()` are replaced by `server_duration()` and `retry_after()`, both returning `Option<Duration>`; `TransactionalBatchOperationResult::retry_after_milliseconds()` and `DistributedTransactionResponse::retry_after_ms()` are similarly replaced by `retry_after() -> Option<Duration>`. `ThroughputProperties::manual`, `autoscale`, `throughput()`, `autoscale_maximum()`, and `autoscale_increment()` now use `u32` instead of the platform-dependent `usize`, matching the RU/s values Cosmos DB actually returns. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
 - `ContainerClient::patch_item()` and `PatchItemOptions` are now gated behind the new, non-default `preview_patch` feature while the API remains in preview. Enable `preview_patch` to keep using it. ([#5133](https://github.com/Azure/azure-sdk-for-rust/pull/5133))
 - `CosmosClient::database_client` and `DatabaseClient::container_client` now take `impl Into<ResourceIdentity>` instead of `&str`; call sites passing a deref-able string (for example a `Cow<str>` field) need `&*value` or `.as_ref()`. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - `DatabaseClient::id()` now returns `&ResourceIdentity` instead of `&str`. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))

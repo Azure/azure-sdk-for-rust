@@ -273,7 +273,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let default_ttl = if config.default_ttl == 0 {
         None
     } else {
-        Some(TimeToLive::Seconds(config.default_ttl as u32))
+        Some(TimeToLive::Seconds(Duration::from_secs(config.default_ttl)))
     };
 
     // Ensure the container exists and grab the ContainerClient. We can't
@@ -355,7 +355,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             &results_db,
             &config.results_container,
             10000,
-            Some(TimeToLive::Seconds(86400)),
+            Some(TimeToLive::Seconds(Duration::from_secs(86400))),
         )
         .await?;
         println!(
@@ -368,7 +368,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             &db_client,
             &config.results_container,
             10000,
-            Some(TimeToLive::Seconds(86400)),
+            Some(TimeToLive::Seconds(Duration::from_secs(86400))),
         )
         .await?;
         println!(

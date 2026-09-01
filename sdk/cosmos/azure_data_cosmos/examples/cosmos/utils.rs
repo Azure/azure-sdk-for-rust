@@ -8,15 +8,15 @@ use clap::Args;
 pub struct ThroughputOptions {
     /// Enables autoscaling and sets the maximum RUs to support. Cannot be used if `--manual` is set.
     #[arg(long)]
-    autoscale: Option<usize>,
+    autoscale: Option<u32>,
 
     /// Sets the increment percentage for autoscale. Ignored unless `--autoscale` is set.
     #[arg(long)]
-    autoscale_increment: Option<usize>,
+    autoscale_increment: Option<u32>,
 
     /// Provisions manual throughput, specifying the number of RUs.
     #[arg(long)]
-    manual: Option<usize>,
+    manual: Option<u32>,
 }
 
 impl TryFrom<ThroughputOptions> for Option<ThroughputProperties> {

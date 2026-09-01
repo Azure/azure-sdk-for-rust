@@ -65,7 +65,7 @@ pub struct Config {
 
     /// Provisioned throughput (RU/s) for the container when it is created.
     #[arg(long, default_value_t = 400)]
-    pub throughput: usize,
+    pub throughput: u32,
 
     // --- Workload ---------------------------------------------------------
     /// Number of documents to seed before the load loop starts.

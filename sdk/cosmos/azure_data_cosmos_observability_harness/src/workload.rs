@@ -487,7 +487,7 @@ async fn ensure_database(client: &CosmosClient, db_name: &str) -> Result<(), Box
 async fn ensure_container(
     db_client: &DatabaseClient,
     container_name: &str,
-    throughput: usize,
+    throughput: u32,
 ) -> Result<ContainerClient, Box<dyn Error>> {
     match db_client.container_client(container_name).await {
         Ok(container) => match container.read(None).await {
