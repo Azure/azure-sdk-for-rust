@@ -8,8 +8,6 @@ documentation for the Azure Cosmos DB SDK for Rust.
 - [Project overview](Project.md) explains the project's purpose and boundaries.
 - [Architecture overview](Architecture.md) explains the SDK, driver, execution
   pipelines, and shared state at a high level.
-- [Cosmos Rust code style](CodeStyle.md) collects concise implementation
-  conventions after the architecture is understood.
 
 ## Directory layout
 
@@ -17,7 +15,6 @@ documentation for the Azure Cosmos DB SDK for Rust.
 docs/
 ├── Project.md
 ├── Architecture.md
-├── CodeStyle.md
 ├── README.md
 ├── AGENTS.md
 ├── specs/       # Numbered, mutable feature specifications
@@ -25,10 +22,9 @@ docs/
 └── reports/     # Unnumbered historical investigations and measurements
 ```
 
-Project and architecture are the top-level design overviews. `CodeStyle.md`
-contains implementation conventions. See [`specs/`](specs/) for detailed
-feature designs, [`adrs/`](adrs/) for finalized decisions, and
-[`reports/`](reports/) for archival technical reports.
+Project and architecture are the top-level design overviews. See
+[`specs/`](specs/) for detailed feature designs, [`adrs/`](adrs/) for
+finalized decisions, and [`reports/`](reports/) for archival technical reports.
 
 Crate READMEs, changelogs, contributor guidance, and Markdown fragments consumed
 directly by Rust source remain with their crates.
