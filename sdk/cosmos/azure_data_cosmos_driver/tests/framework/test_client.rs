@@ -32,6 +32,17 @@ use super::env::{
     GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
 };
 
+fn test_env_filter() -> EnvFilter {
+    match std::env::var("RUST_LOG") {
+        Ok(value) if value.trim().eq_ignore_ascii_case("trace") => EnvFilter::new("debug"),
+        _ => EnvFilter::builder()
+            // Tests with intentional failures cause noise, so silence them
+            // unless the user explicitly configures logging.
+            .with_default_directive("off".parse().unwrap())
+            .from_env_lossy(),
+    }
+}
+
 /// A test client that provides access to a Cosmos DB driver for testing.
 pub struct DriverTestClient {
     runtime: Arc<CosmosDriverRuntime>,
@@ -69,13 +80,7 @@ pub struct TestEnv {
 /// Returns `Ok(None)` if the environment is not configured and tests should be skipped.
 pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let _ = tracing_subscriber::fmt::fmt()
-        .with_env_filter(
-            EnvFilter::builder()
-                // Tests with intentional failures cause noise, so we set the default level to "off"
-                // to silence them unless the user explicitly configures it.
-                .with_default_directive("off".parse().unwrap())
-                .from_env_lossy(),
-        )
+        .with_env_filter(test_env_filter())
         .try_init();
 
     let test_mode = get_test_mode();
