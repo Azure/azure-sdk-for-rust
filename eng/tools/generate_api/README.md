@@ -30,7 +30,7 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 them back, so it can be applied to toggle documentation comments on:
 
 ```sh
-patch -p1 API.md < API.comments.patch
+patch -p1 < API.comments.patch
 ```
 
 ## Workflow
