@@ -56,6 +56,15 @@ If you need a non-fallible parse internally, create a **private** helper method 
 
 **Encode domain semantics in trait impls**: When a type has a domain-specific comparison rule, ordering, or equality definition, implement it directly in the type's `Ord`/`PartialOrd`/`Eq` traits rather than creating standalone helper functions that callers must remember to use. This prevents inconsistency — every comparison automatically gets the right semantics, and you can't accidentally use the wrong one.
 
+### Integer Type Selection
+
+Choose integer types deliberately; don't default to `usize` or `i32` out of habit:
+
+- Use `usize` **only** for memory-related numbers (addresses, array indices, memory/buffer sizes) — including at FFI boundaries when the number refers to memory.
+- Use a specific-size integer when it's necessary for a specific, well-understood memory optimization (e.g., packing a struct), or to match an FFI/ABI requirement.
+- Use `u16` or `u32` for domain numbers when they will clearly fit — not just "`u16`/`u32` should be enough", but "more than 65,535/4 billion of these would be ridiculous" (e.g., RU/s throughput, retry counts, byte offsets within a single document).
+- Use `u64` for domain numbers when the expected range isn't clear, or is known to potentially exceed 32 bits.
+
 ### Cosmos-Specific Patterns
 
 #### Request Building

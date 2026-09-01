@@ -35,9 +35,9 @@ pub enum TimeToLive {
     /// Individual items can still define their own TTL.
     NoDefault,
 
-    /// TTL is enabled with a default expiration of the given duration, rounded
-    /// down to the nearest whole second (the wire granularity Cosmos DB supports).
-    Seconds(Duration),
+    /// TTL is enabled with a default expiration, in seconds. Items expire after
+    /// this many seconds unless they override it with their own `ttl` property.
+    Seconds(u32),
 }
 
 impl TimeToLive {
@@ -47,9 +47,9 @@ impl TimeToLive {
     }
 }
 
-impl From<Duration> for TimeToLive {
-    fn from(d: Duration) -> Self {
-        TimeToLive::Seconds(d)
+impl From<u32> for TimeToLive {
+    fn from(n: u32) -> Self {
+        TimeToLive::Seconds(n)
     }
 }
 
@@ -61,10 +61,7 @@ impl Serialize for TimeToLive {
         match self {
             TimeToLive::Forever => serializer.serialize_none(),
             TimeToLive::NoDefault => serializer.serialize_i32(-1),
-            TimeToLive::Seconds(d) => {
-                let seconds = u32::try_from(d.as_secs()).map_err(serde::ser::Error::custom)?;
-                serializer.serialize_u32(seconds)
-            }
+            TimeToLive::Seconds(seconds) => serializer.serialize_u32(*seconds),
         }
     }
 }
@@ -77,7 +74,7 @@ impl<'de> Deserialize<'de> for TimeToLive {
         match Option::<i32>::deserialize(deserializer)? {
             None => Ok(TimeToLive::Forever),
             Some(-1) => Ok(TimeToLive::NoDefault),
-            Some(n) if n > 0 => Ok(TimeToLive::Seconds(Duration::from_secs(n as u64))),
+            Some(n) if n > 0 => Ok(TimeToLive::Seconds(n as u32)),
             Some(n) => Err(serde::de::Error::invalid_value(
                 serde::de::Unexpected::Signed(n as i64),
                 &"a nonzero positive integer or -1",
@@ -716,7 +713,7 @@ mod tests {
     #[test]
     fn serialize_ttl_seconds() {
         let value = TtlHolder {
-            ttl: TimeToLive::Seconds(Duration::from_secs(4200)),
+            ttl: TimeToLive::Seconds(4200),
         };
         let json = serde_json::to_string(&value).unwrap();
         assert_eq!(r#"{"ttl":4200}"#, json);
@@ -743,7 +740,7 @@ mod tests {
     #[test]
     fn deserialize_ttl_seconds() {
         let value: TtlHolder = serde_json::from_str(r#"{"ttl":4200}"#).unwrap();
-        assert_eq!(TimeToLive::Seconds(Duration::from_secs(4200)), value.ttl);
+        assert_eq!(TimeToLive::Seconds(4200), value.ttl);
     }
 
     #[test]
@@ -784,7 +781,7 @@ mod tests {
 
     #[test]
     fn serialize_ttl_seconds_value() {
-        let json = serde_json::to_string(&TimeToLive::Seconds(Duration::from_secs(86400))).unwrap();
+        let json = serde_json::to_string(&TimeToLive::Seconds(86400)).unwrap();
         assert_eq!("86400", json);
     }
 
@@ -821,10 +818,7 @@ mod tests {
             "analyticalStorageTtl": -1
         }"#;
         let props: ContainerProperties = serde_json::from_str(json).unwrap();
-        assert_eq!(
-            TimeToLive::Seconds(Duration::from_secs(3600)),
-            props.default_ttl
-        );
+        assert_eq!(TimeToLive::Seconds(3600), props.default_ttl);
         assert_eq!(TimeToLive::NoDefault, props.analytical_storage_ttl);
     }
 
