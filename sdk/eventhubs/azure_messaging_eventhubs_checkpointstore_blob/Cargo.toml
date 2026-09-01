@@ -20,9 +20,12 @@ rust-version.workspace = true
 
 [dependencies]
 async-trait.workspace = true
-azure_core.workspace = true
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
 azure_messaging_eventhubs = { path = "../azure_messaging_eventhubs", version = "0.15.0" }
-azure_storage_blob.workspace = true
+# Unreleased: must resolve the same azure_core as azure_messaging_eventhubs, which
+# needs AmqpTransport (issue #3601). The registry build of azure_storage_blob pins
+# the previous azure_core, which puts two copies of the crate in the graph.
+azure_storage_blob = { path = "../../storage/azure_storage_blob", version = "1.1.0-beta.2" }
 futures.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
@@ -30,9 +33,11 @@ time = { workspace = true, features = ["serde"] }
 tracing = { workspace = true }
 
 [dev-dependencies]
-azure_core_opentelemetry.workspace = true
-azure_core_test = { workspace = true, features = ["tracing"] }
-azure_identity.workspace = true
+azure_core_opentelemetry = { path = "../../core/azure_core_opentelemetry" }
+azure_core_test = { path = "../../core/azure_core_test", features = [
+  "tracing",
+] }
+azure_identity = { path = "../../identity/azure_identity" }
 opentelemetry.workspace = true
 opentelemetry-appender-tracing.workspace = true
 opentelemetry-stdout.workspace = true
