@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `QueryPlanMode::{LocalPreferred, GatewayOnly}` to `CosmosClientOptions`, allowing applications to force Gateway query planning as a livesite mitigation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
 - Added `ResourceId` and `ResourceIdentity` for addressing Cosmos databases and containers by user-provided name or by RID. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - `CosmosClient::database_client` and `DatabaseClient::container_client` now accept `impl Into<ResourceIdentity>`, so a `&str`/`String` selects name addressing and a `ResourceId` selects RID addressing. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - Added `DatabaseClient::name()` and `DatabaseClient::rid()` to inspect how a database client was addressed. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))

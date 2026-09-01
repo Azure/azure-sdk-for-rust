@@ -18,10 +18,10 @@ pub use azure_data_cosmos_driver::options::{
     DiagnosticsOptionsBuilder, DiagnosticsVerbosity, EndToEndOperationLatencyPolicy,
     ExcludedRegions, HedgeThreshold, HedgingStrategy, OperationOptions, OperationOptionsBuilder,
     OperationOptionsView, PartitionFailoverOptions, PartitionFailoverOptionsBuilder, PriorityLevel,
-    ReadConsistencyStrategy, Region, ServerCertificateValidation, ThrottlingRetryOptions,
-    ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlGroupOptions,
-    ThroughputControlOptions, ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
-    TlsBackend, UserAgentSuffix,
+    QueryPlanMode, ReadConsistencyStrategy, Region, ServerCertificateValidation,
+    ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView,
+    ThroughputControlGroupOptions, ThroughputControlOptions, ThroughputControlOptionsBuilder,
+    ThroughputControlOptionsView, TlsBackend, UserAgentSuffix,
 };
 pub use batch::{
     BatchDeleteOptions, BatchOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,

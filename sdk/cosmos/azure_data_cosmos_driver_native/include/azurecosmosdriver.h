@@ -48,6 +48,11 @@
 #define COSMOS_VALUE_KIND_BOOL   3
 #define COSMOS_VALUE_KIND_U64    4
 
+// Discriminants for cosmos_driver_options_config_t.query_plan_mode.
+#define COSMOS_QUERY_PLAN_MODE_UNSET           0
+#define COSMOS_QUERY_PLAN_MODE_LOCAL_PREFERRED 1
+#define COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY    2
+
 /**
  * Per spec section 3.6.1, every completion has exactly one of these outcomes.
  *
@@ -1337,6 +1342,7 @@ typedef struct cosmos_operation_options_t {
  * - `operation_options`: pointer to a flat
  *   [`cosmos_operation_options_t`](crate::op_request::CosmosOperationOptions),
  *   or NULL to inherit the driver defaults.
+ * - `query_plan_mode`: `0` inherits; see [`CosmosQueryPlanMode`].
  *
  * The account reference stays a separate handle parameter on
  * [`cosmos_driver_options_build`] — it owns `Arc`-shared state and cannot be
@@ -1360,6 +1366,11 @@ typedef struct cosmos_driver_options_config_t {
    * defaults.
    */
   const struct cosmos_operation_options_t *operation_options;
+  /**
+   * Query-plan mode encoded as a [`CosmosQueryPlanMode`] discriminant.
+   * `0` inherits the driver default or environment override.
+   */
+  int32_t query_plan_mode;
 } cosmos_driver_options_config_t;
 
 /**

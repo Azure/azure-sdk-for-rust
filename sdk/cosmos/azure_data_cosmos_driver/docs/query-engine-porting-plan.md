@@ -158,6 +158,12 @@ Normal builds resolve cross-partition query plans in this order:
 1. Local Rust planner.
 2. Gateway query-plan endpoint.
 
+Set `DriverOptionsBuilder::with_query_plan_mode(QueryPlanMode::GatewayOnly)`
+to bypass local planning. For livesite mitigation,
+`AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE=gateway` authoritatively forces the same
+behavior for every subsequently constructed driver, even when its builder
+selects `LocalPreferred`.
+
 When `__internal_native_query_plan` is enabled, the existing native-first behavior is preserved:
 
 1. Native FFI provider.

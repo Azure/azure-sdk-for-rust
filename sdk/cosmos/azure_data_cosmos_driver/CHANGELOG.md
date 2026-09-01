@@ -19,7 +19,7 @@
 - Added `HedgingOptions` (via `DriverOptionsBuilder::with_hedging_options`), bounding how many metadata operations may make simultaneous cross-region attempts. Defaults to 32; `0` disables metadata hedging. An operation refused a slot follows the ordinary sequential failover path instead of queueing. Data-plane hedging is not budgeted — tracked by [#4916](https://github.com/Azure/azure-sdk-for-rust/issues/4916). ([#4896](https://github.com/Azure/azure-sdk-for-rust/pull/4896))
 - Added `CosmosResponse::serving_region`, returning the region that produced a response — the hedge winner when the operation raced, otherwise the region of the final attempt. ([#4896](https://github.com/Azure/azure-sdk-for-rust/pull/4896))
 - Added resumable cross-partition streaming `ORDER BY` query support. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
-- Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
+- Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes. Added `QueryPlanMode::{LocalPreferred, GatewayOnly}` and the `AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE=gateway` break-glass setting to force Gateway planning. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
 
 ### Breaking Changes
 

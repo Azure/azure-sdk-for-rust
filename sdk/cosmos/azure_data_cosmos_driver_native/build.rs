@@ -80,7 +80,12 @@ fn generate_c_header() {
          #define COSMOS_VALUE_KIND_I64    1\n\
          #define COSMOS_VALUE_KIND_F64    2\n\
          #define COSMOS_VALUE_KIND_BOOL   3\n\
-         #define COSMOS_VALUE_KIND_U64    4",
+         #define COSMOS_VALUE_KIND_U64    4\n\
+         \n\
+         // Discriminants for cosmos_driver_options_config_t.query_plan_mode.\n\
+         #define COSMOS_QUERY_PLAN_MODE_UNSET           0\n\
+         #define COSMOS_QUERY_PLAN_MODE_LOCAL_PREFERRED 1\n\
+         #define COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY    2",
         env!("CARGO_PKG_VERSION")
     );
 
@@ -169,6 +174,7 @@ fn generate_c_header() {
             "CosmosDriverOptionsConfig".into(),
             "driver_options_config_t".into(),
         ),
+        ("CosmosQueryPlanMode".into(), "query_plan_mode_t".into()),
         // Enums / option structs. Variant prefixes are baked into
         // the Rust variant names (e.g. `CompletionQueueStateRunning`,
         // `CompletionOutcomeOk`) so the `ScreamingSnakeCase` enum rule

@@ -13,12 +13,22 @@ use azure_data_cosmos_driver::{
         VirtualRegion,
     },
     models::{AccountReference, CosmosOperation, FeedRange, PartitionKeyDefinition},
-    options::{DriverOptions, OperationOptions, PlanOptions},
+    options::{DriverOptions, OperationOptions, PlanOptions, QueryPlanMode},
 };
 
 use super::{host_recorder::HostRecorder, GATEWAY_URL};
 
 async fn setup() -> (
+    Arc<InMemoryEmulatorHttpClient>,
+    Arc<HostRecorder>,
+    Arc<CosmosDriver>,
+) {
+    setup_with_query_plan_mode(QueryPlanMode::LocalPreferred).await
+}
+
+async fn setup_with_query_plan_mode(
+    mode: QueryPlanMode,
+) -> (
     Arc<InMemoryEmulatorHttpClient>,
     Arc<HostRecorder>,
     Arc<CosmosDriver>,
@@ -47,10 +57,36 @@ async fn setup() -> (
     let account =
         AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
     let driver = runtime
-        .create_driver(DriverOptions::builder(account).build())
+        .create_driver(
+            DriverOptions::builder(account)
+                .with_query_plan_mode(mode)
+                .build(),
+        )
         .await
         .unwrap();
     (emulator, recorder, driver)
+}
+
+#[tokio::test]
+async fn gateway_only_mode_bypasses_local_query_planning() {
+    let (_emulator, recorder, driver) =
+        setup_with_query_plan_mode(QueryPlanMode::GatewayOnly).await;
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .unwrap();
+    recorder.clear();
+
+    driver
+        .plan_operation(
+            query(&container, "SELECT * FROM c WHERE c.pk = 'a'"),
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(recorder.query_plan_count(), 1);
 }
 
 fn query(

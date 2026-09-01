@@ -36,7 +36,7 @@ use crate::{
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView, PlanOptions,
-        ResolvedThroughputControl, ThroughputControlGroupSnapshot,
+        QueryPlanMode, ResolvedThroughputControl, ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse,
 };
@@ -3292,7 +3292,13 @@ impl CosmosDriver {
                 .build());
         }
 
-        tracing::debug!(operation_type = ?operation.operation_type(), resource_type = ?operation.resource_type(), resource_reference = ?operation.resource_reference(), "planning operation");
+        tracing::debug!(
+            operation_type = ?operation.operation_type(),
+            resource_type = ?operation.resource_type(),
+            resource_reference = ?operation.resource_reference(),
+            query_plan_mode = ?self.options.query_plan_mode(),
+            "planning operation"
+        );
 
         // Share the operation across every Request node in the resulting plan.
         // Per-Request differences are layered on at execution time via
@@ -3488,6 +3494,18 @@ impl CosmosDriver {
         operation: &CosmosOperation,
         options: &OperationOptions,
     ) -> crate::error::Result<ResolvedQueryPlan> {
+        if self.options.query_plan_mode() == QueryPlanMode::GatewayOnly {
+            let plan = self
+                .gateway_query_plan(container, operation, options)
+                .await?;
+            tracing::debug!(
+                provider = "gateway",
+                mode = "gateway_only",
+                "using Gateway query plan"
+            );
+            return Ok(ResolvedQueryPlan::Plan(Box::new(plan)));
+        }
+
         // Fetch the query engine configuration from the account metadata cache.
         let account = operation.resource_reference().account();
         let account_endpoint = AccountEndpoint::from(account);
@@ -3572,6 +3590,18 @@ impl CosmosDriver {
         operation: &CosmosOperation,
         options: &OperationOptions,
     ) -> crate::error::Result<ResolvedQueryPlan> {
+        if self.options.query_plan_mode() == QueryPlanMode::GatewayOnly {
+            let plan = self
+                .gateway_query_plan(container, operation, options)
+                .await?;
+            tracing::debug!(
+                provider = "gateway",
+                mode = "gateway_only",
+                "using Gateway query plan"
+            );
+            return Ok(ResolvedQueryPlan::Plan(Box::new(plan)));
+        }
+
         match crate::query::local_plan_adapter::try_local_plan(
             operation.body(),
             container.partition_key_definition(),

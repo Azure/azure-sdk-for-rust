@@ -5,7 +5,9 @@
 
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::options::{BinaryEncodingOptions, OperationOptions, UserAgentSuffix};
+use azure_data_cosmos_driver::options::{
+    BinaryEncodingOptions, OperationOptions, QueryPlanMode, UserAgentSuffix,
+};
 
 use crate::diagnostics::{DiagnosticsHandler, DiagnosticsHandlerChain};
 
@@ -20,6 +22,8 @@ pub struct CosmosClientOptions {
     /// Default [`OperationOptions`] applied to all requests made by this client,
     /// unless overridden by per-request options.
     pub operation: OperationOptions,
+    /// Query-plan provider selection for this client.
+    pub query_plan_mode: QueryPlanMode,
     pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
     /// Options to control binary encoding.
     pub(crate) binary_encoding: Option<BinaryEncodingOptions>,
@@ -35,6 +39,12 @@ impl CosmosClientOptions {
 
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
+        self
+    }
+
+    /// Selects how cross-partition query plans are resolved.
+    pub fn with_query_plan_mode(mut self, mode: QueryPlanMode) -> Self {
+        self.query_plan_mode = mode;
         self
     }
 

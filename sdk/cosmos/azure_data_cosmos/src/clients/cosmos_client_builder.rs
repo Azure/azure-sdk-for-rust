@@ -10,7 +10,7 @@ use crate::{
     diagnostics::{CosmosClientInfo, DiagnosticsHandler},
     options::{
         BinaryEncodingOptions, CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
-        ThroughputControlGroupOptions, UserAgentSuffix,
+        QueryPlanMode, ThroughputControlGroupOptions, UserAgentSuffix,
     },
     AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
 };
@@ -317,6 +317,7 @@ impl CosmosClientBuilder {
             routing_strategy,
             self.options.operation,
             self.options.user_agent_suffix,
+            self.options.query_plan_mode,
             self.partition_failover_options,
             #[cfg(feature = "fault_injection")]
             self.fault_injection_rules,
@@ -345,11 +346,15 @@ impl CosmosClientBuilder {
 ///   a warning and falls back to an empty list, which causes the driver to use
 ///   the account's own region order.
 /// - [`RoutingStrategy::PreferredRegions`] passes the caller's list through unchanged.
+// The feature-gated fault-injection argument makes this helper vary by build;
+// grouping these unrelated option families would obscure their ownership.
+#[allow(clippy::too_many_arguments)]
 fn build_driver_options(
     account: azure_data_cosmos_driver::models::AccountReference,
     strategy: RoutingStrategy,
     operation_options: OperationOptions,
     user_agent_suffix: Option<UserAgentSuffix>,
+    query_plan_mode: QueryPlanMode,
     partition_failover_options: Option<PartitionFailoverOptions>,
     #[cfg(feature = "fault_injection")] fault_injection_rules: Vec<
         Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
@@ -371,7 +376,8 @@ fn build_driver_options(
     };
     let mut builder = azure_data_cosmos_driver::options::DriverOptions::builder(account)
         .with_preferred_regions(preferred_regions)
-        .with_operation_options(operation_options);
+        .with_operation_options(operation_options)
+        .with_query_plan_mode(query_plan_mode);
     if let Some(suffix) = user_agent_suffix {
         builder = builder.with_user_agent_suffix(suffix);
     }
@@ -509,6 +515,7 @@ mod tests {
             RoutingStrategy::ProximityTo(Region::EAST_US),
             OperationOptions::default(),
             None,
+            QueryPlanMode::default(),
             None,
             #[cfg(feature = "fault_injection")]
             Vec::new(),
@@ -532,6 +539,7 @@ mod tests {
             RoutingStrategy::ProximityTo(Region::from("not-a-real-region")),
             OperationOptions::default(),
             None,
+            QueryPlanMode::default(),
             None,
             #[cfg(feature = "fault_injection")]
             Vec::new(),
@@ -553,6 +561,7 @@ mod tests {
             RoutingStrategy::PreferredRegions(input.clone()),
             OperationOptions::default(),
             None,
+            QueryPlanMode::default(),
             None,
             #[cfg(feature = "fault_injection")]
             Vec::new(),
@@ -560,6 +569,24 @@ mod tests {
         )
         .expect("build_driver_options should succeed");
         assert_eq!(opts.preferred_regions(), input.as_slice());
+    }
+
+    #[test]
+    fn query_plan_mode_flows_to_driver_options() {
+        let opts = build_driver_options(
+            test_account(),
+            RoutingStrategy::PreferredRegions(Vec::new()),
+            OperationOptions::default(),
+            None,
+            QueryPlanMode::GatewayOnly,
+            None,
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
+
+        assert_eq!(opts.query_plan_mode(), QueryPlanMode::GatewayOnly);
     }
 
     /// The user-agent suffix must flow through to the per-driver options so
@@ -572,6 +599,7 @@ mod tests {
             RoutingStrategy::PreferredRegions(Vec::new()),
             OperationOptions::default(),
             Some(suffix.clone()),
+            QueryPlanMode::default(),
             None,
             #[cfg(feature = "fault_injection")]
             Vec::new(),
@@ -596,6 +624,7 @@ mod tests {
             RoutingStrategy::PreferredRegions(Vec::new()),
             OperationOptions::default(),
             None,
+            QueryPlanMode::default(),
             Some(pfo),
             #[cfg(feature = "fault_injection")]
             Vec::new(),
@@ -623,6 +652,7 @@ mod tests {
             RoutingStrategy::PreferredRegions(Vec::new()),
             OperationOptions::default(),
             None,
+            QueryPlanMode::default(),
             None,
             #[cfg(feature = "fault_injection")]
             Vec::new(),

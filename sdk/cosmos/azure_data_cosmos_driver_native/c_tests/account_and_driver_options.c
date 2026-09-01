@@ -152,6 +152,7 @@ static int test_driver_options_build_happy_path(void) {
     cosmos_driver_options_config_t cfg = cosmos_driver_options_config_default();
     cfg.preferred_regions = regions;
     cfg.preferred_regions_len = 2;
+    cfg.query_plan_mode = COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY;
 
     cosmos_driver_options_t *opts = NULL;
     int32_t rc = cosmos_driver_options_build(account, &cfg, &opts);
