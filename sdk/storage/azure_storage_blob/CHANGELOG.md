@@ -4,8 +4,6 @@
 
 ### Features Added
 
-- Added opt-in session token authentication for blob download operations that use a `TokenCredential`. Configure it with the new `SessionOptions` and `SessionMode` types via the new `new_with_session_options` constructor on each blob client. Eligible GET blob downloads are authenticated with a short-lived, per-container session token, transparently falling back to bearer token authentication when a session is unavailable.
-
 ### Breaking Changes
 
 ### Bugs Fixed
