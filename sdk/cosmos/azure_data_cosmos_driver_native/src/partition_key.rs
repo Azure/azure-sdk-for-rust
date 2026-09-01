@@ -22,9 +22,9 @@
 //! on non-finite values — a numeric component with NaN / ±∞ is rejected
 //! up-front with `INVALID_OPTION_VALUE` (4014).
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.5.
+//! See [`sdk/cosmos/docs/specs/0019-native-wrapper.md`] section 4.5.
 //!
-//! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
+//! [`sdk/cosmos/docs/specs/0019-native-wrapper.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md
 
 use std::ffi::{c_char, CStr};
 

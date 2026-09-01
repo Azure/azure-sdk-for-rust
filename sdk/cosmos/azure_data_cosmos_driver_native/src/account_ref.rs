@@ -13,9 +13,9 @@
 //! populates the optional `out_error` slot with a rich description for
 //! diagnostics.
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.3.
+//! See [`sdk/cosmos/docs/specs/0019-native-wrapper.md`] section 4.3.
 //!
-//! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
+//! [`sdk/cosmos/docs/specs/0019-native-wrapper.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md
 
 use std::ffi::{c_char, CStr};
 

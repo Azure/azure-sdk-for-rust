@@ -12,7 +12,9 @@ successful point read produces no span and no sampled log line; a failure or a
 threshold-breaching slow operation emits a full diagnostics record.
 
 This crate is a developer tool (`publish = false`); it is not part of the
-published SDK surface.
+supported SDK surface. See the
+[Cosmos SDK project documentation](../docs/README.md) for the diagnostics
+architecture and specification.
 
 ## What it wires up
 

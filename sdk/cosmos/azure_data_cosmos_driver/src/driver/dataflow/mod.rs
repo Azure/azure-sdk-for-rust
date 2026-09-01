@@ -30,7 +30,7 @@
 //!   [`TopologyProvider`] trait with the driver's
 //!   [`PartitionKeyRangeCache`](crate::driver::cache::PartitionKeyRangeCache).
 //!
-//! See `FEED_OPERATIONS_REQS.md` for the design intent behind the dataflow
+//! See `sdk/cosmos/docs/specs/0012-feed-operations-and-dataflow.md` for the design intent behind the dataflow
 //! pipeline (paged operations, split recovery, continuation tokens, planned
 //! cross-partition strategies).
 

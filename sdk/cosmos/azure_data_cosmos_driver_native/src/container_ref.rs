@@ -25,9 +25,9 @@
 //! the container/item-scope operation factories (`cosmos_operation_read_item`,
 //! `cosmos_operation_create_item`, etc.) consume.
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.3 + section 4.4 + section 4.7.
+//! See [`sdk/cosmos/docs/specs/0019-native-wrapper.md`] section 4.3 + section 4.4 + section 4.7.
 //!
-//! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
+//! [`sdk/cosmos/docs/specs/0019-native-wrapper.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md
 
 use std::ffi::{c_char, CStr};
 use std::sync::Arc;

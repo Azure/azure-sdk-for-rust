@@ -31,7 +31,7 @@ pub(crate) fn is_operation_supported_by_gateway_v2(
     is_rid_addressed: bool,
 ) -> bool {
     if is_full_fidelity_change_feed {
-        // Excluded by the Gateway 2.0 contract; see docs/GATEWAY_V2_SPEC.md.
+        // Excluded by the Gateway 2.0 contract; see sdk/cosmos/docs/specs/0011-gateway-v2.md.
         return false;
     }
     if is_rid_addressed {

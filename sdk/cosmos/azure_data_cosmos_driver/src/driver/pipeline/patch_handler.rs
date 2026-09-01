@@ -3,7 +3,7 @@
 
 //! Driver-side handler for [`OperationType::Patch`] operations.
 //!
-//! See `docs/PATCH_HANDLER_SPEC.md` for the full behavior contract. The
+//! See `sdk/cosmos/docs/specs/0017-patch-handler.md` for the full behavior contract. The
 //! short version:
 //!
 //! 1. Validate the patch spec (no ops that target partition-key paths).

@@ -5,6 +5,9 @@ replace the reqwest transport with an in-memory mock, so they measure driver
 overhead only — routing, signing, retry state, response parsing, and session
 token management — with no network I/O.
 
+See the [Cosmos SDK project documentation](../docs/README.md) for project and
+architecture context.
+
 ## Running the benchmarks
 
 ### Standard latency benchmark
@@ -31,5 +34,4 @@ For readable symbol names, build with debug symbols:
 ```sh
 cargo bench -p azure_data_cosmos_benchmarks --profile bench --bench point_read -- --profile-time 30
 ```
-
 
