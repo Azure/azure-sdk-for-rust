@@ -169,20 +169,23 @@ This is the sharpest architectural line in the project.
   `serde`, and exposes typed models and responses to applications. Response
   metadata handling is specified in
   [specs/0003-response-metadata.md](specs/0003-response-metadata.md).
-- **The driver is bytes.** Data plane request bodies are `&[u8]` and responses
-  are buffered `Vec<u8>`. The driver does not know, and must not assume,
-  anything about item shape. Payloads may be UTF-8 JSON or the Cosmos binary
-  encoding, detected transparently — see
-  [specs/0014-binary-encoding-high-level-design.md](specs/0014-binary-encoding-high-level-design.md)
-  and [specs/0015-binary-encoding.md](specs/0015-binary-encoding.md).
+- **The driver boundary is byte-oriented and schema-agnostic.** Data plane
+  request bodies are `&[u8]` and responses are buffered `Vec<u8>`. The driver
+  does not bind application payloads to customer schemas, Rust types, or another
+  language SDK's serialization model.
+- **Bounded generic processing is allowed.** The driver detects and transcodes
+  UTF-8 JSON and Cosmos binary JSON, parses service-defined query envelopes,
+  and inspects projected rows for generic operators such as `DISTINCT`. PATCH
+  performs a bounded driver-side read-modify-write over a JSON item. These
+  stages interpret encoding or JSON structure, but do not acquire knowledge of
+  the application's item schema. See
+  [specs/0014-binary-encoding-high-level-design.md](specs/0014-binary-encoding-high-level-design.md),
+  [specs/0015-binary-encoding.md](specs/0015-binary-encoding.md),
+  [specs/0013-query-engine.md](specs/0013-query-engine.md), and
+  [specs/0017-patch-handler.md](specs/0017-patch-handler.md).
 - **The driver does parse some metadata.** Account and container properties are
   deserialized internally to populate routing caches. That is control plane
   state, not customer data.
-- **One deliberate exception.** PATCH is implemented as a driver-side
-  read-modify-write loop because the service does not offer the required
-  semantics, so a single isolated handler parses a data plane body. Every other
-  stage still treats bodies as opaque. See
-  [specs/0017-patch-handler.md](specs/0017-patch-handler.md).
 
 ## Where to go next
 

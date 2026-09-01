@@ -152,10 +152,12 @@ operation pipeline → retry/failover → transport pipeline → FaultClient →
 - Every client the factory builds — data-plane (Gateway 1.x and Gateway 2.0)
   and metadata — is wrapped in a `FaultClient` carrying the rule list and the
   `TransportKind` of that client (`None` for metadata clients).
-- **Bootstrap is never wrapped.** The initial account-metadata probe runs on the
-  runtime's bootstrap transport, which is built before any driver exists.
-  `MetadataReadDatabaseAccount` rules therefore fire only on post-bootstrap
-  refreshes.
+- **Initial discovery is injectable when rules are configured.** Driver
+  initialization passes the driver-specific factory to a temporary bootstrap
+  transport, and tags the request as `MetadataReadDatabaseAccount`. Without
+  fault-injection rules, initialization uses the runtime's shared bootstrap
+  transport unchanged. Database-account rules may therefore match initial
+  discovery as well as later refreshes and reprobes.
 - Because injection sits under the retry layer, each retry attempt is evaluated
   independently: a `hit_limit: 1` rule fails the first attempt and lets the
   retry through.
@@ -324,8 +326,6 @@ Stated explicitly so the framework is not mistaken for something broader.
 
 - **Not a production feature.** Feature-gated, no configuration file or
   environment-variable surface, no serialization format for rules.
-- **No bootstrap injection.** Rules cannot affect the first account-metadata
-  fetch (§4).
 - **Operation coverage is partial.** `FaultOperationType::PatchItem` exists but
   `from_operation_and_resource` does not map `OperationType::Patch` — patch is a
   client-side read-modify-write, so tests target its `ReadItem` / `ReplaceItem`
