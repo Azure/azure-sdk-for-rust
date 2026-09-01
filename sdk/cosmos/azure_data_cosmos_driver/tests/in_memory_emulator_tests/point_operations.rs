@@ -90,7 +90,7 @@ async fn item_id_with_literal_percent_round_trips_through_driver() {
         .await
         .expect("driver should initialize");
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     let item_id = "item%41";
