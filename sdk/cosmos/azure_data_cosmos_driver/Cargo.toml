@@ -44,6 +44,9 @@ tracing.workspace = true
 url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
+[build-dependencies]
+rustc_version.workspace = true
+
 [dev-dependencies]
 azure_identity.workspace = true
 quick-xml.workspace = true

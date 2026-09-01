@@ -642,6 +642,7 @@ dependencies = [
  "quick-xml",
  "rand 0.10.2",
  "reqwest",
+ "rustc_version",
  "serde",
  "serde_json",
  "time",
