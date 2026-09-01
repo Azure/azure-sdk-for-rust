@@ -33,7 +33,23 @@ Use the bundled script for deterministic discovery and git operations. Run all c
    python3 .github/skills/create-hotfix/create_hotfix.py cherry-pick <sha>...
    ```
 
-   If cherry-picking conflicts, stop and report the conflict without aborting or skipping it.
+   The script automatically resolves `Cargo.lock` conflicts by taking `--ours`,
+   then regenerating it with:
+
+   ```bash
+   cargo generate-lockfile --manifest-path Cargo.toml
+   ```
+
+   If the JSON result has a `waiting` status, prompt the user to resolve and
+   stage the listed conflicts. Remain waiting for the user to confirm they are
+   ready, then run:
+
+   ```bash
+   python3 .github/skills/create-hotfix/create_hotfix.py continue
+   ```
+
+   Repeat this step if another commit conflicts. Do not abort or skip commits.
+   Only show the final message after the script returns a `complete` status.
 
 5. Report the selected crate, base tag, patch version, branch, and cherry-picked commits. Tell the user:
 

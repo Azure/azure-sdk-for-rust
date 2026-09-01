@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import importlib.util
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -101,6 +102,104 @@ class StableTagTests(unittest.TestCase):
             "--tags",
             CREATE_HOTFIX.UPSTREAM_URL,
             "refs/tags/azure_identity@*",
+        )
+
+
+class ConflictTests(unittest.TestCase):
+    def test_resolves_cargo_lock_and_returns_other_conflicts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            marker = Path(directory) / "lock-conflict"
+            with (
+                mock.patch.object(
+                    CREATE_HOTFIX,
+                    "conflicted_files",
+                    return_value=["Cargo.lock", "src/lib.rs"],
+                ),
+                mock.patch.object(CREATE_HOTFIX, "lock_conflict_marker") as get_marker,
+                mock.patch.object(CREATE_HOTFIX, "run") as run,
+            ):
+                get_marker.return_value = marker
+                conflicts = CREATE_HOTFIX.resolve_cargo_lock_conflict()
+
+            self.assertEqual(["src/lib.rs"], conflicts)
+            self.assertTrue(marker.exists())
+        self.assertEqual(
+            [
+                mock.call("git", "checkout", "--ours", "--", "Cargo.lock"),
+                mock.call("git", "add", "Cargo.lock"),
+            ],
+            run.call_args_list,
+        )
+
+    def test_continue_requires_an_active_cherry_pick(self):
+        args = mock.Mock()
+        with (
+            mock.patch.object(
+                CREATE_HOTFIX, "current_branch", return_value="hotfix/fixture"
+            ),
+            mock.patch.object(
+                CREATE_HOTFIX, "cherry_pick_in_progress", return_value=False
+            ),
+            mock.patch.object(CREATE_HOTFIX, "lock_conflict_marker") as get_marker,
+        ):
+            get_marker.return_value = mock.Mock()
+            with self.assertRaisesRegex(
+                CREATE_HOTFIX.CommandError, "no cherry-pick is in progress"
+            ):
+                CREATE_HOTFIX.continue_cherry_pick(args)
+
+    def test_advance_stops_on_non_conflict_failure(self):
+        result = CREATE_HOTFIX.subprocess.CompletedProcess(
+            args=["git", "cherry-pick", "--continue"],
+            returncode=1,
+            stdout="",
+            stderr="the previous cherry-pick is now empty",
+        )
+        with (
+            mock.patch.object(
+                CREATE_HOTFIX, "resolve_cargo_lock_conflict", return_value=[]
+            ),
+            mock.patch.object(CREATE_HOTFIX, "regenerate_cargo_lock"),
+            mock.patch.object(CREATE_HOTFIX, "run_process", return_value=result) as run,
+            mock.patch.object(
+                CREATE_HOTFIX, "cherry_pick_in_progress", return_value=True
+            ),
+            mock.patch.object(CREATE_HOTFIX, "conflicted_files", return_value=[]),
+        ):
+            with self.assertRaisesRegex(
+                CREATE_HOTFIX.CommandError, "cherry-pick is now empty"
+            ):
+                CREATE_HOTFIX.advance_cherry_pick("hotfix/fixture")
+
+        run.assert_called_once()
+
+    def test_regenerates_cargo_lock_after_conflicts_are_resolved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            marker = Path(directory) / "lock-conflict"
+            marker.touch()
+            with (
+                mock.patch.object(
+                    CREATE_HOTFIX,
+                    "lock_conflict_marker",
+                    return_value=marker,
+                ),
+                mock.patch.object(CREATE_HOTFIX, "run") as run,
+            ):
+                CREATE_HOTFIX.regenerate_cargo_lock()
+
+            self.assertFalse(marker.exists())
+
+        self.assertEqual(
+            [
+                mock.call(
+                    "cargo",
+                    "generate-lockfile",
+                    "--manifest-path",
+                    "Cargo.toml",
+                ),
+                mock.call("git", "add", "Cargo.lock"),
+            ],
+            run.call_args_list,
         )
 
 

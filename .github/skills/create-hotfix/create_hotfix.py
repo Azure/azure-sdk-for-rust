@@ -18,17 +18,27 @@ class CommandError(RuntimeError):
     pass
 
 
-def run(*args: str) -> str:
-    result = subprocess.run(
+def run_process(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
         args,
         check=False,
         encoding="utf-8",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
+
+
+def command_error(
+    args: tuple[str, ...], result: subprocess.CompletedProcess[str]
+) -> CommandError:
+    detail = result.stderr.strip() or result.stdout.strip()
+    return CommandError(f"{' '.join(args)} failed: {detail}")
+
+
+def run(*args: str) -> str:
+    result = run_process(*args)
     if result.returncode:
-        detail = result.stderr.strip() or result.stdout.strip()
-        raise CommandError(f"{' '.join(args)} failed: {detail}")
+        raise command_error(args, result)
     return result.stdout
 
 
@@ -137,6 +147,44 @@ def current_branch() -> str:
 
 def worktree_is_clean() -> bool:
     return not run("git", "status", "--porcelain").strip()
+
+
+def git_path(name: str) -> Path:
+    return Path(run("git", "rev-parse", "--git-path", name).strip())
+
+
+def cherry_pick_in_progress() -> bool:
+    return git_path("CHERRY_PICK_HEAD").exists()
+
+
+def lock_conflict_marker() -> Path:
+    return git_path("create-hotfix-cargo-lock-conflict")
+
+
+def conflicted_files() -> list[str]:
+    output = run("git", "diff", "--name-only", "--diff-filter=U", "-z")
+    return sorted(path for path in output.split("\0") if path)
+
+
+def resolve_cargo_lock_conflict() -> list[str]:
+    conflicts = conflicted_files()
+    if "Cargo.lock" not in conflicts:
+        return conflicts
+
+    run("git", "checkout", "--ours", "--", "Cargo.lock")
+    run("git", "add", "Cargo.lock")
+    lock_conflict_marker().touch()
+    return [path for path in conflicts if path != "Cargo.lock"]
+
+
+def regenerate_cargo_lock() -> None:
+    marker = lock_conflict_marker()
+    if not marker.exists():
+        return
+
+    run("cargo", "generate-lockfile", "--manifest-path", "Cargo.toml")
+    run("git", "add", "Cargo.lock")
+    marker.unlink()
 
 
 def is_ancestor(ancestor: str, descendant: str) -> bool:
@@ -289,12 +337,54 @@ def prepare(args: argparse.Namespace) -> dict[str, object]:
     }
 
 
+def advance_cherry_pick(branch: str) -> dict[str, object]:
+    while True:
+        conflicts = resolve_cargo_lock_conflict()
+        if conflicts:
+            return {"status": "waiting", "branch": branch, "conflicts": conflicts}
+
+        regenerate_cargo_lock()
+        command = ("git", "-c", "core.editor=true", "cherry-pick", "--continue")
+        result = run_process(*command)
+        if result.returncode == 0:
+            return {"status": "complete", "branch": branch}
+        if not cherry_pick_in_progress():
+            raise command_error(command, result)
+        if not conflicted_files():
+            raise command_error(command, result)
+
+
 def cherry_pick(args: argparse.Namespace) -> dict[str, object]:
     branch = current_branch()
     if not branch.startswith("hotfix/"):
         raise CommandError("cherry-pick must run from a hotfix/ branch")
-    run("git", "cherry-pick", *args.commits)
-    return {"branch": branch, "cherry_picked": args.commits}
+
+    if not cherry_pick_in_progress():
+        lock_conflict_marker().unlink(missing_ok=True)
+
+    command = ("git", "cherry-pick", *args.commits)
+    result = run_process(*command)
+    if result.returncode == 0:
+        return {
+            "status": "complete",
+            "branch": branch,
+            "cherry_picked": args.commits,
+        }
+    if not cherry_pick_in_progress():
+        raise command_error(command, result)
+    if not conflicted_files():
+        raise command_error(command, result)
+    return advance_cherry_pick(branch)
+
+
+def continue_cherry_pick(_: argparse.Namespace) -> dict[str, object]:
+    branch = current_branch()
+    if not branch.startswith("hotfix/"):
+        raise CommandError("continue must run from a hotfix/ branch")
+    if not cherry_pick_in_progress():
+        lock_conflict_marker().unlink(missing_ok=True)
+        raise CommandError("no cherry-pick is in progress")
+    return advance_cherry_pick(branch)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -319,6 +409,11 @@ def create_parser() -> argparse.ArgumentParser:
     )
     cherry_pick_parser.add_argument("commits", nargs="+", help="Commit SHAs.")
     cherry_pick_parser.set_defaults(handler=cherry_pick)
+
+    continue_parser = subparsers.add_parser(
+        "continue", help="Continue after resolving and staging other conflicts."
+    )
+    continue_parser.set_defaults(handler=continue_cherry_pick)
     return parser
 
 
