@@ -435,6 +435,10 @@ enum cosmos_CosmosReadConsistencyStrategy
    * Read the latest version across all regions (single-master / Strong).
    */
   COSMOS_READ_CONSISTENCY_STRATEGY_GLOBAL_STRONG = 4,
+  /**
+   * Read the latest committed version using a quorum read.
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_LATEST_COMMITTED = 5,
 };
 #ifndef __cplusplus
 #if __STDC_VERSION__ >= 202311L
@@ -487,12 +491,18 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
  * This enum is the **single source of truth** for those names on the C side.
  * Each discriminant is a literal copy of the corresponding
  * [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
- * literals to emit `= N`). Each discriminant must exactly match the driver
- * constant it copies.
+ * literals to emit `= N`). A compile-time guard in the Rust source that defines
+ * this enum (`src/error.rs`, not part of the generated header) verifies every
+ * discriminant against the driver constant it mirrors, so a value that drifts
+ * from the driver — or a driver constant that is renamed or removed — fails the
+ * build instead of silently diverging.
  *
  * [`SubStatusCode`] is a set of associated `pub const`s, not an enumerable
- * type, so keeping this enum in sync when the driver adds a new synthetic
- * `2xxxx` sub-status is a **manual** step: add the matching variant here.
+ * type, so exposing a *new* synthetic `2xxxx` sub-status on the C surface is
+ * still a manual step: add the variant to the Rust enum and pin it in that same
+ * guard. Because the guard maps variants with an exhaustive match, a variant
+ * left unpinned fails to compile — the enum and the driver cannot silently
+ * diverge.
  *
  * The values are *not* exhaustive of the `2xxxx` range: the driver leaves gaps
  * (e.g. `20009`, `20013`, `20103`) for future use. Do not invent variants for
@@ -640,6 +650,10 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_CLIENT_IMDS_REQWEST_FEATURE_REQUIRED = 20158,
   /**
+   * `CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED` (20159).
+   */
+  COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED = 20159,
+  /**
    * `CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT` (20200).
    */
   COSMOS_SUB_STATUS_CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT = 20200,
@@ -731,8 +745,8 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_CLIENT_FFI_PRECONDITION_ALREADY_SET = 20355,
   /**
-   * `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356). Reserved: mirrors
-   * the driver constant but no current wrapper path produces it.
+   * `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356). Returned when a
+   * request uses an operation that is unavailable in this wrapper build.
    */
   COSMOS_SUB_STATUS_CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR = 20356,
   /**
@@ -975,30 +989,6 @@ typedef struct cosmos_bytes_t {
 } cosmos_bytes_t;
 
 /**
- * Layout of the `cosmos_completion_queue_options_t` struct as it appears at
- * the C ABI boundary. Caller-owned, pass-by-value (per section 3.1.2 the
- * layout is published for inputs).
- *
- * The Rust representation does **not** derive `Copy` — nor is it materialized
- * by value from a caller-supplied pointer — because `include_error_details`
- * is declared as `bool` in the emitted C header. Materializing an
- * arbitrary caller byte through a Rust `bool` would be undefined behavior,
- * so `cqoptions_from_ptr` reads each field byte-by-byte via
- * [`std::ptr::addr_of!`] and inspects the boolean byte as a raw `u8`.
- */
-typedef struct cosmos_completion_queue_options_t {
-  uint32_t capacity_hint;
-  uint32_t max_capacity;
-  /**
-   * Whether to capture rich error payloads. Emitted as a C `bool`; the
-   * wrapper reads the underlying byte via a raw pointer and treats any
-   * non-zero value as `true`, so an arbitrary host-written byte cannot
-   * produce an invalid Rust `bool` (which would be undefined behavior).
-   */
-  bool include_error_details;
-} cosmos_completion_queue_options_t;
-
-/**
  * Payload half of the [`CosmosValue`] tagged union. Only the field selected
  * by the sibling `kind` discriminant may be read; reading any other field is
  * undefined behavior.
@@ -1208,6 +1198,30 @@ typedef struct cosmos_completion_t {
    */
   struct cosmos_completion_backing_t *backing;
 } cosmos_completion_t;
+
+/**
+ * Layout of the `cosmos_completion_queue_options_t` struct as it appears at
+ * the C ABI boundary. Caller-owned, pass-by-value (per section 3.1.2 the
+ * layout is published for inputs).
+ *
+ * The Rust representation does **not** derive `Copy` — nor is it materialized
+ * by value from a caller-supplied pointer — because `include_error_details`
+ * is declared as `bool` in the emitted C header. Materializing an
+ * arbitrary caller byte through a Rust `bool` would be undefined behavior,
+ * so `cqoptions_from_ptr` reads each field byte-by-byte via
+ * [`std::ptr::addr_of!`] and inspects the boolean byte as a raw `u8`.
+ */
+typedef struct cosmos_completion_queue_options_t {
+  uint32_t capacity_hint;
+  uint32_t max_capacity;
+  /**
+   * Whether to capture rich error payloads. Emitted as a C `bool`; the
+   * wrapper reads the underlying byte via a raw pointer and treats any
+   * non-zero value as `true`, so an arbitrary host-written byte cannot
+   * produce an invalid Rust `bool` (which would be undefined behavior).
+   */
+  bool include_error_details;
+} cosmos_completion_queue_options_t;
 
 /**
  * A single custom request/operation header. Both pointers are
@@ -1576,6 +1590,21 @@ typedef struct cosmos_operation_request_t {
    * Per-call options. NULL = use driver/runtime defaults.
    */
   const struct cosmos_operation_options_t *options;
+  /**
+   * Stable PATCH tracking UUID (NUL-terminated UTF-8). NULL = generate one
+   * for this invocation.
+   */
+  const char *patch_tracking_id;
+  /**
+   * Maximum number of PATCH tracking entries retained on the item. The
+   * oldest entry is evicted when full. `0` = use the driver default.
+   */
+  uint16_t patch_tracking_capacity;
+  /**
+   * Age-based retention window in whole seconds. Capacity pressure can
+   * evict an entry earlier. `0` = use the driver default.
+   */
+  uint32_t patch_tracking_retention_seconds;
 } cosmos_operation_request_t;
 
 #ifdef __cplusplus
@@ -1651,6 +1680,17 @@ void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
  * undefined behavior.
  */
 void cosmos_bytes_free(struct cosmos_bytes_t bytes);
+
+/**
+ * Returns the effective PATCH tracking UUID carried by a completion.
+ *
+ * The returned NUL-terminated UTF-8 string is borrowed from `completion` and
+ * remains valid until that completion is freed. Returns NULL for non-PATCH
+ * operations, untracked retry-safe PATCH operations, or an invalid completion
+ * pointer. For tracked PATCH operations, the ID is also available on cancelled
+ * completions because it is resolved before execution begins.
+ */
+const char *cosmos_completion_patch_tracking_id(const struct cosmos_completion_t *completion);
 
 /**
  * Create a completion queue bound to `runtime`. Returns NULL if `runtime`

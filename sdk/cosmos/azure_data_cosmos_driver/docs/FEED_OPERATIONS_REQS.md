@@ -165,6 +165,22 @@ Synthetic streaming `ORDER BY` pages sum request charge, merge compound session 
 
 Within a resumed full-key tie, RID filtering follows each backend page's `x-ms-cosmos-query-execution-info`: modern pages use `reverseIndexScan`, while absent or legacy `reverseRidEnabled` metadata falls back to the first ORDER BY direction. Across partition streams, equal keys are ordered by leftmost EPK range, matching .NET and Java; RID is only a per-range continuation discriminator.
 
+### Cross-Partition `DISTINCT`
+
+`DISTINCT` is a composition stage above the fan-out root — `Distinct -> SequentialDrain` when unordered, `Distinct -> StreamingOrderedMerge` when ordered. It keys on a structural, type-aware 128-bit hash of the **whole projected row** (`driver::dataflow::distinct_hash`), not on the `ORDER BY` items, so one node serves both modes and only the retained state differs. The hash gives each JSON type its own seed (so `null`/`false`/`""`/`[]`/`{}` never collide), treats arrays as position-sensitive and objects as order-insensitive, equates `5` with `5.0`, and normalizes `-0.0`. It is standalone so `GROUP BY` can reuse it.
+
+Ordered `DISTINCT` — only `SELECT DISTINCT VALUE <path> … ORDER BY <same path>`, the exact shape the service reports as `Ordered` (see below); list projections and multi-column `ORDER BY` stay unordered even when every projected path is covered — deduplicates by adjacency, so it keeps one hash, runs in O(1) memory, and resumes from the 16 bytes `PipelineNodeState::Distinct` persists: a value the stage has moved past can never reappear. This complements rather than duplicates the merge's own resume trim, which is positional (`_rid` + `skipCount`); `last_hash` catches a *different* `_rid` carrying the *same* projected value — two documents that are one `DISTINCT` row but two `ORDER BY` rows.
+
+Unordered `DISTINCT` retains every hash seen (unbounded, ~16 bytes per distinct value) and is **not** resumable: the set *is* the state, serializing it would produce an unbounded token, and truncating it would silently re-emit duplicates. `Distinct::snapshot_state` fails with `400 / 20124 ClientDistinctContinuationUnsupported`, so `OperationPlan::to_continuation_token` errors at mint time — while the caller still holds a live plan and can keep draining in process or rewrite with a matching `ORDER BY`. In-process paging is fully supported. Once drained there is no state left to lose, so the stage snapshots as `Drained` like any other finished node.
+
+The driver executes whatever `distinctType` the plan reports and never upgrades `Unordered` to `Ordered`. The local plan generator (`query::plan`, backing the in-memory emulator) is deliberately stricter than the service planner — see `plan::distinct_is_ordered` — because misclassifying a stream as adjacency-safe drops rows, while the reverse only costs resumability.
+
+`Ordered` requires a specific query shape, measured against a live account with production's `SUPPORTED_QUERY_FEATURES`: the service reports it for `SELECT DISTINCT VALUE <path> FROM c ORDER BY <same path>` (either direction) and `Unordered` for everything else — the list form (`SELECT DISTINCT c.name …`) whatever its `ORDER BY`, a sort on a different path, a multi-column `ORDER BY` even when it leads with the projected path, and no `ORDER BY` at all. Advertising `Distinct` is mandatory: without it the service rejects any `DISTINCT` query with `400 / 1004 CrossPartitionQueryNotServable`. `tests/gateway_query_plan_comparison.rs::gw_distinct` pins each shape against the live service, and `plan::distinct_is_ordered` encodes the same rule so the local generator agrees.
+
+A live split is safe in both modes: the fan-out node absorbs `SplitRequired` internally and `Distinct` is never rebuilt, so an emitted value cannot be resurrected — and `last_hash` is a value rather than a position, so re-resolving ranges does not invalidate it. Resumed tokens are validated against the plan: a `distinct_type` mismatch, a `Distinct` token for a plan that no longer deduplicates, and a pre-`DISTINCT` token for one that does are all rejected rather than reinterpreted.
+
+Pages whose rows are all duplicates are suppressed rather than surfaced as empty pages, but their request charge and diagnostics fold into the next emitted page (or flush as a final empty page if the child drains first), so a redundant `DISTINCT` query never under-reports its cost.
+
 ### The Driver DOES
 
 - Plan the pipeline (determine targeting, resolve partitions, build the node tree).

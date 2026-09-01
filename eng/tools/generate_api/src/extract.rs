@@ -7,6 +7,7 @@ use crate::{
         ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiMemberKind, ApiModel, ApiModule,
         ApiNavigationPath, ApiPathReference, InherentImplSortKey,
     },
+    rustdoc_compat,
 };
 use rustdoc_types::{
     Constant, Crate, Function, FunctionHeader, GenericArg, GenericArgs, GenericBound,
@@ -742,7 +743,8 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
     ApiItem {
         name: item_name(krate, item),
         kind: item_kind(item),
-        source_id: Some(qualified_source_id(krate, item.id)),
+        source_id: (!matches!(item.inner, ItemEnum::Use(_)))
+            .then(|| qualified_source_id(krate, item.id)),
         navigation_paths: item_navigation_paths(krate, item),
         owner_name: None,
         owner_kind: None,
@@ -1306,12 +1308,14 @@ fn collect_type_path_references_with_elision(
                     );
                 }
             }
-            collect_generic_args_path_references_with_elision(
-                krate,
-                args,
-                synthetic_lifetimes,
-                references,
-            );
+            if let Some(args) = args {
+                collect_generic_args_path_references_with_elision(
+                    krate,
+                    args,
+                    synthetic_lifetimes,
+                    references,
+                );
+            }
         }
         Type::Generic(_) | Type::Primitive(_) | Type::Infer => {}
     }
@@ -1339,12 +1343,14 @@ fn collect_generic_args_path_references_with_elision(
                 }
             }
             for constraint in constraints {
-                collect_generic_args_path_references_with_elision(
-                    krate,
-                    &constraint.args,
-                    synthetic_lifetimes,
-                    references,
-                );
+                if let Some(args) = &constraint.args {
+                    collect_generic_args_path_references_with_elision(
+                        krate,
+                        args,
+                        synthetic_lifetimes,
+                        references,
+                    );
+                }
                 match &constraint.binding {
                     rustdoc_types::AssocItemConstraintKind::Equality(term) => {
                         collect_term_path_references_with_elision(
@@ -1632,9 +1638,7 @@ fn field_has_pin_attribute(field_item: &Item) -> bool {
 }
 
 fn has_automatically_derived(item: &Item) -> bool {
-    item.attrs
-        .iter()
-        .any(|attr| attr.contains("automatically_derived"))
+    rustdoc_compat::is_automatically_derived(item)
 }
 
 fn known_derive_trait_name(path: &Path) -> Option<&'static str> {
@@ -1947,19 +1951,19 @@ fn extract_associated_member(krate: &Crate, item: &Item) -> Option<ApiMember> {
 }
 
 fn extract_attributes(item: &Item) -> Vec<ApiAttribute> {
-    item.attrs
-        .iter()
+    rustdoc_compat::attribute_texts(item)
+        .into_iter()
         .map(|text| ApiAttribute {
-            text: normalize_attribute(text),
+            text: normalize_attribute(&text),
         })
         .collect()
 }
 
 fn extract_module_attributes(item: &Item, is_crate_root: bool) -> Vec<ApiAttribute> {
-    item.attrs
-        .iter()
+    rustdoc_compat::attribute_texts(item)
+        .into_iter()
         .map(|text| ApiAttribute {
-            text: normalize_module_attribute(text, is_crate_root),
+            text: normalize_module_attribute(&text, is_crate_root),
         })
         .collect()
 }
@@ -2106,7 +2110,11 @@ fn collapse_attribute_whitespace(attribute: &str) -> String {
             continue;
         }
 
-        if pending_space && !normalized.is_empty() && !normalized.ends_with(['(', '[', '{']) {
+        if pending_space
+            && !normalized.is_empty()
+            && !normalized.ends_with(['(', '[', '{'])
+            && !matches!(ch, ')' | ']' | '}' | ',')
+        {
             normalized.push(' ');
         }
         pending_space = false;
@@ -3280,7 +3288,9 @@ fn render_type_with_elision(type_: &Type, synthetic_lifetimes: &HashSet<String>)
             }
             rendered.push_str(">::");
             rendered.push_str(name);
-            rendered.push_str(&render_generic_args_with_elision(args, synthetic_lifetimes));
+            if let Some(args) = args {
+                rendered.push_str(&render_generic_args_with_elision(args, synthetic_lifetimes));
+            }
             rendered
         }
     }
@@ -3355,10 +3365,9 @@ fn render_assoc_constraint_with_elision(
     synthetic_lifetimes: &HashSet<String>,
 ) -> String {
     let mut rendered = constraint.name.clone();
-    rendered.push_str(&render_generic_args_with_elision(
-        &constraint.args,
-        synthetic_lifetimes,
-    ));
+    if let Some(args) = &constraint.args {
+        rendered.push_str(&render_generic_args_with_elision(args, synthetic_lifetimes));
+    }
     match &constraint.binding {
         rustdoc_types::AssocItemConstraintKind::Equality(term) => {
             rendered.push_str(" = ");

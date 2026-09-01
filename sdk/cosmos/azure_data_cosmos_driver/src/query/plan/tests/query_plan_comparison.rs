@@ -507,15 +507,137 @@ fn distinct_unordered() {
 }
 
 #[test]
+/// The Gateway reports `Unordered` when the sort key is not a prefix of the
+/// `DISTINCT` projection: the sort cannot group equal projections into runs, so
+/// adjacency deduplication (and therefore continuation) is unavailable. Java
+/// pins this pair in `TestSuiteBase.queryWithOrderByProvider`
+/// (`DistinctQueryTests.queryDocumentsWithOrderBy`), where the mismatched form
+/// fails with HTTP 400 on resume.
+fn distinct_with_mismatched_order_by_is_unordered() {
+    assert_eq!(
+        plan("SELECT DISTINCT VALUE c.id FROM c ORDER BY c._ts DESC")
+            .query_info
+            .distinct_type,
+        DistinctType::Unordered
+    );
+    assert_eq!(
+        plan("SELECT DISTINCT VALUE c.id FROM c ORDER BY c.id DESC")
+            .query_info
+            .distinct_type,
+        DistinctType::Ordered
+    );
+}
+
+/// `SELECT DISTINCT *` deduplicates whole documents, which no single-property
+/// sort can group into runs.
+#[test]
+fn distinct_star_with_order_by_is_unordered() {
+    assert_eq!(
+        plan("SELECT DISTINCT * FROM c ORDER BY c.name")
+            .query_info
+            .distinct_type,
+        DistinctType::Unordered
+    );
+}
+
+/// Pins the local classifier against `distinctType` measured from a live
+/// Gateway using production's `SUPPORTED_QUERY_FEATURES`. The same shapes are
+/// re-checked against the service by
+/// `tests/gateway_query_plan_comparison.rs::gw_distinct`.
+///
+/// The service reports `Ordered` only for `SELECT DISTINCT VALUE <path>` whose
+/// `ORDER BY` is exactly that one path. Every other form is downgraded — the
+/// list form whatever its `ORDER BY`, a sort on a different path, and a
+/// multi-column sort even when it leads with the projected path.
+#[test]
+fn distinct_is_ordered_only_for_the_value_form_matching_its_order_by() {
+    // Measured: Ordered.
+    assert_eq!(
+        plan("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name ASC")
+            .query_info
+            .distinct_type,
+        DistinctType::Ordered
+    );
+    // Measured: Unordered — a multi-column ORDER BY, even one that *leads*
+    // with the projected path. Adjacency would in fact still hold here, but
+    // the service does not report it, and we follow the service.
+    assert_eq!(
+        plan("SELECT DISTINCT VALUE c.id FROM c ORDER BY c.id, c.other")
+            .query_info
+            .distinct_type,
+        DistinctType::Unordered
+    );
+    // Measured: Unordered — list form, even projecting a single path.
+    assert_eq!(
+        plan("SELECT DISTINCT c.name FROM c ORDER BY c.name ASC")
+            .query_info
+            .distinct_type,
+        DistinctType::Unordered
+    );
+    // Measured: Unordered — sort covers only the first of two projections.
+    assert_eq!(
+        plan("SELECT DISTINCT c.name, c.city FROM c ORDER BY c.name ASC")
+            .query_info
+            .distinct_type,
+        DistinctType::Unordered
+    );
+    // Measured: Unordered — no ORDER BY at all.
+    assert_eq!(
+        plan("SELECT DISTINCT VALUE c.name FROM c")
+            .query_info
+            .distinct_type,
+        DistinctType::Unordered
+    );
+    // A sort on a different path cannot group equal projections.
+    assert_eq!(
+        plan("SELECT DISTINCT VALUE c.id FROM c ORDER BY c._ts DESC")
+            .query_info
+            .distinct_type,
+        DistinctType::Unordered
+    );
+}
+
+/// Constant DISTINCT collapses to `None` only without a FROM clause. With one,
+/// the query yields a row per document, so deduplication is real work — measured
+/// live, and pinned by `gw_distinct`. Getting this wrong makes the driver skip
+/// the DISTINCT stage entirely and return one row per document.
+#[test]
+fn constant_distinct_collapses_only_without_a_from_clause() {
+    for sql in [
+        "SELECT DISTINCT VALUE 1",
+        "SELECT DISTINCT VALUE null",
+        "SELECT DISTINCT VALUE 'a'",
+    ] {
+        assert_eq!(
+            plan(sql).query_info.distinct_type,
+            DistinctType::None,
+            "{sql}"
+        );
+    }
+    for sql in [
+        "SELECT DISTINCT VALUE 1 FROM c",
+        "SELECT DISTINCT VALUE null FROM c",
+        "SELECT DISTINCT 1 AS p FROM c",
+    ] {
+        assert_eq!(
+            plan(sql).query_info.distinct_type,
+            DistinctType::Unordered,
+            "{sql}"
+        );
+    }
+}
+
+#[test]
 fn distinct_ordered() {
     assert_eq!(
-        plan("SELECT DISTINCT c.name FROM c ORDER BY c.name ASC"),
+        plan("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name ASC"),
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
             query_info: LocalQueryInfo {
                 distinct_type: DistinctType::Ordered,
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.name".into()],
+                has_select_value: true,
                 ..qi()
             },
         }
@@ -968,7 +1090,9 @@ fn complex_distinct_top_order() {
         QueryPlan {
             pk_filters: PartitionKeyFilter::Unconstrained,
             query_info: LocalQueryInfo {
-                distinct_type: DistinctType::Ordered,
+                // List form: the service downgrades it to `Unordered` whatever
+                // its ORDER BY. See `plan::distinct_is_ordered`.
+                distinct_type: DistinctType::Unordered,
                 top: Some(5),
                 order_by: vec![SortOrder::Ascending],
                 order_by_expressions: vec!["c.name".into()],
@@ -1047,7 +1171,11 @@ fn complex_everything() {
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
             query_info: LocalQueryInfo {
-                distinct_type: DistinctType::Ordered,
+                // `Unordered`, not `Ordered`: the sort covers only `c.city`, while the
+                // projection carries additional columns, so equal projected rows are
+                // not guaranteed to arrive adjacently and adjacency deduplication
+                // would be unsound. See `plan::distinct_is_ordered`.
+                distinct_type: DistinctType::Unordered,
                 top: Some(100),
                 offset: None,
                 limit: None,
@@ -1618,7 +1746,11 @@ fn complex_all_clauses() {
         QueryPlan {
             pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("x".into())]),
             query_info: LocalQueryInfo {
-                distinct_type: DistinctType::Ordered,
+                // `Unordered`, not `Ordered`: the sort covers only `c.city`, while the
+                // projection carries additional columns, so equal projected rows are
+                // not guaranteed to arrive adjacently and adjacency deduplication
+                // would be unsound. See `plan::distinct_is_ordered`.
+                distinct_type: DistinctType::Unordered,
                 top: Some(50),
                 offset: None,
                 limit: None,
@@ -2683,7 +2815,11 @@ fn complex_pk_in_with_distinct_top_order() {
     assert_eq!(
         qp.query_info,
         LocalQueryInfo {
-            distinct_type: DistinctType::Ordered,
+            // `Unordered`, not `Ordered`: the sort covers only `c.name`, while the
+            // projection carries additional columns, so equal projected rows are
+            // not guaranteed to arrive adjacently and adjacency deduplication
+            // would be unsound. See `plan::distinct_is_ordered`.
+            distinct_type: DistinctType::Unordered,
             top: Some(10),
             order_by: vec![SortOrder::Ascending],
             order_by_expressions: vec!["c.name".into()],
@@ -2769,7 +2905,11 @@ fn complex_everything_with_hpk() {
                 PartitionKeyValue::String("u1".into()),
             ]),
             query_info: LocalQueryInfo {
-                distinct_type: DistinctType::Ordered,
+                // `Unordered`, not `Ordered`: the sort covers only `c.city`, while the
+                // projection carries additional columns, so equal projected rows are
+                // not guaranteed to arrive adjacently and adjacency deduplication
+                // would be unsound. See `plan::distinct_is_ordered`.
+                distinct_type: DistinctType::Unordered,
                 top: Some(100),
                 offset: Some(5),
                 limit: Some(20),

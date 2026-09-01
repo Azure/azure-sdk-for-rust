@@ -1,0 +1,2887 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "unordered_duplicates_across_partitions",
+      "description": "The same projected value emitted by two different physical partitions is one DISTINCT row. Neither the backend's per-partition dedup nor a per-page set catches this; only global client-side state does.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDocuments"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "80"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "p0-r1",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "p0-r2",
+                    "payload": "Redmond"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          },
+          {
+            "range": {
+              "minEpk": "80",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "p1-r1",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "p1-r2",
+                    "payload": "Boston"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        2,
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Seattle",
+        "Redmond",
+        "Boston"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "unordered_duplicates_across_pages",
+      "description": "A duplicate that straddles a page boundary within one partition must collapse, so the retained state has to outlive a single page.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/DistinctQueryPipelineStageTests.cs",
+          "test": "SanityTests"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.item FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": 42
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": 1337
+                  }
+                ],
+                "continuation": "page-2"
+              },
+              {
+                "rows": [
+                  {
+                    "rid": "r3",
+                    "payload": 1337
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": 42
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        3,
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        42,
+        1337
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "unordered_duplicates_within_page",
+      "description": "Repeats inside a single backend page collapse. Real Cosmos dedups within a partition first, but a page can still repeat a value when the query fans out over a JOIN.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDistinctDocuments"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.age FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": 1
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": 1
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": 2
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": 1
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        1,
+        2
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "unordered_no_duplicates_passthrough",
+      "description": "A stream with nothing repeated passes through untouched, so deduplication never drops a legitimately distinct row.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": "Redmond"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Boston"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Seattle",
+        "Redmond",
+        "Boston"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "unordered_all_rows_duplicate_single_output",
+      "description": "Every row carries the same value, so exactly one survives. Exercises the all-duplicate page suppression path: intermediate pages must not surface as empty pages, but their request charge must still be reported.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/DistinctQueryPipelineStageTests.cs",
+          "test": "SanityTests"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Seattle"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Seattle"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": "p2"
+              },
+              {
+                "rows": [
+                  {
+                    "rid": "r2",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": "p3"
+              },
+              {
+                "rows": [
+                  {
+                    "rid": "r3",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Seattle"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "type_null_and_boolean_values",
+      "description": "null, false, and true are three separate DISTINCT values and never collide with each other. Each carries its own hash type seed.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/DistinctHashBaselineTests.cs",
+          "test": "ElementsHash"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/implementation/query/DistinctHashTest.java",
+          "test": "booleanHash"
+        }
+      ],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.flag FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": null
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": false
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": true
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": null
+                  },
+                  {
+                    "rid": "r5",
+                    "payload": false
+                  },
+                  {
+                    "rid": "r6",
+                    "payload": true
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        null,
+        false,
+        true
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "type_empty_string_array_object_are_distinct",
+      "description": "The empty string, the empty array, and the empty object are three different values. Their type seeds are the only thing separating them, so a hash that folds only content would collapse all three.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/DistinctHashBaselineTests.cs",
+          "test": "ElementsHash"
+        }
+      ],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.value FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": ""
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": []
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": {}
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": null
+                  },
+                  {
+                    "rid": "r5",
+                    "payload": ""
+                  },
+                  {
+                    "rid": "r6",
+                    "payload": []
+                  },
+                  {
+                    "rid": "r7",
+                    "payload": {}
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "",
+        [],
+        {},
+        null
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "numeric_int_vs_float_equal",
+      "description": "5 and 5.0 are the same Cosmos number, so they deduplicate together. Java asserts exactly this against a live account.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDocumentsForDistinctIntValues"
+        }
+      ],
+      "layers": [
+        "distinctMap",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.intprop FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "intprop": 5
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "intprop": 5.0
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "intprop": 6
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": 5
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": 5.0
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": 6
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        5,
+        6
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "numeric_negative_zero_equals_zero",
+      "description": "-0.0 and 0.0 are numerically equal and must deduplicate. .NET normalizes the sign bit in CosmosNumberHasher but has no test for it; Java would treat them as different. Rust follows .NET.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos/src/Query/Core/Pipeline/Distinct/DistinctHash.cs",
+          "test": "CosmosNumberHasher (implementation; no peer test exists)"
+        }
+      ],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.value FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": -0.0
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": 0.0
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": 0
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        -0.0
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "object_key_order_irrelevant",
+      "description": "Two objects with the same properties in different orders are one DISTINCT value. Both peers fold object properties with XOR precisely so key order cannot matter; only Java tests it.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/implementation/query/DistinctHashTest.java",
+          "test": "jsonObjectHash"
+        },
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos/src/Query/Core/Pipeline/Distinct/DistinctHash.cs",
+          "test": "Visit(CosmosObject) (implementation; no .NET test exists)"
+        }
+      ],
+      "layers": [
+        "distinctMap",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.pet FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "pet": {
+            "name": "fido",
+            "species": "dog"
+          }
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "pet": {
+            "species": "dog",
+            "name": "fido"
+          }
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "pet": {
+            "name": "fido",
+            "species": "cat"
+          }
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": {
+                      "name": "fido",
+                      "species": "dog"
+                    }
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": {
+                      "species": "dog",
+                      "name": "fido"
+                    }
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": {
+                      "name": "fido",
+                      "species": "cat"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        {
+          "name": "fido",
+          "species": "dog"
+        },
+        {
+          "name": "fido",
+          "species": "cat"
+        }
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "array_order_matters",
+      "description": "Arrays are position-sensitive, so [1,2] and [2,1] are two DISTINCT values while a repeat of [1,2] collapses. The mirror image of the object rule above.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/implementation/query/DistinctHashTest.java",
+          "test": "arrayNodeHash"
+        },
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/DistinctHashBaselineTests.cs",
+          "test": "ElementsHash"
+        }
+      ],
+      "layers": [
+        "distinctMap",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.tags FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "tags": [
+            1,
+            2
+          ]
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "tags": [
+            2,
+            1
+          ]
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "tags": [
+            1,
+            2
+          ]
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": [
+                      1,
+                      2
+                    ]
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": [
+                      2,
+                      1
+                    ]
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": [
+                      1,
+                      2
+                    ]
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "wrapped_value_differs_from_bare",
+      "description": "A value, that value inside an array, and that value as an object property are three DISTINCT values. Guards against a hash that folds only leaf content and ignores structure.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/DistinctHashBaselineTests.cs",
+          "test": "WrappedElementsHash"
+        }
+      ],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.value FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": 42
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": [
+                      42
+                    ]
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": {
+                      "prop": 42
+                    }
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": 42
+                  },
+                  {
+                    "rid": "r5",
+                    "payload": [
+                      42
+                    ]
+                  },
+                  {
+                    "rid": "r6",
+                    "payload": {
+                      "prop": 42
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        42,
+        [
+          42
+        ],
+        {
+          "prop": 42
+        }
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "unicode_strings_and_keys",
+      "description": "CJK values and Arabic object keys round-trip through the hash without collapsing distinct values. .NET's mixed-type corpus carries exactly these.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/DistinctQueryPipelineStageTests.cs",
+          "test": "MixedTypeTests"
+        }
+      ],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.value FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "\u654f\u6377\u7684\u68d5\u8272\u72d0\u72f8"
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": "\u654f\u6377\u7684\u68d5\u8272\u72d0\u72f8"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": {
+                      "\u0641\u0648\u0642": 1
+                    }
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": {
+                      "\u062a\u062d\u062a": 1
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "\u654f\u6377\u7684\u68d5\u8272\u72d0\u72f8",
+        {
+          "\u0641\u0648\u0642": 1
+        },
+        {
+          "\u062a\u062d\u062a": 1
+        }
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "select_list_multi_column",
+      "description": "DISTINCT over a multi-column projection deduplicates on the whole projected row, not on any single column. Two rows agreeing on one column but not the other are both kept.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDistinctDocuments"
+        },
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT c.name, c.city FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "name": "ann",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "name": "ann",
+          "city": "Boston"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "name": "ann",
+          "city": "Seattle"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": {
+                      "name": "ann",
+                      "city": "Seattle"
+                    }
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": {
+                      "name": "ann",
+                      "city": "Boston"
+                    }
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": {
+                      "name": "ann",
+                      "city": "Seattle"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        {
+          "name": "ann",
+          "city": "Seattle"
+        },
+        {
+          "name": "ann",
+          "city": "Boston"
+        }
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "select_star_whole_document",
+      "description": "SELECT DISTINCT * deduplicates whole documents. Since every document carries a unique id and system properties, nothing collapses \u2014 the guard is that DISTINCT does not corrupt the passthrough.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDistinctDocuments"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT * FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Seattle"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "expectedValues": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "select_value_constant_with_from_still_deduplicates",
+      "description": "DISTINCT over a constant collapses to distinctType None only when there is no FROM clause. With a FROM the query yields one row per document, so deduplication is real work and the service reports Unordered \u2014 measured live. Every row is the same constant, so exactly one survives.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDistinctDocuments"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE 1 FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        1
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "filters_and_parameters_apply_before_distinct",
+      "description": "A parameterized WHERE clause narrows the rows before deduplication, so DISTINCT never sees the filtered-out values.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDistinctDocuments"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c WHERE c.active = @active",
+        "parameters": [
+          {
+            "name": "@active",
+            "value": true
+          }
+        ],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle",
+          "active": true
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Seattle",
+          "active": true
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston",
+          "active": false
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Seattle"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "empty_total_result",
+      "description": "A DISTINCT query matching no documents drains cleanly with no rows rather than hanging or erroring.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c WHERE c.city = 'nowhere'",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "empty_backend_page_mid_stream",
+      "description": "An empty intermediate backend page (a partition whose rows were all filtered out) must not terminate the merge or be mistaken for an all-duplicate page.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/DistinctQueryPipelineStageTests.cs",
+          "test": "SanityTests"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": "p2"
+              },
+              {
+                "rows": [],
+                "continuation": "p3"
+              },
+              {
+                "rows": [
+                  {
+                    "rid": "r2",
+                    "payload": "Boston"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Seattle",
+        "Boston"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "single_logical_partition_scope",
+      "description": "A DISTINCT query pinned to one logical partition still deduplicates; it just never fans out.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDocuments"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c WHERE c.pk = 'solo'",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "solo",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "solo",
+          "city": "Seattle"
+        },
+        {
+          "id": "d3",
+          "pk": "solo",
+          "city": "Boston"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Seattle",
+        "Boston"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "ordered_adjacent_dedup",
+      "description": "With a matching ORDER BY the merge delivers equal values adjacently, so a single retained hash is enough. This is the mode that supports continuation.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ContinuationTokenSupportAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDocumentsWithOrderBy"
+        }
+      ],
+      "layers": [
+        "distinctMap",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Redmond"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Boston"
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": "Redmond"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Redmond"
+                  },
+                  {
+                    "rid": "r4",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "r5",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        2,
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Redmond",
+        "Seattle"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "ordered_descending_adjacent_dedup",
+      "description": "Descending ORDER BY groups equal values into runs just as ascending does; the map only cares about adjacency, not direction.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/TestSuiteBase.java",
+          "test": "queryWithOrderByProvider"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city DESC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Descending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Boston"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Boston"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Seattle",
+        "Boston"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "ordered_non_adjacent_repeat_is_not_deduped",
+      "description": "Documents the adjacency assumption rather than a desirable behavior: an ordered map deliberately keeps a repeat separated by a different value. Only reachable if the upstream stream is not actually sorted, which the planner prevents by choosing Ordered solely when the plan reports it.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos/src/Query/Core/Pipeline/Distinct/DistinctMap.OrderedDistinctMap.cs",
+          "test": "OrderedDistinctMap.Add (implementation; untested in both peers)"
+        }
+      ],
+      "layers": [
+        "distinctMap",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  },
+                  {
+                    "rid": "r2",
+                    "payload": "Boston"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Seattle",
+        "Boston",
+        "Seattle"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "ordered_run_spanning_pages",
+      "description": "A run of equal values split across two emitted pages must not re-emit its head on the second page. Exercises the map state surviving a page boundary in process.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ContinuationTokenSupportAsync"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Redmond"
+                  }
+                ],
+                "continuation": "p2"
+              },
+              {
+                "rows": [
+                  {
+                    "rid": "r2",
+                    "payload": "Redmond"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Redmond",
+        "Seattle"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "ordered_resume_suppresses_boundary_row",
+      "description": "Resuming from a checkpoint whose last emitted value was Redmond must drop the re-delivered Redmond and emit only what follows. Without the persisted hash the caller would see Redmond twice.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ContinuationTokenSupportAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDocumentsWithOrderBy"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r2",
+                    "payload": "Redmond"
+                  },
+                  {
+                    "rid": "r3",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Seattle"
+      ],
+      "checkpoint": {
+        "lastValue": "Redmond"
+      },
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "ordered_resume_round_trip_matches_full_drain",
+      "description": "Draining an ordered DISTINCT query in one pass and draining it across a serialized continuation token must produce the same rows in the same order.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_CosmosElementContinuationTokenAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Redmond"
+        },
+        {
+          "id": "d6",
+          "pk": "pk-f",
+          "city": "Austin"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1,
+        2,
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Austin",
+        "Boston",
+        "Redmond",
+        "Seattle"
+      ],
+      "checkpoint": {
+        "resumeAfterPage": 1
+      },
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "distinct_order_by_mismatched_field_is_unordered",
+      "description": "When the sort key is not a prefix of the DISTINCT projection the Gateway reports Unordered, because sorting on a different field cannot group equal projections into runs. Java pins the pair and expects HTTP 400 when such a query is resumed.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/TestSuiteBase.java",
+          "test": "queryWithOrderByProvider"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle",
+          "rank": 3
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Boston",
+          "rank": 1
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle",
+          "rank": 2
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Seattle"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "unordered_continuation_token_rejected",
+      "description": "Asking for a continuation token on an unordered DISTINCT query fails at mint time with actionable guidance, rather than returning a token whose resume would re-emit rows. .NET and Java both refuse here.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos/src/Query/Core/Pipeline/DisallowContinuationTokenMessages.cs",
+          "test": "DisallowContinuationTokenMessages.Distinct"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/query/DistinctDocumentQueryExecutionContext.java",
+          "test": "createAsync (BadRequestException on lastHash for a non-ordered query)"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Boston"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": "p2"
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1
+      ],
+      "expectedIds": [],
+      "expectedValues": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "clientDistinctContinuationUnsupported",
+        "messageFragment": "ORDER BY"
+      }
+    },
+    {
+      "id": "malformed_token_rejected",
+      "description": "A continuation token that is not valid for this operation is rejected rather than silently ignored, which would restart the query and re-emit every row.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/query/DistinctContinuationToken.java",
+          "test": "tryParse"
+        },
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos/src/Query/Core/Pipeline/Distinct/DistinctQueryPipelineStage.cs",
+          "test": "DistinctContinuationToken.TryParse"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "clientContinuationTokenShapeMismatch",
+        "messageFragment": "does not match"
+      }
+    },
+    {
+      "id": "token_shape_mismatch_rejected",
+      "description": "A token minted for a non-DISTINCT query (or before DISTINCT support existed) must not resume into a DISTINCT plan, since that would skip deduplication entirely for the remaining pages.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos/src/Query/Core/Pipeline/Distinct/DistinctQueryPipelineStage.cs",
+          "test": "DistinctContinuationToken.TryParse"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "clientContinuationTokenShapeMismatch",
+        "messageFragment": "does not match a DISTINCT query"
+      }
+    },
+    {
+      "id": "distinct_type_mismatch_on_resume_rejected",
+      "description": "A token minted for an ordered DISTINCT must not resume a query the plan now reports as unordered (or vice versa). Reinterpreting it would apply adjacency deduplication to an unsorted stream.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/query/DistinctDocumentQueryExecutionContext.java",
+          "test": "createAsync"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "clientContinuationTokenShapeMismatch",
+        "messageFragment": "minted for"
+      }
+    },
+    {
+      "id": "split_mid_query_unordered_does_not_reemit",
+      "description": "A partition split partway through an unordered DISTINCT query must not resurrect an already-emitted value. The fan-out root absorbs the split internally, so the deduplication state is never rebuilt.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
+          "test": "TestMerge (split coverage exists for ORDER BY only; DISTINCT is untested in both peers)"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Redmond",
+        "Seattle"
+      ],
+      "checkpoint": {
+        "splitAfterPage": 1
+      },
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "split_mid_query_ordered_does_not_reemit",
+      "description": "Same guarantee for ordered DISTINCT: a split mid-drain re-resolves ranges, but last_hash is a value rather than a position, so the boundary row is still suppressed afterwards.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
+          "test": "TestMerge (split coverage exists for ORDER BY only; DISTINCT is untested in both peers)"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Redmond"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Redmond",
+        "Seattle"
+      ],
+      "checkpoint": {
+        "splitAfterPage": 1
+      },
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "headers_request_charge_survives_suppressed_pages",
+      "description": "Backend pages whose rows are all duplicates are never surfaced, but the request units they cost must still be reported on the next emitted page. Otherwise a highly redundant DISTINCT query would appear far cheaper than it was.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDocuments"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Seattle"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Seattle"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Boston"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": "p2"
+              },
+              {
+                "rows": [
+                  {
+                    "rid": "r2",
+                    "payload": "Seattle"
+                  }
+                ],
+                "continuation": "p3"
+              },
+              {
+                "rows": [
+                  {
+                    "rid": "r3",
+                    "payload": "Boston"
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Seattle",
+        "Boston"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "unsupported_combination_group_by",
+      "description": "DISTINCT combined with GROUP BY is not yet supported and must fail with a typed unsupported-feature error rather than silently dropping one of the two stages.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos/src/Query/Core/Pipeline/PipelineFactory.cs",
+          "test": "MonadicCreate (GROUP BY composes above DISTINCT)"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT c.city FROM c GROUP BY c.city",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Boston"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "clientUnsupportedQueryFeature",
+        "messageFragment": "GROUP BY"
+      }
+    },
+    {
+      "id": "combination_top_applies_after_distinct",
+      "description": "DISTINCT composes below TOP: the row limit counts deduplicated values, not raw rows. The ordered stream repeats its first value, so applying TOP before deduplication would return one value instead of two \u2014 this pins the DISTINCT-inside-SkipTake pipeline order.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDistinctDocuments"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT TOP 2 VALUE c.city FROM c ORDER BY c.city",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Boston"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Boston"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Portland"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Seattle"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Portland"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "unsupported_combination_aggregate",
+      "description": "DISTINCT combined with an aggregate is not yet supported; aggregates compose below DISTINCT and need their own stage first.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/DistinctQueryTests.java",
+          "test": "queryDistinctDocuments"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE MAX(c.rank) FROM c",
+        "parameters": [],
+        "columns": [],
+        "distinctType": "Unordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "rank": 1
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "rank": 2
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "clientUnsupportedQueryFeature",
+        "messageFragment": "aggregates"
+      }
+    },
+    {
+      "id": "ordered_offset_limit_applies_after_distinct",
+      "description": "Ordered DISTINCT under OFFSET/LIMIT: the window counts deduplicated values. The sorted stream repeats Austin and Seattle, so applying the window before deduplication would return a different (shorter or shifted) set. Closes the ordered OFFSET/LIMIT gap \u2014 TOP was covered but OFFSET/LIMIT was not.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC OFFSET 1 LIMIT 2",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Austin"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Austin"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Portland"
+        },
+        {
+          "id": "d6",
+          "pk": "pk-f",
+          "city": "Seattle"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Portland"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "ordered_distinct_top_resume_round_trip",
+      "description": "A continuation token for an ordered DISTINCT query under TOP nests SkipTake above Distinct. Draining page-by-page across serialized tokens must match a single drain: the window's remaining budget and the dedup hash have to be peeled and restored in the right order, or rows are dropped or repeated.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_CosmosElementContinuationTokenAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT TOP 3 VALUE c.city FROM c ORDER BY c.city ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Austin"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Austin"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Portland"
+        },
+        {
+          "id": "d6",
+          "pk": "pk-f",
+          "city": "Seattle"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1,
+        2
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Austin",
+        "Boston",
+        "Portland"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "ordered_distinct_offset_limit_resume_round_trip",
+      "description": "Same nested-token round trip as the TOP case, but with OFFSET/LIMIT so the resumed token must carry a partially-consumed skip as well as a remaining take. A token minted mid-skip that loses its remaining offset re-emits rows the first pass already skipped past.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_CosmosElementContinuationTokenAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC OFFSET 1 LIMIT 2",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Austin"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Austin"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Portland"
+        },
+        {
+          "id": "d6",
+          "pk": "pk-f",
+          "city": "Seattle"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1,
+        2
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Portland"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "split_mid_query_windowed_distinct_does_not_reemit",
+      "description": "A partition split mid-drain while DISTINCT runs under an OFFSET/LIMIT window. The fan-out root absorbs the split and neither the dedup state nor the window's remaining budget may be rebuilt: losing the former re-emits a value the window already paid for, losing the latter restarts the offset and over-returns. Closes the gap where split coverage existed for plain DISTINCT but not for DISTINCT composed under a window.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/DistinctQueryTests.cs",
+          "test": "TestDistinct_ExecuteNextAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city ASC OFFSET 1 LIMIT 2",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.city",
+            "direction": "Ascending"
+          }
+        ],
+        "distinctType": "Ordered"
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "pk-a",
+          "city": "Seattle"
+        },
+        {
+          "id": "d2",
+          "pk": "pk-b",
+          "city": "Austin"
+        },
+        {
+          "id": "d3",
+          "pk": "pk-c",
+          "city": "Boston"
+        },
+        {
+          "id": "d4",
+          "pk": "pk-d",
+          "city": "Austin"
+        },
+        {
+          "id": "d5",
+          "pk": "pk-e",
+          "city": "Portland"
+        },
+        {
+          "id": "d6",
+          "pk": "pk-f",
+          "city": "Seattle"
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        1
+      ],
+      "expectedIds": [],
+      "expectedValues": [
+        "Boston",
+        "Portland"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    }
+  ]
+}

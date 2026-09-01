@@ -7,6 +7,8 @@ use azure_core::{fmt::SafeDebug, Bytes};
 use azure_data_cosmos_driver::models::ResponseBody as DriverResponseBody;
 use serde::de::DeserializeOwned;
 
+use crate::feed::FeedBody;
+
 /// The body of a Cosmos DB operation response.
 ///
 /// Returned by [`ItemResponse::into_body`](crate::models::ItemResponse::into_body),
@@ -44,10 +46,24 @@ impl ResponseBody {
         self.0.into_single().map_err(Into::into)
     }
 
-    /// Deserializes every item in a feed response, or the single payload, as
-    /// JSON of type `T`.
-    pub fn into_items<T: DeserializeOwned>(self) -> crate::Result<Vec<T>> {
-        self.0.into_items().map_err(Into::into)
+    /// Deserializes the items of a feed response as JSON of type `T`.
+    ///
+    /// * An [`Items`](DriverResponseBody::Items) body — pre-split by the
+    ///   cross-partition pipeline (skip/take, streaming ORDER BY merge) — is
+    ///   decoded slice-by-slice.
+    /// * A single-partition page that never went through those nodes arrives as
+    ///   a raw `{"Documents":[...]}` envelope in a single
+    ///   [`Bytes`](DriverResponseBody::Bytes) payload, parsed here via
+    ///   [`FeedBody`].
+    /// * A [`NoPayload`](DriverResponseBody::NoPayload) body yields an empty `Vec`.
+    pub(crate) fn into_items<T: DeserializeOwned>(self) -> crate::Result<Vec<T>> {
+        match self.0 {
+            bytes @ DriverResponseBody::Bytes(_) => {
+                let body: FeedBody<T> = bytes.into_single()?;
+                Ok(body.items)
+            }
+            pre_split => pre_split.into_items().map_err(Into::into),
+        }
     }
 }
 

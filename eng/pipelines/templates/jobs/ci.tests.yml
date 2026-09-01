@@ -43,6 +43,9 @@ jobs:
       image: $(OSVmImage)
     os: ${{ parameters.OSName }}
 
+  variables:
+    TestFeatureSet: $[ coalesce(variables['TestFeatureSet'], 'All') ]
+
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
@@ -83,6 +86,7 @@ jobs:
       filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
       arguments: >
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        -FeatureSet '$(TestFeatureSet)'
 
   - task: Powershell@2
     displayName: Convert Test Results to JUnit XML

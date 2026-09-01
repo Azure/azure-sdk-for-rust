@@ -49,7 +49,7 @@ pub(crate) enum PatchEvalError {
     MissingParent(String),
     /// The leaf path the op needed does not exist.
     MissingTarget(String),
-    /// An array token was not `-` and not parseable as a non-negative integer.
+    /// An array token was not `-` or a valid RFC 6902 array index.
     InvalidArrayIndex {
         /// The offending token, percent-decoded.
         token: String,
@@ -242,6 +242,12 @@ fn parse_array_index(
         if allow_append {
             return Ok(len);
         }
+        return Err(PatchEvalError::InvalidArrayIndex {
+            token: token.to_string(),
+            path: full_path.to_string(),
+        });
+    }
+    if token.len() > 1 && token.starts_with('0') {
         return Err(PatchEvalError::InvalidArrayIndex {
             token: token.to_string(),
             path: full_path.to_string(),
@@ -754,6 +760,38 @@ mod tests {
         let doc = json!({"xs": [1, 2, 3]});
         let out = apply(doc, &[PatchOperation::set("/xs/1", json!(9))]).unwrap();
         assert_eq!(out, json!({"xs": [1, 9, 3]}));
+    }
+
+    #[test]
+    fn leading_zero_array_index_is_rejected() {
+        let mut doc = json!({"xs": [{"value": 0}, {"value": 1}]});
+
+        let err = apply_patch_ops(
+            &mut doc,
+            &[PatchOperation::replace("/xs/01/value", json!(2))],
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            err,
+            PatchEvalError::InvalidArrayIndex {
+                token: "01".to_owned(),
+                path: "/xs/01/value".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn leading_zero_object_property_remains_valid() {
+        let mut doc = json!({"xs": {"01": {"value": 1}}});
+
+        apply_patch_ops(
+            &mut doc,
+            &[PatchOperation::replace("/xs/01/value", json!(2))],
+        )
+        .unwrap();
+
+        assert_eq!(doc["xs"]["01"]["value"], 2);
     }
 
     #[test]

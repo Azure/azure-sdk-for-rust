@@ -11,7 +11,7 @@ use azure_data_cosmos::{
     models::{ItemResponse, ThroughputProperties},
     options::{
         BinaryEncodingOptions, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
-        Region, ServerCertificateValidation,
+        ItemWriteOptions, Region, ServerCertificateValidation,
     },
     CosmosClient, CosmosError, CosmosRuntime, CosmosStatus, PartitionKey, Query, RoutingStrategy,
     SubStatusCode,
@@ -122,6 +122,13 @@ const SATELLITE_READINESS_MAX_ATTEMPTS: usize = 8;
 const SATELLITE_READINESS_INITIAL_BACKOFF: Duration = Duration::from_millis(500);
 #[cfg(test_category = "multi_write")]
 const SATELLITE_READINESS_MAX_BACKOFF: Duration = Duration::from_secs(5);
+/// Wall-clock budget shared by both satellite readiness phases.
+///
+/// Readiness runs inside the per-test [`DEFAULT_TEST_TIMEOUT`], so letting each
+/// phase spend its full ladder independently could consume the whole budget and
+/// report a generic test timeout instead of the readiness error explaining it.
+#[cfg(test_category = "multi_write")]
+const SATELLITE_READINESS_BUDGET: Duration = Duration::from_secs(45);
 
 async fn retry_container_readiness<T, E, F, Fut, TimeoutError, ShouldRetry>(
     region: &str,
@@ -181,10 +188,52 @@ fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
         && error.status().sub_status() == Some(SubStatusCode::new(5007))
 }
 
+/// 403/5302, returned while a just-created container is not yet addressable by
+/// name in a satellite region's data path.
+///
+/// RBAC resolves `dbs/<db>/colls/<coll>` to a RID before authorizing a data
+/// request, and authorizes metadata (5301) and name-based data (5302) through
+/// separate paths — so a container read succeeding in a region does not mean an
+/// item request there is authorized yet. Key auth bypasses RBAC entirely, so
+/// this is only expected under AAD.
+fn rbac_name_based_data_not_ready(error: &CosmosError) -> bool {
+    error.status().status_code() == StatusCode::Forbidden
+        && error.status().sub_status() == Some(SubStatusCode::new(5302))
+}
+
 fn transient_satellite_readiness_error(error: &CosmosError, auth_mode: AuthMode) -> bool {
     collection_create_in_progress(error)
         || owner_resource_not_found(error)
-        || (auth_mode == AuthMode::Aad && aad_token_invalid_issuer(error))
+        || (auth_mode == AuthMode::Aad
+            && (aad_token_invalid_issuer(error) || rbac_name_based_data_not_ready(error)))
+}
+
+/// A plain "that item does not exist" 404 — the success signal for the
+/// satellite write-path probe.
+///
+/// Readiness 404s (`1013`, `1003`) and session 404s (`1002`) all carry a
+/// sub-status, so requiring a bare one keeps them from being mistaken for a
+/// ready satellite.
+fn item_not_found(error: &CosmosError) -> bool {
+    error.status().status_code() == StatusCode::NotFound
+        && error
+            .status()
+            .sub_status()
+            .is_none_or(|sub_status| sub_status.value() == 0)
+}
+
+/// Retry predicate for the satellite write-path probe.
+///
+/// The probe is a real data-plane write against a 400 RU container, so on top
+/// of the readiness errors it can see throttling, a transient service error, or
+/// a split. None of those say anything about readiness, and none of them should
+/// fail container creation for every test in the suite.
+fn satellite_probe_should_retry(error: &CosmosError, auth_mode: AuthMode) -> bool {
+    transient_satellite_readiness_error(error, auth_mode)
+        || matches!(
+            error.status().status_code(),
+            StatusCode::TooManyRequests | StatusCode::ServiceUnavailable | StatusCode::Gone
+        )
 }
 
 fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosError {
@@ -1074,7 +1123,7 @@ impl TestRunContext {
             {
                 Ok(response) => {
                     let created = response.into_model()?;
-                    return db_client.container_client(created.id.as_ref()).await;
+                    return Self::wait_for_container_ready(db_client, created.id.as_ref()).await;
                 }
                 Err(e) if e.status().status_code() == StatusCode::TooManyRequests => {
                     println!(
@@ -1095,11 +1144,51 @@ impl TestRunContext {
                         .create_container(properties.clone(), options.clone())
                         .await?;
                     let created = response.into_model()?;
-                    return db_client.container_client(created.id.as_ref()).await;
+                    return Self::wait_for_container_ready(db_client, created.id.as_ref()).await;
                 }
                 Err(e) => return Err(e),
             }
         }
+    }
+
+    /// Waits until a newly created container is usable through the current
+    /// test client's metadata and data-plane paths.
+    ///
+    /// Cosmos can return `404/1013 CollectionCreateInProgress` after a create
+    /// request succeeds. Only that explicitly transient status is retried;
+    /// authorization, routing, and all other errors fail immediately.
+    async fn wait_for_container_ready(
+        db_client: &DatabaseClient,
+        container_id: &str,
+    ) -> azure_data_cosmos::Result<ContainerClient> {
+        const MAX_ATTEMPTS: u32 = 60;
+        const POLL_INTERVAL: Duration = Duration::from_millis(500);
+
+        for attempt in 0..MAX_ATTEMPTS {
+            let error = match db_client.container_client(container_id).await {
+                Ok(container_client) => match container_client.read(None).await {
+                    Ok(_) => return Ok(container_client),
+                    Err(error) => error,
+                },
+                Err(error) => error,
+            };
+
+            let is_create_in_progress = error.status().status_code() == StatusCode::NotFound
+                && error.status().sub_status()
+                    == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
+            if !is_create_in_progress || attempt + 1 == MAX_ATTEMPTS {
+                return Err(error);
+            }
+
+            println!(
+                "waiting for container '{container_id}' to finish creation \
+                 ({}/{MAX_ATTEMPTS})",
+                attempt + 1
+            );
+            tokio::time::sleep(POLL_INTERVAL).await;
+        }
+
+        unreachable!("the final attempt returns above")
     }
 
     /// Creates a container and waits until both the normal and fault-injection
@@ -1309,10 +1398,18 @@ impl TestRunContext {
                 HUB_REGION,
             ]));
         let options = azure_data_cosmos::options::ReadContainerOptions::default()
-            .with_operation_options(operation);
+            .with_operation_options(operation.clone());
         let mut backoff = SATELLITE_READINESS_INITIAL_BACKOFF;
+        let readiness_deadline = tokio::time::Instant::now() + SATELLITE_READINESS_BUDGET;
 
         for attempt in 1..=SATELLITE_READINESS_MAX_ATTEMPTS {
+            if tokio::time::Instant::now() >= readiness_deadline {
+                return Err(container_readiness_timeout_error(
+                    SATELLITE_REGION.as_str(),
+                    attempt,
+                ));
+            }
+
             let probe = async {
                 let container = probe_client
                     .database_client(db_id.clone())
@@ -1334,7 +1431,7 @@ impl TestRunContext {
                             .build()
                             .into());
                     }
-                    return Ok(());
+                    break;
                 }
                 Ok(Err(error)) if transient_satellite_readiness_error(&error, auth_mode) => {
                     if attempt == SATELLITE_READINESS_MAX_ATTEMPTS {
@@ -1359,6 +1456,97 @@ impl TestRunContext {
                     ));
                 }
             }
+        }
+
+        // Phase 1 only proves the collection's *metadata* reached the satellite.
+        // RBAC authorizes metadata (5301) and name-based data (5302) on separate
+        // paths, and a point read can be served by any replica while a write must
+        // reach the primary — so neither proves the failover write these tests
+        // perform is authorized here yet. Probe the write path itself with a
+        // delete of an id that cannot exist: it mutates nothing, is covered by
+        // the same `items/*` grant as the upsert, and answers a bare 404 once the
+        // name resolves in this region.
+        let probe_id = format!("satellite-readiness-probe-{}", Uuid::new_v4());
+        let probe_options = ItemWriteOptions::default().with_operation_options(operation);
+        backoff = SATELLITE_READINESS_INITIAL_BACKOFF;
+
+        for attempt in 1..=SATELLITE_READINESS_MAX_ATTEMPTS {
+            if tokio::time::Instant::now() >= readiness_deadline {
+                return Err(container_readiness_timeout_error(
+                    SATELLITE_REGION.as_str(),
+                    attempt,
+                ));
+            }
+
+            let probe = async {
+                let container = probe_client
+                    .database_client(db_id.clone())
+                    .container_client(container_id)
+                    .await?;
+                container
+                    .delete_item(
+                        PartitionKey::from(probe_id.clone()),
+                        probe_id.as_str(),
+                        Some(probe_options.clone()),
+                    )
+                    .await
+            };
+
+            let error = match tokio::time::timeout(CONTAINER_READINESS_ATTEMPT_TIMEOUT, probe).await
+            {
+                Ok(Ok(_)) => {
+                    return Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                        .with_status(CosmosStatus::new(StatusCode::InternalServerError))
+                        .with_message(format!(
+                            "satellite readiness probe deleted {probe_id}, which cannot exist"
+                        ))
+                        .build()
+                        .into())
+                }
+                Ok(Err(error)) => error,
+                Err(_) => {
+                    if attempt == SATELLITE_READINESS_MAX_ATTEMPTS {
+                        return Err(container_readiness_timeout_error(
+                            SATELLITE_REGION.as_str(),
+                            attempt,
+                        ));
+                    }
+
+                    println!("write-path readiness probe timed out in {SATELLITE_REGION}");
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(SATELLITE_READINESS_MAX_BACKOFF);
+                    continue;
+                }
+            };
+
+            if item_not_found(&error) {
+                // Same routing guarantee phase 1 asserts: a probe that fell back
+                // to the hub would prove nothing about the satellite.
+                if let Some(diagnostics) = error.diagnostics() {
+                    let regions = diagnostics.regions_contacted();
+                    if !regions.contains(&SATELLITE_REGION) || regions.contains(&HUB_REGION) {
+                        return Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                            .with_status(CosmosStatus::new(StatusCode::InternalServerError))
+                            .with_message(format!(
+                                "satellite write-path readiness probe must contact {SATELLITE_REGION} without contacting {HUB_REGION}; contacted {regions:?}"
+                            ))
+                            .build()
+                            .into());
+                    }
+                }
+
+                return Ok(());
+            }
+
+            if !satellite_probe_should_retry(&error, auth_mode)
+                || attempt == SATELLITE_READINESS_MAX_ATTEMPTS
+            {
+                return Err(error);
+            }
+
+            println!("waiting for the write path to be ready in {SATELLITE_REGION}: {error}");
+            tokio::time::sleep(backoff).await;
+            backoff = (backoff * 2).min(SATELLITE_READINESS_MAX_BACKOFF);
         }
 
         unreachable!("satellite readiness attempts are non-zero")
@@ -1571,8 +1759,9 @@ pub async fn build_aad_client_from_env(
 #[cfg(test)]
 mod tests {
     use super::{
-        aad_token_invalid_issuer, retry_container_readiness, transient_satellite_readiness_error,
-        AuthMode,
+        aad_token_invalid_issuer, item_not_found, rbac_name_based_data_not_ready,
+        retry_container_readiness, satellite_probe_should_retry,
+        transient_satellite_readiness_error, AuthMode,
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{CosmosError, CosmosStatus, SubStatusCode};
@@ -1609,6 +1798,25 @@ mod tests {
         )));
     }
 
+    /// 5302 is the *name-based data* RBAC failure. 5301 (metadata) must not be
+    /// treated as transient: metadata is what the container-read probe already
+    /// covers, so tolerating it would hide a genuine permission problem.
+    #[test]
+    fn rbac_not_ready_requires_403_5302() {
+        assert!(rbac_name_based_data_not_ready(&error_with_status(
+            StatusCode::Forbidden,
+            SubStatusCode::new(5302),
+        )));
+        assert!(!rbac_name_based_data_not_ready(&error_with_status(
+            StatusCode::Forbidden,
+            SubStatusCode::new(5301),
+        )));
+        assert!(!rbac_name_based_data_not_ready(&error_with_status(
+            StatusCode::Unauthorized,
+            SubStatusCode::new(5302),
+        )));
+    }
+
     #[test]
     fn satellite_readiness_retries_only_expected_transient_errors() {
         let create_in_progress = error_with_status(
@@ -1621,6 +1829,7 @@ mod tests {
         );
         let aad_invalid_issuer =
             error_with_status(StatusCode::Unauthorized, SubStatusCode::new(5007));
+        let rbac_not_ready = error_with_status(StatusCode::Forbidden, SubStatusCode::new(5302));
         let read_session_not_available = error_with_status(
             StatusCode::NotFound,
             SubStatusCode::READ_SESSION_NOT_AVAILABLE,
@@ -1647,6 +1856,71 @@ mod tests {
         ));
         assert!(!transient_satellite_readiness_error(
             &aad_invalid_issuer,
+            AuthMode::Key
+        ));
+
+        // Key auth never consults RBAC, so a 403/5302 there is a real failure
+        // rather than propagation lag.
+        assert!(transient_satellite_readiness_error(
+            &rbac_not_ready,
+            AuthMode::Aad
+        ));
+        assert!(!transient_satellite_readiness_error(
+            &rbac_not_ready,
+            AuthMode::Key
+        ));
+    }
+
+    /// The success signal must be a *bare* 404. `404/1002` in particular is
+    /// asserted above to be non-transient, so if it were read as "ready" the
+    /// probe would pass on a satellite that cannot serve the session yet.
+    #[test]
+    fn item_not_found_requires_a_bare_404() {
+        assert!(item_not_found(&error_with_status(
+            StatusCode::NotFound,
+            SubStatusCode::new(0),
+        )));
+        assert!(!item_not_found(&error_with_status(
+            StatusCode::NotFound,
+            SubStatusCode::READ_SESSION_NOT_AVAILABLE,
+        )));
+        assert!(!item_not_found(&error_with_status(
+            StatusCode::NotFound,
+            SubStatusCode::COLLECTION_CREATE_IN_PROGRESS,
+        )));
+        assert!(!item_not_found(&error_with_status(
+            StatusCode::Forbidden,
+            SubStatusCode::new(0),
+        )));
+    }
+
+    /// The probe issues a real write, so load-shedding responses must not fail
+    /// container creation for the whole suite.
+    #[test]
+    fn probe_retries_load_shedding_on_top_of_readiness_errors() {
+        for status in [
+            StatusCode::TooManyRequests,
+            StatusCode::ServiceUnavailable,
+            StatusCode::Gone,
+        ] {
+            assert!(
+                satellite_probe_should_retry(
+                    &error_with_status(status, SubStatusCode::new(0)),
+                    AuthMode::Key
+                ),
+                "{status:?} says nothing about readiness and must be retried"
+            );
+        }
+
+        assert!(satellite_probe_should_retry(
+            &error_with_status(
+                StatusCode::NotFound,
+                SubStatusCode::COLLECTION_CREATE_IN_PROGRESS
+            ),
+            AuthMode::Key
+        ));
+        assert!(!satellite_probe_should_retry(
+            &error_with_status(StatusCode::BadRequest, SubStatusCode::new(0)),
             AuthMode::Key
         ));
     }

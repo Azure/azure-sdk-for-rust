@@ -12,6 +12,7 @@ mod cosmos_hpk;
 mod cosmos_items;
 mod cosmos_offers;
 mod cosmos_partition_key_types;
+#[cfg(feature = "preview_patch")]
 mod cosmos_patch;
 mod cosmos_proxy;
 mod cosmos_query;

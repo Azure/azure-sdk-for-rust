@@ -14,9 +14,9 @@
 //!   strict [`EnvelopeRow`]s (envelope shape `{"_rid", "orderByItems",
 //!   "payload"}`), retaining `payload` as raw JSON bytes.
 //!   [`PageAggregator`] accumulates charge/diagnostics across pages, and
-//!   [`PageAggregator::build_page`] reconstructs a synthetic
-//!   `Documents`-array [`CosmosResponse`] — the same wire shape every
-//!   other feed node returns.
+//!   [`PageAggregator::build_page`] emits the ordered payloads as a pre-split
+//!   [`ResponseBody::Items`](crate::models::ResponseBody::Items) body, so the
+//!   calling SDK reads each document directly without re-parsing an envelope.
 //!
 //! Backend continuations are never copied onto the emitted page's headers:
 //! `OperationPlan::to_continuation_token` owns the client-issued token, and
@@ -446,10 +446,11 @@ impl PageAggregator {
     /// Builds the emitted page from the accumulated aggregate plus the
     /// final ordered list of raw item payloads.
     ///
-    /// Body is a synthetic `{"_rid": "", "Documents": [...], "_count": N}`
-    /// envelope of `payloads`' bytes unmodified — the wire shape every
-    /// other feed node returns. `_rid` is left empty (per-item `_rid`
-    /// identifies each item, not the feed-level one).
+    /// The body is a [`ResponseBody::Items`] whose entries are the ordered
+    /// `payloads`' bytes unmodified — one per document. Emitting pre-split
+    /// items (rather than re-serializing a `{"Documents":[...]}` envelope only
+    /// for the SDK to re-parse) lets the calling SDK read each document
+    /// directly.
     ///
     /// It's valid for no backend page to have been absorbed (page
     /// assembled entirely from previously-buffered rows); it then reports
@@ -458,18 +459,10 @@ impl PageAggregator {
         self,
         payloads: &[Box<RawValue>],
     ) -> crate::error::Result<CosmosResponse> {
-        let mut body =
-            Vec::with_capacity(64 + payloads.iter().map(|p| p.get().len() + 1).sum::<usize>());
-        body.extend_from_slice(br#"{"_rid":"","Documents":["#);
-        for (i, payload) in payloads.iter().enumerate() {
-            if i > 0 {
-                body.push(b',');
-            }
-            body.extend_from_slice(payload.get().as_bytes());
-        }
-        body.extend_from_slice(br#"],"_count":"#);
-        body.extend_from_slice(payloads.len().to_string().as_bytes());
-        body.push(b'}');
+        let items: Vec<bytes::Bytes> = payloads
+            .iter()
+            .map(|payload| bytes::Bytes::copy_from_slice(payload.get().as_bytes()))
+            .collect();
 
         let diagnostics = DiagnosticsContext::aggregate_sub_operations(&self.diagnostics_sources)
             .map(Arc::new)
@@ -489,7 +482,7 @@ impl PageAggregator {
         };
 
         Ok(CosmosResponse::new(
-            ResponseBody::from_bytes(body),
+            ResponseBody::from_items(items),
             headers,
             self.status,
             diagnostics,
@@ -805,7 +798,7 @@ mod tests {
     }
 
     #[test]
-    fn page_aggregator_sums_charge_and_builds_documents_envelope() {
+    fn page_aggregator_sums_charge_and_builds_items_body() {
         let mut aggregator = PageAggregator::new();
         aggregator.absorb(&response(b"{}")).unwrap();
         aggregator.absorb(&response(b"{}")).unwrap();
@@ -814,11 +807,9 @@ mod tests {
             RawValue::from_string(r#"{"id":"b"}"#.to_owned()).unwrap(),
         ];
         let page = aggregator.build_page(&payloads).unwrap();
-        let body = page.body_bytes();
-        let value: serde_json::Value = serde_json::from_slice(body).unwrap();
-        assert_eq!(value["Documents"].as_array().unwrap().len(), 2);
-        assert_eq!(value["Documents"][0]["id"], "a");
-        assert_eq!(value["_count"], 2);
+        // The emitted body is an `Items` list of the payload bytes verbatim.
+        assert_eq!(item_bytes(&page), vec![r#"{"id":"a"}"#, r#"{"id":"b"}"#]);
+        assert_eq!(page.headers().item_count, Some(2));
         assert!(page.headers().continuation.is_none());
     }
 
@@ -947,15 +938,27 @@ mod tests {
         );
     }
 
+    /// The exact per-item bytes of a feed page's `Items` body, so tests assert
+    /// the emitted output directly rather than a re-parsed shape.
+    fn item_bytes(page: &CosmosResponse) -> Vec<String> {
+        match page.body() {
+            ResponseBody::Items(items) => items
+                .iter()
+                .map(|b| String::from_utf8(b.to_vec()).unwrap())
+                .collect(),
+            ResponseBody::NoPayload => Vec::new(),
+            ResponseBody::Bytes(_) => panic!("expected an Items feed body"),
+        }
+    }
+
     #[test]
     fn page_aggregator_builds_empty_page_when_polled_children_yielded_no_rows() {
         // At least one page absorbed, but zero rows contributed.
         let mut aggregator = PageAggregator::new();
         aggregator.absorb(&response(b"{}")).unwrap();
         let page = aggregator.build_page(&[]).unwrap();
-        let value: serde_json::Value = serde_json::from_slice(page.body_bytes()).unwrap();
-        assert_eq!(value["Documents"].as_array().unwrap().len(), 0);
-        assert_eq!(value["_count"], 0);
+        assert!(item_bytes(&page).is_empty());
+        assert_eq!(page.headers().item_count, Some(0));
     }
 
     #[test]
@@ -969,7 +972,8 @@ mod tests {
             page.headers().request_charge,
             Some(crate::models::RequestCharge::new(0.0))
         );
-        let value: serde_json::Value = serde_json::from_slice(page.body_bytes()).unwrap();
-        assert_eq!(value["Documents"][0]["id"], "a");
+        // The emitted body is the payload bytes verbatim, one item per document.
+        assert_eq!(item_bytes(&page), vec![r#"{"id":"a"}"#]);
+        assert_eq!(page.headers().item_count, Some(1));
     }
 }

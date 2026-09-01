@@ -35,6 +35,8 @@
 //! cross-partition strategies).
 
 mod context;
+mod distinct;
+pub(crate) mod distinct_hash;
 mod drain;
 mod drained;
 #[cfg(test)]
@@ -48,6 +50,8 @@ pub(crate) mod planner;
 pub(crate) mod query_plan;
 mod query_response;
 mod request;
+mod skip_take;
+mod skip_take_page;
 mod snapshot;
 mod streaming_ordered_merge;
 mod topology;
@@ -56,6 +60,7 @@ mod unordered_merge;
 pub(crate) use context::{
     PartitionRoutingRefresh, PipelineContext, RequestExecutor, ResolvedRange, TopologyProvider,
 };
+pub(crate) use distinct::Distinct;
 pub(crate) use drain::SequentialDrain;
 pub(crate) use drained::DrainedLeaf;
 pub(crate) use node::{
@@ -64,6 +69,7 @@ pub(crate) use node::{
 pub use pipeline::OperationPlan;
 pub(crate) use pipeline::Pipeline;
 pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};
+pub(crate) use skip_take::SkipTake;
 pub(crate) use snapshot::{PipelineNodeState, RangedToken};
 pub(crate) use streaming_ordered_merge::StreamingOrderedMerge;
 pub(crate) use topology::CachedTopologyProvider;

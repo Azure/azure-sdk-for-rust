@@ -12,6 +12,10 @@ jobs:
 - job: Pack
   displayName: "Pack Crates"
   timeoutInMinutes: 90
+  variables:
+    ComponentDetection.SourcePath: $(Build.SourcesDirectory)
+    # Exclude non-shipping samples and tests.
+    ComponentDetection.DirectoryExclusionPatterns: '$(Build.SourcesDirectory)/samples/**;$(Build.SourcesDirectory)/**/tests/**'
 
   pool:
     name: $(LINUXPOOL)
@@ -44,12 +48,13 @@ jobs:
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      WorkingDirectory: $(System.DefaultWorkingDirectory)/eng/tools/generate_api_report
+      Toolchain: nightly
+      WorkingDirectory: $(System.DefaultWorkingDirectory)/eng/tools
       SetDefault: false
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      Toolchain: $(PackToolchain)
+      Toolchain: stable
       ConfigureRegistry: false
 
   - ${{ if eq(parameters.TestPipeline, 'true') }}:
@@ -80,7 +85,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
-        arguments: -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '$(PackToolchain)'
+        arguments: -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
 
     # Temporary: remove check until after core crates are published
     - pwsh: Write-Host "Skipping Pack-Crates.ps1 for auto service directory"
@@ -108,7 +113,6 @@ jobs:
           Write-Host "##vso[task.setvariable variable=AdditionalPackageParams]"
         }
       displayName: Configure crate packing
-      condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
 
     - task: PowerShell@2
       displayName: Check SemVer compatibility
@@ -121,7 +125,7 @@ jobs:
       inputs:
         pwsh: true
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
-        arguments: -PackageNames $(PackageNames) -Toolchain '$(PackToolchain)'
+        arguments: -PackageName $(PackageNames)
 
     - task: Powershell@2
       displayName: Pack Crates
@@ -131,10 +135,20 @@ jobs:
         filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
         arguments: >
           -OutputPath '$(Build.ArtifactStagingDirectory)'
-          -PackageNames $(PackageNames)
+          -PackageName $(PackageNames)
           -OutBuildOrderFile '$(Build.ArtifactStagingDirectory)/release-order.json'
           $(AdditionalPackageParams)
 
+  - ${{ if eq(variables['System.TeamProject'], 'internal') }}:
+    - task: PowerShell@2
+      displayName: Generate Cargo SBOMs
+      inputs:
+        pwsh: true
+        filePath: $(Build.SourcesDirectory)/eng/scripts/Generate-CargoSbom.ps1
+        ${{ if or(eq('auto', parameters.ServiceDirectory), endsWith(variables['Build.DefinitionName'], 'weekly')) }}:
+          arguments: -Workspace
+        ${{ else }}:
+          arguments: -PackageName '$(PackageNames)'
 
   - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
     parameters:

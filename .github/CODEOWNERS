@@ -45,6 +45,9 @@
 # PRLabel: %Azure.Core
 /sdk/core/               @heaths @xirzec @RickWinter @LarryOsterman
 
+# PRLabel: %Azure.Core
+/sdk/core/azure_core_amqp/    @heaths @xirzec @RickWinter @LarryOsterman @j7nw4r @sagar0207 @SwayGom @sjkwak @hmlam
+
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Identity
 # PRLabel: %Azure.Identity
@@ -57,6 +60,9 @@
 # PRLabel: %Cosmos
 /sdk/cosmos/             @Azure/azure-cosmos-rust-sdk
 
+# PRLabel: %Cosmos
+/samples/cosmos/         @Azure/azure-cosmos-rust-sdk
+
 # ServiceLabel: %Cosmos
 # ServiceOwners: @Pilchie
 
@@ -68,7 +74,10 @@
 # ServiceOwners: @Azure/azure-sdk-write-keyvault
 
 # PRLabel: %Storage
-/sdk/storage/            @heaths @xirzec @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft @jaschrep-msft
+/sdk/storage/            @heaths @xirzec @RickWinter @vincenttran-msft @jalauzon-msft @jaschrep-msft
+
+# PRLabel: %Storage
+/samples/storage/        @heaths @xirzec @RickWinter @vincenttran-msft @jalauzon-msft @jaschrep-msft
 
 # ServiceLabel: %Storage
 # AzureSDKOwners: @vincenttran-msft @jalauzon-msft @jaschrep-msft
@@ -90,12 +99,12 @@
 ###########
 # Eng Sys
 ###########
-/eng/                    @danieljurek @heaths @xirzec @RickWinter
+/eng/                    @Azure/azure-sdk-eng @heaths @xirzec @RickWinter @antkmsft
 /eng/common/             @Azure/azure-sdk-eng
-/.github/workflows/      @Azure/azure-sdk-eng
+/.github/workflows/      @heaths @xirzec @Azure/azure-sdk-eng
 /.github/CODEOWNERS      @xirzec @RickWinter @Azure/azure-sdk-eng
 /.config/1espt/          @benbp
-/sdk/canary/             @danieljurek
+/sdk/canary/             @Azure/azure-sdk-eng
 
 # Add owners for notifications for specific pipelines
 /eng/common/pipelines/codeowners-linter.yml       @xirzec @rickwinter

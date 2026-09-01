@@ -40,7 +40,9 @@ pub use database::{
 };
 pub use feed::{FeedOptions, QueryOptions};
 pub use feed_ranges::ReadFeedRangesOptions;
-pub use item::{ItemReadOptions, ItemWriteOptions, PatchItemOptions};
+#[cfg(feature = "preview_patch")]
+pub use item::PatchItemOptions;
+pub use item::{ItemReadOptions, ItemWriteOptions};
 pub use routing_strategy::RoutingStrategy;
 #[cfg(feature = "control_plane")]
 pub use throughput::ThroughputOptions;

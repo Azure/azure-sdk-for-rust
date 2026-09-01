@@ -19,16 +19,22 @@ pub use change_feed_item::{
 };
 pub use container_properties::{
     ChangeFeedPolicy, ConflictResolutionMode, ConflictResolutionPolicy, ContainerProperties,
-    TimeToLive, UniqueKey, UniqueKeyPolicy, VectorDataType, VectorDistanceFunction,
-    VectorEmbedding, VectorEmbeddingPolicy,
+    FullTextPath, FullTextPolicy, TimeToLive, UniqueKey, UniqueKeyPolicy, VectorDataType,
+    VectorDistanceFunction, VectorEmbedding, VectorEmbeddingPolicy,
 };
 #[cfg(feature = "control_plane")]
 pub use database_properties::DatabaseProperties;
 pub use indexing_policy::{
-    CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, IndexingMode, IndexingPolicy,
-    PropertyPath, SpatialIndex, SpatialType, VectorIndex, VectorIndexType,
+    CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, FullTextIndex, IndexingMode,
+    IndexingPolicy, PropertyPath, QuantizerType, SpatialIndex, SpatialType, VectorIndex,
+    VectorIndexType,
 };
 pub use item_response::ItemResponse;
+#[cfg(feature = "preview_patch")]
+pub use patch_tracking::{
+    PatchTrackingId, DEFAULT_PATCH_TRACKING_CAPACITY, PATCH_TRACKING_PROPERTY,
+    PATCH_TRACKING_RETENTION,
+};
 pub use resource_response::ResourceResponse;
 pub use response_body::ResponseBody;
 pub use response_headers::ResponseHeaders;
@@ -58,6 +64,8 @@ mod cosmos_response;
 mod database_properties;
 mod indexing_policy;
 mod item_response;
+#[cfg(feature = "preview_patch")]
+mod patch_tracking;
 mod resource_response;
 mod response_body;
 mod response_headers;
