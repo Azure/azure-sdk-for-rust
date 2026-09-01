@@ -163,8 +163,8 @@ struct PartitionState {
     /// The queue that feeds the worker.
     ///
     /// A close takes the sender out. That ends the queue, which tells the worker
-    /// to drain and stop. An enqueue clones the sender and then releases this
-    /// lock, so a call that waits for space never holds it.
+    /// to drain and stop. An enqueue waits for capacity before taking this
+    /// lock, then holds it through accounting and the send.
     sender: Mutex<Option<mpsc::UnboundedSender<Command>>>,
 
     /// The capacity of the partition buffer.
@@ -266,6 +266,9 @@ pub struct BufferedProducerClient {
     close_signal: Mutex<Option<oneshot::Sender<()>>>,
     closing: Shared<oneshot::Receiver<()>>,
     next_flush_id: AtomicUsize,
+
+    #[cfg(test)]
+    enqueue_hook: Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
 
 impl BufferedProducerClient {
@@ -343,6 +346,8 @@ impl BufferedProducerClient {
             close_signal: Mutex::new(Some(close_signal)),
             closing: closing.shared(),
             next_flush_id: AtomicUsize::new(0),
+            #[cfg(test)]
+            enqueue_hook: Mutex::new(None),
         })
     }
 
@@ -500,12 +505,12 @@ impl BufferedProducerClient {
             permit,
         };
 
-        // Take a clone of the sender and release the lock at once, so a slow
-        // enqueue never blocks a close.
-        let sender = {
-            let guard = state.sender.lock().unwrap();
-            guard.as_ref().ok_or_else(Self::closed_error)?.clone()
-        };
+        // Keep the sender lock through accounting, send, and rollback. Abort
+        // takes this lock before it resets counts, so a failed send cannot
+        // subtract from counts that abort already cleared. The capacity wait
+        // above remains outside this lock.
+        let sender = state.sender.lock().unwrap();
+        let sender = sender.as_ref().ok_or_else(Self::closed_error)?;
         // Count the event before the worker can see it. The worker decrements
         // the counts as soon as the event reaches a terminal outcome, and a
         // fast terminal path (an oversized event with a handler that returns at
@@ -513,6 +518,11 @@ impl BufferedProducerClient {
         // decrement reach zero first and wrap the counts to `usize::MAX`.
         state.buffered.fetch_add(1, Ordering::AcqRel);
         self.total_buffered.fetch_add(1, Ordering::AcqRel);
+
+        #[cfg(test)]
+        if let Some(hook) = self.enqueue_hook.lock().unwrap().take() {
+            hook();
+        }
 
         if sender.unbounded_send(command).is_err() {
             // The worker never saw the event, so it never decrements for it.
@@ -739,6 +749,12 @@ impl BufferedProducerClient {
     #[cfg(test)]
     pub(crate) fn inner_producer(&self) -> Option<Arc<ProducerClient>> {
         self.producer.lock().unwrap().clone()
+    }
+
+    /// Installs a one-shot hook after enqueue accounting and before the send.
+    #[cfg(test)]
+    fn set_enqueue_hook(&self, hook: Box<dyn FnOnce() + Send>) {
+        *self.enqueue_hook.lock().unwrap() = Some(hook);
     }
 }
 

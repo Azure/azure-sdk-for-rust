@@ -1163,6 +1163,85 @@ async fn a_fast_terminal_outcome_does_not_wrap_the_buffered_counts() {
     assert_eq!(h.client.buffered_event_count("0"), 0);
 }
 
+// 28b. An immediate close cannot reset counts while an enqueue can still roll
+// back its accounting.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn abort_during_enqueue_keeps_buffered_counts_at_zero() {
+    use std::sync::{mpsc as std_mpsc, Arc};
+
+    let h = harness(
+        &["0"],
+        Config {
+            with_success_handler: false,
+            ..Default::default()
+        },
+    )
+    .await;
+
+    let accounted = Arc::new(AtomicBool::new(false));
+    let accounted_for_hook = accounted.clone();
+    let (entered_tx, entered_rx) = std_mpsc::channel();
+    let (release_tx, release_rx) = std_mpsc::channel();
+    let client_for_hook = h.client.clone();
+    h.client.set_enqueue_hook(Box::new(move || {
+        // The fixed implementation still owns this lock here. The old
+        // implementation released it before accounting.
+        accounted_for_hook.store(
+            client_for_hook
+                .partitions
+                .get("0")
+                .expect("the test client has partition 0")
+                .sender
+                .try_lock()
+                .is_err(),
+            Ordering::Release,
+        );
+        entered_tx
+            .send(())
+            .expect("the test must observe the enqueue");
+        release_rx
+            .recv()
+            .expect("the test must release the enqueue");
+    }));
+
+    let client_for_enqueue = h.client.clone();
+    let enqueue = tokio::spawn(async move {
+        client_for_enqueue
+            .enqueue_event("race", to_partition("0"))
+            .await
+    });
+
+    while entered_rx.try_recv().is_err() {
+        tokio::task::yield_now().await;
+    }
+
+    // Start the abort while enqueue is paused after accounting.
+    let client_for_abort = h.client.clone();
+    let abort = tokio::spawn(async move { client_for_abort.abort().await });
+    while !h.client.closed.load(Ordering::Acquire) {
+        tokio::task::yield_now().await;
+    }
+
+    if accounted.load(Ordering::Acquire) {
+        // The fixed implementation keeps the sender lock, so abort cannot
+        // finish until enqueue sends and releases the lock.
+        release_tx.send(()).expect("the enqueue hook is waiting");
+        let _ = enqueue.await.unwrap();
+        abort.await.unwrap().unwrap();
+    } else {
+        // The old implementation released the sender lock before accounting.
+        // Let abort reset both counters before enqueue rolls back its failed
+        // send. That is the wrapping interleaving this test guards against.
+        abort.await.unwrap().unwrap();
+        release_tx.send(()).expect("the enqueue hook is waiting");
+        let _ = enqueue.await.unwrap();
+    }
+
+    assert!(accounted.load(Ordering::Acquire));
+    assert_eq!(h.client.total_buffered_event_count(), 0);
+    assert_eq!(h.client.buffered_event_count("0"), 0);
+}
+
 // 29. A delivery handler can enqueue again without deadlocking the worker.
 //
 // The handler runs on the worker task, and the worker is the only thing that
