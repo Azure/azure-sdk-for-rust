@@ -16,14 +16,22 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
 - `--format <markdown|apiview>`: optional output format to generate; defaults to `markdown`
-- `--no-docs`: when generating `apiview`, omit documentation comment tokens
+- `--no-docs`: omit documentation comments: APIView doc tokens, or the Markdown comments patch
 - `--output <dir>`: directory where generated files are written
 
 ### Outputs
 
-- default `markdown` output writes `API.md`
+- default `markdown` output writes `API.md` and `API.comments.patch`
+- `--no-docs` writes only `API.md`
 - `--format apiview` writes `apiview.json`
 - `--format apiview --no-docs` writes `apiview.json` without doc comment tokens
+
+`API.md` never contains documentation comments. `API.comments.patch` is a unified diff that adds
+them back, so it can be applied to toggle documentation comments on:
+
+```sh
+patch -p1 API.md < API.comments.patch
+```
 
 ## Workflow
 

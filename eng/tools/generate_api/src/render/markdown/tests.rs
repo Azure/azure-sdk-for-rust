@@ -6,6 +6,10 @@ use crate::model::{
     ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiMemberKind, ApiModel, ApiModule,
 };
 
+fn render(model: &ApiModel) -> String {
+    render_from_lines(&render_lines(model))
+}
+
 fn item(name: &str, kind: ApiItemKind, declaration: &str) -> ApiItem {
     ApiItem {
         name: name.to_string(),
@@ -136,4 +140,35 @@ fn renders_root_inner_attrs_and_child_module_outer_attrs() {
     assert!(rendered.contains("#![warn(missing_docs)]"));
     assert!(rendered.contains("#[deny(unsafe_code)]\npub mod inner {"));
     assert!(!rendered.contains("#![deny(unsafe_code)]\npub mod inner {"));
+}
+
+#[test]
+fn marks_doc_comments_and_omits_them_from_markdown() {
+    let mut documented = item("Foo", ApiItemKind::Struct, "pub struct Foo;");
+    documented.doc_comments = vec!["/// Does foo.".to_string()];
+
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        root_module: ApiModule {
+            path: "demo".to_string(),
+            doc_comments: vec!["//! Demo crate.".to_string()],
+            attributes: Vec::new(),
+            items: vec![documented],
+            modules: Vec::new(),
+        },
+    };
+
+    let lines = render_lines(&model);
+
+    assert_eq!(
+        lines
+            .iter()
+            .filter(|line| line.is_doc_comment)
+            .map(|line| line.text.as_str())
+            .collect::<Vec<_>>(),
+        vec!["//! Demo crate.", "/// Does foo."]
+    );
+    assert_eq!(render_from_lines(&lines), "```rust\npub struct Foo;\n```\n");
 }
