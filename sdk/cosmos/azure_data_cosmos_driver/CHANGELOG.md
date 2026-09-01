@@ -50,6 +50,7 @@
 
 ### Other Changes
 
+- Client-side PATCH now honors disabled content responses and requests the service-authoritative post-image when responses are enabled, rather than always synthesizing the response from the local merge. ([#5196](https://github.com/Azure/azure-sdk-for-rust/pull/5196))
 - RID-addressed operations route through standard Gateway rather than Gateway 2.0. Gateway 2.0 derives its `DatabaseName`/`CollectionName` routing tokens by parsing the authorization signing link, but a RID-addressed feed operation signs over a bare lowercased RID that carries no `dbs`/`colls` segments, so wrapping the request failed locally with `CLIENT_BAD_REQUEST` before it was sent. Standard Gateway routes raw RID paths natively. See [#4921](https://github.com/Azure/azure-sdk-for-rust/issues/4921) for native RID support on Gateway 2.0. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
 - Changed the messages and severity of some tracing events. ([#4711](https://github.com/Azure/azure-sdk-for-rust/pull/4711))
 - Gateway 2.0 responses now preserve backend duration, quota, item-count, quorum, replica, query, and physical-partition RNTBD metadata when converting to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))

@@ -15,7 +15,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
 };
 use azure_data_cosmos_driver::models::{
     AccountReference, ContainerReference, CosmosOperation, CosmosResponse, ItemReference,
-    PartitionKey, PatchInstructions, PatchOperation, PatchTrackingId,
+    PartitionKey, PatchInstructions, PatchOperation, PatchTrackingId, PATCH_TRACKING_PROPERTY,
 };
 use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, DriverOptions, OperationOptions, OperationOptionsBuilder, PatchStrategy,
@@ -166,8 +166,11 @@ fn without_system_properties(mut document: serde_json::Value) -> serde_json::Val
     document
 }
 
-async fn read_stored(driver: &CosmosDriver, container: &ContainerReference) -> serde_json::Value {
-    without_system_properties(response_json(
+async fn read_stored_raw(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+) -> serde_json::Value {
+    response_json(
         driver
             .execute_singleton_operation(
                 CosmosOperation::read_item(item(container)),
@@ -175,7 +178,11 @@ async fn read_stored(driver: &CosmosDriver, container: &ContainerReference) -> s
             )
             .await
             .expect("item should be readable"),
-    ))
+    )
+}
+
+async fn read_stored(driver: &CosmosDriver, container: &ContainerReference) -> serde_json::Value {
+    without_system_properties(read_stored_raw(driver, container).await)
 }
 
 async fn execute_patch(
@@ -196,6 +203,7 @@ async fn execute_patch(
 async fn assert_equivalent(instructions: PatchInstructions, scenario: &str) {
     let (driver, container) = build_driver(None).await;
     let seed = seed_document();
+    let client_should_track = !instructions.is_retry_safe();
 
     create_item(&driver, &container, &seed).await;
     let client_response = execute_patch(
@@ -205,7 +213,7 @@ async fn assert_equivalent(instructions: PatchInstructions, scenario: &str) {
         PatchStrategy::ClientSide,
     )
     .await;
-    let client_stored = read_stored(&driver, &container).await;
+    let client_stored = read_stored_raw(&driver, &container).await;
 
     delete_item(&driver, &container).await;
     create_item(&driver, &container, &seed).await;
@@ -216,12 +224,34 @@ async fn assert_equivalent(instructions: PatchInstructions, scenario: &str) {
         PatchStrategy::ServerSide,
     )
     .await;
-    let server_stored = read_stored(&driver, &container).await;
+    let server_stored = read_stored_raw(&driver, &container).await;
 
     match (client_response, server_response) {
         (Ok(client), Ok(server)) => {
-            let client_body = without_system_properties(response_json(client));
-            let server_body = without_system_properties(response_json(server));
+            let client_body = response_json(client);
+            let server_body = response_json(server);
+            assert_eq!(
+                client_body.get(PATCH_TRACKING_PROPERTY).is_some(),
+                client_should_track,
+                "{scenario}: client response marker mismatch"
+            );
+            assert_eq!(
+                client_stored.get(PATCH_TRACKING_PROPERTY).is_some(),
+                client_should_track,
+                "{scenario}: client stored marker mismatch"
+            );
+            assert!(
+                server_body.get(PATCH_TRACKING_PROPERTY).is_none(),
+                "{scenario}: server response must not contain a marker"
+            );
+            assert!(
+                server_stored.get(PATCH_TRACKING_PROPERTY).is_none(),
+                "{scenario}: server item must not contain a marker"
+            );
+            let client_body = without_system_properties(client_body);
+            let server_body = without_system_properties(server_body);
+            let client_stored = without_system_properties(client_stored);
+            let server_stored = without_system_properties(server_stored);
             assert_eq!(client_body, server_body, "{scenario}: response mismatch");
             assert_eq!(client_stored, server_stored, "{scenario}: stored mismatch");
             assert_eq!(
@@ -236,7 +266,8 @@ async fn assert_equivalent(instructions: PatchInstructions, scenario: &str) {
                 "{scenario}: error status mismatch"
             );
             assert_eq!(
-                client_stored, server_stored,
+                without_system_properties(client_stored),
+                without_system_properties(server_stored),
                 "{scenario}: failed write mismatch"
             );
         }

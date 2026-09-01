@@ -11,8 +11,7 @@ use azure_data_cosmos::fault_injection::{
     CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
     FaultInjectionRuleBuilder, FaultOperationType,
 };
-use azure_data_cosmos::models::ContainerProperties;
-use azure_data_cosmos::models::ItemResponse;
+use azure_data_cosmos::models::{ContainerProperties, ItemResponse, PATCH_TRACKING_PROPERTY};
 use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
 use azure_data_cosmos::options::{
     ContentResponseOnWrite, OperationOptions, PatchItemOptions, PatchStrategy, Precondition,
@@ -630,22 +629,21 @@ pub async fn patch_item_server_and_client_strategies_match_service_results(
                     .create_item(&pk, &item_id, &initial, None)
                     .await?;
 
-                client_container
+                let instructions = PatchInstructions::from(vec![operation]);
+                let client_should_track = !instructions.is_retry_safe();
+                let client_response: serde_json::Value = client_container
                     .patch_item(
                         &pk,
                         &item_id,
-                        PatchInstructions::from(vec![operation.clone()]),
+                        instructions.clone(),
                         Some(client_options.clone()),
                     )
-                    .await?;
-                server_container
-                    .patch_item(
-                        &pk,
-                        &item_id,
-                        PatchInstructions::from(vec![operation]),
-                        Some(server_options.clone()),
-                    )
-                    .await?;
+                    .await?
+                    .into_model()?;
+                let server_response: serde_json::Value = server_container
+                    .patch_item(&pk, &item_id, instructions, Some(server_options.clone()))
+                    .await?
+                    .into_model()?;
 
                 let client_stored: serde_json::Value = client_container
                     .read_item(&pk, &item_id, None)
@@ -656,9 +654,139 @@ pub async fn patch_item_server_and_client_strategies_match_service_results(
                     .await?
                     .into_model()?;
                 assert_eq!(
+                    client_response.get(PATCH_TRACKING_PROPERTY).is_some(),
+                    client_should_track,
+                    "client response marker mismatch for {case_name}"
+                );
+                assert_eq!(
+                    client_stored.get(PATCH_TRACKING_PROPERTY).is_some(),
+                    client_should_track,
+                    "client stored marker mismatch for {case_name}"
+                );
+                assert!(
+                    server_response.get(PATCH_TRACKING_PROPERTY).is_none(),
+                    "server response must not contain a marker for {case_name}"
+                );
+                assert!(
+                    server_stored.get(PATCH_TRACKING_PROPERTY).is_none(),
+                    "server item must not contain a marker for {case_name}"
+                );
+                assert_eq!(
                     strip_system_properties(client_stored),
                     strip_system_properties(server_stored),
                     "client-side and server-side PATCH differ for {case_name}"
+                );
+            }
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+pub async fn patch_item_server_and_client_strategies_match_service_errors(
+) -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, db_client| {
+            let client_container = create_container_in_database(run_context, db_client).await?;
+            let server_container = create_container_in_database(run_context, db_client).await?;
+            let client_options =
+                PatchItemOptions::default().with_strategy(PatchStrategy::ClientSide);
+            let server_options =
+                PatchItemOptions::default().with_strategy(PatchStrategy::ServerSide);
+
+            let cases = [
+                ("empty list", PatchInstructions::from(Vec::new())),
+                (
+                    "missing replace path",
+                    PatchInstructions::from(vec![PatchOperation::replace(
+                        "/missing/leaf",
+                        serde_json::json!(1),
+                    )]),
+                ),
+                (
+                    "non-number increment",
+                    PatchInstructions::from(vec![PatchOperation::increment("/display_name", 1i64)]),
+                ),
+                (
+                    "partition key",
+                    PatchInstructions::from(vec![PatchOperation::set(
+                        "/partition_key",
+                        serde_json::json!("moved"),
+                    )]),
+                ),
+                (
+                    "set item id",
+                    PatchInstructions::from(vec![PatchOperation::set(
+                        "/id",
+                        serde_json::json!("moved"),
+                    )]),
+                ),
+                (
+                    "replace item id",
+                    PatchInstructions::from(vec![PatchOperation::replace(
+                        "/id",
+                        serde_json::json!("moved"),
+                    )]),
+                ),
+                (
+                    "remove item id",
+                    PatchInstructions::from(vec![PatchOperation::remove("/id")]),
+                ),
+            ];
+
+            for (case_name, instructions) in cases {
+                let unique_id = Uuid::new_v4().to_string();
+                let item_id = format!("patch-error-equivalence-{case_name}-{unique_id}");
+                let pk = format!("pk-{unique_id}");
+                let initial = PatchTestItem {
+                    id: item_id.clone(),
+                    partition_key: pk.clone(),
+                    display_name: "before".into(),
+                    visits: 1,
+                    deleted: false,
+                };
+
+                client_container
+                    .create_item(&pk, &item_id, &initial, None)
+                    .await?;
+                server_container
+                    .create_item(&pk, &item_id, &initial, None)
+                    .await?;
+
+                let client_error = client_container
+                    .patch_item(
+                        &pk,
+                        &item_id,
+                        instructions.clone(),
+                        Some(client_options.clone()),
+                    )
+                    .await
+                    .expect_err("client-side PATCH should reject the invalid instructions");
+                let server_error = server_container
+                    .patch_item(&pk, &item_id, instructions, Some(server_options.clone()))
+                    .await
+                    .expect_err("server-side PATCH should reject the invalid instructions");
+
+                assert_eq!(
+                    client_error.status().status_code(),
+                    server_error.status().status_code(),
+                    "status mismatch for {case_name}"
+                );
+                assert_eq!(
+                    client_error.status().sub_status(),
+                    server_error.status().sub_status(),
+                    "substatus mismatch for {case_name}"
                 );
             }
 

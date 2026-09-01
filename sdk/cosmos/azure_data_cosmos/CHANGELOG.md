@@ -44,6 +44,7 @@
 
 ### Other Changes
 
+- `ContainerClient::patch_item` now honors disabled content responses instead of always returning the post-image; client-side execution requests the service-authoritative post-image when responses are enabled. ([#5196](https://github.com/Azure/azure-sdk-for-rust/pull/5196))
 - Existing `ResponseHeaders` accessors now return Gateway 2.0 backend duration, quota, item-count, and local-LSN response metadata. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 - Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and length-bounded, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
 
