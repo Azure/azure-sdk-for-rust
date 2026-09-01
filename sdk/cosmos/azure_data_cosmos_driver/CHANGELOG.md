@@ -49,6 +49,7 @@
 
 ### Other Changes
 
+- `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
 - RID-addressed operations route through standard Gateway rather than Gateway 2.0. Gateway 2.0 derives its `DatabaseName`/`CollectionName` routing tokens by parsing the authorization signing link, but a RID-addressed feed operation signs over a bare lowercased RID that carries no `dbs`/`colls` segments, so wrapping the request failed locally with `CLIENT_BAD_REQUEST` before it was sent. Standard Gateway routes raw RID paths natively. See [#4921](https://github.com/Azure/azure-sdk-for-rust/issues/4921) for native RID support on Gateway 2.0. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
 - Changed the messages and severity of some tracing events. ([#4711](https://github.com/Azure/azure-sdk-for-rust/pull/4711))
 - Gateway 2.0 responses now preserve backend duration, quota, item-count, quorum, replica, query, and physical-partition RNTBD metadata when converting to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
