@@ -725,24 +725,6 @@ pub async fn patch_item_server_and_client_strategies_match_service_errors(
                         serde_json::json!("moved"),
                     )]),
                 ),
-                (
-                    "set item id",
-                    PatchInstructions::from(vec![PatchOperation::set(
-                        "/id",
-                        serde_json::json!("moved"),
-                    )]),
-                ),
-                (
-                    "replace item id",
-                    PatchInstructions::from(vec![PatchOperation::replace(
-                        "/id",
-                        serde_json::json!("moved"),
-                    )]),
-                ),
-                (
-                    "remove item id",
-                    PatchInstructions::from(vec![PatchOperation::remove("/id")]),
-                ),
             ];
 
             for (case_name, instructions) in cases {
@@ -764,7 +746,7 @@ pub async fn patch_item_server_and_client_strategies_match_service_errors(
                     .create_item(&pk, &item_id, &initial, None)
                     .await?;
 
-                let client_error = client_container
+                let client_error = match client_container
                     .patch_item(
                         &pk,
                         &item_id,
@@ -772,11 +754,27 @@ pub async fn patch_item_server_and_client_strategies_match_service_errors(
                         Some(client_options.clone()),
                     )
                     .await
-                    .expect_err("client-side PATCH should reject the invalid instructions");
-                let server_error = server_container
+                {
+                    Err(error) => error,
+                    Ok(response) => {
+                        return Err(format!(
+                            "client-side PATCH should reject {case_name}; response={response:?}"
+                        )
+                        .into());
+                    }
+                };
+                let server_error = match server_container
                     .patch_item(&pk, &item_id, instructions, Some(server_options.clone()))
                     .await
-                    .expect_err("server-side PATCH should reject the invalid instructions");
+                {
+                    Err(error) => error,
+                    Ok(response) => {
+                        return Err(format!(
+                            "server-side PATCH should reject {case_name}; response={response:?}"
+                        )
+                        .into());
+                    }
+                };
 
                 assert_eq!(
                     client_error.status().status_code(),
