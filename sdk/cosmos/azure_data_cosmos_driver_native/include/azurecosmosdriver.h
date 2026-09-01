@@ -1004,6 +1004,41 @@ typedef struct cosmos_error_t {
 } cosmos_error_t;
 
 /**
+ * One asynchronous access-token request passed to the host.
+ *
+ * `scope` is borrowed and valid only until the token-provider callback
+ * returns. The host must copy it before starting asynchronous work.
+ */
+typedef struct cosmos_token_request_t {
+  /**
+   * Opaque identifier passed to [`cosmos_token_request_complete`].
+   */
+  uint64_t request_id;
+  /**
+   * UTF-8 token scope bytes.
+   */
+  const uint8_t *scope;
+  /**
+   * Number of bytes addressable from `scope`.
+   */
+  uintptr_t scope_len;
+} cosmos_token_request_t;
+
+/**
+ * Host callbacks used to acquire tokens and release host state.
+ */
+typedef struct cosmos_token_provider_t {
+  /**
+   * Starts token acquisition. Must be non-NULL.
+   */
+  int32_t (*get_token)(intptr_t user_data, const struct cosmos_token_request_t *request);
+  /**
+   * Releases `user_data` after the last Rust credential reference is gone.
+   */
+  void (*user_data_free)(intptr_t user_data);
+} cosmos_token_provider_t;
+
+/**
  * A library-owned byte buffer returned by value across the C ABI.
  *
  * The caller reads `ptr` and `len` directly — there are no accessor
@@ -1708,6 +1743,29 @@ cosmos_status_code_t cosmos_account_ref_with_master_key(const char *endpoint,
                                                         struct cosmos_error_t **out_error);
 
 /**
+ * Creates an account reference authenticated by a host token credential.
+ *
+ * The callback provider is adapted into the driver's async
+ * [`azure_core::credentials::TokenCredential`] interface. Ownership of
+ * `user_data` transfers to Rust only on success. The optional
+ * `user_data_free` callback runs after the final account/driver credential
+ * reference is released.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_account` populated.
+ * - `INVALID_ARGUMENT` (1) when `endpoint`, `out_account`, or the provider's
+ *   `get_token` callback is NULL.
+ * - `INVALID_UTF8` (2) when `endpoint` is not valid UTF-8.
+ * - `INVALID_ACCOUNT_REFERENCE` (4003) when `endpoint` is not a parsable URL.
+ */
+cosmos_status_code_t cosmos_account_ref_with_credential(const char *endpoint,
+                                                        struct cosmos_token_provider_t provider,
+                                                        intptr_t user_data,
+                                                        struct cosmos_account_ref_t **out_account,
+                                                        struct cosmos_error_t **out_error);
+
+/**
  * Frees an account-reference handle. NULL is a no-op.
  */
 void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
@@ -1885,6 +1943,27 @@ cosmos_status_code_t cosmos_driver_resolve_container_blocking(const struct cosmo
                                                               const char *container_id,
                                                               struct cosmos_container_ref_t **out_container,
                                                               struct cosmos_error_t **out_error);
+
+/**
+ * Completes a pending host token request.
+ *
+ * The host calls this function exactly once after accepting `request_id` in
+ * its token-provider callback. Token and error buffers are borrowed only for
+ * this call; Rust copies them before returning. Unknown, cancelled, late, or
+ * duplicate request IDs return `400 / CLIENT_FFI_NULL_ARGUMENT`.
+ *
+ * # Safety
+ *
+ * Non-NULL buffers must remain readable for their corresponding lengths for
+ * the duration of this call.
+ */
+cosmos_status_code_t cosmos_token_request_complete(uint64_t request_id,
+                                                   int32_t status,
+                                                   const uint8_t *token,
+                                                   uintptr_t token_len,
+                                                   int64_t expires_on_unix_seconds,
+                                                   const uint8_t *error_message,
+                                                   uintptr_t error_message_len);
 
 /**
  * Creates a name-based database reference parented to `account`.

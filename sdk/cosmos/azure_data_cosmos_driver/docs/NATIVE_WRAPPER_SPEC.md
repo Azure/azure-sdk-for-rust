@@ -1092,9 +1092,8 @@ cosmos_status_code_t cosmos_account_ref_with_master_key(
  * its user_data are kept alive by the AccountReference's Arc. */
 cosmos_status_code_t cosmos_account_ref_with_credential(
     const char *endpoint,
-    cosmos_token_provider_t credential,   /* see §4.10 */
-    void *user_data,
-    void (*user_data_free)(void *user_data),
+    cosmos_token_provider_t provider,   /* see §4.9 */
+    intptr_t user_data,
     cosmos_account_ref_t **out_account,
     cosmos_error_t **out_error);
 
@@ -1653,6 +1652,50 @@ void cosmos_diagnostics_free(cosmos_diagnostics_t *d);
 ```
 
 The JSON snapshot is the **only** place the wrapper serializes anything to JSON, and it's purely a debugging aid — schema-agnosticism is preserved on the data plane.
+
+### 4.9 Host token credentials (`src/credential.rs`)
+
+AAD credentials remain owned by the host SDK. The native wrapper adapts an asynchronous host callback into `azure_core::credentials::TokenCredential`, caches the returned token, and single-flights refresh so concurrent Cosmos requests do not invoke the host credential in parallel.
+
+```c
+typedef struct cosmos_token_request_t {
+    uint64_t request_id;
+    const uint8_t *scope;
+    uintptr_t scope_len;
+} cosmos_token_request_t;
+
+typedef struct cosmos_token_provider_t {
+    int32_t (*get_token)(
+        intptr_t user_data,
+        const cosmos_token_request_t *request);
+    void (*user_data_free)(intptr_t user_data); /* nullable */
+} cosmos_token_provider_t;
+
+cosmos_status_code_t cosmos_token_request_complete(
+    uint64_t request_id,
+    int32_t status,
+    const uint8_t *token,
+    uintptr_t token_len,
+    int64_t expires_on_unix_seconds,
+    const uint8_t *error_message,
+    uintptr_t error_message_len);
+```
+
+`get_token` is required. `user_data_free` is optional. `user_data` is a pointer-sized opaque integer rather than a host pointer; Go bindings use it for a `runtime/cgo.Handle` value and must not retain a Go pointer in C or Rust memory.
+
+The request follows this ownership state machine:
+
+1. Rust registers an opaque `request_id` before calling `get_token`. `scope` and the request struct are borrowed only for that call, so the host copies the scope before starting asynchronous work.
+2. A nonzero `get_token` return rejects synchronously. Rust removes the pending request; the host must not call `cosmos_token_request_complete`.
+3. A zero return accepts the request. The host must call `cosmos_token_request_complete` exactly once, even when token acquisition fails.
+4. `cosmos_token_request_complete` atomically removes `request_id`, copies the borrowed token or error buffers, and wakes the credential-owned refresh task. Unknown, late, or duplicate request IDs return `400 / CLIENT_FFI_NULL_ARGUMENT`.
+5. After the final native account/driver credential reference is dropped, Rust invokes `user_data_free` exactly once when it is non-NULL.
+
+A successful completion supplies a non-empty UTF-8 token and a Unix-seconds expiry later than the current time. A failed completion supplies a nonzero status and may supply a UTF-8 error message. The adapter requests exactly one scope (currently `https://cosmos.azure.com/.default`) and makes at most two immediate attempts for each acquisition.
+
+After the first foreground acquisition, Rust schedules background refresh at 50% of the token's remaining lifetime, with a minimum one-minute interval. A successful refresh replaces the cache and schedules the next refresh from the new expiry. A failed background refresh leaves the still-valid token available to callers and retries after half of its remaining lifetime. Background retries stop once that interval would be under one minute; the next request after actual expiry performs foreground acquisition. This matches the default .NET Cosmos v3 policy and avoids adding refresh latency to ordinary requests. Cosmos 401 responses do not trigger credential refresh or request replay; CAE and claims-challenge handling are deferred.
+
+The host may call `cosmos_token_request_complete` synchronously before `get_token` returns or asynchronously from another host thread. Go can call this fixed exported C function directly, without a per-request function-pointer trampoline. An accepted acquisition is owned by the credential rather than by the Cosmos operation that initiated it: cancelling one waiter does not cancel the host request, release provider state, or permit another caller to start a duplicate refresh. Later callers join the same in-flight operation, and the host must still complete every accepted request because v1 does not expose a host cancellation hook or impose an arbitrary token-acquisition timeout.
 
 ---
 

@@ -120,6 +120,10 @@ Additional examples for various scenarios can be found on in the examples direct
 - [Send events](#send-events)
   - [Send events directly to the Event Hub](#send-events-directly-to-the-event-hub)
   - [Send events using a batch operation](#send-events-using-a-batch-operation)
+- [Send events with the buffered producer](#send-events-with-the-buffered-producer)
+  - [Route events to a partition](#route-events-to-a-partition)
+  - [Flush and shut down](#flush-and-shut-down)
+  - [Trade-offs of buffered publishing](#trade-offs-of-buffered-publishing)
 - [Open an Event Hubs message consumer on an Event Hubs instance](#open-an-event-hubs-message-consumer-on-an-event-hub-instance)
 - [Receive events](#receive-events)
 
@@ -177,6 +181,125 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Box<dyn std::error
     Ok(())
 }
 ```
+
+### Send events with the buffered producer
+
+`BufferedProducerClient` accepts single events and publishes them in the background. The client
+groups the events into batches for each partition, and one worker for each partition sends them.
+This gives a higher throughput than `ProducerClient`, because the caller does not wait for each
+send.
+
+The client reports the outcome of each batch through handlers. A handler for failed batches is
+required, because a send failure arrives after the enqueue call already returned.
+
+```rust no_run
+use azure_identity::DeveloperToolsCredential;
+use azure_messaging_eventhubs::BufferedProducerClient;
+
+async fn buffered_publish() -> Result<(), Box<dyn std::error::Error>> {
+    let host = "<EVENTHUBS_HOST>";
+    let eventhub = "<EVENTHUB_NAME>";
+    let credential = DeveloperToolsCredential::new(None)?;
+
+    let producer = BufferedProducerClient::builder()
+        .with_on_send_succeeded(|context| async move {
+            println!(
+                "The service accepted {} events on partition {}.",
+                context.events.len(),
+                context.partition_id
+            );
+        })
+        .with_on_send_failed(|context| async move {
+            eprintln!(
+                "{} events failed on partition {}: {}",
+                context.events.len(),
+                context.partition_id,
+                context.error
+            );
+        })
+        .open(host, eventhub, credential.clone())
+        .await?;
+
+    for index in 0..1000 {
+        producer.enqueue_event(format!("event {index}"), None).await?;
+    }
+
+    producer.close().await?;
+    Ok(())
+}
+```
+
+#### Route events to a partition
+
+Give a partition ID to send an event to one partition. Give a partition key to send every event
+with that key to the same partition. Set at most one of the two; the client rejects a request that
+sets both. When you set neither, the client assigns the partitions in round-robin order.
+
+```rust no_run
+use azure_messaging_eventhubs::{BufferedProducerClient, EnqueueEventOptions};
+
+async fn route_events(
+    producer: &BufferedProducerClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    producer
+        .enqueue_event(
+            "to partition 0",
+            Some(EnqueueEventOptions {
+                partition_id: Some("0".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    producer
+        .enqueue_event(
+            "grouped by key",
+            Some(EnqueueEventOptions {
+                partition_key: Some("customer-17".to_string()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    Ok(())
+}
+```
+
+#### Flush and shut down
+
+`flush` sets a barrier. It completes once every event that the client accepted before the call
+reaches a terminal outcome. An event that arrives after the barrier does not delay the call.
+
+`close` sends the buffered events and then shuts the client down. `abort` shuts the client down at
+once and abandons the buffered events.
+
+```rust no_run
+use azure_messaging_eventhubs::BufferedProducerClient;
+
+async fn flush_and_close(
+    producer: &BufferedProducerClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    producer.enqueue_event("an event", None).await?;
+
+    // Wait for the events that the client already accepted.
+    producer.flush().await?;
+    println!("{} events are still buffered.", producer.total_buffered_event_count());
+
+    // Send what is left, then shut down.
+    producer.close().await?;
+    Ok(())
+}
+```
+
+#### Trade-offs of buffered publishing
+
+- A successful enqueue means only that the local buffer accepted the event. It does not mean that
+  Event Hubs accepted the event.
+- The process loses the buffered events if it stops before a flush or a close. Call `flush` or
+  `close` when the delivery of the buffered events matters.
+- A send failure arrives after the enqueue call already returned, through the failure handler.
+- Buffering gives a higher throughput, but the latency of one event is less predictable.
+- Use `ProducerClient` when the application needs the result of each send.
 
 ### Open an Event Hubs message consumer on an Event Hub instance
 
