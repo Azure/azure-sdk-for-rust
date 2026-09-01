@@ -329,6 +329,10 @@ pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
 pub async fn patch_strategy_obeys_service_instruction_limit() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
