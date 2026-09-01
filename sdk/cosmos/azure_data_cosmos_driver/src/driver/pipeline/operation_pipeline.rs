@@ -300,6 +300,7 @@ pub(crate) async fn execute_operation_pipeline(
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<ResolvedThroughputControl>,
     pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
+    partition_key_range_cache_enabled: bool,
     hedge_budget: &HedgeBudget,
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
@@ -343,7 +344,8 @@ pub(crate) async fn execute_operation_pipeline(
         .unwrap_or(ReadConsistencyStrategy::Default);
     let effective_consistency =
         resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
-    let session_consistency_active = !session_capturing_disabled
+    let session_consistency_active = partition_key_range_cache_enabled
+        && !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
 
     // Rule 4 (RCS validation): GlobalStrong is
@@ -440,7 +442,9 @@ pub(crate) async fn execute_operation_pipeline(
     // duration) into `evaluate_hedge_eligibility` / `maybe_upgrade_to_hedge`
     // below so the threshold stays stable across retry-driven upgrades.
     let configured_request_timeout = options.end_to_end_latency_policy().map(|p| p.timeout());
-    let deadline = configured_request_timeout.map(|t| Instant::now() + t);
+    let deadline = operation
+        .absolute_deadline()
+        .or_else(|| configured_request_timeout.map(|t| Instant::now() + t));
 
     loop {
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
@@ -478,7 +482,8 @@ pub(crate) async fn execute_operation_pipeline(
             attempt_read_consistency_strategy,
             account_default_consistency,
         );
-        let attempt_session_consistency_active = !session_capturing_disabled
+        let attempt_session_consistency_active = partition_key_range_cache_enabled
+            && !session_capturing_disabled
             && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
 
         // Emit one structured debug record per attempt with the chosen
@@ -901,7 +906,11 @@ pub(crate) async fn execute_operation_pipeline(
                     }
                 }
 
-                return build_cosmos_response(result, diagnostics);
+                return build_cosmos_response(
+                    result,
+                    diagnostics,
+                    routing.routing_fallback.is_some(),
+                );
             }
             OperationAction::FailoverRetry { new_state, delay } => {
                 tracing::debug!(
@@ -2217,6 +2226,7 @@ fn effective_partition_key_for_request(
 fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
+    routing_fallback: bool,
 ) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         TransportOutcome::Success {
@@ -2228,12 +2238,10 @@ fn build_cosmos_response(
 
             let diagnostics_ctx = Arc::new(diagnostics.complete());
 
-            Ok(CosmosResponse::new(
-                body,
-                cosmos_headers,
-                status,
-                diagnostics_ctx,
-            ))
+            Ok(
+                CosmosResponse::new(body, cosmos_headers, status, diagnostics_ctx)
+                    .with_routing_fallback(routing_fallback),
+            )
         }
         _ => {
             // This should only be called with a Complete(Success) result.
@@ -2896,7 +2904,7 @@ fn finalize_hedge_attempt(
 ) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         outcome @ TransportOutcome::Success { .. } => {
-            build_cosmos_response(Box::new(TransportResult { outcome }), diagnostics)
+            build_cosmos_response(Box::new(TransportResult { outcome }), diagnostics, false)
         }
         TransportOutcome::HttpError {
             status,

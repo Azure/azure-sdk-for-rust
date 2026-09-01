@@ -3,6 +3,8 @@
 
 //! Options for item-level point reads, writes, and patch operations.
 
+#[cfg(feature = "preview_patch")]
+use crate::models::PatchTrackingId;
 use azure_data_cosmos_driver::models::{Precondition, SessionToken};
 use azure_data_cosmos_driver::options::OperationOptions;
 
@@ -94,9 +96,9 @@ impl ItemWriteOptions {
 
 /// Options for [`ContainerClient::patch_item()`](crate::clients::ContainerClient::patch_item()).
 ///
-/// **Preview.** Requires the `preview_patch` feature. PATCH is not
-/// production-ready: an interrupted patch may re-apply non-idempotent
-/// operations. See [Failure Semantics](crate::clients::ContainerClient::patch_item()).
+/// **Preview.** Requires the `preview_patch` feature. Unsafe instruction lists
+/// use persisted tracking entries to suppress duplicate application after an
+/// ambiguous transport failure. See [Retry Semantics](crate::clients::ContainerClient::patch_item()).
 ///
 /// PATCH is implemented driver-side as a Read-Modify-Write (RMW) loop:
 /// the driver reads the current item, applies your [`PatchInstructions`](crate::models::PatchInstructions)
@@ -141,7 +143,9 @@ impl ItemWriteOptions {
 /// Read+Replace pair to the wall-clock cost.
 ///
 /// When configuring an end-to-end latency budget via
-/// [`OperationOptions`]'s end-to-end request settings, size the budget
+/// [`OperationOptions`]'s end-to-end request settings, the budget applies once
+/// to the complete logical PATCH, including every Read, Replace, retry, and
+/// terminal verification. Size the budget
 /// accordingly — a useful rule of thumb is **≥ 2× the p99 single-RTT
 /// budget you would set for a plain Replace**, plus headroom for any
 /// 412 retries you want to tolerate. Setting the budget too low can
@@ -161,6 +165,26 @@ pub struct PatchItemOptions {
     /// Maximum number of Read-Modify-Write attempts the driver may make
     /// before surfacing a 412. `None` selects the driver default (5).
     pub max_attempts: Option<std::num::NonZeroU8>,
+
+    /// Stable identity for application-level retries of the same logical
+    /// PATCH. Persist and reuse this value across process restarts; never reuse
+    /// it for a different operation. Use a random, unpredictable ID. Supplying
+    /// an ID opts even a retry-safe instruction list into marker-based
+    /// duplicate suppression. When omitted, the driver generates an ID only
+    /// for unsafe lists.
+    pub tracking_id: Option<PatchTrackingId>,
+
+    /// Maximum number of PATCH tracking entries retained on the
+    /// item. `None` selects
+    /// [`DEFAULT_PATCH_TRACKING_CAPACITY`](crate::models::DEFAULT_PATCH_TRACKING_CAPACITY).
+    /// When full after time-based pruning, the oldest entry is evicted.
+    pub tracking_capacity: Option<std::num::NonZeroU16>,
+
+    /// Number of whole seconds PATCH tracking entries remain eligible for
+    /// duplicate suppression unless FIFO capacity pressure evicts them first.
+    /// `None` selects
+    /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION).
+    pub tracking_retention_seconds: Option<std::num::NonZeroU32>,
 }
 
 #[cfg(feature = "preview_patch")]
@@ -174,6 +198,31 @@ impl PatchItemOptions {
     /// Caps the number of Read-Modify-Write attempts the driver may make.
     pub fn with_max_attempts(mut self, max_attempts: std::num::NonZeroU8) -> Self {
         self.max_attempts = Some(max_attempts);
+        self
+    }
+
+    /// Sets the stable identity for this logical PATCH operation.
+    ///
+    /// Reuse it only when retrying the same operation against the same item.
+    /// Use a random, unpredictable value; cooperating writers are trusted not
+    /// to forge entries in the reserved tracking property.
+    pub fn with_tracking_id(mut self, tracking_id: PatchTrackingId) -> Self {
+        self.tracking_id = Some(tracking_id);
+        self
+    }
+
+    /// Sets the maximum number of tracking entries retained on an item.
+    pub fn with_tracking_capacity(mut self, capacity: std::num::NonZeroU16) -> Self {
+        self.tracking_capacity = Some(capacity);
+        self
+    }
+
+    /// Sets the retention window used when pruning tracking entries by age.
+    pub fn with_tracking_retention_seconds(
+        mut self,
+        retention_seconds: std::num::NonZeroU32,
+    ) -> Self {
+        self.tracking_retention_seconds = Some(retention_seconds);
         self
     }
 
