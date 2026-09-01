@@ -25,6 +25,7 @@ pub mod account_ref;
 pub mod bytes;
 pub mod completion;
 pub mod container_ref;
+pub mod credential;
 pub mod database_ref;
 pub mod driver;
 pub mod driver_options;
