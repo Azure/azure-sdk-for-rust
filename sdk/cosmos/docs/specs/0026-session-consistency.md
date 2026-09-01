@@ -196,23 +196,27 @@ account → runtime → environment, see
 `AZURE_COSMOS_MAX_SESSION_RETRY_COUNT` are the session-relevant environment
 knobs.
 
-### 3.1 When session consistency is "effective"
+### 3.1 When automatic session management is "effective"
 
 The pipeline computes, per attempt:
 
 ```text
-session_effective = !session_capturing_disabled
-                 && read_consistency_strategy.is_session_effective(account_default)
+automatic_session_management_effective =
+    partition_key_range_cache_enabled
+    && !session_capturing_disabled
+    && read_consistency_strategy.is_session_effective(account_default)
 ```
 
 `is_session_effective` is true when the strategy is `Session`, or when the
 strategy is `Default` and the account default consistency level is `Session`.
 `Eventual`, `LatestCommitted`, and `GlobalStrong` deliberately leave the session
-lane, so they neither send nor capture tokens.
+lane, so the pipeline neither resolves cached tokens nor captures response
+tokens.
 
-`session_capturing_disabled` is a single switch that turns off *both* halves —
-no automatic attach, no automatic capture. Explicit per-operation tokens still
-flow (see §4).
+`session_capturing_disabled` is a single switch that turns off *both* automatic
+halves — no cache-based attach and no capture. Explicit per-operation tokens
+remain operation headers and are written directly to the transport request;
+they do not depend on the guarded automatic resolver (see §4).
 
 ---
 

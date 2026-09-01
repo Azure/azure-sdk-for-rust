@@ -63,10 +63,14 @@ Azure Cosmos DB Emulator product, and should never be described as one.
 
 ## Design principles
 
-- **Schema-agnostic data plane.** The driver never interprets item payloads; it
-  moves opaque bytes. Serialization belongs to each language SDK. See
+- **Schema-agnostic data plane.** Application payloads cross the SDK/driver
+  boundary as bytes, and the driver never binds them to application-specific
+  schemas or language types. It may perform bounded, schema-independent
+  processing for wire encodings, query operators, and protocol implementation.
+  Typed serialization belongs to each language SDK. See
   [adrs/0002-schema-agnostic-driver-boundary.md](adrs/0002-schema-agnostic-driver-boundary.md),
-  and [Architecture.md](Architecture.md) for the one narrow exception (PATCH).
+  and [Architecture.md](Architecture.md) for the bounded processing performed
+  inside the driver.
 - **No general model sharing across crate boundaries.** Conversions are
   explicit so the driver can evolve without forcing an SDK major version.
   Narrow, stable protocol types may be shared when the boundary ADR explicitly
