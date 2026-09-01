@@ -17,8 +17,8 @@ use azure_data_cosmos_driver::{
         DatabaseReference, ItemReference, PartitionKey,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, PartitionFailoverOptions, Region,
-        ServerCertificateValidation,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsBuilder,
+        PartitionFailoverOptions, PatchStrategy, Region, ServerCertificateValidation,
     },
     SubStatusCode,
 };
@@ -963,8 +963,11 @@ impl DriverTestRunContext {
             operation = operation.with_patch_max_attempts(n);
         }
 
+        let options = OperationOptionsBuilder::new()
+            .with_patch_strategy(PatchStrategy::ClientSide)
+            .build();
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_operation(operation, options)
             .await?
             .expect("PATCH operation must return a response");
 
