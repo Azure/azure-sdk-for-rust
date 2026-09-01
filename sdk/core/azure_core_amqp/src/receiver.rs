@@ -172,11 +172,15 @@ pub enum AmqpDeliveryOutcome {
 
     /// The delivery was not processed, and the source should apply the changes below
     /// before it redelivers the message.
+    ///
+    /// See [AMQP modified outcome](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-modified).
     Modified {
         /// Asks the source to increment the delivery count of the message.
         delivery_failed: Option<bool>,
 
-        /// Tells the source not to redeliver the message on this link.
+        /// Tells the source not to redeliver the message to the link endpoint that
+        /// sent this outcome. The source can still redeliver the message on another
+        /// link. This is the AMQP `undeliverable-here` field.
         undeliverable_here: Option<bool>,
 
         /// Annotations the source merges into the message annotations before redelivery.
