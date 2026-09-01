@@ -106,6 +106,8 @@ fn generate_c_header() {
         ("DriverHandle".into(), "driver_t".into()),
         ("AccountReference".into(), "account_ref_t".into()),
         ("AccountRefHandle".into(), "account_ref_t".into()),
+        ("CosmosTokenRequest".into(), "token_request_t".into()),
+        ("CosmosTokenProvider".into(), "token_provider_t".into()),
         ("DatabaseReference".into(), "database_ref_t".into()),
         ("DatabaseRefHandle".into(), "database_ref_t".into()),
         ("ContainerReference".into(), "container_ref_t".into()),
@@ -168,6 +170,10 @@ fn generate_c_header() {
         (
             "CosmosOperationRequest".into(),
             "operation_request_t".into(),
+        ),
+        (
+            "CosmosOperationRequestV2".into(),
+            "operation_request_v2_t".into(),
         ),
         ("CosmosRuntimeOptions".into(), "runtime_options_t".into()),
         (

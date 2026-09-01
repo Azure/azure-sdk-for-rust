@@ -39,13 +39,24 @@ Write retries are not strictly idempotent — the initial attempt and a retry ma
 
 For replace and upsert operations, the driver **always retries** regardless of whether an ETag precondition is provided. If the application developer has concerns about idempotency or wants optimistic locking, ETag preconditions (`If-Match` headers) are the appropriate mitigation. Without ETags, there is no concurrency control — concurrent writers or retried writes can silently overwrite each other.
 
+PATCH is a client-side Read-Modify-Write operation. Non-convergent instruction
+lists persist a tracking marker in the same ETag-guarded Replace as the
+mutation. A retry that observes the same marker returns success without
+reapplying the instructions. This duplicate suppression is bounded by the
+configurable whole-second retention window (5 minutes by default), per-item marker capacity, authoritative
+verification-read routing, and cooperating writers preserving the reserved
+`_azsdkPatchTracking` property and marker order. A full marker list evicts its
+oldest entry, so suppression is bounded by the earlier of retention expiry or
+FIFO eviction. One absolute end-to-end deadline covers the complete logical
+PATCH, including all internal Reads, Replaces, retries, and verification.
+
 | Operation                       | Retried?                            | Initial attempt | On retry (duplicate)                                            | App must handle |
 | ------------------------------- | ----------------------------------- | --------------- | --------------------------------------------------------------- | --------------- |
 | Create                          | Yes                                 | 201 Created     | 409 Conflict                                                    | 409             |
 | Delete                          | Yes                                 | 204 No Content  | 404 Not Found                                                   | 404             |
 | Replace / Upsert (with ETag)    | Yes                                 | 200 OK          | 412 Precondition Failed (if concurrent update)                  | 412             |
 | Replace / Upsert (without ETag) | Yes                                 | 200 OK          | 200 OK (silent overwrite — no concurrency control)              | —               |
-| Patch                           | Yes                                 | 200 OK          | 200 OK (operation-level idempotency)                            | —               |
+| Patch                           | Yes, inside tracked RMW             | 200 OK          | 200 OK (matching marker suppresses duplicate application)       | Reuse ID        |
 | Stored Procedure                | **Only when provably not executed** | Varies          | N/A — see [Stored procedure retries](#stored-procedure-retries) | N/A             |
 
 ## Status Code Handling

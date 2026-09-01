@@ -4,7 +4,7 @@ updates:
     directories:
       - "/"
       - "/eng/tools"
-      - "/samples/*"
+      - "/samples/*/*"
     schedule:
       interval: "daily"
     # Keep updates within existing Cargo.toml requirements. Security fixes
@@ -23,6 +23,18 @@ updates:
         - "azure*"
         - "autorest*"
         - "typespec*"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      npm:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "github-actions"
     directory: "/"

@@ -117,6 +117,14 @@ pub struct DriverOptions {
     /// behavior for the lifetime of the driver. They are independent of
     /// per-operation [`OperationOptions`].
     partition_failover_options: PartitionFailoverOptions,
+    /// Whether the driver may fetch and retain partition key range topology.
+    ///
+    /// Disabling this prevents all `/pkranges` requests. Operations that require
+    /// physical partition topology, including cross-partition queries and
+    /// topology-dependent change-feed reads, fail with a client error. Automatic
+    /// session token management is also disabled; user-provided session tokens are
+    /// still sent unchanged.
+    partition_key_range_cache_enabled: bool,
     /// Driver-level limits on simultaneous cross-region attempts.
     ///
     /// Hedging adds a regional attempt to complete an operation when the first is
@@ -180,6 +188,11 @@ impl DriverOptions {
         &self.partition_failover_options
     }
 
+    /// Returns whether partition key range topology caching is enabled.
+    pub fn partition_key_range_cache_enabled(&self) -> bool {
+        self.partition_key_range_cache_enabled
+    }
+
     /// Returns the driver-level cross-region hedging limits.
     pub fn hedging_options(&self) -> &HedgingOptions {
         &self.hedging_options
@@ -206,6 +219,7 @@ pub struct DriverOptionsBuilder {
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
     throughput_control_groups: ThroughputControlGroupRegistry,
     partition_failover_options: Option<PartitionFailoverOptions>,
+    partition_key_range_cache_enabled: bool,
     hedging_options: Option<HedgingOptions>,
     query_plan_mode: Option<QueryPlanMode>,
 }
@@ -222,6 +236,7 @@ impl DriverOptionsBuilder {
             fault_injection_rules: None,
             throughput_control_groups: ThroughputControlGroupRegistry::new(),
             partition_failover_options: None,
+            partition_key_range_cache_enabled: true,
             hedging_options: None,
             query_plan_mode: None,
         }
@@ -230,6 +245,18 @@ impl DriverOptionsBuilder {
     /// Sets the operation options (e.g., consistency, excluded regions, failover, session retry).
     pub fn with_operation_options(mut self, options: OperationOptions) -> Self {
         self.operation_options = Some(options);
+        self
+    }
+
+    /// Enables or disables partition key range topology caching.
+    ///
+    /// When disabled, the driver never requests `/pkranges`. Cross-partition
+    /// queries, change-feed reads requiring physical topology, and physical
+    /// feed-range APIs are unavailable. Logical-partition change-feed reads remain
+    /// available. Automatic session token management is disabled, but user-provided
+    /// session tokens are still sent unchanged.
+    pub fn with_partition_key_range_cache_enabled(mut self, enabled: bool) -> Self {
+        self.partition_key_range_cache_enabled = enabled;
         self
     }
 
@@ -415,6 +442,7 @@ impl DriverOptionsBuilder {
             fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
             throughput_control_groups: self.throughput_control_groups,
             partition_failover_options,
+            partition_key_range_cache_enabled: self.partition_key_range_cache_enabled,
             hedging_options: self.hedging_options.unwrap_or_default(),
             query_plan_mode,
         }
@@ -453,6 +481,16 @@ mod tests {
             .operation_options()
             .max_session_retry_count
             .is_none());
+        assert!(options.partition_key_range_cache_enabled());
+    }
+
+    #[test]
+    fn builder_disables_partition_key_range_cache() {
+        let options = DriverOptionsBuilder::new(test_account())
+            .with_partition_key_range_cache_enabled(false)
+            .build();
+
+        assert!(!options.partition_key_range_cache_enabled());
     }
 
     #[test]

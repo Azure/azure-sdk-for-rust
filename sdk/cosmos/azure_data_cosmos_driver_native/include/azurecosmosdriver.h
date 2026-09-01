@@ -655,6 +655,10 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_CLIENT_IMDS_REQWEST_FEATURE_REQUIRED = 20158,
   /**
+   * `CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED` (20159).
+   */
+  COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED = 20159,
+  /**
    * `CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT` (20200).
    */
   COSMOS_SUB_STATUS_CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT = 20200,
@@ -971,6 +975,41 @@ typedef struct cosmos_error_t {
 } cosmos_error_t;
 
 /**
+ * One asynchronous access-token request passed to the host.
+ *
+ * `scope` is borrowed and valid only until the token-provider callback
+ * returns. The host must copy it before starting asynchronous work.
+ */
+typedef struct cosmos_token_request_t {
+  /**
+   * Opaque identifier passed to [`cosmos_token_request_complete`].
+   */
+  uint64_t request_id;
+  /**
+   * UTF-8 token scope bytes.
+   */
+  const uint8_t *scope;
+  /**
+   * Number of bytes addressable from `scope`.
+   */
+  uintptr_t scope_len;
+} cosmos_token_request_t;
+
+/**
+ * Host callbacks used to acquire tokens and release host state.
+ */
+typedef struct cosmos_token_provider_t {
+  /**
+   * Starts token acquisition. Must be non-NULL.
+   */
+  int32_t (*get_token)(intptr_t user_data, const struct cosmos_token_request_t *request);
+  /**
+   * Releases `user_data` after the last Rust credential reference is gone.
+   */
+  void (*user_data_free)(intptr_t user_data);
+} cosmos_token_provider_t;
+
+/**
  * A library-owned byte buffer returned by value across the C ABI.
  *
  * The caller reads `ptr` and `len` directly — there are no accessor
@@ -988,30 +1027,6 @@ typedef struct cosmos_bytes_t {
    */
   uintptr_t len;
 } cosmos_bytes_t;
-
-/**
- * Layout of the `cosmos_completion_queue_options_t` struct as it appears at
- * the C ABI boundary. Caller-owned, pass-by-value (per section 3.1.2 the
- * layout is published for inputs).
- *
- * The Rust representation does **not** derive `Copy` — nor is it materialized
- * by value from a caller-supplied pointer — because `include_error_details`
- * is declared as `bool` in the emitted C header. Materializing an
- * arbitrary caller byte through a Rust `bool` would be undefined behavior,
- * so `cqoptions_from_ptr` reads each field byte-by-byte via
- * [`std::ptr::addr_of!`] and inspects the boolean byte as a raw `u8`.
- */
-typedef struct cosmos_completion_queue_options_t {
-  uint32_t capacity_hint;
-  uint32_t max_capacity;
-  /**
-   * Whether to capture rich error payloads. Emitted as a C `bool`; the
-   * wrapper reads the underlying byte via a raw pointer and treats any
-   * non-zero value as `true`, so an arbitrary host-written byte cannot
-   * produce an invalid Rust `bool` (which would be undefined behavior).
-   */
-  bool include_error_details;
-} cosmos_completion_queue_options_t;
 
 /**
  * Payload half of the [`CosmosValue`] tagged union. Only the field selected
@@ -1223,6 +1238,30 @@ typedef struct cosmos_completion_t {
    */
   struct cosmos_completion_backing_t *backing;
 } cosmos_completion_t;
+
+/**
+ * Layout of the `cosmos_completion_queue_options_t` struct as it appears at
+ * the C ABI boundary. Caller-owned, pass-by-value (per section 3.1.2 the
+ * layout is published for inputs).
+ *
+ * The Rust representation does **not** derive `Copy` — nor is it materialized
+ * by value from a caller-supplied pointer — because `include_error_details`
+ * is declared as `bool` in the emitted C header. Materializing an
+ * arbitrary caller byte through a Rust `bool` would be undefined behavior,
+ * so `cqoptions_from_ptr` reads each field byte-by-byte via
+ * [`std::ptr::addr_of!`] and inspects the boolean byte as a raw `u8`.
+ */
+typedef struct cosmos_completion_queue_options_t {
+  uint32_t capacity_hint;
+  uint32_t max_capacity;
+  /**
+   * Whether to capture rich error payloads. Emitted as a C `bool`; the
+   * wrapper reads the underlying byte via a raw pointer and treats any
+   * non-zero value as `true`, so an arbitrary host-written byte cannot
+   * produce an invalid Rust `bool` (which would be undefined behavior).
+   */
+  bool include_error_details;
+} cosmos_completion_queue_options_t;
 
 /**
  * A single custom request/operation header. Both pointers are
@@ -1597,6 +1636,21 @@ typedef struct cosmos_operation_request_t {
    * Per-call options. NULL = use driver/runtime defaults.
    */
   const struct cosmos_operation_options_t *options;
+  /**
+   * Stable PATCH tracking UUID (NUL-terminated UTF-8). NULL = generate one
+   * for this invocation.
+   */
+  const char *patch_tracking_id;
+  /**
+   * Maximum number of PATCH tracking entries retained on the item. The
+   * oldest entry is evicted when full. `0` = use the driver default.
+   */
+  uint16_t patch_tracking_capacity;
+  /**
+   * Age-based retention window in whole seconds. Capacity pressure can
+   * evict an entry earlier. `0` = use the driver default.
+   */
+  uint32_t patch_tracking_retention_seconds;
 } cosmos_operation_request_t;
 
 #ifdef __cplusplus
@@ -1660,6 +1714,29 @@ cosmos_status_code_t cosmos_account_ref_with_master_key(const char *endpoint,
                                                         struct cosmos_error_t **out_error);
 
 /**
+ * Creates an account reference authenticated by a host token credential.
+ *
+ * The callback provider is adapted into the driver's async
+ * [`azure_core::credentials::TokenCredential`] interface. Ownership of
+ * `user_data` transfers to Rust only on success. The optional
+ * `user_data_free` callback runs after the final account/driver credential
+ * reference is released.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_account` populated.
+ * - `INVALID_ARGUMENT` (1) when `endpoint`, `out_account`, or the provider's
+ *   `get_token` callback is NULL.
+ * - `INVALID_UTF8` (2) when `endpoint` is not valid UTF-8.
+ * - `INVALID_ACCOUNT_REFERENCE` (4003) when `endpoint` is not a parsable URL.
+ */
+cosmos_status_code_t cosmos_account_ref_with_credential(const char *endpoint,
+                                                        struct cosmos_token_provider_t provider,
+                                                        intptr_t user_data,
+                                                        struct cosmos_account_ref_t **out_account,
+                                                        struct cosmos_error_t **out_error);
+
+/**
  * Frees an account-reference handle. NULL is a no-op.
  */
 void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
@@ -1672,6 +1749,17 @@ void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
  * undefined behavior.
  */
 void cosmos_bytes_free(struct cosmos_bytes_t bytes);
+
+/**
+ * Returns the effective PATCH tracking UUID carried by a completion.
+ *
+ * The returned NUL-terminated UTF-8 string is borrowed from `completion` and
+ * remains valid until that completion is freed. Returns NULL for non-PATCH
+ * operations, untracked retry-safe PATCH operations, or an invalid completion
+ * pointer. For tracked PATCH operations, the ID is also available on cancelled
+ * completions because it is resolved before execution begins.
+ */
+const char *cosmos_completion_patch_tracking_id(const struct cosmos_completion_t *completion);
 
 /**
  * Create a completion queue bound to `runtime`. Returns NULL if `runtime`
@@ -1826,6 +1914,27 @@ cosmos_status_code_t cosmos_driver_resolve_container_blocking(const struct cosmo
                                                               const char *container_id,
                                                               struct cosmos_container_ref_t **out_container,
                                                               struct cosmos_error_t **out_error);
+
+/**
+ * Completes a pending host token request.
+ *
+ * The host calls this function exactly once after accepting `request_id` in
+ * its token-provider callback. Token and error buffers are borrowed only for
+ * this call; Rust copies them before returning. Unknown, cancelled, late, or
+ * duplicate request IDs return `400 / CLIENT_FFI_NULL_ARGUMENT`.
+ *
+ * # Safety
+ *
+ * Non-NULL buffers must remain readable for their corresponding lengths for
+ * the duration of this call.
+ */
+cosmos_status_code_t cosmos_token_request_complete(uint64_t request_id,
+                                                   int32_t status,
+                                                   const uint8_t *token,
+                                                   uintptr_t token_len,
+                                                   int64_t expires_on_unix_seconds,
+                                                   const uint8_t *error_message,
+                                                   uintptr_t error_message_len);
 
 /**
  * Creates a name-based database reference parented to `account`.

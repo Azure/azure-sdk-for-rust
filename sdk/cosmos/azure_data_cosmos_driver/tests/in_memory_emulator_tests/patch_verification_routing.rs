@@ -492,7 +492,7 @@ async fn stale_fallback_session_retries_before_increment_replace() {
     fixture._emulator.store().pause_replication("West US");
 
     let item = ItemReference::from_name(&fixture.container, PartitionKey::from(PK), "item1");
-    fixture
+    let replace_response = fixture
         .driver
         .execute_singleton_operation(
             CosmosOperation::replace_item(item.clone()).with_body(
@@ -510,16 +510,46 @@ async fn stale_fallback_session_retries_before_increment_replace() {
         )
         .await
         .expect("East update succeeds while West replication is paused");
+    let external_session_token = replace_response
+        .headers()
+        .session_token
+        .clone()
+        .expect("the East write returns a session token");
+
+    // Create a separate driver after the write so its item-session cache is
+    // empty. The only way it can preserve the first driver's session on a
+    // reader fallback is through the explicit token on the PATCH operation.
+    let fallback_runtime = fixture
+        ._emulator
+        .runtime_builder()
+        .build()
+        .await
+        .expect("fallback runtime builds");
+    let fallback_account =
+        AccountReference::with_master_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+    let fallback_options = DriverOptions::builder(fallback_account)
+        .with_preferred_regions(vec![Region::WEST_US, Region::EAST_US])
+        .build();
+    let fallback_driver = fallback_runtime
+        .create_driver(fallback_options)
+        .await
+        .expect("fallback driver initializes");
+    let fallback_container = fallback_driver
+        .resolve_container(DB_NAME, CONTAINER_NAME)
+        .await
+        .expect("fallback container resolves");
+    let fallback_item =
+        ItemReference::from_name(&fallback_container, PartitionKey::from(PK), "item1");
+
     fixture.recorder.clear();
-    assert!(fixture
-        .driver
-        .mark_region_endpoint_unavailable_for_testing(&Region::EAST_US));
+    assert!(fallback_driver.mark_region_endpoint_unavailable_for_testing(&Region::EAST_US));
 
     let patch = PatchInstructions::from(vec![PatchOperation::increment("/counter", 1_i64)]);
-    let response = fixture
-        .driver
+    let response = fallback_driver
         .execute_singleton_operation(
-            CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&patch).unwrap()),
+            CosmosOperation::patch_item(fallback_item)
+                .with_body(serde_json::to_vec(&patch).unwrap())
+                .with_session_token(external_session_token.clone()),
             aggressive_hedging_options(),
         )
         .await
@@ -538,7 +568,10 @@ async fn stale_fallback_session_retries_before_increment_replace() {
         ],
         "the stale fallback must session-retry before issuing the Replace"
     );
-    assert!(requests[0].session_token.is_some());
+    assert_eq!(
+        requests[0].session_token.as_deref(),
+        Some(external_session_token.0.as_ref())
+    );
     assert_eq!(requests[0].read_consistency_strategy, None);
     assert_eq!(
         requests[1].read_consistency_strategy.as_deref(),
