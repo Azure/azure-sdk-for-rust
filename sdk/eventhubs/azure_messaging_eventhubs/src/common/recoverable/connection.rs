@@ -148,9 +148,9 @@ pub(crate) struct RecoverableConnection {
     forced_error: Mutex<Option<AmqpError>>,
 
     // Separate from `forced_error`, which the per-operation wrappers
-    // (receive, send, management call) consume. This slot is consumed only
-    // by `ensure_receiver`, so a test can fail an attach without changing
-    // how the operation wrappers behave.
+    // (receive, send, management call) consume. This slot is consumed by
+    // `ensure_receiver` and `ensure_sender`, so a test can fail an attach
+    // without changing how the operation wrappers behave.
     #[cfg(test)]
     forced_attach_error: Mutex<Option<AmqpError>>,
 
@@ -359,13 +359,13 @@ impl RecoverableConnection {
         v.map_or(Ok(()), Err)
     }
 
-    /// Makes the next `ensure_receiver` call fail with `error`.
+    /// Makes the next `ensure_receiver` or `ensure_sender` call fail with `error`.
     ///
     /// The injected error takes the same return path as a rejected link
     /// attach: out of the `get_or_try_init` closure, through
-    /// `ensure_receiver` and `get_receiver`, and into the caller's error
-    /// handling. Tests use this to drive the attach-failure branch of
-    /// `EventReceiver::stream_events` without a live broker.
+    /// `ensure_receiver` or `ensure_sender`, and into the caller's error
+    /// handling. Tests use this to drive attach-failure branches without a
+    /// live broker.
     #[cfg(test)]
     pub(crate) fn force_attach_error(&self, error: AmqpError) -> Result<()> {
         use crate::EventHubsError;
@@ -1023,6 +1023,12 @@ impl RecoverableConnection {
         // steady-state sends never serialize on a shared lock. See issue #2243.
         let sender = self
             .get_or_init_generational(&self.sender_instances, path, || async {
+                // Test seam: fail the attach with an injected error before any
+                // network activity. The error takes the same path as a
+                // rejected sender attach below it.
+                #[cfg(test)]
+                self.get_forced_attach_error()?;
+
                 // Ensure that we are authorized to access the senders path.
                 self.authorizer.authorize_path(self, path).await?;
 
