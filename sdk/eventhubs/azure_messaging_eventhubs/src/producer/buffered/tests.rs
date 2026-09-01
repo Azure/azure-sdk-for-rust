@@ -1706,4 +1706,83 @@ mod live {
 
         Ok(())
     }
+
+    /// A transient sender attach failure must not fail an event that the
+    /// buffered producer already accepted.
+    #[recorded::test(live)]
+    async fn buffered_sender_attach_retries_before_reporting_failure(
+        ctx: TestContext,
+    ) -> crate::Result<()> {
+        const TEST_NAME: &str = "buffered_sender_attach_retries_before_reporting_failure";
+        const PARTITION: &str = "1";
+
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+
+        let outcomes = Arc::new(Outcomes::default());
+        let for_success = outcomes.clone();
+        let for_failure = outcomes.clone();
+        let producer = Arc::new(
+            BufferedProducerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .with_max_wait_time(Duration::seconds(30))
+                .with_on_send_succeeded(move |context: SendBatchSucceededContext| {
+                    let outcomes = for_success.clone();
+                    async move {
+                        outcomes
+                            .succeeded
+                            .lock()
+                            .unwrap()
+                            .extend(bodies(&context.events));
+                    }
+                })
+                .with_on_send_failed(move |context: SendBatchFailedContext| {
+                    let outcomes = for_failure.clone();
+                    async move {
+                        outcomes
+                            .failed
+                            .lock()
+                            .unwrap()
+                            .extend(bodies(&context.events));
+                    }
+                })
+                .open(host.as_str(), eventhub.as_str(), credential)
+                .await?,
+        );
+
+        // The first sender attach fails before it reaches the broker. The
+        // recoverable sender must re-run the attach and size lookup, then the
+        // worker can build and send the batch.
+        producer
+            .inner_producer()
+            .expect("a live client has a producer")
+            .force_attach_error(AmqpError::from(AmqpErrorKind::LinkClosedByRemote(
+                Box::new(azure_core::error::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    "Forced attach error",
+                )),
+            )))
+            .unwrap();
+
+        producer
+            .enqueue_event(
+                "attach-retry",
+                Some(EnqueueEventOptions {
+                    partition_id: Some(PARTITION.to_string()),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        producer.flush().await?;
+        producer.close().await?;
+
+        assert_eq!(
+            outcomes.succeeded.lock().unwrap().as_slice(),
+            ["attach-retry"]
+        );
+        assert!(outcomes.failed.lock().unwrap().is_empty());
+        Ok(())
+    }
 }

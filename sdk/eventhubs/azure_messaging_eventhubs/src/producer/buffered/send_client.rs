@@ -5,7 +5,7 @@
 
 use crate::{error::Result, producer::ProducerClient};
 use azure_core::http::Url;
-use azure_core_amqp::{AmqpMessage, AmqpSendOutcome, AmqpSenderApis};
+use azure_core_amqp::{AmqpMessage, AmqpSendOutcome};
 use std::sync::Arc;
 
 /// The operations that a partition worker needs from the AMQP layer.
@@ -57,8 +57,7 @@ impl BufferedSendClient for ProducerSendClient {
 
     async fn max_message_size(&self, partition_id: &str) -> Result<u64> {
         let path = self.partition_path(partition_id)?;
-        let sender = self.producer.ensure_sender(path).await?;
-        sender.max_message_size().await?.ok_or_else(|| {
+        self.producer.max_message_size(path).await?.ok_or_else(|| {
             crate::EventHubsError::with_message(
                 "No maximum message size available from the sender link.",
             )

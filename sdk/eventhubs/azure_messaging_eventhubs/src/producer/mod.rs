@@ -560,12 +560,27 @@ impl ProducerClient {
         self.connection.force_error(error)
     }
 
+    /// Forces the next sender or receiver attach to fail.
+    #[cfg(test)]
+    pub(crate) fn force_attach_error(&self, error: AmqpError) -> Result<()> {
+        self.connection.force_attach_error(error)
+    }
+
     pub(crate) fn base_url(&self) -> &Url {
         &self.endpoint
     }
 
     async fn ensure_sender(&self, target: Url) -> Result<RecoverableSender> {
         self.connection.get_sender(target).await
+    }
+
+    pub(crate) async fn max_message_size(
+        &self,
+        target: Url,
+    ) -> azure_core_amqp::Result<Option<u64>> {
+        RecoverableSender::new(Arc::downgrade(&self.connection), target)
+            .max_message_size()
+            .await
     }
 
     async fn ensure_connection(&self) -> Result<()> {

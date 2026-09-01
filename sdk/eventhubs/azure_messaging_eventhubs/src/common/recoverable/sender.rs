@@ -159,24 +159,52 @@ impl AmqpSenderApis for RecoverableSender {
     }
 
     async fn max_message_size(&self) -> Result<Option<u64>> {
-        self.recoverable_connection
-            .upgrade()
-            .ok_or_else(|| {
-                AmqpError::from(azure_core::Error::with_message(
-                    AzureErrorKind::Other,
-                    "Missing connection",
-                ))
-            })?
-            .ensure_sender(&self.path)
-            .await
-            .map_err(|e| {
-                AmqpError::from(azure_core::Error::with_error(
-                    AzureErrorKind::Other,
-                    e,
-                    "Could not ensure sender",
-                ))
-            })?
-            .max_message_size()
-            .await
+        let max_message_size = recover_azure_operation(
+            || {
+                let path = self.path.clone();
+                async move {
+                    let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
+                        AmqpError::from(azure_core::Error::with_message(
+                            AzureErrorKind::Other,
+                            "Missing connection",
+                        ))
+                    })?;
+
+                    // Check for forced error.
+                    #[cfg(test)]
+                    connection.get_forced_error()?;
+
+                    let sender = connection.ensure_sender(&path).await.map_err(|e| {
+                        AmqpError::from(azure_core::Error::with_error(
+                            AzureErrorKind::Other,
+                            e,
+                            "Could not ensure sender",
+                        ))
+                    })?;
+                    sender.max_message_size().await
+                }
+            },
+            &self
+                .recoverable_connection
+                .upgrade()
+                .ok_or_else(|| {
+                    AmqpError::from(azure_core::Error::with_message(
+                        AzureErrorKind::Other,
+                        "Missing connection",
+                    ))
+                })?
+                .retry_options,
+            Self::should_retry_send_operation,
+            Some(move |connection: Weak<RecoverableConnection>, reason| {
+                let connection = connection.clone();
+                Box::pin(async move {
+                    // Use the static method from RecoverableConnection to recover from the error.
+                    RecoverableConnection::recover_from_error(connection, reason).await
+                })
+            }),
+            Some(self.recoverable_connection.clone()),
+        )
+        .await?;
+        Ok(max_message_size)
     }
 }
