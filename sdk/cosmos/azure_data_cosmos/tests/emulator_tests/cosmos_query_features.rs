@@ -90,7 +90,7 @@ async fn seed_container(db: &DatabaseClient) -> azure_data_cosmos::Result<Contai
         }
     }
 
-    let container = db.container_client("QueryFeaturesContainer").await?;
+    let container = db.container_client("QueryFeaturesContainer", None).await?;
     for record in sales_records() {
         container
             .create_item(record.partition_key.clone(), &record.id, &record, None)

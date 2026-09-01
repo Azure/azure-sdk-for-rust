@@ -116,7 +116,7 @@ async fn build_driver(
 
 async fn seed_item(driver: &CosmosDriver, item_id: &str) {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     let body = serde_json::json!({"id": item_id, "pk": "pk1", "value": 1}).to_string();
@@ -136,7 +136,7 @@ async fn read_item(
     options: OperationOptions,
 ) -> Result<(), azure_data_cosmos_driver::error::CosmosError> {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id.to_string());
@@ -152,7 +152,7 @@ async fn write_item(
     options: OperationOptions,
 ) -> Result<(), azure_data_cosmos_driver::error::CosmosError> {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     let body = serde_json::json!({"id": item_id, "pk": "pk1", "value": 2}).to_string();

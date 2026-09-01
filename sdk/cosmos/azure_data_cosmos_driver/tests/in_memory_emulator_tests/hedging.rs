@@ -256,7 +256,7 @@ async fn read_item_hedge_diagnostics(
     pk: &str,
 ) -> Option<HedgeDiagnostics> {
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -290,7 +290,7 @@ async fn read_item_result(
     azure_data_cosmos_driver::error::CosmosError,
 > {
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -562,7 +562,7 @@ async fn hedging_write_not_hedged() {
     let (driver, op_options) = make_hedging_driver(&ctx, Duration::from_millis(100), rules).await;
 
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
     let item_ref = ItemReference::from_name(&container, PartitionKey::from("pk1"), "wpk-1");

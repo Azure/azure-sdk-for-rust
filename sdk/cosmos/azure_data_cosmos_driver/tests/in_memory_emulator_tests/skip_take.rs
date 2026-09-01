@@ -180,7 +180,7 @@ fn assert_subset_no_duplicates(ids: &[String], universe: &[String]) {
 async fn cross_partition_offset_limit_returns_correct_count() {
     let (_emulator, driver) = setup(2).await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -211,7 +211,7 @@ async fn cross_partition_offset_limit_returns_correct_count() {
 async fn single_partition_offset_limit_returns_exact_window() {
     let (_emulator, driver) = setup(2).await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -242,7 +242,7 @@ async fn single_partition_offset_limit_returns_exact_window() {
 async fn offset_beyond_total_returns_empty() {
     let (_emulator, driver) = setup(2).await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -268,7 +268,7 @@ async fn offset_beyond_total_returns_empty() {
 async fn limit_zero_returns_empty() {
     let (_emulator, driver) = setup(2).await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -293,7 +293,7 @@ async fn limit_zero_returns_empty() {
 async fn cross_partition_top_returns_correct_count() {
     let (_emulator, driver) = setup(2).await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -318,7 +318,7 @@ async fn cross_partition_top_returns_correct_count() {
 async fn cross_partition_top_larger_than_total_returns_all() {
     let (_emulator, driver) = setup(2).await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -403,7 +403,7 @@ async fn catalog_scenarios_match_expectations() {
 
         let (_emulator, driver) = setup(scenario.partition_count).await;
         let container = driver
-            .resolve_container("testdb", "testcoll")
+            .resolve_container("testdb", "testcoll", OperationOptions::default())
             .await
             .expect("container resolves");
 
