@@ -17,8 +17,9 @@ use std::sync::Arc;
 use crate::{
     logging::apply_storage_logging_defaults,
     session::{
-        options::SessionOptions, policy::SessionAuthenticationPolicy,
-        provider::ContainerSessionProvider,
+        options::SessionOptions,
+        policy::SessionAuthenticationPolicy,
+        provider::{ContainerSessionProvider, SessionProvider},
     },
 };
 
@@ -87,32 +88,86 @@ fn build_auth_policies(
         vec![STORAGE_SCOPE],
     ));
 
-    if session_options.is_enabled() {
-        let service_options = BlobServiceClientOptions {
-            client_options: client_options.clone(),
-            version: version.to_string(),
-        };
-        let provider = Arc::new(ContainerSessionProvider::new(
-            endpoint,
-            credential,
-            service_options,
-        )?);
-        per_retry_policies.push(Arc::new(SessionAuthenticationPolicy::new(
-            provider,
-            bearer,
-            session_options.clone(),
-        )));
-    } else {
+    if !session_options.is_enabled() {
         per_retry_policies.push(bearer);
+        return Ok(per_retry_policies);
     }
 
+    // Session signing needs an account name, resolved once here. Mirror the
+    // service SDK: fail fast when explicitly enabled but unresolvable, or quietly
+    // fall back to bearer when sessions are enabled only by default.
+    let Some(account) = resolve_session_account(endpoint, session_options) else {
+        let endpoint = endpoint_for_log(endpoint);
+        if session_options.is_explicitly_enabled() {
+            tracing::warn!(
+                %endpoint,
+                "session authentication cannot be enabled: the storage account name could not be determined"
+            );
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "the storage account name is required to enable session authentication \
+                     but could not be determined from {endpoint}; set SessionOptions::account_name"
+                ),
+            ));
+        }
+        tracing::warn!(
+            %endpoint,
+            "session authentication disabled: the storage account name could not be determined"
+        );
+        per_retry_policies.push(bearer);
+        return Ok(per_retry_policies);
+    };
+
+    let provider: Arc<dyn SessionProvider> = match &session_options.session_provider {
+        Some(provider) => provider.clone(),
+        None => {
+            let service_options = BlobServiceClientOptions {
+                client_options: client_options.clone(),
+                version: version.to_string(),
+            };
+            let provider: Arc<dyn SessionProvider> =
+                ContainerSessionProvider::new(endpoint, credential, Some(service_options))?;
+            provider
+        }
+    };
+    per_retry_policies.push(Arc::new(SessionAuthenticationPolicy::new(
+        provider, bearer, account,
+    )));
+
     Ok(per_retry_policies)
+}
+
+/// Resolves the account name used to sign session requests: the configured
+/// account name, or the first label of the endpoint host.
+fn resolve_session_account(endpoint: &Url, options: &SessionOptions) -> Option<String> {
+    if let Some(account) = options.account_name.as_deref() {
+        if !account.is_empty() {
+            return Some(account.to_string());
+        }
+    }
+    endpoint
+        .host_str()?
+        .split('.')
+        .next()
+        .filter(|label| !label.is_empty())
+        .map(str::to_string)
+}
+
+/// Reduces `endpoint` to scheme, host, and path for logging, dropping any query
+/// string so a SAS token is never recorded.
+fn endpoint_for_log(endpoint: &Url) -> String {
+    let mut endpoint = endpoint.clone();
+    endpoint.set_query(None);
+    endpoint.set_fragment(None);
+    endpoint.to_string()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::session::options::SessionMode;
+    use crate::session::provider::{SessionTokenInfo, StubSessionProvider};
     use async_trait::async_trait;
     use azure_core::{
         credentials::TokenCredential,
@@ -120,6 +175,7 @@ mod tests {
             headers::{Headers, AUTHORIZATION},
             AsyncRawResponse, Context, Method, Request, StatusCode,
         },
+        time::OffsetDateTime,
         Bytes,
     };
     use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
@@ -233,6 +289,7 @@ mod tests {
         let session_options = SessionOptions {
             mode: SessionMode::Disabled,
             account_name: None,
+            ..Default::default()
         };
 
         let policies = build_auth_policies(
@@ -255,6 +312,7 @@ mod tests {
         let session_options = SessionOptions {
             mode: SessionMode::Enabled,
             account_name: Some("myaccount".into()),
+            ..Default::default()
         };
 
         let policies = build_auth_policies(
@@ -269,5 +327,89 @@ mod tests {
         assert_eq!(policies.len(), 1);
         let auth = auth_scheme_used(&policies[0]).await.unwrap();
         assert!(auth.starts_with("Session token-abc:"), "got: {auth}");
+    }
+
+    #[test]
+    fn resolve_session_account_prefers_configured_name() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: Some("configured".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            resolve_session_account(&endpoint(), &options).as_deref(),
+            Some("configured")
+        );
+    }
+
+    #[test]
+    fn resolve_session_account_falls_back_to_host_label() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: None,
+            ..Default::default()
+        };
+        assert_eq!(
+            resolve_session_account(&endpoint(), &options).as_deref(),
+            Some("myaccount")
+        );
+    }
+
+    #[test]
+    fn resolve_session_account_ignores_empty_configured_name() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: Some(String::new()),
+            ..Default::default()
+        };
+        assert_eq!(
+            resolve_session_account(&endpoint(), &options).as_deref(),
+            Some("myaccount")
+        );
+    }
+
+    #[test]
+    fn endpoint_for_log_strips_query_and_fragment() {
+        let url =
+            Url::parse("https://myaccount.blob.core.windows.net/c/b?sig=secret#frag").unwrap();
+        assert_eq!(
+            endpoint_for_log(&url),
+            "https://myaccount.blob.core.windows.net/c/b"
+        );
+    }
+
+    #[tokio::test]
+    async fn injected_provider_is_used() {
+        let provider = Arc::new(StubSessionProvider::new(
+            SessionTokenInfo::for_test(
+                "injected-token",
+                "c2Vzc2lvbi1rZXk=",
+                OffsetDateTime::from_unix_timestamp(4_000_000_000).unwrap(),
+            ),
+            true,
+        ));
+        let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
+        let session_options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: Some("myaccount".into()),
+            session_provider: Some(provider.clone()),
+        };
+
+        let policies = build_auth_policies(
+            &endpoint(),
+            Some(credential),
+            &session_options,
+            &ClientOptions::default(),
+            "2026-02-06",
+        )
+        .unwrap();
+
+        assert_eq!(policies.len(), 1);
+        let auth = auth_scheme_used(&policies[0]).await.unwrap();
+        assert!(
+            provider.get_calls() >= 1,
+            "the injected provider was not consulted"
+        );
+        assert!(auth.starts_with("Session injected-token:"), "got: {auth}");
     }
 }

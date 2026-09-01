@@ -18,7 +18,8 @@ use azure_core::http::{
 };
 use azure_core_test::{recorded, BodyRegexSanitizer, Recording, TestContext};
 use azure_storage_blob::{
-    models::BlockListType, BlobServiceClient, BlobServiceClientOptions, SessionMode, SessionOptions,
+    models::BlockListType, BlobServiceClient, BlobServiceClientOptions, ContainerSessionProvider,
+    SessionMode, SessionOptions, SessionProvider,
 };
 use common::{ClientOptionsExt, StorageAccount};
 use std::{
@@ -89,6 +90,7 @@ impl Policy for SessionAuthCountingPolicy {
 /// base64 so playback can still sign requests using the recorded body.
 async fn redact_session_credentials(recording: &Recording) -> azure_core::Result<()> {
     // Base64 of "REDACTED": a valid key so playback signing still succeeds.
+    // cspell:ignore VEQUNURUQ
     const REDACTED: &str = "UkVEQUNURUQ=";
     for element in ["SessionToken", "SessionKey"] {
         recording
@@ -124,6 +126,34 @@ async fn session_service_client(
     let session_options = SessionOptions {
         mode,
         account_name: Some(account_name),
+        ..Default::default()
+    };
+    BlobServiceClient::new_with_session_options(
+        Url::parse(&endpoint)?,
+        Some(recording.credential()),
+        session_options,
+        Some(options),
+    )
+}
+
+/// Builds a session-enabled `BlobServiceClient` that reuses the shared
+/// `provider`, with `counting` attached so its downloads are observed.
+fn shared_provider_client(
+    recording: &Recording,
+    account_name: &str,
+    provider: Arc<dyn SessionProvider>,
+    counting: Arc<SessionAuthCountingPolicy>,
+) -> azure_core::Result<BlobServiceClient> {
+    let mut options = BlobServiceClientOptions::default().with_per_try_policy(counting);
+    let endpoint = common::recorded_test_setup(
+        recording,
+        StorageAccount::Standard,
+        &mut options.client_options,
+    );
+    let session_options = SessionOptions {
+        mode: SessionMode::Enabled,
+        account_name: Some(account_name.to_string()),
+        session_provider: Some(provider),
     };
     BlobServiceClient::new_with_session_options(
         Url::parse(&endpoint)?,
@@ -209,6 +239,85 @@ async fn comp_operation_falls_back_to_bearer(ctx: TestContext) -> Result<(), Box
         counts.session_get.load(Ordering::SeqCst),
         0,
         "comp GET must not use session authentication"
+    );
+
+    container.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn shared_provider_reuses_session_across_clients(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let counts = Arc::new(SessionAuthCounts::default());
+    let counting = Arc::new(SessionAuthCountingPolicy {
+        counts: counts.clone(),
+    });
+    redact_session_credentials(recording).await?;
+    let account_name = recording
+        .var("AZURE_STORAGE_ACCOUNT_NAME", None)
+        .as_str()
+        .to_string();
+
+    // One provider owns the single session cache; its own service client is
+    // observed by the shared counter so its Create Session call is counted.
+    let mut provider_options =
+        BlobServiceClientOptions::default().with_per_try_policy(counting.clone());
+    let endpoint = common::recorded_test_setup(
+        recording,
+        StorageAccount::Standard,
+        &mut provider_options.client_options,
+    );
+    let provider: Arc<dyn SessionProvider> = ContainerSessionProvider::new(
+        &Url::parse(&endpoint)?,
+        recording.credential(),
+        Some(provider_options),
+    )?;
+
+    // Two independent clients share the one provider (and its cache).
+    let client1 =
+        shared_provider_client(recording, &account_name, provider.clone(), counting.clone())?;
+    let client2 =
+        shared_provider_client(recording, &account_name, provider.clone(), counting.clone())?;
+
+    let container_name = common::get_container_name(recording);
+    let blob_name = common::get_blob_name(recording);
+    let container = client1.blob_container_client(&container_name);
+    container.create(None).await?;
+    let blob = container.blob_client(&blob_name);
+    let data = b"shared session payload".to_vec();
+    common::create_test_blob(&blob, Some(RequestContent::from(data.clone())), None).await?;
+
+    // Download the same blob through each client; the second reuses the session.
+    let mut buffer = vec![0u8; data.len()];
+    client1
+        .blob_container_client(&container_name)
+        .blob_client(&blob_name)
+        .download_into(&mut buffer, None)
+        .await?;
+    assert_eq!(buffer, data);
+    let mut buffer = vec![0u8; data.len()];
+    client2
+        .blob_container_client(&container_name)
+        .blob_client(&blob_name)
+        .download_into(&mut buffer, None)
+        .await?;
+    assert_eq!(buffer, data);
+
+    assert_eq!(
+        counts.create_session.load(Ordering::SeqCst),
+        1,
+        "a shared provider should mint exactly one session for both clients"
+    );
+    assert!(
+        counts.session_get.load(Ordering::SeqCst) >= 2,
+        "both downloads should use the shared session"
+    );
+    assert_eq!(
+        counts.non_get_session.load(Ordering::SeqCst),
+        0,
+        "non-GET requests must not use session authentication"
     );
 
     container.delete(None).await?;

@@ -19,7 +19,7 @@ use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     fmt::SafeDebug,
-    http::{Method, Request, StatusCode, Url},
+    http::{headers::HeaderName, Method, Request, StatusCode, Url},
     time::{Duration, OffsetDateTime},
     Error, Result,
 };
@@ -28,6 +28,9 @@ use std::{
     fmt,
     sync::{Arc, Mutex},
 };
+
+#[cfg(test)]
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// How long before expiry a proactive background refresh is started.
 const REFRESH_BUFFER: Duration = Duration::seconds(30);
@@ -40,8 +43,11 @@ const FEATURE_NOT_ENABLED: &str = "FeatureNotEnabled";
 
 /// A cached session, or a sentinel indicating that callers should fall back to
 /// bearer authentication for the duration of the cooldown.
+///
+/// This type is opaque: it is returned and consumed by the sealed
+/// [`SessionProvider`] trait and cannot be constructed or inspected by callers.
 #[derive(Clone, SafeDebug)]
-pub(crate) struct SessionTokenInfo {
+pub struct SessionTokenInfo {
     session_token: Option<String>,
     session_key: Option<String>,
     expires_on: OffsetDateTime,
@@ -142,9 +148,19 @@ impl PartialEq for SessionTokenInfo {
     }
 }
 
-/// Provides and caches session tokens used to authenticate eligible requests.
+/// Seals [`SessionProvider`]; only types defined in this module can implement it.
+mod sealed {
+    pub trait Sealed {}
+}
+
+/// Provides and caches session tokens used to authenticate eligible blob download requests.
+///
+/// This trait is sealed and cannot be implemented outside this crate. Construct a
+/// provider with [`ContainerSessionProvider::new`] and assign it to
+/// [`SessionOptions::session_provider`](crate::SessionOptions) to share one
+/// session cache across multiple clients.
 #[async_trait]
-pub(crate) trait SessionProvider: Send + Sync + fmt::Debug {
+pub trait SessionProvider: sealed::Sealed + fmt::Debug + Send + Sync {
     /// Returns a cached session for `request`, acquiring one on first access.
     async fn get_session(&self, request: &Request) -> Result<SessionTokenInfo>;
 
@@ -158,7 +174,7 @@ pub(crate) trait SessionProvider: Send + Sync + fmt::Debug {
 
 /// A [`SessionProvider`] that mints sessions with a [`TokenCredential`] and
 /// caches them per container.
-pub(crate) struct ContainerSessionProvider {
+pub struct ContainerSessionProvider {
     service_client: Arc<BlobServiceClient>,
     refresh_buffer: Duration,
     caches: Mutex<HashMap<String, AutoRefreshingCache<SessionTokenInfo>>>,
@@ -172,24 +188,30 @@ impl fmt::Debug for ContainerSessionProvider {
 }
 
 impl ContainerSessionProvider {
-    /// Creates a provider whose sessions are minted against the blob service
-    /// endpoint derived from `service_url` (container, blob, and query stripped).
-    pub(crate) fn new(
+    /// Creates a provider that mints and caches per-container session tokens.
+    ///
+    /// Sessions are minted against the blob service endpoint derived from
+    /// `service_url` (container, blob, and query stripped). Assign the returned
+    /// provider to [`SessionOptions::session_provider`](crate::SessionOptions) to
+    /// share one session cache across multiple clients.
+    ///
+    /// # Arguments
+    ///
+    /// * `service_url` - A URL for the target account, for example `https://myaccount.blob.core.windows.net/`.
+    /// * `credential` - A [`TokenCredential`] used to mint sessions.
+    /// * `options` - Optional configuration applied to the provider's own service client.
+    pub fn new(
         service_url: &Url,
         credential: Arc<dyn TokenCredential>,
-        options: BlobServiceClientOptions,
-    ) -> Result<Self> {
+        options: Option<BlobServiceClientOptions>,
+    ) -> Result<Arc<Self>> {
         let endpoint = service_endpoint(service_url);
-        let service_client = Arc::new(BlobServiceClient::new(
-            endpoint,
-            Some(credential),
-            Some(options),
-        )?);
-        Ok(Self {
+        let service_client = Arc::new(BlobServiceClient::new(endpoint, Some(credential), options)?);
+        Ok(Arc::new(Self {
             service_client,
             refresh_buffer: REFRESH_BUFFER,
             caches: Mutex::new(HashMap::new()),
-        })
+        }))
     }
 
     /// Returns the per-container cache, creating it on first access.
@@ -242,6 +264,14 @@ impl SessionProvider for ContainerSessionProvider {
         if request.method() != Method::Get {
             return false;
         }
+        // Structured-message downloads are authenticated with bearer, not sessions.
+        if request
+            .headers()
+            .get_optional_str(&STRUCTURED_MESSAGE_HEADER)
+            .is_some()
+        {
+            return false;
+        }
         let url = request.url();
         let Some(segments) = url.path_segments() else {
             return false;
@@ -249,10 +279,13 @@ impl SessionProvider for ContainerSessionProvider {
         let mut segments = segments.filter(|segment| !segment.is_empty());
         let has_container = segments.next().is_some();
         let has_blob = segments.next().is_some();
-        // Eligible only for blob-level GET downloads (no `comp` operation).
-        has_container && has_blob && !has_comp_query(url)
+        // Eligible only for blob-level GET downloads, not sub-resource operations
+        // (`comp`/`restype`).
+        has_container && has_blob && !has_operation_query(url)
     }
 }
+
+impl sealed::Sealed for ContainerSessionProvider {}
 
 /// Mints a new session by calling Create Session, converting fallback-eligible
 /// failures into a fallback-to-bearer sentinel.
@@ -316,11 +349,64 @@ fn container_name(url: &Url) -> Option<String> {
         .map(str::to_string)
 }
 
-/// Whether `url` carries a `comp` query parameter.
-fn has_comp_query(url: &Url) -> bool {
+/// The header set on structured-message downloads, which are not session-eligible.
+const STRUCTURED_MESSAGE_HEADER: HeaderName = HeaderName::from_static("x-ms-structured-body");
+
+/// Whether `url` carries a `comp` or `restype` query parameter, which denote a
+/// sub-resource operation rather than a blob download.
+fn has_operation_query(url: &Url) -> bool {
     url.query_pairs()
-        .any(|(name, _)| name.eq_ignore_ascii_case("comp"))
+        .any(|(name, _)| name.eq_ignore_ascii_case("comp") || name.eq_ignore_ascii_case("restype"))
 }
+
+/// A configurable [`SessionProvider`] test double, shared by the policy and
+/// client-wiring tests. Has an internal counting mechanism to be used for test assertions.
+#[cfg(test)]
+#[derive(Debug)]
+pub(crate) struct StubSessionProvider {
+    session: SessionTokenInfo,
+    eligible: bool,
+    get_calls: AtomicUsize,
+    invalidate_calls: AtomicUsize,
+}
+
+#[cfg(test)]
+impl StubSessionProvider {
+    pub(crate) fn new(session: SessionTokenInfo, eligible: bool) -> Self {
+        Self {
+            session,
+            eligible,
+            get_calls: AtomicUsize::new(0),
+            invalidate_calls: AtomicUsize::new(0),
+        }
+    }
+
+    pub(crate) fn get_calls(&self) -> usize {
+        self.get_calls.load(Ordering::SeqCst)
+    }
+
+    pub(crate) fn invalidate_calls(&self) -> usize {
+        self.invalidate_calls.load(Ordering::SeqCst)
+    }
+}
+
+#[cfg(test)]
+#[async_trait]
+impl SessionProvider for StubSessionProvider {
+    async fn get_session(&self, _request: &Request) -> Result<SessionTokenInfo> {
+        self.get_calls.fetch_add(1, Ordering::SeqCst);
+        Ok(self.session.clone())
+    }
+    async fn invalidate_session(&self, _request: &Request, _current: &SessionTokenInfo) {
+        self.invalidate_calls.fetch_add(1, Ordering::SeqCst);
+    }
+    fn is_request_eligible(&self, _request: &Request) -> bool {
+        self.eligible
+    }
+}
+
+#[cfg(test)]
+impl sealed::Sealed for StubSessionProvider {}
 
 #[cfg(test)]
 mod tests {
@@ -358,7 +444,10 @@ mod tests {
         })
     }
 
-    fn provider_returning(status: StatusCode, body: &'static [u8]) -> ContainerSessionProvider {
+    fn provider_returning(
+        status: StatusCode,
+        body: &'static [u8],
+    ) -> Arc<ContainerSessionProvider> {
         let mock = Arc::new(MockHttpClient::new(move |_req| {
             async move {
                 Ok(AsyncRawResponse::from_bytes(
@@ -380,7 +469,7 @@ mod tests {
         ContainerSessionProvider::new(
             &Url::parse("https://myaccount.blob.core.windows.net/").unwrap(),
             credential,
-            options,
+            Some(options),
         )
         .unwrap()
     }
@@ -427,6 +516,14 @@ mod tests {
         assert!(!provider.is_request_eligible(&get_request(
             "https://a.blob.core.windows.net/c/b?comp=blocklist"
         )));
+        // `restype` operations are ineligible.
+        assert!(!provider.is_request_eligible(&get_request(
+            "https://a.blob.core.windows.net/c/b?restype=container"
+        )));
+        // Structured-message downloads are ineligible.
+        let mut structured = get_request("https://a.blob.core.windows.net/c/b");
+        structured.insert_header(STRUCTURED_MESSAGE_HEADER, "XSM/1.0");
+        assert!(!provider.is_request_eligible(&structured));
     }
 
     #[test]

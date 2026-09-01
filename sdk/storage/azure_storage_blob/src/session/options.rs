@@ -3,6 +3,9 @@
 
 //! Configuration for session token authentication.
 
+use crate::session::provider::SessionProvider;
+use std::sync::Arc;
+
 /// Determines whether blob operations use session token authentication.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum SessionMode {
@@ -44,6 +47,14 @@ pub struct SessionOptions {
     /// signing time. Set this explicitly when using a custom endpoint from which
     /// the account name cannot be derived.
     pub account_name: Option<String>,
+
+    /// An explicit session provider to share across clients.
+    ///
+    /// Construct one with
+    /// [`ContainerSessionProvider::new`](crate::ContainerSessionProvider::new) to
+    /// reuse a single session cache across multiple clients. When unset, each
+    /// client creates its own per-container provider.
+    pub session_provider: Option<Arc<dyn SessionProvider>>,
 }
 
 impl SessionOptions {
@@ -51,6 +62,12 @@ impl SessionOptions {
     /// [`SessionMode::Auto`].
     pub(crate) fn is_enabled(&self) -> bool {
         self.mode.resolve() == SessionMode::Enabled
+    }
+
+    /// Whether session authentication was explicitly requested via
+    /// [`SessionMode::Enabled`], as opposed to being enabled by default.
+    pub(crate) fn is_explicitly_enabled(&self) -> bool {
+        self.mode == SessionMode::Enabled
     }
 }
 

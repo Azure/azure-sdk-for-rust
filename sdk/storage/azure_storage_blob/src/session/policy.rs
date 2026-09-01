@@ -4,7 +4,6 @@
 //! The pipeline policy that selects between session token and bearer token authentication.
 
 use crate::session::{
-    options::SessionOptions,
     provider::{SessionProvider, SessionTokenInfo},
     signer,
 };
@@ -14,7 +13,7 @@ use azure_core::{
     http::{
         headers::{AUTHORIZATION, MS_DATE},
         policies::{Policy, PolicyResult},
-        Context, Request, StatusCode, Url,
+        Context, Request, StatusCode,
     },
     time::{to_rfc7231, OffsetDateTime},
     Error, Result,
@@ -32,56 +31,38 @@ use std::sync::Arc;
 pub(crate) struct SessionAuthenticationPolicy {
     provider: Arc<dyn SessionProvider>,
     fallback: Arc<dyn Policy>,
-    options: SessionOptions,
+    account: String,
 }
 
 impl SessionAuthenticationPolicy {
-    /// Creates a policy that delegates to `fallback` (the bearer token policy)
-    /// whenever session authentication is disabled, ineligible, or unavailable.
+    /// Creates a policy that signs eligible requests for `account`, delegating to
+    /// `fallback` (the bearer token policy) whenever a session cannot be used.
     pub(crate) fn new(
         provider: Arc<dyn SessionProvider>,
         fallback: Arc<dyn Policy>,
-        options: SessionOptions,
+        account: String,
     ) -> Self {
         Self {
             provider,
             fallback,
-            options,
+            account,
         }
     }
 
     /// Signs `request` with the Shared Key protocol and sets the `Session`
     /// authorization header.
     fn sign_request(&self, request: &mut Request, session: &SessionTokenInfo) -> Result<()> {
-        let account = self.resolve_account(request)?;
         let (token, key) = session.credentials().ok_or_else(|| {
             Error::with_message(ErrorKind::Other, "session is missing credentials")
         })?;
 
         // x-ms-date participates in the string-to-sign, so set it before signing.
         request.insert_header(MS_DATE, to_rfc7231(&OffsetDateTime::now_utc()));
-        let signature = signer::sign(request, &account, key)?;
+        let signature = signer::sign(request, &self.account, key)?;
         // `authorization` is not in the logging allowlist, so the session token
         // and signature are redacted by the logging policy.
         request.insert_header(AUTHORIZATION, format!("Session {token}:{signature}"));
         Ok(())
-    }
-
-    /// Resolves the account name used for signing: the configured account name,
-    /// or the one derived from the request URL.
-    fn resolve_account(&self, request: &Request) -> Result<String> {
-        if let Some(account) = self.options.account_name.as_deref() {
-            if !account.is_empty() {
-                return Ok(account.to_string());
-            }
-        }
-        account_from_url(request.url()).ok_or_else(|| {
-            Error::with_message(
-                ErrorKind::Other,
-                "the storage account name could not be determined from the request URL; \
-                 set the session account name when using a custom endpoint",
-            )
-        })
     }
 }
 
@@ -93,8 +74,8 @@ impl Policy for SessionAuthenticationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        // Disabled or ineligible requests use bearer authentication.
-        if !self.options.is_enabled() || !self.provider.is_request_eligible(request) {
+        // Ineligible requests use bearer authentication.
+        if !self.provider.is_request_eligible(request) {
             return self.fallback.send(ctx, request, next).await;
         }
 
@@ -125,23 +106,14 @@ fn clear_session_headers(request: &mut Request) {
     request.headers_mut().remove(MS_DATE);
 }
 
-/// Derives the account name from the first label of the URL host.
-fn account_from_url(url: &Url) -> Option<String> {
-    url.host_str()?
-        .split('.')
-        .next()
-        .filter(|label| !label.is_empty())
-        .map(str::to_string)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::session::options::SessionMode;
+    use crate::session::provider::StubSessionProvider;
     use azure_core::credentials::TokenCredential;
     use azure_core::http::policies::auth::BearerTokenAuthorizationPolicy;
     use azure_core::{
-        http::{headers::Headers, AsyncRawResponse, Method},
+        http::{headers::Headers, AsyncRawResponse, Method, Url},
         Bytes,
     };
     use azure_core_test::credentials::MockCredential;
@@ -181,37 +153,6 @@ mod tests {
         }
     }
 
-    /// A provider with canned behavior for exercising the policy state machine.
-    #[derive(Debug)]
-    struct FakeProvider {
-        session: SessionTokenInfo,
-        eligible: bool,
-        invalidated: Mutex<u32>,
-    }
-
-    impl FakeProvider {
-        fn new(session: SessionTokenInfo, eligible: bool) -> Self {
-            Self {
-                session,
-                eligible,
-                invalidated: Mutex::new(0),
-            }
-        }
-    }
-
-    #[async_trait]
-    impl SessionProvider for FakeProvider {
-        async fn get_session(&self, _request: &Request) -> Result<SessionTokenInfo> {
-            Ok(self.session.clone())
-        }
-        async fn invalidate_session(&self, _request: &Request, _current: &SessionTokenInfo) {
-            *self.invalidated.lock().unwrap() += 1;
-        }
-        fn is_request_eligible(&self, _request: &Request) -> bool {
-            self.eligible
-        }
-    }
-
     fn bearer_policy() -> Arc<dyn Policy> {
         let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
         Arc::new(BearerTokenAuthorizationPolicy::new(
@@ -239,19 +180,15 @@ mod tests {
         )
     }
 
-    fn options(mode: SessionMode) -> SessionOptions {
-        SessionOptions {
-            mode,
-            account_name: None,
-        }
-    }
-
     async fn run(
-        provider: Arc<FakeProvider>,
-        options: SessionOptions,
+        provider: Arc<StubSessionProvider>,
         transport: Arc<CapturingTransport>,
-    ) -> (StatusCode, Vec<Option<String>>, u32) {
-        let policy = SessionAuthenticationPolicy::new(provider.clone(), bearer_policy(), options);
+    ) -> (StatusCode, Vec<Option<String>>, usize) {
+        let policy = SessionAuthenticationPolicy::new(
+            provider.clone(),
+            bearer_policy(),
+            "myaccount".to_string(),
+        );
         let next: [Arc<dyn Policy>; 1] = [transport.clone()];
         let mut request = request();
         let status = policy
@@ -260,17 +197,16 @@ mod tests {
             .unwrap()
             .status();
         let seen = transport.seen_auth.lock().unwrap().clone();
-        let invalidated = *provider.invalidated.lock().unwrap();
+        let invalidated = provider.invalidate_calls();
         (status, seen, invalidated)
     }
 
     #[tokio::test]
     async fn eligible_request_is_signed_with_session_scheme() {
-        let provider = Arc::new(FakeProvider::new(valid_session(), true));
+        let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
         let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
 
-        let (status, seen, invalidated) =
-            run(provider, options(SessionMode::Enabled), transport).await;
+        let (status, seen, invalidated) = run(provider, transport).await;
 
         assert_eq!(status, StatusCode::Ok);
         assert_eq!(seen.len(), 1);
@@ -280,21 +216,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn disabled_mode_uses_bearer() {
-        let provider = Arc::new(FakeProvider::new(valid_session(), true));
-        let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
-
-        let (_status, seen, _) = run(provider, options(SessionMode::Disabled), transport).await;
-
-        assert!(seen[0].as_deref().unwrap().starts_with("Bearer "));
-    }
-
-    #[tokio::test]
     async fn ineligible_request_uses_bearer() {
-        let provider = Arc::new(FakeProvider::new(valid_session(), false));
+        let provider = Arc::new(StubSessionProvider::new(valid_session(), false));
         let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
 
-        let (_status, seen, _) = run(provider, options(SessionMode::Enabled), transport).await;
+        let (_status, seen, _) = run(provider, transport).await;
 
         assert!(seen[0].as_deref().unwrap().starts_with("Bearer "));
     }
@@ -304,10 +230,10 @@ mod tests {
         let sentinel = SessionTokenInfo::fallback_for_test(
             OffsetDateTime::from_unix_timestamp(4_000_000_000).unwrap(),
         );
-        let provider = Arc::new(FakeProvider::new(sentinel, true));
+        let provider = Arc::new(StubSessionProvider::new(sentinel, true));
         let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
 
-        let (_status, seen, _) = run(provider, options(SessionMode::Enabled), transport).await;
+        let (_status, seen, _) = run(provider, transport).await;
 
         assert_eq!(seen.len(), 1);
         assert!(seen[0].as_deref().unwrap().starts_with("Bearer "));
@@ -315,14 +241,13 @@ mod tests {
 
     #[tokio::test]
     async fn unauthorized_invalidates_and_retries_once_with_bearer() {
-        let provider = Arc::new(FakeProvider::new(valid_session(), true));
+        let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
         let transport = CapturingTransport::new(vec![
             response(StatusCode::Unauthorized),
             response(StatusCode::Ok),
         ]);
 
-        let (status, seen, invalidated) =
-            run(provider, options(SessionMode::Enabled), transport).await;
+        let (status, seen, invalidated) = run(provider, transport).await;
 
         assert_eq!(status, StatusCode::Ok);
         assert_eq!(seen.len(), 2, "expected exactly one retry");

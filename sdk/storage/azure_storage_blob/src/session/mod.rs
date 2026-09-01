@@ -6,8 +6,10 @@
 //! Session authentication lets eligible OAuth-authenticated GET blob download
 //! requests be authorized with a short-lived, container-scoped session token
 //! instead of a bearer token, falling back to bearer authentication when a
-//! session cannot be used. All types in this module are internal; the customer
-//! only ever supplies a [`TokenCredential`](azure_core::credentials::TokenCredential).
+//! session cannot be used. Most types are internal; the customer supplies a
+//! [`TokenCredential`](azure_core::credentials::TokenCredential) and, optionally,
+//! [`SessionOptions`](crate::SessionOptions) and a
+//! [`ContainerSessionProvider`](crate::ContainerSessionProvider).
 
 pub(crate) mod cache;
 pub(crate) mod options;
