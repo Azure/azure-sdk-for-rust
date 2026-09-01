@@ -801,7 +801,7 @@ impl DriverTestRunContext {
         let mut last_err_msg: Option<String> = None;
         for _ in 0..12 {
             match driver
-                .resolve_container_by_name(db_name, container_name)
+                .resolve_container_by_name(db_name, container_name, OperationOptions::default())
                 .await
             {
                 Ok(c) => return Ok(c),

@@ -25,7 +25,7 @@ use super::response::headers::{
 #[cfg(feature = "preview_dtx")]
 use super::response::headers::{ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS};
 use super::response::{
-    error_response, success_response, success_response_with_format, ResponseBuilder,
+    error_response, success_response, success_response_with_format, ResponseBuilder, ResponseFormat,
 };
 use super::ru_model::RuChargingModel;
 use super::session::SessionToken;
@@ -912,7 +912,16 @@ pub(crate) async fn handle_operation(
         match result {
             Some(Ok((doc, token, charge, headers))) => {
                 store.replicate(region_name, db_id, coll_id, &doc, false);
-                let builder = success_response(StatusCode::Ok, &doc.body, charge, &token, start);
+                // A stored document, so it is normalized the way the service
+                // renders one in text. Text-only: DTX has no binary format.
+                let builder = success_response_with_format(
+                    StatusCode::Ok,
+                    &doc.body,
+                    false,
+                    charge,
+                    &token,
+                    start,
+                );
                 decorate_point_response(builder, headers, Some(doc.lsn)).build()
             }
             Some(Err(response)) => response,
@@ -2342,6 +2351,7 @@ fn success_feed_response(
     items: Vec<serde_json::Value>,
     page_options: FeedPageOptions<'_>,
     feed_headers: FeedResponseHeaders,
+    format: ResponseFormat,
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_values(
@@ -2355,9 +2365,10 @@ fn success_feed_response(
     };
     let item_count = page.len() as u32;
     let body = feed_to_json(envelope_name, page, rid);
-    let mut builder = success_response(
+    let mut builder = success_response_with_format(
         StatusCode::Ok,
         &body,
+        format.is_binary(),
         1.0,
         &feed_headers.session_token,
         start,
@@ -2384,6 +2395,7 @@ fn success_document_feed_response(
     items: Vec<DocumentFeedItem>,
     page_options: FeedPageOptions<'_>,
     feed_headers: FeedResponseHeaders,
+    format: ResponseFormat,
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_document_feed_items(
@@ -2397,9 +2409,10 @@ fn success_document_feed_response(
     };
     let item_count = page.len() as u32;
     let body = feed_to_json(envelope_name, page, rid);
-    let mut builder = success_response(
+    let mut builder = success_response_with_format(
         StatusCode::Ok,
         &body,
+        format.is_binary(),
         1.0,
         &feed_headers.session_token,
         start,
@@ -2503,6 +2516,7 @@ fn execute_query_feed(
         results,
         FeedPageOptions::from_request(parsed),
         feed_headers,
+        ResponseFormat::from(parsed.binary_response),
         start,
     )
 }
@@ -2527,6 +2541,7 @@ fn execute_document_query_feed(
             results,
             FeedPageOptions::from_request(parsed),
             feed_headers,
+            ResponseFormat::from(parsed.binary_response),
             start,
         ),
         Ok(None) => {
@@ -2552,6 +2567,7 @@ fn execute_document_query_feed(
                 results,
                 FeedPageOptions::from_request(parsed),
                 feed_headers,
+                ResponseFormat::from(parsed.binary_response),
                 start,
             )
         }
@@ -2730,6 +2746,7 @@ fn handle_read_feed_databases(
         databases,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
+        ResponseFormat::Text,
         start,
     )
 }
@@ -2795,6 +2812,7 @@ fn handle_read_feed_containers(
         containers,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
+        ResponseFormat::Text,
         start,
     )
 }
@@ -2856,6 +2874,7 @@ fn handle_read_feed_offers(
         offers,
         FeedPageOptions::from_request(parsed),
         FeedResponseHeaders::none(),
+        ResponseFormat::Text,
         start,
     )
 }
@@ -3197,6 +3216,7 @@ fn handle_read_feed_items(
                 docs,
                 FeedPageOptions::from_request(parsed),
                 headers,
+                ResponseFormat::Text,
                 start,
             )
         }
@@ -3827,11 +3847,20 @@ enum BatchOperation {
     },
 }
 
+/// Per-operation RU charge the emulator reports for a batch operation.
+///
+/// A stand-in: the emulator does not model RU accounting. The value is
+/// deliberately **fractional**, because a real account's charges are — a live
+/// two-item batch billed `6.2857142857142856` RU per operation. An integral
+/// stub would be the one input that makes text normalization rewrite an
+/// emulator-authored number (`1.0` into `1`), a difference the service can
+/// never produce and so not one worth reproducing.
+const BATCH_OPERATION_CHARGE: f64 = 1.24;
+
 fn batch_result(
     status_code: u16,
     resource_body: Option<serde_json::Value>,
     etag: Option<&str>,
-    request_charge: f64,
 ) -> serde_json::Value {
     let mut result = serde_json::Map::new();
     result.insert("statusCode".to_string(), serde_json::json!(status_code));
@@ -3843,7 +3872,7 @@ fn batch_result(
     }
     result.insert(
         "requestCharge".to_string(),
-        serde_json::json!(request_charge),
+        serde_json::json!(BATCH_OPERATION_CHARGE),
     );
     serde_json::Value::Object(result)
 }
@@ -3857,9 +3886,9 @@ fn failed_batch_results(
     (0..len)
         .map(|i| {
             if i == failure_index {
-                batch_result(failure_status, failure_body.clone(), None, 1.0)
+                batch_result(failure_status, failure_body.clone(), None)
             } else {
-                batch_result(424, None, None, 1.0)
+                batch_result(424, None, None)
             }
         })
         .collect()
@@ -4072,7 +4101,6 @@ async fn handle_batch(
                         201,
                         parsed.content_response_on_write.then_some(body),
                         Some(&etag),
-                        1.0,
                     ));
                 }
                 BatchOperation::Upsert {
@@ -4135,7 +4163,6 @@ async fn handle_batch(
                         status,
                         parsed.content_response_on_write.then_some(body),
                         Some(&etag),
-                        1.0,
                     ));
                 }
                 BatchOperation::Replace {
@@ -4187,7 +4214,6 @@ async fn handle_batch(
                         200,
                         parsed.content_response_on_write.then_some(body),
                         Some(&etag),
-                        1.0,
                     ));
                 }
                 BatchOperation::Read {
@@ -4207,13 +4233,12 @@ async fn handle_batch(
                         .as_ref()
                         .is_some_and(|etag| etag == &existing.etag)
                     {
-                        results.push(batch_result(304, None, Some(&existing.etag), 1.0));
+                        results.push(batch_result(304, None, Some(&existing.etag)));
                     } else {
                         results.push(batch_result(
                             200,
                             Some(existing.body.clone()),
                             Some(&existing.etag),
-                            1.0,
                         ));
                     }
                 }
@@ -4240,7 +4265,7 @@ async fn handle_batch(
                         source_region: region_name.to_string(),
                     };
                     changes.push((tombstone, true));
-                    results.push(batch_result(204, None, Some(&existing.etag), 1.0));
+                    results.push(batch_result(204, None, Some(&existing.etag)));
                 }
             }
         }
@@ -4291,7 +4316,14 @@ async fn handle_batch(
                 StatusCode::Ok
             };
             let body = serde_json::Value::Array(results);
-            let mut builder = success_response(status, &body, charge, &token, start);
+            // Each result may embed a stored `resourceBody`, so the array is
+            // normalized the way the service renders a stored document. The
+            // envelope's own numbers ride along, but none of them can be
+            // rewritten: `statusCode` is already an integer, and both a real
+            // charge and [`BATCH_OPERATION_CHARGE`] are fractional. Text-only:
+            // batch has no binary format.
+            let mut builder =
+                success_response_with_format(status, &body, false, charge, &token, start);
             if let Some(lsn) = lsn {
                 builder = builder.with_lsn(lsn);
             }

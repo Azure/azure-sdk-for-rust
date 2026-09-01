@@ -121,7 +121,7 @@ async fn build_driver(rules: Vec<Arc<FaultInjectionRule>>) -> Arc<CosmosDriver> 
 
 async fn seed(driver: &CosmosDriver) -> ContainerReference {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     let item = ItemReference::from_name(&container, PartitionKey::from(PK), ITEM_ID.to_string());

@@ -153,7 +153,7 @@ async fn complete_fixture(
         .await
         .expect("driver initializes against emulator metadata");
     let container = driver
-        .resolve_container(DB_NAME, CONTAINER_NAME)
+        .resolve_container(DB_NAME, CONTAINER_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -538,7 +538,7 @@ async fn stale_fallback_session_retries_before_increment_replace() {
         .await
         .expect("fallback driver initializes");
     let fallback_container = fallback_driver
-        .resolve_container(DB_NAME, CONTAINER_NAME)
+        .resolve_container(DB_NAME, CONTAINER_NAME, OperationOptions::default())
         .await
         .expect("fallback container resolves");
     let fallback_item =

@@ -51,13 +51,14 @@ impl ContainerClient {
         context: ClientContext,
         database: &ResourceIdentity,
         container: ResourceIdentity,
+        options: crate::options::ContainerClientOptions,
     ) -> crate::Result<Self> {
         // The container's addressing mode must match the database's: name-with-name
         // or RID-with-RID. Mixing the two is not supported by the service routing.
         let container_ref = match (database, &container) {
             (ResourceIdentity::Name(db_name), ResourceIdentity::Name(container_name)) => context
                 .driver
-                .resolve_container(db_name, container_name)
+                .resolve_container(db_name, container_name, options.operation)
                 .await
                 .map_err(|e| {
                     azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
@@ -69,7 +70,7 @@ impl ContainerClient {
             (ResourceIdentity::Rid(db_rid), ResourceIdentity::Rid(container_rid)) => {
                 let resolved = context
                     .driver
-                    .resolve_container_by_rid(container_rid.as_str())
+                    .resolve_container_by_rid(container_rid.as_str(), options.operation)
                     .await
                     .map_err(|e| {
                         azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
@@ -79,38 +80,20 @@ impl ContainerClient {
                             ))
                             .build()
                     })?;
-
-                // The parent database RID is derived from the container RID, not
-                // taken from this `DatabaseClient`. Reject a container whose parent
-                // database does not match the addressed database so callers can't
-                // accidentally reach into a different database.
                 if resolved.database_rid() != db_rid.as_str() {
                     return Err(azure_data_cosmos_driver::error::CosmosError::builder()
-                        .with_status(
-                            azure_data_cosmos_driver::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID,
-                        )
-                        .with_message(format!(
-                            "container RID '{}' belongs to database '{}', not the addressed database '{}'",
-                            container_rid.as_str(),
-                            resolved.database_rid(),
-                            db_rid.as_str()
-                        ))
+                        .with_status(azure_data_cosmos_driver::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                        .with_message(format!("container RID '{}' belongs to database '{}', not the addressed database '{}'", container_rid.as_str(), resolved.database_rid(), db_rid.as_str()))
                         .build()
                         .into());
                 }
-
                 resolved
             }
             (ResourceIdentity::Name(_), ResourceIdentity::Rid(_))
             | (ResourceIdentity::Rid(_), ResourceIdentity::Name(_)) => {
                 return Err(azure_data_cosmos_driver::error::CosmosError::builder()
-                    .with_status(
-                        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING,
-                    )
-                    .with_message(
-                        "database and container must use the same addressing mode: \
-                         address both by name or both by RID",
-                    )
+                    .with_status(azure_data_cosmos_driver::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING)
+                    .with_message("database and container must use the same addressing mode: address both by name or both by RID")
                     .build()
                     .into());
             }
@@ -121,7 +104,6 @@ impl ContainerClient {
             context,
         })
     }
-
     /// Builds the SDK-side [`CosmosOperationContext`] for this container's
     /// operations, carrying the operation name plus the database and container
     /// identity the driver context does not know.
@@ -947,6 +929,14 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let query = query.into();
 
+        // Resolve binary encoding so the driver advertises a binary *response*
+        // via the negotiation header. Unlike point item writes, the query
+        // request body stays text (`application/query+json` is a query spec,
+        // not a document), so we do not touch body serialization here — the
+        // driver's request-body gate excludes query.
+        let (operation_options, _binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+
         let container_ref = self.container_ref.clone();
 
         // The first operation to execute in the query items flow.
@@ -973,7 +963,7 @@ impl ContainerClient {
             .driver
             .plan_operation(
                 initial_operation,
-                &options.operation,
+                &operation_options,
                 options.feed.continuation_token.as_ref(),
                 &options.feed.to_plan_options(),
             )
@@ -982,7 +972,7 @@ impl ContainerClient {
             self.context.driver.clone(),
             Some(self.container_ref.clone()),
             plan,
-            options.operation,
+            operation_options,
             self.context.diagnostics_handlers.clone(),
             self.operation_context("query_items"),
         ))

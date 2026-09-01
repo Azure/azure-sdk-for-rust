@@ -343,7 +343,7 @@ impl SdkDualBackend {
         let emu = self
             .emulator_client
             .database_client(db_name)
-            .container_client(container_name)
+            .container_client(container_name, None)
             .await?;
 
         let real = if let Some(ref client) = self.real_client {
@@ -526,7 +526,7 @@ async fn sdk_create_database_and_container_through_driver() {
     assert_eq!(emu_container_props.id, container_name);
 
     let _emu_container = emu_db_client
-        .container_client(container_name)
+        .container_client(container_name, None)
         .await
         .unwrap();
 
@@ -641,7 +641,7 @@ async fn sdk_container_throughput_read_and_replace() {
     let emu_container = backend
         .emulator_client
         .database_client(&db_name)
-        .container_client(container_name)
+        .container_client(container_name, None)
         .await
         .unwrap();
     let emu_throughput = emu_container.read_throughput(None).await.unwrap().unwrap();
@@ -662,7 +662,7 @@ async fn sdk_container_throughput_read_and_replace() {
     if let Some(ref real_client) = backend.real_client {
         let real_container = real_client
             .database_client(&db_name)
-            .container_client(container_name)
+            .container_client(container_name, None)
             .await
             .unwrap();
         let real_throughput = real_container.read_throughput(None).await.unwrap().unwrap();
@@ -1418,7 +1418,7 @@ async fn sdk_create_retries_after_429_throttling() {
 
     let emu_container = emulator_client
         .database_client(&db_name)
-        .container_client("throttle_coll")
+        .container_client("throttle_coll", None)
         .await
         .unwrap();
 
@@ -1536,7 +1536,7 @@ async fn sdk_throttling_retry_options_disables_retry() {
 
     let emu_container = emulator_client
         .database_client(&db_name)
-        .container_client("throttle_coll")
+        .container_client("throttle_coll", None)
         .await
         .unwrap();
 
@@ -1680,7 +1680,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
 
     let emu_container = emu_client
         .database_client(&db_name)
-        .container_client("testcoll")
+        .container_client("testcoll", None)
         .await
         .unwrap();
 
@@ -1946,7 +1946,7 @@ async fn resolve_container_when_ready(
     let container = loop {
         match client
             .database_client(db_name)
-            .container_client(container_name)
+            .container_client(container_name, None)
             .await
         {
             Ok(container) => break container,

@@ -32,7 +32,7 @@ pub use batch::{
 pub use change_feed::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom};
 pub use client::CosmosClientOptions;
 pub use consistency::ConsistencyLevel;
-pub use container::ReadContainerOptions;
+pub use container::{ContainerClientOptions, ReadContainerOptions};
 #[cfg(feature = "control_plane")]
 pub use container::{
     CreateContainerOptions, DeleteContainerOptions, QueryContainersOptions, ReplaceContainerOptions,

@@ -167,7 +167,7 @@ async fn perform_create_and_read(
 
     let container = client
         .database_client(db_name)
-        .container_client(container_name)
+        .container_client(container_name, None)
         .await
         .expect("container client");
 
@@ -200,7 +200,7 @@ async fn perform_metadata_reads(
 
     let database = client.database_client(db_name);
     let container = database
-        .container_client(container_name)
+        .container_client(container_name, None)
         .await
         .expect("container client");
 

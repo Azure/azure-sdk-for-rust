@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     let db_client = client.database_client(&args.database);
-    let container_client = db_client.container_client(&args.container).await?;
+    let container_client = db_client.container_client(&args.container, None).await?;
 
     let response = container_client
         .read_item(&args.partition_key, &args.item_id, None)

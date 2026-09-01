@@ -228,7 +228,7 @@ async fn wait_for_container_ready(
         db_client: &azure_data_cosmos::clients::DatabaseClient,
         container_name: &str,
     ) -> azure_data_cosmos::Result<azure_data_cosmos::clients::ContainerClient> {
-        let container_client = db_client.container_client(container_name).await?;
+        let container_client = db_client.container_client(container_name, None).await?;
         container_client.read(None).await?;
         let mut pages = container_client
             .query_items::<serde_json::Value>(
@@ -392,7 +392,7 @@ async fn assert_item_readable_from_region(
     let db_client = client.database_client(db_name);
 
     for attempt in 0..MAX_ATTEMPTS {
-        let container = match db_client.container_client(container_name).await {
+        let container = match db_client.container_client(container_name, None).await {
             Ok(container) => container,
             Err(e)
                 if (e.status().status_code() == StatusCode::NotFound
@@ -1001,7 +1001,7 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2(
 
         let v1_container = gateway_v1
             .database_client(&db_name)
-            .container_client(&container_name)
+            .container_client(&container_name, None)
             .await?;
         let v2_ids = drain_order_by_with_transport(&v2_container, TransportKind::GatewayV2).await?;
         let v1_ids = drain_order_by_with_transport(&v1_container, TransportKind::Gateway).await?;
