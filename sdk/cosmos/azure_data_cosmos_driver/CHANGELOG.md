@@ -28,6 +28,7 @@
 - Resource-reference accessors now return `Option` to account for RID-addressed references that have no name. `DatabaseReference::name_based_path`, `ContainerReference::database_name`, and `ContainerReference::name_based_path` return `None` when the reference is addressed by RID (previously they returned `&str`/`String` and assumed a name was always present). Use the new `ContainerReference::base_path` to obtain the addressing-appropriate path (RID-based or name-based) when building request URLs. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
 - `AccountReference`, `DatabaseReference`, `ContainerReference`, and `ItemReference` are now tuple structs wrapping private shared state, so wildcard struct patterns such as `AccountReference { .. }` no longer compile. All accessors are unchanged. `DatabaseReference::into_account` was removed; use `DatabaseReference::account` and clone. ([#4908](https://github.com/Azure/azure-sdk-for-rust/pull/4908))
 - `CosmosDriver::plan_operation` now takes an additional `plan_options: &PlanOptions` argument (after `continuation`). The continuation token remains its own argument. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
+- `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
 
 ### Bugs Fixed
 
@@ -49,7 +50,6 @@
 
 ### Other Changes
 
-- `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
 - RID-addressed operations route through standard Gateway rather than Gateway 2.0. Gateway 2.0 derives its `DatabaseName`/`CollectionName` routing tokens by parsing the authorization signing link, but a RID-addressed feed operation signs over a bare lowercased RID that carries no `dbs`/`colls` segments, so wrapping the request failed locally with `CLIENT_BAD_REQUEST` before it was sent. Standard Gateway routes raw RID paths natively. See [#4921](https://github.com/Azure/azure-sdk-for-rust/issues/4921) for native RID support on Gateway 2.0. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
 - Changed the messages and severity of some tracing events. ([#4711](https://github.com/Azure/azure-sdk-for-rust/pull/4711))
 - Gateway 2.0 responses now preserve backend duration, quota, item-count, quorum, replica, query, and physical-partition RNTBD metadata when converting to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
