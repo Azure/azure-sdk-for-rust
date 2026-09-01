@@ -11,6 +11,7 @@
 ### Breaking Changes
 
 - `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
+- `CosmosRequestHeaders::offer_throughput`, `OfferAutoscaleSettings::max_throughput`, `OfferAutoscaleSettings::new`, `OfferAutoscaleSettings::with_increment_percent`, and `AutoscaleThroughputPolicy::increment_percent` now use `u32` instead of the platform-dependent `usize`, matching the RU/s values Cosmos DB actually returns. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
 
 ### Bugs Fixed
 

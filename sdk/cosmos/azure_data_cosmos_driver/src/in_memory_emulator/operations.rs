@@ -2988,7 +2988,7 @@ fn handle_read_offer(
     }
 }
 
-fn parse_offer_throughput(request_body: &[u8], start: Instant) -> Result<u32, AsyncRawResponse> {
+fn parse_offer_throughput(request_body: &[u8], start: Instant) -> Result<u64, AsyncRawResponse> {
     let body: serde_json::Value = serde_json::from_slice(request_body).map_err(|_| {
         error_response(
             StatusCode::BadRequest,
@@ -3004,7 +3004,6 @@ fn parse_offer_throughput(request_body: &[u8], start: Instant) -> Result<u32, As
     let throughput = body
         .pointer("/content/offerThroughput")
         .and_then(|v| v.as_u64())
-        .and_then(|v| u32::try_from(v).ok())
         .ok_or_else(|| {
             error_response(
                 StatusCode::BadRequest,

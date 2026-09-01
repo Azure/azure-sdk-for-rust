@@ -43,9 +43,7 @@ use crate::seed::SharedItems;
 /// from cache or when the gateway omitted the diagnostic header) or when
 /// the value is infinite or negative.
 pub(crate) fn extract_backend_duration(headers: &ResponseHeaders) -> Option<Duration> {
-    headers
-        .server_duration_ms()
-        .map(|ms| Duration::from_secs_f64(ms / 1000.0))
+    headers.server_duration()
 }
 
 /// A single executable perf test operation.

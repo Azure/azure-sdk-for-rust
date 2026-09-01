@@ -494,7 +494,7 @@ EmulatorStore
 | `_etag`                     | `String`                 | Quoted UUID                                                                                        |
 | `partition_key`             | `PartitionKeyDefinition` | Paths, kind (Hash/Range), version                                                                  |
 | `partition_count`           | `u32`                    | Number of physical partitions (default 4)                                                          |
-| `provisioned_throughput_ru` | `Option<u32>`            | Provisioned RU/s (None = no limit; minimum 400 when set)                                           |
+| `provisioned_throughput_ru` | `Option<u64>`            | Provisioned RU/s (None = no limit; minimum 400 when set)                                           |
 
 **PartitionKeyRangeMetadata**: Stores per-partition-key-range metadata, exposed via the
 `/dbs/{db}/colls/{coll}/pkranges` feed. Each physical partition has a corresponding

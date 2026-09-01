@@ -584,8 +584,35 @@ impl ContainerClient {
     /// [`PatchItemOptions::with_tracking_id`]. Explicit unsafe server-side
     /// PATCH is not retried after an ambiguous outcome.
     ///
-    /// An explicitly supplied `If-Match` precondition follows standard ETag
-    /// semantics and can return HTTP 412 when it does not match.
+    /// By default the driver generates a tracking ID for instruction lists that
+    /// are not safe to reapply. The effective ID is available from
+    /// [`ItemResponse::patch_tracking_id`]
+    /// (including successful lost-response recovery) and
+    /// [`CosmosError::patch_tracking_id`](crate::CosmosError::patch_tracking_id)
+    /// on failure. Persist and pass it through [`PatchItemOptions`] to extend
+    /// duplicate suppression across application retries or process restarts.
+    /// If the end-to-end deadline expires after the Replace may have committed
+    /// but before verification completes, the timeout error still carries this
+    /// effective ID. Retry the same logical PATCH with
+    /// [`PatchItemOptions::with_tracking_id`]; do not generate a new ID.
+    /// Verification does not continue beyond the configured deadline.
+    /// Callers may instead provide a [`PatchTrackingId`](crate::models::PatchTrackingId)
+    /// up front. Doing so opts even a retry-safe instruction list into marker-based
+    /// duplicate suppression. Use a random, unpredictable ID and reuse it only
+    /// for the same logical operation against the same item; reusing it for a
+    /// different operation suppresses that operation.
+    ///
+    /// The guarantee is bounded. Entries are protected from pruning for
+    /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION) by
+    /// default; [`PatchItemOptions::with_tracking_retention`] can
+    /// configure a retention window. The per-item list has a
+    /// configurable capacity. When capacity is full, the oldest entry is
+    /// evicted, so suppression is bounded by the earlier of retention expiry or
+    /// FIFO eviction. All writers that replace these items must preserve the
+    /// reserved property and its array order. The property is visible in stored
+    /// and returned JSON and counts toward item size and indexing costs.
+    /// Model-deserialization errors retain the response diagnostics and effective
+    /// tracking ID so callers can safely reconcile a committed PATCH.
     #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,
@@ -1555,8 +1582,11 @@ fn apply_patch_options(
     if let Some(capacity) = options.tracking_capacity {
         operation = operation.with_patch_tracking_capacity(capacity);
     }
-    if let Some(retention_seconds) = options.tracking_retention_seconds {
-        operation = operation.with_patch_tracking_retention_seconds(retention_seconds);
+    if let Some(retention) = options.tracking_retention {
+        let seconds = retention.as_secs().clamp(1, u64::from(u32::MAX)) as u32;
+        operation = operation.with_patch_tracking_retention_seconds(
+            std::num::NonZeroU32::new(seconds).expect("clamped to at least 1"),
+        );
     }
     operation
 }
@@ -1627,7 +1657,7 @@ mod tests {
             .with_max_attempts(std::num::NonZeroU8::new(7).unwrap())
             .with_tracking_id(tracking_id)
             .with_tracking_capacity(std::num::NonZeroU16::new(19).unwrap())
-            .with_tracking_retention_seconds(std::num::NonZeroU32::new(23).unwrap());
+            .with_tracking_retention(std::time::Duration::from_secs(23));
 
         let operation = apply_patch_options(operation, &options);
 

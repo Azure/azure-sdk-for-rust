@@ -10,7 +10,7 @@ static RETRY_AFTER: azure_core::http::headers::HeaderName =
 
 /// Helper to set up a single-region emulator with throttling enabled and a
 /// container provisioned at the given RU/s.
-async fn setup_throttled(throughput_ru: u32) -> TestContext {
+async fn setup_throttled(throughput_ru: u64) -> TestContext {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         azure_core::http::Url::parse(GATEWAY_URL).unwrap(),
