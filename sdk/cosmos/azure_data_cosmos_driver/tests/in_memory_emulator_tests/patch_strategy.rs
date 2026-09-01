@@ -105,7 +105,7 @@ async fn build_driver_with_defaults(
         .await
         .expect("driver should initialize");
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     (driver, container)
