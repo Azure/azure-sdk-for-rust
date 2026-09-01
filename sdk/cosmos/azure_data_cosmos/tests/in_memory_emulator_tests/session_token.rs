@@ -229,7 +229,11 @@ impl Harness {
             .unwrap();
 
         let container = driver
-            .resolve_container(db_name, container_name)
+            .resolve_container(
+                db_name,
+                container_name,
+                azure_data_cosmos_driver::options::OperationOptions::default(),
+            )
             .await
             .unwrap();
 

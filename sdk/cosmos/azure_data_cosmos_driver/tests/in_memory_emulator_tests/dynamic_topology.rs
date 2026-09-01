@@ -122,7 +122,7 @@ async fn read_and_capture_hosts(
     item_id: &str,
 ) -> Vec<String> {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     recorder.clear();
@@ -139,7 +139,7 @@ async fn read_and_capture_hosts(
 
 async fn seed_item(driver: &CosmosDriver, item_id: &str) {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     let body = serde_json::json!({"id": item_id, "pk": "pk1", "value": 1}).to_string();
@@ -507,7 +507,7 @@ async fn write_region_change_moves_writes_to_new_hub() {
     advance_past_refresh().await;
 
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     recorder.clear();

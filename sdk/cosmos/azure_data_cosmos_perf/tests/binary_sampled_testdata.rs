@@ -653,7 +653,7 @@ async fn binary_and_text_queries_agree_over_seeded_corpus() -> Result<(), Box<dy
             )
             .await,
     )?;
-    let container = db_client.container_client(&container_name).await?;
+    let container = db_client.container_client(&container_name, None).await?;
 
     // Scopes every query below to this run, so a reused container does not let
     // earlier runs' documents perturb the expected counts.

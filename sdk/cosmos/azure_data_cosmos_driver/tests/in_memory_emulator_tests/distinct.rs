@@ -460,7 +460,7 @@ async fn catalog_emulator_scenarios_dedupe_as_expected() {
         }
         let (_emulator, driver) = setup().await;
         let container = driver
-            .resolve_container("testdb", "testcoll")
+            .resolve_container("testdb", "testcoll", OperationOptions::default())
             .await
             .expect("container resolves");
         seed(&driver, &container, &scenario.documents).await;
@@ -508,7 +508,7 @@ async fn catalog_emulator_error_scenarios_fail_as_expected() {
         };
         let (_emulator, driver) = setup().await;
         let container = driver
-            .resolve_container("testdb", "testcoll")
+            .resolve_container("testdb", "testcoll", OperationOptions::default())
             .await
             .expect("container resolves");
         seed(&driver, &container, &scenario.documents).await;
@@ -595,7 +595,7 @@ async fn distinct_under_a_window_resumes_across_tokens() {
 
         let (_emulator, driver) = setup().await;
         let container = driver
-            .resolve_container("testdb", "testcoll")
+            .resolve_container("testdb", "testcoll", OperationOptions::default())
             .await
             .expect("container resolves");
         seed(&driver, &container, &scenario.documents).await;
@@ -663,7 +663,7 @@ async fn ordered_distinct_resume_matches_a_single_drain() {
 
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container resolves");
     seed(&driver, &container, &scenario.documents).await;
@@ -748,7 +748,7 @@ async fn split_mid_drain_does_not_reemit_deduplicated_values() {
 
         let (emulator, driver) = setup().await;
         let container = driver
-            .resolve_container("testdb", "testcoll")
+            .resolve_container("testdb", "testcoll", OperationOptions::default())
             .await
             .expect("container resolves");
         seed(&driver, &container, &scenario.documents).await;
