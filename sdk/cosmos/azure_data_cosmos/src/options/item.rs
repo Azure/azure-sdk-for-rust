@@ -183,7 +183,9 @@ pub struct PatchItemOptions {
     /// Duration PATCH tracking entries remain eligible for duplicate
     /// suppression unless FIFO capacity pressure evicts them first. Rounded
     /// down to the nearest whole second — the wire granularity the driver
-    /// supports — with a minimum of one second. `None` selects
+    /// supports — with a minimum of one second (so
+    /// [`Duration::ZERO`](std::time::Duration::ZERO) is treated the same as
+    /// one second, not as "no retention"). `None` selects
     /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION).
     pub tracking_retention: Option<std::time::Duration>,
 }
@@ -221,7 +223,8 @@ impl PatchItemOptions {
     /// Sets the retention window used when pruning tracking entries by age.
     ///
     /// Rounded down to the nearest whole second, with a minimum of one
-    /// second.
+    /// second: [`Duration::ZERO`](std::time::Duration::ZERO) is treated the
+    /// same as one second, not as "no retention".
     pub fn with_tracking_retention(mut self, retention: std::time::Duration) -> Self {
         self.tracking_retention = Some(retention);
         self
