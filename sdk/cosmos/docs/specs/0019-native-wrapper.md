@@ -1751,7 +1751,7 @@ fault_injection = ["azure_data_cosmos_driver/fault_injection"]
 - [ ] `eng/scripts/verify-dependencies.rs` — re-add an exemption for the new crate's `cdylib`/`staticlib` lib-only target (if still required by the script's current rules).
 - [ ] `Cargo.lock` — `cbindgen` MUST be reintroduced strictly as a `[build-dependencies]` entry of `azure_data_cosmos_driver_native`. Per heaths' decision in #2906 review, `cbindgen` is **not** to be promoted to a workspace-level dependency or moved to runtime `[dependencies]`. The build-dep entry is the only place it appears.
 - [ ] `AGENTS.md` — re-add the `azure_data_cosmos_driver_native` entry under the Cosmos crate taxonomy.
-- [ ] `.github/skills/validate/SKILL.md` — ensure validation covers the new crate.
+- [ ] `.github/skills/cosmos-pre-commit-validation/SKILL.md` — re-add scope hint covering the new crate (file globs, expected lint surface).
 - [ ] `.github/skills/cosmos-design-struct/SKILL.md` — re-add scope hint covering the new crate.
 - [ ] **Deleted-file disposition** — #4090 / #4103 churned `sdk/cosmos/azure_data_cosmos_native/azurecosmos.pc.in`, `cmake/DiscoverTests.cmake`, and `docs/next_generation_sdks_design_principles.md`. None of those are reintroduced here: `pkg-config` files are deferred to a future packaging RFC, the CMake test discovery is replaced by the §8 Phase 11 C test harness sitting under `tests/c_smoke/`, and the design-principles doc has been folded into this spec's §2 + §11. Phase 0 should add a one-line README pointer noting where each old file's content now lives so future grep-driven archaeologists do not chase ghosts.
 
