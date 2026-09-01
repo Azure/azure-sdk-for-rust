@@ -11,10 +11,166 @@ use tracing::debug;
 /// Represents the options that can be set when adding event data to an [`EventDataBatch`].
 pub struct AddEventDataOptions {}
 
-struct EventDataBatchState {
+/// The owned serialization core of a batch.
+///
+/// This holds every piece of state needed to accumulate messages and to produce
+/// the AMQP batch envelope. It borrows nothing, so a background task can own one
+/// for the whole life of the task. [`EventDataBatch`] wraps one of these behind a
+/// mutex and keeps the borrow of the [`ProducerClient`] for itself.
+pub(crate) struct EventDataBatchInner {
     serialized_messages: Vec<Vec<u8>>,
     size_in_bytes: u64,
     batch_envelope: Option<AmqpMessage>,
+    max_size_in_bytes: u64,
+    partition_key: Option<String>,
+}
+
+impl EventDataBatchInner {
+    pub(crate) fn new(max_size_in_bytes: u64, partition_key: Option<String>) -> Self {
+        Self {
+            serialized_messages: Vec::new(),
+            size_in_bytes: 0,
+            batch_envelope: None,
+            max_size_in_bytes,
+            partition_key,
+        }
+    }
+
+    pub(crate) fn size(&self) -> u64 {
+        self.size_in_bytes
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        self.serialized_messages.len()
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.serialized_messages.is_empty()
+    }
+
+    fn arithmetic_error() -> EventHubsError {
+        EventHubsError::with_message("Arithmetic error calculating Batch size.")
+    }
+
+    fn calculate_actual_size_for_payload(length: usize) -> Result<u64> {
+        const MESSAGE_HEADER_SIZE_32: usize = 8;
+        const MESSAGE_HEADER_SIZE_8: usize = 5;
+        if length < 256 {
+            Ok(length
+                .checked_add(MESSAGE_HEADER_SIZE_8)
+                .ok_or_else(Self::arithmetic_error)? as u64)
+        } else {
+            Ok(length
+                .checked_add(MESSAGE_HEADER_SIZE_32)
+                .ok_or_else(Self::arithmetic_error)? as u64)
+        }
+    }
+
+    /// Tries to add an AMQP message to the batch.
+    ///
+    /// Returns `true` when the message was added. Returns `false` when the
+    /// message does not fit; in that case the batch is left unchanged.
+    pub(crate) fn try_add(&mut self, message: impl Into<AmqpMessage>) -> Result<bool> {
+        let mut message = message.into();
+        if message.properties.is_none() || message.properties.as_ref().unwrap().message_id.is_none()
+        {
+            message.set_message_id(Uuid::new_v4());
+        }
+        if let Some(partition_key) = self.partition_key.as_ref() {
+            message.add_message_annotation(
+                AmqpSymbol::from("x-opt-partition-key"),
+                partition_key.clone(),
+            );
+        }
+
+        let message_len = AmqpMessage::serialize(&message)?.len();
+        if self.serialized_messages.is_empty() {
+            // The first message serialized is the batch envelope - we capture the parameters from the first message to use for the batch
+            self.size_in_bytes = self
+                .size_in_bytes
+                .checked_add(message_len as u64)
+                .ok_or_else(Self::arithmetic_error)?;
+            self.batch_envelope = Some(Self::create_batch_envelope(&message));
+        }
+        let serialized_message = AmqpMessage::serialize(&message)?;
+        let actual_message_size =
+            Self::calculate_actual_size_for_payload(serialized_message.len())?;
+        if self
+            .size_in_bytes
+            .checked_add(actual_message_size)
+            .ok_or_else(Self::arithmetic_error)?
+            > self.max_size_in_bytes
+        {
+            debug!("Batch is full. Cannot add more messages.");
+            debug!("Message size: {actual_message_size}");
+            debug!("Current batch size: {:?}", self.size_in_bytes);
+            debug!("Max batch size: {:?}", self.max_size_in_bytes);
+            if self.serialized_messages.is_empty() {
+                self.batch_envelope = None;
+                self.size_in_bytes = 0;
+            }
+            return Ok(false);
+        }
+        self.size_in_bytes += actual_message_size;
+        self.serialized_messages.push(serialized_message);
+
+        Ok(true)
+    }
+
+    /// Takes the accumulated messages as a single AMQP batch envelope and resets
+    /// the batch so that it can accumulate again.
+    ///
+    /// # Panics
+    ///
+    /// Panics when the batch is empty. Callers must not send an empty batch.
+    pub(crate) fn take_envelope(&mut self) -> AmqpMessage {
+        let mut batch_envelope = self.batch_envelope.clone().expect(
+            "Batch envelope is missing when getting messages; \
+             send_batch was called on an empty batch (add at least one event before sending).",
+        );
+
+        // Move the messages out of the batch state into a local variable so we
+        // can subsequently move it to the message body.
+        let mut serialized_messages = Vec::<Vec<u8>>::new();
+        serialized_messages.append(&mut self.serialized_messages);
+
+        batch_envelope.set_message_body(serialized_messages);
+
+        // Reset the batch state for the next batch
+        self.batch_envelope = None;
+        self.size_in_bytes = 0;
+        self.serialized_messages.clear();
+
+        batch_envelope
+    }
+
+    fn create_batch_envelope(message: &AmqpMessage) -> AmqpMessage {
+        // Transfer all the message options from the original message to the batch envelope
+        // Do NOT transfer the body, that will be handled later.
+        let mut batch_builder = AmqpMessage::builder();
+
+        if let Some(message_header) = message.header.as_ref() {
+            batch_builder = batch_builder.with_header(message_header.clone());
+        }
+        if let Some(message_properties) = message.properties.as_ref() {
+            batch_builder = batch_builder.with_properties(message_properties.clone());
+        }
+        if let Some(application_properties) = message.application_properties.as_ref() {
+            batch_builder =
+                batch_builder.with_application_properties(application_properties.clone());
+        }
+        if let Some(delivery_annotations) = message.delivery_annotations.as_ref() {
+            batch_builder = batch_builder.with_delivery_annotations(delivery_annotations.clone());
+        }
+        if let Some(message_annotations) = message.message_annotations.as_ref() {
+            batch_builder = batch_builder.with_message_annotations(message_annotations.clone());
+        }
+        if let Some(footer) = message.footer.as_ref() {
+            batch_builder = batch_builder.with_footer(footer.clone());
+        }
+
+        batch_builder.build()
+    }
 }
 
 /// Represents a collections of event data that can be sent to an Event Hubs instance in one operation.
@@ -47,12 +203,7 @@ struct EventDataBatchState {
 /// ```
 pub struct EventDataBatch<'a> {
     producer: &'a ProducerClient,
-    batch_state: Mutex<EventDataBatchState>,
-    /// The size that [`EventDataBatch::resolve_max_size_in_bytes`] decided.
-    /// [`EventDataBatch::try_add_amqp_message`] refuses a message that does not
-    /// fit under it.
-    max_size_in_bytes: u64,
-    partition_key: Option<String>,
+    inner: Mutex<EventDataBatchInner>,
     partition_id: Option<String>,
 }
 
@@ -68,15 +219,10 @@ impl<'a> EventDataBatch<'a> {
         options: Option<EventDataBatchOptions>,
         max_size_in_bytes: u64,
     ) -> Self {
+        let partition_key = options.as_ref().and_then(|o| o.partition_key.clone());
         Self {
             producer,
-            batch_state: Mutex::new(EventDataBatchState {
-                serialized_messages: Vec::new(),
-                size_in_bytes: 0,
-                batch_envelope: None,
-            }),
-            max_size_in_bytes,
-            partition_key: options.as_ref().and_then(|o| o.partition_key.clone()),
+            inner: Mutex::new(EventDataBatchInner::new(max_size_in_bytes, partition_key)),
             partition_id: options.and_then(|o| o.partition_id),
         }
     }
@@ -134,7 +280,7 @@ impl<'a> EventDataBatch<'a> {
     ///
     pub fn size(&self) -> u64 {
         // Note that lock() returns an infallible result.
-        self.batch_state.lock().unwrap().size_in_bytes
+        self.inner.lock().unwrap().size()
     }
 
     /// Gets the number of messages in the batch.
@@ -144,7 +290,7 @@ impl<'a> EventDataBatch<'a> {
     /// The number of messages in the batch.
     ///
     pub fn len(&self) -> usize {
-        self.batch_state.lock().unwrap().serialized_messages.len()
+        self.inner.lock().unwrap().len()
     }
 
     /// Determines whether the batch is empty.
@@ -153,25 +299,7 @@ impl<'a> EventDataBatch<'a> {
     /// `true` if the batch is empty; otherwise, `false`.
     ///
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    fn arithmetic_error() -> EventHubsError {
-        EventHubsError::with_message("Arithmetic error calculating Batch size.")
-    }
-
-    fn calculate_actual_size_for_payload(length: usize) -> Result<u64> {
-        const MESSAGE_HEADER_SIZE_32: usize = 8;
-        const MESSAGE_HEADER_SIZE_8: usize = 5;
-        if length < 256 {
-            Ok(length
-                .checked_add(MESSAGE_HEADER_SIZE_8)
-                .ok_or_else(Self::arithmetic_error)? as u64)
-        } else {
-            Ok(length
-                .checked_add(MESSAGE_HEADER_SIZE_32)
-                .ok_or_else(Self::arithmetic_error)? as u64)
-        }
+        self.inner.lock().unwrap().is_empty()
     }
 
     /// Tries to add an event data to the batch.
@@ -258,106 +386,15 @@ impl<'a> EventDataBatch<'a> {
         message: impl Into<AmqpMessage>,
         #[allow(unused_variables)] options: Option<AddEventDataOptions>,
     ) -> Result<bool> {
-        let mut message = message.into();
-        if message.properties.is_none() || message.properties.as_ref().unwrap().message_id.is_none()
-        {
-            message.set_message_id(Uuid::new_v4());
-        }
-        if let Some(partition_key) = self.partition_key.as_ref() {
-            message.add_message_annotation(
-                AmqpSymbol::from("x-opt-partition-key"),
-                partition_key.clone(),
-            );
-        }
-
-        let mut batch_state = self.batch_state.lock().unwrap();
-        let message_len = AmqpMessage::serialize(&message)?.len();
-        if batch_state.serialized_messages.is_empty() {
-            // The first message serialized is the batch envelope - we capture the parameters from the first message to use for the batch
-            batch_state.size_in_bytes = batch_state
-                .size_in_bytes
-                .checked_add(message_len as u64)
-                .ok_or_else(Self::arithmetic_error)?;
-            batch_state.batch_envelope = Some(self.create_batch_envelope(&message));
-        }
-        let serialized_message = AmqpMessage::serialize(&message)?;
-        let actual_message_size =
-            Self::calculate_actual_size_for_payload(serialized_message.len())?;
-        if batch_state
-            .size_in_bytes
-            .checked_add(actual_message_size)
-            .ok_or_else(Self::arithmetic_error)?
-            > self.max_size_in_bytes
-        {
-            debug!("Batch is full. Cannot add more messages.");
-            debug!("Message size: {actual_message_size}");
-            debug!("Current batch size: {:?}", batch_state.size_in_bytes);
-            debug!("Max batch size: {:?}", self.max_size_in_bytes);
-            if batch_state.serialized_messages.is_empty() {
-                batch_state.batch_envelope = None;
-                batch_state.size_in_bytes = 0;
-            }
-            return Ok(false);
-        }
-        batch_state.size_in_bytes += actual_message_size;
-        batch_state.serialized_messages.push(serialized_message);
-
-        Ok(true)
+        self.inner.lock().unwrap().try_add(message)
     }
 
     pub(crate) fn get_messages(&self) -> AmqpMessage {
-        let mut batch_state = self.batch_state.lock().unwrap();
-
-        let mut batch_envelope = batch_state.batch_envelope.clone().expect(
-            "Batch envelope is missing when getting messages; \
-             send_batch was called on an empty batch (add at least one event before sending).",
-        );
-
-        // Move the messages out of the batch state into a local variable so we
-        // can subsequently move it to the message body.
-        let mut serialized_messages = Vec::<Vec<u8>>::new();
-        serialized_messages.append(&mut batch_state.serialized_messages);
-
-        batch_envelope.set_message_body(serialized_messages);
-
-        // Reset the batch state for the next batch
-        batch_state.batch_envelope = None;
-        batch_state.size_in_bytes = 0;
-        batch_state.serialized_messages.clear();
-
-        batch_envelope
+        self.inner.lock().unwrap().take_envelope()
     }
 
     pub(crate) fn get_batch_path(&self) -> Result<Url> {
         Self::batch_path(self.producer.base_url(), self.partition_id.as_deref())
-    }
-
-    fn create_batch_envelope(&self, message: &AmqpMessage) -> AmqpMessage {
-        // Transfer all the message options from the original message to the batch envelope
-        // Do NOT transfer the body, that will be handled later.
-        let mut batch_builder = AmqpMessage::builder();
-
-        if let Some(message_header) = message.header.as_ref() {
-            batch_builder = batch_builder.with_header(message_header.clone());
-        }
-        if let Some(message_properties) = message.properties.as_ref() {
-            batch_builder = batch_builder.with_properties(message_properties.clone());
-        }
-        if let Some(application_properties) = message.application_properties.as_ref() {
-            batch_builder =
-                batch_builder.with_application_properties(application_properties.clone());
-        }
-        if let Some(delivery_annotations) = message.delivery_annotations.as_ref() {
-            batch_builder = batch_builder.with_delivery_annotations(delivery_annotations.clone());
-        }
-        if let Some(message_annotations) = message.message_annotations.as_ref() {
-            batch_builder = batch_builder.with_message_annotations(message_annotations.clone());
-        }
-        if let Some(footer) = message.footer.as_ref() {
-            batch_builder = batch_builder.with_footer(footer.clone());
-        }
-
-        batch_builder.build()
     }
 }
 
@@ -392,6 +429,7 @@ pub struct EventDataBatchOptions {
 mod tests {
     use super::*;
     use crate::RetryOptions;
+    use azure_core_amqp::AmqpTransport;
     use azure_core_test::credentials::MockCredential;
     use std::sync::Arc;
 
@@ -417,6 +455,11 @@ mod tests {
         }
     }
 
+    // The cap the batch actually enforces, read out of the serialization core.
+    fn effective_max_size(batch: &EventDataBatch<'_>) -> u64 {
+        batch.inner.lock().unwrap().max_size_in_bytes
+    }
+
     // A client that never opens a connection. `try_add_event_data` only
     // serializes and measures, so a batch can be driven without a broker.
     fn offline_producer() -> ProducerClient {
@@ -428,6 +471,7 @@ mod tests {
             RetryOptions::default(),
             None,
             None,
+            AmqpTransport::default(),
         )
     }
 
@@ -533,7 +577,7 @@ mod tests {
             EventDataBatch::resolve_max_size_in_bytes(Some(&options), LINK_MAX_SIZE)
                 .expect("1024 bytes is below the link maximum");
         let batch = EventDataBatch::new(&producer, Some(options), max_size_in_bytes);
-        assert_eq!(batch.max_size_in_bytes, MAX_SIZE);
+        assert_eq!(effective_max_size(&batch), MAX_SIZE);
 
         let body = "x".repeat(128);
         let mut accepted = 0;
@@ -580,7 +624,7 @@ mod tests {
             .expect("the link maximum is always allowed");
         let batch = EventDataBatch::new(&producer, None, max_size_in_bytes);
 
-        assert_eq!(batch.max_size_in_bytes, LINK_MAX_SIZE);
+        assert_eq!(effective_max_size(&batch), LINK_MAX_SIZE);
         assert!(batch
             .try_add_event_data("x".repeat(128), None)
             .expect("adding an event of a known size cannot fail"));

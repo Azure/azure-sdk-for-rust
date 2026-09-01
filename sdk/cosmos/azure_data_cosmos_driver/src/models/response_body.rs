@@ -145,19 +145,13 @@ impl ResponseBody {
             }
             Self::Items(items) => items
                 .into_iter()
-                // NOTE: `deserialize_response` auto-detects binary per slice via
-                // the `0x80` preamble, but the feed pipeline that produces
-                // `Self::Items` splits the `Documents` array by scanning **text**
-                // JSON — it is not binary-aware. A single-preamble binary feed
-                // envelope would therefore be sliced into sub-documents *without*
-                // preambles, which `is_binary` would then route to the text path.
-                // This is inert today because query/feed binary negotiation is
-                // deferred (the service does not emit binary feeds without the
-                // negotiation header), so the binary `Items` branch is only
-                // exercised by hand-prefixed synthetic tests. When feed/query
-                // binary negotiation is added, the feed splitter must be made
-                // binary-aware (or each slice re-prefixed) before this path can
-                // decode real binary feeds.
+                // Items are decoded independently, auto-detecting binary per
+                // slice via the `0x80` preamble. Safe because every producer
+                // (`skip_take_page::split_feed_envelope`, `build_page`) emits
+                // each document already standalone-encoded. A future splitter
+                // that slices a single-preamble envelope by scanning text would
+                // yield preamble-less sub-documents misrouted to the text path,
+                // so it must re-prefix per document first.
                 .map(|b| deserialize_response(&b, "failed to deserialize feed item"))
                 .collect(),
         }
@@ -399,6 +393,40 @@ mod tests {
         let body = ResponseBody::from_items(vec![Bytes::from_static(b"a")]);
         match &body {
             ResponseBody::Items(v) => assert_eq!(v.len(), 1),
+            _ => panic!("expected Items variant"),
+        }
+    }
+
+    /// A query page arrives as pre-split `Items`, so honoring
+    /// `request_text_response` for a query means transcoding every item, not
+    /// just a single body. Mixed input also proves the per-item binary sniff:
+    /// an already-text item must survive untouched rather than being re-parsed.
+    #[test]
+    fn transcode_to_text_converts_every_item_of_a_query_page() {
+        let binary_a = crate::binary_json::transcode_to_binary(br#"{"id":"a","n":1}"#).unwrap();
+        let binary_b = crate::binary_json::transcode_to_binary(br#"{"id":"b","n":2}"#).unwrap();
+        let already_text = Bytes::from_static(br#"{"id":"c"}"#);
+
+        let body = ResponseBody::from_items(vec![
+            Bytes::from(binary_a),
+            Bytes::from(binary_b),
+            already_text.clone(),
+        ]);
+        let text = body.transcode_to_text().unwrap();
+
+        match &text {
+            ResponseBody::Items(items) => {
+                assert_eq!(items.len(), 3);
+                for item in items {
+                    assert!(
+                        !crate::binary_json::is_binary(item),
+                        "every item must be text after transcoding",
+                    );
+                }
+                assert_eq!(&items[0][..], br#"{"id":"a","n":1}"#);
+                assert_eq!(&items[1][..], br#"{"id":"b","n":2}"#);
+                assert_eq!(&items[2][..], &already_text[..]);
+            }
             _ => panic!("expected Items variant"),
         }
     }

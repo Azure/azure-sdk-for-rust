@@ -350,7 +350,7 @@ async fn provision_fixture_with_topology(
     let emulator_driver_container = harness
         .emulator
         .driver
-        .resolve_container(db_name, container_name)
+        .resolve_container(db_name, container_name, OperationOptions::default())
         .await?;
     split_physical_partitions_at_points(harness, db_name, container_name, split_points).await?;
 
@@ -369,7 +369,7 @@ async fn provision_fixture_with_topology(
         .emulator
         .client
         .database_client(db_name)
-        .container_client(container_name)
+        .container_client(container_name, None)
         .await?;
     let external_container = if let Some(external) = &harness.external {
         Some(resolve_container_when_ready(&external.client, db_name, container_name).await?)
@@ -387,7 +387,7 @@ async fn provision_fixture_with_topology(
         Some(
             external
                 .driver
-                .resolve_container(db_name, container_name)
+                .resolve_container(db_name, container_name, OperationOptions::default())
                 .await?,
         )
     } else {
@@ -528,7 +528,7 @@ async fn resolve_container_when_ready(
     loop {
         match client
             .database_client(db_name)
-            .container_client(container_name)
+            .container_client(container_name, None)
             .await
         {
             Ok(container) => return Ok(container),

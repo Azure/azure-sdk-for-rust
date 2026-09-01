@@ -57,12 +57,37 @@ pub(crate) struct SkipTake {
     /// accumulated charge/diagnostics can still be flushed as a final empty
     /// page rather than being dropped.
     pending_flush: Option<CosmosResponse>,
+    /// Whether a re-split page is emitted as Cosmos binary JSON. Derived from
+    /// the negotiated operation, never from the bytes of a received page, so
+    /// this node agrees with [`PageAggregator`] on the same query.
+    ///
+    /// [`PageAggregator`]: super::query_response::PageAggregator
+    emit_binary: bool,
+    /// Set when a page was consumed from the child but could not be processed,
+    /// leaving the window counters and the child's continuation permanently
+    /// disagreeing. The node then refuses to produce further pages or a resume
+    /// token — see [`process_page`](Self::process_page) for why no error on
+    /// that path is recoverable.
+    poisoned: bool,
 }
 
 impl SkipTake {
     /// Wraps `child`, skipping `skip` documents then taking up to `take`
-    /// (`None` = all remaining).
-    pub(crate) fn new(child: Box<dyn PipelineNode>, skip: u64, take: Option<u64>) -> Self {
+    /// (`None` = all remaining). `emit_binary` is the encoding the operation
+    /// hands back to the caller (see
+    /// [`CosmosOperation::emits_binary_payload`]) — not
+    /// [`negotiates_binary_response`], which is the encoding asked of the
+    /// service. The two differ under `request_text_response`, where the wire
+    /// stays binary but this node must emit text.
+    ///
+    /// [`CosmosOperation::emits_binary_payload`]: crate::models::CosmosOperation::emits_binary_payload
+    /// [`negotiates_binary_response`]: crate::models::CosmosOperation::negotiates_binary_response
+    pub(crate) fn new(
+        child: Box<dyn PipelineNode>,
+        skip: u64,
+        take: Option<u64>,
+        emit_binary: bool,
+    ) -> Self {
         Self {
             child,
             remaining_skip: skip,
@@ -71,6 +96,8 @@ impl SkipTake {
             suppressed_charge: RequestCharge::default(),
             suppressed_diagnostics: Vec::new(),
             pending_flush: None,
+            emit_binary,
+            poisoned: false,
         }
     }
 
@@ -152,6 +179,90 @@ impl SkipTake {
             is_terminal: true,
         })
     }
+
+    /// Applies the window to one page from the child, returning the page to
+    /// emit or `None` when the page was fully skipped and retained for its
+    /// RU/diagnostics.
+    ///
+    /// **Every error out of this method is unrecoverable in place**, which is
+    /// why the caller poisons on all of them rather than on individual steps.
+    /// The child's page is already consumed, so its continuation has moved,
+    /// while `remaining_skip` / `remaining_take` still hold their pre-page
+    /// values. Resuming from that pair would skip the consumed documents *and*
+    /// re-apply the full window to the ones after them.
+    ///
+    /// The sibling ordered merge takes the opposite stance because it owns
+    /// per-row boundaries and can hold rows back; a `SkipTake` is handed a
+    /// whole page at once and cannot return part of it.
+    fn process_page(
+        &mut self,
+        response: CosmosResponse,
+        is_terminal: bool,
+    ) -> crate::error::Result<Option<PageResult>> {
+        // Split the child's page into per-document slices. An ordered merge
+        // hands us pre-split `Items`; a raw backend feed page arrives as
+        // `Bytes` and is split as text, then re-encoded below.
+        let (items, needs_encode) = match response.body() {
+            ResponseBody::Items(items) => (items.clone(), false),
+            ResponseBody::Bytes(b) => (skip_take_page::split_feed_envelope(b)?, true),
+            ResponseBody::NoPayload => (Vec::new(), false),
+        };
+
+        let outcome =
+            skip_take_page::skip_take_items(items, self.remaining_skip, self.remaining_take);
+
+        // Encode only the survivors: a document the window discards must not be
+        // able to fail the query.
+        let emitted_items = if needs_encode {
+            skip_take_page::encode_items(outcome.items, self.emit_binary)?
+        } else {
+            outcome.items
+        };
+
+        self.remaining_skip -= outcome.dropped;
+        if let Some(take) = self.remaining_take.as_mut() {
+            *take -= outcome.emitted;
+        }
+
+        let take_exhausted = matches!(self.remaining_take, Some(0));
+        let terminal = is_terminal || take_exhausted;
+
+        // A page fully consumed by the outstanding skip is retained for its
+        // RU/diagnostics rather than surfaced as an empty intermediate page.
+        if outcome.emitted == 0 && !terminal {
+            self.suppress(response);
+            return Ok(None);
+        }
+
+        if take_exhausted {
+            self.exhausted = true;
+        }
+
+        let new_response = self.rebuild(&response, emitted_items, outcome.emitted);
+        Ok(Some(PageResult::Page {
+            response: new_response,
+            is_terminal: terminal,
+        }))
+    }
+
+    /// The error a poisoned node returns from every subsequent call.
+    ///
+    /// Deliberately the same status as the failure that caused it: the poison is
+    /// not an independent fault, it is that fault made durable. The cause is
+    /// deterministic — replaying the same child page fails the same way — so
+    /// the message points at the encoding rather than suggesting a retry.
+    fn poisoned_error() -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message(
+                "skip/take node is unusable: a page was consumed from its child but could not be \
+                 processed, so the offset/limit window and the child's resume position no longer \
+                 agree and no continuation token can be minted; the page holds a document the \
+                 negotiated encoding cannot represent, so retrying is futile — re-run the query \
+                 with a text response instead",
+            )
+            .build()
+    }
 }
 
 #[async_trait]
@@ -160,6 +271,9 @@ impl PipelineNode for SkipTake {
         &mut self,
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult> {
+        if self.poisoned {
+            return Err(Self::poisoned_error());
+        }
         if self.exhausted {
             return Ok(PageResult::Drained);
         }
@@ -196,48 +310,18 @@ impl PipelineNode for SkipTake {
                     response,
                     is_terminal,
                 } => {
-                    // Split the child's page into per-document slices. A
-                    // streaming ordered merge already hands us pre-split
-                    // `Items`; a raw backend feed page arrives as `Bytes` and is
-                    // split here; `NoPayload` is a zero-document page.
-                    let items: Vec<Bytes> = match response.body() {
-                        ResponseBody::Items(items) => items.clone(),
-                        ResponseBody::Bytes(b) => skip_take_page::split_feed_envelope(b)?,
-                        ResponseBody::NoPayload => Vec::new(),
-                    };
-
-                    let outcome = skip_take_page::skip_take_items(
-                        items,
-                        self.remaining_skip,
-                        self.remaining_take,
-                    );
-                    self.remaining_skip -= outcome.dropped;
-                    if let Some(take) = self.remaining_take.as_mut() {
-                        *take -= outcome.emitted;
+                    // Every fallible step in `process_page` runs *after* the
+                    // child handed over the page, so poison on any error rather
+                    // than at individual call sites.
+                    match self.process_page(response, is_terminal) {
+                        Ok(Some(page)) => return Ok(page),
+                        // Fully consumed by the outstanding skip; pull the next.
+                        Ok(None) => continue,
+                        Err(err) => {
+                            self.poisoned = true;
+                            return Err(err);
+                        }
                     }
-
-                    let take_exhausted = matches!(self.remaining_take, Some(0));
-                    let terminal = is_terminal || take_exhausted;
-
-                    // Suppress a page that was fully consumed by the outstanding
-                    // skip and is not the child's last page — pull the next page
-                    // instead of surfacing an empty intermediate page. Retain the
-                    // page's RU/diagnostics so the next emitted page accounts for
-                    // them.
-                    if outcome.emitted == 0 && !terminal {
-                        self.suppress(response);
-                        continue;
-                    }
-
-                    if take_exhausted {
-                        self.exhausted = true;
-                    }
-
-                    let new_response = self.rebuild(&response, outcome.items, outcome.emitted);
-                    return Ok(PageResult::Page {
-                        response: new_response,
-                        is_terminal: terminal,
-                    });
                 }
             }
         }
@@ -249,6 +333,11 @@ impl PipelineNode for SkipTake {
     }
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
+        // A poisoned node's window counters no longer describe the child's
+        // position, so any token minted here would resume incorrectly.
+        if self.poisoned {
+            return Err(Self::poisoned_error());
+        }
         // Once the window is fully satisfied there is nothing left to resume.
         if self.exhausted {
             return Ok(PipelineNodeState::Drained);
@@ -341,7 +430,7 @@ mod tests {
             // If SkipTake pulled again this would be returned, but it must not.
             Ok(PageResult::Drained),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 0, Some(2));
+        let mut node = SkipTake::new(Box::new(child), 0, Some(2), false);
         assert_eq!(drain_ids(&mut node).await, vec![1, 2]);
     }
 
@@ -354,7 +443,7 @@ mod tests {
             Ok(PageResult::Drained),
         ]);
         // Skip 3, take rest → 4,5,6.
-        let mut node = SkipTake::new(Box::new(child), 3, None);
+        let mut node = SkipTake::new(Box::new(child), 3, None, false);
         assert_eq!(drain_ids(&mut node).await, vec![4, 5, 6]);
     }
 
@@ -367,7 +456,7 @@ mod tests {
             Ok(PageResult::Drained),
         ]);
         // OFFSET 1 LIMIT 3 → 2,3,4.
-        let mut node = SkipTake::new(Box::new(child), 1, Some(3));
+        let mut node = SkipTake::new(Box::new(child), 1, Some(3), false);
         assert_eq!(drain_ids(&mut node).await, vec![2, 3, 4]);
     }
 
@@ -378,14 +467,14 @@ mod tests {
             page_result(&[3], true),
             Ok(PageResult::Drained),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 10, Some(5));
+        let mut node = SkipTake::new(Box::new(child), 10, Some(5), false);
         assert_eq!(drain_ids(&mut node).await, Vec::<u64>::new());
     }
 
     #[tokio::test]
     async fn snapshot_reports_progress_then_drained() {
         let child = MockLeaf::with_pages(vec![page_result(&[1, 2, 3, 4], false)]);
-        let mut node = SkipTake::new(Box::new(child), 1, Some(2));
+        let mut node = SkipTake::new(Box::new(child), 1, Some(2), false);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -416,7 +505,7 @@ mod tests {
             page_result(&[1, 2], false),
             page_result(&[3, 4], false),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 1, Some(5));
+        let mut node = SkipTake::new(Box::new(child), 1, Some(5), false);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -433,6 +522,107 @@ mod tests {
             }
             other => panic!("expected SkipTake snapshot, got {other:?}"),
         }
+    }
+
+    /// A page whose documents parse as JSON (so the envelope splits) but cannot
+    /// be re-encoded to Cosmos binary JSON, forcing `encode_items` to fail.
+    fn page_failing_binary_encode(is_terminal: bool) -> crate::error::Result<PageResult> {
+        // `1e999` is out of `f64` range, so `transcode_to_binary`'s *parse*
+        // rejects it. `RawValue` defers number parsing, so the envelope split
+        // still succeeds and the failure lands on the re-encode.
+        let body = br#"{"Documents":[{"id":1,"n":1e999}],"_count":1}"#.to_vec();
+        Ok(PageResult::Page {
+            response: response(&body),
+            is_terminal,
+        })
+    }
+
+    #[tokio::test]
+    async fn encode_failure_poisons_the_node_instead_of_resuming_wrong() {
+        // The child page is consumed before `encode_items` runs, so its
+        // continuation has advanced while `remaining_skip` has not. Resuming
+        // from that pair would skip the consumed documents *and* re-apply the
+        // window to the ones after them.
+        let child = MockLeaf::with_pages(vec![
+            page_failing_binary_encode(false),
+            page_result(&[2], true),
+        ]);
+        let mut node = SkipTake::new(Box::new(child), 0, None, true);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        let error = node
+            .next_page(&mut context)
+            .await
+            .expect_err("re-encoding an infinite number must fail");
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+        );
+
+        // No further page, even though the child has one left to give.
+        let second = node
+            .next_page(&mut context)
+            .await
+            .expect_err("a poisoned node must not emit another page");
+        assert!(
+            second.to_string().contains("skip/take node is unusable"),
+            "the second failure must be the poison, not an incidental error: {second}",
+        );
+
+        // And no resume token, which is the assertion that matters.
+        let snapshot = node
+            .snapshot_state()
+            .expect_err("a poisoned node must not mint a resume token");
+        assert!(
+            snapshot.to_string().contains("skip/take node is unusable"),
+            "snapshot must fail with the poison: {snapshot}",
+        );
+    }
+
+    /// A page whose envelope cannot be split at all, failing before the window
+    /// is applied. Reaches `split_feed_envelope` rather than `encode_items`.
+    fn page_failing_envelope_split(is_terminal: bool) -> crate::error::Result<PageResult> {
+        Ok(PageResult::Page {
+            response: response(b"{\"Documents\":[ truncated"),
+            is_terminal,
+        })
+    }
+
+    #[tokio::test]
+    async fn envelope_split_failure_poisons_the_node_too() {
+        // The split runs in the same unrecoverable window as the encode, so
+        // poisoning must not be specific to the encode step.
+        let child = MockLeaf::with_pages(vec![
+            page_failing_envelope_split(false),
+            page_result(&[2], true),
+        ]);
+        let mut node = SkipTake::new(Box::new(child), 5, None, false);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        node.next_page(&mut context)
+            .await
+            .expect_err("a malformed envelope must fail");
+
+        let second = node
+            .next_page(&mut context)
+            .await
+            .expect_err("a poisoned node must not emit another page");
+        assert!(
+            second.to_string().contains("skip/take node is unusable"),
+            "the second failure must be the poison: {second}",
+        );
+
+        let snapshot = node
+            .snapshot_state()
+            .expect_err("a poisoned node must not mint a resume token");
+        assert!(
+            snapshot.to_string().contains("skip/take node is unusable"),
+            "snapshot must fail with the poison: {snapshot}",
+        );
     }
 
     /// Builds a query-page response body/charge pair for the RU-accounting tests.
@@ -462,7 +652,7 @@ mod tests {
             charged_page(&[4, 5], true, 7.0),
             Ok(PageResult::Drained),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 3, None);
+        let mut node = SkipTake::new(Box::new(child), 3, None, false);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -486,7 +676,7 @@ mod tests {
             charged_page(&[3], true, 4.0),
             Ok(PageResult::Drained),
         ]);
-        let mut node = SkipTake::new(Box::new(child), 10, None);
+        let mut node = SkipTake::new(Box::new(child), 10, None, false);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));

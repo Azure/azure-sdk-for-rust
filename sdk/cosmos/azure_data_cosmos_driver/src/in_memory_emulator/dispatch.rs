@@ -213,6 +213,13 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     // Matching the .NET flag enum, the presence of a `CosmosBinary` token (case-
     // insensitive, comma-separated) means the client can decode a binary
     // response.
+    //
+    // Fidelity note: this derives the flag from the header alone, whereas the
+    // real gateway honors the negotiation only for `OperationType.Query`. The
+    // emulator would therefore return binary for any negotiated feed, but the
+    // Rust driver only advertises binary for point ops and query
+    // (`binary_negotiates_response`), so no control-plane feed request that
+    // Rust sends carries the header — the divergence is unreachable in practice.
     let binary_response = headers
         .get_optional_str(&SUPPORTED_SERIALIZATION_FORMATS)
         .map(|v| {

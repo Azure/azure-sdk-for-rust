@@ -63,7 +63,7 @@ pub async fn create_container_with_items(
         }
     }
 
-    let container_client = db.container_client("TestContainer").await?;
+    let container_client = db.container_client("TestContainer", None).await?;
 
     // Under AAD, the first data-plane request against a freshly created
     // container can race with 403/5302 RbacUnauthorizedNameBasedDataRequest

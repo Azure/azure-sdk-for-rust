@@ -32,7 +32,9 @@
 use std::ffi::{c_char, CStr};
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::models::ContainerReference as DriverContainerReference;
+use azure_data_cosmos_driver::{
+    models::ContainerReference as DriverContainerReference, options::OperationOptions,
+};
 
 use crate::driver::DriverHandle;
 use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
@@ -159,7 +161,7 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
     let driver_arc = Arc::clone(&driver_inner.inner);
     let result = runtime_inner.tokio.block_on(async move {
         driver_arc
-            .resolve_container_by_name(&db_id, &container_id)
+            .resolve_container_by_name(&db_id, &container_id, OperationOptions::default())
             .await
     });
 
