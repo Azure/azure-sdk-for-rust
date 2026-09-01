@@ -1876,10 +1876,10 @@ mod tests {
         }
     }
 
-    /// Stored procedure execution is the one data-plane operation the driver
-    /// refuses to retry after an ambiguous failure: the procedure body is
-    /// opaque, so a re-run can repeat arbitrary mutations. The tests below pin
-    /// both halves of that contract — what aborts, and what still retries.
+    /// Stored procedure execution supplies the exhaustive status matrix for
+    /// operations the driver refuses to retry after an ambiguous failure. The
+    /// PATCH-specific tests above verify classification into the same shared
+    /// retry gate without duplicating every status case here.
     mod stored_procedure_retries {
         use super::*;
         use crate::models::{FeedRange, OperationType, StoredProcedureReference};

@@ -190,6 +190,26 @@ list selected explicitly with `ServerSide`, both retry layers stop after an
 ambiguous result. Statuses that prove the operation was rejected before
 execution retain their normal retry policy.
 
+### Intentional implementation and test boundaries
+
+- **Native FFI strategy and tracking identity:** Native callers select a
+  per-operation strategy through `cosmos_operation_options_t.patch_strategy`.
+  `UNSET` inherits the driver's layered configuration; `AUTO`, `CLIENT_SIDE`,
+  and `SERVER_SIDE` map directly to the corresponding `PatchStrategy` values.
+  Native submission may pre-resolve a tracking ID so cancellation can expose a
+  stable identity, but normal success and error completions replace that value
+  with the effective ID from the driver response or error. A provisional ID on
+  cancellation does not imply that server-side PATCH persisted a marker, and
+  tracking settings must not influence strategy selection.
+- **Retry status coverage:** Retry tests intentionally do not duplicate the
+  complete status-code matrix for server-side PATCH. PATCH-specific tests
+  verify that resolved retry safety, request-sent state, and ambiguous outcomes
+  reach the shared retry gate. The stored-procedure tests exercise the
+  exhaustive status matrix, including safe exceptions such as 503, because
+  both operation types use `CosmosOperation::allows_ambiguous_outcome_retry`
+  and `is_unsafe_retry_after_possible_execution`. Add PATCH-specific status
+  cases only if PATCH gains behavior outside that shared predicate.
+
 ## Tracking protocol
 
 The reserved `_azsdkPatchTracking` property is an array of objects with a UUID
