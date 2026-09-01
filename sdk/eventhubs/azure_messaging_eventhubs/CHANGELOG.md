@@ -18,6 +18,7 @@
 
 ### Bugs Fixed
 
+- `ProducerClient::close` now stops the authorization refresh task, so repeated producer life cycles release task-held memory. ([#4595](https://github.com/Azure/azure-sdk-for-rust/issues/4595))
 - `ConsumerClient::close` and `ProducerClient::close` now close the connection when another object still holds it, most often an `EventReceiver` that the caller has not dropped. Both methods used to report an error and leave the connection open. ([#4931](https://github.com/Azure/azure-sdk-for-rust/issues/4931))
 - A handle that outlives the client it came from now reports that the client is closed on its next call. Such a handle opened a second connection to the service before. ([#4931](https://github.com/Azure/azure-sdk-for-rust/issues/4931))
 - `EventProcessor::close` now continues past a partition client that the application still holds. It used to stop there, which left the partition clients behind it open and skipped the close of the consumer client. ([#4931](https://github.com/Azure/azure-sdk-for-rust/issues/4931))

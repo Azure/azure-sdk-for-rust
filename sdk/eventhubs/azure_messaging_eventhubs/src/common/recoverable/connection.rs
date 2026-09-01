@@ -427,6 +427,8 @@ impl RecoverableConnection {
         // the client.
         self.closed.store(true, Ordering::Release);
 
+        self.authorizer.stop_refresh_task().await;
+
         // Swap the cell out under the write lock, then detach without holding
         // it. The guard is a separate binding so the lock scope is visible and
         // a debugger can read it.
@@ -1508,9 +1510,17 @@ impl Drop for RecoverableConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::http::Url;
+    use azure_core::{
+        credentials::{AccessToken, TokenCredential, TokenRequestOptions},
+        http::Url,
+        time::{Duration, OffsetDateTime},
+    };
     use azure_core_test::credentials::MockCredential;
-    use std::sync::Arc;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+    use tokio::sync::Notify;
 
     // A close does not need exclusive ownership of the connection.
     //
@@ -1548,6 +1558,153 @@ mod tests {
         assert!(
             error.to_string().contains("closed"),
             "the error must say that the client is closed, got: {error}"
+        );
+    }
+
+    #[tokio::test]
+    async fn close_stops_owned_authorization_refresh_task() {
+        #[derive(Debug)]
+        struct GatedCredential {
+            requests: AtomicUsize,
+            entered_refresh: Notify,
+            release_refresh: Notify,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for GatedCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                match self.requests.fetch_add(1, Ordering::SeqCst) {
+                    0 => Ok(AccessToken::new(
+                        azure_core::credentials::Secret::new("initial_token"),
+                        OffsetDateTime::now_utc() + Duration::hours(1),
+                    )),
+                    1 => {
+                        self.entered_refresh.notify_one();
+                        self.release_refresh.notified().await;
+                        Ok(AccessToken::new(
+                            azure_core::credentials::Secret::new("refreshed_token"),
+                            OffsetDateTime::now_utc() + Duration::hours(1),
+                        ))
+                    }
+                    request => unreachable!("unexpected token request {request}"),
+                }
+            }
+        }
+
+        let credential = Arc::new(GatedCredential {
+            requests: AtomicUsize::new(0),
+            entered_refresh: Notify::new(),
+            release_refresh: Notify::new(),
+        });
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            AmqpTransport::default(),
+            credential.clone(),
+            Default::default(),
+            None,
+        );
+        let authorizer = connection.authorizer.clone();
+        authorizer.disable_authorization().unwrap();
+        authorizer
+            .set_token_refresh_bias_for_test(Duration::hours(2))
+            .unwrap();
+
+        let path = Url::parse("amqps://example.com/close_refresh_task").unwrap();
+        authorizer.authorize_path(&connection, &path).await.unwrap();
+
+        // The second request proves that the refresher holds an Arc to the authorizer.
+        credential.entered_refresh.notified().await;
+
+        connection.close_connection().await.unwrap();
+        assert_eq!(
+            Arc::strong_count(&authorizer),
+            2,
+            "the connection and test authorizer references must remain after close"
+        );
+        drop(connection);
+        assert_eq!(
+            Arc::strong_count(&authorizer),
+            1,
+            "authorization refresh task remained alive after close; strong_count={}",
+            Arc::strong_count(&authorizer)
+        );
+    }
+
+    #[tokio::test]
+    async fn close_racing_first_authorization_does_not_start_refresher() {
+        #[derive(Debug)]
+        struct GatedCredential {
+            requests: AtomicUsize,
+            entered: Notify,
+            release: Notify,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for GatedCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                if self.requests.fetch_add(1, Ordering::SeqCst) == 0 {
+                    self.entered.notify_one();
+                    self.release.notified().await;
+                }
+                Ok(AccessToken::new(
+                    azure_core::credentials::Secret::new("initial_token"),
+                    OffsetDateTime::now_utc() + Duration::hours(1),
+                ))
+            }
+        }
+
+        let credential = Arc::new(GatedCredential {
+            requests: AtomicUsize::new(0),
+            entered: Notify::new(),
+            release: Notify::new(),
+        });
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            AmqpTransport::default(),
+            credential.clone(),
+            Default::default(),
+            None,
+        );
+        let authorizer = connection.authorizer.clone();
+        authorizer.disable_authorization().unwrap();
+
+        let path = Url::parse("amqps://example.com/close_first_authorization").unwrap();
+        let authorization = {
+            let authorizer = authorizer.clone();
+            let connection = connection.clone();
+            tokio::spawn(async move { authorizer.authorize_path(&connection, &path).await })
+        };
+
+        credential.entered.notified().await;
+        connection.close_connection().await.unwrap();
+        credential.release.notify_one();
+        authorization
+            .await
+            .expect("authorize_path task panicked")
+            .expect("authorize_path returned an error");
+
+        assert_eq!(
+            credential.requests.load(Ordering::SeqCst),
+            1,
+            "the first authorization must make one token request"
+        );
+        drop(connection);
+        assert_eq!(
+            Arc::strong_count(&authorizer),
+            1,
+            "authorization refresh task must not start after close"
         );
     }
 
