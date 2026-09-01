@@ -180,12 +180,9 @@ pub struct PatchItemOptions {
     /// selects the driver default (5).
     pub max_attempts: Option<std::num::NonZeroU8>,
 
-    /// Stable identity for application-level retries of the same logical
-    /// PATCH. Persist and reuse this value across process restarts; never reuse
-    /// it for a different operation. Use a random, unpredictable ID. Supplying
-    /// an ID opts even a retry-safe instruction list into marker-based
-    /// duplicate suppression. When omitted, the driver generates an ID only
-    /// for unsafe lists.
+    /// Stable identity for application-level retries of this PATCH.
+    ///
+    /// See [`Self::with_tracking_id`] for usage and guarantees.
     pub tracking_id: Option<PatchTrackingId>,
 
     /// Maximum number of PATCH tracking entries retained on the
@@ -229,9 +226,24 @@ impl PatchItemOptions {
 
     /// Sets the stable identity for this logical PATCH operation.
     ///
-    /// Reuse it only when retrying the same operation against the same item.
-    /// Use a random, unpredictable value; cooperating writers are trusted not
-    /// to forge entries in the reserved tracking property.
+    /// This setting is effective only when strategy resolution selects
+    /// client-side execution. It does not influence strategy selection and is
+    /// ignored by server-side PATCH.
+    ///
+    /// On the client-side path, supplying an ID opts even a retry-safe
+    /// instruction list into marker-based duplicate suppression. Persist and
+    /// reuse the same random, unpredictable ID only for application-level
+    /// retries of the same logical operation against the same item, including
+    /// across process restarts. Reusing it for a different operation suppresses
+    /// that operation. Cooperating writers must preserve the reserved tracking
+    /// property and are trusted not to forge entries.
+    ///
+    /// When omitted, the driver generates an ID for unsafe client-side lists.
+    /// The effective ID is available from the response, diagnostics, and errors
+    /// so a retry can reuse it after an ambiguous failure. Duplicate suppression
+    /// remains bounded by the configured retention window and tracking capacity.
+    /// Tracking entries are visible in stored and returned JSON and count toward
+    /// item size and indexing costs.
     pub fn with_tracking_id(mut self, tracking_id: PatchTrackingId) -> Self {
         self.tracking_id = Some(tracking_id);
         self

@@ -1991,12 +1991,14 @@ mod tests {
 
         let response = execute_with_dispatcher(
             &dispatcher,
-            canonical_patch_op().with_patch_tracking_id(id),
+            canonical_patch_op()
+                .with_patch_tracking_id(id)
+                .with_precondition(Precondition::if_match(Etag::from("\"v1\""))),
             OperationOptions::default(),
             None,
         )
         .await
-        .expect("verification read must recognize the committed Replace");
+        .expect("marker recognition must precede the now-stale caller If-Match");
 
         let body: serde_json::Value = response.into_body().into_single().unwrap();
         assert_eq!(body["visits"], 1);

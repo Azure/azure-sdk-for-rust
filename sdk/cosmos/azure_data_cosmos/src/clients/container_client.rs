@@ -583,6 +583,14 @@ impl ContainerClient {
     /// from Cosmos DB. An explicit `content_response_on_write = Disabled`
     /// suppresses the response body for either strategy.
     ///
+    /// # Execution Tradeoffs
+    ///
+    /// Server-side PATCH charges for and resolves conflicts at the changed
+    /// paths. Client-side PATCH reads and serializes the complete JSON item
+    /// again, then replaces it, so it consumes Read plus Replace request units
+    /// and resolves multi-write conflicts at document granularity. Select an
+    /// explicit strategy when those differences matter.
+    ///
     /// # Retry Semantics
     ///
     /// [`PatchStrategy::Auto`](crate::options::PatchStrategy::Auto) is the
@@ -590,49 +598,14 @@ impl ContainerClient {
     /// more than 10 instructions. Unsafe or longer lists use tracked
     /// client-side RMW. Explicit server-side PATCH with more than 10
     /// instructions fails with HTTP 400 rather than falling back.
-    /// Tracking IDs and other client-side-only settings do not influence
-    /// `Auto`; they are ignored when the instruction list selects server-side
-    /// PATCH. Explicit `ServerSide` likewise provides no marker-backed
-    /// duplicate suppression.
+    /// Client-side-only settings do not influence strategy selection and are
+    /// ignored on the server path. To provide a stable identity for
+    /// application-level retries when client-side execution is selected, use
+    /// [`PatchItemOptions::with_tracking_id`]. Explicit unsafe server-side
+    /// PATCH is not retried after an ambiguous outcome.
     ///
-    /// For unsafe client-side lists, the driver writes a tracking entry under
-    /// [`PATCH_TRACKING_PROPERTY`](crate::models::PATCH_TRACKING_PROPERTY) in
-    /// the same ETag-guarded Replace as the mutation. If that Replace commits
-    /// but its response is lost, the next verification Read observes the entry
-    /// and returns success without applying the instructions again.
-    /// Explicit unsafe server-side PATCH writes no marker and is not retried
-    /// after an ambiguous outcome; callers receive the original error and must
-    /// reconcile it.
-    ///
-    /// By default the driver generates a tracking ID for instruction lists that
-    /// are not safe to reapply. The effective ID is available from
-    /// [`ItemResponse::patch_tracking_id`]
-    /// (including successful lost-response recovery) and
-    /// [`CosmosError::patch_tracking_id`](crate::CosmosError::patch_tracking_id)
-    /// on failure. Persist and pass it through [`PatchItemOptions`] to extend
-    /// duplicate suppression across application retries or process restarts.
-    /// If the end-to-end deadline expires after the Replace may have committed
-    /// but before verification completes, the timeout error still carries this
-    /// effective ID. Retry the same logical PATCH with
-    /// [`PatchItemOptions::with_tracking_id`]; do not generate a new ID.
-    /// Verification does not continue beyond the configured deadline.
-    /// Callers may instead provide a [`PatchTrackingId`](crate::models::PatchTrackingId)
-    /// up front. Doing so opts even a retry-safe instruction list into marker-based
-    /// duplicate suppression. Use a random, unpredictable ID and reuse it only
-    /// for the same logical operation against the same item; reusing it for a
-    /// different operation suppresses that operation.
-    ///
-    /// The guarantee is bounded. Entries are protected from pruning for
-    /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION) by
-    /// default; [`PatchItemOptions::with_tracking_retention_seconds`] can
-    /// configure a positive whole-second window. The per-item list has a
-    /// configurable capacity. When capacity is full, the oldest entry is
-    /// evicted, so suppression is bounded by the earlier of retention expiry or
-    /// FIFO eviction. All writers that replace these items must preserve the
-    /// reserved property and its array order. The property is visible in stored
-    /// and returned JSON and counts toward item size and indexing costs.
-    /// Model-deserialization errors retain the response diagnostics and effective
-    /// tracking ID so callers can safely reconcile a committed PATCH.
+    /// An explicitly supplied `If-Match` precondition follows standard ETag
+    /// semantics and can return HTTP 412 when it does not match.
     #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,

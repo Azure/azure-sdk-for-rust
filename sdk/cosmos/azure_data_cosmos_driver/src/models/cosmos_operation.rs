@@ -511,8 +511,10 @@ impl CosmosOperation {
     ///
     /// Reuse the same ID for application-level retries of the same logical
     /// operation. Prefer a random, unpredictable ID. Supplying an ID opts even
-    /// a retry-safe instruction list into marker-based duplicate suppression.
-    /// If omitted, the driver generates an ID only for unsafe lists.
+    /// a retry-safe instruction list into marker-based duplicate suppression
+    /// when client-side execution is selected. It does not influence strategy
+    /// resolution and is ignored by server-side PATCH. If omitted, the driver
+    /// generates an ID only for unsafe lists executed client-side.
     pub fn with_patch_tracking_id(mut self, tracking_id: crate::models::PatchTrackingId) -> Self {
         self.patch_tracking_id = Some(tracking_id);
         self

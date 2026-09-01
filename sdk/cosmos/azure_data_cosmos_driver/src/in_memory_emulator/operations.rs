@@ -5223,6 +5223,34 @@ async fn handle_patch_locked(
                 .build());
             }
 
+            match patched_body.get("id").and_then(|value| value.as_str()) {
+                Some(body_id) if body_id == doc_id => {}
+                Some(_) => {
+                    return Err(error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        "Document id in request body must match the resource id in the request URI",
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+                None => {
+                    return Err(error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        "Missing 'id' field in document",
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+            }
+
             let patched_components =
                 match extract_pk_from_body(&patched_body, state.metadata.partition_key.paths()) {
                     Ok(components) => components,

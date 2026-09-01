@@ -48,10 +48,11 @@ the instructions. Duplicate suppression is bounded by retention, capacity,
 authoritative verification routing, and cooperating writers preserving the
 reserved property and marker order.
 
-`PatchStrategy::Auto` sends only retry-safe lists of at most 10 instructions
-server-side; unsafe or longer lists use client-side RMW. Non-retry-safe
-client-side lists persist a tracking marker, while retry-safe over-limit lists
-do not need one. Explicit `ServerSide` never falls back: more than 10
+`PatchStrategy::Auto` sends retry-safe lists of at most 10 instructions
+server-side; unsafe or longer lists use client-side RMW. Client-side-only
+settings do not influence that decision. Non-retry-safe client-side lists and
+client-side lists with a caller-supplied tracking ID persist a tracking marker,
+while retry-safe over-limit lists do not need one. Explicit `ServerSide` never falls back: more than 10
 instructions receive service `400`, and unsafe instructions stop on ambiguous
 outcomes rather than risk duplicate execution.
 
@@ -128,17 +129,18 @@ The session token is preserved on all retry attempts — it is never cleared to 
 
 ### 408 — Request Timeout
 
-| Operation                         | Action                          | Budget              |
-| --------------------------------- | ------------------------------- | ------------------- |
-| Reads                             | Cross-region failover retry     | 3 failover attempts |
-| Writes (except stored procedures) | **Cross-region failover retry** | 3 failover attempts |
-| Stored Procedure writes           | **Abort**                       | —                   |
+| Operation                                            | Action                          | Budget              |
+| ---------------------------------------------------- | ------------------------------- | ------------------- |
+| Reads                                                | Cross-region failover retry     | 3 failover attempts |
+| Writes allowing ambiguous-outcome retries            | **Cross-region failover retry** | 3 failover attempts |
+| Stored procedures and unsafe explicit server PATCHes | **Abort**                       | —                   |
 
 408 indicates a server-side or client-side timeout. The Rust driver retries writes on 408 because:
 
 - CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above).
 - 412 (Precondition Failed) prevents silent overwrites if a retried write races with a concurrent update.
-- Stored procedure execution is excluded from write retries (not idempotent).
+- Stored procedure execution and unsafe explicit server-side PATCH are excluded
+  because their mutations may not be safe to repeat.
 
 For single-write accounts, retry cycles through the available endpoint(s). For multi-write accounts, retry advances to the next preferred write region.
 
@@ -166,13 +168,13 @@ Standard 429 is handled entirely within the transport pipeline — the operation
 
 ### 5xx — Server Errors (500, 502, 503, 504)
 
-| Operation                  | Action                          | Budget              |
-| -------------------------- | ------------------------------- | ------------------- |
-| Reads                      | Cross-region failover retry     | 3 failover attempts |
-| Writes (all)               | **Cross-region failover retry** | 3 failover attempts |
-| Stored Procedure execution | **Abort** (except 503)          | —                   |
+| Operation                                            | Action                          | Budget              |
+| ---------------------------------------------------- | ------------------------------- | ------------------- |
+| Reads                                                | Cross-region failover retry     | 3 failover attempts |
+| Writes allowing ambiguous-outcome retries            | **Cross-region failover retry** | 3 failover attempts |
+| Stored procedures and unsafe explicit server PATCHes | **Abort** (except 503)          | —                   |
 
-All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signal from Cosmos DB — when the service intentionally returns 503, it guarantees the write was not processed. All other 5xx codes (500, 502, 504) are retried identically because CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). 502/504 may be raised by intermediate proxies, but ETag preconditions (412 on stale ETag) prevent silent overwrites on retry. Stored procedure execution aborts on every 5xx except 503, which alone proves the procedure did not run — see `is_unsafe_retry_after_possible_execution` in `src/driver/pipeline/retry_evaluation.rs`.
+503 is the canonical "safe to retry" signal from Cosmos DB — when the service intentionally returns 503, it guarantees the write was not processed. Other 5xx codes (500, 502, 504) are retried for operations that allow ambiguous-outcome retries because ETag preconditions can make the final state deterministic (see [Idempotency Requirements](#idempotency-requirements) above). Stored procedure execution and unsafe explicit server-side PATCH abort on those other 5xx responses because their mutations may already have run; 503 remains retryable because it proves the operation did not run. See `is_unsafe_retry_after_possible_execution` in `src/driver/pipeline/retry_evaluation.rs`.
 
 **Endpoint marking**: Individual 5xx failures do not mark endpoints as unavailable. Endpoint unavailability is driven by PPCB's per-partition failure thresholds (see [Per-Partition Circuit Breaker](#per-partition-circuit-breaker-ppcb)). Each failure increments the partition's failure counter; only when the configured threshold is crossed does routing shift to the next preferred region.
 
@@ -182,20 +184,20 @@ All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signa
 
 ### Transport Errors (Connection Failures)
 
-| Sent Status                              | Operation                  | Action                          | Budget              |
-| ---------------------------------------- | -------------------------- | ------------------------------- | ------------------- |
-| **Not sent** (request never left client) | Any                        | Cross-region failover retry     | 3 failover attempts |
-| **Sent** or unknown                      | Reads                      | Cross-region failover retry     | 3 failover attempts |
-| **Sent** or unknown                      | Writes (all)               | **Cross-region failover retry** | 3 failover attempts |
-| **Sent** or unknown                      | Stored Procedure execution | **Abort**                       | —                   |
+| Sent Status                              | Operation                                            | Action                          | Budget              |
+| ---------------------------------------- | ---------------------------------------------------- | ------------------------------- | ------------------- |
+| **Not sent** (request never left client) | Any                                                  | Cross-region failover retry     | 3 failover attempts |
+| **Sent** or unknown                      | Reads                                                | Cross-region failover retry     | 3 failover attempts |
+| **Sent** or unknown                      | Writes allowing ambiguous-outcome retries            | **Cross-region failover retry** | 3 failover attempts |
+| **Sent** or unknown                      | Stored procedures and unsafe explicit server PATCHes | **Abort**                       | —                   |
 
 When the request was definitely not sent (connection refused, DNS failure, TLS error), the endpoint itself is unreachable. The driver marks the endpoint as unavailable (affecting all partitions on it) and records a partition-level failure for PPCB tracking, then retries on the next preferred region.
 
 When the request was possibly sent, the endpoint is clearly reachable — only partition-level marking is applied (via PPCB). The endpoint is not marked unavailable since other partitions on it are unaffected. The partition mark is applied whether or not the operation goes on to retry.
 
-For connectivity errors (connection refused, I/O errors), the transport layer performs 1 local retry on a different TCP shard to the same endpoint before escalating to the operation pipeline for cross-region failover. This local retry is gated by `TransportPipelineContext::allow_sent_transport_retry` (declared and consumed in `src/driver/transport/transport_pipeline.rs`, evaluated by `should_retry_connectivity_failure`). The operation pipeline populates it from `CosmosOperation::allows_ambiguous_outcome_retry` (`src/models/cosmos_operation.rs`) at both call sites in `src/driver/pipeline/operation_pipeline.rs`, so it is `false` only for stored procedure execution and the two retry layers cannot disagree about a single failure. Declining it does not abort the operation, it escalates straight to cross-region failover.
+For connectivity errors (connection refused, I/O errors), the transport layer performs 1 local retry on a different TCP shard to the same endpoint before escalating to the operation pipeline for cross-region failover. This local retry is gated by `TransportPipelineContext::allow_sent_transport_retry` (declared and consumed in `src/driver/transport/transport_pipeline.rs`, evaluated by `should_retry_connectivity_failure`). The operation pipeline populates it from `CosmosOperation::allows_ambiguous_outcome_retry` (`src/models/cosmos_operation.rs`) at both call sites in `src/driver/pipeline/operation_pipeline.rs`, so it is `false` for stored procedure execution and unsafe explicit server-side PATCH, and the two retry layers cannot disagree about a single failure. Declining the local retry does not by itself abort the operation; the operation layer applies the same ambiguity gate before cross-region failover.
 
-**Note**: The Rust driver retries non-idempotent writes even when the request may have been sent, because CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). Stored procedure execution is excluded.
+**Note**: The Rust driver retries non-idempotent writes even when the request may have been sent, because CRUD write operations can reach a deterministic final state when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). Stored procedure execution and unsafe explicit server-side PATCH are excluded.
 
 ### Deadline Exceeded (Client-Side Timeout)
 
@@ -249,8 +251,8 @@ PPCB is an **opt-out** feature (enabled by default) that provides partition-leve
 
 | Account Type | Reads          | Writes                                   |
 | ------------ | -------------- | ---------------------------------------- |
-| Single-write | ✅ PPCB-managed| ❌ Not PPCB-managed (PPAF handles writes)|
-| Multi-write  | ✅ PPCB-managed| ✅ PPCB-managed                          |
+| Single-write | ✅ PPCB-managed | ❌ Not PPCB-managed (PPAF handles writes) |
+| Multi-write  | ✅ PPCB-managed | ✅ PPCB-managed                           |
 
 ### Behavior
 

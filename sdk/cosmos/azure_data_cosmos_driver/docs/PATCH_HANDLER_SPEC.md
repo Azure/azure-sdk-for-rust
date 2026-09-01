@@ -63,9 +63,9 @@ error rather than risking duplicate application. Client-side unsafe PATCH uses
 the B2 marker protocol.
 
 Tracking ID, maximum-attempt, capacity, and retention settings apply only when
-strategy resolution selects client-side RMW. `Auto` ignores those settings when
-the instruction list is eligible for server-side PATCH. Explicit `ServerSide`
-does the same; the service does not persist the client's marker and the request
+strategy resolution selects client-side RMW. They do not influence strategy
+resolution and are ignored whenever `Auto` or explicit `ServerSide` selects the
+server path; the service does not persist the client's marker and the request
 receives no marker-backed duplicate suppression.
 
 ## Client-side RMW algorithm
@@ -80,9 +80,10 @@ receives no marker-backed duplicate suppression.
 
 2. Classify the instruction list. A list is retry-safe when it contains only
   Replace and non-append Set operations and no operation path is a strict
-  ancestor or descendant of another. A caller-supplied ID opts any list into
-  tracking; without one, every other list requires tracking. Resolve one stable
-  tracking ID and the capacity before entering the loop.
+  ancestor or descendant of another. On this client-side path, a caller-supplied
+  ID opts any list into tracking; without one, every other list requires
+  tracking. Resolve one stable tracking ID and the capacity before entering the
+  loop.
   If the reserved tracking path overlaps a container partition-key path,
   reject a tracked PATCH before dispatching any sub-operation.
 
@@ -203,9 +204,11 @@ operation diagnostics. Callers can persist that value and reuse it for an
 application or process retry of the same logical PATCH.
 Caller-supplied IDs should be random and unpredictable as well as unique to the
 logical operation and item. Cooperating writers are trusted not to forge marker
-entries. Supplying an ID opts any instruction list into marker-based duplicate
-suppression, including a list the driver classifies as retry-safe. Without a
-supplied ID, retry-safe instruction lists do not create markers or return an ID.
+entries. On the client-side path, supplying an ID opts any instruction list
+into marker-based duplicate suppression, including a list the driver classifies
+as retry-safe. Tracking settings are ignored on the server-side path. Without a
+supplied ID, retry-safe client-side instruction lists do not create markers or
+return an ID.
 
 Each entry is protected from pruning for its configured positive number of
 whole seconds (300 seconds by default). Persisting the window on each marker

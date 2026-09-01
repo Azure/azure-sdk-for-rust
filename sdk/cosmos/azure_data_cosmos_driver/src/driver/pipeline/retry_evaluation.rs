@@ -17,8 +17,8 @@
 //! Writes are **not** gated on idempotency: `Create` and `Upsert` are retried
 //! after an ambiguous failure just like `Replace` and `Delete`, because Cosmos
 //! DB's conflict detection makes the final resource state deterministic. The
-//! sole exception is stored procedure execution (`OperationType::Execute`),
-//! whose body is opaque to the driver — it aborts on 408, on 5xx other than
+//! exceptions are stored procedure execution (`OperationType::Execute`) and
+//! unsafe explicit server-side PATCH. They abort on 408, on 5xx other than
 //! 503, and on a transport error that was not definitively unsent. See
 //! `docs/ErrorCodesAndRetries.md`.
 
@@ -753,7 +753,7 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
 /// Whether retrying `operation` is unsafe because the backend may already have
 /// processed the request.
 ///
-/// Only stored procedure execution is affected — see
+/// Stored procedure execution and unsafe explicit server-side PATCH are affected — see
 /// [`CosmosOperation::allows_ambiguous_outcome_retry`]. `503` stays retryable
 /// because Cosmos DB returns it exclusively for requests it did *not* process;
 /// `408` and the remaining `5xx` codes leave the outcome genuinely unknown, so

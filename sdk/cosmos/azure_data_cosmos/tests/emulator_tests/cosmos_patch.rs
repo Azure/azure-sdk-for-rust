@@ -517,6 +517,59 @@ pub async fn patch_item_server_side_round_trips_over_gateway_v2() -> Result<(), 
 
 #[tokio::test]
 #[cfg_attr(
+    not(test_category = "emulator_inmemory_gateway_v2"),
+    ignore = "requires hosted in-memory emulator with Gateway V2 enabled"
+)]
+pub async fn patch_item_client_side_round_trips_over_gateway_v2() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+            let item_id = format!("patch-client-gateway-v2-{unique_id}");
+            let pk = format!("pk-{unique_id}");
+            let initial = PatchTestItem {
+                id: item_id.clone(),
+                partition_key: pk.clone(),
+                display_name: "before".into(),
+                visits: 0,
+                deleted: false,
+            };
+            container_client
+                .create_item(&pk, &item_id, &initial, None)
+                .await?;
+
+            let options = PatchItemOptions::default().with_strategy(PatchStrategy::ClientSide);
+            let response = container_client
+                .patch_item(
+                    &pk,
+                    &item_id,
+                    PatchInstructions::from(vec![PatchOperation::set(
+                        "/display_name",
+                        serde_json::json!("after"),
+                    )]),
+                    Some(options),
+                )
+                .await?;
+
+            let requests = response.diagnostics().requests();
+            assert_eq!(requests.len(), 2);
+            assert_eq!(requests[0].operation_name(), Some("patch_read_item"));
+            assert_eq!(requests[1].operation_name(), Some("patch_replace_item"));
+            assert!(requests
+                .iter()
+                .all(|request| request.transport_kind() == TransportKind::GatewayV2));
+
+            let post_image: PatchTestItem = response.into_model()?;
+            assert_eq!(post_image.display_name, "after");
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
     not(any(
         test_category = "emulator",
         test_category = "emulator_vnext",

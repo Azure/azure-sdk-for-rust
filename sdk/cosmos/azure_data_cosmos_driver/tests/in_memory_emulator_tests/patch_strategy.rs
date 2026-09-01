@@ -3,7 +3,10 @@
 
 //! Equivalence, path-selection, service-limit, and telemetry tests for PATCH strategies.
 
-use std::sync::{Arc, Mutex};
+use std::{
+    num::{NonZeroU16, NonZeroU32, NonZeroU8},
+    sync::{Arc, Mutex},
+};
 
 use azure_core::http::{Method, Request, Url};
 use azure_data_cosmos_driver::in_memory_emulator::{
@@ -301,6 +304,21 @@ async fn representative_errors_are_equivalent() {
             "partition key",
             PatchInstructions::from(vec![PatchOperation::set("/pk", serde_json::json!("moved"))]),
         ),
+        (
+            "set item id",
+            PatchInstructions::from(vec![PatchOperation::set("/id", serde_json::json!("moved"))]),
+        ),
+        (
+            "replace item id",
+            PatchInstructions::from(vec![PatchOperation::replace(
+                "/id",
+                serde_json::json!("moved"),
+            )]),
+        ),
+        (
+            "remove item id",
+            PatchInstructions::from(vec![PatchOperation::remove("/id")]),
+        ),
     ] {
         assert_equivalent(instructions, scenario).await;
     }
@@ -586,7 +604,7 @@ async fn content_response_on_write_disabled_suppresses_both_strategy_bodies() {
 }
 
 #[tokio::test]
-async fn tracking_id_does_not_override_auto_or_explicit_server_side() {
+async fn client_side_settings_do_not_override_auto_or_explicit_server_side() {
     let recorder = MethodRecorder::new();
     let (driver, container) = build_driver(Some(recorder.clone())).await;
     create_item(&driver, &container, &seed_document()).await;
@@ -596,11 +614,14 @@ async fn tracking_id_does_not_override_auto_or_explicit_server_side() {
     recorder.clear();
     let operation = CosmosOperation::patch_item(item(&container))
         .with_body(serde_json::to_vec(&instructions).unwrap())
-        .with_patch_tracking_id(tracking_id);
+        .with_patch_tracking_id(tracking_id)
+        .with_patch_max_attempts(NonZeroU8::new(3).unwrap())
+        .with_patch_tracking_capacity(NonZeroU16::new(10).unwrap())
+        .with_patch_tracking_retention_seconds(NonZeroU32::new(60).unwrap());
     let response = driver
         .execute_singleton_operation(operation, OperationOptions::default())
         .await
-        .expect("Auto should ignore client-side tracking settings on the server path");
+        .expect("Auto should ignore client-side-only settings on the server path");
     assert_eq!(recorder.data_plane_methods(), vec![Method::Patch]);
     assert_eq!(response.patch_tracking_id(), None);
 
