@@ -14,9 +14,9 @@
 //! `register_throughput_control_group` / `with_fault_injection_rules`) is
 //! deliberately not surfaced yet — each requires its own flat options struct.
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.1.
+//! See [`sdk/cosmos/docs/specs/0019-native-wrapper.md`] section 4.1.
 //!
-//! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
+//! [`sdk/cosmos/docs/specs/0019-native-wrapper.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md
 
 use std::ffi::{c_char, CStr};
 use std::time::Duration;
@@ -131,10 +131,11 @@ pub(crate) enum RuntimeBuildError {
 // ─────────────────────────────────────────────────────────────────────────────
 // Flat single-call construction (cosmos_runtime_options_t / cosmos_runtime_build)
 //
-// Per docs/DATA_MOVEMENT_MODEL.md: a host fills out one flat `#[repr(C)]`
-// struct in its own language and hands it across the boundary in a single
-// `cosmos_runtime_build` call. This is the only runtime-construction surface —
-// the per-field incremental builder was removed in P5 (no back-compat).
+// Per sdk/cosmos/docs/adrs/0005-flat-native-abi-data-model.md: a host fills out
+// one flat `#[repr(C)]` struct in its own language and hands it across the
+// boundary in a single `cosmos_runtime_build` call. This is the only
+// runtime-construction surface — the per-field incremental builder was removed
+// in P5 (no back-compat).
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Flat C ABI options for building a `cosmos_runtime_t` in a single call.

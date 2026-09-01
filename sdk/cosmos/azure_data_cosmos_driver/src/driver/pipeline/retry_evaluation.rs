@@ -20,7 +20,7 @@
 //! exceptions are stored procedure execution (`OperationType::Execute`) and
 //! unsafe explicit server-side PATCH. They abort on 408, on 5xx other than
 //! 503, and on a transport error that was not definitively unsent. See
-//! `docs/ErrorCodesAndRetries.md`.
+//! `sdk/cosmos/docs/specs/0006-error-codes-and-retries.md`.
 
 use crate::{
     diagnostics::RequestSentStatus,
@@ -697,9 +697,9 @@ fn try_handle_read_session_not_available(
 
 /// Builds the `OperationRetryState` for a 404/1002 session retry,
 /// latching the `hub_region_processing_only` flag when the trigger
-/// conditions defined by HUB_REGION_PROCESSING_HEADER_SPEC.md fire.
+/// conditions defined by sdk/cosmos/docs/specs/0010-hub-region-processing-header.md fire.
 ///
-/// All four conditions must hold (HUB_REGION_PROCESSING_HEADER_SPEC.md
+/// All four conditions must hold (sdk/cosmos/docs/specs/0010-hub-region-processing-header.md
 /// §7.1 / public-spec §3.3):
 ///
 /// 1. `is_dataplane` — metadata operations ride the same pipeline but
@@ -1734,7 +1734,7 @@ mod tests {
     }
 
     /// Locks in the driver's deliberate divergence from the other Cosmos SDKs
-    /// (see `docs/ErrorCodesAndRetries.md`): a non-idempotent write is retried
+    /// (see `sdk/cosmos/docs/specs/0006-error-codes-and-retries.md`): a non-idempotent write is retried
     /// even when the request may already have been sent. Python/Java/.NET abort
     /// here.
     #[test]
@@ -3383,7 +3383,7 @@ mod tests {
     // -----------------------------------------------------------------------
     // Hub-region-processing-only latch tests.
     //
-    // See HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §4.1 for the
+    // See sdk/cosmos/docs/specs/0010-hub-region-processing-header.md §3 / public-spec §4.1 for the
     // shape these cases are meant to cover (T-1..T-5, T-AC-8, T-8, T-9).
     //
     // All tests drive `evaluate_transport_result` against a 1002 response and
@@ -3439,7 +3439,7 @@ mod tests {
     }
 
     /// T-1 — Single-master, data-plane, first 1002 sets the latch.
-    /// Covers AC-1 of HUB_REGION_PROCESSING_HEADER_SPEC.md.
+    /// Covers AC-1 of sdk/cosmos/docs/specs/0010-hub-region-processing-header.md.
     #[test]
     fn hub_region_latch_sets_on_first_1002_single_master_dataplane() {
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
@@ -4180,7 +4180,7 @@ mod tests {
     /// 404/1002 on a multi-master account does NOT signal
     /// `observed_session_unavailable` — matches
     /// `build_session_retry_state`'s 4-condition trigger (AC-4
-    /// per HUB_REGION_PROCESSING_HEADER_SPEC.md §7.1).
+    /// per sdk/cosmos/docs/specs/0010-hub-region-processing-header.md §7.1).
     #[test]
     fn hedge_leg_effects_1002_multi_master_no_signal() {
         let op = make_read_operation();

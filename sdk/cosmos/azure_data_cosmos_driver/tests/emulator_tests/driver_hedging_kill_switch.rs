@@ -9,7 +9,7 @@
 //!
 //! Cross-region read hedging only dispatches a second leg when the account
 //! exposes at least two applicable preferred regions (the `should_hedge` gate;
-//! see `docs/HEDGING_SPEC.md` §5). The single-region emulator never satisfies
+//! see `sdk/cosmos/docs/specs/0009-cross-region-hedging.md` §5). The single-region emulator never satisfies
 //! that gate, so no emulator test can observe a hedge actually firing or being
 //! suppressed. These tests therefore validate the part this layer newly adds —
 //! and that the macro unit tests (which use the injectable `from_env_vars` /

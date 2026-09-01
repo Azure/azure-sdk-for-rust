@@ -40,7 +40,7 @@ const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
 /// .NET metadata hedging threshold (first-attempt timeout + 500ms = 1.5s).
 /// Metadata reads run with `OperationOptions::default()` (no configured
 /// end-to-end latency), so deriving from `request_timeout` is not meaningful;
-/// the value is fixed and not customer-configurable. See `docs/HEDGING_SPEC.md`.
+/// the value is fixed and not customer-configurable. See `sdk/cosmos/docs/specs/0009-cross-region-hedging.md`.
 const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 
 /// `(ResourceType, OperationType)` pairs eligible for cross-region hedging.
@@ -61,7 +61,7 @@ const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 ///   wins, later pages are pinned to the winning region (the continuation ETag
 ///   is region-affine) via `OperationOverrides::region_pin`.
 ///
-/// See `docs/HEDGING_SPEC.md`.
+/// See `sdk/cosmos/docs/specs/0009-cross-region-hedging.md`.
 const HEDGEABLE_PAIRS: &[(ResourceType, OperationType)] = &[
     (ResourceType::Document, OperationType::Read),
     (ResourceType::DocumentCollection, OperationType::Read),

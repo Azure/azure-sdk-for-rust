@@ -424,7 +424,7 @@ pub(crate) async fn execute_operation_pipeline(
         operation.prefers_write_endpoints_for_read(),
     );
 
-    // HUB_REGION_PROCESSING_HEADER_SPEC.md §1.5: gate the
+    // sdk/cosmos/docs/specs/0010-hub-region-processing-header.md §1.5: gate the
     // `x-ms-cosmos-hub-region-processing-only` latch on data-plane scope
     // so metadata-pipeline operations (which ride the same
     // `execute_operation_pipeline`) never emit the header.
@@ -715,7 +715,7 @@ pub(crate) async fn execute_operation_pipeline(
         let mut transport_request =
             build_transport_request(operation, &overrides, custom_headers, &ctx)?;
 
-        // HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §3.4:
+        // sdk/cosmos/docs/specs/0010-hub-region-processing-header.md §3 / public-spec §3.4:
         // Emit the `x-ms-cosmos-hub-region-processing-only: True` header
         // when the latch is set. The latch is flipped in
         // `try_handle_read_session_not_available` on the first 1002 of a
@@ -9788,7 +9788,7 @@ mod tests {
 
     // ── apply_hub_region_header ──────────────────────────────────────
     //
-    // See HUB_REGION_PROCESSING_HEADER_SPEC.md §3.4 / public-spec §4.2.
+    // See sdk/cosmos/docs/specs/0010-hub-region-processing-header.md §3.4 / public-spec §4.2.
     // The emission logic itself is a 4-line conditional; these tests
     // exercise both branches so AC-1/AC-5 don't drift on a refactor.
 
@@ -10676,7 +10676,7 @@ mod tests {
 
     /// T-S7 — Eligibility predicate: metadata pipeline → skip. Mirrors
     /// AC-8 and the data-plane scope gate of
-    /// `HUB_REGION_PROCESSING_HEADER_SPEC.md`.
+    /// `sdk/cosmos/docs/specs/0010-hub-region-processing-header.md`.
     #[test]
     fn shared_hub_region_latch_eligibility_skip_metadata() {
         assert!(!super::should_build_shared_hub_region_latch(

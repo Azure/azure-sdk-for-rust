@@ -9,7 +9,7 @@
 //! **Cosmos-compatible canonical form** of what was sent against what came back.
 //!
 //! See the design doc:
-//! `azure_data_cosmos_driver/docs/BINARY_ENCODING_ROUNDTRIP_FUZZER.md`.
+//! `sdk/cosmos/docs/specs/0016-binary-encoding-roundtrip-fuzzer.md`.
 //!
 //! # Running
 //!

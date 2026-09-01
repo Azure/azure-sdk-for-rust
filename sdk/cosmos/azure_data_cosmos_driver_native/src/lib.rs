@@ -6,12 +6,13 @@
 //!
 //! This crate exposes a schema-agnostic completion-queue-style FFI suitable
 //! for cross-language SDK reuse (.NET, Java, Go, Python, native C/C++). The
-//! design is fully specified in [`docs/NATIVE_WRAPPER_SPEC.md`] in the driver
-//! crate, with a picture-first overview in [`docs/ASYNC_INVOCATION_ARCHITECTURE.md`].
+//! design is fully specified in [`sdk/cosmos/docs/specs/0019-native-wrapper.md`],
+//! with a picture-first overview in
+//! [`sdk/cosmos/docs/specs/0020-native-async-invocation.md`].
 //!
 //! [`azure_data_cosmos_driver`]: https://docs.rs/azure_data_cosmos_driver
-//! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
-//! [`docs/ASYNC_INVOCATION_ARCHITECTURE.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md
+//! [`sdk/cosmos/docs/specs/0019-native-wrapper.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md
+//! [`sdk/cosmos/docs/specs/0020-native-async-invocation.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0020-native-async-invocation.md
 
 // We routinely dereference C-supplied pointers at the FFI boundary; that is
 // the entire point of the crate.

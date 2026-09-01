@@ -4,7 +4,7 @@
 //! Cross-region hedging integration tests using the in-memory emulator.
 //!
 //! Implements the initial subset of spec §15.2 ("Fault-injection / multi-region
-//! tests") from `docs/HEDGING_SPEC.md`. This is the first driver-level test
+//! tests") from `sdk/cosmos/docs/specs/0009-cross-region-hedging.md`. This is the first driver-level test
 //! coverage of the hedging stack: prior phases were covered by unit tests
 //! against synthetic eligibility/race fixtures (§15.1).
 //!

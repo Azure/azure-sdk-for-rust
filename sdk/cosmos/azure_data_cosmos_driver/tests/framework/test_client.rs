@@ -51,7 +51,7 @@ pub struct DriverTestClient {
     /// per-operation helpers (`create_database`, `read_item`, …). Empty by
     /// default; populated by [`run_with_unique_db_and_hedging`] for the
     /// hedging path, which requires application-preferred regions to be set
-    /// per `HEDGING_SPEC.md` §5.2.
+    /// per `sdk/cosmos/docs/specs/0009-cross-region-hedging.md` §5.2.
     preferred_regions: Vec<Region>,
     /// Driver-level fault-injection rules applied to every driver created by
     /// the per-operation helpers. Empty by default; populated by the
@@ -459,7 +459,7 @@ impl DriverTestClient {
     /// Like [`run_with_unique_db_and_fault_injection_options`](Self::run_with_unique_db_and_fault_injection_options)
     /// but additionally pre-configures driver-level `preferred_regions`,
     /// which is required for cross-region hedging eligibility per
-    /// `HEDGING_SPEC.md` §5.2 (the §5.1 `should_hedge()` short-circuits
+    /// `sdk/cosmos/docs/specs/0009-cross-region-hedging.md` §5.2 (the §5.1 `should_hedge()` short-circuits
     /// when no application-preferred regions are configured).
     ///
     /// The `preferred_regions` are stored on the client and applied to every
