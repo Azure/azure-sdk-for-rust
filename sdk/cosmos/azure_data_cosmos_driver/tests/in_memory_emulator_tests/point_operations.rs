@@ -6,6 +6,10 @@
 
 use super::*;
 use azure_core::http::headers::HeaderValue;
+use azure_data_cosmos_driver::{
+    models::{AccountReference, CosmosOperation, ItemReference, PartitionKey},
+    options::{DriverOptions, OperationOptions},
+};
 
 #[tokio::test]
 async fn create_new_item() {
@@ -68,6 +72,51 @@ async fn read_existing_item() {
     assert_eq!(doc["value"], 42);
     assert!(doc.get("_rid").is_some());
     assert!(doc.get("_etag").is_some());
+}
+
+#[tokio::test]
+async fn item_id_with_literal_percent_round_trips_through_driver() {
+    let ctx = setup_single_region().await;
+    let runtime = ctx
+        .emulator
+        .runtime_builder()
+        .build()
+        .await
+        .expect("runtime should build against the in-memory emulator");
+    let account =
+        AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account).build())
+        .await
+        .expect("driver should initialize");
+    let container = driver
+        .resolve_container("testdb", "testcoll")
+        .await
+        .expect("container should resolve");
+    let item_id = "item%41";
+    let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id.to_string());
+    let body = serde_json::json!({"id": item_id, "pk": "pk1", "value": 42});
+
+    driver
+        .execute_singleton_operation(
+            CosmosOperation::create_item(item).with_body(serde_json::to_vec(&body).unwrap()),
+            OperationOptions::default(),
+        )
+        .await
+        .expect("item should be created");
+
+    let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id.to_string());
+    let response = driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(item),
+            OperationOptions::default(),
+        )
+        .await
+        .expect("literal percent item should be read");
+    let bytes = response.into_body().single().expect("point read body");
+    let document: serde_json::Value = serde_json::from_slice(&bytes).expect("body should be JSON");
+
+    assert_eq!(document["id"], item_id);
 }
 
 #[tokio::test]
