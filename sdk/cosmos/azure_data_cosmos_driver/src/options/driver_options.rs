@@ -32,8 +32,8 @@ pub enum QueryPlanMode {
 impl QueryPlanMode {
     fn parse_override(value: &str) -> Option<Self> {
         match value.trim().to_ascii_lowercase().as_str() {
-            "local_preferred" | "localpreferred" => Some(Self::LocalPreferred),
-            "gateway" | "gateway_only" | "gatewayonly" => Some(Self::GatewayOnly),
+            "local_preferred" => Some(Self::LocalPreferred),
+            "gateway" | "gateway_only" => Some(Self::GatewayOnly),
             _ => None,
         }
     }
