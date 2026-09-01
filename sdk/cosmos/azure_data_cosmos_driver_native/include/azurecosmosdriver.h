@@ -1351,6 +1351,15 @@ typedef struct cosmos_operation_options_t {
    * An explicit `false` forces binary **off** for this operation regardless
    * of any account/runtime default; `unset` inherits a lower layer (text by
    * default).
+   *
+   * The response side is uniform across operation types: point reads,
+   * writes that echo content, and queries all negotiate a binary response,
+   * so a host that enables this flag receives response bodies — including
+   * query result items — as Cosmos binary JSON and must decode them. Detect
+   * with the `0x80` preamble. (A query's *request* body stays text either
+   * way, since it carries a query spec rather than a document.) See
+   * [`binary_encoding_request_text_response`](Self::binary_encoding_request_text_response)
+   * for the text opt-out.
    */
   int8_t binary_encoding_enabled;
   /**
@@ -1360,6 +1369,16 @@ typedef struct cosmos_operation_options_t {
    * Only meaningful when [`binary_encoding_enabled`](Self::binary_encoding_enabled)
    * is true: the wire stays binary in both directions and the driver hands
    * back text. `unset` / `false` returns the binary response as-is.
+   *
+   * This applies to every operation type, queries included: the wire keeps
+   * the bandwidth saving and the driver transcodes each response body — for
+   * a query, each result item — back to text before handing it over.
+   *
+   * Note the returned text is re-serialized by the driver rather than being
+   * the service's original bytes: values are preserved, but object keys are
+   * emitted in sorted order and numbers use Rust's shortest round-trip
+   * rendering. Hosts needing byte-exact service output should leave binary
+   * encoding disabled.
    */
   int8_t binary_encoding_request_text_response;
 } cosmos_operation_options_t;
