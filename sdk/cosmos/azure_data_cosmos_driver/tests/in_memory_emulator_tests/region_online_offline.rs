@@ -221,7 +221,7 @@ async fn build_driver_at_with_options(
 
 async fn seed_item(driver: &CosmosDriver, item_id: &str) {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     let body = serde_json::json!({"id": item_id, "pk": "pk1", "value": 1}).to_string();
@@ -242,7 +242,7 @@ async fn read_and_capture_hosts(
     item_id: &str,
 ) -> Vec<String> {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     recorder.clear();
@@ -264,7 +264,7 @@ async fn write_and_capture_hosts(
     item_id: &str,
 ) -> Vec<String> {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     recorder.clear();
@@ -1918,7 +1918,7 @@ async fn offline_region_plus_exclusion_uses_nonpreferred_region() {
     advance_past_refresh().await;
 
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     let item = ItemReference::from_name(
@@ -2031,7 +2031,7 @@ async fn operation_racing_offline_transition_retries_next_region() {
 
     observer.arm();
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "race-offline-item");
