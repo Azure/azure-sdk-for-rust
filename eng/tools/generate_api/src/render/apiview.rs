@@ -159,7 +159,7 @@ fn render_all_review_lines(
 }
 
 fn render_package_metadata(model: &ApiModel) -> Vec<ReviewLine> {
-    let mut lines = vec![metadata_line(&model.package_name)];
+    let mut lines = Vec::new();
     let metadata = &model.package_metadata;
     if let Some(description) = &metadata.description {
         lines.push(metadata_line(&format!("Description: {description}")));
@@ -172,12 +172,13 @@ fn render_package_metadata(model: &ApiModel) -> Vec<ReviewLine> {
     }
 
     lines.push(metadata_line("Features:"));
-    for (feature, enabled_features) in &metadata.features {
+    for (feature, enabled_features) in metadata.features() {
         lines.push(metadata_line(&format!("- {feature}")));
         for enabled_feature in enabled_features {
             lines.push(metadata_line(&format!("  - {enabled_feature}")));
         }
     }
+    lines.push(metadata_line(""));
     lines
 }
 

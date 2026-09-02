@@ -176,11 +176,14 @@ Documentation handling:
 
 Package metadata rendering:
 
-- both formats render the crate name first
+- Markdown renders the crate name first; APIView uses only the top-level `PackageName`
 - missing description, edition, or rust-version values are omitted
-- features render in lexical order with their enabled features and dependencies as children
+- features use `default` plus `package.metadata.docs.rs.features` when present
+- without docs.rs feature metadata, all Cargo features render
+- crates without defined features render an empty `default` feature
+- `default` renders first, followed by other visible features in lexical order
 - Markdown renders the crate name as H1, metadata as a list, and features under an H2
-- APIView renders crate metadata and features as leading text-token lines
+- APIView renders metadata and features as leading text-token lines followed by a blank text line
 
 Signature normalization:
 

@@ -115,6 +115,7 @@ fn renders_package_metadata_and_features_as_leading_text_tokens() {
             edition: Some("2021".to_string()),
             rust_version: Some("1.88".to_string()),
             features: BTreeMap::from([
+                ("alpha".to_string(), vec!["dep:alpha".to_string()]),
                 (
                     "default".to_string(),
                     vec!["azure_core/default".to_string(), "hmac".to_string()],
@@ -137,7 +138,6 @@ fn renders_package_metadata_and_features_as_leading_text_tokens() {
     assert_eq!(
         lines.iter().map(line_text).collect::<Vec<_>>(),
         vec![
-            "azure_security_keyvault_secrets",
             "Description: Azure Key Vault secrets client library",
             "Edition: 2021",
             "Rust version: 1.88",
@@ -145,8 +145,11 @@ fn renders_package_metadata_and_features_as_leading_text_tokens() {
             "- default",
             "  - azure_core/default",
             "  - hmac",
+            "- alpha",
+            "  - dep:alpha",
             "- test",
             "  - default",
+            "",
         ]
     );
     assert!(lines
@@ -180,7 +183,7 @@ fn omits_missing_package_metadata() {
         .iter()
         .map(line_text)
         .collect::<Vec<_>>(),
-        vec!["demo", "Features:"]
+        vec!["Features:", "- default", ""]
     );
 }
 

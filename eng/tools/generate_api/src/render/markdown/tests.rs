@@ -187,7 +187,7 @@ fn marks_doc_comments_and_omits_them_from_markdown() {
     );
     assert_eq!(
         render_from_lines(&lines),
-        "# demo\n\n## Features\n\n```rust\npub struct Foo;\n```\n"
+        "# demo\n\n## Features\n\n- `default`\n\n```rust\npub struct Foo;\n```\n"
     );
 }
 
@@ -202,6 +202,7 @@ fn renders_package_metadata_and_features_before_api() {
             edition: Some("2021".to_string()),
             rust_version: Some("1.88".to_string()),
             features: BTreeMap::from([
+                ("alpha".to_string(), vec!["dep:alpha".to_string()]),
                 (
                     "default".to_string(),
                     vec!["azure_core/default".to_string(), "hmac".to_string()],
@@ -235,6 +236,8 @@ fn renders_package_metadata_and_features_before_api() {
          - `default`\n\
          \x20\x20- `azure_core/default`\n\
          \x20\x20- `hmac`\n\
+         - `alpha`\n\
+         \x20\x20- `dep:alpha`\n\
          - `test`\n\
          \x20\x20- `default`\n\
          \n\
@@ -260,7 +263,10 @@ fn omits_missing_package_metadata() {
         },
     };
 
-    assert_eq!(render(&model), "# demo\n\n## Features\n\n```rust\n```\n");
+    assert_eq!(
+        render(&model),
+        "# demo\n\n## Features\n\n- `default`\n\n```rust\n```\n"
+    );
 }
 
 #[test]

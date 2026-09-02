@@ -36,12 +36,33 @@ impl ApiModel {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub(crate) struct PackageMetadata {
     pub(crate) description: Option<String>,
     pub(crate) edition: Option<String>,
     pub(crate) rust_version: Option<String>,
     pub(crate) features: BTreeMap<String, Vec<String>>,
+}
+
+impl Default for PackageMetadata {
+    fn default() -> Self {
+        Self {
+            description: None,
+            edition: None,
+            rust_version: None,
+            features: BTreeMap::from([("default".to_string(), Vec::new())]),
+        }
+    }
+}
+
+impl PackageMetadata {
+    pub(crate) fn features(&self) -> impl Iterator<Item = (&String, &Vec<String>)> {
+        self.features.get_key_value("default").into_iter().chain(
+            self.features
+                .iter()
+                .filter(|(feature, _)| feature.as_str() != "default"),
+        )
+    }
 }
 
 #[derive(Debug, Clone)]

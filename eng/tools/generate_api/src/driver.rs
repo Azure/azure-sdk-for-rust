@@ -86,7 +86,25 @@ struct CargoPackage {
     rust_version: Option<String>,
     #[serde(default)]
     features: BTreeMap<String, Vec<String>>,
+    metadata: Option<CargoPackageMetadata>,
     targets: Vec<CargoTarget>,
+}
+
+#[derive(Default, Deserialize)]
+struct CargoPackageMetadata {
+    #[serde(default)]
+    docs: CargoDocsMetadata,
+}
+
+#[derive(Default, Deserialize)]
+struct CargoDocsMetadata {
+    #[serde(default)]
+    rs: CargoDocsRsMetadata,
+}
+
+#[derive(Default, Deserialize)]
+struct CargoDocsRsMetadata {
+    features: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
@@ -156,6 +174,13 @@ fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, Strin
             .iter()
             .any(|target| target.kind.iter().any(|kind| is_library_target_kind(kind)));
 
+        let features = select_features(
+            package.features,
+            package
+                .metadata
+                .as_ref()
+                .and_then(|metadata| metadata.docs.rs.features.as_deref()),
+        );
         workspace_packages.insert(
             name.clone(),
             PackageMetadata {
@@ -167,7 +192,7 @@ fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, Strin
                     description: package.description,
                     edition: package.edition,
                     rust_version: package.rust_version,
-                    features: package.features,
+                    features,
                 },
             },
         );
@@ -184,6 +209,31 @@ fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, Strin
         current_package,
         packages: workspace_packages,
     })
+}
+
+fn select_features(
+    features: BTreeMap<String, Vec<String>>,
+    docs_rs_features: Option<&[String]>,
+) -> BTreeMap<String, Vec<String>> {
+    if features.is_empty() {
+        return BTreeMap::from([("default".to_string(), Vec::new())]);
+    }
+
+    match docs_rs_features {
+        Some(visible_features) => {
+            let mut selected = BTreeMap::new();
+            if let Some(enabled) = features.get("default") {
+                selected.insert("default".to_string(), enabled.clone());
+            }
+            selected.extend(visible_features.iter().filter_map(|feature| {
+                features
+                    .get(feature)
+                    .map(|enabled| (feature.clone(), enabled.clone()))
+            }));
+            selected
+        }
+        None => features,
+    }
 }
 
 struct WorkspaceMetadata {
@@ -318,8 +368,8 @@ impl PackageMetadata {
 
 #[cfg(test)]
 mod tests {
-    use super::{crate_target_name, CargoPackage, CargoTarget};
-    use std::path::PathBuf;
+    use super::{crate_target_name, select_features, CargoPackage, CargoTarget};
+    use std::{collections::BTreeMap, path::PathBuf};
 
     #[test]
     fn prefers_library_like_target_names() {
@@ -399,6 +449,13 @@ mod tests {
                 "default": ["dep:foo", "foo/std"],
                 "test": ["default"]
             },
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "features": ["test"]
+                    }
+                }
+            },
             "targets": []
         }))
         .expect("package metadata should deserialize");
@@ -409,6 +466,12 @@ mod tests {
         assert_eq!(
             package.features["default"],
             ["dep:foo".to_string(), "foo/std".to_string()]
+        );
+        assert_eq!(
+            package
+                .metadata
+                .and_then(|metadata| metadata.docs.rs.features),
+            Some(vec!["test".to_string()])
         );
     }
 
@@ -427,5 +490,60 @@ mod tests {
         assert!(package.edition.is_none());
         assert!(package.rust_version.is_none());
         assert!(package.features.is_empty());
+        assert!(package.metadata.is_none());
+    }
+
+    #[test]
+    fn selects_default_and_docs_rs_features() {
+        let features = BTreeMap::from([
+            ("alpha".to_string(), vec!["dep:alpha".to_string()]),
+            ("default".to_string(), vec!["alpha".to_string()]),
+            ("test".to_string(), vec!["default".to_string()]),
+        ]);
+
+        assert_eq!(
+            select_features(features, Some(&["alpha".to_string()])),
+            BTreeMap::from([
+                ("alpha".to_string(), vec!["dep:alpha".to_string()]),
+                ("default".to_string(), vec!["alpha".to_string()]),
+            ])
+        );
+    }
+
+    #[test]
+    fn does_not_duplicate_default_from_docs_rs_features() {
+        let features = BTreeMap::from([
+            ("alpha".to_string(), Vec::new()),
+            ("default".to_string(), vec!["alpha".to_string()]),
+        ]);
+
+        assert_eq!(
+            select_features(
+                features,
+                Some(&["default".to_string(), "alpha".to_string()])
+            ),
+            BTreeMap::from([
+                ("alpha".to_string(), Vec::new()),
+                ("default".to_string(), vec!["alpha".to_string()]),
+            ])
+        );
+    }
+
+    #[test]
+    fn selects_all_features_without_docs_rs_features() {
+        let features = BTreeMap::from([
+            ("alpha".to_string(), Vec::new()),
+            ("default".to_string(), vec!["alpha".to_string()]),
+        ]);
+
+        assert_eq!(select_features(features.clone(), None), features);
+    }
+
+    #[test]
+    fn declares_default_when_no_features_are_defined() {
+        assert_eq!(
+            select_features(BTreeMap::new(), Some(&["test".to_string()])),
+            BTreeMap::from([("default".to_string(), Vec::new())])
+        );
     }
 }

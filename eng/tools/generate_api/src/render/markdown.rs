@@ -31,7 +31,7 @@ pub(crate) fn render_lines(model: &ApiModel) -> Vec<RenderedLine> {
     render_package_metadata(&mut output, model);
     push_code(&mut output, 0, "## Features");
     push_code(&mut output, 0, "");
-    for (feature, enabled_features) in &model.package_metadata.features {
+    for (feature, enabled_features) in model.package_metadata.features() {
         push_code(&mut output, 0, &format!("- `{feature}`"));
         for enabled_feature in enabled_features {
             push_code(&mut output, 0, &format!("  - `{enabled_feature}`"));
