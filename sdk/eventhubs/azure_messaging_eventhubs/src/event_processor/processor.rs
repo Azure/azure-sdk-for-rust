@@ -353,6 +353,12 @@ impl EventProcessor {
     /// Stops the processing loop, the event delivery, and the ownership of
     /// this instance. Shared by [`shutdown`](EventProcessor::shutdown) and
     /// [`close`](EventProcessor::close).
+    ///
+    /// The call does not wait for a `dispatch` that is already in flight,
+    /// because `dispatch` can park on the partition client queue. It writes
+    /// the `is_running` flag first, and `dispatch` re-reads that flag after
+    /// its claim and after its receiver opens. The mutex around the flag
+    /// orders the two, so exactly one side cleans up.
     async fn stop(&self) -> Result<()> {
         {
             let mut is_running = self.is_running.lock().map_err(|_| {
@@ -449,6 +455,15 @@ impl EventProcessor {
             error!(err = ?e, "Error in load balancing.");
             e
         })?;
+
+        // `stop` lists the ownership records, so a claim that lands after
+        // that list would outlive the shutdown. The `is_running` mutex orders
+        // the two: this read sees the stop, or the stop's list sees the claim.
+        if self.is_shutdown()? {
+            info!("Event processor stopped during load balancing, releasing the claims.");
+            self.release_ownerships().await;
+            return Ok(());
+        }
 
         // Revoke clients for any partitions no longer in the ownership set.
         let owned_ids: std::collections::HashSet<&str> =
@@ -579,6 +594,22 @@ impl EventProcessor {
                 let _ = strong_consumers.remove_partition_client(&partition_id);
             }
             return Err(e);
+        }
+
+        // `stop` snapshots the map, so a receiver set after that snapshot
+        // would outlive the shutdown. The `is_running` mutex orders the two:
+        // this read sees the stop, or the snapshot sees the receiver. The map
+        // entry rolls back the same way as the two failure paths above.
+        if self.is_shutdown()? {
+            info!(
+                partition_id = %partition_id,
+                "Event processor stopped while the receiver opened, dropping the client."
+            );
+            partition_client.request_close_receiver().await;
+            if let Some(strong_consumers) = consumers.upgrade() {
+                let _ = strong_consumers.remove_partition_client(&partition_id);
+            }
+            return Ok(());
         }
 
         debug!(partition_id = %partition_id, "Adding partition client to queue.");
@@ -953,7 +984,7 @@ mod tests {
     use super::builders::validate_expiration_vs_update_interval;
     use super::{
         Checkpoint, CheckpointStore, ConsumerClientDetails, EventProcessor, EventProcessorOptions,
-        PartitionClient, ProcessorConsumersMap, ProcessorStrategy, StartPositions,
+        HashMap, PartitionClient, ProcessorConsumersMap, ProcessorStrategy, StartPositions,
     };
     use crate::{
         consumer::event_receiver::receiver_with_failing_attach, error::ErrorKind,
@@ -1345,6 +1376,78 @@ mod tests {
         let fut = processor.shutdown();
         assert_send(&fut);
         fut.await.expect("shutdown must succeed");
+    }
+
+    /// A claim can land after `release_ownerships` listed the records. The
+    /// dispatch must release what it claimed, or the partitions stay held
+    /// until they expire. Calling `dispatch` after `shutdown` stands in for
+    /// that interleaving: the flag is written when the claim returns.
+    #[tokio::test]
+    async fn a_dispatch_that_claims_after_shutdown_releases_the_claims() {
+        let (processor, _consumers) = processor_with_queued_clients(&["0", "1"]).await;
+        drain_partition_client_queue(&processor).await;
+        processor.shutdown().await.expect("shutdown must succeed");
+
+        processor
+            .dispatch(&["0", "1"], &processor.consumers)
+            .await
+            .expect("a dispatch after shutdown must not fail");
+
+        let own_id = processor.client_details.client_id.clone();
+        let still_ours: Vec<String> = processor
+            .checkpoint_store
+            .list_ownerships(
+                &processor.client_details.fully_qualified_namespace,
+                &processor.client_details.eventhub_name,
+                &processor.client_details.consumer_group,
+            )
+            .await
+            .expect("the store must list ownerships")
+            .into_iter()
+            .filter(|o| o.owner_id.as_deref() == Some(own_id.as_str()))
+            .map(|o| o.partition_id)
+            .collect();
+        assert!(
+            still_ours.is_empty(),
+            "a dispatch after shutdown must leave no ownership claimed, got: {still_ours:?}"
+        );
+    }
+
+    /// The other half of the same race. `close_all_receivers` either missed
+    /// this client or found it with an empty `event_receiver`, so the client
+    /// must not reach the application and must leave the map as it found it.
+    #[tokio::test]
+    async fn a_receiver_that_opens_after_shutdown_never_reaches_the_application() {
+        let (processor, consumers) = processor_with_queued_clients(&["1"]).await;
+        drain_partition_client_queue(&processor).await;
+        processor.shutdown().await.expect("shutdown must succeed");
+
+        processor
+            .add_partition_client("0".to_string(), &HashMap::new(), Arc::downgrade(&consumers))
+            .await
+            .expect("adding a partition client after shutdown must not fail");
+
+        let active = consumers
+            .get_active_partition_ids()
+            .expect("the map must lock");
+        assert!(
+            !active.contains(&"0".to_string()),
+            "a client opened after shutdown must roll its map entry back, got: {active:?}"
+        );
+
+        let mut queue = processor.next_partition_clients.lock().await;
+        assert!(
+            queue.try_recv().is_err(),
+            "a client opened after shutdown must not reach the application"
+        );
+    }
+
+    /// The queue holds one client for each partition, and its buffer is the
+    /// partition count. A test that adds one more client would park on a full
+    /// queue instead of reaching its assertion, so it drains the queue first.
+    async fn drain_partition_client_queue(processor: &EventProcessor) {
+        let mut queue = processor.next_partition_clients.lock().await;
+        while queue.try_recv().is_ok() {}
     }
 
     /// The validation must reject the historical default (expiration=10s,
