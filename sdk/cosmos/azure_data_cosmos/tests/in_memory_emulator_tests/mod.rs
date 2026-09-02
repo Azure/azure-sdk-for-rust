@@ -10,6 +10,7 @@ pub mod change_feed;
 use std::time::Duration;
 
 pub mod binary_round_trip;
+pub mod container_recreation;
 pub mod cosmos_hpk_split;
 pub mod driver_end_to_end;
 #[cfg(feature = "preview_dtx")]

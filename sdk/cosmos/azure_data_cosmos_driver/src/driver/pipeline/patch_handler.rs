@@ -79,6 +79,13 @@ pub(crate) trait SubOperationDispatcher: Send + Sync {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<CosmosResponse>;
+
+    async fn canonicalize_operation_container(
+        &self,
+        _operation: &mut CosmosOperation,
+    ) -> crate::error::Result<bool> {
+        Ok(false)
+    }
 }
 
 #[async_trait]
@@ -89,6 +96,13 @@ impl SubOperationDispatcher for CosmosDriver {
         options: OperationOptions,
     ) -> crate::error::Result<CosmosResponse> {
         CosmosDriver::execute_singleton_operation(self, operation, options).await
+    }
+
+    async fn canonicalize_operation_container(
+        &self,
+        operation: &mut CosmosOperation,
+    ) -> crate::error::Result<bool> {
+        CosmosDriver::canonicalize_operation_container(self, operation).await
     }
 }
 
@@ -139,7 +153,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 
 async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized>(
     dispatcher: &D,
-    operation: CosmosOperation,
+    mut operation: CosmosOperation,
     mut options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
     absolute_deadline: Option<Instant>,
@@ -196,7 +210,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
             .build());
     }
 
-    let item_ref = operation
+    let mut item_ref = operation
         .partition_key()
         .cloned()
         .and_then(|pk| operation.resource_reference().try_into_item_reference(pk))
@@ -259,7 +273,17 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     let operation_name: Option<Arc<str>> = operation.db_operation_name().map(Arc::from);
     let caller_session_token = operation.request_headers().session_token.clone();
 
-    for _ in 0..attempts {
+    let custom_session_token = options.custom_headers.as_ref().is_some_and(|headers| {
+        headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
+            crate::models::request_header_names::SESSION_TOKEN,
+        ))
+    });
+    let recreation_allowed = caller_session_token.is_none() && !custom_session_token;
+    let mut recreation_retried = false;
+    let mut rmw_attempts = 0;
+
+    while rmw_attempts < attempts {
+        rmw_attempts += 1;
         // Read the current item from the write endpoint at LatestCommitted.
         // Writer routing strips the caller's token because LatestCommitted is
         // outside the session lane. If routing degrades to a reader, the
@@ -276,17 +300,38 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         // it still describe the *sub-op* (`read_item`). Re-stamp the virtual
         // PATCH operation's identity so the failure reports the same
         // `db.operation.name` as its success and retry-exhaustion counterparts.
-        let read_resp = dispatcher
+        let read_resp = match dispatcher
             .execute_operation(read_op, read_options.clone())
             .await
-            .map_err(|err| {
-                stamp_patch_identity(
+        {
+            Ok(response) => response,
+            Err(err)
+                if recreation_allowed
+                    && !recreation_retried
+                    && is_container_recreation_error(&err)
+                    && dispatcher
+                        .canonicalize_operation_container(&mut operation)
+                        .await? =>
+            {
+                recreation_retried = true;
+                rmw_attempts -= 1;
+                item_ref = operation
+                    .partition_key()
+                    .cloned()
+                    .and_then(|pk| operation.resource_reference().try_into_item_reference(pk))
+                    .expect("retargeted PATCH operation remains an item operation");
+                push_unique_diagnostics(&mut sub_op_diagnostics, err.diagnostics());
+                continue;
+            }
+            Err(err) => {
+                return Err(stamp_patch_identity(
                     err,
                     operation_name.clone(),
                     tracking_id,
                     &sub_op_diagnostics,
-                )
-            })?;
+                ));
+            }
+        };
         let read_headers = read_resp.headers().clone();
         let read_status = read_resp.status();
         let routing_fallback = read_resp.routing_fallback();
@@ -521,6 +566,23 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 continue;
             }
             Err(err) => {
+                if recreation_allowed
+                    && !recreation_retried
+                    && is_container_recreation_error(&err)
+                    && dispatcher
+                        .canonicalize_operation_container(&mut operation)
+                        .await?
+                {
+                    recreation_retried = true;
+                    rmw_attempts -= 1;
+                    item_ref = operation
+                        .partition_key()
+                        .cloned()
+                        .and_then(|pk| operation.resource_reference().try_into_item_reference(pk))
+                        .expect("retargeted PATCH operation remains an item operation");
+                    push_unique_diagnostics(&mut sub_op_diagnostics, err.diagnostics());
+                    continue;
+                }
                 if terminal_error_requires_verification(&err) {
                     if let Some(tracking) = tracking {
                         push_unique_diagnostics(&mut sub_op_diagnostics, err.diagnostics());
@@ -546,6 +608,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                                     verification_error.diagnostics(),
                                 );
                             }
+
                             Err(verification_error) => {
                                 return Err(stamp_patch_identity(
                                     verification_error,
@@ -605,6 +668,15 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         operation_name,
         tracking_id,
     ))
+}
+
+fn is_container_recreation_error(error: &crate::error::CosmosError) -> bool {
+    let status = error.status();
+    (status.status_code() == StatusCode::BadRequest
+        && status.sub_status() == Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH))
+        || (status.status_code() == StatusCode::Gone
+            && status.sub_status() == Some(crate::models::SubStatusCode::NAME_CACHE_STALE))
+        || status.is_read_session_not_available()
 }
 
 /// Re-stamps the virtual PATCH operation's canonical `db.operation.name` onto

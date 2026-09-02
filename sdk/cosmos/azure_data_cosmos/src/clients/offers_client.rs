@@ -9,7 +9,7 @@
 use crate::clients::ClientContext;
 use crate::diagnostics::CosmosOperationContext;
 use crate::{feed::FeedBody, models::CosmosResponse, models::ThroughputProperties, Query};
-use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation};
+use azure_data_cosmos_driver::models::{AccountReference, ContainerReference, CosmosOperation};
 use azure_data_cosmos_driver::options::OperationOptions;
 
 /// Queries the offer for a given resource ID (RID) via the driver.
@@ -56,6 +56,43 @@ pub(crate) async fn find_offer(
     }
 }
 
+pub(crate) async fn find_offer_for_container(
+    context: &ClientContext,
+    container: &ContainerReference,
+    operation_options: OperationOptions,
+    op_context: CosmosOperationContext,
+) -> crate::Result<Option<ThroughputProperties>> {
+    let offer = find_offer(
+        context,
+        container.account(),
+        container.rid(),
+        operation_options.clone(),
+        op_context.clone(),
+    )
+    .await?;
+    if offer.is_some() || container.is_by_rid() {
+        return Ok(offer);
+    }
+
+    let replacement = context
+        .driver
+        .refresh_container_if_recreated(container)
+        .await
+        .map_err(crate::CosmosError::from)?;
+    let Some(replacement) = replacement else {
+        return Ok(None);
+    };
+
+    find_offer(
+        context,
+        replacement.account(),
+        replacement.rid(),
+        operation_options,
+        op_context,
+    )
+    .await
+}
+
 /// Reads a specific offer by its RID via the driver, returning the full response.
 ///
 /// The read is routed through the result-aware completion seam so the offer-read
@@ -90,15 +127,59 @@ pub(crate) async fn begin_replace(
     operation_options: OperationOptions,
     op_context: CosmosOperationContext,
 ) -> crate::Result<crate::clients::ThroughputPoller> {
-    let mut current_throughput = find_offer(
+    let current_throughput = find_offer(
         &context,
         &account,
         resource_id,
         operation_options.clone(),
         op_context.clone(),
     )
-    .await?
-    .ok_or_else(|| {
+    .await?;
+    begin_replace_with_offer(
+        context,
+        account,
+        current_throughput,
+        throughput,
+        operation_options,
+        op_context,
+    )
+    .await
+}
+
+pub(crate) async fn begin_replace_for_container(
+    context: ClientContext,
+    container: &ContainerReference,
+    throughput: ThroughputProperties,
+    operation_options: OperationOptions,
+    op_context: CosmosOperationContext,
+) -> crate::Result<crate::clients::ThroughputPoller> {
+    let current_throughput = find_offer_for_container(
+        &context,
+        container,
+        operation_options.clone(),
+        op_context.clone(),
+    )
+    .await?;
+    begin_replace_with_offer(
+        context,
+        container.account().clone(),
+        current_throughput,
+        throughput,
+        operation_options,
+        op_context,
+    )
+    .await
+}
+
+async fn begin_replace_with_offer(
+    context: ClientContext,
+    account: AccountReference,
+    current_throughput: Option<ThroughputProperties>,
+    throughput: ThroughputProperties,
+    operation_options: OperationOptions,
+    op_context: CosmosOperationContext,
+) -> crate::Result<crate::clients::ThroughputPoller> {
+    let mut current_throughput = current_throughput.ok_or_else(|| {
         // No offer exists for the resource — typically the caller
         // pointed at a resource that doesn't support throughput
         // (e.g. a serverless or shared-throughput container).

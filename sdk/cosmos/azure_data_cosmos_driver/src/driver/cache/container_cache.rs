@@ -112,6 +112,62 @@ impl ContainerCache {
         self.get_or_fetch_impl(&self.by_name, key, fetch_fn).await
     }
 
+    /// Refreshes a name-addressed container if the cache still contains the
+    /// caller's observed RID.
+    ///
+    /// Concurrent refreshes share one service request. If another caller already
+    /// installed a newer RID, that value wins without invoking `fetch_fn`.
+    /// Failed refreshes restore the previous valid entry unless a newer refresh
+    /// won in the meantime.
+    pub(crate) async fn refresh_by_name_if_same<F, Fut>(
+        &self,
+        account_endpoint: &str,
+        db_name: &str,
+        container_name: &str,
+        observed_rid: &str,
+        fetch_fn: F,
+    ) -> crate::error::Result<Arc<ContainerReference>>
+    where
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = crate::error::Result<ContainerReference>>,
+    {
+        let key = ContainerNameKey {
+            account_endpoint: account_endpoint.to_owned(),
+            db_name: db_name.to_owned(),
+            container_name: container_name.to_owned(),
+        };
+        let previous = self.by_name.get(&key).await;
+        let resolved = self
+            .by_name
+            .get_or_refresh_with(
+                key.clone(),
+                |current| match current {
+                    Some(Ok(container)) => container.rid() == observed_rid,
+                    Some(Err(_)) | None => true,
+                },
+                fetch_fn,
+            )
+            .await
+            .expect("refresh predicate always initializes a missing entry");
+
+        match resolved.as_ref() {
+            Ok(container) => {
+                self.put(container.clone()).await;
+                Ok(Arc::new(container.clone()))
+            }
+            Err(error) => {
+                if let Some(previous) = previous.filter(|value| value.as_ref().is_ok()) {
+                    self.by_name
+                        .replace_if_same(&key, &resolved, previous)
+                        .await;
+                } else {
+                    self.by_name.invalidate_if_same(&key, &resolved).await;
+                }
+                Err(error.clone())
+            }
+        }
+    }
+
     /// Looks up a container by RID, fetching if not cached.
     ///
     /// On a cache miss, calls `fetch_fn` to resolve the container from the
@@ -136,7 +192,6 @@ impl ContainerCache {
     }
 
     /// Returns a cached container looked up by name, or `None` if not cached.
-    #[allow(dead_code)] // Used in tests; will be called from production code once lookup-by-name is wired up.
     pub(crate) async fn get_by_name(
         &self,
         account_endpoint: &str,
@@ -281,12 +336,20 @@ mod tests {
     }
 
     fn test_container(db: &str, container: &str) -> ContainerReference {
+        test_container_with_rid(db, container, &format!("{db}_{container}_rid"))
+    }
+
+    fn test_container_with_rid(
+        db: &str,
+        container: &str,
+        container_rid: &str,
+    ) -> ContainerReference {
         ContainerReference::new(
             test_account(),
             db.to_owned(),
             format!("{db}_rid"),
             container.to_owned(),
-            format!("{db}_{container}_rid"),
+            container_rid.to_owned(),
             &test_container_props(),
         )
     }
@@ -364,6 +427,86 @@ mod tests {
 
         assert_eq!(resolved.name(), "mycoll");
         assert_eq!(counter.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn refresh_by_name_replaces_only_observed_generation() {
+        let cache = ContainerCache::new();
+        let old = test_container_with_rid("mydb", "mycoll", "old_rid");
+        let replacement = test_container_with_rid("mydb", "mycoll", "new_rid");
+        cache.put(old).await;
+
+        let resolved = cache
+            .refresh_by_name_if_same(ACCOUNT_ENDPOINT, "mydb", "mycoll", "old_rid", || async {
+                Ok(replacement)
+            })
+            .await
+            .expect("refresh should succeed");
+
+        assert_eq!(resolved.rid(), "new_rid");
+        assert_eq!(
+            cache
+                .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
+                .await
+                .expect("name entry should remain cached")
+                .rid(),
+            "new_rid",
+        );
+        assert!(cache
+            .get_by_rid(ACCOUNT_ENDPOINT, "old_rid")
+            .await
+            .is_some());
+        assert!(cache
+            .get_by_rid(ACCOUNT_ENDPOINT, "new_rid")
+            .await
+            .is_some());
+    }
+
+    #[tokio::test]
+    async fn refresh_by_name_preserves_newer_winner() {
+        let cache = ContainerCache::new();
+        cache
+            .put(test_container_with_rid("mydb", "mycoll", "new_rid"))
+            .await;
+        let calls = AtomicUsize::new(0);
+
+        let resolved = cache
+            .refresh_by_name_if_same(ACCOUNT_ENDPOINT, "mydb", "mycoll", "old_rid", || async {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok(test_container_with_rid("mydb", "mycoll", "other_rid"))
+            })
+            .await
+            .expect("newer winner should be returned");
+
+        assert_eq!(resolved.rid(), "new_rid");
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
+    async fn failed_refresh_restores_observed_generation() {
+        let cache = ContainerCache::new();
+        cache
+            .put(test_container_with_rid("mydb", "mycoll", "old_rid"))
+            .await;
+
+        let error = crate::error::CosmosError::builder()
+            .with_message("refresh failed")
+            .build();
+        let result = cache
+            .refresh_by_name_if_same(ACCOUNT_ENDPOINT, "mydb", "mycoll", "old_rid", || async {
+                Err(error)
+            })
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(
+            cache
+                .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
+                .await
+                .expect("old generation should be restored")
+                .rid(),
+            "old_rid",
+        );
     }
 
     // --- put ---

@@ -146,7 +146,12 @@ pub(crate) fn finalize_plan(
                 .build());
         }
     }
-    Ok(OperationPlan::new(pipeline, operation))
+    Ok(OperationPlan::new(
+        pipeline,
+        operation,
+        plan_options.clone(),
+        !is_fresh,
+    ))
 }
 
 /// Builds a fan-out [`Pipeline`] from a backend query plan as a sequential drain.

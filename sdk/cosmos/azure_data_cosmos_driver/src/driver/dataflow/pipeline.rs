@@ -5,7 +5,10 @@
 
 use std::sync::Arc;
 
-use crate::models::{ContinuationToken, CosmosOperation, CosmosResponse};
+use crate::{
+    models::{ContinuationToken, CosmosOperation, CosmosResponse},
+    options::PlanOptions,
+};
 
 use super::context::PipelineContext;
 use super::node::{PageResult, PipelineNode};
@@ -87,15 +90,28 @@ impl Pipeline {
 /// Produced by [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation).
 pub struct OperationPlan {
     pub(crate) pipeline: Pipeline,
-    operation: Arc<CosmosOperation>,
+    pub(crate) operation: Arc<CosmosOperation>,
+    pub(crate) plan_options: PlanOptions,
+    pub(crate) is_resumed: bool,
+    pub(crate) has_progressed: bool,
+    pub(crate) container_recreation_recovery_attempted: bool,
 }
 
 impl OperationPlan {
     /// Creates an operation plan wrapping the given pipeline.
-    pub(crate) fn new(pipeline: Pipeline, operation: Arc<CosmosOperation>) -> Self {
+    pub(crate) fn new(
+        pipeline: Pipeline,
+        operation: Arc<CosmosOperation>,
+        plan_options: PlanOptions,
+        is_resumed: bool,
+    ) -> Self {
         Self {
             pipeline,
             operation,
+            plan_options,
+            is_resumed,
+            has_progressed: false,
+            container_recreation_recovery_attempted: false,
         }
     }
 

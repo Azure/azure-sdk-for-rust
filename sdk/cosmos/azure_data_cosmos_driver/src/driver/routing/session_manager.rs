@@ -9,7 +9,8 @@
 #[cfg(feature = "preview_dtx")]
 use crate::models::partition_key_range::PartitionKeyRange;
 use crate::models::{
-    CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType, SessionToken,
+    ContainerReference, CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType,
+    SessionToken,
 };
 
 use super::session_container::SessionContainer;
@@ -130,6 +131,16 @@ impl SessionManager {
         };
 
         self.container.set_session_token(container, session_token);
+    }
+
+    /// Clears the old RID's cached tokens and moves the logical container name
+    /// to the replacement RID.
+    pub(crate) fn remap_container(
+        &self,
+        old: &ContainerReference,
+        new: &ContainerReference,
+    ) -> bool {
+        self.container.remap_container(old, new)
     }
 
     /// Merges per-operation DTX session tokens into the shared session cache.
