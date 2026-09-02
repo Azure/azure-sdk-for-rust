@@ -78,7 +78,8 @@ impl InMemoryCheckpointStore {
     }
 
     /// Updates the ownership for a specific partition, and reports a lost
-    /// claim as `Ok(None)`. An `Err` is a store failure, not a lost claim.
+    /// claim as `Ok(None)`. An `Err` is a store failure or an invalid
+    /// `Ownership`, never a lost claim.
     fn try_update_ownership(&self, ownership: &Ownership) -> Result<Option<Ownership>> {
         trace!("Update ownership for partition {}", ownership.partition_id);
 
