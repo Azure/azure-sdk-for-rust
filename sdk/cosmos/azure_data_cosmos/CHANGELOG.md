@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added preview `PatchStrategy`, `PatchItemOptions::with_strategy`, and `PatchItemOptions::with_precondition`; the default `Auto` strategy uses one server request for retry-safe lists of at most 10 instructions and client-side RMW otherwise, with marker-backed tracking only for non-retry-safe lists. ([#5196](https://github.com/Azure/azure-sdk-for-rust/pull/5196))
 - Added `PatchTrackingId`, `PatchInstructions::is_retry_safe`, `PatchItemOptions::with_tracking_id`, `PatchItemOptions::with_tracking_capacity`, `PatchItemOptions::with_tracking_retention_seconds`, `ItemResponse::patch_tracking_id`, `CosmosError::patch_tracking_id`, `FaultInjectionErrorType::ResponseTimeoutAfterService`, and public PATCH tracking property, retention, and default-capacity constants for bounded duplicate suppression across application retries. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
 - Added `CosmosClientBuilder::with_partition_key_range_cache_enabled` to disable partition topology caching and `/pkranges` requests when only topology-independent operations are needed. ([#5174](https://github.com/Azure/azure-sdk-for-rust/pull/5174))
 - Added `ResourceId` and `ResourceIdentity` for addressing Cosmos databases and containers by user-provided name or by RID. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
@@ -29,10 +30,9 @@
 ### Breaking Changes
 
 - `ContainerClient::patch_item()` and `PatchItemOptions` are now gated behind the new, non-default `preview_patch` feature while the API remains in preview. Enable `preview_patch` to keep using it. ([#5133](https://github.com/Azure/azure-sdk-for-rust/pull/5133))
- - `DatabaseClient::container_client` now requires a second argument of type `Option<ContainerClientOptions>`; pass `None` to retain the previous behavior. ([#4992](https://github.com/Azure/azure-sdk-for-rust/pull/4992))
+- `DatabaseClient::container_client` now requires a second argument of type `Option<ContainerClientOptions>`; pass `None` to retain the previous behavior. ([#4992](https://github.com/Azure/azure-sdk-for-rust/pull/4992))
 - `CosmosClient::database_client` and `DatabaseClient::container_client` now take `impl Into<ResourceIdentity>` instead of `&str`; call sites passing a deref-able string (for example a `Cow<str>` field) need `&*value` or `.as_ref()`. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - `DatabaseClient::id()` now returns `&ResourceIdentity` instead of `&str`. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
-- `DatabaseClient::container_client` now requires a second argument of type `Option<ContainerClientOptions>`; pass `None` to retain the previous behavior.
 - Control-plane APIs are now gated behind the new `control_plane` feature, which is **not** enabled by default. Code using database or container management (`CosmosClient::create_database`/`query_databases`, `DatabaseClient::read`/`create_container`/`query_containers`/`delete`, `ContainerClient::replace`/`delete`), throughput management (`read_throughput`/`begin_replace_throughput`, `ThroughputPoller`), or the associated model and options types (`DatabaseProperties`, `ThroughputProperties`, and the container create/replace/delete/query, database, and throughput option types) must now enable the `control_plane` feature. Reading container properties via `ContainerClient::read()` — along with `ContainerProperties`, `IndexingPolicy`, `ResourceResponse`, and `ReadContainerOptions` — remains available without the feature, since it works with Entra ID authentication and mirrors the metadata read the SDK already performs internally. ([#4854](https://github.com/Azure/azure-sdk-for-rust/pull/4854))
 - Fresh cross-partition queries and change feed reads now fail with a `BadRequest` error if they would fan out to more than 100 physical partitions. Raise `FeedOptions::max_fan_out` to run a broader operation. The limit is checked only at initial query setup — resuming from a continuation token is unaffected, and a partition split that raises the fan-out mid-execution does not abort the operation. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 
@@ -47,6 +47,7 @@
 
 ### Other Changes
 
+- `ContainerClient::patch_item` now honors disabled content responses instead of always returning the post-image; client-side execution requests the service-authoritative post-image when responses are enabled. ([#5196](https://github.com/Azure/azure-sdk-for-rust/pull/5196))
 - Existing `ResponseHeaders` accessors now return Gateway 2.0 backend duration, quota, item-count, and local-LSN response metadata. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 - Cosmos HTTP error messages now include the service's own explanation from the response body, normalized to a single line and length-bounded, so a `400` no longer renders as a bare `Cosmos DB returned HTTP 400: Unknown`. ([#4904](https://github.com/Azure/azure-sdk-for-rust/pull/4904))
 

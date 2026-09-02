@@ -30,9 +30,9 @@
 //!
 //! 5. **Dual-consistency invariants (V2)** — the V2 RNTBD path must never
 //!    serialize *both* `ConsistencyLevel` and a separate
-//!    `ReadConsistencyStrategy` token. Documented as an invariant lock; the
-//!    underlying RNTBD enum currently exposes only the `ConsistencyLevel`
-//!    token (`tokens.rs`), so the invariant is structurally guaranteed.
+//!    `ReadConsistencyStrategy` token. The inside-crate request-wrapping tests
+//!    assert mutual exclusion; this integration test locks the observable
+//!    transport boundary.
 //!
 //! 6. **Capabilities header pin** — every outgoing request carries
 //!    `x-ms-cosmos-sdk-supportedcapabilities = "8"`. Asserted via the first
@@ -278,11 +278,9 @@ async fn v1_http_never_emits_both_consistency_headers() {
 /// The V2 (RNTBD) path must never serialize *both* a `ConsistencyLevel` token
 /// and a separate `ReadConsistencyStrategy` token on the same wrapped frame.
 ///
-/// Today the RNTBD token enum
-/// (`driver::transport::rntbd::tokens::RntbdRequestToken`) exposes only the
-/// `ConsistencyLevel` variant — there is no `ReadConsistencyStrategy` token
-/// at all — so the invariant is structurally guaranteed by the type system.
-/// This test is therefore a *contract lock* expressed at the boundary this
+/// The RNTBD token enum exposes both `ConsistencyLevel` and
+/// `ReadConsistencyStrategy`, so the request wrapper must enforce mutual
+/// exclusion. This test is a *contract lock* expressed at the boundary this
 /// integration test can actually observe.
 ///
 /// `CapturingTransport` lives at the `HttpClientFactory` layer, so it only
@@ -319,11 +317,7 @@ async fn v2_rntbd_never_emits_both_consistency_tokens() {
     // construction. If this assertion ever fails, RNTBD-bearing traffic has
     // become observable at the HttpClientFactory layer and the body must be
     // structurally decoded to assert mutual exclusion of `ConsistencyLevel`
-    // and any future `ReadConsistencyStrategy` token.
-    //
-    // TODO: when a `ReadConsistencyStrategy` RNTBD token lands,
-    // replace this scheme check with a structural decode of the wrapped
-    // frame and assert at-most-one consistency token per wrapped request.
+    // and `ReadConsistencyStrategy`.
     for req in &captured {
         let scheme = req.url.scheme();
         assert!(

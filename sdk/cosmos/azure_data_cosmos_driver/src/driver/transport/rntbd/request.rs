@@ -164,6 +164,7 @@ mod tests {
     fn request_frames_round_trip_for_slice_one_operations() {
         let operations = [
             OperationType::Create,
+            OperationType::Patch,
             OperationType::Read,
             OperationType::ReadFeed,
             OperationType::Replace,
@@ -218,6 +219,21 @@ mod tests {
             operation_id,
             RntbdOperationType::from(OperationType::SqlQuery).value()
         );
+    }
+
+    #[test]
+    fn patch_uses_rntbd_operation_id_two() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::Patch,
+            activity_id: Uuid::nil(),
+            metadata: Vec::new(),
+            body: Some(br#"{"operations":[]}"#.to_vec()),
+        };
+
+        let bytes = serialize(&frame).unwrap();
+        assert_eq!(u16::from_le_bytes([bytes[6], bytes[7]]), 0x0002);
+        assert_eq!(RntbdRequestFrame::read(&bytes).unwrap(), frame);
     }
 
     #[test]
