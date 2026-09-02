@@ -81,6 +81,7 @@ struct CargoPackage {
     manifest_path: String,
     version: String,
     name: String,
+    description: Option<String>,
     edition: Option<String>,
     rust_version: Option<String>,
     #[serde(default)]
@@ -188,6 +189,7 @@ fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, Strin
                 manifest_path,
                 has_library_target,
                 api: ApiPackageMetadata {
+                    description: package.description,
                     edition: package.edition,
                     rust_version: package.rust_version,
                     features,
@@ -458,6 +460,10 @@ mod tests {
         }))
         .expect("package metadata should deserialize");
 
+        assert_eq!(
+            package.description.as_deref(),
+            Some("First line\nSecond line")
+        );
         assert_eq!(package.edition.as_deref(), Some("2021"));
         assert_eq!(package.rust_version.as_deref(), Some("1.88"));
         assert_eq!(

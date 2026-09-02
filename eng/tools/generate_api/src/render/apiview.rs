@@ -161,6 +161,16 @@ fn render_all_review_lines(
 fn render_package_metadata(model: &ApiModel) -> Vec<ReviewLine> {
     let mut lines = Vec::new();
     let metadata = &model.package_metadata;
+    if let Some(description) = metadata.description_lines() {
+        if description.len() == 1 {
+            lines.push(metadata_line(&format!("Description: {}", description[0])));
+        } else {
+            lines.push(metadata_line("Description:"));
+            for line in description {
+                lines.push(metadata_line(line));
+            }
+        }
+    }
     if let Some(edition) = &metadata.edition {
         lines.push(metadata_line(&format!("Edition: {edition}")));
     }

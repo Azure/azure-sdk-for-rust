@@ -50,13 +50,26 @@ pub(crate) fn render_lines(model: &ApiModel) -> Vec<RenderedLine> {
 
 fn render_package_metadata(output: &mut Vec<RenderedLine>, model: &ApiModel) {
     let metadata = &model.package_metadata;
+    if let Some(description) = metadata.description_lines() {
+        if description.len() == 1 {
+            push_code(output, 0, &format!("**Description**: {}", description[0]));
+        } else {
+            push_code(output, 0, "**Description:**");
+            for line in description {
+                push_code(output, 0, line);
+            }
+        }
+    }
     if let Some(edition) = &metadata.edition {
         push_code(output, 0, &format!("- **Edition**: {edition}"));
     }
     if let Some(rust_version) = &metadata.rust_version {
         push_code(output, 0, &format!("- **Rust version**: {rust_version}"));
     }
-    if metadata.edition.is_some() || metadata.rust_version.is_some() {
+    if metadata.description.is_some()
+        || metadata.edition.is_some()
+        || metadata.rust_version.is_some()
+    {
         push_code(output, 0, "");
     }
 }

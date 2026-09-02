@@ -111,6 +111,7 @@ fn renders_package_metadata_and_features_as_leading_text_tokens() {
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
         package_metadata: PackageMetadata {
+            description: Some("Multi-line\ncomment\n".to_string()),
             edition: Some("2021".to_string()),
             rust_version: Some("1.88".to_string()),
             features: BTreeMap::from([
@@ -137,6 +138,9 @@ fn renders_package_metadata_and_features_as_leading_text_tokens() {
     assert_eq!(
         lines.iter().map(line_text).collect::<Vec<_>>(),
         vec![
+            "Description:",
+            "Multi-line",
+            "comment",
             "Edition: 2021",
             "Rust version: 1.88",
             "Features:",

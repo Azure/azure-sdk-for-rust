@@ -198,6 +198,7 @@ fn renders_package_metadata_and_features_before_api() {
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
         package_metadata: PackageMetadata {
+            description: Some("Manage secrets.\n".to_string()),
             edition: Some("2021".to_string()),
             rust_version: Some("1.88".to_string()),
             features: BTreeMap::from([
@@ -226,6 +227,7 @@ fn renders_package_metadata_and_features_before_api() {
         render(&model),
         "# azure_security_keyvault_secrets\n\
          \n\
+         **Description**: Manage secrets.\n\
          - **Edition**: 2021\n\
          - **Rust version**: 1.88\n\
          \n\
@@ -274,6 +276,7 @@ fn comments_patch_accounts_for_package_metadata_lines() {
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
         package_metadata: PackageMetadata {
+            description: Some("Multi-line\ncomment\n".to_string()),
             edition: Some("2021".to_string()),
             rust_version: Some("1.88".to_string()),
             features: BTreeMap::from([("default".to_string(), vec!["dep:foo".to_string()])]),
@@ -288,8 +291,19 @@ fn comments_patch_accounts_for_package_metadata_lines() {
     };
 
     let lines = render_lines(&model);
+    let api_without_docs = render_from_lines(&lines);
+    let api_with_docs = lines
+        .iter()
+        .map(|line| format!("{}\n", line.text))
+        .collect::<String>();
     let patch = crate::render::patch::render(&lines, "API.md");
+    let parsed_patch = diffy::Patch::from_str(&patch).expect("patch should parse");
 
-    assert!(patch.contains("@@ -9,5 +9,7 @@"));
+    assert!(api_without_docs.contains("**Description:**\nMulti-line\ncomment\n"));
+    assert!(patch.contains("@@ -12,5 +12,7 @@"));
     assert!(patch.contains("+//! Demo docs.\n+/// Does foo.\n"));
+    assert_eq!(
+        diffy::apply(&api_without_docs, &parsed_patch).expect("patch should apply"),
+        api_with_docs
+    );
 }
