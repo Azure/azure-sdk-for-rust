@@ -245,12 +245,12 @@ impl ResponseBuilder {
     /// byte-exact, so both branches agree on a spelling the service would not
     /// produce.
     pub fn with_document_body(mut self, body: &serde_json::Value, binary: bool) -> Self {
-        let mut body = service_number_model(body.clone());
         self.body = if binary {
-            crate::binary_json::encode(&body)
+            crate::binary_json::encode(body)
         } else {
-            crate::binary_json::normalize_integral_floats(&mut body);
-            Self::to_text(&body)
+            let mut normalized = body.clone();
+            crate::binary_json::normalize_integral_floats(&mut normalized);
+            Self::to_text(&normalized)
         };
         self
     }
@@ -269,28 +269,6 @@ impl ResponseBuilder {
             HeaderValue::from(format!("{:.2}", elapsed_ms)),
         );
         AsyncRawResponse::from_bytes(self.status, headers, self.body)
-    }
-}
-
-fn service_number_model(value: serde_json::Value) -> serde_json::Value {
-    match value {
-        serde_json::Value::Number(number) => serde_json::Number::from_f64(
-            number
-                .as_f64()
-                .expect("JSON numbers are representable as finite f64"),
-        )
-        .map(serde_json::Value::Number)
-        .expect("finite f64 is a valid JSON number"),
-        serde_json::Value::Array(values) => {
-            serde_json::Value::Array(values.into_iter().map(service_number_model).collect())
-        }
-        serde_json::Value::Object(values) => serde_json::Value::Object(
-            values
-                .into_iter()
-                .map(|(key, value)| (key, service_number_model(value)))
-                .collect(),
-        ),
-        value => value,
     }
 }
 

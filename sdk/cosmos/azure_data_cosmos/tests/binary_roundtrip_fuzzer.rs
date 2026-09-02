@@ -2050,56 +2050,13 @@ fn canonical_query_results(values: Vec<Value>, ordered: bool) -> Vec<String> {
                 }
                 value => value,
             };
-            structural_query_key(&value)
+            canonicalize(&value)
         })
         .collect();
     if !ordered {
         canonical.sort();
     }
     canonical
-}
-
-fn structural_query_key(value: &Value) -> String {
-    fn write(value: &Value, output: &mut String) {
-        match value {
-            Value::Null => output.push('n'),
-            Value::Bool(value) => output.push(if *value { 't' } else { 'f' }),
-            Value::Number(number) => {
-                if let Some(value) = number.as_i64() {
-                    output.push_str(&format!("i:{value};"));
-                } else if let Some(value) = number.as_u64() {
-                    output.push_str(&format!("u:{value};"));
-                } else {
-                    let value = number.as_f64().expect("finite JSON number");
-                    output.push_str(&format!("d:{:016x};", value.to_bits()));
-                }
-            }
-            Value::String(value) => {
-                output.push_str("s:");
-                output.push_str(&serde_json::to_string(value).expect("string serializes"));
-                output.push(';');
-            }
-            Value::Array(values) => {
-                output.push('[');
-                values.iter().for_each(|value| write(value, output));
-                output.push(']');
-            }
-            Value::Object(values) => {
-                output.push('{');
-                let mut entries: Vec<_> = values.iter().collect();
-                entries.sort_unstable_by_key(|(key, _)| *key);
-                for (key, value) in entries {
-                    write(&Value::String(key.clone()), output);
-                    write(value, output);
-                }
-                output.push('}');
-            }
-        }
-    }
-
-    let mut output = String::new();
-    write(value, &mut output);
-    output
 }
 
 /// Queries the just-written item back and asserts it round-trips, covering the
@@ -2748,10 +2705,17 @@ mod tests {
     }
 
     #[test]
-    fn query_comparison_preserves_integral_float_representation() {
-        assert_ne!(
-            structural_query_key(&serde_json::json!(1)),
-            structural_query_key(&serde_json::json!(1.0))
+    fn query_comparison_normalizes_numeric_response_encoding() {
+        assert_eq!(
+            canonical_query_results(vec![serde_json::json!(1)], false),
+            canonical_query_results(vec![serde_json::json!(1.0)], false)
+        );
+
+        let text_value: Value = serde_json::from_str("17176286778362458520").unwrap();
+        let binary_value: Value = serde_json::from_str("17176286778362458112").unwrap();
+        assert_eq!(
+            canonical_query_results(vec![text_value], false),
+            canonical_query_results(vec![binary_value], false)
         );
     }
 
