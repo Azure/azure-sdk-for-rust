@@ -60,7 +60,7 @@ The shared model is the boundary between extraction and rendering.
 
 It currently models:
 
-- package metadata
+- package name, version, description, edition, rust-version, and features
 - modules
 - item doc comments
 - item attributes
@@ -173,6 +173,14 @@ Documentation handling:
 - rustdoc docs stay separate from attrs in the shared model
 - markdown output omits doc comments and emits them as a companion patch
 - APIView renders comment tokens with documentation markers
+
+Package metadata rendering:
+
+- both formats render the crate name first
+- missing description, edition, or rust-version values are omitted
+- features render in lexical order with their enabled features and dependencies as children
+- Markdown renders the crate name as H1, metadata as a list, and features under an H2
+- APIView renders crate metadata and features as leading text-token lines
 
 Signature normalization:
 

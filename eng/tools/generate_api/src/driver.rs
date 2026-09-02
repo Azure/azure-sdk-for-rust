@@ -1,7 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{cli::Request, diagnostics, extract, model::ApiModel};
+use crate::{
+    cli::Request,
+    diagnostics, extract,
+    model::{ApiModel, PackageMetadata as ApiPackageMetadata},
+};
 use rustdoc_types::{Crate, FORMAT_VERSION};
 use serde::Deserialize;
 use std::{
@@ -77,6 +81,11 @@ struct CargoPackage {
     manifest_path: String,
     version: String,
     name: String,
+    description: Option<String>,
+    edition: Option<String>,
+    rust_version: Option<String>,
+    #[serde(default)]
+    features: BTreeMap<String, Vec<String>>,
     targets: Vec<CargoTarget>,
 }
 
@@ -154,6 +163,12 @@ fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, Strin
                 version: package.version,
                 manifest_path,
                 has_library_target,
+                api: ApiPackageMetadata {
+                    description: package.description,
+                    edition: package.edition,
+                    rust_version: package.rust_version,
+                    features: package.features,
+                },
             },
         );
     }
@@ -288,6 +303,7 @@ pub(crate) struct PackageMetadata {
     pub(crate) version: String,
     pub(crate) manifest_path: PathBuf,
     pub(crate) has_library_target: bool,
+    pub(crate) api: ApiPackageMetadata,
 }
 
 impl PackageMetadata {
@@ -302,7 +318,7 @@ impl PackageMetadata {
 
 #[cfg(test)]
 mod tests {
-    use super::{crate_target_name, CargoTarget};
+    use super::{crate_target_name, CargoPackage, CargoTarget};
     use std::path::PathBuf;
 
     #[test]
@@ -350,6 +366,7 @@ mod tests {
             version: "0.1.0".to_string(),
             manifest_path: PathBuf::from("sdk/cosmos/azure_data_cosmos_driver_native/Cargo.toml"),
             has_library_target: true,
+            api: Default::default(),
         };
 
         assert_eq!(package.rustdoc_selector_args(), ["--lib"]);
@@ -362,8 +379,53 @@ mod tests {
             version: "0.1.0".to_string(),
             manifest_path: PathBuf::from("sdk/cosmos/azure_data_cosmos_benchmarks/Cargo.toml"),
             has_library_target: false,
+            api: Default::default(),
         };
 
         assert!(package.rustdoc_selector_args().is_empty());
+    }
+
+    #[test]
+    fn reads_api_metadata_from_cargo_metadata() {
+        let package: CargoPackage = serde_json::from_value(serde_json::json!({
+            "id": "demo 1.0.0 (path+file:///demo)",
+            "manifest_path": "/demo/Cargo.toml",
+            "version": "1.0.0",
+            "name": "demo",
+            "description": "Demo crate",
+            "edition": "2021",
+            "rust_version": "1.88",
+            "features": {
+                "default": ["dep:foo", "foo/std"],
+                "test": ["default"]
+            },
+            "targets": []
+        }))
+        .expect("package metadata should deserialize");
+
+        assert_eq!(package.description.as_deref(), Some("Demo crate"));
+        assert_eq!(package.edition.as_deref(), Some("2021"));
+        assert_eq!(package.rust_version.as_deref(), Some("1.88"));
+        assert_eq!(
+            package.features["default"],
+            ["dep:foo".to_string(), "foo/std".to_string()]
+        );
+    }
+
+    #[test]
+    fn allows_missing_optional_api_metadata() {
+        let package: CargoPackage = serde_json::from_value(serde_json::json!({
+            "id": "demo 1.0.0 (path+file:///demo)",
+            "manifest_path": "/demo/Cargo.toml",
+            "version": "1.0.0",
+            "name": "demo",
+            "targets": []
+        }))
+        .expect("package metadata should deserialize");
+
+        assert!(package.description.is_none());
+        assert!(package.edition.is_none());
+        assert!(package.rust_version.is_none());
+        assert!(package.features.is_empty());
     }
 }

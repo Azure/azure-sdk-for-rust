@@ -1,16 +1,23 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::collections::BTreeMap;
+
 #[derive(Debug, Clone)]
 pub(crate) struct ApiModel {
     pub(crate) package_name: String,
     pub(crate) package_version: String,
     pub(crate) parser_version: String,
+    pub(crate) package_metadata: PackageMetadata,
     pub(crate) root_module: ApiModule,
 }
 
 impl ApiModel {
-    pub(crate) fn new(package_name: String, package_version: String) -> Self {
+    pub(crate) fn new(
+        package_name: String,
+        package_version: String,
+        package_metadata: PackageMetadata,
+    ) -> Self {
         let root_module = ApiModule {
             path: package_name.clone(),
             doc_comments: Vec::new(),
@@ -23,9 +30,18 @@ impl ApiModel {
             package_name,
             package_version,
             parser_version: env!("CARGO_PKG_VERSION").to_string(),
+            package_metadata,
             root_module,
         }
     }
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct PackageMetadata {
+    pub(crate) description: Option<String>,
+    pub(crate) edition: Option<String>,
+    pub(crate) rust_version: Option<String>,
+    pub(crate) features: BTreeMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone)]
