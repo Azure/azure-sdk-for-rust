@@ -32,17 +32,25 @@ impl std::str::FromStr for QueryPlanMode {
     type Err = crate::error::CosmosError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        match value.trim().to_ascii_lowercase().as_str() {
-            "localpreferred" | "local_preferred" => Ok(Self::LocalPreferred),
-            "gateway" | "gatewayonly" | "gateway_only" => Ok(Self::GatewayOnly),
-            _ => Err(crate::error::CosmosError::builder()
+        let value = value.trim();
+        if value.eq_ignore_ascii_case("LocalPreferred")
+            || value.eq_ignore_ascii_case("local_preferred")
+        {
+            Ok(Self::LocalPreferred)
+        } else if value.eq_ignore_ascii_case("GatewayOnly")
+            || value.eq_ignore_ascii_case("gateway_only")
+            || value.eq_ignore_ascii_case("gateway")
+        {
+            Ok(Self::GatewayOnly)
+        } else {
+            Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
                     azure_core::http::StatusCode::BadRequest,
                 ))
                 .with_message(format!(
                     "'{value}' is not a valid query plan mode; expected LocalPreferred or GatewayOnly"
                 ))
-                .build()),
+                .build())
         }
     }
 }
