@@ -3449,6 +3449,7 @@ impl CosmosDriver {
             if overrides.partition_key_range_id.is_some()
                 || overrides.feed_range.is_some()
                 || overrides.pkrange_bounds.is_some()
+                || overrides.region_pin.is_some()
             {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
@@ -7116,6 +7117,10 @@ mod tests {
 
     /// Builds a `ContainerReference` from a partition-key-definition JSON blob.
     fn epk_test_container(pk_json: &str) -> ContainerReference {
+        epk_test_container_with_rid(pk_json, "testcontainer_rid")
+    }
+
+    fn epk_test_container_with_rid(pk_json: &str, rid: &str) -> ContainerReference {
         let container_props = crate::models::ContainerProperties {
             id: "testcontainer".into(),
             partition_key: serde_json::from_str(pk_json).unwrap(),
@@ -7126,7 +7131,7 @@ mod tests {
             "testdb",
             "testdb_rid",
             "testcontainer",
-            "testcontainer_rid",
+            rid.to_owned(),
             &container_props,
         )
     }
@@ -7196,6 +7201,34 @@ mod tests {
         assert_eq!(
             error.status(),
             crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
+        );
+    }
+
+    #[tokio::test]
+    async fn pkrange_continuation_is_rejected_after_container_recreation() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let previous = epk_test_container_with_rid(r#"{"paths":["/pk"],"version":2}"#, "old_rid");
+        let replacement =
+            epk_test_container_with_rid(r#"{"paths":["/pk"],"version":2}"#, "new_rid");
+        runtime.container_cache().put(replacement).await;
+        let driver = CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build())
+            .expect("CosmosDriver::new should succeed in tests");
+        let operation = CosmosOperation::read_all_partition_key_ranges(previous)
+            .with_precondition(crate::models::Precondition::if_none_match("old-etag"));
+        let overrides = OperationOverrides {
+            region_pin: Some(Box::new(RegionPin::default())),
+            ..Default::default()
+        };
+
+        let error = driver
+            .execute_operation_direct(&operation, overrides, &OperationOptions::default())
+            .await
+            .expect_err("a partition-range continuation cannot cross container generations");
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                .with_sub_status(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH.value(),),
         );
     }
 

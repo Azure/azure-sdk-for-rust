@@ -77,6 +77,7 @@ impl ContainerRidKey {
 pub(crate) struct ContainerCache {
     by_name: AsyncCache<ContainerNameKey, crate::error::Result<ContainerReference>>,
     by_rid: AsyncCache<ContainerRidKey, crate::error::Result<ContainerReference>>,
+    refreshes: AsyncCache<ContainerNameKey, crate::error::Result<ContainerReference>>,
 }
 
 impl ContainerCache {
@@ -85,6 +86,7 @@ impl ContainerCache {
         Self {
             by_name: AsyncCache::new(),
             by_rid: AsyncCache::new(),
+            refreshes: AsyncCache::new(),
         }
     }
 
@@ -115,10 +117,10 @@ impl ContainerCache {
     /// Refreshes a name-addressed container if the cache still contains the
     /// caller's observed RID.
     ///
-    /// Concurrent refreshes share one service request. If another caller already
-    /// installed a newer RID, that value wins without invoking `fetch_fn`.
-    /// Failed refreshes restore the previous valid entry unless a newer refresh
-    /// won in the meantime.
+    /// Concurrent refreshes share one service request while the previous value
+    /// remains readable. If another caller already installed a newer RID, that
+    /// value wins without invoking `fetch_fn`. A failed refresh leaves the
+    /// previous valid entry untouched.
     pub(crate) async fn refresh_by_name_if_same<F, Fut>(
         &self,
         account_endpoint: &str,
@@ -137,35 +139,48 @@ impl ContainerCache {
             container_name: container_name.to_owned(),
         };
         let previous = self.by_name.get(&key).await;
-        let resolved = self
-            .by_name
-            .get_or_refresh_with(
-                key.clone(),
-                |current| match current {
-                    Some(Ok(container)) => container.rid() == observed_rid,
-                    Some(Err(_)) | None => true,
-                },
-                fetch_fn,
-            )
-            .await
-            .expect("refresh predicate always initializes a missing entry");
-
-        match resolved.as_ref() {
-            Ok(container) => {
-                self.put(container.clone()).await;
-                Ok(Arc::new(container.clone()))
-            }
-            Err(error) => {
-                if let Some(previous) = previous.filter(|value| value.as_ref().is_ok()) {
-                    self.by_name
-                        .replace_if_same(&key, &resolved, previous)
-                        .await;
-                } else {
-                    self.by_name.invalidate_if_same(&key, &resolved).await;
-                }
-                Err(error.clone())
+        if let Some(Ok(container)) = previous.as_deref() {
+            if container.rid() != observed_rid {
+                return Ok(Arc::new(container.clone()));
             }
         }
+
+        let resolved = self
+            .refreshes
+            .get_or_insert_with(key.clone(), fetch_fn)
+            .await;
+
+        let result = match resolved.as_ref() {
+            Ok(container) => {
+                let current = self.by_name.get(&key).await;
+                if let Some(Ok(current)) = current.as_deref() {
+                    if current.rid() != observed_rid {
+                        self.refreshes.invalidate_if_same(&key, &resolved).await;
+                        return Ok(Arc::new(current.clone()));
+                    }
+                }
+
+                let replacement = Arc::new(Ok(container.clone()));
+                let replaced = if let Some(current) = current.as_ref() {
+                    self.by_name
+                        .replace_if_same(&key, current, replacement)
+                        .await
+                } else {
+                    false
+                };
+                if replaced {
+                    self.put(container.clone()).await;
+                    Ok(Arc::new(container.clone()))
+                } else {
+                    let container = container.clone();
+                    self.get_or_fetch_impl(&self.by_name, key.clone(), || async { Ok(container) })
+                        .await
+                }
+            }
+            Err(error) => Err(error.clone()),
+        };
+        self.refreshes.invalidate_if_same(&key, &resolved).await;
+        result
     }
 
     /// Looks up a container by RID, fetching if not cached.
@@ -312,6 +327,10 @@ mod tests {
     };
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use tokio::{
+        sync::Notify,
+        time::{sleep, Duration},
+    };
     use url::Url;
 
     fn test_account() -> AccountReference {
@@ -504,6 +523,87 @@ mod tests {
                 .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
                 .await
                 .expect("old generation should be restored")
+                .rid(),
+            "old_rid",
+        );
+    }
+
+    #[tokio::test]
+    async fn failed_concurrent_refresh_keeps_observed_generation_readable() {
+        let cache = Arc::new(ContainerCache::new());
+        cache
+            .put(test_container_with_rid("mydb", "mycoll", "old_rid"))
+            .await;
+        let calls = Arc::new(AtomicUsize::new(0));
+        let started = Arc::new(Notify::new());
+        let release = Arc::new(Notify::new());
+
+        let owner = {
+            let cache = Arc::clone(&cache);
+            let calls = Arc::clone(&calls);
+            let started = Arc::clone(&started);
+            let release = Arc::clone(&release);
+            tokio::spawn(async move {
+                cache
+                    .refresh_by_name_if_same(
+                        ACCOUNT_ENDPOINT,
+                        "mydb",
+                        "mycoll",
+                        "old_rid",
+                        || async move {
+                            calls.fetch_add(1, Ordering::SeqCst);
+                            started.notify_one();
+                            release.notified().await;
+                            Err(crate::error::CosmosError::builder()
+                                .with_message("refresh failed")
+                                .build())
+                        },
+                    )
+                    .await
+            })
+        };
+
+        started.notified().await;
+        assert_eq!(
+            cache
+                .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
+                .await
+                .expect("old generation should remain readable during refresh")
+                .rid(),
+            "old_rid",
+        );
+
+        let waiter = {
+            let cache = Arc::clone(&cache);
+            let calls = Arc::clone(&calls);
+            tokio::spawn(async move {
+                cache
+                    .refresh_by_name_if_same(
+                        ACCOUNT_ENDPOINT,
+                        "mydb",
+                        "mycoll",
+                        "old_rid",
+                        || async move {
+                            calls.fetch_add(1, Ordering::SeqCst);
+                            Err(crate::error::CosmosError::builder()
+                                .with_message("unexpected second refresh")
+                                .build())
+                        },
+                    )
+                    .await
+            })
+        };
+        sleep(Duration::from_millis(10)).await;
+        release.notify_one();
+
+        assert!(owner.await.unwrap().is_err());
+        assert!(waiter.await.unwrap().is_err());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            cache
+                .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
+                .await
+                .expect("old generation should remain cached after refresh failure")
                 .rid(),
             "old_rid",
         );
@@ -704,6 +804,7 @@ mod tests {
 
         cache.by_name.clear().await;
         cache.by_rid.clear().await;
+        cache.refreshes.clear().await;
 
         assert!(cache
             .get_by_name(ACCOUNT_ENDPOINT, "db", "coll1")
