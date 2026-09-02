@@ -33,6 +33,7 @@
 
 ### Bugs Fixed
 
+- Name-addressed container operations now refresh metadata and retry once after container recreation, clearing generation-specific session and partition-routing state before targeting the replacement. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
 - Fixed doubles losing up to 1 ULP when a text JSON body is parsed, so a value such as `96.182417728091792` no longer comes back as `96.1824177280918`. `serde_json`'s default float parser is not correctly rounded; the `float_roundtrip` feature is now enabled. ([#5040](https://github.com/Azure/azure-sdk-for-rust/pull/5040))
 - Unsafe PATCH operations now atomically persist bounded tracking markers so ambiguous Replace retries and caller-token retries recognize their own prior commit instead of reapplying non-idempotent instructions. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
 - PATCH Read-Modify-Write reads now prefer the PPAF partition writer or account write endpoints, force `ReadConsistencyStrategy::LatestCommitted` without a session token, and suppress hedging so a future verification read cannot be won by a stale replica; when write routing is unavailable or excluded, the read falls back with account-default session semantics and records a `routing_fallback` request event when it uses a reader. ([#5167](https://github.com/Azure/azure-sdk-for-rust/pull/5167))

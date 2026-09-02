@@ -342,17 +342,27 @@ impl ThroughputControlGroupRegistry {
     ) -> Result<(), ThroughputControlGroupRegistrationError> {
         let key = group.key();
 
-        // Check for duplicate key
-        if self.groups.contains_key(&key) {
+        // A name-addressed container keeps one logical identity across RID
+        // generations. Reject a second registration for the same logical
+        // container and group name so recreation fallback stays deterministic.
+        if self.groups.contains_key(&key)
+            || self.groups.values().any(|existing| {
+                existing.name() == group.name()
+                    && same_logical_container(existing.container(), group.container())
+            })
+        {
             return Err(ThroughputControlGroupRegistrationError::DuplicateGroup(key));
         }
 
         // Check for duplicate default
         if group.is_default() {
-            if let Some(existing_default) = self.defaults.get(group.container()) {
+            if let Some(existing_default) = self.groups.values().find(|existing| {
+                existing.is_default()
+                    && same_logical_container(existing.container(), group.container())
+            }) {
                 return Err(ThroughputControlGroupRegistrationError::DuplicateDefault {
                     container: group.container().clone(),
-                    existing_default: existing_default.clone(),
+                    existing_default: existing_default.name().clone(),
                 });
             }
             self.defaults
@@ -582,6 +592,52 @@ mod tests {
 
         assert!(registry.register(group1).is_ok());
         let result = registry.register(group2);
+        assert!(matches!(
+            result,
+            Err(ThroughputControlGroupRegistrationError::DuplicateDefault { .. })
+        ));
+    }
+
+    #[test]
+    fn registry_rejects_duplicate_logical_group_after_recreation() {
+        let mut registry = ThroughputControlGroupRegistry::new();
+        let original = test_container_with_rid("old_rid");
+        let replacement = test_container_with_rid("new_rid");
+
+        registry
+            .register(
+                ThroughputControlGroupOptions::new("same-name", original, false)
+                    .with_throughput_bucket(100),
+            )
+            .unwrap();
+        let result = registry.register(
+            ThroughputControlGroupOptions::new("same-name", replacement, false)
+                .with_throughput_bucket(200),
+        );
+
+        assert!(matches!(
+            result,
+            Err(ThroughputControlGroupRegistrationError::DuplicateGroup(_))
+        ));
+    }
+
+    #[test]
+    fn registry_rejects_duplicate_logical_default_after_recreation() {
+        let mut registry = ThroughputControlGroupRegistry::new();
+        let original = test_container_with_rid("old_rid");
+        let replacement = test_container_with_rid("new_rid");
+
+        registry
+            .register(
+                ThroughputControlGroupOptions::new("default-1", original, true)
+                    .with_throughput_bucket(100),
+            )
+            .unwrap();
+        let result = registry.register(
+            ThroughputControlGroupOptions::new("default-2", replacement, true)
+                .with_throughput_bucket(200),
+        );
+
         assert!(matches!(
             result,
             Err(ThroughputControlGroupRegistrationError::DuplicateDefault { .. })

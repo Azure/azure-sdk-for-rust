@@ -3730,6 +3730,25 @@ impl CosmosDriver {
         })
     }
 
+    async fn adopt_recreated_container(
+        &self,
+        previous: &ContainerReference,
+        replacement: &ContainerReference,
+    ) {
+        if previous.rid() == replacement.rid() {
+            return;
+        }
+
+        self.session_manager.remap_container(previous, replacement);
+        if let Some(cache) = &self.pk_range_cache {
+            cache.invalidate(previous).await;
+        }
+        self.pk_range_region_pins
+            .lock()
+            .expect("partition-key-range region-pin mutex poisoned")
+            .remove(previous);
+    }
+
     /// Refreshes a name-addressed container and returns replacement metadata when
     /// its RID changed.
     ///
@@ -3765,15 +3784,8 @@ impl CosmosDriver {
                     ))
                     .await?;
                     if replacement.rid() != previous_for_refresh.rid() {
-                        self.session_manager
-                            .remap_container(&previous_for_refresh, &replacement);
-                        if let Some(cache) = &self.pk_range_cache {
-                            cache.invalidate(&previous_for_refresh).await;
-                        }
-                        self.pk_range_region_pins
-                            .lock()
-                            .expect("partition-key-range region-pin mutex poisoned")
-                            .remove(&previous_for_refresh);
+                        self.adopt_recreated_container(&previous_for_refresh, &replacement)
+                            .await;
                     }
                     Ok(replacement)
                 },
@@ -3783,6 +3795,8 @@ impl CosmosDriver {
         if resolved.rid() == observed_rid {
             Ok(None)
         } else {
+            self.adopt_recreated_container(previous, resolved.as_ref())
+                .await;
             Ok(Some(resolved.as_ref().clone()))
         }
     }
@@ -3791,7 +3805,7 @@ impl CosmosDriver {
         &self,
         operation: &mut CosmosOperation,
     ) -> crate::error::Result<bool> {
-        let Some(current) = operation.container() else {
+        let Some(current) = operation.container().cloned() else {
             return Ok(false);
         };
         let Some(database_name) = current.database_name() else {
@@ -3810,6 +3824,8 @@ impl CosmosDriver {
             return Ok(false);
         }
 
+        self.adopt_recreated_container(&current, cached.as_ref())
+            .await;
         operation.retarget_container(cached.as_ref().clone())?;
         Ok(true)
     }
