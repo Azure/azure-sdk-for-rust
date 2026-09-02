@@ -8,6 +8,7 @@
 
 ### Bugs Fixed
 
+- `InMemoryCheckpointStore::claim_ownership` now treats a stale ETag as a lost claim instead of an error, the same way `BlobCheckpointStore` does. It skips that partition, returns the partitions it did claim, and logs the conflict at the debug level. A single lost claim used to return an error that reached `EventProcessor::run`, which stopped every partition the instance owned and discarded the new ETag for each partition that the same batch had already renewed. ([#5095](https://github.com/Azure/azure-sdk-for-rust/issues/5095))
 - Producer sends and sender metadata waits now enforce `RetryOptions::max_total_elapsed` while preparation, transport I/O, recovery, or backoff is pending; expiry returns an I/O timeout and retires the captured connection.
 - Connection recovery and client close now terminate failed transports without waiting for graceful shutdown, and cancelled recovery leaves generation state usable.
 - Sends waiting for settlement now retry when a peer invalidates their connection, session, or link. These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate events.
@@ -50,7 +51,6 @@
 - The error that a receive timeout produces now carries its cause unboxed, so `downcast_ref::<std::io::Error>()` returns the `std::io::Error` with `ErrorKind::TimedOut`. The cause was boxed twice, which stored a `Box<std::io::Error>` and made every downcast to `std::io::Error` return `None`. ([#5098](https://github.com/Azure/azure-sdk-for-rust/issues/5098))
 - `InMemoryCheckpointStore` now rotates the ETag and refreshes `last_modified_time` when an existing ownership is renewed, matching the create path and the production `BlobCheckpointStore`. Previously the renewal path reinserted the caller's record verbatim, leaving a stale ETag and timestamp; that divergence from the real store could mask bugs in code that relies on ETag rotation for optimistic concurrency. ([#4594](https://github.com/Azure/azure-sdk-for-rust/issues/4594))
 - `PartitionClient::update_checkpoint` no longer reports success without writing a usable checkpoint. It wrote nothing when the event had no message annotations, and it wrote an empty checkpoint when the annotations held no position. An empty checkpoint suppressed the per-partition start position the caller configured. It also erased a good checkpoint in `BlobCheckpointStore`, because that store rewrites the whole blob metadata on each update. ([#5097](https://github.com/Azure/azure-sdk-for-rust/issues/5097))
-- `InMemoryCheckpointStore::claim_ownership` now treats a stale ETag as a lost claim instead of an error, the same way `BlobCheckpointStore` does. It skips that partition, returns the partitions it did claim, and logs the conflict at the debug level. A single lost claim used to return an error that reached `EventProcessor::run`, which stopped every partition the instance owned and discarded the new ETag for each partition that the same batch had already renewed. ([#5095](https://github.com/Azure/azure-sdk-for-rust/issues/5095))
 
 ### Other Changes
 
