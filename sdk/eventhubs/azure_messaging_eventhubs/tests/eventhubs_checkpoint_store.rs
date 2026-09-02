@@ -104,7 +104,7 @@ async fn test_claim_ownership_renewal_rotates_etag_and_timestamp() {
 /// A claim that lost the race is a normal outcome. The store must report the
 /// loss with an empty result and keep the winner's record.
 #[tokio::test]
-async fn test_claim_ownership_lost_claim_is_not_an_error() {
+async fn claim_ownership_lost_claim_is_not_an_error() {
     common::setup();
     let store = InMemoryCheckpointStore::new();
     let ownership = Ownership {
@@ -149,7 +149,7 @@ async fn test_claim_ownership_lost_claim_is_not_an_error() {
 /// stale partition sits in the middle of the batch, so a store that stops at
 /// the first conflict fails this test.
 #[tokio::test]
-async fn test_claim_ownership_continues_past_a_lost_claim() {
+async fn claim_ownership_continues_past_a_lost_claim() {
     common::setup();
     let store = InMemoryCheckpointStore::new();
     let new_ownership = |partition_id: &str, owner_id: &str| Ownership {
@@ -229,7 +229,7 @@ async fn test_claim_ownership_continues_past_a_lost_claim() {
 /// A validation failure is a different outcome from a lost claim, so
 /// `claim_ownership` must still return an error for a record it cannot use.
 #[tokio::test]
-async fn test_claim_ownership_invalid_ownership_still_errors() {
+async fn claim_ownership_invalid_ownership_still_errors() {
     common::setup();
     let store = InMemoryCheckpointStore::new();
     let ownership = Ownership {
