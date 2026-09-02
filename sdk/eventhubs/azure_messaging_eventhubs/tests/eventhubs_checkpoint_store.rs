@@ -205,7 +205,7 @@ async fn checkpoints() -> azure_core::Result<()> {
 /// A checkpoint that one caller stores with a mixed case consumer group must
 /// come back to a caller that lists with a lowercase consumer group.
 #[tokio::test]
-async fn test_checkpoint_key_survives_consumer_group_case_change() {
+async fn checkpoint_key_survives_consumer_group_case_change() {
     common::setup();
     let store = InMemoryCheckpointStore::new();
     let checkpoint = Checkpoint {
@@ -241,7 +241,7 @@ async fn test_checkpoint_key_survives_consumer_group_case_change() {
 /// The load balancer drives the ownership path, so it needs the same
 /// stability across the case of the consumer group.
 #[tokio::test]
-async fn test_ownership_key_survives_consumer_group_case_change() {
+async fn ownership_key_survives_consumer_group_case_change() {
     common::setup();
     let store = InMemoryCheckpointStore::new();
     let ownership = Ownership {
