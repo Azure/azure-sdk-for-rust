@@ -1993,17 +1993,15 @@ fn build_transport_request(
         } else {
             format!("/{}", request_path)
         };
-        // Set the path exactly as computed. `Url::set_path` percent-encodes only
-        // the characters that are structurally significant in a URL path (space,
-        // `?`, `#`, `<`, `>`, `{`, `}`, backtick) and leaves everything else —
-        // including base64's `=`/`+` padding and path-legal sub-delimiters like
-        // `@` — byte-for-byte intact. That is exactly what both addressing modes
-        // need: a RID segment reaches the gateway raw so its lowercased-RID
-        // signature is honored, and a name segment matches the raw resource link
-        // we signed (and, on Gateway 2.0, its RNTBD target). Encoding those
-        // path-legal characters ourselves would make a RID look name-based and
-        // break Gateway 2.0's outer-path-vs-RNTBD equality check for names.
-        base.set_path(&normalized);
+        // Escape literal percent bytes before `Url::set_path`: it preserves valid
+        // `%HH` sequences, but Cosmos resource names treat them as literal text.
+        // Leave path separators and path-legal characters (`@`, `+`, `=`) intact
+        // so RID routing and Gateway 2.0 path comparisons remain unchanged.
+        if normalized.contains('%') {
+            base.set_path(&normalized.replace('%', "%25"));
+        } else {
+            base.set_path(&normalized);
+        }
         base
     };
 
@@ -4752,10 +4750,8 @@ mod tests {
         assert_eq!(request.url.path(), "/dbs/mydb");
     }
 
-    /// Builds a transport request for `operation` with default routing/context
-    /// and returns the final `Url::path()` after `set_path` has reprocessed it.
-    /// Used to assert the raw-vs-percent-encoded seam in `build_transport_request`.
-    fn transport_request_path(operation: &CosmosOperation) -> String {
+    /// Builds a transport request for `operation` with default routing/context.
+    fn transport_request(operation: &CosmosOperation) -> super::TransportRequest {
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
         let ctx = TransportRequestContext {
@@ -4770,9 +4766,12 @@ mod tests {
         };
         build_transport_request(operation, &OperationOverrides::default(), None, &ctx)
             .expect("request should build")
-            .url
-            .path()
-            .to_owned()
+    }
+
+    /// Returns the final `Url::path()` after `set_path` has reprocessed it.
+    /// Used to assert the raw-vs-percent-encoded seam in `build_transport_request`.
+    fn transport_request_path(operation: &CosmosOperation) -> String {
+        transport_request(operation).url.path().to_owned()
     }
 
     #[test]
@@ -4818,6 +4817,23 @@ mod tests {
         assert_eq!(
             transport_request_path(&operation),
             "/dbs/testdb/colls/testcontainer/docs/Item@1-abc"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_escapes_literal_percent_without_changing_signing_link() {
+        let item =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "item%41");
+        let operation = CosmosOperation::read_item(item);
+        let request = transport_request(&operation);
+
+        assert_eq!(
+            request.url.path(),
+            "/dbs/testdb/colls/testcontainer/docs/item%2541"
+        );
+        assert_eq!(
+            request.auth_context.resource_link.as_str(),
+            "dbs/testdb/colls/testcontainer/docs/item%41"
         );
     }
 
