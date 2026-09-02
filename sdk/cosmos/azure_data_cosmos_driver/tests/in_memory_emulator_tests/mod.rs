@@ -29,6 +29,7 @@ pub mod offers;
 pub mod order_by;
 #[cfg(feature = "fault_injection")]
 pub mod patch_retry_faults;
+pub mod patch_strategy;
 pub mod patch_verification_routing;
 pub mod point_operations;
 pub mod ppaf_dynamic_enablement;

@@ -137,7 +137,10 @@ impl Harness {
             )
             .await
             .unwrap();
-        let container = database.container_client(CONTAINER_NAME).await.unwrap();
+        let container = database
+            .container_client(CONTAINER_NAME, None)
+            .await
+            .unwrap();
 
         Self {
             emulator,

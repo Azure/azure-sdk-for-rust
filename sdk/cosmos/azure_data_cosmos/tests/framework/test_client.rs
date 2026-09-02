@@ -24,6 +24,17 @@ use std::time::Duration;
 use std::{str::FromStr, sync::OnceLock};
 use tracing_subscriber::EnvFilter;
 
+fn test_env_filter() -> EnvFilter {
+    match std::env::var("RUST_LOG") {
+        Ok(value) if value.trim().eq_ignore_ascii_case("trace") => EnvFilter::new("debug"),
+        _ => EnvFilter::builder()
+            // Tests with intentional failures cause noise, so silence them
+            // unless the user explicitly configures logging.
+            .with_default_directive("off".parse().unwrap())
+            .from_env_lossy(),
+    }
+}
+
 /// Represents a Cosmos DB client connected to a test account.
 pub struct TestClient {
     cosmos_client: Option<CosmosClient>,
@@ -686,13 +697,7 @@ impl TestClient {
         // Initialize tracing subscriber for logging, if not already initialized.
         // The error is ignored because it only happens if the subscriber is already initialized.
         _ = tracing_subscriber::fmt()
-            .with_env_filter(
-                EnvFilter::builder()
-                    // Tests with intentional failures cause noise, so we set the default level to "off"
-                    // to silence them unless the user explicitly configures it.
-                    .with_default_directive("off".parse().unwrap())
-                    .from_env_lossy(),
-            )
+            .with_env_filter(test_env_filter())
             .try_init();
 
         let test_client = Self::from_env(
@@ -941,7 +946,7 @@ impl TestRunContext {
     ) -> azure_data_cosmos::Result<ContainerClient> {
         self.management_client()
             .database_client(db_client.id())
-            .container_client(container_id)
+            .container_client(container_id, None)
             .await
     }
 
@@ -1135,8 +1140,9 @@ impl TestRunContext {
                 }
                 Err(e) if e.status().status_code() == StatusCode::Conflict => {
                     // Container already exists, delete and recreate it, then return a client
-                    let container_client =
-                        db_client.container_client(properties.id.as_ref()).await?;
+                    let container_client = db_client
+                        .container_client(properties.id.as_ref(), None)
+                        .await?;
                     container_client.delete(None).await?;
 
                     // recreate
@@ -1165,7 +1171,7 @@ impl TestRunContext {
         const POLL_INTERVAL: Duration = Duration::from_millis(500);
 
         for attempt in 0..MAX_ATTEMPTS {
-            let error = match db_client.container_client(container_id).await {
+            let error = match db_client.container_client(container_id, None).await {
                 Ok(container_client) => match container_client.read(None).await {
                     Ok(_) => return Ok(container_client),
                     Err(error) => error,
@@ -1227,7 +1233,7 @@ impl TestRunContext {
                     let db_client = original_db_client;
                     let container_id = original_container_id.clone();
                     async move {
-                        let container = db_client.container_client(&*container_id).await?;
+                        let container = db_client.container_client(&*container_id, None).await?;
                         container.read(None).await?;
                         Ok::<_, azure_data_cosmos::CosmosError>(container)
                     }
@@ -1250,7 +1256,7 @@ impl TestRunContext {
                     async move {
                         let container = fault_client
                             .database_client(&db_id)
-                            .container_client(&*container_id)
+                            .container_client(&*container_id, None)
                             .await?;
                         container.read(None).await?;
                         Ok::<_, azure_data_cosmos::CosmosError>(container)
@@ -1316,7 +1322,7 @@ impl TestRunContext {
                     async move {
                         let container = client
                             .database_client(&db_id)
-                            .container_client(&*container_id)
+                            .container_client(&*container_id, None)
                             .await?;
                         container.read(None).await?;
                         Ok::<_, azure_data_cosmos::CosmosError>(container)
@@ -1342,7 +1348,7 @@ impl TestRunContext {
                     async move {
                         let container = client
                             .database_client(&db_id)
-                            .container_client(&*container_id)
+                            .container_client(&*container_id, None)
                             .await?;
                         container.read(None).await?;
                         Ok::<_, azure_data_cosmos::CosmosError>(container)
@@ -1364,7 +1370,7 @@ impl TestRunContext {
                     let db_client = original_db_client;
                     let container_id = original_container_id.clone();
                     async move {
-                        let container = db_client.container_client(&*container_id).await?;
+                        let container = db_client.container_client(&*container_id, None).await?;
                         container.read(None).await?;
                         Ok::<_, azure_data_cosmos::CosmosError>(container)
                     }
@@ -1413,7 +1419,7 @@ impl TestRunContext {
             let probe = async {
                 let container = probe_client
                     .database_client(db_id.clone())
-                    .container_client(container_id)
+                    .container_client(container_id, None)
                     .await?;
                 container.read(Some(options.clone())).await
             };
@@ -1481,7 +1487,7 @@ impl TestRunContext {
             let probe = async {
                 let container = probe_client
                     .database_client(db_id.clone())
-                    .container_client(container_id)
+                    .container_client(container_id, None)
                     .await?;
                 container
                     .delete_item(
@@ -1631,7 +1637,7 @@ impl TestRunContext {
         // Now that we have a list of databases created by this test, we delete them.
         // We COULD choose not to delete them and instead validate that they were deleted, but this is what I've gone with for now.
         for id in ids {
-            println!("Deleting left-over database: {}", &id);
+            println!("Deleting left-over database: {}", id);
             self.management_client()
                 .database_client(&id)
                 .delete(None)

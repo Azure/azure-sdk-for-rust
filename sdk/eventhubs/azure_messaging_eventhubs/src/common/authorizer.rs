@@ -18,7 +18,7 @@ use azure_core_amqp::{AmqpClaimsBasedSecurityApis as _, AmqpError};
 use rand::{rng, RngExt};
 use std::{
     collections::{HashMap, HashSet},
-    sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
+    sync::{Arc, Mutex as SyncMutex, Weak},
 };
 use tracing::{debug, error, info, trace, warn};
 
@@ -71,9 +71,15 @@ enum RefreshPass {
     Stop,
 }
 
+enum AuthorizationRefresherState {
+    NotStarted,
+    Running(SpawnedTask),
+    Stopped,
+}
+
 pub(crate) struct Authorizer {
     authorization_scopes: RwLock<HashMap<Url, AccessToken>>,
-    authorization_refresher: OnceLock<SpawnedTask>,
+    authorization_refresher: SyncMutex<AuthorizationRefresherState>,
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
     credential: Arc<dyn TokenCredential>,
@@ -86,9 +92,6 @@ pub(crate) struct Authorizer {
     disable_authorization: SyncMutex<bool>,
 }
 
-unsafe impl Send for Authorizer {}
-unsafe impl Sync for Authorizer {}
-
 impl Authorizer {
     /// Creates an authorizer. `cbs_token_type` is `None` for JWT/Entra
     /// credentials and `Some("servicebus.windows.net:sastoken")` for SAS
@@ -99,7 +102,7 @@ impl Authorizer {
         cbs_token_type: Option<&'static str>,
     ) -> Self {
         Self {
-            authorization_refresher: OnceLock::new(),
+            authorization_refresher: SyncMutex::new(AuthorizationRefresherState::NotStarted),
             authorization_scopes: RwLock::new(HashMap::new()),
             token_refresh_bias: SyncMutex::new(TokenRefreshTimes::default()),
             credential,
@@ -116,8 +119,28 @@ impl Authorizer {
         scopes.clear();
     }
 
+    pub(crate) async fn stop_refresh_task(&self) {
+        let task = {
+            let mut state = self
+                .authorization_refresher
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            match std::mem::replace(&mut *state, AuthorizationRefresherState::Stopped) {
+                AuthorizationRefresherState::Running(task) => Some(task),
+                AuthorizationRefresherState::NotStarted | AuthorizationRefresherState::Stopped => {
+                    None
+                }
+            }
+        };
+
+        if let Some(task) = task {
+            task.abort();
+            let _ = task.await;
+        }
+    }
+
     #[cfg(test)]
-    fn disable_authorization(&self) -> Result<()> {
+    pub(crate) fn disable_authorization(&self) -> Result<()> {
         use crate::EventHubsError;
 
         let mut disable_authorization = self
@@ -226,12 +249,18 @@ impl Authorizer {
                 continue;
             };
 
-            self.authorization_refresher.get_or_init(|| {
+            let mut state = self
+                .authorization_refresher
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if matches!(&*state, AuthorizationRefresherState::NotStarted) {
                 debug!("Starting authorization refresh task.");
                 let self_clone = self.clone();
                 let async_runtime = get_async_runtime();
-                async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task()))
-            });
+                *state = AuthorizationRefresherState::Running(
+                    async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task())),
+                );
+            }
 
             return Ok(stored);
         }
@@ -650,6 +679,17 @@ impl Authorizer {
         *token_refresh_bias = refresh_times;
         Ok(())
     }
+
+    #[cfg(test)]
+    pub(crate) fn set_token_refresh_bias_for_test(&self, bias: Duration) -> Result<()> {
+        self.set_token_refresh_times(TokenRefreshTimes {
+            before_expiration_refresh_time: bias,
+            jitter_min: Duration::milliseconds(0),
+            // The upper bound is exclusive. This range produces zero jitter
+            // while avoiding an empty random range in the refresh loop.
+            jitter_max: Duration::milliseconds(1),
+        })
+    }
 }
 
 #[cfg(test)]
@@ -807,6 +847,7 @@ mod tests {
             url,
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             mock_credential.clone(),
             Default::default(),
             None,
@@ -872,6 +913,7 @@ mod tests {
             url,
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             mock_credential.clone(),
             Default::default(),
             None,
@@ -941,6 +983,7 @@ mod tests {
             host.clone(),
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             mock_credential.clone(),
             Default::default(),
             None,
@@ -1102,6 +1145,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            Default::default(),
             credential.clone(),
             Default::default(),
             None,
@@ -1198,6 +1242,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             credential.clone(),
             Default::default(),
             None,
@@ -1303,6 +1348,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             credential.clone(),
             Default::default(),
             None,
@@ -1435,6 +1481,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             credential.clone(),
             Default::default(),
             None,

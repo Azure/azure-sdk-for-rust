@@ -82,6 +82,27 @@ fn order_by_operation_with_page_size(n: u32) -> Arc<CosmosOperation> {
     )
 }
 
+/// A binary-negotiated ORDER BY operation.
+fn binary_order_by_operation() -> Arc<CosmosOperation> {
+    Arc::new(
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec())
+            .with_supported_serialization_formats("CosmosBinary"),
+    )
+}
+
+/// Like [`binary_order_by_operation`] but with an explicit `max_item_count`.
+fn binary_order_by_operation_with_page_size(n: u32) -> Arc<CosmosOperation> {
+    Arc::new(
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec())
+            .with_max_item_count(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(n).unwrap(),
+            ))
+            .with_supported_serialization_formats("CosmosBinary"),
+    )
+}
+
 /// A single-ascending-column ORDER BY plan spanning the full container.
 fn order_by_plan() -> QueryPlan {
     QueryPlan {
@@ -214,6 +235,43 @@ fn envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResp
     )
 }
 
+/// Like [`envelope_page`] but encodes the feed body as Cosmos **binary** JSON,
+/// exercising `parse_envelope_page`'s transcode path through the merge.
+fn binary_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResponse {
+    let documents: Vec<serde_json::Value> = rows
+        .iter()
+        .map(|(rid, rank)| {
+            serde_json::json!({
+                "_rid": label_rid(rid),
+                "orderByItems": [{"item": rank}],
+                "payload": {"id": rid, "rank": rank},
+            })
+        })
+        .collect();
+    let body = serde_json::json!({
+        "_rid": "",
+        "Documents": documents,
+        "_count": documents.len(),
+    });
+    let text = serde_json::to_vec(&body).unwrap();
+    let binary = crate::binary_json::transcode_to_binary(&text).unwrap();
+    assert!(crate::binary_json::is_binary(&binary));
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    diagnostics.set_operation_status(azure_core::http::StatusCode::Ok, None);
+    let mut headers = CosmosResponseHeaders::new();
+    headers.continuation = continuation.map(str::to_owned);
+    headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
+    CosmosResponse::new(
+        binary,
+        headers,
+        CosmosStatus::new(azure_core::http::StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
 /// Like [`envelope_page`] but JOIN-shaped: `(rid, rank, id)` rows where
 /// several rows may share one `_rid` (a single document expanded by a JOIN)
 /// while carrying distinct payload `id`s. Drives the `skip_count` resume path.
@@ -318,7 +376,9 @@ fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cosm
 }
 
 /// Extracts every emitted item's `id`, in wire order. The pipeline emits a
-/// pre-split `Items` body (one payload per document).
+/// pre-split `Items` body (one payload per document). A binary-negotiated merge
+/// emits binary items, so each is transcoded to text before parsing — mirroring
+/// the SDK's per-slice format-agnostic decode.
 fn ids_in_page(page: &CosmosResponse) -> Vec<String> {
     let items = match page.body() {
         crate::models::ResponseBody::Items(items) => items.clone(),
@@ -328,10 +388,24 @@ fn ids_in_page(page: &CosmosResponse) -> Vec<String> {
     items
         .iter()
         .map(|item| {
-            let value: serde_json::Value = serde_json::from_slice(item).unwrap();
+            let text = crate::binary_json::transcode_to_text(item).unwrap();
+            let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
             value["id"].as_str().unwrap().to_owned()
         })
         .collect()
+}
+
+/// Whether every item in an emitted page is Cosmos binary JSON. An empty page
+/// (no items) is treated as binary-neutral (`true`) so a trailing empty page
+/// does not fail a binary-source assertion.
+fn page_is_binary(page: &CosmosResponse) -> bool {
+    match page.body() {
+        crate::models::ResponseBody::Items(items) => {
+            items.iter().all(|item| crate::binary_json::is_binary(item))
+        }
+        crate::models::ResponseBody::NoPayload => true,
+        crate::models::ResponseBody::Bytes(b) => crate::binary_json::is_binary(b),
+    }
 }
 
 async fn drain_all(pipeline: &mut Pipeline, executor: &mut MockRequestExecutor) -> Vec<String> {
@@ -482,6 +556,183 @@ async fn merges_two_partitions_into_global_order() {
             .map(str::to_owned)
             .collect::<Vec<_>>(),
         "rows must interleave in ascending rank order across both partitions"
+    );
+}
+
+/// Binary-negotiated ORDER BY pages must merge into the same global order as
+/// the text path — proof the merge is format-agnostic.
+#[tokio::test]
+async fn merges_two_binary_partitions_into_global_order() {
+    let op = binary_order_by_operation();
+    let plan = order_by_plan();
+
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(binary_envelope_page(
+            &[("l1", 1), ("l2", 3), ("l3", 5)],
+            None,
+        )),
+        Ok(binary_envelope_page(
+            &[("r1", 2), ("r2", 4), ("r3", 6)],
+            None,
+        )),
+    ]);
+
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+        .await
+        .unwrap();
+    let ids = drain_all(&mut pipeline, &mut executor).await;
+
+    assert_eq!(
+        ids,
+        vec!["l1", "r1", "l2", "r2", "l3", "r3"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        "binary ORDER BY pages must interleave in the same global order as text"
+    );
+}
+
+/// Regression: a binary-negotiated merge must emit binary on every output page,
+/// including pages served entirely from buffered rows. With page size 1 and one
+/// 3-row backend page, pages 2 and 3 consume no backend response.
+#[tokio::test]
+async fn binary_merge_keeps_every_page_binary_including_buffer_only_pages() {
+    let op = binary_order_by_operation_with_page_size(1);
+    let plan = order_by_plan();
+
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut executor = MockRequestExecutor::new(vec![Ok(binary_envelope_page(
+        &[("a", 1), ("b", 2), ("c", 3)],
+        None,
+    ))]);
+
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+        .await
+        .unwrap();
+
+    let mut formats = Vec::new();
+    let mut ids = Vec::new();
+    let mut noop_topology = super::super::mocks::NoopTopologyProvider;
+    loop {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut noop_topology));
+        match pipeline.next_page(&mut context).await.unwrap() {
+            Some(response) => {
+                let page_ids = ids_in_page(&response);
+                // `page_is_binary` is vacuously true for an empty page.
+                if !page_ids.is_empty() {
+                    formats.push(page_is_binary(&response));
+                }
+                ids.extend(page_ids);
+            }
+            None => break,
+        }
+    }
+
+    assert_eq!(
+        ids,
+        vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],
+        "all rows must still be emitted in order",
+    );
+    // The single backend page fills 3 rows; page size 1 emits 3 pages.
+    assert!(
+        formats.len() >= 3,
+        "expected at least 3 output pages, got {}",
+        formats.len()
+    );
+    assert!(
+        formats.iter().all(|&is_binary| is_binary),
+        "every page of a binary-sourced merge must stay binary, got {formats:?}",
+    );
+}
+
+/// A binary-negotiated merge resumed from a continuation token must keep the
+/// global order across the checkpoint and keep emitting binary. The mid-page
+/// checkpoint also exercises the value-boundary resume path.
+#[tokio::test]
+async fn binary_merge_resumed_from_continuation_preserves_order_and_stays_binary() {
+    let op = binary_order_by_operation_with_page_size(1);
+    let plan = order_by_plan();
+
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor1 = MockRequestExecutor::new(vec![
+        Ok(binary_envelope_page(&[("l1", 1), ("l2", 3)], None)),
+        Ok(binary_envelope_page(&[("r1", 2), ("r2", 4)], None)),
+    ]);
+    let mut pipeline1 = build_streaming_ordered_merge(&plan, &mut topology1, &op, None)
+        .await
+        .unwrap();
+
+    let mut noop = super::super::mocks::NoopTopologyProvider;
+    let mut context = PipelineContext::new(&mut executor1, Some(&mut noop));
+    let first = pipeline1
+        .next_page(&mut context)
+        .await
+        .unwrap()
+        .expect("expected a first page");
+    assert_eq!(ids_in_page(&first), vec!["l1".to_owned()]);
+    assert!(
+        page_is_binary(&first),
+        "a binary-sourced merge must emit binary before the checkpoint"
+    );
+
+    let state = pipeline1.snapshot_state().unwrap();
+    drop(pipeline1);
+
+    // The mock re-serves full pages, so the client-side discard must strip the
+    // already-emitted "l1" row.
+    let resumed_state = round_trip_state(state, &op);
+    // A two-range resume re-resolves per saved range, so queue a result each.
+    let ranges = vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ];
+    let mut topology2 =
+        MockTopologyProvider::new(vec![Ok(ranges.clone()), Ok(ranges.clone()), Ok(ranges)]);
+    let mut executor2 = MockRequestExecutor::new(vec![
+        Ok(binary_envelope_page(&[("l1", 1), ("l2", 3)], None)),
+        Ok(binary_envelope_page(&[("r1", 2), ("r2", 4)], None)),
+    ]);
+    let mut pipeline2 =
+        build_streaming_ordered_merge(&plan, &mut topology2, &op, Some(resumed_state))
+            .await
+            .unwrap();
+
+    let mut ids = Vec::new();
+    let mut formats = Vec::new();
+    let mut noop2 = super::super::mocks::NoopTopologyProvider;
+    loop {
+        let mut context = PipelineContext::new(&mut executor2, Some(&mut noop2));
+        match pipeline2.next_page(&mut context).await.unwrap() {
+            Some(response) => {
+                let page_ids = ids_in_page(&response);
+                if !page_ids.is_empty() {
+                    formats.push(page_is_binary(&response));
+                }
+                ids.extend(page_ids);
+            }
+            None => break,
+        }
+    }
+
+    assert_eq!(
+        ids,
+        vec!["r1", "l2", "r2"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        "resumed binary merge must continue the global order without \
+         re-emitting the pre-checkpoint row"
+    );
+    assert!(
+        formats.iter().all(|&is_binary| is_binary),
+        "every page after a binary resume must stay binary, got {formats:?}"
     );
 }
 

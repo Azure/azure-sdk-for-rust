@@ -114,7 +114,7 @@ async fn setup_with_observer(
         .await
         .unwrap();
     let old_container = driver
-        .resolve_container(DATABASE_NAME, CONTAINER_NAME)
+        .resolve_container(DATABASE_NAME, CONTAINER_NAME, OperationOptions::default())
         .await
         .unwrap();
     (emulator, driver, old_container)

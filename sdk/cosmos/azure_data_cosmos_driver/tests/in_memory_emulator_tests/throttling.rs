@@ -533,7 +533,7 @@ async fn fault_injection_429_honors_configurable_throttle_retry_count() {
             .expect("driver should initialize against the in-memory emulator");
 
         let container = driver
-            .resolve_container_by_name("testdb", "testcoll")
+            .resolve_container_by_name("testdb", "testcoll", OperationOptions::default())
             .await
             .expect("container should resolve");
 

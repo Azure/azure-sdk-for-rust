@@ -121,22 +121,37 @@ pub(crate) struct Distinct {
     /// charge/diagnostics can still be flushed as a final empty page if the
     /// child drains without ever surfacing a terminal page.
     pending_flush: Option<CosmosResponse>,
+    /// Whether a re-split page is emitted as Cosmos binary JSON. Derived from
+    /// the negotiated operation, never from the bytes of a received page, so
+    /// this node agrees with its sibling nodes on the same query.
+    emit_binary: bool,
+    /// Set when a page was consumed from the child but could not be processed,
+    /// leaving the deduplication map ahead of the rows actually emitted. The
+    /// node then refuses further pages and refuses to mint a resume token — see
+    /// [`process_page`](Self::process_page).
+    poisoned: bool,
 }
 
 impl Distinct {
-    /// Wraps `child` with a fresh map for `distinct_type`.
+    /// Wraps `child` with a fresh map for `distinct_type`, emitting text.
     #[cfg(test)]
     pub(crate) fn new(child: Box<dyn PipelineNode>, distinct_type: DistinctType) -> Self {
-        Self::with_last_hash(child, distinct_type, None)
+        Self::with_last_hash(child, distinct_type, None, false)
     }
 
     /// Wraps `child`, seeding an ordered map with the hash of the last row
     /// emitted before a checkpoint. `last_hash` is ignored for an unordered
-    /// map, whose state is never persisted.
+    /// map, whose state is never persisted. `emit_binary` is the encoding the
+    /// operation hands back to the caller (see
+    /// [`CosmosOperation::emits_binary_payload`]), not the encoding negotiated
+    /// with the service.
+    ///
+    /// [`CosmosOperation::emits_binary_payload`]: crate::models::CosmosOperation::emits_binary_payload
     pub(crate) fn with_last_hash(
         child: Box<dyn PipelineNode>,
         distinct_type: DistinctType,
         last_hash: Option<Hash128>,
+        emit_binary: bool,
     ) -> Self {
         let map = match distinct_type {
             // `None` never reaches here — the planner only wraps a root when
@@ -155,6 +170,8 @@ impl Distinct {
             suppressed_charge: RequestCharge::default(),
             suppressed_diagnostics: None,
             pending_flush: None,
+            emit_binary,
+            poisoned: false,
         }
     }
 
@@ -163,13 +180,7 @@ impl Distinct {
     fn select_survivors(&mut self, items: &[Bytes]) -> crate::error::Result<Vec<Bytes>> {
         let mut keep = Vec::with_capacity(items.len());
         for item in items {
-            let value: serde_json::Value = serde_json::from_slice(item).map_err(|e| {
-                crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                    .with_message("failed to parse a DISTINCT row payload as JSON")
-                    .with_source(e)
-                    .build()
-            })?;
+            let value = parse_row(item)?;
             if self.map.accept(hash_value(&value)?) {
                 keep.push(item.clone());
             }
@@ -255,6 +266,95 @@ impl Distinct {
             is_terminal: true,
         })
     }
+
+    /// Deduplicates one page from the child, returning the page to emit or
+    /// `None` when every row was a duplicate and the page was retained for its
+    /// RU/diagnostics.
+    ///
+    /// **Every error out of this method is unrecoverable in place**, which is
+    /// why the caller poisons on all of them. The child's page is already
+    /// consumed, so its continuation has moved, while the map may have accepted
+    /// rows this node never emitted. A token minted from that pair would resume
+    /// past rows the caller never saw.
+    fn process_page(
+        &mut self,
+        response: CosmosResponse,
+        is_terminal: bool,
+    ) -> crate::error::Result<Option<PageResult>> {
+        // Normalize the child's page into per-document slices. A streaming
+        // ordered merge hands over pre-split `Items`, already in the encoding
+        // the operation emits; a raw backend feed page arrives as `Bytes` and
+        // is split as text, then re-encoded below. `NoPayload` is a
+        // zero-document page.
+        let (items, needs_encode) = match response.body() {
+            ResponseBody::Items(items) => (items.clone(), false),
+            ResponseBody::Bytes(bytes) => (skip_take_page::split_feed_envelope(bytes)?, true),
+            ResponseBody::NoPayload => (Vec::new(), false),
+        };
+        let survivors = self.select_survivors(&items)?;
+        let emitted = survivors.len();
+        let survivors = if needs_encode {
+            skip_take_page::encode_items(survivors, self.emit_binary)?
+        } else {
+            survivors
+        };
+
+        // An all-duplicate intermediate page becomes a pull rather than an
+        // empty public page; its RU/diagnostics are retained.
+        if emitted == 0 && !is_terminal {
+            self.suppress(response);
+            return Ok(None);
+        }
+
+        let new_response = self.rebuild(&response, survivors, emitted);
+        Ok(Some(PageResult::Page {
+            response: new_response,
+            is_terminal,
+        }))
+    }
+
+    /// The error a poisoned node returns from every subsequent call.
+    ///
+    /// Deliberately the same status as the failure that caused it: the poison
+    /// is that fault made durable. The cause is deterministic — replaying the
+    /// same child page fails the same way — so the message points at the
+    /// encoding rather than suggesting a retry.
+    fn poisoned_error() -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message(
+                "DISTINCT node is unusable: a page was consumed from its child but could not be \
+                 processed, so the deduplication map and the child's resume position no longer \
+                 agree and no continuation token can be minted; the page holds a document the \
+                 negotiated encoding cannot represent, so retrying is futile — re-run the query \
+                 with a text response instead",
+            )
+            .build()
+    }
+}
+
+/// Parses one row payload into a value to hash, accepting either encoding.
+///
+/// A binary payload is decoded and its integral `Double`s normalized to
+/// integers, exactly as [`normalize_page_body`] does for a whole page, so a row
+/// hashes identically whether it reached this node as text or as binary.
+///
+/// [`normalize_page_body`]: super::query_response::normalize_page_body
+fn parse_row(item: &Bytes) -> crate::error::Result<serde_json::Value> {
+    fn row_error(e: impl std::error::Error + Send + Sync + 'static) -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("failed to parse a DISTINCT row payload as JSON")
+            .with_source(e)
+            .build()
+    }
+
+    if crate::binary_json::is_binary(item) {
+        let mut value = crate::binary_json::decode(item).map_err(row_error)?;
+        crate::binary_json::normalize_integral_floats(&mut value);
+        return Ok(value);
+    }
+    serde_json::from_slice(item).map_err(row_error)
 }
 
 #[async_trait]
@@ -263,6 +363,9 @@ impl PipelineNode for Distinct {
         &mut self,
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult> {
+        if self.poisoned {
+            return Err(Self::poisoned_error());
+        }
         if self.exhausted {
             return Ok(PageResult::Drained);
         }
@@ -295,32 +398,14 @@ impl PipelineNode for Distinct {
                 PageResult::Page {
                     response,
                     is_terminal,
-                } => {
-                    // Normalize the child's page into per-document slices. A
-                    // streaming ordered merge (and a `SkipTake` below us) hands
-                    // over pre-split `Items`; a raw backend feed page arrives as
-                    // `Bytes`; `NoPayload` is a zero-document page.
-                    let items: Vec<Bytes> = match response.body() {
-                        ResponseBody::Items(items) => items.clone(),
-                        ResponseBody::Bytes(bytes) => skip_take_page::split_feed_envelope(bytes)?,
-                        ResponseBody::NoPayload => Vec::new(),
-                    };
-                    let survivors = self.select_survivors(&items)?;
-                    let emitted = survivors.len();
-
-                    // An all-duplicate intermediate page becomes a pull rather
-                    // than an empty public page; its RU/diagnostics are retained.
-                    if emitted == 0 && !is_terminal {
-                        self.suppress(response);
-                        continue;
+                } => match self.process_page(response, is_terminal) {
+                    Ok(Some(page)) => return Ok(page),
+                    Ok(None) => continue,
+                    Err(e) => {
+                        self.poisoned = true;
+                        return Err(e);
                     }
-
-                    let new_response = self.rebuild(&response, survivors, emitted);
-                    return Ok(PageResult::Page {
-                        response: new_response,
-                        is_terminal,
-                    });
-                }
+                },
             }
         }
     }
@@ -331,6 +416,9 @@ impl PipelineNode for Distinct {
     }
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
+        if self.poisoned {
+            return Err(Self::poisoned_error());
+        }
         // A drained pipeline has no deduplication state left to lose, so even
         // an unordered map can snapshot: resuming `Drained` re-emits nothing.
         // Refusing here would break the common "page to completion, then
@@ -599,8 +687,12 @@ mod tests {
             page(&[r#""Redmond""#, r#""Seattle""#], true),
             Ok(PageResult::Drained),
         ]);
-        let mut node =
-            Distinct::with_last_hash(Box::new(child), DistinctType::Ordered, Some(boundary));
+        let mut node = Distinct::with_last_hash(
+            Box::new(child),
+            DistinctType::Ordered,
+            Some(boundary),
+            false,
+        );
         assert_eq!(strings(&drain(&mut node).await), vec![r#""Seattle""#]);
     }
 
@@ -983,6 +1075,7 @@ mod tests {
                 Box::new(MockLeaf::with_pages(pages)),
                 fixture_distinct_type(&scenario.query.distinct_type),
                 last_hash,
+                false,
             );
             let (values, charge) = drain_with_charge(&mut node).await;
             assert_eq!(
@@ -1028,6 +1121,122 @@ mod tests {
         assert!(
             ran_a_resume_checkpoint,
             "no catalog scenario exercised an ordered resume checkpoint"
+        );
+    }
+
+    // ── Binary encoding ──────────────────────────────────────────────────
+
+    fn to_binary(text: &str) -> Bytes {
+        Bytes::from(crate::binary_json::transcode_to_binary(text.as_bytes()).unwrap())
+    }
+
+    /// Emits an `Items` page whose payloads are already in the operation's
+    /// encoding, the shape `StreamingOrderedMerge` hands to `Distinct`.
+    fn binary_items_page(
+        documents: &[&str],
+        is_terminal: bool,
+    ) -> crate::error::Result<PageResult> {
+        let template = response(b"");
+        let items: Vec<Bytes> = documents.iter().map(|d| to_binary(d)).collect();
+        Ok(PageResult::Page {
+            response: CosmosResponse::new(
+                ResponseBody::from_items(items),
+                template.headers().clone(),
+                template.status(),
+                template.diagnostics(),
+            ),
+            is_terminal,
+        })
+    }
+
+    async fn drain_items(node: &mut Distinct) -> Vec<Bytes> {
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        let mut all = Vec::new();
+        loop {
+            match node.next_page(&mut context).await.unwrap() {
+                PageResult::Page { response, .. } => match response.body() {
+                    ResponseBody::Items(items) => all.extend(items.iter().cloned()),
+                    ResponseBody::NoPayload => {}
+                    other => panic!("expected an Items body, got {other:?}"),
+                },
+                PageResult::Drained => break,
+                PageResult::SplitRequired { .. } => panic!("unexpected split"),
+            }
+        }
+        all
+    }
+
+    /// A binary-negotiated `ORDER BY` query reaches `Distinct` as pre-encoded
+    /// `Items`. The rows must still hash structurally, and the surviving bytes
+    /// must be passed through untouched rather than re-encoded.
+    #[tokio::test]
+    async fn binary_items_deduplicate_and_pass_through() {
+        let child = MockLeaf::with_pages(vec![
+            binary_items_page(&[r#"{"item":42}"#, r#"{"item":1337}"#], false),
+            binary_items_page(&[r#"{"item":1337}"#, r#"{"item":42}"#], true),
+            Ok(PageResult::Drained),
+        ]);
+        let mut node =
+            Distinct::with_last_hash(Box::new(child), DistinctType::Unordered, None, true);
+        let items = drain_items(&mut node).await;
+        assert_eq!(
+            items,
+            vec![to_binary(r#"{"item":42}"#), to_binary(r#"{"item":1337}"#)]
+        );
+    }
+
+    /// A binary-negotiated unordered fan-out reaches `Distinct` as a raw
+    /// binary envelope. Survivors must come back out as standalone binary so
+    /// the parent `SkipTake` — which treats an `Items` body as already encoded
+    /// — does not hand the SDK a text/binary mix.
+    #[tokio::test]
+    async fn a_binary_envelope_re_emits_survivors_as_binary() {
+        let envelope = to_binary(
+            &String::from_utf8(page_body(&[
+                r#"{"item":42}"#,
+                r#"{"item":42}"#,
+                r#"{"item":1337}"#,
+            ]))
+            .unwrap(),
+        );
+        let child = MockLeaf::with_pages(vec![
+            Ok(PageResult::Page {
+                response: response(&envelope),
+                is_terminal: true,
+            }),
+            Ok(PageResult::Drained),
+        ]);
+        let mut node =
+            Distinct::with_last_hash(Box::new(child), DistinctType::Unordered, None, true);
+        let items = drain_items(&mut node).await;
+        assert_eq!(
+            items,
+            vec![to_binary(r#"{"item":42}"#), to_binary(r#"{"item":1337}"#)]
+        );
+    }
+
+    /// The same envelope on a text-emitting query keeps its zero-copy text
+    /// slices, so enabling binary on the wire is the only thing that changes
+    /// what the SDK receives.
+    #[tokio::test]
+    async fn a_binary_envelope_re_emits_survivors_as_text_when_not_emitting_binary() {
+        let envelope = to_binary(
+            &String::from_utf8(page_body(&[r#"{"item":42}"#, r#"{"item":42}"#])).unwrap(),
+        );
+        let child = MockLeaf::with_pages(vec![
+            Ok(PageResult::Page {
+                response: response(&envelope),
+                is_terminal: true,
+            }),
+            Ok(PageResult::Drained),
+        ]);
+        let mut node =
+            Distinct::with_last_hash(Box::new(child), DistinctType::Unordered, None, false);
+        assert_eq!(
+            strings(&drain(&mut node).await),
+            vec![r#"{"item":42}"#.to_string()]
         );
     }
 }
