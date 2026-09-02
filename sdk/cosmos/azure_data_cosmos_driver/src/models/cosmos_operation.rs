@@ -165,6 +165,10 @@ pub struct CosmosOperation {
     /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
     /// is dispatched exactly like the standalone Read/Replace it is.
     is_patch_sub_operation: bool,
+    /// Whether a server-side PATCH may be resent after an ambiguous failure.
+    /// `None` means strategy resolution has not classified the operation and
+    /// therefore fails closed.
+    patch_retry_safe: Option<bool>,
     /// `true` when the caller asked for a **text** payload over a binary wire
     /// (`BinaryEncodingOptions::request_text_response`) and this operation
     /// negotiated binary anyway. Recorded at negotiation time so pipeline nodes
@@ -560,8 +564,10 @@ impl CosmosOperation {
     ///
     /// Reuse the same ID for application-level retries of the same logical
     /// operation. Prefer a random, unpredictable ID. Supplying an ID opts even
-    /// a retry-safe instruction list into marker-based duplicate suppression.
-    /// If omitted, the driver generates an ID only for unsafe lists.
+    /// a retry-safe instruction list into marker-based duplicate suppression
+    /// when client-side execution is selected. It does not influence strategy
+    /// resolution and is ignored by server-side PATCH. If omitted, the driver
+    /// generates an ID only for unsafe lists executed client-side.
     pub fn with_patch_tracking_id(mut self, tracking_id: crate::models::PatchTrackingId) -> Self {
         self.patch_tracking_id = Some(tracking_id);
         self
@@ -620,6 +626,18 @@ impl CosmosOperation {
         self.is_patch_sub_operation = true;
         self.internal_read_routing = InternalReadRouting::PreferredWriteEndpointsNoHedging;
         self
+    }
+
+    /// Records whether a server-side PATCH may be resent after an ambiguous
+    /// failure, based on the resolved instruction list.
+    pub(crate) fn with_patch_retry_safe(mut self, retry_safe: bool) -> Self {
+        self.patch_retry_safe = Some(retry_safe);
+        self
+    }
+
+    /// Returns whether PATCH strategy resolution classified this operation.
+    pub(crate) fn patch_strategy_is_resolved(&self) -> bool {
+        self.patch_retry_safe.is_some()
     }
 
     /// Returns whether this internal read should start at preferred write endpoints.
@@ -686,6 +704,7 @@ impl CosmosOperation {
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,
+            patch_retry_safe: None,
             transcodes_response_to_text: false,
             internal_read_routing: InternalReadRouting::Default,
             absolute_deadline: None,
@@ -1036,19 +1055,11 @@ impl CosmosOperation {
         Self::for_item(OperationType::Replace, item)
     }
 
-    /// Builds a virtual PATCH operation for an item.
+    /// Builds a PATCH operation for an item.
     ///
-    /// The driver implements PATCH as a client-side Read-Modify-Write loop:
-    /// it reads the current item, applies the requested patch operations to
-    /// the local JSON document, and issues an ETag-guarded
-    /// [`OperationType::Replace`]. The PATCH operation itself is never sent on
-    /// the wire; callers build a [`crate::models::PatchInstructions`] and pass it as
-    /// the operation body (via [`with_body`](Self::with_body)) — the patch
-    /// handler deserializes it before issuing the underlying transport
-    /// operations.
-    ///
-    /// An interrupted patch may re-apply non-idempotent operations — see
-    /// `docs/PATCH_HANDLER_SPEC.md`.
+    /// [`crate::options::PatchStrategy`] selects one server-side request or the
+    /// client-side Read-Modify-Write loop. Callers serialize
+    /// [`crate::models::PatchInstructions`] into the operation body.
     pub fn patch_item(item: ItemReference) -> Self {
         Self::for_item(OperationType::Patch, item)
     }
@@ -1247,11 +1258,10 @@ impl CosmosOperation {
     /// is ambiguous — that is, when the request may already have been received
     /// and processed.
     ///
-    /// Only stored procedure execution returns `false`. Its body is opaque to
-    /// the driver, so re-running it can repeat arbitrary mutations with no way
-    /// to detect the duplicate. Every other data-plane operation is retried,
-    /// because Cosmos DB's conflict detection (409/412) makes the final
-    /// resource state deterministic — see `docs/ErrorCodesAndRetries.md`.
+    /// Stored procedure execution returns `false` because its body is opaque.
+    /// Server-side PATCH returns the strategy resolver's classification;
+    /// unresolved PATCH fails closed. Other data-plane operations retain the
+    /// driver's existing retry behavior.
     ///
     /// This is deliberately *not* `is_idempotent`: the driver retries
     /// non-idempotent writes such as `Create` and `Upsert` on purpose.
@@ -1260,7 +1270,11 @@ impl CosmosOperation {
     /// cross-region failover in the operation pipeline, and the same-endpoint
     /// shard retry in the transport pipeline.
     pub fn allows_ambiguous_outcome_retry(&self) -> bool {
-        self.operation_type != OperationType::Execute
+        match self.operation_type {
+            OperationType::Execute => false,
+            OperationType::Patch => self.patch_retry_safe.unwrap_or(false),
+            _ => true,
+        }
     }
 
     /// Returns true if this operation can be planned with a single-node pipeline.
@@ -1533,7 +1547,6 @@ mod tests {
         for op in [
             item(CosmosOperation::create_item),
             item(CosmosOperation::upsert_item),
-            item(CosmosOperation::patch_item),
             item(CosmosOperation::replace_item),
             item(CosmosOperation::delete_item),
             item(CosmosOperation::read_item),
@@ -1545,6 +1558,25 @@ mod tests {
                 op.operation_type()
             );
         }
+    }
+
+    #[test]
+    fn server_patch_ambiguous_retry_requires_resolved_safety() {
+        let patch = || {
+            CosmosOperation::patch_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "doc1",
+            ))
+        };
+
+        assert!(!patch().allows_ambiguous_outcome_retry());
+        assert!(patch()
+            .with_patch_retry_safe(true)
+            .allows_ambiguous_outcome_retry());
+        assert!(!patch()
+            .with_patch_retry_safe(false)
+            .allows_ambiguous_outcome_retry());
     }
 
     #[cfg(feature = "preview_dtx")]

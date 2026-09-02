@@ -19,15 +19,16 @@ protocol described in [Tracking protocol](#tracking-protocol).
 
 ## Overview
 
-`Patch` is a *virtual* operation type: the Cosmos DB REST endpoint does not
-accept arbitrary JSON-Patch payloads, so the driver synthesizes the result
-of a PATCH by running a **Read-Modify-Write (RMW) loop** entirely
-client-side.
+PATCH has two execution paths. Server-side PATCH sends `PatchInstructions` to
+Cosmos DB as one request. Client-side PATCH runs the tracked
+**Read-Modify-Write (RMW) loop** in `driver::pipeline::patch_handler`. The
+`PatchStrategy` option selects a path through `resolve_patch_strategy` before
+transport planning.
 
-The handler lives in
-`driver::pipeline::patch_handler` (`src/driver/pipeline/patch_handler.rs`)
-and is dispatched from `CosmosDriver::execute_operation` before any of the
-normal pipeline stages run.
+The server path uses the normal operation pipeline, standard-gateway content
+type `application/json_patch+json`, and Gateway 2.0 RNTBD operation ID
+`0x0002`. The client path is intercepted by `CosmosDriver::execute_operation`
+before transport selection and dispatches ordinary Read and Replace helpers.
 
 ## Inputs
 
@@ -36,24 +37,41 @@ normal pipeline stages run.
 | `CosmosOperation` with `OperationType::Patch` | `CosmosOperation::patch_item(ItemReference)`        | Required.                                                         |
 | Body                                          | `with_body(serde_json::to_vec(&PatchInstructions))` | Required. The handler re-parses it as `PatchInstructions`.        |
 | Partition key                                 | `with_partition_key(...)`                           | Required. Used to issue the internal Read.                        |
+| `patch_strategy`                              | `OperationOptions.patch_strategy`                   | Optional. Layered; defaults to `PatchStrategy::Auto`.             |
 | `patch_max_attempts`                          | `with_patch_max_attempts(NonZeroU8)`                | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
 | `patch_tracking_id`                           | `with_patch_tracking_id(PatchTrackingId)`           | Optional. Generated once per invocation for unsafe instructions.  |
 | `patch_tracking_capacity`                     | `with_patch_tracking_capacity(NonZeroU16)`          | Optional. Defaults to 1024 entries; oldest is evicted when full.  |
 | `patch_tracking_retention_seconds`            | `with_patch_tracking_retention_seconds(NonZeroU32)` | Optional. Defaults to 300 seconds; whole-second granularity.      |
 
-## Algorithm
+## Strategy resolution
+
+Cosmos DB accepts at most 10 instructions in one server-side PATCH. The
+client-side RMW path has no corresponding instruction-count limit.
+
+| Requested strategy | Retry-safe list, at most 10 | Unsafe list, at most 10 | More than 10 instructions  |
+| ------------------ | --------------------------- | ----------------------- | -------------------------- |
+| `Auto`             | Server-side                 | Client-side             | Client-side                |
+| `ClientSide`       | Client-side                 | Client-side             | Client-side                |
+| `ServerSide`       | Server-side                 | Server-side             | Server-side, service `400` |
+
+`Auto` is the default. It chooses server-side only when the complete list is
+safe to resend and fits the service limit. More than 10 instructions therefore
+switch automatically to RMW under `Auto`; explicit `ServerSide` is never
+silently rewritten and surfaces the server rejection. Explicit unsafe
+`ServerSide` PATCH disables ambiguous-outcome retries and surfaces the original
+error rather than risking duplicate application. Client-side unsafe PATCH uses
+the B2 marker protocol.
+
+Tracking ID, maximum-attempt, capacity, and retention settings apply only when
+strategy resolution selects client-side RMW. They do not influence strategy
+resolution and are ignored whenever `Auto` or explicit `ServerSide` selects the
+server path; the service does not persist the client's marker and the request
+receives no marker-backed duplicate suppression.
+
+## Client-side RMW algorithm
 
 ```text
 1. Pre-flight validation:
-   - reject any caller-set Precondition on the outer PATCH operation. The
-     handler owns the If-Match precondition on the internal Replace and
-     captures the ETag off the matching Read; honoring a caller-set value
-     would either shadow that ETag (silently breaking the RMW guarantee)
-     or require resolving it against the handler's own ETag (no sensible
-     merge). The SDK wrapper already drops any Precondition before
-     reaching this layer; the guard fail-fasts a driver-level user that
-     constructed `CosmosOperation::patch_item(..).with_precondition(..)`
-     directly.
    - reject ops whose path overlaps any partition-key path (we cannot
      move a document between physical partitions). For MoveOp this
      covers BOTH the source (`from`) and the destination (`path`).
@@ -62,9 +80,10 @@ normal pipeline stages run.
 
 2. Classify the instruction list. A list is retry-safe when it contains only
   Replace and non-append Set operations and no operation path is a strict
-  ancestor or descendant of another. A caller-supplied ID opts any list into
-  tracking; without one, every other list requires tracking. Resolve one stable
-  tracking ID and the capacity before entering the loop.
+  ancestor or descendant of another. On this client-side path, a caller-supplied
+  ID opts any list into tracking; without one, every other list requires
+  tracking. Resolve one stable tracking ID and the capacity before entering the
+  loop.
   If the reserved tracking path overlaps a container partition-key path,
   reject a tracked PATCH before dispatching any sub-operation.
 
@@ -73,6 +92,12 @@ normal pipeline stages run.
   session token onto the Read so reader fallback can preserve an external
   session; writer routing removes it before transport because LatestCommitted
   is not session-effective.
+
+   Transport selection MUST preserve `LatestCommitted`: Gateway V1 sends
+   `x-ms-cosmos-read-consistency-strategy: LatestCommitted`; Gateway 2.0 sends
+   RNTBD token `0x00FE = 0x03` and the proxy passes that strategy through to
+   its backend read; Direct mode uses the same RNTBD token. The Rust driver
+   currently implements Gateway V1 and Gateway 2.0, not Direct connectivity.
 
 loop up to max_attempts times:
    4. read = execute_operation(Read, read_options) with:
@@ -92,6 +117,11 @@ loop up to max_attempts times:
        for any non-2xx Read response; the patch handler propagates that
        error verbatim (with its raw_response and diagnostics intact).
        if read.headers().etag is None: return Other("no ETag, cannot RMW").
+      Evaluate any caller Precondition against read.headers().etag:
+      - IfMatch succeeds only when the values match (or the value is `*`).
+      - IfNoneMatch is rejected before dispatch because PATCH is a write.
+      Return 412 before Replace when the condition is not met. Repeat this
+      evaluation after every Read when a 412 race restarts the loop.
    5. value = serde_json::from_slice(read.body())
     For a tracked PATCH:
      - if the tracking ID is already present, return the Read as success
@@ -141,6 +171,45 @@ or reapply the mutation. It returns the ambiguous timeout/error stamped with
 the effective tracking ID. An application retry must reuse that ID; finding
 the committed marker then returns success without issuing another Replace.
 
+## Server-side execution
+
+The server path sends the serialized instruction envelope directly through the
+normal point-operation pipeline. Cosmos DB applies the instructions atomically
+and returns the post-image when content response on write is enabled. Strategy
+resolution enables that response by default to preserve the existing
+`patch_item` contract; an explicit disabled setting suppresses the response
+body for both server-side and client-side execution.
+
+The service rejects an empty list, invalid operations, partition-key changes,
+and lists containing more than 10 instructions. `patch_max_attempts` and the
+tracking ID/capacity/retention settings apply only to client-side RMW. No
+`_azsdkPatchTracking` property is written by server-side PATCH.
+
+Retry-safe server PATCH can use normal ambiguous-outcome retries. For an unsafe
+list selected explicitly with `ServerSide`, both retry layers stop after an
+ambiguous result. Statuses that prove the operation was rejected before
+execution retain their normal retry policy.
+
+### Intentional implementation and test boundaries
+
+- **Native FFI strategy and tracking identity:** Native callers select a
+  per-operation strategy through `cosmos_operation_options_t.patch_strategy`.
+  `UNSET` inherits the driver's layered configuration; `AUTO`, `CLIENT_SIDE`,
+  and `SERVER_SIDE` map directly to the corresponding `PatchStrategy` values.
+  Native submission may pre-resolve a tracking ID so cancellation can expose a
+  stable identity, but normal success and error completions replace that value
+  with the effective ID from the driver response or error. A provisional ID on
+  cancellation does not imply that server-side PATCH persisted a marker, and
+  tracking settings must not influence strategy selection.
+- **Retry status coverage:** Retry tests intentionally do not duplicate the
+  complete status-code matrix for server-side PATCH. PATCH-specific tests
+  verify that resolved retry safety, request-sent state, and ambiguous outcomes
+  reach the shared retry gate. The stored-procedure tests exercise the
+  exhaustive status matrix, including safe exceptions such as 503, because
+  both operation types use `CosmosOperation::allows_ambiguous_outcome_retry`
+  and `is_unsafe_retry_after_possible_execution`. Add PATCH-specific status
+  cases only if PATCH gains behavior outside that shared predicate.
+
 ## Tracking protocol
 
 The reserved `_azsdkPatchTracking` property is an array of objects with a UUID
@@ -155,9 +224,11 @@ operation diagnostics. Callers can persist that value and reuse it for an
 application or process retry of the same logical PATCH.
 Caller-supplied IDs should be random and unpredictable as well as unique to the
 logical operation and item. Cooperating writers are trusted not to forge marker
-entries. Supplying an ID opts any instruction list into marker-based duplicate
-suppression, including a list the driver classifies as retry-safe. Without a
-supplied ID, retry-safe instruction lists do not create markers or return an ID.
+entries. On the client-side path, supplying an ID opts any instruction list
+into marker-based duplicate suppression, including a list the driver classifies
+as retry-safe. Tracking settings are ignored on the server-side path. Without a
+supplied ID, retry-safe client-side instruction lists do not create markers or
+return an ID.
 
 Each entry is protected from pruning for its configured positive number of
 whole seconds (300 seconds by default). Persisting the window on each marker
@@ -289,11 +360,13 @@ than risk applying the mutation again.
 
 ## Response Synthesis
 
-Because the post-image of a PATCH must reflect what the server *now*
-contains, the handler builds the returned `CosmosResponse` from:
+Unless `content_response_on_write` is explicitly disabled, the post-image of a
+PATCH must reflect what the server *now* contains. The handler builds the
+returned `CosmosResponse` from:
 
-- **Body**: the locally-merged JSON it just sent in the successful Replace
-  (the Replace's response body is *not* required to be present).
+- **Body**: the locally-merged JSON it just sent in the successful Replace (the
+  Replace's response body is *not* required to be present), or `NoPayload` when
+  content response on write is disabled.
 - **Headers / status**: those of the successful Replace, with request charge
   replaced by the total charge of the logical PATCH.
 - **Diagnostics**: an *aggregated* `DiagnosticsContext` synthesized via
@@ -314,6 +387,25 @@ headers, and status are returned as the committed post-image, except that the
 request-charge header is replaced with the exact total charge from the
 aggregated operation diagnostics. Its diagnostics are aggregated with all
 prior sub-operations from the same invocation.
+
+## OpenTelemetry operation names
+
+Both strategies report the caller-facing operation as `patch_item` on the root
+span, operation diagnostics, and operation metric. A server-side PATCH has one
+request attempt and inherits `patch_item` on its child request span.
+
+Client-side RMW names each network helper explicitly:
+
+- `patch_read_item` for the initial Read, every retry Read, and a terminal or
+  application-level verification Read;
+- `patch_replace_item` for each conditional Replace attempt.
+
+Tracking-marker inspection, insertion, pruning, and recognition happen locally
+within those helpers and do not create synthetic network spans. A caller retry
+whose marker is already present therefore reports one `patch_read_item` child
+under the `patch_item` root and no Replace child. This naming keeps standalone
+`read_item`/`replace_item` telemetry distinct while preserving the logical PATCH
+identity.
 
 ### System-property reconciliation on the synthesized body
 
@@ -342,7 +434,10 @@ Replace response before returning:
    `content_response_on_write`.
 
 `from_local_body_and_driver_headers` is the single helper that builds this
-synthesized response. It is `pub(crate)` and lives in
+synthesized response. Before the logical PATCH returns, an explicit
+`content_response_on_write = Disabled` replaces that synthesized payload with
+`NoPayload` while retaining headers, status, diagnostics, and routing metadata.
+The helper is `pub(crate)` and lives in
 `driver::pipeline::from_local_body` (`src/driver/pipeline/from_local_body.rs`).
 
 ## Patch Operations
@@ -410,35 +505,38 @@ as a JSON number without precision loss.
   Thus both successful and failed PATCH operations follow the "one PATCH
   operation = one `DiagnosticsContext`" contract.
 
-## Why Driver-Side?
+## Why two paths?
 
-- The Cosmos DB REST data plane does not natively accept the
-  rich `PatchOperation` set we expose; alternate "operations" wire formats vary
-  by SDK and have never been consistent across languages.
-- A driver-side RMW gives us a single, schema-agnostic implementation
-  that benefits every language SDK once they wrap `OperationType::Patch`.
-- The cost — one extra request per PATCH — is acceptable for the
-  current feature scope; a future revision may switch to a server-side
-  patch endpoint when one is universally available.
+- Server-side PATCH costs one request and preserves path-level conflict
+  resolution, but accepts no more than 10 instructions and cannot safely retry
+  an unsafe list after an ambiguous outcome.
+- Client-side RMW supports longer lists and uses the tracking protocol for
+  bounded duplicate suppression, at the cost of at least one Read plus one
+  Replace and document-level ETag contention.
+- `Auto` selects the server path only when it retains the same retry safety and
+  falls back to RMW where the service limit or instruction semantics require it.
 
 ## Invariants
 
-- The patch handler is the **only** code path allowed to deserialize a
-  data plane response body. Every other pipeline stage continues to treat
-  the body as `Vec<u8>`.
+- The client-side patch handler is the only operation handler allowed to
+  deserialize a data-plane item body. The server path forwards the serialized
+  instruction envelope without inspecting the stored item.
 - `OperationType::Patch` is *not* idempotent and is *not* read-only.
-- `OperationType::Patch` is dispatched **before** the standard retry/
-  routing/throttling pipeline. The internal Read and Replace ops re-enter
-  the pipeline normally, but they are never themselves `Patch`, so there
-  is no recursive loop.
+- Client-side PATCH is dispatched before the standard pipeline. Its internal
+  Read and Replace operations re-enter normally. Server-side PATCH enters the
+  standard retry/routing/throttling pipeline directly.
 - The handler owns the `If-Match` precondition on the internal Replace.
-  A caller-set `Precondition` on the outer PATCH `CosmosOperation` is
-  rejected by the pre-flight guard before any sub-operation is dispatched.
-  Likewise, the PATCH wire format (`PatchInstructions`) has no `condition` field,
+  A caller-set ETag `Precondition` is evaluated against every authoritative
+  Read before the handler applies operations; the internal Replace still uses
+  the corresponding Read ETag as its lost-update guard. The PATCH wire format
+  (`PatchInstructions`) has no SQL `condition` field,
   so a SQL filter predicate (peer SDKs' `FilterPredicate`) cannot be
   attached to a PATCH request in this preview.
 - 412 stays non-retryable in the global retry-evaluation policy. PATCH's
   RMW retry is internal and never depends on the global policy.
+- An unresolved server PATCH fails closed for ambiguous-outcome retry.
+  Strategy resolution marks only a retry-safe server instruction list as
+  eligible; an explicit unsafe `ServerSide` request remains at-most-once.
 - Every internal Read prefers the PPAF partition writer or account write
   endpoints, forces `LatestCommitted`, and suppresses hedging. It carries the
   caller's explicit session token for possible fallback, but preferred-writer

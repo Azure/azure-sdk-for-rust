@@ -206,7 +206,9 @@ impl FaultOperationType {
             (OperationType::ReadFeed, ResourceType::PartitionKeyRange) => {
                 Some(FaultOperationType::MetadataPartitionKeyRanges)
             }
-            // PatchItem will be mapped when OperationType::Patch is added to the driver.
+            // Only server-side PATCH reaches transport as Patch. Client-side
+            // PATCH is injected through its Read and Replace helper requests.
+            (OperationType::Patch, ResourceType::Document) => Some(FaultOperationType::PatchItem),
             _ => None,
         }
     }

@@ -2605,29 +2605,58 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
-        // PATCH is a virtual operation type: dispatch it to the dedicated
-        // Read-Modify-Write handler, which issues its own Read/Replace
-        // operations through this same entry point. `Box::pin` gives the
-        // recursive future a fixed size.
-        if operation.operation_type() == crate::models::OperationType::Patch {
-            let max_attempts = operation.patch_max_attempts();
-            let absolute_deadline = self
-                .operation_options_view(&options)
-                .end_to_end_latency_policy()
-                .map(|policy| std::time::Instant::now() + policy.timeout());
-            return Box::pin(async {
-                let result = crate::driver::pipeline::patch_handler::execute(
-                    self,
-                    operation,
-                    options,
-                    max_attempts,
-                    absolute_deadline,
-                )
-                .await?;
-                Ok(Some(result))
-            })
-            .await;
-        }
+        // PATCH runs either as one server-side request or through the tracked
+        // Read-Modify-Write loop. The client-side arm re-enters this method for
+        // its helper Read/Replace operations, so boxing fixes the recursive
+        // future size.
+        let (operation, options) =
+            if operation.operation_type() == crate::models::OperationType::Patch {
+                match self.resolve_patch_execution(&operation, &options)? {
+                    crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide => {
+                        let max_attempts = operation.patch_max_attempts();
+                        let option_view = self.operation_options_view(&options);
+                        let absolute_deadline = option_view
+                            .end_to_end_latency_policy()
+                            .map(|policy| std::time::Instant::now() + policy.timeout());
+                        let suppress_response_body = matches!(
+                            option_view.content_response_on_write(),
+                            Some(crate::options::ContentResponseOnWrite::Disabled)
+                        );
+                        return Box::pin(async {
+                            let mut result = crate::driver::pipeline::patch_handler::execute(
+                                self,
+                                operation,
+                                options,
+                                max_attempts,
+                                absolute_deadline,
+                                !suppress_response_body,
+                            )
+                            .await?;
+                            if suppress_response_body {
+                                result = result.without_body();
+                            }
+                            Ok(Some(result))
+                        })
+                        .await;
+                    }
+                    crate::driver::pipeline::patch_strategy::PatchExecution::ServerSide {
+                        retry_safe,
+                    } => {
+                        let mut options = options;
+                        if self
+                            .operation_options_view(&options)
+                            .content_response_on_write()
+                            .is_none()
+                        {
+                            options.content_response_on_write =
+                                Some(crate::options::ContentResponseOnWrite::Enabled);
+                        }
+                        (operation.with_patch_retry_safe(retry_safe), options)
+                    }
+                }
+            } else {
+                (operation, options)
+            };
 
         // Resolve binary encoding through the same layered view as every other
         // option. Two independent gates apply:
@@ -2675,6 +2704,77 @@ impl CosmosDriver {
             self.execute_plan(&mut plan, container, options).await
         })
         .await
+    }
+
+    /// Parses, validates, and resolves a PATCH execution strategy before any
+    /// sub-operation or wire request is dispatched.
+    fn resolve_patch_execution(
+        &self,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::error::Result<crate::driver::pipeline::patch_strategy::PatchExecution> {
+        use crate::driver::pipeline::patch_strategy::resolve_patch_strategy;
+
+        let instructions = operation
+            .body()
+            .and_then(|body| serde_json::from_slice::<crate::models::PatchInstructions>(body).ok());
+
+        if operation
+            .precondition()
+            .is_some_and(|condition| condition.is_if_none_match())
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message("PATCH supports If-Match preconditions; If-None-Match is read-only")
+                .build());
+        }
+
+        let item_ref = operation
+            .partition_key()
+            .cloned()
+            .and_then(|partition_key| {
+                operation
+                    .resource_reference()
+                    .try_into_item_reference(partition_key)
+            })
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                    .with_message(
+                        "PATCH dispatch requires an item-level operation with a partition key",
+                    )
+                    .build()
+            })?;
+
+        if let Some(instructions) = instructions.as_ref() {
+            if instructions.operations.is_empty() {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                    .with_message("PATCH operation must include at least one PatchOperation")
+                    .build());
+            }
+            crate::driver::pipeline::patch_handler::validate_partition_key_paths(
+                &instructions.operations,
+                &item_ref,
+            )?;
+        }
+
+        let requested = self
+            .operation_options_view(options)
+            .patch_strategy()
+            .copied()
+            .unwrap_or_default();
+        let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
+        tracing::debug!(
+            requested_patch_strategy = requested.as_str(),
+            patch_execution = execution.as_str(),
+            patch_retry_safe = execution.retry_safe(),
+            operation_count = instructions
+                .as_ref()
+                .map(|instructions| instructions.operations.len()),
+            "patch strategy resolved"
+        );
+        Ok(execution)
     }
 
     /// Whether an operation's **request body** should be transcoded to Cosmos
@@ -3451,6 +3551,18 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        if operation.operation_type() == crate::models::OperationType::Patch
+            && !operation.patch_strategy_is_resolved()
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message(
+                    "PATCH operations must be executed with CosmosDriver::execute_operation so \
+                     the PATCH strategy can be resolved",
+                )
+                .build());
+        }
+
         // `None` resolves the binary options lazily at the negotiation choke
         // point. Boxed to keep this wrapper's future pointer-sized.
         Box::pin(self.plan_operation_resolved(operation, options, continuation, plan_options, None))
@@ -4381,6 +4493,40 @@ mod tests {
         // Both outcomes are decided without installing a topology provider or
         // issuing a replacement lookup against a cache.
         assert!(driver.pk_range_cache.is_none());
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_unresolved_patch() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let operation = CosmosOperation::patch_item(crate::models::ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ))
+        .with_body(
+            serde_json::to_vec(&crate::models::PatchInstructions::from(vec![
+                crate::models::PatchOperation::increment("/count", 1),
+            ]))
+            .unwrap(),
+        );
+
+        let err = match Box::pin(driver.plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        ))
+        .await
+        {
+            Ok(_) => panic!("unresolved PATCH must be rejected before planning"),
+            Err(err) => err,
+        };
+
+        assert_eq!(err.status(), crate::error::CosmosStatus::CLIENT_BAD_REQUEST);
     }
 
     #[tokio::test]

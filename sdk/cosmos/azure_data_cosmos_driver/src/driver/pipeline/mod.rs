@@ -17,5 +17,6 @@ pub(crate) mod operation_pipeline;
 // Shared by the PATCH handler and the in-memory emulator's DTX patch handling.
 pub(crate) mod patch_eval;
 pub(crate) mod patch_handler;
+pub(crate) mod patch_strategy;
 pub(crate) mod patch_tracking;
 pub(crate) mod retry_evaluation;

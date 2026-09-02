@@ -1138,9 +1138,7 @@ async fn read_failover_on_503_via_fault_injection() {
     use azure_data_cosmos_driver::options::DriverOptionsBuilder;
     use std::sync::Arc;
 
-    let _ = tracing_subscriber::fmt::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .try_init();
+    super::init_test_tracing();
 
     // ── Fault injection rule: 503 on ReadItem in East US ─────────
     let fault_result = FaultInjectionResultBuilder::new()

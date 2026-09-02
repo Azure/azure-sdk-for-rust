@@ -478,6 +478,40 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
 #endif // __cplusplus
 
 /**
+ * Tri-state mirror of [`PatchStrategy`] for the flat options struct.
+ * `0` (`Unset`) means "inherit from a lower-priority layer".
+ */
+enum cosmos_patch_strategy_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Inherit from account / runtime / environment.
+   */
+  COSMOS_PATCH_STRATEGY_UNSET = 0,
+  /**
+   * Let the driver choose from instruction safety and service limits.
+   */
+  COSMOS_PATCH_STRATEGY_AUTO = 1,
+  /**
+   * Always use client-side read-modify-write execution.
+   */
+  COSMOS_PATCH_STRATEGY_CLIENT_SIDE = 2,
+  /**
+   * Always send the PATCH to the service.
+   */
+  COSMOS_PATCH_STRATEGY_SERVER_SIDE = 3,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_patch_strategy_t cosmos_patch_strategy_t;
+#else
+typedef int32_t cosmos_patch_strategy_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
  * Named mirror of the driver's synthetic (`2xxxx`) sub-status codes.
  *
  * The Cosmos service returns real sub-status codes for wire failures, but the
@@ -1299,6 +1333,12 @@ typedef struct cosmos_operation_options_t {
    * inherits. Stored as a raw `i32` for the same reason as above.
    */
   int32_t content_response_on_write;
+  /**
+   * PATCH execution strategy, encoded as a [`CosmosPatchStrategy`]
+   * discriminant. `0` (`Unset`) inherits. Stored as a raw `i32` so invalid
+   * host values can be rejected before materializing the enum.
+   */
+  int32_t patch_strategy;
   /**
    * Disable automatic session token management. Tri-state bool.
    */

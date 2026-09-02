@@ -27,7 +27,8 @@ use crate::{
         transport::CosmosTransport,
     },
     models::{
-        cosmos_headers::QUERY_CONTENT_TYPE, effective_partition_key::EffectivePartitionKey,
+        cosmos_headers::{PATCH_CONTENT_TYPE, QUERY_CONTENT_TYPE},
+        effective_partition_key::EffectivePartitionKey,
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
@@ -2054,6 +2055,12 @@ fn build_transport_request(
                 HeaderValue::from_static("False"),
             );
         }
+        OperationType::Patch => {
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(PATCH_CONTENT_TYPE),
+            );
+        }
         OperationType::Query | OperationType::SqlQuery => {
             headers.insert(
                 HeaderName::from_static(request_header_names::IS_QUERY),
@@ -2418,12 +2425,12 @@ fn apply_optional_request_headers(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
 ) {
-    if !operation.operation_type().is_read_only()
-        && !matches!(
+    let content_response_enabled = !operation.operation_type().is_read_only()
+        && matches!(
             options.content_response_on_write(),
             Some(&crate::options::ContentResponseOnWrite::Enabled)
-        )
-    {
+        );
+    if !operation.operation_type().is_read_only() && !content_response_enabled {
         transport_request.headers.insert(
             request_header_names::PREFER,
             HeaderValue::from_static("return=minimal"),
@@ -2438,6 +2445,12 @@ fn apply_optional_request_headers(
                     .insert(name.clone(), value.clone());
             }
         }
+    }
+
+    if content_response_enabled {
+        transport_request
+            .headers
+            .remove(request_header_names::PREFER);
     }
 
     if operation.prefers_write_endpoints_for_read() && transport_request.routing_fallback.is_none()
@@ -5147,6 +5160,65 @@ mod tests {
                 .expect("request should build");
         super::apply_optional_request_headers(&mut request, &operation, &view);
         assert!(request.headers.get_optional_str(&session_header).is_none());
+    }
+
+    #[test]
+    fn content_response_enabled_strips_custom_prefer_headers() {
+        let operation = CosmosOperation::patch_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("patch-response-headers".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let prefer_header = HeaderName::from_static(request_header_names::PREFER);
+        let custom_headers = std::collections::HashMap::from([(
+            prefer_header.clone(),
+            azure_core::http::headers::HeaderValue::from_static("return=minimal"),
+        )]);
+        let content_response_options = crate::options::OperationOptions {
+            content_response_on_write: Some(crate::options::ContentResponseOnWrite::Enabled),
+            ..Default::default()
+        };
+
+        let mut request = build_transport_request(
+            &operation,
+            &OperationOverrides::default(),
+            Some(&custom_headers),
+            &ctx,
+        )
+        .expect("request should build");
+        let view = crate::options::OperationOptionsView::new(
+            None,
+            None,
+            None,
+            Some(&content_response_options),
+        );
+        super::apply_optional_request_headers(&mut request, &operation, &view);
+        assert!(request.headers.get_optional_str(&prefer_header).is_none());
+
+        let layered_options = crate::options::OperationOptions {
+            content_response_on_write: Some(crate::options::ContentResponseOnWrite::Enabled),
+            custom_headers: Some(custom_headers),
+            ..Default::default()
+        };
+        let view =
+            crate::options::OperationOptionsView::new(None, None, None, Some(&layered_options));
+        let mut request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
+        super::apply_optional_request_headers(&mut request, &operation, &view);
+        assert!(request.headers.get_optional_str(&prefer_header).is_none());
     }
 
     #[test]
@@ -9565,6 +9637,39 @@ mod tests {
         let op = CosmosOperation::query_offers(test_account())
             .with_body(br#"{"query":"SELECT * FROM root"}"#.to_vec());
         assert_query_headers_present(&op, "query_offers");
+    }
+
+    #[test]
+    fn build_transport_request_sets_patch_content_type() {
+        let operation = CosmosOperation::patch_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ))
+        .with_body(br#"{"operations":[]}"#.to_vec());
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+        let context = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &context)
+                .expect("PATCH request should build");
+
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&azure_core::http::headers::CONTENT_TYPE),
+            Some(crate::models::cosmos_headers::PATCH_CONTENT_TYPE)
+        );
     }
 
     /// Helper: builds a transport request from `op` and asserts the two
