@@ -45,7 +45,7 @@
 /// assert!(options.enabled);
 /// assert!(options.request_text_response);
 /// ```
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct BinaryEncodingOptions {
     /// Whether Cosmos binary JSON is used on the wire for the operation.
@@ -74,8 +74,17 @@ pub struct BinaryEncodingOptions {
     pub request_text_response: bool,
 }
 
+impl Default for BinaryEncodingOptions {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            request_text_response: false,
+        }
+    }
+}
+
 impl BinaryEncodingOptions {
-    /// Creates binary-encoding options with defaults (disabled).
+    /// Creates binary-encoding options with binary encoding enabled.
     pub fn new() -> Self {
         Self::default()
     }
@@ -93,5 +102,18 @@ impl BinaryEncodingOptions {
     pub fn with_request_text_response(mut self, request_text_response: bool) -> Self {
         self.request_text_response = request_text_response;
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn enabled_by_default() {
+        let options = BinaryEncodingOptions::default();
+
+        assert!(options.enabled);
+        assert!(!options.request_text_response);
     }
 }
