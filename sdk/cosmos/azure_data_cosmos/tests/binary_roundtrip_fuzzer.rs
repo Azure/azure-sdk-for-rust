@@ -2448,7 +2448,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             for (label, client) in &clients {
                 let container = client
                     .database_client(&database_name)
-                    .container_client(&container_name)
+                    .container_client(&container_name, None)
                     .await?;
                 let context = format!("iter={iter} config={label} query={phase} seed={}", cfg.seed);
                 let actual = canonical_query_results(
@@ -2471,7 +2471,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
         for (label, client) in &clients {
             let container = client
                 .database_client(&database_name)
-                .container_client(&container_name)
+                .container_client(&container_name, None)
                 .await?;
             let context = format!(
                 "iter={iter} config={label} query=typed-integer seed={}",

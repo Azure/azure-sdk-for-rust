@@ -815,7 +815,7 @@ async fn split_mid_drain_does_not_reemit_deduplicated_values() {
 async fn text_and_binary_query_pages_have_pipeline_parity() {
     let (_emulator, driver, recorder) = setup_with_query_recorder().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     let documents: Vec<serde_json::Value> = [
@@ -991,7 +991,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
 async fn ordered_distinct_tokens_resume_across_binary_modes() {
     let (_emulator, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     let documents: Vec<serde_json::Value> = [("a", "pk1", 1), ("b", "pk2", 2), ("c", "pk3", 3)]

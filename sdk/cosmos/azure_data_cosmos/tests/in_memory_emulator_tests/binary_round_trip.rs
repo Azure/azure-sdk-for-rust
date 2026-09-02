@@ -162,7 +162,7 @@ async fn build_multi_partition_container_with_recorder(
 
     let container = client
         .database_client(db_name)
-        .container_client("items")
+        .container_client("items", None)
         .await
         .unwrap();
     (container, recorder)
@@ -527,7 +527,7 @@ async fn binary_query_negotiates_response_and_round_trips() {
         .unwrap();
     let container = client
         .database_client("bin-query")
-        .container_client("items")
+        .container_client("items", None)
         .await
         .unwrap();
 
