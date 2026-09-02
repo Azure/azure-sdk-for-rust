@@ -35,6 +35,17 @@ async fn setup_with_query_plan_mode(
     Arc<HostRecorder>,
     Arc<CosmosDriver>,
 ) {
+    setup_with_driver_options(mode, true).await
+}
+
+async fn setup_with_driver_options(
+    mode: QueryPlanMode,
+    partition_key_range_cache_enabled: bool,
+) -> (
+    Arc<InMemoryEmulatorHttpClient>,
+    Arc<HostRecorder>,
+    Arc<CosmosDriver>,
+) {
     let recorder = HostRecorder::new();
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
@@ -62,6 +73,7 @@ async fn setup_with_query_plan_mode(
         .create_driver(
             DriverOptions::builder(account)
                 .with_query_plan_mode(mode)
+                .with_partition_key_range_cache_enabled(partition_key_range_cache_enabled)
                 .build(),
         )
         .await
@@ -195,6 +207,69 @@ async fn contradictory_query_short_circuits_all_query_io() {
         .await
         .unwrap()
         .is_none());
+    assert_eq!(recorder.query_plan_count(), 0);
+    assert_eq!(recorder.routing_metadata_count(), 0);
+    assert_eq!(recorder.document_query_count(), 0);
+}
+
+#[tokio::test]
+async fn contradictory_query_does_not_require_partition_topology() {
+    let (_emulator, recorder, driver) =
+        setup_with_driver_options(QueryPlanMode::LocalPreferred, false).await;
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .unwrap();
+    recorder.clear();
+
+    let mut plan = driver
+        .plan_operation(
+            query(
+                &container,
+                "SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'",
+            ),
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        )
+        .await
+        .unwrap();
+
+    assert!(driver
+        .execute_plan(&mut plan, Some(container), OperationOptions::default())
+        .await
+        .unwrap()
+        .is_none());
+    assert_eq!(recorder.query_plan_count(), 0);
+    assert_eq!(recorder.routing_metadata_count(), 0);
+    assert_eq!(recorder.document_query_count(), 0);
+}
+
+#[tokio::test]
+async fn nonempty_query_without_partition_topology_fails_before_gateway() {
+    let (_emulator, recorder, driver) =
+        setup_with_driver_options(QueryPlanMode::LocalPreferred, false).await;
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .unwrap();
+    recorder.clear();
+
+    let error = driver
+        .plan_operation(
+            query(&container, "SELECT * FROM c"),
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        )
+        .await
+        .err()
+        .expect("query should require partition topology");
+
+    assert_eq!(
+        error.status(),
+        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
+    );
     assert_eq!(recorder.query_plan_count(), 0);
     assert_eq!(recorder.routing_metadata_count(), 0);
     assert_eq!(recorder.document_query_count(), 0);

@@ -3766,7 +3766,24 @@ impl CosmosDriver {
                 .build()
         })?;
 
-        let cache = self.partition_key_range_cache()?;
+        let cache = match self.partition_key_range_cache() {
+            Ok(cache) => cache,
+            Err(error) => {
+                if self.effective_query_plan_mode(options) != QueryPlanMode::GatewayOnly
+                    && matches!(
+                        crate::query::local_plan_adapter::try_local_plan(
+                            operation.body(),
+                            container.partition_key_definition(),
+                        ),
+                        Ok(crate::query::local_plan_adapter::ProviderResolution::Empty)
+                    )
+                {
+                    let pipeline = Pipeline::new(Box::new(DrainedLeaf));
+                    return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+                }
+                return Err(error);
+            }
+        };
 
         // `Box::pin` keeps `plan_operation`'s future small. Inlined, it grows to
         // 17,288 bytes and trips `clippy::large_futures` at five caller sites.
