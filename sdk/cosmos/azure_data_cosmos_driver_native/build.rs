@@ -207,6 +207,7 @@ fn generate_c_header() {
             "CosmosContentResponseOnWrite".into(),
             "content_response_on_write_t".into(),
         ),
+        ("CosmosPatchStrategy".into(), "patch_strategy_t".into()),
     ]);
 
     let config = cbindgen::Config {
@@ -259,6 +260,7 @@ fn generate_c_header() {
                 "CosmosPreconditionKind".into(),
                 "CosmosReadConsistencyStrategy".into(),
                 "CosmosContentResponseOnWriteOpt".into(),
+                "CosmosPatchStrategy".into(),
                 // Named mirror of the driver's synthetic sub-status codes. Not
                 // referenced by any exported struct field (hosts read the low 16
                 // bits of a packed cosmos_status_code_t), so force its emission.

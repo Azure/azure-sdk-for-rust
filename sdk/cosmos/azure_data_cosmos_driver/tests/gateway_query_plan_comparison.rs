@@ -107,7 +107,7 @@ async fn ensure_container(
     }
 
     driver
-        .resolve_container(DB_NAME, container_name)
+        .resolve_container(DB_NAME, container_name, OperationOptions::default())
         .await
         .expect("failed to resolve container")
 }

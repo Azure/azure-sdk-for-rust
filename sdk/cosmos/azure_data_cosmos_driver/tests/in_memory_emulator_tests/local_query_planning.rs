@@ -72,7 +72,7 @@ async fn gateway_only_mode_bypasses_local_query_planning() {
     let (_emulator, recorder, driver) =
         setup_with_query_plan_mode(QueryPlanMode::GatewayOnly).await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     recorder.clear();
@@ -103,7 +103,7 @@ fn query(
 async fn eligible_query_skips_gateway_query_plan() {
     let (_emulator, recorder, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     recorder.clear();
@@ -139,7 +139,7 @@ async fn eligible_query_skips_gateway_query_plan() {
 async fn contradictory_query_short_circuits_all_query_io() {
     let (_emulator, recorder, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     recorder.clear();
@@ -173,7 +173,7 @@ async fn contradictory_query_short_circuits_all_query_io() {
 async fn supported_order_by_skips_gateway_query_plan() {
     let (_emulator, recorder, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     recorder.clear();
@@ -214,7 +214,7 @@ enum FallbackOutcome {
 async fn unsupported_families_fall_back_to_gateway_once() {
     let (_emulator, recorder, driver) = setup().await;
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
 

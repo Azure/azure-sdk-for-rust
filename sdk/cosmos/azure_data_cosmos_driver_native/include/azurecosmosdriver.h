@@ -483,6 +483,40 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
 #endif // __cplusplus
 
 /**
+ * Tri-state mirror of [`PatchStrategy`] for the flat options struct.
+ * `0` (`Unset`) means "inherit from a lower-priority layer".
+ */
+enum cosmos_patch_strategy_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Inherit from account / runtime / environment.
+   */
+  COSMOS_PATCH_STRATEGY_UNSET = 0,
+  /**
+   * Let the driver choose from instruction safety and service limits.
+   */
+  COSMOS_PATCH_STRATEGY_AUTO = 1,
+  /**
+   * Always use client-side read-modify-write execution.
+   */
+  COSMOS_PATCH_STRATEGY_CLIENT_SIDE = 2,
+  /**
+   * Always send the PATCH to the service.
+   */
+  COSMOS_PATCH_STRATEGY_SERVER_SIDE = 3,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_patch_strategy_t cosmos_patch_strategy_t;
+#else
+typedef int32_t cosmos_patch_strategy_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
  * Named mirror of the driver's synthetic (`2xxxx`) sub-status codes.
  *
  * The Cosmos service returns real sub-status codes for wire failures, but the
@@ -1305,6 +1339,12 @@ typedef struct cosmos_operation_options_t {
    */
   int32_t content_response_on_write;
   /**
+   * PATCH execution strategy, encoded as a [`CosmosPatchStrategy`]
+   * discriminant. `0` (`Unset`) inherits. Stored as a raw `i32` so invalid
+   * host values can be rejected before materializing the enum.
+   */
+  int32_t patch_strategy;
+  /**
    * Disable automatic session token management. Tri-state bool.
    */
   int8_t session_capturing_disabled;
@@ -1356,6 +1396,15 @@ typedef struct cosmos_operation_options_t {
    * An explicit `false` forces binary **off** for this operation regardless
    * of any account/runtime default; `unset` inherits a lower layer (text by
    * default).
+   *
+   * The response side is uniform across operation types: point reads,
+   * writes that echo content, and queries all negotiate a binary response,
+   * so a host that enables this flag receives response bodies — including
+   * query result items — as Cosmos binary JSON and must decode them. Detect
+   * with the `0x80` preamble. (A query's *request* body stays text either
+   * way, since it carries a query spec rather than a document.) See
+   * [`binary_encoding_request_text_response`](Self::binary_encoding_request_text_response)
+   * for the text opt-out.
    */
   int8_t binary_encoding_enabled;
   /**
@@ -1365,6 +1414,16 @@ typedef struct cosmos_operation_options_t {
    * Only meaningful when [`binary_encoding_enabled`](Self::binary_encoding_enabled)
    * is true: the wire stays binary in both directions and the driver hands
    * back text. `unset` / `false` returns the binary response as-is.
+   *
+   * This applies to every operation type, queries included: the wire keeps
+   * the bandwidth saving and the driver transcodes each response body — for
+   * a query, each result item — back to text before handing it over.
+   *
+   * Note the returned text is re-serialized by the driver rather than being
+   * the service's original bytes: values are preserved, but object keys are
+   * emitted in sorted order and numbers use Rust's shortest round-trip
+   * rendering. Hosts needing byte-exact service output should leave binary
+   * encoding disabled.
    */
   int8_t binary_encoding_request_text_response;
 } cosmos_operation_options_t;

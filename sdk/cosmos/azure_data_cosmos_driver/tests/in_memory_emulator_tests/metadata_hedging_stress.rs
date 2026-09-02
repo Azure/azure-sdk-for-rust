@@ -568,7 +568,7 @@ async fn scenario_cold_start(ctx: &MultiRegionTestContext, cfg: &StressConfig) -
 
             let started = Instant::now();
             let container = driver
-                .resolve_container_by_name(DB_NAME, COLL_NAME)
+                .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
                 .await
                 .expect("container resolves");
             driver
@@ -656,7 +656,7 @@ async fn scenario_pk_range_cold_chain(
                 .await
                 .expect("driver initializes");
             let container = driver
-                .resolve_container_by_name(DB_NAME, COLL_NAME)
+                .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
                 .await
                 .expect("container resolves");
             recorder.record(timed_pk_range_read(&driver, &container).await);
@@ -781,7 +781,7 @@ async fn scenario_mixed_workload(ctx: &MultiRegionTestContext, cfg: &StressConfi
             .await
             .expect("driver initializes");
         let container = driver
-            .resolve_container_by_name(DB_NAME, COLL_NAME)
+            .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
             .await
             .expect("container resolves");
 

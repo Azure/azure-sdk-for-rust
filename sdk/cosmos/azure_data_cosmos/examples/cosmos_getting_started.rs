@@ -94,7 +94,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // container per app.
     let items = client
         .database_client(&args.database)
-        .container_client(&args.container)
+        .container_client(&args.container, None)
         .await?;
 
     // ----- 1. Create a brand-new item. --------------------------------------

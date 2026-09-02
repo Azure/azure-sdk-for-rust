@@ -12,9 +12,6 @@
     "RustToolchainName": [
       "stable"
     ],
-    "TestFeatureSet": [
-      "All"
-    ],
     "AZURE_COSMOS_EMULATOR_FLAVOR": [
       "vnext"
     ]
