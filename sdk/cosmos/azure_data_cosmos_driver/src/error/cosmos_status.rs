@@ -530,7 +530,6 @@ impl SubStatusCode {
             20214 => Some("ClientContinuationTokenOrderByStateInvalid"),
             20215 => Some("ClientStreamingMergeSplitReplacementInvalid"),
             20216 => Some("ClientContinuationTokenAfterTranscodeFailure"),
-            20218 => Some("ClientStreamingOrderByFingerprintMissing"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
@@ -1542,11 +1541,6 @@ impl SubStatusCode {
     /// never received.
     pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: SubStatusCode =
         SubStatusCode(20216);
-
-    /// A streaming `ORDER BY` plan is missing its request fingerprint (20218).
-    /// Unreachable by construction; retained to avoid an FFI-boundary panic if
-    /// that invariant regresses.
-    pub const CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING: SubStatusCode = SubStatusCode(20218);
 
     // ----- 20300-20349: SDK-detected service contract violations -----
 
@@ -2565,13 +2559,6 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
     };
 
-    /// 500 / 20218 — streaming `ORDER BY` planning is missing its
-    /// pre-encoding request fingerprint.
-    pub const CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING),
-    };
-
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)
 
     /// 410 / 20300 — the supplied session-token feed ranges contain no
@@ -2739,18 +2726,6 @@ mod tests {
         assert_eq!(
             CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING.name(),
             Some("ClientMixedNameRidAddressing")
-        );
-    }
-
-    #[test]
-    fn streaming_order_by_fingerprint_missing_status_is_searchable() {
-        assert_eq!(
-            CosmosStatus::CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING.name(),
-            Some("ClientStreamingOrderByFingerprintMissing")
-        );
-        assert_eq!(
-            CosmosStatus::CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING.sub_status(),
-            Some(SubStatusCode::CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING)
         );
     }
 

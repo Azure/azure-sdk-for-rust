@@ -575,7 +575,7 @@ async fn binary_query_negotiates_response_and_round_trips() {
     for value in formats.iter() {
         assert_eq!(
             value.as_deref(),
-            Some("CosmosBinary"),
+            Some("JsonText,CosmosBinary"),
             "query must advertise a binary response",
         );
     }
@@ -767,7 +767,7 @@ fn assert_query_advertised_binary(recorder: &QueryRequestRecorder) {
     for value in formats.iter() {
         assert_eq!(
             value.as_deref(),
-            Some("CosmosBinary"),
+            Some("JsonText,CosmosBinary"),
             "every query fan-out page must advertise a binary response",
         );
     }

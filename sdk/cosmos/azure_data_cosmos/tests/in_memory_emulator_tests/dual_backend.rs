@@ -97,9 +97,7 @@ impl DualBackend {
     /// The emulator is always created. The real backend is created only when
     /// the environment is configured (see module-level docs).
     pub async fn setup() -> Result<Self, Box<dyn Error>> {
-        let _ = tracing_subscriber::fmt::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-            .try_init();
+        super::init_test_tracing();
 
         let run_id = Uuid::new_v4().to_string()[..8].to_string();
 

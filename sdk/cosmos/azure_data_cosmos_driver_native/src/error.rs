@@ -192,8 +192,6 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientSingletonOperationReturnedEmptyPage = 20210,
     /// `CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED` (20213).
     CosmosSubStatusClientContinuationTokenSavedRangeUnhonored = 20213,
-    /// `CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING` (20218).
-    CosmosSubStatusClientStreamingOrderByFingerprintMissing = 20218,
     /// `CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE` (20301).
     CosmosSubStatusClientNoThroughputOfferForResource = 20301,
     /// `CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES` (20302).
@@ -330,7 +328,6 @@ const _: () = {
         CosmosSubStatusClientSplitRetriesExhausted => CLIENT_SPLIT_RETRIES_EXHAUSTED,
         CosmosSubStatusClientBuildResponseInvokedOnFailure => CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE,
         CosmosSubStatusClientRootNodeCannotRequestSplit => CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT,
-        CosmosSubStatusClientStreamingOrderByFingerprintMissing => CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING,
         CosmosSubStatusClientSingletonOperationReturnedEmptyPage => CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE,
         CosmosSubStatusClientContinuationTokenSavedRangeUnhonored => CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED,
         CosmosSubStatusClientNoThroughputOfferForResource => CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE,

@@ -331,7 +331,8 @@ impl Token {
         )
     }
 
-    /// `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`).
+    /// `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`) shared by
+    /// Gateway 2.0 and Direct RNTBD requests.
     ///
     /// Server requires this token in place of `ConsistencyLevel` when the caller
     /// specifies a non-`Default` read consistency strategy on a read request.
@@ -898,8 +899,12 @@ impl RntbdOperationType {
 
 impl From<OperationType> for RntbdOperationType {
     fn from(value: OperationType) -> Self {
+        // Keep these IDs aligned with the Java SDK's
+        // RntbdConstants.RntbdOperationType wire enum:
+        // https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/directconnectivity/rntbd/RntbdConstants.java
         let id = match value {
             OperationType::Create => 0x0001,
+            OperationType::Patch => 0x0002,
             OperationType::Read => 0x0003,
             OperationType::ReadFeed => 0x0004,
             OperationType::Delete => 0x0005,
@@ -914,15 +919,6 @@ impl From<OperationType> for RntbdOperationType {
             OperationType::HeadFeed => 0x0012,
             OperationType::Upsert => 0x0013,
             OperationType::Batch => 0x0025,
-            // Patch operations are handled by the driver-side patch_handler
-            // pipeline stage (Read-Modify-Write) and never reach the RNTBD
-            // transport encoder. Reaching this arm is a bug in the driver
-            // dispatch path.
-            OperationType::Patch => {
-                unreachable!(
-                    "OperationType::Patch must be handled by patch_handler before RNTBD encoding"
-                )
-            }
             // Distributed transactions do not use the thin-client RNTBD
             // encoder; they route through the standard gateway coordinator.
             #[cfg(feature = "preview_dtx")]
@@ -940,8 +936,8 @@ impl TryFrom<u16> for RntbdOperationType {
 
     fn try_from(value: u16) -> azure_core::Result<Self> {
         match value {
-            0x0001 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000F | 0x0011
-            | 0x0012 | 0x0013 | 0x0025 | 0x0042 => Ok(Self(value)),
+            0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000F
+            | 0x0011 | 0x0012 | 0x0013 | 0x0025 | 0x0042 => Ok(Self(value)),
             other => Err(data_conversion_error(format!(
                 "unknown RNTBD operation type 0x{other:04X}"
             ))),
@@ -955,6 +951,7 @@ impl TryFrom<RntbdOperationType> for OperationType {
     fn try_from(value: RntbdOperationType) -> azure_core::Result<Self> {
         match value.0 {
             0x0001 => Ok(Self::Create),
+            0x0002 => Ok(Self::Patch),
             0x0003 => Ok(Self::Read),
             0x0004 => Ok(Self::ReadFeed),
             0x0005 => Ok(Self::Delete),
@@ -1182,8 +1179,9 @@ mod tests {
     #[test]
     fn read_consistency_strategy_token_byte_mapping() {
         // The RNTBD `ReadConsistencyStrategy` token has id `0x00FE`, `Byte`
-        // type, and these exact byte values. A drift here means the SDK and
-        // the gateway disagree about what consistency the caller requested.
+        // type, and these exact byte values in both Gateway 2.0 and Direct
+        // mode. A drift here means the SDK and backend disagree about what
+        // consistency the caller requested.
         let cases = [
             (ReadConsistencyStrategy::Eventual, 0x01u8),
             (ReadConsistencyStrategy::Session, 0x02u8),

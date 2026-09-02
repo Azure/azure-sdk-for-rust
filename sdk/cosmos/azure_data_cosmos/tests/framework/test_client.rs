@@ -24,6 +24,17 @@ use std::time::Duration;
 use std::{str::FromStr, sync::OnceLock};
 use tracing_subscriber::EnvFilter;
 
+fn test_env_filter() -> EnvFilter {
+    match std::env::var("RUST_LOG") {
+        Ok(value) if value.trim().eq_ignore_ascii_case("trace") => EnvFilter::new("debug"),
+        _ => EnvFilter::builder()
+            // Tests with intentional failures cause noise, so silence them
+            // unless the user explicitly configures logging.
+            .with_default_directive("off".parse().unwrap())
+            .from_env_lossy(),
+    }
+}
+
 /// Represents a Cosmos DB client connected to a test account.
 pub struct TestClient {
     cosmos_client: Option<CosmosClient>,
@@ -686,13 +697,7 @@ impl TestClient {
         // Initialize tracing subscriber for logging, if not already initialized.
         // The error is ignored because it only happens if the subscriber is already initialized.
         _ = tracing_subscriber::fmt()
-            .with_env_filter(
-                EnvFilter::builder()
-                    // Tests with intentional failures cause noise, so we set the default level to "off"
-                    // to silence them unless the user explicitly configures it.
-                    .with_default_directive("off".parse().unwrap())
-                    .from_env_lossy(),
-            )
+            .with_env_filter(test_env_filter())
             .try_init();
 
         let test_client = Self::from_env(

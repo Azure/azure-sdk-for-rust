@@ -75,6 +75,7 @@ pub use crate::error::cosmos_status::{CosmosStatus, SubStatusCode};
 pub use effective_partition_key::EffectivePartitionKey;
 pub use feed_range::FeedRange;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
+pub(crate) use patch::MAX_SERVER_SIDE_PATCH_OPERATIONS;
 pub use patch::{
     CosmosNumber, PatchInstructions, PatchOperation, PatchTrackingId,
     DEFAULT_PATCH_TRACKING_CAPACITY, PATCH_TRACKING_PROPERTY, PATCH_TRACKING_RETENTION,
@@ -614,12 +615,9 @@ pub enum OperationType {
     Execute,
     /// Patch an item using a server-style operation list.
     ///
-    /// The driver implements `Patch` as a client-side Read-Modify-Write loop:
-    /// it issues a [`OperationType::Read`] for the target item, applies the
-    /// requested patch operations to the local document, and then issues an
-    /// ETag-guarded [`OperationType::Replace`]. PATCH itself is therefore
-    /// never sent on the wire; the variant is a virtual operation type the
-    /// driver dispatches to a dedicated handler.
+    /// Depending on [`crate::options::PatchStrategy`], the driver sends PATCH
+    /// to the service or decomposes it into a tracked [`OperationType::Read`]
+    /// and ETag-guarded [`OperationType::Replace`].
     Patch,
     /// Commit a distributed write transaction.
     #[cfg(feature = "preview_dtx")]
@@ -665,16 +663,15 @@ impl OperationType {
     /// True for the ops that may negotiate a binary **response** via the
     /// `x-ms-cosmos-supported-serialization-formats` header. This is a superset
     /// of [`supports_binary_request_body`](OperationType::supports_binary_request_body):
-    /// the point item ops plus query and read-feed operations.
+    /// the point item ops plus `Query` / `SqlQuery`.
     ///
-    /// `ReadFeed` also represents change feed, which the full operation-level
-    /// gate excludes via `CosmosOperation::is_change_feed`.
+    /// `ReadFeed` / change feed is intentionally excluded: the backend only
+    /// honors the negotiation header for `Query`, and returns a binary response
+    /// for a `ReadFeed`-with-partition-key request as a known bug — so change
+    /// feed must never advertise binary.
     pub(crate) fn supports_binary_response(self) -> bool {
         self.supports_binary_request_body()
-            || matches!(
-                self,
-                OperationType::Query | OperationType::SqlQuery | OperationType::ReadFeed
-            )
+            || matches!(self, OperationType::Query | OperationType::SqlQuery)
     }
 
     /// Returns the HTTP method for this operation type.
@@ -696,10 +693,6 @@ impl OperationType {
             OperationType::ReadFeed => Method::Get,
             OperationType::Replace => Method::Put,
             OperationType::Head | OperationType::HeadFeed => Method::Head,
-            // `Patch` is a virtual operation; the driver decomposes it into a
-            // Read followed by a Replace, so it never produces wire requests
-            // of its own. Reporting `Patch` keeps `http_method` total for
-            // diagnostics/logging without affecting the transport layer.
             OperationType::Patch => Method::Patch,
         }
     }
@@ -922,7 +915,7 @@ mod tests {
     fn supports_binary_request_body_covers_only_bodied_point_ops() {
         // Matches the binary-encoding spec §2 scope table: create/read/replace/
         // upsert. `delete` is excluded (no request or response body); query,
-        // feed, batch, and stored-procedure paths are excluded.
+        // feed, batch, and stored-procedure paths are deferred.
         for op in [
             OperationType::Create,
             OperationType::Read,

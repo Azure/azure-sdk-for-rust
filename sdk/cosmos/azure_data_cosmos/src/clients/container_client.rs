@@ -512,11 +512,13 @@ impl ContainerClient {
         ))
     }
 
-    /// Applies a JSON-PATCH-style update to an item by reading it, applying
-    /// the [`PatchInstructions`] locally, and issuing an ETag-guarded Replace.
+    /// Applies a JSON-PATCH-style update to an item using either one
+    /// server-side PATCH request or client-side Read-Modify-Write. The
+    /// client-side path persists a tracking marker only when required for
+    /// duplicate suppression.
     ///
     /// **Preview.** Requires the `preview_patch` feature. This API is not
-    /// production-ready — see [Failure Semantics](#failure-semantics) below.
+    /// production-ready — see [Retry Semantics](#retry-semantics) below.
     ///
     /// The handler refuses to PATCH paths that overlap the container's
     /// partition-key paths: rewriting the partition key would move the
@@ -548,9 +550,6 @@ impl ContainerClient {
     ///     PatchOperation::set("/displayName", serde_json::json!("New name")),
     ///     PatchOperation::increment("/visits", 1i64),
     /// ]);
-    /// // The post-image of the patched item is always available, regardless of
-    /// // `content_response_on_write`: the driver synthesizes it from the locally
-    /// // merged document.
     /// let updated: Product = container_client
     ///     .patch_item("category1", "product1", patch, None)
     ///     .await?
@@ -561,52 +560,34 @@ impl ContainerClient {
     ///
     /// # Response Body
     ///
-    /// Unlike a wire-level Cosmos PATCH (which honors
-    /// `content_response_on_write`), this method always returns the post-image
-    /// of the patched item. The SDK constructs it locally from the merged
-    /// document it just wrote, so no extra round trip is required to read it
-    /// back. Callers that don't need the body can use
-    /// [`ItemResponse::<serde_json::Value>`] or simply discard the response.
+    /// By default both strategies return the post-image. Client-side PATCH
+    /// constructs it from the merged document; server-side PATCH requests it
+    /// from Cosmos DB. An explicit `content_response_on_write = Disabled`
+    /// suppresses the response body for either strategy.
+    ///
+    /// # Execution Tradeoffs
+    ///
+    /// Server-side PATCH charges for and resolves conflicts at the changed
+    /// paths. Client-side PATCH reads and serializes the complete JSON item
+    /// again, then replaces it, so it consumes Read plus Replace request units
+    /// and resolves multi-write conflicts at document granularity. Select an
+    /// explicit strategy when those differences matter.
     ///
     /// # Retry Semantics
     ///
-    /// Non-overlapping instruction lists containing only `Replace` and
-    /// non-append `Set` operations are safe to reapply. For every other list,
-    /// the driver writes a tracking entry under
-    /// [`PATCH_TRACKING_PROPERTY`](crate::models::PATCH_TRACKING_PROPERTY) in
-    /// the same ETag-guarded Replace as the mutation. If that Replace commits
-    /// but its response is lost, the next verification Read observes the entry
-    /// and returns success without applying the instructions again.
+    /// [`PatchStrategy::Auto`](crate::options::PatchStrategy::Auto) is the
+    /// default. It uses server-side PATCH for retry-safe lists containing no
+    /// more than 10 instructions. Unsafe or longer lists use tracked
+    /// client-side RMW. Explicit server-side PATCH with more than 10
+    /// instructions fails with HTTP 400 rather than falling back.
+    /// Client-side-only settings do not influence strategy selection and are
+    /// ignored on the server path. To provide a stable identity for
+    /// application-level retries when client-side execution is selected, use
+    /// [`PatchItemOptions::with_tracking_id`]. Explicit unsafe server-side
+    /// PATCH is not retried after an ambiguous outcome.
     ///
-    /// By default the driver generates a tracking ID for instruction lists that
-    /// are not safe to reapply. The effective ID is available from
-    /// [`ItemResponse::patch_tracking_id`]
-    /// (including successful lost-response recovery) and
-    /// [`CosmosError::patch_tracking_id`](crate::CosmosError::patch_tracking_id)
-    /// on failure. Persist and pass it through [`PatchItemOptions`] to extend
-    /// duplicate suppression across application retries or process restarts.
-    /// If the end-to-end deadline expires after the Replace may have committed
-    /// but before verification completes, the timeout error still carries this
-    /// effective ID. Retry the same logical PATCH with
-    /// [`PatchItemOptions::with_tracking_id`]; do not generate a new ID.
-    /// Verification does not continue beyond the configured deadline.
-    /// Callers may instead provide a [`PatchTrackingId`](crate::models::PatchTrackingId)
-    /// up front. Doing so opts even a retry-safe instruction list into marker-based
-    /// duplicate suppression. Use a random, unpredictable ID and reuse it only
-    /// for the same logical operation against the same item; reusing it for a
-    /// different operation suppresses that operation.
-    ///
-    /// The guarantee is bounded. Entries are protected from pruning for
-    /// [`PATCH_TRACKING_RETENTION`](crate::models::PATCH_TRACKING_RETENTION) by
-    /// default; [`PatchItemOptions::with_tracking_retention_seconds`] can
-    /// configure a positive whole-second window. The per-item list has a
-    /// configurable capacity. When capacity is full, the oldest entry is
-    /// evicted, so suppression is bounded by the earlier of retention expiry or
-    /// FIFO eviction. All writers that replace these items must preserve the
-    /// reserved property and its array order. The property is visible in stored
-    /// and returned JSON and counts toward item size and indexing costs.
-    /// Model-deserialization errors retain the response diagnostics and effective
-    /// tracking ID so callers can safely reconcile a committed PATCH.
+    /// An explicitly supplied `If-Match` precondition follows standard ETag
+    /// semantics and can return HTTP 412 when it does not match.
     #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,
@@ -630,14 +611,14 @@ impl ContainerClient {
             CosmosOperation::patch_item(item_ref).with_body(body),
             &options,
         );
-        // PATCH manages its own If-Match internally — we only forward the
-        // session token.
         let operation = apply_item_options(operation, options.session_token, None);
+
+        let operation_options = apply_patch_operation_options(options.operation, options.strategy);
 
         let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(operation, operation_options)
             .await;
 
         Ok(ItemResponse::new(
@@ -1522,6 +1503,9 @@ fn apply_patch_options(
     mut operation: CosmosOperation,
     options: &PatchItemOptions,
 ) -> CosmosOperation {
+    if let Some(precondition) = options.precondition.clone() {
+        operation = operation.with_precondition(precondition);
+    }
     if let Some(max_attempts) = options.max_attempts {
         operation = operation.with_patch_max_attempts(max_attempts);
     }
@@ -1535,6 +1519,17 @@ fn apply_patch_options(
         operation = operation.with_patch_tracking_retention_seconds(retention_seconds);
     }
     operation
+}
+
+#[cfg(feature = "preview_patch")]
+fn apply_patch_operation_options(
+    mut operation_options: OperationOptions,
+    strategy: Option<crate::options::PatchStrategy>,
+) -> OperationOptions {
+    if let Some(strategy) = strategy {
+        operation_options.patch_strategy = Some(strategy);
+    }
+    operation_options
 }
 
 fn should_force_refresh_feed_ranges<T>(ranges: Option<&[T]>, force_refresh: bool) -> bool {
@@ -1585,6 +1580,10 @@ mod tests {
             .parse::<crate::models::PatchTrackingId>()
             .unwrap();
         let options = PatchItemOptions::default()
+            .with_strategy(crate::options::PatchStrategy::ClientSide)
+            .with_precondition(Precondition::if_match(azure_core::http::Etag::from(
+                "\"etag\"",
+            )))
             .with_max_attempts(std::num::NonZeroU8::new(7).unwrap())
             .with_tracking_id(tracking_id)
             .with_tracking_capacity(std::num::NonZeroU16::new(19).unwrap())
@@ -1599,8 +1598,19 @@ mod tests {
         );
         assert_eq!(operation.patch_tracking_capacity().unwrap().get(), 19);
         assert_eq!(
+            operation.precondition(),
+            Some(&Precondition::if_match(azure_core::http::Etag::from(
+                "\"etag\""
+            )))
+        );
+        assert_eq!(
             operation.patch_tracking_retention_seconds().unwrap().get(),
             23
+        );
+        let operation_options = apply_patch_operation_options(options.operation, options.strategy);
+        assert_eq!(
+            operation_options.patch_strategy,
+            Some(crate::options::PatchStrategy::ClientSide)
         );
     }
 

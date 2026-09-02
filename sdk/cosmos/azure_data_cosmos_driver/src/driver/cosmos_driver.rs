@@ -79,10 +79,18 @@ const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_mill
 /// there is nothing to gain from letting the service choose text.
 const BINARY_NEGOTIATION_FORMATS_POINT: &str = "CosmosBinary";
 
-/// Format advertised for query and read-feed responses when binary encoding is
-/// enabled. Live service probes confirm that the header alone negotiates binary
-/// pages while the query specification remains text.
-const BINARY_NEGOTIATION_FORMATS_QUERY: &str = "CosmosBinary";
+/// Formats advertised for **queries** when binary encoding is enabled, matching
+/// .NET's query default.
+///
+/// An accept-list, not a demand: the service may answer in text, keeping .NET's
+/// safety valve for query shapes that cannot produce binary. Nothing downstream
+/// needs a uniform format — page decode sniffs the `0x80` preamble per page, and
+/// the emitted encoding is a property of the operation
+/// ([`CosmosOperation::emits_binary_payload`]), not of any absorbed page. The
+/// cost is diagnosability: a text answer silently forfeits the RU saving.
+///
+/// [`CosmosOperation::emits_binary_payload`]: crate::models::CosmosOperation::emits_binary_payload
+const BINARY_NEGOTIATION_FORMATS_QUERY: &str = "JsonText,CosmosBinary";
 
 fn should_retry_account_properties_connectivity_error(
     error: &crate::error::CosmosError,
@@ -2597,29 +2605,58 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
-        // PATCH is a virtual operation type: dispatch it to the dedicated
-        // Read-Modify-Write handler, which issues its own Read/Replace
-        // operations through this same entry point. `Box::pin` gives the
-        // recursive future a fixed size.
-        if operation.operation_type() == crate::models::OperationType::Patch {
-            let max_attempts = operation.patch_max_attempts();
-            let absolute_deadline = self
-                .operation_options_view(&options)
-                .end_to_end_latency_policy()
-                .map(|policy| std::time::Instant::now() + policy.timeout());
-            return Box::pin(async {
-                let result = crate::driver::pipeline::patch_handler::execute(
-                    self,
-                    operation,
-                    options,
-                    max_attempts,
-                    absolute_deadline,
-                )
-                .await?;
-                Ok(Some(result))
-            })
-            .await;
-        }
+        // PATCH runs either as one server-side request or through the tracked
+        // Read-Modify-Write loop. The client-side arm re-enters this method for
+        // its helper Read/Replace operations, so boxing fixes the recursive
+        // future size.
+        let (operation, options) =
+            if operation.operation_type() == crate::models::OperationType::Patch {
+                match self.resolve_patch_execution(&operation, &options)? {
+                    crate::driver::pipeline::patch_strategy::PatchExecution::ClientSide => {
+                        let max_attempts = operation.patch_max_attempts();
+                        let option_view = self.operation_options_view(&options);
+                        let absolute_deadline = option_view
+                            .end_to_end_latency_policy()
+                            .map(|policy| std::time::Instant::now() + policy.timeout());
+                        let suppress_response_body = matches!(
+                            option_view.content_response_on_write(),
+                            Some(crate::options::ContentResponseOnWrite::Disabled)
+                        );
+                        return Box::pin(async {
+                            let mut result = crate::driver::pipeline::patch_handler::execute(
+                                self,
+                                operation,
+                                options,
+                                max_attempts,
+                                absolute_deadline,
+                                !suppress_response_body,
+                            )
+                            .await?;
+                            if suppress_response_body {
+                                result = result.without_body();
+                            }
+                            Ok(Some(result))
+                        })
+                        .await;
+                    }
+                    crate::driver::pipeline::patch_strategy::PatchExecution::ServerSide {
+                        retry_safe,
+                    } => {
+                        let mut options = options;
+                        if self
+                            .operation_options_view(&options)
+                            .content_response_on_write()
+                            .is_none()
+                        {
+                            options.content_response_on_write =
+                                Some(crate::options::ContentResponseOnWrite::Enabled);
+                        }
+                        (operation.with_patch_retry_safe(retry_safe), options)
+                    }
+                }
+            } else {
+                (operation, options)
+            };
 
         // Resolve binary encoding through the same layered view as every other
         // option. Two independent gates apply:
@@ -2631,7 +2668,7 @@ impl CosmosDriver {
         let resource_type = operation.resource_type();
         let operation_type = operation.operation_type();
         let encodes_request_body = Self::binary_encodes_request_body(resource_type, operation_type);
-        let negotiates_response = Self::binary_negotiates_response(&operation);
+        let negotiates_response = Self::binary_negotiates_response(resource_type, operation_type);
         let binary = if encodes_request_body || negotiates_response {
             self.operation_options_view(&options)
                 .binary_encoding()
@@ -2669,6 +2706,77 @@ impl CosmosDriver {
         .await
     }
 
+    /// Parses, validates, and resolves a PATCH execution strategy before any
+    /// sub-operation or wire request is dispatched.
+    fn resolve_patch_execution(
+        &self,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::error::Result<crate::driver::pipeline::patch_strategy::PatchExecution> {
+        use crate::driver::pipeline::patch_strategy::resolve_patch_strategy;
+
+        let instructions = operation
+            .body()
+            .and_then(|body| serde_json::from_slice::<crate::models::PatchInstructions>(body).ok());
+
+        if operation
+            .precondition()
+            .is_some_and(|condition| condition.is_if_none_match())
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message("PATCH supports If-Match preconditions; If-None-Match is read-only")
+                .build());
+        }
+
+        let item_ref = operation
+            .partition_key()
+            .cloned()
+            .and_then(|partition_key| {
+                operation
+                    .resource_reference()
+                    .try_into_item_reference(partition_key)
+            })
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                    .with_message(
+                        "PATCH dispatch requires an item-level operation with a partition key",
+                    )
+                    .build()
+            })?;
+
+        if let Some(instructions) = instructions.as_ref() {
+            if instructions.operations.is_empty() {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                    .with_message("PATCH operation must include at least one PatchOperation")
+                    .build());
+            }
+            crate::driver::pipeline::patch_handler::validate_partition_key_paths(
+                &instructions.operations,
+                &item_ref,
+            )?;
+        }
+
+        let requested = self
+            .operation_options_view(options)
+            .patch_strategy()
+            .copied()
+            .unwrap_or_default();
+        let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
+        tracing::debug!(
+            requested_patch_strategy = requested.as_str(),
+            patch_execution = execution.as_str(),
+            patch_retry_safe = execution.retry_safe(),
+            operation_count = instructions
+                .as_ref()
+                .map(|instructions| instructions.operations.len()),
+            "patch strategy resolved"
+        );
+        Ok(execution)
+    }
+
     /// Whether an operation's **request body** should be transcoded to Cosmos
     /// binary JSON.
     ///
@@ -2689,14 +2797,16 @@ impl CosmosDriver {
     /// `x-ms-cosmos-supported-serialization-formats` header.
     ///
     /// This is a superset of [`binary_encodes_request_body`]: the point item
-    /// ops plus query and document read-feed operations. Change feed uses the
-    /// same `ReadFeed` operation type but is explicitly excluded.
+    /// ops plus `Query` / `SqlQuery`. Change feed (`ReadFeed`) is excluded — the
+    /// backend does not honor the negotiation header for it.
     ///
     /// [`binary_encodes_request_body`]: CosmosDriver::binary_encodes_request_body
-    fn binary_negotiates_response(operation: &CosmosOperation) -> bool {
-        operation.resource_type() == crate::models::ResourceType::Document
-            && operation.operation_type().supports_binary_response()
-            && !operation.is_change_feed()
+    fn binary_negotiates_response(
+        resource_type: crate::models::ResourceType,
+        operation_type: crate::models::OperationType,
+    ) -> bool {
+        resource_type == crate::models::ResourceType::Document
+            && operation_type.supports_binary_response()
     }
 
     /// Advertises a binary response via the
@@ -2722,7 +2832,8 @@ impl CosmosDriver {
         options: &OperationOptions,
         resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> CosmosOperation {
-        if !Self::binary_negotiates_response(&operation) {
+        if !Self::binary_negotiates_response(operation.resource_type(), operation.operation_type())
+        {
             return operation;
         }
         // Reuse a caller-resolved value when available (the `execute_operation`
@@ -2758,13 +2869,13 @@ impl CosmosDriver {
         {
             return operation;
         }
-        // Queries and read feeds keep text request bodies but negotiate binary
-        // responses. Point item operations use the same binary-only value.
+        // Queries advertise an accept-list; point ops force binary. Mirrors
+        // .NET — see the two constants. `SqlQuery` is included because
+        // `OperationType::supports_binary_response` admits it, so gating on
+        // `Query` alone would hand a query the point-op *demand*.
         let formats = if matches!(
             operation.operation_type(),
-            crate::models::OperationType::Query
-                | crate::models::OperationType::SqlQuery
-                | crate::models::OperationType::ReadFeed
+            crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
         ) {
             BINARY_NEGOTIATION_FORMATS_QUERY
         } else {
@@ -2789,10 +2900,9 @@ impl CosmosDriver {
     fn apply_request_binary_encoding(
         operation: CosmosOperation,
     ) -> crate::error::Result<CosmosOperation> {
-        if !Self::binary_encodes_request_body(operation.resource_type(), operation.operation_type())
-        {
-            return Ok(operation);
-        }
+        // Transcode a non-empty *text* body to binary. A body that is already
+        // binary (the SDK's typed fast path) or empty is left in place — no
+        // clone — so only genuinely text bodies pay the conversion.
         let transcoded = match operation.body() {
             Some(body) if !body.is_empty() && !crate::binary_json::is_binary(body) => {
                 Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
@@ -2811,23 +2921,6 @@ impl CosmosDriver {
             Some(bytes) => operation.with_body(bytes),
             None => operation,
         })
-    }
-
-    fn query_plan_request_body(
-        operation: &CosmosOperation,
-    ) -> crate::error::Result<Option<Vec<u8>>> {
-        let Some(body) = operation.body().filter(|body| !body.is_empty()) else {
-            return Ok(None);
-        };
-        crate::binary_json::transcode_to_text(body)
-            .map(Some)
-            .map_err(|e| {
-                crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
-                    .with_message("failed to prepare text query-plan request body")
-                    .with_source(e)
-                    .build()
-            })
     }
 
     /// Executes a singleton operation (operations which return only a single result).
@@ -3458,6 +3551,18 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        if operation.operation_type() == crate::models::OperationType::Patch
+            && !operation.patch_strategy_is_resolved()
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message(
+                    "PATCH operations must be executed with CosmosDriver::execute_operation so \
+                     the PATCH strategy can be resolved",
+                )
+                .build());
+        }
+
         // `None` resolves the binary options lazily at the negotiation choke
         // point. Boxed to keep this wrapper's future pointer-sized.
         Box::pin(self.plan_operation_resolved(operation, options, continuation, plan_options, None))
@@ -3491,11 +3596,6 @@ impl CosmosDriver {
         // reference, so it issues no additional network calls and does not change
         // the request flow.
         operation.validate_addressing()?;
-        let query_fingerprint = matches!(
-            operation.operation_type(),
-            crate::models::OperationType::Query | crate::models::OperationType::SqlQuery
-        )
-        .then(|| planner::streaming_query_fingerprint(&operation));
 
         // Planning holds the whole pipeline-builder state across several await
         // points, which makes it one of the largest futures in the driver —
@@ -3509,7 +3609,6 @@ impl CosmosDriver {
                 options,
                 continuation,
                 plan_options,
-                query_fingerprint,
                 resolved_binary,
             )
             .await
@@ -3523,7 +3622,6 @@ impl CosmosDriver {
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
-        query_fingerprint: Option<String>,
         resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
@@ -3654,23 +3752,11 @@ impl CosmosDriver {
             .as_ref()
             .is_some_and(planner::is_streaming_order_by)
         {
-            let query_fingerprint = query_fingerprint.ok_or_else(|| {
-                crate::error::CosmosError::builder()
-                    .with_status(
-                        crate::error::CosmosStatus::CLIENT_STREAMING_ORDER_BY_FINGERPRINT_MISSING,
-                    )
-                    .with_message(
-                        "internal error: streaming ORDER BY query is missing its pre-encoding \
-                         request fingerprint",
-                    )
-                    .build()
-            })?;
-            let pipeline = planner::build_streaming_ordered_merge_with_fingerprint(
+            let pipeline = planner::build_streaming_ordered_merge(
                 &query_plan,
                 &mut topology,
                 &operation,
                 resume_state,
-                query_fingerprint,
             )
             .await?;
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
@@ -3697,7 +3783,7 @@ impl CosmosDriver {
             container.clone(),
             std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
         )
-        .with_body(Self::query_plan_request_body(operation)?.unwrap_or_default());
+        .with_body(operation.body().unwrap_or_default().to_vec());
 
         let response = self
             .execute_operation_direct(
@@ -3751,10 +3837,9 @@ impl CosmosDriver {
             .map(|props| props.query_engine_configuration.clone())
             .unwrap_or_default();
 
-        let query_plan_body = Self::query_plan_request_body(operation)?;
-        let native_result = query_plan_body
-            .as_deref()
-            .and_then(|body| std::str::from_utf8(body).ok())
+        let native_result = operation
+            .body()
+            .and_then(|b| std::str::from_utf8(b).ok())
             .map(|json| self.try_native_query_plan(json, container, &query_engine_config));
 
         match native_result {
@@ -4154,21 +4239,6 @@ mod tests {
         )
     }
 
-    #[test]
-    fn empty_query_body_skips_native_query_plan_input() {
-        let resource = crate::models::CosmosResourceReference::from(test_account());
-        let missing =
-            CosmosOperation::new(crate::models::OperationType::Query, resource.clone(), None);
-        let empty = CosmosOperation::new(crate::models::OperationType::Query, resource, None)
-            .with_body(Vec::new());
-
-        assert_eq!(
-            CosmosDriver::query_plan_request_body(&missing).unwrap(),
-            None
-        );
-        assert_eq!(CosmosDriver::query_plan_request_body(&empty).unwrap(), None);
-    }
-
     #[cfg(feature = "preview_dtx")]
     fn dtx_response(
         status_code: azure_core::http::StatusCode,
@@ -4423,6 +4493,40 @@ mod tests {
         // Both outcomes are decided without installing a topology provider or
         // issuing a replacement lookup against a cache.
         assert!(driver.pk_range_cache.is_none());
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_unresolved_patch() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let operation = CosmosOperation::patch_item(crate::models::ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ))
+        .with_body(
+            serde_json::to_vec(&crate::models::PatchInstructions::from(vec![
+                crate::models::PatchOperation::increment("/count", 1),
+            ]))
+            .unwrap(),
+        );
+
+        let err = match Box::pin(driver.plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        ))
+        .await
+        {
+            Ok(_) => panic!("unresolved PATCH must be rejected before planning"),
+            Err(err) => err,
+        };
+
+        assert_eq!(err.status(), crate::error::CosmosStatus::CLIENT_BAD_REQUEST);
     }
 
     #[tokio::test]
@@ -6769,63 +6873,45 @@ mod tests {
     }
 
     #[test]
-    fn binary_negotiates_response_covers_item_query_and_read_feed_ops() {
+    fn binary_negotiates_response_covers_item_ops_and_query() {
         use crate::models::{OperationType, ResourceType};
 
-        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        // Point item ops plus query/sql-query on `Document` advertise a binary
+        // response.
         for op in [
             OperationType::Create,
             OperationType::Read,
-            OperationType::ReadFeed,
             OperationType::Replace,
             OperationType::Upsert,
             OperationType::Query,
             OperationType::SqlQuery,
         ] {
-            let operation = CosmosOperation::new(
-                op,
-                crate::models::CosmosResourceReference::from(container.clone())
-                    .with_resource_type(ResourceType::Document)
-                    .into_feed_reference(),
-                Some(crate::models::FeedRange::full()),
-            );
             assert!(
-                CosmosDriver::binary_negotiates_response(&operation),
+                CosmosDriver::binary_negotiates_response(ResourceType::Document, op),
                 "Document + {op:?} should negotiate a binary response",
             );
         }
 
-        for op in [OperationType::Delete, OperationType::Patch] {
-            let operation = CosmosOperation::new(
-                op,
-                crate::models::CosmosResourceReference::from(container.clone())
-                    .with_resource_type(ResourceType::Document)
-                    .into_feed_reference(),
-                Some(crate::models::FeedRange::full()),
-            );
+        // Change feed (`ReadFeed`) is excluded — the backend does not honor the
+        // negotiation header for it.
+        for op in [
+            OperationType::ReadFeed,
+            OperationType::Delete,
+            OperationType::Patch,
+        ] {
             assert!(
-                !CosmosDriver::binary_negotiates_response(&operation),
+                !CosmosDriver::binary_negotiates_response(ResourceType::Document, op),
                 "Document + {op:?} must not negotiate a binary response",
             );
         }
 
+        // Control-plane resources never negotiate binary responses.
         for op in [OperationType::Query, OperationType::Read] {
-            let operation = CosmosOperation::new(
-                op,
-                crate::models::CosmosResourceReference::from(container.clone())
-                    .with_resource_type(ResourceType::Database)
-                    .into_feed_reference(),
-                None,
-            );
             assert!(
-                !CosmosDriver::binary_negotiates_response(&operation),
+                !CosmosDriver::binary_negotiates_response(ResourceType::Database, op),
                 "Database + {op:?} must not negotiate a binary response (control plane)",
             );
         }
-
-        let change_feed =
-            CosmosOperation::change_feed(container, Some(crate::models::FeedRange::full()));
-        assert!(!CosmosDriver::binary_negotiates_response(&change_feed));
     }
 
     /// A query plan is service metadata (`{"partitionedQueryExecutionInfo":…}`),
@@ -6837,15 +6923,10 @@ mod tests {
         use crate::models::{OperationType, ResourceType};
 
         assert!(
-            !CosmosDriver::binary_negotiates_response(&CosmosOperation::new(
-                OperationType::QueryPlan,
-                crate::models::CosmosResourceReference::from(epk_test_container(
-                    r#"{"paths":["/pk"],"version":2}"#,
-                ))
-                .with_resource_type(ResourceType::Document)
-                .into_feed_reference(),
-                None,
-            )),
+            !CosmosDriver::binary_negotiates_response(
+                ResourceType::Document,
+                OperationType::QueryPlan
+            ),
             "a query plan must be fetched as text; its parser has no binary path",
         );
         assert!(
@@ -6894,10 +6975,12 @@ mod tests {
         );
     }
 
-    /// Queries and point operations both request `CosmosBinary`; query request
-    /// bodies remain text and only the response negotiation is shared.
+    /// A query advertises .NET's accept-list (`JsonText,CosmosBinary`) while a
+    /// point op forces `CosmosBinary`. The split is deliberate: a query keeps
+    /// the service's ability to answer in text, which the driver already
+    /// handles per page, whereas a point response has no pipeline behind it.
     #[tokio::test]
-    async fn query_and_point_op_request_binary_responses() {
+    async fn query_advertises_accept_list_while_point_op_forces_binary() {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let driver_options = DriverOptions::builder(test_account()).build();
         let driver = CosmosDriver::new(cosmos_runtime, driver_options)
@@ -6917,9 +7000,11 @@ mod tests {
                 .request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some(BINARY_NEGOTIATION_FORMATS_QUERY),
-            "queries request binary responses while keeping their request bodies text",
+            Some("JsonText,CosmosBinary"),
+            "queries must advertise both so the service can fall back to text",
         );
+        // The accept-list still counts as negotiating binary, so pipeline nodes
+        // keep emitting binary regardless of which format the service picks.
         assert!(negotiated.negotiates_binary_response());
 
         let point = binary_encoding_test_operation(b"{}".to_vec());
@@ -7161,7 +7246,7 @@ mod tests {
                 .supported_serialization_formats
                 .as_deref(),
             Some(BINARY_NEGOTIATION_FORMATS_QUERY),
-            "SqlQuery must use the same response negotiation as Query",
+            "SqlQuery is a query: it must advertise the accept-list, not the demand",
         );
     }
 
@@ -7198,30 +7283,6 @@ mod tests {
         let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
 
         assert_eq!(op.body().unwrap(), binary.as_slice());
-    }
-
-    #[test]
-    fn apply_request_binary_encoding_keeps_query_body_text() {
-        use crate::models::{OperationType, ResourceType};
-
-        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
-        let text =
-            br#"{"query":"SELECT * FROM c WHERE c.id = @p","parameters":[{"name":"@p","value":1}]}"#
-                .to_vec();
-        for operation_type in [OperationType::Query, OperationType::SqlQuery] {
-            let operation = CosmosOperation::new(
-                operation_type,
-                crate::models::CosmosResourceReference::from(container.clone())
-                    .with_resource_type(ResourceType::Document)
-                    .into_feed_reference(),
-                Some(crate::models::FeedRange::full()),
-            )
-            .with_body(text.clone());
-
-            let operation = CosmosDriver::apply_request_binary_encoding(operation).unwrap();
-
-            assert_eq!(operation.body(), Some(text.as_slice()));
-        }
     }
 
     #[test]
@@ -7268,13 +7329,13 @@ mod tests {
             !crate::binary_json::is_binary(op.body().unwrap()),
             "query body must remain text on the wire",
         );
-        // Still advertises a binary response; per-page decode remains tolerant
-        // of a text response during mixed rollout.
+        // Still advertises a binary response — as an accept-list, so the
+        // service may answer text and the per-page decode handles it.
         assert_eq!(
             op.request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some(BINARY_NEGOTIATION_FORMATS_QUERY),
+            Some("JsonText,CosmosBinary"),
         );
     }
 
@@ -7312,7 +7373,7 @@ mod tests {
                 .request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some(BINARY_NEGOTIATION_FORMATS_QUERY),
+            Some("JsonText,CosmosBinary"),
             "a query keeps the wire binary and lets `execute_plan` transcode the \
              page back to text, so it must still negotiate binary",
         );
