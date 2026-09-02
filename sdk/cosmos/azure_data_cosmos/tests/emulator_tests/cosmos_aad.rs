@@ -26,7 +26,7 @@ use azure_core::Uuid;
 use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::{PartitionKey, Query};
-use framework::{TestClient, TestRunContext};
+use framework::{probe_data_plane_ready, TestClient, TestRunContext};
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -71,6 +71,16 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
                 .database_client(db_client.id())
                 .container_client(&container_id, None)
                 .await?;
+
+            // Metadata (5301) and name-based data (5302) authorize through
+            // separate RBAC paths. `run_context.create_container` above only
+            // warms the framework's key-auth client; this test's own
+            // freshly-built AAD client has never issued a data-plane
+            // request against this container, so its first item operation
+            // can still race and return
+            // `403/5302 RbacUnauthorizedNameBasedDataRequest`. Probe this
+            // client's data path before exercising real assertions.
+            probe_data_plane_ready("aad client", &aad_container).await?;
 
             let unique = Uuid::new_v4().to_string();
             let pk = format!("pk-{unique}");
