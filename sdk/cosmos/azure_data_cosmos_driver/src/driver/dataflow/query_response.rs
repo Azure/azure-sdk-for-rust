@@ -307,7 +307,7 @@ pub(crate) fn parse_envelope_page(
 ) -> crate::error::Result<Vec<EnvelopeRow>> {
     let bytes = match body {
         ResponseBody::NoPayload => return Ok(Vec::new()),
-        ResponseBody::Bytes(b) => normalize_page_body(b)?,
+        ResponseBody::Bytes(b) => b.clone(),
         ResponseBody::Items(_) => {
             return Err(envelope_error(
                 "rewritten-query backend page returned an already-split `Items` body; \
