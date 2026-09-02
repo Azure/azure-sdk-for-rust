@@ -26,9 +26,10 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 - `--format apiview` writes `apiview.json`
 - `--format apiview --no-docs` writes `apiview.json` without doc comment tokens
 
-Both formats include available Cargo metadata (`description`, `edition`, and `rust-version`) and
-the crate's default and docs.rs feature graph (or all features when not configured). Markdown also
-starts with the crate name. `API.md` never contains documentation comments.
+Both formats include available Cargo metadata (`edition` and `rust-version`) and the crate's
+default and docs.rs feature list (or all features when not configured). Markdown also starts with
+the crate name. Children of the `default` feature are also listed. `API.md` never contains
+documentation comments.
 `API.comments.patch` is a unified diff that adds them back, so it can be applied to toggle
 documentation comments on:
 

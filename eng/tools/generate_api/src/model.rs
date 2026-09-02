@@ -38,7 +38,6 @@ impl ApiModel {
 
 #[derive(Debug, Clone)]
 pub(crate) struct PackageMetadata {
-    pub(crate) description: Option<String>,
     pub(crate) edition: Option<String>,
     pub(crate) rust_version: Option<String>,
     pub(crate) features: BTreeMap<String, Vec<String>>,
@@ -47,7 +46,6 @@ pub(crate) struct PackageMetadata {
 impl Default for PackageMetadata {
     fn default() -> Self {
         Self {
-            description: None,
             edition: None,
             rust_version: None,
             features: BTreeMap::from([("default".to_string(), Vec::new())]),
@@ -56,12 +54,28 @@ impl Default for PackageMetadata {
 }
 
 impl PackageMetadata {
-    pub(crate) fn features(&self) -> impl Iterator<Item = (&String, &Vec<String>)> {
-        self.features.get_key_value("default").into_iter().chain(
-            self.features
-                .iter()
-                .filter(|(feature, _)| feature.as_str() != "default"),
-        )
+    pub(crate) fn feature_names(&self) -> impl Iterator<Item = &String> {
+        self.features
+            .get_key_value("default")
+            .map(|(name, _)| name)
+            .into_iter()
+            .chain(
+                self.features
+                    .iter()
+                    .filter(|(feature, _)| feature.as_str() != "default")
+                    .map(|(name, _)| name),
+            )
+    }
+
+    pub(crate) fn default_feature_children(&self) -> Vec<&String> {
+        let mut children = self
+            .features
+            .get("default")
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>();
+        children.sort_unstable();
+        children
     }
 }
 

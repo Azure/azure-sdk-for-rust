@@ -81,7 +81,6 @@ struct CargoPackage {
     manifest_path: String,
     version: String,
     name: String,
-    description: Option<String>,
     edition: Option<String>,
     rust_version: Option<String>,
     #[serde(default)]
@@ -189,7 +188,6 @@ fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, Strin
                 manifest_path,
                 has_library_target,
                 api: ApiPackageMetadata {
-                    description: package.description,
                     edition: package.edition,
                     rust_version: package.rust_version,
                     features,
@@ -442,7 +440,6 @@ mod tests {
             "manifest_path": "/demo/Cargo.toml",
             "version": "1.0.0",
             "name": "demo",
-            "description": "Demo crate",
             "edition": "2021",
             "rust_version": "1.88",
             "features": {
@@ -460,7 +457,6 @@ mod tests {
         }))
         .expect("package metadata should deserialize");
 
-        assert_eq!(package.description.as_deref(), Some("Demo crate"));
         assert_eq!(package.edition.as_deref(), Some("2021"));
         assert_eq!(package.rust_version.as_deref(), Some("1.88"));
         assert_eq!(
@@ -486,7 +482,6 @@ mod tests {
         }))
         .expect("package metadata should deserialize");
 
-        assert!(package.description.is_none());
         assert!(package.edition.is_none());
         assert!(package.rust_version.is_none());
         assert!(package.features.is_empty());

@@ -198,14 +198,13 @@ fn renders_package_metadata_and_features_before_api() {
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
         package_metadata: PackageMetadata {
-            description: Some("Azure Key Vault secrets client library".to_string()),
             edition: Some("2021".to_string()),
             rust_version: Some("1.88".to_string()),
             features: BTreeMap::from([
                 ("alpha".to_string(), vec!["dep:alpha".to_string()]),
                 (
                     "default".to_string(),
-                    vec!["azure_core/default".to_string(), "hmac".to_string()],
+                    vec!["hmac".to_string(), "azure_core/default".to_string()],
                 ),
                 ("test".to_string(), vec!["default".to_string()]),
             ]),
@@ -227,7 +226,6 @@ fn renders_package_metadata_and_features_before_api() {
         render(&model),
         "# azure_security_keyvault_secrets\n\
          \n\
-         - **Description**: Azure Key Vault secrets client library\n\
          - **Edition**: 2021\n\
          - **Rust version**: 1.88\n\
          \n\
@@ -237,9 +235,7 @@ fn renders_package_metadata_and_features_before_api() {
          \x20\x20- `azure_core/default`\n\
          \x20\x20- `hmac`\n\
          - `alpha`\n\
-         \x20\x20- `dep:alpha`\n\
          - `test`\n\
-         \x20\x20- `default`\n\
          \n\
          ```rust\n\
          pub struct SecretClient;\n\
@@ -278,7 +274,6 @@ fn comments_patch_accounts_for_package_metadata_lines() {
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
         package_metadata: PackageMetadata {
-            description: Some("Demo crate".to_string()),
             edition: Some("2021".to_string()),
             rust_version: Some("1.88".to_string()),
             features: BTreeMap::from([("default".to_string(), vec!["dep:foo".to_string()])]),
@@ -295,6 +290,6 @@ fn comments_patch_accounts_for_package_metadata_lines() {
     let lines = render_lines(&model);
     let patch = crate::render::patch::render(&lines, "API.md");
 
-    assert!(patch.contains("@@ -10,5 +10,7 @@"));
+    assert!(patch.contains("@@ -9,5 +9,7 @@"));
     assert!(patch.contains("+//! Demo docs.\n+/// Does foo.\n"));
 }

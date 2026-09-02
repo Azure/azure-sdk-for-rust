@@ -31,10 +31,12 @@ pub(crate) fn render_lines(model: &ApiModel) -> Vec<RenderedLine> {
     render_package_metadata(&mut output, model);
     push_code(&mut output, 0, "## Features");
     push_code(&mut output, 0, "");
-    for (feature, enabled_features) in model.package_metadata.features() {
+    for feature in model.package_metadata.feature_names() {
         push_code(&mut output, 0, &format!("- `{feature}`"));
-        for enabled_feature in enabled_features {
-            push_code(&mut output, 0, &format!("  - `{enabled_feature}`"));
+        if feature == "default" {
+            for child in model.package_metadata.default_feature_children() {
+                push_code(&mut output, 0, &format!("  - `{child}`"));
+            }
         }
     }
     if !model.package_metadata.features.is_empty() {
@@ -48,19 +50,13 @@ pub(crate) fn render_lines(model: &ApiModel) -> Vec<RenderedLine> {
 
 fn render_package_metadata(output: &mut Vec<RenderedLine>, model: &ApiModel) {
     let metadata = &model.package_metadata;
-    if let Some(description) = &metadata.description {
-        push_code(output, 0, &format!("- **Description**: {description}"));
-    }
     if let Some(edition) = &metadata.edition {
         push_code(output, 0, &format!("- **Edition**: {edition}"));
     }
     if let Some(rust_version) = &metadata.rust_version {
         push_code(output, 0, &format!("- **Rust version**: {rust_version}"));
     }
-    if metadata.description.is_some()
-        || metadata.edition.is_some()
-        || metadata.rust_version.is_some()
-    {
+    if metadata.edition.is_some() || metadata.rust_version.is_some() {
         push_code(output, 0, "");
     }
 }

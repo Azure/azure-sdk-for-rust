@@ -22,6 +22,38 @@ fn item(name: &str, kind: ApiItemKind, declaration: &str) -> ApiItem {
 }
 
 #[test]
+fn orders_feature_names_and_default_children() {
+    let metadata = PackageMetadata {
+        edition: None,
+        rust_version: None,
+        features: BTreeMap::from([
+            ("alpha".to_string(), vec!["ignored".to_string()]),
+            (
+                "default".to_string(),
+                vec!["zeta".to_string(), "alpha".to_string()],
+            ),
+            ("zeta".to_string(), Vec::new()),
+        ]),
+    };
+
+    assert_eq!(
+        metadata
+            .feature_names()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        vec!["default", "alpha", "zeta"]
+    );
+    assert_eq!(
+        metadata
+            .default_feature_children()
+            .into_iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        vec!["alpha", "zeta"]
+    );
+}
+
+#[test]
 fn sorts_inherent_impls_by_type_parameter_then_infer_then_explicit_type() {
     let mut explicit = item(
         "Builder",
