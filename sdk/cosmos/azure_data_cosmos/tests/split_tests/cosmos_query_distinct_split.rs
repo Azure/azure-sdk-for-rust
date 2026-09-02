@@ -15,13 +15,15 @@
 //! rows for the same values, which is precisely the case a per-partition or
 //! per-page dedup would get wrong.
 //!
-//! Two invariants are asserted across one live split:
+//! Three invariants are asserted across one live split:
 //!
 //! - **Unordered** `DISTINCT` drained straight through a split returns each
 //!   value exactly once.
 //! - **Ordered** `DISTINCT` (matching `ORDER BY`) resumed from a continuation
 //!   token captured *before* the split returns each value exactly once, in
 //!   sorted order, with no gap at the boundary.
+//! - **Windowed ordered** `DISTINCT` retains its deduplication and row-window
+//!   state while a split occurs between output pages.
 //!
 //! Runs only under `test_category = "split"` against split-capable resources.
 
@@ -120,10 +122,9 @@ where
 
 /// Cross-partition `DISTINCT` across a live partition split.
 ///
-/// Part 1 drains an unordered `DISTINCT` straight through a forced split.
-/// Part 2 captures an ordered `DISTINCT` continuation token before the split
-/// (already taken, since the split happened in part 1) and resumes it against
-/// the post-split topology.
+/// Captures ordered and windowed state before the split, drains an unordered
+/// `DISTINCT` through the split, then finishes both saved scenarios against the
+/// post-split topology.
 async fn run_distinct_query_across_split_returns_each_value_once(
     binary: bool,
 ) -> Result<(), Box<dyn Error>> {
@@ -220,6 +221,32 @@ async fn run_distinct_query_across_split_returns_each_value_once(
                 "the pre-split checkpoint must have emitted at least one value"
             );
 
+            // ── Windowed DISTINCT: keep live state across the split ────────
+            //
+            // Consume one of the two requested values before the split. This
+            // leaves both the dedup map and the window's remaining take active
+            // while the unordered query below forces the topology change.
+            let windowed_options = QueryOptions::default()
+                .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
+            let mut windowed_pages = container_client
+                .query_items::<String>(
+                    WINDOWED_QUERY,
+                    FeedScope::full_container(),
+                    Some(windowed_options),
+                )
+                .await?
+                .into_pages();
+            let mut windowed = windowed_pages
+                .next()
+                .await
+                .expect("windowed DISTINCT should yield a pre-split page")?
+                .into_items();
+            assert_eq!(
+                windowed.len(),
+                1,
+                "the pre-split page must leave one windowed result pending"
+            );
+
             // ── Unordered DISTINCT: drain straight through the split ──────
             let mut split_done = false;
             let unordered = drain_with_hook(&container_client, UNORDERED_QUERY, || {
@@ -278,35 +305,14 @@ async fn run_distinct_query_across_split_returns_each_value_once(
                 "an ordered DISTINCT resume must preserve global sort order across the split"
             );
 
-            // ── DISTINCT under a row window, drained across the split ─────
-            //
-            // `SkipTake` wraps `Distinct`, so a split must preserve both the
-            // dedup state and the window's remaining budget. Losing the former
-            // re-emits a value the window already paid for; losing the latter
-            // restarts the offset and over-returns. The emulator covers this
-            // with a simulated split — this is the same shape against a real
-            // one, where the fan-out is genuinely rebuilt.
-            let windowed =
-                drain_with_hook(&container_client, WINDOWED_QUERY, || async { Ok(()) }).await?;
+            // ── Windowed DISTINCT: finish against the new topology ─────────
+            while let Some(page) = windowed_pages.next().await {
+                windowed.extend(page?.into_items());
+            }
             assert_eq!(
-                windowed.len(),
-                2,
-                "`{WINDOWED_QUERY}` must apply its window to deduplicated values across the \
-                 split, got {windowed:?}"
-            );
-            let mut windowed_sorted = windowed.clone();
-            windowed_sorted.sort();
-            windowed_sorted.dedup();
-            assert_eq!(
-                windowed_sorted.len(),
-                windowed.len(),
-                "windowed DISTINCT across a split returned duplicates: {windowed:?}"
-            );
-            let mut in_order = windowed.clone();
-            in_order.sort();
-            assert_eq!(
-                windowed, in_order,
-                "windowed DISTINCT must preserve global sort order across the split"
+                windowed,
+                vec!["g01", "g02"],
+                "`{WINDOWED_QUERY}` must preserve the exact DISTINCT window across the split"
             );
 
             Ok(())
