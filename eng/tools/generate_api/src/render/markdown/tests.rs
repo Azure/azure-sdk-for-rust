@@ -153,7 +153,11 @@ fn marks_doc_comments_and_omits_them_from_markdown() {
         parser_version: "0.0.0".to_string(),
         root_module: ApiModule {
             path: "demo".to_string(),
-            doc_comments: vec!["//! Demo crate.".to_string()],
+            doc_comments: vec![
+                "/// Demo crate.".to_string(),
+                "///".to_string(),
+                "/// More details.".to_string(),
+            ],
             attributes: Vec::new(),
             items: vec![documented],
             modules: Vec::new(),
@@ -168,7 +172,12 @@ fn marks_doc_comments_and_omits_them_from_markdown() {
             .filter(|line| line.is_doc_comment)
             .map(|line| line.text.as_str())
             .collect::<Vec<_>>(),
-        vec!["//! Demo crate.", "/// Does foo."]
+        vec![
+            "//! Demo crate.",
+            "//!",
+            "//! More details.",
+            "/// Does foo."
+        ]
     );
     assert_eq!(render_from_lines(&lines), "```rust\npub struct Foo;\n```\n");
 }

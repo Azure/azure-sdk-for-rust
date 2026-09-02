@@ -2,7 +2,7 @@
 
 ## Goal
 
-`eng/tools/generate_api` is a Rust CLI that generates two public API artifacts for a target crate:
+`eng/tools/generate_api` is a Rust CLI that generates the following public API artifacts for a target crate:
 
 1. `API.md` — one fenced `rust` block
 2. `API.comments.patch` — a unified diff that adds doc comments back to `API.md`

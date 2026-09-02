@@ -39,7 +39,7 @@ fn render_module(output: &mut Vec<RenderedLine>, module: &ApiModule, is_root: bo
     modules.sort_by(|left, right| left.path.cmp(&right.path));
 
     let body_indent = if is_root { indent } else { indent + 1 };
-    push_doc_comments(output, indent, &module.doc_comments);
+    push_module_doc_comments(output, indent, &module.doc_comments, is_root);
     for attribute in &module.attributes {
         push_code(output, indent, &attribute.text);
     }
@@ -119,6 +119,25 @@ fn push_multiline(output: &mut Vec<RenderedLine>, indent: usize, text: &str) {
 fn push_doc_comments(output: &mut Vec<RenderedLine>, indent: usize, doc_comments: &[String]) {
     for comment in doc_comments {
         push_line(output, indent, comment, true);
+    }
+}
+
+fn push_module_doc_comments(
+    output: &mut Vec<RenderedLine>,
+    indent: usize,
+    doc_comments: &[String],
+    is_root: bool,
+) {
+    for comment in doc_comments {
+        let comment = if is_root {
+            comment
+                .strip_prefix("///")
+                .map(|suffix| format!("//!{suffix}"))
+                .unwrap_or_else(|| comment.clone())
+        } else {
+            comment.clone()
+        };
+        push_line(output, indent, &comment, true);
     }
 }
 
