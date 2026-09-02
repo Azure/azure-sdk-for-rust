@@ -6,7 +6,7 @@
 //!
 //! Construction is a single flat call: the host fills a
 //! [`CosmosDriverOptionsConfig`] `#[repr(C)]` struct (preferred regions + a
-//! pointer to the flat `cosmos_operation_options_t` + query-plan mode) and
+//! pointer to the flat `cosmos_operation_options_t`) and
 //! passes it, together with the account handle, to
 //! [`cosmos_driver_options_build`]. Drivers that don't configure operation
 //! options inherit the driver's own defaults.
@@ -28,9 +28,7 @@
 use std::ffi::{c_char, CStr};
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::options::{
-    DriverOptions, DriverOptionsBuilder, QueryPlanMode, Region,
-};
+use azure_data_cosmos_driver::options::{DriverOptions, DriverOptionsBuilder, Region};
 
 use crate::account_ref::AccountRefHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
@@ -142,37 +140,6 @@ unsafe fn decode_preferred_regions(
 // removed in P5 (no back-compat).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Query-plan selection for [`CosmosDriverOptionsConfig`].
-#[repr(i32)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum CosmosQueryPlanMode {
-    /// Inherit the driver default or environment override.
-    CosmosQueryPlanModeUnset = 0,
-    /// Prefer local planning, falling back to the Gateway before execution.
-    CosmosQueryPlanModeLocalPreferred = 1,
-    /// Always request query plans from the Gateway.
-    CosmosQueryPlanModeGatewayOnly = 2,
-}
-
-impl CosmosQueryPlanMode {
-    fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
-        Ok(match raw {
-            0 => Self::CosmosQueryPlanModeUnset,
-            1 => Self::CosmosQueryPlanModeLocalPreferred,
-            2 => Self::CosmosQueryPlanModeGatewayOnly,
-            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
-        })
-    }
-
-    fn to_driver(self) -> Option<QueryPlanMode> {
-        match self {
-            Self::CosmosQueryPlanModeUnset => None,
-            Self::CosmosQueryPlanModeLocalPreferred => Some(QueryPlanMode::LocalPreferred),
-            Self::CosmosQueryPlanModeGatewayOnly => Some(QueryPlanMode::GatewayOnly),
-        }
-    }
-}
-
 /// Flat C ABI config for building a `cosmos_driver_options_t` in a single call.
 ///
 /// All fields are sentinel-encoded so a zeroed struct (or a NULL pointer passed
@@ -184,8 +151,6 @@ impl CosmosQueryPlanMode {
 /// - `operation_options`: pointer to a flat
 ///   [`cosmos_operation_options_t`](crate::op_request::CosmosOperationOptions),
 ///   or NULL to inherit the driver defaults.
-/// - `query_plan_mode`: `0` inherits; see [`CosmosQueryPlanMode`].
-///
 /// The account reference stays a separate handle parameter on
 /// [`cosmos_driver_options_build`] — it owns `Arc`-shared state and cannot be
 /// flattened into bytes.
@@ -203,9 +168,6 @@ pub struct CosmosDriverOptionsConfig {
     /// Per-driver default operation options, or NULL to inherit the driver
     /// defaults.
     pub operation_options: *const crate::op_request::CosmosOperationOptions,
-    /// Query-plan mode encoded as a [`CosmosQueryPlanMode`] discriminant.
-    /// `0` inherits the driver default or environment override.
-    pub query_plan_mode: i32,
 }
 
 /// Returns an all-unset [`CosmosDriverOptionsConfig`] by value. The host
@@ -217,7 +179,6 @@ pub extern "C" fn cosmos_driver_options_config_default() -> CosmosDriverOptionsC
         preferred_regions: std::ptr::null(),
         preferred_regions_len: 0,
         operation_options: std::ptr::null(),
-        query_plan_mode: CosmosQueryPlanMode::CosmosQueryPlanModeUnset as i32,
     }
 }
 
@@ -286,13 +247,6 @@ pub extern "C" fn cosmos_driver_options_build(
             };
             builder = builder.with_operation_options(driver_opts);
         }
-        let query_plan_mode = match CosmosQueryPlanMode::from_i32(cfg.query_plan_mode) {
-            Ok(mode) => mode,
-            Err(code) => return code.as_status_code(),
-        };
-        if let Some(mode) = query_plan_mode.to_driver() {
-            builder = builder.with_query_plan_mode(mode);
-        }
     }
 
     let handle = DriverOptionsHandle::into_raw(builder.build());
@@ -334,10 +288,6 @@ mod tests {
         assert!(c.preferred_regions.is_null());
         assert_eq!(c.preferred_regions_len, 0);
         assert!(c.operation_options.is_null());
-        assert_eq!(
-            c.query_plan_mode,
-            CosmosQueryPlanMode::CosmosQueryPlanModeUnset as i32
-        );
     }
 
     #[test]
@@ -406,39 +356,6 @@ mod tests {
         assert_eq!(names, vec!["eastus", "westus3"]);
         drop(inner);
         cosmos_driver_options_free(opts);
-        crate::account_ref::cosmos_account_ref_free(account);
-    }
-
-    #[test]
-    fn flat_build_sets_gateway_only_query_plan_mode() {
-        let account = make_account();
-        let mut cfg = cosmos_driver_options_config_default();
-        cfg.query_plan_mode = CosmosQueryPlanMode::CosmosQueryPlanModeGatewayOnly as i32;
-        let mut opts: *mut DriverOptionsHandle = ptr::null_mut();
-
-        assert_eq!(
-            cosmos_driver_options_build(account, &cfg, &mut opts),
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
-        );
-        let inner = DriverOptionsHandle::inner_arc(opts).unwrap();
-        assert_eq!(inner.inner.query_plan_mode(), QueryPlanMode::GatewayOnly);
-        drop(inner);
-        cosmos_driver_options_free(opts);
-        crate::account_ref::cosmos_account_ref_free(account);
-    }
-
-    #[test]
-    fn flat_build_rejects_invalid_query_plan_mode() {
-        let account = make_account();
-        let mut cfg = cosmos_driver_options_config_default();
-        cfg.query_plan_mode = 99;
-        let mut opts: *mut DriverOptionsHandle = ptr::null_mut();
-
-        assert_eq!(
-            cosmos_driver_options_build(account, &cfg, &mut opts),
-            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
-        );
-        assert!(opts.is_null());
         crate::account_ref::cosmos_account_ref_free(account);
     }
 

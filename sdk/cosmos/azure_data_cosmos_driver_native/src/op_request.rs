@@ -42,7 +42,8 @@ use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::Etag;
 use azure_data_cosmos_driver::options::{
     BinaryEncodingOptions, ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
-    OperationOptions, PatchStrategy, ReadConsistencyStrategy, Region, ThroughputControlOptions,
+    OperationOptions, PatchStrategy, QueryPlanMode, ReadConsistencyStrategy, Region,
+    ThroughputControlOptions,
 };
 use azure_data_cosmos_driver::{
     models::{
@@ -213,6 +214,38 @@ impl CosmosPatchStrategy {
             Self::CosmosPatchStrategyAuto => Some(PatchStrategy::Auto),
             Self::CosmosPatchStrategyClientSide => Some(PatchStrategy::ClientSide),
             Self::CosmosPatchStrategyServerSide => Some(PatchStrategy::ServerSide),
+        }
+    }
+}
+
+/// Tri-state mirror of [`QueryPlanMode`] for the flat options struct.
+/// `0` (`Unset`) means "inherit from a lower-priority layer".
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CosmosQueryPlanMode {
+    /// Inherit from account / runtime / environment.
+    CosmosQueryPlanModeUnset = 0,
+    /// Prefer local planning, falling back to the Gateway before execution.
+    CosmosQueryPlanModeLocalPreferred = 1,
+    /// Always request query plans from the Gateway.
+    CosmosQueryPlanModeGatewayOnly = 2,
+}
+
+impl CosmosQueryPlanMode {
+    fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
+        Ok(match raw {
+            0 => Self::CosmosQueryPlanModeUnset,
+            1 => Self::CosmosQueryPlanModeLocalPreferred,
+            2 => Self::CosmosQueryPlanModeGatewayOnly,
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
+        })
+    }
+
+    fn to_driver(self) -> Option<QueryPlanMode> {
+        match self {
+            Self::CosmosQueryPlanModeUnset => None,
+            Self::CosmosQueryPlanModeLocalPreferred => Some(QueryPlanMode::LocalPreferred),
+            Self::CosmosQueryPlanModeGatewayOnly => Some(QueryPlanMode::GatewayOnly),
         }
     }
 }
@@ -435,6 +468,10 @@ pub struct CosmosOperationOptions {
     /// rendering. Hosts needing byte-exact service output should leave binary
     /// encoding disabled.
     pub binary_encoding_request_text_response: i8,
+    /// Query-plan mode encoded as a [`CosmosQueryPlanMode`] discriminant.
+    /// `0` (`Unset`) inherits. Stored as a raw `i32` so invalid host values can
+    /// be rejected before materializing the enum.
+    pub query_plan_mode: i32,
 }
 
 impl CosmosOperationOptions {
@@ -454,6 +491,7 @@ impl CosmosOperationOptions {
             CosmosContentResponseOnWriteOpt::from_i32(self.content_response_on_write)?
                 .to_driver()?;
         opts.patch_strategy = CosmosPatchStrategy::from_i32(self.patch_strategy)?.to_driver();
+        opts.query_plan_mode = CosmosQueryPlanMode::from_i32(self.query_plan_mode)?.to_driver();
         opts.session_capturing_disabled = decode_tristate_bool(self.session_capturing_disabled)?;
 
         opts.max_failover_retry_count = decode_opt_u32(self.max_failover_retry_count);
@@ -550,6 +588,7 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
         content_response_on_write:
             CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset as i32,
         patch_strategy: CosmosPatchStrategy::CosmosPatchStrategyUnset as i32,
+        query_plan_mode: CosmosQueryPlanMode::CosmosQueryPlanModeUnset as i32,
         session_capturing_disabled: TRISTATE_UNSET,
         max_failover_retry_count: -1,
         max_session_retry_count: -1,
@@ -1483,6 +1522,28 @@ mod tests {
     }
 
     #[test]
+    fn query_plan_mode_maps_to_driver() {
+        use CosmosQueryPlanMode as M;
+        for (mode, expected) in [
+            (M::CosmosQueryPlanModeUnset, None),
+            (
+                M::CosmosQueryPlanModeLocalPreferred,
+                Some(QueryPlanMode::LocalPreferred),
+            ),
+            (
+                M::CosmosQueryPlanModeGatewayOnly,
+                Some(QueryPlanMode::GatewayOnly),
+            ),
+        ] {
+            let mut options = cosmos_operation_options_default();
+            options.query_plan_mode = mode as i32;
+            // SAFETY: all pointer fields are NULL / len 0.
+            let driver = unsafe { options.to_driver() }.expect("options convert");
+            assert_eq!(driver.query_plan_mode, expected);
+        }
+    }
+
+    #[test]
     fn read_consistency_from_i32_validates_range() {
         use CosmosReadConsistencyStrategy as S;
         assert_eq!(S::from_i32(0), Ok(S::CosmosReadConsistencyStrategyUnset));
@@ -1544,6 +1605,26 @@ mod tests {
     }
 
     #[test]
+    fn query_plan_mode_from_i32_validates_range() {
+        use CosmosQueryPlanMode as M;
+        assert_eq!(M::from_i32(0), Ok(M::CosmosQueryPlanModeUnset));
+        assert_eq!(M::from_i32(1), Ok(M::CosmosQueryPlanModeLocalPreferred));
+        assert_eq!(M::from_i32(2), Ok(M::CosmosQueryPlanModeGatewayOnly));
+        assert_eq!(
+            M::from_i32(3),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        );
+
+        let mut options = cosmos_operation_options_default();
+        options.query_plan_mode = 3;
+        // SAFETY: all pointer fields are NULL / len 0.
+        assert!(matches!(
+            unsafe { options.to_driver() },
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        ));
+    }
+
+    #[test]
     fn operation_kind_from_i32_validates_range() {
         use CosmosOperationKind as K;
         assert_eq!(K::from_i32(0), Ok(K::CosmosOperationKindInvalid));
@@ -1584,6 +1665,10 @@ mod tests {
             o.patch_strategy,
             CosmosPatchStrategy::CosmosPatchStrategyUnset as i32
         );
+        assert_eq!(
+            o.query_plan_mode,
+            CosmosQueryPlanMode::CosmosQueryPlanModeUnset as i32
+        );
         assert_eq!(o.session_capturing_disabled, TRISTATE_UNSET);
         assert_eq!(o.max_failover_retry_count, -1);
         assert_eq!(o.max_session_retry_count, -1);
@@ -1608,6 +1693,7 @@ mod tests {
         assert_eq!(driver.read_consistency_strategy, None);
         assert_eq!(driver.content_response_on_write, None);
         assert_eq!(driver.patch_strategy, None);
+        assert_eq!(driver.query_plan_mode, None);
         assert_eq!(driver.session_capturing_disabled, None);
         assert_eq!(driver.max_failover_retry_count, None);
         assert_eq!(driver.max_session_retry_count, None);
@@ -1647,6 +1733,7 @@ mod tests {
             ),
             81
         );
+        assert_eq!(offset_of!(CosmosOperationOptions, query_plan_mode), 84);
     }
 
     #[test]

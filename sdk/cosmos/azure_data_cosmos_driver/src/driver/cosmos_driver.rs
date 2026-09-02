@@ -2114,6 +2114,13 @@ impl CosmosDriver {
         )
     }
 
+    fn effective_query_plan_mode(&self, options: &OperationOptions) -> QueryPlanMode {
+        self.operation_options_view(options)
+            .query_plan_mode()
+            .copied()
+            .unwrap_or_default()
+    }
+
     /// Computes the effective throughput-control header values for an operation.
     ///
     /// Resolves the per-request `x-ms-cosmos-throughput-bucket` and
@@ -3658,7 +3665,7 @@ impl CosmosDriver {
             operation_type = ?operation.operation_type(),
             resource_type = ?operation.resource_type(),
             resource_reference = ?operation.resource_reference(),
-            query_plan_mode = ?self.options.query_plan_mode(),
+            query_plan_mode = ?self.effective_query_plan_mode(options),
             "planning operation"
         );
 
@@ -3861,13 +3868,14 @@ impl CosmosDriver {
         operation: &CosmosOperation,
         options: &OperationOptions,
     ) -> crate::error::Result<ResolvedQueryPlan> {
-        if self.options.query_plan_mode() == QueryPlanMode::GatewayOnly {
+        let query_plan_mode = self.effective_query_plan_mode(options);
+        if query_plan_mode == QueryPlanMode::GatewayOnly {
             let plan = self
                 .gateway_query_plan(container, operation, options)
                 .await?;
             tracing::debug!(
                 provider = "gateway",
-                mode = "gateway_only",
+                mode = ?query_plan_mode,
                 "using Gateway query plan"
             );
             return Ok(ResolvedQueryPlan::Plan(Box::new(plan)));
@@ -3891,7 +3899,7 @@ impl CosmosDriver {
 
         match native_result {
             Some(Ok(plan)) => {
-                tracing::debug!(provider = "native_ffi", "using native FFI query plan");
+                tracing::debug!(provider = "native_ffi", mode = ?query_plan_mode, "using native FFI query plan");
                 return Ok(ResolvedQueryPlan::Plan(Box::new(plan)));
             }
             Some(Err(crate::query_plan_native::error::QueryPlanError::LibraryNotAvailable {
@@ -3932,6 +3940,7 @@ impl CosmosDriver {
                         crate::query::local_plan_adapter::ProviderResolution::Plan(_) => "plan",
                         crate::query::local_plan_adapter::ProviderResolution::Empty => "empty",
                     },
+                    mode = ?query_plan_mode,
                     "using local Rust query plan"
                 );
                 return Ok(resolution.into());
@@ -3944,7 +3953,7 @@ impl CosmosDriver {
         let plan = self
             .gateway_query_plan(container, operation, options)
             .await?;
-        tracing::debug!(provider = "gateway", "using Gateway query plan");
+        tracing::debug!(provider = "gateway", mode = ?query_plan_mode, "using Gateway query plan");
         Ok(ResolvedQueryPlan::Plan(Box::new(plan)))
     }
 
@@ -3957,13 +3966,14 @@ impl CosmosDriver {
         operation: &CosmosOperation,
         options: &OperationOptions,
     ) -> crate::error::Result<ResolvedQueryPlan> {
-        if self.options.query_plan_mode() == QueryPlanMode::GatewayOnly {
+        let query_plan_mode = self.effective_query_plan_mode(options);
+        if query_plan_mode == QueryPlanMode::GatewayOnly {
             let plan = self
                 .gateway_query_plan(container, operation, options)
                 .await?;
             tracing::debug!(
                 provider = "gateway",
-                mode = "gateway_only",
+                mode = ?query_plan_mode,
                 "using Gateway query plan"
             );
             return Ok(ResolvedQueryPlan::Plan(Box::new(plan)));
@@ -3980,6 +3990,7 @@ impl CosmosDriver {
                         crate::query::local_plan_adapter::ProviderResolution::Plan(_) => "plan",
                         crate::query::local_plan_adapter::ProviderResolution::Empty => "empty",
                     },
+                    mode = ?query_plan_mode,
                     "using local Rust query plan"
                 );
                 return Ok(resolution.into());
@@ -3991,7 +4002,7 @@ impl CosmosDriver {
         let plan = self
             .gateway_query_plan(container, operation, options)
             .await?;
-        tracing::debug!(provider = "gateway", "using Gateway query plan");
+        tracing::debug!(provider = "gateway", mode = ?query_plan_mode, "using Gateway query plan");
         Ok(ResolvedQueryPlan::Plan(Box::new(plan)))
     }
 

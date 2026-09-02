@@ -30,6 +30,7 @@ mod patch_strategy;
 mod plan_options;
 mod policies;
 mod priority;
+mod query_plan_mode;
 mod read_consistency;
 mod region;
 mod throughput_control;
@@ -42,7 +43,7 @@ pub use diagnostics_options::{
 };
 pub(crate) use diagnostics_thresholds::is_point_operation;
 pub use diagnostics_thresholds::DiagnosticsThresholds;
-pub use driver_options::{DriverOptions, DriverOptionsBuilder, QueryPlanMode};
+pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use hedging::{
     HedgingOptions, HedgingOptionsBuilder, DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS,
@@ -61,6 +62,7 @@ pub use policies::{
     ServerCertificateValidation, TlsBackend,
 };
 pub use priority::PriorityLevel;
+pub use query_plan_mode::QueryPlanMode;
 pub(crate) use read_consistency::resolve_effective_consistency;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;

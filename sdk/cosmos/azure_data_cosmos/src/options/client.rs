@@ -22,8 +22,6 @@ pub struct CosmosClientOptions {
     /// Default [`OperationOptions`] applied to all requests made by this client,
     /// unless overridden by per-request options.
     pub operation: OperationOptions,
-    /// Query-plan provider selection for this client.
-    pub query_plan_mode: QueryPlanMode,
     pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
     /// Options to control binary encoding.
     pub(crate) binary_encoding: Option<BinaryEncodingOptions>,
@@ -44,7 +42,7 @@ impl CosmosClientOptions {
 
     /// Selects how cross-partition query plans are resolved.
     pub fn with_query_plan_mode(mut self, mode: QueryPlanMode) -> Self {
-        self.query_plan_mode = mode;
+        self.operation.query_plan_mode = Some(mode);
         self
     }
 

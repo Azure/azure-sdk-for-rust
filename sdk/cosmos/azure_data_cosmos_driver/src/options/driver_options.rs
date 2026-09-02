@@ -8,36 +8,13 @@ use std::sync::Arc;
 use crate::{
     models::AccountReference,
     options::{
-        HedgingOptions, OperationOptions, PartitionFailoverOptions, Region,
+        HedgingOptions, OperationOptions, PartitionFailoverOptions, QueryPlanMode, Region,
         ThroughputControlGroupOptions, ThroughputControlGroupRegistry, UserAgentSuffix,
     },
 };
 
 #[cfg(feature = "fault_injection")]
 use crate::fault_injection::FaultInjectionRule;
-
-const QUERY_PLAN_MODE_OVERRIDE_ENV: &str = "AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE";
-
-/// Controls how cross-partition query plans are resolved.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum QueryPlanMode {
-    /// Prefer local planning and fall back to the Gateway before execution.
-    #[default]
-    LocalPreferred,
-    /// Always request query plans from the Gateway.
-    GatewayOnly,
-}
-
-impl QueryPlanMode {
-    fn parse_override(value: &str) -> Option<Self> {
-        match value.trim().to_ascii_lowercase().as_str() {
-            "local_preferred" => Some(Self::LocalPreferred),
-            "gateway" | "gateway_only" => Some(Self::GatewayOnly),
-            _ => None,
-        }
-    }
-}
 
 /// Configuration options for a Cosmos DB driver instance.
 ///
@@ -133,8 +110,6 @@ pub struct DriverOptions {
     /// per-operation [`AvailabilityStrategy`](crate::options::AvailabilityStrategy)
     /// asks for.
     hedging_options: HedgingOptions,
-    /// Query-plan provider selection for this driver.
-    query_plan_mode: QueryPlanMode,
 }
 
 impl DriverOptions {
@@ -197,11 +172,6 @@ impl DriverOptions {
     pub fn hedging_options(&self) -> &HedgingOptions {
         &self.hedging_options
     }
-
-    /// Returns the effective query-plan provider selection.
-    pub fn query_plan_mode(&self) -> QueryPlanMode {
-        self.query_plan_mode
-    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -221,7 +191,6 @@ pub struct DriverOptionsBuilder {
     partition_failover_options: Option<PartitionFailoverOptions>,
     partition_key_range_cache_enabled: bool,
     hedging_options: Option<HedgingOptions>,
-    query_plan_mode: Option<QueryPlanMode>,
 }
 
 impl DriverOptionsBuilder {
@@ -238,7 +207,6 @@ impl DriverOptionsBuilder {
             partition_failover_options: None,
             partition_key_range_cache_enabled: true,
             hedging_options: None,
-            query_plan_mode: None,
         }
     }
 
@@ -382,7 +350,9 @@ impl DriverOptionsBuilder {
     /// The environment-only `AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE` break-glass
     /// setting takes precedence over this value.
     pub fn with_query_plan_mode(mut self, mode: QueryPlanMode) -> Self {
-        self.query_plan_mode = Some(mode);
+        self.operation_options
+            .get_or_insert_default()
+            .query_plan_mode = Some(mode);
         self
     }
 
@@ -421,18 +391,6 @@ impl DriverOptionsBuilder {
                     PartitionFailoverOptions::default()
                 }),
         };
-        let configured_query_plan_mode = self.query_plan_mode.unwrap_or_default();
-        let query_plan_mode = match get_env(QUERY_PLAN_MODE_OVERRIDE_ENV) {
-            Some(value) => QueryPlanMode::parse_override(&value).unwrap_or_else(|| {
-                tracing::warn!(
-                    env = QUERY_PLAN_MODE_OVERRIDE_ENV,
-                    "ignoring invalid query-plan mode override"
-                );
-                configured_query_plan_mode
-            }),
-            None => configured_query_plan_mode,
-        };
-
         DriverOptions {
             account: self.account,
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
@@ -444,7 +402,6 @@ impl DriverOptionsBuilder {
             partition_failover_options,
             partition_key_range_cache_enabled: self.partition_key_range_cache_enabled,
             hedging_options: self.hedging_options.unwrap_or_default(),
-            query_plan_mode,
         }
     }
 }
@@ -546,9 +503,9 @@ mod tests {
     }
 
     #[test]
-    fn query_plan_mode_defaults_to_local_preferred() {
+    fn query_plan_mode_is_unset_by_default() {
         let options = DriverOptionsBuilder::new(test_account()).build_from_env(&|_| None);
-        assert_eq!(options.query_plan_mode(), QueryPlanMode::LocalPreferred);
+        assert_eq!(options.operation_options().query_plan_mode, None);
     }
 
     #[test]
@@ -556,27 +513,10 @@ mod tests {
         let options = DriverOptionsBuilder::new(test_account())
             .with_query_plan_mode(QueryPlanMode::GatewayOnly)
             .build_from_env(&|_| None);
-        assert_eq!(options.query_plan_mode(), QueryPlanMode::GatewayOnly);
-    }
-
-    #[test]
-    fn query_plan_mode_environment_override_is_authoritative() {
-        let options = DriverOptionsBuilder::new(test_account())
-            .with_query_plan_mode(QueryPlanMode::LocalPreferred)
-            .build_from_env(&|key| {
-                (key == QUERY_PLAN_MODE_OVERRIDE_ENV).then(|| "gateway".to_owned())
-            });
-        assert_eq!(options.query_plan_mode(), QueryPlanMode::GatewayOnly);
-    }
-
-    #[test]
-    fn invalid_query_plan_mode_override_preserves_configured_mode() {
-        let options = DriverOptionsBuilder::new(test_account())
-            .with_query_plan_mode(QueryPlanMode::GatewayOnly)
-            .build_from_env(&|key| {
-                (key == QUERY_PLAN_MODE_OVERRIDE_ENV).then(|| "invalid".to_owned())
-            });
-        assert_eq!(options.query_plan_mode(), QueryPlanMode::GatewayOnly);
+        assert_eq!(
+            options.operation_options().query_plan_mode,
+            Some(QueryPlanMode::GatewayOnly)
+        );
     }
 
     // ── Partition-failover / PPCB end-to-end env resolution ─────────────────

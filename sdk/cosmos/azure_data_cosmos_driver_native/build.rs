@@ -82,7 +82,7 @@ fn generate_c_header() {
          #define COSMOS_VALUE_KIND_BOOL   3\n\
          #define COSMOS_VALUE_KIND_U64    4\n\
          \n\
-         // Discriminants for cosmos_driver_options_config_t.query_plan_mode.\n\
+         // Discriminants for cosmos_operation_options_t.query_plan_mode.\n\
          #define COSMOS_QUERY_PLAN_MODE_UNSET           0\n\
          #define COSMOS_QUERY_PLAN_MODE_LOCAL_PREFERRED 1\n\
          #define COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY    2",

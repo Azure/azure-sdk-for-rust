@@ -158,11 +158,18 @@ Normal builds resolve cross-partition query plans in this order:
 1. Local Rust planner.
 2. Gateway query-plan endpoint.
 
-Set `DriverOptionsBuilder::with_query_plan_mode(QueryPlanMode::GatewayOnly)`
-to bypass local planning. For livesite mitigation,
-`AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE=gateway` authoritatively forces the same
-behavior for every subsequently constructed driver, even when its builder
-selects `LocalPreferred`.
+Set `DriverOptionsBuilder::with_query_plan_mode(QueryPlanMode::GatewayOnly)` to
+change the default for a driver, or set the mode in `OperationOptions` to
+override it for one query. The Rust SDK exposes the same scopes through
+`CosmosClientBuilder::with_query_plan_mode` and
+`QueryOptions::with_query_plan_mode`.
+
+Query-plan mode follows the standard operation → account → runtime →
+environment option hierarchy. `AZURE_COSMOS_QUERY_PLAN_MODE` supplies the
+lowest-priority process default. For livesite mitigation,
+`AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE=gateway` authoritatively forces Gateway
+planning above every programmatic layer. Environment settings are captured
+when the runtime is constructed.
 
 When `__internal_native_query_plan` is enabled, the existing native-first behavior is preserved:
 

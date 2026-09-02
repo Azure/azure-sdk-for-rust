@@ -13,7 +13,9 @@ use azure_data_cosmos_driver::{
         VirtualRegion,
     },
     models::{AccountReference, CosmosOperation, FeedRange, PartitionKeyDefinition},
-    options::{DriverOptions, OperationOptions, PlanOptions, QueryPlanMode},
+    options::{
+        DriverOptions, OperationOptions, OperationOptionsBuilder, PlanOptions, QueryPlanMode,
+    },
 };
 
 use super::{host_recorder::HostRecorder, GATEWAY_URL};
@@ -68,7 +70,32 @@ async fn setup_with_query_plan_mode(
 }
 
 #[tokio::test]
-async fn gateway_only_mode_bypasses_local_query_planning() {
+async fn per_request_gateway_only_mode_bypasses_local_query_planning() {
+    let (_emulator, recorder, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .unwrap();
+    recorder.clear();
+    let options = OperationOptionsBuilder::new()
+        .with_query_plan_mode(QueryPlanMode::GatewayOnly)
+        .build();
+
+    driver
+        .plan_operation(
+            query(&container, "SELECT * FROM c WHERE c.pk = 'a'"),
+            &options,
+            None,
+            &PlanOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(recorder.query_plan_count(), 1);
+}
+
+#[cfg(not(feature = "__internal_native_query_plan"))]
+#[tokio::test]
+async fn per_request_local_preferred_overrides_gateway_only_client_default() {
     let (_emulator, recorder, driver) =
         setup_with_query_plan_mode(QueryPlanMode::GatewayOnly).await;
     let container = driver
@@ -76,17 +103,21 @@ async fn gateway_only_mode_bypasses_local_query_planning() {
         .await
         .unwrap();
     recorder.clear();
+    let options = OperationOptionsBuilder::new()
+        .with_query_plan_mode(QueryPlanMode::LocalPreferred)
+        .build();
 
     driver
         .plan_operation(
             query(&container, "SELECT * FROM c WHERE c.pk = 'a'"),
-            &OperationOptions::default(),
+            &options,
             None,
             &PlanOptions::default(),
         )
         .await
         .unwrap();
-    assert_eq!(recorder.query_plan_count(), 1);
+
+    assert_eq!(recorder.query_plan_count(), 0);
 }
 
 fn query(

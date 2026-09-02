@@ -206,7 +206,7 @@ impl CosmosClientBuilder {
 
     /// Selects how cross-partition query plans are resolved.
     pub fn with_query_plan_mode(mut self, mode: QueryPlanMode) -> Self {
-        self.options.query_plan_mode = mode;
+        self.options.operation.query_plan_mode = Some(mode);
         self
     }
 
@@ -338,7 +338,6 @@ impl CosmosClientBuilder {
             strategy: routing_strategy,
             operation_options: self.options.operation,
             user_agent_suffix: self.options.user_agent_suffix,
-            query_plan_mode: self.options.query_plan_mode,
             partition_failover_options: self.partition_failover_options,
             partition_key_range_cache_enabled: self
                 .partition_key_range_cache_enabled
@@ -376,7 +375,6 @@ struct DriverOptionsInput {
     strategy: RoutingStrategy,
     operation_options: OperationOptions,
     user_agent_suffix: Option<UserAgentSuffix>,
-    query_plan_mode: QueryPlanMode,
     partition_failover_options: Option<PartitionFailoverOptions>,
     partition_key_range_cache_enabled: bool,
     #[cfg(feature = "fault_injection")]
@@ -402,7 +400,6 @@ impl DriverOptionsInput {
         let mut builder = azure_data_cosmos_driver::options::DriverOptions::builder(self.account)
             .with_preferred_regions(preferred_regions)
             .with_operation_options(self.operation_options)
-            .with_query_plan_mode(self.query_plan_mode)
             .with_partition_key_range_cache_enabled(self.partition_key_range_cache_enabled);
         if let Some(suffix) = self.user_agent_suffix {
             builder = builder.with_user_agent_suffix(suffix);
@@ -505,6 +502,16 @@ mod tests {
         assert_eq!(builder.options.user_agent_suffix.as_ref(), Some(&suffix));
     }
 
+    #[test]
+    fn query_plan_mode_setter_updates_account_operation_options() {
+        let builder = CosmosClientBuilder::new().with_query_plan_mode(QueryPlanMode::GatewayOnly);
+
+        assert_eq!(
+            builder.options.operation.query_plan_mode,
+            Some(QueryPlanMode::GatewayOnly)
+        );
+    }
+
     fn test_account() -> azure_data_cosmos_driver::models::AccountReference {
         azure_data_cosmos_driver::models::AccountReference::with_master_key(
             "https://test.documents.azure.com/".parse().unwrap(),
@@ -518,7 +525,6 @@ mod tests {
             strategy,
             operation_options: OperationOptions::default(),
             user_agent_suffix: None,
-            query_plan_mode: QueryPlanMode::default(),
             partition_failover_options: None,
             partition_key_range_cache_enabled: true,
             #[cfg(feature = "fault_injection")]
@@ -590,14 +596,14 @@ mod tests {
 
     #[test]
     fn query_plan_mode_flows_to_driver_options() {
-        let opts = DriverOptionsInput {
-            query_plan_mode: QueryPlanMode::GatewayOnly,
-            ..test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))
-        }
-        .build()
-        .expect("driver options should build");
+        let mut input = test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()));
+        input.operation_options.query_plan_mode = Some(QueryPlanMode::GatewayOnly);
+        let opts = input.build().expect("driver options should build");
 
-        assert_eq!(opts.query_plan_mode(), QueryPlanMode::GatewayOnly);
+        assert_eq!(
+            opts.operation_options().query_plan_mode,
+            Some(QueryPlanMode::GatewayOnly)
+        );
     }
 
     /// The user-agent suffix must flow through to the per-driver options so
