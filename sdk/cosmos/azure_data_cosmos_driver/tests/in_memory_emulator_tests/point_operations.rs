@@ -114,7 +114,7 @@ async fn item_id_with_literal_percent_round_trips_through_driver() {
         .await
         .expect("literal percent item should be read");
     let bytes = response.into_body().single().expect("point read body");
-    let document: serde_json::Value = serde_json::from_slice(&bytes).expect("body should be JSON");
+    let document = parse_json_body(&bytes).expect("body should be JSON");
 
     assert_eq!(document["id"], item_id);
 }
