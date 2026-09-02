@@ -156,7 +156,7 @@ async fn create_client(
 async fn container(client: &CosmosClient) -> azure_data_cosmos::ContainerClient {
     client
         .database_client(DATABASE)
-        .container_client(CONTAINER)
+        .container_client(CONTAINER, None)
         .await
         .expect("container resolves")
 }

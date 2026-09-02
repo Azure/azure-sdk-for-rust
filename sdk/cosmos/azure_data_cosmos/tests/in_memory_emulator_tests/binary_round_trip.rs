@@ -79,17 +79,16 @@ async fn build_container(db_name: &str, binary: bool) -> ContainerClient {
         EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
-    let mut builder = CosmosClientBuilder::new().with_runtime(
-        CosmosRuntimeBuilder::from(emulator.runtime_builder())
-            .build()
-            .await
-            .unwrap(),
-    );
-    if binary {
-        builder =
-            builder.with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(true));
-    }
-    let client = builder
+    // Always set the option explicitly: binary encoding is enabled by default,
+    // so leaving it unset would make `binary = false` a binary client.
+    let client = CosmosClientBuilder::new()
+        .with_runtime(
+            CosmosRuntimeBuilder::from(emulator.runtime_builder())
+                .build()
+                .await
+                .unwrap(),
+        )
+        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(binary))
         .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await
         .unwrap();
@@ -145,17 +144,16 @@ async fn build_multi_partition_container_with_recorder(
         EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
-    let mut builder = CosmosClientBuilder::new().with_runtime(
-        CosmosRuntimeBuilder::from(emulator.runtime_builder())
-            .build()
-            .await
-            .unwrap(),
-    );
-    if binary {
-        builder =
-            builder.with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(true));
-    }
-    let client = builder
+    // Always set the option explicitly: binary encoding is enabled by default,
+    // so leaving it unset would make `binary = false` a binary client.
+    let client = CosmosClientBuilder::new()
+        .with_runtime(
+            CosmosRuntimeBuilder::from(emulator.runtime_builder())
+                .build()
+                .await
+                .unwrap(),
+        )
+        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(binary))
         .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await
         .unwrap();

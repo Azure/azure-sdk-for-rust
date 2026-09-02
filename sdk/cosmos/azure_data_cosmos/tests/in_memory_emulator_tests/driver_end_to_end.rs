@@ -24,14 +24,16 @@ use azure_data_cosmos_driver::options::Region;
 
 use super::dual_backend::DualBackend;
 use super::validation::{
-    compare_responses, BodyValidationSpec, HeaderValidationSpec, ResponseSnapshot,
+    compare_responses, parse_body_json, BodyValidationSpec, HeaderValidationSpec, ResponseSnapshot,
 };
 use uuid::Uuid;
 
 /// Parses a single-payload response body as JSON without consuming the response.
 fn body_json(response: &CosmosResponse) -> serde_json::Value {
     match response.body() {
-        ResponseBody::Bytes(b) => serde_json::from_slice(b).unwrap(),
+        ResponseBody::Bytes(b) => {
+            parse_body_json(b).expect("response body should parse as text or binary JSON")
+        }
         ResponseBody::NoPayload => panic!("expected single Bytes body, got no payload"),
         ResponseBody::Items(_) => panic!("expected single Bytes body, got feed response"),
     }

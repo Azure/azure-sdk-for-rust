@@ -1388,9 +1388,10 @@ typedef struct cosmos_operation_options_t {
    * When true, the driver transcodes a **text** request body to binary
    * before sending it (an already-binary body is passed through) and
    * advertises `CosmosBinary`, so the caller never encodes binary itself.
-   * An explicit `false` forces binary **off** for this operation regardless
-   * of any account/runtime default; `unset` inherits a lower layer (text by
-   * default).
+   * An explicit `false` (`1`) is the text opt-out: it forces binary **off**
+   * for this operation regardless of any account/runtime default. `unset`
+   * inherits a lower layer, which enables binary encoding by default, so an
+   * all-unset options struct negotiates binary.
    *
    * The response side is uniform across operation types: point reads,
    * writes that echo content, and queries all negotiate a binary response,
