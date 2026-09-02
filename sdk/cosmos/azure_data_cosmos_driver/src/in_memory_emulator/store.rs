@@ -18,8 +18,9 @@ use super::session::SessionState;
 use crate::models::{PartitionKeyDefinition, PartitionKeyKind, PartitionKeyVersion};
 
 type SplitMergeLocks = HashMap<(String, String), Arc<async_lock::Mutex<()>>>;
-type InFlightReplications = Arc<std::sync::Mutex<HashMap<u64, PendingReplication>>>;
+type ReplicationTrackerHandle = Arc<std::sync::Mutex<ReplicationTracker>>;
 type CatchUpJournals = Arc<std::sync::Mutex<HashMap<(String, u64), Vec<PendingReplication>>>>;
+type ReplicationRegistrationHook = Arc<dyn Fn() + Send + Sync>;
 /// Sentinel pkrange id used for control-plane (database/container/offer) session
 /// tokens. Chosen as `u32::MAX` so it cannot collide with any user pkrange id,
 /// since real Cosmos partition counts are bounded far below this value.
@@ -233,13 +234,16 @@ pub struct EmulatorStore {
     dtx_replication_capture: std::sync::Mutex<Option<Vec<CapturedReplication>>>,
     /// Tracks spawned replication tasks so tests can drain them.
     replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
+    /// Serializes a local mutation through replication registration against
+    /// delayed catch-up snapshot and finalization.
+    replication_barrier: Arc<async_lock::Mutex<()>>,
     /// Delayed replications that have been scheduled but not yet applied.
     ///
     /// Region enrollment replays this bounded set into the joining replica so
     /// a mutation already queued for the seed hub cannot fall between the
-    /// source snapshot and target enrollment. Entries are removed immediately
-    /// after their task applies.
-    in_flight_replications: InFlightReplications,
+    /// source snapshot and target enrollment. The tracker retains the newest
+    /// mutation for an item until every older in-flight mutation completes.
+    replication_tracker: ReplicationTrackerHandle,
     next_replication_operation_id: AtomicU64,
     /// Per-incarnation mutation journals for regions using delayed catch-up.
     ///
@@ -249,6 +253,8 @@ pub struct EmulatorStore {
     /// enrollment-time create from being resurrected.
     catch_up_journals: CatchUpJournals,
     next_catch_up_journal_id: AtomicU64,
+    /// Optional deterministic interleaving hook for emulator regression tests.
+    before_replication_registration: std::sync::Mutex<Option<ReplicationRegistrationHook>>,
     /// Tracks spawned split/merge tasks separately from replication so a
     /// control-plane panic does not surface inside an unrelated point-write
     /// handler that happens to call `replicate()`.
@@ -319,10 +325,12 @@ impl EmulatorStore {
             #[cfg(feature = "preview_dtx")]
             dtx_replication_capture: std::sync::Mutex::new(None),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
-            in_flight_replications: Arc::new(std::sync::Mutex::new(HashMap::new())),
+            replication_barrier: Arc::new(async_lock::Mutex::new(())),
+            replication_tracker: Arc::new(std::sync::Mutex::new(ReplicationTracker::default())),
             next_replication_operation_id: AtomicU64::new(0),
             catch_up_journals: Arc::new(std::sync::Mutex::new(HashMap::new())),
             next_catch_up_journal_id: AtomicU64::new(0),
+            before_replication_registration: std::sync::Mutex::new(None),
             control_plane_tasks: std::sync::Mutex::new(Vec::new()),
             transport_request_counter: AtomicU32::new(0),
             replication_semaphore: Arc::new(tokio::sync::Semaphore::new(
@@ -501,6 +509,19 @@ impl EmulatorStore {
     #[cfg(feature = "preview_dtx")]
     pub(crate) fn document_write_lock(&self) -> Arc<async_lock::Mutex<()>> {
         self.document_write_lock.clone()
+    }
+
+    pub(crate) fn replication_barrier(&self) -> Arc<async_lock::Mutex<()>> {
+        Arc::clone(&self.replication_barrier)
+    }
+
+    /// Sets a hook invoked after local commit and before replication registration.
+    #[doc(hidden)]
+    pub fn set_before_replication_registration_hook_for_tests(
+        &self,
+        hook: Option<Arc<dyn Fn() + Send + Sync>>,
+    ) {
+        *self.before_replication_registration.lock().unwrap() = hook;
     }
 
     /// Returns the preview-DTX document write lock for internal emulator tests.
@@ -925,17 +946,17 @@ impl EmulatorStore {
 
             // Replay mutations that were committed before enrollment but have
             // not reached every existing replica yet. Delayed tasks remain in
-            // `in_flight_replications` until apply; paused targets retain their
+            // the replication tracker until apply; paused targets retain their
             // entries in per-region buffers. A write beginning after this
             // snapshot blocks on the regions read lock and will discover the
             // newly inserted target normally.
             let mut pending: Vec<PendingReplication> = {
-                // Keep the same in-flight -> journals lock order as
+                // Keep the same tracker -> journals lock order as
                 // `replicate`. Journal creation and replication registration
                 // are atomic relative to each other: a mutation is either in
                 // this initial snapshot or appended to the new journal.
-                let in_flight = self.in_flight_replications.lock().unwrap();
-                let pending: Vec<_> = in_flight.values().cloned().collect();
+                let tracker = self.replication_tracker.lock().unwrap();
+                let pending = tracker.replay_snapshot();
                 if let Some(journal_id) = catch_up_journal_id {
                     self.catch_up_journals
                         .lock()
@@ -998,7 +1019,8 @@ impl EmulatorStore {
             // Delayed intentionally starts empty, then takes a later snapshot.
             // This preserves the original policy's observable lag behavior.
             let target = Arc::clone(&region_store);
-            let in_flight = Arc::clone(&self.in_flight_replications);
+            let barrier = Arc::clone(&self.replication_barrier);
+            let tracker = Arc::clone(&self.replication_tracker);
             let journals = Arc::clone(&self.catch_up_journals);
             let journal_key = (
                 region_name.clone(),
@@ -1006,11 +1028,12 @@ impl EmulatorStore {
             );
             tokio::spawn(async move {
                 tokio::time::sleep(delay).await;
+                let _replication_guard = barrier.lock().await;
                 target.catch_up_from(&seed_source);
-                // Match replication registration's in-flight -> journals lock
+                // Match replication registration's tracker -> journals lock
                 // order. A mutation registered before finalization either
                 // appends before removal or blocks finalization at in-flight.
-                let in_flight_guard = in_flight.lock().unwrap();
+                let tracker_guard = tracker.lock().unwrap();
                 let mut journals_guard = journals.lock().unwrap();
                 let mut pending = journals_guard.remove(&journal_key).unwrap_or_default();
                 sort_pending_replications(&mut pending);
@@ -1021,7 +1044,7 @@ impl EmulatorStore {
                 // no mutation can apply to the target between journal removal
                 // and replay.
                 drop(journals_guard);
-                drop(in_flight_guard);
+                drop(tracker_guard);
             });
         } else if let SeedingPolicy::HiddenUntilReady(delay) = seeding {
             // Hidden buildout is already internally seeded and participates in
@@ -1110,9 +1133,9 @@ impl EmulatorStore {
         self.advance_vector_clock_versions();
         self.config.remove_region(region_name)?;
         {
-            // Match replication registration's in-flight -> journals order so
+            // Match replication registration's tracker -> journals order so
             // no mutation can append to an orphaned journal during cleanup.
-            let _in_flight = self.in_flight_replications.lock().unwrap();
+            let _tracker = self.replication_tracker.lock().unwrap();
             self.catch_up_journals
                 .lock()
                 .unwrap()
@@ -1370,11 +1393,15 @@ impl EmulatorStore {
             doc: doc.clone(),
             is_delete,
         };
+        let registration_hook = self.before_replication_registration.lock().unwrap().clone();
+        if let Some(hook) = registration_hook {
+            hook();
+        }
         {
-            // Match add_region's in-flight -> journals lock order.
-            let mut in_flight = self.in_flight_replications.lock().unwrap();
+            // Match add_region's tracker -> journals lock order.
+            let mut tracker = self.replication_tracker.lock().unwrap();
             let mut journals = self.catch_up_journals.lock().unwrap();
-            in_flight.insert(operation_id, pending_replication.clone());
+            tracker.register(operation_id, pending_replication.clone());
             for journal in journals.values_mut() {
                 journal.push(pending_replication.clone());
             }
@@ -1389,10 +1416,10 @@ impl EmulatorStore {
         drop(regions);
 
         if region_names.is_empty() {
-            self.in_flight_replications
+            self.replication_tracker
                 .lock()
                 .unwrap()
-                .remove(&operation_id);
+                .complete(operation_id);
             return;
         }
         let remaining_targets = Arc::new(AtomicUsize::new(region_names.len()));
@@ -1434,10 +1461,10 @@ impl EmulatorStore {
 
     fn complete_replication_target(&self, operation_id: u64, remaining_targets: &AtomicUsize) {
         if remaining_targets.fetch_sub(1, Ordering::SeqCst) == 1 {
-            self.in_flight_replications
+            self.replication_tracker
                 .lock()
                 .unwrap()
-                .remove(&operation_id);
+                .complete(operation_id);
         }
     }
 
@@ -1811,6 +1838,89 @@ pub(crate) struct PendingReplication {
     pub source_region: String,
     pub doc: StoredDocument,
     pub is_delete: bool,
+}
+
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
+struct ReplicationKey {
+    db_id: String,
+    coll_id: String,
+    epk: Epk,
+    id: String,
+}
+
+struct TrackedReplication {
+    operation_id: u64,
+    pending: PendingReplication,
+}
+
+#[derive(Default)]
+struct ReplicationTracker {
+    in_flight: HashMap<u64, PendingReplication>,
+    in_flight_counts: BTreeMap<ReplicationKey, usize>,
+    latest_by_item: BTreeMap<ReplicationKey, TrackedReplication>,
+}
+
+impl ReplicationTracker {
+    fn register(&mut self, operation_id: u64, pending: PendingReplication) {
+        let key = pending.key();
+        *self.in_flight_counts.entry(key.clone()).or_default() += 1;
+        let should_replace = self
+            .latest_by_item
+            .get(&key)
+            .is_none_or(|tracked| pending.lww_order() > tracked.pending.lww_order());
+        if should_replace {
+            self.latest_by_item.insert(
+                key,
+                TrackedReplication {
+                    operation_id,
+                    pending: pending.clone(),
+                },
+            );
+        }
+        self.in_flight.insert(operation_id, pending);
+    }
+
+    fn complete(&mut self, operation_id: u64) {
+        let Some(pending) = self.in_flight.remove(&operation_id) else {
+            return;
+        };
+        let key = pending.key();
+        let count = self
+            .in_flight_counts
+            .get_mut(&key)
+            .expect("registered replication must have an in-flight count");
+        *count -= 1;
+        if *count == 0 {
+            self.in_flight_counts.remove(&key);
+            self.latest_by_item.remove(&key);
+        }
+    }
+
+    fn replay_snapshot(&self) -> Vec<PendingReplication> {
+        let mut pending: Vec<_> = self.in_flight.values().cloned().collect();
+        pending.extend(
+            self.latest_by_item
+                .values()
+                .filter(|tracked| !self.in_flight.contains_key(&tracked.operation_id))
+                .map(|tracked| tracked.pending.clone()),
+        );
+        pending
+    }
+}
+
+impl PendingReplication {
+    fn key(&self) -> ReplicationKey {
+        ReplicationKey {
+            db_id: self.db_id.clone(),
+            coll_id: self.coll_id.clone(),
+            epk: self.doc.epk.clone(),
+            id: self.doc.id.clone(),
+        }
+    }
+
+    fn lww_order(&self) -> (u64, u64) {
+        (self.doc.ts, self.doc.lsn)
+    }
 }
 
 fn sort_pending_replications(pending: &mut [PendingReplication]) {
@@ -3576,6 +3686,170 @@ fn decode_v1_number_hex_to_u32(hex: &str) -> Result<u32, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn test_store(config: VirtualAccountConfig) -> Arc<EmulatorStore> {
+        let store = EmulatorStore::new(config);
+        store.create_database("db");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        store.create_container_with_config(
+            "db",
+            "c",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+        store
+    }
+
+    fn test_document(id: &str, ts: u64, lsn: u64) -> StoredDocument {
+        StoredDocument {
+            body: serde_json::json!({"id": id, "pk": "value"}),
+            id: id.to_string(),
+            rid: format!("rid-{id}"),
+            etag: format!("etag-{lsn}"),
+            ts,
+            self_link: format!("dbs/db/colls/c/docs/{id}/"),
+            lsn,
+            epk: Epk::MIN,
+            body_size_bytes: 32,
+            source_region: "West".to_string(),
+        }
+    }
+
+    fn apply_local_document(
+        store: &EmulatorStore,
+        region_name: &str,
+        doc: &StoredDocument,
+        is_delete: bool,
+    ) {
+        let region = Arc::clone(
+            store
+                .regions
+                .read()
+                .unwrap()
+                .get(region_name)
+                .expect("test region must exist"),
+        );
+        let containers = region.containers.read().unwrap();
+        let state = containers
+            .get(&("db".to_string(), "c".to_string()))
+            .expect("test container must exist");
+        let partition = state
+            .find_partition(&doc.epk)
+            .expect("test partition must exist");
+        apply_doc_to_partition(partition, doc, is_delete);
+    }
+
+    fn contains_document(store: &EmulatorStore, region_name: &str, epk: &Epk, id: &str) -> bool {
+        let region = Arc::clone(
+            store
+                .regions
+                .read()
+                .unwrap()
+                .get(region_name)
+                .expect("test region must exist"),
+        );
+        let containers = region.containers.read().unwrap();
+        let state = containers
+            .get(&("db".to_string(), "c".to_string()))
+            .expect("test container must exist");
+        let partition = state
+            .find_partition(epk)
+            .expect("test partition must exist");
+        let documents = partition.documents.read().unwrap();
+        documents.get(epk).is_some_and(|docs| docs.contains_key(id))
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn region_add_replays_completed_delete_after_older_create() {
+        let delay_call = Arc::new(AtomicUsize::new(0));
+        let delay_call_clone = Arc::clone(&delay_call);
+        let replication = super::super::config::ReplicationConfig::immediate()
+            .with_replication_delay_fn(Arc::new(move || {
+                if delay_call_clone.fetch_add(1, Ordering::SeqCst) == 0 {
+                    Duration::from_secs(3_600)
+                } else {
+                    Duration::ZERO
+                }
+            }));
+        let config = VirtualAccountConfig::new(vec![
+            VirtualRegion::new("East", url::Url::parse("https://east.local").unwrap()),
+            VirtualRegion::new("West", url::Url::parse("https://west.local").unwrap()),
+        ])
+        .unwrap()
+        .with_replication_config(replication);
+        let store = test_store(config);
+        let mut create = test_document("item", 1, 1);
+        create.source_region = "East".to_string();
+        let mut delete = test_document("item", 2, 2);
+        delete.body = serde_json::Value::Null;
+        delete.source_region = "East".to_string();
+
+        apply_local_document(&store, "East", &create, false);
+        store.replicate("East", "db", "c", &create, false);
+        apply_local_document(&store, "East", &delete, true);
+        store.replicate("East", "db", "c", &delete, true);
+
+        store
+            .add_region(
+                VirtualRegion::new("Central", url::Url::parse("https://central.local").unwrap()),
+                SeedingPolicy::Immediate,
+            )
+            .unwrap();
+
+        assert!(!contains_document(&store, "Central", &Epk::MIN, "item"));
+        tokio::time::advance(Duration::from_secs(3_600)).await;
+        store.drain_pending_replications().await;
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn delayed_catch_up_waits_for_local_replication_registration() {
+        let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+            "East",
+            url::Url::parse("https://east.local").unwrap(),
+        )])
+        .unwrap()
+        .with_write_mode(WriteMode::Multi)
+        .with_replication_config(super::super::config::ReplicationConfig::fixed(
+            Duration::from_secs(3_600),
+        ));
+        let store = test_store(config);
+        store
+            .add_region(
+                VirtualRegion::new("West", url::Url::parse("https://west.local").unwrap()),
+                SeedingPolicy::Delayed(Duration::from_secs(10)),
+            )
+            .unwrap();
+        tokio::task::yield_now().await;
+
+        let barrier = store.replication_barrier();
+        let replication_guard = barrier.lock().await;
+        let document = test_document("item", 1, 1);
+        apply_local_document(&store, "West", &document, false);
+
+        tokio::time::advance(Duration::from_secs(10)).await;
+        tokio::task::yield_now().await;
+        store.replicate("West", "db", "c", &document, false);
+        drop(replication_guard);
+
+        for _ in 0..10 {
+            if store.catch_up_journals.lock().unwrap().is_empty() {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+
+        assert!(
+            store.catch_up_journals.lock().unwrap().is_empty(),
+            "catch-up must finish after the replication barrier is released"
+        );
+        assert!(contains_document(&store, "West", &Epk::MIN, "item"));
+    }
 
     #[tokio::test(start_paused = true)]
     async fn removing_delayed_region_clears_catch_up_journal() {

@@ -27,7 +27,7 @@
 //! the production account-refresh interval is five minutes.
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
 use azure_core::http::{Method, Request, StatusCode, Url};
@@ -221,7 +221,7 @@ async fn build_driver_at_with_options(
 
 async fn seed_item(driver: &CosmosDriver, item_id: &str) {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     let body = serde_json::json!({"id": item_id, "pk": "pk1", "value": 1}).to_string();
@@ -242,7 +242,7 @@ async fn read_and_capture_hosts(
     item_id: &str,
 ) -> Vec<String> {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     recorder.clear();
@@ -264,7 +264,7 @@ async fn write_and_capture_hosts(
     item_id: &str,
 ) -> Vec<String> {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     recorder.clear();
@@ -1556,6 +1556,137 @@ async fn delayed_region_remains_advertised_during_buildout() {
     );
 }
 
+/// A real point-write handler must hold catch-up behind replication registration.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn delayed_catch_up_cannot_overwrite_handler_write_before_registration() {
+    let recorder = HostRecorder::new();
+    let emulator = build_emulator(vec![east()], WriteMode::Multi, recorder);
+    let store = emulator.store();
+
+    let mut seed = Request::new(
+        Url::parse(&format!("{EAST_URL}/dbs/testdb/colls/testcoll/docs")).unwrap(),
+        Method::Post,
+    );
+    seed.set_body(serde_json::json!({"id": "catch-up-sentinel", "pk": "pk1"}).to_string());
+    seed.headers_mut().insert(
+        super::PARTITION_KEY.clone(),
+        azure_core::http::headers::HeaderValue::from_static("[\"pk1\"]"),
+    );
+    let (status, _, _) = collect_response(emulator.execute_request(&seed).await.unwrap()).await;
+    assert_eq!(status, StatusCode::Created);
+
+    let (registration_tx, registration_rx) = tokio::sync::oneshot::channel();
+    let registration_tx = Arc::new(Mutex::new(Some(registration_tx)));
+    let release_registration = Arc::new((Mutex::new(false), Condvar::new()));
+    let registration_tx_clone = Arc::clone(&registration_tx);
+    let release_registration_clone = Arc::clone(&release_registration);
+    store.set_before_replication_registration_hook_for_tests(Some(Arc::new(move || {
+        if let Some(tx) = registration_tx_clone.lock().unwrap().take() {
+            tx.send(()).expect("test must wait for registration hook");
+            let (released, wake) = &*release_registration_clone;
+            let mut released = released.lock().unwrap();
+            while !*released {
+                released = wake.wait(released).unwrap();
+            }
+        }
+    })));
+    drop(registration_tx);
+
+    struct RegistrationRelease(Arc<(Mutex<bool>, Condvar)>);
+
+    impl RegistrationRelease {
+        fn release(&self) {
+            let (released, wake) = &*self.0;
+            *released.lock().unwrap() = true;
+            wake.notify_all();
+        }
+    }
+
+    impl Drop for RegistrationRelease {
+        fn drop(&mut self) {
+            self.release();
+        }
+    }
+
+    let registration_release = RegistrationRelease(Arc::clone(&release_registration));
+    let catch_up_started = std::time::Instant::now();
+    store
+        .add_region(west(), SeedingPolicy::Delayed(Duration::from_secs(1)))
+        .unwrap();
+
+    let mut create = Request::new(
+        Url::parse(&format!("{WEST_URL}/dbs/testdb/colls/testcoll/docs")).unwrap(),
+        Method::Post,
+    );
+    create.set_body(serde_json::json!({"id": "handler-race", "pk": "pk1"}).to_string());
+    create.headers_mut().insert(
+        super::PARTITION_KEY.clone(),
+        azure_core::http::headers::HeaderValue::from_static("[\"pk1\"]"),
+    );
+
+    let emulator_clone = Arc::clone(&emulator);
+    let write = tokio::spawn(async move {
+        let response = emulator_clone.execute_request(&create).await.unwrap();
+        collect_response(response).await.0
+    });
+    tokio::time::timeout(Duration::from_secs(5), registration_rx)
+        .await
+        .expect("handler must reach replication registration before timeout")
+        .expect("handler must reach replication registration");
+    assert!(
+        catch_up_started.elapsed() < Duration::from_secs(1),
+        "handler must commit before delayed catch-up starts"
+    );
+
+    tokio::time::sleep(Duration::from_millis(1_100)).await;
+    registration_release.release();
+
+    assert_eq!(write.await.unwrap(), StatusCode::Created);
+    store.set_before_replication_registration_hook_for_tests(None);
+
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let mut read = Request::new(
+                Url::parse(&format!(
+                    "{WEST_URL}/dbs/testdb/colls/testcoll/docs/catch-up-sentinel"
+                ))
+                .unwrap(),
+                Method::Get,
+            );
+            read.headers_mut().insert(
+                super::PARTITION_KEY.clone(),
+                azure_core::http::headers::HeaderValue::from_static("[\"pk1\"]"),
+            );
+            let (status, _, _) =
+                collect_response(emulator.execute_request(&read).await.unwrap()).await;
+            if status == StatusCode::Ok {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("delayed catch-up must complete");
+
+    let mut read = Request::new(
+        Url::parse(&format!(
+            "{WEST_URL}/dbs/testdb/colls/testcoll/docs/handler-race"
+        ))
+        .unwrap(),
+        Method::Get,
+    );
+    read.headers_mut().insert(
+        super::PARTITION_KEY.clone(),
+        azure_core::http::headers::HeaderValue::from_static("[\"pk1\"]"),
+    );
+    let (status, _, _) = collect_response(emulator.execute_request(&read).await.unwrap()).await;
+    assert_eq!(
+        status,
+        StatusCode::Ok,
+        "delayed catch-up must not erase a local write before registration"
+    );
+}
+
 /// A mutation already pending at enrollment stays out of a `Delayed` region
 /// until its catch-up timer fires.
 #[tokio::test(start_paused = true)]
@@ -1918,7 +2049,7 @@ async fn offline_region_plus_exclusion_uses_nonpreferred_region() {
     advance_past_refresh().await;
 
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     let item = ItemReference::from_name(
@@ -2031,7 +2162,7 @@ async fn operation_racing_offline_transition_retries_next_region() {
 
     observer.arm();
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "race-offline-item");
