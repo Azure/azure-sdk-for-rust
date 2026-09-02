@@ -440,6 +440,7 @@ mod tests {
             "manifest_path": "/demo/Cargo.toml",
             "version": "1.0.0",
             "name": "demo",
+            "description": "First line\nSecond line",
             "edition": "2021",
             "rust_version": "1.88",
             "features": {
