@@ -638,7 +638,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let client = build_client(&args, Arc::clone(&recorder), *mode).await?;
         let container = client
             .database_client(&args.database)
-            .container_client(&args.container)
+            .container_client(&args.container, None)
             .await?;
         // Warm up connections, routing caches, and query plans outside of any
         // recording phase so the first measured round is not penalized.
@@ -817,7 +817,7 @@ async fn ensure_container(
         Err(err) => return Err(err.into()),
     }
 
-    Ok(database.container_client(&args.container).await?)
+    Ok(database.container_client(&args.container, None).await?)
 }
 
 /// Identifies one seeded document.
