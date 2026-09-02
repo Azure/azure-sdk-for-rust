@@ -107,39 +107,46 @@ class StableTagTests(unittest.TestCase):
 
     @mock.patch.object(CREATE_HOTFIX, "run")
     def test_excludes_non_publishable_workspace_crates(self, run):
-        root = Path("/repo")
-        run.return_value = json.dumps(
-            {
-                "workspace_members": ["publishable", "private"],
-                "packages": [
-                    {
-                        "id": "publishable",
-                        "name": "azure_identity",
-                        "version": "1.0.0",
-                        "manifest_path": "/repo/sdk/identity/azure_identity/Cargo.toml",
-                        "publish": None,
-                    },
-                    {
-                        "id": "private",
-                        "name": "azure_core_test",
-                        "version": "0.1.0",
-                        "manifest_path": "/repo/sdk/core/azure_core_test/Cargo.toml",
-                        "publish": [],
-                    },
-                ],
-            }
-        )
-
-        self.assertEqual(
-            [
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            identity_manifest = (
+                root / "sdk" / "identity" / "azure_identity" / "Cargo.toml"
+            )
+            core_test_manifest = (
+                root / "sdk" / "core" / "azure_core_test" / "Cargo.toml"
+            )
+            run.return_value = json.dumps(
                 {
-                    "name": "azure_identity",
-                    "path": "sdk/identity/azure_identity",
-                    "version": "1.0.0",
+                    "workspace_members": ["publishable", "private"],
+                    "packages": [
+                        {
+                            "id": "publishable",
+                            "name": "azure_identity",
+                            "version": "1.0.0",
+                            "manifest_path": str(identity_manifest),
+                            "publish": None,
+                        },
+                        {
+                            "id": "private",
+                            "name": "azure_core_test",
+                            "version": "0.1.0",
+                            "manifest_path": str(core_test_manifest),
+                            "publish": [],
+                        },
+                    ],
                 }
-            ],
-            CREATE_HOTFIX.workspace_crates(root),
-        )
+            )
+
+            self.assertEqual(
+                [
+                    {
+                        "name": "azure_identity",
+                        "path": "sdk/identity/azure_identity",
+                        "version": "1.0.0",
+                    }
+                ],
+                CREATE_HOTFIX.workspace_crates(root),
+            )
 
 
 class ConflictTests(unittest.TestCase):
