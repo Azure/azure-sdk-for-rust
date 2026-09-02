@@ -1369,7 +1369,7 @@ impl TestRunContext {
                 let primary_client_for_probe = self.client().clone();
                 let primary_container = primary_client_for_probe
                     .database_client(probe_db_id.clone())
-                    .container_client(&*probe_container_id)
+                    .container_client(&*probe_container_id, None)
                     .await?;
                 probe_data_plane_ready("original client", &primary_container).await?;
             }
