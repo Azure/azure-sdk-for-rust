@@ -30,10 +30,11 @@ pub trait CheckpointStore: Send + Sync {
     /// than the `ownerships` argument when another owner holds a partition.
     ///
     /// # Errors
-    /// Returns an error only when the store fails, for example an
-    /// authentication failure or a missing container. A lost claim is not an
-    /// error. The implementation must omit that partition from the returned
-    /// vector and continue with the other partitions.
+    /// Returns an error when the store fails, for example an authentication
+    /// failure or a missing container. Returns an error when an `Ownership`
+    /// argument is invalid, for example an empty required field. A lost claim
+    /// is not an error. The implementation must omit that partition from the
+    /// returned vector and continue with the other partitions.
     ///
     async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>>;
 
