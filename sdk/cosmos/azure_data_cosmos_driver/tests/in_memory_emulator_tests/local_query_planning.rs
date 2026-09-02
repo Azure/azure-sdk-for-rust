@@ -204,23 +204,71 @@ async fn supported_order_by_skips_gateway_query_plan() {
     assert_eq!(recorder.query_plan_count(), 0);
 }
 
+#[derive(Clone, Copy)]
+enum FallbackOutcome {
+    Plan,
+    Error,
+}
+
 #[tokio::test]
-async fn unsupported_aggregate_uses_gateway_query_plan() {
+async fn unsupported_families_fall_back_to_gateway_once() {
     let (_emulator, recorder, driver) = setup().await;
     let container = driver
         .resolve_container("testdb", "testcoll")
         .await
         .unwrap();
-    recorder.clear();
 
-    let result = driver
-        .plan_operation(
-            query(&container, "SELECT VALUE COUNT(1) FROM c"),
-            &OperationOptions::default(),
-            None,
-            &PlanOptions::default(),
-        )
-        .await;
-    assert!(result.is_err());
-    assert_eq!(recorder.query_plan_count(), 1);
+    let scenarios = [
+        (
+            "aggregate",
+            "SELECT VALUE COUNT(1) FROM c",
+            FallbackOutcome::Error,
+        ),
+        (
+            "group_by",
+            "SELECT c.pk, COUNT(1) FROM c GROUP BY c.pk",
+            FallbackOutcome::Error,
+        ),
+        (
+            "dcount",
+            "SELECT VALUE DCOUNT(c.pk) FROM c",
+            FallbackOutcome::Plan,
+        ),
+        (
+            "hybrid",
+            "SELECT VALUE RRF(c.score) FROM c",
+            FallbackOutcome::Plan,
+        ),
+        (
+            "rewrite_unavailable",
+            "SELECT VALUE 1 ORDER BY 1",
+            FallbackOutcome::Error,
+        ),
+    ];
+
+    for (name, text, expected) in scenarios {
+        recorder.clear();
+        let result = driver
+            .plan_operation(
+                query(&container, text),
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            )
+            .await;
+
+        assert_eq!(
+            recorder.query_plan_count(),
+            1,
+            "{name} must issue exactly one Gateway query-plan request"
+        );
+        match expected {
+            FallbackOutcome::Plan => {
+                assert!(result.is_ok(), "{name} should produce a Gateway plan");
+            }
+            FallbackOutcome::Error => {
+                assert!(result.is_err(), "{name} should surface a planning error");
+            }
+        }
+    }
 }
