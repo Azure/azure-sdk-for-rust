@@ -35,7 +35,7 @@ since the service persists the binary form directly. A secondary benefit is
 faster serialization/deserialization when the typed path reads and writes the
 binary form natively.
 
-The feature is **opt-in** and **transparent**: when enabled, callers use the
+The feature is **enabled by default** and **transparent**: callers use the
 same `create_item` / `read_item` / `query_items` / etc. APIs and observe
 text-equivalent results.
 
@@ -105,8 +105,8 @@ introduced binary encoding for point operations:
   `EnableBinaryResponseOnPointOperations` request option.
 - Patch, batch, and bulk were explicitly **out of scope**.
 
-The Rust design adopts the same enablement model but goes **straight to native
-serde codecs** on both sides (rather than text↔binary transcoders):
+The Rust design enables binary encoding by default and goes **straight to
+native serde codecs** on both sides (rather than text↔binary transcoders):
 `T: Serialize` is encoded directly to Cosmos binary JSON via
 [`binary_json::to_vec`], and binary responses are deserialized straight into
 `T: Deserialize` via [`binary_json::from_slice`], with no intermediate text or
@@ -414,8 +414,8 @@ small items, where the `Value` allocation dominated the fixed overhead.
 - **Enablement.** Resolved once at client construction, preferring the explicit
   `CosmosClientBuilder::with_binary_encoding_options` /
   `with_binary_encoding_enabled` option and falling back to the
-  `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable; disabled by
-  default.
+  `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable; enabled by
+  default when neither is set.
 
 ### 9.1 Driver-side binary encoding and transcoding
 
@@ -570,8 +570,8 @@ rare forms is a possible future optimization.)
 - `azure_data_cosmos/src/clients/mod.rs`: `resolve_binary_encoding` prefers the
   explicit `CosmosClientBuilder::with_binary_encoding_options` /
   `with_binary_encoding_enabled` option and falls back to the
-  `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable, resolving a
-  `BinaryEncodingOptions`.
+  `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable, then defaults
+  to enabled, resolving a `BinaryEncodingOptions`.
 - `azure_data_cosmos/src/options/client.rs`: the public `BinaryEncodingOptions`
   (`enabled`, `request_text_response`) exposed through `options`.
 - `azure_data_cosmos_driver/src/models/cosmos_headers.rs`: the
