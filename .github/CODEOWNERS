@@ -60,6 +60,9 @@
 # PRLabel: %Cosmos
 /sdk/cosmos/             @Azure/azure-cosmos-rust-sdk
 
+# PRLabel: %Cosmos
+/samples/cosmos/         @Azure/azure-cosmos-rust-sdk
+
 # ServiceLabel: %Cosmos
 # ServiceOwners: @Pilchie
 
@@ -71,7 +74,10 @@
 # ServiceOwners: @Azure/azure-sdk-write-keyvault
 
 # PRLabel: %Storage
-/sdk/storage/            @heaths @xirzec @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft @jaschrep-msft
+/sdk/storage/            @heaths @xirzec @RickWinter @vincenttran-msft @jalauzon-msft @jaschrep-msft
+
+# PRLabel: %Storage
+/samples/storage/        @heaths @xirzec @RickWinter @vincenttran-msft @jalauzon-msft @jaschrep-msft
 
 # ServiceLabel: %Storage
 # AzureSDKOwners: @vincenttran-msft @jalauzon-msft @jaschrep-msft

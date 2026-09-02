@@ -18,7 +18,7 @@ use azure_core_amqp::{AmqpClaimsBasedSecurityApis as _, AmqpError};
 use rand::{rng, RngExt};
 use std::{
     collections::{HashMap, HashSet},
-    sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
+    sync::{Arc, Mutex as SyncMutex, Weak},
 };
 use tracing::{debug, error, info, trace, warn};
 
@@ -71,9 +71,15 @@ enum RefreshPass {
     Stop,
 }
 
+enum AuthorizationRefresherState {
+    NotStarted,
+    Running(SpawnedTask),
+    Stopped,
+}
+
 pub(crate) struct Authorizer {
     authorization_scopes: RwLock<HashMap<Url, AccessToken>>,
-    authorization_refresher: OnceLock<SpawnedTask>,
+    authorization_refresher: SyncMutex<AuthorizationRefresherState>,
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
     credential: Arc<dyn TokenCredential>,
@@ -86,9 +92,6 @@ pub(crate) struct Authorizer {
     disable_authorization: SyncMutex<bool>,
 }
 
-unsafe impl Send for Authorizer {}
-unsafe impl Sync for Authorizer {}
-
 impl Authorizer {
     /// Creates an authorizer. `cbs_token_type` is `None` for JWT/Entra
     /// credentials and `Some("servicebus.windows.net:sastoken")` for SAS
@@ -99,7 +102,7 @@ impl Authorizer {
         cbs_token_type: Option<&'static str>,
     ) -> Self {
         Self {
-            authorization_refresher: OnceLock::new(),
+            authorization_refresher: SyncMutex::new(AuthorizationRefresherState::NotStarted),
             authorization_scopes: RwLock::new(HashMap::new()),
             token_refresh_bias: SyncMutex::new(TokenRefreshTimes::default()),
             credential,
@@ -116,8 +119,28 @@ impl Authorizer {
         scopes.clear();
     }
 
+    pub(crate) async fn stop_refresh_task(&self) {
+        let task = {
+            let mut state = self
+                .authorization_refresher
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            match std::mem::replace(&mut *state, AuthorizationRefresherState::Stopped) {
+                AuthorizationRefresherState::Running(task) => Some(task),
+                AuthorizationRefresherState::NotStarted | AuthorizationRefresherState::Stopped => {
+                    None
+                }
+            }
+        };
+
+        if let Some(task) = task {
+            task.abort();
+            let _ = task.await;
+        }
+    }
+
     #[cfg(test)]
-    fn disable_authorization(&self) -> Result<()> {
+    pub(crate) fn disable_authorization(&self) -> Result<()> {
         use crate::EventHubsError;
 
         let mut disable_authorization = self
@@ -126,6 +149,17 @@ impl Authorizer {
             .map_err(|e| EventHubsError::with_message(e.to_string()))?;
         *disable_authorization = true;
         Ok(())
+    }
+
+    /// Test hook: read the cached token for `path` without authorizing.
+    ///
+    /// A refresh replaces the map entry in place and only ever advances
+    /// `expires_on`, so a test can watch one path's expiry to tell whether that
+    /// specific path was refreshed. The shared `get_token` call count cannot make
+    /// that distinction.
+    #[cfg(test)]
+    async fn peek_token(&self, path: &Url) -> Option<AccessToken> {
+        self.authorization_scopes.read().await.get(path).cloned()
     }
 
     #[tracing::instrument(
@@ -215,12 +249,18 @@ impl Authorizer {
                 continue;
             };
 
-            self.authorization_refresher.get_or_init(|| {
+            let mut state = self
+                .authorization_refresher
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if matches!(&*state, AuthorizationRefresherState::NotStarted) {
                 debug!("Starting authorization refresh task.");
                 let self_clone = self.clone();
                 let async_runtime = get_async_runtime();
-                async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task()))
-            });
+                *state = AuthorizationRefresherState::Running(
+                    async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task())),
+                );
+            }
 
             return Ok(stored);
         }
@@ -639,6 +679,17 @@ impl Authorizer {
         *token_refresh_bias = refresh_times;
         Ok(())
     }
+
+    #[cfg(test)]
+    pub(crate) fn set_token_refresh_bias_for_test(&self, bias: Duration) -> Result<()> {
+        self.set_token_refresh_times(TokenRefreshTimes {
+            before_expiration_refresh_time: bias,
+            jitter_min: Duration::milliseconds(0),
+            // The upper bound is exclusive. This range produces zero jitter
+            // while avoiding an empty random range in the refresh loop.
+            jitter_max: Duration::milliseconds(1),
+        })
+    }
 }
 
 #[cfg(test)]
@@ -721,6 +772,62 @@ mod tests {
         }
     }
 
+    // Poll `get_token_get_count` until it reaches `target` or `timeout` elapses,
+    // returning the last observed count either way.
+    //
+    // The token refresh task wakes on a real timer and only refreshes once the
+    // sleep overshoots the scheduled instant, so the exact moment a refresh lands
+    // drifts with scheduler latency. Reading the count at a single fixed instant
+    // makes the timing tests flaky under load (the read can race ahead of a
+    // refresh that is merely a little late). Waiting for the expected count keeps
+    // the assertions deterministic without widening the race window: a refresh
+    // that never happens still fails fast once the generous timeout expires.
+    //
+    // The deadline uses `tokio::time::Instant` rather than the wall clock, so a
+    // clock correction cannot cut the wait short or stretch it past the bound.
+    async fn wait_for_token_count(
+        credential: &MockTokenCredential,
+        target: usize,
+        timeout: std::time::Duration,
+    ) -> usize {
+        let deadline = tokio::time::Instant::now() + timeout;
+        loop {
+            let count = credential.get_token_get_count();
+            if count >= target || tokio::time::Instant::now() >= deadline {
+                return count;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+    }
+
+    // Poll the cached token for `path` until its expiry advances past
+    // `previous_expiry` or `timeout` elapses, returning the last observed expiry.
+    //
+    // `wait_for_token_count` watches a counter shared by every path, so it cannot
+    // tell which path a refresh belonged to. Once a wait window is wide enough to
+    // overlap another path's refresh, a count target can be reached by the wrong
+    // path and the assertion passes for the wrong reason. A refresh replaces the
+    // cache entry in place and only ever advances `expires_on` (a credential that
+    // returns the same expiry is marked non-refreshable instead), so watching one
+    // path's expiry ties each assertion to the path it names.
+    async fn wait_for_token_refresh(
+        authorizer: &Arc<Authorizer>,
+        path: &Url,
+        previous_expiry: OffsetDateTime,
+        timeout: std::time::Duration,
+    ) -> Option<OffsetDateTime> {
+        let deadline = tokio::time::Instant::now() + timeout;
+        loop {
+            let expiry = authorizer.peek_token(path).await.map(|t| t.expires_on);
+            if expiry.is_some_and(|e| e > previous_expiry)
+                || tokio::time::Instant::now() >= deadline
+            {
+                return expiry;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+    }
+
     // When a token is created, it needs to have a proper expiration time.
     // This test verifies that the expiration time of tokens is set correctly when
     // authorizing a path. It also confirms that tokens are properly stored for reuse
@@ -740,6 +847,7 @@ mod tests {
             url,
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             mock_credential.clone(),
             Default::default(),
             None,
@@ -795,7 +903,6 @@ mod tests {
     // If this feature fails in production, clients would disconnect when their tokens expire,
     // which could lead to data loss, application failures, or service degradation.
     #[recorded::test]
-    #[ignore = "frequent off-by-one issues in dev loop"]
     async fn token_refresh(_ctx: TestContext) -> Result<()> {
         let url = Url::parse("amqps://example.com").unwrap();
         let path = Url::parse("amqps://example.com/test_token_refresh").unwrap();
@@ -806,6 +913,7 @@ mod tests {
             url,
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             mock_credential.clone(),
             Default::default(),
             None,
@@ -848,16 +956,15 @@ mod tests {
         let current_count = mock_credential.get_token_get_count();
         assert_eq!(current_count, 1);
 
-        trace!("Sleeping for 15 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
+        trace!("Waiting for the token to expire and be refreshed. Current token count: {current_count}");
 
-        // Sleep a bit to ensure we will have refreshed the token - since the token expires in 20 seconds,
-        // we will refresh it between 8 and 12 seconds before the expiration time. If we wait for 13 seconds,
-        // we should have refreshed the token.
-        tokio::time::sleep(std::time::Duration::from_secs(13)).await;
-
-        // Verify that the token get count has increased, indicating a refresh was attempted
-        let final_count = mock_credential.get_token_get_count();
-        trace!("After sleeping, token count: {final_count}");
+        // The token expires in 20 seconds and refreshes 8 to 12 seconds before
+        // that, so the refresh lands 8 to 12 seconds from now. Wait for the count
+        // to reach 2 instead of reading it at a fixed instant, because the exact
+        // moment the refresh lands drifts with scheduler latency.
+        let final_count =
+            wait_for_token_count(&mock_credential, 2, std::time::Duration::from_secs(25)).await;
+        trace!("After waiting, token count: {final_count}");
 
         assert!(
             final_count >= 2,
@@ -876,6 +983,7 @@ mod tests {
             host.clone(),
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             mock_credential.clone(),
             Default::default(),
             None,
@@ -911,10 +1019,11 @@ mod tests {
         let path1 = Url::parse("amqps://example.com/test_token_refresh_1").unwrap();
         // Get access to the connection
         //let connection = connection_manager.ensure_connection().await.unwrap();
-        authorizer
+        let path1_expiry = authorizer
             .authorize_path(&recoverable_connection, &path1)
             .await
-            .unwrap();
+            .unwrap()
+            .expires_on;
 
         // Because the token expires in 20 seconds, token_refresh_1 will be refreshed
         // between 14 and 16 seconds from now.
@@ -925,10 +1034,11 @@ mod tests {
 
         // Authorize the second path, which will store the token
         let path2 = Url::parse("amqps://example.com/test_token_refresh_2").unwrap();
-        authorizer
+        let path2_expiry = authorizer
             .authorize_path(&recoverable_connection, &path2)
             .await
-            .unwrap();
+            .unwrap()
+            .expires_on;
 
         // Verify initial token retrieval count - it should have been refreshed three times -
         let current_count = mock_credential.get_token_get_count();
@@ -937,30 +1047,58 @@ mod tests {
 
         // Token_refresh_1 will be refreshed between 4 and 6 seconds from now.
         // Token_refresh_2 will be refreshed between 14 and 16 from now.
-        trace!("Sleeping for 7 seconds to allow token_refresh_1 to expire and be refreshed. Current token count: {current_count}");
-        tokio::time::sleep(std::time::Duration::from_secs(7)).await;
-
-        // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_1 but not token_refresh_2.
-        let final_count = mock_credential.get_token_get_count();
-        trace!("After sleeping the first time, token count: {final_count}");
+        //
+        // Wait on path1's own expiry rather than the shared call count. The count
+        // cannot say which path was refreshed, and the second wait below is wide
+        // enough to overlap path1's next refresh, so a count target there could be
+        // reached by path1 even if path2 never refreshed.
+        trace!("Waiting for token_refresh_1 to expire and be refreshed. Current token count: {current_count}");
+        let refreshed1 = wait_for_token_refresh(
+            &authorizer,
+            &path1,
+            path1_expiry,
+            std::time::Duration::from_secs(12),
+        )
+        .await;
         assert!(
-            final_count >= 2,
-            "Expected first get token count to be at least 2, but got {final_count}"
+            refreshed1.is_some_and(|e| e > path1_expiry),
+            "Expected token_refresh_1 to be refreshed (expiry to advance past {path1_expiry}), but got {refreshed1:?}"
+        );
+
+        // Only path1 is due in this window, so exactly one refresh has landed.
+        let final_count = mock_credential.get_token_get_count();
+        trace!("After waiting the first time, token count: {final_count}");
+        assert!(
+            final_count >= 3,
+            "Expected token_refresh_1 to be refreshed (count >= 3), but got {final_count}"
         );
 
         trace!("First token expiration get count: {}", final_count);
         // Token_refresh_1 will be refreshed between 13 and 15 seconds from now.
         // Token_refresh_2 will be refreshed between 7 and 9 seconds from now.
 
-        // Sleep for 10 seconds to allow the second token to expire and be refreshed.
-        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+        // Wait for token_refresh_2 to be refreshed. It refreshes ~7-9s from now;
+        // the timeout is generous so that scheduler latency under load delays the
+        // test rather than failing it. Waiting on path2's own expiry keeps the
+        // assertion honest even though this window also covers path1's next
+        // refresh.
+        let refreshed2 = wait_for_token_refresh(
+            &authorizer,
+            &path2,
+            path2_expiry,
+            std::time::Duration::from_secs(20),
+        )
+        .await;
+        assert!(
+            refreshed2.is_some_and(|e| e > path2_expiry),
+            "Expected token_refresh_2 to be refreshed (expiry to advance past {path2_expiry}), but got {refreshed2:?}"
+        );
 
-        // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_2.
         let final_count = mock_credential.get_token_get_count();
         trace!("Getting second token count: {final_count}");
         assert!(
             final_count >= 4,
-            "Expected second get token count to be 4, but got {final_count}"
+            "Expected token_refresh_2 to be refreshed (count >= 4), but got {final_count}"
         );
         trace!("Second token expiration get count: {}", final_count);
 
@@ -1007,6 +1145,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            Default::default(),
             credential.clone(),
             Default::default(),
             None,
@@ -1103,6 +1242,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             credential.clone(),
             Default::default(),
             None,
@@ -1208,6 +1348,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             credential.clone(),
             Default::default(),
             None,
@@ -1340,6 +1481,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             credential.clone(),
             Default::default(),
             None,

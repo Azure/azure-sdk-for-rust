@@ -33,6 +33,7 @@ pub(crate) struct NonStreamingOrderedMerge {
     skip: usize,
     take: usize,
     page_size: usize,
+    emit_binary: bool,
     retained: Vec<RetainedRow>,
     next_ordinal: u64,
     results: VecDeque<Box<RawValue>>,
@@ -50,6 +51,7 @@ impl NonStreamingOrderedMerge {
         skip: usize,
         take: usize,
         max_item_count: Option<MaxItemCountHint>,
+        emit_binary: bool,
     ) -> Self {
         let page_size = match max_item_count {
             Some(MaxItemCountHint::Limit(value)) => value.get() as usize,
@@ -63,10 +65,11 @@ impl NonStreamingOrderedMerge {
             skip,
             take,
             page_size,
+            emit_binary,
             retained: Vec::with_capacity(retention_limit),
             next_ordinal: 0,
             results: VecDeque::new(),
-            aggregator: Some(PageAggregator::new()),
+            aggregator: Some(PageAggregator::new(emit_binary)),
             session_token: None,
             buffering_complete: false,
             exhausted: false,
@@ -138,13 +141,26 @@ impl NonStreamingOrderedMerge {
 
     fn emit_page(&mut self) -> crate::error::Result<PageResult> {
         let count = self.page_size.min(self.results.len());
-        let payloads: Vec<_> = self.results.drain(..count).collect();
-        let aggregator = self.aggregator.take().unwrap_or_else(|| {
-            let mut aggregator = PageAggregator::new();
+        if self.aggregator.is_none() {
+            let mut aggregator = PageAggregator::new(self.emit_binary);
             aggregator.seed_session_token(self.session_token.clone());
-            aggregator
-        });
-        let response = aggregator.build_page(&payloads)?;
+            self.aggregator = Some(aggregator);
+        }
+        let aggregator = self
+            .aggregator
+            .as_ref()
+            .expect("aggregator was initialized");
+        let items = self
+            .results
+            .iter()
+            .take(count)
+            .enumerate()
+            .map(|(index, payload)| aggregator.encode_item(index, payload))
+            .collect::<crate::error::Result<Vec<_>>>()?;
+        self.results.drain(..count);
+
+        let aggregator = self.aggregator.take().expect("aggregator was initialized");
+        let response = aggregator.build_page(items);
         let is_terminal = self.results.is_empty();
         self.exhausted = is_terminal;
         Ok(PageResult::Page {
@@ -270,6 +286,7 @@ mod tests {
             take,
             page_size
                 .map(|value| MaxItemCountHint::Limit(std::num::NonZeroU32::new(value).unwrap())),
+            false,
         )
     }
 
@@ -385,6 +402,75 @@ mod tests {
         assert_eq!(response.headers().request_charge.unwrap().value(), 3.5);
     }
 
+    #[tokio::test]
+    async fn emits_binary_items_when_negotiated() {
+        let mut node = NonStreamingOrderedMerge::new(
+            Box::new(MockLeaf::with_pages(vec![Ok(page(
+                &[("a", 1.0, "a")],
+                1.0,
+                true,
+            ))])),
+            vec![SortOrder::Ascending],
+            1,
+            0,
+            1,
+            None,
+            true,
+        );
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = context(&mut executor, &mut topology);
+
+        let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
+            panic!("expected page");
+        };
+        let ResponseBody::Items(items) = response.body() else {
+            panic!("expected items response");
+        };
+        assert_eq!(items.len(), 1);
+        assert!(crate::binary_json::is_binary(&items[0]));
+        let item: serde_json::Value = crate::binary_json::from_slice(&items[0]).unwrap();
+        assert_eq!(item["id"], "a");
+    }
+
+    #[tokio::test]
+    async fn binary_encode_failure_does_not_consume_results() {
+        let mut deep = json!(1);
+        for _ in 0..(crate::binary_json::reader::MAX_DEPTH + 8) {
+            deep = serde_json::Value::Array(vec![deep]);
+        }
+        let body = serde_json::to_vec(&json!({
+            "Documents": [{
+                "_rid": "a",
+                "orderByItems": [{ "item": 1.0 }],
+                "payload": { "id": "a", "deep": deep }
+            }]
+        }))
+        .unwrap();
+        let mut node = NonStreamingOrderedMerge::new(
+            Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                response: response_with_charge(&body, 1.0),
+                is_terminal: true,
+            })])),
+            vec![SortOrder::Ascending],
+            1,
+            0,
+            1,
+            None,
+            true,
+        );
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = context(&mut executor, &mut topology);
+
+        let error = node.next_page(&mut context).await.unwrap_err();
+        assert_eq!(
+            error.status(),
+            CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID
+        );
+        assert_eq!(node.results.len(), 1);
+    }
+
     #[test]
     fn continuation_is_always_rejected() {
         let node = merge(Vec::new(), 1, 0, 1, None);
@@ -425,6 +511,7 @@ mod tests {
             0,
             1,
             None,
+            false,
         );
         assert_eq!(node.compare_rows(&left, &right), Ordering::Less);
     }

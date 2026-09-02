@@ -124,7 +124,7 @@ async fn dataplane_excluded_all_preferred_multi_master_falls_back_to_hub() {
         .expect("driver should initialize");
 
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
 
@@ -196,7 +196,7 @@ async fn dataplane_excluded_all_preferred_single_master_falls_back_to_hub() {
         .expect("driver should initialize");
 
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
 

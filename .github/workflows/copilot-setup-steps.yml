@@ -28,10 +28,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install gh-aw extension
-        uses: github/gh-aw-actions/setup-cli@2709137ea6c5b0e19aa621454dc643ea8dc526b1 # v0.85.4
+        uses: github/gh-aw-actions/setup-cli@ea4b911d44a5336c74325a122a5fd9110b45ff06 # v0.87.4
         with:
           version: v0.85.4
 
@@ -41,7 +41,7 @@ jobs:
           sudo apt-get install -y pkg-config libssl-dev
 
       - name: Cache cargo dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/bin/

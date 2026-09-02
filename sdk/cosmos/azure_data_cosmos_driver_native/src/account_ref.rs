@@ -4,12 +4,8 @@
 //! C ABI surface for `cosmos_account_ref_t` — wraps the driver's
 //! [`azure_data_cosmos_driver::models::AccountReference`].
 //!
-//! The wrapper currently ships only the master-key path. Token-credential
-//! (`AccountReference::with_credential`) and resource-token paths require an
-//! FFI bridge for `Arc<dyn TokenCredential>` (an async trait whose
-//! implementations live in `azure_identity`) — bridging an arbitrary C-side
-//! async credential through FFI is non-trivial and is intentionally
-//! deferred to a follow-up.
+//! Master-key credentials are copied into Rust-owned memory. Token credentials
+//! use a host callback adapted to the driver's async `TokenCredential` trait.
 //!
 //! Construction validates the endpoint URL up-front; a parse failure
 //! surfaces a `400 Bad Request` packed status whose sub-status is
@@ -27,7 +23,10 @@ use azure_core::credentials::Secret;
 use azure_data_cosmos_driver::models::AccountReference as DriverAccountReference;
 use url::Url;
 
-use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
+use crate::{
+    credential::{create_token_credential, CosmosTokenProvider},
+    error::{CosmosError, CosmosErrorCode, CosmosStatusCode},
+};
 
 /// The C ABI handle for an account reference (`cosmos_account_ref_t`).
 ///
@@ -195,6 +194,51 @@ pub extern "C" fn cosmos_account_ref_with_master_key(
     CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
 }
 
+/// Creates an account reference authenticated by a host token credential.
+///
+/// The callback provider is adapted into the driver's async
+/// [`azure_core::credentials::TokenCredential`] interface. Ownership of
+/// `user_data` transfers to Rust only on success. The optional
+/// `user_data_free` callback runs after the final account/driver credential
+/// reference is released.
+///
+/// # Returns
+///
+/// - `SUCCESS` (0) with `*out_account` populated.
+/// - `INVALID_ARGUMENT` (1) when `endpoint`, `out_account`, or the provider's
+///   `get_token` callback is NULL.
+/// - `INVALID_UTF8` (2) when `endpoint` is not valid UTF-8.
+/// - `INVALID_ACCOUNT_REFERENCE` (4003) when `endpoint` is not a parsable URL.
+#[no_mangle]
+pub extern "C" fn cosmos_account_ref_with_credential(
+    endpoint: *const c_char,
+    provider: CosmosTokenProvider,
+    user_data: isize,
+    out_account: *mut *mut AccountRefHandle,
+    out_error: *mut *mut CosmosError,
+) -> CosmosStatusCode {
+    if out_account.is_null() || provider.get_token.is_none() {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+    }
+    let endpoint_str = match try_cstr_to_str(endpoint) {
+        Ok(s) => s,
+        Err(code) => return code.as_status_code(),
+    };
+    let url = match parse_endpoint(endpoint_str, out_error) {
+        Ok(u) => u,
+        Err(code) => return code.as_status_code(),
+    };
+    let credential = create_token_credential(provider, user_data)
+        .expect("provider callback was validated before credential construction");
+    let driver_ref = DriverAccountReference::with_credential(url, credential);
+    let handle = AccountRefHandle::into_raw(driver_ref);
+    // SAFETY: caller guarantees `out_account` is writable for one handle.
+    unsafe {
+        *out_account = handle;
+    }
+    CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+}
+
 /// Frees an account-reference handle. NULL is a no-op.
 #[no_mangle]
 pub extern "C" fn cosmos_account_ref_free(account: *mut AccountRefHandle) {
@@ -210,6 +254,10 @@ pub(crate) mod tests {
     use super::*;
     use std::ffi::CString;
     use std::ptr;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
 
     fn ok_cstr(s: &str) -> CString {
         CString::new(s).expect("test inputs must be NUL-free")
@@ -296,5 +344,104 @@ pub(crate) mod tests {
             CosmosErrorCode::CosmosErrorCodeInvalidAccountReference.as_status_code()
         );
         assert!(out.is_null());
+    }
+
+    unsafe extern "C" fn unused_get_token(
+        _user_data: isize,
+        _request: *const crate::credential::CosmosTokenRequest,
+    ) -> i32 {
+        unreachable!("credential callback is not used during construction")
+    }
+
+    unsafe extern "C" fn free_provider(user_data: isize) {
+        // SAFETY: tests transfer one strong `Arc<AtomicUsize>` reference.
+        let released = unsafe { Arc::from_raw(user_data as *const AtomicUsize) };
+        released.fetch_add(1, Ordering::SeqCst);
+    }
+
+    #[test]
+    fn with_credential_rejects_null_out_account_without_taking_ownership() {
+        let endpoint = ok_cstr("https://x.documents.azure.com:443/");
+        let released = Arc::new(AtomicUsize::new(0));
+        let user_data = Arc::into_raw(Arc::clone(&released)) as isize;
+        let provider = CosmosTokenProvider {
+            get_token: Some(unused_get_token),
+            user_data_free: Some(free_provider),
+        };
+
+        let rc = cosmos_account_ref_with_credential(
+            endpoint.as_ptr(),
+            provider,
+            user_data,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        );
+
+        assert_eq!(
+            rc,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+        assert_eq!(released.load(Ordering::SeqCst), 0);
+        // SAFETY: ownership was not transferred, so reclaim the extra strong
+        // reference created for the attempted constructor.
+        unsafe {
+            drop(Arc::from_raw(user_data as *const AtomicUsize));
+        }
+    }
+
+    #[test]
+    fn with_credential_releases_host_state_with_account() {
+        let endpoint = ok_cstr("https://x.documents.azure.com:443/");
+        let released = Arc::new(AtomicUsize::new(0));
+        let user_data = Arc::into_raw(Arc::clone(&released)) as isize;
+        let provider = CosmosTokenProvider {
+            get_token: Some(unused_get_token),
+            user_data_free: Some(free_provider),
+        };
+        let mut out: *mut AccountRefHandle = ptr::null_mut();
+
+        let rc = cosmos_account_ref_with_credential(
+            endpoint.as_ptr(),
+            provider,
+            user_data,
+            &mut out,
+            ptr::null_mut(),
+        );
+
+        assert_eq!(rc, CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code());
+        assert!(!out.is_null());
+        cosmos_account_ref_free(out);
+        assert_eq!(released.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn with_credential_invalid_endpoint_does_not_take_ownership() {
+        let endpoint = ok_cstr("not a url");
+        let released = Arc::new(AtomicUsize::new(0));
+        let user_data = Arc::into_raw(Arc::clone(&released)) as isize;
+        let provider = CosmosTokenProvider {
+            get_token: Some(unused_get_token),
+            user_data_free: Some(free_provider),
+        };
+        let mut out: *mut AccountRefHandle = ptr::null_mut();
+
+        let rc = cosmos_account_ref_with_credential(
+            endpoint.as_ptr(),
+            provider,
+            user_data,
+            &mut out,
+            ptr::null_mut(),
+        );
+
+        assert_eq!(
+            rc,
+            CosmosErrorCode::CosmosErrorCodeInvalidAccountReference.as_status_code()
+        );
+        assert!(out.is_null());
+        assert_eq!(released.load(Ordering::SeqCst), 0);
+        // SAFETY: ownership was not transferred on constructor failure.
+        unsafe {
+            drop(Arc::from_raw(user_data as *const AtomicUsize));
+        }
     }
 }

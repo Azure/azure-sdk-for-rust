@@ -505,9 +505,11 @@ async fn timed_pk_range_read(
     container: &ContainerReference,
 ) -> Duration {
     let started = Instant::now();
-    let _ = driver
+    driver
         .resolve_all_partition_key_ranges(container, false)
-        .await;
+        .await
+        .expect("partition key range read succeeds")
+        .expect("partition key range read returns topology");
     started.elapsed()
 }
 
@@ -566,12 +568,14 @@ async fn scenario_cold_start(ctx: &MultiRegionTestContext, cfg: &StressConfig) -
 
             let started = Instant::now();
             let container = driver
-                .resolve_container_by_name(DB_NAME, COLL_NAME)
+                .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
                 .await
                 .expect("container resolves");
-            let _ = driver
+            driver
                 .resolve_all_partition_key_ranges(&container, false)
-                .await;
+                .await
+                .expect("cold partition key range read succeeds")
+                .expect("cold partition key range read returns topology");
             recorder.record(started.elapsed());
         }
 
@@ -652,7 +656,7 @@ async fn scenario_pk_range_cold_chain(
                 .await
                 .expect("driver initializes");
             let container = driver
-                .resolve_container_by_name(DB_NAME, COLL_NAME)
+                .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
                 .await
                 .expect("container resolves");
             recorder.record(timed_pk_range_read(&driver, &container).await);
@@ -777,15 +781,17 @@ async fn scenario_mixed_workload(ctx: &MultiRegionTestContext, cfg: &StressConfi
             .await
             .expect("driver initializes");
         let container = driver
-            .resolve_container_by_name(DB_NAME, COLL_NAME)
+            .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
             .await
             .expect("container resolves");
 
         // Warm both caches first: the point-read leg is only meaningful as
         // "warm" traffic if it is not paying for a cold PK-range chain.
-        let _ = driver
+        driver
             .resolve_all_partition_key_ranges(&container, false)
-            .await;
+            .await
+            .expect("partition key range warm-up succeeds")
+            .expect("partition key range warm-up returns topology");
         let _ = timed_point_read(&driver, &container).await;
 
         let mut recorder = Recorder::new(arm);

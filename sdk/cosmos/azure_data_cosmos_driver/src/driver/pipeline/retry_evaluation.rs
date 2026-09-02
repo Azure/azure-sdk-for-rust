@@ -17,8 +17,8 @@
 //! Writes are **not** gated on idempotency: `Create` and `Upsert` are retried
 //! after an ambiguous failure just like `Replace` and `Delete`, because Cosmos
 //! DB's conflict detection makes the final resource state deterministic. The
-//! sole exception is stored procedure execution (`OperationType::Execute`),
-//! whose body is opaque to the driver — it aborts on 408, on 5xx other than
+//! exceptions are stored procedure execution (`OperationType::Execute`) and
+//! unsafe explicit server-side PATCH. They abort on 408, on 5xx other than
 //! 503, and on a transport error that was not definitively unsent. See
 //! `docs/ErrorCodesAndRetries.md`.
 
@@ -753,7 +753,7 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
 /// Whether retrying `operation` is unsafe because the backend may already have
 /// processed the request.
 ///
-/// Only stored procedure execution is affected — see
+/// Stored procedure execution and unsafe explicit server-side PATCH are affected — see
 /// [`CosmosOperation::allows_ambiguous_outcome_retry`]. `503` stays retryable
 /// because Cosmos DB returns it exclusively for requests it did *not* process;
 /// `408` and the remaining `5xx` codes leave the outcome genuinely unknown, so
@@ -1782,10 +1782,104 @@ mod tests {
         }
     }
 
-    /// Stored procedure execution is the one data-plane operation the driver
-    /// refuses to retry after an ambiguous failure: the procedure body is
-    /// opaque, so a re-run can repeat arbitrary mutations. The tests below pin
-    /// both halves of that contract — what aborts, and what still retries.
+    mod server_side_patch_retries {
+        use super::*;
+
+        fn make_patch_operation(retry_safe: Option<bool>) -> CosmosOperation {
+            let account = AccountReference::with_master_key(
+                url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+                "dGVzdA==",
+            );
+            let pk_def: PartitionKeyDefinition =
+                serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+            let props = ContainerProperties {
+                id: "testcontainer".into(),
+                partition_key: pk_def,
+                system_properties: SystemProperties::default(),
+            };
+            let container = ContainerReference::new(
+                account,
+                "testdb",
+                "testdb_rid",
+                "testcontainer",
+                "testcontainer_rid",
+                &props,
+            );
+            let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+            let operation = CosmosOperation::patch_item(item).with_body(
+                br#"{"operations":[{"op":"increment","path":"/visits","value":1}]}"#.to_vec(),
+            );
+            match retry_safe {
+                Some(retry_safe) => operation.with_patch_retry_safe(retry_safe),
+                None => operation,
+            }
+        }
+
+        fn evaluate(op: &CosmosOperation, result: TransportResult) -> OperationAction {
+            let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+            let endpoint = CosmosEndpoint::global(
+                url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            );
+            evaluate_transport_result(op, &endpoint, result, &state).0
+        }
+
+        #[test]
+        fn unsafe_and_unresolved_patch_abort_after_possible_execution() {
+            for retry_safe in [None, Some(false)] {
+                for request_sent in [RequestSentStatus::Sent, RequestSentStatus::Unknown] {
+                    let action = evaluate(
+                        &make_patch_operation(retry_safe),
+                        make_transport_error(request_sent),
+                    );
+                    assert!(
+                        matches!(action, OperationAction::Abort { .. }),
+                        "retry_safe={retry_safe:?}, request_sent={request_sent:?}: got {action:?}"
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn definitively_unsent_unsafe_patch_retries() {
+            let action = evaluate(
+                &make_patch_operation(Some(false)),
+                make_transport_error(RequestSentStatus::NotSent),
+            );
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "a definitively unsent PATCH is safe to retry, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn retry_safe_patch_retries_after_possible_execution() {
+            let action = evaluate(
+                &make_patch_operation(Some(true)),
+                make_transport_error(RequestSentStatus::Sent),
+            );
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "a convergent PATCH may be retried, got {action:?}"
+            );
+        }
+
+        #[test]
+        fn unsafe_patch_request_timeout_aborts() {
+            let action = evaluate(
+                &make_patch_operation(Some(false)),
+                make_http_error(StatusCode::RequestTimeout),
+            );
+            assert!(
+                matches!(action, OperationAction::Abort { .. }),
+                "408 leaves PATCH execution ambiguous, got {action:?}"
+            );
+        }
+    }
+
+    /// Stored procedure execution supplies the exhaustive status matrix for
+    /// operations the driver refuses to retry after an ambiguous failure. The
+    /// PATCH-specific tests above verify classification into the same shared
+    /// retry gate without duplicating every status case here.
     mod stored_procedure_retries {
         use super::*;
         use crate::models::{FeedRange, OperationType, StoredProcedureReference};
@@ -2032,6 +2126,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -2996,6 +3091,7 @@ mod tests {
             hub_region_processing_only: false,
             shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
+            patch_verification_failed_endpoint_urls: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,

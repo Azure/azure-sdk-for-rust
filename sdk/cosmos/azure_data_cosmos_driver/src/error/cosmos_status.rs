@@ -514,6 +514,7 @@ impl SubStatusCode {
             20156 => Some("ClientRequestUrlMissingKnownPort"),
             20157 => Some("ClientImdsHttpClientConstructionFailed"),
             20158 => Some("ClientImdsReqwestFeatureRequired"),
+            20159 => Some("ClientPartitionKeyRangeCacheRequired"),
             20200 => Some("ClientContinuationTokenFetchInFlight"),
             20201 => Some("ClientTopologyProviderMissing"),
             20202 => Some("ClientDriverNotInitialized"),
@@ -531,6 +532,7 @@ impl SubStatusCode {
             20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
             20214 => Some("ClientContinuationTokenOrderByStateInvalid"),
             20215 => Some("ClientStreamingMergeSplitReplacementInvalid"),
+            20216 => Some("ClientContinuationTokenAfterTranscodeFailure"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
@@ -1453,6 +1455,10 @@ impl SubStatusCode {
     /// enabled (20158).
     pub const CLIENT_IMDS_REQWEST_FEATURE_REQUIRED: SubStatusCode = SubStatusCode(20158);
 
+    /// Partition key range topology was required while its cache was disabled
+    /// by driver configuration (20159).
+    pub const CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED: SubStatusCode = SubStatusCode(20159);
+
     // ----- 20200-20249: SDK internal invariants -----
 
     /// `to_continuation_token` was called while a page fetch was
@@ -1546,6 +1552,13 @@ impl SubStatusCode {
     /// mid-group boundary and cannot be safely repositioned.
     pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode =
         SubStatusCode(20215);
+
+    /// A continuation token was requested after a page's body failed to
+    /// transcode back to text (20216). The pipeline had already advanced, so
+    /// any token minted afterwards would resume *past* the page the caller
+    /// never received.
+    pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: SubStatusCode =
+        SubStatusCode(20216);
 
     // ----- 20300-20349: SDK-detected service contract violations -----
 
@@ -2457,6 +2470,12 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_IMDS_REQWEST_FEATURE_REQUIRED),
     };
 
+    /// 400 / 20159 — partition key range topology cache disabled.
+    pub const CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED),
+    };
+
     // Internal invariants (HTTP 500, sub-status 20200-20249)
 
     /// 500 / 20200 — `to_continuation_token` called while a page fetch
@@ -2568,6 +2587,14 @@ impl CosmosStatus {
     pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+    };
+
+    /// 500 / 20216 — a continuation token was requested after a page's body
+    /// failed to transcode back to text, so no token minted now could resume
+    /// without skipping that page.
+    pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
     };
 
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)

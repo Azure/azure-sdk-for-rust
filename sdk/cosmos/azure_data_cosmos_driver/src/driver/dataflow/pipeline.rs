@@ -88,6 +88,14 @@ impl Pipeline {
 pub struct OperationPlan {
     pub(crate) pipeline: Pipeline,
     operation: Arc<CosmosOperation>,
+    /// Set when a page advanced every node's resume position but could not be
+    /// handed to the caller, so the plan's progress and what the caller
+    /// received have diverged. Once set, no continuation token can be minted:
+    /// any token would resume *past* the lost page.
+    ///
+    /// Same pattern as `SkipTake`'s `poisoned` flag, at the boundary layer
+    /// rather than inside a node.
+    continuation_poisoned: bool,
 }
 
 impl OperationPlan {
@@ -96,7 +104,47 @@ impl OperationPlan {
         Self {
             pipeline,
             operation,
+            continuation_poisoned: false,
         }
+    }
+
+    /// Records that a page advanced the pipeline but never reached the caller.
+    pub(crate) fn poison_continuation(&mut self) {
+        self.continuation_poisoned = true;
+    }
+
+    /// Whether a page advanced this plan without reaching the caller.
+    ///
+    /// Read by
+    /// [`CosmosDriver::execute_plan`](crate::driver::CosmosDriver::execute_plan)
+    /// to refuse the *next* page as well. Closing only the token exit would
+    /// leave the quieter one open: a caller that keeps pulling pages instead of
+    /// minting a token would receive the page *after* the lost one and never
+    /// learn a page went missing.
+    pub(crate) fn continuation_poisoned(&self) -> bool {
+        self.continuation_poisoned
+    }
+
+    /// The error a poisoned plan returns from every subsequent call.
+    ///
+    /// Deliberately carries the status of the failure that caused it — the
+    /// poison is not an independent fault, it is that fault made durable. Same
+    /// reasoning as `SkipTake::poisoned_error`, at the boundary layer.
+    pub(crate) fn poisoned_error() -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message(
+                "this plan is unusable: a page advanced it but could not be returned to the \
+                 caller, so its progress and what the caller received no longer agree. Continuing \
+                 would deliver the page *after* the lost one and no continuation token can be \
+                 minted; re-run the query from the last token that was captured successfully",
+            )
+            .build()
+    }
+
+    /// Returns whether executing this plan can require physical partition topology.
+    pub(crate) fn requires_partition_key_range_topology(&self) -> bool {
+        !self.operation.is_trivial()
     }
 
     /// Snapshots this plan into a [`ContinuationToken`] suitable for cross-process
@@ -114,7 +162,45 @@ impl OperationPlan {
     /// `feed_range` cannot be determined. These errors indicate an internal
     /// pipeline bug rather than user input, and surface as a Cosmos client
     /// error rather than silently producing a lossy continuation token.
+    ///
+    /// Also returns an error when an earlier page failed in a way that left a
+    /// node's progress and its child's resume position disagreeing — a skip/take
+    /// node whose page could not be encoded, for instance. That is neither an
+    /// invariant violation nor an internal bug: it is a genuine failure on the
+    /// data path, reported here because no token minted afterwards could resume
+    /// correctly.
+    ///
+    /// The same applies when a page was produced but could not be delivered to
+    /// the caller — a binary response body that failed to transcode to text.
+    /// Reported as
+    /// [`CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE`](crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE).
+    /// That failure also stops the plan being executed again — see
+    /// [`CosmosDriver::execute_plan`](crate::driver::CosmosDriver::execute_plan)
+    /// — so a caller cannot step over the lost page by simply pulling the next
+    /// one instead of minting a token.
     pub fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken> {
+        if self.continuation_poisoned {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE,
+                )
+                .with_message(
+                    "a page advanced this plan but could not be returned to the caller, so no \
+                     continuation token can be minted: resuming from here would skip that page. \
+                     Re-run the query from the last token that was captured successfully",
+                )
+                .build());
+        }
         ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state()?)
+    }
+
+    /// Whether the driver must transcode each page's body back to text before
+    /// returning it.
+    ///
+    /// Fixed when the plan was built, alongside the request header and the
+    /// `emit_binary` flag baked into the pipeline nodes, so every page of a
+    /// plan agrees on the emitted encoding.
+    pub(crate) fn transcodes_response_to_text(&self) -> bool {
+        self.operation.transcodes_response_to_text()
     }
 }

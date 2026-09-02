@@ -26,9 +26,9 @@ use std::any::Any;
 use std::future::Future;
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::models::{AccountReference, ContainerReference, CosmosResponse};
 use azure_data_cosmos_driver::options::DriverOptions;
+use azure_data_cosmos_driver::{driver::CosmosDriver, options::OperationOptions};
 
 use crate::account_ref::AccountRefHandle;
 use crate::completion::{
@@ -324,6 +324,19 @@ pub extern "C" fn cosmos_submit_operation(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    submit_operation_with_builder(driver, queue, user_data, out_pre_error, || {
+        // SAFETY: caller guarantees the v1 request fields follow their contracts.
+        unsafe { build_request(request) }
+    })
+}
+
+fn submit_operation_with_builder(
+    driver: *const DriverHandle,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+    build: impl FnOnce() -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
+) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
@@ -341,9 +354,7 @@ pub extern "C" fn cosmos_submit_operation(
 
     // Build the driver operation + options + inbound continuation from the
     // flat request. Validation failures abort before we spend a spawn.
-    // SAFETY: caller guarantees `request`'s pointer fields per the struct
-    // contract.
-    let built = match unsafe { build_request(request) } {
+    let built = match build() {
         Ok(b) => b,
         Err(code) => {
             write_err(code);
@@ -363,9 +374,13 @@ pub extern "C" fn cosmos_submit_operation(
     let crate::op_request::BuiltRequest {
         operation,
         options,
+        patch_tracking_id,
         continuation,
         plan_options,
     } = built;
+    if let Some(tracking_id) = patch_tracking_id {
+        ctx.op_inner.set_patch_tracking_id(tracking_id.to_string());
+    }
 
     spawn_oneshot(
         ctx,
@@ -434,6 +449,19 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, || {
+        // SAFETY: caller guarantees the v1 request fields follow their contracts.
+        unsafe { build_request(request) }
+    })
+}
+
+fn submit_singleton_operation_with_builder(
+    driver: *const DriverHandle,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+    build: impl FnOnce() -> Result<crate::op_request::BuiltRequest, CosmosErrorCode>,
+) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
@@ -449,9 +477,7 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     };
     let driver_arc: Arc<CosmosDriver> = Arc::clone(&driver_inner.inner);
 
-    // SAFETY: caller guarantees `request`'s pointer fields per the struct
-    // contract.
-    let built = match unsafe { build_request(request) } {
+    let built = match build() {
         Ok(b) => b,
         Err(code) => {
             write_err(code);
@@ -470,8 +496,14 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     let runtime = Arc::clone(ctx.queue.runtime());
     // `continuation` is intentionally dropped: singletons do not paginate.
     let crate::op_request::BuiltRequest {
-        operation, options, ..
+        operation,
+        options,
+        patch_tracking_id,
+        ..
     } = built;
+    if let Some(tracking_id) = patch_tracking_id {
+        ctx.op_inner.set_patch_tracking_id(tracking_id.to_string());
+    }
 
     spawn_oneshot(
         ctx,
@@ -628,7 +660,7 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
         task_runtime,
         async move {
             driver_arc
-                .resolve_container_by_name(&db_id, &container_id)
+                .resolve_container_by_name(&db_id, &container_id, OperationOptions::default())
                 .await
         },
         |container_ref: azure_data_cosmos_driver::models::ContainerReference| {
@@ -769,10 +801,11 @@ mod tests {
     #[test]
     fn spawn_oneshot_cancellation_yields_cancelled_completion() {
         use crate::completion::{
-            cosmos_completion_queue_create, cosmos_completion_queue_free,
-            cosmos_completion_queue_free_completions, cosmos_completion_queue_wait,
-            cosmos_operation_handle_cancel, cosmos_operation_handle_free, CosmosCompletion,
-            CosmosCompletionOutcome, CosmosCompletionQueueOptions,
+            cosmos_completion_patch_tracking_id, cosmos_completion_queue_create,
+            cosmos_completion_queue_free, cosmos_completion_queue_free_completions,
+            cosmos_completion_queue_wait, cosmos_operation_handle_cancel,
+            cosmos_operation_handle_free, CosmosCompletion, CosmosCompletionOutcome,
+            CosmosCompletionQueueOptions,
         };
         use crate::runtime::{__test_only_create_default_runtime, cosmos_runtime_free};
         use std::mem::MaybeUninit;
@@ -787,6 +820,8 @@ mod tests {
         assert!(!queue.is_null());
 
         let (ctx, op_handle) = pre_flight_spawn(queue, 0).expect("pre-flight ok");
+        let tracking_id = "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f";
+        ctx.op_inner.set_patch_tracking_id(tracking_id.to_owned());
         let runtime = Arc::clone(ctx.queue.runtime());
 
         // A future that never resolves on its own — only cancellation can end
@@ -815,6 +850,15 @@ mod tests {
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
         );
         assert_eq!(c.was_cancel_requested, 1);
+        let actual = cosmos_completion_patch_tracking_id(&c);
+        assert!(!actual.is_null());
+        // SAFETY: the pointer is borrowed from the live completion backing.
+        assert_eq!(
+            unsafe { std::ffi::CStr::from_ptr(actual) }
+                .to_str()
+                .unwrap(),
+            tracking_id
+        );
 
         cosmos_completion_queue_free_completions(&mut c as *mut CosmosCompletion, 1);
         cosmos_operation_handle_free(op_handle);

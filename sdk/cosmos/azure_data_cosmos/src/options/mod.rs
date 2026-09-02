@@ -11,6 +11,9 @@
 pub use azure_data_cosmos_driver::models::{
     MaxItemCountHint, Precondition, SessionToken, ThroughputControlGroupName,
 };
+#[cfg(feature = "preview_patch")]
+#[doc(inline)]
+pub use azure_data_cosmos_driver::options::PatchStrategy;
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::{
     AvailabilityStrategy, BinaryEncodingOptions, ConnectionPoolOptions,
@@ -29,7 +32,7 @@ pub use batch::{
 pub use change_feed::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom};
 pub use client::CosmosClientOptions;
 pub use consistency::ConsistencyLevel;
-pub use container::ReadContainerOptions;
+pub use container::{ContainerClientOptions, ReadContainerOptions};
 #[cfg(feature = "control_plane")]
 pub use container::{
     CreateContainerOptions, DeleteContainerOptions, QueryContainersOptions, ReplaceContainerOptions,
@@ -40,7 +43,9 @@ pub use database::{
 };
 pub use feed::{FeedOptions, QueryOptions};
 pub use feed_ranges::ReadFeedRangesOptions;
-pub use item::{ItemReadOptions, ItemWriteOptions, PatchItemOptions};
+#[cfg(feature = "preview_patch")]
+pub use item::PatchItemOptions;
+pub use item::{ItemReadOptions, ItemWriteOptions};
 pub use routing_strategy::RoutingStrategy;
 #[cfg(feature = "control_plane")]
 pub use throughput::ThroughputOptions;
