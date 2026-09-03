@@ -3,10 +3,14 @@
 
 use std::{
     num::NonZeroU32,
-    sync::{Arc, Mutex},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc, Mutex,
+    },
 };
 
-use azure_core::http::{headers::HeaderName, Method, Request, StatusCode, Url};
+use azure_core::http::{headers::HeaderName, Context, Method, Request, StatusCode, Url};
+use azure_data_cosmos::diagnostics::{DiagnosticsContext, DiagnosticsHandler};
 use azure_data_cosmos::{
     models::{ContainerProperties, ThroughputProperties},
     options::{CreateContainerOptions, ItemReadOptions, MaxItemCountHint, QueryOptions, Region},
@@ -41,6 +45,20 @@ struct RequestSnapshot {
 #[derive(Debug, Default)]
 struct RecordingObserver {
     requests: Mutex<Vec<RequestSnapshot>>,
+}
+
+#[derive(Default)]
+struct RecordingDiagnosticsHandler {
+    completions: AtomicUsize,
+    last_request_count: AtomicUsize,
+}
+
+impl DiagnosticsHandler for RecordingDiagnosticsHandler {
+    fn handle(&self, diagnostics: &DiagnosticsContext, _context: &Context<'_>) {
+        self.completions.fetch_add(1, Ordering::SeqCst);
+        self.last_request_count
+            .store(diagnostics.request_count(), Ordering::SeqCst);
+    }
 }
 
 impl RecordingObserver {
@@ -95,6 +113,7 @@ struct TestItem {
 struct Harness {
     emulator: Arc<InMemoryEmulatorHttpClient>,
     observer: Arc<RecordingObserver>,
+    diagnostics_handler: Arc<RecordingDiagnosticsHandler>,
     client: CosmosClient,
     container: ContainerClient,
 }
@@ -115,6 +134,7 @@ impl Harness {
             GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
             azure_core::credentials::Secret::new(ACCOUNT_KEY),
         );
+        let diagnostics_handler = Arc::new(RecordingDiagnosticsHandler::default());
         let client = CosmosClientBuilder::new()
             .with_runtime(
                 CosmosRuntimeBuilder::from(emulator.runtime_builder())
@@ -122,6 +142,7 @@ impl Harness {
                     .await
                     .unwrap(),
             )
+            .with_diagnostics_handler(diagnostics_handler.clone())
             .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
             .await
             .unwrap();
@@ -145,6 +166,7 @@ impl Harness {
         Self {
             emulator,
             observer,
+            diagnostics_handler,
             client,
             container,
         }
@@ -347,6 +369,10 @@ async fn long_lived_client_recovers_across_supported_operations() {
     };
     assert_eq!(resume_error.status().status_code(), StatusCode::BadRequest);
 
+    let completions_before_throughput = harness
+        .diagnostics_handler
+        .completions
+        .load(Ordering::SeqCst);
     let throughput = harness
         .container
         .read_throughput(None)
@@ -354,6 +380,22 @@ async fn long_lived_client_recovers_across_supported_operations() {
         .unwrap()
         .expect("replacement container has dedicated throughput");
     assert_eq!(throughput.throughput(), Some(400));
+    assert_eq!(
+        harness
+            .diagnostics_handler
+            .completions
+            .load(Ordering::SeqCst),
+        completions_before_throughput + 1,
+        "throughput recreation recovery must dispatch one completion"
+    );
+    assert_eq!(
+        harness
+            .diagnostics_handler
+            .last_request_count
+            .load(Ordering::SeqCst),
+        2,
+        "the completion must retain both offer-query requests"
+    );
 }
 
 #[cfg(feature = "preview_patch")]
