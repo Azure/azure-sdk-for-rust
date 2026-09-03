@@ -13,7 +13,7 @@ For the phased implementation plan and low-level wire details, see
 
 Adds first-class support for **Cosmos binary JSON** to the Rust SDK and driver. Cosmos binary JSON is a tagged byte stream the service can persist and transmit in place of UTF-8 text JSON; it is more compact and cheaper to (de)serialize.
 
-This design delivers a **complete decoder** and a **native serde codec**, and makes binary encoding a **driver capability** on `OperationOptions.binary_encoding` so it is shared by every consumer of the driver — the Rust SDK **and** any FFI-based SDK (.NET, Java, Go, …). It is opt-in (`CosmosClientBuilder::with_binary_encoding_options`, with an `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment-variable fallback). When the option is off, every request and response is **byte-for-byte unchanged** — the binary code is inert.
+This design delivers a **complete decoder** and a **native serde codec**, and makes binary encoding a **driver capability** on `OperationOptions.binary_encoding` so it is shared by every consumer of the driver — the Rust SDK **and** any FFI-based SDK (.NET, Java, Go, …). It is enabled by default and can be disabled with `CosmosClientBuilder::with_binary_encoding_options`, a per-operation override, or `AZURE_COSMOS_BINARY_ENCODING_ENABLED=false`. When the option is off, every request and response is **byte-for-byte unchanged** — the binary code is inert.
 
 Because the option lives on the driver and is schema-agnostic, the driver performs the byte-level transcoding **both ways** when needed:
 
@@ -49,7 +49,7 @@ Every binary buffer begins with the preamble byte `0x80`. Because `0x80` is a UT
 
 ### Enablement (driver option, resolved once)
 
-Binary encoding is a driver option: `OperationOptions.binary_encoding: Option<BinaryEncodingOptions>` (driver-owned type). The Rust SDK **re-exports** `BinaryEncodingOptions` and resolves enablement **once at client build** via `resolve_binary_encoding(Option<BinaryEncodingOptions>)`, storing it on the client context — there is no per-request lookup. It prefers the explicit `CosmosClientBuilder::with_binary_encoding_options(..)` option and falls back to the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy: `1` / `true` / `yes` / `on`, case-insensitive). Each item operation carries the resolved options onto its `OperationOptions` (via a `with_binary_encoding` helper).
+Binary encoding is a driver option: `OperationOptions.binary_encoding: Option<BinaryEncodingOptions>` (driver-owned type). The Rust SDK **re-exports** `BinaryEncodingOptions` and resolves enablement **once at client build** via `resolve_binary_encoding(Option<BinaryEncodingOptions>)`, storing it on the client context — there is no per-request lookup. It prefers the explicit `CosmosClientBuilder::with_binary_encoding_options(..)` option, then the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy: `1` / `true` / `yes` / `on`, case-insensitive), and defaults to enabled when neither is set. Each item operation carries the resolved options onto its `OperationOptions` (via a `with_binary_encoding` helper).
 
 FFI hosts set the equivalent flat fields on the C ABI `cosmos_operation_options_t` (`binary_encoding_enabled`, `binary_encoding_request_text_response`), which convert to the same driver option — so no SDK code is involved. Two ABI-specific details:
 
@@ -532,7 +532,7 @@ When the option is **off**, both paths collapse to the existing text behavior �
 * **Transcoding** — `binary_json::transcode_to_text` **and** `transcode_to_binary` unit tests (round-trip equivalence, binary/text/empty passthrough, malformed-input errors); `ResponseBody::transcode_to_text` tests.
 * **DISTINCT pipelines** — text/binary numeric equivalence, mixed-format `ORDER BY` → `DISTINCT` → `SkipTake` composition, continuation portability, and live partition-split coverage.
 * **Driver option + request encode** — `OperationOptions.binary_encoding` builder/layered-resolution tests; `apply_request_binary_encoding` tests (text→binary + header, already-binary passthrough, invalid-text error).
-* **FFI** — `cosmos_operation_options_t` conversion tests: `binary_encoding_enabled` + `request_text_response` build the driver option (enabled+text, enabled-only, disabled-yields-none).
+* **FFI** — `cosmos_operation_options_t` conversion tests: `binary_encoding_enabled` + `request_text_response` build the driver option (enabled+text, enabled-only, explicit disable preserved).
 * **Benchmarks** — `azure_data_cosmos_benchmarks`'s `binary_encode` / `binary_decode` compare text, the retired via-`Value` path, and the shipped native codec on small and ~1.7 MB items.
 
 Validation sweep (per the cosmos contributing guidelines): `cargo fmt`, `clippy` (driver `--all-features`; SDK default features), `cargo doc -D warnings` (driver), `cspell`, and the driver lib + SDK test suites — all clean.
@@ -546,15 +546,15 @@ cargo test -p azure_data_cosmos --features __internal_in_memory_emulator \
 
 ---
 
-## Enabling binary encoding
+## Configuring binary encoding
 
-Binary is **off by default**. To opt in for item operations, set it on the client builder:
+Binary is **on by default**. To disable it for a client, set explicit options on the client builder:
 
 ```rust
 use azure_data_cosmos::options::BinaryEncodingOptions;
 
 let client = CosmosClientBuilder::new()
-    .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(true))
+    .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(false))
     .build(account, routing_strategy)
     .await?;
 ```
@@ -571,10 +571,10 @@ let client = CosmosClientBuilder::new()
     .await?;
 ```
 
-As a fallback (e.g. for enabling encoding without a code change), the same enablement is read from an environment variable when the builder option is not set:
+When the builder option is not set, the default can also be overridden with an environment variable:
 
 ```bash
-AZURE_COSMOS_BINARY_ENCODING_ENABLED=true
+AZURE_COSMOS_BINARY_ENCODING_ENABLED=false
 ```
 
 The explicit builder option takes precedence; the flag is resolved once at client build.
@@ -597,10 +597,10 @@ opts.binary_encoding_request_text_response = 2;    /* 2 = true  */
 
 ## Backward compatibility & safety
 
-* **Off by default.** With the flag unset, requests and responses are byte-for-byte identical to current behavior; the text path is unchanged.
+* **Explicit opt-out.** `BinaryEncodingOptions::with_enabled(false)` or `AZURE_COSMOS_BINARY_ENCODING_ENABLED=false` preserves the text-only behavior; requests and responses are byte-for-byte unchanged by the binary codec.
 * **Response decode is always on but inert.** `is_binary` only triggers on a `0x80` first byte, which the service emits solely when it has negotiated binary — so enabling decode cannot affect existing text responses.
 * **No model sharing across crates.** The SDK consumes the driver's codec via its public `binary_json` API. `BinaryEncodingOptions` is a **driver** type the SDK re-exports (like `Region` / `ConsistencyLevel`), because binary encoding is a wire/driver concern shared with FFI hosts; no item/document models cross the boundary.
-* **No `CHANGELOG` entry yet** — this is a gated feature with no user-facing default change. The entry lands when the feature graduates.
+* **Changelog entries are present** in both the SDK and driver for the user-facing default change.
 
 ---
 
@@ -693,10 +693,10 @@ decode** (auto-detected by the `0x80` first byte).
 
 | | .NET | Rust |
 |---|---|---|
-| Opt-in gate | `ConfigurationManager.IsBinaryEncodingEnabled()` (env var) + `ItemRequestOptions.EnableBinaryResponseOnPointOperations` | `BinaryEncodingOptions` (client default + per-op override) |
+| Enablement | `ConfigurationManager.IsBinaryEncodingEnabled()` (env var) + `ItemRequestOptions.EnableBinaryResponseOnPointOperations` | Enabled by default; `BinaryEncodingOptions` (client default + per-op override) and environment opt-out |
 | Suppressed with custom serializer | Yes — `GetTargetResponseSerializationFormat` returns `Text` | N/A (SDK owns serde) |
 | Response decode | Format-agnostic `JsonNavigator` (first-byte detect) | Shared `deserialize_response` / `is_binary` choke point |
-| Status | Preview / opt-in | Preview / opt-in |
+| Status | Preview / opt-in | Preview / enabled by default |
 
 ### Divergences
 

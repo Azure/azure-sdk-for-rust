@@ -238,20 +238,17 @@ fn query_operation(
 fn documents_of(
     response: azure_data_cosmos_driver::models::CosmosResponse,
 ) -> Vec<serde_json::Value> {
-    // Each buffer may be text or Cosmos binary JSON; `0x80` disambiguates.
-    fn decode(bytes: &[u8]) -> serde_json::Value {
-        if azure_data_cosmos_driver::binary_json::is_binary(bytes) {
-            azure_data_cosmos_driver::binary_json::from_slice(bytes).unwrap()
-        } else {
-            serde_json::from_slice(bytes).unwrap()
-        }
-    }
-
     match response.into_body() {
         ResponseBody::NoPayload => Vec::new(),
-        ResponseBody::Items(items) => items.iter().map(|item| decode(item)).collect(),
+        ResponseBody::Items(items) => items
+            .iter()
+            .map(|item| {
+                super::parse_json_body(item).expect("item should parse as text or binary JSON")
+            })
+            .collect(),
         ResponseBody::Bytes(bytes) => {
-            let value = decode(&bytes);
+            let value =
+                super::parse_json_body(&bytes).expect("page should parse as text or binary JSON");
             value["Documents"].as_array().cloned().unwrap_or_default()
         }
     }
@@ -847,12 +844,15 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             distinct_type: "Ordered".to_owned(),
         },
     ] {
+        let text_options = OperationOptionsBuilder::new()
+            .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(false))
+            .build();
         let (text, text_formats) = drain_query_with_options(
             &driver,
             &container,
             &query,
-            OperationOptions::default(),
-            OperationOptions::default(),
+            text_options.clone(),
+            text_options.clone(),
         )
         .await;
         let text_request_modes = recorder.take();
@@ -889,18 +889,13 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             &container,
             &query,
             binary_options.clone(),
-            OperationOptions::default(),
+            text_options.clone(),
         )
         .await;
         let planned_binary_request_modes = recorder.take();
-        let (_, planned_text_formats) = drain_query_with_options(
-            &driver,
-            &container,
-            &query,
-            OperationOptions::default(),
-            binary_options,
-        )
-        .await;
+        let (_, planned_text_formats) =
+            drain_query_with_options(&driver, &container, &query, text_options, binary_options)
+                .await;
         let planned_text_request_modes = recorder.take();
 
         let binary = normalize_binary_values(binary);
@@ -1002,6 +997,9 @@ async fn ordered_distinct_tokens_resume_across_binary_modes() {
     let binary = OperationOptionsBuilder::new()
         .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true))
         .build();
+    let text = OperationOptionsBuilder::new()
+        .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(false))
+        .build();
     for (query, expected) in [
         (
             QuerySpec {
@@ -1030,7 +1028,7 @@ async fn ordered_distinct_tokens_resume_across_binary_modes() {
                 &driver,
                 &container,
                 &query,
-                OperationOptions::default(),
+                text.clone(),
                 binary.clone(),
             )
             .await,
@@ -1044,7 +1042,7 @@ async fn ordered_distinct_tokens_resume_across_binary_modes() {
                 &container,
                 &query,
                 binary.clone(),
-                OperationOptions::default(),
+                text.clone(),
             )
             .await,
             expected,

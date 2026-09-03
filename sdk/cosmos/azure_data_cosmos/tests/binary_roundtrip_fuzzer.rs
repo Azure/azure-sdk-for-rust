@@ -1794,9 +1794,11 @@ struct RunConfig {
 
 fn run_configs() -> Vec<RunConfig> {
     vec![
+        // Explicitly disabled, not unset: binary encoding is enabled by
+        // default, so an unset option would make this control a binary run.
         RunConfig {
             label: "text-control",
-            binary: None,
+            binary: Some(BinaryEncodingOptions::new().with_enabled(false)),
         },
         RunConfig {
             label: "binary",
