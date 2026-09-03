@@ -1,0 +1,181 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+# =============================================================================
+# native-driver.yml  --  Cosmos Go native-driver cross-build + supply-chain evidence
+#
+#   STATUS: MANUAL. This pipeline is intentionally not referenced by
+#   sdk/cosmos/ci*.yml or any automatic PR trigger. Run its registered pipeline
+#   definition against a PR with an authorized `/azp run` comment.
+#
+#   It productizes the manual windows/amd64 bootstrap (Azure/azure-cosmos-driver
+#   PR #5) into the full "Big 5 + musl" matrix. See ./README.md and
+#   ../docs/NATIVE_SUPPLY_CHAIN.md for the security/provenance design.
+# =============================================================================
+
+trigger: none
+pr: none
+
+variables:
+  - name: crateDir
+    value: sdk/cosmos/azure_data_cosmos_driver_native
+  - name: pipelineDir
+    value: sdk/cosmos/azure_data_cosmos_driver_native/pipeline
+
+extends:
+  template: /eng/pipelines/templates/stages/1es-redirect.yml
+  parameters:
+    Use1ESOfficial: true
+    EnableGoInternalModuleProxy: true
+    stages:
+      # -----------------------------------------------------------------------
+      # 1. Build each target: capture syslibs, build the .a with
+      #    cargo-auditable, and emit per-artifact metadata.
+      # -----------------------------------------------------------------------
+      - stage: build
+        displayName: Cross-build native matrix
+        jobs:
+          - job: test_generation_scripts
+            displayName: Test native generation scripts
+            pool:
+              name: azsdk-pool
+              image: windows-2022
+              os: windows
+            steps:
+              - template: /eng/common/pipelines/templates/steps/run-pester-tests.yml
+                parameters:
+                  TargetDirectory: $(pipelineDir)/tests
+          - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
+            parameters:
+              JobTemplatePath: /sdk/cosmos/azure_data_cosmos_driver_native/pipeline/native-driver-build-job.yml
+              SparseCheckout: false
+              AdditionalParameters: {}
+              MatrixConfigs:
+                - Name: native_driver
+                  Path: $(Build.ArtifactStagingDirectory)/native-driver-job-matrix.json
+                  Selection: all
+                  GenerateVMJobs: true
+              PreGenerationSteps:
+                - pwsh: >
+                    $(pipelineDir)/New-NativeJobMatrix.ps1
+                    -OutputPath $(Build.ArtifactStagingDirectory)/native-driver-job-matrix.json
+                  displayName: Generate native driver job configuration
+
+      # -----------------------------------------------------------------------
+      # 2. Generate the per-target Go modules and publish the
+      #    azure-cosmos-driver layout + SHA256SUMS.
+      # -----------------------------------------------------------------------
+      - stage: gomodules
+        displayName: Generate Go modules + SHA256SUMS
+        dependsOn: build
+        jobs:
+          - job: generate
+            displayName: New-GoModules
+            pool:
+              name: azsdk-pool
+              image: ubuntu-22.04
+              os: linux
+            steps:
+              - download: current
+              - pwsh: |
+                  $artifactRoot = "$(Pipeline.Workspace)/native"
+                  New-Item -ItemType Directory -Force -Path $artifactRoot | Out-Null
+                  Get-ChildItem "$(Pipeline.Workspace)" -Directory -Filter "native-*" |
+                    ForEach-Object {
+                      $targetId = $_.Name.Substring("native-".Length)
+                      $destination = Join-Path $artifactRoot $targetId
+                      New-Item -ItemType Directory -Force -Path $destination | Out-Null
+                      Copy-Item (Join-Path $_.FullName "*") $destination -Recurse -Force
+                    }
+                displayName: Normalize downloaded native artifact layout
+              - pwsh: >
+                  $(pipelineDir)/New-GoModules.ps1
+                  -ArtifactRoot $(Pipeline.Workspace)/native
+                  -OutputRoot   $(Build.ArtifactStagingDirectory)/azure-cosmos-driver
+                displayName: Emit go.mod + link_*.go + native/
+              - pwsh: |
+                  $root = "$(Build.ArtifactStagingDirectory)/azure-cosmos-driver"
+                  Get-ChildItem -Recurse -Filter libazurecosmosdriver.a $root |
+                    ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.FullName.Substring($root.Length+1))" } |
+                    Set-Content "$root/SHA256SUMS"
+                displayName: Write SHA256SUMS (published out of the trusted build)
+              - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
+                parameters:
+                  ArtifactName: azure-cosmos-driver-modules
+                  ArtifactPath: $(Build.ArtifactStagingDirectory)/azure-cosmos-driver
+                  SbomEnabled: true
+
+      # -----------------------------------------------------------------------
+      # 3. For successful main-branch builds only, verify the combined artifact,
+      #    update Azure/azure-cosmos-driver, and open a draft PR. GitHub branch
+      #    protection and CODEOWNERS provide the human approval boundary.
+      # -----------------------------------------------------------------------
+      - stage: publish_go_pr
+        displayName: Open downstream Go draft PR
+        dependsOn: gomodules
+        condition: >-
+          and(
+            succeeded(),
+            eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+            eq(variables['Build.Reason'], 'Manual')
+          )
+        jobs:
+          - job: publish
+            displayName: Publish Azure/azure-cosmos-driver PR
+            pool:
+              name: azsdk-pool
+              image: ubuntu-22.04
+              os: linux
+            steps:
+              - download: current
+                artifact: azure-cosmos-driver-modules
+              - pwsh: |
+                  $matrix = Get-Content -Raw "$(pipelineDir)/build-matrix.json" | ConvertFrom-Json
+                  Write-Host "##vso[task.setvariable variable=GoVersion]$($matrix.go_toolchain_version)"
+                displayName: Read Go version from build matrix
+              - task: GoTool@0
+                displayName: Install Go $(GoVersion)
+                inputs:
+                  version: $(GoVersion)
+              - template: /eng/common/pipelines/templates/steps/login-to-github.yml
+                parameters:
+                  TokenOwners:
+                    - Azure
+              - pwsh: |
+                  $checkout = "$(Pipeline.Workspace)/azure-cosmos-driver"
+                  if (Test-Path $checkout) {
+                    throw "Downstream checkout path already exists: $checkout"
+                  }
+
+                  $credential = [Convert]::ToBase64String(
+                    [Text.Encoding]::ASCII.GetBytes("x-access-token:$env:GH_TOKEN")
+                  )
+                  git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $credential" `
+                    clone --branch main --single-branch `
+                    https://github.com/Azure/azure-cosmos-driver.git $checkout
+                  if ($LASTEXITCODE -ne 0) {
+                    throw "Unable to clone Azure/azure-cosmos-driver."
+                  }
+                displayName: Clone private downstream repository
+                env:
+                  GH_TOKEN: $(GH_TOKEN)
+              - pwsh: >
+                  $(pipelineDir)/Prepare-GoDriverPullRequest.ps1
+                  -GeneratedRoot $(Pipeline.Workspace)/azure-cosmos-driver-modules
+                  -CheckoutRoot $(Pipeline.Workspace)/azure-cosmos-driver
+                displayName: Verify and stage generated Go modules
+              - template: /eng/common/pipelines/templates/steps/create-pull-request.yml
+                parameters:
+                  PROwner: Azure
+                  RepoOwner: Azure
+                  RepoName: azure-cosmos-driver
+                  BaseBranchName: main
+                  PRBranchName: automation/native-driver-$(Build.BuildId)
+                  CommitMsg: Update Cosmos native driver libraries
+                  PRTitle: Update Cosmos native driver libraries
+                  PRBody: "Generated from Azure/azure-sdk-for-rust commit $(Build.SourceVersion) by Azure DevOps build $(Build.BuildNumber)."
+                  GHTeamReviewers: azure-cosmos-sdk
+                  OpenAsDraft: true
+                  AuthToken: $(GH_TOKEN)
+                  WorkingDirectory: $(Pipeline.Workspace)/azure-cosmos-driver
+                  ScriptDirectory: $(Build.SourcesDirectory)/eng/common/scripts
