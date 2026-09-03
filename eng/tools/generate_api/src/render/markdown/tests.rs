@@ -227,7 +227,7 @@ fn renders_package_metadata_and_features_before_api() {
         render(&model),
         "# azure_security_keyvault_secrets\n\
          \n\
-         **Description**: Manage secrets.\n\
+         - **Description**: Manage secrets.\n\
          - **Edition**: 2021\n\
          - **Rust version**: 1.88\n\
          \n\
@@ -241,6 +241,47 @@ fn renders_package_metadata_and_features_before_api() {
          \n\
          ```rust\n\
          pub struct SecretClient;\n\
+         ```\n"
+    );
+}
+
+#[test]
+fn preserves_multiline_description_paragraphs() {
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        package_metadata: PackageMetadata {
+            description: Some("Line one\n\nLine two\nAlso line two\n\nLine three\n".to_string()),
+            ..Default::default()
+        },
+        root_module: ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: Vec::new(),
+            modules: Vec::new(),
+        },
+    };
+
+    assert_eq!(
+        render(&model),
+        "# demo\n\
+         \n\
+         - **Description:**\n\
+         \n\
+         \x20\x20Line one\n\
+         \n\
+         \x20\x20Line two\n\
+         \x20\x20Also line two\n\
+         \n\
+         \x20\x20Line three\n\
+         \n\
+         ## Features\n\
+         \n\
+         - `default`\n\
+         \n\
+         ```rust\n\
          ```\n"
     );
 }
@@ -299,13 +340,18 @@ fn comments_patch_accounts_for_package_metadata_lines() {
     let patch = crate::render::patch::render(&lines, "API.md");
     let parsed_patch = diffy::Patch::from_str(&patch).expect("patch should parse");
 
-    assert!(api_without_docs.contains("**Description:**\nMulti-line\ncomment\n"));
-    assert!(patch.contains(
-        "@@ -15,1 +15,3 @@\n\
-         +//! Demo docs.\n\
-         +/// Does foo.\n\
-         \x20pub struct Foo;\n"
-    ));
+    assert!(api_without_docs.contains(concat!(
+        "- **Description:**\n",
+        "\n",
+        "  Multi-line\n",
+        "  comment\n",
+    )));
+    assert!(patch.contains(concat!(
+        "@@ -16,1 +16,3 @@\n",
+        "+//! Demo docs.\n",
+        "+/// Does foo.\n",
+        " pub struct Foo;\n",
+    )));
     assert_eq!(
         diffy::apply(&api_without_docs, &parsed_patch).expect("patch should apply"),
         api_with_docs

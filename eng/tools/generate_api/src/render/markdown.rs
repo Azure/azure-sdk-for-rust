@@ -52,11 +52,16 @@ fn render_package_metadata(output: &mut Vec<RenderedLine>, model: &ApiModel) {
     let metadata = &model.package_metadata;
     if let Some(description) = metadata.description_lines() {
         if description.len() == 1 {
-            push_code(output, 0, &format!("**Description**: {}", description[0]));
+            push_code(output, 0, &format!("- **Description**: {}", description[0]));
         } else {
-            push_code(output, 0, "**Description:**");
+            push_code(output, 0, "- **Description:**");
+            push_code(output, 0, "");
             for line in description {
-                push_code(output, 0, line);
+                if line.is_empty() {
+                    push_code(output, 0, "");
+                } else {
+                    push_code(output, 0, &format!("  {line}"));
+                }
             }
         }
     }
