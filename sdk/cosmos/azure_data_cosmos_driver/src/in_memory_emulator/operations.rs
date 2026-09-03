@@ -997,7 +997,7 @@ pub(crate) async fn handle_operation(
         let write_lock = store.document_write_lock();
         let _write_guard = write_lock.lock().await;
         let replication_barrier = store.replication_barrier();
-        let _replication_guard = replication_barrier.lock().await;
+        let _replication_guard = replication_barrier.read().await;
         handle_dtx_write_transaction_locked(store, region_name, operations, start).await
     }
 
@@ -3955,7 +3955,7 @@ async fn handle_batch(
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
-    let _replication_guard = replication_barrier.lock().await;
+    let _replication_guard = replication_barrier.read().await;
 
     const MAX_BATCH_OPERATIONS: usize = 100;
     const MAX_BATCH_PAYLOAD_BYTES: usize = 2 * 1024 * 1024;
@@ -4598,7 +4598,7 @@ async fn handle_create(
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
-    let _replication_guard = replication_barrier.lock().await;
+    let _replication_guard = replication_barrier.read().await;
 
     handle_create_locked(store, region_name, parsed, request_body, start).await
 }
@@ -5082,7 +5082,7 @@ async fn handle_replace(
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
-    let _replication_guard = replication_barrier.lock().await;
+    let _replication_guard = replication_barrier.read().await;
 
     handle_replace_locked(store, region_name, parsed, request_body, start).await
 }
@@ -5099,7 +5099,7 @@ async fn handle_patch(
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
-    let _replication_guard = replication_barrier.lock().await;
+    let _replication_guard = replication_barrier.read().await;
 
     handle_patch_locked(store, region_name, parsed, request_body, start).await
 }
@@ -5748,7 +5748,7 @@ async fn handle_upsert(
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
-    let _replication_guard = replication_barrier.lock().await;
+    let _replication_guard = replication_barrier.read().await;
 
     handle_upsert_locked(store, region_name, parsed, request_body, start).await
 }
@@ -5982,7 +5982,7 @@ async fn handle_delete(
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
-    let _replication_guard = replication_barrier.lock().await;
+    let _replication_guard = replication_barrier.read().await;
 
     handle_delete_locked(store, region_name, parsed, start).await
 }

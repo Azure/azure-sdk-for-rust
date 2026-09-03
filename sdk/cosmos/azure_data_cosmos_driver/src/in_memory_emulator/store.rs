@@ -234,9 +234,11 @@ pub struct EmulatorStore {
     dtx_replication_capture: std::sync::Mutex<Option<Vec<CapturedReplication>>>,
     /// Tracks spawned replication tasks so tests can drain them.
     replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
-    /// Serializes a local mutation through replication registration against
-    /// delayed catch-up snapshot and finalization.
-    replication_barrier: Arc<async_lock::Mutex<()>>,
+    /// Coordinates local mutation registration with delayed catch-up.
+    ///
+    /// Writes share the barrier; catch-up takes it exclusively across snapshot
+    /// and finalization.
+    replication_barrier: Arc<async_lock::RwLock<()>>,
     /// Delayed replications that have been scheduled but not yet applied.
     ///
     /// Region enrollment replays this bounded set into the joining replica so
@@ -325,7 +327,7 @@ impl EmulatorStore {
             #[cfg(feature = "preview_dtx")]
             dtx_replication_capture: std::sync::Mutex::new(None),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
-            replication_barrier: Arc::new(async_lock::Mutex::new(())),
+            replication_barrier: Arc::new(async_lock::RwLock::new(())),
             replication_tracker: Arc::new(std::sync::Mutex::new(ReplicationTracker::default())),
             next_replication_operation_id: AtomicU64::new(0),
             catch_up_journals: Arc::new(std::sync::Mutex::new(HashMap::new())),
@@ -511,7 +513,7 @@ impl EmulatorStore {
         self.document_write_lock.clone()
     }
 
-    pub(crate) fn replication_barrier(&self) -> Arc<async_lock::Mutex<()>> {
+    pub(crate) fn replication_barrier(&self) -> Arc<async_lock::RwLock<()>> {
         Arc::clone(&self.replication_barrier)
     }
 
@@ -1028,7 +1030,7 @@ impl EmulatorStore {
             );
             tokio::spawn(async move {
                 tokio::time::sleep(delay).await;
-                let _replication_guard = barrier.lock().await;
+                let _replication_guard = barrier.write().await;
                 target.catch_up_from(&seed_source);
                 // Match replication registration's tracker -> journals lock
                 // order. A mutation registered before finalization either
@@ -3828,7 +3830,7 @@ mod tests {
         tokio::task::yield_now().await;
 
         let barrier = store.replication_barrier();
-        let replication_guard = barrier.lock().await;
+        let replication_guard = barrier.read().await;
         let document = test_document("item", 1, 1);
         apply_local_document(&store, "West", &document, false);
 

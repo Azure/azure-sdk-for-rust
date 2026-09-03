@@ -26,6 +26,8 @@
 //! Time is virtualized with `tokio::time::pause()` (via `start_paused`) because
 //! the production account-refresh interval is five minutes.
 
+#[cfg(not(feature = "preview_dtx"))]
+use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
@@ -1685,6 +1687,96 @@ async fn delayed_catch_up_cannot_overwrite_handler_write_before_registration() {
         StatusCode::Ok,
         "delayed catch-up must not erase a local write before registration"
     );
+}
+
+/// Independent handlers share the replication barrier through registration.
+#[cfg(not(feature = "preview_dtx"))]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn replication_registration_preserves_concurrent_handler_writes() {
+    let recorder = HostRecorder::new();
+    let emulator = build_emulator(vec![east(), west()], WriteMode::Multi, recorder);
+    let store = emulator.store();
+
+    let registrations = Arc::new(AtomicUsize::new(0));
+    let (both_registered_tx, both_registered_rx) = tokio::sync::oneshot::channel();
+    let both_registered_tx = Arc::new(Mutex::new(Some(both_registered_tx)));
+    let release_registration = Arc::new((Mutex::new(false), Condvar::new()));
+    let registrations_clone = Arc::clone(&registrations);
+    let both_registered_tx_clone = Arc::clone(&both_registered_tx);
+    let release_registration_clone = Arc::clone(&release_registration);
+    store.set_before_replication_registration_hook_for_tests(Some(Arc::new(move || {
+        if registrations_clone.fetch_add(1, Ordering::SeqCst) + 1 == 2 {
+            if let Some(tx) = both_registered_tx_clone.lock().unwrap().take() {
+                let _ = tx.send(());
+            }
+        }
+        let (released, wake) = &*release_registration_clone;
+        let mut released = released.lock().unwrap();
+        while !*released {
+            released = wake.wait(released).unwrap();
+        }
+    })));
+    drop(both_registered_tx);
+
+    struct RegistrationRelease(Arc<(Mutex<bool>, Condvar)>);
+
+    impl RegistrationRelease {
+        fn release(&self) {
+            let (released, wake) = &*self.0;
+            *released.lock().unwrap() = true;
+            wake.notify_all();
+        }
+    }
+
+    impl Drop for RegistrationRelease {
+        fn drop(&mut self) {
+            self.release();
+        }
+    }
+
+    let registration_release = RegistrationRelease(release_registration);
+    let write = |region_url: &str, id: &str| {
+        let mut request = Request::new(
+            Url::parse(&format!("{region_url}/dbs/testdb/colls/testcoll/docs")).unwrap(),
+            Method::Post,
+        );
+        request.set_body(serde_json::json!({"id": id, "pk": id}).to_string());
+        request.headers_mut().insert(
+            super::PARTITION_KEY.clone(),
+            azure_core::http::headers::HeaderValue::from(format!("[\"{id}\"]")),
+        );
+        request
+    };
+
+    let east_write = {
+        let emulator = Arc::clone(&emulator);
+        let request = write(EAST_URL, "east-concurrent");
+        tokio::spawn(async move {
+            collect_response(emulator.execute_request(&request).await.unwrap())
+                .await
+                .0
+        })
+    };
+    let west_write = {
+        let emulator = Arc::clone(&emulator);
+        let request = write(WEST_URL, "west-concurrent");
+        tokio::spawn(async move {
+            collect_response(emulator.execute_request(&request).await.unwrap())
+                .await
+                .0
+        })
+    };
+
+    tokio::time::timeout(Duration::from_secs(5), both_registered_rx)
+        .await
+        .expect("independent handlers must register replication concurrently")
+        .expect("registration hook must remain installed");
+    registration_release.release();
+
+    assert_eq!(east_write.await.unwrap(), StatusCode::Created);
+    assert_eq!(west_write.await.unwrap(), StatusCode::Created);
+    assert_eq!(registrations.load(Ordering::SeqCst), 2);
+    store.set_before_replication_registration_hook_for_tests(None);
 }
 
 /// A mutation already pending at enrollment stays out of a `Delayed` region
