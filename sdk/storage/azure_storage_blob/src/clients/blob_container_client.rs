@@ -254,9 +254,9 @@ impl BlobContainerClient {
 mod tests {
     use super::*;
     use crate::models::StorageResponseFormat;
-    use arrow::array::{builder::StringBuilder, RecordBatch};
-    use arrow::datatypes::{DataType, Field, Schema};
-    use arrow::ipc::writer::StreamWriter;
+    use arrow_array::{builder::StringBuilder, RecordBatch};
+    use arrow_ipc::writer::StreamWriter;
+    use arrow_schema::{DataType, Field, Schema};
     use azure_core::{
         http::{
             headers::{Headers, ACCEPT, CONTENT_TYPE},
