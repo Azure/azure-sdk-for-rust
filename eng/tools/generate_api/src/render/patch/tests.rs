@@ -25,13 +25,15 @@ fn renders_empty_patch_without_doc_comments() {
 }
 
 #[test]
-fn renders_insertions_with_context() {
+fn renders_one_hunk_per_doc_block() {
     let lines = vec![
         code("```rust"),
         doc("/// Does foo."),
         doc("///"),
         doc("/// What else did you expect?"),
         code("pub fn foo();"),
+        doc("/// Does bar."),
+        code("pub fn bar();"),
         code("```"),
     ];
 
@@ -41,40 +43,56 @@ fn renders_insertions_with_context() {
         patch,
         "--- a/API.md\n\
          +++ b/API.md\n\
-         @@ -1,3 +1,6 @@\n\
-         \x20```rust\n\
+         @@ -2,1 +2,4 @@\n\
          +/// Does foo.\n\
          +///\n\
          +/// What else did you expect?\n\
          \x20pub fn foo();\n\
-         \x20```\n"
+         @@ -3,1 +6,2 @@\n\
+         +/// Does bar.\n\
+         \x20pub fn bar();\n"
     );
 }
 
 #[test]
-fn merges_nearby_changes_into_one_hunk() {
-    let mut lines = vec![code("```rust"), doc("/// First.")];
-    lines.extend((0..4).map(|index| code(&format!("pub fn item{index}();"))));
-    lines.push(doc("/// Second."));
-    lines.push(code("pub fn last();"));
-    lines.push(code("```"));
-
-    let patch = render(&lines, "API.md");
-
-    assert_eq!(patch.matches("@@ -").count(), 1);
-    assert!(patch.contains("@@ -1,7 +1,9 @@"));
-}
-
-#[test]
-fn splits_distant_changes_into_separate_hunks() {
-    let mut lines = vec![code("```rust"), doc("/// First.")];
-    lines.extend((0..20).map(|index| code(&format!("pub fn item{index}();"))));
-    lines.push(doc("/// Second."));
-    lines.push(code("pub fn last();"));
-    lines.push(code("```"));
+fn keeps_following_context_to_one_line() {
+    let lines = vec![
+        code("```rust"),
+        doc("/// Foo."),
+        code("pub struct Foo {"),
+        code("    pub field: bool,"),
+        code("}"),
+        doc("/// Builds foo."),
+        code("pub fn build(&self) -> Foo;"),
+        code("```"),
+    ];
 
     let patch = render(&lines, "API.md");
 
     assert_eq!(patch.matches("@@ -").count(), 2);
-    assert!(patch.contains("@@ -1,4 +1,5 @@"));
+    assert!(patch.contains("@@ -2,1 +2,2 @@\n+/// Foo.\n pub struct Foo {\n"));
+    assert!(!patch.contains("pub struct Foo {\n     pub field: bool,"));
+    assert!(patch.contains("@@ -5,1 +6,2 @@\n+/// Builds foo.\n pub fn build(&self) -> Foo;\n"));
+}
+
+#[test]
+fn anchors_doc_comments_before_attributes() {
+    let lines = vec![
+        code("```rust"),
+        doc("/// Foo."),
+        code("#[cfg(feature = \"preview\")]"),
+        code("pub struct Foo;"),
+        code("```"),
+    ];
+
+    let patch = render(&lines, "API.md");
+
+    assert_eq!(
+        patch,
+        "--- a/API.md\n\
+         +++ b/API.md\n\
+         @@ -2,1 +2,2 @@\n\
+         +/// Foo.\n\
+         \x20#[cfg(feature = \"preview\")]\n"
+    );
 }

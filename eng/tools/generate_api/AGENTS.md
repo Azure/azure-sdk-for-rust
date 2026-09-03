@@ -193,7 +193,9 @@ For traits whose rustdoc-expanded methods carry synthetic async-trait lifetimes:
 - `render::markdown::render_lines` renders every line and marks doc comment lines
 - `render::markdown::render_from_lines` drops the marked lines to produce `API.md`
 - `render::patch` turns the marked lines into a unified diff against `API.md`
-- the diff only contains insertions, uses 3 lines of context, and merges hunks with overlapping context
+- the diff only contains insertions
+- each contiguous doc-comment block becomes its own hunk
+- each hunk includes only the doc comments plus the next non-doc line as context
 - no doc comments means an empty patch file
 
 ## APIView output design

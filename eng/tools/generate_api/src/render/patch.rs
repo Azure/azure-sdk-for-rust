@@ -3,21 +3,14 @@
 
 use crate::render::markdown::RenderedLine;
 
-/// Number of unchanged lines rendered around each change in a hunk.
-const CONTEXT_LINES: usize = 3;
-
 /// Renders a unified diff that adds documentation comments back to `file_name`.
 ///
 /// The rendered Markdown omits documentation comments, so the patch only ever
 /// contains insertions. Applying it to `file_name` yields the same API surface
 /// with documentation comments included.
 pub(crate) fn render(lines: &[RenderedLine], file_name: &str) -> String {
-    let changes = lines
-        .iter()
-        .enumerate()
-        .filter_map(|(index, line)| line.is_doc_comment.then_some(index))
-        .collect::<Vec<_>>();
-    if changes.is_empty() {
+    let hunks = collect_hunks(lines);
+    if hunks.is_empty() {
         return String::new();
     }
 
@@ -34,10 +27,7 @@ pub(crate) fn render(lines: &[RenderedLine], file_name: &str) -> String {
     }
 
     let mut output = format!("--- a/{file_name}\n+++ b/{file_name}\n");
-    for (first_change, last_change) in group_changes(&changes) {
-        let start = first_change.saturating_sub(CONTEXT_LINES);
-        let end = (last_change + CONTEXT_LINES).min(lines.len() - 1);
-
+    for (start, end) in hunks {
         let source_count = source_numbers[start..=end]
             .iter()
             .filter(|number| number.is_some())
@@ -45,7 +35,6 @@ pub(crate) fn render(lines: &[RenderedLine], file_name: &str) -> String {
         let source_start = source_numbers[start..=end]
             .iter()
             .find_map(|number| *number)
-            // A hunk without context starts after the preceding source line.
             .unwrap_or_else(|| {
                 source_numbers[..start]
                     .iter()
@@ -69,16 +58,31 @@ pub(crate) fn render(lines: &[RenderedLine], file_name: &str) -> String {
     output
 }
 
-/// Groups changed line indexes into hunks, merging groups with overlapping context.
-fn group_changes(changes: &[usize]) -> Vec<(usize, usize)> {
-    let mut groups: Vec<(usize, usize)> = Vec::new();
-    for &change in changes {
-        match groups.last_mut() {
-            Some((_, last)) if change <= *last + (CONTEXT_LINES * 2) + 1 => *last = change,
-            _ => groups.push((change, change)),
+/// Collects one hunk per contiguous doc-comment block plus its next context line.
+fn collect_hunks(lines: &[RenderedLine]) -> Vec<(usize, usize)> {
+    let mut hunks = Vec::new();
+    let mut index = 0;
+    while index < lines.len() {
+        if !lines[index].is_doc_comment {
+            index += 1;
+            continue;
         }
+
+        let start = index;
+        while index + 1 < lines.len() && lines[index + 1].is_doc_comment {
+            index += 1;
+        }
+
+        let end = lines
+            .iter()
+            .enumerate()
+            .skip(index + 1)
+            .find_map(|(line_index, line)| (!line.is_doc_comment).then_some(line_index))
+            .unwrap_or(index);
+        hunks.push((start, end));
+        index = end + 1;
     }
-    groups
+    hunks
 }
 
 #[cfg(test)]
