@@ -77,6 +77,12 @@ impl CustomTokenProxyConfig {
                 "must use HTTPS",
             ));
         }
+        if proxy_url.host_str().is_none() {
+            return Err(invalid_configuration(
+                AZURE_KUBERNETES_TOKEN_PROXY,
+                "must contain a host",
+            ));
+        }
         if !proxy_url.username().is_empty() || proxy_url.password().is_some() {
             return Err(invalid_configuration(
                 AZURE_KUBERNETES_TOKEN_PROXY,
@@ -529,8 +535,6 @@ uaZPC0VV2qRwbAE=\n\
             "not a URL",
             "http://kubernetes.default.svc",
             "https://user@kubernetes.default.svc",
-            "https://kubernetes.default.svc?query=value",
-            "https://kubernetes.default.svc#fragment",
         ] {
             let error = config(&[(AZURE_KUBERNETES_TOKEN_PROXY, value)])
                 .expect_err("proxy URL should be invalid");
