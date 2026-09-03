@@ -5,7 +5,6 @@
 
 mod bytes_stream;
 mod read_stream;
-mod shared;
 
 use crate::{
     error::{Error, ErrorKind, Result},
@@ -15,7 +14,6 @@ pub use bytes_stream::*;
 use dyn_clone::DynClone;
 use futures::{io::AsyncRead, stream::Stream, task::Poll};
 pub use read_stream::{ReadStream, SeekableReadStream};
-pub use shared::*;
 use std::{pin::Pin, task::Context};
 
 /// Amount of the stream to buffer in memory during streaming uploads.

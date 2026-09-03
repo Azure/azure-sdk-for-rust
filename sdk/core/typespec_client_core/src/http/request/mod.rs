@@ -446,7 +446,6 @@ impl<T, F> From<Box<dyn SeekableStream>> for RequestContent<T, F> {
     /// Some implementations available in this crate:
     ///
     /// - [`BytesStream`]
-    /// - [`SharedStream`](crate::stream::SharedStream)
     ///
     /// # Examples
     ///

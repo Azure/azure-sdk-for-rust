@@ -81,8 +81,7 @@ where
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<std::io::Result<usize>> {
-        // try_lock always succeeds in practice: ReadStream has a single logical reader
-        // at any given time (SharedStream ensures only one clone reads at once).
+        // The reader has a single logical position shared by all clones.
         poll_reader(&self.get_mut().reader, cx, buf)
     }
 }
@@ -153,8 +152,7 @@ where
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<std::io::Result<usize>> {
-        // try_lock always succeeds in practice: SeekableReadStream has a single logical reader
-        // at any given time (SharedStream ensures only one clone reads at once).
+        // The reader has a single logical position shared by all clones.
         poll_reader(&self.get_mut().reader, cx, buf)
     }
 }
