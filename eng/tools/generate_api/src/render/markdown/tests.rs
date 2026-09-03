@@ -4,7 +4,9 @@
 use super::*;
 use crate::model::{
     ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiMemberKind, ApiModel, ApiModule,
+    PackageMetadata,
 };
+use std::collections::BTreeMap;
 
 fn render(model: &ApiModel) -> String {
     render_from_lines(&render_lines(model))
@@ -59,6 +61,7 @@ fn renders_explicit_trait_impl_blocks() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -91,6 +94,7 @@ fn renders_inherent_members_inside_impl_blocks() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -116,6 +120,7 @@ fn renders_root_inner_attrs_and_child_module_outer_attrs() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -151,6 +156,7 @@ fn marks_doc_comments_and_omits_them_from_markdown() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: vec![
@@ -179,5 +185,175 @@ fn marks_doc_comments_and_omits_them_from_markdown() {
             "/// Does foo."
         ]
     );
-    assert_eq!(render_from_lines(&lines), "```rust\npub struct Foo;\n```\n");
+    assert_eq!(
+        render_from_lines(&lines),
+        "# demo\n\n## Features\n\n- `default`\n\n```rust\npub struct Foo;\n```\n"
+    );
+}
+
+#[test]
+fn renders_package_metadata_and_features_before_api() {
+    let model = ApiModel {
+        package_name: "azure_security_keyvault_secrets".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        package_metadata: PackageMetadata {
+            description: Some("Manage secrets.\n".to_string()),
+            edition: Some("2021".to_string()),
+            rust_version: Some("1.88".to_string()),
+            features: BTreeMap::from([
+                ("alpha".to_string(), vec!["dep:alpha".to_string()]),
+                (
+                    "default".to_string(),
+                    vec!["hmac".to_string(), "azure_core/default".to_string()],
+                ),
+                ("test".to_string(), vec!["default".to_string()]),
+            ]),
+        },
+        root_module: ApiModule {
+            path: "azure_security_keyvault_secrets".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: vec![item(
+                "SecretClient",
+                ApiItemKind::Struct,
+                "pub struct SecretClient;",
+            )],
+            modules: Vec::new(),
+        },
+    };
+
+    assert_eq!(
+        render(&model),
+        "# azure_security_keyvault_secrets\n\
+         \n\
+         - **Description**: Manage secrets.\n\
+         - **Edition**: 2021\n\
+         - **Rust version**: 1.88\n\
+         \n\
+         ## Features\n\
+         \n\
+         - `default`\n\
+         \x20\x20- `azure_core/default`\n\
+         \x20\x20- `hmac`\n\
+         - `alpha`\n\
+         - `test`\n\
+         \n\
+         ```rust\n\
+         pub struct SecretClient;\n\
+         ```\n"
+    );
+}
+
+#[test]
+fn preserves_multiline_description_paragraphs() {
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        package_metadata: PackageMetadata {
+            description: Some("Line one\n\nLine two\nAlso line two\n\nLine three\n".to_string()),
+            ..Default::default()
+        },
+        root_module: ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: Vec::new(),
+            modules: Vec::new(),
+        },
+    };
+
+    assert_eq!(
+        render(&model),
+        "# demo\n\
+         \n\
+         - **Description:**\n\
+         \n\
+         \x20\x20Line one\n\
+         \n\
+         \x20\x20Line two\n\
+         \x20\x20Also line two\n\
+         \n\
+         \x20\x20Line three\n\
+         \n\
+         ## Features\n\
+         \n\
+         - `default`\n\
+         \n\
+         ```rust\n\
+         ```\n"
+    );
+}
+
+#[test]
+fn omits_missing_package_metadata() {
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
+        root_module: ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: Vec::new(),
+            modules: Vec::new(),
+        },
+    };
+
+    assert_eq!(
+        render(&model),
+        "# demo\n\n## Features\n\n- `default`\n\n```rust\n```\n"
+    );
+}
+
+#[test]
+fn comments_patch_accounts_for_package_metadata_lines() {
+    let mut documented = item("Foo", ApiItemKind::Struct, "pub struct Foo;");
+    documented.doc_comments = vec!["/// Does foo.".to_string()];
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        package_metadata: PackageMetadata {
+            description: Some("Multi-line\ncomment\n".to_string()),
+            edition: Some("2021".to_string()),
+            rust_version: Some("1.88".to_string()),
+            features: BTreeMap::from([("default".to_string(), vec!["dep:foo".to_string()])]),
+        },
+        root_module: ApiModule {
+            path: "demo".to_string(),
+            doc_comments: vec!["//! Demo docs.".to_string()],
+            attributes: Vec::new(),
+            items: vec![documented],
+            modules: Vec::new(),
+        },
+    };
+
+    let lines = render_lines(&model);
+    let api_without_docs = render_from_lines(&lines);
+    let api_with_docs = lines
+        .iter()
+        .map(|line| format!("{}\n", line.text))
+        .collect::<String>();
+    let patch = crate::render::patch::render(&lines, "API.md");
+    let parsed_patch = diffy::Patch::from_str(&patch).expect("patch should parse");
+
+    assert!(api_without_docs.contains(concat!(
+        "- **Description:**\n",
+        "\n",
+        "  Multi-line\n",
+        "  comment\n",
+    )));
+    assert!(patch.contains(concat!(
+        "@@ -16,1 +16,3 @@\n",
+        "+//! Demo docs.\n",
+        "+/// Does foo.\n",
+        " pub struct Foo;\n",
+    )));
+    assert_eq!(
+        diffy::apply(&api_without_docs, &parsed_patch).expect("patch should apply"),
+        api_with_docs
+    );
 }

@@ -17,3 +17,6 @@ clap = { workspace = true }
 rustdoc-types = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[dev-dependencies]
+diffy = "0.5.2"

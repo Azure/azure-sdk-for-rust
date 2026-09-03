@@ -26,10 +26,57 @@ pub(crate) fn render_from_lines(lines: &[RenderedLine]) -> String {
 /// without them and still generate a patch that adds them back.
 pub(crate) fn render_lines(model: &ApiModel) -> Vec<RenderedLine> {
     let mut output = Vec::new();
+    push_code(&mut output, 0, &format!("# {}", model.package_name));
+    push_code(&mut output, 0, "");
+    render_package_metadata(&mut output, model);
+    push_code(&mut output, 0, "## Features");
+    push_code(&mut output, 0, "");
+    for feature in model.package_metadata.feature_names() {
+        push_code(&mut output, 0, &format!("- `{feature}`"));
+        if feature == "default" {
+            for child in model.package_metadata.default_feature_children() {
+                push_code(&mut output, 0, &format!("  - `{child}`"));
+            }
+        }
+    }
+    if !model.package_metadata.features.is_empty() {
+        push_code(&mut output, 0, "");
+    }
     push_code(&mut output, 0, "```rust");
     render_module(&mut output, &model.root_module, true, 0);
     push_code(&mut output, 0, "```");
     output
+}
+
+fn render_package_metadata(output: &mut Vec<RenderedLine>, model: &ApiModel) {
+    let metadata = &model.package_metadata;
+    if let Some(description) = metadata.description_lines() {
+        if description.len() == 1 {
+            push_code(output, 0, &format!("- **Description**: {}", description[0]));
+        } else {
+            push_code(output, 0, "- **Description:**");
+            push_code(output, 0, "");
+            for line in description {
+                if line.is_empty() {
+                    push_code(output, 0, "");
+                } else {
+                    push_code(output, 0, &format!("  {line}"));
+                }
+            }
+        }
+    }
+    if let Some(edition) = &metadata.edition {
+        push_code(output, 0, &format!("- **Edition**: {edition}"));
+    }
+    if let Some(rust_version) = &metadata.rust_version {
+        push_code(output, 0, &format!("- **Rust version**: {rust_version}"));
+    }
+    if metadata.description.is_some()
+        || metadata.edition.is_some()
+        || metadata.rust_version.is_some()
+    {
+        push_code(output, 0, "");
+    }
 }
 
 fn render_module(output: &mut Vec<RenderedLine>, module: &ApiModule, is_root: bool, indent: usize) {
