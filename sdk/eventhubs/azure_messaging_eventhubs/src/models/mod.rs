@@ -10,6 +10,32 @@ pub use azure_core_amqp::AmqpMessage;
 /// An AMQP Value.
 pub use azure_core_amqp::AmqpValue;
 
+/// The transport that carries the AMQP protocol.
+///
+/// Event Hubs is normally reached with AMQP framed directly over a TCP/TLS
+/// socket ([`AmqpTransport::Tcp`], port 5671). Some networks (for example
+/// corporate firewalls) only permit outbound connections on port 443; there,
+/// [`AmqpTransport::WebSocket`] tunnels AMQP over secure WebSockets instead.
+/// Select it with `with_transport` on a client builder.
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::{ProducerClient, models::AmqpTransport};
+/// use azure_identity::DeveloperToolsCredential;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let credential = DeveloperToolsCredential::new(None)?;
+///     let producer = ProducerClient::builder()
+///         .with_transport(AmqpTransport::WebSocket)
+///         .open("my_namespace.servicebus.windows.net", "my_eventhub", credential)
+///         .await?;
+///     Ok(())
+/// }
+/// ```
+pub use azure_core_amqp::AmqpTransport;
+
 /// An AMQP Simple Value.
 ///
 /// An AMQP Simple Value is a primitive type in AMQP 1.0.

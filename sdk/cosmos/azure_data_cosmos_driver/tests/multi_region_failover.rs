@@ -288,7 +288,7 @@ async fn create_unique_db_and_container(
         return Err(format!("create container failed, status: {container_status:?}").into());
     }
     let container_ref = driver
-        .resolve_container_by_name(&db_name, &container_name)
+        .resolve_container_by_name(&db_name, &container_name, OperationOptions::default())
         .await?;
     Ok((db_ref, container_ref))
 }

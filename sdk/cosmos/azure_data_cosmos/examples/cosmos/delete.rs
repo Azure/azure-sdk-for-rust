@@ -58,7 +58,7 @@ impl DeleteCommand {
                 partition_key,
             } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container).await?;
+                let container_client = db_client.container_client(&container, None).await?;
 
                 let response = container_client
                     .delete_item(partition_key, &item_id, None)
@@ -81,7 +81,7 @@ impl DeleteCommand {
 
             Subcommands::Container { database, id } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&id).await?;
+                let container_client = db_client.container_client(&id, None).await?;
                 container_client.delete(None).await?;
                 Ok(())
             }

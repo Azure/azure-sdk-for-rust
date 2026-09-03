@@ -26,6 +26,7 @@ mod hedging;
 mod identity;
 mod operation_options;
 mod partition_failover;
+mod patch_strategy;
 mod plan_options;
 mod policies;
 mod priority;
@@ -53,6 +54,7 @@ pub use operation_options::{
     ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
 };
 pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
+pub use patch_strategy::PatchStrategy;
 pub use plan_options::{PlanOptions, DEFAULT_MAX_FAN_OUT};
 pub use policies::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,

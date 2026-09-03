@@ -27,7 +27,8 @@ use crate::{
         transport::CosmosTransport,
     },
     models::{
-        cosmos_headers::QUERY_CONTENT_TYPE, effective_partition_key::EffectivePartitionKey,
+        cosmos_headers::{PATCH_CONTENT_TYPE, QUERY_CONTENT_TYPE},
+        effective_partition_key::EffectivePartitionKey,
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
@@ -1992,17 +1993,15 @@ fn build_transport_request(
         } else {
             format!("/{}", request_path)
         };
-        // Set the path exactly as computed. `Url::set_path` percent-encodes only
-        // the characters that are structurally significant in a URL path (space,
-        // `?`, `#`, `<`, `>`, `{`, `}`, backtick) and leaves everything else —
-        // including base64's `=`/`+` padding and path-legal sub-delimiters like
-        // `@` — byte-for-byte intact. That is exactly what both addressing modes
-        // need: a RID segment reaches the gateway raw so its lowercased-RID
-        // signature is honored, and a name segment matches the raw resource link
-        // we signed (and, on Gateway 2.0, its RNTBD target). Encoding those
-        // path-legal characters ourselves would make a RID look name-based and
-        // break Gateway 2.0's outer-path-vs-RNTBD equality check for names.
-        base.set_path(&normalized);
+        // Escape literal percent bytes before `Url::set_path`: it preserves valid
+        // `%HH` sequences, but Cosmos resource names treat them as literal text.
+        // Leave path separators and path-legal characters (`@`, `+`, `=`) intact
+        // so RID routing and Gateway 2.0 path comparisons remain unchanged.
+        if normalized.contains('%') {
+            base.set_path(&normalized.replace('%', "%25"));
+        } else {
+            base.set_path(&normalized);
+        }
         base
     };
 
@@ -2052,6 +2051,12 @@ fn build_transport_request(
             headers.insert(
                 HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
                 HeaderValue::from_static("False"),
+            );
+        }
+        OperationType::Patch => {
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(PATCH_CONTENT_TYPE),
             );
         }
         OperationType::Query | OperationType::SqlQuery => {
@@ -2418,12 +2423,12 @@ fn apply_optional_request_headers(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
 ) {
-    if !operation.operation_type().is_read_only()
-        && !matches!(
+    let content_response_enabled = !operation.operation_type().is_read_only()
+        && matches!(
             options.content_response_on_write(),
             Some(&crate::options::ContentResponseOnWrite::Enabled)
-        )
-    {
+        );
+    if !operation.operation_type().is_read_only() && !content_response_enabled {
         transport_request.headers.insert(
             request_header_names::PREFER,
             HeaderValue::from_static("return=minimal"),
@@ -2438,6 +2443,12 @@ fn apply_optional_request_headers(
                     .insert(name.clone(), value.clone());
             }
         }
+    }
+
+    if content_response_enabled {
+        transport_request
+            .headers
+            .remove(request_header_names::PREFER);
     }
 
     if operation.prefers_write_endpoints_for_read() && transport_request.routing_fallback.is_none()
@@ -4739,10 +4750,8 @@ mod tests {
         assert_eq!(request.url.path(), "/dbs/mydb");
     }
 
-    /// Builds a transport request for `operation` with default routing/context
-    /// and returns the final `Url::path()` after `set_path` has reprocessed it.
-    /// Used to assert the raw-vs-percent-encoded seam in `build_transport_request`.
-    fn transport_request_path(operation: &CosmosOperation) -> String {
+    /// Builds a transport request for `operation` with default routing/context.
+    fn transport_request(operation: &CosmosOperation) -> super::TransportRequest {
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
         let ctx = TransportRequestContext {
@@ -4757,9 +4766,12 @@ mod tests {
         };
         build_transport_request(operation, &OperationOverrides::default(), None, &ctx)
             .expect("request should build")
-            .url
-            .path()
-            .to_owned()
+    }
+
+    /// Returns the final `Url::path()` after `set_path` has reprocessed it.
+    /// Used to assert the raw-vs-percent-encoded seam in `build_transport_request`.
+    fn transport_request_path(operation: &CosmosOperation) -> String {
+        transport_request(operation).url.path().to_owned()
     }
 
     #[test]
@@ -4805,6 +4817,23 @@ mod tests {
         assert_eq!(
             transport_request_path(&operation),
             "/dbs/testdb/colls/testcontainer/docs/Item@1-abc"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_escapes_literal_percent_without_changing_signing_link() {
+        let item =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "item%41");
+        let operation = CosmosOperation::read_item(item);
+        let request = transport_request(&operation);
+
+        assert_eq!(
+            request.url.path(),
+            "/dbs/testdb/colls/testcontainer/docs/item%2541"
+        );
+        assert_eq!(
+            request.auth_context.resource_link.as_str(),
+            "dbs/testdb/colls/testcontainer/docs/item%41"
         );
     }
 
@@ -5147,6 +5176,65 @@ mod tests {
                 .expect("request should build");
         super::apply_optional_request_headers(&mut request, &operation, &view);
         assert!(request.headers.get_optional_str(&session_header).is_none());
+    }
+
+    #[test]
+    fn content_response_enabled_strips_custom_prefer_headers() {
+        let operation = CosmosOperation::patch_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("patch-response-headers".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let prefer_header = HeaderName::from_static(request_header_names::PREFER);
+        let custom_headers = std::collections::HashMap::from([(
+            prefer_header.clone(),
+            azure_core::http::headers::HeaderValue::from_static("return=minimal"),
+        )]);
+        let content_response_options = crate::options::OperationOptions {
+            content_response_on_write: Some(crate::options::ContentResponseOnWrite::Enabled),
+            ..Default::default()
+        };
+
+        let mut request = build_transport_request(
+            &operation,
+            &OperationOverrides::default(),
+            Some(&custom_headers),
+            &ctx,
+        )
+        .expect("request should build");
+        let view = crate::options::OperationOptionsView::new(
+            None,
+            None,
+            None,
+            Some(&content_response_options),
+        );
+        super::apply_optional_request_headers(&mut request, &operation, &view);
+        assert!(request.headers.get_optional_str(&prefer_header).is_none());
+
+        let layered_options = crate::options::OperationOptions {
+            content_response_on_write: Some(crate::options::ContentResponseOnWrite::Enabled),
+            custom_headers: Some(custom_headers),
+            ..Default::default()
+        };
+        let view =
+            crate::options::OperationOptionsView::new(None, None, None, Some(&layered_options));
+        let mut request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
+        super::apply_optional_request_headers(&mut request, &operation, &view);
+        assert!(request.headers.get_optional_str(&prefer_header).is_none());
     }
 
     #[test]
@@ -9565,6 +9653,39 @@ mod tests {
         let op = CosmosOperation::query_offers(test_account())
             .with_body(br#"{"query":"SELECT * FROM root"}"#.to_vec());
         assert_query_headers_present(&op, "query_offers");
+    }
+
+    #[test]
+    fn build_transport_request_sets_patch_content_type() {
+        let operation = CosmosOperation::patch_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ))
+        .with_body(br#"{"operations":[]}"#.to_vec());
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+        let context = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &context)
+                .expect("PATCH request should build");
+
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&azure_core::http::headers::CONTENT_TYPE),
+            Some(crate::models::cosmos_headers::PATCH_CONTENT_TYPE)
+        );
     }
 
     /// Helper: builds a transport request from `op` and asserts the two

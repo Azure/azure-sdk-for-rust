@@ -226,7 +226,17 @@ store.begin_region_removal("West US")?;   // endpoint 403/1008, still advertised
 store.cancel_region_removal("West US")?;  // abort: back to normal service
 store.remove_region("West US")?;          // or complete: dropped from the topology
 store.set_write_mode(WriteMode::Multi);
-store.set_write_region("West US")?;       // failover
+store.set_write_region("West US")?;       // failover (settled outcome)
+
+store.set_region_offline("Central US")?;  // ARM offlineRegion
+store.set_region_online("Central US")?;   // ARM onlineRegion
+store.set_failover_priorities(&["West US", "East US", "Central US"])?;
+store.announce_failover("West US")?;      // incoming + current advertised; current still writes
+store.begin_failover("West US")?;         // incoming writes; outgoing still advertised
+store.complete_failover();                // narrows to the new one
+
+store.revoke_region_write("Central US")?; // advertised, but writes return 403/3
+store.restore_region_write("Central US")?;
 ```
 
 Semantics:
@@ -263,6 +273,64 @@ Semantics:
 - **`set_write_region` models routine behavior.** For single-master accounts the gateway itself can
   report an arbitrary read location as the write location between successive account reads, so
   clients must already tolerate the advertised write region moving.
+- **Region offline is not region removal.** `set_region_offline` reproduces the ARM `offlineRegion`
+  operation: the region stays a member of the account but leaves **both** `readableLocations` and
+  `writableLocations`, and its endpoint stops resolving. Requests routed there fail with
+  `503/20012 TransportDnsFailed` — verified against a live account, whose offlined regional
+  hostname returned NXDOMAIN — rather than the `403/1008` a *removed* region returns. That
+  difference is why [`RegionStatus::Offline`] is a distinct state and not a reuse of
+  [`RegionStatus::Draining`].
+- **Offlining the write region fails over rather than erroring.** Unlike removal, which is refused
+  for the write region, the service accepts this and promotes the next region in *failover-priority*
+  order. Offlining the last online region is refused (`400`).
+- **`set_failover_priorities` is only observable at position 0.** See below.
+- **`begin_failover` / `complete_failover` model the transition, not just the outcome.** A live
+  single-write account advertises **two** writable locations during a manual failover while
+  `enableMultipleWriteLocations` stays `false`. `set_write_region` remains the atomic form for tests
+  that only care about the settled state.
+- **Strong consistency gates multi-write separately from the account flag.** The gateway emits
+  `enableMultipleWriteLocations: true` from account configuration, but only expands
+  `writableLocations` when consistency is not Strong. The emulator therefore reports the flag while
+  keeping both the payload and write enforcement hub-only under Strong.
+- **Satellite write revocation is enforcement-only.** `revoke_region_write` mirrors
+  `Topology.WriteStatusRevokedSatelliteRegions`: the satellite stays in both location lists and
+  continues serving reads, but writes return `403/3`. The routing gateway never consults the
+  revocation set when constructing account locations.
+- **In-progress region adds can be hidden.** `SeedingPolicy::HiddenUntilReady` mirrors the Cosmos
+  Fabric default `EnableSkipInProgressRegionInGetDatabaseAccount=true`: the region exists internally
+  but is removed from both client-visible lists, cannot accept writes or be promoted, and becomes
+  visible only after delayed catch-up finishes. `Delayed` remains available for the alternate
+  advertised-before-ready behavior.
+
+#### Failover priority
+
+Reordering failover priority is its own ARM operation, and on a single-write account promoting a
+region to position 0 **is** the manual-failover operation. It is modeled by
+`set_failover_priorities`, which requires a complete assignment naming every active region exactly
+once — the service rejects partial assignments.
+
+Only **position 0 is observable to a client**. This is worth stating plainly because it contradicts
+what this document previously claimed (that `failoverPriority` "orders `readableLocations`"). Four
+successive priority configurations on a live three-region account, each read back over a *fresh*
+connection, showed:
+
+| ARM priorities | Priority order would be | Actual `readableLocations` |
+| --- | --- | --- |
+| East=0, West=1, Central=2 | East, West, Central | East, West, Central |
+| East=0, Central=1, West=2 | East, Central, West | **East, West, Central** (unchanged) |
+| Central=0, East=1, West=2 | Central, East, West | **Central, West, East** |
+| West=0, Central=1, East=2 | West, Central, East | **West, East, Central** |
+
+So a priority change that does not touch position 0 produces **no data-plane change at all** — on a
+single-write account it also interrupts no writes (78/78 succeeded across one such swap) — while the
+position-0 region is always advertised first. The tail order is stable but does not track priority,
+and no positional rule explained it.
+
+The emulator therefore keeps priority order *separate* from advertisement order: `active` carries
+advertisement order and is never reordered by a priority change, so region IDs stay stable (session
+token vector clocks embed them) and a below-position-0 reorder is correctly invisible. Advertisement
+hoists the current write region to the front and otherwise preserves insertion order; the service's
+tail order is a deliberate simplification.
 
 #### Multi-write vs single-write transitions
 
@@ -270,11 +338,51 @@ Semantics:
 | --- | --- | --- |
 | Region **add** | Advertised near the end of provisioning; flaps ~40 s before settling. Enters `readableLocations` only. | Enters `readableLocations` **and** `writableLocations` in one atomic transition, with no flapping. |
 | Region **remove** | Regional endpoint 403/1008 after ~20 s; global read keeps advertising it for ~7 min. | Regional endpoint 403/1008 after ~31 s, then alternates 200 ↔ 403/1008 nine times over ~5 min; global read keeps advertising it — in **both** lists — for ~6.5 min. |
+| Region **offline** | ARM marks the region `Offline` (keeping its `failoverPriority`) ~15 s in; all endpoints drop it from both lists ~11 s later, atomically and without flapping. Offlining the write region fails over and renumbers priorities. | Identical: dropped from both lists in the same second on every endpoint. |
+| Region **online** | Gated behind an account capability that is **off by default**; without it the operation is rejected `400 "OnlineRegion capability not enabled"`, and re-listing the region with an ordinary topology update does not restore it either — the only path back is remove-then-add. | Same. |
+| **Priority change** off position 0 | No data-plane change; no write interruption. | No data-plane change. |
+| **Priority change** to position 0 | Manual failover: `writableLocations` widens to both regions (~16 s), the outgoing region begins returning `403/3`, then the payload narrows to the new write region. | Reorders advertisement only; every region stays writable, so nothing is gated. |
 
 The removal window is worse under multi-write: a multi-write client routes writes to its **local**
 region, so a client colocated with the dying region writes into it, gets 403/1008, refreshes
 topology, is told the region is still writable, and retries into it again. Under single-write those
 writes were going to the hub anyway. This is exactly what [`RegionStatus::Draining`] models.
+
+#### The failover race the emulator reproduces
+
+During a manual failover on a live single-write account the ordering was **announce → switch →
+narrow**:
+
+1. `writableLocations` grows to include both the outgoing and incoming write regions, while
+   `enableMultipleWriteLocations` stays `false` (observed in 76 samples across four endpoints).
+   For the first ~6 s of this window the **outgoing region still accepts writes** (`201`).
+2. The outgoing region then starts rejecting writes with `403/3`.
+3. ~10 s after *that* the payload finally drops the outgoing region.
+
+The service maintains three write-region slots for exactly this —
+`DatabaseAccountHandler.GetLocationsFromTopology` folds `Topology.WriteRegion`,
+`Topology.NextWriteRegion` and `Topology.PreviousWriteRegion` into `writableLocations` (and into
+`readableLocations`). The emulator mirrors all three:
+
+| Phase | Service slot | Emulator call | Writes accepted by |
+| --- | --- | --- | --- |
+| Announce | `NextWriteRegion` | `announce_failover(to)` | the **outgoing** region |
+| Switch | `PreviousWriteRegion` | `begin_failover(to)` | the **incoming** region; outgoing returns `403/3` while still advertised |
+| Settled | — | `complete_failover()` | the incoming region alone |
+
+Step 2 overlapping step 3 means there is a window in which the account read advertises a region as
+writable that is already refusing writes — the race
+`LocationCacheTests.ValidateRetryOnWriteForbiddenExceptionAsync` covers. `set_write_region` remains
+the atomic form for tests that only care about the settled state.
+
+#### Why the advertised order is what it is
+
+`GetLocationsFromTopology` builds both lists as `HashSet<string>`, adding the write region (and the
+next/previous write regions) **first**, then the read regions. There is therefore no ordering
+contract beyond "the write region is added first", which is exactly what the live captures showed:
+position 0 is stable and the tail follows neither `failoverPriority` nor any positional rule. The
+emulator's advertisement order — write region hoisted, tail in insertion order — is a faithful
+reading of this.
 
 #### Known fidelity gaps
 
@@ -284,9 +392,13 @@ Service behavior that is **not** currently modeled:
 | --- | --- | --- |
 | `x-ms-number-of-read-regions` | `readLocations - 1` (0 with one region, 1 with two) | hard-coded `0` |
 | `x-ms-last-state-change-utc` | a real, **per-region** timestamp (two regions of one account reported different values) | hard-coded epoch |
-| `failoverPriority` | orders `readableLocations`; reordering it is its own ARM operation and, on a single-write account, constitutes a manual failover | not modeled; ordering is insertion order, and `set_write_region` models only the outcome |
+| `readableLocations` tail order | stable, but does not follow `failoverPriority` and no positional rule explains it | insertion order, with the write region hoisted to position 0 |
+| `onlineRegion` capability gating | off by default; the operation is rejected until enabled | `set_region_online` always succeeds, so recovery is testable without a second account shape |
+| Stale payload over a reused connection | a client holding a live connection can read a pre-failover payload — naming a write region that is already offline — indefinitely, while a reconnecting client sees the correct topology | not modeled; the emulator is an in-process shim with no connection pooling, so no connection exists whose reuse could pin a payload |
 | Concurrent topology operations | rejected with `412 PreconditionFailed` ("already an operation in progress which requires exclusive lock") | not modeled; mutations always succeed |
 | Consistency-level constraints | Strong restricts which regions may be added and is incompatible with multi-write | not modeled; consistency is static and never validated against a topology change |
+| Account-level read revocation | `Topology.ReadStatusRevoked`, set when a customer revokes their managed key | not modeled |
+| Richer location lifecycle | `LocationStatus` is `Uninitialized`/`Initializing`/`InternallyReady`/`Online`/`Deleting`; `InternallyReady` means provisioned but deliberately not exposed to external customers | collapsed into `Active`/`Draining`/`Offline`/`Retired` |
 
 Only the RNTBD / Gateway 2.0 transport parses the read-region count today
 (`rntbd/response.rs`), so the first row has a narrow blast radius — but it does mean a Gateway 2.0
@@ -324,6 +436,7 @@ that is modeled:
 | --- | --- |
 | `Immediate` (default) | The region is fully seeded from the current write region — catalog, partition layout (so post-split layouts carry over), documents and LSN high-water marks — before `add_region` returns. |
 | `Delayed(duration)` | The region is advertised immediately but empty **and rewound to LSN 0**, then catches up after `duration`. Emulates the window where a region is in the topology but not yet useful. The LSN rewind matters: session freshness is judged against those counters, so a region holding no data but claiming the source's high-water mark would answer a session read with a bare `404` instead of the `404/1002 ReadSessionNotAvailable` a lagging replica returns. |
+| `HiddenUntilReady(duration)` | The region is internally seeded and participates in replication, but is filtered from both account location lists until buildout completes, matching `RemoveInProgressRegionsFromConfiguration` with Cosmos Fabric's default skip-in-progress flag. It cannot accept external writes or be promoted while hidden. |
 
 ---
 

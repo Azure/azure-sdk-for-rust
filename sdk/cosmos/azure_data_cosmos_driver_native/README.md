@@ -33,7 +33,8 @@ for the full design.
 | Capability                                                                      | Status                                                                                  |
 | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Master-key authentication                                                       | ✅                                                                                       |
-| Token-credential / resource-token authentication                                | ⏳ follow-up (needs `TokenCredential` FFI bridge)                                        |
+| AAD token-credential authentication                                             | ✅ via host credential bridge                                                            |
+| Resource-token authentication                                                   | ⏳ follow-up                                                                              |
 | Sync driver creation (`_blocking`)                                              | ✅                                                                                       |
 | Async driver creation (`_submit`)                                               | ✅                                                                                       |
 | Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`)                        | ⏳ needs driver-side `was_cached` signal                                                 |
@@ -152,9 +153,12 @@ below for the production-shape guidance.
 >   token.
 >
 > Item PATCH, `patch_max_attempts`, and bounded tracking are fields on the
-> canonical `cosmos_operation_request_t`. Consuming language SDKs decide
-> whether and how to expose PATCH as preview. For unsafe instruction lists, the
-> driver stores `_azsdkPatchTracking` on the item. Passing NULL for
+> canonical `cosmos_operation_request_t`. Per-operation PATCH execution is
+> selected through `cosmos_operation_options_t.patch_strategy`; leave it
+> `COSMOS_PATCH_STRATEGY_UNSET` to inherit, or set `AUTO`, `CLIENT_SIDE`, or
+> `SERVER_SIDE`. Consuming language SDKs decide whether and how to expose PATCH
+> as preview. For unsafe instruction lists executed client-side, the driver
+> stores `_azsdkPatchTracking` on the item. Passing NULL for
 > `patch_tracking_id` generates an ID for the invocation. Retrieve the effective
 > UUID from `cosmos_completion_patch_tracking_id`, then persist and reuse it for
 > application retries. Cancelled completions also expose the resolved ID because

@@ -24,11 +24,13 @@ mod simple_value;
 mod value;
 
 pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
-pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions};
+pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpTransport};
 pub use error::*;
 pub use management::{AmqpManagement, AmqpManagementApis};
 pub use messaging::{AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpSource, AmqpTarget};
-pub use receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
+pub use receiver::{
+    AmqpDeliveryOutcome, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode,
+};
 pub use sender::{AmqpSendOptions, AmqpSendOutcome, AmqpSender, AmqpSenderApis, AmqpSenderOptions};
 pub use session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions};
 pub use simple_value::AmqpSimpleValue;

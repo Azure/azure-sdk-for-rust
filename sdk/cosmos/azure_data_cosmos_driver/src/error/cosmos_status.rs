@@ -529,6 +529,7 @@ impl SubStatusCode {
             20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
             20214 => Some("ClientContinuationTokenOrderByStateInvalid"),
             20215 => Some("ClientStreamingMergeSplitReplacementInvalid"),
+            20216 => Some("ClientContinuationTokenAfterTranscodeFailure"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
@@ -1533,6 +1534,13 @@ impl SubStatusCode {
     /// mid-group boundary and cannot be safely repositioned.
     pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode =
         SubStatusCode(20215);
+
+    /// A continuation token was requested after a page's body failed to
+    /// transcode back to text (20216). The pipeline had already advanced, so
+    /// any token minted afterwards would resume *past* the page the caller
+    /// never received.
+    pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: SubStatusCode =
+        SubStatusCode(20216);
 
     // ----- 20300-20349: SDK-detected service contract violations -----
 
@@ -2541,6 +2549,14 @@ impl CosmosStatus {
     pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+    };
+
+    /// 500 / 20216 — a continuation token was requested after a page's body
+    /// failed to transcode back to text, so no token minted now could resume
+    /// without skipping that page.
+    pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
     };
 
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)

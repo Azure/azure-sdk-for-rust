@@ -478,6 +478,40 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
 #endif // __cplusplus
 
 /**
+ * Tri-state mirror of [`PatchStrategy`] for the flat options struct.
+ * `0` (`Unset`) means "inherit from a lower-priority layer".
+ */
+enum cosmos_patch_strategy_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Inherit from account / runtime / environment.
+   */
+  COSMOS_PATCH_STRATEGY_UNSET = 0,
+  /**
+   * Let the driver choose from instruction safety and service limits.
+   */
+  COSMOS_PATCH_STRATEGY_AUTO = 1,
+  /**
+   * Always use client-side read-modify-write execution.
+   */
+  COSMOS_PATCH_STRATEGY_CLIENT_SIDE = 2,
+  /**
+   * Always send the PATCH to the service.
+   */
+  COSMOS_PATCH_STRATEGY_SERVER_SIDE = 3,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_patch_strategy_t cosmos_patch_strategy_t;
+#else
+typedef int32_t cosmos_patch_strategy_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
  * Named mirror of the driver's synthetic (`2xxxx`) sub-status codes.
  *
  * The Cosmos service returns real sub-status codes for wire failures, but the
@@ -970,6 +1004,41 @@ typedef struct cosmos_error_t {
 } cosmos_error_t;
 
 /**
+ * One asynchronous access-token request passed to the host.
+ *
+ * `scope` is borrowed and valid only until the token-provider callback
+ * returns. The host must copy it before starting asynchronous work.
+ */
+typedef struct cosmos_token_request_t {
+  /**
+   * Opaque identifier passed to [`cosmos_token_request_complete`].
+   */
+  uint64_t request_id;
+  /**
+   * UTF-8 token scope bytes.
+   */
+  const uint8_t *scope;
+  /**
+   * Number of bytes addressable from `scope`.
+   */
+  uintptr_t scope_len;
+} cosmos_token_request_t;
+
+/**
+ * Host callbacks used to acquire tokens and release host state.
+ */
+typedef struct cosmos_token_provider_t {
+  /**
+   * Starts token acquisition. Must be non-NULL.
+   */
+  int32_t (*get_token)(intptr_t user_data, const struct cosmos_token_request_t *request);
+  /**
+   * Releases `user_data` after the last Rust credential reference is gone.
+   */
+  void (*user_data_free)(intptr_t user_data);
+} cosmos_token_provider_t;
+
+/**
  * A library-owned byte buffer returned by value across the C ABI.
  *
  * The caller reads `ptr` and `len` directly — there are no accessor
@@ -1265,6 +1334,12 @@ typedef struct cosmos_operation_options_t {
    */
   int32_t content_response_on_write;
   /**
+   * PATCH execution strategy, encoded as a [`CosmosPatchStrategy`]
+   * discriminant. `0` (`Unset`) inherits. Stored as a raw `i32` so invalid
+   * host values can be rejected before materializing the enum.
+   */
+  int32_t patch_strategy;
+  /**
    * Disable automatic session token management. Tri-state bool.
    */
   int8_t session_capturing_disabled;
@@ -1313,9 +1388,19 @@ typedef struct cosmos_operation_options_t {
    * When true, the driver transcodes a **text** request body to binary
    * before sending it (an already-binary body is passed through) and
    * advertises `CosmosBinary`, so the caller never encodes binary itself.
-   * An explicit `false` forces binary **off** for this operation regardless
-   * of any account/runtime default; `unset` inherits a lower layer (text by
-   * default).
+   * An explicit `false` (`1`) is the text opt-out: it forces binary **off**
+   * for this operation regardless of any account/runtime default. `unset`
+   * inherits a lower layer, which enables binary encoding by default, so an
+   * all-unset options struct negotiates binary.
+   *
+   * The response side is uniform across operation types: point reads,
+   * writes that echo content, and queries all negotiate a binary response,
+   * so a host that enables this flag receives response bodies — including
+   * query result items — as Cosmos binary JSON and must decode them. Detect
+   * with the `0x80` preamble. (A query's *request* body stays text either
+   * way, since it carries a query spec rather than a document.) See
+   * [`binary_encoding_request_text_response`](Self::binary_encoding_request_text_response)
+   * for the text opt-out.
    */
   int8_t binary_encoding_enabled;
   /**
@@ -1323,8 +1408,22 @@ typedef struct cosmos_operation_options_t {
    * Tri-state bool (`0` unset / `1` false / `2` true).
    *
    * Only meaningful when [`binary_encoding_enabled`](Self::binary_encoding_enabled)
-   * is true: the wire stays binary in both directions and the driver hands
-   * back text. `unset` / `false` returns the binary response as-is.
+   * resolves to true: the wire stays binary in both directions and the
+   * driver hands back text. `unset` / `false` returns the binary response
+   * as-is. Setting this to `2` is honored even when
+   * [`binary_encoding_enabled`](Self::binary_encoding_enabled) is left
+   * unset, since binary is enabled by default.
+   *
+   * This applies to every operation type, queries included: the wire keeps
+   * the bandwidth saving and the driver transcodes each response body — for
+   * a query, each result item — back to text before handing it over.
+   *
+   * Note the returned text is re-serialized by the driver rather than being
+   * the service's original bytes: values are preserved, but object keys are
+   * emitted in sorted order and numbers use Rust's shortest round-trip
+   * rendering. Hosts needing byte-exact service output must explicitly
+   * disable binary encoding by setting
+   * [`binary_encoding_enabled`](Self::binary_encoding_enabled) to `1`.
    */
   int8_t binary_encoding_request_text_response;
 } cosmos_operation_options_t;
@@ -1668,6 +1767,29 @@ cosmos_status_code_t cosmos_account_ref_with_master_key(const char *endpoint,
                                                         struct cosmos_error_t **out_error);
 
 /**
+ * Creates an account reference authenticated by a host token credential.
+ *
+ * The callback provider is adapted into the driver's async
+ * [`azure_core::credentials::TokenCredential`] interface. Ownership of
+ * `user_data` transfers to Rust only on success. The optional
+ * `user_data_free` callback runs after the final account/driver credential
+ * reference is released.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_account` populated.
+ * - `INVALID_ARGUMENT` (1) when `endpoint`, `out_account`, or the provider's
+ *   `get_token` callback is NULL.
+ * - `INVALID_UTF8` (2) when `endpoint` is not valid UTF-8.
+ * - `INVALID_ACCOUNT_REFERENCE` (4003) when `endpoint` is not a parsable URL.
+ */
+cosmos_status_code_t cosmos_account_ref_with_credential(const char *endpoint,
+                                                        struct cosmos_token_provider_t provider,
+                                                        intptr_t user_data,
+                                                        struct cosmos_account_ref_t **out_account,
+                                                        struct cosmos_error_t **out_error);
+
+/**
  * Frees an account-reference handle. NULL is a no-op.
  */
 void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
@@ -1845,6 +1967,27 @@ cosmos_status_code_t cosmos_driver_resolve_container_blocking(const struct cosmo
                                                               const char *container_id,
                                                               struct cosmos_container_ref_t **out_container,
                                                               struct cosmos_error_t **out_error);
+
+/**
+ * Completes a pending host token request.
+ *
+ * The host calls this function exactly once after accepting `request_id` in
+ * its token-provider callback. Token and error buffers are borrowed only for
+ * this call; Rust copies them before returning. Unknown, cancelled, late, or
+ * duplicate request IDs return `400 / CLIENT_FFI_NULL_ARGUMENT`.
+ *
+ * # Safety
+ *
+ * Non-NULL buffers must remain readable for their corresponding lengths for
+ * the duration of this call.
+ */
+cosmos_status_code_t cosmos_token_request_complete(uint64_t request_id,
+                                                   int32_t status,
+                                                   const uint8_t *token,
+                                                   uintptr_t token_len,
+                                                   int64_t expires_on_unix_seconds,
+                                                   const uint8_t *error_message,
+                                                   uintptr_t error_message_len);
 
 /**
  * Creates a name-based database reference parented to `account`.

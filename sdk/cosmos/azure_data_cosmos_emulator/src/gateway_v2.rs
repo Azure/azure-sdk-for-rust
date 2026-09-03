@@ -276,7 +276,10 @@ mod tests {
             .create_driver(DriverOptions::builder(account).build())
             .await
             .unwrap();
-        let container = driver.resolve_container("db", "coll").await.unwrap();
+        let container = driver
+            .resolve_container("db", "coll", OperationOptions::default())
+            .await
+            .unwrap();
         let item =
             ItemReference::from_name(&container, PartitionKey::from("pk1"), "item1".to_owned());
         let response = driver

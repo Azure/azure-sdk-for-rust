@@ -190,13 +190,16 @@ impl CosmosClientBuilder {
     ///
     /// Binary encoding governs two things together: encoding item write bodies
     /// as binary and advertising that the client accepts binary responses via
-    /// the response-format negotiation header. The options are resolved once at
-    /// [`build()`](Self::build) time.
+    /// the response-format negotiation header. Response negotiation applies to
+    /// queries as well as point item operations; body encoding does not, since
+    /// a query body is a query spec rather than a document. The options are
+    /// resolved once at [`build()`](Self::build) time.
     ///
-    /// When this setter is **not** called, enablement falls back to the
-    /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy
-    /// values `1` / `true` / `yes` / `on`, case-insensitive, trimmed). Passing
-    /// explicit options here takes precedence over that variable.
+    /// Binary encoding is enabled by default. When this setter is **not**
+    /// called, `AZURE_COSMOS_BINARY_ENCODING_ENABLED` can override the default;
+    /// truthy values are `1` / `true` / `yes` / `on` (case-insensitive,
+    /// trimmed), and any other value disables encoding. Passing explicit
+    /// options here takes precedence over that variable.
     pub fn with_binary_encoding_options(mut self, options: BinaryEncodingOptions) -> Self {
         self.options.binary_encoding = Some(options);
         self
