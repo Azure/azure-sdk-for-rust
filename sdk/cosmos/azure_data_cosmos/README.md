@@ -34,7 +34,7 @@ require disabling binary encoding.
 
 For now, you must disable Binary Encoding explicitly when building the client:
 
-```rust no_run
+```rust,ignore
 use azure_data_cosmos::{options::BinaryEncodingOptions, CosmosClient};
 
 let client = CosmosClient::builder()
