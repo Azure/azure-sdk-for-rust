@@ -360,29 +360,6 @@ mod tests {
         Ok(())
     }
 
-    #[cfg(not(feature = "arrow"))]
-    #[tokio::test]
-    async fn list_blobs_mock_defaults_to_xml_without_arrow() -> Result<()> {
-        let client = container_client_with(xml_mock_client_with_accept("application/xml"));
-        let names = collect_blob_names(client.list_blobs(None)?).await?;
-        assert_eq!(
-            names,
-            ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
-        );
-        Ok(())
-    }
-
-    #[cfg(not(feature = "arrow"))]
-    #[test]
-    fn list_blobs_rejects_end_before_without_arrow() {
-        let client = container_client_with(xml_mock_client_with_accept("application/xml"));
-        let options = BlobContainerClientListBlobsOptions {
-            end_before: Some("cc.txt".to_string()),
-            ..Default::default()
-        };
-        assert!(client.list_blobs(Some(options)).is_err());
-    }
-
     fn container_client_with(mock: Arc<dyn azure_core::http::HttpClient>) -> BlobContainerClient {
         BlobContainerClient::new(
             Url::parse("https://example.blob.core.windows.net/container").unwrap(),
@@ -461,31 +438,56 @@ mod tests {
     }
 
     #[cfg(not(feature = "arrow"))]
-    #[tokio::test]
-    async fn list_blobs_hierarchical_mock_defaults_to_xml_without_arrow() -> Result<()> {
-        let client = container_client_with(xml_hierarchy_mock_client("application/xml"));
-        let page = client
-            .list_blobs_hierarchical("/", None)?
-            .into_pages()
-            .try_next()
-            .await?
-            .expect("expected a page")
-            .into_model()?;
+    mod xml_tests {
+        use super::*;
 
-        assert_eq!(page.delimiter.as_deref(), Some("/"));
-        assert_eq!(page.container_name.as_deref(), Some("container"));
-        let prefixes = page
-            .hierarchical_list
-            .blob_prefixes
-            .as_deref()
-            .expect("expected blob prefixes");
-        assert_eq!(prefixes.len(), 1);
-        assert_eq!(prefixes[0].name.as_deref(), Some("dir1/"));
-        assert_eq!(
-            page.hierarchical_list.blob_items[0].name.as_deref(),
-            Some("top.txt")
-        );
-        Ok(())
+        #[tokio::test]
+        async fn list_blobs_mock_defaults_to_xml_without_arrow() -> Result<()> {
+            let client = container_client_with(xml_mock_client_with_accept("application/xml"));
+            let names = collect_blob_names(client.list_blobs(None)?).await?;
+            assert_eq!(
+                names,
+                ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
+            );
+            Ok(())
+        }
+
+        #[test]
+        fn list_blobs_rejects_end_before_without_arrow() {
+            let client = container_client_with(xml_mock_client_with_accept("application/xml"));
+            let options = BlobContainerClientListBlobsOptions {
+                end_before: Some("cc.txt".to_string()),
+                ..Default::default()
+            };
+            assert!(client.list_blobs(Some(options)).is_err());
+        }
+
+        #[tokio::test]
+        async fn list_blobs_hierarchical_mock_defaults_to_xml_without_arrow() -> Result<()> {
+            let client = container_client_with(xml_hierarchy_mock_client("application/xml"));
+            let page = client
+                .list_blobs_hierarchical("/", None)?
+                .into_pages()
+                .try_next()
+                .await?
+                .expect("expected a page")
+                .into_model()?;
+
+            assert_eq!(page.delimiter.as_deref(), Some("/"));
+            assert_eq!(page.container_name.as_deref(), Some("container"));
+            let prefixes = page
+                .hierarchical_list
+                .blob_prefixes
+                .as_deref()
+                .expect("expected blob prefixes");
+            assert_eq!(prefixes.len(), 1);
+            assert_eq!(prefixes[0].name.as_deref(), Some("dir1/"));
+            assert_eq!(
+                page.hierarchical_list.blob_items[0].name.as_deref(),
+                Some("top.txt")
+            );
+            Ok(())
+        }
     }
 
     #[cfg(feature = "arrow")]
