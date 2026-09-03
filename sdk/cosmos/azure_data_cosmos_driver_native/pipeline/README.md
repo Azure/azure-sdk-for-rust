@@ -26,8 +26,8 @@ The active build targets are:
 - Linux ARM64 using musl
 - macOS ARM64
 
-Windows ARM64 is outside this matrix, and Intel macOS remains disabled. Dynamic
-libraries for .NET, Java, and Python are also outside this pull request.
+Windows ARM64 and Intel macOS are outside the supported matrix. Dynamic libraries
+for .NET, Java, and Python are also outside this pull request.
 
 The generated Windows cgo linker file statically links the MinGW pthread runtime.
 This prevents the final Go application from requiring a separately distributed
@@ -49,7 +49,6 @@ This prevents the final Go application from requiring a separately distributed
 | `Invoke-LocalSupplyChain.ps1` | Runs a local end-to-end integration test without publishing anything. |
 | `native-driver.yml` | Defines the official 1ES build, Go module artifact, and downstream draft pull request. |
 | `native-driver-build-job.yml` | Runs one generated target row with the appropriate pool, image, Rust setup, and linker. |
-| `native-driver-pr-validation.yml` | Runs the pipeline Pester tests from the repository pull-request pipeline when files in this folder change. |
 | `../docs/NATIVE_SUPPLY_CHAIN.md` | Explains how the artifacts are built and verified. |
 
 ## Production flow
@@ -86,6 +85,10 @@ The official 1ES template is the governed build and provenance boundary. The
 pipeline uses the repository's standard `1ES.PublishPipelineArtifact@1` wrapper
 with SBOM generation enabled rather than implementing a second, pipeline-local
 signature verifier.
+
+The native-driver pipeline is not part of the automatic pull-request pipeline.
+Authorized reviewers can run its registered pipeline definition against a pull
+request with an `/azp run` comment.
 
 The publication stage runs only after a successful manual build of
 `refs/heads/main`. It mints a short-lived Azure SDK Automation GitHub App token,
@@ -168,4 +171,3 @@ the appropriate driver module, so users do not need a custom musl build tag.
 - Confirm that the Azure SDK Automation GitHub App installation includes the
   private `Azure/azure-cosmos-driver` repository and that this pipeline may use
   the `AzureSDKEngKeyVault Secrets` service connection.
-- Decide whether Intel macOS has enough demand to enable it.

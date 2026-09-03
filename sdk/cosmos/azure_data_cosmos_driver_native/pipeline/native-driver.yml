@@ -4,10 +4,9 @@
 # =============================================================================
 # native-driver.yml  --  Cosmos Go native-driver cross-build + supply-chain evidence
 #
-#   STATUS: NOT CONNECTED. This pipeline is intentionally not referenced by
-#   sdk/cosmos/ci*.yml or any pr.yml trigger. It cannot run until an owner adds
-#   it to an internal pipeline definition. Do not enable triggers or add it to CI
-#   without explicit approval.
+#   STATUS: MANUAL. This pipeline is intentionally not referenced by
+#   sdk/cosmos/ci*.yml or any automatic PR trigger. Run its registered pipeline
+#   definition against a PR with an authorized `/azp run` comment.
 #
 #   It productizes the manual windows/amd64 bootstrap (Azure/azure-cosmos-driver
 #   PR #5) into the full "Big 5 + musl" matrix. See ./README.md and

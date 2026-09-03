@@ -19,6 +19,7 @@
       "libc": null,
       "triple": "x86_64-pc-windows-gnu",
       "c_compiler": "gcc",
+      "apt_packages": [],
       "module_path": "windows/amd64",
       "native_subdir": null,
       "build_tag_extra": null,
@@ -26,8 +27,7 @@
         "-Wl,-Bstatic",
         "-lwinpthread",
         "-Wl,-Bdynamic"
-      ],
-      "risk": null
+      ]
     },
     {
       "id": "linux-amd64-glibc",
@@ -36,10 +36,10 @@
       "libc": "glibc",
       "triple": "x86_64-unknown-linux-gnu",
       "c_compiler": "gcc",
+      "apt_packages": [],
       "module_path": "linux/amd64",
       "native_subdir": null,
-      "build_tag_extra": null,
-      "risk": null
+      "build_tag_extra": null
     },
     {
       "id": "linux-arm64-glibc",
@@ -48,10 +48,13 @@
       "libc": "glibc",
       "triple": "aarch64-unknown-linux-gnu",
       "c_compiler": "aarch64-linux-gnu-gcc",
+      "apt_packages": [
+        "gcc-aarch64-linux-gnu",
+        "libc6-dev-arm64-cross"
+      ],
       "module_path": "linux/arm64",
       "native_subdir": null,
-      "build_tag_extra": null,
-      "risk": null
+      "build_tag_extra": null
     },
     {
       "id": "darwin-arm64",
@@ -60,10 +63,10 @@
       "libc": null,
       "triple": "aarch64-apple-darwin",
       "c_compiler": "clang",
+      "apt_packages": [],
       "module_path": "darwin/arm64",
       "native_subdir": null,
-      "build_tag_extra": null,
-      "risk": null
+      "build_tag_extra": null
     },
     {
       "id": "linux-amd64-musl",
@@ -72,6 +75,10 @@
       "libc": "musl",
       "triple": "x86_64-unknown-linux-musl",
       "c_compiler": "musl-gcc",
+      "apt_packages": [
+        "musl-dev",
+        "musl-tools"
+      ],
       "module_path": "linux/amd64-musl",
       "native_subdir": null,
       "build_tag_extra": null,
@@ -81,8 +88,7 @@
           "consumer_flag": "-lgcc_eh",
           "compiler_library": "libgcc_eh.a"
         }
-      ],
-      "risk": null
+      ]
     },
     {
       "id": "linux-arm64-musl",
@@ -91,6 +97,7 @@
       "libc": "musl",
       "triple": "aarch64-unknown-linux-musl",
       "c_compiler": "aarch64-linux-musl-gcc",
+      "apt_packages": [],
       "module_path": "linux/arm64-musl",
       "native_subdir": null,
       "build_tag_extra": null,
@@ -100,22 +107,7 @@
           "consumer_flag": "-lgcc_eh",
           "compiler_library": "libgcc_eh.a"
         }
-      ],
-      "risk": null
-    }
-  ],
-  "optional_targets": [
-    {
-      "id": "darwin-amd64",
-      "goos": "darwin",
-      "goarch": "amd64",
-      "libc": null,
-      "triple": "x86_64-apple-darwin",
-      "c_compiler": "clang",
-      "module_path": "darwin/amd64",
-      "native_subdir": null,
-      "build_tag_extra": null,
-      "risk": "long-tail; enable only if a customer needs Intel macOS."
+      ]
     }
   ],
   "reference_syslibs": {

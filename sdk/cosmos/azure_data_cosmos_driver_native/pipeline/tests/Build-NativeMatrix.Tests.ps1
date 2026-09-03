@@ -9,11 +9,8 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $PipelinePath = Join-Path $PipelineDirectory 'native-driver.yml'
         $JobMatrixScriptPath = Join-Path $PipelineDirectory 'New-NativeJobMatrix.ps1'
         $BuildJobTemplatePath = Join-Path $PipelineDirectory 'native-driver-build-job.yml'
-        $PrValidationTemplatePath = Join-Path $PipelineDirectory 'native-driver-pr-validation.yml'
         $RepositoryRoot = (Resolve-Path (Join-Path $PipelineDirectory '../../../..')).Path
         $OneEsRedirectPath = Join-Path $RepositoryRoot 'eng/pipelines/templates/stages/1es-redirect.yml'
-        $PullRequestPipelinePath = Join-Path $RepositoryRoot 'eng/pipelines/pullrequest.yml'
-        $ClientArchetypePath = Join-Path $RepositoryRoot 'eng/pipelines/templates/stages/archetype-sdk-client.yml'
         $Matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
         $CargoLinkerVariable = 'CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER'
         $CcVariable = 'CC_x86_64_pc_windows_gnu'
@@ -195,6 +192,7 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             $generated.TargetId | Should -Be $target.id
             $generated.Triple | Should -Be $target.triple
             $generated.CCompiler | Should -Be $target.c_compiler
+            $generated.AptPackages | Should -Be (@($target.apt_packages) -join ' ')
             $generated.GoToolchainVersion | Should -Be $Matrix.go_toolchain_version
         }
     }
@@ -236,12 +234,20 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $buildJobTemplate | Should -Match ([regex]::Escape('-StaticOnly'))
     }
 
-    It 'provisions Linux compilers from Ubuntu or checksum-pinned Microsoft prior art' {
+    It 'provisions Linux compilers from matrix metadata or checksum-pinned Microsoft prior art' {
+        $outputPath = Join-Path $TestDrive 'native-driver-job-matrix.json'
+        & $JobMatrixScriptPath -MatrixPath $MatrixPath -OutputPath $outputPath
+
+        $jobMatrix = Get-Content $outputPath -Raw | ConvertFrom-Json
         $buildJobTemplate = Get-Content $BuildJobTemplatePath -Raw
 
-        $buildJobTemplate | Should -Match 'gcc-aarch64-linux-gnu'
-        $buildJobTemplate | Should -Match 'libc6-dev-arm64-cross'
-        $buildJobTemplate | Should -Match 'musl-dev musl-tools'
+        $jobMatrix.matrix.Target.'linux-arm64-glibc'.AptPackages |
+            Should -Be 'gcc-aarch64-linux-gnu libc6-dev-arm64-cross'
+        $jobMatrix.matrix.Target.'linux-amd64-musl'.AptPackages |
+            Should -Be 'musl-dev musl-tools'
+        $buildJobTemplate | Should -Match ([regex]::Escape(
+            'read -r -a apt_packages <<< "$(AptPackages)"'
+        ))
         $buildJobTemplate | Should -Match ([regex]::Escape(
             'microsoft/vscode-linux-build-agent/releases/download/'
         ))
@@ -290,29 +296,6 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         ).Count | Should -Be 2
         $pipeline | Should -Match ([regex]::Escape(
             "eq(variables['Build.Reason'], 'Manual')"
-        ))
-    }
-
-    It 'runs pipeline Pester tests in pull-request validation when this folder changes' {
-        $pullRequestPipeline = Get-Content $PullRequestPipelinePath -Raw
-        $clientArchetype = Get-Content $ClientArchetypePath -Raw
-        $prValidationTemplate = Get-Content $PrValidationTemplatePath -Raw
-
-        $pullRequestPipeline | Should -Match 'AdditionalBuildJobs:'
-        $pullRequestPipeline | Should -Match ([regex]::Escape(
-            'template: /sdk/cosmos/azure_data_cosmos_driver_native/pipeline/native-driver-pr-validation.yml'
-        ))
-        $clientArchetype | Should -Match 'name:\s+AdditionalBuildJobs'
-        $clientArchetype | Should -Match 'each additionalJob in parameters\.AdditionalBuildJobs'
-        $prValidationTemplate | Should -Match ([regex]::Escape(
-            "condition: eq(variables['Build.Reason'], 'PullRequest')"
-        ))
-        $prValidationTemplate | Should -Match ([regex]::Escape(
-            "-DiffPath 'sdk/cosmos/azure_data_cosmos_driver_native/pipeline/**'"
-        ))
-        $prValidationTemplate | Should -Match 'IsNullOrWhiteSpace'
-        $prValidationTemplate | Should -Match ([regex]::Escape(
-            'template: /eng/common/pipelines/templates/steps/run-pester-tests.yml'
         ))
     }
 }
