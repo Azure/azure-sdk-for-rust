@@ -23,6 +23,7 @@ The tool exposes:
 - `--manifest-path <path/to/Cargo.toml>`
 - `--format <markdown|apiview>` default `markdown`
 - `--no-docs` suppresses doc comments in `apiview` and skips `API.comments.patch`
+- `--check` compares generated content with existing files without writing; missing files pass
 - `--output <directory>`
 
 Behavior:
@@ -30,6 +31,7 @@ Behavior:
 - default `markdown` writes `API.md` and `API.comments.patch`
 - `--format apiview` writes `apiview.json`
 - `--no-docs` suppresses APIView doc comment tokens and the Markdown comments patch
+- check comparisons ignore line-ending differences and mismatches exit `1`
 - progress goes to stdout
 - fatal errors go to stderr and exit `1`
 
@@ -38,7 +40,8 @@ Behavior:
 - Standalone bin crate in the `eng/tools` workspace
 - Uses `eng/tools/rust-toolchain.toml` toolchain `nightly-2026-04-14`
 - Keep rustdoc schema compatibility logic isolated from the tool-owned model and renderers
-- Current deps: `rustdoc-types`, `serde`, `serde_json`, `clap`
+- Current deps: `rustdoc-types`, `serde`, `serde_json`, `clap`, `sha2`
+- Add common dependencies to the `eng/tools` workspace using versions already used by the repository
 - `rustc-dev` stays included because long-term direction remains closer to librustdoc/HIR
 - Keep implementation and tests separate when practical. Prefer sibling `tests.rs` files over nested `mod tests` blocks. Tiny local `#[test]` items may stay inline
 

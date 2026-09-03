@@ -17,6 +17,7 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
 - `--format <markdown|apiview>`: optional output format to generate; defaults to `markdown`
 - `--no-docs`: omit documentation comments: APIView doc tokens, or the Markdown comments patch
+- `--check`: compare generated content with existing output files without writing them
 - `--output <dir>`: directory where generated files are written
 
 ### Outputs
@@ -25,6 +26,8 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 - `--no-docs` writes only `API.md`
 - `--format apiview` writes `apiview.json`
 - `--format apiview --no-docs` writes `apiview.json` without doc comment tokens
+- `--check` succeeds when output files are absent or match after normalizing line endings; a mismatch
+  writes an error to stderr and exits with code `1`
 
 Both formats include available Cargo metadata (`description`, `edition`, and `rust-version`) and
 the crate's default and docs.rs feature list (or all features when not configured). Markdown also

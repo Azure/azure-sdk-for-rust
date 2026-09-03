@@ -23,6 +23,10 @@ struct Args {
     #[arg(long)]
     no_docs: bool,
 
+    /// Check generated content against existing files without writing them.
+    #[arg(long)]
+    check: bool,
+
     /// Directory where generated files will be written.
     #[arg(long, value_name = "DIR")]
     output: PathBuf,
@@ -33,6 +37,7 @@ pub(crate) struct Request {
     pub(crate) manifest_path: PathBuf,
     pub(crate) format: OutputFormat,
     pub(crate) no_docs: bool,
+    pub(crate) check: bool,
     pub(crate) output_dir: PathBuf,
 }
 
@@ -60,6 +65,7 @@ pub(crate) fn parse() -> Request {
         manifest_path: args.manifest_path,
         format: args.format,
         no_docs: args.no_docs,
+        check: args.check,
         output_dir: args.output,
     }
 }
