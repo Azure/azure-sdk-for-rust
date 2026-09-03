@@ -578,7 +578,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.38.0"
+version = "0.39.0"
 dependencies = [
  "arbitrary",
  "async-lock",
@@ -623,7 +623,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "arc-swap",
  "async-lock",

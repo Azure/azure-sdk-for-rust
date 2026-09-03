@@ -17,7 +17,7 @@ azure_core = { workspace = true }
 # `control_plane` is not optional here: the harness provisions its own soak
 # database and container before driving load, so it always needs Database and
 # Container CRUD.
-azure_data_cosmos = { path = "../azure_data_cosmos", version = "0.38.0", features = [
+azure_data_cosmos = { path = "../azure_data_cosmos", version = "0.39.0", features = [
   "control_plane",
   "key_auth",
 ] }
