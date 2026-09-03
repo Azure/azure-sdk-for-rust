@@ -5,6 +5,7 @@ use super::*;
 
 fn code(text: &str) -> RenderedLine {
     RenderedLine {
+        declaration_location: None,
         text: text.to_string(),
         is_doc_comment: false,
     }
@@ -12,6 +13,7 @@ fn code(text: &str) -> RenderedLine {
 
 fn doc(text: &str) -> RenderedLine {
     RenderedLine {
+        declaration_location: None,
         text: text.to_string(),
         is_doc_comment: true,
     }

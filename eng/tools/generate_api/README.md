@@ -17,13 +17,15 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
 - `--format <markdown|apiview>`: optional output format to generate; defaults to `markdown`
 - `--no-docs`: omit documentation comments: APIView doc tokens, or the Markdown comments patch
+- `--no-map`: omit the Markdown source map; accepted as a no-op for APIView output
 - `--check`: compare generated content with existing output files without writing them
 - `--output <dir>`: directory where generated files are written
 
 ### Outputs
 
-- default `markdown` output writes `API.md` and `API.comments.patch`
-- `--no-docs` writes only `API.md`
+- default `markdown` output writes `API.md`, `API.md.map`, and `API.comments.patch`
+- `--no-docs` skips `API.comments.patch`
+- `--no-map` skips `API.md.map`
 - `--format apiview` writes `apiview.json`
 - `--format apiview --no-docs` writes `apiview.json` without doc comment tokens
 - `--check` succeeds when output files are absent or match after normalizing line endings; a mismatch
@@ -41,6 +43,9 @@ documentation comments on:
 ```sh
 patch -p1 < API.comments.patch
 ```
+
+`API.md.map` is an ECMA-426 source map with repo-relative Rust source paths. It maps declaration
+lines in the fenced Rust API block back to the corresponding item or member declarations.
 
 ## Workflow
 

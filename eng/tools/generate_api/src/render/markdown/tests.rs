@@ -4,7 +4,7 @@
 use super::*;
 use crate::model::{
     ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiMemberKind, ApiModel, ApiModule,
-    PackageMetadata,
+    PackageMetadata, SourceLocation,
 };
 use std::collections::BTreeMap;
 
@@ -14,6 +14,7 @@ fn render(model: &ApiModel) -> String {
 
 fn item(name: &str, kind: ApiItemKind, declaration: &str) -> ApiItem {
     ApiItem {
+        declaration_location: None,
         name: name.to_string(),
         kind,
         source_id: None,
@@ -32,12 +33,21 @@ fn item(name: &str, kind: ApiItemKind, declaration: &str) -> ApiItem {
 
 fn member(name: &str, kind: ApiMemberKind, declaration: &str) -> ApiMember {
     ApiMember {
+        declaration_location: None,
         name: name.to_string(),
         kind,
         doc_comments: Vec::new(),
         attributes: Vec::new(),
         declaration: declaration.to_string(),
         declaration_path_references: Vec::new(),
+    }
+}
+
+fn location(path: &str, line: usize, column: usize) -> SourceLocation {
+    SourceLocation {
+        path: path.to_string(),
+        line,
+        column,
     }
 }
 
@@ -63,6 +73,7 @@ fn renders_explicit_trait_impl_blocks() {
         parser_version: "0.0.0".to_string(),
         package_metadata: Default::default(),
         root_module: ApiModule {
+            declaration_location: None,
             path: "demo".to_string(),
             doc_comments: Vec::new(),
             attributes: Vec::new(),
@@ -96,6 +107,7 @@ fn renders_inherent_members_inside_impl_blocks() {
         parser_version: "0.0.0".to_string(),
         package_metadata: Default::default(),
         root_module: ApiModule {
+            declaration_location: None,
             path: "demo".to_string(),
             doc_comments: Vec::new(),
             attributes: Vec::new(),
@@ -115,6 +127,49 @@ fn renders_inherent_members_inside_impl_blocks() {
 }
 
 #[test]
+fn maps_only_declaration_lines_after_removing_docs() {
+    let mut foo = item("Foo", ApiItemKind::Struct, "pub struct Foo {");
+    foo.declaration_location = Some(location("src/lib.rs", 10, 0));
+    let mut field = member("value", ApiMemberKind::Field, "pub value: u32,");
+    field.doc_comments = vec!["/// The value.".to_string()];
+    field.declaration_location = Some(location("src/lib.rs", 12, 4));
+    foo.members.push(field);
+
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
+        root_module: ApiModule {
+            declaration_location: None,
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: vec![foo],
+            modules: Vec::new(),
+        },
+    };
+
+    let mappings = source_mappings_from_lines(&render_lines(&model));
+
+    assert_eq!(
+        mappings,
+        vec![
+            GeneratedMapping {
+                generated_line: 7,
+                generated_column: 0,
+                original: location("src/lib.rs", 10, 0),
+            },
+            GeneratedMapping {
+                generated_line: 8,
+                generated_column: 4,
+                original: location("src/lib.rs", 12, 4),
+            },
+        ]
+    );
+}
+
+#[test]
 fn renders_root_inner_attrs_and_child_module_outer_attrs() {
     let model = ApiModel {
         package_name: "demo".to_string(),
@@ -122,6 +177,7 @@ fn renders_root_inner_attrs_and_child_module_outer_attrs() {
         parser_version: "0.0.0".to_string(),
         package_metadata: Default::default(),
         root_module: ApiModule {
+            declaration_location: None,
             path: "demo".to_string(),
             doc_comments: Vec::new(),
             attributes: vec![ApiAttribute {
@@ -129,6 +185,7 @@ fn renders_root_inner_attrs_and_child_module_outer_attrs() {
             }],
             items: Vec::new(),
             modules: vec![ApiModule {
+                declaration_location: None,
                 path: "demo::inner".to_string(),
                 doc_comments: Vec::new(),
                 attributes: vec![ApiAttribute {
@@ -158,6 +215,7 @@ fn marks_doc_comments_and_omits_them_from_markdown() {
         parser_version: "0.0.0".to_string(),
         package_metadata: Default::default(),
         root_module: ApiModule {
+            declaration_location: None,
             path: "demo".to_string(),
             doc_comments: vec![
                 "/// Demo crate.".to_string(),
@@ -211,6 +269,7 @@ fn renders_package_metadata_and_features_before_api() {
             ]),
         },
         root_module: ApiModule {
+            declaration_location: None,
             path: "azure_security_keyvault_secrets".to_string(),
             doc_comments: Vec::new(),
             attributes: Vec::new(),
@@ -294,6 +353,7 @@ fn omits_missing_package_metadata() {
         parser_version: "0.0.0".to_string(),
         package_metadata: Default::default(),
         root_module: ApiModule {
+            declaration_location: None,
             path: "demo".to_string(),
             doc_comments: Vec::new(),
             attributes: Vec::new(),
@@ -323,6 +383,7 @@ fn comments_patch_accounts_for_package_metadata_lines() {
             features: BTreeMap::from([("default".to_string(), vec!["dep:foo".to_string()])]),
         },
         root_module: ApiModule {
+            declaration_location: None,
             path: "demo".to_string(),
             doc_comments: vec!["//! Demo docs.".to_string()],
             attributes: Vec::new(),
