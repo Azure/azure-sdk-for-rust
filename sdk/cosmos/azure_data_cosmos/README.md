@@ -32,7 +32,7 @@ Please see the tracking issue at [Azure/azure-sdk-for-rust#5240](https://github.
 **NOTE:** This does NOT apply to the Windows emulator. Only the Linux emulators
 require disabling binary encoding.
 
-For now, you must disable Binary Encoding explcitly when building the client:
+For now, you must disable Binary Encoding explicitly when building the client:
 
 ```rust no_run
 use azure_data_cosmos::{options::BinaryEncodingOptions, CosmosClient};
