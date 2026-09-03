@@ -300,8 +300,12 @@ fn comments_patch_accounts_for_package_metadata_lines() {
     let parsed_patch = diffy::Patch::from_str(&patch).expect("patch should parse");
 
     assert!(api_without_docs.contains("**Description:**\nMulti-line\ncomment\n"));
-    assert!(patch.contains("@@ -12,5 +12,7 @@"));
-    assert!(patch.contains("+//! Demo docs.\n+/// Does foo.\n"));
+    assert!(patch.contains(
+        "@@ -15,1 +15,3 @@\n\
+         +//! Demo docs.\n\
+         +/// Does foo.\n\
+         \x20pub struct Foo;\n"
+    ));
     assert_eq!(
         diffy::apply(&api_without_docs, &parsed_patch).expect("patch should apply"),
         api_with_docs
