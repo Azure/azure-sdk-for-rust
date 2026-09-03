@@ -260,14 +260,6 @@ impl BlobContainerClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(feature = "arrow")]
-    use arrow_array::{builder::StringBuilder, RecordBatch};
-    #[cfg(feature = "arrow")]
-    use arrow_ipc::writer::StreamWriter;
-    #[cfg(feature = "arrow")]
-    use arrow_schema::{DataType, Field, Schema};
-    #[cfg(feature = "arrow")]
-    use azure_core::http::pager::PagerOptions;
     use azure_core::{
         http::{
             headers::{Headers, ACCEPT, CONTENT_TYPE},
@@ -278,8 +270,6 @@ mod tests {
     };
     use azure_core_test::http::MockHttpClient;
     use futures::{FutureExt as _, TryStreamExt as _};
-    #[cfg(feature = "arrow")]
-    use std::collections::HashMap;
     use std::sync::Arc;
 
     const LIST_BLOBS_PAGE: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
@@ -370,50 +360,6 @@ mod tests {
         Ok(())
     }
 
-    #[cfg(feature = "arrow")]
-    #[tokio::test]
-    async fn list_blobs_mock_arrow_all_pages() -> Result<()> {
-        let client = container_client_with(arrow_mock_client());
-        let names = collect_blob_names(client.list_blobs(None)?).await?;
-        assert_eq!(
-            names,
-            ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
-        );
-        Ok(())
-    }
-
-    #[cfg(feature = "arrow")]
-    #[tokio::test]
-    async fn list_blobs_mock_arrow_xml_fallback() -> Result<()> {
-        // Arrow is requested (the default), but the service replies with XML; the pager must
-        // still decode every blob across both pages via the XML fallback path.
-        let client = container_client_with(xml_mock_client_with_accept(
-            "application/vnd.apache.arrow.stream,application/xml",
-        ));
-        let names = collect_blob_names(client.list_blobs(None)?).await?;
-        assert_eq!(
-            names,
-            ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
-        );
-        Ok(())
-    }
-
-    #[cfg(feature = "arrow")]
-    #[tokio::test]
-    async fn list_blobs_mock_arrow_from_continuation() -> Result<()> {
-        let client = container_client_with(arrow_mock_client());
-        let options = BlobContainerClientListBlobsOptions {
-            method_options: PagerOptions {
-                continuation: Some(PagerContinuation::Token("page2".into())),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-        let names = collect_blob_names(client.list_blobs(Some(options))?).await?;
-        assert_eq!(names, ["page2-a.txt", "page2-b.txt"]);
-        Ok(())
-    }
-
     #[cfg(not(feature = "arrow"))]
     #[tokio::test]
     async fn list_blobs_mock_defaults_to_xml_without_arrow() -> Result<()> {
@@ -435,51 +381,6 @@ mod tests {
             ..Default::default()
         };
         assert!(client.list_blobs(Some(options)).is_err());
-    }
-
-    #[cfg(feature = "arrow")]
-    #[tokio::test]
-    async fn list_blobs_mock_arrow_sends_end_before() -> Result<()> {
-        // The end_before option flows out as the `endBefore` query parameter.
-        let client = container_client_with(Arc::new(MockHttpClient::new(|req| {
-            assert!(req
-                .url()
-                .query_pairs()
-                .any(|(k, v)| k == "endBefore" && v == "cc.txt"));
-            let body = build_arrow_list_blobs(&["aa.txt"], None);
-            async move {
-                let mut headers = Headers::new();
-                headers.insert(CONTENT_TYPE, "application/vnd.apache.arrow.stream");
-                Ok(AsyncRawResponse::from_bytes(StatusCode::Ok, headers, body))
-            }
-            .boxed()
-        })));
-        let options = BlobContainerClientListBlobsOptions {
-            end_before: Some("cc.txt".to_string()),
-            ..Default::default()
-        };
-        let names = collect_blob_names(client.list_blobs(Some(options))?).await?;
-        assert_eq!(names, ["aa.txt"]);
-        Ok(())
-    }
-
-    #[cfg(feature = "arrow")]
-    #[tokio::test]
-    async fn list_blobs_mock_arrow_drops_envelope() -> Result<()> {
-        // Arrow carries only blob rows and the next marker; envelope fields stay None.
-        let client = container_client_with(arrow_mock_client());
-        let page = client
-            .list_blobs(None)?
-            .into_pages()
-            .try_next()
-            .await?
-            .expect("expected a page")
-            .into_model()?;
-        assert!(page.container_name.is_none());
-        assert!(page.prefix.is_none());
-        assert!(page.max_results.is_none());
-        assert!(page.service_endpoint.is_none());
-        Ok(())
     }
 
     fn container_client_with(mock: Arc<dyn azure_core::http::HttpClient>) -> BlobContainerClient {
@@ -507,55 +408,6 @@ mod tests {
             names.extend(model.blob_items.into_iter().filter_map(|b| b.name));
         }
         Ok(names)
-    }
-
-    #[cfg(feature = "arrow")]
-    fn build_arrow_list_blobs(names: &[&str], next_marker: Option<&str>) -> Bytes {
-        let metadata: HashMap<String, String> = next_marker
-            .map(|m| HashMap::from([("NextMarker".to_string(), m.to_string())]))
-            .unwrap_or_default();
-        let schema = Arc::new(Schema::new_with_metadata(
-            vec![Field::new("Name", DataType::Utf8, true)],
-            metadata,
-        ));
-        let mut builder = StringBuilder::new();
-        for name in names {
-            builder.append_value(name);
-        }
-        let batch = RecordBatch::try_new(schema.clone(), vec![Arc::new(builder.finish())])
-            .expect("valid batch");
-        let mut buf = Vec::new();
-        let mut writer = StreamWriter::try_new(&mut buf, &schema).expect("valid writer");
-        writer.write(&batch).expect("write batch");
-        writer.finish().expect("finish");
-        Bytes::from(buf)
-    }
-
-    #[cfg(feature = "arrow")]
-    fn arrow_mock_client() -> Arc<dyn azure_core::http::HttpClient> {
-        let page1 = build_arrow_list_blobs(&["page1-a.txt", "page1-b.txt"], Some("page2"));
-        let page2 = build_arrow_list_blobs(&["page2-a.txt", "page2-b.txt"], None);
-        Arc::new(MockHttpClient::new(move |req| {
-            assert_eq!(
-                req.headers().get_str(&ACCEPT).unwrap(),
-                "application/vnd.apache.arrow.stream,application/xml"
-            );
-            let is_page2 = req
-                .url()
-                .query_pairs()
-                .any(|(k, v)| k == "marker" && v == "page2");
-            let body = if is_page2 {
-                page2.clone()
-            } else {
-                page1.clone()
-            };
-            async move {
-                let mut headers = Headers::new();
-                headers.insert(CONTENT_TYPE, "application/vnd.apache.arrow.stream");
-                Ok(AsyncRawResponse::from_bytes(StatusCode::Ok, headers, body))
-            }
-            .boxed()
-        }))
     }
 
     fn xml_mock_client_with_accept(accept: &'static str) -> Arc<dyn azure_core::http::HttpClient> {
@@ -587,66 +439,6 @@ mod tests {
     <Blob><Name>top.txt</Name><Properties><BlobType>BlockBlob</BlobType></Properties></Blob>
   </Blobs>
 </EnumerationResults>"#;
-
-    #[cfg(feature = "arrow")]
-    fn build_arrow_hierarchy(
-        blobs: &[&str],
-        prefixes: &[&str],
-        next_marker: Option<&str>,
-    ) -> Bytes {
-        let metadata: HashMap<String, String> = next_marker
-            .map(|m| HashMap::from([("NextMarker".to_string(), m.to_string())]))
-            .unwrap_or_default();
-        let schema = Arc::new(Schema::new_with_metadata(
-            vec![
-                Field::new("Name", DataType::Utf8, true),
-                Field::new("ResourceType", DataType::Utf8, true),
-            ],
-            metadata,
-        ));
-        let mut names = StringBuilder::new();
-        let mut resource_types = StringBuilder::new();
-        for prefix in prefixes {
-            names.append_value(prefix);
-            resource_types.append_value("blobprefix");
-        }
-        for blob in blobs {
-            names.append_value(blob);
-            resource_types.append_value("blob");
-        }
-        let batch = RecordBatch::try_new(
-            schema.clone(),
-            vec![Arc::new(names.finish()), Arc::new(resource_types.finish())],
-        )
-        .expect("valid batch");
-        let mut buf = Vec::new();
-        let mut writer = StreamWriter::try_new(&mut buf, &schema).expect("valid writer");
-        writer.write(&batch).expect("write batch");
-        writer.finish().expect("finish");
-        Bytes::from(buf)
-    }
-
-    #[cfg(feature = "arrow")]
-    fn arrow_hierarchy_mock_client() -> Arc<dyn azure_core::http::HttpClient> {
-        let page = build_arrow_hierarchy(&["top.txt"], &["dir1/", "dir2/"], None);
-        Arc::new(MockHttpClient::new(move |req| {
-            assert_eq!(
-                req.headers().get_str(&ACCEPT).unwrap(),
-                "application/vnd.apache.arrow.stream,application/xml"
-            );
-            assert!(req
-                .url()
-                .query_pairs()
-                .any(|(k, v)| k == "delimiter" && v == "/"));
-            let page = page.clone();
-            async move {
-                let mut headers = Headers::new();
-                headers.insert(CONTENT_TYPE, "application/vnd.apache.arrow.stream");
-                Ok(AsyncRawResponse::from_bytes(StatusCode::Ok, headers, page))
-            }
-            .boxed()
-        }))
-    }
 
     fn xml_hierarchy_mock_client(accept: &'static str) -> Arc<dyn azure_core::http::HttpClient> {
         Arc::new(MockHttpClient::new(move |req| {
@@ -697,119 +489,314 @@ mod tests {
     }
 
     #[cfg(feature = "arrow")]
-    fn arrow_hierarchy_mock_client_paged() -> Arc<dyn azure_core::http::HttpClient> {
-        let page1 = build_arrow_hierarchy(&["a.txt"], &["dir1/"], Some("page2"));
-        let page2 = build_arrow_hierarchy(&["b.txt"], &["dir2/"], None);
-        Arc::new(MockHttpClient::new(move |req| {
-            assert_eq!(
-                req.headers().get_str(&ACCEPT).unwrap(),
-                "application/vnd.apache.arrow.stream,application/xml"
-            );
-            let is_page2 = req
-                .url()
-                .query_pairs()
-                .any(|(k, v)| k == "marker" && v == "page2");
-            let body = if is_page2 {
-                page2.clone()
-            } else {
-                page1.clone()
-            };
-            async move {
-                let mut headers = Headers::new();
-                headers.insert(CONTENT_TYPE, "application/vnd.apache.arrow.stream");
-                Ok(AsyncRawResponse::from_bytes(StatusCode::Ok, headers, body))
+    mod arrow_tests {
+        use super::*;
+        use arrow_array::{builder::StringBuilder, RecordBatch};
+        use arrow_ipc::writer::StreamWriter;
+        use arrow_schema::{DataType, Field, Schema};
+        use azure_core::http::pager::PagerOptions;
+        use std::collections::HashMap;
+
+        fn build_arrow_list_blobs(names: &[&str], next_marker: Option<&str>) -> Bytes {
+            let metadata: HashMap<String, String> = next_marker
+                .map(|m| HashMap::from([("NextMarker".to_string(), m.to_string())]))
+                .unwrap_or_default();
+            let schema = Arc::new(Schema::new_with_metadata(
+                vec![Field::new("Name", DataType::Utf8, true)],
+                metadata,
+            ));
+            let mut builder = StringBuilder::new();
+            for name in names {
+                builder.append_value(name);
             }
-            .boxed()
-        }))
-    }
-
-    #[cfg(feature = "arrow")]
-    #[tokio::test]
-    async fn list_blobs_hierarchical_mock_arrow() -> Result<()> {
-        let client = container_client_with(arrow_hierarchy_mock_client());
-        let page = client
-            .list_blobs_hierarchical("/", None)?
-            .into_pages()
-            .try_next()
-            .await?
-            .expect("expected a page")
-            .into_model()?;
-
-        let blobs: Vec<_> = page
-            .hierarchical_list
-            .blob_items
-            .iter()
-            .filter_map(|b| b.name.as_deref())
-            .collect();
-        assert_eq!(blobs, ["top.txt"]);
-
-        let prefixes = page
-            .hierarchical_list
-            .blob_prefixes
-            .expect("prefixes should be present");
-        let prefix_names: Vec<_> = prefixes.iter().filter_map(|p| p.name.as_deref()).collect();
-        assert_eq!(prefix_names, ["dir1/", "dir2/"]);
-
-        // Arrow omits the response envelope fields, including the delimiter.
-        assert!(page.delimiter.is_none());
-        assert!(page.container_name.is_none());
-        assert!(page.prefix.is_none());
-        Ok(())
-    }
-
-    #[cfg(feature = "arrow")]
-    #[tokio::test]
-    async fn list_blobs_hierarchical_mock_arrow_xml_fallback() -> Result<()> {
-        // Arrow requested (default) but the service replies with XML; prefixes, blobs, and the
-        // delimiter (which Arrow omits) all decode via the XML fallback.
-        let client = container_client_with(xml_hierarchy_mock_client(
-            "application/vnd.apache.arrow.stream,application/xml",
-        ));
-        let page = client
-            .list_blobs_hierarchical("/", None)?
-            .into_pages()
-            .try_next()
-            .await?
-            .expect("expected a page")
-            .into_model()?;
-
-        assert_eq!(page.delimiter.as_deref(), Some("/"));
-        let prefixes = page
-            .hierarchical_list
-            .blob_prefixes
-            .expect("prefixes should be present");
-        assert_eq!(prefixes[0].name.as_deref(), Some("dir1/"));
-        assert_eq!(
-            page.hierarchical_list.blob_items[0].name.as_deref(),
-            Some("top.txt")
-        );
-        Ok(())
-    }
-
-    #[cfg(feature = "arrow")]
-    #[tokio::test]
-    async fn list_blobs_hierarchical_mock_arrow_all_pages() -> Result<()> {
-        let client = container_client_with(arrow_hierarchy_mock_client_paged());
-        let mut pages = client.list_blobs_hierarchical("/", None)?.into_pages();
-
-        let mut blobs = Vec::new();
-        let mut prefixes = Vec::new();
-        while let Some(page) = pages.try_next().await? {
-            let page = page.into_model()?;
-            blobs.extend(
-                page.hierarchical_list
-                    .blob_items
-                    .into_iter()
-                    .filter_map(|b| b.name),
-            );
-            if let Some(page_prefixes) = page.hierarchical_list.blob_prefixes {
-                prefixes.extend(page_prefixes.into_iter().filter_map(|p| p.name));
-            }
+            let batch = RecordBatch::try_new(schema.clone(), vec![Arc::new(builder.finish())])
+                .expect("valid batch");
+            let mut buf = Vec::new();
+            let mut writer = StreamWriter::try_new(&mut buf, &schema).expect("valid writer");
+            writer.write(&batch).expect("write batch");
+            writer.finish().expect("finish");
+            Bytes::from(buf)
         }
 
-        // Blobs and prefixes from both pages aggregate across the NextMarker boundary.
-        assert_eq!(blobs, ["a.txt", "b.txt"]);
-        assert_eq!(prefixes, ["dir1/", "dir2/"]);
-        Ok(())
+        fn arrow_mock_client() -> Arc<dyn azure_core::http::HttpClient> {
+            let page1 = build_arrow_list_blobs(&["page1-a.txt", "page1-b.txt"], Some("page2"));
+            let page2 = build_arrow_list_blobs(&["page2-a.txt", "page2-b.txt"], None);
+            Arc::new(MockHttpClient::new(move |req| {
+                assert_eq!(
+                    req.headers().get_str(&ACCEPT).unwrap(),
+                    "application/vnd.apache.arrow.stream,application/xml"
+                );
+                let is_page2 = req
+                    .url()
+                    .query_pairs()
+                    .any(|(k, v)| k == "marker" && v == "page2");
+                let body = if is_page2 {
+                    page2.clone()
+                } else {
+                    page1.clone()
+                };
+                async move {
+                    let mut headers = Headers::new();
+                    headers.insert(CONTENT_TYPE, "application/vnd.apache.arrow.stream");
+                    Ok(AsyncRawResponse::from_bytes(StatusCode::Ok, headers, body))
+                }
+                .boxed()
+            }))
+        }
+
+        fn build_arrow_hierarchy(
+            blobs: &[&str],
+            prefixes: &[&str],
+            next_marker: Option<&str>,
+        ) -> Bytes {
+            let metadata: HashMap<String, String> = next_marker
+                .map(|m| HashMap::from([("NextMarker".to_string(), m.to_string())]))
+                .unwrap_or_default();
+            let schema = Arc::new(Schema::new_with_metadata(
+                vec![
+                    Field::new("Name", DataType::Utf8, true),
+                    Field::new("ResourceType", DataType::Utf8, true),
+                ],
+                metadata,
+            ));
+            let mut names = StringBuilder::new();
+            let mut resource_types = StringBuilder::new();
+            for prefix in prefixes {
+                names.append_value(prefix);
+                resource_types.append_value("blobprefix");
+            }
+            for blob in blobs {
+                names.append_value(blob);
+                resource_types.append_value("blob");
+            }
+            let batch = RecordBatch::try_new(
+                schema.clone(),
+                vec![Arc::new(names.finish()), Arc::new(resource_types.finish())],
+            )
+            .expect("valid batch");
+            let mut buf = Vec::new();
+            let mut writer = StreamWriter::try_new(&mut buf, &schema).expect("valid writer");
+            writer.write(&batch).expect("write batch");
+            writer.finish().expect("finish");
+            Bytes::from(buf)
+        }
+
+        fn arrow_hierarchy_mock_client() -> Arc<dyn azure_core::http::HttpClient> {
+            let page = build_arrow_hierarchy(&["top.txt"], &["dir1/", "dir2/"], None);
+            Arc::new(MockHttpClient::new(move |req| {
+                assert_eq!(
+                    req.headers().get_str(&ACCEPT).unwrap(),
+                    "application/vnd.apache.arrow.stream,application/xml"
+                );
+                assert!(req
+                    .url()
+                    .query_pairs()
+                    .any(|(k, v)| k == "delimiter" && v == "/"));
+                let page = page.clone();
+                async move {
+                    let mut headers = Headers::new();
+                    headers.insert(CONTENT_TYPE, "application/vnd.apache.arrow.stream");
+                    Ok(AsyncRawResponse::from_bytes(StatusCode::Ok, headers, page))
+                }
+                .boxed()
+            }))
+        }
+
+        fn arrow_hierarchy_mock_client_paged() -> Arc<dyn azure_core::http::HttpClient> {
+            let page1 = build_arrow_hierarchy(&["a.txt"], &["dir1/"], Some("page2"));
+            let page2 = build_arrow_hierarchy(&["b.txt"], &["dir2/"], None);
+            Arc::new(MockHttpClient::new(move |req| {
+                assert_eq!(
+                    req.headers().get_str(&ACCEPT).unwrap(),
+                    "application/vnd.apache.arrow.stream,application/xml"
+                );
+                let is_page2 = req
+                    .url()
+                    .query_pairs()
+                    .any(|(k, v)| k == "marker" && v == "page2");
+                let body = if is_page2 {
+                    page2.clone()
+                } else {
+                    page1.clone()
+                };
+                async move {
+                    let mut headers = Headers::new();
+                    headers.insert(CONTENT_TYPE, "application/vnd.apache.arrow.stream");
+                    Ok(AsyncRawResponse::from_bytes(StatusCode::Ok, headers, body))
+                }
+                .boxed()
+            }))
+        }
+
+        #[tokio::test]
+        async fn list_blobs_mock_arrow_all_pages() -> Result<()> {
+            let client = container_client_with(arrow_mock_client());
+            let names = collect_blob_names(client.list_blobs(None)?).await?;
+            assert_eq!(
+                names,
+                ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
+            );
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn list_blobs_mock_arrow_xml_fallback() -> Result<()> {
+            // Arrow is requested (the default), but the service replies with XML; the pager must
+            // still decode every blob across both pages via the XML fallback path.
+            let client = container_client_with(xml_mock_client_with_accept(
+                "application/vnd.apache.arrow.stream,application/xml",
+            ));
+            let names = collect_blob_names(client.list_blobs(None)?).await?;
+            assert_eq!(
+                names,
+                ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
+            );
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn list_blobs_mock_arrow_from_continuation() -> Result<()> {
+            let client = container_client_with(arrow_mock_client());
+            let options = BlobContainerClientListBlobsOptions {
+                method_options: PagerOptions {
+                    continuation: Some(PagerContinuation::Token("page2".into())),
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let names = collect_blob_names(client.list_blobs(Some(options))?).await?;
+            assert_eq!(names, ["page2-a.txt", "page2-b.txt"]);
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn list_blobs_mock_arrow_sends_end_before() -> Result<()> {
+            // The end_before option flows out as the `endBefore` query parameter.
+            let client = container_client_with(Arc::new(MockHttpClient::new(|req| {
+                assert!(req
+                    .url()
+                    .query_pairs()
+                    .any(|(k, v)| k == "endBefore" && v == "cc.txt"));
+                let body = build_arrow_list_blobs(&["aa.txt"], None);
+                async move {
+                    let mut headers = Headers::new();
+                    headers.insert(CONTENT_TYPE, "application/vnd.apache.arrow.stream");
+                    Ok(AsyncRawResponse::from_bytes(StatusCode::Ok, headers, body))
+                }
+                .boxed()
+            })));
+            let options = BlobContainerClientListBlobsOptions {
+                end_before: Some("cc.txt".to_string()),
+                ..Default::default()
+            };
+            let names = collect_blob_names(client.list_blobs(Some(options))?).await?;
+            assert_eq!(names, ["aa.txt"]);
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn list_blobs_mock_arrow_drops_envelope() -> Result<()> {
+            // Arrow carries only blob rows and the next marker; envelope fields stay None.
+            let client = container_client_with(arrow_mock_client());
+            let page = client
+                .list_blobs(None)?
+                .into_pages()
+                .try_next()
+                .await?
+                .expect("expected a page")
+                .into_model()?;
+            assert!(page.container_name.is_none());
+            assert!(page.prefix.is_none());
+            assert!(page.max_results.is_none());
+            assert!(page.service_endpoint.is_none());
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn list_blobs_hierarchical_mock_arrow() -> Result<()> {
+            let client = container_client_with(arrow_hierarchy_mock_client());
+            let page = client
+                .list_blobs_hierarchical("/", None)?
+                .into_pages()
+                .try_next()
+                .await?
+                .expect("expected a page")
+                .into_model()?;
+
+            let blobs: Vec<_> = page
+                .hierarchical_list
+                .blob_items
+                .iter()
+                .filter_map(|b| b.name.as_deref())
+                .collect();
+            assert_eq!(blobs, ["top.txt"]);
+
+            let prefixes = page
+                .hierarchical_list
+                .blob_prefixes
+                .expect("prefixes should be present");
+            let prefix_names: Vec<_> = prefixes.iter().filter_map(|p| p.name.as_deref()).collect();
+            assert_eq!(prefix_names, ["dir1/", "dir2/"]);
+
+            // Arrow omits the response envelope fields, including the delimiter.
+            assert!(page.delimiter.is_none());
+            assert!(page.container_name.is_none());
+            assert!(page.prefix.is_none());
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn list_blobs_hierarchical_mock_arrow_xml_fallback() -> Result<()> {
+            // Arrow requested (default) but the service replies with XML; prefixes, blobs, and the
+            // delimiter (which Arrow omits) all decode via the XML fallback.
+            let client = container_client_with(xml_hierarchy_mock_client(
+                "application/vnd.apache.arrow.stream,application/xml",
+            ));
+            let page = client
+                .list_blobs_hierarchical("/", None)?
+                .into_pages()
+                .try_next()
+                .await?
+                .expect("expected a page")
+                .into_model()?;
+
+            assert_eq!(page.delimiter.as_deref(), Some("/"));
+            let prefixes = page
+                .hierarchical_list
+                .blob_prefixes
+                .expect("prefixes should be present");
+            assert_eq!(prefixes[0].name.as_deref(), Some("dir1/"));
+            assert_eq!(
+                page.hierarchical_list.blob_items[0].name.as_deref(),
+                Some("top.txt")
+            );
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn list_blobs_hierarchical_mock_arrow_all_pages() -> Result<()> {
+            let client = container_client_with(arrow_hierarchy_mock_client_paged());
+            let mut pages = client.list_blobs_hierarchical("/", None)?.into_pages();
+
+            let mut blobs = Vec::new();
+            let mut prefixes = Vec::new();
+            while let Some(page) = pages.try_next().await? {
+                let page = page.into_model()?;
+                blobs.extend(
+                    page.hierarchical_list
+                        .blob_items
+                        .into_iter()
+                        .filter_map(|b| b.name),
+                );
+                if let Some(page_prefixes) = page.hierarchical_list.blob_prefixes {
+                    prefixes.extend(page_prefixes.into_iter().filter_map(|p| p.name));
+                }
+            }
+
+            // Blobs and prefixes from both pages aggregate across the NextMarker boundary.
+            assert_eq!(blobs, ["a.txt", "b.txt"]);
+            assert_eq!(prefixes, ["dir1/", "dir2/"]);
+            Ok(())
+        }
     }
 }

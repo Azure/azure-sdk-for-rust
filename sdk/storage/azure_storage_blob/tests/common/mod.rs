@@ -27,19 +27,15 @@ use azure_core::{
     Bytes, Result,
 };
 use azure_core_test::{Recording, TestMode};
-#[cfg(feature = "arrow")]
-use azure_storage_blob::models::{
-    BlobContainerClientListBlobsOptions, BlobItem, ListBlobsIncludeItem,
-};
 use azure_storage_blob::{
     models::{
-        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
-        EncryptionAlgorithmType,
+        BlobContainerClientListBlobsOptions, BlobItem, BlockBlobClientUploadOptions,
+        BlockBlobClientUploadResult, BlockLookupList, EncryptionAlgorithmType,
+        ListBlobsIncludeItem,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
     BlobServiceClient, BlobServiceClientOptions,
 };
-#[cfg(feature = "arrow")]
 use futures::TryStreamExt;
 
 pub const KB: usize = 1024;
@@ -244,11 +240,8 @@ pub async fn create_test_blob(
     }
 }
 
-/// Lists blobs in `container_client` using the Apache Arrow accept format and returns every
-/// decoded blob item across all pages. Used by Arrow field-mapping tests to verify listed
-/// properties over the wire.
-#[cfg(feature = "arrow")]
-pub async fn list_blobs_arrow(
+/// Lists blobs in `container_client` and returns every decoded item across all pages.
+pub async fn list_blobs_with_include(
     container_client: &BlobContainerClient,
     include: Option<Vec<ListBlobsIncludeItem>>,
 ) -> Result<Vec<BlobItem>> {

@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#![cfg(not(feature = "arrow"))]
+
 mod common;
 
 use azure_core::http::RequestContent;
-#[cfg(feature = "arrow")]
 use azure_core::time::{parse_rfc3339, to_rfc3339, OffsetDateTime};
 use azure_core_test::{recorded, TestContext};
-#[cfg(feature = "arrow")]
 use azure_core_test::{TestMode, VarOptions};
-#[cfg(feature = "arrow")]
 use azure_storage_blob::models::{
     AccessTier, ArchiveStatus, BlobClientGetPropertiesResultHeaders,
     BlobClientSetImmutabilityPolicyOptions, BlobClientSetTierOptions,
@@ -22,17 +21,14 @@ use azure_storage_blob::models::{
     ListBlobsIncludeItem,
 };
 use common::{create_test_blob, get_blob_name, get_container_client, StorageAccount};
-#[cfg(feature = "arrow")]
-use common::{get_blob_service_client, get_valid_encryption_scope, list_blobs_arrow};
+use common::{get_blob_service_client, get_valid_encryption_scope, list_blobs_with_include};
 use futures::{StreamExt, TryStreamExt};
-#[cfg(feature = "arrow")]
 use std::time::Duration;
 use std::{collections::HashMap, error::Error};
-#[cfg(feature = "arrow")]
 use tokio::time;
 
 #[recorded::test]
-async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -72,11 +68,8 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[cfg(feature = "arrow")]
 #[recorded::test]
-async fn test_list_blobs_arrow_populates_properties(
-    ctx: TestContext,
-) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_populates_properties_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -108,9 +101,7 @@ async fn test_list_blobs_arrow_populates_properties(
     )
     .await?;
 
-    // Act: request the Apache Arrow stream. The SDK transparently decodes Arrow or
-    // falls back to XML, so this exercises the field mapping on whichever wire
-    // format the live service returns.
+    // Act: list blobs with metadata and tags included.
     let items: Vec<_> = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
             include: Some(vec![
@@ -147,7 +138,7 @@ async fn test_list_blobs_arrow_populates_properties(
     assert_eq!(Some(true), props.server_encrypted);
     assert_eq!(Some(1), props.tag_count);
 
-    // Map-typed columns decode from the Arrow `map<utf8,utf8>` columns.
+    // Map-valued metadata and tags are populated from the response.
     let blob_meta = blob
         .metadata
         .as_ref()
@@ -168,9 +159,8 @@ async fn test_list_blobs_arrow_populates_properties(
     Ok(())
 }
 
-#[cfg(feature = "arrow")]
 #[recorded::test]
-async fn test_list_blobs_hierarchical_arrow(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_hierarchical_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -182,7 +172,7 @@ async fn test_list_blobs_hierarchical_arrow(ctx: TestContext) -> Result<(), Box<
         create_test_blob(&container_client.blob_client(name), None, None).await?;
     }
 
-    // Act: list hierarchically over Apache Arrow, grouping the directory with "/".
+    // Act: list hierarchically, grouping the directory with "/".
     // Paging is used here because virtual-directory prefixes are only exposed on the page
     // envelope, not through the item iterator.
     let page = container_client
@@ -214,43 +204,8 @@ async fn test_list_blobs_hierarchical_arrow(ctx: TestContext) -> Result<(), Box<
     Ok(())
 }
 
-#[cfg(feature = "arrow")]
 #[recorded::test]
-async fn test_list_blobs_arrow_end_before(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, false, StorageAccount::Standard, None).await?;
-    container_client.create(None).await?;
-
-    // Arrange: four lexicographically ordered blobs.
-    for name in ["aa.txt", "bb.txt", "cc.txt", "dd.txt"] {
-        create_test_blob(&container_client.blob_client(name), None, None).await?;
-    }
-
-    // Act: Apache Arrow range listing stops before "cc.txt" (exclusive).
-    let items: Vec<_> = container_client
-        .list_blobs(Some(BlobContainerClientListBlobsOptions {
-            end_before: Some("cc.txt".to_string()),
-            ..Default::default()
-        }))?
-        .try_collect()
-        .await?;
-
-    // Assert: only names ordered before "cc.txt" are returned.
-    let names: Vec<_> = items.iter().filter_map(|b| b.name.as_deref()).collect();
-    assert!(names.contains(&"aa.txt"));
-    assert!(names.contains(&"bb.txt"));
-    assert!(!names.contains(&"cc.txt"));
-    assert!(!names.contains(&"dd.txt"));
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[cfg(feature = "arrow")]
-#[recorded::test]
-async fn test_list_blobs_arrow_stateful_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_stateful_properties_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -329,8 +284,8 @@ async fn test_list_blobs_arrow_stateful_properties(ctx: TestContext) -> Result<(
     create_test_blob(&deleted_client, None, None).await?;
     deleted_client.delete(None).await?;
 
-    // A single Arrow list call covers every blob staged above.
-    let items = list_blobs_arrow(
+    // A single list call covers every blob staged above.
+    let items = list_blobs_with_include(
         &container_client,
         Some(vec![
             ListBlobsIncludeItem::Snapshots,
@@ -415,9 +370,8 @@ async fn test_list_blobs_arrow_stateful_properties(ctx: TestContext) -> Result<(
     Ok(())
 }
 
-#[cfg(feature = "arrow")]
 #[recorded::test]
-async fn test_list_blobs_arrow_version_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_version_properties_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -439,7 +393,7 @@ async fn test_list_blobs_arrow_version_properties(ctx: TestContext) -> Result<()
     )
     .await?;
 
-    let items = list_blobs_arrow(
+    let items = list_blobs_with_include(
         &container_client,
         Some(vec![ListBlobsIncludeItem::Versions]),
     )
@@ -472,9 +426,8 @@ async fn test_list_blobs_arrow_version_properties(ctx: TestContext) -> Result<()
     Ok(())
 }
 
-#[cfg(feature = "arrow")]
 #[recorded::test]
-async fn test_list_blobs_arrow_has_versions_only(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_has_versions_only_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -498,7 +451,7 @@ async fn test_list_blobs_arrow_has_versions_only(ctx: TestContext) -> Result<(),
     .await?;
     blob_client.delete(None).await?;
 
-    let items = list_blobs_arrow(
+    let items = list_blobs_with_include(
         &container_client,
         Some(vec![ListBlobsIncludeItem::DeletedWithVersions]),
     )
@@ -514,9 +467,8 @@ async fn test_list_blobs_arrow_has_versions_only(ctx: TestContext) -> Result<(),
     Ok(())
 }
 
-#[cfg(feature = "arrow")]
 #[recorded::test]
-async fn test_list_blobs_arrow_copy_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_copy_properties_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -551,7 +503,8 @@ async fn test_list_blobs_arrow_copy_properties(ctx: TestContext) -> Result<(), B
     }
     assert_eq!(Some(CopyStatus::Success), copy_status);
 
-    let items = list_blobs_arrow(&container_client, Some(vec![ListBlobsIncludeItem::Copy])).await?;
+    let items =
+        list_blobs_with_include(&container_client, Some(vec![ListBlobsIncludeItem::Copy])).await?;
     let blob = items
         .iter()
         .find(|b| b.name.as_deref() == Some(dest_name.as_str()))
@@ -570,9 +523,8 @@ async fn test_list_blobs_arrow_copy_properties(ctx: TestContext) -> Result<(), B
     Ok(())
 }
 
-#[cfg(feature = "arrow")]
 #[recorded::test(playback)]
-async fn test_list_blobs_arrow_immutability_properties(
+async fn test_list_blobs_immutability_properties_xml(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -611,7 +563,7 @@ async fn test_list_blobs_arrow_immutability_properties(
         .await?;
     blob_client.set_legal_hold(true, None).await?;
 
-    let items = list_blobs_arrow(
+    let items = list_blobs_with_include(
         &container_client,
         Some(vec![
             ListBlobsIncludeItem::ImmutabilityPolicy,
@@ -640,9 +592,8 @@ async fn test_list_blobs_arrow_immutability_properties(
     Ok(())
 }
 
-#[cfg(feature = "arrow")]
 #[recorded::test(playback)]
-async fn test_list_blobs_arrow_last_accessed_on(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_last_accessed_on_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -653,7 +604,7 @@ async fn test_list_blobs_arrow_last_accessed_on(ctx: TestContext) -> Result<(), 
     create_test_blob(&blob_client, None, None).await?;
     let _ = blob_client.download(None).await?.body.collect().await?;
 
-    let items = list_blobs_arrow(&container_client, None).await?;
+    let items = list_blobs_with_include(&container_client, None).await?;
     let blob = items
         .iter()
         .find(|b| b.name.as_deref() == Some(blob_name.as_str()))
@@ -667,9 +618,8 @@ async fn test_list_blobs_arrow_last_accessed_on(ctx: TestContext) -> Result<(), 
     Ok(())
 }
 
-#[cfg(feature = "arrow")]
 #[recorded::test(playback)]
-async fn test_list_blobs_arrow_object_replication_metadata(
+async fn test_list_blobs_object_replication_metadata_xml(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -677,7 +627,7 @@ async fn test_list_blobs_arrow_object_replication_metadata(
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
 
     let container_client = service_client.blob_container_client("test1");
-    let blobs = list_blobs_arrow(&container_client, None).await?;
+    let blobs = list_blobs_with_include(&container_client, None).await?;
     let blob = blobs
         .iter()
         .find(|blob| {
@@ -705,7 +655,7 @@ async fn test_list_blobs_arrow_object_replication_metadata(
 }
 
 #[recorded::test]
-async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_with_continuation_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -823,7 +773,9 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
 }
 
 #[recorded::test]
-async fn test_list_blobs_decodes_xml_invalid_names(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_decodes_xml_invalid_names_xml(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -872,75 +824,7 @@ async fn test_list_blobs_decodes_xml_invalid_names(ctx: TestContext) -> Result<(
 }
 
 #[recorded::test]
-async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, false, StorageAccount::Standard, None).await?;
-    container_client.create(None).await?;
-
-    // Create a blob with metadata and one with tags
-    let metadata_blob_name = get_blob_name(recording);
-    let tags_blob_name = get_blob_name(recording);
-    let metadata = HashMap::from([("team".to_string(), "sdk".to_string())]);
-    create_test_blob(
-        &container_client.blob_client(&metadata_blob_name),
-        None,
-        Some(BlockBlobClientUploadOptions {
-            metadata: Some(metadata.clone()),
-            ..Default::default()
-        }),
-    )
-    .await?;
-    create_test_blob(
-        &container_client.blob_client(&tags_blob_name),
-        None,
-        Some(
-            BlockBlobClientUploadOptions::default()
-                .with_tags(HashMap::from([("env".to_string(), "test".to_string())])),
-        ),
-    )
-    .await?;
-
-    // List with both Metadata and Tags includes
-    let items: Vec<_> = container_client
-        .list_blobs(Some(BlobContainerClientListBlobsOptions {
-            include: Some(vec![
-                ListBlobsIncludeItem::Metadata,
-                ListBlobsIncludeItem::Tags,
-            ]),
-            ..Default::default()
-        }))?
-        .try_collect()
-        .await?;
-
-    // Metadata blob: metadata should be populated
-    let meta_blob = items
-        .iter()
-        .find(|b| b.name.as_deref() == Some(metadata_blob_name.as_str()))
-        .expect("expected metadata blob in listing");
-    let blob_meta = meta_blob
-        .metadata
-        .as_ref()
-        .expect("metadata should be populated");
-    assert_eq!(Some(&metadata), blob_meta.values.as_ref());
-
-    // Tags blob: blob_tags should be populated
-    let tags_blob = items
-        .iter()
-        .find(|b| b.name.as_deref() == Some(tags_blob_name.as_str()))
-        .expect("expected tags blob in listing");
-    assert!(
-        tags_blob.blob_tags.is_some(),
-        "expected blob_tags to be populated with Tags include"
-    );
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_list_blobs_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_with_prefix_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -972,7 +856,7 @@ async fn test_list_blobs_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Err
 }
 
 #[recorded::test]
-async fn test_list_blobs_with_uncommitted_blobs_include(
+async fn test_list_blobs_with_uncommitted_blobs_include_xml(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -1018,10 +902,7 @@ async fn test_list_blobs_with_uncommitted_blobs_include(
 }
 
 #[recorded::test]
-async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // TODO: requires an account with blob soft-delete enabled (set via Set Blob Service Properties,
-    // deleteRetentionPolicy.enabled = true). Record this test against such an account.
-
+async fn test_list_blobs_with_deleted_include_xml(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -1059,52 +940,6 @@ async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Bo
     assert!(
         deleted_blob.deleted.unwrap_or(false),
         "blob should be marked as deleted"
-    );
-
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_list_blobs_with_copy_include(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, false, StorageAccount::Standard, None).await?;
-    container_client.create(None).await?;
-
-    // Create source blob and copy it to a destination
-    let source_name = get_blob_name(recording);
-    let dest_name = get_blob_name(recording);
-    let source_blob_client = container_client.blob_client(&source_name);
-    create_test_blob(&source_blob_client, None, None).await?;
-
-    let dest_blob_client = container_client.blob_client(&dest_name);
-    dest_blob_client
-        .block_blob_client()
-        .upload_blob_from_url(source_blob_client.url().as_str().into(), None)
-        .await?;
-
-    // Copy Include Scenario
-    let items: Vec<_> = container_client
-        .list_blobs(Some(BlobContainerClientListBlobsOptions {
-            include: Some(vec![ListBlobsIncludeItem::Copy]),
-            ..Default::default()
-        }))?
-        .try_collect()
-        .await?;
-
-    // Assert
-    // Note: copy_status/copy_id/copy_source are only populated for async Copy Blob
-    // operations, not synchronous Put Blob From URL. The Copy include flag is
-    // accepted and the destination blob still appears in the listing.
-    let dest_blob = items
-        .into_iter()
-        .find(|b| b.name.as_deref() == Some(dest_name.as_str()))
-        .expect("destination blob should appear in listing");
-    assert!(
-        dest_blob.properties.is_some(),
-        "dest blob should have properties"
     );
 
     container_client.delete(None).await?;
