@@ -19,13 +19,13 @@ pub use crate::generated::models::*;
 pub use download_result::{
     BlobClientDownloadIntoResult, BlobClientDownloadResult, BlobDownloadProperties,
 };
+pub(crate) use format::decode_next_marker;
 pub use format::AutoFormat;
 pub use method_options::BlobClientDownloadOptions;
 pub use method_options::BlockBlobClientUploadOptions;
 pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
 pub use method_options::{
     BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
-    StorageResponseFormat,
 };
 pub use upload_result::BlockBlobClientUploadResult;
 pub use upload_result::BlockBlobClientUploadResult as BlobClientUploadResult;

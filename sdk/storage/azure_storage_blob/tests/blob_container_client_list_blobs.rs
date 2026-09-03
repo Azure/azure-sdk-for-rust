@@ -3,25 +3,32 @@
 
 mod common;
 
-use azure_core::{
-    http::RequestContent,
-    time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
-};
-use azure_core_test::{recorded, TestContext, TestMode, VarOptions};
+use azure_core::http::RequestContent;
+#[cfg(feature = "arrow")]
+use azure_core::time::{parse_rfc3339, to_rfc3339, OffsetDateTime};
+use azure_core_test::{recorded, TestContext};
+#[cfg(feature = "arrow")]
+use azure_core_test::{TestMode, VarOptions};
+#[cfg(feature = "arrow")]
 use azure_storage_blob::models::{
     AccessTier, ArchiveStatus, BlobClientGetPropertiesResultHeaders,
     BlobClientSetImmutabilityPolicyOptions, BlobClientSetTierOptions,
-    BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions, BlobType,
-    BlockBlobClientUploadOptions, CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState,
-    LeaseStatus, ListBlobsIncludeItem, PageBlobClientSetSequenceNumberOptions, RehydratePriority,
-    SequenceNumberActionType, StorageResponseFormat,
+    BlobContainerClientListBlobsHierarchicalOptions, CopyStatus, ImmutabilityPolicyMode,
+    LeaseDuration, LeaseState, LeaseStatus, PageBlobClientSetSequenceNumberOptions,
+    RehydratePriority, SequenceNumberActionType,
 };
-use common::{
-    create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_valid_encryption_scope, list_blobs_arrow, StorageAccount,
+use azure_storage_blob::models::{
+    BlobContainerClientListBlobsOptions, BlobType, BlockBlobClientUploadOptions,
+    ListBlobsIncludeItem,
 };
+use common::{create_test_blob, get_blob_name, get_container_client, StorageAccount};
+#[cfg(feature = "arrow")]
+use common::{get_blob_service_client, get_valid_encryption_scope, list_blobs_arrow};
 use futures::{StreamExt, TryStreamExt};
-use std::{collections::HashMap, error::Error, time::Duration};
+#[cfg(feature = "arrow")]
+use std::time::Duration;
+use std::{collections::HashMap, error::Error};
+#[cfg(feature = "arrow")]
 use tokio::time;
 
 #[recorded::test]
@@ -65,6 +72,7 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[cfg(feature = "arrow")]
 #[recorded::test]
 async fn test_list_blobs_arrow_populates_properties(
     ctx: TestContext,
@@ -105,7 +113,6 @@ async fn test_list_blobs_arrow_populates_properties(
     // format the live service returns.
     let items: Vec<_> = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
-            response_format: Some(StorageResponseFormat::Arrow),
             include: Some(vec![
                 ListBlobsIncludeItem::Metadata,
                 ListBlobsIncludeItem::Tags,
@@ -161,6 +168,7 @@ async fn test_list_blobs_arrow_populates_properties(
     Ok(())
 }
 
+#[cfg(feature = "arrow")]
 #[recorded::test]
 async fn test_list_blobs_hierarchical_arrow(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -181,7 +189,6 @@ async fn test_list_blobs_hierarchical_arrow(ctx: TestContext) -> Result<(), Box<
         .list_blobs_hierarchical(
             "/",
             Some(BlobContainerClientListBlobsHierarchicalOptions {
-                response_format: Some(StorageResponseFormat::Arrow),
                 ..Default::default()
             }),
         )?
@@ -207,6 +214,7 @@ async fn test_list_blobs_hierarchical_arrow(ctx: TestContext) -> Result<(), Box<
     Ok(())
 }
 
+#[cfg(feature = "arrow")]
 #[recorded::test]
 async fn test_list_blobs_arrow_end_before(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -223,7 +231,6 @@ async fn test_list_blobs_arrow_end_before(ctx: TestContext) -> Result<(), Box<dy
     // Act: Apache Arrow range listing stops before "cc.txt" (exclusive).
     let items: Vec<_> = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
-            response_format: Some(StorageResponseFormat::Arrow),
             end_before: Some("cc.txt".to_string()),
             ..Default::default()
         }))?
@@ -241,6 +248,7 @@ async fn test_list_blobs_arrow_end_before(ctx: TestContext) -> Result<(), Box<dy
     Ok(())
 }
 
+#[cfg(feature = "arrow")]
 #[recorded::test]
 async fn test_list_blobs_arrow_stateful_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -407,6 +415,7 @@ async fn test_list_blobs_arrow_stateful_properties(ctx: TestContext) -> Result<(
     Ok(())
 }
 
+#[cfg(feature = "arrow")]
 #[recorded::test]
 async fn test_list_blobs_arrow_version_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -463,6 +472,7 @@ async fn test_list_blobs_arrow_version_properties(ctx: TestContext) -> Result<()
     Ok(())
 }
 
+#[cfg(feature = "arrow")]
 #[recorded::test]
 async fn test_list_blobs_arrow_has_versions_only(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -504,6 +514,7 @@ async fn test_list_blobs_arrow_has_versions_only(ctx: TestContext) -> Result<(),
     Ok(())
 }
 
+#[cfg(feature = "arrow")]
 #[recorded::test]
 async fn test_list_blobs_arrow_copy_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -559,6 +570,7 @@ async fn test_list_blobs_arrow_copy_properties(ctx: TestContext) -> Result<(), B
     Ok(())
 }
 
+#[cfg(feature = "arrow")]
 #[recorded::test(playback)]
 async fn test_list_blobs_arrow_immutability_properties(
     ctx: TestContext,
@@ -628,6 +640,7 @@ async fn test_list_blobs_arrow_immutability_properties(
     Ok(())
 }
 
+#[cfg(feature = "arrow")]
 #[recorded::test(playback)]
 async fn test_list_blobs_arrow_last_accessed_on(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -654,6 +667,7 @@ async fn test_list_blobs_arrow_last_accessed_on(ctx: TestContext) -> Result<(), 
     Ok(())
 }
 
+#[cfg(feature = "arrow")]
 #[recorded::test(playback)]
 async fn test_list_blobs_arrow_object_replication_metadata(
     ctx: TestContext,

@@ -111,40 +111,11 @@ impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptio
     }
 }
 
-/// The response format requested by
-/// [`BlobContainerClient::list_blobs`](crate::BlobContainerClient::list_blobs) and
-/// [`BlobContainerClient::list_blobs_hierarchical`](crate::BlobContainerClient::list_blobs_hierarchical).
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub enum StorageResponseFormat {
-    /// Prefer Apache Arrow and allow the service to fall back to XML.
-    ///
-    /// Over Apache Arrow the service returns only the blob rows (and prefixes, for a hierarchical
-    /// listing) plus the next marker, so the response envelope fields (such as `container_name`,
-    /// `marker`, `max_results`, `prefix`, and `service_endpoint`) are `None`. Request
-    /// [`Xml`](Self::Xml) to populate them.
-    #[default]
-    Arrow,
-
-    /// Request XML only.
-    Xml,
-}
-
-impl StorageResponseFormat {
-    pub(crate) fn as_header_value(self) -> &'static str {
-        match self {
-            Self::Arrow => "application/vnd.apache.arrow.stream,application/xml",
-            Self::Xml => "application/xml",
-        }
-    }
-}
-
 /// Options to be passed to [`BlobContainerClient::list_blobs`](crate::BlobContainerClient::list_blobs).
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientListBlobsOptions<'a> {
-    /// Selects the response format. Defaults to [`StorageResponseFormat::Arrow`].
-    pub response_format: Option<StorageResponseFormat>,
-
-    /// Filters the results to return only names that are ordered before this value. Only applies to the Apache Arrow scenario.
+    /// Filters the results to return only names that are ordered before this value. Requires the
+    /// `arrow` feature.
     pub end_before: Option<String>,
 
     /// Specify to include additional, optional information.
@@ -172,7 +143,6 @@ pub struct BlobContainerClientListBlobsOptions<'a> {
 impl BlobContainerClientListBlobsOptions<'_> {
     pub(crate) fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
         BlobContainerClientListBlobsOptions {
-            response_format: self.response_format,
             end_before: self.end_before,
             include: self.include,
             marker: self.marker,
@@ -207,10 +177,8 @@ impl BlobContainerClientListBlobsOptions<'_> {
 /// Options to be passed to [`BlobContainerClient::list_blobs_hierarchical`](crate::BlobContainerClient::list_blobs_hierarchical).
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientListBlobsHierarchicalOptions<'a> {
-    /// Selects the response format. Defaults to [`StorageResponseFormat::Arrow`].
-    pub response_format: Option<StorageResponseFormat>,
-
-    /// Filters the results to return only names that are ordered before this value. Only applies to the Apache Arrow scenario.
+    /// Filters the results to return only names that are ordered before this value. Requires the
+    /// `arrow` feature.
     pub end_before: Option<String>,
 
     /// Specify to include additional, optional information.
@@ -238,7 +206,6 @@ pub struct BlobContainerClientListBlobsHierarchicalOptions<'a> {
 impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
     pub(crate) fn into_owned(self) -> BlobContainerClientListBlobsHierarchicalOptions<'static> {
         BlobContainerClientListBlobsHierarchicalOptions {
-            response_format: self.response_format,
             end_before: self.end_before,
             include: self.include,
             marker: self.marker,

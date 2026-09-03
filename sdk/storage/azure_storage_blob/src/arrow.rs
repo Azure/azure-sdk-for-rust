@@ -15,59 +15,14 @@ use arrow_schema::{ArrowError, DataType, TimeUnit};
 use azure_core::{
     base64,
     error::{Error, ErrorKind},
-    http::{
-        headers::{self, Headers},
-        Etag,
-    },
+    http::Etag,
     time::OffsetDateTime,
     Result,
 };
-use serde::Deserialize;
 
 const NEXT_MARKER_KEY: &str = "NextMarker";
-const ARROW_CONTENT_TYPE: &str = "application/vnd.apache.arrow.stream";
-const XML_CONTENT_TYPE: &str = "application/xml";
 
-#[derive(Clone, Copy)]
-pub(crate) enum WireFormat {
-    Arrow,
-    Xml,
-}
-
-pub(crate) fn decode_next_marker(headers: &Headers, bytes: &[u8]) -> Result<Option<String>> {
-    match wire_format(headers)? {
-        WireFormat::Arrow => arrow_next_marker(bytes),
-        WireFormat::Xml => {
-            #[derive(Deserialize)]
-            struct ListBlobsPage {
-                #[serde(rename = "NextMarker")]
-                next_marker: Option<String>,
-            }
-
-            let page: ListBlobsPage = azure_core::xml::from_xml(bytes)?;
-            Ok(page.next_marker.filter(|marker| !marker.is_empty()))
-        }
-    }
-}
-
-pub(crate) fn wire_format(headers: &Headers) -> Result<WireFormat> {
-    let Some(content_type) = headers.get_optional_str(&headers::CONTENT_TYPE) else {
-        return Ok(WireFormat::Xml);
-    };
-    let media_type = content_type.split(';').next().unwrap_or_default().trim();
-    if media_type.eq_ignore_ascii_case(ARROW_CONTENT_TYPE) {
-        Ok(WireFormat::Arrow)
-    } else if media_type.eq_ignore_ascii_case(XML_CONTENT_TYPE) {
-        Ok(WireFormat::Xml)
-    } else {
-        Err(Error::with_message(
-            ErrorKind::DataConversion,
-            format!("unsupported list blobs Content-Type: {content_type}"),
-        ))
-    }
-}
-
-fn arrow_next_marker(bytes: &[u8]) -> Result<Option<String>> {
+pub(crate) fn decode_arrow_next_marker(bytes: &[u8]) -> Result<Option<String>> {
     let reader = StreamReader::try_new(bytes, None).map_err(to_error)?;
     Ok(reader
         .schema()
@@ -722,12 +677,7 @@ mod tests {
             writer.finish().unwrap();
         }
 
-        assert_eq!(None, arrow_next_marker(&buffer).unwrap());
-    }
-
-    #[test]
-    fn missing_content_type_defaults_to_xml() {
-        assert!(matches!(wire_format(&Headers::new()), Ok(WireFormat::Xml)));
+        assert_eq!(None, decode_arrow_next_marker(&buffer).unwrap());
     }
 
     #[test]

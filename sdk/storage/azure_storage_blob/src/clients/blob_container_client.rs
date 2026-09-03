@@ -4,9 +4,8 @@
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
 use crate::{
-    arrow::decode_next_marker,
     models::{
-        AutoFormat, BlobContainerClientListBlobsHierarchicalOptions,
+        decode_next_marker, AutoFormat, BlobContainerClientListBlobsHierarchicalOptions,
         BlobContainerClientListBlobsOptions, ListBlobsHierarchicalResponse, ListBlobsResponse,
         StorageErrorCode,
     },
@@ -23,6 +22,11 @@ use azure_core::{
     tracing, Result,
 };
 use std::sync::Arc;
+
+#[cfg(feature = "arrow")]
+const LIST_BLOBS_ACCEPT: &str = "application/vnd.apache.arrow.stream,application/xml";
+#[cfg(not(feature = "arrow"))]
+const LIST_BLOBS_ACCEPT: &str = "application/xml";
 
 impl BlobContainerClient {
     /// Creates a new BlobContainerClient from a container URL.
@@ -126,10 +130,8 @@ impl BlobContainerClient {
 
     /// Returns a list of the blobs in the specified container.
     ///
-    /// The response format defaults to
-    /// [`StorageResponseFormat::Arrow`](crate::models::StorageResponseFormat::Arrow); see
-    /// [`StorageResponseFormat`](crate::models::StorageResponseFormat) for the available formats
-    /// and how to select one.
+    /// Requests Apache Arrow with XML fallback when the `arrow` feature is enabled and XML only
+    /// otherwise.
     ///
     /// # Arguments
     ///
@@ -140,10 +142,13 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
     ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
         let options = options.unwrap_or_default().into_owned();
-        let accept = options
-            .response_format
-            .unwrap_or_default()
-            .as_header_value();
+        #[cfg(not(feature = "arrow"))]
+        if options.end_before.is_some() {
+            return Err(azure_core::Error::with_message(
+                ErrorKind::DataConversion,
+                "end_before requires the `arrow` feature",
+            ));
+        }
         let pager_options = options.method_options.clone();
         let client = Arc::new(BlobContainerClient {
             endpoint: self.endpoint.clone(),
@@ -163,7 +168,7 @@ impl BlobContainerClient {
                 }
                 Box::pin(async move {
                     let response = client
-                        .list_blobs_internal(accept.to_string(), Some(options))
+                        .list_blobs_internal(LIST_BLOBS_ACCEPT.to_string(), Some(options))
                         .await?;
                     let (status, headers, body) = response.deconstruct();
                     let body = body.collect().await?;
@@ -186,9 +191,8 @@ impl BlobContainerClient {
     /// directories using `delimiter`.
     ///
     /// Virtual directories are returned as [`BlobPrefix`](crate::models::BlobPrefix) entries on the
-    /// page's [`hierarchical_list`](crate::models::BlobHierarchyList). The response format defaults
-    /// to [`StorageResponseFormat::Arrow`](crate::models::StorageResponseFormat::Arrow); see
-    /// [`StorageResponseFormat`](crate::models::StorageResponseFormat) for details.
+    /// page's [`hierarchical_list`](crate::models::BlobHierarchyList). Requests Apache Arrow with
+    /// XML fallback when the `arrow` feature is enabled and XML only otherwise.
     ///
     /// # Arguments
     ///
@@ -201,10 +205,13 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobsHierarchicalOptions<'_>>,
     ) -> Result<Pager<ListBlobsHierarchicalResponse, AutoFormat>> {
         let options = options.unwrap_or_default().into_owned();
-        let accept = options
-            .response_format
-            .unwrap_or_default()
-            .as_header_value();
+        #[cfg(not(feature = "arrow"))]
+        if options.end_before.is_some() {
+            return Err(azure_core::Error::with_message(
+                ErrorKind::DataConversion,
+                "end_before requires the `arrow` feature",
+            ));
+        }
         let delimiter = delimiter.to_string();
         let pager_options = options.method_options.clone();
         let client = Arc::new(BlobContainerClient {
@@ -227,7 +234,7 @@ impl BlobContainerClient {
                 Box::pin(async move {
                     let response = client
                         .list_blobs_hierarchical_internal(
-                            accept.to_string(),
+                            LIST_BLOBS_ACCEPT.to_string(),
                             &delimiter,
                             Some(options),
                         )
@@ -253,21 +260,27 @@ impl BlobContainerClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::StorageResponseFormat;
+    #[cfg(feature = "arrow")]
     use arrow_array::{builder::StringBuilder, RecordBatch};
+    #[cfg(feature = "arrow")]
     use arrow_ipc::writer::StreamWriter;
+    #[cfg(feature = "arrow")]
     use arrow_schema::{DataType, Field, Schema};
+    #[cfg(feature = "arrow")]
+    use azure_core::http::pager::PagerOptions;
     use azure_core::{
         http::{
             headers::{Headers, ACCEPT, CONTENT_TYPE},
-            pager::{PagerContinuation, PagerOptions},
+            pager::PagerContinuation,
             AsyncRawResponse, ClientOptions, StatusCode, Transport,
         },
         Bytes,
     };
     use azure_core_test::http::MockHttpClient;
     use futures::{FutureExt as _, TryStreamExt as _};
-    use std::{collections::HashMap, sync::Arc};
+    #[cfg(feature = "arrow")]
+    use std::collections::HashMap;
+    use std::sync::Arc;
 
     const LIST_BLOBS_PAGE: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
 <EnumerationResults ServiceEndpoint="https://example.blob.core.windows.net/" ContainerName="container">
@@ -357,6 +370,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(feature = "arrow")]
     #[tokio::test]
     async fn list_blobs_mock_arrow_all_pages() -> Result<()> {
         let client = container_client_with(arrow_mock_client());
@@ -368,6 +382,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(feature = "arrow")]
     #[tokio::test]
     async fn list_blobs_mock_arrow_xml_fallback() -> Result<()> {
         // Arrow is requested (the default), but the service replies with XML; the pager must
@@ -383,6 +398,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(feature = "arrow")]
     #[tokio::test]
     async fn list_blobs_mock_arrow_from_continuation() -> Result<()> {
         let client = container_client_with(arrow_mock_client());
@@ -398,14 +414,11 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(not(feature = "arrow"))]
     #[tokio::test]
-    async fn list_blobs_mock_explicit_xml() -> Result<()> {
+    async fn list_blobs_mock_defaults_to_xml_without_arrow() -> Result<()> {
         let client = container_client_with(xml_mock_client_with_accept("application/xml"));
-        let options = BlobContainerClientListBlobsOptions {
-            response_format: Some(StorageResponseFormat::Xml),
-            ..Default::default()
-        };
-        let names = collect_blob_names(client.list_blobs(Some(options))?).await?;
+        let names = collect_blob_names(client.list_blobs(None)?).await?;
         assert_eq!(
             names,
             ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
@@ -413,6 +426,18 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(not(feature = "arrow"))]
+    #[test]
+    fn list_blobs_rejects_end_before_without_arrow() {
+        let client = container_client_with(xml_mock_client_with_accept("application/xml"));
+        let options = BlobContainerClientListBlobsOptions {
+            end_before: Some("cc.txt".to_string()),
+            ..Default::default()
+        };
+        assert!(client.list_blobs(Some(options)).is_err());
+    }
+
+    #[cfg(feature = "arrow")]
     #[tokio::test]
     async fn list_blobs_mock_arrow_sends_end_before() -> Result<()> {
         // The end_before option flows out as the `endBefore` query parameter.
@@ -430,7 +455,6 @@ mod tests {
             .boxed()
         })));
         let options = BlobContainerClientListBlobsOptions {
-            response_format: Some(StorageResponseFormat::Arrow),
             end_before: Some("cc.txt".to_string()),
             ..Default::default()
         };
@@ -439,6 +463,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(feature = "arrow")]
     #[tokio::test]
     async fn list_blobs_mock_arrow_drops_envelope() -> Result<()> {
         // Arrow carries only blob rows and the next marker; envelope fields stay None.
@@ -484,6 +509,7 @@ mod tests {
         Ok(names)
     }
 
+    #[cfg(feature = "arrow")]
     fn build_arrow_list_blobs(names: &[&str], next_marker: Option<&str>) -> Bytes {
         let metadata: HashMap<String, String> = next_marker
             .map(|m| HashMap::from([("NextMarker".to_string(), m.to_string())]))
@@ -505,6 +531,7 @@ mod tests {
         Bytes::from(buf)
     }
 
+    #[cfg(feature = "arrow")]
     fn arrow_mock_client() -> Arc<dyn azure_core::http::HttpClient> {
         let page1 = build_arrow_list_blobs(&["page1-a.txt", "page1-b.txt"], Some("page2"));
         let page2 = build_arrow_list_blobs(&["page2-a.txt", "page2-b.txt"], None);
@@ -561,6 +588,7 @@ mod tests {
   </Blobs>
 </EnumerationResults>"#;
 
+    #[cfg(feature = "arrow")]
     fn build_arrow_hierarchy(
         blobs: &[&str],
         prefixes: &[&str],
@@ -598,6 +626,7 @@ mod tests {
         Bytes::from(buf)
     }
 
+    #[cfg(feature = "arrow")]
     fn arrow_hierarchy_mock_client() -> Arc<dyn azure_core::http::HttpClient> {
         let page = build_arrow_hierarchy(&["top.txt"], &["dir1/", "dir2/"], None);
         Arc::new(MockHttpClient::new(move |req| {
@@ -622,6 +651,10 @@ mod tests {
     fn xml_hierarchy_mock_client(accept: &'static str) -> Arc<dyn azure_core::http::HttpClient> {
         Arc::new(MockHttpClient::new(move |req| {
             assert_eq!(req.headers().get_str(&ACCEPT).unwrap(), accept);
+            assert!(req
+                .url()
+                .query_pairs()
+                .any(|(key, value)| key == "delimiter" && value == "/"));
             async move {
                 let mut headers = Headers::new();
                 headers.insert(CONTENT_TYPE, "application/xml");
@@ -635,6 +668,35 @@ mod tests {
         }))
     }
 
+    #[cfg(not(feature = "arrow"))]
+    #[tokio::test]
+    async fn list_blobs_hierarchical_mock_defaults_to_xml_without_arrow() -> Result<()> {
+        let client = container_client_with(xml_hierarchy_mock_client("application/xml"));
+        let page = client
+            .list_blobs_hierarchical("/", None)?
+            .into_pages()
+            .try_next()
+            .await?
+            .expect("expected a page")
+            .into_model()?;
+
+        assert_eq!(page.delimiter.as_deref(), Some("/"));
+        assert_eq!(page.container_name.as_deref(), Some("container"));
+        let prefixes = page
+            .hierarchical_list
+            .blob_prefixes
+            .as_deref()
+            .expect("expected blob prefixes");
+        assert_eq!(prefixes.len(), 1);
+        assert_eq!(prefixes[0].name.as_deref(), Some("dir1/"));
+        assert_eq!(
+            page.hierarchical_list.blob_items[0].name.as_deref(),
+            Some("top.txt")
+        );
+        Ok(())
+    }
+
+    #[cfg(feature = "arrow")]
     fn arrow_hierarchy_mock_client_paged() -> Arc<dyn azure_core::http::HttpClient> {
         let page1 = build_arrow_hierarchy(&["a.txt"], &["dir1/"], Some("page2"));
         let page2 = build_arrow_hierarchy(&["b.txt"], &["dir2/"], None);
@@ -661,6 +723,7 @@ mod tests {
         }))
     }
 
+    #[cfg(feature = "arrow")]
     #[tokio::test]
     async fn list_blobs_hierarchical_mock_arrow() -> Result<()> {
         let client = container_client_with(arrow_hierarchy_mock_client());
@@ -694,6 +757,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(feature = "arrow")]
     #[tokio::test]
     async fn list_blobs_hierarchical_mock_arrow_xml_fallback() -> Result<()> {
         // Arrow requested (default) but the service replies with XML; prefixes, blobs, and the
@@ -722,6 +786,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(feature = "arrow")]
     #[tokio::test]
     async fn list_blobs_hierarchical_mock_arrow_all_pages() -> Result<()> {
         let client = container_client_with(arrow_hierarchy_mock_client_paged());

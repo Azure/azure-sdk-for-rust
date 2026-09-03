@@ -7,6 +7,7 @@
 #![allow(dead_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+#[cfg(feature = "arrow")]
 mod arrow;
 pub(crate) mod buffers;
 pub mod clients;
