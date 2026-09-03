@@ -205,7 +205,7 @@ async fn stored_item(driver: &CosmosDriver, container: &ContainerReference) -> s
         .expect("read back must succeed")
         .expect("read must return a response");
     let bytes = response.into_body().single().expect("point read body");
-    serde_json::from_slice(&bytes).expect("body is JSON")
+    super::parse_json_body(&bytes).expect("body is JSON")
 }
 
 fn increment() -> PatchInstructions {
