@@ -37,16 +37,29 @@ fn run() -> Result<(), String> {
     let output_path = output::output_path(&request)?;
     diagnostics::info(format!("Generating file: {}", output_path.display()));
 
-    let rendered = match request.format {
-        cli::OutputFormat::Markdown => render::markdown::render(&model),
+    match request.format {
+        cli::OutputFormat::Markdown => {
+            let lines = render::markdown::render_lines(&model);
+            let rendered = render::markdown::render_from_lines(&lines);
+            output::write_file(&output_path, &rendered)?;
+            diagnostics::info(format!("Wrote file: {}", output_path.display()));
+
+            if !request.no_docs {
+                let patch_path = output::output_file_path(&request, cli::COMMENTS_PATCH_FILE_NAME);
+                let file_name = request.format.default_file_name();
+                let patch = render::patch::render(&lines, file_name);
+                output::write_file(&patch_path, &patch)?;
+                diagnostics::info(format!("Wrote file: {}", patch_path.display()));
+            }
+        }
         cli::OutputFormat::Apiview => {
             let options = render::apiview::RenderOptions::new(!request.no_docs);
-            render::apiview::render(&model, &options)?
+            let rendered = render::apiview::render(&model, &options)?;
+            output::write_file(&output_path, &rendered)?;
+            diagnostics::info(format!("Wrote file: {}", output_path.display()));
         }
-    };
+    }
 
-    output::write_file(&output_path, &rendered)?;
-    diagnostics::info(format!("Wrote file: {}", output_path.display()));
     Ok(())
 }
 
