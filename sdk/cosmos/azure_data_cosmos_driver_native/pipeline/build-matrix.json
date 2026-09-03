@@ -104,20 +104,6 @@
       "risk": null
     }
   ],
-  "optional_targets": [
-    {
-      "id": "darwin-amd64",
-      "goos": "darwin",
-      "goarch": "amd64",
-      "libc": null,
-      "triple": "x86_64-apple-darwin",
-      "c_compiler": "clang",
-      "module_path": "darwin/amd64",
-      "native_subdir": null,
-      "build_tag_extra": null,
-      "risk": "long-tail; enable only if a customer needs Intel macOS."
-    }
-  ],
   "reference_syslibs": {
     "x86_64-pc-windows-gnu": [
       "-lws2_32",
