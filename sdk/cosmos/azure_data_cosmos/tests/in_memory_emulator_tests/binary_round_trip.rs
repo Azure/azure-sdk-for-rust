@@ -79,8 +79,7 @@ async fn build_container(db_name: &str, binary: bool) -> ContainerClient {
         EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
-    // Always set the option explicitly: binary encoding is enabled by default,
-    // so leaving it unset would make `binary = false` a binary client.
+    // Set explicitly: an unset option would inherit the binary default.
     let client = CosmosClientBuilder::new()
         .with_runtime(
             CosmosRuntimeBuilder::from(emulator.runtime_builder())
@@ -108,7 +107,7 @@ async fn build_container(db_name: &str, binary: bool) -> ContainerClient {
 async fn build_multi_partition_container_with_recorder(
     db_name: &str,
     partition_count: u32,
-    binary: bool,
+    binary: Option<bool>,
 ) -> (ContainerClient, Arc<QueryRequestRecorder>) {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
@@ -144,16 +143,18 @@ async fn build_multi_partition_container_with_recorder(
         EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
-    // Always set the option explicitly: binary encoding is enabled by default,
-    // so leaving it unset would make `binary = false` a binary client.
-    let client = CosmosClientBuilder::new()
-        .with_runtime(
-            CosmosRuntimeBuilder::from(emulator.runtime_builder())
-                .build()
-                .await
-                .unwrap(),
-        )
-        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(binary))
+    // `None` leaves the option unset, exercising the resolved default.
+    let mut builder = CosmosClientBuilder::new().with_runtime(
+        CosmosRuntimeBuilder::from(emulator.runtime_builder())
+            .build()
+            .await
+            .unwrap(),
+    );
+    if let Some(binary) = binary {
+        builder =
+            builder.with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(binary));
+    }
+    let client = builder
         .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await
         .unwrap();
@@ -596,7 +597,7 @@ async fn binary_query_negotiates_response_and_round_trips() {
 #[tokio::test]
 async fn binary_cross_partition_query_round_trips() {
     let (container, recorder) =
-        build_multi_partition_container_with_recorder("bin-xpart-query", 3, true).await;
+        build_multi_partition_container_with_recorder("bin-xpart-query", 3, Some(true)).await;
 
     // Spread items across several partition keys so the fan-out spans ranges.
     let items: Vec<TestItem> = (0..12)
@@ -644,7 +645,7 @@ async fn binary_cross_partition_query_round_trips() {
 #[tokio::test]
 async fn binary_cross_partition_order_by_merges_and_round_trips() {
     let (container, recorder) =
-        build_multi_partition_container_with_recorder("bin-xpart-order-by", 3, true).await;
+        build_multi_partition_container_with_recorder("bin-xpart-order-by", 3, Some(true)).await;
 
     // Interleave values across partition keys so the global order differs from
     // any single partition's local order — forcing the k-way merge to actually
@@ -702,7 +703,7 @@ async fn binary_cross_partition_order_by_merges_and_round_trips() {
 #[tokio::test]
 async fn binary_cross_partition_skip_take_round_trips() {
     let (container, recorder) =
-        build_multi_partition_container_with_recorder("bin-xpart-skip-take", 3, true).await;
+        build_multi_partition_container_with_recorder("bin-xpart-skip-take", 3, Some(true)).await;
 
     let items: Vec<TestItem> = (0..10)
         .map(|i| TestItem {
@@ -807,7 +808,8 @@ fn assert_query_advertised_binary(recorder: &QueryRequestRecorder) {
 #[tokio::test]
 async fn disabled_binary_query_advertises_no_format() {
     let (container, recorder) =
-        build_multi_partition_container_with_recorder("no-binary-xpart-query", 3, false).await;
+        build_multi_partition_container_with_recorder("no-binary-xpart-query", 3, Some(false))
+            .await;
 
     let items: Vec<TestItem> = (0..6)
         .map(|i| TestItem {
@@ -843,6 +845,53 @@ async fn disabled_binary_query_advertises_no_format() {
             value.as_deref(),
             None,
             "a query on a binary-disabled client must advertise no serialization format",
+        );
+    }
+}
+
+/// The mirror of the test above, guarding the **default**: a client that sets no
+/// binary option at all must still negotiate binary. Without this, silently
+/// flipping the default off passes every wire-level test.
+#[tokio::test]
+async fn default_client_negotiates_binary_without_any_option() {
+    let (container, recorder) =
+        build_multi_partition_container_with_recorder("default-xpart-query", 3, None).await;
+
+    let items: Vec<TestItem> = (0..6)
+        .map(|i| TestItem {
+            id: format!("d-{i}"),
+            pk: format!("pk{}", i % 3),
+            value: i,
+            note: format!("default {i}"),
+        })
+        .collect();
+    for item in &items {
+        container
+            .create_item(&item.pk, &item.id, item, Some(write_options_with_content()))
+            .await
+            .unwrap();
+    }
+
+    let iter = Box::pin(container.query_items::<TestItem>(
+        Query::from("SELECT * FROM c"),
+        FeedScope::full_container(),
+        None,
+    ))
+    .await
+    .unwrap();
+    let results: Vec<TestItem> = Box::pin(iter.try_collect()).await.unwrap();
+    assert_eq!(results.len(), items.len());
+
+    let formats = recorder.negotiation_formats.lock().unwrap();
+    assert!(
+        !formats.is_empty(),
+        "expected at least one query request to be recorded",
+    );
+    for value in formats.iter() {
+        assert_eq!(
+            value.as_deref(),
+            Some("JsonText,CosmosBinary"),
+            "a query on a default client must advertise binary",
         );
     }
 }

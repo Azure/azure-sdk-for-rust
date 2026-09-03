@@ -1408,8 +1408,11 @@ typedef struct cosmos_operation_options_t {
    * Tri-state bool (`0` unset / `1` false / `2` true).
    *
    * Only meaningful when [`binary_encoding_enabled`](Self::binary_encoding_enabled)
-   * is true: the wire stays binary in both directions and the driver hands
-   * back text. `unset` / `false` returns the binary response as-is.
+   * resolves to true: the wire stays binary in both directions and the
+   * driver hands back text. `unset` / `false` returns the binary response
+   * as-is. Setting this to `2` is honored even when
+   * [`binary_encoding_enabled`](Self::binary_encoding_enabled) is left
+   * unset, since binary is enabled by default.
    *
    * This applies to every operation type, queries included: the wire keeps
    * the bandwidth saving and the driver transcodes each response body — for
@@ -1418,8 +1421,9 @@ typedef struct cosmos_operation_options_t {
    * Note the returned text is re-serialized by the driver rather than being
    * the service's original bytes: values are preserved, but object keys are
    * emitted in sorted order and numbers use Rust's shortest round-trip
-   * rendering. Hosts needing byte-exact service output should leave binary
-   * encoding disabled.
+   * rendering. Hosts needing byte-exact service output must explicitly
+   * disable binary encoding by setting
+   * [`binary_encoding_enabled`](Self::binary_encoding_enabled) to `1`.
    */
   int8_t binary_encoding_request_text_response;
 } cosmos_operation_options_t;
