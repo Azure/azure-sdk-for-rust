@@ -40,3 +40,6 @@ pub use typespec_client_core::xml;
 mod private {
     pub trait Sealed {}
 }
+
+// Intentional compilation error for validating PR annotations.
+const _INTENTIONAL_PR_ANNOTATION_FAILURE: u64 = "expected a u64";
