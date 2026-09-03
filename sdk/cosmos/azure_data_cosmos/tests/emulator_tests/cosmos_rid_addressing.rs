@@ -107,7 +107,7 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
 
             // ...and the container by RID under that RID-addressed database.
             let rid_container = rid_db_client
-                .container_client(ResourceId::from(container_rid.clone()))
+                .container_client(ResourceId::from(container_rid.clone()), None)
                 .await?;
 
             // Reading by RID resolves back to the same container.
@@ -122,7 +122,7 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
             let mgmt_rid_container = run_context
                 .management_client()
                 .database_client(ResourceId::from(db_rid.clone()))
-                .container_client(ResourceId::from(container_rid.clone()))
+                .container_client(ResourceId::from(container_rid.clone()), None)
                 .await?;
             let throughput = mgmt_rid_container
                 .read_throughput(None)
@@ -242,7 +242,7 @@ pub async fn mixed_name_and_rid_addressing_is_rejected() -> Result<(), Box<dyn E
             // `db_client` is name-addressed; addressing the container by RID
             // mixes the two modes and must be rejected.
             let Err(err) = db_client
-                .container_client(ResourceId::from(container_rid))
+                .container_client(ResourceId::from(container_rid), None)
                 .await
             else {
                 panic!("expected mixed name/RID addressing to be rejected");
@@ -312,7 +312,7 @@ pub async fn container_rid_from_another_database_is_rejected() -> Result<(), Box
                 .client()
                 .database_client(ResourceId::from(db1_rid));
             let result = rid_db1_client
-                .container_client(ResourceId::from(container2_rid))
+                .container_client(ResourceId::from(container2_rid), None)
                 .await;
 
             // Clean up db2 regardless of the assertion outcome below.

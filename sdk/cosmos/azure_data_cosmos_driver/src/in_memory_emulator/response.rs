@@ -216,26 +216,49 @@ impl ResponseBuilder {
         self
     }
 
-    pub fn with_json_body(self, body: &serde_json::Value) -> Self {
-        self.with_value_body(body, false)
+    /// Sets the body from a JSON value as UTF-8 text, verbatim.
+    ///
+    /// For bodies the emulator synthesizes itself — error envelopes,
+    /// control-plane payloads, transaction envelopes. These are not stored
+    /// documents, so the normalization
+    /// [`with_document_body`](Self::with_document_body) applies would only
+    /// rewrite values the emulator authored (an RU charge of `3.0` into `3`).
+    pub fn with_json_body(mut self, body: &serde_json::Value) -> Self {
+        self.body = Self::to_text(body);
+        self
     }
 
-    /// Sets the body from a JSON value, encoded as Cosmos binary JSON when
-    /// `binary` is set (the client negotiated it) or UTF-8 text JSON otherwise.
-    ///
-    /// The binary form begins with the `0x80` preamble, which the SDK
-    /// auto-detects from the first byte, so the `Content-Type` stays
+    /// Sets the body from a **stored document**, encoded as Cosmos binary JSON
+    /// when `binary` is set or UTF-8 text JSON otherwise. The binary form's
+    /// `0x80` preamble is auto-detected by the SDK, so `Content-Type` stays
     /// `application/json` either way (mirroring the real service).
-    pub fn with_value_body(mut self, body: &serde_json::Value, binary: bool) -> Self {
+    ///
+    /// The text branch normalizes integral floats because the service spells a
+    /// stored `3.0` as `3` in text but sends a `Double` in binary (measured
+    /// live). Without it the emulator would show a text/binary disagreement the
+    /// service does not have, masking the real one these tests exist to catch.
+    /// The binary branch stays unnormalized so the `NUMBER_DOUBLE` marker
+    /// survives, which is the case under test.
+    ///
+    /// Known gap: the service folds `-0.0` to `0` at storage;
+    /// `normalize_integral_floats` preserves the sign to keep local round-trips
+    /// byte-exact, so both branches agree on a spelling the service would not
+    /// produce.
+    pub fn with_document_body(mut self, body: &serde_json::Value, binary: bool) -> Self {
         self.body = if binary {
             crate::binary_json::encode(body)
         } else {
-            // The emulator owns these `Value`s, so a serialization failure is a
-            // bug in the emulator — fail loudly rather than emit an empty body
-            // that would mask the defect downstream.
-            serde_json::to_vec(body).expect("emulator response body must serialize to JSON")
+            let mut normalized = body.clone();
+            crate::binary_json::normalize_integral_floats(&mut normalized);
+            Self::to_text(&normalized)
         };
         self
+    }
+
+    /// Serializes a body the emulator owns. A failure here is an emulator bug,
+    /// so fail loudly rather than emit an empty body that would mask it.
+    fn to_text(body: &serde_json::Value) -> Vec<u8> {
+        serde_json::to_vec(body).expect("emulator response body must serialize to JSON")
     }
 
     pub fn build(self) -> AsyncRawResponse {
@@ -249,7 +272,13 @@ impl ResponseBuilder {
     }
 }
 
-/// Creates a success response with a JSON body.
+/// Creates a success response whose body the emulator authored itself —
+/// control-plane payloads, envelopes, plans. The body is emitted verbatim; see
+/// [`ResponseBuilder::with_json_body`].
+///
+/// Handlers returning a **stored document** must call
+/// [`success_response_with_format`] instead, so the document is normalized (or
+/// binary-encoded) the way the service would render it.
 pub(crate) fn success_response(
     status: StatusCode,
     body: &serde_json::Value,
@@ -257,10 +286,14 @@ pub(crate) fn success_response(
     session_token: &str,
     start: Instant,
 ) -> ResponseBuilder {
-    success_response_with_format(status, body, false, charge, session_token, start)
+    ResponseBuilder::new(status, start)
+        .with_request_charge(charge)
+        .with_session_token(session_token)
+        .with_json_body(body)
 }
 
-/// Like [`success_response`], but encodes the body as Cosmos binary JSON when
+/// Like [`success_response`], but the body is a **stored document**: normalized
+/// as the service renders it in text, or encoded as Cosmos binary JSON when
 /// `binary` is set. Used by the item read/write handlers to honor a client that
 /// negotiated binary responses via `x-ms-cosmos-supported-serialization-formats`.
 pub(crate) fn success_response_with_format(
@@ -274,7 +307,38 @@ pub(crate) fn success_response_with_format(
     ResponseBuilder::new(status, start)
         .with_request_charge(charge)
         .with_session_token(session_token)
-        .with_value_body(body, binary)
+        .with_document_body(body, binary)
+}
+
+/// The serialization format the emulator emits for a feed response body.
+///
+/// Replaces a bare positional `bool` on the feed builders so each call site
+/// reads `ResponseFormat::Text` / `ResponseFormat::Binary` instead of a naked
+/// `false` / `true` that a future edit could silently transpose with an
+/// adjacent argument.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ResponseFormat {
+    /// UTF-8 text JSON — the default for read-feed and control-plane responses.
+    Text,
+    /// Cosmos binary JSON — emitted only when the request negotiated it.
+    Binary,
+}
+
+impl ResponseFormat {
+    /// Whether this format is Cosmos binary JSON.
+    pub(crate) fn is_binary(self) -> bool {
+        matches!(self, ResponseFormat::Binary)
+    }
+}
+
+impl From<bool> for ResponseFormat {
+    fn from(binary: bool) -> Self {
+        if binary {
+            ResponseFormat::Binary
+        } else {
+            ResponseFormat::Text
+        }
+    }
 }
 
 /// Creates an error response.

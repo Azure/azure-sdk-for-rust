@@ -21,6 +21,18 @@ parameters:
     default: true
 
 steps:
+# `variables/rust.yml` relocates CARGO_HOME off the OS volume. Cargo finds its own
+# subcommands there, but tools invoked directly (taplo, cargo2junit) need it on PATH.
+- pwsh: |
+    $cargoBin = ([System.IO.Path]::Combine($env:CARGO_HOME, 'bin'))
+    New-Item -ItemType Directory -Force -Path $cargoBin | Out-Null
+
+    if (($env:PATH -split [System.IO.Path]::PathSeparator) -notcontains $cargoBin) {
+      Write-Host "##vso[task.prependpath]$cargoBin"
+    }
+  displayName: Add CARGO_HOME/bin to PATH
+  condition: and(succeeded(), ne(variables['CARGO_HOME'], ''))
+
 - ${{ if parameters.ConfigureRegistry }}:
   - pwsh: |
       $cargoHome = $env:CARGO_HOME

@@ -79,6 +79,10 @@ impl RequestSnapshot {
     fn is_item_read(&self) -> bool {
         self.method == Method::Get && self.is_item_request()
     }
+
+    fn is_partition_key_range_request(&self) -> bool {
+        self.url.path().ends_with("/pkranges")
+    }
 }
 
 /// [`RequestObserver`] that records every request the emulator sees so tests can
@@ -125,6 +129,15 @@ impl RecordingObserver {
         );
         reads.into_iter().next().unwrap()
     }
+
+    fn assert_no_partition_key_range_requests(&self) {
+        assert!(
+            self.snapshots()
+                .iter()
+                .all(|request| !request.is_partition_key_range_request()),
+            "cache-disabled operations must not request /pkranges"
+        );
+    }
 }
 
 impl RequestObserver for RecordingObserver {
@@ -169,6 +182,10 @@ struct Harness {
 
 impl Harness {
     async fn setup() -> Self {
+        Self::setup_with_partition_key_range_cache(true).await
+    }
+
+    async fn setup_with_partition_key_range_cache(enabled: bool) -> Self {
         let observer = RecordingObserver::new();
 
         let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
@@ -203,12 +220,20 @@ impl Harness {
             EMULATOR_KEY,
         );
         let driver = runtime
-            .create_driver(DriverOptions::builder(account).build())
+            .create_driver(
+                DriverOptions::builder(account)
+                    .with_partition_key_range_cache_enabled(enabled)
+                    .build(),
+            )
             .await
             .unwrap();
 
         let container = driver
-            .resolve_container(db_name, container_name)
+            .resolve_container(
+                db_name,
+                container_name,
+                azure_data_cosmos_driver::options::OperationOptions::default(),
+            )
             .await
             .unwrap();
 
@@ -270,6 +295,70 @@ impl Harness {
             .as_ref()
             .map(|t| t.as_str().to_string())
     }
+}
+
+#[tokio::test]
+async fn cache_disabled_preserves_explicit_tokens_without_automatic_session_management() {
+    let h = Harness::setup_with_partition_key_range_cache(false).await;
+
+    h.observer.clear();
+    let response_token = h
+        .create("pk1", "item-1", 1)
+        .await
+        .expect("create should return a session token");
+
+    h.driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(h.item_ref("pk1", "item-1")),
+            OperationOptionsBuilder::new().build(),
+        )
+        .await
+        .expect("read without an explicit token should succeed");
+    assert_eq!(
+        h.observer.single_item_read().session_token,
+        None,
+        "the write response token must not be captured automatically"
+    );
+    h.observer.assert_no_partition_key_range_requests();
+
+    h.observer.clear();
+    h.driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(h.item_ref("pk1", "item-1"))
+                .with_session_token(response_token.clone()),
+            OperationOptionsBuilder::new().build(),
+        )
+        .await
+        .expect("read with an explicit token should succeed");
+    assert_eq!(
+        h.observer.single_item_read().session_token.as_deref(),
+        Some(response_token.as_str()),
+        "the explicit token must be sent unchanged"
+    );
+
+    h.observer.assert_no_partition_key_range_requests();
+}
+
+#[tokio::test]
+async fn explicit_false_cannot_reactivate_cache_disabled_session_management() {
+    let h = Harness::setup_with_partition_key_range_cache(false).await;
+    h.create("pk1", "item-1", 1)
+        .await
+        .expect("create should return a session token");
+
+    h.observer.clear();
+    h.driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(h.item_ref("pk1", "item-1")),
+            OperationOptionsBuilder::new()
+                .with_session_capturing_disabled(false)
+                .build(),
+        )
+        .await
+        .expect("read should succeed");
+
+    assert_eq!(h.observer.single_item_read().session_token, None);
+    h.observer.assert_no_partition_key_range_requests();
 }
 
 /// A read that follows a create must carry the **cached** session token equal to

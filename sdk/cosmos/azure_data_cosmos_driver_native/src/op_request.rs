@@ -36,18 +36,19 @@
 
 use std::collections::HashMap;
 use std::ffi::{c_char, CStr};
-use std::num::{NonZeroU32, NonZeroU8};
+use std::num::{NonZeroU16, NonZeroU32, NonZeroU8};
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::Etag;
 use azure_data_cosmos_driver::options::{
     BinaryEncodingOptions, ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
-    OperationOptions, ReadConsistencyStrategy, Region, ThroughputControlOptions,
+    OperationOptions, PatchStrategy, ReadConsistencyStrategy, Region, ThroughputControlOptions,
 };
 use azure_data_cosmos_driver::{
     models::{
         ActivityId, ContainerReference, ContinuationToken, CosmosOperation, ItemReference,
-        MaxItemCountHint, PartitionKey, Precondition, SessionToken, ThroughputControlGroupName,
+        MaxItemCountHint, OperationType, PartitionKey, PatchInstructions, PatchTrackingId,
+        Precondition, SessionToken, ThroughputControlGroupName,
     },
     options::PlanOptions,
 };
@@ -135,6 +136,8 @@ pub enum CosmosReadConsistencyStrategy {
     CosmosReadConsistencyStrategySession = 3,
     /// Read the latest version across all regions (single-master / Strong).
     CosmosReadConsistencyStrategyGlobalStrong = 4,
+    /// Read the latest committed version using a quorum read.
+    CosmosReadConsistencyStrategyLatestCommitted = 5,
 }
 
 impl CosmosReadConsistencyStrategy {
@@ -153,6 +156,7 @@ impl CosmosReadConsistencyStrategy {
             2 => Self::CosmosReadConsistencyStrategyEventual,
             3 => Self::CosmosReadConsistencyStrategySession,
             4 => Self::CosmosReadConsistencyStrategyGlobalStrong,
+            5 => Self::CosmosReadConsistencyStrategyLatestCommitted,
             _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
         })
     }
@@ -166,7 +170,50 @@ impl CosmosReadConsistencyStrategy {
             Self::CosmosReadConsistencyStrategyGlobalStrong => {
                 Some(ReadConsistencyStrategy::GlobalStrong)
             }
+            Self::CosmosReadConsistencyStrategyLatestCommitted => {
+                Some(ReadConsistencyStrategy::LatestCommitted)
+            }
         })
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cosmos_patch_strategy_t  (0 = unset)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Tri-state mirror of [`PatchStrategy`] for the flat options struct.
+/// `0` (`Unset`) means "inherit from a lower-priority layer".
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CosmosPatchStrategy {
+    /// Inherit from account / runtime / environment.
+    CosmosPatchStrategyUnset = 0,
+    /// Let the driver choose from instruction safety and service limits.
+    CosmosPatchStrategyAuto = 1,
+    /// Always use client-side read-modify-write execution.
+    CosmosPatchStrategyClientSide = 2,
+    /// Always send the PATCH to the service.
+    CosmosPatchStrategyServerSide = 3,
+}
+
+impl CosmosPatchStrategy {
+    fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
+        Ok(match raw {
+            0 => Self::CosmosPatchStrategyUnset,
+            1 => Self::CosmosPatchStrategyAuto,
+            2 => Self::CosmosPatchStrategyClientSide,
+            3 => Self::CosmosPatchStrategyServerSide,
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
+        })
+    }
+
+    fn to_driver(self) -> Option<PatchStrategy> {
+        match self {
+            Self::CosmosPatchStrategyUnset => None,
+            Self::CosmosPatchStrategyAuto => Some(PatchStrategy::Auto),
+            Self::CosmosPatchStrategyClientSide => Some(PatchStrategy::ClientSide),
+            Self::CosmosPatchStrategyServerSide => Some(PatchStrategy::ServerSide),
+        }
     }
 }
 
@@ -325,6 +372,10 @@ pub struct CosmosOperationOptions {
     /// [`CosmosContentResponseOnWriteOpt`] discriminant. `0` (`Unset`)
     /// inherits. Stored as a raw `i32` for the same reason as above.
     pub content_response_on_write: i32,
+    /// PATCH execution strategy, encoded as a [`CosmosPatchStrategy`]
+    /// discriminant. `0` (`Unset`) inherits. Stored as a raw `i32` so invalid
+    /// host values can be rejected before materializing the enum.
+    pub patch_strategy: i32,
     /// Disable automatic session token management. Tri-state bool.
     pub session_capturing_disabled: i8,
     /// Max region-failover retries. `< 0` = unset.
@@ -354,16 +405,40 @@ pub struct CosmosOperationOptions {
     /// When true, the driver transcodes a **text** request body to binary
     /// before sending it (an already-binary body is passed through) and
     /// advertises `CosmosBinary`, so the caller never encodes binary itself.
-    /// An explicit `false` forces binary **off** for this operation regardless
-    /// of any account/runtime default; `unset` inherits a lower layer (text by
-    /// default).
+    /// An explicit `false` (`1`) is the text opt-out: it forces binary **off**
+    /// for this operation regardless of any account/runtime default. `unset`
+    /// inherits a lower layer, which enables binary encoding by default, so an
+    /// all-unset options struct negotiates binary.
+    ///
+    /// The response side is uniform across operation types: point reads,
+    /// writes that echo content, and queries all negotiate a binary response,
+    /// so a host that enables this flag receives response bodies — including
+    /// query result items — as Cosmos binary JSON and must decode them. Detect
+    /// with the `0x80` preamble. (A query's *request* body stays text either
+    /// way, since it carries a query spec rather than a document.) See
+    /// [`binary_encoding_request_text_response`](Self::binary_encoding_request_text_response)
+    /// for the text opt-out.
     pub binary_encoding_enabled: i8,
     /// Whether the driver transcodes the binary response back to **text** JSON.
     /// Tri-state bool (`0` unset / `1` false / `2` true).
     ///
     /// Only meaningful when [`binary_encoding_enabled`](Self::binary_encoding_enabled)
-    /// is true: the wire stays binary in both directions and the driver hands
-    /// back text. `unset` / `false` returns the binary response as-is.
+    /// resolves to true: the wire stays binary in both directions and the
+    /// driver hands back text. `unset` / `false` returns the binary response
+    /// as-is. Setting this to `2` is honored even when
+    /// [`binary_encoding_enabled`](Self::binary_encoding_enabled) is left
+    /// unset, since binary is enabled by default.
+    ///
+    /// This applies to every operation type, queries included: the wire keeps
+    /// the bandwidth saving and the driver transcodes each response body — for
+    /// a query, each result item — back to text before handing it over.
+    ///
+    /// Note the returned text is re-serialized by the driver rather than being
+    /// the service's original bytes: values are preserved, but object keys are
+    /// emitted in sorted order and numbers use Rust's shortest round-trip
+    /// rendering. Hosts needing byte-exact service output must explicitly
+    /// disable binary encoding by setting
+    /// [`binary_encoding_enabled`](Self::binary_encoding_enabled) to `1`.
     pub binary_encoding_request_text_response: i8,
 }
 
@@ -383,6 +458,7 @@ impl CosmosOperationOptions {
         opts.content_response_on_write =
             CosmosContentResponseOnWriteOpt::from_i32(self.content_response_on_write)?
                 .to_driver()?;
+        opts.patch_strategy = CosmosPatchStrategy::from_i32(self.patch_strategy)?.to_driver();
         opts.session_capturing_disabled = decode_tristate_bool(self.session_capturing_disabled)?;
 
         opts.max_failover_retry_count = decode_opt_u32(self.max_failover_retry_count);
@@ -419,19 +495,20 @@ impl CosmosOperationOptions {
             opts.custom_headers = Some(headers);
         }
 
-        // Binary encoding is a whole-value option. It is tri-state: `unset`
-        // leaves `binary_encoding` as `None` (inherit a lower layer), while an
-        // explicit `true`/`false` is honored as `Some(..)` so a host can force
-        // binary off regardless of any account/runtime default. The
-        // `request_text_response` flag is only meaningful when binary is on.
-        if let Some(enabled) = decode_tristate_bool(self.binary_encoding_enabled)? {
-            let request_text_response =
-                decode_tristate_bool(self.binary_encoding_request_text_response)?.unwrap_or(false);
-            opts.binary_encoding = Some(
-                BinaryEncodingOptions::new()
-                    .with_enabled(enabled)
-                    .with_request_text_response(request_text_response),
-            );
+        // Each flag is tri-state; an explicitly requested text response is
+        // honored even when `enabled` is unset.
+        let enabled = decode_tristate_bool(self.binary_encoding_enabled)?;
+        let request_text_response =
+            decode_tristate_bool(self.binary_encoding_request_text_response)?;
+        if enabled.is_some() || request_text_response.is_some() {
+            let mut binary_encoding = BinaryEncodingOptions::default();
+            if let Some(enabled) = enabled {
+                binary_encoding = binary_encoding.with_enabled(enabled);
+            }
+            if let Some(request_text_response) = request_text_response {
+                binary_encoding = binary_encoding.with_request_text_response(request_text_response);
+            }
+            opts.binary_encoding = Some(binary_encoding);
         }
 
         Ok(opts)
@@ -478,6 +555,7 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
             as i32,
         content_response_on_write:
             CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset as i32,
+        patch_strategy: CosmosPatchStrategy::CosmosPatchStrategyUnset as i32,
         session_capturing_disabled: TRISTATE_UNSET,
         max_failover_retry_count: -1,
         max_session_retry_count: -1,
@@ -727,6 +805,15 @@ pub struct CosmosOperationRequest {
 
     /// Per-call options. NULL = use driver/runtime defaults.
     pub options: *const CosmosOperationOptions,
+    /// Stable PATCH tracking UUID (NUL-terminated UTF-8). NULL = generate one
+    /// for this invocation.
+    pub patch_tracking_id: *const c_char,
+    /// Maximum number of PATCH tracking entries retained on the item. The
+    /// oldest entry is evicted when full. `0` = use the driver default.
+    pub patch_tracking_capacity: u16,
+    /// Age-based retention window in whole seconds. Capacity pressure can
+    /// evict an entry earlier. `0` = use the driver default.
+    pub patch_tracking_retention_seconds: u32,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -737,6 +824,7 @@ pub struct CosmosOperationRequest {
 pub(crate) struct BuiltRequest {
     pub(crate) operation: CosmosOperation,
     pub(crate) options: OperationOptions,
+    pub(crate) patch_tracking_id: Option<PatchTrackingId>,
     /// Inbound continuation token (if the host supplied one). Threaded into
     /// [`azure_data_cosmos_driver::driver::CosmosDriver::plan_operation`] by
     /// the feed submit entry point; ignored by the singleton entry point.
@@ -765,6 +853,13 @@ pub(crate) unsafe fn build_request(
     let req = unsafe { &*request };
 
     let operation = unsafe { build_operation(req)? };
+    let operation = apply_patch_tracking_fields(
+        operation,
+        req.patch_tracking_id,
+        req.patch_tracking_capacity,
+        req.patch_tracking_retention_seconds,
+    )?;
+    let (operation, patch_tracking_id) = resolve_patch_tracking_id(operation);
 
     let options = if req.options.is_null() {
         OperationOptions::default()
@@ -787,9 +882,42 @@ pub(crate) unsafe fn build_request(
     Ok(BuiltRequest {
         operation,
         options,
+        patch_tracking_id,
         continuation,
         plan_options,
     })
+}
+
+fn resolve_patch_tracking_id(
+    mut operation: CosmosOperation,
+) -> (CosmosOperation, Option<PatchTrackingId>) {
+    if operation.operation_type() != OperationType::Patch {
+        return (operation, None);
+    }
+    let instructions = operation
+        .body()
+        .and_then(|body| serde_json::from_slice::<PatchInstructions>(body).ok());
+    let requires_tracking = patch_requires_tracking(
+        operation.patch_tracking_id().is_some(),
+        instructions.as_ref(),
+    );
+    if !requires_tracking {
+        return (operation, None);
+    }
+
+    let tracking_id = operation
+        .patch_tracking_id()
+        .unwrap_or_else(PatchTrackingId::new);
+    operation = operation.with_patch_tracking_id(tracking_id);
+    (operation, Some(tracking_id))
+}
+
+fn patch_requires_tracking(
+    caller_supplied_tracking_id: bool,
+    instructions: Option<&PatchInstructions>,
+) -> bool {
+    caller_supplied_tracking_id
+        || instructions.is_some_and(|instructions| !instructions.is_retry_safe())
 }
 
 /// Builds just the [`CosmosOperation`] (factory + inline mutators) from a
@@ -985,6 +1113,60 @@ unsafe fn apply_inline_mutators(
     Ok(op)
 }
 
+fn apply_patch_tracking_fields(
+    mut operation: CosmosOperation,
+    tracking_id: *const c_char,
+    tracking_capacity: u16,
+    tracking_retention_seconds: u32,
+) -> Result<CosmosOperation, CosmosErrorCode> {
+    if tracking_id.is_null() && tracking_capacity == 0 && tracking_retention_seconds == 0 {
+        return Ok(operation);
+    }
+    if operation.operation_type() != OperationType::Patch {
+        return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+    }
+    let fields =
+        parse_patch_tracking_fields(tracking_id, tracking_capacity, tracking_retention_seconds)?;
+    if let Some(tracking_id) = fields.tracking_id {
+        operation = operation.with_patch_tracking_id(tracking_id);
+    }
+    if let Some(capacity) = fields.tracking_capacity {
+        operation = operation.with_patch_tracking_capacity(capacity);
+    }
+    if let Some(retention_seconds) = fields.tracking_retention_seconds {
+        operation = operation.with_patch_tracking_retention_seconds(retention_seconds);
+    }
+    Ok(operation)
+}
+
+#[derive(Debug)]
+struct ParsedPatchTrackingFields {
+    tracking_id: Option<PatchTrackingId>,
+    tracking_capacity: Option<NonZeroU16>,
+    tracking_retention_seconds: Option<std::num::NonZeroU32>,
+}
+
+fn parse_patch_tracking_fields(
+    tracking_id: *const c_char,
+    tracking_capacity: u16,
+    tracking_retention_seconds: u32,
+) -> Result<ParsedPatchTrackingFields, CosmosErrorCode> {
+    let tracking_id = if tracking_id.is_null() {
+        None
+    } else {
+        Some(
+            require_cstr(tracking_id)?
+                .parse::<PatchTrackingId>()
+                .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)?,
+        )
+    };
+    Ok(ParsedPatchTrackingFields {
+        tracking_id,
+        tracking_capacity: NonZeroU16::new(tracking_capacity),
+        tracking_retention_seconds: std::num::NonZeroU32::new(tracking_retention_seconds),
+    })
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Strict-scope reference accessors
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1065,6 +1247,110 @@ fn require_cstr<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_data_cosmos_driver::models::PatchOperation;
+
+    #[test]
+    fn supplied_id_opts_retry_safe_patch_into_tracking() {
+        let instructions = PatchInstructions::new()
+            .with_operation(PatchOperation::set("/name", serde_json::json!("after")));
+
+        assert!(!patch_requires_tracking(false, Some(&instructions)));
+        assert!(patch_requires_tracking(true, Some(&instructions)));
+    }
+
+    #[test]
+    fn patch_tracking_fields_map_to_driver_operation() {
+        let tracking_id = std::ffi::CString::new("7f5241c9-d7c2-4071-97a3-43bdebf6ef8f").unwrap();
+
+        let parsed = parse_patch_tracking_fields(tracking_id.as_ptr(), 17, 23).unwrap();
+
+        assert_eq!(
+            parsed.tracking_id.unwrap().to_string(),
+            "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f"
+        );
+        assert_eq!(parsed.tracking_capacity, NonZeroU16::new(17));
+        assert_eq!(
+            parsed.tracking_retention_seconds,
+            std::num::NonZeroU32::new(23)
+        );
+    }
+
+    #[test]
+    fn invalid_patch_tracking_id_is_rejected() {
+        let tracking_id = std::ffi::CString::new("not-a-uuid").unwrap();
+        let result = parse_patch_tracking_fields(tracking_id.as_ptr(), 0, 0);
+
+        assert_eq!(
+            result.unwrap_err(),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+        );
+    }
+
+    #[test]
+    fn patch_tracking_fields_are_rejected_for_non_patch_operation() {
+        let operation = CosmosOperation::read_all_databases(
+            azure_data_cosmos_driver::models::AccountReference::with_master_key(
+                azure_core::http::Url::parse("https://localhost").unwrap(),
+                "test-key",
+            ),
+        );
+
+        let result = apply_patch_tracking_fields(operation, std::ptr::null(), 17, 0);
+
+        assert_eq!(
+            result.unwrap_err(),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+        );
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    #[test]
+    fn operation_request_abi_layout_is_stable() {
+        use std::mem::{offset_of, size_of};
+
+        assert_eq!(size_of::<CosmosOperationRequest>(), 168);
+        assert_eq!(offset_of!(CosmosOperationRequest, kind), 0);
+        assert_eq!(offset_of!(CosmosOperationRequest, account), 8);
+        assert_eq!(offset_of!(CosmosOperationRequest, database), 16);
+        assert_eq!(offset_of!(CosmosOperationRequest, container), 24);
+        assert_eq!(offset_of!(CosmosOperationRequest, item_id), 32);
+        assert_eq!(offset_of!(CosmosOperationRequest, resource_link), 40);
+        assert_eq!(offset_of!(CosmosOperationRequest, partition_key), 48);
+        assert_eq!(
+            offset_of!(CosmosOperationRequest, partition_key_components),
+            56
+        );
+        assert_eq!(offset_of!(CosmosOperationRequest, partition_key_len), 64);
+        assert_eq!(offset_of!(CosmosOperationRequest, feed_range), 72);
+        assert_eq!(offset_of!(CosmosOperationRequest, body), 80);
+        assert_eq!(offset_of!(CosmosOperationRequest, body_len), 88);
+        assert_eq!(offset_of!(CosmosOperationRequest, session_token), 96);
+        assert_eq!(offset_of!(CosmosOperationRequest, activity_id), 104);
+        assert_eq!(offset_of!(CosmosOperationRequest, continuation_token), 112);
+        assert_eq!(offset_of!(CosmosOperationRequest, max_item_count), 120);
+        assert_eq!(offset_of!(CosmosOperationRequest, max_fan_out), 124);
+        assert_eq!(offset_of!(CosmosOperationRequest, patch_max_attempts), 128);
+        assert_eq!(
+            offset_of!(CosmosOperationRequest, populate_index_metrics),
+            129
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationRequest, populate_query_metrics),
+            130
+        );
+        assert_eq!(offset_of!(CosmosOperationRequest, precondition_kind), 132);
+        assert_eq!(offset_of!(CosmosOperationRequest, precondition_etag), 136);
+        assert_eq!(offset_of!(CosmosOperationRequest, options), 144);
+        assert_eq!(offset_of!(CosmosOperationRequest, patch_tracking_id), 152);
+        assert_eq!(
+            offset_of!(CosmosOperationRequest, patch_tracking_capacity),
+            160
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationRequest, patch_tracking_retention_seconds),
+            164
+        );
+    }
 
     #[test]
     fn tristate_bool_decodes_sentinels() {
@@ -1156,6 +1442,10 @@ mod tests {
             S::CosmosReadConsistencyStrategyGlobalStrong.to_driver(),
             Ok(Some(ReadConsistencyStrategy::GlobalStrong))
         );
+        assert_eq!(
+            S::CosmosReadConsistencyStrategyLatestCommitted.to_driver(),
+            Ok(Some(ReadConsistencyStrategy::LatestCommitted))
+        );
     }
 
     #[test]
@@ -1176,6 +1466,29 @@ mod tests {
     }
 
     #[test]
+    fn patch_strategy_maps_to_driver() {
+        use CosmosPatchStrategy as S;
+        for (strategy, expected) in [
+            (S::CosmosPatchStrategyUnset, None),
+            (S::CosmosPatchStrategyAuto, Some(PatchStrategy::Auto)),
+            (
+                S::CosmosPatchStrategyClientSide,
+                Some(PatchStrategy::ClientSide),
+            ),
+            (
+                S::CosmosPatchStrategyServerSide,
+                Some(PatchStrategy::ServerSide),
+            ),
+        ] {
+            let mut options = cosmos_operation_options_default();
+            options.patch_strategy = strategy as i32;
+            // SAFETY: all pointer fields are NULL / len 0.
+            let driver = unsafe { options.to_driver() }.expect("options convert");
+            assert_eq!(driver.patch_strategy, expected);
+        }
+    }
+
+    #[test]
     fn read_consistency_from_i32_validates_range() {
         use CosmosReadConsistencyStrategy as S;
         assert_eq!(S::from_i32(0), Ok(S::CosmosReadConsistencyStrategyUnset));
@@ -1185,6 +1498,10 @@ mod tests {
         );
         assert_eq!(
             S::from_i32(5),
+            Ok(S::CosmosReadConsistencyStrategyLatestCommitted)
+        );
+        assert_eq!(
+            S::from_i32(6),
             Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
         assert_eq!(
@@ -1205,6 +1522,31 @@ mod tests {
             C::from_i32(3),
             Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
+    }
+
+    #[test]
+    fn patch_strategy_from_i32_validates_range() {
+        use CosmosPatchStrategy as S;
+        assert_eq!(S::from_i32(0), Ok(S::CosmosPatchStrategyUnset));
+        assert_eq!(S::from_i32(1), Ok(S::CosmosPatchStrategyAuto));
+        assert_eq!(S::from_i32(2), Ok(S::CosmosPatchStrategyClientSide));
+        assert_eq!(S::from_i32(3), Ok(S::CosmosPatchStrategyServerSide));
+        assert_eq!(
+            S::from_i32(4),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        );
+        assert_eq!(
+            S::from_i32(-1),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        );
+
+        let mut options = cosmos_operation_options_default();
+        options.patch_strategy = 4;
+        // SAFETY: all pointer fields are NULL / len 0.
+        assert!(matches!(
+            unsafe { options.to_driver() },
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        ));
     }
 
     #[test]
@@ -1244,6 +1586,10 @@ mod tests {
             o.content_response_on_write,
             CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset as i32
         );
+        assert_eq!(
+            o.patch_strategy,
+            CosmosPatchStrategy::CosmosPatchStrategyUnset as i32
+        );
         assert_eq!(o.session_capturing_disabled, TRISTATE_UNSET);
         assert_eq!(o.max_failover_retry_count, -1);
         assert_eq!(o.max_session_retry_count, -1);
@@ -1267,6 +1613,7 @@ mod tests {
         let driver = unsafe { o.to_driver() }.expect("default options convert");
         assert_eq!(driver.read_consistency_strategy, None);
         assert_eq!(driver.content_response_on_write, None);
+        assert_eq!(driver.patch_strategy, None);
         assert_eq!(driver.session_capturing_disabled, None);
         assert_eq!(driver.max_failover_retry_count, None);
         assert_eq!(driver.max_session_retry_count, None);
@@ -1274,6 +1621,38 @@ mod tests {
         assert_eq!(driver.excluded_regions, None);
         assert!(driver.throughput_control.is_none());
         assert!(driver.binary_encoding.is_none());
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    #[test]
+    fn operation_options_abi_layout_is_stable() {
+        use std::mem::{offset_of, size_of};
+
+        assert_eq!(size_of::<CosmosOperationOptions>(), 88);
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, read_consistency_strategy),
+            0
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, content_response_on_write),
+            4
+        );
+        assert_eq!(offset_of!(CosmosOperationOptions, patch_strategy), 8);
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, session_capturing_disabled),
+            12
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, binary_encoding_enabled),
+            80
+        );
+        assert_eq!(
+            offset_of!(
+                CosmosOperationOptions,
+                binary_encoding_request_text_response
+            ),
+            81
+        );
     }
 
     #[test]
@@ -1305,13 +1684,22 @@ mod tests {
 
     #[test]
     fn binary_encoding_unset_yields_no_option() {
-        // enabled unset → no binary-encoding option at all (inherit a lower
-        // layer), even if the text-response flag is set (a no-op when unset).
+        let o = cosmos_operation_options_default();
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        assert!(driver.binary_encoding.is_none());
+    }
+
+    #[test]
+    fn text_response_is_honored_without_an_explicit_enabled_flag() {
         let mut o = cosmos_operation_options_default();
         o.binary_encoding_request_text_response = TRISTATE_TRUE;
         // SAFETY: all pointer fields are NULL / len 0.
         let driver = unsafe { o.to_driver() }.expect("options convert");
-        assert!(driver.binary_encoding.is_none());
+        let be = driver
+            .binary_encoding
+            .expect("an explicit text-response request must be carried through");
+        assert!(be.request_text_response);
     }
 
     #[test]

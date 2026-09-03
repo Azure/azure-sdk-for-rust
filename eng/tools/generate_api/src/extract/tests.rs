@@ -562,8 +562,8 @@ fn extracts_root_module_attributes_as_inner_attrs() {
         .get_mut(&Id(0))
         .expect("crate root present")
         .attrs = vec![
-        "#[warn(missing_docs)]".to_string(),
-        "#[doc = include_str!(\"../README.md\")]".to_string(),
+        rustdoc_types::Attribute::Other("#[warn(missing_docs)]".to_string()),
+        rustdoc_types::Attribute::Other("#[doc = include_str!(\"../README.md\")]".to_string()),
     ];
 
     let model = extract_model(&package_metadata("demo"), &krate, &mut NoopResolver)
@@ -2562,7 +2562,16 @@ impl ItemTestExt for Item {
     }
 
     fn with_attrs(mut self, attrs: Vec<String>) -> Self {
-        self.attrs = attrs;
+        self.attrs = attrs
+            .into_iter()
+            .map(|attribute| {
+                if attribute == "#[automatically_derived]" {
+                    rustdoc_types::Attribute::AutomaticallyDerived
+                } else {
+                    rustdoc_types::Attribute::Other(attribute)
+                }
+            })
+            .collect();
         self
     }
 }

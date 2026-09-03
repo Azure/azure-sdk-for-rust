@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+#[cfg(feature = "fe2o3_amqp_ws")]
+use crate::fe2o3::error::Fe2o3WebSocketError;
 use crate::{
-    connection::{AmqpConnectionApis, AmqpConnectionOptions},
+    connection::{AmqpConnectionApis, AmqpConnectionOptions, AmqpTransport},
     error::{AmqpErrorKind, Result},
     fe2o3::error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError},
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
@@ -42,6 +44,51 @@ impl Drop for Fe2o3AmqpConnection {
     fn drop(&mut self) {
         debug!("Dropping Fe2o3AmqpConnection.");
     }
+}
+
+// cspell:ignore servicebus
+
+/// The well-known path that Service Bus and Event Hubs expose for the AMQP
+/// WebSocket binding. Matches the suffix used by the other Azure SDKs.
+#[cfg(feature = "fe2o3_amqp_ws")]
+const WEBSOCKET_PATH: &str = "/$servicebus/websocket/";
+
+/// Builds the secure WebSocket (`wss://`) address used to tunnel AMQP for the
+/// given connection target. The target is the AMQP service URL (or a custom
+/// endpoint proxy). Its scheme and path are discarded: only the host and an
+/// explicit port (if any) are carried over, since AMQP-over-WebSockets always
+/// uses TLS and a fixed binding path. When no port is present the default
+/// `wss` port (443) is used.
+#[cfg(feature = "fe2o3_amqp_ws")]
+fn websocket_address(target: &Url) -> Result<String> {
+    let host = target
+        .host_str()
+        .ok_or_else(|| AmqpError::with_message("AMQP connection URL is missing a host."))?;
+    let authority = match target.port() {
+        Some(port) => format!("{host}:{port}"),
+        None => host.to_string(),
+    };
+    Ok(format!("wss://{authority}{WEBSOCKET_PATH}"))
+}
+
+/// Builds the TLS connector for AMQP framed directly on TCP.
+///
+/// The default connector of `fe2o3-amqp` fills its root store from
+/// `webpki-roots`, a compiled-in copy of the Mozilla root set, and it ignores
+/// the trust store of the operating system. This connector uses the platform
+/// verifier instead, so the TCP transport trusts the same roots as the HTTP
+/// stack of `azure_core`, and a broker behind a private or an enterprise
+/// certificate authority keeps working.
+#[cfg(feature = "fe2o3_amqp_rustls")]
+fn platform_verifier_connector() -> Result<tokio_rustls::TlsConnector> {
+    use rustls_platform_verifier::ConfigVerifierExt as _;
+
+    let config = rustls::ClientConfig::with_platform_verifier().map_err(|e| {
+        AmqpError::with_message(format!("Could not build the AMQP TLS configuration: {e}"))
+    })?;
+    Ok(tokio_rustls::TlsConnector::from(std::sync::Arc::new(
+        config,
+    )))
 }
 
 #[async_trait::async_trait]
@@ -111,18 +158,91 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 builder = builder.buffer_size(buffer_size);
             }
 
-            if let Some(custom_endpoint) = options.custom_endpoint {
-                endpoint = custom_endpoint;
-                builder = builder.hostname(url.host_str());
-            }
+            let handle = match options.transport.unwrap_or_default() {
+                AmqpTransport::Tcp => {
+                    // `custom_endpoint` redirects the socket to a proxy while the
+                    // AMQP `hostname` stays the real service host.
+                    if let Some(custom_endpoint) = options.custom_endpoint {
+                        endpoint = custom_endpoint;
+                        builder = builder.hostname(url.host_str());
+                    }
+
+                    // Supply the connector so that the handshake uses the trust
+                    // store of the operating system. See
+                    // `platform_verifier_connector`. Without a connector,
+                    // `fe2o3-amqp` falls back to its `webpki-roots` default.
+                    #[cfg(feature = "fe2o3_amqp_rustls")]
+                    {
+                        builder
+                            .rustls_connector(platform_verifier_connector()?)
+                            .open(endpoint)
+                            .await
+                            .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
+                    }
+
+                    // Another TLS stack, selected through a direct dependency on
+                    // `fe2o3-amqp`, keeps the default connector of that stack.
+                    #[cfg(not(feature = "fe2o3_amqp_rustls"))]
+                    {
+                        builder
+                            .open(endpoint)
+                            .await
+                            .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
+                    }
+                }
+                AmqpTransport::WebSocket => {
+                    // A build without the transport code still accepts the variant,
+                    // so report the missing feature rather than fail to compile.
+                    #[cfg(not(feature = "fe2o3_amqp_ws"))]
+                    {
+                        Err(AmqpError::with_message(
+                            "The WebSocket transport needs the `fe2o3_amqp_ws` feature of \
+                             azure_core_amqp.",
+                        ))?;
+                        unreachable!()
+                    }
+
+                    // Tunnel AMQP over a secure WebSocket (port 443) for networks
+                    // that block the native AMQP ports. The socket connects to the
+                    // websocket address (or the custom endpoint proxy, if set),
+                    // while the AMQP `hostname` remains the real service host.
+                    // `open_with_stream` does not derive the hostname from a URL,
+                    // so it must be set explicitly.
+                    //
+                    // `connect_with_config` takes no connector, so `fe2o3-amqp-ws`
+                    // uses whichever TLS stack its own features select. The
+                    // `fe2o3_amqp_ws_rustls` feature of this crate selects rustls,
+                    // and a direct dependency on `fe2o3-amqp-ws` in the application
+                    // can select another stack instead.
+                    //
+                    // `connect_tls_with_config` does the same thing, but it sits
+                    // behind the TLS features of `fe2o3-amqp-ws`, so a call to it
+                    // would keep `fe2o3_amqp_ws` from building on its own.
+                    // `connect_with_config` carries no such gate, and it reports
+                    // `TlsFeatureNotEnabled` when no stack is selected.
+                    #[cfg(feature = "fe2o3_amqp_ws")]
+                    {
+                        let ws_target = options.custom_endpoint.as_ref().unwrap_or(&url);
+                        let ws_address = websocket_address(ws_target)?;
+                        debug!("Opening AMQP-over-WebSockets connection to {ws_address}.");
+                        let ws_stream = fe2o3_amqp_ws::WebSocketStream::connect_with_config(
+                            &ws_address,
+                            None,
+                            false,
+                        )
+                        .await
+                        .map_err(|e| AmqpError::from(Fe2o3WebSocketError(e)))?;
+                        builder
+                            .hostname(url.host_str())
+                            .open_with_stream(ws_stream)
+                            .await
+                            .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
+                    }
+                }
+            };
 
             self.connection
-                .set(Mutex::new(
-                    builder
-                        .open(endpoint)
-                        .await
-                        .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?,
-                ))
+                .set(Mutex::new(handle))
                 .map_err(|_| Self::connection_already_set())?;
             Ok(())
         }
@@ -219,5 +339,69 @@ impl From<Fe2o3ConnectionError> for AmqpError {
 
             _ => AmqpErrorKind::TransportImplementationError(Box::new(e.0)).into(),
         }
+    }
+}
+
+#[cfg(all(test, feature = "fe2o3_amqp_rustls"))]
+mod rustls_tests {
+    use super::*;
+
+    #[test]
+    fn platform_verifier_connector_builds() {
+        // `ClientConfig::builder()` panics when the process has no default
+        // crypto provider, and the platform verifier reports an error when it
+        // cannot read the trust store of the operating system. Both faults
+        // would otherwise appear only when a connection opens.
+        assert!(platform_verifier_connector().is_ok());
+    }
+}
+
+#[cfg(all(test, feature = "fe2o3_amqp_ws"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn websocket_address_uses_default_port_for_service_url() {
+        // The Event Hubs connection URL has no explicit port; the wss default
+        // (443) is implied and the binding path is appended.
+        let url = Url::parse("amqps://my-namespace.servicebus.windows.net/my-eventhub").unwrap();
+        assert_eq!(
+            websocket_address(&url).unwrap(),
+            "wss://my-namespace.servicebus.windows.net/$servicebus/websocket/"
+        );
+    }
+
+    #[test]
+    fn websocket_address_preserves_explicit_port() {
+        // A custom endpoint (e.g. a local proxy) may carry an explicit port,
+        // which must be preserved in the websocket address.
+        let proxy = Url::parse("amqps://localhost:8081/").unwrap();
+        assert_eq!(
+            websocket_address(&proxy).unwrap(),
+            "wss://localhost:8081/$servicebus/websocket/"
+        );
+    }
+
+    #[test]
+    fn websocket_address_preserves_an_amqp_port() {
+        // A custom endpoint that names an AMQP port keeps it. The .NET Azure SDK
+        // carries `CustomEndpointAddress` into the WebSocket address the same way,
+        // so a proxy that accepts WebSockets on 5671 stays reachable. A caller who
+        // wants port 443 leaves the port out.
+        let proxy = Url::parse("amqps://proxy.example.com:5671/").unwrap();
+        assert_eq!(
+            websocket_address(&proxy).unwrap(),
+            "wss://proxy.example.com:5671/$servicebus/websocket/"
+        );
+    }
+
+    #[test]
+    fn websocket_address_keeps_brackets_around_ipv6_host() {
+        // `Url::host_str` keeps the brackets around an IPv6 literal, so the
+        // authority stays valid when the host and the port are joined.
+        let proxy = Url::parse("amqps://[::1]:8081/").unwrap();
+        let address = websocket_address(&proxy).unwrap();
+        assert_eq!(address, "wss://[::1]:8081/$servicebus/websocket/");
+        assert!(Url::parse(&address).is_ok());
     }
 }

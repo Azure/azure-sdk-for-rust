@@ -392,7 +392,7 @@ async fn metadata_pk_range_read_hedges_cold_then_pins_to_the_winner() {
     let driver = make_driver(&ctx, vec![Arc::clone(&east_pk), Arc::clone(&west_pk)]).await;
 
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -401,7 +401,8 @@ async fn metadata_pk_range_read_hedges_cold_then_pins_to_the_winner() {
     driver
         .resolve_all_partition_key_ranges(&container, false)
         .await
-        .expect("cold partition key range fetch succeeds");
+        .expect("cold partition key range fetch succeeds")
+        .expect("cold partition key range fetch returns topology");
 
     assert!(
         east_pk.hit_count() >= 1,
@@ -421,7 +422,8 @@ async fn metadata_pk_range_read_hedges_cold_then_pins_to_the_winner() {
     driver
         .resolve_all_partition_key_ranges(&container, true)
         .await
-        .expect("forced partition key range refresh succeeds");
+        .expect("forced partition key range refresh succeeds")
+        .expect("forced partition key range refresh returns topology");
 
     assert_eq!(
         east_pk.hit_count(),

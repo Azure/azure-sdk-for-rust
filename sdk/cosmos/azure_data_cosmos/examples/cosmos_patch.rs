@@ -3,22 +3,27 @@
 
 //! Partial updates with PATCH.
 //!
+//! **Preview.** Requires the `preview_patch` feature.
+//!
 //! Demonstrates `ContainerClient::patch_item` and the `PatchInstructions`
 //! builder, exercising every variant of `PatchOperation` (`set`, `add`,
 //! `replace`, `remove`, `increment`, `move_value`).
 //!
 //! ## How PATCH actually works
 //!
-//! Cosmos SQL "patch" is currently implemented by the SDK as a *client-side*
-//! read-modify-write loop:
+//! `PatchStrategy::Auto` sends retry-safe lists containing at most 10
+//! instructions directly to Cosmos DB. Unsafe or longer lists use the tracked
+//! client-side read-modify-write loop:
 //!
 //! 1. The SDK reads the current item (capturing its ETag).
 //! 2. The SDK applies the patch operations locally.
 //! 3. The SDK issues a conditional Replace gated on the ETag from step 1.
-//! 4. On a 412 Precondition Failed (mid-air collision), the SDK retries
-//!    from step 1 up to `PatchItemOptions::with_max_attempts` times.
+//! 4. On a 412 Precondition Failed (mid-air collision), the SDK starts another
+//!    attempt from step 1 until the total `PatchItemOptions::with_max_attempts`
+//!    budget, including the initial attempt, is exhausted.
 //!
-//! See `ContainerClient::patch_item` rustdoc for the idempotency caveats.
+//! Explicit `ServerSide` never falls back and Cosmos DB rejects more than 10
+//! instructions. See `ContainerClient::patch_item` for retry semantics.
 //!
 //! ## Required setup
 //!
@@ -27,12 +32,12 @@
 //! ## Running
 //!
 //! ```text
-//! cargo run --example cosmos_patch -- \
+//! cargo run --features preview_patch --example cosmos_patch -- \
 //!     https://<account>.documents.azure.com:443/ --region "East US" --use-entra
 //! ```
 
 use azure_data_cosmos::models::{CosmosNumber, PatchInstructions, PatchOperation};
-use azure_data_cosmos::options::PatchItemOptions;
+use azure_data_cosmos::options::{PatchItemOptions, PatchStrategy};
 use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosClient, RoutingStrategy};
 use azure_identity::DeveloperToolsCredential;
 use clap::Parser;
@@ -72,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = create_client(&args).await?;
     let items = client
         .database_client(&args.database)
-        .container_client(&args.container)
+        .container_client(&args.container, None)
         .await?;
 
     // Seed an item with a shape rich enough to exercise every PatchOperation.
@@ -110,9 +115,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_operation(PatchOperation::move_value("/tags/0", "/headline_tag"));
 
     // ----- Issue the patch. -------------------------------------------------
-    // `with_max_attempts` bounds the SDK's internal RMW retry loop. The
-    // default (3) is fine for most workloads; very contended items may
-    // benefit from a higher cap, but consider re-shaping the workload first.
+    // This list includes non-idempotent operations, so Auto would choose RMW.
+    // Select ClientSide explicitly because `with_max_attempts` applies only to
+    // that path. The default is 5; this example sets it explicitly.
+    // Very contended items may benefit from a higher cap, but consider
+    // re-shaping the workload first.
     let response = items
         .patch_item(
             "contoso",
@@ -120,6 +127,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             patch,
             Some(
                 PatchItemOptions::default()
+                    .with_strategy(PatchStrategy::ClientSide)
                     .with_max_attempts(NonZeroU8::new(5).expect("5 is non-zero")),
             ),
         )
@@ -130,8 +138,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         response.headers().request_charge(),
     );
 
-    // The response is the standard `ItemResponse` shape, so we can read the
-    // patched item back via `into_model::<T>()` when content-on-write is on.
+    // PATCH returns the post-image by default. Setting
+    // `content_response_on_write` to Disabled suppresses it for either path.
     let patched: serde_json::Value = response.into_model()?;
     println!("after    {patched:#}");
 

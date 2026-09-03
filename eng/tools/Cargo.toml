@@ -3,7 +3,6 @@ resolver = "2"
 members = [
   "check_api_superset",
   "generate_api",
-  "generate_api_report",
 ]
 
 [workspace.package]
@@ -11,11 +10,11 @@ authors = ["Microsoft"]
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/Azure/azure-sdk-for-rust"
-rust-version = "1.85"
+rust-version = "1.95"
 
 [workspace.dependencies]
 clap = { version = "4.5.58", features = ["derive"] }
-rustdoc-types = "0.41.0"
+rustdoc-types = "0.57.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 toml = "0.8.20"

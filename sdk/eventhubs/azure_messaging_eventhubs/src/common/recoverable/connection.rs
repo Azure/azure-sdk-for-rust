@@ -25,7 +25,7 @@ use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
     AmqpManagement, AmqpManagementApis, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions,
     AmqpSender, AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource,
-    AmqpSymbol,
+    AmqpSymbol, AmqpTransport,
 };
 #[cfg(test)]
 use std::sync::Mutex;
@@ -79,6 +79,7 @@ pub(crate) struct RecoverableConnection {
     pub(super) url: Url,
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
+    transport: AmqpTransport,
     // The management client is a single cached instance, held in a `OnceCell`
     // for the same reason the per-path caches are: the expensive build (connect
     // + session begin + CBS authorize + link attach) must not run while a lock
@@ -147,9 +148,9 @@ pub(crate) struct RecoverableConnection {
     forced_error: Mutex<Option<AmqpError>>,
 
     // Separate from `forced_error`, which the per-operation wrappers
-    // (receive, send, management call) consume. This slot is consumed only
-    // by `ensure_receiver`, so a test can fail an attach without changing
-    // how the operation wrappers behave.
+    // (receive, send, management call) consume. This slot is consumed by
+    // `ensure_receiver` and `ensure_sender`, so a test can fail an attach
+    // without changing how the operation wrappers behave.
     #[cfg(test)]
     forced_attach_error: Mutex<Option<AmqpError>>,
 
@@ -283,6 +284,7 @@ impl RecoverableConnection {
         url: Url,
         application_id: Option<String>,
         custom_endpoint: Option<Url>,
+        transport: AmqpTransport,
         credential: Arc<dyn TokenCredential>,
         retry_options: RetryOptions,
         cbs_token_type: Option<&'static str>,
@@ -299,6 +301,7 @@ impl RecoverableConnection {
                 application_id,
                 connection_name,
                 custom_endpoint,
+                transport,
                 retry_options,
                 cbs_lock: AsyncMutex::new(()),
                 connections: AsyncMutex::new(None),
@@ -356,13 +359,13 @@ impl RecoverableConnection {
         v.map_or(Ok(()), Err)
     }
 
-    /// Makes the next `ensure_receiver` call fail with `error`.
+    /// Makes the next `ensure_receiver` or `ensure_sender` call fail with `error`.
     ///
     /// The injected error takes the same return path as a rejected link
     /// attach: out of the `get_or_try_init` closure, through
-    /// `ensure_receiver` and `get_receiver`, and into the caller's error
-    /// handling. Tests use this to drive the attach-failure branch of
-    /// `EventReceiver::stream_events` without a live broker.
+    /// `ensure_receiver` or `ensure_sender`, and into the caller's error
+    /// handling. Tests use this to drive attach-failure branches without a
+    /// live broker.
     #[cfg(test)]
     pub(crate) fn force_attach_error(&self, error: AmqpError) -> Result<()> {
         use crate::EventHubsError;
@@ -423,6 +426,8 @@ impl RecoverableConnection {
         // open a second connection to the service after the application closed
         // the client.
         self.closed.store(true, Ordering::Release);
+
+        self.authorizer.stop_refresh_task().await;
 
         // Swap the cell out under the write lock, then detach without holding
         // it. The guard is a separate binding so the lock scope is visible and
@@ -808,6 +813,28 @@ impl RecoverableConnection {
         .cell
     }
 
+    /// Builds the options handed to [`AmqpConnection::open`]. Kept separate from
+    /// `create_connection` so the wiring can be asserted without a broker.
+    fn connection_options(&self) -> AmqpConnectionOptions {
+        AmqpConnectionOptions {
+            properties: Some(
+                vec![
+                    ("user-agent", get_user_agent(&self.application_id)),
+                    ("version", get_package_version()),
+                    ("platform", get_platform_info()),
+                    ("product", get_package_name()),
+                ]
+                .into_iter()
+                .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+                .collect(),
+            ),
+            desired_capabilities: Some(vec![GEODR_REPLICATION_CAPABILITY.into()]),
+            custom_endpoint: self.custom_endpoint.clone(),
+            transport: Some(self.transport),
+            ..Default::default()
+        }
+    }
+
     #[instrument(
         level = "debug",
         skip_all,
@@ -829,22 +856,7 @@ impl RecoverableConnection {
             .open(
                 self.connection_name.clone(),
                 self.url.clone(),
-                Some(AmqpConnectionOptions {
-                    properties: Some(
-                        vec![
-                            ("user-agent", get_user_agent(&self.application_id)),
-                            ("version", get_package_version()),
-                            ("platform", get_platform_info()),
-                            ("product", get_package_name()),
-                        ]
-                        .into_iter()
-                        .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
-                        .collect(),
-                    ),
-                    desired_capabilities: Some(vec![GEODR_REPLICATION_CAPABILITY.into()]),
-                    custom_endpoint: self.custom_endpoint.clone(),
-                    ..Default::default()
-                }),
+                Some(self.connection_options()),
             )
             .await?;
         info!(
@@ -1011,6 +1023,12 @@ impl RecoverableConnection {
         // steady-state sends never serialize on a shared lock. See issue #2243.
         let sender = self
             .get_or_init_generational(&self.sender_instances, path, || async {
+                // Test seam: fail the attach with an injected error before any
+                // network activity. The error takes the same path as a
+                // rejected sender attach below it.
+                #[cfg(test)]
+                self.get_forced_attach_error()?;
+
                 // Ensure that we are authorized to access the senders path.
                 self.authorizer.authorize_path(self, path).await?;
 
@@ -1498,9 +1516,17 @@ impl Drop for RecoverableConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::http::Url;
+    use azure_core::{
+        credentials::{AccessToken, TokenCredential, TokenRequestOptions},
+        http::Url,
+        time::{Duration, OffsetDateTime},
+    };
     use azure_core_test::credentials::MockCredential;
-    use std::sync::Arc;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+    use tokio::sync::Notify;
 
     // A close does not need exclusive ownership of the connection.
     //
@@ -1515,6 +1541,7 @@ mod tests {
             Url::parse("amqps://example.com").unwrap(),
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1540,6 +1567,153 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn close_stops_owned_authorization_refresh_task() {
+        #[derive(Debug)]
+        struct GatedCredential {
+            requests: AtomicUsize,
+            entered_refresh: Notify,
+            release_refresh: Notify,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for GatedCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                match self.requests.fetch_add(1, Ordering::SeqCst) {
+                    0 => Ok(AccessToken::new(
+                        azure_core::credentials::Secret::new("initial_token"),
+                        OffsetDateTime::now_utc() + Duration::hours(1),
+                    )),
+                    1 => {
+                        self.entered_refresh.notify_one();
+                        self.release_refresh.notified().await;
+                        Ok(AccessToken::new(
+                            azure_core::credentials::Secret::new("refreshed_token"),
+                            OffsetDateTime::now_utc() + Duration::hours(1),
+                        ))
+                    }
+                    request => unreachable!("unexpected token request {request}"),
+                }
+            }
+        }
+
+        let credential = Arc::new(GatedCredential {
+            requests: AtomicUsize::new(0),
+            entered_refresh: Notify::new(),
+            release_refresh: Notify::new(),
+        });
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            AmqpTransport::default(),
+            credential.clone(),
+            Default::default(),
+            None,
+        );
+        let authorizer = connection.authorizer.clone();
+        authorizer.disable_authorization().unwrap();
+        authorizer
+            .set_token_refresh_bias_for_test(Duration::hours(2))
+            .unwrap();
+
+        let path = Url::parse("amqps://example.com/close_refresh_task").unwrap();
+        authorizer.authorize_path(&connection, &path).await.unwrap();
+
+        // The second request proves that the refresher holds an Arc to the authorizer.
+        credential.entered_refresh.notified().await;
+
+        connection.close_connection().await.unwrap();
+        assert_eq!(
+            Arc::strong_count(&authorizer),
+            2,
+            "the connection and test authorizer references must remain after close"
+        );
+        drop(connection);
+        assert_eq!(
+            Arc::strong_count(&authorizer),
+            1,
+            "authorization refresh task remained alive after close; strong_count={}",
+            Arc::strong_count(&authorizer)
+        );
+    }
+
+    #[tokio::test]
+    async fn close_racing_first_authorization_does_not_start_refresher() {
+        #[derive(Debug)]
+        struct GatedCredential {
+            requests: AtomicUsize,
+            entered: Notify,
+            release: Notify,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for GatedCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                if self.requests.fetch_add(1, Ordering::SeqCst) == 0 {
+                    self.entered.notify_one();
+                    self.release.notified().await;
+                }
+                Ok(AccessToken::new(
+                    azure_core::credentials::Secret::new("initial_token"),
+                    OffsetDateTime::now_utc() + Duration::hours(1),
+                ))
+            }
+        }
+
+        let credential = Arc::new(GatedCredential {
+            requests: AtomicUsize::new(0),
+            entered: Notify::new(),
+            release: Notify::new(),
+        });
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            AmqpTransport::default(),
+            credential.clone(),
+            Default::default(),
+            None,
+        );
+        let authorizer = connection.authorizer.clone();
+        authorizer.disable_authorization().unwrap();
+
+        let path = Url::parse("amqps://example.com/close_first_authorization").unwrap();
+        let authorization = {
+            let authorizer = authorizer.clone();
+            let connection = connection.clone();
+            tokio::spawn(async move { authorizer.authorize_path(&connection, &path).await })
+        };
+
+        credential.entered.notified().await;
+        connection.close_connection().await.unwrap();
+        credential.release.notify_one();
+        authorization
+            .await
+            .expect("authorize_path task panicked")
+            .expect("authorize_path returned an error");
+
+        assert_eq!(
+            credential.requests.load(Ordering::SeqCst),
+            1,
+            "the first authorization must make one token request"
+        );
+        drop(connection);
+        assert_eq!(
+            Arc::strong_count(&authorizer),
+            1,
+            "authorization refresh task must not start after close"
+        );
+    }
+
     // The RecoverableConnection implementation uses a UUID to identify connections unless an application ID is provided.
     // This test verifies that a new recoverable connection uses a UUID for its connection ID when no application ID is specified.
     // It also verifies that the connections aren't initialized during construction - they're created on-demand.
@@ -1550,6 +1724,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1573,6 +1748,7 @@ mod tests {
             url,
             Some(app_id.clone()),
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1593,6 +1769,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1613,6 +1790,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1667,6 +1845,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1696,6 +1875,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1740,6 +1920,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1785,6 +1966,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1840,6 +2022,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1943,6 +2126,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1992,12 +2176,58 @@ mod tests {
             url,
             None,
             Some(custom_endpoint.clone()),
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
         );
 
         assert_eq!(connection_manager.custom_endpoint, Some(custom_endpoint));
+    }
+
+    // The transport selected on a client builder (and, transitively, on an
+    // EventProcessor's injected ConsumerClient) must reach the connection so it
+    // is applied when the AMQP connection is opened. This verifies the field is
+    // stored on the RecoverableConnection.
+    #[test]
+    fn constructor_with_websocket_transport() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection_manager = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            AmqpTransport::WebSocket,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+
+        assert_eq!(connection_manager.transport, AmqpTransport::WebSocket);
+    }
+
+    // The stored transport must also reach the options handed to
+    // `AmqpConnection::open`. Asserting on the constructor alone would still
+    // pass if `create_connection` dropped the `with_transport` call.
+    #[test]
+    fn connection_options_carry_the_transport() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let custom_endpoint = Url::parse("amqps://proxy.example.com:8081").unwrap();
+        for transport in [AmqpTransport::Tcp, AmqpTransport::WebSocket] {
+            let connection_manager = RecoverableConnection::new(
+                url.clone(),
+                None,
+                Some(custom_endpoint.clone()),
+                transport,
+                Arc::new(MockCredential),
+                Default::default(),
+                None,
+            );
+
+            let options = connection_manager.connection_options();
+            assert_eq!(options.transport, Some(transport));
+            assert_eq!(options.custom_endpoint, Some(custom_endpoint.clone()));
+            assert!(options.properties.is_some());
+        }
     }
 
     #[test]
@@ -2363,6 +2593,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2439,6 +2670,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2488,6 +2720,7 @@ mod tests {
             url,
             None,
             None,
+            AmqpTransport::default(),
             Arc::new(MockCredential),
             Default::default(),
             None,

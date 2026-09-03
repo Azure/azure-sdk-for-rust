@@ -26,17 +26,22 @@
 //! cargo run --example cosmos_runtime --features key_auth
 //! ```
 
+// Only the `key_auth` code paths below build a client; the fallbacks just report
+// that the feature is missing, so everything else is gated to keep the
+// default-feature build warning-free.
+#[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
-use azure_data_cosmos::options::Region;
+#[cfg(feature = "key_auth")]
 use azure_data_cosmos::options::{
-    ConnectionPoolOptions, ServerCertificateValidation, UserAgentSuffix,
+    ConnectionPoolOptions, Region, ServerCertificateValidation, UserAgentSuffix,
 };
-use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy,
-};
+use azure_data_cosmos::CosmosClient;
+#[cfg(feature = "key_auth")]
+use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosRuntime, RoutingStrategy};
 use std::error::Error;
 
 /// The well-known emulator account key.
+#[cfg(feature = "key_auth")]
 const EMULATOR_KEY: &str =
     "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
 
