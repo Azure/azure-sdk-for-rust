@@ -2,10 +2,11 @@
 
 ## Goal
 
-`eng/tools/generate_api` is a Rust CLI that generates two public API artifacts for a target crate:
+`eng/tools/generate_api` is a Rust CLI that generates the following public API artifacts for a target crate:
 
 1. `API.md` — one fenced `rust` block
-2. `apiview.json` — an APIView tree-style `CodeFile`
+2. `API.comments.patch` — a unified diff that adds doc comments back to `API.md`
+3. `apiview.json` — an APIView tree-style `CodeFile`
 
 ## Scope
 
@@ -21,14 +22,14 @@ The tool exposes:
 
 - `--manifest-path <path/to/Cargo.toml>`
 - `--format <markdown|apiview>` default `markdown`
-- `--no-docs` only for `apiview`
+- `--no-docs` suppresses doc comments in `apiview` and skips `API.comments.patch`
 - `--output <directory>`
 
 Behavior:
 
-- default `markdown` writes `API.md`
+- default `markdown` writes `API.md` and `API.comments.patch`
 - `--format apiview` writes `apiview.json`
-- `--no-docs` suppresses APIView doc comment tokens
+- `--no-docs` suppresses APIView doc comment tokens and the Markdown comments patch
 - progress goes to stdout
 - fatal errors go to stderr and exit `1`
 
@@ -170,7 +171,7 @@ Known synthesized derives:
 Documentation handling:
 
 - rustdoc docs stay separate from attrs in the shared model
-- markdown output currently omits doc comments
+- markdown output omits doc comments and emits them as a companion patch
 - APIView renders comment tokens with documentation markers
 
 Signature normalization:
@@ -186,6 +187,16 @@ For traits whose rustdoc-expanded methods carry synthetic async-trait lifetimes:
 - synthesize `#[async_trait]`
 - elide synthetic `'lifeN` and `'async_trait` lifetimes from signatures
 - remove empty generic parameter lists after elision
+
+## Comments patch output
+
+- `render::markdown::render_lines` renders every line and marks doc comment lines
+- `render::markdown::render_from_lines` drops the marked lines to produce `API.md`
+- `render::patch` turns the marked lines into a unified diff against `API.md`
+- the diff only contains insertions
+- each contiguous doc-comment block becomes its own hunk
+- each hunk includes only the doc comments plus the next non-doc line as context
+- no doc comments means an empty patch file
 
 ## APIView output design
 
