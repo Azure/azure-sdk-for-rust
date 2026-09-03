@@ -52,13 +52,17 @@ jobs:
         - bash: |
             set -euo pipefail
 
-            read -r -a apt_packages <<< "$(AptPackages)"
-            if (( ${#apt_packages[@]} > 0 )); then
-              sudo apt-get update
-              sudo apt-get install -yq "${apt_packages[@]}"
-            fi
-
             case "$(TargetId)" in
+              linux-amd64-glibc)
+                ;;
+              linux-arm64-glibc)
+                sudo apt-get update
+                sudo apt-get install -yq gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+                ;;
+              linux-amd64-musl)
+                sudo apt-get update
+                sudo apt-get install -yq musl-dev musl-tools
+                ;;
               linux-arm64-musl)
                 toolchain_root="$(Agent.TempDirectory)/aarch64-linux-musl"
                 toolchain_archive="$(Agent.TempDirectory)/aarch64-linux-musl-gcc-10.3.0.tar.gz"
@@ -71,8 +75,6 @@ jobs:
                 tar -xzf "$toolchain_archive" -C "$toolchain_root"
                 echo "##vso[task.prependpath]$toolchain_root/output/bin"
                 export PATH="$toolchain_root/output/bin:$PATH"
-                ;;
-              linux-*)
                 ;;
               *)
                 echo "Unsupported Linux native-driver target: $(TargetId)" >&2

@@ -26,8 +26,8 @@ The active build targets are:
 - Linux ARM64 using musl
 - macOS ARM64
 
-Windows ARM64 and Intel macOS are outside the supported matrix. Dynamic libraries
-for .NET, Java, and Python are also outside this pull request.
+Windows ARM64 is outside this matrix, and Intel macOS remains disabled. Dynamic
+libraries for .NET, Java, and Python are also outside this pull request.
 
 The generated Windows cgo linker file statically links the MinGW pthread runtime.
 This prevents the final Go application from requiring a separately distributed
@@ -171,3 +171,4 @@ the appropriate driver module, so users do not need a custom musl build tag.
 - Confirm that the Azure SDK Automation GitHub App installation includes the
   private `Azure/azure-cosmos-driver` repository and that this pipeline may use
   the `AzureSDKEngKeyVault Secrets` service connection.
+- Decide whether Intel macOS has enough demand to enable it.

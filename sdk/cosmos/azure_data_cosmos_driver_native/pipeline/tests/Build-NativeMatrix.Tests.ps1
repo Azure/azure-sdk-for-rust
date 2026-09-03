@@ -192,7 +192,6 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             $generated.TargetId | Should -Be $target.id
             $generated.Triple | Should -Be $target.triple
             $generated.CCompiler | Should -Be $target.c_compiler
-            $generated.AptPackages | Should -Be (@($target.apt_packages) -join ' ')
             $generated.GoToolchainVersion | Should -Be $Matrix.go_toolchain_version
         }
     }
@@ -234,20 +233,12 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $buildJobTemplate | Should -Match ([regex]::Escape('-StaticOnly'))
     }
 
-    It 'provisions Linux compilers from matrix metadata or checksum-pinned Microsoft prior art' {
-        $outputPath = Join-Path $TestDrive 'native-driver-job-matrix.json'
-        & $JobMatrixScriptPath -MatrixPath $MatrixPath -OutputPath $outputPath
-
-        $jobMatrix = Get-Content $outputPath -Raw | ConvertFrom-Json
+    It 'provisions Linux compilers from Ubuntu or checksum-pinned Microsoft prior art' {
         $buildJobTemplate = Get-Content $BuildJobTemplatePath -Raw
 
-        $jobMatrix.matrix.Target.'linux-arm64-glibc'.AptPackages |
-            Should -Be 'gcc-aarch64-linux-gnu libc6-dev-arm64-cross'
-        $jobMatrix.matrix.Target.'linux-amd64-musl'.AptPackages |
-            Should -Be 'musl-dev musl-tools'
-        $buildJobTemplate | Should -Match ([regex]::Escape(
-            'read -r -a apt_packages <<< "$(AptPackages)"'
-        ))
+        $buildJobTemplate | Should -Match 'gcc-aarch64-linux-gnu'
+        $buildJobTemplate | Should -Match 'libc6-dev-arm64-cross'
+        $buildJobTemplate | Should -Match 'musl-dev musl-tools'
         $buildJobTemplate | Should -Match ([regex]::Escape(
             'microsoft/vscode-linux-build-agent/releases/download/'
         ))
