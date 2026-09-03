@@ -1421,15 +1421,13 @@ impl CosmosDriver {
         db_name: &str,
         container_name: &str,
         options: OperationOptions,
+        absolute_deadline: Option<Instant>,
     ) -> crate::error::Result<ContainerReference> {
         let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
+        let operation = CosmosOperation::read_container_by_name(db_ref, container_name.to_owned())
+            .with_absolute_deadline(absolute_deadline);
 
-        let container_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
-                options,
-            )
-            .await?;
+        let container_result = self.execute_singleton_operation(operation, options).await?;
         let container_headers = container_result.headers().clone();
         let container_diagnostics = container_result.diagnostics();
         let container_props: ContainerProperties =
@@ -2264,10 +2262,13 @@ impl CosmosDriver {
         container: ContainerReference,
         continuation: Option<String>,
         region_pin: Option<RegionPin>,
+        options: OperationOptions,
+        absolute_deadline: Option<Instant>,
     ) -> (Option<PkRangeFetchResult>, Option<CosmosEndpoint>) {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
-        let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
+        let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone())
+            .with_absolute_deadline(absolute_deadline);
 
         // Set changefeed If-None-Match precondition for continuation.
         if let Some(token) = continuation.as_deref() {
@@ -2290,7 +2291,6 @@ impl CosmosDriver {
         // configuration. The pin's endpoint additionally routes the request back
         // to the region that served the cold page, so a failover retry cannot
         // move the chain either.
-        let options = OperationOptions::default();
         let overrides = OperationOverrides {
             region_pin: region_pin.map(Box::new),
             ..Default::default()
@@ -2440,10 +2440,13 @@ impl CosmosDriver {
     /// pinned region cannot wedge later force-refreshes.
     fn pk_range_page_fetcher<'a>(
         &'a self,
+        options: OperationOptions,
+        absolute_deadline: Option<Instant>,
     ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
            + Send
            + 'a {
         move |container, continuation| {
+            let options = options.clone();
             Box::pin(async move {
                 let region_pin = {
                     let mut pins = self
@@ -2464,7 +2467,13 @@ impl CosmosDriver {
                 let is_cold = region_pin.is_none();
 
                 let (result, serving_endpoint) = self
-                    .fetch_pk_ranges_from_service(container.clone(), continuation, region_pin)
+                    .fetch_pk_ranges_from_service(
+                        container.clone(),
+                        continuation,
+                        region_pin,
+                        options,
+                        absolute_deadline,
+                    )
                     .await;
                 // Record the serving region for every successful cold page, so
                 // the continuation pages that follow are pinned to it. Pages
@@ -2515,6 +2524,7 @@ impl CosmosDriver {
         operation: &CosmosOperation,
         overrides: &OperationOverrides,
         automatic_session_management_active: bool,
+        options: &OperationOptions,
     ) -> Option<PartitionKeyRangeId> {
         let cache = self.pk_range_cache.as_ref()?;
         // Only pre-resolve for partitioned data plane operations.
@@ -2581,7 +2591,7 @@ impl CosmosDriver {
                     container,
                     partition_key,
                     false,
-                    self.pk_range_page_fetcher(),
+                    self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
                 )
                 .await
                 .map(PartitionKeyRangeId::from);
@@ -2607,7 +2617,7 @@ impl CosmosDriver {
                 container,
                 target.min_inclusive()..target.max_exclusive(),
                 false,
-                self.pk_range_page_fetcher(),
+                self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
             )
             .await
             .map(PartitionKeyRangeId::from)
@@ -3304,7 +3314,9 @@ impl CosmosDriver {
             let recovered = match recovery_outcome {
                 ContainerRecreationRecoveryOutcome::NotAttempted => {
                     container_recreation_recovery_eligible(&operation, &options)
-                        && self.try_recover_recreated_container(&mut operation).await?
+                        && self
+                            .try_recover_recreated_container(&mut operation, &options)
+                            .await?
                 }
                 ContainerRecreationRecoveryOutcome::PlanRebuildRequired => {
                     self.canonicalize_operation_container(&mut operation).await?
@@ -3403,7 +3415,11 @@ impl CosmosDriver {
         };
         let mut topology = container.and_then(|container| {
             self.pk_range_cache.as_ref().map(|cache| {
-                CachedTopologyProvider::new(cache, container, self.pk_range_page_fetcher())
+                CachedTopologyProvider::new(
+                    cache,
+                    container,
+                    self.pk_range_page_fetcher(options.clone(), absolute_deadline),
+                )
             })
         });
         let mut context = PipelineContext::new(
@@ -3549,6 +3565,7 @@ impl CosmosDriver {
                 &operation,
                 &overrides,
                 automatic_session_management_active,
+                options,
             )
             .await;
 
@@ -3599,6 +3616,7 @@ impl CosmosDriver {
             &mut operation,
             overrides.clone(),
             &effective_options,
+            options,
             options.custom_headers.as_ref(),
             self.location_state_store.as_ref(),
             &transport,
@@ -3636,7 +3654,10 @@ impl CosmosDriver {
         if let Some(tracker) = &overrides.container_recreation_recovery_tracker {
             tracker.mark_attempted();
         }
-        if !self.try_recover_recreated_container(&mut operation).await? {
+        if !self
+            .try_recover_recreated_container(&mut operation, options)
+            .await?
+        {
             return Err(error);
         }
 
@@ -3650,6 +3671,7 @@ impl CosmosDriver {
                 &operation,
                 &overrides,
                 automatic_session_management_active,
+                options,
             )
             .await;
         overrides.container_recreation_recovery_disabled = true;
@@ -3668,6 +3690,7 @@ impl CosmosDriver {
             &mut operation,
             overrides,
             &effective_options,
+            options,
             options.custom_headers.as_ref(),
             self.location_state_store.as_ref(),
             &transport,
@@ -3717,12 +3740,21 @@ impl CosmosDriver {
     pub(crate) fn try_recover_recreated_container<'a>(
         &'a self,
         operation: &'a mut CosmosOperation,
+        options: &'a OperationOptions,
     ) -> BoxFuture<'a, crate::error::Result<bool>> {
         Box::pin(async move {
             let Some(previous) = operation.container().cloned() else {
                 return Ok(false);
             };
-            let Some(resolved) = self.refresh_container_if_recreated(&previous).await? else {
+            let absolute_deadline = operation.absolute_deadline();
+            let Some(resolved) = self
+                .refresh_container_if_recreated_with_deadline(
+                    &previous,
+                    options.clone(),
+                    absolute_deadline,
+                )
+                .await?
+            else {
                 return Ok(false);
             };
 
@@ -3758,6 +3790,17 @@ impl CosmosDriver {
     pub async fn refresh_container_if_recreated(
         &self,
         previous: &ContainerReference,
+        options: OperationOptions,
+    ) -> crate::error::Result<Option<ContainerReference>> {
+        self.refresh_container_if_recreated_with_deadline(previous, options, None)
+            .await
+    }
+
+    async fn refresh_container_if_recreated_with_deadline(
+        &self,
+        previous: &ContainerReference,
+        options: OperationOptions,
+        absolute_deadline: Option<Instant>,
     ) -> crate::error::Result<Option<ContainerReference>> {
         let Some(database_name) = previous.database_name().map(str::to_owned) else {
             return Ok(None);
@@ -3781,7 +3824,8 @@ impl CosmosDriver {
                     let replacement = Box::pin(self.fetch_container_by_name(
                         &database_name_for_fetch,
                         &container_name_for_fetch,
-                        OperationOptions::default(),
+                        options,
+                        absolute_deadline,
                     ))
                     .await?;
                     if replacement.rid() != previous_for_refresh.rid() {
@@ -3905,6 +3949,7 @@ impl CosmosDriver {
                     &db_name_owned,
                     &container_name_owned,
                     operation_options,
+                    None,
                 )
                     .await
                     .map_err(|err| {
@@ -4168,8 +4213,11 @@ impl CosmosDriver {
             })?;
             let feed_range = operation.target().cloned().unwrap_or_else(FeedRange::full);
             let container_ref = container.clone();
-            let mut topology =
-                CachedTopologyProvider::new(cache, container_ref, self.pk_range_page_fetcher());
+            let mut topology = CachedTopologyProvider::new(
+                cache,
+                container_ref,
+                self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+            );
             let pipeline = planner::build_unordered_merge(
                 &feed_range,
                 &mut topology,
@@ -4200,8 +4248,11 @@ impl CosmosDriver {
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
-        let mut topology =
-            CachedTopologyProvider::new(cache, container_ref, self.pk_range_page_fetcher());
+        let mut topology = CachedTopologyProvider::new(
+            cache,
+            container_ref,
+            self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+        );
 
         // Route streaming ORDER BY queries to the k-way merge instead of
         // the natural-order sequential drain.
@@ -4372,7 +4423,11 @@ impl CosmosDriver {
     {
         let routing_map = self
             .partition_key_range_cache()?
-            .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
+            .try_lookup(
+                container,
+                force_refresh,
+                self.pk_range_page_fetcher(OperationOptions::default(), None),
+            )
             .await;
 
         let Some(routing_map) = routing_map else {
@@ -4425,7 +4480,11 @@ impl CosmosDriver {
         if epk_range.start == epk_range.end {
             // Full key — point lookup
             let routing_map = cache
-                .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
+                .try_lookup(
+                    container,
+                    force_refresh,
+                    self.pk_range_page_fetcher(OperationOptions::default(), None),
+                )
                 .await;
             let Some(routing_map) = routing_map else {
                 return Ok(None);
@@ -4446,7 +4505,7 @@ impl CosmosDriver {
                     container,
                     &epk_range.start..&epk_range.end,
                     force_refresh,
-                    self.pk_range_page_fetcher(),
+                    self.pk_range_page_fetcher(OperationOptions::default(), None),
                 )
                 .await)
         }

@@ -7,6 +7,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
+    time::Duration,
 };
 
 use azure_core::http::{
@@ -22,12 +23,15 @@ use azure_data_cosmos_driver::{
         ConsistencyLevel, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
         VirtualRegion,
     },
-    models::{AccountReference, CosmosOperation, ItemReference, PartitionKey},
-    options::{DriverOptions, OperationOptions},
+    models::{AccountReference, CosmosOperation, ItemReference, PartitionKey, SubStatusCode},
+    options::{
+        DriverOptions, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions, Region,
+    },
     CosmosDriver,
 };
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
+const WEST_GATEWAY_URL: &str = "https://westus.emulator.local";
 const DATABASE_NAME: &str = "recreation-db";
 const CONTAINER_NAME: &str = "recreation-coll";
 const ITEM_ID: &str = "replacement-item";
@@ -85,6 +89,19 @@ async fn setup_with_observer(
     )])
     .unwrap()
     .with_consistency(ConsistencyLevel::Session);
+    setup_with_config(vec![rule], observer, config, None).await
+}
+
+async fn setup_with_config(
+    rules: Vec<Arc<FaultInjectionRule>>,
+    observer: Option<Arc<dyn RequestObserver>>,
+    config: VirtualAccountConfig,
+    preferred_regions: Option<Vec<Region>>,
+) -> (
+    Arc<InMemoryEmulatorHttpClient>,
+    Arc<CosmosDriver>,
+    azure_data_cosmos_driver::models::ContainerReference,
+) {
     let emulator = InMemoryEmulatorHttpClient::new(config);
     let emulator = Arc::new(match observer {
         Some(observer) => emulator.with_request_observer(observer),
@@ -103,16 +120,17 @@ async fn setup_with_observer(
         .unwrap(),
     );
     let runtime = emulator
-        .runtime_builder_with_fault_rules(vec![rule])
+        .runtime_builder_with_fault_rules(rules)
         .build()
         .await
         .unwrap();
     let account =
         AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
-    let driver = runtime
-        .create_driver(DriverOptions::builder(account).build())
-        .await
-        .unwrap();
+    let mut driver_options = DriverOptions::builder(account);
+    if let Some(preferred_regions) = preferred_regions {
+        driver_options = driver_options.with_preferred_regions(preferred_regions);
+    }
+    let driver = runtime.create_driver(driver_options.build()).await.unwrap();
     let old_container = driver
         .resolve_container(DATABASE_NAME, CONTAINER_NAME, OperationOptions::default())
         .await
@@ -168,9 +186,13 @@ async fn recreate_and_seed(emulator: &InMemoryEmulatorHttpClient) {
         .unwrap(),
     );
 
+    seed_at(emulator, GATEWAY_URL).await;
+}
+
+async fn seed_at(emulator: &InMemoryEmulatorHttpClient, gateway_url: &str) {
     let mut request = Request::new(
         Url::parse(&format!(
-            "{GATEWAY_URL}/dbs/{DATABASE_NAME}/colls/{CONTAINER_NAME}/docs"
+            "{gateway_url}/dbs/{DATABASE_NAME}/colls/{CONTAINER_NAME}/docs"
         ))
         .unwrap(),
         Method::Post,
@@ -265,4 +287,191 @@ async fn repeated_recreation_signal_does_not_receive_a_second_recovery_budget() 
     // five hits. Any additional hit means the plan coordinator incorrectly
     // opened another recreation recovery after that sequence terminated.
     assert_eq!(rule.hit_count(), 5);
+}
+
+#[tokio::test]
+async fn recreation_refresh_honors_excluded_regions() {
+    let recreation_response = CustomResponseBuilder::new(StatusCode::Gone)
+        .with_sub_status(1000)
+        .with_body(br#"{"code":"Injected","message":"container metadata is stale"}"#.to_vec())
+        .build();
+    let recreation_rule = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "recreation-options-excluded-region",
+            FaultInjectionResultBuilder::new()
+                .with_custom_response(recreation_response)
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::ReadItem)
+                .with_region(Region::WEST_US)
+                .build(),
+        )
+        .with_hit_limit(1)
+        .build(),
+    );
+    recreation_rule.disable();
+    let metadata_rule = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "recreation-metadata-excluded-region",
+            FaultInjectionResultBuilder::new()
+                .with_delay(Duration::from_millis(1))
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::MetadataReadContainer)
+                .with_region(Region::EAST_US)
+                .build(),
+        )
+        .build(),
+    );
+    metadata_rule.disable();
+    let west_metadata_rule = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "recreation-metadata-included-region",
+            FaultInjectionResultBuilder::new()
+                .with_delay(Duration::from_millis(1))
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::MetadataReadContainer)
+                .with_region(Region::WEST_US)
+                .build(),
+        )
+        .build(),
+    );
+    west_metadata_rule.disable();
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", Url::parse(GATEWAY_URL).unwrap()),
+        VirtualRegion::new("West US", Url::parse(WEST_GATEWAY_URL).unwrap()),
+    ])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session);
+    let (emulator, driver, old_container) = setup_with_config(
+        vec![
+            recreation_rule.clone(),
+            metadata_rule.clone(),
+            west_metadata_rule.clone(),
+        ],
+        None,
+        config,
+        Some(vec![Region::EAST_US, Region::WEST_US]),
+    )
+    .await;
+    recreate_and_seed(&emulator).await;
+    emulator
+        .store()
+        .set_write_mode(azure_data_cosmos_driver::in_memory_emulator::WriteMode::Multi);
+    seed_at(&emulator, WEST_GATEWAY_URL).await;
+    emulator
+        .store()
+        .set_write_mode(azure_data_cosmos_driver::in_memory_emulator::WriteMode::Single);
+    recreation_rule.enable();
+    metadata_rule.enable();
+    west_metadata_rule.enable();
+
+    let mut options = OperationOptions::default();
+    options.excluded_regions = Some(ExcludedRegions::from_iter([Region::EAST_US]));
+    let response = driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &old_container,
+                PartitionKey::from(PARTITION_KEY_VALUE),
+                ITEM_ID.to_owned(),
+            )),
+            options,
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::Ok);
+    assert_eq!(recreation_rule.hit_count(), 1);
+    assert_eq!(west_metadata_rule.hit_count(), 1);
+    assert_eq!(
+        metadata_rule.hit_count(),
+        0,
+        "the container refresh must not use an excluded region"
+    );
+}
+
+#[tokio::test]
+async fn recreation_refresh_shares_original_deadline() {
+    let recreation_response = CustomResponseBuilder::new(StatusCode::Gone)
+        .with_sub_status(1000)
+        .with_body(br#"{"code":"Injected","message":"container metadata is stale"}"#.to_vec())
+        .build();
+    let recreation_rule = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "recreation-options-deadline",
+            FaultInjectionResultBuilder::new()
+                .with_custom_response(recreation_response)
+                .with_delay(Duration::from_millis(600))
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::ReadItem)
+                .build(),
+        )
+        .with_hit_limit(1)
+        .build(),
+    );
+    recreation_rule.disable();
+    let metadata_rule = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "recreation-metadata-deadline",
+            FaultInjectionResultBuilder::new()
+                .with_delay(Duration::from_millis(600))
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::MetadataReadContainer)
+                .build(),
+        )
+        .build(),
+    );
+    metadata_rule.disable();
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        Url::parse(GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session);
+    let (emulator, driver, old_container) = setup_with_config(
+        vec![recreation_rule.clone(), metadata_rule.clone()],
+        None,
+        config,
+        None,
+    )
+    .await;
+    recreate_and_seed(&emulator).await;
+    recreation_rule.enable();
+    metadata_rule.enable();
+
+    let mut options = OperationOptions::default();
+    options.end_to_end_latency_policy =
+        Some(EndToEndOperationLatencyPolicy::new(Duration::from_secs(1)));
+    let result = driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &old_container,
+                PartitionKey::from(PARTITION_KEY_VALUE),
+                ITEM_ID.to_owned(),
+            )),
+            options,
+        )
+        .await;
+
+    assert_eq!(recreation_rule.hit_count(), 1);
+    assert_eq!(metadata_rule.hit_count(), 1);
+    let error = result.unwrap_err();
+    assert_eq!(error.status().status_code(), StatusCode::RequestTimeout);
+    assert_eq!(
+        error.status().sub_status(),
+        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+    );
 }

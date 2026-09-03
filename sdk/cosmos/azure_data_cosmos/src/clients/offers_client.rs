@@ -137,7 +137,7 @@ pub(crate) async fn find_offer_for_container(
 
     let replacement = match context
         .driver
-        .refresh_container_if_recreated(container)
+        .refresh_container_if_recreated(container, operation_options.clone())
         .await
     {
         Ok(replacement) => replacement,

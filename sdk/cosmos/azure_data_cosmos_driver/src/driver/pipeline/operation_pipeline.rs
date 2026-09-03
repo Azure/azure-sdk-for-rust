@@ -34,7 +34,7 @@ use crate::{
         Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
     options::{
-        resolve_effective_consistency, HedgeThreshold, OperationOptionsView,
+        resolve_effective_consistency, HedgeThreshold, OperationOptions, OperationOptionsView,
         ReadConsistencyStrategy, Region, ResolvedThroughputControl,
     },
 };
@@ -389,6 +389,7 @@ pub(crate) async fn execute_operation_pipeline(
     operation: &mut CosmosOperation,
     overrides: OperationOverrides,
     options: &OperationOptionsView<'_>,
+    operation_options: &OperationOptions,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     location_state_store: &LocationStateStore,
     transport: &CosmosTransport,
@@ -553,6 +554,8 @@ pub(crate) async fn execute_operation_pipeline(
         .or_else(|| configured_request_timeout.map(|t| Instant::now() + t));
 
     loop {
+        diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
+
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
         let location = location_state_store.snapshot();
 
@@ -922,7 +925,10 @@ pub(crate) async fn execute_operation_pipeline(
             if let Some(tracker) = &overrides.container_recreation_recovery_tracker {
                 tracker.mark_attempted();
             }
-            match driver.try_recover_recreated_container(operation).await {
+            match driver
+                .try_recover_recreated_container(operation, operation_options)
+                .await
+            {
                 Ok(true) => {
                     if !retry_in_place {
                         if let Some(tracker) = &overrides.container_recreation_recovery_tracker {
@@ -952,6 +958,7 @@ pub(crate) async fn execute_operation_pipeline(
                             operation,
                             &overrides,
                             session_consistency_active,
+                            operation_options,
                         ))
                         .await;
                     throughput_control = operation
