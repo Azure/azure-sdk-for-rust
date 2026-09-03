@@ -30,6 +30,7 @@
 
 ### Breaking Changes
 
+- Cosmos binary JSON encoding is now enabled by default for supported item and query operations. Use `CosmosClientBuilder::with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(false))` or set `AZURE_COSMOS_BINARY_ENCODING_ENABLED=false` to retain text JSON on the wire. ([#5227](https://github.com/Azure/azure-sdk-for-rust/pull/5227))
 - `ContainerClient::patch_item()` and `PatchItemOptions` are now gated behind the new, non-default `preview_patch` feature while the API remains in preview. Enable `preview_patch` to keep using it. ([#5133](https://github.com/Azure/azure-sdk-for-rust/pull/5133))
 - `DatabaseClient::container_client` now requires a second argument of type `Option<ContainerClientOptions>`; pass `None` to retain the previous behavior. ([#4992](https://github.com/Azure/azure-sdk-for-rust/pull/4992))
 - `CosmosClient::database_client` and `DatabaseClient::container_client` now take `impl Into<ResourceIdentity>` instead of `&str`; call sites passing a deref-able string (for example a `Cow<str>` field) need `&*value` or `.as_ref()`. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))

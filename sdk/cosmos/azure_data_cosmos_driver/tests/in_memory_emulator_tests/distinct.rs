@@ -173,10 +173,13 @@ fn documents_of(
         ResponseBody::NoPayload => Vec::new(),
         ResponseBody::Items(items) => items
             .iter()
-            .map(|item| serde_json::from_slice(item).unwrap())
+            .map(|item| {
+                super::parse_json_body(item).expect("item should parse as text or binary JSON")
+            })
             .collect(),
         ResponseBody::Bytes(bytes) => {
-            let value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            let value =
+                super::parse_json_body(&bytes).expect("page should parse as text or binary JSON");
             value["Documents"].as_array().cloned().unwrap_or_default()
         }
     }

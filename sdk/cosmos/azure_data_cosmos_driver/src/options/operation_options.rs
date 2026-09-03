@@ -171,7 +171,7 @@ pub struct OperationOptions {
     /// Controls whether the operation uses binary on the wire and whether the
     /// driver transcodes the response back to text. Schema-agnostic, so it is
     /// honored uniformly for the Rust SDK and FFI callers. `None` inherits from
-    /// a lower level (default: text JSON, no binary). See
+    /// a lower level (default: binary encoding enabled). See
     /// [`BinaryEncodingOptions`].
     pub binary_encoding: Option<BinaryEncodingOptions>,
 }
