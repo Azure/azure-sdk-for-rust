@@ -41,5 +41,11 @@ mod private {
     pub trait Sealed {}
 }
 
-// Intentional compilation error for validating PR annotations.
-const _INTENTIONAL_PR_ANNOTATION_FAILURE: u64 = "expected a u64";
+#[cfg(test)]
+mod tests {
+    // Intentional misspeling and test failure for validating PR annotations.
+    #[test]
+    fn intentional_pr_annotation_failure() {
+        assert_eq!(1, 2, "intentional PR annotation failure");
+    }
+}
