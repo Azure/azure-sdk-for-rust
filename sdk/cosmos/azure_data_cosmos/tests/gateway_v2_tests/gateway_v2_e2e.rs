@@ -8,7 +8,8 @@ use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::diagnostics::{DiagnosticsContext, TransportKind};
 use azure_data_cosmos::models::{
     CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, ContainerProperties,
-    IndexingPolicy, PartitionKeyDefinition, PartitionKeyVersion, ThroughputProperties,
+    IndexingPolicy, ItemResponse, PartitionKeyDefinition, PartitionKeyVersion,
+    ThroughputProperties,
 };
 use azure_data_cosmos::options::{
     ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions, ItemWriteOptions,
@@ -94,6 +95,42 @@ fn live_credentials() -> Option<(String, String)> {
     let (endpoint_var, key_var) = ("AZURE_COSMOS_GW_V2_ENDPOINT", "AZURE_COSMOS_GW_V2_KEY");
 
     Some((read_env(endpoint_var)?, read_env(key_var)?))
+}
+
+async fn create_seed_item<P, T>(
+    container: &azure_data_cosmos::clients::ContainerClient,
+    partition_key: P,
+    item_id: &str,
+    item: &T,
+) -> Result<ItemResponse, Box<dyn std::error::Error>>
+where
+    P: Into<azure_data_cosmos::PartitionKey> + Clone,
+    T: Serialize,
+{
+    const MAX_ATTEMPTS: u32 = 6;
+
+    let mut delay = std::time::Duration::from_millis(250);
+    for attempt in 1..=MAX_ATTEMPTS {
+        match container
+            .create_item(partition_key.clone(), item_id, item, None)
+            .await
+        {
+            Ok(response) => return Ok(response),
+            Err(error)
+                if error.status().status_code() == StatusCode::Unauthorized
+                    && error.to_string().contains("MAC signature")
+                    && attempt < MAX_ATTEMPTS =>
+            {
+                eprintln!(
+                    "transient 401 during Gateway 2.0 seed write; retrying attempt {attempt}/{MAX_ATTEMPTS} after {delay:?}: {error}"
+                );
+                tokio::time::sleep(delay).await;
+                delay = (delay * 2).min(std::time::Duration::from_secs(5));
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+    unreachable!("the bounded retry loop always returns on its final attempt")
 }
 
 /// Build a [`CosmosClient`] against the live Gateway 2.0 account.
@@ -467,9 +504,7 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
         label: "initial".into(),
     };
 
-    let create_resp = container
-        .create_item(&pk_value, &item_id, &item, None)
-        .await?;
+    let create_resp = create_seed_item(&container, &pk_value, &item_id, &item).await?;
     assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
     assert!(!create_resp.diagnostics().activity_id().as_str().is_empty());
     assert!(create_resp.diagnostics().duration() > std::time::Duration::ZERO);
@@ -535,9 +570,7 @@ pub async fn gateway_v2_v1_container_point_crud_round_trip(
             label: "initial".into(),
         };
 
-        let create_resp = container
-            .create_item(&pk_value, &item_id, &item, None)
-            .await?;
+        let create_resp = create_seed_item(&container, &pk_value, &item_id, &item).await?;
         assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
 
         let read_resp = container.read_item(&pk_value, &item_id, None).await?;
@@ -672,9 +705,7 @@ pub async fn gateway_v2_diagnostics_validation() -> Result<(), Box<dyn std::erro
         value: 99,
         label: "diag".into(),
     };
-    container
-        .create_item(&pk_value, "diag-item", &item, None)
-        .await?;
+    create_seed_item(&container, &pk_value, "diag-item", &item).await?;
 
     let read_resp = container.read_item(&pk_value, "diag-item", None).await?;
     let diagnostics = read_resp.diagnostics();
@@ -788,7 +819,7 @@ pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip(
                 // `PartitionKeyValue: From<&'static str>` impl is the only
                 // borrow-friendly one) — clone strings into the tuple.
                 let pk = PartitionKey::from((tenant.to_string(), user_id, session_id));
-                container.create_item(pk, &id, &item, None).await?;
+                create_seed_item(&container, pk, &id, &item).await?;
             }
         }
     }
@@ -993,9 +1024,7 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2(
                 value: (index / 4) as i64,
                 label: format!("label-{}", index % 4),
             };
-            let response = v2_container
-                .create_item(&item.pk, &item.id, &item, None)
-                .await?;
+            let response = create_seed_item(&v2_container, &item.pk, &item.id, &item).await?;
             assert_transport_kind(&response.diagnostics(), TransportKind::GatewayV2);
         }
 
@@ -1071,7 +1100,7 @@ pub async fn gateway_v2_cross_partition_query_full_container(
             value: i as i64,
             label: format!("row-{i}"),
         };
-        container.create_item(&pk, &id, &item, None).await?;
+        create_seed_item(&container, &pk, &id, &item).await?;
         expected_ids.insert(id);
     }
 
@@ -1149,7 +1178,7 @@ pub async fn gateway_v2_cross_partition_query_via_feed_range_full(
             value: i as i64,
             label: format!("row-{i}"),
         };
-        container.create_item(&pk, &id, &item, None).await?;
+        create_seed_item(&container, &pk, &id, &item).await?;
         expected_ids.insert(id);
     }
 
@@ -1236,7 +1265,7 @@ pub async fn gateway_v2_session_read_your_writes_ppcb_disabled(
             value: i as i64,
             label: format!("row-{i}"),
         };
-        let create_resp = container.create_item(&pk, &id, &item, None).await?;
+        let create_resp = create_seed_item(&container, &pk, &id, &item).await?;
         assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
         written.push((pk, id.clone()));
         expected_ids.insert(id);
@@ -1331,7 +1360,7 @@ pub async fn gateway_v2_query_honors_max_item_count_page_size(
             value: i as i64,
             label: format!("row-{i}"),
         };
-        container.create_item(&pk_value, &id, &item, None).await?;
+        create_seed_item(&container, &pk_value, &id, &item).await?;
     }
 
     let page_size = NonZeroU32::new(3).expect("3 is non-zero");
@@ -1414,9 +1443,7 @@ pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<(), Box<dyn
         label: "initial".into(),
     };
 
-    let create_resp = container
-        .create_item(&pk_value, &item_id, &item, None)
-        .await?;
+    let create_resp = create_seed_item(&container, &pk_value, &item_id, &item).await?;
     assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
     let etag_v1: Etag = create_resp
         .headers()
@@ -1523,9 +1550,7 @@ pub async fn gateway_v2_read_with_non_default_consistency_strategy(
         value: 42,
         label: "rcs".into(),
     };
-    container
-        .create_item(&pk_value, &item_id, &item, None)
-        .await?;
+    create_seed_item(&container, &pk_value, &item_id, &item).await?;
 
     const MAX_ATTEMPTS: u32 = 40;
     const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
@@ -1608,9 +1633,7 @@ pub async fn gateway_v2_point_read_usable_from_every_region(
         value: 7,
         label: "multi-region".into(),
     };
-    let create_resp = container
-        .create_item(&pk_value, &item_id, &item, None)
-        .await?;
+    let create_resp = create_seed_item(&container, &pk_value, &item_id, &item).await?;
     assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
 
     for region in REGIONS {
