@@ -573,6 +573,17 @@ impl DriverTestRunContext {
     /// these helpers inherits them.
     fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
         let mut builder = DriverOptions::builder(self.client.account.clone());
+        #[cfg(test_category = "emulator_vnext")]
+        {
+            // The vNext emulator cannot reliably extract partition keys from binary item bodies.
+            let options = OperationOptionsBuilder::new()
+                .with_binary_encoding(
+                    azure_data_cosmos_driver::options::BinaryEncodingOptions::new()
+                        .with_enabled(false),
+                )
+                .build();
+            builder = builder.with_operation_options(options);
+        }
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
         }

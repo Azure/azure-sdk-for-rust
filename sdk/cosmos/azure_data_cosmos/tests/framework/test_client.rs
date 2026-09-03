@@ -207,7 +207,7 @@ fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
 /// separate paths — so a container read succeeding in a region does not mean an
 /// item request there is authorized yet. Key auth bypasses RBAC entirely, so
 /// this is only expected under AAD.
-fn rbac_name_based_data_not_ready(error: &CosmosError) -> bool {
+pub(crate) fn rbac_name_based_data_not_ready(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::Forbidden
         && error.status().sub_status() == Some(SubStatusCode::new(5302))
 }
