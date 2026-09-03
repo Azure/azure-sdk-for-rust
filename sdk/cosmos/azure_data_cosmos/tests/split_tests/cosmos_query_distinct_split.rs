@@ -35,13 +35,13 @@ use std::error::Error;
 use std::num::NonZeroU32;
 use std::time::Duration;
 
-use azure_data_cosmos::feed::ContinuationToken;
+use azure_data_cosmos::feed::{ContinuationToken, QueryPageIterator};
 use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
     models::{ContainerProperties, CosmosStatus, ThroughputProperties},
-    options::{BinaryEncodingOptions, MaxItemCountHint, QueryOptions},
+    options::{BinaryEncodingOptions, MaxItemCountHint, OperationOptions, QueryOptions},
 };
 use framework::{TestClient, TestOptions};
 use futures::StreamExt;
@@ -90,44 +90,118 @@ fn assert_each_value_exactly_once(actual: &[String], context: &str) {
     );
 }
 
-/// Drains `query` one page at a time, invoking `after_first_page` once the
-/// first page has been collected (used to force the split mid-drain).
-async fn drain_with_hook<F, Fut>(
+fn query_options(binary: bool, page_size: u32) -> QueryOptions {
+    let mut operation = OperationOptions::default();
+    operation.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(binary));
+    QueryOptions::default()
+        .with_operation_options(operation)
+        .with_max_item_count(MaxItemCountHint::Limit(
+            NonZeroU32::new(page_size).expect("page size is non-zero"),
+        ))
+}
+
+async fn start_query(
     container_client: &ContainerClient,
     query: &str,
-    mut after_first_page: F,
-) -> Result<Vec<String>, Box<dyn Error>>
-where
-    F: FnMut() -> Fut,
-    Fut: std::future::Future<Output = Result<(), Box<dyn Error>>>,
-{
-    let options = QueryOptions::default()
-        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(PAGE_SIZE).unwrap()));
+    binary: bool,
+    page_size: u32,
+) -> Result<(QueryPageIterator<String>, Vec<String>), Box<dyn Error>> {
     let mut pages = container_client
-        .query_items::<String>(query, FeedScope::full_container(), Some(options))
+        .query_items::<String>(
+            query,
+            FeedScope::full_container(),
+            Some(query_options(binary, page_size)),
+        )
         .await?
         .into_pages();
+    let first_page = pages
+        .next()
+        .await
+        .expect("query should yield at least one page")?
+        .into_items();
+    Ok((pages, first_page))
+}
 
-    let mut collected = Vec::new();
-    let mut page_index = 0usize;
+async fn drain_remaining(
+    pages: &mut QueryPageIterator<String>,
+    mut collected: Vec<String>,
+) -> Result<Vec<String>, Box<dyn Error>> {
     while let Some(page) = pages.next().await {
         collected.extend(page?.into_items());
-        if page_index == 0 {
-            after_first_page().await?;
+    }
+    Ok(collected)
+}
+
+async fn capture_ordered_checkpoint(
+    container_client: &ContainerClient,
+    binary: bool,
+) -> Result<(Vec<String>, ContinuationToken), Box<dyn Error>> {
+    let (pages, collected) = start_query(container_client, ORDERED_QUERY, binary, 2).await?;
+    let token = match pages.to_continuation_token() {
+        Ok(token) => ContinuationToken::from_string(token.as_str().to_owned()),
+        Err(error)
+            if error.status().sub_status()
+                == CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED.sub_status() =>
+        {
+            panic!(
+                "service planned `{ORDERED_QUERY}` as unordered DISTINCT (continuation \
+                 refused: {error}). The VALUE form with a matching ORDER BY is a required \
+                 contract for resumable DISTINCT; if the service genuinely changed, update \
+                 `plan::distinct_is_ordered` and the docs rather than skipping this test."
+            );
         }
-        page_index += 1;
+        Err(error) => {
+            return Err(format!(
+                "minting a continuation for `{ORDERED_QUERY}` failed with an unexpected \
+                 error (not the unsupported-continuation status): {error}"
+            )
+            .into());
+        }
+    };
+    assert!(
+        !collected.is_empty(),
+        "the pre-split checkpoint must have emitted at least one value"
+    );
+    Ok((collected, token))
+}
+
+async fn resume_ordered(
+    container_client: &ContainerClient,
+    binary: bool,
+    mut collected: Vec<String>,
+    token: ContinuationToken,
+) -> Result<Vec<String>, Box<dyn Error>> {
+    let mut continuation = Some(token);
+    loop {
+        let mut options = query_options(binary, 2);
+        if let Some(token) = continuation.take() {
+            options = options.with_continuation_token(token);
+        }
+        let mut pages = container_client
+            .query_items::<String>(ORDERED_QUERY, FeedScope::full_container(), Some(options))
+            .await?
+            .into_pages();
+        let Some(page) = pages.next().await else {
+            break;
+        };
+        collected.extend(page?.into_items());
+        continuation = Some(ContinuationToken::from_string(
+            pages.to_continuation_token()?.as_str().to_owned(),
+        ));
     }
     Ok(collected)
 }
 
 /// Cross-partition `DISTINCT` across a live partition split.
 ///
-/// Captures ordered and windowed state before the split, drains an unordered
-/// `DISTINCT` through the split, then finishes both saved scenarios against the
-/// post-split topology.
-async fn run_distinct_query_across_split_returns_each_value_once(
-    binary: bool,
-) -> Result<(), Box<dyn Error>> {
+/// Captures text and binary ordered, windowed, and unordered state before one
+/// shared split, then finishes every scenario against the child topology.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "split"),
+    ignore = "requires test_category 'split'"
+)]
+pub async fn text_and_binary_distinct_queries_reuse_one_split() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let properties =
@@ -167,185 +241,86 @@ async fn run_distinct_query_across_split_returns_each_value_once(
             );
             let partitions_before = ranges_before.len();
 
-            // ── Ordered DISTINCT: capture a token before the split ────────
-            //
-            // Taken first so the checkpoint predates the topology change.
-            let ordered_options = QueryOptions::default()
-                .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(2).unwrap()));
-            let mut ordered_pages = container_client
-                .query_items::<String>(
-                    ORDERED_QUERY,
-                    FeedScope::full_container(),
-                    Some(ordered_options),
-                )
-                .await?
-                .into_pages();
-            let mut ordered_collected: Vec<String> = ordered_pages
-                .next()
-                .await
-                .expect("ordered DISTINCT should yield at least one page")?
-                .into_items();
-            // `ORDERED_QUERY` uses the `VALUE` form, which the service reports
-            // as `distinctType: Ordered` and is therefore resumable. Read the
-            // outcome back rather than asserting it, so that if a future service
-            // version downgrades the shape this reports a self-describing skip
-            // instead of a bare panic that would blame the wrong thing.
-            let ordered_token = match ordered_pages.to_continuation_token() {
-                Ok(token) => ContinuationToken::from_string(token.as_str().to_owned()),
-                // Only an explicit "this shape cannot be resumed" refusal is a
-                // legitimate service-plan downgrade. Any other failure is a
-                // continuation regression and must not be swallowed, or this
-                // test would go green while resume is broken.
-                Err(error)
-                    if error.status().sub_status()
-                        == CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED.sub_status() =>
-                {
-                    panic!(
-                        "service planned `{ORDERED_QUERY}` as unordered DISTINCT (continuation \
-                         refused: {error}). The VALUE form with a matching ORDER BY is a required \
-                         contract for resumable DISTINCT; if the service genuinely changed, update \
-                         `plan::distinct_is_ordered` and the docs rather than skipping this test."
-                    );
-                }
-                Err(error) => {
-                    return Err(format!(
-                        "minting a continuation for `{ORDERED_QUERY}` failed with an unexpected \
-                         error (not the unsupported-continuation status): {error}"
-                    )
-                    .into());
-                }
-            };
-            drop(ordered_pages);
+            let (ordered_text, ordered_text_token) =
+                capture_ordered_checkpoint(&container_client, false).await?;
+            let (ordered_binary, ordered_binary_token) =
+                capture_ordered_checkpoint(&container_client, true).await?;
+
+            let (mut windowed_text_pages, windowed_text) =
+                start_query(&container_client, WINDOWED_QUERY, false, 1).await?;
+            let (mut windowed_binary_pages, windowed_binary) =
+                start_query(&container_client, WINDOWED_QUERY, true, 1).await?;
+            assert_eq!(windowed_text.len(), 1);
+            assert_eq!(windowed_binary.len(), 1);
+
+            let (mut unordered_text_pages, unordered_text) =
+                start_query(&container_client, UNORDERED_QUERY, false, PAGE_SIZE).await?;
+            let (mut unordered_binary_pages, unordered_binary) =
+                start_query(&container_client, UNORDERED_QUERY, true, PAGE_SIZE).await?;
+
+            let partitions_after =
+                force_split_and_wait(&container_client, partitions_before).await?;
             assert!(
-                !ordered_collected.is_empty(),
-                "the pre-split checkpoint must have emitted at least one value"
+                partitions_after > partitions_before,
+                "split must increase partition count: before={partitions_before}, \
+                 after={partitions_after}"
             );
 
-            // ── Windowed DISTINCT: keep live state across the split ────────
-            //
-            // Consume one of the two requested values before the split. This
-            // leaves both the dedup map and the window's remaining take active
-            // while the unordered query below forces the topology change.
-            let windowed_options = QueryOptions::default()
-                .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
-            let mut windowed_pages = container_client
-                .query_items::<String>(
-                    WINDOWED_QUERY,
-                    FeedScope::full_container(),
-                    Some(windowed_options),
-                )
-                .await?
-                .into_pages();
-            let mut windowed = windowed_pages
-                .next()
-                .await
-                .expect("windowed DISTINCT should yield a pre-split page")?
-                .into_items();
-            assert_eq!(
-                windowed.len(),
-                1,
-                "the pre-split page must leave one windowed result pending"
-            );
-
-            // ── Unordered DISTINCT: drain straight through the split ──────
-            let mut split_done = false;
-            let unordered = drain_with_hook(&container_client, UNORDERED_QUERY, || {
-                let container_client = container_client.clone();
-                let should_split = !split_done;
-                split_done = true;
-                async move {
-                    if should_split {
-                        let partitions_after =
-                            force_split_and_wait(&container_client, partitions_before).await?;
-                        assert!(
-                            partitions_after > partitions_before,
-                            "split must increase partition count: before={partitions_before}, \
-                             after={partitions_after}"
-                        );
-                    }
-                    Ok(())
-                }
-            })
-            .await?;
-            assert_each_value_exactly_once(&unordered, "unordered DISTINCT across a split");
-
-            // ── Ordered DISTINCT: resume the pre-split token ──────────────
-            let mut continuation = Some(ordered_token);
-            loop {
-                let mut options = QueryOptions::default()
-                    .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(2).unwrap()));
-                if let Some(token) = continuation.take() {
-                    options = options.with_continuation_token(token);
-                }
-                let mut pages = container_client
-                    .query_items::<String>(
-                        ORDERED_QUERY,
-                        FeedScope::full_container(),
-                        Some(options),
-                    )
-                    .await?
-                    .into_pages();
-                let Some(page) = pages.next().await else {
-                    break;
-                };
-                ordered_collected.extend(page?.into_items());
-                let serialized = pages.to_continuation_token()?.as_str().to_owned();
-                drop(pages);
-                continuation = Some(ContinuationToken::from_string(serialized));
-            }
-
+            let unordered_text = drain_remaining(&mut unordered_text_pages, unordered_text).await?;
+            let unordered_binary =
+                drain_remaining(&mut unordered_binary_pages, unordered_binary).await?;
             assert_each_value_exactly_once(
-                &ordered_collected,
-                "ordered DISTINCT resumed across a split",
+                &unordered_text,
+                "text unordered DISTINCT across a split",
             );
-            let mut sorted = ordered_collected.clone();
-            sorted.sort();
-            assert_eq!(
-                ordered_collected, sorted,
-                "an ordered DISTINCT resume must preserve global sort order across the split"
+            assert_each_value_exactly_once(
+                &unordered_binary,
+                "binary unordered DISTINCT across a split",
             );
 
-            // ── Windowed DISTINCT: finish against the new topology ─────────
-            while let Some(page) = windowed_pages.next().await {
-                windowed.extend(page?.into_items());
+            for (binary, collected, token, context) in [
+                (
+                    false,
+                    ordered_text,
+                    ordered_text_token,
+                    "text ordered DISTINCT resumed across a split",
+                ),
+                (
+                    true,
+                    ordered_binary,
+                    ordered_binary_token,
+                    "binary ordered DISTINCT resumed across a split",
+                ),
+            ] {
+                let ordered = resume_ordered(&container_client, binary, collected, token).await?;
+                assert_each_value_exactly_once(&ordered, context);
+                let mut sorted = ordered.clone();
+                sorted.sort();
+                assert_eq!(
+                    ordered, sorted,
+                    "{context}: global sort order must survive the split"
+                );
             }
-            assert_eq!(
-                windowed,
-                vec!["g01", "g02"],
-                "`{WINDOWED_QUERY}` must preserve the exact DISTINCT window across the split"
-            );
+
+            let windowed_text = drain_remaining(&mut windowed_text_pages, windowed_text).await?;
+            let windowed_binary =
+                drain_remaining(&mut windowed_binary_pages, windowed_binary).await?;
+            for (encoding, windowed) in [("text", windowed_text), ("binary", windowed_binary)] {
+                assert_eq!(
+                    windowed,
+                    vec!["g01", "g02"],
+                    "{encoding} `{WINDOWED_QUERY}` must preserve the exact DISTINCT window \
+                     across the split"
+                );
+            }
 
             Ok(())
         },
-        // A real split takes minutes; the 80s default would abort mid-poll.
-        // Matches the other split tests in this directory.
-        Some({
-            let options = TestOptions::new().with_timeout(Duration::from_secs(40 * 60));
-            if binary {
-                options.with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true))
-            } else {
-                options
-            }
-        }),
+        Some(
+            TestOptions::new()
+                .with_timeout(Duration::from_secs(40 * 60))
+                .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true)),
+        ),
     )
     .await
-}
-
-#[tokio::test]
-#[cfg_attr(
-    not(test_category = "split"),
-    ignore = "requires test_category 'split'"
-)]
-pub async fn distinct_query_across_split_returns_each_value_once() -> Result<(), Box<dyn Error>> {
-    run_distinct_query_across_split_returns_each_value_once(false).await
-}
-
-#[tokio::test]
-#[cfg_attr(
-    not(test_category = "split"),
-    ignore = "requires test_category 'split'"
-)]
-pub async fn binary_distinct_query_across_split_returns_each_value_once(
-) -> Result<(), Box<dyn Error>> {
-    run_distinct_query_across_split_returns_each_value_once(true).await
 }
