@@ -106,6 +106,7 @@ extends:
                   .artifactignore
                   _manifest/**
                   !_manifest/spdx_2.2/
+                  _manifest/spdx_2.2/**
                   !_manifest/spdx_2.2/manifest.spdx.json
                   !_manifest/spdx_2.2/manifest.spdx.json.sha256
                   !_manifest/spdx_2.2/manifest.spdx.cose
