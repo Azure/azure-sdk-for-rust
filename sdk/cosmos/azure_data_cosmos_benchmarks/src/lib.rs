@@ -19,7 +19,7 @@ use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntimeBuilder,
     models::{AccountReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey},
     options::{DriverOptions, OperationOptions},
-    testing::{
+    test::{
         ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
         TransportClient, TransportError,
     },

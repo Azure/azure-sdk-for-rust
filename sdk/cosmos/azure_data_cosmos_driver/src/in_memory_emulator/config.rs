@@ -10,7 +10,7 @@ use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use url::Url;
 
-use super::ru_model::RuChargingModel;
+use super::ru_model::RequestUnitChargingModel;
 
 /// Runtime-mutable account topology.
 ///
@@ -276,7 +276,7 @@ pub struct VirtualAccountConfig {
     consistency: ConsistencyLevel,
     replication: ReplicationConfig,
     replication_overrides: HashMap<(String, String), ReplicationConfig>,
-    ru_model: RuChargingModel,
+    ru_model: RequestUnitChargingModel,
     throttling_enabled: bool,
     /// Server-side per-partition automatic failover flag -- emitted as
     /// `enablePerPartitionFailoverBehavior` in the account JSON. Atomic and
@@ -343,7 +343,7 @@ impl VirtualAccountConfig {
             consistency: ConsistencyLevel::Session,
             replication: ReplicationConfig::default(),
             replication_overrides: HashMap::new(),
-            ru_model: RuChargingModel::default(),
+            ru_model: RequestUnitChargingModel::default(),
             throttling_enabled: false,
             enable_per_partition_failover: Arc::new(AtomicBool::new(false)),
         })
@@ -446,7 +446,7 @@ impl VirtualAccountConfig {
     }
 
     /// Sets the RU charging model.
-    pub fn with_ru_model(mut self, model: RuChargingModel) -> Self {
+    pub fn with_ru_model(mut self, model: RequestUnitChargingModel) -> Self {
         self.ru_model = model;
         self
     }
@@ -544,7 +544,7 @@ impl VirtualAccountConfig {
         &self.replication
     }
 
-    pub fn ru_model(&self) -> &RuChargingModel {
+    pub fn ru_model(&self) -> &RequestUnitChargingModel {
         &self.ru_model
     }
 

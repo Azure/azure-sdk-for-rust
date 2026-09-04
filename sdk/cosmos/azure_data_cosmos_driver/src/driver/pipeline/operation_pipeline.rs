@@ -16,7 +16,7 @@ use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use futures::future::{pending, select, Either, Future};
 
 use crate::{
-    diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
+    diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportSecurity},
     driver::{
         routing::{
             can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
@@ -65,7 +65,7 @@ use crate::driver::transport::{
 /// cumulative-wait budget, and the per-retry delay cap ("interval"). Data-plane
 /// gets more retries at a longer interval (count-limited); metadata keeps the
 /// patient, shorter-interval budget.
-fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration, Duration) {
+fn default_throttle_budget(pipeline_type: PipelineKind) -> (u32, Duration, Duration) {
     if pipeline_type.is_data_plane() {
         (
             DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
@@ -294,7 +294,7 @@ pub(crate) async fn execute_operation_pipeline(
     user_agent: &azure_core::http::headers::HeaderValue,
     client_id: &azure_core::http::headers::HeaderValue,
     activity_id: &ActivityId,
-    pipeline_type: PipelineType,
+    pipeline_type: PipelineKind,
     transport_security: TransportSecurity,
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
@@ -429,8 +429,8 @@ pub(crate) async fn execute_operation_pipeline(
     // so metadata-pipeline operations (which ride the same
     // `execute_operation_pipeline`) never emit the header.
     //
-    // Use the `PipelineType::is_data_plane()` accessor — NOT `==` matching
-    // — because `PipelineType` is `#[non_exhaustive]` and a future variant
+    // Use the `PipelineKind::is_data_plane()` accessor — NOT `==` matching
+    // — because `PipelineKind` is `#[non_exhaustive]` and a future variant
     // would silently bypass an equality gate. Equivalently
     // `!pipeline_type.is_metadata()` (the metadata pipeline is the only
     // current variant that is out of spec scope).
@@ -737,10 +737,10 @@ pub(crate) async fn execute_operation_pipeline(
             "transport request created");
 
         let selected_transport = match pipeline_type {
-            PipelineType::DataPlane => {
+            PipelineKind::DataPlane => {
                 transport.get_dataplane_transport(account_endpoint, routing.transport_mode)?
             }
-            PipelineType::Metadata => transport.get_metadata_transport(account_endpoint)?,
+            PipelineKind::Metadata => transport.get_metadata_transport(account_endpoint)?,
         };
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
@@ -2382,7 +2382,7 @@ fn should_emit_hub_region_header(
 /// having elapsed, so the zero-overhead happy path (primary wins
 /// pre-threshold) is preserved.
 fn should_build_shared_hub_region_latch(
-    pipeline_type: PipelineType,
+    pipeline_type: PipelineKind,
     can_use_multiple_write_locations: bool,
 ) -> bool {
     pipeline_type.is_data_plane() && !can_use_multiple_write_locations
@@ -2714,7 +2714,7 @@ struct AttemptContext<'a> {
     user_agent: &'a azure_core::http::headers::HeaderValue,
     client_id: &'a azure_core::http::headers::HeaderValue,
     activity_id: &'a ActivityId,
-    pipeline_type: PipelineType,
+    pipeline_type: PipelineKind,
     transport_security: TransportSecurity,
     /// Global database account name parsed from `account_endpoint`. Used by
     /// Gateway 2.0 request wrapping when an attempt routes to a G2 endpoint.
@@ -3003,7 +3003,7 @@ fn maybe_upgrade_to_hedge<'a>(
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
     hedge_budget: &'a HedgeBudget,
-    pipeline_type: PipelineType,
+    pipeline_type: PipelineKind,
     activity_id: &ActivityId,
 ) -> (OperationAction, Option<HedgePermit<'a>>) {
     // Extract `new_state` from the retry-upgrade-eligible variants;
@@ -3148,10 +3148,10 @@ async fn perform_single_attempt(
     apply_optional_request_headers(&mut transport_request, ctx.operation, ctx.options);
 
     let selected_transport = match ctx.pipeline_type {
-        PipelineType::DataPlane => ctx
+        PipelineKind::DataPlane => ctx
             .transport
             .get_dataplane_transport(ctx.account_endpoint, routing.transport_mode)?,
-        PipelineType::Metadata => ctx.transport.get_metadata_transport(ctx.account_endpoint)?,
+        PipelineKind::Metadata => ctx.transport.get_metadata_transport(ctx.account_endpoint)?,
     };
 
     // Resolve the per-leg throttle (429) retry budget from the same effective
@@ -10473,7 +10473,7 @@ mod tests {
         );
         let _ = child.start_request(
             super::ExecutionContext::Hedging,
-            super::PipelineType::DataPlane,
+            super::PipelineKind::DataPlane,
             super::TransportSecurity::Secure,
             TransportKind::Gateway,
             TransportHttpVersion::Http11,
@@ -10589,7 +10589,7 @@ mod tests {
         );
         let _ = child.start_request(
             super::ExecutionContext::Hedging,
-            super::PipelineType::DataPlane,
+            super::PipelineKind::DataPlane,
             super::TransportSecurity::Secure,
             TransportKind::Gateway,
             TransportHttpVersion::Http11,
@@ -10625,7 +10625,7 @@ mod tests {
         );
         let _ = child.start_request(
             super::ExecutionContext::Hedging,
-            super::PipelineType::DataPlane,
+            super::PipelineKind::DataPlane,
             super::TransportSecurity::Secure,
             TransportKind::Gateway,
             TransportHttpVersion::Http11,
@@ -10660,7 +10660,7 @@ mod tests {
     #[test]
     fn shared_hub_region_latch_eligibility_dataplane_single_master() {
         assert!(super::should_build_shared_hub_region_latch(
-            super::PipelineType::DataPlane,
+            super::PipelineKind::DataPlane,
             false, // single-master
         ));
     }
@@ -10669,7 +10669,7 @@ mod tests {
     #[test]
     fn shared_hub_region_latch_eligibility_skip_multi_master() {
         assert!(!super::should_build_shared_hub_region_latch(
-            super::PipelineType::DataPlane,
+            super::PipelineKind::DataPlane,
             true, // multi-master
         ));
     }
@@ -10680,11 +10680,11 @@ mod tests {
     #[test]
     fn shared_hub_region_latch_eligibility_skip_metadata() {
         assert!(!super::should_build_shared_hub_region_latch(
-            super::PipelineType::Metadata,
+            super::PipelineKind::Metadata,
             false,
         ));
         assert!(!super::should_build_shared_hub_region_latch(
-            super::PipelineType::Metadata,
+            super::PipelineKind::Metadata,
             true,
         ));
     }

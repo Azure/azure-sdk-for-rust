@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Renamed several types for naming consistency: `diagnostics::PipelineType` is now `diagnostics::PipelineKind` (following the `Kind`-over-`Type` convention), `diagnostics::ProxyConfiguration` is now `diagnostics::ProxyConfig` (matching the `Config` naming used elsewhere), and `in_memory_emulator::RuChargingModel` is now `in_memory_emulator::RequestUnitChargingModel` (expanding the `RU` acronym). The unstable `testing` module (`__internal_mocking` feature) was renamed to `test`. ([#5203](https://github.com/Azure/azure-sdk-for-rust/pull/5203))
+
 ### Bugs Fixed
 
 ### Other Changes

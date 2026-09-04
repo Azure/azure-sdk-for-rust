@@ -54,7 +54,7 @@ use std::sync::{Arc, Mutex};
 use async_trait::async_trait;
 use azure_data_cosmos_driver::models::AccountReference;
 use azure_data_cosmos_driver::options::DriverOptions;
-use azure_data_cosmos_driver::testing::{
+use azure_data_cosmos_driver::test::{
     ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
     TransportClient, TransportError,
 };

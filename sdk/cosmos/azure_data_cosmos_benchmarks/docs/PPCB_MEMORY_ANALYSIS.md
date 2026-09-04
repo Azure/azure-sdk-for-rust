@@ -228,10 +228,10 @@ dhat = { workspace = true, optional = true }
 PPCB's data structures are crate-private in production
 (`pub(crate) mod partition_endpoint_state`). The benchmark accesses them
 through the existing `__internal_testing` re-export pattern documented
-in `azure_data_cosmos_driver/src/testing.rs`:
+in `azure_data_cosmos_driver/src/test.rs`:
 
 ```rust
-// In azure_data_cosmos_driver/src/testing.rs (only compiled when
+// In azure_data_cosmos_driver/src/test.rs (only compiled when
 // __internal_testing feature is enabled).
 pub use crate::driver::routing::endpoint::CosmosEndpoint;
 pub use crate::driver::routing::partition_endpoint_state::{
@@ -243,7 +243,7 @@ pub use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;
 
 This change keeps the production API surface untouched: the underlying
 modules remain `pub(crate)`, so external callers can only reach these
-types via the unstable `crate::testing::*` namespace under the explicit
+types via the unstable `crate::test::*` namespace under the explicit
 opt-in feature flag.
 
 ### 4.4 Steady-state synthesis
@@ -808,7 +808,7 @@ regions, release build, Windows x86_64).
 | `partition_key_range_id.rs` | Inner `String` replaced with `CompactString`; added `From<&str>`; all accessors updated to `self.0.as_str()` |
 | `routing_systems.rs` | `try_move_next_endpoint` rewritten to use `if !contains { push }` instead of `HashSet::insert`. Two test sites use `smallvec![…]` literal in place of `HashSet::insert(…)` |
 | `testing.rs` | Re-exported the new `FailedEndpoints` alias under `__internal_testing` |
-| `examples/ppcb_state_dhat.rs` | Imports `FailedEndpoints` from `azure_data_cosmos_driver::testing`; populates the field via `iter().cloned().collect::<FailedEndpoints>()` |
+| `examples/ppcb_state_dhat.rs` | Imports `FailedEndpoints` from `azure_data_cosmos_driver::test`; populates the field via `iter().cloned().collect::<FailedEndpoints>()` |
 
 The `union` feature of `smallvec` was selected deliberately: without it
 the inline storage and the heap pointer/capacity sit in separate fields
@@ -1027,7 +1027,7 @@ without touching production API:
 - `CosmosDriver::location_state_store()` — returns `&Arc<LocationStateStore>`.
 - `LocationStateStore::apply_partition` widened from `pub(crate)` to `pub`
   (the enclosing module remains private, so it is still only reachable
-  via `crate::testing::*`).
+  via `crate::test::*`).
 
 ### 16.3 Headline numbers (real account, v2 driver)
 
@@ -1206,7 +1206,7 @@ apples-to-apples comparison §15 only had against synthesized state.
 | Harness | `examples/ppcb_state_real_dhat.rs` — same example, only the inner type alias changed (`HashSet<CosmosEndpoint>` instead of `FailedEndpoints`/`SmallVec<[…; 4]>`) |
 
 The two non-functional adjustments needed to compile against v1
-(`pub` widening of routing types so `crate::testing` can re-export them,
+(`pub` widening of routing types so `crate::test` can re-export them,
 and substituting `HashSet` for the `FailedEndpoints` alias) do not touch
 the heap layout — they exist so the same example binary can be built
 against either driver version.
