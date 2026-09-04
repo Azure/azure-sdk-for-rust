@@ -316,6 +316,7 @@ fn preserves_multiline_description_paragraphs() {
         },
         root_module: ApiModule {
             path: "demo".to_string(),
+            declaration_location: None,
             doc_comments: Vec::new(),
             attributes: Vec::new(),
             items: Vec::new(),

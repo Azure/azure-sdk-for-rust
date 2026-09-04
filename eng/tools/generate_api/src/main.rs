@@ -47,8 +47,14 @@ fn run() -> Result<(), String> {
             if !request.no_map {
                 let map_path = output::output_file_path(&request, cli::SOURCE_MAP_FILE_NAME);
                 let mappings = render::markdown::source_mappings_from_lines(&lines);
-                let map =
-                    source_map::render(cli::OutputFormat::Markdown.default_file_name(), &mappings)?;
+                let repository_root = std::env::current_dir()
+                    .map_err(|error| format!("Failed to resolve repository root: {error}"))?;
+                let map = source_map::render(
+                    cli::OutputFormat::Markdown.default_file_name(),
+                    &mappings,
+                    &request.output_dir,
+                    &repository_root,
+                )?;
                 save_or_check(&request, &map_path, &map)?;
             }
 

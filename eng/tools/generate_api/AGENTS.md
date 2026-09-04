@@ -220,9 +220,11 @@ For traits whose rustdoc-expanded methods carry synthetic async-trait lifetimes:
 
 - `source_map` owns the generic ECMA-426 v3 schema and Base64 VLQ encoding
 - the shared model stores repo-relative zero-based declaration locations
+- `sourceRoot` points from an in-repo output directory to the repository root
+- output outside the repository omits `sourceRoot`; `sources` always stay repo-relative
 - Markdown maps item, module, and member declaration lines only
 - headings, metadata, fences, attributes, documentation, and structural closing lines are unmapped
-- `sourceRoot` and `names` are omitted
+- `names` is omitted
 
 ## APIView output design
 

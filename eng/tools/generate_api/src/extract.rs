@@ -44,8 +44,7 @@ fn proc_macro_helper_location(item: &Item, helper: &str) -> Option<SourceLocatio
     let source = crate::source_cache::get(&span.filename)?;
     let lines = source.lines().collect::<Vec<_>>();
     let item_line = span.begin.0.saturating_sub(1).min(lines.len());
-    let search_start = item_line.saturating_sub(20);
-    let attribute_start = (search_start..item_line)
+    let attribute_start = (0..item_line)
         .rev()
         .find(|index| lines[*index].contains("#[proc_macro_derive"))?;
 

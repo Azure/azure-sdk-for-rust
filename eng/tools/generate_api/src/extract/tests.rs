@@ -2122,6 +2122,51 @@ fn extracts_derive_macro_helpers_as_members() {
 }
 
 #[test]
+fn locates_derive_macro_helpers_in_long_attributes() {
+    let path = std::path::PathBuf::from(format!(
+        "generate_api_proc_macro_source_test_{}.rs",
+        std::process::id()
+    ));
+    let source = format!(
+        "#[proc_macro_derive(\n    BlobDerive,\n    attributes(\n        blob,\n{}\n    )\n)]\npub fn derive() {{}}\n",
+        "\n".repeat(20)
+    );
+    std::fs::write(&path, source).unwrap();
+
+    let mut macro_item = item(
+        Id(1),
+        Some("BlobDerive"),
+        ItemEnum::ProcMacro(rustdoc_types::ProcMacro {
+            kind: rustdoc_types::MacroKind::Derive,
+            helpers: vec!["blob".to_string()],
+        }),
+    );
+    macro_item.span = Some(rustdoc_types::Span {
+        filename: path.clone(),
+        begin: (28, 1),
+        end: (28, 19),
+    });
+
+    let location = proc_macro_helper_location(&macro_item, "blob");
+
+    std::fs::remove_file(path).unwrap();
+    assert_eq!(
+        location,
+        Some(crate::model::SourceLocation {
+            path: macro_item
+                .span
+                .as_ref()
+                .unwrap()
+                .filename
+                .to_string_lossy()
+                .to_string(),
+            line: 3,
+            column: 8,
+        })
+    );
+}
+
+#[test]
 fn extracts_macro_matcher_arms_as_members() {
     let macro_id = Id(1);
     let krate = crate_with_items(vec![item(

@@ -44,8 +44,19 @@ documentation comments on:
 patch -p1 < API.comments.patch
 ```
 
-`API.md.map` is an ECMA-426 source map with repo-relative Rust source paths. It maps declaration
-lines in the fenced Rust API block back to the corresponding item or member declarations.
+`API.md.map` is an ECMA-426 source map that maps declaration lines in the fenced Rust API block
+back to the corresponding item or member declarations. Entries in `sources` are always relative
+to the repository root. The generated `sourceRoot` is the relative path from the `--output`
+directory to the repository root when the output directory is inside the repository. `sourceRoot`
+is omitted when the output directory is outside the repository.
+
+Source-map consumers differ in how they resolve `sourceRoot`. If the application opens the source
+map with the repository root as its base, remove `sourceRoot`. If the application cannot resolve
+the generated relative `sourceRoot`, replace it with the absolute path to the repository root.
+Alternatively, keep the generated relative `sourceRoot` and the source map at the same relative
+location within an unchanged repository directory structure; the source paths will then continue
+to resolve relative to `API.md.map` or a custom map path. Keep the `sources` entries unchanged in
+all cases.
 
 ## Workflow
 
