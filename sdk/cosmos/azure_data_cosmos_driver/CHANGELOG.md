@@ -10,6 +10,8 @@
 
 ### Bugs Fixed
 
+- Name-addressed container operations now refresh metadata and retry once after container recreation, clearing generation-specific session and partition-routing state before targeting the replacement. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
+
 ### Other Changes
 
 ## 0.7.0 (2026-09-02)
@@ -50,7 +52,6 @@
 
 ### Bugs Fixed
 
-- Name-addressed container operations now refresh metadata and retry once after container recreation, clearing generation-specific session and partition-routing state before targeting the replacement. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
 - Fixed doubles losing up to 1 ULP when a text JSON body is parsed, so a value such as `96.182417728091792` no longer comes back as `96.1824177280918`. `serde_json`'s default float parser is not correctly rounded; the `float_roundtrip` feature is now enabled. ([#5040](https://github.com/Azure/azure-sdk-for-rust/pull/5040))
 - Literal `%` characters in resource names are now percent-encoded on the HTTP request path so the gateway resolves the intended resource while authorization continues to use the original name. ([#5207](https://github.com/Azure/azure-sdk-for-rust/pull/5207))
 - Unsafe PATCH operations now atomically persist bounded tracking markers so ambiguous Replace retries and caller-token retries recognize their own prior commit instead of reapplying non-idempotent instructions. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
