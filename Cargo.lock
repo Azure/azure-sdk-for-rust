@@ -1017,6 +1017,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_storage_stress"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_test 0.2.0",
+ "bytes",
+ "clap",
+ "crc-fast",
+ "futures",
+ "pin-project",
+ "rand 0.10.2",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "azure_storage_stress_blob"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
+ "azure_storage_blob 1.1.0-beta.2",
+ "azure_storage_stress",
+ "bytes",
+ "clap",
+ "crc-fast",
+ "futures",
+ "rand 0.10.2",
+ "reqwest",
+ "serde",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "backtrace"
 version = "0.3.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1392,6 +1434,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b2a41393f66f16b0823bb79094d54ac5fbd34ab292ddafb9a0456ac9f87d201"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "crc"
+version = "3.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9710d3b3739c2e349eb44fe848ad0b7c8cb1e42bd87ee49371df2f7acaf3e675"
+dependencies = [
+ "crc-catalog",
+]
+
+[[package]]
+name = "crc-catalog"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "217698eaf96b4a3f0bc4f3662aaa55bdf913cd54d7204591faa790070c6d0853"
+
+[[package]]
+name = "crc-fast"
+version = "1.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fd92aca2c6001b1bf5ba0ff84ee74ec8501b52bbef0cac80bf25a6c1d87a83d"
+dependencies = [
+ "crc",
+ "digest",
+ "rustversion",
+ "spin",
 ]
 
 [[package]]
@@ -3930,6 +3999,12 @@ dependencies = [
  "libc",
  "windows-sys 0.61.2",
 ]
+
+[[package]]
+name = "spin"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "023a211cb3138dbc438680b32560ad89f699977624c9f8dbb95a47d5b4c07dd3"
 
 [[package]]
 name = "stable_deref_trait"
