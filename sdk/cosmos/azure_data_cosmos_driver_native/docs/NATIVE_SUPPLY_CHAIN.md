@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 -->
-<!-- cSpell:ignore Authenticode codesign dylib staticlib rustls mingw musl SPDX -->
+<!-- cSpell:ignore artifactignore Authenticode codesign dylib staticlib rustls mingw musl SPDX -->
 
 # How the Go native driver is built and verified
 
@@ -85,6 +85,12 @@ carries a consolidated `provenance.json` binding the release identity (see
 [provenance.json](#provenancejson)). The Windows linker file also statically
 links the MinGW pthread runtime so the final Go application does not require a
 separate `libwinpthread-1.dll`.
+
+The publication root uses a default-deny `.artifactignore` for `_manifest`,
+with exact exceptions for those six stable filenames. The artifact service
+therefore leaves generated diagnostics in restricted pipeline task retention
+while the published and downstream-consumed artifact contains only the approved
+evidence bundle.
 
 ## Why the static library is not code-signed
 

@@ -289,4 +289,31 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             "eq(variables['Build.Reason'], 'Manual')"
         ))
     }
+
+    It 'limits the published manifest to the release evidence allowlist' {
+        $pipeline = Get-Content $PipelinePath -Raw
+
+        $artifactIgnoreMatch = [regex]::Match(
+            $pipeline,
+            "(?ms)^\s+@'\r?\n(?<rules>.*?)^\s+'@ \| Set-Content `"\`$root/\.artifactignore`""
+        )
+        $artifactIgnoreMatch.Success | Should -BeTrue
+        $artifactIgnoreRules = @(
+            $artifactIgnoreMatch.Groups['rules'].Value -split '\r?\n' |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { $_ }
+        )
+        $artifactIgnoreRules | Should -Be @(
+            '.artifactignore'
+            '_manifest/**'
+            '!_manifest/spdx_2.2/'
+            '!_manifest/spdx_2.2/manifest.spdx.json'
+            '!_manifest/spdx_2.2/manifest.spdx.json.sha256'
+            '!_manifest/spdx_2.2/manifest.spdx.cose'
+            '!_manifest/spdx_2.2/manifest.cat'
+            '!_manifest/spdx_2.2/bsi.json'
+            '!_manifest/spdx_2.2/bsi.cose'
+        )
+        $pipeline | Should -Match '(?s)ArtifactName:\s+azure-cosmos-driver-modules\s+ArtifactPath:.*?SbomEnabled:\s+true'
+    }
 }

@@ -2,6 +2,7 @@
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 -->
+<!-- cSpell:ignore artifactignore -->
 
 # Go native driver build pipeline
 
@@ -69,7 +70,7 @@ Publish each target through the official 1ES template with its standard SBOM
 Generate and test the Go modules
     |
     v
-Publish the azure-cosmos-driver-modules pipeline artifact
+Publish the filtered azure-cosmos-driver-modules pipeline artifact
     |
     v
 Verify the downloaded artifact and generated paths
@@ -102,6 +103,11 @@ rejects files outside the managed roots, runs Go validation for each module
 definition and the Linux AMD64 module, and opens a draft pull request. The
 target repository's branch rules require review and code-owner approval before
 merge.
+
+The publication root contains a default-deny `.artifactignore` for `_manifest`.
+The artifact service excludes every generated manifest file except the six
+approved `_manifest/spdx_2.2` members, so diagnostics remain in restricted
+pipeline task retention and do not appear in the published artifact.
 
 ## Local integration test
 
