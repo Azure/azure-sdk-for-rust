@@ -59,6 +59,7 @@ use async_trait::async_trait;
 
 use crate::models::{CosmosOperation, FeedRange, MaxItemCountHint, SessionToken};
 
+use super::binary_heap;
 use super::order_by::{
     classify_row_vs_boundary, compare_key_tuples, compare_rids, OrderByItem, OrderByResumeValue,
     RowVsBoundary,
@@ -525,51 +526,12 @@ impl StreamingOrderedMerge {
         let mut heap = Vec::with_capacity(self.children.len());
         for idx in 0..self.children.len() {
             if self.children[idx].buffered.front().is_some() {
-                self.heap_push(&mut heap, idx);
+                binary_heap::push_by(&mut heap, idx, |left, right| {
+                    self.row_less_than(*left, *right)
+                });
             }
         }
         heap
-    }
-
-    fn heap_push(&self, heap: &mut Vec<usize>, child_idx: usize) {
-        heap.push(child_idx);
-        let mut pos = heap.len() - 1;
-        while pos > 0 {
-            let parent = (pos - 1) / 2;
-            if !self.row_less_than(heap[pos], heap[parent]) {
-                break;
-            }
-            heap.swap(pos, parent);
-            pos = parent;
-        }
-    }
-
-    fn heap_pop(&self, heap: &mut Vec<usize>) -> Option<usize> {
-        let winner = *heap.first()?;
-        let last = heap.pop().expect("heap has a first element");
-        if !heap.is_empty() {
-            heap[0] = last;
-            let mut pos = 0;
-            loop {
-                let left = pos * 2 + 1;
-                if left >= heap.len() {
-                    break;
-                }
-                let right = left + 1;
-                let smallest = if right < heap.len() && self.row_less_than(heap[right], heap[left])
-                {
-                    right
-                } else {
-                    left
-                };
-                if !self.row_less_than(heap[smallest], heap[pos]) {
-                    break;
-                }
-                heap.swap(pos, smallest);
-                pos = smallest;
-            }
-        }
-        Some(winner)
     }
 
     fn row_less_than(&self, a_idx: usize, b_idx: usize) -> bool {
@@ -627,7 +589,9 @@ impl PipelineNode for StreamingOrderedMerge {
         let mut items: Vec<bytes::Bytes> = Vec::new();
 
         while items.len() < cap {
-            let Some(winner) = self.heap_pop(&mut head_heap) else {
+            let Some(winner) = binary_heap::pop_by(&mut head_heap, |left, right| {
+                self.row_less_than(*left, *right)
+            }) else {
                 break;
             };
             let row = self.children[winner]
@@ -669,7 +633,9 @@ impl PipelineNode for StreamingOrderedMerge {
             items.push(item);
             if items.len() < cap {
                 if self.children[winner].buffered.front().is_some() {
-                    self.heap_push(&mut head_heap, winner);
+                    binary_heap::push_by(&mut head_heap, winner, |left, right| {
+                        self.row_less_than(*left, *right)
+                    });
                 } else {
                     // From here on rows have already been consumed and their
                     // boundaries advanced, so a fetch failure must not discard
@@ -698,7 +664,9 @@ impl PipelineNode for StreamingOrderedMerge {
                         }
                         head_heap = self.build_head_heap();
                     } else if self.children[winner].buffered.front().is_some() {
-                        self.heap_push(&mut head_heap, winner);
+                        binary_heap::push_by(&mut head_heap, winner, |left, right| {
+                            self.row_less_than(*left, *right)
+                        });
                     }
                 }
             }

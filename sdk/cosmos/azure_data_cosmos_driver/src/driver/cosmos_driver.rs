@@ -3762,6 +3762,21 @@ impl CosmosDriver {
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
+        if query_plan
+            .query_info
+            .as_ref()
+            .is_some_and(planner::is_non_streaming_order_by)
+        {
+            let pipeline = planner::build_non_streaming_ordered_merge(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
+
         let pipeline =
             planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
                 .await?;
