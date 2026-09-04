@@ -7,6 +7,8 @@
 use crate::models::PatchTrackingId;
 use azure_data_cosmos_driver::models::{Precondition, SessionToken};
 use azure_data_cosmos_driver::options::OperationOptions;
+#[cfg(feature = "preview_patch")]
+use azure_data_cosmos_driver::options::PatchStrategy;
 
 /// Options for item point-read operations.
 ///
@@ -100,26 +102,27 @@ impl ItemWriteOptions {
 /// use persisted tracking entries to suppress duplicate application after an
 /// ambiguous transport failure. See [Retry Semantics](crate::clients::ContainerClient::patch_item()).
 ///
-/// PATCH is implemented driver-side as a Read-Modify-Write (RMW) loop:
-/// the driver reads the current item, applies your [`PatchInstructions`](crate::models::PatchInstructions)
-/// locally, and issues an ETag-guarded Replace. If the Replace returns
-/// 412 PreconditionFailed (another writer raced), the loop restarts.
+/// PATCH can execute server-side as one request or through the tracked
+/// client-side Read-Modify-Write (RMW) loop. [`PatchStrategy::Auto`] is the
+/// default: it uses server-side PATCH for retry-safe lists containing at most
+/// 10 instructions, and client-side RMW for unsafe or longer lists.
 ///
-/// The optional [`max_attempts`](Self::max_attempts) field bounds how many
-/// times that loop may retry; `None` falls back to the driver default (5).
+/// Explicit [`PatchStrategy::ServerSide`] never falls back. Cosmos DB rejects
+/// more than 10 instructions with HTTP 400. [`PatchStrategy::ClientSide`] has
+/// no corresponding instruction-count limit.
 ///
-/// # Conditions are not exposed
+/// The optional [`max_attempts`](Self::max_attempts) field bounds only the
+/// client-side loop; `None` falls back to the driver default (5).
 ///
-/// PATCH intentionally does **not** expose either flavor of "condition" that
-/// peer SDKs surface on their PATCH options:
+/// # Conditions
 ///
-/// * **`Precondition` (`If-Match` / `If-None-Match`).** The handler owns the
-///   `If-Match` precondition on the internal Replace and captures the ETag
-///   off the matching Read; honoring a caller-set value would either shadow
-///   that ETag (silently breaking the RMW guarantee) or require resolving
-///   it against the handler's own ETag (no sensible merge). The driver-side
-///   PATCH handler rejects any caller-set precondition with an error before
-///   issuing any sub-operation.
+/// PATCH exposes ETag preconditions but not SQL filter predicates:
+///
+/// * **`Precondition::IfMatch`.** Server-side PATCH sends the condition to
+///   Cosmos DB. Client-side PATCH evaluates it against each write-region
+///   `LatestCommitted` Read, then uses that Read's ETag as the internal Replace
+///   concurrency guard. `IfNoneMatch` is a read condition and is rejected for
+///   PATCH.
 /// * **SQL filter predicate** (peer SDKs' `FilterPredicate`). Predicate
 ///   evaluation requires either native wire-level PATCH (so the server
 ///   evaluates the predicate inside the same transaction) or a client-side
@@ -132,25 +135,23 @@ impl ItemWriteOptions {
 /// [`ItemReadOptions`] / [`ItemWriteOptions`]). All other general-purpose
 /// settings (custom headers, content response behavior, excluded regions,
 /// etc.) are configured via [`with_operation_options`](Self::with_operation_options) — see
-/// [`OperationOptions`] for details.
+/// [`OperationOptions`] for details. In particular, an explicit
+/// `content_response_on_write = Disabled` suppresses the PATCH response body
+/// for both server-side and client-side execution.
 ///
 /// # Latency
 ///
-/// Because every PATCH is at minimum a Read followed by a Replace, the
-/// best-case round-trip floor for ``patch_item`` is **2× the single-RTT
-/// cost** of a comparable Read or Replace against the same partition.
-/// Each retry triggered by a 412 PreconditionFailed adds another full
-/// Read+Replace pair to the wall-clock cost.
+/// Server-side PATCH has a one-request latency floor. Client-side PATCH is at
+/// minimum a Read followed by a Replace, and each 412 retry adds another full
+/// Read+Replace pair.
 ///
 /// When configuring an end-to-end latency budget via
 /// [`OperationOptions`]'s end-to-end request settings, the budget applies once
 /// to the complete logical PATCH, including every Read, Replace, retry, and
 /// terminal verification. Size the budget
-/// accordingly — a useful rule of thumb is **≥ 2× the p99 single-RTT
-/// budget you would set for a plain Replace**, plus headroom for any
-/// 412 retries you want to tolerate. Setting the budget too low can
-/// cancel the RMW between the Read and the Replace, producing a
-/// timeout error even when the service is healthy.
+/// accordingly when `ClientSide` is possible, including through `Auto`
+/// fallback. A useful rule of thumb is **≥ 2× the p99 single-RTT budget for a
+/// plain Replace**, plus headroom for 412 retries.
 #[cfg(feature = "preview_patch")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
@@ -159,19 +160,29 @@ pub struct PatchItemOptions {
     /// See [`OperationOptions`] for available settings and layered resolution behavior.
     pub operation: OperationOptions,
 
+    /// How this PATCH should execute.
+    ///
+    /// `None` inherits the layered default, which resolves to
+    /// [`PatchStrategy::Auto`]. Client-side-only settings do not influence
+    /// strategy resolution. When both this field and
+    /// [`operation.patch_strategy`](OperationOptions::patch_strategy) are set,
+    /// this field takes precedence.
+    pub strategy: Option<PatchStrategy>,
+
     /// Session token for session-consistent writes.
     pub session_token: Option<SessionToken>,
 
-    /// Maximum number of Read-Modify-Write attempts the driver may make
-    /// before surfacing a 412. `None` selects the driver default (5).
+    /// `If-Match` ETag check applied to the item before PATCH commits.
+    pub precondition: Option<Precondition>,
+
+    /// Maximum number of client-side Read-Modify-Write attempts the driver may
+    /// make before surfacing a 412. Ignored by server-side PATCH. `None`
+    /// selects the driver default (5).
     pub max_attempts: Option<std::num::NonZeroU8>,
 
-    /// Stable identity for application-level retries of the same logical
-    /// PATCH. Persist and reuse this value across process restarts; never reuse
-    /// it for a different operation. Use a random, unpredictable ID. Supplying
-    /// an ID opts even a retry-safe instruction list into marker-based
-    /// duplicate suppression. When omitted, the driver generates an ID only
-    /// for unsafe lists.
+    /// Stable identity for application-level retries of this PATCH.
+    ///
+    /// See [`Self::with_tracking_id`] for usage and guarantees.
     pub tracking_id: Option<PatchTrackingId>,
 
     /// Maximum number of PATCH tracking entries retained on the
@@ -198,17 +209,44 @@ impl PatchItemOptions {
         self
     }
 
+    /// Sets an `If-Match` ETag check for this PATCH.
+    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
+        self.precondition = Some(precondition);
+        self
+    }
+
     /// Caps the number of Read-Modify-Write attempts the driver may make.
     pub fn with_max_attempts(mut self, max_attempts: std::num::NonZeroU8) -> Self {
         self.max_attempts = Some(max_attempts);
         self
     }
 
+    /// Selects how this PATCH executes.
+    pub fn with_strategy(mut self, strategy: PatchStrategy) -> Self {
+        self.strategy = Some(strategy);
+        self
+    }
+
     /// Sets the stable identity for this logical PATCH operation.
     ///
-    /// Reuse it only when retrying the same operation against the same item.
-    /// Use a random, unpredictable value; cooperating writers are trusted not
-    /// to forge entries in the reserved tracking property.
+    /// This setting is effective only when strategy resolution selects
+    /// client-side execution. It does not influence strategy selection and is
+    /// ignored by server-side PATCH.
+    ///
+    /// On the client-side path, supplying an ID opts even a retry-safe
+    /// instruction list into marker-based duplicate suppression. Persist and
+    /// reuse the same random, unpredictable ID only for application-level
+    /// retries of the same logical operation against the same item, including
+    /// across process restarts. Reusing it for a different operation suppresses
+    /// that operation. Cooperating writers must preserve the reserved tracking
+    /// property and are trusted not to forge entries.
+    ///
+    /// When omitted, the driver generates an ID for unsafe client-side lists.
+    /// The effective ID is available from the response, diagnostics, and errors
+    /// so a retry can reuse it after an ambiguous failure. Duplicate suppression
+    /// remains bounded by the configured retention window and tracking capacity.
+    /// Tracking entries are visible in stored and returned JSON and count toward
+    /// item size and indexing costs.
     pub fn with_tracking_id(mut self, tracking_id: PatchTrackingId) -> Self {
         self.tracking_id = Some(tracking_id);
         self

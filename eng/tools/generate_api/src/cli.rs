@@ -19,9 +19,13 @@ struct Args {
     #[arg(long, value_enum, default_value_t = OutputFormat::Markdown)]
     format: OutputFormat,
 
-    /// Do not emit documentation comments in APIView output.
+    /// Do not emit documentation comments in APIView output or the Markdown comments patch.
     #[arg(long)]
     no_docs: bool,
+
+    /// Check generated content against existing files without writing them.
+    #[arg(long)]
+    check: bool,
 
     /// Directory where generated files will be written.
     #[arg(long, value_name = "DIR")]
@@ -33,6 +37,7 @@ pub(crate) struct Request {
     pub(crate) manifest_path: PathBuf,
     pub(crate) format: OutputFormat,
     pub(crate) no_docs: bool,
+    pub(crate) check: bool,
     pub(crate) output_dir: PathBuf,
 }
 
@@ -41,6 +46,9 @@ pub(crate) enum OutputFormat {
     Markdown,
     Apiview,
 }
+
+/// File name of the patch that adds documentation comments back to `API.md`.
+pub(crate) const COMMENTS_PATCH_FILE_NAME: &str = "API.comments.patch";
 
 impl OutputFormat {
     pub(crate) fn default_file_name(self) -> &'static str {
@@ -57,6 +65,7 @@ pub(crate) fn parse() -> Request {
         manifest_path: args.manifest_path,
         format: args.format,
         no_docs: args.no_docs,
+        check: args.check,
         output_dir: args.output,
     }
 }

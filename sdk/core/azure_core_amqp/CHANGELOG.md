@@ -7,6 +7,8 @@
 - Added `AmqpTransport` and `AmqpConnectionOptions::transport` to support AMQP over secure WebSockets.
 - Added the `fe2o3_amqp_ws` and `fe2o3_amqp_ws_rustls` features for AMQP over WebSockets. Both are enabled by default.
 - Added the `fe2o3_amqp_rustls` feature for AMQP over TCP with rustls and the aws-lc-rs provider. It is enabled by default. ([#4189](https://github.com/Azure/azure-sdk-for-rust/issues/4189))
+- Added `AmqpReceiverApis::settle_delivery` and `AmqpDeliveryOutcome` to settle deliveries with accepted, rejected, released, or modified outcomes. See [#4935](https://github.com/Azure/azure-sdk-for-rust/issues/4935).
+- Added the `AmqpErrorCondition::DeadLetter` variant for the `com.microsoft:dead-letter` error condition. See [#4935](https://github.com/Azure/azure-sdk-for-rust/issues/4935).
 
 ### Breaking Changes
 

@@ -265,11 +265,35 @@ impl CosmosTransport {
         endpoint: &AccountEndpoint,
         transport_mode: TransportMode,
     ) -> crate::error::Result<AdaptiveTransport> {
-        if self
+        let allow_invalid_cert = self
             .connection_pool
             .server_certificate_validation()
-            .allows_insecure_connection(endpoint)
+            .allows_insecure_connection(endpoint);
+
+        if matches!(transport_mode, TransportMode::GatewayV2)
+            && !self.connection_pool.gateway_v2_disabled()
         {
+            let transport = match self.dataplane_gateway_v2_transport.get() {
+                Some(t) => t.clone(),
+                None => {
+                    let mut config = HttpClientConfig::dataplane_gateway_v2(&self.connection_pool);
+                    if allow_invalid_cert {
+                        config = config.with_allow_invalid_cert();
+                    }
+                    let t = AdaptiveTransport::gateway_v2(
+                        &self.connection_pool,
+                        self.http_client_factory.clone(),
+                        config,
+                    );
+                    self.dataplane_gateway_v2_transport
+                        .get_or_init(|| t)
+                        .clone()
+                }
+            };
+            return Ok(transport);
+        }
+
+        if allow_invalid_cert {
             let transport = match self.insecure_emulator_dataplane_transport.get() {
                 Some(t) => t.clone(),
                 None => {
@@ -291,26 +315,7 @@ impl CosmosTransport {
             return Ok(transport);
         }
 
-        match transport_mode {
-            TransportMode::GatewayV2 if !self.connection_pool.gateway_v2_disabled() => {
-                let transport = match self.dataplane_gateway_v2_transport.get() {
-                    Some(t) => t.clone(),
-                    None => {
-                        let config = HttpClientConfig::dataplane_gateway_v2(&self.connection_pool);
-                        let t = AdaptiveTransport::gateway_v2(
-                            &self.connection_pool,
-                            self.http_client_factory.clone(),
-                            config,
-                        );
-                        self.dataplane_gateway_v2_transport
-                            .get_or_init(|| t)
-                            .clone()
-                    }
-                };
-                Ok(transport)
-            }
-            _ => Ok(self.dataplane_gateway_transport.clone()),
-        }
+        Ok(self.dataplane_gateway_transport.clone())
     }
 }
 
@@ -366,6 +371,23 @@ pub(crate) mod tests {
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
+            .unwrap();
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGatewayV2(_)));
+    }
+
+    #[test]
+    fn dataplane_transport_uses_gateway_v2_for_insecure_emulator_endpoint() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_server_certificate_validation(
+                crate::options::ServerCertificateValidation::RequiredUnlessEmulator,
+            )
+            .build()
+            .unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
+        let endpoint = AccountEndpoint::try_from("http://127.0.0.1:10250/").unwrap();
 
         let ctx = transport
             .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)

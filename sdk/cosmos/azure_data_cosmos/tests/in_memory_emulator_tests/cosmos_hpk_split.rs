@@ -147,7 +147,10 @@ fn create_geo_container(store: &Arc<EmulatorStore>, partition_count: u32) {
 }
 
 async fn container_client(client: &CosmosClient) -> Result<ContainerClient, Box<dyn Error>> {
-    Ok(client.database_client(DB).container_client(COLL).await?)
+    Ok(client
+        .database_client(DB)
+        .container_client(COLL, None)
+        .await?)
 }
 
 async fn seed(container: &ContainerClient, items: &[GeoItem]) -> Result<(), Box<dyn Error>> {

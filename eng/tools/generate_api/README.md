@@ -16,14 +16,31 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
 - `--format <markdown|apiview>`: optional output format to generate; defaults to `markdown`
-- `--no-docs`: when generating `apiview`, omit documentation comment tokens
+- `--no-docs`: omit documentation comments: APIView doc tokens, or the Markdown comments patch
+- `--check`: compare generated content with existing output files without writing them
 - `--output <dir>`: directory where generated files are written
 
 ### Outputs
 
-- default `markdown` output writes `API.md`
+- default `markdown` output writes `API.md` and `API.comments.patch`
+- `--no-docs` writes only `API.md`
 - `--format apiview` writes `apiview.json`
 - `--format apiview --no-docs` writes `apiview.json` without doc comment tokens
+- `--check` succeeds when output files are absent or match after normalizing line endings; a mismatch
+  writes an error to stderr and exits with code `1`
+
+Both formats include available Cargo metadata (`description`, `edition`, and `rust-version`) and
+the crate's default and docs.rs feature list (or all features when not configured). Markdown also
+starts with the crate name. Multiline descriptions render with the `Description` label on its own
+line before the description text. Children of the `default` feature are also listed. `API.md` never
+contains
+documentation comments.
+`API.comments.patch` is a unified diff that adds them back, so it can be applied to toggle
+documentation comments on:
+
+```sh
+patch -p1 < API.comments.patch
+```
 
 ## Workflow
 

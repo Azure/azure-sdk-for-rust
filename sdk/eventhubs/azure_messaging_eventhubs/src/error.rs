@@ -45,6 +45,17 @@ pub enum ErrorKind {
     ///
     AmqpError(AmqpError),
 
+    /// The service settled the transfer, but it did not durably accept it.
+    ///
+    /// The broker returned an AMQP `Modified` or `Released` outcome. Neither
+    /// outcome means the service stored the events. The buffered producer
+    /// reports this as a delivery failure.
+    ///
+    /// A `Released` or `Modified` outcome does not prove that the service
+    /// discarded the events either. If the caller sends the same events again,
+    /// the service can store them two times.
+    SendNotAccepted(Cow<'static, str>),
+
     /// Receiver was disconnected by the broker because another receiver
     /// attached with the same or higher epoch (owner level). The inner
     /// `AmqpDescribedError` is for logging; match on the variant:
@@ -95,6 +106,9 @@ impl std::fmt::Display for EventHubsError {
             ErrorKind::SendRejected(e) => write!(f, "Send rejected: {:?}", e),
             ErrorKind::InvalidManagementResponse => f.write_str("Invalid management response"),
             ErrorKind::AmqpError(source) => write!(f, "AMQP Error: {:?}", source),
+            ErrorKind::SendNotAccepted(msg) => {
+                write!(f, "Send was not durably accepted: {}", msg)
+            }
             ErrorKind::ConsumerDisconnected(e) => {
                 write!(
                     f,

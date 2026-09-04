@@ -27,11 +27,13 @@ pub mod offers;
 pub mod order_by;
 #[cfg(feature = "fault_injection")]
 pub mod patch_retry_faults;
+pub mod patch_strategy;
 pub mod patch_verification_routing;
 pub mod point_operations;
 pub mod ppaf_dynamic_enablement;
 pub mod query;
 pub mod read_feed;
+pub mod region_online_offline;
 #[cfg(feature = "fault_injection")]
 pub mod regional_gateway_unreachable;
 pub mod skip_take;
@@ -271,6 +273,18 @@ pub fn upsert_item_request(
     req
 }
 
+/// Parses a response body, accepting either text JSON or Cosmos binary JSON.
+///
+/// Binary encoding is enabled by default, so a body is detected by its `0x80`
+/// preamble rather than assumed to be text.
+pub fn parse_json_body(bytes: &[u8]) -> Option<serde_json::Value> {
+    if azure_data_cosmos_driver::binary_json::is_binary(bytes) {
+        azure_data_cosmos_driver::binary_json::decode(bytes).ok()
+    } else {
+        serde_json::from_slice(bytes).ok()
+    }
+}
+
 /// Decodes a query page's documents into JSON values, accepting either a
 /// pre-split `Items` body (as the cross-partition skip/take and streaming
 /// ORDER BY nodes now emit) or a raw `{"Documents":[...]}` envelope in a single
@@ -283,10 +297,10 @@ pub fn page_document_values(
         ResponseBody::NoPayload => Vec::new(),
         ResponseBody::Items(items) => items
             .iter()
-            .map(|b| serde_json::from_slice(b).unwrap())
+            .map(|b| parse_json_body(b).expect("item should parse as text or binary JSON"))
             .collect(),
         ResponseBody::Bytes(b) => {
-            let value: serde_json::Value = serde_json::from_slice(&b).unwrap();
+            let value = parse_json_body(&b).expect("page should parse as text or binary JSON");
             value["Documents"].as_array().cloned().unwrap_or_default()
         }
     }
@@ -299,7 +313,7 @@ pub async fn read_response_body(response: AsyncRawResponse) -> serde_json::Value
     if body_bytes.is_empty() {
         serde_json::Value::Null
     } else {
-        serde_json::from_slice(body_bytes).unwrap_or(serde_json::Value::Null)
+        parse_json_body(body_bytes).unwrap_or(serde_json::Value::Null)
     }
 }
 
@@ -314,7 +328,7 @@ pub async fn collect_response(
     let body = if body_bytes.is_empty() {
         serde_json::Value::Null
     } else {
-        serde_json::from_slice(body_bytes).unwrap_or(serde_json::Value::Null)
+        parse_json_body(body_bytes).unwrap_or(serde_json::Value::Null)
     };
     (status, headers, body)
 }

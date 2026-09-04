@@ -392,7 +392,7 @@ async fn metadata_pk_range_read_hedges_cold_then_pins_to_the_winner() {
     let driver = make_driver(&ctx, vec![Arc::clone(&east_pk), Arc::clone(&west_pk)]).await;
 
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
 
