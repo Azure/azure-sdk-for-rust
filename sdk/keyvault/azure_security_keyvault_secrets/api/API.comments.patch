@@ -1,0 +1,890 @@
+--- a/API.md
++++ b/API.md
+@@ -13,1 +13,259 @@
++//! # Azure Key Vault secrets client library for Rust
++//!
++//! Azure Key Vault is a cloud service that provides a secure storage of secrets, such as passwords and database connection strings.
++//!
++//! The Azure Key Vault secrets client library allows you to securely store and control the access to tokens, passwords, API keys, and other secrets. This library offers operations to create, retrieve, update, delete, purge, backup, restore, and list the secrets and its versions.
++//!
++//! [Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
++//!
++//! ## Getting started
++//!
++//! ### Install the package
++//!
++//! Install the Azure Key Vault secrets client library for Rust with [Cargo]:
++//!
++//! ```sh
++//! cargo add azure_security_keyvault_secrets
++//! ```
++//!
++//! ### Prerequisites
++//!
++//! * An [Azure subscription].
++//! * An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
++//! * Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
++//!
++//! If you use the Azure CLI, replace `<your-resource-group-name>` and `<your-key-vault-name>` with your own, unique names:
++//!
++//! ```azurecli
++//! az keyvault create --resource-group <your-resource-group-name> --name <your-key-vault-name>
++//! ```
++//!
++//! ### Install dependencies
++//!
++//! Add the following crates to your project:
++//!
++//! ```sh
++//! cargo add azure_identity tokio
++//! ```
++//!
++//! ### Authenticate the client
++//!
++//! In order to interact with the Azure Key Vault service, you'll need to create an instance of the `SecretClient`. You need a **vault url**, which you may see as "DNS Name" in the portal, and credentials to instantiate a client object.
++//!
++//! The example shown below uses a `DeveloperToolsCredential`, which is appropriate for local development environments. We recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
++//!
++//! The `DeveloperToolsCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
++//!
++//! ```azurecli
++//! az login
++//! ```
++//!
++//! Instantiate a `DeveloperToolsCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
++//!
++//! ### Instantiate a client
++//!
++//! ```rust no_run
++//! use azure_identity::DeveloperToolsCredential;
++//! use azure_security_keyvault_secrets::SecretClient;
++//!
++//! #[tokio::main]
++//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
++//!     // Create a new secret client
++//!     let credential = DeveloperToolsCredential::new(None)?;
++//!     let client = SecretClient::new(
++//!         "https://<your-key-vault-name>.vault.azure.net/",
++//!         credential.clone(),
++//!         None,
++//!     )?;
++//!
++//!     // Get a secret using the secret client.
++//!     let secret = client
++//!         .get_secret("secret-name", None)
++//!         .await?
++//!         .into_model()?;
++//!     println!("Secret: {:?}", secret.value);
++//!
++//!     Ok(())
++//! }
++//! ```
++//!
++//! ## Key concepts
++//!
++//! ### Secret
++//!
++//! A `Secret` is the fundamental resource within Azure Key Vault. From a developer's perspective, Azure Key Vault APIs accept and return secret values as strings.
++//!
++//! ### SecretClient
++//!
++//! The `SecretClient` provides asynchronous operations for working with Key Vault secrets.
++//!
++//! ### Thread safety
++//!
++//! We guarantee that all client instance methods are thread-safe and independent of each other. This ensures that the recommendation of reusing client instances is always safe, even across threads.
++//!
++//! ## Examples
++//!
++//! The following section provides several code snippets using a `SecretClient` like we [instantiated above](#instantiate-a-client):
++//!
++//! * [Create a secret](#create-a-secret)
++//! * [Retrieve a secret](#retrieve-a-secret)
++//! * [Update an existing secret](#update-an-existing-secret)
++//! * [Delete a secret](#delete-a-secret)
++//! * [List secrets](#list-secrets)
++//!
++//! ### Create a secret
++//!
++//! `set_secret` creates a Key Vault secret to be stored in the Azure Key Vault. If a secret with the same name already exists, then a new version of the secret is created.
++//!
++//! ```rust ignore create_secret
++//! use azure_security_keyvault_secrets::{models::SetSecretParameters, ResourceExt};
++//!
++//! // Create a new secret using the secret client.
++//! let secret_set_parameters = SetSecretParameters {
++//!     value: Some("secret-value".into()),
++//!     ..Default::default()
++//! };
++//!
++//! let secret = client
++//!     .set_secret("secret-name", secret_set_parameters.try_into()?, None)
++//!     .await?
++//!     .into_model()?;
++//!
++//! println!(
++//!     "Secret Name: {:?}, Value: {:?}, Version: {:?}",
++//!     secret.resource_id()?.name,
++//!     secret.value,
++//!     secret.resource_id()?.version
++//! );
++//! ```
++//!
++//! ### Retrieve a secret
++//!
++//! `get_secret` retrieves a secret previously stored in the Azure Key Vault. Setting the `secret-version` to an empty string will return the latest version.
++//!
++//! ```rust ignore get_secret
++//! use azure_security_keyvault_secrets::models::SecretClientGetSecretOptions;
++//!
++//! // Retrieve a secret using the secret client.
++//! let get_options = SecretClientGetSecretOptions {
++//!     secret_version: Some("secret-version".to_string()),
++//!     ..Default::default()
++//! };
++//! let secret = client
++//!     .get_secret("secret-name", Some(get_options))
++//!     .await?
++//!     .into_model()?;
++//!
++//! println!("Secret Value: {:?}", secret.value);
++//! ```
++//!
++//! ### Update an existing secret
++//!
++//! `update_secret_properties` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
++//!
++//! ```rust ignore update_secret
++//! use azure_security_keyvault_secrets::models::UpdateSecretPropertiesParameters;
++//! use std::collections::HashMap;
++//!
++//! // Update a secret using the secret client.
++//! let secret_update_parameters = UpdateSecretPropertiesParameters {
++//!     content_type: Some("text/plain".into()),
++//!     tags: Some(HashMap::from_iter(vec![(
++//!         "tag-name".into(),
++//!         "tag-value".into(),
++//!     )])),
++//!     ..Default::default()
++//! };
++//!
++//! client
++//!     .update_secret_properties(
++//!         "secret-name",
++//!         secret_update_parameters.try_into()?,
++//!         None,
++//!     )
++//!     .await?
++//!     .into_model()?;
++//! ```
++//!
++//! ### Delete a secret
++//!
++//! `delete_secret` will tell Key Vault to delete a secret but it is not deleted immediately. It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_secret` on the returned `DeletedSecret.id`.
++//!
++//! ```rust ignore delete_secret
++//! // Delete a secret using the secret client.
++//! client.delete_secret("secret-name", None).await?;
++//! ```
++//!
++//! ### List secrets
++//!
++//! This example lists all the secrets in the specified Azure Key Vault. The value is not returned when listing all secrets. You will need to call `SecretClient::get_secret` to retrieve the value.
++//!
++//! ```rust ignore list_secrets
++//! use azure_security_keyvault_secrets::ResourceExt;
++//! use futures::TryStreamExt;
++//!
++//! let mut pager = client.list_secret_properties(None)?;
++//! while let Some(secret) = pager.try_next().await? {
++//!     // Get the secret name from the ID.
++//!     let name = secret.resource_id()?.name;
++//!     println!("Found Secret with Name: {}", name);
++//! }
++//! ```
++//!
++//! ## Troubleshooting
++//!
++//! ### General
++//!
++//! When you interact with the Azure Key Vault secrets client library using the Rust SDK, errors returned by the service correspond to the same HTTP status codes returned for [REST API] requests.
++//!
++//! For example, if you try to retrieve a secret that doesn't exist in your Azure Key Vault, a `404` error is returned, indicating `Not Found`.
++//!
++//! ```rust ignore errors
++//! match client.get_secret("secret-name", None).await {
++//!     Ok(response) => println!("Secret Value: {:?}", response.into_model()?.value),
++//!     Err(err) => println!("Error: {:#?}", err.into_inner()?),
++//! }
++//! ```
++//!
++//! You will notice that additional information is logged, like the Client Request ID of the operation.
++//!
++//! ```text
++//! Error: ErrorResponse {
++//!     error: ErrorDetails {
++//!         code: Some(
++//!             "SecretNotFound",
++//!         ),
++//!         message: Some(
++//!             "A secret with (name/id) secret-name was not found in this key vault. If you recently deleted this secret you may be able to recover it using the correct recovery command. For help resolving this issue, please see https://go.microsoft.com/fwlink/?linkid=2125182",
++//!         ),
++//!     },
++//!     ..
++//! }
++//! ```
++//!
++//! ## Contributing
++//!
++//! See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
++//!
++//! This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit <https://opensource.microsoft.com/cla/>.
++//!
++//! When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repos using our CLA.
++//!
++//! This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact <opencode@microsoft.com> with any additional questions or comments.
++//!
++//! <!-- LINKS -->
++//! [API reference documentation]: https://docs.rs/azure_security_keyvault_secrets/latest/azure_security_keyvault_secrets
++//! [Azure CLI]: https://learn.microsoft.com/cli/azure
++//! [Azure subscription]: https://azure.microsoft.com/free/
++//! [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
++//! [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
++//! [Product documentation]: https://learn.microsoft.com/azure/key-vault/
++//! [REST API]: https://learn.microsoft.com/rest/api/keyvault/
++//! [Cargo]: https://crates.io/
++//! [Package (crates.io)]: https://crates.io/crates/azure_security_keyvault_secrets
++//! [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets/src
++//! [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
++//! [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
++//! [access control]: https://learn.microsoft.com/azure/key-vault/general/assign-access-policy
++//! [RBAC]: https://learn.microsoft.com/azure/key-vault/general/rbac-guide
+ #![cfg_attr(docsrs, feature(doc_cfg))]
+@@ -16,1 +274,4 @@
++/// Information about the resource.
++///
++/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`Secret`](crate::models::Secret) to get this information.
+ #[derive(Clone, Debug, Eq, PartialEq)]
+@@ -18,1 +279,2 @@
++    /// The source URL of the resource.
+     pub source_id: String,
+@@ -19,1 +281,2 @@
++    /// The vault URL containing the resource.
+     pub vault_url: String,
+@@ -20,1 +283,2 @@
++    /// The name of the resource.
+     pub name: String,
+@@ -21,1 +285,2 @@
++    /// The optional version of the resource.
+     pub version: Option<String>,
+@@ -35,1 +300,2 @@
++/// Extension methods to get a [`ResourceId`] from models in this crate.
+ pub trait ResourceExt {
+@@ -36,1 +302,22 @@
++    /// Gets the [`ResourceId`] from this model.
++    ///
++    /// You can parse the name and version to pass to subsequent [`SecretClient`](crate::SecretClient) method calls.
++    ///
++    /// # Examples
++    ///
++    /// ```
++    /// use azure_security_keyvault_secrets::{models::Secret, ResourceExt as _};
++    ///
++    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
++    /// // SecretClient::get_secret() will return a Secret.
++    /// let mut secret = Secret::default();
++    /// secret.id = Some("https://my-vault.vault.azure.net/secrets/my-secret/abcd1234?api-version=7.5".into());
++    ///
++    /// let id = secret.resource_id()?;
++    /// assert_eq!(id.vault_url, "https://my-vault.vault.azure.net");
++    /// assert_eq!(id.name, "my-secret");
++    /// assert_eq!(id.version, Some("abcd1234".into()));
++    /// # Ok(())
++    /// # }
++    /// ```
+     fn resource_id(&self) -> Result<ResourceId>;
+@@ -38,1 +325,2 @@
++/// Clients used to communicate with the service.
+ pub mod clients {
+@@ -39,1 +327,2 @@
++    /// The key vault client performs cryptographic key operations and vault operations against the Key Vault service.
+     pub struct SecretClient {
+@@ -42,1 +331,9 @@
++        /// Creates a new SecretClient, using Entra ID authentication.
++        ///
++        /// # Arguments
++        ///
++        /// * `endpoint` - Service host
++        /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
++        ///   Entra ID token to use when authenticating.
++        /// * `options` - Optional configuration for the client.
+         fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<SecretClientOptions>) -> Result<Self>;
+@@ -45,1 +342,10 @@
++        /// Backs up the specified secret.
++        ///
++        /// Requests that a backup of the specified secret be downloaded to the client. All versions of the secret will be downloaded.
++        /// This operation requires the secrets/backup permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `secret_name` - The name of the secret.
++        /// * `options` - Optional parameters for the request.
+         async fn backup_secret(&self, secret_name: &str, options: Option<SecretClientBackupSecretOptions<'_>>) -> Result<Response<BackupSecretResult>>;
+@@ -46,1 +352,10 @@
++        /// Deletes a secret from a specified key vault.
++        ///
++        /// The DELETE operation applies to any secret stored in Azure Key Vault. DELETE cannot be applied to an individual version
++        /// of a secret. This operation requires the secrets/delete permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `secret_name` - The name of the secret.
++        /// * `options` - Optional parameters for the request.
+         async fn delete_secret(&self, secret_name: &str, options: Option<SecretClientDeleteSecretOptions<'_>>) -> Result<Response<DeletedSecret>>;
+@@ -47,1 +362,2 @@
++        /// Returns the Url associated with this client.
+         fn endpoint(&self) -> &Url;
+@@ -48,1 +364,10 @@
++        /// Gets the specified deleted secret.
++        ///
++        /// The Get Deleted Secret operation returns the specified deleted secret along with its attributes. This operation requires
++        /// the secrets/get permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `secret_name` - The name of the secret.
++        /// * `options` - Optional parameters for the request.
+         async fn get_deleted_secret(&self, secret_name: &str, options: Option<SecretClientGetDeletedSecretOptions<'_>>) -> Result<Response<DeletedSecret>>;
+@@ -49,1 +374,9 @@
++        /// Get a specified secret from a given key vault.
++        ///
++        /// The GET operation is applicable to any secret stored in Azure Key Vault. This operation requires the secrets/get permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `secret_name` - The name of the secret.
++        /// * `options` - Optional parameters for the request.
+         async fn get_secret(&self, secret_name: &str, options: Option<SecretClientGetSecretOptions<'_>>) -> Result<Response<Secret>>;
+@@ -50,1 +383,9 @@
++        /// Lists deleted secrets for the specified vault.
++        ///
++        /// The Get Deleted Secrets operation returns the secrets that have been deleted for a vault enabled for soft-delete. This
++        /// operation requires the secrets/list permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `options` - Optional parameters for the request.
+         fn list_deleted_secret_properties(&self, options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>) -> Result<Pager<ListDeletedSecretPropertiesResult>>;
+@@ -51,1 +392,10 @@
++        /// List secrets in a specified key vault.
++        ///
++        /// The Get Secrets operation is applicable to the entire vault. However, only the base secret identifier and its attributes
++        /// are provided in the response. Individual secret versions are not listed in the response. This operation requires the secrets/list
++        /// permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `options` - Optional parameters for the request.
+         fn list_secret_properties(&self, options: Option<SecretClientListSecretPropertiesOptions<'_>>) -> Result<Pager<ListSecretPropertiesResult>>;
+@@ -52,1 +402,10 @@
++        /// List all versions of the specified secret.
++        ///
++        /// The full secret identifier and attributes are provided in the response. No values are returned for the secrets. This operations
++        /// requires the secrets/list permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `secret_name` - The name of the secret.
++        /// * `options` - Optional parameters for the request.
+         fn list_secret_properties_versions(&self, secret_name: &str, options: Option<SecretClientListSecretPropertiesVersionsOptions<'_>>) -> Result<Pager<ListSecretPropertiesResult>>;
+@@ -53,1 +412,10 @@
++        /// Permanently deletes the specified secret.
++        ///
++        /// The purge deleted secret operation removes the secret permanently, without the possibility of recovery. This operation
++        /// can only be enabled on a soft-delete enabled vault. This operation requires the secrets/purge permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `secret_name` - The name of the secret.
++        /// * `options` - Optional parameters for the request.
+         async fn purge_deleted_secret(&self, secret_name: &str, options: Option<SecretClientPurgeDeletedSecretOptions<'_>>) -> Result<Response<(), NoFormat>>;
+@@ -54,1 +422,10 @@
++        /// Recovers the deleted secret to the latest version.
++        ///
++        /// Recovers the deleted secret in the specified vault. This operation can only be performed on a soft-delete enabled vault.
++        /// This operation requires the secrets/recover permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `secret_name` - The name of the deleted secret.
++        /// * `options` - Optional parameters for the request.
+         async fn recover_deleted_secret(&self, secret_name: &str, options: Option<SecretClientRecoverDeletedSecretOptions<'_>>) -> Result<Response<Secret>>;
+@@ -55,1 +432,9 @@
++        /// Restores a backed up secret to a vault.
++        ///
++        /// Restores a backed up secret, and all its versions, to a vault. This operation requires the secrets/restore permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `parameters` - The parameters to restore the secret.
++        /// * `options` - Optional parameters for the request.
+         async fn restore_secret(&self, parameters: RequestContent<RestoreSecretParameters>, options: Option<SecretClientRestoreSecretOptions<'_>>) -> Result<Response<Secret>>;
+@@ -56,1 +441,12 @@
++        /// Sets a secret in a specified key vault.
++        ///
++        /// The SET operation adds a secret to the Azure Key Vault. If the named secret already exists, Azure Key Vault creates a
++        /// new version of that secret. This operation requires the secrets/set permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `secret_name` - The name of the secret. The value you provide may be copied globally for the purpose of running the
++        ///   service. The value provided should not include personally identifiable or sensitive information.
++        /// * `parameters` - The parameters for setting the secret.
++        /// * `options` - Optional parameters for the request.
+         async fn set_secret(&self, secret_name: &str, parameters: RequestContent<SetSecretParameters>, options: Option<SecretClientSetSecretOptions<'_>>) -> Result<Response<Secret>>;
+@@ -57,1 +453,11 @@
++        /// Updates the attributes associated with a specified secret in a given key vault.
++        ///
++        /// The UPDATE operation changes specified attributes of an existing stored secret. Attributes that are not specified in the
++        /// request are left unchanged. The value of a secret itself cannot be changed. This operation requires the secrets/set permission.
++        ///
++        /// # Arguments
++        ///
++        /// * `secret_name` - The name of the secret.
++        /// * `parameters` - The parameters for update secret operation.
++        /// * `options` - Optional parameters for the request.
+         async fn update_secret_properties(&self, secret_name: &str, parameters: RequestContent<UpdateSecretPropertiesParameters>, options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>) -> Result<Response<Secret>>;
+@@ -59,1 +465,2 @@
++    /// Options used when creating a [`SecretClient`]
+     #[derive(Clone, Debug)]
+@@ -61,1 +468,2 @@
++        /// The API version to use for this operation.
+         pub api_version: String,
+@@ -62,1 +470,2 @@
++        /// Allows customization of the client.
+         pub client_options: azure_core::http::ClientOptions,
+@@ -63,1 +472,3 @@
++        /// Controls whether the client requires the resource specified in authentication
++        /// challenges to match the Key Vault or Managed HSM domain. True by default.
+         pub verify_challenge_resource: Option<bool>,
+@@ -69,1 +480,2 @@
++/// Contains all the data structures and types used by the client library.
+ pub mod models {
+@@ -70,1 +482,2 @@
++    /// The backup secret result, containing the backup blob.
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -73,1 +486,4 @@
++        /// The backup blob containing the backed up secret.
++        ///
++        /// Operational visibility: Read
+         #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing)]
+@@ -76,1 +492,2 @@
++    /// A Deleted Secret consisting of its previous id, attributes and its tags, as well as information on when it will be purged.
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -79,1 +496,2 @@
++        /// The secret management attributes.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -81,1 +499,2 @@
++        /// The content type of the secret.
+         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
+@@ -83,1 +502,4 @@
++        /// The time when the secret was deleted, in UTC
++        ///
++        /// Operational visibility: Read
+         #[serde(default, rename = "deletedDate", skip_serializing, with = "azure_core::time::unix_time::option")]
+@@ -85,1 +507,2 @@
++        /// The secret id.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -87,1 +510,4 @@
++        /// If this is a secret backing a KV certificate, then this field specifies the corresponding key backing the KV certificate.
++        ///
++        /// Operational visibility: Read
+         #[serde(skip_serializing)]
+@@ -89,1 +515,5 @@
++        /// True if the secret's lifetime is managed by key vault. If this is a secret backing a certificate, then managed will be
++        /// true.
++        ///
++        /// Operational visibility: Read
+         #[serde(skip_serializing)]
+@@ -91,1 +521,3 @@
++        /// The version of the previous certificate, if applicable. Applies only to certificates created after June 1, 2025. Certificates
++        /// created before this date are not retroactively updated.
+         #[serde(rename = "previousVersion", skip_serializing_if = "Option::is_none")]
+@@ -93,1 +525,2 @@
++        /// The url of the recovery object, used to identify and recover the deleted secret.
+         #[serde(rename = "recoveryId", skip_serializing_if = "Option::is_none")]
+@@ -95,1 +528,4 @@
++        /// The time when the secret is scheduled to be purged, in UTC
++        ///
++        /// Operational visibility: Read
+         #[serde(default, rename = "scheduledPurgeDate", skip_serializing, with = "azure_core::time::unix_time::option")]
+@@ -97,1 +533,2 @@
++        /// Application specific metadata in the form of key-value pairs.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -99,1 +536,2 @@
++        /// The secret value.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -102,1 +540,2 @@
++    /// The deleted secret item containing metadata about the deleted secret.
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -105,1 +544,2 @@
++        /// The secret management attributes.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -107,1 +547,2 @@
++        /// Type of the secret value such as a password.
+         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
+@@ -109,1 +550,4 @@
++        /// The time when the secret was deleted, in UTC
++        ///
++        /// Operational visibility: Read
+         #[serde(default, rename = "deletedDate", skip_serializing, with = "azure_core::time::unix_time::option")]
+@@ -111,1 +555,2 @@
++        /// Secret identifier.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -113,1 +558,4 @@
++        /// True if the secret's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
++        ///
++        /// Operational visibility: Read
+         #[serde(skip_serializing)]
+@@ -115,1 +563,2 @@
++        /// The url of the recovery object, used to identify and recover the deleted secret.
+         #[serde(rename = "recoveryId", skip_serializing_if = "Option::is_none")]
+@@ -117,1 +566,4 @@
++        /// The time when the secret is scheduled to be purged, in UTC
++        ///
++        /// Operational visibility: Read
+         #[serde(default, rename = "scheduledPurgeDate", skip_serializing, with = "azure_core::time::unix_time::option")]
+@@ -119,1 +571,2 @@
++        /// Application specific metadata in the form of key-value pairs.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -122,1 +575,2 @@
++    /// The key vault error exception.
+     #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+@@ -124,1 +578,4 @@
++        /// The key vault server error.
++        ///
++        /// Operational visibility: Read
+         #[serde(skip_serializing)]
+@@ -127,1 +584,2 @@
++    /// The key vault server error.
+     #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+@@ -129,1 +587,4 @@
++        /// The error code.
++        ///
++        /// Operational visibility: Read
+         #[serde(skip_serializing)]
+@@ -131,1 +592,4 @@
++        /// The key vault server error.
++        ///
++        /// Operational visibility: Read
+         #[serde(rename = "innererror", skip_serializing)]
+@@ -133,1 +597,4 @@
++        /// The error message.
++        ///
++        /// Operational visibility: Read
+         #[serde(skip_serializing)]
+@@ -136,1 +603,2 @@
++    /// The deleted secret list result
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -139,1 +607,4 @@
++        /// The URL to get the next set of deleted secrets.
++        ///
++        /// Operational visibility: Read
+         #[serde(rename = "nextLink", skip_serializing)]
+@@ -141,1 +612,5 @@
++        /// A response message containing a list of deleted secrets in the key vault along with a link to the next page of deleted
++        /// secrets.
++        ///
++        /// Operational visibility: Read
+         #[serde(default, skip_serializing)]
+@@ -150,1 +625,2 @@
++    /// The secret list result.
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -153,1 +629,4 @@
++        /// The URL to get the next set of secrets.
++        ///
++        /// Operational visibility: Read
+         #[serde(rename = "nextLink", skip_serializing)]
+@@ -155,1 +634,4 @@
++        /// A response message containing a list of secrets in the key vault along with a link to the next page of secrets.
++        ///
++        /// Operational visibility: Read
+         #[serde(default, skip_serializing)]
+@@ -164,1 +646,2 @@
++    /// The secret restore parameters.
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -166,1 +649,2 @@
++        /// The backup blob associated with a secret bundle.
+         #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", rename = "value", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
+@@ -173,1 +657,2 @@
++    /// A secret consisting of a value, id and its attributes.
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -176,1 +661,2 @@
++        /// The secret management attributes.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -178,1 +664,2 @@
++        /// The content type of the secret.
+         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
+@@ -180,1 +667,2 @@
++        /// The secret id.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -182,1 +670,4 @@
++        /// If this is a secret backing a KV certificate, then this field specifies the corresponding key backing the KV certificate.
++        ///
++        /// Operational visibility: Read
+         #[serde(skip_serializing)]
+@@ -184,1 +675,5 @@
++        /// True if the secret's lifetime is managed by key vault. If this is a secret backing a certificate, then managed will be
++        /// true.
++        ///
++        /// Operational visibility: Read
+         #[serde(skip_serializing)]
+@@ -186,1 +681,3 @@
++        /// The version of the previous certificate, if applicable. Applies only to certificates created after June 1, 2025. Certificates
++        /// created before this date are not retroactively updated.
+         #[serde(rename = "previousVersion", skip_serializing_if = "Option::is_none")]
+@@ -188,1 +685,2 @@
++        /// Application specific metadata in the form of key-value pairs.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -190,1 +688,2 @@
++        /// The secret value.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -193,1 +692,2 @@
++    /// The secret management attributes.
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -195,1 +695,4 @@
++        /// Creation time in UTC.
++        ///
++        /// Operational visibility: Read
+         #[serde(default, skip_serializing, with = "azure_core::time::unix_time::option")]
+@@ -197,1 +700,2 @@
++        /// Determines whether the object is enabled.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -199,1 +703,2 @@
++        /// Expiry date in UTC.
+         #[serde(default, rename = "exp", skip_serializing_if = "Option::is_none", with = "azure_core::time::unix_time::option")]
+@@ -201,1 +706,2 @@
++        /// Not before date in UTC.
+         #[serde(default, rename = "nbf", skip_serializing_if = "Option::is_none", with = "azure_core::time::unix_time::option")]
+@@ -203,1 +709,4 @@
++        /// softDelete data retention days. Value should be >=7 and <=90 when softDelete enabled, otherwise 0.
++        ///
++        /// Operational visibility: Read
+         #[serde(rename = "recoverableDays", skip_serializing)]
+@@ -205,1 +714,6 @@
++        /// Reflects the deletion recovery level currently in effect for secrets in the current vault. If it contains 'Purgeable',
++        /// the secret can be permanently deleted by a privileged user; otherwise, only the system can purge the secret, at the end
++        /// of the retention interval.
++        ///
++        /// Operational visibility: Read
+         #[serde(rename = "recoveryLevel", skip_serializing)]
+@@ -207,1 +721,4 @@
++        /// Last updated time in UTC.
++        ///
++        /// Operational visibility: Read
+         #[serde(default, skip_serializing, with = "azure_core::time::unix_time::option")]
+@@ -210,1 +727,2 @@
++    /// Options to be passed to [`SecretClient::backup_secret()`](crate::generated::clients::SecretClient::backup_secret())
+     #[derive(Clone, Debug, Default)]
+@@ -212,1 +730,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+@@ -214,1 +733,2 @@
++    /// Options to be passed to [`SecretClient::delete_secret()`](crate::generated::clients::SecretClient::delete_secret())
+     #[derive(Clone, Debug, Default)]
+@@ -216,1 +736,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+@@ -218,1 +739,2 @@
++    /// Options to be passed to [`SecretClient::get_deleted_secret()`](crate::generated::clients::SecretClient::get_deleted_secret())
+     #[derive(Clone, Debug, Default)]
+@@ -220,1 +742,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+@@ -222,1 +745,2 @@
++    /// Options to be passed to [`SecretClient::get_secret()`](crate::generated::clients::SecretClient::get_secret())
+     #[derive(Clone, Debug, Default)]
+@@ -224,1 +748,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+@@ -225,1 +750,4 @@
++        /// The media type (MIME type) of the certificate. If a supported format is specified, the certificate content is converted
++        /// to the requested format. Currently, only PFX to PEM conversion is supported. If an unsupported format is specified, the
++        /// request is rejected. If not specified, the certificate is returned in its original format without conversion.
+         pub out_content_type: Option<super::ContentType>,
+@@ -226,1 +754,2 @@
++        /// The version of the secret. This URI fragment is optional. If not specified, the latest version of the secret is returned.
+         pub secret_version: Option<String>,
+@@ -228,1 +757,2 @@
++    /// Options to be passed to [`SecretClient::list_deleted_secret_properties()`](crate::generated::clients::SecretClient::list_deleted_secret_properties())
+     #[derive(Clone, Debug, Default)]
+@@ -230,1 +760,2 @@
++        /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
+         pub maxresults: Option<i32>,
+@@ -231,1 +762,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::pager::PagerOptions<'a>,
+@@ -234,1 +766,2 @@
++        /// Transforms this [`SecretClientListDeletedSecretPropertiesOptions`] into a new `SecretClientListDeletedSecretPropertiesOptions` that owns the underlying data, cloning it if necessary.
+         fn into_owned(self) -> SecretClientListDeletedSecretPropertiesOptions<'static>;
+@@ -236,1 +769,2 @@
++    /// Options to be passed to [`SecretClient::list_secret_properties()`](crate::generated::clients::SecretClient::list_secret_properties())
+     #[derive(Clone, Debug, Default)]
+@@ -238,1 +772,2 @@
++        /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
+         pub maxresults: Option<i32>,
+@@ -239,1 +774,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::pager::PagerOptions<'a>,
+@@ -242,1 +778,2 @@
++        /// Transforms this [`SecretClientListSecretPropertiesOptions`] into a new `SecretClientListSecretPropertiesOptions` that owns the underlying data, cloning it if necessary.
+         fn into_owned(self) -> SecretClientListSecretPropertiesOptions<'static>;
+@@ -244,1 +781,2 @@
++    /// Options to be passed to [`SecretClient::list_secret_properties_versions()`](crate::generated::clients::SecretClient::list_secret_properties_versions())
+     #[derive(Clone, Debug, Default)]
+@@ -246,1 +784,2 @@
++        /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
+         pub maxresults: Option<i32>,
+@@ -247,1 +786,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::pager::PagerOptions<'a>,
+@@ -250,1 +790,2 @@
++        /// Transforms this [`SecretClientListSecretPropertiesVersionsOptions`] into a new `SecretClientListSecretPropertiesVersionsOptions` that owns the underlying data, cloning it if necessary.
+         fn into_owned(self) -> SecretClientListSecretPropertiesVersionsOptions<'static>;
+@@ -252,1 +793,2 @@
++    /// Options to be passed to [`SecretClient::purge_deleted_secret()`](crate::generated::clients::SecretClient::purge_deleted_secret())
+     #[derive(Clone, Debug, Default)]
+@@ -254,1 +796,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+@@ -256,1 +799,2 @@
++    /// Options to be passed to [`SecretClient::recover_deleted_secret()`](crate::generated::clients::SecretClient::recover_deleted_secret())
+     #[derive(Clone, Debug, Default)]
+@@ -258,1 +802,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+@@ -260,1 +805,2 @@
++    /// Options to be passed to [`SecretClient::restore_secret()`](crate::generated::clients::SecretClient::restore_secret())
+     #[derive(Clone, Debug, Default)]
+@@ -262,1 +808,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+@@ -264,1 +811,2 @@
++    /// Options to be passed to [`SecretClient::set_secret()`](crate::generated::clients::SecretClient::set_secret())
+     #[derive(Clone, Debug, Default)]
+@@ -266,1 +814,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+@@ -268,1 +817,2 @@
++    /// Options to be passed to [`SecretClient::update_secret_properties()`](crate::generated::clients::SecretClient::update_secret_properties())
+     #[derive(Clone, Debug, Default)]
+@@ -270,1 +820,2 @@
++        /// Allows customization of the method call.
+         pub method_options: azure_core::http::ClientMethodOptions<'a>,
+@@ -271,1 +822,2 @@
++        /// The version of the secret.
+         pub secret_version: Option<String>,
+@@ -273,1 +825,2 @@
++    /// The secret item containing secret metadata.
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -276,1 +829,2 @@
++        /// The secret management attributes.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -278,1 +832,2 @@
++        /// Type of the secret value such as a password.
+         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
+@@ -280,1 +835,2 @@
++        /// Secret identifier.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -282,1 +838,4 @@
++        /// True if the secret's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true.
++        ///
++        /// Operational visibility: Read
+         #[serde(skip_serializing)]
+@@ -284,1 +843,2 @@
++        /// Application specific metadata in the form of key-value pairs.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -287,1 +847,2 @@
++    /// The secret set parameters.
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -289,1 +850,2 @@
++        /// Type of the secret value such as a password.
+         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
+@@ -291,1 +853,2 @@
++        /// The secret management attributes.
+         #[serde(rename = "attributes", skip_serializing_if = "Option::is_none")]
+@@ -293,1 +856,2 @@
++        /// Application specific metadata in the form of key-value pairs.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -295,1 +859,2 @@
++        /// The value of the secret.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -302,1 +867,2 @@
++    /// The secret update parameters.
+     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+@@ -304,1 +870,2 @@
++        /// Type of the secret value such as a password.
+         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
+@@ -306,1 +873,2 @@
++        /// The secret management attributes.
+         #[serde(rename = "attributes", skip_serializing_if = "Option::is_none")]
+@@ -308,1 +876,2 @@
++        /// Application specific metadata in the form of key-value pairs.
+         #[serde(skip_serializing_if = "Option::is_none")]
+@@ -315,1 +884,2 @@
++    /// The media type (MIME type).
+     #[derive(Clone, Debug, Eq, PartialEq)]
+@@ -317,1 +887,2 @@
++        /// The PEM file format.
+         Pem,
+@@ -318,1 +889,2 @@
++        /// The PKCS#12 file format.
+         Pfx,
+@@ -319,1 +891,2 @@
++        /// Any other value not defined in `ContentType`.
+         UnknownValue(String),
+@@ -340,1 +913,4 @@
++    /// Reflects the deletion recovery level currently in effect for secrets in the current vault. If it contains 'Purgeable',
++    /// the secret can be permanently deleted by a privileged user; otherwise, only the system can purge the secret, at the end
++    /// of the retention interval.
+     #[derive(Clone, Debug, Eq, PartialEq)]
+@@ -342,1 +918,4 @@
++        /// Denotes a vault state in which deletion is recoverable without the possibility for immediate and permanent deletion (i.e.
++        /// purge when 7 <= SoftDeleteRetentionInDays < 90).This level guarantees the recoverability of the deleted entity during
++        /// the retention interval and while the subscription is still available.
+         CustomizedRecoverable,
+@@ -343,1 +922,5 @@
++        /// Denotes a vault and subscription state in which deletion is recoverable, immediate and permanent deletion (i.e. purge)
++        /// is not permitted, and in which the subscription itself cannot be permanently canceled when 7 <= SoftDeleteRetentionInDays
++        /// < 90. This level guarantees the recoverability of the deleted entity during the retention interval, and also reflects
++        /// the fact that the subscription itself cannot be cancelled.
+         CustomizedRecoverableProtectedSubscription,
+@@ -344,1 +927,4 @@
++        /// Denotes a vault state in which deletion is recoverable, and which also permits immediate and permanent deletion (i.e.
++        /// purge when 7 <= SoftDeleteRetentionInDays < 90). This level guarantees the recoverability of the deleted entity during
++        /// the retention interval, unless a Purge operation is requested, or the subscription is cancelled.
+         CustomizedRecoverablePurgeable,
+@@ -345,1 +931,4 @@
++        /// Denotes a vault state in which deletion is an irreversible operation, without the possibility for recovery. This level
++        /// corresponds to no protection being available against a Delete operation; the data is irretrievably lost upon accepting
++        /// a Delete operation at the entity level or higher (vault, resource group, subscription etc.)
+         Purgeable,
+@@ -346,1 +935,4 @@
++        /// Denotes a vault state in which deletion is recoverable without the possibility for immediate and permanent deletion (i.e.
++        /// purge). This level guarantees the recoverability of the deleted entity during the retention interval (90 days) and while
++        /// the subscription is still available. System wil permanently delete it after 90 days, if not recovered
+         Recoverable,
+@@ -347,1 +939,4 @@
++        /// Denotes a vault and subscription state in which deletion is recoverable within retention interval (90 days), immediate
++        /// and permanent deletion (i.e. purge) is not permitted, and in which the subscription itself cannot be permanently canceled.
++        /// System wil permanently delete it after 90 days, if not recovered
+         RecoverableProtectedSubscription,
+@@ -348,1 +943,5 @@
++        /// Denotes a vault state in which deletion is recoverable, and which also permits immediate and permanent deletion (i.e.
++        /// purge). This level guarantees the recoverability of the deleted entity during the retention interval (90 days), unless
++        /// a Purge operation is requested, or the subscription is cancelled. System wil permanently delete it after 90 days, if not
++        /// recovered
+         RecoverablePurgeable,
+@@ -349,1 +948,2 @@
++        /// Any other value not defined in `DeletionRecoveryLevel`.
+         UnknownValue(String),
