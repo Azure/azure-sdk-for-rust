@@ -4,7 +4,7 @@
 use crate::{
     error::{AmqpErrorKind, Result},
     messaging::{AmqpDelivery, AmqpSource},
-    receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
+    receiver::{AmqpDeliveryOutcome, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::AmqpSession,
     AmqpError,
 };
@@ -180,6 +180,56 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .await
             .map_err(AmqpError::from)?;
         trace!("Rejected delivery.");
+
+        Ok(())
+    }
+
+    async fn settle_delivery(
+        &self,
+        delivery: &AmqpDelivery,
+        outcome: AmqpDeliveryOutcome,
+    ) -> Result<()> {
+        let receiver = self
+            .receiver
+            .get()
+            .ok_or_else(Self::receiver_not_set)?
+            .lock()
+            .await;
+
+        trace!("Settling delivery with outcome: {:?}", outcome);
+        match outcome {
+            AmqpDeliveryOutcome::Accepted => receiver
+                .accept(&delivery.0.delivery)
+                .await
+                .map_err(AmqpError::from)?,
+            AmqpDeliveryOutcome::Released => receiver
+                .release(&delivery.0.delivery)
+                .await
+                .map_err(AmqpError::from)?,
+            AmqpDeliveryOutcome::Rejected(error) => receiver
+                .reject(
+                    &delivery.0.delivery,
+                    error.map(fe2o3_amqp_types::definitions::Error::from),
+                )
+                .await
+                .map_err(AmqpError::from)?,
+            AmqpDeliveryOutcome::Modified {
+                delivery_failed,
+                undeliverable_here,
+                message_annotations,
+            } => receiver
+                .modify(
+                    &delivery.0.delivery,
+                    fe2o3_amqp_types::messaging::Modified {
+                        delivery_failed,
+                        undeliverable_here,
+                        message_annotations: message_annotations.map(Into::into),
+                    },
+                )
+                .await
+                .map_err(AmqpError::from)?,
+        }
+        trace!("Settled delivery.");
 
         Ok(())
     }

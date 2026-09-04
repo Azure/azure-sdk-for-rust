@@ -34,10 +34,12 @@
 ///     .with_request_charge_metric(true)
 ///     .with_returned_rows_metric(true)
 ///     .with_active_instance_metric(true)
+///     .with_hedged_metric(true)
 ///     .with_extended_attributes(true);
 /// assert!(full.request_charge_metric_enabled());
 /// assert!(full.returned_rows_metric_enabled());
 /// assert!(full.active_instance_metric_enabled());
+/// assert!(full.hedged_metric_enabled());
 /// assert!(full.extended_attributes_enabled());
 /// ```
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -45,6 +47,7 @@ pub struct MetricsOptions {
     request_charge_metric: bool,
     returned_rows_metric: bool,
     active_instance_metric: bool,
+    hedged_metric: bool,
     extended_attributes: bool,
 }
 
@@ -92,6 +95,20 @@ impl MetricsOptions {
         self
     }
 
+    /// Enables (or disables) the `azure.cosmosdb.client.operation.hedged` counter
+    /// (operations that dispatched a cross-region hedge fan-out). Off by default.
+    ///
+    /// The counter increments only for operations where hedging actually fanned
+    /// out, so it is near-zero cardinality; it always carries the low-cardinality
+    /// `hedge_terminal_state` dimension. The higher-cardinality hedge-region
+    /// dimension is added only when [`with_extended_attributes`](Self::with_extended_attributes)
+    /// is also enabled.
+    #[must_use]
+    pub fn with_hedged_metric(mut self, enabled: bool) -> Self {
+        self.hedged_metric = enabled;
+        self
+    }
+
     /// Enables (or disables) the extended attribute set on every emitted metric:
     /// consistency level, contacted regions, sub-status code, and connection
     /// mode. These can be higher cardinality, so they are opt-in and off by
@@ -115,6 +132,11 @@ impl MetricsOptions {
     /// Whether the active-instance up-down counter is emitted.
     pub fn active_instance_metric_enabled(&self) -> bool {
         self.active_instance_metric
+    }
+
+    /// Whether the hedged-operation counter is emitted.
+    pub fn hedged_metric_enabled(&self) -> bool {
+        self.hedged_metric
     }
 
     /// Whether the extended attribute set is attached to emitted metrics.

@@ -12,7 +12,7 @@
 //! which fails before the request reaches the emulator but reports
 //! [`RequestSentStatus::Unknown`]. The exactly-once test uses
 //! [`FaultInjectionErrorType::ResponseTimeoutAfterService`] instead: the
-//! emulator commits the Replace and then the fault client discards its
+//! emulator commits the matching write and then the fault client discards its
 //! response.
 //!
 //! `rule.hit_count()` counts how many times a request reached the fault, so it
@@ -38,7 +38,9 @@ use azure_data_cosmos_driver::models::{
     AccountReference, ContainerReference, CosmosOperation, ItemReference, PartitionKey,
     PatchInstructions, PatchOperation, PatchTrackingId,
 };
-use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions};
+use azure_data_cosmos_driver::options::{
+    DriverOptions, OperationOptions, OperationOptionsBuilder, PatchStrategy,
+};
 use azure_data_cosmos_driver::CosmosDriver;
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
@@ -66,9 +68,9 @@ fn ambiguous_failure_rule(
     Arc::new(builder.build())
 }
 
-fn post_service_timeout_rule(id: &str) -> Arc<FaultInjectionRule> {
+fn post_service_timeout_rule(id: &str, operation: FaultOperationType) -> Arc<FaultInjectionRule> {
     let condition = FaultInjectionConditionBuilder::new()
-        .with_operation_type(FaultOperationType::ReplaceItem)
+        .with_operation_type(operation)
         .build();
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ResponseTimeoutAfterService)
@@ -119,7 +121,7 @@ async fn build_driver(rules: Vec<Arc<FaultInjectionRule>>) -> Arc<CosmosDriver> 
 
 async fn seed(driver: &CosmosDriver) -> ContainerReference {
     let container = driver
-        .resolve_container("testdb", "testcoll")
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .expect("container should resolve");
     let item = ItemReference::from_name(&container, PartitionKey::from(PK), ITEM_ID.to_string());
@@ -160,15 +162,29 @@ async fn execute_patch(
     azure_data_cosmos_driver::models::CosmosResponse,
     azure_data_cosmos_driver::error::CosmosError,
 > {
+    execute_patch_with_strategy(driver, container, ops, tracking_id, PatchStrategy::Auto).await
+}
+
+async fn execute_patch_with_strategy(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    ops: PatchInstructions,
+    tracking_id: Option<PatchTrackingId>,
+    strategy: PatchStrategy,
+) -> Result<
+    azure_data_cosmos_driver::models::CosmosResponse,
+    azure_data_cosmos_driver::error::CosmosError,
+> {
     let item = ItemReference::from_name(container, PartitionKey::from(PK), ITEM_ID.to_string());
     let mut operation =
         CosmosOperation::patch_item(item).with_body(serde_json::to_vec(&ops).unwrap());
     if let Some(tracking_id) = tracking_id {
         operation = operation.with_patch_tracking_id(tracking_id);
     }
-    let response = driver
-        .execute_operation(operation, OperationOptions::default())
-        .await?;
+    let options = OperationOptionsBuilder::new()
+        .with_patch_strategy(strategy)
+        .build();
+    let response = driver.execute_operation(operation, options).await?;
     Ok(response.expect("PATCH must return a singleton response"))
 }
 
@@ -189,11 +205,18 @@ async fn stored_item(driver: &CosmosDriver, container: &ContainerReference) -> s
         .expect("read back must succeed")
         .expect("read must return a response");
     let bytes = response.into_body().single().expect("point read body");
-    serde_json::from_slice(&bytes).expect("body is JSON")
+    super::parse_json_body(&bytes).expect("body is JSON")
 }
 
 fn increment() -> PatchInstructions {
     PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)])
+}
+
+fn set_name() -> PatchInstructions {
+    PatchInstructions::from(vec![PatchOperation::set(
+        "/name",
+        serde_json::json!("after"),
+    )])
 }
 
 fn overlapping_replace_then_set() -> PatchInstructions {
@@ -201,6 +224,124 @@ fn overlapping_replace_then_set() -> PatchInstructions {
         PatchOperation::replace("/a/b", serde_json::json!(1)),
         PatchOperation::set("/a", serde_json::json!({})),
     ])
+}
+
+#[tokio::test]
+async fn unsafe_server_side_patch_is_not_retried_after_ambiguous_failure() {
+    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    let outcome = execute_patch_with_strategy(
+        &driver,
+        &container,
+        increment(),
+        None,
+        PatchStrategy::ServerSide,
+    )
+    .await;
+
+    assert!(outcome.is_err());
+    assert_eq!(
+        rule.hit_count(),
+        1,
+        "unsafe server PATCH must not be resent"
+    );
+}
+
+#[tokio::test]
+async fn safe_server_side_patch_is_retried_after_ambiguous_failure() {
+    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    let outcome = execute_patch_with_strategy(
+        &driver,
+        &container,
+        set_name(),
+        None,
+        PatchStrategy::ServerSide,
+    )
+    .await;
+
+    assert!(outcome.is_err(), "every attempt is faulted");
+    assert!(rule.hit_count() > 1, "retry-safe server PATCH should retry");
+}
+
+#[tokio::test]
+async fn unsafe_server_side_patch_commits_once_when_response_is_lost() {
+    let rule = post_service_timeout_rule(
+        "unsafe-patch-post-service-timeout",
+        FaultOperationType::PatchItem,
+    );
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    let outcome = execute_patch_with_strategy(
+        &driver,
+        &container,
+        increment(),
+        None,
+        PatchStrategy::ServerSide,
+    )
+    .await;
+
+    assert!(
+        outcome.is_err(),
+        "an unsafe server PATCH must surface ambiguous committed response loss"
+    );
+    assert_eq!(
+        rule.hit_count(),
+        1,
+        "unsafe server PATCH must not be resent"
+    );
+    assert_eq!(
+        stored_visits(&driver, &container).await,
+        2,
+        "the committed increment must be applied exactly once"
+    );
+}
+
+#[tokio::test]
+async fn safe_server_side_patch_retries_after_committed_response_is_lost() {
+    let rule = post_service_timeout_rule(
+        "safe-patch-post-service-timeout",
+        FaultOperationType::PatchItem,
+    );
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    let response = execute_patch_with_strategy(
+        &driver,
+        &container,
+        set_name(),
+        None,
+        PatchStrategy::ServerSide,
+    )
+    .await
+    .expect("retry-safe server PATCH must recover from committed response loss");
+
+    assert_eq!(rule.hit_count(), 1, "only the first response is discarded");
+    assert_eq!(
+        response.diagnostics().request_count(),
+        2,
+        "safe server PATCH must include the faulted request and successful retry"
+    );
+    assert_eq!(stored_item(&driver, &container).await["name"], "after");
+}
+
+#[tokio::test]
+async fn auto_keeps_unsafe_patch_off_the_server_endpoint() {
+    let rule = ambiguous_failure_rule("patch-timeout", FaultOperationType::PatchItem, None);
+    let driver = build_driver(vec![Arc::clone(&rule)]).await;
+    let container = seed(&driver).await;
+
+    execute_patch_with_strategy(&driver, &container, increment(), None, PatchStrategy::Auto)
+        .await
+        .expect("Auto should use tracked RMW");
+
+    assert_eq!(rule.hit_count(), 0);
+    assert_eq!(stored_visits(&driver, &container).await, 2);
 }
 
 /// The read-modify-write loop re-reads before each attempt, so an `increment`
@@ -247,16 +388,38 @@ async fn unsafe_patch_applies_once_when_it_recovers() {
 /// lets an application retry with the same token complete with only a Read.
 #[tokio::test]
 async fn unsafe_patch_commits_once_when_response_is_lost() {
-    let rule = post_service_timeout_rule("replace-post-service-timeout");
+    let rule = post_service_timeout_rule(
+        "replace-post-service-timeout",
+        FaultOperationType::ReplaceItem,
+    );
     let driver = build_driver(vec![Arc::clone(&rule)]).await;
     let container = seed(&driver).await;
     let tracking_id = "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f"
         .parse::<PatchTrackingId>()
         .unwrap();
 
-    execute_patch(&driver, &container, increment(), Some(tracking_id))
+    let recovered_response = execute_patch(&driver, &container, increment(), Some(tracking_id))
         .await
         .expect("the marker must prove that the timed-out Replace committed");
+
+    assert_eq!(
+        recovered_response.diagnostics().operation_name(),
+        Some("patch_item")
+    );
+    let recovered_requests = recovered_response.diagnostics().requests();
+    assert_eq!(
+        recovered_requests
+            .iter()
+            .map(|request| request.operation_name())
+            .collect::<Vec<_>>(),
+        vec![
+            Some("patch_read_item"),
+            Some("patch_replace_item"),
+            Some("patch_replace_item"),
+            Some("patch_read_item"),
+        ],
+        "response-loss recovery must name both Replace attempts and the verification Read"
+    );
 
     assert_eq!(rule.hit_count(), 1, "one committed response was discarded");
     let after_lost_response = stored_item(&driver, &container).await;
@@ -276,6 +439,15 @@ async fn unsafe_patch_commits_once_when_response_is_lost() {
         1,
         "the application retry must perform only the verification Read"
     );
+    assert_eq!(
+        retry_response.diagnostics().operation_name(),
+        Some("patch_item")
+    );
+    assert_eq!(
+        retry_response.diagnostics().requests()[0].operation_name(),
+        Some("patch_read_item"),
+        "marker recognition is local, so the only helper span is the verification Read"
+    );
     let after_application_retry = stored_item(&driver, &container).await;
     assert_eq!(after_application_retry["visits"], 2);
     assert_eq!(after_application_retry["_etag"], committed_etag);
@@ -283,7 +455,10 @@ async fn unsafe_patch_commits_once_when_response_is_lost() {
 
 #[tokio::test]
 async fn overlapping_safe_ops_use_tracking_when_response_is_lost() {
-    let rule = post_service_timeout_rule("overlapping-ops-post-service-timeout");
+    let rule = post_service_timeout_rule(
+        "overlapping-ops-post-service-timeout",
+        FaultOperationType::ReplaceItem,
+    );
     let driver = build_driver(vec![Arc::clone(&rule)]).await;
     let container = seed(&driver).await;
 

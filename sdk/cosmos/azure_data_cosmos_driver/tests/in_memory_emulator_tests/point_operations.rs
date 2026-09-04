@@ -6,6 +6,10 @@
 
 use super::*;
 use azure_core::http::headers::HeaderValue;
+use azure_data_cosmos_driver::{
+    models::{AccountReference, CosmosOperation, ItemReference, PartitionKey},
+    options::{DriverOptions, OperationOptions},
+};
 
 #[tokio::test]
 async fn create_new_item() {
@@ -68,6 +72,141 @@ async fn read_existing_item() {
     assert_eq!(doc["value"], 42);
     assert!(doc.get("_rid").is_some());
     assert!(doc.get("_etag").is_some());
+}
+
+#[tokio::test]
+async fn item_id_with_literal_percent_round_trips_through_driver() {
+    let ctx = setup_single_region().await;
+    let runtime = ctx
+        .emulator
+        .runtime_builder()
+        .build()
+        .await
+        .expect("runtime should build against the in-memory emulator");
+    let account =
+        AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account).build())
+        .await
+        .expect("driver should initialize");
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .expect("container should resolve");
+    let item_id = "item%41";
+    let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id.to_string());
+    let body = serde_json::json!({"id": item_id, "pk": "pk1", "value": 42});
+
+    driver
+        .execute_singleton_operation(
+            CosmosOperation::create_item(item).with_body(serde_json::to_vec(&body).unwrap()),
+            OperationOptions::default(),
+        )
+        .await
+        .expect("item should be created");
+
+    let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id.to_string());
+    let response = driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(item),
+            OperationOptions::default(),
+        )
+        .await
+        .expect("literal percent item should be read");
+    let bytes = response.into_body().single().expect("point read body");
+    let document = parse_json_body(&bytes).expect("body should be JSON");
+
+    assert_eq!(document["id"], item_id);
+}
+
+/// Guards the **default**: a driver operation with no binary option must still
+/// put binary on the wire — the request body carries the `0x80` preamble and
+/// advertises `CosmosBinary`. Without this, silently flipping the default off
+/// passes every other wire-level test.
+#[tokio::test]
+async fn default_operation_negotiates_binary_on_the_wire() {
+    #[derive(Debug, Default)]
+    struct BinaryRequestRecorder {
+        formats: std::sync::Mutex<Vec<Option<String>>>,
+        body_is_binary: std::sync::Mutex<Vec<bool>>,
+    }
+
+    impl azure_data_cosmos_driver::in_memory_emulator::RequestObserver for BinaryRequestRecorder {
+        fn on_request(&self, request: &Request) {
+            if request.method() != Method::Post || !request.url().path().ends_with("/docs") {
+                return;
+            }
+            let formats = request
+                .headers()
+                .get_optional_str(&SUPPORTED_SERIALIZATION_FORMATS)
+                .map(str::to_string);
+            self.formats.lock().unwrap().push(formats);
+            let is_binary = matches!(
+                request.body(),
+                azure_core::http::request::Body::Bytes(bytes)
+                    if azure_data_cosmos_driver::binary_json::is_binary(bytes)
+            );
+            self.body_is_binary.lock().unwrap().push(is_binary);
+        }
+    }
+
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        Url::parse(GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session);
+    let recorder = Arc::new(BinaryRequestRecorder::default());
+    let emulator = Arc::new(
+        InMemoryEmulatorHttpClient::new(config).with_request_observer(Arc::clone(&recorder)
+            as Arc<dyn azure_data_cosmos_driver::in_memory_emulator::RequestObserver>),
+    );
+    let store = emulator.store();
+    store.create_database("testdb");
+    store.create_container(
+        "testdb",
+        "testcoll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+    );
+
+    let runtime = emulator.runtime_builder().build().await.unwrap();
+    let account =
+        AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account).build())
+        .await
+        .expect("driver should initialize");
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .expect("container should resolve");
+
+    let body = serde_json::json!({"id": "d1", "pk": "pk1", "value": 1});
+    let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "d1".to_string());
+    driver
+        .execute_singleton_operation(
+            CosmosOperation::create_item(item).with_body(serde_json::to_vec(&body).unwrap()),
+            OperationOptions::default(),
+        )
+        .await
+        .expect("create must succeed");
+
+    let formats = recorder.formats.lock().unwrap();
+    let bodies = recorder.body_is_binary.lock().unwrap();
+    assert!(!formats.is_empty(), "expected at least one docs request");
+    assert!(
+        formats.iter().all(|f| f.as_deref() == Some("CosmosBinary")),
+        "default point op must advertise CosmosBinary; saw {formats:?}",
+    );
+    assert!(
+        bodies.iter().all(|b| *b),
+        "default point op request body must carry the 0x80 preamble",
+    );
 }
 
 #[tokio::test]

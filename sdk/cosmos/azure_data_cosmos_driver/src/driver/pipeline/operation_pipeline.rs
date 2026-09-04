@@ -27,7 +27,8 @@ use crate::{
         transport::CosmosTransport,
     },
     models::{
-        cosmos_headers::QUERY_CONTENT_TYPE, effective_partition_key::EffectivePartitionKey,
+        cosmos_headers::{PATCH_CONTENT_TYPE, QUERY_CONTENT_TYPE},
+        effective_partition_key::EffectivePartitionKey,
         request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
         Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
@@ -1992,17 +1993,15 @@ fn build_transport_request(
         } else {
             format!("/{}", request_path)
         };
-        // Set the path exactly as computed. `Url::set_path` percent-encodes only
-        // the characters that are structurally significant in a URL path (space,
-        // `?`, `#`, `<`, `>`, `{`, `}`, backtick) and leaves everything else —
-        // including base64's `=`/`+` padding and path-legal sub-delimiters like
-        // `@` — byte-for-byte intact. That is exactly what both addressing modes
-        // need: a RID segment reaches the gateway raw so its lowercased-RID
-        // signature is honored, and a name segment matches the raw resource link
-        // we signed (and, on Gateway 2.0, its RNTBD target). Encoding those
-        // path-legal characters ourselves would make a RID look name-based and
-        // break Gateway 2.0's outer-path-vs-RNTBD equality check for names.
-        base.set_path(&normalized);
+        // Escape literal percent bytes before `Url::set_path`: it preserves valid
+        // `%HH` sequences, but Cosmos resource names treat them as literal text.
+        // Leave path separators and path-legal characters (`@`, `+`, `=`) intact
+        // so RID routing and Gateway 2.0 path comparisons remain unchanged.
+        if normalized.contains('%') {
+            base.set_path(&normalized.replace('%', "%25"));
+        } else {
+            base.set_path(&normalized);
+        }
         base
     };
 
@@ -2052,6 +2051,12 @@ fn build_transport_request(
             headers.insert(
                 HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
                 HeaderValue::from_static("False"),
+            );
+        }
+        OperationType::Patch => {
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(PATCH_CONTENT_TYPE),
             );
         }
         OperationType::Query | OperationType::SqlQuery => {
@@ -2296,7 +2301,7 @@ fn should_capture_session_token_from_status(
 /// transport pipeline expects for diagnostics annotation.
 ///
 /// - First attempt (no failover, no session retry) → `Initial`
-/// - Any session retry in progress → `Retry`
+/// - Any session retry in progress → `OperationRetry`
 /// - Otherwise (a failover retry) → `RegionFailover`
 ///
 /// Session-retry takes precedence over failover-retry because in the rare
@@ -2307,7 +2312,7 @@ fn compute_execution_context(retry_state: &OperationRetryState) -> ExecutionCont
     if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
         ExecutionContext::Initial
     } else if retry_state.session_token_retry_count > 0 {
-        ExecutionContext::Retry
+        ExecutionContext::OperationRetry
     } else {
         ExecutionContext::RegionFailover
     }
@@ -2418,12 +2423,12 @@ fn apply_optional_request_headers(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
 ) {
-    if !operation.operation_type().is_read_only()
-        && !matches!(
+    let content_response_enabled = !operation.operation_type().is_read_only()
+        && matches!(
             options.content_response_on_write(),
             Some(&crate::options::ContentResponseOnWrite::Enabled)
-        )
-    {
+        );
+    if !operation.operation_type().is_read_only() && !content_response_enabled {
         transport_request.headers.insert(
             request_header_names::PREFER,
             HeaderValue::from_static("return=minimal"),
@@ -2438,6 +2443,12 @@ fn apply_optional_request_headers(
                     .insert(name.clone(), value.clone());
             }
         }
+    }
+
+    if content_response_enabled {
+        transport_request
+            .headers
+            .remove(request_header_names::PREFER);
     }
 
     if operation.prefers_write_endpoints_for_read() && transport_request.routing_fallback.is_none()
@@ -3589,6 +3600,11 @@ async fn execute_hedged(
     // The diag clone is owned by the future and returned alongside the
     // result, so the borrow checker can reclaim it after `select` resolves.
     let primary_diag = parent_diagnostics.clone_for_hedge_attempt();
+    // Describe the primary as a race participant before its builder is moved
+    // into the future. `leg_dispatch` reads the leg's launch instant, so the
+    // fan-out record orders correctly against every attempt in the operation.
+    let primary_dispatch =
+        primary_diag.leg_dispatch(primary_region.clone(), ExecutionContext::Initial);
     let primary_attempt = Box::pin(async move {
         let mut diag = primary_diag;
         // Primary is launched before Stage 2 elapses, so no shared
@@ -3786,7 +3802,21 @@ async fn execute_hedged(
     )
     .then(|| Arc::new(AtomicBool::new(ctx.hub_region_processing_only_initial)));
     let secondary_shared_latch = shared_hub_region_latch.clone();
+    // Record the fan-out on the *parent* before the race runs, so the operation
+    // is known to have hedged regardless of which leg won. Each leg's own
+    // attempts survive the race via the diagnostics hedge journal, so this
+    // record only has to reconstruct a leg cancelled before it dispatched
+    // anything — most commonly the alternate, which `select` never polls when
+    // the primary is already resolved. The parent builder reaches every exit
+    // path (`finalize_hedge_attempt` on Terminal, `diagnostics:
+    // parent_diagnostics` on BothTransient), so the record always survives to
+    // `complete()`.
     let secondary_diag = parent_diagnostics.clone_for_hedge_attempt();
+    let secondary_dispatch = secondary_diag.leg_dispatch(
+        secondary_region.clone(),
+        crate::diagnostics::ExecutionContext::Hedging,
+    );
+    parent_diagnostics.record_hedge_fanout(primary_dispatch, secondary_dispatch);
     let secondary_attempt = Box::pin(async move {
         let mut diag = secondary_diag;
         let result = perform_single_attempt(
@@ -4739,10 +4769,8 @@ mod tests {
         assert_eq!(request.url.path(), "/dbs/mydb");
     }
 
-    /// Builds a transport request for `operation` with default routing/context
-    /// and returns the final `Url::path()` after `set_path` has reprocessed it.
-    /// Used to assert the raw-vs-percent-encoded seam in `build_transport_request`.
-    fn transport_request_path(operation: &CosmosOperation) -> String {
+    /// Builds a transport request for `operation` with default routing/context.
+    fn transport_request(operation: &CosmosOperation) -> super::TransportRequest {
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
         let ctx = TransportRequestContext {
@@ -4757,9 +4785,12 @@ mod tests {
         };
         build_transport_request(operation, &OperationOverrides::default(), None, &ctx)
             .expect("request should build")
-            .url
-            .path()
-            .to_owned()
+    }
+
+    /// Returns the final `Url::path()` after `set_path` has reprocessed it.
+    /// Used to assert the raw-vs-percent-encoded seam in `build_transport_request`.
+    fn transport_request_path(operation: &CosmosOperation) -> String {
+        transport_request(operation).url.path().to_owned()
     }
 
     #[test]
@@ -4805,6 +4836,23 @@ mod tests {
         assert_eq!(
             transport_request_path(&operation),
             "/dbs/testdb/colls/testcontainer/docs/Item@1-abc"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_escapes_literal_percent_without_changing_signing_link() {
+        let item =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "item%41");
+        let operation = CosmosOperation::read_item(item);
+        let request = transport_request(&operation);
+
+        assert_eq!(
+            request.url.path(),
+            "/dbs/testdb/colls/testcontainer/docs/item%2541"
+        );
+        assert_eq!(
+            request.auth_context.resource_link.as_str(),
+            "dbs/testdb/colls/testcontainer/docs/item%41"
         );
     }
 
@@ -4856,7 +4904,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -4889,7 +4937,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -4951,7 +4999,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -5001,7 +5049,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -5147,6 +5195,65 @@ mod tests {
                 .expect("request should build");
         super::apply_optional_request_headers(&mut request, &operation, &view);
         assert!(request.headers.get_optional_str(&session_header).is_none());
+    }
+
+    #[test]
+    fn content_response_enabled_strips_custom_prefer_headers() {
+        let operation = CosmosOperation::patch_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("patch-response-headers".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let prefer_header = HeaderName::from_static(request_header_names::PREFER);
+        let custom_headers = std::collections::HashMap::from([(
+            prefer_header.clone(),
+            azure_core::http::headers::HeaderValue::from_static("return=minimal"),
+        )]);
+        let content_response_options = crate::options::OperationOptions {
+            content_response_on_write: Some(crate::options::ContentResponseOnWrite::Enabled),
+            ..Default::default()
+        };
+
+        let mut request = build_transport_request(
+            &operation,
+            &OperationOverrides::default(),
+            Some(&custom_headers),
+            &ctx,
+        )
+        .expect("request should build");
+        let view = crate::options::OperationOptionsView::new(
+            None,
+            None,
+            None,
+            Some(&content_response_options),
+        );
+        super::apply_optional_request_headers(&mut request, &operation, &view);
+        assert!(request.headers.get_optional_str(&prefer_header).is_none());
+
+        let layered_options = crate::options::OperationOptions {
+            content_response_on_write: Some(crate::options::ContentResponseOnWrite::Enabled),
+            custom_headers: Some(custom_headers),
+            ..Default::default()
+        };
+        let view =
+            crate::options::OperationOptionsView::new(None, None, None, Some(&layered_options));
+        let mut request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
+        super::apply_optional_request_headers(&mut request, &operation, &view);
+        assert!(request.headers.get_optional_str(&prefer_header).is_none());
     }
 
     #[test]
@@ -9567,6 +9674,39 @@ mod tests {
         assert_query_headers_present(&op, "query_offers");
     }
 
+    #[test]
+    fn build_transport_request_sets_patch_content_type() {
+        let operation = CosmosOperation::patch_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ))
+        .with_body(br#"{"operations":[]}"#.to_vec());
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+        let context = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &context)
+                .expect("PATCH request should build");
+
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&azure_core::http::headers::CONTENT_TYPE),
+            Some(crate::models::cosmos_headers::PATCH_CONTENT_TYPE)
+        );
+    }
+
     /// Helper: builds a transport request from `op` and asserts the two
     /// well-known query headers (`x-ms-documentdb-isquery` and the
     /// `application/query+json` content type) are auto-emitted by the pipeline.
@@ -9623,17 +9763,17 @@ mod tests {
     fn execution_context_retry_when_session_retry_active() {
         // Session-retry takes precedence over failover-retry: when both
         // counters are non-zero, the most recent advance was the session
-        // retry, so the attempt is annotated as a `Retry`.
+        // retry, so the attempt is annotated as an `OperationRetry`.
         let state = retry_state_with_counts(1, 1);
         assert!(matches!(
             super::compute_execution_context(&state),
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         ));
 
         let state = retry_state_with_counts(0, 1);
         assert!(matches!(
             super::compute_execution_context(&state),
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         ));
     }
 
@@ -10314,7 +10454,7 @@ mod tests {
 
     #[test]
     fn diagnostics_clone_for_hedge_attempt_starts_empty() {
-        let parent = test_diagnostics();
+        let mut parent = test_diagnostics();
         let child = parent.clone_for_hedge_attempt();
         // A fresh sub-builder must not carry the parent's request list,
         // status, or accumulated hedge diagnostics.

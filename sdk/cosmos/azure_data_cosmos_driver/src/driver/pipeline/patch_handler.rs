@@ -6,12 +6,10 @@
 //! See `docs/PATCH_HANDLER_SPEC.md` for the full behavior contract. The
 //! short version:
 //!
-//! 1. Reject any caller-set [`Precondition`] on the outer PATCH operation —
-//!    the handler manages `If-Match` internally, so honoring a caller's
-//!    value would silently break the RMW guarantee.
-//! 2. Validate the patch spec (no ops that target partition-key paths).
-//! 3. Issue an internal [`OperationType::Read`] for the target item.
-//! 4. Capture the response ETag (refuse to RMW if there isn't one).
+//! 1. Validate the patch spec (no ops that target partition-key paths).
+//! 2. Issue an internal [`OperationType::Read`] for the target item.
+//! 3. Capture the response ETag and evaluate any caller precondition against it.
+//! 4. Refuse to RMW if the Read did not return an ETag.
 //! 5. Parse the JSON body into a [`serde_json::Value`], apply the ops locally
 //!    using [`apply_patch_ops`], and re-serialize.
 //! 6. Issue an internal ETag-guarded [`OperationType::Replace`].
@@ -46,7 +44,9 @@ use crate::models::{
     CosmosOperation, CosmosResponse, PartitionKeyKind, PatchInstructions, PatchOperation,
     Precondition,
 };
-use crate::options::{BinaryEncodingOptions, OperationOptions, ReadConsistencyStrategy};
+use crate::options::{
+    BinaryEncodingOptions, ContentResponseOnWrite, OperationOptions, ReadConsistencyStrategy,
+};
 use async_trait::async_trait;
 use azure_core::http::{Etag, StatusCode};
 use std::num::NonZeroU8;
@@ -102,6 +102,7 @@ pub(crate) async fn execute(
     options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
     absolute_deadline: Option<Instant>,
+    return_response_body: bool,
 ) -> crate::error::Result<CosmosResponse> {
     execute_with_dispatcher_and_deadline(
         driver,
@@ -109,6 +110,7 @@ pub(crate) async fn execute(
         options,
         max_attempts,
         absolute_deadline,
+        return_response_body,
     )
     .await
 }
@@ -127,12 +129,17 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .end_to_end_latency_policy
         .as_ref()
         .map(|policy| Instant::now() + policy.timeout());
+    let return_response_body = !matches!(
+        options.content_response_on_write,
+        Some(ContentResponseOnWrite::Disabled)
+    );
     execute_with_dispatcher_and_deadline(
         dispatcher,
         operation,
         options,
         max_attempts,
         absolute_deadline,
+        return_response_body,
     )
     .await
 }
@@ -143,6 +150,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     mut options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
     absolute_deadline: Option<Instant>,
+    return_response_body: bool,
 ) -> crate::error::Result<CosmosResponse> {
     // PATCH is excluded from binary encoding. Force it off *explicitly*:
     // `None` would inherit a lower layer (e.g. an account/client that enabled
@@ -150,32 +158,24 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     options.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(false));
     let mut read_options = options.clone();
     read_options.read_consistency_strategy = Some(ReadConsistencyStrategy::LatestCommitted);
+    let mut replace_options = options.clone();
+    replace_options.content_response_on_write = Some(if return_response_body {
+        ContentResponseOnWrite::Enabled
+    } else {
+        ContentResponseOnWrite::Disabled
+    });
 
-    // -- 1. Reject caller-set preconditions --
-    //
-    // PATCH manages its own `If-Match` precondition internally — the handler
-    // captures the current item's ETag on the internal Read and threads it
-    // into the internal Replace. Honoring a caller-set `Precondition` would
-    // either shadow that ETag (silently breaking the RMW guarantees) or
-    // require resolving it against the handler's own ETag (no sensible
-    // merge). The SDK's `ContainerClient::patch_item` already drops any
-    // precondition before reaching this layer; this guard fail-fasts on any
-    // driver-level user that constructed
-    // `CosmosOperation::patch_item(..).with_precondition(..)` directly,
-    // instead of silently ignoring it.
-    if operation.precondition().is_some() {
+    if operation
+        .precondition()
+        .is_some_and(Precondition::is_if_none_match)
+    {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::new(
-                azure_core::http::StatusCode::BadRequest,
-            ))
-            .with_message(
-                "PATCH does not support caller-set preconditions; \
-             the handler manages If-Match internally",
-            )
+            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+            .with_message("PATCH supports If-Match preconditions; If-None-Match is read-only")
             .build());
     }
 
-    // -- 2. Parse and validate the patch spec --
+    // -- 1. Parse and validate the patch spec --
     let body = operation
         .body()
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchInstructions body"))?;
@@ -258,6 +258,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     // decomposition stays visible underneath the aggregate.
     let operation_name: Option<Arc<str>> = operation.db_operation_name().map(Arc::from);
     let caller_session_token = operation.request_headers().session_token.clone();
+    let caller_precondition = operation.precondition().cloned();
 
     for _ in 0..attempts {
         // Read the current item from the write endpoint at LatestCommitted.
@@ -397,6 +398,14 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                     &sub_op_diagnostics,
                 )
             })?;
+        validate_caller_precondition(caller_precondition.as_ref(), &etag).map_err(|err| {
+            stamp_patch_identity(
+                err,
+                operation_name.clone(),
+                tracking_id,
+                &sub_op_diagnostics,
+            )
+        })?;
         // R3-DRIVER: forward the session token returned by the Read on the
         // Replace, so the write commits against the same replica view we
         // just read from. This is what mitigates SE-004 (session token
@@ -445,7 +454,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         // to inspect.
         replace_dispatched = true;
         match dispatcher
-            .execute_operation(replace_op, options.clone())
+            .execute_operation(replace_op, replace_options.clone())
             .await
         {
             Ok(replace_resp) => {
@@ -820,6 +829,28 @@ fn missing_body_error(msg: &'static str) -> crate::error::CosmosError {
         .build()
 }
 
+fn validate_caller_precondition(
+    precondition: Option<&Precondition>,
+    current_etag: &Etag,
+) -> crate::error::Result<()> {
+    let Some(precondition) = precondition else {
+        return Ok(());
+    };
+    let satisfied = match precondition {
+        Precondition::IfMatch(expected) => expected.as_ref() == "*" || expected == current_etag,
+        Precondition::IfNoneMatch(_) => false,
+    };
+    if satisfied {
+        return Ok(());
+    }
+    Err(crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            StatusCode::PreconditionFailed,
+        ))
+        .with_message("One of the specified pre-conditions is not met.")
+        .build())
+}
+
 /// Returns `true` if `err` is the driver pipeline's representation of a
 /// `412 Precondition Failed` HTTP response (i.e. our ETag-guarded Replace
 /// lost the race against a concurrent writer).
@@ -858,11 +889,9 @@ fn is_precondition_failed(err: &crate::error::CosmosError) -> bool {
 ///    `content_response_on_write`), and that body is the source of truth.
 /// 2. Otherwise, parse `merged_bytes` as a JSON object and overwrite its
 ///    `_etag` member with `replace_etag` (the value the Replace minted).
-///    Other system properties (`_rid`, `_self`, `_attachments`) are stable
-///    across edits of the same item, so the Read's values remain correct.
-///    `_ts` is not exposed on the Replace response header path, so the
-///    Read's `_ts` is left intact; it may lag the true post-image by the
-///    Read→Replace round-trip but never goes backwards.
+///    This is a defensive fallback for explicitly bodyless or anomalously
+///    empty Replace responses. The outer driver discards it when the caller
+///    disabled response content.
 /// 3. If `merged_bytes` is not a JSON object, or `replace_etag` is `None`,
 ///    or any serde step fails, the merged bytes are returned unchanged —
 ///    the body in that case is no worse than what the previous
@@ -1002,7 +1031,7 @@ fn exhaustion_error(
 /// a client-side RMW loop — mutating the partition key means the item moves
 /// partitions, which can't be done atomically through a Replace. Fail fast
 /// rather than silently produce an inconsistent state.
-fn validate_partition_key_paths(
+pub(crate) fn validate_partition_key_paths(
     ops: &[PatchOperation],
     item_ref: &crate::models::ItemReference,
 ) -> crate::error::Result<()> {
@@ -1705,6 +1734,7 @@ mod tests {
         session_token: Option<SessionToken>,
         body: Option<Vec<u8>>,
         read_consistency_strategy: Option<ReadConsistencyStrategy>,
+        content_response_on_write: Option<ContentResponseOnWrite>,
         prefers_write_endpoints_for_read: bool,
         suppresses_hedging: bool,
         absolute_deadline: Option<Instant>,
@@ -1741,6 +1771,7 @@ mod tests {
                 session_token: operation.request_headers().session_token.clone(),
                 body: operation.body().map(<[u8]>::to_vec),
                 read_consistency_strategy: options.read_consistency_strategy,
+                content_response_on_write: options.content_response_on_write,
                 prefers_write_endpoints_for_read: operation.prefers_write_endpoints_for_read(),
                 suppresses_hedging: operation.suppresses_hedging(),
                 absolute_deadline: operation.absolute_deadline(),
@@ -1960,12 +1991,14 @@ mod tests {
 
         let response = execute_with_dispatcher(
             &dispatcher,
-            canonical_patch_op().with_patch_tracking_id(id),
+            canonical_patch_op()
+                .with_patch_tracking_id(id)
+                .with_precondition(Precondition::if_match(Etag::from("\"v1\""))),
             OperationOptions::default(),
             None,
         )
         .await
-        .expect("verification read must recognize the committed Replace");
+        .expect("marker recognition must precede the now-stale caller If-Match");
 
         let body: serde_json::Value = response.into_body().into_single().unwrap();
         assert_eq!(body["visits"], 1);
@@ -2937,32 +2970,116 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn caller_set_precondition_is_rejected_before_any_sub_op() {
-        // PATCH manages its own If-Match internally — letting a caller-set
-        // precondition through would either shadow the handler's ETag
-        // (silently breaking RMW) or require resolving against it (no
-        // sensible merge). The guard must fail fast before issuing any
-        // sub-operation so a misuse never makes it onto the wire.
+    async fn matching_caller_precondition_uses_read_etag_for_replace() {
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                Some("\"v2\""),
+                StatusCode::Ok,
+            ),
+        ]);
+        let op = patch_op_for(
+            test_item_ref(),
+            vec![PatchOperation::increment("/visits", 1i64)],
+        )
+        .with_precondition(Precondition::if_match(Etag::from("\"v1\"")));
+
+        execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect("matching caller If-Match must allow the PATCH");
+
+        let calls = dispatcher.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].op_type, OperationType::Read);
+        assert_eq!(calls[1].op_type, OperationType::Replace);
+        assert_eq!(calls[1].if_match_etag.as_deref(), Some("\"v1\""));
+    }
+
+    #[tokio::test]
+    async fn mismatching_caller_if_match_fails_after_read() {
+        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
+            br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+            Some("\"v1\""),
+            StatusCode::Ok,
+        )]);
+        let op = patch_op_for(
+            test_item_ref(),
+            vec![PatchOperation::increment("/visits", 1i64)],
+        )
+        .with_precondition(Precondition::if_match(Etag::from("\"other\"")));
+
+        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect_err("a failed caller If-Match must stop before Replace");
+
+        assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed);
+        assert_eq!(dispatcher.calls().len(), 1);
+        assert_eq!(dispatcher.calls()[0].op_type, OperationType::Read);
+    }
+
+    #[tokio::test]
+    async fn caller_if_none_match_is_rejected_before_read() {
         let dispatcher = ScriptedDispatcher::new(vec![]);
         let op = patch_op_for(
             test_item_ref(),
-            vec![PatchOperation::set("/x", serde_json::json!(1))],
+            vec![PatchOperation::increment("/visits", 1i64)],
         )
-        .with_precondition(Precondition::if_match(Etag::from("\"abc\"")));
+        .with_precondition(Precondition::if_none_match(Etag::from("\"v1\"")));
 
-        let err = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
             .await
-            .expect_err("PATCH with caller-set precondition must be rejected");
+            .expect_err("PATCH If-None-Match must be rejected before I/O");
 
-        let msg = format!("{err}").to_ascii_lowercase();
-        assert!(
-            msg.contains("precondition"),
-            "error should mention the precondition rejection: {err}"
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
         );
-        assert!(
-            dispatcher.calls().is_empty(),
-            "precondition rejection must issue zero sub-operations; got: {:?}",
-            dispatcher.calls()
+        assert!(dispatcher.calls().is_empty());
+    }
+
+    #[tokio::test]
+    async fn caller_if_match_is_reevaluated_after_replace_race() {
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "race")),
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":4}"#.to_vec(),
+                Some("\"v2\""),
+                StatusCode::Ok,
+            ),
+        ]);
+        let op = patch_op_for(
+            test_item_ref(),
+            vec![PatchOperation::increment("/visits", 1i64)],
+        );
+        let op = op.with_precondition(Precondition::if_match(Etag::from("\"v1\"")));
+
+        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect_err("the caller If-Match must fail after a concurrent update");
+
+        assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed);
+        assert_eq!(
+            dispatcher
+                .calls()
+                .iter()
+                .map(|call| call.op_type)
+                .collect::<Vec<_>>(),
+            vec![
+                OperationType::Read,
+                OperationType::Replace,
+                OperationType::Read
+            ],
+            "the changed ETag must stop the retry before a second Replace"
         );
     }
 
@@ -3087,8 +3204,8 @@ mod tests {
         // If-Match precondition.
         //
         // Script: Read returns body with _etag=\"v1\" + etag header \"v1\";
-        // Replace returns empty body (content_response_on_write=false
-        // semantics) + etag header \"v2\".
+        // Replace returns an explicitly requested empty body + etag header
+        // \"v2\".
         let dispatcher = ScriptedDispatcher::new(vec![
             ScriptedReply::ok(
                 br#"{"id":"doc1","pk":"pk1","visits":0,"_etag":"\"v1\""}"#.to_vec(),
@@ -3099,9 +3216,19 @@ mod tests {
         ]);
 
         let op = canonical_patch_op();
-        let resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+        let options = OperationOptions {
+            content_response_on_write: Some(ContentResponseOnWrite::Disabled),
+            ..OperationOptions::default()
+        };
+        let resp = execute_with_dispatcher(&dispatcher, op, options, None)
             .await
             .expect("PATCH should succeed");
+
+        assert_eq!(
+            dispatcher.calls()[1].content_response_on_write,
+            Some(ContentResponseOnWrite::Disabled),
+            "bodyless client-side PATCH must keep the inner Replace bodyless"
+        );
 
         // Header carries the Replace's new etag (existing behavior).
         assert_eq!(
@@ -3148,6 +3275,12 @@ mod tests {
         let resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
             .await
             .expect("PATCH should succeed");
+
+        assert_eq!(
+            dispatcher.calls()[1].content_response_on_write,
+            Some(ContentResponseOnWrite::Enabled),
+            "default client-side PATCH must request the authoritative Replace post-image"
+        );
 
         let body_bytes = resp
             .into_body()

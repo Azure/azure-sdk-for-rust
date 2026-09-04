@@ -17,8 +17,8 @@ use azure_data_cosmos_driver::{
         DatabaseReference, ItemReference, PartitionKey,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, PartitionFailoverOptions, Region,
-        ServerCertificateValidation,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsBuilder,
+        PartitionFailoverOptions, PatchStrategy, Region, ServerCertificateValidation,
     },
     SubStatusCode,
 };
@@ -31,6 +31,17 @@ use super::env::{
     EMULATOR_CONNECTION_STRING, GATEWAY_V2_ENDPOINT_ENV_VAR, GATEWAY_V2_KEY_ENV_VAR,
     GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
 };
+
+fn test_env_filter() -> EnvFilter {
+    match std::env::var("RUST_LOG") {
+        Ok(value) if value.trim().eq_ignore_ascii_case("trace") => EnvFilter::new("debug"),
+        _ => EnvFilter::builder()
+            // Tests with intentional failures cause noise, so silence them
+            // unless the user explicitly configures logging.
+            .with_default_directive("off".parse().unwrap())
+            .from_env_lossy(),
+    }
+}
 
 /// A test client that provides access to a Cosmos DB driver for testing.
 pub struct DriverTestClient {
@@ -69,13 +80,7 @@ pub struct TestEnv {
 /// Returns `Ok(None)` if the environment is not configured and tests should be skipped.
 pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let _ = tracing_subscriber::fmt::fmt()
-        .with_env_filter(
-            EnvFilter::builder()
-                // Tests with intentional failures cause noise, so we set the default level to "off"
-                // to silence them unless the user explicitly configures it.
-                .with_default_directive("off".parse().unwrap())
-                .from_env_lossy(),
-        )
+        .with_env_filter(test_env_filter())
         .try_init();
 
     let test_mode = get_test_mode();
@@ -523,6 +528,46 @@ impl DriverTestClient {
         })
         .await
     }
+
+    /// Runs a test with runtime operation options and a unique database.
+    pub async fn run_with_unique_db_options<F, Fut>(
+        operation_options: OperationOptions,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(env) = resolve_test_env()? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(env.connection_pool)
+            .with_default_operation_options(operation_options)
+            .build()
+            .await?;
+
+        let client = Self {
+            runtime,
+            account: env.account,
+            preferred_regions: Vec::new(),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: Vec::new(),
+            partition_failover_options: None,
+        };
+        let context = DriverTestRunContext::new(client);
+        let db_name = context.unique_database_name();
+        let db_ref = context.create_database(&db_name).await?;
+
+        let result = f(context.clone(), db_ref.clone()).await;
+
+        // Cleanup (best effort)
+        let _ = context.delete_database(&db_ref).await;
+
+        result
+    }
 }
 
 /// Context for a test run, providing helpers for driver operations.
@@ -796,7 +841,7 @@ impl DriverTestRunContext {
         let mut last_err_msg: Option<String> = None;
         for _ in 0..12 {
             match driver
-                .resolve_container_by_name(db_name, container_name)
+                .resolve_container_by_name(db_name, container_name, OperationOptions::default())
                 .await
             {
                 Ok(c) => return Ok(c),
@@ -958,8 +1003,11 @@ impl DriverTestRunContext {
             operation = operation.with_patch_max_attempts(n);
         }
 
+        let options = OperationOptionsBuilder::new()
+            .with_patch_strategy(PatchStrategy::ClientSide)
+            .build();
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_operation(operation, options)
             .await?
             .expect("PATCH operation must return a response");
 

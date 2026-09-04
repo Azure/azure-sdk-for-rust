@@ -3,9 +3,7 @@
 
 //! Partial updates with PATCH.
 //!
-//! **Preview.** Requires the `preview_patch` feature. PATCH is not
-//! production-ready: an interrupted patch may re-apply non-idempotent
-//! operations. See `ContainerClient::patch_item` rustdoc.
+//! **Preview.** Requires the `preview_patch` feature.
 //!
 //! Demonstrates `ContainerClient::patch_item` and the `PatchInstructions`
 //! builder, exercising every variant of `PatchOperation` (`set`, `add`,
@@ -13,8 +11,9 @@
 //!
 //! ## How PATCH actually works
 //!
-//! Cosmos SQL "patch" is currently implemented by the SDK as a *client-side*
-//! read-modify-write loop:
+//! `PatchStrategy::Auto` sends retry-safe lists containing at most 10
+//! instructions directly to Cosmos DB. Unsafe or longer lists use the tracked
+//! client-side read-modify-write loop:
 //!
 //! 1. The SDK reads the current item (capturing its ETag).
 //! 2. The SDK applies the patch operations locally.
@@ -23,7 +22,8 @@
 //!    attempt from step 1 until the total `PatchItemOptions::with_max_attempts`
 //!    budget, including the initial attempt, is exhausted.
 //!
-//! See `ContainerClient::patch_item` rustdoc for the idempotency caveats.
+//! Explicit `ServerSide` never falls back and Cosmos DB rejects more than 10
+//! instructions. See `ContainerClient::patch_item` for retry semantics.
 //!
 //! ## Required setup
 //!
@@ -37,7 +37,7 @@
 //! ```
 
 use azure_data_cosmos::models::{CosmosNumber, PatchInstructions, PatchOperation};
-use azure_data_cosmos::options::PatchItemOptions;
+use azure_data_cosmos::options::{PatchItemOptions, PatchStrategy};
 use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosClient, RoutingStrategy};
 use azure_identity::DeveloperToolsCredential;
 use clap::Parser;
@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client = create_client(&args).await?;
     let items = client
         .database_client(&args.database)
-        .container_client(&args.container)
+        .container_client(&args.container, None)
         .await?;
 
     // Seed an item with a shape rich enough to exercise every PatchOperation.
@@ -115,8 +115,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_operation(PatchOperation::move_value("/tags/0", "/headline_tag"));
 
     // ----- Issue the patch. -------------------------------------------------
-    // `with_max_attempts` bounds the total number of RMW attempts, including
-    // the initial attempt. The default is 5; this example sets it explicitly.
+    // This list includes non-idempotent operations, so Auto would choose RMW.
+    // Select ClientSide explicitly because `with_max_attempts` applies only to
+    // that path. The default is 5; this example sets it explicitly.
     // Very contended items may benefit from a higher cap, but consider
     // re-shaping the workload first.
     let response = items
@@ -126,6 +127,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             patch,
             Some(
                 PatchItemOptions::default()
+                    .with_strategy(PatchStrategy::ClientSide)
                     .with_max_attempts(NonZeroU8::new(5).expect("5 is non-zero")),
             ),
         )
@@ -136,9 +138,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         response.headers().request_charge(),
     );
 
-    // The response always contains the post-image: the handler uses the
-    // service body when present and otherwise synthesizes it from the locally
-    // merged document, so `into_model::<T>()` does not require content-on-write.
+    // PATCH returns the post-image by default. Setting
+    // `content_response_on_write` to Disabled suppresses it for either path.
     let patched: serde_json::Value = response.into_model()?;
     println!("after    {patched:#}");
 

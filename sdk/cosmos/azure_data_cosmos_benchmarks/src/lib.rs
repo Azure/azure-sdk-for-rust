@@ -297,7 +297,11 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
 
     // Resolve the container (primes the container cache).
     let container_ref = driver
-        .resolve_container(database.as_str(), container.as_str())
+        .resolve_container(
+            database.as_str(),
+            container.as_str(),
+            OperationOptions::default(),
+        )
         .await
         .expect("failed to resolve container");
 
@@ -370,7 +374,7 @@ pub async fn setup() -> (Arc<CosmosDriver>, ItemReference) {
         .expect("failed to create driver");
 
     let container = driver
-        .resolve_container("benchdb", "benchcontainer")
+        .resolve_container("benchdb", "benchcontainer", OperationOptions::default())
         .await
         .expect("failed to resolve container");
 

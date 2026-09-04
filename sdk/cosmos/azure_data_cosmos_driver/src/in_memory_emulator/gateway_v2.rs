@@ -19,6 +19,7 @@ use crate::{
         RntbdRequestFrame, RntbdResponse,
     },
     models::{CosmosStatus, OperationType, ResourceType},
+    options::ReadConsistencyStrategy,
 };
 
 use super::{ConsistencyLevel, InMemoryEmulatorHttpClient};
@@ -122,11 +123,10 @@ fn decode_request(
             "hosted Gateway V2 does not yet support AllowTentativeWrites",
         ));
     }
-    if metadata.read_consistency_strategy.is_some() {
-        return Err(gateway_v2_bad_request(
-            "hosted Gateway V2 does not yet support non-default ReadConsistencyStrategy",
-        ));
-    }
+    let read_consistency_strategy = metadata
+        .read_consistency_strategy
+        .map(read_consistency_strategy_from_wire)
+        .transpose()?;
     if let Some(value) = metadata.consistency_level {
         if !matches!(value, 0x00..=0x04) {
             return Err(gateway_v2_bad_request(
@@ -159,7 +159,7 @@ fn decode_request(
     }
     if matches!(
         frame.operation_type,
-        OperationType::Read | OperationType::Replace | OperationType::Delete
+        OperationType::Read | OperationType::Replace | OperationType::Patch | OperationType::Delete
     ) && metadata.partition_key.is_none()
         && metadata.effective_partition_key.is_some()
     {
@@ -187,6 +187,7 @@ fn decode_request(
         OperationType::Create | OperationType::Upsert => (Method::Post, false),
         OperationType::Read => (Method::Get, true),
         OperationType::Replace => (Method::Put, true),
+        OperationType::Patch => (Method::Patch, true),
         OperationType::Delete => (Method::Delete, true),
         OperationType::Query
         | OperationType::SqlQuery
@@ -250,6 +251,11 @@ fn decode_request(
     if let Some(value) = metadata.session_token {
         request.headers_mut().insert("x-ms-session-token", value);
     }
+    if let Some(strategy) = read_consistency_strategy {
+        request
+            .headers_mut()
+            .insert("x-ms-cosmos-read-consistency-strategy", strategy.as_str());
+    }
     if let Some(value) = metadata.page_size {
         let value = if value == u32::MAX {
             "-1".to_owned()
@@ -310,6 +316,14 @@ fn decode_request(
         request.set_body(body);
     }
     Ok(request)
+}
+
+fn read_consistency_strategy_from_wire(value: u8) -> crate::error::Result<ReadConsistencyStrategy> {
+    ReadConsistencyStrategy::from_rntbd_wire_byte(value).ok_or_else(|| {
+        gateway_v2_bad_request(format!(
+            "RNTBD request contains unknown ReadConsistencyStrategy value {value:#04x}"
+        ))
+    })
 }
 
 fn decode_metadata(
@@ -900,6 +914,64 @@ mod tests {
                 .get_optional_str(&HeaderName::from_static("x-ms-end-epk")),
             Some("1020FF")
         );
+    }
+
+    #[test]
+    fn read_consistency_strategy_is_forwarded_to_the_emulator_core() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::Read,
+            activity_id: Uuid::new_v4(),
+            metadata: vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::document_name("item1".to_owned()),
+                Token::partition_key(r#"["pk1"]"#.to_owned()),
+                Token::read_consistency_strategy(ReadConsistencyStrategy::LatestCommitted),
+                Token::payload_present(false),
+            ],
+            body: None,
+        };
+        let outer = Request::new(
+            Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs/item1").unwrap(),
+            Method::Post,
+        );
+
+        let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
+        assert_eq!(
+            request.headers().get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-read-consistency-strategy"
+            )),
+            Some("LatestCommitted")
+        );
+    }
+
+    #[test]
+    fn unknown_read_consistency_strategy_is_rejected() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::Read,
+            activity_id: Uuid::new_v4(),
+            metadata: vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::document_name("item1".to_owned()),
+                Token::partition_key(r#"["pk1"]"#.to_owned()),
+                Token::new(
+                    RntbdRequestToken::ReadConsistencyStrategy,
+                    TokenValue::Byte(0xFF),
+                ),
+                Token::payload_present(false),
+            ],
+            body: None,
+        };
+        let outer = Request::new(
+            Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs/item1").unwrap(),
+            Method::Post,
+        );
+
+        let error = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap_err();
+        assert!(error.to_string().contains("ReadConsistencyStrategy value"));
     }
 
     #[test]
