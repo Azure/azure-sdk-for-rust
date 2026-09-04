@@ -201,3 +201,67 @@ async fn checkpoints() -> azure_core::Result<()> {
 
     Ok(())
 }
+
+/// A checkpoint that one caller stores with a mixed case consumer group must
+/// come back to a caller that lists with a lowercase consumer group.
+#[tokio::test]
+async fn checkpoint_key_survives_consumer_group_case_change() {
+    common::setup();
+    let store = InMemoryCheckpointStore::new();
+    let checkpoint = Checkpoint {
+        fully_qualified_namespace: "NS-Test.ServiceBus.Windows.Net".to_string(),
+        event_hub_name: "My-EventHub".to_string(),
+        consumer_group: "$Default".to_string(),
+        partition_id: "Partition-A".to_string(),
+        ..Default::default()
+    };
+    store.update_checkpoint(checkpoint).await.unwrap();
+
+    let checkpoints = store
+        .list_checkpoints("ns-test.servicebus.windows.net", "my-eventhub", "$default")
+        .await
+        .unwrap();
+    assert_eq!(
+        checkpoints.len(),
+        1,
+        "the lowercase listing did not find the mixed case checkpoint"
+    );
+
+    // The store returns a clone of the stored record, so the fields keep the
+    // case of the caller that stored them. No folded value leaks into a field.
+    assert_eq!(checkpoints[0].partition_id, "Partition-A");
+    assert_eq!(checkpoints[0].consumer_group, "$Default");
+    assert_eq!(checkpoints[0].event_hub_name, "My-EventHub");
+    assert_eq!(
+        checkpoints[0].fully_qualified_namespace,
+        "NS-Test.ServiceBus.Windows.Net"
+    );
+}
+
+/// The load balancer drives the ownership path, so it needs the same
+/// stability across the case of the consumer group.
+#[tokio::test]
+async fn ownership_key_survives_consumer_group_case_change() {
+    common::setup();
+    let store = InMemoryCheckpointStore::new();
+    let ownership = Ownership {
+        fully_qualified_namespace: "NS-Test.ServiceBus.Windows.Net".to_string(),
+        event_hub_name: "My-EventHub".to_string(),
+        consumer_group: "$Default".to_string(),
+        partition_id: "Partition-A".to_string(),
+        owner_id: Some("owner_id".to_string()),
+        ..Default::default()
+    };
+    store.claim_ownership(&[ownership]).await.unwrap();
+
+    let ownerships = store
+        .list_ownerships("ns-test.servicebus.windows.net", "my-eventhub", "$default")
+        .await
+        .unwrap();
+    assert_eq!(
+        ownerships.len(),
+        1,
+        "the lowercase listing did not find the mixed case ownership"
+    );
+    assert_eq!(ownerships[0].partition_id, "Partition-A");
+}
