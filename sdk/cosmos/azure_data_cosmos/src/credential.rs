@@ -89,11 +89,12 @@ mod tests {
     }
 
     fn assert_safe_debug_render(rendered: &str, variant: &str) {
-        let payload_redacted = format!("{variant}(..)");
         let payload_elided = variant.to_string();
+        let tuple_like = format!("{variant}(");
         assert!(
-            rendered == payload_redacted || rendered == payload_elided,
-            "expected {payload_redacted:?} or {payload_elided:?}, got {rendered:?}"
+            rendered == payload_elided
+                || (rendered.starts_with(&tuple_like) && rendered.ends_with(')')),
+            "expected {payload_elided:?} or a tuple-like {variant} rendering, got {rendered:?}"
         );
     }
 

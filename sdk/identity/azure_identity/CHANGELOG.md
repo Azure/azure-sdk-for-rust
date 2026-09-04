@@ -1,16 +1,10 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.1 (2026-09-04)
 
 ### Features Added
 
 - Added support for Arc-connected servers when using the `ManagedIdentityCredential`.
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 1.0.0 (2026-05-11)
 
@@ -22,17 +16,17 @@
 
 - Added `#[non_exhaustive]` to `UserAssignedId`.
 
-## 0.35.0 (2026-04-022)
-
-### Other Changes
-
-- Updated dependencies.
-
 ## 0.34.0 (2026-04-08)
 
 ### Other Changes
 
 - Upgraded dependencies
+
+## 0.35.0 (2026-04-022)
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 0.33.0 (2026-03-09)
 

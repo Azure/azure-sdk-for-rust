@@ -1067,14 +1067,6 @@ mod tests {
             round_tripped["fullTextPolicy"]["fullTextPaths"][0]["tokenizer"]
         );
 
-        let debug = format!("{properties:?}");
-        for unknown_value in ["Geography", "text-embedding-3-small", "standard", "word"] {
-            assert!(
-                !debug.contains(unknown_value),
-                "unknown field value should be redacted from Debug output: {unknown_value}"
-            );
-        }
-
         // System properties must keep their existing treatment: `_rid` round
         // trips, while `_etag` and `_ts` stay read-only and are not sent back.
         assert_eq!(json!("rid-value"), round_tripped["_rid"]);

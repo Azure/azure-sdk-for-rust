@@ -1,16 +1,10 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.1 (2026-09-04)
 
 ### Features Added
 
 - Implemented span backdating (`Tracer::start_span_with_options`, `Tracer::start_span_with_parent_and_options`, and `Span::end_at`) by mapping to the OpenTelemetry `SpanBuilder::with_start_time` and `Span::end_with_timestamp` APIs, so late-bound (tail-sampled) spans can be emitted with their original timestamps.
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 1.0.0 (2026-05-11)
 
