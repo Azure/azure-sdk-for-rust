@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Cosmos driver user agents now include the build-time Rust compiler version instead of `rustc/unknown`. ([#5201](https://github.com/Azure/azure-sdk-for-rust/pull/5201))
+
 ### Other Changes
 
 ## 0.7.0 (2026-09-02)
