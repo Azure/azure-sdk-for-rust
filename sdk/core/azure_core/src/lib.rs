@@ -40,3 +40,12 @@ pub use typespec_client_core::xml;
 mod private {
     pub trait Sealed {}
 }
+
+#[cfg(test)]
+mod tests {
+    // Intentional misspeling and test failure for validating PR annotations.
+    #[test]
+    fn intentional_pr_annotation_failure() {
+        assert_eq!(1, 2, "intentional PR annotation failure");
+    }
+}

@@ -63,17 +63,28 @@ $packagesToAnalyze = Get-CargoSelectedPackages `
   -PackageInfoDirectory $packageInfoPath
 $workspaceManifestPath = [System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')
 $packageArgs = if ($PackageName -or $ManifestDir) {
-  '--package ' + ($packagesToAnalyze.name -join ' --package ')
+  @($packagesToAnalyze.name | ForEach-Object { '--package'; $_ })
 }
+$packageArgsString = $packageArgs -join ' '
 
 if ($Audit) {
   Invoke-LoggedCommand "cargo audit" -GroupOutput
 }
 
-Invoke-LoggedCommand "cargo check --manifest-path sdk/core/azure_core/Cargo.toml $packageArgs --all-features --all-targets --keep-going" -GroupOutput
+[void](Invoke-CargoCommandWithDiagnostics `
+  -ArgumentList (@(
+    'check',
+    '--manifest-path',
+    'sdk/core/azure_core/Cargo.toml'
+  ) + $packageArgs + @(
+    '--all-features',
+    '--all-targets',
+    '--keep-going'
+  )) `
+  -GroupOutput)
 
 if ($packageArgs) {
-  Invoke-LoggedCommand "cargo fmt --manifest-path '$workspaceManifestPath' $packageArgs -- --check" -GroupOutput
+  Invoke-LoggedCommand "cargo fmt --manifest-path '$workspaceManifestPath' $packageArgsString -- --check" -GroupOutput
 }
 else {
   Invoke-LoggedCommand "cargo fmt --manifest-path '$workspaceManifestPath' --all -- --check" -GroupOutput
@@ -81,13 +92,33 @@ else {
 
 Invoke-LoggedCommand "taplo format --check"
 
-Invoke-LoggedCommand "cargo clippy --manifest-path '$workspaceManifestPath' $packageArgs --all-features --all-targets --keep-going --no-deps" -GroupOutput
+[void](Invoke-CargoCommandWithDiagnostics `
+  -ArgumentList (@(
+    'clippy',
+    '--manifest-path',
+    $workspaceManifestPath
+  ) + $packageArgs + @(
+    '--all-features',
+    '--all-targets',
+    '--keep-going',
+    '--no-deps'
+  )) `
+  -GroupOutput)
 
 if ($Deny) {
   Invoke-LoggedCommand "cargo deny --manifest-path '$workspaceManifestPath' --all-features check bans licenses sources" -GroupOutput
 }
 
-Invoke-LoggedCommand "cargo doc --manifest-path '$workspaceManifestPath' $packageArgs --no-deps --all-features" -GroupOutput
+[void](Invoke-CargoCommandWithDiagnostics `
+  -ArgumentList (@(
+    'doc',
+    '--manifest-path',
+    $workspaceManifestPath
+  ) + $packageArgs + @(
+    '--no-deps',
+    '--all-features'
+  )) `
+  -GroupOutput)
 
 # Verify package dependencies and keywords
 $verifyDependenciesScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'verify-dependencies.rs'))

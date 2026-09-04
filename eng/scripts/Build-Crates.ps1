@@ -29,5 +29,13 @@ else {
 }
 
 foreach ($path in $manifestPath) {
-  Invoke-LoggedCommand "cargo build --manifest-path '$path' --keep-going --all-features" -GroupOutput
+  [void](Invoke-CargoCommandWithDiagnostics `
+    -ArgumentList @(
+      'build',
+      '--manifest-path',
+      $path,
+      '--keep-going',
+      '--all-features'
+    ) `
+    -GroupOutput)
 }
