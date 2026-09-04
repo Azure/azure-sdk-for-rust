@@ -124,7 +124,6 @@ extends:
           - ${{ parameters.AdditionalMatrixConfigs }}
           MatrixFilters: ${{ parameters.MatrixFilters }}
           MatrixReplace: ${{ parameters.MatrixReplace }}
-
     # Run live tests for internal only, not public CI builds. This can be triggered manually via an `/azp run` comment.
     - ${{ if and(not(and(eq(parameters.SkipPrValidation, true), eq(variables['Build.Reason'], 'Manual'))), eq(variables['System.TeamProject'], 'internal'), eq(parameters.RunLiveTests, 'true')) }}:
       - ${{ each cloud in parameters.CloudConfig }}:

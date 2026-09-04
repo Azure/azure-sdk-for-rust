@@ -35,6 +35,14 @@ static int test_options_default_is_all_unset(void)
               "read_consistency unset (=%d)", opts.read_consistency_strategy);
        ASSERT(opts.content_response_on_write == 0,
               "content_response unset (=%d)", opts.content_response_on_write);
+       ASSERT(COSMOS_PATCH_STRATEGY_AUTO == 1,
+              "patch strategy Auto ABI value (=%d)", COSMOS_PATCH_STRATEGY_AUTO);
+       ASSERT(COSMOS_PATCH_STRATEGY_CLIENT_SIDE == 2,
+              "patch strategy ClientSide ABI value (=%d)", COSMOS_PATCH_STRATEGY_CLIENT_SIDE);
+       ASSERT(COSMOS_PATCH_STRATEGY_SERVER_SIDE == 3,
+              "patch strategy ServerSide ABI value (=%d)", COSMOS_PATCH_STRATEGY_SERVER_SIDE);
+       ASSERT(opts.patch_strategy == COSMOS_PATCH_STRATEGY_UNSET,
+              "patch_strategy unset (=%d)", opts.patch_strategy);
        ASSERT(opts.session_capturing_disabled == 0,
               "session_capturing unset (=%d)", opts.session_capturing_disabled);
        ASSERT(opts.max_failover_retry_count < 0,

@@ -4,8 +4,9 @@
 use super::*;
 use crate::model::{
     ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiMemberKind, ApiModel, ApiModule,
-    ApiNavigationPath, ApiPathReference, InherentImplSortKey,
+    ApiNavigationPath, ApiPathReference, InherentImplSortKey, PackageMetadata,
 };
+use std::collections::BTreeMap;
 
 fn item(name: &str, kind: ApiItemKind, declaration: &str) -> ApiItem {
     ApiItem {
@@ -64,6 +65,7 @@ fn navigation_lookup(root_module: &ApiModule) -> NavigationLookup {
         package_name: root_module.local_name().to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: root_module.clone(),
     })
 }
@@ -100,6 +102,89 @@ fn line_text(line: &ReviewLine) -> String {
         .iter()
         .map(|token| token.value.as_str())
         .collect()
+}
+
+#[test]
+fn renders_package_metadata_and_features_as_leading_text_tokens() {
+    let model = ApiModel {
+        package_name: "azure_security_keyvault_secrets".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        package_metadata: PackageMetadata {
+            description: Some("Multi-line\ncomment\n".to_string()),
+            edition: Some("2021".to_string()),
+            rust_version: Some("1.88".to_string()),
+            features: BTreeMap::from([
+                ("alpha".to_string(), vec!["dep:alpha".to_string()]),
+                (
+                    "default".to_string(),
+                    vec!["hmac".to_string(), "azure_core/default".to_string()],
+                ),
+                ("test".to_string(), vec!["default".to_string()]),
+            ]),
+        },
+        root_module: ApiModule {
+            path: "azure_security_keyvault_secrets".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: Vec::new(),
+            modules: Vec::new(),
+        },
+    };
+
+    let lookup = NavigationLookup::new(&model);
+    let lines = render_all_review_lines(&model, &RenderOptions::default(), &lookup);
+
+    assert_eq!(
+        lines.iter().map(line_text).collect::<Vec<_>>(),
+        vec![
+            "Description:",
+            "Multi-line",
+            "comment",
+            "Edition: 2021",
+            "Rust version: 1.88",
+            "Features:",
+            "- default",
+            "  - azure_core/default",
+            "  - hmac",
+            "- alpha",
+            "- test",
+            "",
+        ]
+    );
+    assert!(lines
+        .iter()
+        .flat_map(|line| &line.tokens)
+        .all(|token| token.kind == token_kind::TEXT && !token.is_documentation));
+}
+
+#[test]
+fn omits_missing_package_metadata() {
+    let model = ApiModel {
+        package_name: "demo".to_string(),
+        package_version: "1.0.0".to_string(),
+        parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
+        root_module: ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: Vec::new(),
+            modules: Vec::new(),
+        },
+    };
+
+    assert_eq!(
+        render_all_review_lines(
+            &model,
+            &RenderOptions::default(),
+            &NavigationLookup::new(&model),
+        )
+        .iter()
+        .map(line_text)
+        .collect::<Vec<_>>(),
+        vec!["Features:", "- default", ""]
+    );
 }
 
 #[test]
@@ -183,6 +268,7 @@ fn renders_root_inner_attrs_and_child_module_outer_attrs() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -416,6 +502,7 @@ fn links_trait_impl_owner_to_local_definition() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -472,6 +559,7 @@ fn links_trait_impl_owner_to_public_reexport() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -529,6 +617,7 @@ fn links_trait_impl_owner_to_declaration_over_visible_reexport() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -578,6 +667,7 @@ fn keeps_trait_impl_owner_unlinked_without_visible_target() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -633,6 +723,7 @@ fn links_associated_error_type_to_visible_error_target() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -703,6 +794,7 @@ fn links_bare_result_to_public_reexport_when_resolved_path_matches() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -745,6 +837,7 @@ fn links_crate_result_with_resolved_path_metadata() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -794,6 +887,7 @@ fn links_where_clause_references_after_signature_types() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -866,6 +960,7 @@ fn keeps_std_result_references_unlinked_without_current_crate_reexport() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -912,6 +1007,7 @@ fn prefers_original_definition_over_public_reexport_for_bare_result_links() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -1072,6 +1168,7 @@ fn orders_modules_after_non_module_navigation_items() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
@@ -1290,6 +1387,7 @@ fn same_crate_reexport_links_to_nested_declaration() {
         package_name: "demo".to_string(),
         package_version: "1.0.0".to_string(),
         parser_version: "0.0.0".to_string(),
+        package_metadata: Default::default(),
         root_module: ApiModule {
             path: "demo".to_string(),
             doc_comments: Vec::new(),

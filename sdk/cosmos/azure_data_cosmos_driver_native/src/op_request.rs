@@ -42,7 +42,7 @@ use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::Etag;
 use azure_data_cosmos_driver::options::{
     BinaryEncodingOptions, ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
-    OperationOptions, ReadConsistencyStrategy, Region, ThroughputControlOptions,
+    OperationOptions, PatchStrategy, ReadConsistencyStrategy, Region, ThroughputControlOptions,
 };
 use azure_data_cosmos_driver::{
     models::{
@@ -174,6 +174,46 @@ impl CosmosReadConsistencyStrategy {
                 Some(ReadConsistencyStrategy::LatestCommitted)
             }
         })
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cosmos_patch_strategy_t  (0 = unset)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Tri-state mirror of [`PatchStrategy`] for the flat options struct.
+/// `0` (`Unset`) means "inherit from a lower-priority layer".
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CosmosPatchStrategy {
+    /// Inherit from account / runtime / environment.
+    CosmosPatchStrategyUnset = 0,
+    /// Let the driver choose from instruction safety and service limits.
+    CosmosPatchStrategyAuto = 1,
+    /// Always use client-side read-modify-write execution.
+    CosmosPatchStrategyClientSide = 2,
+    /// Always send the PATCH to the service.
+    CosmosPatchStrategyServerSide = 3,
+}
+
+impl CosmosPatchStrategy {
+    fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
+        Ok(match raw {
+            0 => Self::CosmosPatchStrategyUnset,
+            1 => Self::CosmosPatchStrategyAuto,
+            2 => Self::CosmosPatchStrategyClientSide,
+            3 => Self::CosmosPatchStrategyServerSide,
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
+        })
+    }
+
+    fn to_driver(self) -> Option<PatchStrategy> {
+        match self {
+            Self::CosmosPatchStrategyUnset => None,
+            Self::CosmosPatchStrategyAuto => Some(PatchStrategy::Auto),
+            Self::CosmosPatchStrategyClientSide => Some(PatchStrategy::ClientSide),
+            Self::CosmosPatchStrategyServerSide => Some(PatchStrategy::ServerSide),
+        }
     }
 }
 
@@ -332,6 +372,10 @@ pub struct CosmosOperationOptions {
     /// [`CosmosContentResponseOnWriteOpt`] discriminant. `0` (`Unset`)
     /// inherits. Stored as a raw `i32` for the same reason as above.
     pub content_response_on_write: i32,
+    /// PATCH execution strategy, encoded as a [`CosmosPatchStrategy`]
+    /// discriminant. `0` (`Unset`) inherits. Stored as a raw `i32` so invalid
+    /// host values can be rejected before materializing the enum.
+    pub patch_strategy: i32,
     /// Disable automatic session token management. Tri-state bool.
     pub session_capturing_disabled: i8,
     /// Max region-failover retries. `< 0` = unset.
@@ -361,16 +405,40 @@ pub struct CosmosOperationOptions {
     /// When true, the driver transcodes a **text** request body to binary
     /// before sending it (an already-binary body is passed through) and
     /// advertises `CosmosBinary`, so the caller never encodes binary itself.
-    /// An explicit `false` forces binary **off** for this operation regardless
-    /// of any account/runtime default; `unset` inherits a lower layer (text by
-    /// default).
+    /// An explicit `false` (`1`) is the text opt-out: it forces binary **off**
+    /// for this operation regardless of any account/runtime default. `unset`
+    /// inherits a lower layer, which enables binary encoding by default, so an
+    /// all-unset options struct negotiates binary.
+    ///
+    /// The response side is uniform across operation types: point reads,
+    /// writes that echo content, and queries all negotiate a binary response,
+    /// so a host that enables this flag receives response bodies — including
+    /// query result items — as Cosmos binary JSON and must decode them. Detect
+    /// with the `0x80` preamble. (A query's *request* body stays text either
+    /// way, since it carries a query spec rather than a document.) See
+    /// [`binary_encoding_request_text_response`](Self::binary_encoding_request_text_response)
+    /// for the text opt-out.
     pub binary_encoding_enabled: i8,
     /// Whether the driver transcodes the binary response back to **text** JSON.
     /// Tri-state bool (`0` unset / `1` false / `2` true).
     ///
     /// Only meaningful when [`binary_encoding_enabled`](Self::binary_encoding_enabled)
-    /// is true: the wire stays binary in both directions and the driver hands
-    /// back text. `unset` / `false` returns the binary response as-is.
+    /// resolves to true: the wire stays binary in both directions and the
+    /// driver hands back text. `unset` / `false` returns the binary response
+    /// as-is. Setting this to `2` is honored even when
+    /// [`binary_encoding_enabled`](Self::binary_encoding_enabled) is left
+    /// unset, since binary is enabled by default.
+    ///
+    /// This applies to every operation type, queries included: the wire keeps
+    /// the bandwidth saving and the driver transcodes each response body — for
+    /// a query, each result item — back to text before handing it over.
+    ///
+    /// Note the returned text is re-serialized by the driver rather than being
+    /// the service's original bytes: values are preserved, but object keys are
+    /// emitted in sorted order and numbers use Rust's shortest round-trip
+    /// rendering. Hosts needing byte-exact service output must explicitly
+    /// disable binary encoding by setting
+    /// [`binary_encoding_enabled`](Self::binary_encoding_enabled) to `1`.
     pub binary_encoding_request_text_response: i8,
 }
 
@@ -390,6 +458,7 @@ impl CosmosOperationOptions {
         opts.content_response_on_write =
             CosmosContentResponseOnWriteOpt::from_i32(self.content_response_on_write)?
                 .to_driver()?;
+        opts.patch_strategy = CosmosPatchStrategy::from_i32(self.patch_strategy)?.to_driver();
         opts.session_capturing_disabled = decode_tristate_bool(self.session_capturing_disabled)?;
 
         opts.max_failover_retry_count = decode_opt_u32(self.max_failover_retry_count);
@@ -426,19 +495,20 @@ impl CosmosOperationOptions {
             opts.custom_headers = Some(headers);
         }
 
-        // Binary encoding is a whole-value option. It is tri-state: `unset`
-        // leaves `binary_encoding` as `None` (inherit a lower layer), while an
-        // explicit `true`/`false` is honored as `Some(..)` so a host can force
-        // binary off regardless of any account/runtime default. The
-        // `request_text_response` flag is only meaningful when binary is on.
-        if let Some(enabled) = decode_tristate_bool(self.binary_encoding_enabled)? {
-            let request_text_response =
-                decode_tristate_bool(self.binary_encoding_request_text_response)?.unwrap_or(false);
-            opts.binary_encoding = Some(
-                BinaryEncodingOptions::new()
-                    .with_enabled(enabled)
-                    .with_request_text_response(request_text_response),
-            );
+        // Each flag is tri-state; an explicitly requested text response is
+        // honored even when `enabled` is unset.
+        let enabled = decode_tristate_bool(self.binary_encoding_enabled)?;
+        let request_text_response =
+            decode_tristate_bool(self.binary_encoding_request_text_response)?;
+        if enabled.is_some() || request_text_response.is_some() {
+            let mut binary_encoding = BinaryEncodingOptions::default();
+            if let Some(enabled) = enabled {
+                binary_encoding = binary_encoding.with_enabled(enabled);
+            }
+            if let Some(request_text_response) = request_text_response {
+                binary_encoding = binary_encoding.with_request_text_response(request_text_response);
+            }
+            opts.binary_encoding = Some(binary_encoding);
         }
 
         Ok(opts)
@@ -485,6 +555,7 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
             as i32,
         content_response_on_write:
             CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset as i32,
+        patch_strategy: CosmosPatchStrategy::CosmosPatchStrategyUnset as i32,
         session_capturing_disabled: TRISTATE_UNSET,
         max_failover_retry_count: -1,
         max_session_retry_count: -1,
@@ -1395,6 +1466,29 @@ mod tests {
     }
 
     #[test]
+    fn patch_strategy_maps_to_driver() {
+        use CosmosPatchStrategy as S;
+        for (strategy, expected) in [
+            (S::CosmosPatchStrategyUnset, None),
+            (S::CosmosPatchStrategyAuto, Some(PatchStrategy::Auto)),
+            (
+                S::CosmosPatchStrategyClientSide,
+                Some(PatchStrategy::ClientSide),
+            ),
+            (
+                S::CosmosPatchStrategyServerSide,
+                Some(PatchStrategy::ServerSide),
+            ),
+        ] {
+            let mut options = cosmos_operation_options_default();
+            options.patch_strategy = strategy as i32;
+            // SAFETY: all pointer fields are NULL / len 0.
+            let driver = unsafe { options.to_driver() }.expect("options convert");
+            assert_eq!(driver.patch_strategy, expected);
+        }
+    }
+
+    #[test]
     fn read_consistency_from_i32_validates_range() {
         use CosmosReadConsistencyStrategy as S;
         assert_eq!(S::from_i32(0), Ok(S::CosmosReadConsistencyStrategyUnset));
@@ -1428,6 +1522,31 @@ mod tests {
             C::from_i32(3),
             Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
+    }
+
+    #[test]
+    fn patch_strategy_from_i32_validates_range() {
+        use CosmosPatchStrategy as S;
+        assert_eq!(S::from_i32(0), Ok(S::CosmosPatchStrategyUnset));
+        assert_eq!(S::from_i32(1), Ok(S::CosmosPatchStrategyAuto));
+        assert_eq!(S::from_i32(2), Ok(S::CosmosPatchStrategyClientSide));
+        assert_eq!(S::from_i32(3), Ok(S::CosmosPatchStrategyServerSide));
+        assert_eq!(
+            S::from_i32(4),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        );
+        assert_eq!(
+            S::from_i32(-1),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        );
+
+        let mut options = cosmos_operation_options_default();
+        options.patch_strategy = 4;
+        // SAFETY: all pointer fields are NULL / len 0.
+        assert!(matches!(
+            unsafe { options.to_driver() },
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        ));
     }
 
     #[test]
@@ -1467,6 +1586,10 @@ mod tests {
             o.content_response_on_write,
             CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset as i32
         );
+        assert_eq!(
+            o.patch_strategy,
+            CosmosPatchStrategy::CosmosPatchStrategyUnset as i32
+        );
         assert_eq!(o.session_capturing_disabled, TRISTATE_UNSET);
         assert_eq!(o.max_failover_retry_count, -1);
         assert_eq!(o.max_session_retry_count, -1);
@@ -1490,6 +1613,7 @@ mod tests {
         let driver = unsafe { o.to_driver() }.expect("default options convert");
         assert_eq!(driver.read_consistency_strategy, None);
         assert_eq!(driver.content_response_on_write, None);
+        assert_eq!(driver.patch_strategy, None);
         assert_eq!(driver.session_capturing_disabled, None);
         assert_eq!(driver.max_failover_retry_count, None);
         assert_eq!(driver.max_session_retry_count, None);
@@ -1497,6 +1621,38 @@ mod tests {
         assert_eq!(driver.excluded_regions, None);
         assert!(driver.throughput_control.is_none());
         assert!(driver.binary_encoding.is_none());
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    #[test]
+    fn operation_options_abi_layout_is_stable() {
+        use std::mem::{offset_of, size_of};
+
+        assert_eq!(size_of::<CosmosOperationOptions>(), 88);
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, read_consistency_strategy),
+            0
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, content_response_on_write),
+            4
+        );
+        assert_eq!(offset_of!(CosmosOperationOptions, patch_strategy), 8);
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, session_capturing_disabled),
+            12
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, binary_encoding_enabled),
+            80
+        );
+        assert_eq!(
+            offset_of!(
+                CosmosOperationOptions,
+                binary_encoding_request_text_response
+            ),
+            81
+        );
     }
 
     #[test]
@@ -1528,13 +1684,22 @@ mod tests {
 
     #[test]
     fn binary_encoding_unset_yields_no_option() {
-        // enabled unset → no binary-encoding option at all (inherit a lower
-        // layer), even if the text-response flag is set (a no-op when unset).
+        let o = cosmos_operation_options_default();
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        assert!(driver.binary_encoding.is_none());
+    }
+
+    #[test]
+    fn text_response_is_honored_without_an_explicit_enabled_flag() {
         let mut o = cosmos_operation_options_default();
         o.binary_encoding_request_text_response = TRISTATE_TRUE;
         // SAFETY: all pointer fields are NULL / len 0.
         let driver = unsafe { o.to_driver() }.expect("options convert");
-        assert!(driver.binary_encoding.is_none());
+        let be = driver
+            .binary_encoding
+            .expect("an explicit text-response request must be carried through");
+        assert!(be.request_text_response);
     }
 
     #[test]

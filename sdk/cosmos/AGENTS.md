@@ -152,13 +152,26 @@ The Cosmos DB implementation is split across three crates with distinct purposes
 
 ### Schema-Agnostic Data Plane Principle
 
-**Critical Architectural Rule**: `azure_data_cosmos_driver` is completely ignorant of document/item schemas and serialization formats.
+**Critical Architectural Rule**: `azure_data_cosmos_driver` is completely ignorant of document/item *schemas*.
 
 **Rationale**:
 
 - Cosmos DB is a **schemaless database** - item structure is application-defined
 - Driver must support multiple language SDKs (Rust, Java, .NET, Python) each with native serialization patterns
-- Serialization is a **core capability** that must be handled natively in the consuming SDK
+- Mapping items to application types is a **core capability** that must be handled natively in the consuming SDK
+
+**Where the wire encoding sits**: schema-ignorance does *not* extend to the Cosmos binary
+wire encoding. That encoding is negotiated with the service by the driver, on a header the
+driver owns (`x-ms-cosmos-supported-serialization-formats`), and the query pipeline cannot
+do its job without understanding it — nodes such as the ordered merge and `SkipTake` split
+a feed envelope apart, re-order documents across pages, and reassemble a new envelope. That
+is impossible to do over opaque bytes. So the boundary is:
+
+- **Driver owns the *envelope* and the wire encoding**: negotiating it, parsing feed pages,
+  and emitting pages in the negotiated encoding.
+- **SDK owns the *item***: turning a document's bytes into an application type and back.
+
+The driver never inspects or depends on the fields *inside* a document.
 
 **Driver Data Plane Contract**:
 
@@ -201,7 +214,18 @@ where
 }
 ```
 
-**Content Encoding**: UTF-8 JSON vs Cosmos binary encoding is detected automatically based on the first byte value (transparent to API).
+**Content Encoding**: a *received* body is recognized as UTF-8 JSON or Cosmos binary from its
+first byte, so decoding is transparent to the API. Do **not** extend that sniffing to decide
+what a pipeline node *emits* — the emitted encoding is a property of the operation
+(`CosmosOperation::emits_binary_payload`), not of the bytes that happened to arrive. Deriving
+emission from received bytes lets two nodes in the same pipeline disagree when the service
+answers in a format other than the one that was requested.
+
+Note `emits_binary_payload` rather than `negotiates_binary_response`: the former is what the
+caller receives, the latter is what the wire carries. They diverge under
+`BinaryEncodingOptions::request_text_response`, where the wire stays binary but the driver
+hands back text — so a node keyed off the wire format would re-encode items that
+`execute_plan` immediately decodes again.
 
 **Implications**:
 
@@ -533,6 +557,32 @@ Every public API should document:
 - **Errors**: What errors can be returned and why
 - **Performance**: RU/s implications, if relevant
 - **Partition Key**: Whether the operation is partition-scoped
+
+### Comment Brevity (IMPORTANT)
+
+Keep comments **short and dense**. Long, chatty comment blocks are noise: they age badly, bury the
+signal, and read as filler.
+
+- **Inline comments**: 1–2 lines. 3 is the hard ceiling. Explain *why*, never *what* the code already says.
+- **Doc comments**: lead with a one-sentence summary. Add detail only when a caller genuinely needs it
+  to use the API correctly.
+- **Test comments**: usually unnecessary — a good test name plus a clear assertion message says it.
+  Comment only a non-obvious setup or a subtle invariant.
+- **Never** restate an argument three ways, narrate the diff ("this used to be X, now it's Y"),
+  re-explain something already covered by a nearby doc comment, or write a mini design doc inline.
+  Link to the spec/HLD instead.
+- When a rationale really needs paragraphs, it belongs in `docs/`, not in the source.
+
+```rust
+// ❌ BAD: five lines to say one thing
+// This is a client-side re-encode of a payload the driver itself produced,
+// not a malformed service envelope, so it is a serialization fault (not the
+// 500 `SERVICE_ORDER_BY_ENVELOPE_INVALID`). Include the item ordinal to
+// correlate on a large page.
+
+// ✅ GOOD
+// Client-side re-encode failure, not a malformed service envelope.
+```
 
 ## Additional Resources
 

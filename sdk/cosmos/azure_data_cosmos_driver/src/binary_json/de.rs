@@ -83,17 +83,18 @@ impl<'de> BinaryDeserializer<'de> {
     /// bytes) and forwards it through `Value`'s deserializer. Used for the
     /// exotic wire forms the native fast path does not handle.
     ///
-    /// The integral-`Double`→integer coercion from
-    /// [`deserialize_integer`](Self::deserialize_integer) does **not** apply here:
-    /// `Value`'s deserializer maps a `Number(f64)` straight to `visit_f64`. The
-    /// only affected form is a service-only uniform `Float64` array (`0xF0..`),
-    /// so a typed integer sequence (e.g. `Vec<u64>`) errors instead of coercing;
-    /// the untyped `Value` target keeps the `f64` either way. Accepted limitation.
+    /// The decoded value is normalized first: `Value`'s own deserializer maps a
+    /// `Number(f64)` straight to `visit_f64`, so an exotic form (notably a
+    /// service-only uniform `Float64` array, `0xF0..`) would otherwise decode
+    /// its integral members as floats while the native path decodes them as
+    /// integers. It also lets a typed integer sequence (e.g. `Vec<u64>`)
+    /// deserialize instead of erroring.
     fn deserialize_via_value<V>(&mut self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        let value = self.reader.read_value(self.depth)?;
+        let mut value = self.reader.read_value(self.depth)?;
+        super::normalize_integral_floats(&mut value);
         value
             .deserialize_any(visitor)
             .map_err(|e| BinaryError::Custom(e.to_string()))
@@ -215,7 +216,25 @@ impl<'de> Deserializer<'de> for &mut BinaryDeserializer<'de> {
                             detail: "non-finite double (NaN or infinity)",
                         });
                     }
-                    visitor.visit_f64(f)
+                    // An integral `Double` decodes as an integer, matching the
+                    // service's text rendering. This is the *untyped* path, so
+                    // without it a `serde_json::Value` from a binary page holds
+                    // `Float(3.0)` where a text page holds `PosInt(3)`, and
+                    // `Number`'s `PartialEq` is variant-sensitive. A float
+                    // target still gets its `f64`: serde's float visitors accept
+                    // an integer visit.
+                    //
+                    // This also decides `#[serde(untagged)]` variant selection,
+                    // which buffers through `deserialize_any`. Deliberate: the
+                    // same enum picks the integer variant over a text page, so
+                    // the two encodings agree rather than diverging.
+                    match super::integral_double(f) {
+                        Some(super::IntegralDouble::Unsigned(unsigned)) => {
+                            visitor.visit_u64(unsigned)
+                        }
+                        Some(super::IntegralDouble::Signed(signed)) => visitor.visit_i64(signed),
+                        None => visitor.visit_f64(f),
+                    }
                 }
                 ScalarToken::Str(s) => visitor.visit_borrowed_str(s),
             };
@@ -261,11 +280,11 @@ impl<'de> Deserializer<'de> for &mut BinaryDeserializer<'de> {
         // others → single-key object). Decode the whole value and let
         // `serde_json::Value`'s enum deserializer apply the matching rule.
         //
-        // TODO(cosmos/binary-json, #4976): like `deserialize_via_value`, this
-        // `Value`-based path does not apply the integral-`Double`→integer
-        // coercion, so such a value in an enum variant field errors. Same fix as
-        // the uniform-`Float64`-array limitation; tracked in the CHANGELOG.
-        let value = self.reader.read_value(self.depth)?;
+        // Normalized for the same reason as `deserialize_via_value`: `Value`'s
+        // deserializer would otherwise hand an integral `Double` in a variant
+        // field to `visit_f64`, disagreeing with the native path.
+        let mut value = self.reader.read_value(self.depth)?;
+        super::normalize_integral_floats(&mut value);
         value
             .into_deserializer()
             .deserialize_enum(name, variants, visitor)
@@ -542,6 +561,33 @@ mod tests {
         let echoed_exact = double_buffer(exact as f64);
         let back_exact: u64 = from_slice(&echoed_exact).unwrap();
         assert_eq!(back_exact, exact);
+    }
+
+    /// `#[serde(untagged)]` buffers through `deserialize_any`, so the
+    /// integral-`Double` coercion decides which variant an integral number
+    /// selects. Binary must pick the same variant text does, or the two
+    /// encodings disagree for the same stored document.
+    #[test]
+    fn untagged_variant_selection_agrees_between_binary_and_text() {
+        #[derive(Deserialize, PartialEq, Debug)]
+        #[serde(untagged)]
+        enum Value {
+            Int(i64),
+            Float(f64),
+        }
+
+        // Float variant declared second, so this would pass vacuously if the
+        // order were reversed.
+        let from_binary: Value = from_slice(&double_buffer(3.0)).unwrap();
+        let from_text: Value = serde_json::from_str("3").unwrap();
+        assert_eq!(from_binary, Value::Int(3));
+        assert_eq!(from_binary, from_text);
+
+        // A fractional `Double` still reaches the float variant on both paths.
+        let fractional_binary: Value = from_slice(&double_buffer(2.5)).unwrap();
+        let fractional_text: Value = serde_json::from_str("2.5").unwrap();
+        assert_eq!(fractional_binary, Value::Float(2.5));
+        assert_eq!(fractional_binary, fractional_text);
     }
 
     /// Signed targets must route through `visit_i64`, not `visit_u64` (which a

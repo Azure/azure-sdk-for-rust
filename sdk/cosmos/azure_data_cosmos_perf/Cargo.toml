@@ -12,8 +12,8 @@ rust-version.workspace = true
 [dependencies]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["reqwest"] }
-azure_data_cosmos = { path = "../azure_data_cosmos", version = "0.38.0", features = ["key_auth", "control_plane"] }
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.7.0" }
+azure_data_cosmos = { path = "../azure_data_cosmos", version = "0.39.0", features = ["key_auth", "control_plane"] }
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0" }
 azure_identity = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 console-subscriber = { workspace = true, optional = true }
@@ -21,6 +21,9 @@ futures.workspace = true
 hdrhistogram.workspace = true
 hostname.workspace = true
 rand.workspace = true
+# Used only by the `binary_payload_ab` harness, which owns its own transport so it
+# can measure request/response body sizes at the wire boundary.
+reqwest = { workspace = true, features = ["http2", "rustls"] }
 serde.workspace = true
 serde_json.workspace = true
 sysinfo.workspace = true
@@ -41,6 +44,25 @@ tokio-metrics = { workspace = true, optional = true }
 default = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 tokio-metrics = ["dep:tokio-metrics"]
+# Opt-in only. `__internal_mocking` exposes
+# `CosmosDriverRuntimeBuilder::with_mock_http_client_factory`, which the
+# `binary_payload_ab` harness uses to install a byte-counting transport in front
+# of reqwest.
+#
+# It must not be a plain dependency feature: Cargo's v2 resolver unifies features
+# across a single build, so declaring it unconditionally turns on
+# `__internal_mocking` for every other crate in a `--workspace` build. Keeping it
+# behind a non-default feature (and behind the binary's `required-features`)
+# leaves a default workspace build free of the unstable surface. Verify with
+# `cargo tree --workspace -e features -i azure_data_cosmos_driver`.
+binary-ab = ["azure_data_cosmos_driver/__internal_mocking"]
+
+# Built only when `binary-ab` is on, so the harness's dependency on the driver's
+# internal mocking surface cannot leak into a default build.
+[[bin]]
+name = "binary_payload_ab"
+path = "src/bin/binary_payload_ab.rs"
+required-features = ["binary-ab"]
 
 [lints]
 workspace = true

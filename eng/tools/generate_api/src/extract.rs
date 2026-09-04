@@ -78,7 +78,11 @@ pub(crate) fn extract_model(
         return Err("rustdoc JSON root item was not a module".to_string());
     };
 
-    let mut model = ApiModel::new(package.name.clone(), package.version.clone());
+    let mut model = ApiModel::new(
+        package.name.clone(),
+        package.version.clone(),
+        package.api.clone(),
+    );
     model.root_module = extract_module(krate, root, package.name.clone(), resolver)?;
     Ok(model)
 }

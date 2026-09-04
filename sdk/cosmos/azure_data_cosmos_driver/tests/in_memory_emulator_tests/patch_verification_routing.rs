@@ -25,7 +25,7 @@ use azure_data_cosmos_driver::models::{
 use azure_data_cosmos_driver::options::ExcludedRegions;
 use azure_data_cosmos_driver::options::{
     AvailabilityStrategy, DriverOptions, HedgeThreshold, HedgingStrategy, OperationOptions,
-    OperationOptionsBuilder, PartitionFailoverOptions, Region,
+    OperationOptionsBuilder, PartitionFailoverOptions, PatchStrategy, Region,
 };
 use azure_data_cosmos_driver::{CosmosDriver, CosmosDriverRuntime};
 
@@ -153,7 +153,7 @@ async fn complete_fixture(
         .await
         .expect("driver initializes against emulator metadata");
     let container = driver
-        .resolve_container(DB_NAME, CONTAINER_NAME)
+        .resolve_container(DB_NAME, CONTAINER_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
 
@@ -229,8 +229,11 @@ async fn patch(fixture: &Fixture) -> azure_data_cosmos_driver::models::CosmosRes
 
 async fn patch_with_options(
     fixture: &Fixture,
-    options: OperationOptions,
+    mut options: OperationOptions,
 ) -> azure_data_cosmos_driver::models::CosmosResponse {
+    // These tests exercise the RMW helper Read's routing, so keep PATCH off the
+    // one-request server path regardless of the supplied cross-cutting options.
+    options.patch_strategy = Some(PatchStrategy::ClientSide);
     let item = ItemReference::from_name(&fixture.container, PartitionKey::from(PK), "item1");
     let patch = PatchInstructions::from(vec![PatchOperation::set(
         "/value",
@@ -535,7 +538,7 @@ async fn stale_fallback_session_retries_before_increment_replace() {
         .await
         .expect("fallback driver initializes");
     let fallback_container = fallback_driver
-        .resolve_container(DB_NAME, CONTAINER_NAME)
+        .resolve_container(DB_NAME, CONTAINER_NAME, OperationOptions::default())
         .await
         .expect("fallback container resolves");
     let fallback_item =

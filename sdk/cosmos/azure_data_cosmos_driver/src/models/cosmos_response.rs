@@ -152,6 +152,13 @@ impl CosmosResponse {
         self.payload.into_body()
     }
 
+    /// Suppresses the response payload while preserving status, headers,
+    /// diagnostics, and routing metadata.
+    pub(crate) fn without_body(mut self) -> Self {
+        self.payload.body = ResponseBody::NoPayload;
+        self
+    }
+
     /// Transcodes a binary JSON response body to text JSON in place.
     ///
     /// Applied by the driver when the operation negotiated binary on the wire
