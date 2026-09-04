@@ -5,6 +5,7 @@ use super::*;
 
 fn item(name: &str, kind: ApiItemKind, declaration: &str) -> ApiItem {
     ApiItem {
+        declaration_location: None,
         name: name.to_string(),
         kind,
         source_id: None,
@@ -106,6 +107,7 @@ fn sorts_inherent_impls_by_type_parameter_then_infer_then_explicit_type() {
     });
 
     let module = ApiModule {
+        declaration_location: None,
         path: "demo".to_string(),
         doc_comments: Vec::new(),
         attributes: Vec::new(),

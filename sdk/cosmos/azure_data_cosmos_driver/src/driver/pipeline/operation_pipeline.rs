@@ -2301,7 +2301,7 @@ fn should_capture_session_token_from_status(
 /// transport pipeline expects for diagnostics annotation.
 ///
 /// - First attempt (no failover, no session retry) → `Initial`
-/// - Any session retry in progress → `Retry`
+/// - Any session retry in progress → `OperationRetry`
 /// - Otherwise (a failover retry) → `RegionFailover`
 ///
 /// Session-retry takes precedence over failover-retry because in the rare
@@ -2312,7 +2312,7 @@ fn compute_execution_context(retry_state: &OperationRetryState) -> ExecutionCont
     if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
         ExecutionContext::Initial
     } else if retry_state.session_token_retry_count > 0 {
-        ExecutionContext::Retry
+        ExecutionContext::OperationRetry
     } else {
         ExecutionContext::RegionFailover
     }
@@ -3600,6 +3600,11 @@ async fn execute_hedged(
     // The diag clone is owned by the future and returned alongside the
     // result, so the borrow checker can reclaim it after `select` resolves.
     let primary_diag = parent_diagnostics.clone_for_hedge_attempt();
+    // Describe the primary as a race participant before its builder is moved
+    // into the future. `leg_dispatch` reads the leg's launch instant, so the
+    // fan-out record orders correctly against every attempt in the operation.
+    let primary_dispatch =
+        primary_diag.leg_dispatch(primary_region.clone(), ExecutionContext::Initial);
     let primary_attempt = Box::pin(async move {
         let mut diag = primary_diag;
         // Primary is launched before Stage 2 elapses, so no shared
@@ -3797,7 +3802,21 @@ async fn execute_hedged(
     )
     .then(|| Arc::new(AtomicBool::new(ctx.hub_region_processing_only_initial)));
     let secondary_shared_latch = shared_hub_region_latch.clone();
+    // Record the fan-out on the *parent* before the race runs, so the operation
+    // is known to have hedged regardless of which leg won. Each leg's own
+    // attempts survive the race via the diagnostics hedge journal, so this
+    // record only has to reconstruct a leg cancelled before it dispatched
+    // anything — most commonly the alternate, which `select` never polls when
+    // the primary is already resolved. The parent builder reaches every exit
+    // path (`finalize_hedge_attempt` on Terminal, `diagnostics:
+    // parent_diagnostics` on BothTransient), so the record always survives to
+    // `complete()`.
     let secondary_diag = parent_diagnostics.clone_for_hedge_attempt();
+    let secondary_dispatch = secondary_diag.leg_dispatch(
+        secondary_region.clone(),
+        crate::diagnostics::ExecutionContext::Hedging,
+    );
+    parent_diagnostics.record_hedge_fanout(primary_dispatch, secondary_dispatch);
     let secondary_attempt = Box::pin(async move {
         let mut diag = secondary_diag;
         let result = perform_single_attempt(
@@ -4885,7 +4904,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -4918,7 +4937,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -4980,7 +4999,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -5030,7 +5049,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -9744,17 +9763,17 @@ mod tests {
     fn execution_context_retry_when_session_retry_active() {
         // Session-retry takes precedence over failover-retry: when both
         // counters are non-zero, the most recent advance was the session
-        // retry, so the attempt is annotated as a `Retry`.
+        // retry, so the attempt is annotated as an `OperationRetry`.
         let state = retry_state_with_counts(1, 1);
         assert!(matches!(
             super::compute_execution_context(&state),
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         ));
 
         let state = retry_state_with_counts(0, 1);
         assert!(matches!(
             super::compute_execution_context(&state),
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         ));
     }
 
@@ -10435,7 +10454,7 @@ mod tests {
 
     #[test]
     fn diagnostics_clone_for_hedge_attempt_starts_empty() {
-        let parent = test_diagnostics();
+        let mut parent = test_diagnostics();
         let child = parent.clone_for_hedge_attempt();
         // A fresh sub-builder must not carry the parent's request list,
         // status, or accumulated hedge diagnostics.

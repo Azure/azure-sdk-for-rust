@@ -194,6 +194,10 @@ impl QueryOptions {
         self.feed = self.feed.with_continuation_token(continuation_token);
         self
     }
+
+    pub(crate) fn to_plan_options(&self) -> PlanOptions {
+        self.feed.to_plan_options()
+    }
 }
 
 #[cfg(test)]

@@ -880,7 +880,7 @@ impl CosmosDriver {
                             .unwrap_or(azure_core::time::Duration::ZERO),
                     )
                     .await;
-                    execution_context = ExecutionContext::Retry;
+                    execution_context = ExecutionContext::OperationRetry;
                     continue;
                 }
             }
@@ -3753,6 +3753,21 @@ impl CosmosDriver {
             .is_some_and(planner::is_streaming_order_by)
         {
             let pipeline = planner::build_streaming_ordered_merge(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
+
+        if query_plan
+            .query_info
+            .as_ref()
+            .is_some_and(planner::is_non_streaming_order_by)
+        {
+            let pipeline = planner::build_non_streaming_ordered_merge(
                 &query_plan,
                 &mut topology,
                 &operation,

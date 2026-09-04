@@ -124,6 +124,21 @@ impl FeedScope {
 ///     .with_parameter("@customer_info", CustomerInfo { id: 42, name: "Contoso".into() }).unwrap();
 /// # assert_eq!(serde_json::to_string(&query).unwrap(), "{\"query\":\"\\n    SELECT * FROM c\\n    WHERE c.id = @customer_info.id\\n    AND c.name = @customer_info.name\",\"parameters\":[{\"name\":\"@customer_info\",\"value\":{\"id\":42,\"name\":\"Contoso\"}}]}");
 /// ```
+///
+/// Vectors can be bound as array parameters rather than interpolated into the
+/// query text:
+///
+/// ```rust
+/// # use azure_data_cosmos::Query;
+/// let query_vector = vec![0.1_f32, 0.2, 0.3];
+/// let query = Query::from(
+///     "SELECT TOP 5 c.id, VectorDistance(c.embedding, @vector, false) AS score \
+///      FROM c ORDER BY VectorDistance(c.embedding, @vector, false)",
+/// )
+/// .with_parameter("@vector", &query_vector).unwrap();
+/// # let serialized = serde_json::to_value(&query).unwrap();
+/// # assert_eq!(serialized["parameters"][0]["value"], serde_json::to_value(&query_vector).unwrap());
+/// ```
 #[derive(Clone, Debug, Serialize)]
 pub struct Query {
     /// The query text itself.
@@ -238,6 +253,29 @@ mod tests {
         assert_eq!(
             serialized,
             r#"{"query":"SELECT * FROM c","parameters":[{"name":"string_param","value":"value1"},{"name":"int_param","value":42},{"name":"float_param","value":4.2},{"name":"bool_param","value":true},{"name":"obj_param","value":{"name":"foo","value":"bar"}},{"name":"arr_param","value":["a","b","c"]},{"name":"null_option","value":null},{"name":"null_value","value":null}]}"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    pub fn serialize_query_with_float_vector_parameter() -> Result<(), Box<dyn Error>> {
+        let query_vector = vec![0.25_f32, -1.5, 2.0];
+        let query = Query::from(
+            "SELECT TOP 3 * FROM c ORDER BY VectorDistance(c.embedding, @vector, false)",
+        )
+        .with_parameter("@vector", query_vector)?;
+
+        assert_eq!(
+            serde_json::to_value(query)?,
+            serde_json::json!({
+                "query": "SELECT TOP 3 * FROM c ORDER BY VectorDistance(c.embedding, @vector, false)",
+                "parameters": [
+                    {
+                        "name": "@vector",
+                        "value": [0.25, -1.5, 2.0]
+                    }
+                ]
+            })
         );
         Ok(())
     }
