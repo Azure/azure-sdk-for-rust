@@ -858,14 +858,12 @@ impl ContainerClient {
         ))
     }
 
-    /// Executes a single-partition query against items in the container.
+    /// Executes a query against items in the container.
     ///
     /// The resulting document will be deserialized into the type provided as `T`.
     /// If you want to deserialize the document to a direct representation of the JSON returned, use [`serde_json::Value`] as the target type.
     ///
     /// We recommend using ["turbofish" syntax](https://doc.rust-lang.org/book/appendix-02-operators.html#:~:text=turbofish) (`query_items::<SomeTargetType>(...)`) to specify the target type, as it makes type inference easier.
-    ///
-    /// **NOTE:** Currently, the Azure Cosmos DB SDK for Rust only supports single-partition querying. Cross-partition queries may be supported in the future.
     ///
     /// # Arguments
     ///
@@ -875,9 +873,20 @@ impl ContainerClient {
     ///
     /// # Cross Partition Queries
     ///
-    /// Cross-partition queries are significantly limited in the current version of the Cosmos DB SDK.
-    /// They are run on the gateway and limited to simple projections (`SELECT`) and filtering (`WHERE`).
-    /// For more details, see [the Cosmos DB documentation page on cross-partition queries](https://learn.microsoft.com/en-us/rest/api/cosmos-db/querying-cosmosdb-resources-using-the-rest-api#queries-that-cannot-be-served-by-gateway).
+    /// When `scope` spans multiple partitions, the SDK obtains a query plan and composes the
+    /// client-side pipeline needed to execute it. Supported features include ordinary projections
+    /// and filters, `TOP`, `OFFSET`/`LIMIT`, streaming single- and multiple-column `ORDER BY`, and
+    /// ordered or unordered `DISTINCT`.
+    ///
+    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with a
+    /// finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers that result window before
+    /// returning the first page, so use narrow projections and choose a result window appropriate
+    /// for the memory available to the application.
+    ///
+    /// The buffered result can be iterated in pages, but it does not support continuation tokens
+    /// for resuming in another process. Aggregates, `GROUP BY`, and hybrid/full-text ranking remain
+    /// unsupported when their query plans require client-side stages that have not been
+    /// implemented.
     ///
     /// # Examples
     ///
@@ -919,6 +928,38 @@ impl ContainerClient {
     /// # }
     /// ```
     ///
+    /// A raw SQL vector search can bind the query vector as a parameter. Vector ordering must not
+    /// specify `ASC` or `DESC`, and must use `TOP N` or `OFFSET`/`LIMIT` when querying across
+    /// partitions:
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// use azure_data_cosmos::{feed::FeedScope, Query};
+    /// use futures::TryStreamExt;
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// #[derive(serde::Deserialize)]
+    /// struct VectorMatch {
+    ///     id: String,
+    ///     score: f64,
+    /// }
+    ///
+    /// let query_vector = vec![0.1_f32, 0.2, 0.3];
+    /// let query = Query::from(
+    ///     "SELECT TOP 5 c.id, VectorDistance(c.embedding, @vector, false) AS score \
+    ///      FROM c ORDER BY VectorDistance(c.embedding, @vector, false)",
+    /// )
+    /// .with_parameter("@vector", &query_vector)?;
+    /// let mut matches = container_client
+    ///     .query_items::<VectorMatch>(query, FeedScope::full_container(), None)
+    ///     .await?;
+    ///
+    /// while let Some(item) = matches.try_next().await? {
+    ///     println!("{}: {}", item.id, item.score);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
     /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
     pub async fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
@@ -927,6 +968,7 @@ impl ContainerClient {
         options: Option<QueryOptions>,
     ) -> crate::Result<QueryItemIterator<T>> {
         let options = options.unwrap_or_default();
+        let plan_options = options.to_plan_options();
         let query = query.into();
 
         // Resolve binary encoding so the driver advertises a binary *response*
@@ -965,7 +1007,7 @@ impl ContainerClient {
                 initial_operation,
                 &operation_options,
                 options.feed.continuation_token.as_ref(),
-                &options.feed.to_plan_options(),
+                &plan_options,
             )
             .await?;
         Ok(QueryItemIterator::new(
