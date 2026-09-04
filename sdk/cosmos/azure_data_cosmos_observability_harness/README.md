@@ -13,7 +13,7 @@ threshold-breaching slow operation emits a full diagnostics record.
 
 This crate is a developer tool (`publish = false`); it is not part of the
 supported SDK surface. See the
-[Cosmos SDK project documentation](../docs/README.md) for the diagnostics
+[Cosmos SDK project documentation](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md) for the diagnostics
 architecture and specification.
 
 ## What it wires up

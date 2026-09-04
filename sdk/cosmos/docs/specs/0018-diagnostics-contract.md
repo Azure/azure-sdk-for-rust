@@ -30,10 +30,10 @@ To keep the design honest, references below are tagged by where each piece lands
 implying everything already exists:
 
 - **[main]** — already on `upstream/main` (`sdk/cosmos/azure_data_cosmos_driver`): the
-  always-collected [`DiagnosticsContext`][ctx] and its `requests()` / `duration()` / `status()` /
+  always-collected `DiagnosticsContext` and its `requests()` / `duration()` / `status()` /
   `total_request_charge()` / `regions_contacted()` / `machine_id()` /
   `to_json_string(verbosity)` surface (plus the crate-private `is_completed()`),
-  [`RequestDiagnostics`][ctx], the `DiagnosticsOptions` / `DiagnosticsVerbosity` config, and the
+  `RequestDiagnostics`, the `DiagnosticsOptions` / `DiagnosticsVerbosity` config, and the
   non-optional `CosmosResponse::diagnostics() -> Arc<DiagnosticsContext>`. **This is the
   foundation this contract builds on, and it already exists** — so there is no separate
   foundation workstream (the earlier "WS0" was dropped and its stand-alone PR #4785 closed as
@@ -49,7 +49,7 @@ implying everything already exists:
   `Context`, so the emitted metrics/spans carry `db.operation.name` / `db.namespace` /
   `db.collection.name` in production.
 - **[WS4/WS5]** — the small driver additions the emission layer needs that upstream lacked:
-  [`DiagnosticsThresholds`][thresholds] and the public `is_failure()` / `is_completed()` /
+  `DiagnosticsThresholds` and the public `is_failure()` / `is_completed()` /
   `is_threshold_violated()` predicates and the `operation_name()` accessor.
 - **[WS4c]** — the upstream span-backdating trait additions to `typespec_client_core` +
   `azure_core_opentelemetry`, shipped as the **separate** core-crate PR #4784 (not in this PR).
@@ -70,7 +70,7 @@ implying everything already exists:
 > workstream first. That is wrong: the full foundation — `DiagnosticsContext`,
 > `CosmosResponse::diagnostics()`, `RequestDiagnostics`, `DiagnosticsVerbosity`, and
 > `DiagnosticsOptions` — is **already on `upstream/main`**. The one diagnostics type that is
-> **not** upstream is [`DiagnosticsThresholds`][thresholds]; this PR adds it alongside the
+> **not** upstream is `DiagnosticsThresholds`; this PR adds it alongside the
 > emission handlers. The tags above reflect that reality.
 
 ## 1. Requirements this contract satisfies
@@ -96,7 +96,7 @@ cheap handle. Two things were underspecified, and the SDK requirements must driv
 design (not the other way around):
 
 1. **One implicit shape.** Materialization is JSON-only and implicit
-   ([`to_json_string`][ctx] [main]). Different consumers want different shapes: metrics want a
+   (`to_json_string` [main]). Different consumers want different shapes: metrics want a
    structured object, tracing wants spans, logs want a string. JSON is the single costliest
    step (bench: struct build ~3.7 µs → +detailed JSON ~6.6 µs), so forcing it on everyone is
    wasteful — and lossy/expensive across an FFI boundary.
@@ -140,7 +140,7 @@ Four invariants:
   never removes operation-level diagnostics and never disables collection.
 
 There is **no parallel diagnostics model**: the driver owns one canonical
-[`DiagnosticsContext`][ctx] [main] and every representation is a view over it.
+`DiagnosticsContext` [main] and every representation is a view over it.
 
 ## 4. The emission model — the `DiagnosticsHandler` chain
 
@@ -203,7 +203,7 @@ fn should_emit_span(ctx: &DiagnosticsContext, thresholds: &DiagnosticsThresholds
 
 - **Default (D4):** a fast success (e.g. a 5 ms point read) emits **no span**; a slow op
   (≥ threshold) or a failure **does**. This is exactly R4/R9 — no per-fast-op cost.
-- **Thresholds use [`DiagnosticsThresholds`][thresholds] [WS4/WS5]** (added by this PR) and are
+- **Thresholds use `DiagnosticsThresholds` [WS4/WS5]** (added by this PR) and are
   **configurable via the standard Rust options chain**; start from Java-like defaults, tunable before GA.
 - This is the piece the earlier draft under-specified. It is distinct from `DiagnosticsLevel`
   (§5.1): the level sets *depth of what a span contains*; tail-sampling sets *whether a span
@@ -226,9 +226,9 @@ logged/traced and peg the CPU:
 
 | Materializer | Consumer intent | Backed by |
 | --- | --- | --- |
-| **Structured object** | metrics | [`DiagnosticsContext::requests()`][ctx] [main], reduced into an operation roll-up |
-| **OTel span tree** | traces | reconstructed from [`DiagnosticsContext`][ctx] + per-attempt [`RequestDiagnostics`][ctx] [main]; a `Span`/`Attr` in-memory form is the OTel-aligned shape (kept in [WS7]) |
-| **String** | logs | [`DiagnosticsContext::to_json_string(verbosity)`][ctx] [main] |
+| **Structured object** | metrics | `DiagnosticsContext::requests()` [main], reduced into an operation roll-up |
+| **OTel span tree** | traces | reconstructed from `DiagnosticsContext` + per-attempt `RequestDiagnostics` [main]; a `Span`/`Attr` in-memory form is the OTel-aligned shape (kept in [WS7]) |
+| **String** | logs | `DiagnosticsContext::to_json_string(verbosity)` [main] |
 
 Materialization is **explicit, lazy, and per-representation**: each is paid only when a handler
 asks for it, so the expensive JSON step is never paid on a metrics-only or span-only path.
@@ -251,7 +251,7 @@ diagnostics.**
 - `Full` — + every per-attempt transport record (`Verbosity::Detailed`).
 
 > **Collection is not gated.** Operation-level metrics are *computed by iterating the
-> per-attempt records* ([`requests()`][ctx] [main]), so "cheap op-level only" is not achievable
+> per-attempt records* (`requests()` [main]), so "cheap op-level only" is not achievable
 > by dropping transport collection. The driver **always collects** the full per-attempt records
 > and the level gates only *materialization + exposure* (P4).
 
@@ -366,7 +366,7 @@ semconv names.
 
 ### 10.2 Operation-level metrics (always-on, low cardinality)
 
-Source: an operation roll-up over [`DiagnosticsContext::requests()`][ctx] [main], emitted by
+Source: an operation roll-up over `DiagnosticsContext::requests()` [main], emitted by
 `CosmosMetricsHandler` [WS3]. **Emit the *stable* instruments first**, with only low-cardinality
 attributes. This powers client-side Grafana dashboards (R7) with per-combination series (R8).
 
@@ -426,7 +426,7 @@ a metric dimension to control time-series cardinality (D7).
 > **Client instance id (D10).** `azure.client.id` is a stable per-client instance id. Prefer
 > `vmId`; when VM metadata is unreachable, fall back to a **static GUID** so two requests can be
 > attributed to the same `CosmosClient`/driver instance. **Check whether
-> [`DiagnosticsContext`][ctx] already carries this before adding it.** Note that
+> `DiagnosticsContext` already carries this before adding it.** Note that
 > `azure.cosmosdb.client.active_instance.count` is *not* keyed on `azure.client.id`: semconv
 > defines its attribute set as `server.address` plus `server.port` (the latter only for a
 > non-default port), so the counter reads as "live clients per account endpoint"
@@ -454,7 +454,7 @@ Emitted by `CosmosTracingHandler` [WS4], **only when tail-sampling (§5.2) says 
 
 | `DiagnosticsContext` element | OTel span |
 | --- | --- |
-| operation (root) | root span, kind `CLIENT`, name `<operation> <target>`; window backdated over [`duration()`][ctx] [main] |
+| operation (root) | root span, kind `CLIENT`, name `<operation> <target>`; window backdated over `duration()` [main] |
 | each retained `RequestDiagnostics` (attempt / hedge leg) | child span, kind `CLIENT` |
 | request-event timeline | timed span **events** on the attempt span |
 | hedging | a hedge span with terminal state + regions |
@@ -469,7 +469,7 @@ Emitted by `CosmosTracingHandler` [WS4], **only when tail-sampling (§5.2) says 
   proven by the salvaged PR #4685 spike. **Ship (b) now behind one internal seam; migrate to (a)
   when it lands.**
 - **Build from the bounded list.** The emitter builds the tree from the retained attempt list
-  ([`requests()`][ctx], bounded by §8), emitting **one child span per retained attempt** — never
+  (`requests()`, bounded by §8), emitting **one child span per retained attempt** — never
   one span per pre-compaction attempt (the retained list is already bounded by
   `max_request_diagnostics`). Collapsing each run into a single count-bearing span is a possible
   future optimization and is not yet implemented.
@@ -492,7 +492,7 @@ span-attribute names so the spans correlate:
 > ⚠ **Two `azure_core` gotchas (D2/D3).** (1) The constant is `az.service_request.id` (a **dot**
 > before `id`), while `az.client_request_id` uses an underscore. (2) These constants are
 > **module-private** in `azure_core`
-> ([`http/policies/instrumentation/mod.rs`][azcore]) and cannot be imported. Until `azure_core`
+> and cannot be imported. Until `azure_core`
 > exposes them, centralize identical string literals in one Cosmos-local module and file an
 > `azure_core` issue to expose public constants + fix the naming inconsistency. **Cosmos-specific
 > attributes use the real `azure.cosmosdb.*` namespace** (not the earlier draft's `db.cosmosdb.*`).
@@ -529,7 +529,7 @@ These map to the plan's decisions D1–D10.
 
 ## 13. Scope & guardrails
 
-- **Additive / non-breaking.** The public boundary is [`diagnostics::DiagnosticsContext`][ctx]
+- **Additive / non-breaking.** The public boundary is `diagnostics::DiagnosticsContext`
   [main], consumed by `azure_data_cosmos`. `CosmosResponse::diagnostics()` stays non-optional. No
   SemVer break. **This contract doc itself adds no code or public API; it is folded into the
   combined observability PR (#4789), which carries the implementation and its CHANGELOG entries.**
@@ -540,7 +540,3 @@ These map to the plan's decisions D1–D10.
   exposure/depth, not collection (P4).
 - **No `azure_core` / `typespec_client_core` change** is *required* by this contract; the
   upstream `Meter` (D2) and span-backdating (D3) additions are proposals pursued in parallel.
-
-[thresholds]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/options/diagnostics_thresholds.rs
-[ctx]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs
-[azcore]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/src/http/policies/instrumentation/mod.rs

@@ -5,13 +5,13 @@
 C ABI wrapper around [`azure_data_cosmos_driver`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver),
 designed for cross-language SDK reuse (.NET, Java, Go, Python, native C/C++).
 The full design is in
-[the native wrapper specification](../docs/specs/0019-native-wrapper.md);
+[the native wrapper specification](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md);
 the picture-first overview is in
-[the native async invocation overview](../docs/specs/0020-native-async-invocation.md);
+[the native async invocation overview](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0020-native-async-invocation.md);
 this README is a short orientation and a quick-start for each supported
 binding language.
 
-See the [Cosmos SDK project documentation](../docs/README.md) for the broader
+See the [Cosmos SDK project documentation](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md) for the broader
 project and architecture context.
 
 ## What this crate ships

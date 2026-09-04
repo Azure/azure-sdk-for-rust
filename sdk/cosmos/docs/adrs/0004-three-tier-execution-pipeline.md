@@ -50,7 +50,5 @@ flows may enter below Dataflow, but their retries remain driver-owned.
 - [Architecture execution pipelines](../Architecture.md#execution-pipelines)
 - [Operation and transport pipelines specification](../specs/0005-operation-and-transport-pipelines.md)
 - [Feed operations and dataflow specification](../specs/0012-feed-operations-and-dataflow.md)
-- [`operation_pipeline` implementation](../../azure_data_cosmos_driver/src/driver/pipeline/operation_pipeline.rs)
-- [`transport_pipeline` implementation](../../azure_data_cosmos_driver/src/driver/transport/transport_pipeline.rs)
 - Merged PRs `Azure/azure-sdk-for-rust#3829`,
   `Azure/azure-sdk-for-rust#3875`, and `Azure/azure-sdk-for-rust#4440`

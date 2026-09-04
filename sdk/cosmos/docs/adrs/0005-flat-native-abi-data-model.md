@@ -48,6 +48,4 @@ invariants.
 
 - [Native wrapper specification](../specs/0019-native-wrapper.md)
 - [Native async invocation specification](../specs/0020-native-async-invocation.md)
-- [`op_request` flat request model](../../azure_data_cosmos_driver_native/src/op_request.rs)
-- [`CosmosCompletion` owned result model](../../azure_data_cosmos_driver_native/src/completion.rs)
 - Merged PR `Azure/azure-sdk-for-rust#4515`

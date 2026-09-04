@@ -47,9 +47,6 @@ configured connectivity-probe policy accepts it.
 
 - [Architecture: routing and endpoints](../Architecture.md#shared-state)
 - [Distributed transaction coordinator routing](../specs/0022-distributed-transactions.md#31-dtc-coordinator-routing)
-- [Account endpoint state](../../azure_data_cosmos_driver/src/driver/routing/account_endpoint_state.rs)
-- [Operation endpoint selection](../../azure_data_cosmos_driver/src/driver/pipeline/operation_pipeline.rs)
-- [Backup endpoint bootstrap API](../../azure_data_cosmos/src/clients/cosmos_client_builder.rs)
 - Issue [#4487](https://github.com/Azure/azure-sdk-for-rust/issues/4487) and
   PRs [#4503](https://github.com/Azure/azure-sdk-for-rust/pull/4503),
   [#4604](https://github.com/Azure/azure-sdk-for-rust/pull/4604), and

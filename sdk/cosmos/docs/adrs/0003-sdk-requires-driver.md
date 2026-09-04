@@ -35,6 +35,5 @@ execution path.
 
 - [Architecture SDK layer](../Architecture.md#layers)
 - [SDK-to-driver cutover specification](../specs/0004-sdk-to-driver-cutover.md)
-- [`ClientContext` required driver field](../../azure_data_cosmos/src/clients/mod.rs)
 - Merged PRs `Azure/azure-sdk-for-rust#4005` and
   `Azure/azure-sdk-for-rust#4053`

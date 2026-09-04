@@ -86,7 +86,7 @@ sequenceDiagram
 
 2. **cbindgen auto-generates the C header.** A C / C# / Go caller needs a
    *declaration* of each function and struct. Rather than hand-write that,
-   [`build.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/build.rs) runs
+   the crate build script runs
    **cbindgen** on every `cargo build`: it parses the `extern "C"` functions
    and `#[repr(C)]` types and writes
    [`include/azurecosmosdriver.h`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/include/azurecosmosdriver.h).

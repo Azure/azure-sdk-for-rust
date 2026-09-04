@@ -51,10 +51,3 @@ debt, not sanctioned exceptions or precedents for new direct reads.
 ## Authoritative references
 
 - [Configuration options specification](../specs/0001-configuration-options.md)
-- [Generated environment loading](../../azure_data_cosmos_macros/src/env.rs)
-- [IMDS direct read](../../azure_data_cosmos_driver/src/system/vm_metadata.rs)
-- [Endpoint-TTL direct read](../../azure_data_cosmos_driver/src/driver/cosmos_driver.rs)
-- [Query-plan library direct read](../../azure_data_cosmos_driver/src/query_plan_native/native.rs)
-- [Emulator-host direct read](../../azure_data_cosmos_driver/src/driver/transport/emulator.rs)
-- [Backtrace direct reads](../../azure_data_cosmos_driver/src/error/backtrace.rs)
-- [Proxy backend policy](../../azure_data_cosmos_driver/src/driver/transport/http_client_factory.rs)

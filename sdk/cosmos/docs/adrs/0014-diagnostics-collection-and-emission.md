@@ -53,7 +53,4 @@ logging is permitted; eager public telemetry export is not the default.
 ## Authoritative references
 
 - [Diagnostics contract](../specs/0018-diagnostics-contract.md)
-- [Driver diagnostics context](../../azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs)
-- [Bounded diagnostics compaction](../../azure_data_cosmos_driver/src/diagnostics/compaction.rs)
-- [SDK diagnostics handler chain](../../azure_data_cosmos/src/diagnostics/handler.rs)
 - PR [#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789)

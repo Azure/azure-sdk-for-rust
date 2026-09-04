@@ -42,8 +42,5 @@ an independent precedence chain.
 
 - [Configuration options specification](../specs/0001-configuration-options.md)
 - [Hierarchical configuration model](../specs/0002-hierarchical-configuration-model.md)
-- [`CosmosOptions` macro contract](../../azure_data_cosmos_macros/src/lib.rs)
-- [Generated layered views](../../azure_data_cosmos_macros/src/view.rs)
-- [Generated option builders](../../azure_data_cosmos_macros/src/builder.rs)
 - Merged PRs `Azure/azure-sdk-for-rust#3778`,
   `Azure/azure-sdk-for-rust#3803`, and `Azure/azure-sdk-for-rust#3744`

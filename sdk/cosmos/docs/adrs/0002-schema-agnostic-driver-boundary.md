@@ -59,6 +59,5 @@ application-schema knowledge would require superseding this decision.
 - [Query engine specification](../specs/0013-query-engine.md)
 - [PATCH handler specification](../specs/0017-patch-handler.md)
 - [SDK-to-driver cutover specification](../specs/0004-sdk-to-driver-cutover.md)
-- [`patch_handler` implementation](../../azure_data_cosmos_driver/src/driver/pipeline/patch_handler.rs)
 - Merged PRs `Azure/azure-sdk-for-rust#4005` and
   `Azure/azure-sdk-for-rust#4440`

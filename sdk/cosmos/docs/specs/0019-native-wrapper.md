@@ -565,20 +565,20 @@ Rationale:
 
 ### 3.5 Error model
 
-The wrapper's error surface is built on two complementary types — a **packed `cosmos_status_code_t`** numeric return value for the C function contract, and a rich `cosmos_error_t` payload that mirrors the driver's `azure_data_cosmos::Error` (introduced in [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442)). Both surfaces are derived from the driver's single canonical [`CosmosStatus`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs) taxonomy — there is **no** parallel FFI-specific error enum (this is the unification landed in [#4696](https://github.com/Azure/azure-sdk-for-rust/issues/4696); the authoritative implementation lives in [`src/error.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/src/error.rs) and the crate README's "Error & status model" section). Both **must** be exposed because the host SDKs sitting on top of this wrapper need full error fidelity for **diagnosability** and for **routing failure classes into language-native exception types** — they do **not** re-implement retry / throttling / conditional-write recovery (that's the driver's responsibility, by design — see [`Architecture.md`](../Architecture.md) "Schema-Agnostic Data Plane"). Concretely:
+The wrapper's error surface is built on two complementary types — a **packed `cosmos_status_code_t`** numeric return value for the C function contract, and a rich `cosmos_error_t` payload that mirrors the driver's `azure_data_cosmos::Error` (introduced in [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442)). Both surfaces are derived from the driver's single canonical `CosmosStatus` taxonomy — there is **no** parallel FFI-specific error enum (this is the unification landed in [#4696](https://github.com/Azure/azure-sdk-for-rust/issues/4696); the authoritative implementation and the crate README's "Error & status model" section describe the same model). Both **must** be exposed because the host SDKs sitting on top of this wrapper need full error fidelity for **diagnosability** and for **routing failure classes into language-native exception types** — they do **not** re-implement retry / throttling / conditional-write recovery (that's the driver's responsibility, by design — see [`Architecture.md`](../Architecture.md) "Schema-Agnostic Data Plane"). Concretely:
 
 - **Diagnosability.** `400 Bad Request` is the canonical example: callers cannot debug it without the gateway response body, headers (`x-ms-activity-id`, `x-ms-substatus`), and the driver's `DiagnosticsContext` for the failed attempt. The rich payload exposes all three.
 - **Failure-class routing.** Host SDKs translate `cosmos_error_is_not_found(e)` / `_is_conflict(e)` / `_is_precondition_failed(e)` / `_is_throttled(e)` etc. into their language-native exceptions (`CosmosException` subclasses in Java, dedicated error variants in Go, `CosmosException.StatusCode` in .NET). Routing is **classification**, not retry.
 - **What host SDKs do NOT do.** They do **not** drive retry loops, back-off timers, conditional-write recovery, or cross-region failover off the wrapper's error surface — those are owned by the driver's pipeline (`transport_pipeline.rs`, the throttle / failover / circuit-breaker components, and the `OperationOptions` retry knobs). A host SDK that re-implements any of these on top of the wrapper is defeating the whole point of the driver split.
 
-> **Landing prerequisites — read this before implementing.** §3.5.2 below and §6 mirror the **actually merged** shape of [`azure_data_cosmos_driver::error::CosmosError`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/mod.rs) from PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442) (now on `main`). Notable departures from earlier drafts of this spec:
+> **Landing prerequisites — read this before implementing.** §3.5.2 below and §6 mirror the **actually merged** shape of `azure_data_cosmos_driver::error::CosmosError` from PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442) (now on `main`). Notable departures from earlier drafts of this spec:
 >
-> - There is **no `Kind` enum** on the merged `CosmosError` — the type is monomorphic. Failure-class taxonomy is encoded entirely through the `CosmosStatus` HTTP status code + optional [`SubStatusCode`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs) (16-bit, with synthetic values such as `TRANSPORT_GENERATED_503 = 20003`, `CLIENT_OPERATION_TIMEOUT = 20008` for client-side categories). The spec therefore exposes no `cosmos_error_kind_t` enum or `cosmos_error_kind(e)` accessor; host SDKs route on `(status_code, sub_status)` directly. The earlier `COSMOS_ERROR_KIND_*` taxonomy has been removed from this section.
+> - There is **no `Kind` enum** on the merged `CosmosError` — the type is monomorphic. Failure-class taxonomy is encoded entirely through the `CosmosStatus` HTTP status code + optional `SubStatusCode` (16-bit, with synthetic values such as `TRANSPORT_GENERATED_503 = 20003`, `CLIENT_OPERATION_TIMEOUT = 20008` for client-side categories). The spec therefore exposes no `cosmos_error_kind_t` enum or `cosmos_error_kind(e)` accessor; host SDKs route on `(status_code, sub_status)` directly. The earlier `COSMOS_ERROR_KIND_*` taxonomy has been removed from this section.
 > - **Predicates live on `CosmosStatus`, invoked as `err.status().is_*()`.** The wrapper still exposes them as flat `cosmos_error_is_*(e)` calls for caller ergonomics, but only mirrors the predicates that actually exist on the merged `CosmosStatus`. See §3.5.2 for the exact list.
 > - **Header accessors (`activity_id`, `session_token`, `etag`, retry-after) do not live on `CosmosError`.** They are reachable via `err.response().headers()` when a wire response was received. The wrapper exposes them as `cosmos_error_*` convenience accessors that internally walk through `cosmos_error_response(e)`; they return NULL / -1 for non-wire errors (transport, client, configuration).
-> - **Backtrace tuning is process-global, not per-runtime / per-driver.** The driver exposes [`error::set_backtrace_options(BacktraceOptions { max_captures_per_second, max_resolutions_per_second })`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/backtrace.rs) as a free function, not as a `CosmosDriverRuntimeBuilder` / `CosmosDriverBuilder` method. The wrapper therefore exposes a single `cosmos_set_backtrace_options(captures, resolutions)` entry at module scope instead of the per-runtime / per-driver setters earlier drafts described. See §6.4.
+> - **Backtrace tuning is process-global, not per-runtime / per-driver.** The driver exposes `error::set_backtrace_options(BacktraceOptions { max_captures_per_second, max_resolutions_per_second })` as a free function, not as a `CosmosDriverRuntimeBuilder` / `CosmosDriverBuilder` method. The wrapper therefore exposes a single `cosmos_set_backtrace_options(captures, resolutions)` entry at module scope instead of the per-runtime / per-driver setters earlier drafts described. See §6.4.
 >
-> Sub-status synthetic codes (`20003`, `20008`, `20010..=20015`, `20020`, `20402`, `20912`, ...) are defined as `pub const` on [`SubStatusCode`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs); the wrapper re-exports them verbatim through the `COSMOS_SUB_STATUS_*` constants described in §3.5.2.
+> Sub-status synthetic codes (`20003`, `20008`, `20010..=20015`, `20020`, `20402`, `20912`, ...) are defined as `pub const` on `SubStatusCode`; the wrapper re-exports them verbatim through the `COSMOS_SUB_STATUS_*` constants described in §3.5.2.
 
 #### 3.5.1 `cosmos_status_code_t`
 
@@ -588,11 +588,11 @@ A **packed 32-bit status** returned by every fallible C function. It carries the
 
 - `0` (`COSMOS_STATUS_SUCCESS`) — success.
 - The high 16 bits hold the HTTP status (`400`, `404`, `429`, `503`, …).
-- The low 16 bits hold the driver [`SubStatusCode`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs) value, or `0` when the operation had no sub-status.
+- The low 16 bits hold the driver `SubStatusCode` value, or `0` when the operation had no sub-status.
 
 Hosts decode with the macros emitted in the header: `COSMOS_STATUS_HTTP(code) = code >> 16` and `COSMOS_STATUS_SUB(code) = code & 0xFFFF`. A non-zero low half is compared against the named `COSMOS_SUB_STATUS_*` constants (§3.5.2); a low half of `0` means there was no sub-status. Because the sub-status occupies the full low 16 bits, every `SubStatusCode` value — including `0xFFFF` (`SCRIPT_COMPILE_ERROR`) — round-trips with no reserved sentinel. The rich `cosmos_error_t.sub_status` field still separates "no sub-status" (`-1`) from an explicit `0`.
 
-**Pure-FFI / pre-flight failures speak the same language.** A failure that never reached the wire (a NULL argument, invalid UTF-8, a shut-down queue) still packs a *real* HTTP status paired with a driver `CLIENT_FFI_*` (or `CLIENT_*`) sub-status, so it fits the identical integer as a service error. The internal condition set that performs this mapping lives in `CosmosErrorCode` in [`src/error.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/src/error.rs); it is `pub(crate)` and is **never** exported to the header. The pre-flight / plumbing conditions and the packed status each maps to are:
+**Pure-FFI / pre-flight failures speak the same language.** A failure that never reached the wire (a NULL argument, invalid UTF-8, a shut-down queue) still packs a *real* HTTP status paired with a driver `CLIENT_FFI_*` (or `CLIENT_*`) sub-status, so it fits the identical integer as a service error. The internal condition set that performs this mapping lives in `CosmosErrorCode`; it is `pub(crate)` and is **never** exported to the header. The pre-flight / plumbing conditions and the packed status each maps to are:
 
   | HTTP | Sub-status constant                                     | Meaning                                                                                                                                                                     |
   | ---- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -619,7 +619,7 @@ Service (wire) failures pack their real HTTP status and sub-status straight from
 
 #### 3.5.2 `cosmos_error_t` (rich payload, mirrors `azure_data_cosmos_driver::error::CosmosError`)
 
-The driver's `CosmosError` ([`azure_data_cosmos_driver::error::CosmosError`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/mod.rs)) carries structured information host SDKs need for correct retry / throttle / conditional-write handling. The wrapper mirrors that surface 1:1 through accessor functions on `cosmos_error_t`:
+The driver's `CosmosError` (`azure_data_cosmos_driver::error::CosmosError`) carries structured information host SDKs need for correct retry / throttle / conditional-write handling. The wrapper mirrors that surface 1:1 through accessor functions on `cosmos_error_t`:
 
 ```c
 /* Status / categorical accessors. `cosmos_error_status_code(e)` is always
@@ -675,7 +675,7 @@ const char *cosmos_error_backtrace(const cosmos_error_t *e);
 
 /* Predicates — flat namespace on cosmos_error_t for caller ergonomics. Each
  * forwards internally to the corresponding `err.status().is_*()` method on
- * [`CosmosStatus`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs). The set below mirrors the
+ * `CosmosStatus`. The set below mirrors the
  * predicates actually implemented on the merged CosmosStatus; consult that
  * file for the exact decision rules per status / sub-status combination. */
 bool cosmos_error_is_success(const cosmos_error_t *e);              /* status in 2xx */
@@ -709,7 +709,7 @@ void cosmos_error_free(cosmos_error_t *e);
 
 **Wrapper does NOT construct `cosmos_error_t`.** Errors are only ever *received* from the driver; no `cosmos_error_create_*` API is exposed.
 
-**Synthetic sub-status codes** for client-side / transport / serialization failures are surfaced verbatim through `cosmos_error_sub_status` — the wrapper does not re-number them. Authoritative names + values live on [`SubStatusCode`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs) in the driver. The currently-defined `20xxx` set is:
+**Synthetic sub-status codes** for client-side / transport / serialization failures are surfaced verbatim through `cosmos_error_sub_status` — the wrapper does not re-number them. Authoritative names + values live on `SubStatusCode` in the driver. The currently-defined `20xxx` set is:
 >
 > - `TRANSPORT_GENERATED_503 = 20003` (transport-synthesized 503 in the response pipeline)
 > - `CLIENT_OPERATION_TIMEOUT = 20008` (end-to-end deadline exceeded on the client)
@@ -1761,7 +1761,7 @@ Each line is intentionally a checklist item rather than prose — Phase 0 accept
 
 ## 6. Error Semantics
 
-The driver moved to a structured error type in PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442): [`azure_data_cosmos_driver::error::CosmosError`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/mod.rs) plus `Result<T> = std::result::Result<T, CosmosError>`. `CosmosError` is monomorphic — it carries a [`CosmosStatus`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs) (HTTP status code + optional [`SubStatusCode`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/cosmos_status.rs)), the originating [`CosmosResponse`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/models/cosmos_response.rs) when a wire response was received, an `Arc<DiagnosticsContext>`, a human message, an optional `source` chain, and an optional rate-limited `Arc<str>` backtrace. There is no `Kind` enum on the merged type; failure-class taxonomy is encoded entirely through the `(status_code, sub_status)` pair. Synthetic sub-status codes (e.g. `TRANSPORT_GENERATED_503 = 20003`, `CLIENT_OPERATION_TIMEOUT = 20008`, transport `20010..=20015`, serialization `20020`, authentication `20402`) make every client-side failure observable through the same typed surface as service errors.
+The driver moved to a structured error type in PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442): `azure_data_cosmos_driver::error::CosmosError` plus `Result<T> = std::result::Result<T, CosmosError>`. `CosmosError` is monomorphic — it carries a `CosmosStatus` (HTTP status code + optional `SubStatusCode`), the originating `CosmosResponse` when a wire response was received, an `Arc<DiagnosticsContext>`, a human message, an optional `source` chain, and an optional rate-limited `Arc<str>` backtrace. There is no `Kind` enum on the merged type; failure-class taxonomy is encoded entirely through the `(status_code, sub_status)` pair. Synthetic sub-status codes (e.g. `TRANSPORT_GENERATED_503 = 20003`, `CLIENT_OPERATION_TIMEOUT = 20008`, transport `20010..=20015`, serialization `20020`, authentication `20402`) make every client-side failure observable through the same typed surface as service errors.
 
 The wrapper's contract is shaped by that decision:
 
@@ -1784,7 +1784,7 @@ The driver classifies *every* non-2xx HTTP status that the gateway returns as a 
 
 ### 6.3 Packed status ↔ `cosmos_error_t` mapping
 
-When `execute_operation` returns `Err(CosmosError)`, the wrapper packs the driver error's `(status_code, sub_status)` pair directly into the `cosmos_status_code_t` returned by `cosmos_completion_status` *and* always populates the rich `cosmos_error_t` for full detail. There is **no** coarse lossy re-classification step — the packed status *is* the driver's HTTP status and sub-status, verbatim (`CosmosStatusCode::from_driver_error` in [`src/error.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/src/error.rs) is a straight `(http << 16) | sub` pack of `err.status()`, with the low 16 bits `0` when there is no sub-status).
+When `execute_operation` returns `Err(CosmosError)`, the wrapper packs the driver error's `(status_code, sub_status)` pair directly into the `cosmos_status_code_t` returned by `cosmos_completion_status` *and* always populates the rich `cosmos_error_t` for full detail. There is **no** coarse lossy re-classification step — the packed status *is* the driver's HTTP status and sub-status, verbatim (`CosmosStatusCode::from_driver_error` is a straight `(http << 16) | sub` pack of `err.status()`, with the low 16 bits `0` when there is no sub-status).
 
 Hosts dispatch by decoding the packed status:
 
@@ -1812,7 +1812,7 @@ pub fn azure_data_cosmos_driver::error::set_backtrace_options(BacktraceOptions {
 });
 ```
 
-The limits are process-global atomics inside the error-construction path (see [`src/error/backtrace.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/error/backtrace.rs)); they are *not* attached to `CosmosDriverRuntimeBuilder` or any driver instance, because per-runtime state on the hot error-construction path is not viable. The wrapper therefore exposes a single module-scope C entry point that mirrors the driver function 1:1:
+The limits are process-global atomics inside the error-construction path; they are *not* attached to `CosmosDriverRuntimeBuilder` or any driver instance, because per-runtime state on the hot error-construction path is not viable. The wrapper therefore exposes a single module-scope C entry point that mirrors the driver function 1:1:
 
 ```c
 /* Process-global. Last-writer-wins semantics across concurrent calls. Pass

@@ -41,11 +41,6 @@ range lookup, and invalidation or topology changes may require later refreshes.
 ## Authoritative references
 
 - [Partition-key-range cache specification](../specs/0007-partition-key-range-cache.md)
-- [`CosmosClientBuilder::build`](../../azure_data_cosmos/src/clients/cosmos_client_builder.rs)
-- [`DatabaseClient::container_client`](../../azure_data_cosmos/src/clients/database_client.rs)
-- [Container metadata resolution](../../azure_data_cosmos/src/clients/container_client.rs)
-- [Driver account initialization](../../azure_data_cosmos_driver/src/driver/cosmos_driver.rs)
-- [Lazy partition-key-range cache](../../azure_data_cosmos_driver/src/driver/cache/partition_key_range_cache.rs)
 - Merged PRs `Azure/azure-sdk-for-rust#3799`,
   `Azure/azure-sdk-for-rust#3864`, `Azure/azure-sdk-for-rust#3553`, and
   `Azure/azure-sdk-for-rust#4007`

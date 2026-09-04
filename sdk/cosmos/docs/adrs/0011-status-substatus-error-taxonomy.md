@@ -44,8 +44,6 @@ become a second exported taxonomy.
 
 - [Error codes and retries specification](../specs/0006-error-codes-and-retries.md)
 - [Native wrapper error model](../specs/0019-native-wrapper.md#35-error-model)
-- [Driver `CosmosStatus` and `SubStatusCode`](../../azure_data_cosmos_driver/src/error/cosmos_status.rs)
-- [Native packed status and rich error](../../azure_data_cosmos_driver_native/src/error.rs)
 - PRs [#3583](https://github.com/Azure/azure-sdk-for-rust/pull/3583),
   [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442), and
   [#4820](https://github.com/Azure/azure-sdk-for-rust/pull/4820)
