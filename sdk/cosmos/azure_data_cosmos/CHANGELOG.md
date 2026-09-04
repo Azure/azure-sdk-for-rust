@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Extended opt-in Cosmos binary JSON encoding to cross-partition `DISTINCT` query pages. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
+- Extended Cosmos binary JSON encoding to cross-partition `DISTINCT` query pages. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 
 ### Breaking Changes
 

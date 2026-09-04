@@ -22,6 +22,9 @@ parameters:
   - name: AutoBaseline
     type: boolean
     default: false
+  - name: EnableGoInternalModuleProxy
+    type: boolean
+    default: false
 
 extends:
   ${{ if and(parameters.Use1ESOfficial, eq(parameters.oneESTemplateTag, 'canary')) }}:
@@ -37,6 +40,11 @@ extends:
       # Enable 1es template team to verify validation has been run on canary
       customBuildTags:
         - 1ES.PT.Tag-refs/tags/canary
+    ${{ if eq(parameters.EnableGoInternalModuleProxy, true) }}:
+      featureFlags:
+        golang:
+          internalModuleProxy:
+            enabled: true
     settings:
       networkIsolationPolicy: Permissive, CFSClean
       skipBuildTagsForGitHubPullRequests: true

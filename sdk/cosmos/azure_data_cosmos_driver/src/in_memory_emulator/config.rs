@@ -381,7 +381,7 @@ impl VirtualAccountConfig {
     ///
     /// Construct each config with [`Self::new`] instead of cloning a base.
     pub fn with_write_mode(self, mode: WriteMode) -> Self {
-        self.topology.write().unwrap().write_mode = mode;
+        self.set_write_mode(mode);
         self
     }
 
@@ -826,6 +826,10 @@ impl VirtualAccountConfig {
     /// on a normal account, not a one-way door.
     pub(crate) fn set_write_mode(&self, mode: WriteMode) {
         let mut topology = self.topology.write().unwrap();
+        if topology.write_mode != mode {
+            topology.failing_over_from = None;
+            topology.next_write_region = None;
+        }
         topology.write_mode = mode;
     }
 
@@ -993,11 +997,14 @@ impl VirtualAccountConfig {
         };
 
         if topology.write_region == region_name {
-            topology.write_region = next_online;
+            topology.write_region = next_online.clone();
             // The service renumbers priorities during an offline-triggered
             // failover: surviving regions move up and the offlined former hub
             // moves to the lowest-priority position.
-            topology.priority_order.retain(|name| name != region_name);
+            topology
+                .priority_order
+                .retain(|name| name != region_name && name != &next_online);
+            topology.priority_order.insert(0, next_online);
             topology.priority_order.push(region_name.to_string());
             // No `failing_over_from`: the outgoing region is offline, and an
             // offline region is filtered out of the advertised lists entirely,
@@ -1761,5 +1768,55 @@ mod tests {
         assert!(error
             .to_string()
             .contains("partition key range page size must be > 0"));
+    }
+
+    #[test]
+    fn write_mode_change_clears_failover_transition() {
+        let announced = VirtualAccountConfig::new(vec![region("East"), region("West")]).unwrap();
+        announced.announce_failover("West").unwrap();
+        announced.set_write_mode(WriteMode::Multi);
+        announced.set_write_mode(WriteMode::Single);
+
+        let snapshot = announced.topology_snapshot();
+        assert_eq!(
+            snapshot
+                .writable(true)
+                .iter()
+                .map(|region| region.name())
+                .collect::<Vec<_>>(),
+            vec!["East"]
+        );
+        assert_eq!(snapshot.next_write_region, None);
+        assert_eq!(snapshot.failing_over_from, None);
+
+        let begun = VirtualAccountConfig::new(vec![region("East"), region("West")]).unwrap();
+        begun.begin_failover("West").unwrap();
+        begun.set_write_mode(WriteMode::Multi);
+        begun.set_write_mode(WriteMode::Single);
+
+        let snapshot = begun.topology_snapshot();
+        assert_eq!(
+            snapshot
+                .writable(true)
+                .iter()
+                .map(|region| region.name())
+                .collect::<Vec<_>>(),
+            vec!["West"]
+        );
+        assert_eq!(snapshot.next_write_region, None);
+        assert_eq!(snapshot.failing_over_from, None);
+    }
+
+    #[test]
+    fn offline_failover_hoists_first_online_priority() {
+        let config =
+            VirtualAccountConfig::new(vec![region("East"), region("West"), region("Central")])
+                .unwrap();
+        config.set_region_offline("West").unwrap();
+        config.set_region_offline("East").unwrap();
+
+        let topology = config.topology.read().unwrap();
+        assert_eq!(topology.write_region, "Central");
+        assert_eq!(topology.priority_order, vec!["Central", "West", "East"]);
     }
 }
