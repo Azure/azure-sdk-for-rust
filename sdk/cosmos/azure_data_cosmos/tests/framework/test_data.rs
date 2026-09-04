@@ -6,6 +6,7 @@ use azure_data_cosmos::{
 };
 use std::time::Duration;
 
+use super::test_client::{probe_data_plane_ready, AuthMode};
 use super::MockItem;
 
 const ITEMS_PER_PARTITION: usize = 10;
@@ -63,6 +64,15 @@ pub async fn create_container_with_items(
     }
 
     let container_client = db.container_client("TestContainer", None).await?;
+
+    // Under AAD, the first data-plane request against a freshly created
+    // container can race with 403/5302 RbacUnauthorizedNameBasedDataRequest
+    // before the name→RID mapping is cached on this client's connection.
+    // Probe once so the item-seeding loop below doesn't burn its budget
+    // being retried by the driver.
+    if AuthMode::from_env() == AuthMode::Aad {
+        probe_data_plane_ready("test_data::create_container_with_items", &container_client).await?;
+    }
 
     for item in items {
         let item_id = item.id.clone();

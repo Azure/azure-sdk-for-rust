@@ -1,0 +1,70 @@
+{
+  "comment": "Desired fixed Cosmos accounts for the Rust SDK Cosmos live tests. Consumed by New-CosmosLiveTestAccounts.ps1 to (re)create accounts in the sdk-ci resource group and to emit JSON for the fixed-accounts ADO secret (see sdk/cosmos/pipeline/README.md). Account names here are the logical selectors used by live-platform-matrix.json's AccountSelector. accountNamePrefix + name form the actual Cosmos account name (must be globally unique, <=44 chars, lowercase). regionDefaults mirrors sdk/cosmos/test-resources.bicep's region choices (singleRegion: East US 2; multiRegion: East US 2 write + West US 3) so behavior matches the previous per-run ARM-provisioned accounts as closely as possible. testCategory/consistency/database on each entry are copied verbatim into the emitted account JSON and drive COSMOS_RUSTFLAGS / AZURE_COSMOS_DEFAULT_CONSISTENCY / DATABASE_NAME at test time.",
+  "regionDefaults": {
+    "singleRegion": ["East US 2"],
+    "multiRegion": ["East US 2", "West US 3"]
+  },
+  "database": "shared-test-db",
+  "accounts": [
+    {
+      "name": "eventual-singlewrite",
+      "defaultConsistencyLevel": "Eventual",
+      "enableAutomaticFailover": false,
+      "enableMultipleWriteLocations": false,
+      "enableMultipleRegions": false,
+      "enableContinuousBackup": true,
+      "testCategory": "emulator",
+      "includeSecondaryKey": true
+    },
+    {
+      "name": "session-singlewrite",
+      "defaultConsistencyLevel": "Session",
+      "enableAutomaticFailover": false,
+      "enableMultipleWriteLocations": false,
+      "enableMultipleRegions": false,
+      "enableContinuousBackup": true,
+      "testCategory": "emulator",
+      "includeSecondaryKey": true
+    },
+    {
+      "name": "strong-singlewrite",
+      "defaultConsistencyLevel": "Strong",
+      "enableAutomaticFailover": false,
+      "enableMultipleWriteLocations": false,
+      "enableMultipleRegions": false,
+      "enableContinuousBackup": true,
+      "testCategory": "emulator",
+      "includeSecondaryKey": true
+    },
+    {
+      "name": "session-multiwrite",
+      "defaultConsistencyLevel": "Session",
+      "enableAutomaticFailover": false,
+      "enableMultipleWriteLocations": true,
+      "enableMultipleRegions": true,
+      "enableContinuousBackup": false,
+      "testCategory": "multi_write",
+      "includeSecondaryKey": true
+    },
+    {
+      "name": "session-split",
+      "defaultConsistencyLevel": "Session",
+      "enableAutomaticFailover": false,
+      "enableMultipleWriteLocations": false,
+      "enableMultipleRegions": false,
+      "enableContinuousBackup": true,
+      "testCategory": "split",
+      "includeSecondaryKey": true
+    },
+    {
+      "name": "session-mr-failover",
+      "defaultConsistencyLevel": "Session",
+      "enableAutomaticFailover": true,
+      "enableMultipleWriteLocations": false,
+      "enableMultipleRegions": true,
+      "enableContinuousBackup": false,
+      "testCategory": "multi_region",
+      "includeSecondaryKey": true
+    }
+  ]
+}

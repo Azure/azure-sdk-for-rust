@@ -518,7 +518,14 @@
     "vout",
     "Xpert",
     "xpert",
-    "yxxx"
+    "yxxx",
+    "issecret",
+    "multiwrite",
+    "rustflags",
+    "sdkci",
+    "setvariable",
+    "singlewrite",
+    "whatif"
   ],
   "ignorePaths": [
     "live-platform-matrix.json",
