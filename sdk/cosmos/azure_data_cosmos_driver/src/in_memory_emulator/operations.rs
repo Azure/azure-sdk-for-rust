@@ -996,6 +996,8 @@ pub(crate) async fn handle_operation(
     ) -> AsyncRawResponse {
         let write_lock = store.document_write_lock();
         let _write_guard = write_lock.lock().await;
+        let replication_barrier = store.replication_barrier();
+        let _replication_guard = replication_barrier.read().await;
         handle_dtx_write_transaction_locked(store, region_name, operations, start).await
     }
 
@@ -3952,6 +3954,8 @@ async fn handle_batch(
     let write_lock = store.document_write_lock();
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
+    let replication_barrier = store.replication_barrier();
+    let _replication_guard = replication_barrier.read().await;
 
     const MAX_BATCH_OPERATIONS: usize = 100;
     const MAX_BATCH_PAYLOAD_BYTES: usize = 2 * 1024 * 1024;
@@ -4593,6 +4597,8 @@ async fn handle_create(
     let write_lock = store.document_write_lock();
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
+    let replication_barrier = store.replication_barrier();
+    let _replication_guard = replication_barrier.read().await;
 
     handle_create_locked(store, region_name, parsed, request_body, start).await
 }
@@ -5075,6 +5081,8 @@ async fn handle_replace(
     let write_lock = store.document_write_lock();
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
+    let replication_barrier = store.replication_barrier();
+    let _replication_guard = replication_barrier.read().await;
 
     handle_replace_locked(store, region_name, parsed, request_body, start).await
 }
@@ -5090,6 +5098,8 @@ async fn handle_patch(
     let write_lock = store.document_write_lock();
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
+    let replication_barrier = store.replication_barrier();
+    let _replication_guard = replication_barrier.read().await;
 
     handle_patch_locked(store, region_name, parsed, request_body, start).await
 }
@@ -5737,6 +5747,8 @@ async fn handle_upsert(
     let write_lock = store.document_write_lock();
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
+    let replication_barrier = store.replication_barrier();
+    let _replication_guard = replication_barrier.read().await;
 
     handle_upsert_locked(store, region_name, parsed, request_body, start).await
 }
@@ -5969,6 +5981,8 @@ async fn handle_delete(
     let write_lock = store.document_write_lock();
     #[cfg(feature = "preview_dtx")]
     let _write_guard = write_lock.lock().await;
+    let replication_barrier = store.replication_barrier();
+    let _replication_guard = replication_barrier.read().await;
 
     handle_delete_locked(store, region_name, parsed, start).await
 }

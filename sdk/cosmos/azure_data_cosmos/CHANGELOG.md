@@ -1,6 +1,16 @@
 # Release History
 
-## 0.38.0 (Unreleased)
+## 0.39.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.38.0 (2026-09-02)
 
 ### Features Added
 
@@ -18,6 +28,7 @@
 - Extended binary JSON encoding to `query_items`: when binary encoding is enabled, queries negotiate a binary response (the request body stays text `application/query+json`) and decode binary feed pages, including the streaming cross-partition `ORDER BY` merge. Off by default and negotiated on the standard-gateway path. ([#5040](https://github.com/Azure/azure-sdk-for-rust/pull/5040))
 - Added `FeedOptions::max_fan_out` (and `FeedOptions::with_max_fan_out`) to cap how many physical partitions a cross-partition query or change feed may fan out to. Applies to `ContainerClient::query_items` and `ContainerClient::query_change_feed`. The cap is enforced only at initial query setup; a partition that splits mid-execution and pushes the fan-out higher does not abort the operation. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
 - Added resumable cross-partition streaming `ORDER BY` query support. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
+- Added hedging details to diagnostics, logs, metrics, and traces. ([#5198](https://github.com/Azure/azure-sdk-for-rust/pull/5198))
 - Added a pluggable client-side diagnostics emission layer — the `DiagnosticsHandler` trait and ordered `DiagnosticsHandlerChain` (registered via `CosmosClientBuilder::with_diagnostics_handler`) — invoked once per operation (singleton and paginated, on success and failure) with the completed `DiagnosticsContext` plus an SDK-supplied `CosmosOperationContext`; the empty default chain is a zero-overhead no-op. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 - Added the `metrics`-gated `CosmosMetricsHandler` (with `MetricsOptions`), emitting the stable `db.client.operation.duration` histogram plus per-signal opt-in metrics (`with_request_charge_metric`, `with_returned_rows_metric`) and an opt-in extended attribute set (`with_extended_attributes`); a no-op when no meter provider is registered. Each histogram declares explicit bucket boundaries (`attributes::BUCKETS_OPERATION_DURATION_SECONDS`, `BUCKETS_REQUEST_CHARGE_RU`, `BUCKETS_RETURNED_ROWS`) rather than inheriting OpenTelemetry's millisecond-scaled defaults, which would collapse every real observation of the seconds-valued duration metric into a single bucket and make latency percentiles constant. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 - Added `MetricsOptions::with_active_instance_metric`, an opt-in `azure.cosmosdb.client.active_instance.count` up-down counter reporting the number of live `CosmosClient` instances per account endpoint, keyed on `server.address` (plus `server.port` for a non-default port). ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))

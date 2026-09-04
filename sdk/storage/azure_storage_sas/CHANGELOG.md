@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Removed the `UserDelegationKey` re-export; import it from `azure_storage_common::models` directly.
+
 ### Bugs Fixed
 
 ### Other Changes

@@ -880,7 +880,7 @@ impl CosmosDriver {
                             .unwrap_or(azure_core::time::Duration::ZERO),
                     )
                     .await;
-                    execution_context = ExecutionContext::Retry;
+                    execution_context = ExecutionContext::OperationRetry;
                     continue;
                 }
             }
