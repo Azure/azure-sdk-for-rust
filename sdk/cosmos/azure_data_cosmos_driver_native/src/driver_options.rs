@@ -22,10 +22,6 @@
 //! Transport-side knobs (connection pool, user-agent suffix, workload
 //! id, correlation id) live on the runtime options, not here.
 //!
-//! See [`sdk/cosmos/docs/specs/0019-native-wrapper.md`] section 4.2.
-//!
-//! [`sdk/cosmos/docs/specs/0019-native-wrapper.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md
-
 use std::ffi::{c_char, CStr};
 use std::sync::Arc;
 
@@ -133,7 +129,7 @@ unsafe fn decode_preferred_regions(
 // Flat single-call construction (cosmos_driver_options_config_t /
 // cosmos_driver_options_build)
 //
-// Per sdk/cosmos/docs/adrs/0005-flat-native-abi-data-model.md: a host fills out
+// Per ADR 0005, Flat native ABI data model, a host fills out
 // one flat `#[repr(C)]` struct and hands it across the boundary in a single
 // `cosmos_driver_options_build` call. The account stays a handle (it owns
 // `Arc`-shared state and cannot round-trip as bytes). This is the only

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 //! Multi-region live-account integration tests for cross-region request
-//! hedging (`sdk/cosmos/docs/specs/0009-cross-region-hedging.md`).
+//! hedging (Spec 0009: Cross-region hedging).
 //!
 //! **Prereqs**: ≥2-region read account. The `test-resources.bicep` template
 //! provisions East US 2 + West US 3 when `enableMultipleRegions=true`. A
@@ -63,7 +63,7 @@ const PRIMARY_READ_DELAY: Duration = Duration::from_millis(1500);
 /// Builds a runtime-level [`OperationOptions`] that enables hedging with a
 /// custom threshold. Tests pass this into the harness so the
 /// driver-runtime layer of the option-resolution view
-/// (per `sdk/cosmos/docs/specs/0002-hierarchical-configuration-model.md`)
+/// (per Spec 0002: Hierarchical configuration model)
 /// carries the strategy for every
 /// operation issued by the test.
 fn hedging_operation_options(threshold: Duration) -> OperationOptions {

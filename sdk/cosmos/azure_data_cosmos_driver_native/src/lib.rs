@@ -6,13 +6,9 @@
 //!
 //! This crate exposes a schema-agnostic completion-queue-style FFI suitable
 //! for cross-language SDK reuse (.NET, Java, Go, Python, native C/C++). The
-//! design is fully specified in [`sdk/cosmos/docs/specs/0019-native-wrapper.md`],
-//! with a picture-first overview in
-//! [`sdk/cosmos/docs/specs/0020-native-async-invocation.md`].
+//! design uses a completion queue and flat C-compatible data structures.
 //!
 //! [`azure_data_cosmos_driver`]: https://docs.rs/azure_data_cosmos_driver
-//! [`sdk/cosmos/docs/specs/0019-native-wrapper.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md
-//! [`sdk/cosmos/docs/specs/0020-native-async-invocation.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0020-native-async-invocation.md
 
 // We routinely dereference C-supplied pointers at the FFI boundary; that is
 // the entire point of the crate.

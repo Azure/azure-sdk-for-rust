@@ -8,6 +8,17 @@ This file contains coding guidelines and architectural patterns specific to the 
 
 ## Core Principles
 
+### Documentation navigation
+
+- Start with [`docs/README.md`](docs/README.md) to inventory Cosmos project
+  documentation.
+- Read [`docs/Project.md`](docs/Project.md) and
+  [`docs/Architecture.md`](docs/Architecture.md) for project and architecture
+  context, then use the indexes in `docs/README.md` to find relevant specs,
+  ADRs, and reports.
+- Do not load the entire documentation set when only a few indexed documents
+  are relevant.
+
 ### Design guidelines
 
 - Follow the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html) as the primary reference for API design, error handling, async patterns, and module organization unless they conflict with Cosmos-specific requirements outlined below or in other `cosmos.*.instructions.md` files.
@@ -558,6 +569,22 @@ Every public API should document:
 - **Performance**: RU/s implications, if relevant
 - **Partition Key**: Whether the operation is partition-scoped
 
+### Source comment references
+
+- Rust source comments and rendered Rustdoc must not contain direct paths or
+  links to Markdown files. Avoid stale pseudo-links such as repository-relative
+  paths written as text or Markdown links.
+- `include_str!` may embed Markdown in a `doc` attribute, including crate
+  READMEs and shared Rustdoc fragments. The compiler validates these paths, and
+  the path is not rendered in the generated documentation.
+- Public doc comments must not reference Cosmos specs or ADRs.
+- Internal doc comments on private or `pub(crate)` items may reference a spec
+  or ADR only by its number and title, for example, "Spec 0017: Patch handler"
+  or "ADR 0005: Flat native ABI data model."
+- Non-doc comments may use the same number-and-title form.
+- Put detailed rationale in `docs/`; use `docs/README.md` to locate it rather
+  than embedding a file path in Rust source.
+
 ### Comment Brevity (IMPORTANT)
 
 Keep comments **short and dense**. Long, chatty comment blocks are noise: they age badly, bury the
@@ -570,7 +597,8 @@ signal, and read as filler.
   Comment only a non-obvious setup or a subtle invariant.
 - **Never** restate an argument three ways, narrate the diff ("this used to be X, now it's Y"),
   re-explain something already covered by a nearby doc comment, or write a mini design doc inline.
-  Link to the spec/HLD instead.
+  Refer to an applicable spec by number and title only when the source comment
+  rules above allow it.
 - When a rationale really needs paragraphs, it belongs in `docs/`, not in the source.
 
 ```rust
@@ -586,6 +614,9 @@ signal, and read as filler.
 
 ## Additional Resources
 
+- [Cosmos documentation index](docs/README.md)
+- [Cosmos project overview](docs/Project.md)
+- [Cosmos architecture overview](docs/Architecture.md)
 - [Azure Cosmos DB REST API Reference](https://learn.microsoft.com/rest/api/cosmos-db/)
 - [Cosmos DB Best Practices](https://learn.microsoft.com/azure/cosmos-db/best-practice-dotnet)
 - [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html)

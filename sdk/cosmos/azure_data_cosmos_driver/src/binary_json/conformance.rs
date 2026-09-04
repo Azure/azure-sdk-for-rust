@@ -4,7 +4,7 @@
 //! Encode-direction conformance tests for the Cosmos binary JSON codec.
 //!
 //! These tests implement the encoder conformance requirements of the
-//! wire-format spec (`docs/BINARY_ENCODING_RFC.md` §7 "Canonical encoding" and
+//! wire-format specification (§7 "Canonical encoding" and
 //! Appendix A "Golden test vectors"). Decoder conformance (§8) is covered by the
 //! per-form tests in [`reader`](super::reader) and [`de`](super::de); this
 //! module fills the previously-missing encode side.
