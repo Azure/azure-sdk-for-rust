@@ -19,6 +19,7 @@ azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default
 futures.workspace = true
 openssl = { workspace = true, optional = true }
 pin-project.workspace = true
+reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
@@ -39,7 +40,11 @@ tokio.workspace = true
 tracing-subscriber.workspace = true
 
 [features]
-default = ["azure_core/default"]
+default = ["azure_core/default", "reqwest_rustls"]
+reqwest = ["dep:reqwest", "reqwest/rustls", "azure_core/reqwest"]
+# Enables the custom token proxy used by AKS workload identity binding.
+# Adds Reqwest and Azure Core's rustls-based Reqwest transport.
+reqwest_rustls = ["reqwest", "azure_core/reqwest_rustls"]
 tokio = ["dep:tokio", "azure_core/tokio", "tokio/process"]
 client_certificate = ["openssl"]
 
