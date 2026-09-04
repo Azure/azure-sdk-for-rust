@@ -1,10 +1,21 @@
 # Release History
 
-## 0.38.0 (Unreleased)
+## 0.39.0 (Unreleased)
 
 ### Features Added
 
 - Added `QueryPlanMode::{LocalPreferred, GatewayOnly}`, `CosmosClientOptions::with_query_plan_mode`, `CosmosClientBuilder::with_query_plan_mode`, and `QueryOptions::with_query_plan_mode`, allowing applications to force Gateway query planning globally or for an individual query as a livesite mitigation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.38.0 (2026-09-02)
+
+### Features Added
+
 - Added preview `PatchStrategy`, `PatchItemOptions::with_strategy`, and `PatchItemOptions::with_precondition`; the default `Auto` strategy uses one server request for retry-safe lists of at most 10 instructions and client-side RMW otherwise, with marker-backed tracking only for non-retry-safe lists. ([#5196](https://github.com/Azure/azure-sdk-for-rust/pull/5196))
 - Added `PatchTrackingId`, `PatchInstructions::is_retry_safe`, `PatchItemOptions::with_tracking_id`, `PatchItemOptions::with_tracking_capacity`, `PatchItemOptions::with_tracking_retention_seconds`, `ItemResponse::patch_tracking_id`, `CosmosError::patch_tracking_id`, `FaultInjectionErrorType::ResponseTimeoutAfterService`, and public PATCH tracking property, retention, and default-capacity constants for bounded duplicate suppression across application retries. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
 - Added `CosmosClientBuilder::with_partition_key_range_cache_enabled` to disable partition topology caching and `/pkranges` requests when only topology-independent operations are needed. ([#5174](https://github.com/Azure/azure-sdk-for-rust/pull/5174))
