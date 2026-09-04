@@ -254,19 +254,6 @@ impl OperationOverrides {
                 HeaderName::from_static(header_name),
                 HeaderValue::from(continuation.clone()),
             );
-
-            // For change feed reads, the per-partition continuation (carried
-            // via `If-None-Match`) fully describes the resume position. Any
-            // start-from marker the operation set for not-yet-polled partitions
-            // (e.g. `If-Modified-Since` for a `PointInTime` start) must not
-            // co-exist with it, otherwise the request carries two conflicting
-            // position headers. The `Now` start marker (`If-None-Match: *`) is
-            // already overwritten above by this same header insert.
-            if continuation_as_if_none_match {
-                headers.remove(HeaderName::from_static(
-                    request_header_names::IF_MODIFIED_SINCE,
-                ));
-            }
         }
 
         Ok(())
@@ -4982,12 +4969,10 @@ mod tests {
     }
 
     #[test]
-    fn build_transport_request_change_feed_continuation_drops_if_modified_since() {
+    fn build_transport_request_change_feed_continuation_keeps_if_modified_since() {
         // PointInTime start sets If-Modified-Since on the shared operation.
-        // Once a partition has a continuation (ETag) it must resume purely
-        // from that ETag (sent as If-None-Match); the stale start marker must
-        // not co-exist, otherwise the request carries two conflicting
-        // position headers.
+        // Merged partitions require the original timestamp alongside every
+        // ETag continuation so the backend can filter interleaved parent LSNs.
         let pk_def = test_partition_key_definition("/partition_key");
         let target = crate::models::FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
         let operation = CosmosOperation::change_feed(test_container(), Some(target))
@@ -5024,14 +5009,12 @@ mod tests {
             Some("\"etag-123\"".to_string()),
             "continuation must be sent as If-None-Match"
         );
-        assert!(
-            request
-                .headers
-                .get_optional_str(&HeaderName::from_static(
-                    request_header_names::IF_MODIFIED_SINCE
-                ))
-                .is_none(),
-            "stale PointInTime start marker must be dropped once a continuation is present"
+        assert_eq!(
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::IF_MODIFIED_SINCE
+            )),
+            Some("Mon, 01 Jan 2024 00:00:00 GMT"),
+            "PointInTime start marker must remain alongside the continuation"
         );
     }
 

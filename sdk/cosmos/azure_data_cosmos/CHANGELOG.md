@@ -10,6 +10,8 @@
 
 ### Bugs Fixed
 
+- Added partition-merge support and preserved point-in-time change feed filtering across merged partitions by retaining `If-Modified-Since` alongside continuations on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
+
 ### Other Changes
 
 ## 0.38.0 (2026-09-02)

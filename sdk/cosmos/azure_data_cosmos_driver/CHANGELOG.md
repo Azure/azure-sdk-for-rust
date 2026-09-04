@@ -10,6 +10,8 @@
 
 ### Bugs Fixed
 
+- Added partition-merge routing support, advertised the merge capability bits, and retained point-in-time change feed filtering across merged partitions on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
+
 ### Other Changes
 
 ## 0.7.0 (2026-09-02)
