@@ -142,13 +142,6 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
     ) -> Result<Pager<ListBlobsResponse, AutoFormat>> {
         let options = options.unwrap_or_default().into_owned();
-        #[cfg(not(feature = "arrow"))]
-        if options.end_before.is_some() {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
-                "end_before requires the `arrow` feature",
-            ));
-        }
         let pager_options = options.method_options.clone();
         let client = Arc::new(BlobContainerClient {
             endpoint: self.endpoint.clone(),
@@ -205,13 +198,6 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobsHierarchicalOptions<'_>>,
     ) -> Result<Pager<ListBlobsHierarchicalResponse, AutoFormat>> {
         let options = options.unwrap_or_default().into_owned();
-        #[cfg(not(feature = "arrow"))]
-        if options.end_before.is_some() {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
-                "end_before requires the `arrow` feature",
-            ));
-        }
         let delimiter = delimiter.to_string();
         let pager_options = options.method_options.clone();
         let client = Arc::new(BlobContainerClient {
@@ -450,16 +436,6 @@ mod tests {
                 ["page1-a.txt", "page1-b.txt", "page2-a.txt", "page2-b.txt"]
             );
             Ok(())
-        }
-
-        #[test]
-        fn list_blobs_rejects_end_before_without_arrow() {
-            let client = container_client_with(xml_mock_client_with_accept("application/xml"));
-            let options = BlobContainerClientListBlobsOptions {
-                end_before: Some("cc.txt".to_string()),
-                ..Default::default()
-            };
-            assert!(client.list_blobs(Some(options)).is_err());
         }
 
         #[tokio::test]

@@ -114,8 +114,8 @@ impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptio
 /// Options to be passed to [`BlobContainerClient::list_blobs`](crate::BlobContainerClient::list_blobs).
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientListBlobsOptions<'a> {
-    /// Filters the results to return only names that are ordered before this value. Requires the
-    /// `arrow` feature.
+    /// Filters the results to return only names that are ordered before this value.
+    #[cfg(feature = "arrow")]
     pub end_before: Option<String>,
 
     /// Specify to include additional, optional information.
@@ -143,6 +143,7 @@ pub struct BlobContainerClientListBlobsOptions<'a> {
 impl BlobContainerClientListBlobsOptions<'_> {
     pub(crate) fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
         BlobContainerClientListBlobsOptions {
+            #[cfg(feature = "arrow")]
             end_before: self.end_before,
             include: self.include,
             marker: self.marker,
@@ -162,7 +163,10 @@ impl BlobContainerClientListBlobsOptions<'_> {
         method_options: ClientMethodOptions<'static>,
     ) -> BlobContainerClientListBlobsInternalOptions<'static> {
         BlobContainerClientListBlobsInternalOptions {
+            #[cfg(feature = "arrow")]
             end_before: self.end_before.clone(),
+            #[cfg(not(feature = "arrow"))]
+            end_before: None,
             include: self.include.clone(),
             marker: self.marker.clone(),
             maxresults: self.maxresults,
@@ -177,8 +181,8 @@ impl BlobContainerClientListBlobsOptions<'_> {
 /// Options to be passed to [`BlobContainerClient::list_blobs_hierarchical`](crate::BlobContainerClient::list_blobs_hierarchical).
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientListBlobsHierarchicalOptions<'a> {
-    /// Filters the results to return only names that are ordered before this value. Requires the
-    /// `arrow` feature.
+    /// Filters the results to return only names that are ordered before this value.
+    #[cfg(feature = "arrow")]
     pub end_before: Option<String>,
 
     /// Specify to include additional, optional information.
@@ -206,6 +210,7 @@ pub struct BlobContainerClientListBlobsHierarchicalOptions<'a> {
 impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
     pub(crate) fn into_owned(self) -> BlobContainerClientListBlobsHierarchicalOptions<'static> {
         BlobContainerClientListBlobsHierarchicalOptions {
+            #[cfg(feature = "arrow")]
             end_before: self.end_before,
             include: self.include,
             marker: self.marker,
@@ -225,7 +230,10 @@ impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
         method_options: ClientMethodOptions<'static>,
     ) -> BlobContainerClientListBlobsHierarchicalInternalOptions<'static> {
         BlobContainerClientListBlobsHierarchicalInternalOptions {
+            #[cfg(feature = "arrow")]
             end_before: self.end_before.clone(),
+            #[cfg(not(feature = "arrow"))]
+            end_before: None,
             include: self.include.clone(),
             marker: self.marker.clone(),
             maxresults: self.maxresults,
