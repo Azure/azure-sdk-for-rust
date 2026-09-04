@@ -640,8 +640,7 @@ mod tests {
     /// Canonical wire JSON for the `PatchInstructions` exercised by the
     /// serialize/deserialize tests below. Kept as a single source of
     /// truth so the two halves of the (former) round-trip test cannot
-    /// drift apart silently. Matches `PATCH_HANDLER_SPEC.md` §"Wire
-    /// format".
+    /// drift apart silently. Matches Spec 0017: Patch handler, "Wire format."
     const PATCH_SPEC_WIRE_JSON: &str = concat!(
         r#"{"operations":["#,
         r#"{"op":"set","path":"/age","value":31},"#,

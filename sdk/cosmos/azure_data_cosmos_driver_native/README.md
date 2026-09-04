@@ -5,11 +5,14 @@
 C ABI wrapper around [`azure_data_cosmos_driver`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver),
 designed for cross-language SDK reuse (.NET, Java, Go, Python, native C/C++).
 The full design is in
-[NATIVE_WRAPPER_SPEC.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md);
+[the native wrapper specification](../docs/specs/0019-native-wrapper.md);
 the picture-first overview is in
-[ASYNC_INVOCATION_ARCHITECTURE.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md);
+[the native async invocation overview](../docs/specs/0020-native-async-invocation.md);
 this README is a short orientation and a quick-start for each supported
 binding language.
+
+See the [Cosmos SDK project documentation](../docs/README.md) for the broader
+project and architecture context.
 
 ## What this crate ships
 
@@ -25,7 +28,7 @@ binding language.
 
 The wrapper supports end-to-end CRUD against a real Cosmos account. The
 remaining items below are surface-area additions on top of a functional core.
-See [the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md)
+See [the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md)
 for the full design.
 
 ### Capability matrix (current)
@@ -1295,7 +1298,7 @@ if __name__ == "__main__":
 7. **Single-runtime caching.** Drivers are cached by endpoint URL on the
    `cosmos_runtime_t` that created them. Multiple `cosmos_runtime_t`
    instances do **not** share their caches — see
-   [section 4.4.1 in the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md)
+   [section 4.4.1 in the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md)
    for the full contract.
 
 ## Repository archaeology — files removed by PR #4103
@@ -1308,7 +1311,7 @@ reintroduced in this crate; their content now lives elsewhere:
 | Old file                                                     | New location                                                                                                                                                           |
 | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `azurecosmos.pc.in` (pkg-config template)                    | This crate ships a sibling `azurecosmosdriver.pc.in` with the same shape but a new package name.                                                                       |
-| `docs/next_generation_sdks_design_principles.md`             | Folded into [NATIVE_WRAPPER_SPEC.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md). |
+| `docs/next_generation_sdks_design_principles.md`             | Folded into [sdk/cosmos/docs/specs/0019-native-wrapper.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md). |
 | `c_tests/test_common.h` runtime / client / database fixtures | Re-added incrementally as the corresponding C entry points land.                                                                                                       |
 
 If you are spelunking the git history of the old crate looking for a behavior

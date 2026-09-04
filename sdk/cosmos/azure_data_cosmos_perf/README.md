@@ -4,6 +4,9 @@ A CLI tool for performance and scale testing the Azure Cosmos DB Rust SDK. It ru
 point reads, single-partition queries, bounded change feed reads, upserts, and creates
 concurrently and reports latency statistics at configurable intervals.
 
+See the [Cosmos SDK project documentation](../docs/README.md) for project and
+architecture context.
+
 ## Prerequisites
 
 - Rust toolchain (MSRV 1.88)

@@ -2069,7 +2069,7 @@ impl DiagnosticsContextBuilder {
         //
         // Both histories are then bounded by the same `max_request_diagnostics`
         // cap as the attempt list, so a retry storm cannot grow them without
-        // limit (DIAGNOSTICS-CONTRACT.md §8). The pre-truncation lengths are
+        // limit (Spec 0018: Diagnostics contract, §8). The pre-truncation lengths are
         // retained so the truncation is explicit rather than silent.
         let cap = self.options.max_request_diagnostics();
         let requested_regions =
@@ -3525,7 +3525,7 @@ fn ordered_unique_regions(requests: &[RequestDiagnostics]) -> Vec<Region> {
 }
 
 /// Bounds a materialized region history to `cap` entries, independently of
-/// attempt count, per the bounded-size guarantee in `DIAGNOSTICS-CONTRACT.md`
+/// attempt count, per the bounded-size guarantee in Spec 0018: Diagnostics contract,
 /// §8.
 ///
 /// Under a `410`/`429` retry storm the dispatch history grows one entry per
@@ -5311,7 +5311,7 @@ mod tests {
         // The dispatch history is materialized from the FULL attempt list, so a
         // retry storm that compacts `requests` down to the cap must not lose the
         // hedge fan-out recorded mid-storm. But the history itself is also
-        // bounded (DIAGNOSTICS-CONTRACT.md §8) — the elision keeps head and tail
+        // bounded (Spec 0018: Diagnostics contract, §8) — the elision keeps head and tail
         // and the exact count stays available.
         let cap = 16;
         let options = Arc::new(
@@ -5350,7 +5350,7 @@ mod tests {
         assert!(ctx.requests().len() <= cap);
         assert!(ctx.compaction().is_some());
         // ...and so is the dispatch history, independently of attempt count
-        // (DIAGNOSTICS-CONTRACT.md §8) — but the elision is explicit, not
+        // (Spec 0018: Diagnostics contract, §8) — but the elision is explicit, not
         // silent: the exact count is still reported. 40 retries + the hedge's
         // reconstructed primary leg + the alternate's own attempt.
         assert_eq!(ctx.total_requested_regions(), 42);
