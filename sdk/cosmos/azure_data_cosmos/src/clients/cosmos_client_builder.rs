@@ -10,7 +10,7 @@ use crate::{
     diagnostics::{CosmosClientInfo, DiagnosticsHandler},
     options::{
         BinaryEncodingOptions, CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
-        QueryPlanMode, ThroughputControlGroupOptions, UserAgentSuffix,
+        ThroughputControlGroupOptions, UserAgentSuffix,
     },
     AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
 };
@@ -202,12 +202,6 @@ impl CosmosClientBuilder {
     /// options here takes precedence over that variable.
     pub fn with_binary_encoding_options(mut self, options: BinaryEncodingOptions) -> Self {
         self.options.binary_encoding = Some(options);
-        self
-    }
-
-    /// Selects how cross-partition query plans are resolved.
-    pub fn with_query_plan_mode(mut self, mode: QueryPlanMode) -> Self {
-        self.options.operation.query_plan_mode = Some(mode);
         self
     }
 
@@ -448,7 +442,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        options::{PartitionFailoverOptions, Region, UserAgentSuffix},
+        options::{PartitionFailoverOptions, QueryPlanMode, Region, UserAgentSuffix},
         RoutingStrategy,
     };
 
@@ -501,16 +495,6 @@ mod tests {
         let suffix = UserAgentSuffix::new("myapp-westus2");
         let builder = CosmosClientBuilder::new().with_user_agent_suffix(suffix.clone());
         assert_eq!(builder.options.user_agent_suffix.as_ref(), Some(&suffix));
-    }
-
-    #[test]
-    fn query_plan_mode_setter_updates_account_operation_options() {
-        let builder = CosmosClientBuilder::new().with_query_plan_mode(QueryPlanMode::GatewayOnly);
-
-        assert_eq!(
-            builder.options.operation.query_plan_mode,
-            Some(QueryPlanMode::GatewayOnly)
-        );
     }
 
     fn test_account() -> azure_data_cosmos_driver::models::AccountReference {

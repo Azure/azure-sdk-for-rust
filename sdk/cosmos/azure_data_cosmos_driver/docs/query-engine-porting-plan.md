@@ -158,11 +158,11 @@ Normal builds resolve cross-partition query plans in this order:
 1. Local Rust planner.
 2. Gateway query-plan endpoint.
 
-Set `DriverOptionsBuilder::with_query_plan_mode(QueryPlanMode::GatewayOnly)` to
-change the default for a driver, or set the mode in `OperationOptions` to
-override it for one query. The Rust SDK exposes the same scopes through
-`CosmosClientBuilder::with_query_plan_mode` and
-`QueryOptions::with_query_plan_mode`.
+Set `QueryPlanMode::GatewayOnly` on `OperationOptions` to bypass local planning.
+Use `DriverOptionsBuilder::with_operation_options` or
+`CosmosClientBuilder::with_default_operation_options` to change the default for
+a driver or client, and the operation-specific `with_operation_options` setter
+to override it for one query.
 
 Query-plan mode follows the standard operation → account → runtime →
 environment option hierarchy. `AZURE_COSMOS_QUERY_PLAN_MODE` supplies the

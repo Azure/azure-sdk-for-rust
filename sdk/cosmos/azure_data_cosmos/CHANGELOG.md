@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `QueryPlanMode::{LocalPreferred, GatewayOnly}`, `CosmosClientOptions::with_query_plan_mode`, `CosmosClientBuilder::with_query_plan_mode`, and `QueryOptions::with_query_plan_mode`, allowing applications to force Gateway query planning globally or for an individual query as a livesite mitigation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
+- Added `QueryPlanMode::{LocalPreferred, GatewayOnly}` to `OperationOptions`, allowing applications to force Gateway query planning globally or for an individual query as a livesite mitigation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
 
 ### Breaking Changes
 

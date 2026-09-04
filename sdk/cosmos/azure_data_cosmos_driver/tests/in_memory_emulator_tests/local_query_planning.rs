@@ -72,7 +72,11 @@ async fn setup_with_driver_options(
     let driver = runtime
         .create_driver(
             DriverOptions::builder(account)
-                .with_query_plan_mode(mode)
+                .with_operation_options(
+                    OperationOptionsBuilder::new()
+                        .with_query_plan_mode(mode)
+                        .build(),
+                )
                 .with_partition_key_range_cache_enabled(partition_key_range_cache_enabled)
                 .build(),
         )
@@ -136,8 +140,20 @@ fn query(
     container: &azure_data_cosmos_driver::models::ContainerReference,
     text: &str,
 ) -> CosmosOperation {
+    query_with_parameters(container, text, serde_json::json!([]))
+}
+
+fn query_with_parameters(
+    container: &azure_data_cosmos_driver::models::ContainerReference,
+    text: &str,
+    parameters: serde_json::Value,
+) -> CosmosOperation {
     CosmosOperation::query_items(container.clone(), Some(FeedRange::full())).with_body(
-        serde_json::to_vec(&serde_json::json!({"query": text, "parameters": []})).unwrap(),
+        serde_json::to_vec(&serde_json::json!({
+            "query": text,
+            "parameters": parameters,
+        }))
+        .unwrap(),
     )
 }
 
@@ -177,7 +193,6 @@ async fn eligible_query_skips_gateway_query_plan() {
     assert_eq!(recorder.document_query_count(), 1);
 }
 
-#[cfg(not(feature = "__internal_native_query_plan"))]
 #[tokio::test]
 async fn contradictory_query_short_circuits_all_query_io() {
     let (_emulator, recorder, driver) = setup().await;
@@ -207,6 +222,39 @@ async fn contradictory_query_short_circuits_all_query_io() {
         .await
         .unwrap()
         .is_none());
+    assert_eq!(recorder.query_plan_count(), 0);
+    assert_eq!(recorder.routing_metadata_count(), 0);
+    assert_eq!(recorder.document_query_count(), 0);
+}
+
+#[tokio::test]
+async fn gateway_only_contradiction_without_partition_topology_still_fails() {
+    let (_emulator, recorder, driver) =
+        setup_with_driver_options(QueryPlanMode::GatewayOnly, false).await;
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .unwrap();
+    recorder.clear();
+
+    let error = driver
+        .plan_operation(
+            query(
+                &container,
+                "SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'",
+            ),
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        )
+        .await
+        .err()
+        .expect("GatewayOnly must not use the local contradiction bypass");
+
+    assert_eq!(
+        error.status(),
+        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
+    );
     assert_eq!(recorder.query_plan_count(), 0);
     assert_eq!(recorder.routing_metadata_count(), 0);
     assert_eq!(recorder.document_query_count(), 0);
@@ -372,9 +420,61 @@ async fn unsupported_families_fall_back_to_gateway_once() {
             FallbackOutcome::Plan => {
                 assert!(result.is_ok(), "{name} should produce a Gateway plan");
             }
+
             FallbackOutcome::Error => {
                 assert!(result.is_err(), "{name} should surface a planning error");
             }
         }
+    }
+}
+
+#[tokio::test]
+async fn vector_queries_fall_back_to_gateway_once() {
+    let (_emulator, recorder, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .unwrap();
+
+    let scenarios = [
+        query(
+            &container,
+            "SELECT TOP 5 c.id FROM c \
+             ORDER BY VectorDistance(c.vector, [0.1, 0.2])",
+        ),
+        query_with_parameters(
+            &container,
+            "SELECT VALUE c.id FROM c \
+             ORDER BY VectorDistance(c.vector, @vector, true) \
+             OFFSET @offset LIMIT @limit",
+            serde_json::json!([
+                {"name": "@vector", "value": [0.1, 0.2]},
+                {"name": "@offset", "value": 2},
+                {"name": "@limit", "value": 3}
+            ]),
+        ),
+    ];
+
+    for operation in scenarios {
+        recorder.clear();
+        let result = driver
+            .plan_operation(
+                operation,
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            )
+            .await;
+
+        assert_eq!(
+            recorder.query_plan_count(),
+            1,
+            "vector query must issue exactly one Gateway query-plan request"
+        );
+        assert!(
+            result.is_err(),
+            "the in-memory Gateway cannot synthesize authoritative vector metadata"
+        );
+        assert_eq!(recorder.document_query_count(), 0);
     }
 }

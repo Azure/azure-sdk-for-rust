@@ -4,9 +4,7 @@
 //! Feed/query options: paging, query metrics, and continuation tokens.
 
 use azure_data_cosmos_driver::models::{MaxItemCountHint, SessionToken};
-use azure_data_cosmos_driver::options::{
-    OperationOptions, PlanOptions, QueryPlanMode, DEFAULT_MAX_FAN_OUT,
-};
+use azure_data_cosmos_driver::options::{OperationOptions, PlanOptions, DEFAULT_MAX_FAN_OUT};
 
 use crate::feed::ContinuationToken;
 
@@ -147,12 +145,6 @@ pub struct QueryOptions {
 }
 
 impl QueryOptions {
-    /// Selects how the query plan is resolved for this query.
-    pub fn with_query_plan_mode(mut self, mode: QueryPlanMode) -> Self {
-        self.operation.query_plan_mode = Some(mode);
-        self
-    }
-
     /// Sets the session token for this request.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
         self.session_token = Some(session_token.into());
@@ -226,15 +218,5 @@ mod tests {
         let feed = FeedOptions::default().with_max_fan_out(250);
         let plan_options = feed.to_plan_options();
         assert_eq!(plan_options.max_fan_out, 250);
-    }
-
-    #[test]
-    fn query_plan_mode_setter_updates_operation_options() {
-        let options = QueryOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly);
-
-        assert_eq!(
-            options.operation.query_plan_mode,
-            Some(QueryPlanMode::GatewayOnly)
-        );
     }
 }

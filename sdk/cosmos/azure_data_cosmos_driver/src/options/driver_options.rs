@@ -8,7 +8,7 @@ use std::sync::Arc;
 use crate::{
     models::AccountReference,
     options::{
-        HedgingOptions, OperationOptions, PartitionFailoverOptions, QueryPlanMode, Region,
+        HedgingOptions, OperationOptions, PartitionFailoverOptions, Region,
         ThroughputControlGroupOptions, ThroughputControlGroupRegistry, UserAgentSuffix,
     },
 };
@@ -345,17 +345,6 @@ impl DriverOptionsBuilder {
         self
     }
 
-    /// Selects how cross-partition query plans are resolved.
-    ///
-    /// The environment-only `AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE` break-glass
-    /// setting takes precedence over this value.
-    pub fn with_query_plan_mode(mut self, mode: QueryPlanMode) -> Self {
-        self.operation_options
-            .get_or_insert_default()
-            .query_plan_mode = Some(mode);
-        self
-    }
-
     /// Builds the [`DriverOptions`].
     ///
     /// When [`with_partition_failover_options`](Self::with_partition_failover_options)
@@ -506,17 +495,6 @@ mod tests {
     fn query_plan_mode_is_unset_by_default() {
         let options = DriverOptionsBuilder::new(test_account()).build_from_env(&|_| None);
         assert_eq!(options.operation_options().query_plan_mode, None);
-    }
-
-    #[test]
-    fn query_plan_mode_builder_is_honored_without_override() {
-        let options = DriverOptionsBuilder::new(test_account())
-            .with_query_plan_mode(QueryPlanMode::GatewayOnly)
-            .build_from_env(&|_| None);
-        assert_eq!(
-            options.operation_options().query_plan_mode,
-            Some(QueryPlanMode::GatewayOnly)
-        );
     }
 
     // ── Partition-failover / PPCB end-to-end env resolution ─────────────────
