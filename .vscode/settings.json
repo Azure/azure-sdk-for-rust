@@ -1,4 +1,10 @@
 {
+  "files.readonlyInclude": {
+    "**/API.md": true,
+    "**/API.comments.diff": true,
+    "**/API.comments.patch": true,
+    "**/API.md.map": true
+  },
   "azure-pipelines.1ESPipelineTemplatesSchemaFile": true,
   "cmake.ignoreCMakeListsMissing": true,
   "cSpell.enabled": true,
