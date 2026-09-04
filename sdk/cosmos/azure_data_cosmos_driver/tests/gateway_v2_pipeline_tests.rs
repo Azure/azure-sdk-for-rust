@@ -35,7 +35,7 @@
 //!    transport boundary.
 //!
 //! 6. **Capabilities header pin** — every outgoing request carries
-//!    `x-ms-cosmos-sdk-supportedcapabilities = "8"`. Asserted via the first
+//!    `x-ms-cosmos-sdk-supportedcapabilities = "11"`. Asserted via the first
 //!    captured request through the mock factory.
 //!
 //! ## Why `__internal_mocking`?
@@ -337,16 +337,11 @@ async fn v2_rntbd_never_emits_both_consistency_tokens() {
 // ----------------------------------------------------------------------------
 
 /// Every outgoing HTTP request must carry
-/// `x-ms-cosmos-sdk-supportedcapabilities: 8`. The bitmask "8" is
-/// `IGNORE_UNKNOWN_RNTBD_TOKENS` (bit 0x08), matching the
-/// `SUPPORTED_CAPABILITIES_IGNORE_UNKNOWN_RNTBD_TOKENS` constant.
-/// Gateway 2.0 inspects this to decide whether
-/// the SDK can tolerate unknown RNTBD tokens; it MUST stay pinned to
-/// "8" in this PR. Additional bits (`PARTITION_MERGE`,
-/// `CHANGE_FEED_WITH_START_TIME_POST_MERGE`) will be added in a
-/// follow-up once their handling is wired through.
+/// `x-ms-cosmos-sdk-supportedcapabilities: 11`. The bitmask combines
+/// `PARTITION_MERGE` (1), `CHANGE_FEED_WITH_START_TIME_POST_MERGE` (2),
+/// and `IGNORE_UNKNOWN_RNTBD_TOKENS` (8).
 #[tokio::test]
-async fn capabilities_header_value_is_pinned_to_eight() {
+async fn capabilities_header_value_is_pinned_to_eleven() {
     const CAPABILITIES: &str = "x-ms-cosmos-sdk-supportedcapabilities";
 
     let (runtime, transport) = capturing_runtime().await;
@@ -364,7 +359,7 @@ async fn capabilities_header_value_is_pinned_to_eight() {
         });
         assert_eq!(
             value.as_deref(),
-            Some("8"),
+            Some("11"),
             "capabilities header missing or wrong on request to {}",
             req.url
         );

@@ -68,6 +68,20 @@
           "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'binary_encoding' }"
         }
       }
+    },
+    {
+      "Agent": {
+        "ubuntu": {
+          "OSVmImage": "env:LINUXVMIMAGE",
+          "Pool": "env:LINUXPOOL"
+        }
+      },
+      "RustToolchainName": ["stable"],
+      "Account Settings": {
+        "Session Partition Merge Preview": {
+          "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; enablePartitionMerge = $true; testCategory = 'merge' }"
+        }
+      }
     }
   ]
 }

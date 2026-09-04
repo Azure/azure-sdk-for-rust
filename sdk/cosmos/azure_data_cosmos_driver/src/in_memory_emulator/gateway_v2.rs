@@ -85,6 +85,7 @@ struct RequestMetadata {
     continuation: Option<String>,
     session_token: Option<String>,
     match_condition: Option<String>,
+    if_modified_since: Option<String>,
     effective_partition_key: Option<String>,
     start_epk: Option<String>,
     end_epk: Option<String>,
@@ -271,6 +272,9 @@ fn decode_request(
         };
         request.headers_mut().insert(header, value);
     }
+    if let Some(value) = metadata.if_modified_since {
+        request.headers_mut().insert("if-modified-since", value);
+    }
     if let Some(value) = metadata.start_epk {
         request.headers_mut().insert("x-ms-start-epk", value);
         request
@@ -358,6 +362,9 @@ fn decode_metadata(
             }
             RntbdRequestToken::Match => {
                 metadata.match_condition = Some(expect_string(kind, token.value)?)
+            }
+            RntbdRequestToken::IfModifiedSince => {
+                metadata.if_modified_since = Some(expect_string(kind, token.value)?)
             }
             RntbdRequestToken::StartEpkHash => {
                 metadata.start_epk = Some(expect_hex(kind, token.value)?)

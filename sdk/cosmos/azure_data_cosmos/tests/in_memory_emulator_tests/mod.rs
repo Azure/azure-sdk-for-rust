@@ -22,6 +22,7 @@ pub mod end_to_end;
 pub mod handler_propagation;
 pub mod hpk;
 pub mod partition_key_equality;
+pub mod partition_merge;
 pub mod partition_range_drain;
 pub mod query_comparison;
 pub mod session_token;
