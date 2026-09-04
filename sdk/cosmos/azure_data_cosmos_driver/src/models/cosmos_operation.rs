@@ -359,6 +359,35 @@ impl CosmosOperation {
         self.resource_reference.container()
     }
 
+    /// Retargets this operation to refreshed metadata for the same named
+    /// container and recomputes logical partition routing.
+    pub(crate) fn retarget_container(
+        &mut self,
+        replacement: ContainerReference,
+    ) -> crate::error::Result<()> {
+        if self
+            .target
+            .as_ref()
+            .is_some_and(|target| target.partition_key().is_none() && target != &FeedRange::full())
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message(
+                    "an explicit effective partition key range cannot be carried to a recreated \
+                     container; obtain a new feed range from the replacement container",
+                )
+                .build());
+        }
+        let replacement_target = self.partition_key().cloned().map(|partition_key| {
+            FeedRange::for_partition(partition_key, replacement.partition_key_definition())
+        });
+        self.resource_reference.retarget_container(replacement)?;
+        if replacement_target.is_some() {
+            self.target = replacement_target;
+        }
+        Ok(())
+    }
+
     /// Returns the operation target.
     pub fn target(&self) -> Option<&FeedRange> {
         self.target.as_ref()
@@ -1408,6 +1437,19 @@ mod tests {
         )
     }
 
+    fn replacement_container() -> ContainerReference {
+        let mut properties = test_container_props();
+        properties.partition_key = test_partition_key_definition("/replacement-pk");
+        ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "replacement_container_rid",
+            &properties,
+        )
+    }
+
     #[test]
     fn create_operation() {
         let pk = PartitionKey::from("pk1");
@@ -1418,6 +1460,23 @@ mod tests {
         assert_eq!(op.resource_type(), ResourceType::Document);
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());
+    }
+
+    #[test]
+    fn retarget_rejects_explicit_epk_range() {
+        let range = FeedRange::new("10".into(), "20".into()).unwrap();
+        let mut operation = CosmosOperation::query_items(test_container(), Some(range.clone()));
+
+        let error = operation
+            .retarget_container(replacement_container())
+            .unwrap_err();
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+        );
+        assert_eq!(operation.container().unwrap().rid(), "testcontainer_rid");
+        assert_eq!(operation.target(), Some(&range));
     }
 
     #[test]

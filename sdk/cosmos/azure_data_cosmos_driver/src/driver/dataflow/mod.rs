@@ -107,7 +107,12 @@ mod tests {
             response: response(b"page"),
             is_terminal: true,
         })])));
-        OperationPlan::new(pipeline, std::sync::Arc::new(operation()))
+        OperationPlan::new(
+            pipeline,
+            std::sync::Arc::new(operation()),
+            crate::options::PlanOptions::default(),
+            false,
+        )
     }
 
     /// A poisoned plan must refuse to mint rather than hand back a token that

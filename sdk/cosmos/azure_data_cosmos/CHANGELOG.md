@@ -52,6 +52,7 @@
 
 ### Bugs Fixed
 
+- Name-based container clients now automatically recover when a container is deleted and recreated. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
 - Fixed doubles losing up to 1 ULP when a text JSON response body is parsed, so a value such as `96.182417728091792` no longer comes back as `96.1824177280918`. `serde_json`'s default float parser is not correctly rounded; the `float_roundtrip` feature is now enabled. ([#5040](https://github.com/Azure/azure-sdk-for-rust/pull/5040))
 - Unsafe client-side PATCH operations now persist a bounded marker with the mutation, preventing duplicate increments, array edits, removes, and moves when a Replace commits but its response is lost. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
 - `PatchOperation::Increment` now serializes with the `incr` wire tag the Cosmos DB service expects, instead of `increment`. This is observable where patch instructions reach the service directly — today the distributed-transaction patch operation, whose increments were rejected. `ContainerClient::patch_item` is unaffected, as its read-modify-write loop never puts the instructions on the wire. Deserialization stays backward compatible: `increment` is still accepted on input, so persisted patch documents keep parsing, and re-serializing upgrades them to `incr`. ([#5087](https://github.com/Azure/azure-sdk-for-rust/pull/5087))
