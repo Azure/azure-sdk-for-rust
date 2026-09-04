@@ -1,6 +1,18 @@
 # Release History
 
-## 0.38.0 (Unreleased)
+## 0.39.0 (Unreleased)
+
+### Features Added
+
+- Extended opt-in Cosmos binary JSON encoding to cross-partition `DISTINCT` query pages. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.38.0 (2026-09-02)
 
 ### Features Added
 
@@ -14,7 +26,6 @@
 - Reading and querying items by RID now works end-to-end, including a parent-database cross-check that rejects a container RID belonging to a different database. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 - Added cross-partition `DISTINCT` query support. `SELECT DISTINCT` now deduplicates structurally equal values across every physical partition and page, rather than failing as an unsupported query feature. A `DISTINCT` query of the exact form `SELECT DISTINCT VALUE <path> … ORDER BY <same path>` (for example `SELECT DISTINCT VALUE c.city FROM c ORDER BY c.city`) is resumable from a continuation token; every other shape — including a list projection such as `SELECT DISTINCT c.city …` and any multi-column `ORDER BY` — is not, and requesting a token for it returns an error explaining how to rewrite the query. ([#5026](https://github.com/Azure/azure-sdk-for-rust/pull/5026))
 - Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosClient`. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
-- Extended opt-in Cosmos binary JSON encoding to cross-partition `DISTINCT` query pages. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added opt-in Cosmos binary JSON encoding for item operations (`create`/`read`/`replace`/`upsert`). Enable it via `CosmosClientBuilder::with_binary_encoding_options` (or the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment-variable fallback). Off by default; when disabled, requests and responses are byte-for-byte unchanged. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
 - Extended binary JSON encoding to `query_items`: when binary encoding is enabled, queries negotiate a binary response (the request body stays text `application/query+json`) and decode binary feed pages, including the streaming cross-partition `ORDER BY` merge. Off by default and negotiated on the standard-gateway path. ([#5040](https://github.com/Azure/azure-sdk-for-rust/pull/5040))
 - Added `FeedOptions::max_fan_out` (and `FeedOptions::with_max_fan_out`) to cap how many physical partitions a cross-partition query or change feed may fan out to. Applies to `ContainerClient::query_items` and `ContainerClient::query_change_feed`. The cap is enforced only at initial query setup; a partition that splits mid-execution and pushes the fan-out higher does not abort the operation. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))

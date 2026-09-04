@@ -1,11 +1,22 @@
 # Release History
 
-## 0.7.0 (Unreleased)
+## 0.8.0 (Unreleased)
+
+### Features Added
+
+- Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.7.0 (2026-09-02)
 
 ### Features Added
 
 - Added `PatchStrategy` (`Auto`, `ClientSide`, `ServerSide`) and server-side PATCH over standard Gateway and Gateway 2.0; `Auto` uses client-side RMW for unsafe lists or more than 10 instructions, while client-side-only settings do not influence strategy selection and explicit `ServerSide` surfaces the service limit and disables ambiguous retries for unsafe lists. ([#5196](https://github.com/Azure/azure-sdk-for-rust/pull/5196))
-- Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added `PatchTrackingId`, `PatchInstructions::is_retry_safe`, PATCH tracking capacity and whole-second retention controls, public tracking protocol constants, effective tracking ID access on responses, errors, and diagnostics, additive native v2 request/submit and completion-accessor support, and the `ResponseTimeoutAfterService` fault for testing commit-succeeded/response-lost recovery. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
 - Added `DriverOptionsBuilder::with_partition_key_range_cache_enabled` to disable partition topology caching and `/pkranges` requests; operations requiring physical topology return HTTP `400` with substatus `20159`. ([#5174](https://github.com/Azure/azure-sdk-for-rust/pull/5174))
 - Added `CosmosOperation::allows_ambiguous_outcome_retry`, reporting whether an operation may be retried when the request may already have been received and processed. It is `false` for stored procedure execution and unsafe explicit server-side PATCH; unlike `is_idempotent` it is `true` for `Create` and `Upsert`, matching the driver's stance that non-idempotent writes are retried on purpose. Both retry layers now consult it, so the transport pipeline no longer refuses a same-endpoint shard retry for a failure the operation pipeline would immediately retry cross-region. ([#5111](https://github.com/Azure/azure-sdk-for-rust/pull/5111))
