@@ -2466,15 +2466,14 @@ impl CosmosDriver {
                 };
                 let is_cold = region_pin.is_none();
 
-                let (result, serving_endpoint) = self
-                    .fetch_pk_ranges_from_service(
-                        container.clone(),
-                        continuation,
-                        region_pin,
-                        options,
-                        absolute_deadline,
-                    )
-                    .await;
+                let (result, serving_endpoint) = Box::pin(self.fetch_pk_ranges_from_service(
+                    container.clone(),
+                    continuation,
+                    region_pin,
+                    options,
+                    absolute_deadline,
+                ))
+                .await;
                 // Record the serving region for every successful cold page, so
                 // the continuation pages that follow are pinned to it. Pages
                 // that already carry a pin leave it untouched: the chain must
@@ -4375,15 +4374,15 @@ impl CosmosDriver {
                 ..
             })) => {
                 tracing::debug!("native query plan library not available, falling back to gateway");
-                self.gateway_query_plan(container, operation, options).await
+                Box::pin(self.gateway_query_plan(container, operation, options)).await
             }
             Some(Err(e)) => {
                 tracing::warn!(error = %e, "native query plan generation failed, falling back to gateway");
-                self.gateway_query_plan(container, operation, options).await
+                Box::pin(self.gateway_query_plan(container, operation, options)).await
             }
             None => {
                 tracing::debug!("using gateway query plan");
-                self.gateway_query_plan(container, operation, options).await
+                Box::pin(self.gateway_query_plan(container, operation, options)).await
             }
         }
     }
