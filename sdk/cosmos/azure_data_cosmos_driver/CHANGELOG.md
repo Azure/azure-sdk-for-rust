@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
+
 ### Bugs Fixed
 
 ### Other Changes
@@ -45,7 +47,6 @@
 - Resource-reference accessors now return `Option` to account for RID-addressed references that have no name. `DatabaseReference::name_based_path`, `ContainerReference::database_name`, and `ContainerReference::name_based_path` return `None` when the reference is addressed by RID (previously they returned `&str`/`String` and assumed a name was always present). Use the new `ContainerReference::base_path` to obtain the addressing-appropriate path (RID-based or name-based) when building request URLs. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
 - `AccountReference`, `DatabaseReference`, `ContainerReference`, and `ItemReference` are now tuple structs wrapping private shared state, so wildcard struct patterns such as `AccountReference { .. }` no longer compile. All accessors are unchanged. `DatabaseReference::into_account` was removed; use `DatabaseReference::account` and clone. ([#4908](https://github.com/Azure/azure-sdk-for-rust/pull/4908))
 - `CosmosDriver::plan_operation` now takes an additional `plan_options: &PlanOptions` argument (after `continuation`). The continuation token remains its own argument. ([#4855](https://github.com/Azure/azure-sdk-for-rust/pull/4855))
-- `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
 
 ### Bugs Fixed
 
