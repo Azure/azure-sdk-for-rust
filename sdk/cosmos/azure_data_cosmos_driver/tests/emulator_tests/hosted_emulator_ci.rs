@@ -19,7 +19,10 @@ use azure_data_cosmos_driver::{
         ContainerReference, CosmosOperation, CosmosResponse, FeedRange, ItemReference,
         PartitionKey, ResponseBody,
     },
-    options::{DriverOptions, OperationOptions, PlanOptions},
+    options::{
+        BinaryEncodingOptions, DriverOptions, OperationOptions, OperationOptionsBuilder,
+        PlanOptions,
+    },
     SubStatusCode,
 };
 use serde::{Deserialize, Serialize};
@@ -500,11 +503,14 @@ async fn driver_recovers_stale_routing_after_merge() -> TestResult {
         .await?;
         // Prime the production driver's routing cache with the pre-merge
         // physical ranges.
+        let text_options = OperationOptionsBuilder::new()
+            .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(false))
+            .build();
         let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
             .with_body(br#"{"query":"SELECT * FROM c","parameters":[]}"#.to_vec());
         let mut warm_plan = Box::pin(driver.plan_operation(
             operation,
-            &OperationOptions::default(),
+            &text_options,
             None,
             &PlanOptions::default(),
         ))
@@ -513,7 +519,7 @@ async fn driver_recovers_stale_routing_after_merge() -> TestResult {
             .execute_plan(
                 &mut warm_plan,
                 Some(container.clone()),
-                OperationOptions::default(),
+                text_options.clone(),
             )
             .await?
             .is_some()
@@ -531,7 +537,7 @@ async fn driver_recovers_stale_routing_after_merge() -> TestResult {
             .with_body(br#"{"query":"SELECT * FROM c","parameters":[]}"#.to_vec());
         let mut stale_plan = Box::pin(driver.plan_operation(
             operation,
-            &OperationOptions::default(),
+            &text_options,
             None,
             &PlanOptions::default(),
         ))
@@ -541,7 +547,7 @@ async fn driver_recovers_stale_routing_after_merge() -> TestResult {
             .execute_plan(
                 &mut stale_plan,
                 Some(container.clone()),
-                OperationOptions::default(),
+                text_options.clone(),
             )
             .await?
         {

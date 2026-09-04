@@ -207,7 +207,7 @@ fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
 /// separate paths — so a container read succeeding in a region does not mean an
 /// item request there is authorized yet. Key auth bypasses RBAC entirely, so
 /// this is only expected under AAD.
-fn rbac_name_based_data_not_ready(error: &CosmosError) -> bool {
+pub(crate) fn rbac_name_based_data_not_ready(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::Forbidden
         && error.status().sub_status() == Some(SubStatusCode::new(5302))
 }
@@ -358,11 +358,26 @@ impl TestOptions {
         self
     }
 
-    /// Configures Cosmos binary JSON encoding for the normal (non-fault) client
-    /// via the standard client option, avoiding any `std::env` mutation.
+    /// Configures Cosmos binary JSON encoding for the underlying clients via the
+    /// standard client option, avoiding any `std::env` mutation.
     pub fn with_binary_encoding(mut self, options: BinaryEncodingOptions) -> Self {
         self.binary_encoding = Some(options);
         self
+    }
+}
+
+fn effective_binary_encoding(
+    binary_encoding: Option<BinaryEncodingOptions>,
+) -> Option<BinaryEncodingOptions> {
+    #[cfg(test_category = "emulator_vnext")]
+    {
+        // The vNext emulator cannot reliably extract partition keys from binary item bodies.
+        Some(binary_encoding.unwrap_or_else(|| BinaryEncodingOptions::new().with_enabled(false)))
+    }
+
+    #[cfg(not(test_category = "emulator_vnext"))]
+    {
+        binary_encoding
     }
 }
 
@@ -520,13 +535,14 @@ impl TestClient {
         fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         application_region: Option<Region>,
         allow_invalid_certificates: bool,
+        binary_encoding: Option<BinaryEncodingOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(
             None,
             fault_rules,
             application_region,
             allow_invalid_certificates,
-            None,
+            binary_encoding,
         )
         .await
     }
@@ -549,6 +565,8 @@ impl TestClient {
                 cosmos_client: None,
             });
         };
+
+        let binary_encoding = effective_binary_encoding(binary_encoding);
 
         match env_var.as_ref() {
             "emulator" => {
@@ -735,8 +753,12 @@ impl TestClient {
                         .client_application_region
                         .clone()
                         .unwrap_or(HUB_REGION);
-                    let (aad_client, _recorder) =
-                        build_aad_client_from_env(region, Vec::new()).await?;
+                    let (aad_client, _recorder) = build_aad_client_from_env(
+                        region,
+                        Vec::new(),
+                        options.binary_encoding.clone(),
+                    )
+                    .await?;
                     (aad_client, Some(key_client))
                 }
                 AuthMode::Key => (key_client, None),
@@ -754,13 +776,22 @@ impl TestClient {
                             .fault_client_application_region
                             .clone()
                             .unwrap_or(HUB_REGION);
-                        Some(build_aad_client_from_env(region, rules).await?.0)
+                        Some(
+                            build_aad_client_from_env(
+                                region,
+                                rules,
+                                options.binary_encoding.clone(),
+                            )
+                            .await?
+                            .0,
+                        )
                     }
                     AuthMode::Key => {
                         Self::from_env_with_fault_rules(
                             rules,
                             options.fault_client_application_region.clone(),
                             options.allow_invalid_certificates,
+                            options.binary_encoding.clone(),
                         )
                         .await?
                         .cosmos_client
@@ -1611,7 +1642,7 @@ impl TestRunContext {
     pub async fn aad_client(
         &self,
     ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
-        build_aad_client_from_env(HUB_REGION, Vec::new()).await
+        build_aad_client_from_env(HUB_REGION, Vec::new(), None).await
     }
 
     /// Cleans up test resources.
@@ -1704,6 +1735,7 @@ pub fn targets_emulator() -> bool {
 pub async fn build_aad_client_from_env(
     region: Region,
     fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
+    binary_encoding: Option<BinaryEncodingOptions>,
 ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
     use super::CosmosEmulatorCredential;
 
@@ -1722,6 +1754,9 @@ pub async fn build_aad_client_from_env(
     let is_emulator = is_emulator_shorthand || host_is_local(&endpoint_str);
 
     let mut builder = CosmosClient::builder();
+    if let Some(options) = effective_binary_encoding(binary_encoding) {
+        builder = builder.with_binary_encoding_options(options);
+    }
     let strategy = RoutingStrategy::ProximityTo(region);
 
     let (credential, recorder): (
@@ -1765,9 +1800,9 @@ pub async fn build_aad_client_from_env(
 #[cfg(test)]
 mod tests {
     use super::{
-        aad_token_invalid_issuer, item_not_found, rbac_name_based_data_not_ready,
-        retry_container_readiness, satellite_probe_should_retry,
-        transient_satellite_readiness_error, AuthMode,
+        aad_token_invalid_issuer, effective_binary_encoding, item_not_found,
+        rbac_name_based_data_not_ready, retry_container_readiness, satellite_probe_should_retry,
+        transient_satellite_readiness_error, AuthMode, BinaryEncodingOptions,
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{CosmosError, CosmosStatus, SubStatusCode};
@@ -1779,6 +1814,17 @@ mod tests {
         },
         time::Duration,
     };
+
+    #[test]
+    #[cfg(test_category = "emulator_vnext")]
+    fn vnext_disables_binary_encoding_by_default() {
+        assert!(!effective_binary_encoding(None).unwrap().enabled);
+        assert!(
+            effective_binary_encoding(Some(BinaryEncodingOptions::new()))
+                .unwrap()
+                .enabled
+        );
+    }
 
     fn error_with_status(status: StatusCode, sub_status: SubStatusCode) -> CosmosError {
         azure_data_cosmos_driver::error::CosmosError::builder()
