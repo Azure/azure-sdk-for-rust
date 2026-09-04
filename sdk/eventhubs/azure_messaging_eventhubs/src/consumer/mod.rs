@@ -1039,6 +1039,58 @@ pub(crate) mod tests {
         Ok(())
     }
 
+    #[test]
+    fn test_start_position_builder_with_earliest() {
+        let start_position = StartPosition {
+            location: StartLocation::Earliest,
+            ..Default::default()
+        };
+        assert_eq!(start_position.location, StartLocation::Earliest);
+        assert_eq!(
+            "amqp.annotation.x-opt-offset > '-1'",
+            StartPosition::start_expression(&Some(start_position)),
+        );
+
+        // Earliest is a sentinel offset, not a real event offset, so the
+        // inclusive flag does not change the expression.
+        let start_position = StartPosition {
+            location: StartLocation::Earliest,
+            inclusive: true,
+        };
+        assert_eq!(
+            "amqp.annotation.x-opt-offset > '-1'",
+            StartPosition::start_expression(&Some(start_position)),
+        );
+    }
+
+    #[test]
+    fn test_start_position_builder_with_latest() {
+        let start_position = StartPosition {
+            location: StartLocation::Latest,
+            ..Default::default()
+        };
+        assert_eq!(start_position.location, StartLocation::Latest);
+        assert_eq!(
+            "amqp.annotation.x-opt-offset > '@latest'",
+            StartPosition::start_expression(&Some(start_position)),
+        );
+
+        // Latest is also a sentinel offset, so inclusive does not change it.
+        let start_position = StartPosition {
+            location: StartLocation::Latest,
+            inclusive: true,
+        };
+        assert_eq!(
+            "amqp.annotation.x-opt-offset > '@latest'",
+            StartPosition::start_expression(&Some(start_position)),
+        );
+
+        assert_eq!(
+            "amqp.annotation.x-opt-offset > '@latest'",
+            StartPosition::start_expression(&None),
+        );
+    }
+
     #[recorded::test]
     async fn test_start_position_builder_inclusive(_ctx: TestContext) -> Result<()> {
         let start_position = StartPosition {
