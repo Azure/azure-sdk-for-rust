@@ -16,10 +16,6 @@
 //! Container handles therefore arrive alongside the response surface that
 //! delivers a resolved container.
 //!
-//! See [`sdk/cosmos/docs/specs/0019-native-wrapper.md`] section 4.3.
-//!
-//! [`sdk/cosmos/docs/specs/0019-native-wrapper.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md
-
 use std::ffi::{c_char, CStr};
 
 use azure_data_cosmos_driver::models::DatabaseReference as DriverDatabaseReference;

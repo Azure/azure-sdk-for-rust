@@ -8,8 +8,7 @@
 //! configurations, and asserts the value survives unchanged by comparing a
 //! **Cosmos-compatible canonical form** of what was sent against what came back.
 //!
-//! See the design doc:
-//! `sdk/cosmos/docs/specs/0016-binary-encoding-roundtrip-fuzzer.md`.
+//! Implements Spec 0016: Binary encoding roundtrip fuzzer.
 //!
 //! # Running
 //!

@@ -22,10 +22,6 @@
 //! — `cosmos_driver_get_or_create_blocking` always returns `SUCCESS` on
 //! a cached hit. This is tracked as a follow-up.
 //!
-//! See [`sdk/cosmos/docs/specs/0019-native-wrapper.md`] section 4.4.
-//!
-//! [`sdk/cosmos/docs/specs/0019-native-wrapper.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md
-
 use std::sync::Arc;
 
 use azure_data_cosmos_driver::driver::CosmosDriver;

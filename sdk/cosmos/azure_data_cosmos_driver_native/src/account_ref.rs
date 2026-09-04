@@ -13,10 +13,6 @@
 //! populates the optional `out_error` slot with a rich description for
 //! diagnostics.
 //!
-//! See [`sdk/cosmos/docs/specs/0019-native-wrapper.md`] section 4.3.
-//!
-//! [`sdk/cosmos/docs/specs/0019-native-wrapper.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md
-
 use std::ffi::{c_char, CStr};
 
 use azure_core::credentials::Secret;

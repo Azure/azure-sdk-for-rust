@@ -260,7 +260,7 @@ impl CosmosOperation {
             // `read_feed_ranges` for feed reads and funnels container/database
             // queries through the generic `query_items`. Keep them aligned with
             // this crate's own `read_all_*` / `query_*` public API, not with
-            // .NET. See sdk/cosmos/docs/specs/0018-diagnostics-contract.md.
+            // .NET. See Spec 0018: Diagnostics contract.
             (OperationType::ReadFeed, ResourceType::Document) => {
                 if self.is_change_feed {
                     "query_change_feed"
