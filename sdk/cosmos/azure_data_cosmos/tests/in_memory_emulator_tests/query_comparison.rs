@@ -6,7 +6,8 @@
 #![allow(clippy::large_futures)]
 
 use std::{
-    borrow::Cow, collections::BTreeSet, error::Error, num::NonZeroU32, sync::Arc, time::Duration,
+    borrow::Cow, collections::BTreeSet, error::Error, future::Future, num::NonZeroU32, sync::Arc,
+    time::Duration,
 };
 
 use azure_core::{
@@ -25,6 +26,7 @@ use azure_data_cosmos::{
 };
 use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntime,
+    error::CosmosError,
     in_memory_emulator::{
         ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
         VirtualRegion,
@@ -154,16 +156,68 @@ async fn resolve_external_backend() -> Result<Option<Backend>, Box<dyn Error>> {
     let endpoint = connection.account_endpoint().to_owned();
     let key = connection.account_key().secret().to_string();
 
-    let initial_driver =
-        build_external_driver(&endpoint, &key, OperationOptions::default(), None).await?;
+    let initial_driver = retry_transport_generated_503("initial external driver", || {
+        build_external_driver(&endpoint, &key, OperationOptions::default(), None)
+    })
+    .await?;
     let (hub_region, excluded_regions) = resolve_hub_region_and_exclusions(&initial_driver).await;
     let mut default_options = OperationOptions::default();
     default_options.excluded_regions = excluded_regions;
 
-    let client =
-        build_external_client(&endpoint, &key, default_options.clone(), hub_region.clone()).await?;
-    let driver = build_external_driver(&endpoint, &key, default_options, Some(hub_region)).await?;
+    let client = retry_transport_generated_503("external client", || {
+        build_external_client(&endpoint, &key, default_options.clone(), hub_region.clone())
+    })
+    .await?;
+    let driver = retry_transport_generated_503("external driver", || {
+        build_external_driver(
+            &endpoint,
+            &key,
+            default_options.clone(),
+            Some(hub_region.clone()),
+        )
+    })
+    .await?;
     Ok(Some(Backend { client, driver }))
+}
+
+fn is_transport_generated_503(error: &(dyn Error + 'static)) -> bool {
+    let mut current = Some(error);
+    while let Some(error) = current {
+        if let Some(cosmos) = error.downcast_ref::<CosmosError>() {
+            return cosmos.status().is_transport_generated_503();
+        }
+        current = error.source();
+    }
+    false
+}
+
+async fn retry_transport_generated_503<T, F, Fut>(
+    description: &str,
+    mut operation: F,
+) -> Result<T, Box<dyn Error>>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<T, Box<dyn Error>>>,
+{
+    const MAX_ATTEMPTS: u32 = 12;
+    let mut backoff = Duration::from_millis(250);
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        match operation().await {
+            Ok(result) => return Ok(result),
+            Err(error) if is_transport_generated_503(error.as_ref()) && attempt < MAX_ATTEMPTS => {
+                eprintln!(
+                    "[query-comparison] {description} hit a transport-generated 503 on attempt \
+                     {attempt}/{MAX_ATTEMPTS}; retrying in {backoff:?}: {error}"
+                );
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(Duration::from_secs(5));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    unreachable!("the bounded retry loop always returns on its final attempt")
 }
 
 async fn build_external_client(

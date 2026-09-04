@@ -7139,6 +7139,81 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn malformed_binary_after_distinct_state_poisons_execution_and_continuation() {
+        use crate::driver::dataflow::{
+            mocks::{response, MockLeaf},
+            query_plan::DistinctType,
+            Distinct, PageResult, Pipeline,
+        };
+
+        let driver = transcoding_test_driver().await;
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .build();
+        let operation = driver.apply_response_negotiation(
+            CosmosOperation::query_items(
+                epk_test_container(r#"{"paths":["/pk"],"version":2}"#),
+                Some(FeedRange::full()),
+            )
+            .with_body(
+                serde_json::to_vec(
+                    &serde_json::json!({ "query": "SELECT DISTINCT VALUE c.n FROM c" }),
+                )
+                .unwrap(),
+            ),
+            &options,
+            None,
+        );
+        assert!(operation.emits_binary_payload());
+
+        let child = MockLeaf::with_pages(vec![
+            Ok(PageResult::Page {
+                response: response(br#"{"_rid":"","Documents":[1],"_count":1}"#),
+                is_terminal: false,
+            }),
+            Ok(PageResult::Page {
+                response: response(&[crate::binary_json::PREAMBLE]),
+                is_terminal: false,
+            }),
+        ]);
+        let root = Distinct::with_last_hash(
+            Box::new(child),
+            DistinctType::Ordered,
+            None,
+            operation.emits_binary_payload(),
+        );
+        let mut plan = OperationPlan::new(Pipeline::new(Box::new(root)), Arc::new(operation));
+
+        driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect("the first DISTINCT page should update and emit pipeline state");
+        plan.to_continuation_token()
+            .expect("the valid first page should leave DISTINCT resumable");
+
+        let err = driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect_err("the malformed binary page must fail inside DISTINCT");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "got: {err}",
+        );
+
+        plan.to_continuation_token()
+            .expect_err("DISTINCT must refuse a token after consuming an invalid page");
+        let err = driver
+            .execute_plan(&mut plan, None, OperationOptions::default())
+            .await
+            .expect_err("poisoned DISTINCT must refuse further execution");
+        assert!(
+            err.to_string().contains("DISTINCT node is unusable"),
+            "the refusal must come from DISTINCT poison; got: {err}",
+        );
+    }
+
     /// The control: the poison above has to come from the failed transcode,
     /// not from running `execute_plan` at all.
     #[tokio::test]
