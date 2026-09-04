@@ -528,6 +528,46 @@ impl DriverTestClient {
         })
         .await
     }
+
+    /// Runs a test with runtime operation options and a unique database.
+    pub async fn run_with_unique_db_options<F, Fut>(
+        operation_options: OperationOptions,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(env) = resolve_test_env()? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(env.connection_pool)
+            .with_default_operation_options(operation_options)
+            .build()
+            .await?;
+
+        let client = Self {
+            runtime,
+            account: env.account,
+            preferred_regions: Vec::new(),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: Vec::new(),
+            partition_failover_options: None,
+        };
+        let context = DriverTestRunContext::new(client);
+        let db_name = context.unique_database_name();
+        let db_ref = context.create_database(&db_name).await?;
+
+        let result = f(context.clone(), db_ref.clone()).await;
+
+        // Cleanup (best effort)
+        let _ = context.delete_database(&db_ref).await;
+
+        result
+    }
 }
 
 /// Context for a test run, providing helpers for driver operations.

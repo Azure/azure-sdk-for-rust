@@ -95,7 +95,7 @@ pub(crate) fn render(model: &ApiModel, options: &RenderOptions) -> Result<String
         package_version: &model.package_version,
         parser_version: &model.parser_version,
         language: "Rust",
-        review_lines: render_review_lines(model, options, &navigation_lookup),
+        review_lines: render_all_review_lines(model, options, &navigation_lookup),
     };
     validate_code_file(&document)?;
 
@@ -146,6 +146,68 @@ fn render_review_lines(
     navigation_lookup: &NavigationLookup,
 ) -> Vec<ReviewLine> {
     render_root_module(&model.root_module, options, navigation_lookup)
+}
+
+fn render_all_review_lines(
+    model: &ApiModel,
+    options: &RenderOptions,
+    navigation_lookup: &NavigationLookup,
+) -> Vec<ReviewLine> {
+    let mut lines = render_package_metadata(model);
+    lines.extend(render_review_lines(model, options, navigation_lookup));
+    lines
+}
+
+fn render_package_metadata(model: &ApiModel) -> Vec<ReviewLine> {
+    let mut lines = Vec::new();
+    let metadata = &model.package_metadata;
+    if let Some(description) = metadata.description_lines() {
+        if description.len() == 1 {
+            lines.push(metadata_line(&format!("Description: {}", description[0])));
+        } else {
+            lines.push(metadata_line("Description:"));
+            for line in description {
+                lines.push(metadata_line(line));
+            }
+        }
+    }
+    if let Some(edition) = &metadata.edition {
+        lines.push(metadata_line(&format!("Edition: {edition}")));
+    }
+    if let Some(rust_version) = &metadata.rust_version {
+        lines.push(metadata_line(&format!("Rust version: {rust_version}")));
+    }
+
+    lines.push(metadata_line("Features:"));
+    for feature in metadata.feature_names() {
+        lines.push(metadata_line(&format!("- {feature}")));
+        if feature == "default" {
+            for child in metadata.default_feature_children() {
+                lines.push(metadata_line(&format!("  - {child}")));
+            }
+        }
+    }
+    lines.push(metadata_line(""));
+    lines
+}
+
+fn metadata_line(value: &str) -> ReviewLine {
+    ReviewLine {
+        line_id: None,
+        tokens: vec![ReviewToken {
+            kind: token_kind::TEXT,
+            value: value.to_string(),
+            has_prefix_space: false,
+            has_suffix_space: false,
+            is_documentation: false,
+            navigation_display_name: None,
+            navigate_to_id: None,
+            render_classes: None,
+        }],
+        children: Vec::new(),
+        is_context_end_line: None,
+        related_to_line: None,
+    }
 }
 
 fn render_module_contents(

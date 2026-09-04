@@ -34,19 +34,44 @@ fn run() -> Result<(), String> {
     ));
 
     let model = driver::load_model(&request)?;
-    let output_path = output::output_path(&request)?;
+    let output_path = output::output_path(&request);
     diagnostics::info(format!("Generating file: {}", output_path.display()));
 
-    let rendered = match request.format {
-        cli::OutputFormat::Markdown => render::markdown::render(&model),
+    match request.format {
+        cli::OutputFormat::Markdown => {
+            let lines = render::markdown::render_lines(&model);
+            let rendered = render::markdown::render_from_lines(&lines);
+            save_or_check(&request, &output_path, &rendered)?;
+
+            if !request.no_docs {
+                let patch_path = output::output_file_path(&request, cli::COMMENTS_PATCH_FILE_NAME);
+                let file_name = request.format.default_file_name();
+                let patch = render::patch::render(&lines, file_name);
+                save_or_check(&request, &patch_path, &patch)?;
+            }
+        }
         cli::OutputFormat::Apiview => {
             let options = render::apiview::RenderOptions::new(!request.no_docs);
-            render::apiview::render(&model, &options)?
+            let rendered = render::apiview::render(&model, &options)?;
+            save_or_check(&request, &output_path, &rendered)?;
         }
-    };
+    }
 
-    output::write_file(&output_path, &rendered)?;
-    diagnostics::info(format!("Wrote file: {}", output_path.display()));
+    Ok(())
+}
+
+fn save_or_check(request: &cli::Request, path: &Path, contents: &str) -> Result<(), String> {
+    if request.check {
+        if output::check_file(path, contents)? {
+            diagnostics::info(format!("Generated content matches: {}", path.display()));
+        } else {
+            diagnostics::info(format!("No existing file to check: {}", path.display()));
+        }
+    } else {
+        output::write_file(path, contents)?;
+        diagnostics::info(format!("Wrote file: {}", path.display()));
+    }
+
     Ok(())
 }
 

@@ -1,2 +1,6 @@
 # Don't include the CMake build directory in source control.
 build/
+
+# Native cross-build pipeline outputs (see pipeline/README.md).
+pipeline/artifacts/
+pipeline/generated/

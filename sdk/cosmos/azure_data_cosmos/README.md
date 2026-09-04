@@ -21,6 +21,37 @@ cargo add azure_data_cosmos
 Note: If you don't have an Azure subscription, create a free account before you begin.
 You can Try Azure Cosmos DB for free without an Azure subscription, free of charge and commitments, or create an Azure Cosmos DB free tier account, with the first 400 RU/s and 5 GB of storage for free. You can also use the Azure Cosmos DB Emulator with a URI of <https://localhost:8081>. For the key to use with the emulator, see [how to develop with the emulator](https://learn.microsoft.com/azure/cosmos-db/how-to-develop-emulator).
 
+#### Known Issue: Using the vNext emulator
+
+The Azure Cosmos DB Linux vNext emulator does not currently support Cosmos
+binary JSON encoding. Binary encoding is enabled by default in this SDK and
+must be explicitly disabled when connecting to the vNext emulator. This is a
+temporary known issue, and we're working towards an automatic resolution.
+Please see the tracking issue at [Azure/azure-sdk-for-rust#5240](https://github.com/Azure/azure-sdk-for-rust/issues/5240).
+
+**NOTE:** This does NOT apply to the Windows emulator. Only the Linux emulators
+require disabling binary encoding.
+
+For now, you must disable Binary Encoding explicitly when building the client:
+
+```rust,ignore
+use azure_data_cosmos::{options::BinaryEncodingOptions, CosmosClient};
+
+let client = CosmosClient::builder()
+    .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(false))
+    .build(account, routing_strategy)
+    .await?;
+```
+
+Alternatively, disable binary encoding through the environment before starting
+the application:
+
+```sh
+export AZURE_COSMOS_BINARY_ENCODING_ENABLED=false
+```
+
+An explicit client option takes precedence over the environment variable.
+
 ### Create an Azure Cosmos DB account
 
 You can create an Azure Cosmos DB account using:
