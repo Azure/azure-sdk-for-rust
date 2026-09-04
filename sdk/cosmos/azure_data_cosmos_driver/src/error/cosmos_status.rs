@@ -500,6 +500,11 @@ impl SubStatusCode {
             20120 => Some("ClientInvalidResourceId"),
             20121 => Some("ClientMixedNameRidAddressing"),
             20122 => Some("ClientQueryRewriteBodyInvalid"),
+            20123 => Some("ClientDistinctValueTooDeeplyNested"),
+            20124 => Some("ClientDistinctContinuationUnsupported"),
+            20125 => Some("ClientNonStreamingOrderByContinuationUnsupported"),
+            20126 => Some("ClientNonStreamingOrderByRequiresFiniteWindow"),
+            20127 => Some("ClientNonStreamingOrderByWindowTooLarge"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -509,6 +514,7 @@ impl SubStatusCode {
             20156 => Some("ClientRequestUrlMissingKnownPort"),
             20157 => Some("ClientImdsHttpClientConstructionFailed"),
             20158 => Some("ClientImdsReqwestFeatureRequired"),
+            20159 => Some("ClientPartitionKeyRangeCacheRequired"),
             20200 => Some("ClientContinuationTokenFetchInFlight"),
             20201 => Some("ClientTopologyProviderMissing"),
             20202 => Some("ClientDriverNotInitialized"),
@@ -518,6 +524,7 @@ impl SubStatusCode {
             20206 => Some("ClientSplitRetriesExhausted"),
             20207 => Some("ClientBuildResponseInvokedOnFailure"),
             20208 => Some("ClientRootNodeCannotRequestSplit"),
+            20217 => Some("ClientDistinctCannotForwardSplit"),
             20209 => Some("ClientCrossPartitionQueryRequiresContainerRef"),
             20210 => Some("ClientSingletonOperationReturnedEmptyPage"),
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
@@ -525,6 +532,7 @@ impl SubStatusCode {
             20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
             20214 => Some("ClientContinuationTokenOrderByStateInvalid"),
             20215 => Some("ClientStreamingMergeSplitReplacementInvalid"),
+            20216 => Some("ClientContinuationTokenAfterTranscodeFailure"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
@@ -1381,6 +1389,32 @@ impl SubStatusCode {
     /// each partition's query text.
     pub const CLIENT_QUERY_REWRITE_BODY_INVALID: SubStatusCode = SubStatusCode(20122);
 
+    /// A `DISTINCT` value nested deeper than the structural hasher's depth
+    /// limit (20123). Cosmos caps document nesting well below that limit, so
+    /// this indicates a hand-crafted or corrupt payload.
+    pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: SubStatusCode = SubStatusCode(20123);
+
+    /// A continuation token was requested for an unordered `DISTINCT` query
+    /// (20124). Resuming would require carrying the entire set of seen values,
+    /// so the token is refused rather than silently re-emitting duplicates.
+    /// Adding a matching `ORDER BY` makes the query resumable.
+    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = SubStatusCode(20124);
+
+    /// A continuation token was supplied or requested for a non-streaming
+    /// `ORDER BY` query (20125). Resuming would require serializing the buffered
+    /// result set, so the operation must be drained in-process.
+    pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: SubStatusCode =
+        SubStatusCode(20125);
+
+    /// A non-streaming `ORDER BY` query did not contain a finite `TOP` or
+    /// `OFFSET`/`LIMIT` window (20126).
+    pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: SubStatusCode =
+        SubStatusCode(20126);
+
+    /// A non-streaming `ORDER BY` query's candidate window cannot be represented
+    /// by the current process (20127).
+    pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: SubStatusCode = SubStatusCode(20127);
+
     // ----- 20150-20199: SDK configuration / setup errors -----
 
     /// Two fault-injection rules registered with the same id (20150).
@@ -1420,6 +1454,10 @@ impl SubStatusCode {
     /// IMDS fetch requires the `reqwest` cargo feature and it was not
     /// enabled (20158).
     pub const CLIENT_IMDS_REQWEST_FEATURE_REQUIRED: SubStatusCode = SubStatusCode(20158);
+
+    /// Partition key range topology was required while its cache was disabled
+    /// by driver configuration (20159).
+    pub const CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED: SubStatusCode = SubStatusCode(20159);
 
     // ----- 20200-20249: SDK internal invariants -----
 
@@ -1466,6 +1504,13 @@ impl SubStatusCode {
     /// handled by a parent node (20208).
     pub const CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT: SubStatusCode = SubStatusCode(20208);
 
+    /// A `DISTINCT` node was asked to forward a partition split (20217).
+    /// `SplitRequired` replaces the node that emits it, which would discard the
+    /// deduplication map and resurrect already-suppressed values, so the split
+    /// is refused here instead of being passed to a parent. Unreachable today:
+    /// the wrapped fan-out node absorbs splits internally.
+    pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: SubStatusCode = SubStatusCode(20217);
+
     /// A cross-partition query plan was attempted without a container
     /// reference (20209).
     pub const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: SubStatusCode =
@@ -1507,6 +1552,13 @@ impl SubStatusCode {
     /// mid-group boundary and cannot be safely repositioned.
     pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode =
         SubStatusCode(20215);
+
+    /// A continuation token was requested after a page's body failed to
+    /// transcode back to text (20216). The pipeline had already advanced, so
+    /// any token minted afterwards would resume *past* the page the caller
+    /// never received.
+    pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: SubStatusCode =
+        SubStatusCode(20216);
 
     // ----- 20300-20349: SDK-detected service contract violations -----
 
@@ -2321,6 +2373,47 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_QUERY_REWRITE_BODY_INVALID),
     };
 
+    /// 400 / 20123 — a `DISTINCT` value nested past the structural hasher's
+    /// depth limit.
+    pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED),
+    };
+
+    /// 400 / 20124 — a continuation token was requested for an unordered
+    /// `DISTINCT` query, which cannot be resumed safely.
+    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED),
+    };
+
+    /// 400 / 20125 — continuation tokens are not supported by non-streaming
+    /// `ORDER BY`.
+    pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED),
+    };
+
+    /// 400 / 20126 — non-streaming `ORDER BY` requires a finite result window.
+    pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW),
+    };
+
+    /// 400 / 20127 — the non-streaming `ORDER BY` candidate window cannot be
+    /// represented by the current process.
+    pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE),
+    };
+
+    /// 500 / 20217 — a `DISTINCT` node was asked to forward a partition split,
+    /// which would discard its deduplication state.
+    pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT),
+    };
+
     // Configuration / setup (HTTP 400, sub-status 20150-20199)
 
     /// 400 / 20150 — duplicate fault-injection rule id.
@@ -2375,6 +2468,12 @@ impl CosmosStatus {
     pub const CLIENT_IMDS_REQWEST_FEATURE_REQUIRED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_IMDS_REQWEST_FEATURE_REQUIRED),
+    };
+
+    /// 400 / 20159 — partition key range topology cache disabled.
+    pub const CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED),
     };
 
     // Internal invariants (HTTP 500, sub-status 20200-20249)
@@ -2488,6 +2587,14 @@ impl CosmosStatus {
     pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+    };
+
+    /// 500 / 20216 — a continuation token was requested after a page's body
+    /// failed to transcode back to text, so no token minted now could resume
+    /// without skipping that page.
+    pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
     };
 
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)

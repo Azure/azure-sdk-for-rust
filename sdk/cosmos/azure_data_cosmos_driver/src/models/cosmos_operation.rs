@@ -10,7 +10,7 @@ use crate::models::{
 };
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Instant};
 use time::OffsetDateTime;
 
 /// Which change feed mode a factory should configure.
@@ -115,7 +115,7 @@ fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
 /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
 ///
 /// // 2. Resolve the container (reads database + container from service, caches result)
-/// let container = driver.resolve_container("mydb", "mycontainer").await?;
+/// let container = driver.resolve_container("mydb", "mycontainer", OperationOptions::default()).await?;
 ///
 /// // 3. Build and execute item operations
 /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
@@ -144,6 +144,12 @@ pub struct CosmosOperation {
     /// make. Only consulted when `operation_type == OperationType::Patch`;
     /// ignored for every other op. `None` selects the handler default (5).
     patch_max_attempts: Option<std::num::NonZeroU8>,
+    /// Stable identity used to detect a previously committed unsafe PATCH.
+    patch_tracking_id: Option<crate::models::PatchTrackingId>,
+    /// Maximum number of protected PATCH markers retained on the item.
+    patch_tracking_capacity: Option<std::num::NonZeroU16>,
+    /// Minimum number of whole seconds PATCH markers remain protected.
+    patch_tracking_retention_seconds: Option<std::num::NonZeroU32>,
     /// `true` when this operation is a change feed read. Set explicitly by
     /// [`change_feed`](Self::change_feed) rather than inferred from a header,
     /// so future change feed modes can be added without ambiguity.
@@ -159,6 +165,30 @@ pub struct CosmosOperation {
     /// affects [`db_operation_name`](Self::db_operation_name), so the sub-op
     /// is dispatched exactly like the standalone Read/Replace it is.
     is_patch_sub_operation: bool,
+    /// Whether a server-side PATCH may be resent after an ambiguous failure.
+    /// `None` means strategy resolution has not classified the operation and
+    /// therefore fails closed.
+    patch_retry_safe: Option<bool>,
+    /// `true` when the caller asked for a **text** payload over a binary wire
+    /// (`BinaryEncodingOptions::request_text_response`) and this operation
+    /// negotiated binary anyway. Recorded at negotiation time so pipeline nodes
+    /// that synthesize a page can tell the *wire* format apart from the
+    /// *emitted* format — see
+    /// [`emits_binary_payload`](Self::emits_binary_payload).
+    transcodes_response_to_text: bool,
+    /// Internal routing constraint for reads whose correctness depends on
+    /// observing the write region rather than the nearest read replica.
+    internal_read_routing: InternalReadRouting,
+    /// Absolute deadline inherited by internal sub-operations that belong to
+    /// one logical operation, such as PATCH Read-Modify-Write.
+    absolute_deadline: Option<Instant>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum InternalReadRouting {
+    #[default]
+    Default,
+    PreferredWriteEndpointsNoHedging,
 }
 
 impl CosmosOperation {
@@ -329,6 +359,35 @@ impl CosmosOperation {
         self.resource_reference.container()
     }
 
+    /// Retargets this operation to refreshed metadata for the same named
+    /// container and recomputes logical partition routing.
+    pub(crate) fn retarget_container(
+        &mut self,
+        replacement: ContainerReference,
+    ) -> crate::error::Result<()> {
+        if self
+            .target
+            .as_ref()
+            .is_some_and(|target| target.partition_key().is_none() && target != &FeedRange::full())
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message(
+                    "an explicit effective partition key range cannot be carried to a recreated \
+                     container; obtain a new feed range from the replacement container",
+                )
+                .build());
+        }
+        let replacement_target = self.partition_key().cloned().map(|partition_key| {
+            FeedRange::for_partition(partition_key, replacement.partition_key_definition())
+        });
+        self.resource_reference.retarget_container(replacement)?;
+        if replacement_target.is_some() {
+            self.target = replacement_target;
+        }
+        Ok(())
+    }
+
     /// Returns the operation target.
     pub fn target(&self) -> Option<&FeedRange> {
         self.target.as_ref()
@@ -404,6 +463,52 @@ impl CosmosOperation {
     ) -> Self {
         self.request_headers.supported_serialization_formats = Some(formats.into());
         self
+    }
+
+    /// Whether this operation advertised Cosmos binary JSON in its
+    /// `x-ms-cosmos-supported-serialization-formats` header.
+    ///
+    /// Describes the **wire**, not what the caller receives: under
+    /// `BinaryEncodingOptions::request_text_response` the wire stays binary
+    /// while the driver transcodes the response to text on the way out.
+    pub(crate) fn negotiates_binary_response(&self) -> bool {
+        self.request_headers
+            .supported_serialization_formats
+            .as_deref()
+            .is_some_and(|formats| {
+                formats
+                    .split(',')
+                    .any(|format| format.trim().eq_ignore_ascii_case("CosmosBinary"))
+            })
+    }
+
+    /// Records that the driver will transcode this operation's response back to
+    /// text before returning it to the caller.
+    pub(crate) fn transcoding_response_to_text(mut self) -> Self {
+        self.transcodes_response_to_text = true;
+        self
+    }
+
+    /// Whether the driver must transcode this operation's response body to text
+    /// before handing it back.
+    ///
+    /// Decided once at negotiation time, so a caller who varies
+    /// `request_text_response` between pages cannot desynchronize the emitted
+    /// encoding from what the pipeline nodes were built to produce.
+    pub(crate) fn transcodes_response_to_text(&self) -> bool {
+        self.transcodes_response_to_text
+    }
+
+    /// Whether pipeline nodes that synthesize a page should emit **binary**
+    /// items.
+    ///
+    /// Distinct from [`negotiates_binary_response`](Self::negotiates_binary_response),
+    /// which describes the wire. The two diverge under
+    /// `BinaryEncodingOptions::request_text_response`: the wire stays binary
+    /// while the driver transcodes on the way out, so a node emitting binary
+    /// would re-encode every item only for `execute_plan` to decode it again.
+    pub(crate) fn emits_binary_payload(&self) -> bool {
+        self.negotiates_binary_response() && !self.transcodes_response_to_text
     }
 
     /// Sets the maximum number of items the server should return per page
@@ -484,6 +589,52 @@ impl CosmosOperation {
         self.patch_max_attempts
     }
 
+    /// Sets a stable tracking ID for a client-side PATCH.
+    ///
+    /// Reuse the same ID for application-level retries of the same logical
+    /// operation. Prefer a random, unpredictable ID. Supplying an ID opts even
+    /// a retry-safe instruction list into marker-based duplicate suppression
+    /// when client-side execution is selected. It does not influence strategy
+    /// resolution and is ignored by server-side PATCH. If omitted, the driver
+    /// generates an ID only for unsafe lists executed client-side.
+    pub fn with_patch_tracking_id(mut self, tracking_id: crate::models::PatchTrackingId) -> Self {
+        self.patch_tracking_id = Some(tracking_id);
+        self
+    }
+
+    /// Returns the caller-supplied PATCH tracking ID, if any.
+    pub fn patch_tracking_id(&self) -> Option<crate::models::PatchTrackingId> {
+        self.patch_tracking_id
+    }
+
+    /// Sets the maximum number of PATCH tracking entries retained on one item.
+    ///
+    /// When the cap is reached after age-based pruning, PATCH evicts the first
+    /// entry before appending the new marker.
+    pub fn with_patch_tracking_capacity(mut self, capacity: std::num::NonZeroU16) -> Self {
+        self.patch_tracking_capacity = Some(capacity);
+        self
+    }
+
+    /// Returns the configured PATCH tracking capacity, if any.
+    pub fn patch_tracking_capacity(&self) -> Option<std::num::NonZeroU16> {
+        self.patch_tracking_capacity
+    }
+
+    /// Sets the age-based retention window for PATCH tracking entries.
+    pub fn with_patch_tracking_retention_seconds(
+        mut self,
+        retention_seconds: std::num::NonZeroU32,
+    ) -> Self {
+        self.patch_tracking_retention_seconds = Some(retention_seconds);
+        self
+    }
+
+    /// Returns the configured PATCH tracking retention in whole seconds, if any.
+    pub fn patch_tracking_retention_seconds(&self) -> Option<std::num::NonZeroU32> {
+        self.patch_tracking_retention_seconds
+    }
+
     /// Marks this operation as an internal sub-operation of a PATCH's
     /// Read-Modify-Write loop.
     ///
@@ -494,6 +645,56 @@ impl CosmosOperation {
     pub(crate) fn as_patch_sub_operation(mut self) -> Self {
         self.is_patch_sub_operation = true;
         self
+    }
+
+    /// Marks this operation as the Read half of PATCH's Read-Modify-Write loop.
+    ///
+    /// The read prefers write endpoints and cannot be hedged because a response
+    /// from another region may not yet contain the write being verified.
+    pub(crate) fn as_patch_read_sub_operation(mut self) -> Self {
+        self.is_patch_sub_operation = true;
+        self.internal_read_routing = InternalReadRouting::PreferredWriteEndpointsNoHedging;
+        self
+    }
+
+    /// Records whether a server-side PATCH may be resent after an ambiguous
+    /// failure, based on the resolved instruction list.
+    pub(crate) fn with_patch_retry_safe(mut self, retry_safe: bool) -> Self {
+        self.patch_retry_safe = Some(retry_safe);
+        self
+    }
+
+    /// Returns whether PATCH strategy resolution classified this operation.
+    pub(crate) fn patch_strategy_is_resolved(&self) -> bool {
+        self.patch_retry_safe.is_some()
+    }
+
+    /// Returns whether this internal read should start at preferred write endpoints.
+    pub(crate) fn prefers_write_endpoints_for_read(&self) -> bool {
+        matches!(
+            self.internal_read_routing,
+            InternalReadRouting::PreferredWriteEndpointsNoHedging
+        )
+    }
+
+    /// Returns whether correctness requires hedging to remain disabled.
+    pub(crate) fn suppresses_hedging(&self) -> bool {
+        matches!(
+            self.internal_read_routing,
+            InternalReadRouting::PreferredWriteEndpointsNoHedging
+        )
+    }
+
+    /// Applies an absolute deadline shared by a logical operation's internal
+    /// sub-operations.
+    pub(crate) fn with_absolute_deadline(mut self, deadline: Option<Instant>) -> Self {
+        self.absolute_deadline = deadline;
+        self
+    }
+
+    /// Returns the absolute deadline inherited from the logical operation.
+    pub(crate) fn absolute_deadline(&self) -> Option<Instant> {
+        self.absolute_deadline
     }
 
     /// Returns `true` when this operation is an internal sub-operation of a
@@ -526,9 +727,16 @@ impl CosmosOperation {
             request_headers: CosmosRequestHeaders::new(),
             body: None,
             patch_max_attempts: None,
+            patch_tracking_id: None,
+            patch_tracking_capacity: None,
+            patch_tracking_retention_seconds: None,
             is_change_feed: false,
             change_feed_start: None,
             is_patch_sub_operation: false,
+            patch_retry_safe: None,
+            transcodes_response_to_text: false,
+            internal_read_routing: InternalReadRouting::Default,
+            absolute_deadline: None,
         }
     }
 
@@ -689,7 +897,7 @@ impl CosmosOperation {
     ///     "my-key",
     /// );
     /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
-    /// let container = driver.resolve_container("my-database", "my-container").await?;
+    /// let container = driver.resolve_container("my-database", "my-container", OperationOptions::default()).await?;
     ///
     /// let result = driver
     ///     .execute_singleton_operation(
@@ -782,7 +990,7 @@ impl CosmosOperation {
     ///     "my-key",
     /// );
     /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
-    /// let container = driver.resolve_container("my-database", "my-container").await?;
+    /// let container = driver.resolve_container("my-database", "my-container", OperationOptions::default()).await?;
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
@@ -822,7 +1030,7 @@ impl CosmosOperation {
     ///     "my-key",
     /// );
     /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
-    /// let container = driver.resolve_container("my-database", "my-container").await?;
+    /// let container = driver.resolve_container("my-database", "my-container", OperationOptions::default()).await?;
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
@@ -876,16 +1084,11 @@ impl CosmosOperation {
         Self::for_item(OperationType::Replace, item)
     }
 
-    /// Builds a virtual PATCH operation for an item.
+    /// Builds a PATCH operation for an item.
     ///
-    /// The driver implements PATCH as a client-side Read-Modify-Write loop:
-    /// it reads the current item, applies the requested patch operations to
-    /// the local JSON document, and issues an ETag-guarded
-    /// [`OperationType::Replace`]. The PATCH operation itself is never sent on
-    /// the wire; callers build a [`crate::models::PatchInstructions`] and pass it as
-    /// the operation body (via [`with_body`](Self::with_body)) — the patch
-    /// handler deserializes it before issuing the underlying transport
-    /// operations.
+    /// [`crate::options::PatchStrategy`] selects one server-side request or the
+    /// client-side Read-Modify-Write loop. Callers serialize
+    /// [`crate::models::PatchInstructions`] into the operation body.
     pub fn patch_item(item: ItemReference) -> Self {
         Self::for_item(OperationType::Patch, item)
     }
@@ -1080,6 +1283,29 @@ impl CosmosOperation {
         self.operation_type.is_idempotent()
     }
 
+    /// Returns true if this operation may be retried when the backend outcome
+    /// is ambiguous — that is, when the request may already have been received
+    /// and processed.
+    ///
+    /// Stored procedure execution returns `false` because its body is opaque.
+    /// Server-side PATCH returns the strategy resolver's classification;
+    /// unresolved PATCH fails closed. Other data-plane operations retain the
+    /// driver's existing retry behavior.
+    ///
+    /// This is deliberately *not* `is_idempotent`: the driver retries
+    /// non-idempotent writes such as `Create` and `Upsert` on purpose.
+    ///
+    /// Gates both retry layers so they cannot disagree about the same failure:
+    /// cross-region failover in the operation pipeline, and the same-endpoint
+    /// shard retry in the transport pipeline.
+    pub fn allows_ambiguous_outcome_retry(&self) -> bool {
+        match self.operation_type {
+            OperationType::Execute => false,
+            OperationType::Patch => self.patch_retry_safe.unwrap_or(false),
+            _ => true,
+        }
+    }
+
     /// Returns true if this operation can be planned with a single-node pipeline.
     ///
     /// An operation is "trivial" when it does not require fan-out across multiple
@@ -1211,6 +1437,19 @@ mod tests {
         )
     }
 
+    fn replacement_container() -> ContainerReference {
+        let mut properties = test_container_props();
+        properties.partition_key = test_partition_key_definition("/replacement-pk");
+        ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "replacement_container_rid",
+            &properties,
+        )
+    }
+
     #[test]
     fn create_operation() {
         let pk = PartitionKey::from("pk1");
@@ -1221,6 +1460,23 @@ mod tests {
         assert_eq!(op.resource_type(), ResourceType::Document);
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());
+    }
+
+    #[test]
+    fn retarget_rejects_explicit_epk_range() {
+        let range = FeedRange::new("10".into(), "20".into()).unwrap();
+        let mut operation = CosmosOperation::query_items(test_container(), Some(range.clone()));
+
+        let error = operation
+            .retarget_container(replacement_container())
+            .unwrap_err();
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+        );
+        assert_eq!(operation.container().unwrap().rid(), "testcontainer_rid");
+        assert_eq!(operation.target(), Some(&range));
     }
 
     #[test]
@@ -1330,6 +1586,56 @@ mod tests {
 
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());
+    }
+
+    /// Both retry layers consult this one predicate, so a failure the transport
+    /// pipeline declines to retry on another shard cannot then be retried
+    /// cross-region by the operation pipeline — strictly more expensive for
+    /// identical duplicate-execution semantics.
+    #[test]
+    fn ambiguous_outcome_retry_covers_non_idempotent_writes() {
+        let pk = PartitionKey::from("pk1");
+        let item = |op: fn(ItemReference) -> CosmosOperation| {
+            op(ItemReference::from_name(
+                &test_container(),
+                pk.clone(),
+                "doc1",
+            ))
+        };
+
+        for op in [
+            item(CosmosOperation::create_item),
+            item(CosmosOperation::upsert_item),
+            item(CosmosOperation::replace_item),
+            item(CosmosOperation::delete_item),
+            item(CosmosOperation::read_item),
+            CosmosOperation::batch(test_container(), pk.clone()),
+        ] {
+            assert!(
+                op.allows_ambiguous_outcome_retry(),
+                "{:?} must stay eligible for retry after an ambiguous failure",
+                op.operation_type()
+            );
+        }
+    }
+
+    #[test]
+    fn server_patch_ambiguous_retry_requires_resolved_safety() {
+        let patch = || {
+            CosmosOperation::patch_item(ItemReference::from_name(
+                &test_container(),
+                PartitionKey::from("pk1"),
+                "doc1",
+            ))
+        };
+
+        assert!(!patch().allows_ambiguous_outcome_retry());
+        assert!(patch()
+            .with_patch_retry_safe(true)
+            .allows_ambiguous_outcome_retry());
+        assert!(!patch()
+            .with_patch_retry_safe(false)
+            .allows_ambiguous_outcome_retry());
     }
 
     #[cfg(feature = "preview_dtx")]
@@ -1465,9 +1771,19 @@ mod tests {
 
         assert!(!CosmosOperation::read_item(item()).is_patch_sub_operation());
         assert!(!CosmosOperation::replace_item(item()).is_patch_sub_operation());
+        assert!(!CosmosOperation::read_item(item()).prefers_write_endpoints_for_read());
+        assert!(!CosmosOperation::read_item(item()).suppresses_hedging());
         assert!(CosmosOperation::read_item(item())
             .as_patch_sub_operation()
             .is_patch_sub_operation());
+        assert!(!CosmosOperation::read_item(item())
+            .as_patch_sub_operation()
+            .prefers_write_endpoints_for_read());
+
+        let patch_read = CosmosOperation::read_item(item()).as_patch_read_sub_operation();
+        assert!(patch_read.is_patch_sub_operation());
+        assert!(patch_read.prefers_write_endpoints_for_read());
+        assert!(patch_read.suppresses_hedging());
     }
 
     #[test]

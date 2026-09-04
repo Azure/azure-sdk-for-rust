@@ -16,18 +16,49 @@ cargo add azure_data_cosmos
 
 ### Prerequisites
 
-* An [Azure subscription] or free Azure Cosmos DB trial account.
+- An [Azure subscription] or free Azure Cosmos DB trial account.
 
 Note: If you don't have an Azure subscription, create a free account before you begin.
 You can Try Azure Cosmos DB for free without an Azure subscription, free of charge and commitments, or create an Azure Cosmos DB free tier account, with the first 400 RU/s and 5 GB of storage for free. You can also use the Azure Cosmos DB Emulator with a URI of <https://localhost:8081>. For the key to use with the emulator, see [how to develop with the emulator](https://learn.microsoft.com/azure/cosmos-db/how-to-develop-emulator).
+
+#### Known Issue: Using the vNext emulator
+
+The Azure Cosmos DB Linux vNext emulator does not currently support Cosmos
+binary JSON encoding. Binary encoding is enabled by default in this SDK and
+must be explicitly disabled when connecting to the vNext emulator. This is a
+temporary known issue, and we're working towards an automatic resolution.
+Please see the tracking issue at [Azure/azure-sdk-for-rust#5240](https://github.com/Azure/azure-sdk-for-rust/issues/5240).
+
+**NOTE:** This does NOT apply to the Windows emulator. Only the Linux emulators
+require disabling binary encoding.
+
+For now, you must disable Binary Encoding explicitly when building the client:
+
+```rust,ignore
+use azure_data_cosmos::{options::BinaryEncodingOptions, CosmosClient};
+
+let client = CosmosClient::builder()
+    .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(false))
+    .build(account, routing_strategy)
+    .await?;
+```
+
+Alternatively, disable binary encoding through the environment before starting
+the application:
+
+```sh
+export AZURE_COSMOS_BINARY_ENCODING_ENABLED=false
+```
+
+An explicit client option takes precedence over the environment variable.
 
 ### Create an Azure Cosmos DB account
 
 You can create an Azure Cosmos DB account using:
 
-* [Azure Portal](https://portal.azure.com).
-* [Azure CLI](https://learn.microsoft.com/cli/azure).
-* [Azure ARM](https://learn.microsoft.com/azure/cosmos-db/quick-create-template).
+- [Azure Portal](https://portal.azure.com).
+- [Azure CLI](https://learn.microsoft.com/cli/azure).
+- [Azure ARM](https://learn.microsoft.com/azure/cosmos-db/quick-create-template).
 
 #### Authenticate the client
 
@@ -37,8 +68,8 @@ In order to interact with the Azure Cosmos DB service you'll need to create an i
 
 The following section provides several code snippets covering some of the most common Azure Cosmos DB NoSQL API tasks, including:
 
-* [Create Client](#create-cosmos-db-client "Create Cosmos DB client")
-* [CRUD operation on Items](#crud-operation-on-items "CRUD operation on Items")
+- [Create Client](#create-cosmos-db-client "Create Cosmos DB client")
+- [CRUD operation on Items](#crud-operation-on-items "CRUD operation on Items")
 
 ### Create Cosmos DB Client
 
@@ -107,7 +138,6 @@ container metadata read the SDK already performs internally.
 ```rust
 use serde::{Serialize, Deserialize};
 use azure_data_cosmos::CosmosClient;
-use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
 
 #[derive(Serialize, Deserialize)]
 struct Item {
@@ -123,7 +153,10 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
         value: "2".into(),
     };
 
-    let container = cosmos_client.database_client("myDatabase").container_client("myContainer").await?;
+    let container = cosmos_client
+        .database_client("myDatabase")
+        .container_client("myContainer", None)
+        .await?;
 
     // Create an item
     container.create_item("partition1", "1", item, None).await?;
@@ -137,27 +170,45 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
     // Replace an item
     container.replace_item("partition1", "1", item, None).await?;
 
-    let patch = PatchInstructions::from(vec![
-        PatchOperation::set("/value", serde_json::json!("4")),
-    ]);
-    let patched: Item = container
-        .patch_item("partition1", "1", patch, None)
-        .await?
-        .into_model()?;
-    println!("patched value = {}", patched.value);
-
     // Delete an item
     container.delete_item("partition1", "1", None).await?;
     Ok(())
 }
 ```
 
+### Partial updates with PATCH (preview)
+
+`ContainerClient::patch_item()` applies JSON-Patch-style operations to a single item. It is
+gated behind the `preview_patch` feature and is **not production-ready**:
+
+```sh
+cargo add azure_data_cosmos --features preview_patch
+```
+
+```rust,ignore
+use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
+
+let patch = PatchInstructions::from(vec![
+    PatchOperation::set("/value", serde_json::json!("4")),
+]);
+let patched: Item = container
+    .patch_item("partition1", "1", patch, None)
+    .await?
+    .into_model()?;
+```
+
+The default `PatchStrategy::Auto` uses one server-side request for retry-safe
+lists containing at most 10 instructions. Unsafe or longer lists use the
+client-side read-modify-write path. Marker-backed tracking is used only for
+non-retry-safe lists. Explicit `ServerSide` never falls back and Cosmos DB
+rejects more than 10 instructions with HTTP 400.
+
 ## Next steps
 
-* [Resource Model of Azure Cosmos DB Service](https://learn.microsoft.com/azure/cosmos-db/sql-api-resources)
-* [Azure Cosmos DB Resource URI](https://learn.microsoft.com/rest/api/documentdb/documentdb-resource-uri-syntax-for-rest)
-* [Partitioning](https://learn.microsoft.com/azure/cosmos-db/partition-data)
-* [Using emulator](https://github.com/Azure/azure-documentdb-dotnet/blob/master/docs/documentdb-nosql-local-emulator.md)
+- [Resource Model of Azure Cosmos DB Service](https://learn.microsoft.com/azure/cosmos-db/sql-api-resources)
+- [Azure Cosmos DB Resource URI](https://learn.microsoft.com/rest/api/documentdb/documentdb-resource-uri-syntax-for-rest)
+- [Partitioning](https://learn.microsoft.com/azure/cosmos-db/partition-data)
+- [Using emulator](https://github.com/Azure/azure-documentdb-dotnet/blob/master/docs/documentdb-nosql-local-emulator.md)
 
 ### Provide feedback
 

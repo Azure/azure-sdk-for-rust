@@ -2,10 +2,12 @@
 
 ## Goal
 
-`eng/tools/generate_api` is a Rust CLI that generates two public API artifacts for a target crate:
+`eng/tools/generate_api` is a Rust CLI that generates the following public API artifacts for a target crate:
 
 1. `API.md` — one fenced `rust` block
-2. `apiview.json` — an APIView tree-style `CodeFile`
+2. `API.md.map` — an ECMA-426 source map for declaration lines in `API.md`
+3. `API.comments.patch` — a unified diff that adds doc comments back to `API.md`
+4. `apiview.json` — an APIView tree-style `CodeFile`
 
 ## Scope
 
@@ -21,14 +23,17 @@ The tool exposes:
 
 - `--manifest-path <path/to/Cargo.toml>`
 - `--format <markdown|apiview>` default `markdown`
-- `--no-docs` only for `apiview`
+- `--no-docs` suppresses doc comments in `apiview` and skips `API.comments.patch`
+- `--no-map` skips `API.md.map`; it is a no-op for `apiview`
+- `--check` compares generated content with existing files without writing; missing files pass
 - `--output <directory>`
 
 Behavior:
 
-- default `markdown` writes `API.md`
+- default `markdown` writes `API.md`, `API.md.map`, and `API.comments.patch`
 - `--format apiview` writes `apiview.json`
-- `--no-docs` suppresses APIView doc comment tokens
+- `--no-docs` suppresses APIView doc comment tokens and the Markdown comments patch
+- check comparisons ignore line-ending differences and mismatches exit `1`
 - progress goes to stdout
 - fatal errors go to stderr and exit `1`
 
@@ -37,7 +42,8 @@ Behavior:
 - Standalone bin crate in the `eng/tools` workspace
 - Uses `eng/tools/rust-toolchain.toml` toolchain `nightly-2026-04-14`
 - Keep rustdoc schema compatibility logic isolated from the tool-owned model and renderers
-- Current deps: `rustdoc-types`, `serde`, `serde_json`, `clap`
+- Current deps: `rustdoc-types`, `serde`, `serde_json`, `clap`, `sha2`
+- Add common dependencies to the `eng/tools` workspace using versions already used by the repository
 - `rustc-dev` stays included because long-term direction remains closer to librustdoc/HIR
 - Keep implementation and tests separate when practical. Prefer sibling `tests.rs` files over nested `mod tests` blocks. Tiny local `#[test]` items may stay inline
 
@@ -59,7 +65,7 @@ The shared model is the boundary between extraction and rendering.
 
 It currently models:
 
-- package metadata
+- package name, version, edition, rust-version, and features
 - modules
 - item doc comments
 - item attributes
@@ -170,8 +176,21 @@ Known synthesized derives:
 Documentation handling:
 
 - rustdoc docs stay separate from attrs in the shared model
-- markdown output currently omits doc comments
+- markdown output omits doc comments and emits them as a companion patch
 - APIView renders comment tokens with documentation markers
+
+Package metadata rendering:
+
+- Markdown renders the crate name first; APIView uses only the top-level `PackageName`
+- missing description, edition, or rust-version values are omitted
+- multiline descriptions render with the `Description` label on its own line
+- features use `default` plus `package.metadata.docs.rs.features` when present
+- without docs.rs feature metadata, all Cargo features render
+- crates without defined features render an empty `default` feature
+- `default` renders first, followed by other visible features in lexical order
+- render feature names only, except for the `default` feature's lexically sorted children
+- Markdown renders the crate name as H1, metadata before features, and features under an H2
+- APIView renders metadata and features as leading text-token lines followed by a blank text line
 
 Signature normalization:
 
@@ -186,6 +205,26 @@ For traits whose rustdoc-expanded methods carry synthetic async-trait lifetimes:
 - synthesize `#[async_trait]`
 - elide synthetic `'lifeN` and `'async_trait` lifetimes from signatures
 - remove empty generic parameter lists after elision
+
+## Comments patch output
+
+- `render::markdown::render_lines` renders every line and marks doc comment lines
+- `render::markdown::render_from_lines` drops the marked lines to produce `API.md`
+- `render::patch` turns the marked lines into a unified diff against `API.md`
+- the diff only contains insertions
+- each contiguous doc-comment block becomes its own hunk
+- each hunk includes only the doc comments plus the next non-doc line as context
+- no doc comments means an empty patch file
+
+## Source map output
+
+- `source_map` owns the generic ECMA-426 v3 schema and Base64 VLQ encoding
+- the shared model stores repo-relative zero-based declaration locations
+- `sourceRoot` points from an in-repo output directory to the repository root
+- output outside the repository omits `sourceRoot`; `sources` always stay repo-relative
+- Markdown maps item, module, and member declaration lines only
+- headings, metadata, fences, attributes, documentation, and structural closing lines are unmapped
+- `names` is omitted
 
 ## APIView output design
 

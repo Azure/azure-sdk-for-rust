@@ -358,10 +358,15 @@ pub async fn hpk_item_delete_full_key() -> Result<(), Box<dyn Error>> {
 }
 
 /// A5: patch a field on an item addressed by a full 2-level key.
+#[cfg(feature = "preview_patch")]
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn hpk_item_patch_full_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -802,16 +807,17 @@ pub async fn hpk_query_single_partition_order_by_servable() -> Result<(), Box<dy
     .await
 }
 
-/// B9: cross-partition advanced query operators (`DISTINCT`, aggregates,
-/// `GROUP BY`) over a hierarchical container are not servable.
+/// B9: cross-partition advanced query operators over a hierarchical container.
 ///
-/// The Rust SDK only advertises the `OffsetAndLimit,Top` cross-partition query
-/// features (see #4750), so any full-container query needing a client-side
-/// pipeline the SDK does not yet implement is rejected. HPK fan-out itself
-/// works since #4729 (see B6); these cases fail solely because the SDK lacks
-/// the corresponding cross-partition operator pipeline. Each case is expected
-/// to error with 400 BadRequest / 1004 CrossPartitionQueryNotServable.
-/// `OFFSET/LIMIT/TOP` are covered separately by the servable case below.
+/// The SDK advertises only the features it has a client-side pipeline for (see
+/// `query::SUPPORTED_QUERY_FEATURES`), and the service rejects any query needing
+/// one it did not advertise with 400 BadRequest / 1004
+/// CrossPartitionQueryNotServable. HPK fan-out itself already works (see B6),
+/// so these cases turn on operator support alone.
+///
+/// `DISTINCT` and `OFFSET`/`LIMIT`/`TOP` are servable now that their stages
+/// landed; aggregates and `GROUP BY` are still pipeline-less and remain
+/// rejected.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -826,8 +832,26 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
         async |run_context, db_client| {
             let container = seed_three_level(run_context, db_client).await?;
 
+            // Servable: DISTINCT has a client-side stage, and it must
+            // deduplicate correctly across the container's physical partitions.
+            let mut countries = collect_query::<serde_json::Value>(
+                &container,
+                "SELECT DISTINCT VALUE c.country FROM c",
+                FeedScope::full_container(),
+            )
+            .await?
+            .into_iter()
+            .map(|v| v.as_str().unwrap_or_default().to_owned())
+            .collect::<Vec<_>>();
+            countries.sort();
+            assert_eq!(
+                countries,
+                vec!["CANADA".to_string(), "USA".to_string()],
+                "cross-partition DISTINCT over an HPK container must return each country once"
+            );
+
+            // Still rejected: no client-side pipeline for these yet.
             let advanced = [
-                "SELECT DISTINCT c.country FROM c",
                 "SELECT VALUE COUNT(1) FROM c",
                 "SELECT c.state, COUNT(1) AS n FROM c GROUP BY c.state",
             ];

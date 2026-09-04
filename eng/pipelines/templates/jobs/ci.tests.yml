@@ -43,6 +43,12 @@ jobs:
       image: $(OSVmImage)
     os: ${{ parameters.OSName }}
 
+  variables:
+    # Must not be named `TestFeatureSet`: a variable whose expression reads its
+    # own name is a cycle Azure DevOps cannot resolve, so it emits the literal
+    # `$[ ... ]` text instead of a value.
+    EffectiveTestFeatureSet: $[ coalesce(variables['TestFeatureSet'], 'All') ]
+
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
@@ -83,6 +89,7 @@ jobs:
       filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
       arguments: >
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        -FeatureSet '$(EffectiveTestFeatureSet)'
 
   - task: Powershell@2
     displayName: Convert Test Results to JUnit XML

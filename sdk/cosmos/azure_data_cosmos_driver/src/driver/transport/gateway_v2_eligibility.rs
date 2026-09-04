@@ -12,12 +12,9 @@ use crate::models::{OperationType, ResourceType};
 /// scope for Rust SDK GA; every non-Document resource type falls back to
 /// standard Gateway via the eligibility-fallback path.
 ///
-/// `OperationType::Patch` always returns `false`: the driver short-circuits
-/// `Patch` operations to the driver-side `patch_handler` pipeline stage in
-/// `CosmosDriver::execute_operation` before transport selection ever runs,
-/// so the outer `Patch` operation never reaches Gateway 2.0 transport. The
-/// sub-operations the patch handler issues (`Read` / `Replace`) are each
-/// evaluated on their own merits.
+/// A server-side `OperationType::Patch` on a document is eligible and uses
+/// RNTBD opcode `0x0002`. Client-side PATCH never reaches transport selection
+/// as a PATCH; its helper Read and Replace are evaluated independently.
 ///
 /// `is_rid_addressed` operations always return `false`. Gateway 2.0 derives its
 /// `DatabaseName` / `CollectionName` routing tokens by parsing the signing link
@@ -54,11 +51,9 @@ pub(crate) fn is_operation_supported_by_gateway_v2(
             | OperationType::SqlQuery
             | OperationType::QueryPlan
             | OperationType::ReadFeed
+            | OperationType::Patch
             | OperationType::Batch => true,
-            OperationType::Head
-            | OperationType::HeadFeed
-            | OperationType::Execute
-            | OperationType::Patch => false,
+            OperationType::Head | OperationType::HeadFeed | OperationType::Execute => false,
             // Distributed transactions route through the standard gateway
             // coordinator, never the thin-client Gateway 2.0 path.
             #[cfg(feature = "preview_dtx")]
@@ -130,11 +125,9 @@ mod tests {
                 | OperationType::SqlQuery
                 | OperationType::QueryPlan
                 | OperationType::ReadFeed
+                | OperationType::Patch
                 | OperationType::Batch => true,
-                OperationType::Head
-                | OperationType::HeadFeed
-                | OperationType::Execute
-                | OperationType::Patch => false,
+                OperationType::Head | OperationType::HeadFeed | OperationType::Execute => false,
                 #[cfg(feature = "preview_dtx")]
                 OperationType::CommitDistributedTransaction
                 | OperationType::ReadDistributedTransaction => false,

@@ -12,12 +12,14 @@ mod cosmos_hpk;
 mod cosmos_items;
 mod cosmos_offers;
 mod cosmos_partition_key_types;
+#[cfg(feature = "preview_patch")]
 mod cosmos_patch;
 mod cosmos_proxy;
 mod cosmos_query;
 mod cosmos_query_features;
 mod cosmos_response_metadata;
 mod cosmos_rid_addressing;
+mod cosmos_vector_query;
 
 #[path = "../framework/mod.rs"]
 mod framework;

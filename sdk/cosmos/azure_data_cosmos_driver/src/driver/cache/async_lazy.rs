@@ -33,6 +33,13 @@ impl<T> AsyncLazy<T> {
         }
     }
 
+    /// Creates an initialized `AsyncLazy` from an existing shared value.
+    pub(crate) fn from_arc(value: Arc<T>) -> Self {
+        Self {
+            value: RwLock::new(Some(value)),
+        }
+    }
+
     /// Gets the value, initializing it with the provided future if necessary.
     ///
     /// Uses double-checked locking: the fast path acquires only a read lock.

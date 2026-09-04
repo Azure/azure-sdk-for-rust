@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.1
 
       # Both toolchains are required. Analyze-Code.ps1 runs `cargo +nightly docs-rs`
       # per package, and eng/scripts/verify-*.rs are cargo scripts whose shebangs
@@ -54,14 +54,14 @@ jobs:
       # Tool versions are pinned in eng/cgmanifest.json and read by Analyze-Code.ps1,
       # so a cache hit lets every `cargo install` short-circuit without rebuilding.
       - name: Cache analysis tools
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/cargo-tools
           key: ${{ runner.os }}-${{ runner.arch }}-analyze-tools-${{ hashFiles('eng/cgmanifest.json', 'rust-toolchain.toml') }}
 
       # Downloaded sources are toolchain independent, so an older entry is always safe to reuse.
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry/index/
@@ -74,7 +74,7 @@ jobs:
       # Compiled artifacts are only reusable under the same toolchains, so both the stable
       # pin (rust-toolchain.toml) and the nightly pin (Language-Settings.ps1) gate the key.
       - name: Cache cargo build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: target/
           key: ${{ runner.os }}-${{ runner.arch }}-analyze-target-${{ hashFiles('rust-toolchain.toml', 'eng/scripts/Language-Settings.ps1') }}-${{ hashFiles('Cargo.lock') }}

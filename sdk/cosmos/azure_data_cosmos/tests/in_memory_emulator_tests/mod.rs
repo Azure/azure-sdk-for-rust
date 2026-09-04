@@ -8,8 +8,10 @@
 
 pub mod change_feed;
 use std::time::Duration;
+use tracing_subscriber::EnvFilter;
 
 pub mod binary_round_trip;
+pub mod container_recreation;
 pub mod cosmos_hpk_split;
 pub mod driver_end_to_end;
 #[cfg(feature = "preview_dtx")]
@@ -24,6 +26,7 @@ pub mod partition_key_equality;
 pub mod partition_range_drain;
 pub mod query_comparison;
 pub mod session_token;
+pub mod topology_parity;
 pub mod user_agent;
 pub mod validation;
 
@@ -32,6 +35,26 @@ const SETUP_TIMEOUT_SECONDS_ENV_VAR: &str = "AZURE_COSMOS_TEST_SETUP_TIMEOUT_SEC
 
 /// Default live-account setup readiness window.
 const DEFAULT_SETUP_TIMEOUT_SECONDS: u64 = 180;
+
+fn configured_test_env_filter(value: &str) -> EnvFilter {
+    if value.trim().eq_ignore_ascii_case("trace") {
+        EnvFilter::new("debug")
+    } else {
+        EnvFilter::new(value)
+    }
+}
+
+fn test_env_filter() -> EnvFilter {
+    std::env::var("RUST_LOG")
+        .map(|value| configured_test_env_filter(&value))
+        .unwrap_or_else(|_| EnvFilter::from_default_env())
+}
+
+fn init_test_tracing() {
+    let _ = tracing_subscriber::fmt::fmt()
+        .with_env_filter(test_env_filter())
+        .try_init();
+}
 
 /// Returns the bounded live-account setup readiness window shared by the
 /// dual-backend suites, overridable via the
@@ -43,4 +66,47 @@ fn setup_timeout() -> Duration {
         .filter(|seconds| *seconds > 0)
         .map(Duration::from_secs)
         .unwrap_or_else(|| Duration::from_secs(DEFAULT_SETUP_TIMEOUT_SECONDS))
+}
+
+#[test]
+fn unscoped_trace_logging_is_capped_at_debug() {
+    use tracing_subscriber::prelude::*;
+
+    let subscriber = tracing_subscriber::registry().with(configured_test_env_filter("trace"));
+    tracing::subscriber::with_default(subscriber, || {
+        assert!(!tracing::enabled!(
+            target: "h2::codec::framed_read",
+            tracing::Level::TRACE
+        ));
+        assert!(tracing::enabled!(
+            target: "h2::codec::framed_read",
+            tracing::Level::DEBUG
+        ));
+        assert!(!tracing::enabled!(
+            target: "azure_data_cosmos_driver::driver",
+            tracing::Level::TRACE
+        ));
+    });
+
+    let subscriber = tracing_subscriber::registry().with(configured_test_env_filter("info"));
+    tracing::subscriber::with_default(subscriber, || {
+        assert!(!tracing::enabled!(
+            target: "h2::codec::framed_read",
+            tracing::Level::DEBUG
+        ));
+        assert!(tracing::enabled!(
+            target: "h2::codec::framed_read",
+            tracing::Level::INFO
+        ));
+    });
+
+    let subscriber = tracing_subscriber::registry().with(configured_test_env_filter(
+        "info,azure_data_cosmos_driver=trace",
+    ));
+    tracing::subscriber::with_default(subscriber, || {
+        assert!(tracing::enabled!(
+            target: "azure_data_cosmos_driver::driver",
+            tracing::Level::TRACE
+        ));
+    });
 }

@@ -24,13 +24,15 @@ use crate::{
 };
 
 use super::{
+    distinct_hash::Hash128,
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan, SortOrder},
     query_response,
     snapshot::{OrderByRangeToken, ValueBoundary},
-    streaming_ordered_merge, DrainedLeaf, OperationPlan, PartitionRoutingRefresh, Pipeline,
-    PipelineNode, PipelineNodeState, RangedToken, Request, RequestTarget, ResolvedRange,
-    SequentialDrain, SkipTake, StreamingOrderedMerge, TopologyProvider, UnorderedMerge,
+    streaming_ordered_merge, Distinct, DrainedLeaf, NonStreamingOrderedMerge, OperationPlan,
+    PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, RangedToken, Request,
+    RequestTarget, ResolvedRange, SequentialDrain, SkipTake, StreamingOrderedMerge,
+    TopologyProvider, UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -145,7 +147,12 @@ pub(crate) fn finalize_plan(
                 .build());
         }
     }
-    Ok(OperationPlan::new(pipeline, operation))
+    Ok(OperationPlan::new(
+        pipeline,
+        operation,
+        plan_options.clone(),
+        !is_fresh,
+    ))
 }
 
 /// Builds a fan-out [`Pipeline`] from a backend query plan as a sequential drain.
@@ -195,6 +202,15 @@ pub(crate) async fn build_sequential_drain(
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
+    build_sequential_drain_inner(query_plan, topology_provider, operation, resume).await
+}
+
+async fn build_sequential_drain_inner(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
     validate_query_plan(query_plan)?;
 
     // Global OFFSET / LIMIT / TOP window derived from the query plan.
@@ -237,6 +253,13 @@ pub(crate) async fn build_sequential_drain(
         }
         other => other,
     };
+
+    // `DISTINCT` sits *inside* the skip/take window (SQL applies OFFSET /
+    // LIMIT / TOP to the deduplicated stream), so its token state nests one
+    // level below `SkipTake`'s and is peeled second.
+    let distinct_type = plan_distinct_type(query_plan);
+    let (inner_resume, last_hash) = peel_distinct_resume(inner_resume, distinct_type)?;
+    let resumed_drained = matches!(inner_resume, Some(PipelineNodeState::Drained));
 
     let needs_skip_take = skip > 0 || take.is_some();
 
@@ -297,13 +320,28 @@ pub(crate) async fn build_sequential_drain(
     // the single Request with multiple Requests.
     let fanout: Box<dyn PipelineNode> = Box::new(SequentialDrain::new(request_nodes));
 
+    // `DISTINCT` deduplicates the fan-out stream first; the global skip/take
+    // window then counts deduplicated rows, matching SQL semantics.
+    let deduped = apply_distinct(
+        fanout,
+        distinct_type,
+        last_hash,
+        resumed_drained,
+        operation.emits_binary_payload(),
+    );
+
     // Cross-partition OFFSET / LIMIT / TOP applies a global skip/take over the
     // fan-out's EPK-ordered stream. When none is present the fan-out is the
     // pipeline root directly.
     let root: Box<dyn PipelineNode> = if needs_skip_take {
-        Box::new(SkipTake::new(fanout, skip, take))
+        Box::new(SkipTake::new(
+            deduped,
+            skip,
+            take,
+            operation.emits_binary_payload(),
+        ))
     } else {
-        fanout
+        deduped
     };
     Ok(Pipeline::new(root))
 }
@@ -312,6 +350,141 @@ pub(crate) async fn build_sequential_drain(
 /// more `ORDER BY` columns not requiring the non-streaming buffered sort).
 pub(crate) fn is_streaming_order_by(info: &QueryInfo) -> bool {
     !info.order_by.is_empty() && !info.has_non_streaming_order_by
+}
+
+/// `true` if `query_info` selects the fully buffered non-streaming ORDER BY pipeline.
+pub(crate) fn is_non_streaming_order_by(info: &QueryInfo) -> bool {
+    info.has_non_streaming_order_by
+}
+
+/// Builds a bounded, fully buffered merge for a finite non-streaming ORDER BY query.
+pub(crate) async fn build_non_streaming_ordered_merge(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
+    if resume.is_some() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(
+                crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED,
+            )
+            .with_message(
+                "cross-partition non-streaming ORDER BY queries cannot be resumed from a continuation token",
+            )
+            .build());
+    }
+
+    if query_plan.hybrid_search_query_info.is_some() {
+        return Err(unsupported_feature(
+            "hybrid search combined with non-streaming ORDER BY",
+        ));
+    }
+
+    let info = query_plan.query_info.as_ref().ok_or_else(|| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+            .with_message(
+                "internal error: non-streaming ORDER BY path selected with no queryInfo present",
+            )
+            .build()
+    })?;
+    if !info.has_non_streaming_order_by {
+        return Err(unsupported_feature(
+            "non-streaming ORDER BY path selected for a streaming query",
+        ));
+    }
+    if info.distinct_type != DistinctType::None {
+        return Err(unsupported_feature(
+            "DISTINCT combined with non-streaming ORDER BY",
+        ));
+    }
+    if !info.aggregates.is_empty() {
+        return Err(unsupported_feature(
+            "aggregates combined with non-streaming ORDER BY",
+        ));
+    }
+    if !info.group_by_expressions.is_empty() {
+        return Err(unsupported_feature(
+            "GROUP BY combined with non-streaming ORDER BY",
+        ));
+    }
+    if info.order_by.is_empty() {
+        return Err(unsupported_feature(
+            "non-streaming ORDER BY requires at least one sort key",
+        ));
+    }
+    if info
+        .rewritten_query
+        .as_deref()
+        .is_none_or(|query| query.is_empty())
+    {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(
+                crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY,
+            )
+            .with_message(
+                "query plan reported non-streaming ORDER BY but did not supply a non-empty rewrittenQuery",
+            )
+            .build());
+    }
+
+    let skip = info.offset.unwrap_or(0);
+    let take = combine_take(info).ok_or_else(|| {
+        crate::error::CosmosError::builder()
+            .with_status(
+                crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW,
+            )
+            .with_message(
+                "cross-partition non-streaming ORDER BY requires a finite TOP or OFFSET/LIMIT window",
+            )
+            .build()
+    })?;
+    let retention_limit = skip.checked_add(take).ok_or_else(|| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+            .with_message("non-streaming ORDER BY OFFSET plus take overflows the supported window")
+            .build()
+    })?;
+    let retention_limit = usize::try_from(retention_limit).map_err(|_| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+            .with_message("non-streaming ORDER BY candidate window does not fit in memory")
+            .build()
+    })?;
+    let skip = usize::try_from(skip).map_err(|_| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+            .with_message("non-streaming ORDER BY OFFSET does not fit in memory")
+            .build()
+    })?;
+    let take = usize::try_from(take).map_err(|_| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+            .with_message("non-streaming ORDER BY take does not fit in memory")
+            .build()
+    })?;
+
+    let effective_operation = rewritten_operation(operation, query_plan)?;
+    let request_nodes = plan_fresh(query_plan, topology_provider, &effective_operation).await?;
+    if request_nodes.is_empty() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("query plan produced no partition ranges to query")
+            .build());
+    }
+
+    let fanout: Box<dyn PipelineNode> = Box::new(SequentialDrain::new(request_nodes));
+    let root = Box::new(NonStreamingOrderedMerge::new(
+        fanout,
+        info.order_by.clone(),
+        retention_limit,
+        skip,
+        take,
+        operation.request_headers().max_item_count,
+        operation.emits_binary_payload(),
+    ));
+    Ok(Pipeline::new(root))
 }
 
 /// Builds a [`streaming_ordered_merge::StreamingOrderedMerge`] pipeline
@@ -324,6 +497,15 @@ pub(crate) fn is_streaming_order_by(info: &QueryInfo) -> bool {
 /// rebuilds it via [`streaming_ordered_merge::build_children`], the same
 /// path a live split uses.
 pub(crate) async fn build_streaming_ordered_merge(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
+    build_streaming_ordered_merge_inner(query_plan, topology_provider, operation, resume).await
+}
+
+async fn build_streaming_ordered_merge_inner(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
@@ -389,6 +571,13 @@ pub(crate) async fn build_streaming_ordered_merge(
         }
         other => other,
     };
+
+    // `DISTINCT` sits *inside* the skip/take window (SQL applies OFFSET /
+    // LIMIT / TOP to the deduplicated stream), so its token state nests one
+    // level below `SkipTake`'s and is peeled second.
+    let distinct_type = plan_distinct_type(query_plan);
+    let (resume, last_hash) = peel_distinct_resume(resume, distinct_type)?;
+    let resumed_drained = matches!(resume, Some(PipelineNodeState::Drained));
 
     let query_from_beginning = query_response::rewritten_query_from_beginning(rewritten_query)?;
     let plain_body = query_response::rewrite_query_body(operation.body(), &query_from_beginning)?;
@@ -507,6 +696,7 @@ pub(crate) async fn build_streaming_ordered_merge(
             .build());
     }
 
+    let emit_binary = plain_operation.emits_binary_payload();
     let ordered_root: Box<dyn PipelineNode> = Box::new(StreamingOrderedMerge::new(
         plain_operation,
         directions,
@@ -514,13 +704,23 @@ pub(crate) async fn build_streaming_ordered_merge(
         query_fingerprint,
     ));
 
+    // `DISTINCT` deduplicates the ordered stream first; the global skip/take
+    // window then counts deduplicated rows, matching SQL semantics.
+    let deduped = apply_distinct(
+        ordered_root,
+        distinct_type,
+        last_hash,
+        resumed_drained,
+        emit_binary,
+    );
+
     // Apply the global OFFSET / LIMIT / TOP window over the ordered stream. When
     // the query carries none, the ordered merge is the pipeline root directly.
     let needs_skip_take = skip > 0 || take.is_some();
     let root: Box<dyn PipelineNode> = if needs_skip_take {
-        Box::new(SkipTake::new(ordered_root, skip, take))
+        Box::new(SkipTake::new(deduped, skip, take, emit_binary))
     } else {
-        ordered_root
+        deduped
     };
     Ok(Pipeline::new(root))
 }
@@ -1271,6 +1471,7 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
         PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
         PipelineNodeState::SkipTake { .. } => "SkipTake",
         PipelineNodeState::StreamingOrderedMerge { .. } => "StreamingOrderedMerge",
+        PipelineNodeState::Distinct { .. } => "Distinct",
     }
 }
 
@@ -1324,6 +1525,119 @@ fn validate_unordered_merge_tokens(
     Ok(parsed)
 }
 
+/// The kind of deduplication this query plan asks for, or
+/// [`DistinctType::None`] when it asks for none.
+fn plan_distinct_type(plan: &QueryPlan) -> DistinctType {
+    plan.query_info
+        .as_ref()
+        .map(|info| info.distinct_type)
+        .unwrap_or_default()
+}
+
+/// Wraps `pipeline`'s root in a [`Distinct`] stage when the plan calls for
+/// deduplication, leaving it untouched otherwise.
+///
+/// `DISTINCT` composes *above* the fan-out root, matching .NET's
+/// `PipelineFactory` and Java's `PipelinedDocumentQueryExecutionContext`:
+/// merge/`ORDER BY` -> aggregate -> **DISTINCT** -> `GROUP BY` ->
+/// `OFFSET`/`LIMIT`/`TOP`.
+/// Wraps `node` in a [`Distinct`] stage when the plan calls for one.
+///
+/// `DISTINCT` deduplicates *before* any `OFFSET` / `LIMIT` / `TOP` window is
+/// applied, so callers must wrap the fan-out with this first and only then
+/// apply [`SkipTake`]; otherwise the window would count duplicate rows.
+fn apply_distinct(
+    node: Box<dyn PipelineNode>,
+    distinct_type: DistinctType,
+    last_hash: Option<Hash128>,
+    resumed_drained: bool,
+    emit_binary: bool,
+) -> Box<dyn PipelineNode> {
+    if distinct_type == DistinctType::None {
+        return node;
+    }
+    // A fully-drained resume needs no deduplication stage: the inner pipeline
+    // is a `DrainedLeaf` and will emit nothing. Wrapping it would leave a
+    // `Distinct` whose `exhausted` is still `false`, so an unordered query
+    // would refuse to re-snapshot a token it had just accepted.
+    if resumed_drained {
+        return node;
+    }
+    Box::new(Distinct::with_last_hash(
+        node,
+        distinct_type,
+        last_hash,
+        emit_binary,
+    ))
+}
+
+/// Splits a resume state into the inner (fan-out) state and the `DISTINCT`
+/// stage's saved `last_hash`, rejecting any token whose shape or distinct kind
+/// does not match the current query plan.
+///
+/// A token minted before DISTINCT support (or for a non-DISTINCT query) has no
+/// `Distinct` layer; resuming it into a DISTINCT plan would silently skip
+/// deduplication, so it is rejected rather than reinterpreted. The mirror case
+/// — a `Distinct` token resumed into a non-DISTINCT plan — falls through to the
+/// inner builders, which reject the unexpected shape.
+fn peel_distinct_resume(
+    resume: Option<PipelineNodeState>,
+    distinct_type: DistinctType,
+) -> crate::error::Result<(Option<PipelineNodeState>, Option<Hash128>)> {
+    match resume {
+        Some(PipelineNodeState::Distinct {
+            distinct_type: saved,
+            last_hash,
+            child,
+        }) => {
+            if saved != distinct_type {
+                return Err(distinct_token_mismatch(saved, distinct_type));
+            }
+            if saved != DistinctType::Ordered {
+                // We never mint one, so this is a hand-crafted or corrupted
+                // token. Resuming would re-emit every value seen before the
+                // checkpoint.
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED,
+                    )
+                    .with_message(
+                        "continuation token carries unordered DISTINCT state, which cannot be \
+                         resumed; add a matching ORDER BY to make the query resumable",
+                    )
+                    .build());
+            }
+            Ok((Some(*child), last_hash))
+        }
+        // `Drained` is shape-agnostic: the whole pipeline, DISTINCT included,
+        // finished.
+        Some(PipelineNodeState::Drained) => Ok((Some(PipelineNodeState::Drained), None)),
+        Some(other) if distinct_type != DistinctType::None => {
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(format!(
+                    "continuation token shape {} does not match a DISTINCT query",
+                    snapshot_kind(&other)
+                ))
+                .build())
+        }
+        other => Ok((other, None)),
+    }
+}
+
+fn distinct_token_mismatch(
+    saved: DistinctType,
+    expected: DistinctType,
+) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        .with_message(format!(
+            "continuation token was minted for {saved:?} DISTINCT but the query plan reports \
+             {expected:?}"
+        ))
+        .build()
+}
+
 /// Validates that the query plan does not require features we don't yet support.
 fn validate_query_plan(plan: &QueryPlan) -> crate::error::Result<()> {
     if plan.hybrid_search_query_info.is_some() {
@@ -1346,9 +1660,6 @@ fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
     }
     if !info.group_by_expressions.is_empty() {
         return Err(unsupported_feature("GROUP BY in cross-partition queries"));
-    }
-    if info.distinct_type != DistinctType::None {
-        return Err(unsupported_feature("DISTINCT in cross-partition queries"));
     }
     Ok(())
 }
@@ -1388,6 +1699,7 @@ fn rewritten_operation(
     else {
         return Ok(Arc::clone(operation));
     };
+    let rewritten = query_response::rewritten_query_from_beginning(rewritten)?;
 
     let mut body: serde_json::Value = match operation.body() {
         Some(bytes) if !bytes.is_empty() => serde_json::from_slice(bytes).map_err(|e| {
@@ -1412,10 +1724,7 @@ fn rewritten_operation(
             )
             .build());
     };
-    map.insert(
-        "query".to_owned(),
-        serde_json::Value::String(rewritten.to_owned()),
-    );
+    map.insert("query".to_owned(), serde_json::Value::String(rewritten));
 
     let new_body = serde_json::to_vec(&body).map_err(|e| {
         crate::error::CosmosError::builder()
@@ -1461,11 +1770,6 @@ fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error:
     if !info.group_by_expressions.is_empty() {
         return Err(unsupported_feature(
             "GROUP BY combined with ORDER BY in cross-partition queries",
-        ));
-    }
-    if info.distinct_type != DistinctType::None {
-        return Err(unsupported_feature(
-            "DISTINCT combined with ORDER BY in cross-partition queries",
         ));
     }
     Ok(())
@@ -2508,6 +2812,36 @@ mod tests {
         assert_eq!(parsed["query"], "SELECT * FROM c OFFSET 0 LIMIT 5");
     }
 
+    #[test]
+    fn rewritten_operation_replaces_formattable_order_by_placeholder() {
+        let operation = Arc::new(
+            cross_partition_query_operation().with_body(
+                br#"{"query":"SELECT TOP 2 * FROM c ORDER BY VectorDistance(c.v, @v, false)","parameters":[{"name":"@v","value":[0.0,1.0]}]}"#
+                    .to_vec(),
+            ),
+        );
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                rewritten_query: Some(
+                    "SELECT TOP 2 c._rid, [{\"item\": VectorDistance(c.v, @v, false)}] AS orderByItems, c AS payload FROM c WHERE {documentdb-formattableorderbyquery-filter} ORDER BY VectorDistance(c.v, @v, false)"
+                        .to_owned(),
+                ),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let rewritten = rewritten_operation(&operation, &plan).unwrap();
+        let body: serde_json::Value = serde_json::from_slice(rewritten.body().unwrap()).unwrap();
+        let query = body["query"].as_str().unwrap();
+        assert!(query.contains("WHERE true"));
+        assert!(!query.contains("documentdb-formattableorderbyquery-filter"));
+        assert_eq!(
+            body["parameters"][0]["value"],
+            serde_json::json!([0.0, 1.0])
+        );
+    }
+
     #[tokio::test]
     async fn rejects_query_plan_with_order_by() {
         use super::super::query_plan::SortOrder;
@@ -3446,6 +3780,143 @@ mod tests {
         let mut non_streaming = order_by_query_info(Some("SELECT 1"));
         non_streaming.has_non_streaming_order_by = true;
         assert!(!is_streaming_order_by(&non_streaming));
+        assert!(is_non_streaming_order_by(&non_streaming));
+    }
+
+    fn non_streaming_order_by_operation() -> CosmosOperation {
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full())).with_body(
+            br#"{"query":"SELECT TOP 5 c.id FROM c ORDER BY c.rank, c.tie DESC","parameters":[]}"#
+                .to_vec(),
+        )
+    }
+
+    fn non_streaming_order_by_plan() -> QueryPlan {
+        QueryPlan {
+            partitioned_query_execution_info_version: 2,
+            query_info: Some(QueryInfo {
+                top: Some(5),
+                order_by: vec![SortOrder::Ascending, SortOrder::Descending],
+                order_by_expressions: vec!["c.rank".to_owned(), "c.tie".to_owned()],
+                rewritten_query: Some(
+                    "SELECT c._rid, [{\"item\": c.rank}, {\"item\": c.tie}] AS orderByItems, c.id AS payload FROM c ORDER BY c.rank, c.tie DESC"
+                        .to_owned(),
+                ),
+                has_non_streaming_order_by: true,
+                ..Default::default()
+            }),
+            query_ranges: vec![qr("", "FF")],
+            hybrid_search_query_info: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn build_non_streaming_ordered_merge_trusts_plan_metadata() {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let plan = non_streaming_order_by_plan();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "80", "pk-left"),
+            rr("80", "FF", "pk-right"),
+        ])]);
+
+        let pipeline = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .unwrap();
+        let merge = pipeline
+            .into_root()
+            .downcast::<crate::driver::dataflow::NonStreamingOrderedMerge>()
+            .expect("root must be a NonStreamingOrderedMerge");
+        let mut children = merge.into_children();
+        let drain = children
+            .pop()
+            .unwrap()
+            .downcast::<crate::driver::dataflow::SequentialDrain>()
+            .expect("buffered merge child must be a SequentialDrain");
+        assert_eq!(drain.into_children().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn build_non_streaming_ordered_merge_requires_finite_window() {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let mut plan = non_streaming_order_by_plan();
+        plan.query_info.as_mut().unwrap().top = None;
+        let mut topology = MockTopologyProvider::new(Vec::new());
+
+        let err = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW
+        );
+    }
+
+    #[tokio::test]
+    async fn build_non_streaming_ordered_merge_accepts_large_finite_window() {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let mut plan = non_streaming_order_by_plan();
+        let info = plan.query_info.as_mut().unwrap();
+        info.top = None;
+        info.offset = Some(50_000);
+        info.limit = Some(3);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-range")])]);
+
+        let pipeline = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .expect("finite windows are not capped by the client");
+        assert!(pipeline
+            .into_root()
+            .downcast::<crate::driver::dataflow::NonStreamingOrderedMerge>()
+            .is_some());
+    }
+
+    #[tokio::test]
+    async fn build_non_streaming_ordered_merge_rejects_resume_and_streaming_plan() {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let plan = non_streaming_order_by_plan();
+        let mut topology = MockTopologyProvider::new(Vec::new());
+        let err = build_non_streaming_ordered_merge(
+            &plan,
+            &mut topology,
+            &operation,
+            Some(PipelineNodeState::Drained),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+        );
+
+        let mut streaming_plan = non_streaming_order_by_plan();
+        streaming_plan
+            .query_info
+            .as_mut()
+            .unwrap()
+            .has_non_streaming_order_by = false;
+        let err =
+            build_non_streaming_ordered_merge(&streaming_plan, &mut topology, &operation, None)
+                .await
+                .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+        );
+    }
+
+    #[tokio::test]
+    async fn build_non_streaming_ordered_merge_rejects_distinct() {
+        let operation = Arc::new(non_streaming_order_by_operation());
+        let mut plan = non_streaming_order_by_plan();
+        plan.query_info.as_mut().unwrap().distinct_type = DistinctType::Unordered;
+        let mut topology = MockTopologyProvider::new(Vec::new());
+
+        let err = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+        );
     }
 
     #[test]
@@ -3487,7 +3958,7 @@ mod tests {
     }
 
     #[test]
-    fn validate_query_plan_for_streaming_order_by_rejects_aggregates_group_by_distinct() {
+    fn validate_query_plan_for_streaming_order_by_rejects_aggregates_and_group_by() {
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().aggregates = vec!["Count".to_owned()];
         assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
@@ -3495,10 +3966,176 @@ mod tests {
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().group_by_expressions = vec!["c.a".to_owned()];
         assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
 
+    /// DISTINCT is now composed as a stage above the merge rather than
+    /// rejected, so plan validation must accept it in both forms.
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_accepts_distinct() {
+        for distinct_type in [DistinctType::Ordered, DistinctType::Unordered] {
+            let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+            plan.query_info.as_mut().unwrap().distinct_type = distinct_type;
+            assert!(
+                validate_query_plan_for_streaming_order_by(&plan).is_ok(),
+                "{distinct_type:?} DISTINCT must be accepted alongside ORDER BY"
+            );
+        }
+    }
+
+    // ── DISTINCT continuation-token validation ───────────────────────────
+    //
+    // The catalog scenarios `malformed_token_rejected`,
+    // `token_shape_mismatch_rejected`, and
+    // `distinct_type_mismatch_on_resume_rejected` are pinned here, since they
+    // are about token shape rather than page contents.
+
+    fn distinct_state(distinct_type: DistinctType) -> PipelineNodeState {
+        PipelineNodeState::Distinct {
+            distinct_type,
+            last_hash: None,
+            child: Box::new(PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk: String::new(),
+                active_tokens: Vec::new(),
+            }),
+        }
+    }
+
+    #[test]
+    fn peel_distinct_resume_unwraps_a_matching_ordered_token() {
+        let (inner, last_hash) = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Ordered)),
+            DistinctType::Ordered,
+        )
+        .expect("a matching ordered token resumes");
+        assert!(matches!(
+            inner,
+            Some(PipelineNodeState::SequentialDrain { .. })
+        ));
+        assert_eq!(last_hash, None);
+    }
+
+    /// Catalog: `distinct_type_mismatch_on_resume_rejected`. Reinterpreting an
+    /// ordered token as unordered would apply adjacency deduplication to an
+    /// unsorted stream.
+    #[test]
+    fn peel_distinct_resume_rejects_a_distinct_type_mismatch() {
+        let err = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Ordered)),
+            DistinctType::Unordered,
+        )
+        .expect_err("an ordered token must not resume an unordered plan");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
+        assert!(err.to_string().contains("minted for"));
+    }
+
+    /// We never mint an unordered DISTINCT token, so one can only be
+    /// hand-crafted or corrupted — and resuming it would re-emit every value
+    /// seen before the checkpoint.
+    #[test]
+    fn peel_distinct_resume_rejects_a_hand_crafted_unordered_token() {
+        let err = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Unordered)),
+            DistinctType::Unordered,
+        )
+        .expect_err("an unordered DISTINCT token is never resumable");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED)
+        );
+        assert!(err.to_string().contains("ORDER BY"));
+    }
+
+    /// Catalog: `token_shape_mismatch_rejected`. A token minted before DISTINCT
+    /// support (or for a non-DISTINCT query) has no `Distinct` layer; resuming
+    /// it would silently skip deduplication for every remaining page.
+    #[test]
+    fn peel_distinct_resume_rejects_a_token_without_a_distinct_layer() {
+        let err = peel_distinct_resume(
+            Some(PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk: String::new(),
+                active_tokens: Vec::new(),
+            }),
+            DistinctType::Unordered,
+        )
+        .expect_err("a non-DISTINCT token must not resume a DISTINCT plan");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
+        assert!(err.to_string().contains("does not match a DISTINCT query"));
+    }
+
+    /// The mirror case: a `Distinct` token handed to a plan that no longer asks
+    /// for deduplication is rejected rather than reinterpreted.
+    #[test]
+    fn peel_distinct_resume_rejects_a_distinct_token_for_a_plain_plan() {
+        let err = peel_distinct_resume(
+            Some(distinct_state(DistinctType::Ordered)),
+            DistinctType::None,
+        )
+        .expect_err("a DISTINCT token cannot resume a plain plan");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
+    }
+
+    /// `Drained` is shape-agnostic: the whole pipeline, DISTINCT included,
+    /// finished, so it must resume for any plan shape.
+    #[test]
+    fn peel_distinct_resume_passes_drained_through_unchanged() {
+        for distinct_type in [
+            DistinctType::None,
+            DistinctType::Ordered,
+            DistinctType::Unordered,
+        ] {
+            let (inner, last_hash) =
+                peel_distinct_resume(Some(PipelineNodeState::Drained), distinct_type)
+                    .expect("a drained token resumes for any shape");
+            assert!(matches!(inner, Some(PipelineNodeState::Drained)));
+            assert_eq!(last_hash, None);
+        }
+    }
+
+    #[test]
+    fn peel_distinct_resume_passes_a_fresh_start_through() {
+        let (inner, last_hash) = peel_distinct_resume(None, DistinctType::Unordered)
+            .expect("a fresh start needs no token");
+        assert!(inner.is_none());
+        assert_eq!(last_hash, None);
+    }
+
+    /// Catalog: `malformed_token_rejected`. Wrapping the fan-out state in a
+    /// `Distinct` layer must not bypass the inner state's own validation — a
+    /// malformed child is still rejected rather than silently restarting the
+    /// query (which would re-emit every row).
+    #[tokio::test]
+    async fn distinct_token_with_a_malformed_child_is_still_rejected() {
         let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
         plan.query_info.as_mut().unwrap().distinct_type = DistinctType::Ordered;
-        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+        let operation = Arc::new(order_by_operation());
+        let mut topology = MockTopologyProvider::new(vec![]);
+
+        // A `SequentialDrain` child is the wrong shape under a streaming
+        // ORDER BY plan, and the inner builder must say so.
+        let malformed = PipelineNodeState::Distinct {
+            distinct_type: DistinctType::Ordered,
+            last_hash: None,
+            child: Box::new(PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk: String::new(),
+                active_tokens: Vec::new(),
+            }),
+        };
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &operation, Some(malformed))
+            .await
+            .expect_err("a malformed inner state must not resume");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        );
     }
 
     #[test]

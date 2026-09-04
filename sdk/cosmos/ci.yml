@@ -52,10 +52,30 @@ extends:
       # Live budget for the binary-encoding round-trip fuzzer
       # (azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs). Only consumed on
       # the `binary_encoding` live leg (live-platform-matrix.json); a no-op
-      # elsewhere. Each iteration exercises 3 encoding configs x 4 point ops, so
-      # 200 => ~2400 round-trips — bounded to fit the live-test time cap. Bump it
-      # for a deeper soak.
-      AZURE_COSMOS_FUZZ_ITERATIONS: '200'
+      # elsewhere. Each iteration exercises 3 encoding configs; every config runs
+      # 4 point ops + 1 single-partition query + 1 cross-partition ORDER BY
+      # query, and the pure-`binary` config adds a typed wide-integer probe of
+      # 3 more round-trips (upsert, point read, ORDER BY). That is 3*6 + 3 = 21
+      # per iteration, so 180 => ~3800.
+      #
+      # Treat that as a floor, not a total. It counts only the calls the fuzzer
+      # makes by name: it does not count the query-plan request a
+      # cross-partition query issues, nor the partition-key-range lookups, nor
+      # the per-partition fan-out of an ORDER BY (one page fetch per physical
+      # partition, not one per query). The real request count is higher by a
+      # factor that depends on the container's partition count, so size the
+      # budget by wall clock rather than by this number.
+      #
+      # ORDER BY runs on every config so the control exercises the same surface
+      # as the experiment (#4976); it previously ran only on pure `binary`, which
+      # left an ORDER BY failure unattributable. Iterations dropped 200 => 180 to
+      # hold the total round-trip count roughly flat while paying for that
+      # coverage.
+      #
+      # Neither count has been timed against a full live run; the leg already
+      # needs ~63-65 min of the 90-min cap, so if it starts being cancelled,
+      # lower this first. Raise it for a deeper soak.
+      AZURE_COSMOS_FUZZ_ITERATIONS: '180'
       # Enable the wide-number generator (integers at or beyond 2^53, where the
       # service's number model stores the value as an IEEE-754 double). Without
       # this the fuzzer never covers the precision boundary it exists to guard.
@@ -72,6 +92,19 @@ extends:
         Selection: sparse
         NonSparseParameters: RustToolchainName
         GenerateVMJobs: true
+      # Non-blocking, byte-level codec fuzzing (cargo-fuzz). Adds a single
+      # Linux + nightly job to the Build stage (MatrixConfigs is Build-only).
+      # Its test-setup hook (Invoke-CosmosTestSetup.ps1, gated on
+      # AZURE_COSMOS_FUZZ=1) replays the golden vectors once (libFuzzer -runs=0)
+      # to prove they still decode without panicking. ContinueOnError=true, so a
+      # crash reports "succeeded with issues"; crash inputs are published as
+      # artifacts. Weekly-only: the golden vectors are already covered per-PR by
+      # the offline conformance unit tests. Runner: eng/scripts/Run-BinaryJsonFuzz.ps1.
+      - ${{ if or(eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}:
+        - Name: Cosmos_binary_codec_golden_vector_validation
+          Path: sdk/cosmos/fuzz-matrix.json
+          Selection: all
+          GenerateVMJobs: true
       # Emulator jobs run only in Build. `MatrixConfigs` (unlike
       # `AdditionalMatrixConfigs`) is never consumed by the live-test stage in
       # archetype-sdk-client.yml, so these entries don't enter live stages,

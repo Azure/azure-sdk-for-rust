@@ -373,6 +373,41 @@ fn is_constant_expression(expr: &SqlScalarExpression) -> bool {
     }
 }
 
+/// `true` when a `DISTINCT` query can be deduplicated by adjacency: a
+/// `SELECT DISTINCT VALUE <path>` whose `ORDER BY` is exactly that one path.
+///
+/// Adjacency deduplication compares each row only against the previous one, so
+/// it is sound only when the sort groups structurally equal *projected rows*
+/// into contiguous runs. `SELECT DISTINCT c.name, c.city FROM c ORDER BY c.name`
+/// can legitimately deliver `(a,x), (a,y), (a,x)`, which an adjacency map would
+/// emit twice.
+///
+/// The exact shape is measured, not derived — against a live account with
+/// production's `SUPPORTED_QUERY_FEATURES`, the Gateway reports `Ordered` for
+/// `SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name ASC` (ascending or
+/// descending) and `Unordered` for every other form tried: the list form
+/// (`SELECT DISTINCT c.name …`) whatever its `ORDER BY`, a sort on a different
+/// path, a multi-column `ORDER BY` even when it *leads* with the projected path,
+/// and no `ORDER BY` at all. `tests/gateway_query_plan_comparison.rs::gw_distinct`
+/// pins each of those against the live service.
+///
+/// Matching the service exactly keeps this generator in step with the plans the
+/// driver executes; it is also the only form
+/// `synthesize_order_by_rewritten_query` can build an envelope query for. When
+/// in doubt, `Unordered` is always correct and merely gives up resumability.
+fn distinct_is_ordered(spec: &SqlSelectSpec, order_by_expressions: &[String]) -> bool {
+    // Exactly one sort key; see the measured note above.
+    let [sort_path] = order_by_expressions else {
+        return false;
+    };
+    // Only `SELECT DISTINCT VALUE <expr>`.
+    let SqlSelectSpec::Value(expr) = spec else {
+        return false;
+    };
+    let mut parts = Vec::new();
+    collect_path_parts(expr, &mut parts) && parts.join(".") == *sort_path
+}
+
 fn analyze_query(query: &SqlQuery, parameters: &Params) -> crate::error::Result<LocalQueryInfo> {
     let mut info = LocalQueryInfo {
         has_select_value: matches!(query.select.spec, SqlSelectSpec::Value(_)),
@@ -380,29 +415,8 @@ fn analyze_query(query: &SqlQuery, parameters: &Params) -> crate::error::Result<
         ..Default::default()
     };
 
-    // DISTINCT — Gateway optimizes away DISTINCT when the SELECT expression is a
-    // constant (literal) that doesn't reference any collection variable, because
-    // a single constant value is always distinct by definition.
-    if query.select.distinct {
-        // Gateway only collapses DISTINCT-on-constant for the `SELECT DISTINCT VALUE <expr>`
-        // form. The list form (`SELECT DISTINCT 1, 2 FROM c`) is treated as ordinary DISTINCT
-        // by the Gateway because the result rows are JSON objects (with synthesized property
-        // names) and are therefore not all guaranteed to be identical. We mirror that
-        // asymmetry intentionally — do not extend this to `SqlSelectSpec::List` without
-        // verifying behavior against the Gateway.
-        let is_constant_select = match &query.select.spec {
-            SqlSelectSpec::Value(expr) => is_constant_expression(expr),
-            _ => false,
-        };
-        if is_constant_select {
-            // Gateway reports distinctType: "None" for constant expressions
-            info.distinct_type = DistinctType::None;
-        } else if query.order_by.is_some() {
-            info.distinct_type = DistinctType::Ordered;
-        } else {
-            info.distinct_type = DistinctType::Unordered;
-        }
-    }
+    // DISTINCT is classified after ORDER BY below, since `Ordered` requires
+    // the projection and the sort to agree.
 
     // TOP — substitute parameterized values; error if unresolvable.
     info.top = match &query.select.top {
@@ -441,6 +455,30 @@ fn analyze_query(query: &SqlQuery, parameters: &Params) -> crate::error::Result<
         for expr in &group_by.expressions {
             info.group_by_expressions.push(expr_to_path_string(expr)?);
         }
+    }
+
+    // DISTINCT — the Gateway optimizes DISTINCT away when the query selects a
+    // constant (literal) and has no `FROM` clause, because such a query yields
+    // exactly one row and is trivially distinct.
+    if query.select.distinct {
+        // The `FROM` clause is load-bearing: measured against a live account,
+        // `SELECT DISTINCT VALUE 1` reports `None` but
+        // `SELECT DISTINCT VALUE 1 FROM c` reports `Unordered` — with a `FROM`
+        // the query yields one row *per document*, so deduplication is real
+        // work. The list form (`SELECT DISTINCT 1 AS p FROM c`) is likewise
+        // `Unordered`. `gw_distinct` pins all three against the service.
+        let is_constant_select = query.from.is_none()
+            && match &query.select.spec {
+                SqlSelectSpec::Value(expr) => is_constant_expression(expr),
+                _ => false,
+            };
+        info.distinct_type = if is_constant_select {
+            DistinctType::None
+        } else if distinct_is_ordered(&query.select.spec, &info.order_by_expressions) {
+            DistinctType::Ordered
+        } else {
+            DistinctType::Unordered
+        };
     }
 
     // JOIN
@@ -1472,10 +1510,15 @@ mod tests {
         assert_eq!(qp.query_info.distinct_type, DistinctType::Unordered);
     }
 
+    /// The `VALUE` form is the only one the service reports as `Ordered`
+    /// (measured against a live account); the list form below is downgraded.
     #[test]
     fn distinct_ordered() {
-        let qp = plan("SELECT DISTINCT c.name FROM c ORDER BY c.name");
+        let qp = plan("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name");
         assert_eq!(qp.query_info.distinct_type, DistinctType::Ordered);
+
+        let qp = plan("SELECT DISTINCT c.name FROM c ORDER BY c.name");
+        assert_eq!(qp.query_info.distinct_type, DistinctType::Unordered);
     }
 
     #[test]

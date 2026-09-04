@@ -232,7 +232,7 @@ pub(crate) async fn execute_transport_pipeline(
         } else if throttle_state.attempt_count == 0 {
             request.execution_context
         } else {
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         };
 
         let request_handle = diagnostics.start_request(
@@ -243,6 +243,14 @@ pub(crate) async fn execute_transport_pipeline(
             ctx.transport.diagnostics_http_version(),
             &request.endpoint,
         );
+
+        if let Some(fallback) = request.routing_fallback {
+            diagnostics.add_event(
+                request_handle,
+                RequestEvent::new(RequestEventType::RoutingFallback)
+                    .with_details(fallback.as_str()),
+            );
+        }
 
         for failed_transport_shard in prior_failed_transport_shards.iter().cloned() {
             diagnostics.add_failed_transport_shard(request_handle, failed_transport_shard);
@@ -931,9 +939,71 @@ mod tests {
     static TEST_CLIENT_ID_HEADER: azure_core::http::headers::HeaderName =
         azure_core::http::headers::HeaderName::from_static("x-ms-client-id");
 
+    fn connectivity_failure(request_sent: RequestSentStatus) -> TransportResult {
+        TransportResult {
+            outcome: TransportOutcome::TransportError {
+                status: CosmosStatus::TRANSPORT_IO_FAILED,
+                error: crate::error::CosmosError::builder()
+                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_message("connection reset")
+                    .build(),
+                request_sent,
+            },
+        }
+    }
+
+    /// A request that definitively never left the client is safe to retry for
+    /// every operation type, so the caller's flag is not consulted.
+    #[test]
+    fn unsent_connectivity_failure_retries_regardless_of_caller_flag() {
+        let result = connectivity_failure(RequestSentStatus::NotSent);
+        assert!(should_retry_connectivity_failure(&result, false));
+        assert!(should_retry_connectivity_failure(&result, true));
+    }
+
+    /// Once the request may have reached the backend, the same predicate the
+    /// operation pipeline uses for cross-region failover decides this retry.
+    /// Callers pass `CosmosOperation::allows_ambiguous_outcome_retry`, so the
+    /// two layers cannot disagree about a single failure.
+    #[test]
+    fn possibly_sent_connectivity_failure_defers_to_caller_flag() {
+        for request_sent in [RequestSentStatus::Sent, RequestSentStatus::Unknown] {
+            let result = connectivity_failure(request_sent);
+            assert!(
+                !should_retry_connectivity_failure(&result, false),
+                "{request_sent:?} must not retry when the operation forbids ambiguous retries"
+            );
+            assert!(
+                should_retry_connectivity_failure(&result, true),
+                "{request_sent:?} must retry when the operation allows ambiguous retries"
+            );
+        }
+    }
+
+    /// The retry is bounded to a single extra same-endpoint attempt; widening
+    /// it would multiply duplicate executions for non-idempotent writes.
+    #[test]
+    fn local_connectivity_retries_are_capped_at_one() {
+        assert_eq!(MAX_LOCAL_CONNECTIVITY_RETRIES, 1);
+    }
+
     #[derive(Debug)]
     struct HangingTransportClient {
         delay: Duration,
+    }
+
+    #[derive(Debug)]
+    struct SuccessfulTransportClient;
+
+    #[async_trait]
+    impl TransportClient for SuccessfulTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            Ok(HttpResponse {
+                status: 200,
+                headers: azure_core::http::headers::Headers::new(),
+                body: Vec::new(),
+            })
+        }
     }
 
     #[async_trait]
@@ -1323,6 +1393,7 @@ mod tests {
                 "",
             ),
             execution_context: ExecutionContext::Initial,
+            routing_fallback: None,
             deadline: Some(Instant::now() + Duration::from_millis(100)),
         };
         let client = AdaptiveTransport::Gateway(Arc::new(HangingTransportClient {
@@ -1363,6 +1434,60 @@ mod tests {
         let requests = completed.requests();
         assert_eq!(requests.len(), 1);
         assert!(requests[0].timed_out());
+    }
+
+    #[tokio::test]
+    async fn routing_fallback_is_recorded_in_request_diagnostics() {
+        use crate::driver::pipeline::components::RoutingFallbackReason;
+
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let mut request = test_request(None);
+        request.routing_fallback =
+            Some(RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded);
+        let client = AdaptiveTransport::Gateway(Arc::new(SuccessfulTransportClient));
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("routing-fallback".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+
+        let result = execute_transport_pipeline(
+            request,
+            &TransportPipelineContext {
+                transport: &client,
+                allow_sent_transport_retry: false,
+                credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
+                pipeline_type: PipelineType::DataPlane,
+                transport_security: TransportSecurity::Secure,
+                endpoint_key: endpoint.endpoint_key(),
+                account_name: None,
+                collection_rid: None,
+                max_throttle_attempts: 0,
+                max_throttle_wait_time: Duration::ZERO,
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
+            },
+            &mut diagnostics,
+        )
+        .await;
+
+        assert!(matches!(result.outcome, TransportOutcome::Success { .. }));
+        let completed = diagnostics.complete();
+        let requests = completed.requests();
+        assert_eq!(requests.len(), 1);
+        let fallback = requests[0]
+            .events()
+            .iter()
+            .find(|event| {
+                event.event_type() == &crate::diagnostics::RequestEventType::RoutingFallback
+            })
+            .expect("routing fallback event must be recorded");
+        assert_eq!(
+            fallback.details(),
+            Some("patch_verification_read_write_endpoint_unavailable_or_excluded")
+        );
     }
 
     #[tokio::test]
@@ -1874,6 +1999,7 @@ mod tests {
                 "",
             ),
             execution_context: ExecutionContext::Initial,
+            routing_fallback: None,
             deadline,
         }
     }
@@ -2233,6 +2359,7 @@ mod tests {
                 "dbs/db1/colls/coll1/docs/doc1",
             ),
             execution_context: ExecutionContext::Initial,
+            routing_fallback: None,
             deadline: None,
         }
     }

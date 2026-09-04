@@ -34,7 +34,10 @@
 //! pipeline (paged operations, split recovery, continuation tokens, planned
 //! cross-partition strategies).
 
+mod binary_heap;
 mod context;
+mod distinct;
+pub(crate) mod distinct_hash;
 mod drain;
 mod drained;
 #[cfg(test)]
@@ -42,6 +45,7 @@ mod integration_tests;
 #[cfg(test)]
 pub(crate) mod mocks;
 mod node;
+mod non_streaming_ordered_merge;
 pub(crate) mod order_by;
 mod pipeline;
 pub(crate) mod planner;
@@ -58,11 +62,13 @@ mod unordered_merge;
 pub(crate) use context::{
     PartitionRoutingRefresh, PipelineContext, RequestExecutor, ResolvedRange, TopologyProvider,
 };
+pub(crate) use distinct::Distinct;
 pub(crate) use drain::SequentialDrain;
 pub(crate) use drained::DrainedLeaf;
 pub(crate) use node::{
     split_replacement_invalid, validate_exact_coverage, PageResult, PipelineNode, SplitReplacements,
 };
+pub(crate) use non_streaming_ordered_merge::NonStreamingOrderedMerge;
 pub use pipeline::OperationPlan;
 pub(crate) use pipeline::Pipeline;
 pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};
@@ -91,5 +97,52 @@ mod tests {
         let page = pipeline.next_page(&mut context).await.unwrap().unwrap();
 
         assert_eq!(page.body_bytes(), b"page");
+    }
+
+    /// Builds a plan over a single-page mock leaf. The operation is a
+    /// `read_database`, so minting a token normally fails with the *non-query*
+    /// error — which is what makes it a usable control below.
+    fn plan() -> OperationPlan {
+        let pipeline = Pipeline::new(Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+            response: response(b"page"),
+            is_terminal: true,
+        })])));
+        OperationPlan::new(
+            pipeline,
+            std::sync::Arc::new(operation()),
+            crate::options::PlanOptions::default(),
+            false,
+        )
+    }
+
+    /// A poisoned plan must refuse to mint rather than hand back a token that
+    /// skips the page the caller never received.
+    #[test]
+    fn poisoned_plan_refuses_to_mint_a_continuation_token() {
+        let mut plan = plan();
+        plan.poison_continuation();
+
+        let err = plan
+            .to_continuation_token()
+            .expect_err("a poisoned plan must not mint a token");
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            "got: {err}"
+        );
+    }
+
+    /// Control for the test above: the same plan fails for its own unrelated
+    /// reason, proving the poison check is what produced the error there.
+    #[test]
+    fn a_clean_plan_reaches_the_normal_minting_path() {
+        let err = plan()
+            .to_continuation_token()
+            .expect_err("a read_database operation cannot be tokenized");
+        assert_ne!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            "a plan that was never poisoned must not report transcode poisoning; got: {err}"
+        );
     }
 }

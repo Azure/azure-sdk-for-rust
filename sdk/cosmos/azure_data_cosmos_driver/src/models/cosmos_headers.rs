@@ -118,6 +118,7 @@ pub(crate) mod request_header_names {
     pub const VERSION: &str = "x-ms-version";
     pub const CACHE_CONTROL: &str = "cache-control";
     pub const COLLECTION_RID: &str = "x-ms-documentdb-collection-rid";
+    pub const INTENDED_COLLECTION_RID: &str = "x-ms-cosmos-intended-collection-rid";
 
     /// Account name the Gateway 2.0 proxy uses to route an outer HTTP/2
     /// request to the correct backend.
@@ -215,6 +216,9 @@ pub(crate) mod response_header_names {
 }
 
 pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
+
+/// Content type required by a server-side single-document PATCH request.
+pub const PATCH_CONTENT_TYPE: &str = "application/json_patch+json";
 
 /// Header names used by the fault injection framework.
 #[cfg(feature = "fault_injection")]

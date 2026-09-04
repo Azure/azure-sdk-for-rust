@@ -23,7 +23,7 @@ use std::{borrow::Cow, error::Error as StdError, fmt, sync::Arc};
 
 use crate::{
     diagnostics::DiagnosticsContext,
-    models::{CosmosResponse, CosmosResponsePayload},
+    models::{CosmosResponse, CosmosResponsePayload, PatchTrackingId},
 };
 
 pub mod cosmos_status;
@@ -94,6 +94,8 @@ struct CosmosErrorInner {
     /// [`ErrorContext`] variants — for the `Wire` variant this is
     /// reconciled to match `response.status()` at `build()` time.
     status: CosmosStatus,
+    /// Effective duplicate-suppression identity for a tracked PATCH operation.
+    patch_tracking_id: Option<PatchTrackingId>,
     /// Discriminates wire-response errors (carrying a full
     /// [`CosmosResponse`]) from synthetic errors (carrying at most a
     /// standalone [`DiagnosticsContext`]) and the internal
@@ -250,6 +252,16 @@ impl CosmosError {
             ErrorContext::WirePending { .. } => None,
             ErrorContext::Synthetic { diagnostics } => diagnostics.clone(),
         }
+    }
+
+    /// Returns the effective duplicate-suppression identity for a tracked PATCH.
+    ///
+    /// This includes IDs generated internally by the driver and remains
+    /// available even when the failure has no diagnostics context.
+    pub fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
+        self.inner
+            .patch_tracking_id
+            .or_else(|| self.diagnostics_ref().and_then(|d| d.patch_tracking_id()))
     }
 
     /// `pub(crate)`: borrowing version of [`diagnostics()`](Self::diagnostics)
@@ -612,6 +624,8 @@ pub struct CosmosErrorBuilder {
     /// response carries its own); used to promote `WirePending` to
     /// `Wire`, or attached as the synthetic diagnostics slot.
     diagnostics: Option<Arc<DiagnosticsContext>>,
+    /// Effective duplicate-suppression identity for a tracked PATCH operation.
+    patch_tracking_id: Option<PatchTrackingId>,
     message: Option<Cow<'static, str>>,
     source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     /// Prepended to the final message as `"{context}: {message}"` when set.
@@ -626,6 +640,7 @@ impl CosmosErrorBuilder {
             response: None,
             response_parts: None,
             diagnostics: None,
+            patch_tracking_id: None,
             message: None,
             source: None,
             context_prefix: None,
@@ -646,6 +661,7 @@ impl CosmosErrorBuilder {
             response: None,
             response_parts: None,
             diagnostics: None,
+            patch_tracking_id: None,
             message: None,
             source: None,
             context_prefix: None,
@@ -730,6 +746,12 @@ impl CosmosErrorBuilder {
         self
     }
 
+    /// Attaches the effective duplicate-suppression identity for a tracked PATCH.
+    pub fn with_patch_tracking_id(mut self, id: PatchTrackingId) -> Self {
+        self.patch_tracking_id = Some(id);
+        self
+    }
+
     /// Prepends operational context to the final message as
     /// `"{context}: {message}"`. Repeated calls override (the most recent
     /// context wins); chain multiple `with_context` calls into one
@@ -770,6 +792,9 @@ impl CosmosErrorBuilder {
         // `WirePending` and `Synthetic` both need it stored on the outer
         // inner and `Wire` overrides it from the response.
         let base_status = self.base.as_ref().map(|b| b.inner.status);
+        let patch_tracking_id = self
+            .patch_tracking_id
+            .or_else(|| self.base.as_ref().and_then(|b| b.patch_tracking_id()));
         let resolved_status = self.status.or(base_status).unwrap_or_else(|| {
             CosmosStatus::new(azure_core::http::StatusCode::InternalServerError)
         });
@@ -927,6 +952,7 @@ impl CosmosErrorBuilder {
 
         CosmosError::from_inner(CosmosErrorInner {
             status,
+            patch_tracking_id,
             context,
             message,
             source,

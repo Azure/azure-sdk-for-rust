@@ -6,10 +6,13 @@
 
 - Added `Tracer::start_span_with_options`, `Tracer::start_span_with_parent_and_options`, and `Span::end_at`, along with a `SpanOptions` struct, to allow reconstructing spans with explicit (backdated) start and end timestamps. These are additive with default implementations, so existing `Tracer`/`Span` implementations continue to work unchanged.
 - Added `DeserializeWith::deserialize_from` with a body-only default, allowing custom model decoders to inspect response headers without requiring serde deserialization.
+- Added cloneable `stream::ReadStream` and `stream::SeekableReadStream` adapters, along with `RequestContent::from_reader` and `RequestContent::from_seekable_reader`, to build request bodies from `futures::io::AsyncRead` sources.
 
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- Updated `typespec_client_core` so dropping a sleep future created by the standard (non-`tokio`) async runtime promptly cancels its worker thread.
 
 ### Other Changes
 

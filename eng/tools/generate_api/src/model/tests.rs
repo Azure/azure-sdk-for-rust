@@ -5,6 +5,7 @@ use super::*;
 
 fn item(name: &str, kind: ApiItemKind, declaration: &str) -> ApiItem {
     ApiItem {
+        declaration_location: None,
         name: name.to_string(),
         kind,
         source_id: None,
@@ -19,6 +20,60 @@ fn item(name: &str, kind: ApiItemKind, declaration: &str) -> ApiItem {
         declaration_path_references: Vec::new(),
         members: Vec::new(),
     }
+}
+
+#[test]
+fn orders_feature_names_and_default_children() {
+    let metadata = PackageMetadata {
+        description: None,
+        edition: None,
+        rust_version: None,
+        features: BTreeMap::from([
+            ("alpha".to_string(), vec!["ignored".to_string()]),
+            (
+                "default".to_string(),
+                vec!["zeta".to_string(), "alpha".to_string()],
+            ),
+            ("zeta".to_string(), Vec::new()),
+        ]),
+    };
+
+    assert_eq!(
+        metadata
+            .feature_names()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        vec!["default", "alpha", "zeta"]
+    );
+    assert_eq!(
+        metadata
+            .default_feature_children()
+            .into_iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        vec!["alpha", "zeta"]
+    );
+}
+
+#[test]
+fn splits_description_lines_after_ignoring_one_final_newline() {
+    let single_line = PackageMetadata {
+        description: Some("Single-line comment\n".to_string()),
+        ..Default::default()
+    };
+    assert_eq!(
+        single_line.description_lines(),
+        Some(vec!["Single-line comment"])
+    );
+
+    let multi_line = PackageMetadata {
+        description: Some("Multi-line\ncomment\n".to_string()),
+        ..Default::default()
+    };
+    assert_eq!(
+        multi_line.description_lines(),
+        Some(vec!["Multi-line", "comment"])
+    );
 }
 
 #[test]
@@ -52,6 +107,7 @@ fn sorts_inherent_impls_by_type_parameter_then_infer_then_explicit_type() {
     });
 
     let module = ApiModule {
+        declaration_location: None,
         path: "demo".to_string(),
         doc_comments: Vec::new(),
         attributes: Vec::new(),

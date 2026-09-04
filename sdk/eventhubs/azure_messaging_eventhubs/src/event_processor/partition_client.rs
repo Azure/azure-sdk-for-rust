@@ -3,12 +3,11 @@
 
 use super::processor::ProcessorConsumersMap;
 use crate::{
-    error::Result,
+    error::{ErrorKind, Result},
     models::{Checkpoint, ConsumerClientDetails, ReceivedEventData},
     processor::CheckpointStore,
     EventHubsError, EventReceiver,
 };
-use azure_core_amqp::{message::AmqpAnnotationKey, AmqpValue};
 use futures::Stream;
 use std::{
     pin::Pin,
@@ -144,45 +143,30 @@ impl PartitionClient {
 
     /// Updates the checkpoint for the current partition.
     ///
-    /// This method extracts the sequence number and offset from the provided `ReceivedEventData`
+    /// This method reads the offset and the sequence number from the provided `ReceivedEventData`
     /// and updates the checkpoint in the `CheckpointStore`.
     ///
     /// # Arguments
-    /// * `event_data` - The event data containing the sequence number and offset to update the checkpoint.
+    /// * `event_data` - The event data that carries the offset and the sequence number to record.
     ///
     /// # Errors
-    /// Returns an error if the sequence number or offset is invalid, or if updating the checkpoint fails.
+    /// Returns [`ErrorKind::MissingCheckpointMetadata`](crate::error::ErrorKind::MissingCheckpointMetadata)
+    /// when the event carries no offset and no sequence number. Such an event names no position in
+    /// the partition, and a checkpoint with both fields empty erases the position the store holds.
+    /// Returns an error also when the checkpoint store fails to write the checkpoint.
     pub async fn update_checkpoint(&self, event_data: &ReceivedEventData) -> Result<()> {
-        let mut offset_option = None;
-        let mut sequence_number_option = None;
-
-        let event_data_message = event_data.raw_amqp_message();
-        let Some(message_annotations) = event_data_message.message_annotations.as_ref() else {
-            // No message annotations. Nothing to do.
-            return Ok(());
-        };
-        for (key, value) in message_annotations.0.iter() {
-            let AmqpAnnotationKey::Symbol(symbol) = key else {
-                continue;
-            };
-
-            if *symbol == "x-opt-offset" {
-                let AmqpValue::String(offset_value) = value else {
-                    continue;
-                };
-                offset_option = Some(offset_value.clone());
-            } else if *symbol == "x-opt-sequence-number" {
-                let AmqpValue::Long(sequence_number_value) = value else {
-                    continue;
-                };
-                sequence_number_option = Some(*sequence_number_value);
-            }
+        let offset = event_data.offset().clone();
+        let sequence_number = event_data.sequence_number();
+        if offset.is_none() && sequence_number.is_none() {
+            return Err(EventHubsError::from(ErrorKind::MissingCheckpointMetadata {
+                partition_id: self.partition_id.clone(),
+            }));
         }
 
         debug!(
             partition_id = %self.partition_id,
-            sequence_number = ?sequence_number_option,
-            offset = ?offset_option,
+            sequence_number = ?sequence_number,
+            offset = ?offset,
             "Updating checkpoint for partition."
         );
         let checkpoint = Checkpoint {
@@ -190,8 +174,8 @@ impl PartitionClient {
             event_hub_name: self.client_details.eventhub_name.clone(),
             consumer_group: self.client_details.consumer_group.clone(),
             partition_id: self.partition_id.clone(),
-            offset: offset_option,
-            sequence_number: sequence_number_option,
+            offset,
+            sequence_number,
         };
         self.checkpoint_store
             .update_checkpoint(checkpoint)
@@ -227,6 +211,277 @@ impl Drop for PartitionClient {
         trace!(
             partition_id = %self.partition_id,
             "Dropping PartitionClient for partition."
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::ErrorKind;
+    use crate::event_processor::Ownership;
+    use crate::in_memory_checkpoint_store::InMemoryCheckpointStore;
+    // Every AMQP name this module needs is declared here, not inherited from
+    // the parent module, so the tests survive a change to the parent imports.
+    use azure_core_amqp::{message::AmqpAnnotations, AmqpMessage, AmqpSymbol, AmqpValue};
+
+    const TEST_NAMESPACE: &str = "ns.servicebus.windows.net";
+    const TEST_EVENT_HUB: &str = "test-eventhub";
+    const TEST_CONSUMER_GROUP: &str = "test-consumer-group";
+
+    fn client_details() -> ConsumerClientDetails {
+        ConsumerClientDetails {
+            fully_qualified_namespace: TEST_NAMESPACE.to_string(),
+            consumer_group: TEST_CONSUMER_GROUP.to_string(),
+            eventhub_name: TEST_EVENT_HUB.to_string(),
+            client_id: "test-client".to_string(),
+        }
+    }
+
+    fn client_with_store(partition_id: &str) -> (PartitionClient, Arc<InMemoryCheckpointStore>) {
+        let store = Arc::new(InMemoryCheckpointStore::new());
+        let client = PartitionClient::new(
+            partition_id.to_string(),
+            store.clone(),
+            client_details(),
+            Weak::new(),
+        );
+        (client, store)
+    }
+
+    /// Builds an event whose AMQP message carries message annotations. An
+    /// empty slice still sets an empty annotation map, which is not the same
+    /// input as an absent map.
+    fn event_with(pairs: &[(&str, AmqpValue)]) -> ReceivedEventData {
+        let mut annotations = AmqpAnnotations::new();
+        for (key, value) in pairs {
+            annotations.insert(AmqpSymbol::from(*key), value.clone());
+        }
+        AmqpMessage::builder()
+            .with_message_annotations(annotations)
+            .build()
+            .into()
+    }
+
+    fn event_without_annotations() -> ReceivedEventData {
+        AmqpMessage::default().into()
+    }
+
+    struct FailingCheckpointStore;
+
+    #[async_trait::async_trait]
+    impl CheckpointStore for FailingCheckpointStore {
+        async fn claim_ownership(
+            &self,
+            _ownerships: &[Ownership],
+        ) -> azure_core::Result<Vec<Ownership>> {
+            unreachable!("update_checkpoint must not claim ownership")
+        }
+
+        async fn list_checkpoints(
+            &self,
+            _namespace: &str,
+            _event_hub_name: &str,
+            _consumer_group: &str,
+        ) -> azure_core::Result<Vec<Checkpoint>> {
+            unreachable!("update_checkpoint must not list checkpoints")
+        }
+
+        async fn list_ownerships(
+            &self,
+            _namespace: &str,
+            _event_hub_name: &str,
+            _consumer_group: &str,
+        ) -> azure_core::Result<Vec<Ownership>> {
+            unreachable!("update_checkpoint must not list ownerships")
+        }
+
+        async fn update_checkpoint(&self, _checkpoint: Checkpoint) -> azure_core::Result<()> {
+            Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "store is down",
+            ))
+        }
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_rejects_an_event_without_message_annotations() {
+        let (client, store) = client_with_store("0");
+        let event = event_without_annotations();
+
+        let result = client.update_checkpoint(&event).await;
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+
+        assert!(
+            stored.is_empty(),
+            "an event without message annotations must write no checkpoint, got: {stored:?}"
+        );
+        assert!(
+            result.is_err(),
+            "an event without message annotations must return an error to the caller"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_rejects_an_event_without_offset_or_sequence_number() {
+        let (client, store) = client_with_store("1");
+        let event = event_with(&[("x-opt-partition-key", AmqpValue::String("pk".into()))]);
+
+        let result = client.update_checkpoint(&event).await;
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+
+        assert!(
+            stored.is_empty(),
+            "annotations without an offset and without a sequence number must write no \
+             checkpoint, got: {stored:?}"
+        );
+        assert!(
+            result.is_err(),
+            "annotations without an offset and without a sequence number must return an error"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_rejects_annotations_with_the_wrong_value_types() {
+        let (client, store) = client_with_store("2");
+        let event = event_with(&[
+            ("x-opt-offset", AmqpValue::Long(42)),
+            ("x-opt-sequence-number", AmqpValue::String("17".to_string())),
+        ]);
+
+        let result = client.update_checkpoint(&event).await;
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+
+        assert!(
+            stored.is_empty(),
+            "annotations with the wrong value types must write no checkpoint, got: {stored:?}"
+        );
+        assert!(
+            result.is_err(),
+            "annotations with the wrong value types must return an error"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_error_names_the_partition_and_the_kind() {
+        let (client, _store) = client_with_store("7");
+        let event = event_with(&[]);
+
+        let error = client
+            .update_checkpoint(&event)
+            .await
+            .expect_err("an event without the two annotations must return an error");
+
+        let ErrorKind::MissingCheckpointMetadata { partition_id } = &error.kind else {
+            panic!("the caller must be able to match on the kind, got: {error:?}");
+        };
+        assert_eq!(
+            partition_id.as_str(),
+            "7",
+            "the error must name the partition, got: {partition_id}"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_writes_an_offset_only_checkpoint() {
+        let (client, store) = client_with_store("3");
+        let event = event_with(&[("x-opt-offset", AmqpValue::String("1024".to_string()))]);
+
+        client
+            .update_checkpoint(&event)
+            .await
+            .expect("an offset alone must write a checkpoint");
+
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+        assert_eq!(stored.len(), 1, "the store must hold one checkpoint");
+        assert_eq!(stored[0].offset, Some("1024".to_string()));
+        assert_eq!(stored[0].sequence_number, None);
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_writes_a_sequence_number_only_checkpoint() {
+        let (client, store) = client_with_store("4");
+        let event = event_with(&[("x-opt-sequence-number", AmqpValue::Long(17))]);
+
+        client
+            .update_checkpoint(&event)
+            .await
+            .expect("a sequence number alone must write a checkpoint");
+
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+        assert_eq!(stored.len(), 1, "the store must hold one checkpoint");
+        assert_eq!(stored[0].offset, None);
+        assert_eq!(stored[0].sequence_number, Some(17));
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_writes_both_values_and_the_identity_fields() {
+        let (client, store) = client_with_store("5");
+        let event = event_with(&[
+            ("x-opt-offset", AmqpValue::String("2048".to_string())),
+            ("x-opt-sequence-number", AmqpValue::Long(99)),
+        ]);
+
+        client
+            .update_checkpoint(&event)
+            .await
+            .expect("a complete pair of annotations must write a checkpoint");
+
+        let stored = store
+            .list_checkpoints(TEST_NAMESPACE, TEST_EVENT_HUB, TEST_CONSUMER_GROUP)
+            .await
+            .expect("the store must list its checkpoints");
+        assert_eq!(stored.len(), 1, "the store must hold one checkpoint");
+        assert_eq!(stored[0].fully_qualified_namespace, TEST_NAMESPACE);
+        assert_eq!(stored[0].event_hub_name, TEST_EVENT_HUB);
+        assert_eq!(stored[0].consumer_group, TEST_CONSUMER_GROUP);
+        assert_eq!(stored[0].partition_id, "5");
+        assert_eq!(stored[0].offset, Some("2048".to_string()));
+        assert_eq!(stored[0].sequence_number, Some(99));
+    }
+
+    #[tokio::test]
+    async fn update_checkpoint_reports_a_store_failure_with_its_context() {
+        let client = PartitionClient::new(
+            "6".to_string(),
+            Arc::new(FailingCheckpointStore),
+            client_details(),
+            Weak::new(),
+        );
+        let event = event_with(&[
+            ("x-opt-offset", AmqpValue::String("4096".to_string())),
+            ("x-opt-sequence-number", AmqpValue::Long(5)),
+        ]);
+
+        let error = client
+            .update_checkpoint(&event)
+            .await
+            .expect_err("a store failure must reach the caller");
+
+        assert!(
+            matches!(error.kind, ErrorKind::AzureCore(_)),
+            "a store failure must keep the Azure Core kind, got: {error:?}"
+        );
+        assert!(
+            error
+                .to_string()
+                .contains("Failed to update checkpoint for partition 6"),
+            "the error must name the partition, got: {error}"
         );
     }
 }

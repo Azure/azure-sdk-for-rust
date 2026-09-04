@@ -1062,16 +1062,19 @@ fn local_reexport_preserves_synthesized_derives_for_reexported_items() {
 fn model_reexport_collects_nested_impls_by_owner_identity() {
     let expanded = expand_model_item_reexport(
         &ApiModule {
+            declaration_location: None,
             path: "azure_core".to_string(),
             doc_comments: Vec::new(),
             attributes: Vec::new(),
             items: Vec::new(),
             modules: vec![ApiModule {
+                declaration_location: None,
                 path: "azure_core::credentials".to_string(),
                 doc_comments: Vec::new(),
                 attributes: Vec::new(),
                 items: vec![
                     ApiItem {
+                        declaration_location: None,
                         name: "Secret".to_string(),
                         kind: ApiItemKind::Struct,
                         source_id: Some("secret".to_string()),
@@ -1087,6 +1090,7 @@ fn model_reexport_collects_nested_impls_by_owner_identity() {
                         members: Vec::new(),
                     },
                     ApiItem {
+                        declaration_location: None,
                         name: "Secret".to_string(),
                         kind: ApiItemKind::InherentImpl,
                         source_id: Some("secret-inherent".to_string()),
@@ -1105,6 +1109,7 @@ fn model_reexport_collects_nested_impls_by_owner_identity() {
                         members: Vec::new(),
                     },
                     ApiItem {
+                        declaration_location: None,
                         name: "Secret<T>".to_string(),
                         kind: ApiItemKind::TraitImpl,
                         source_id: Some("secret-debug".to_string()),
@@ -1145,15 +1150,18 @@ fn model_reexport_collects_nested_impls_by_owner_identity() {
 fn model_reexport_resolves_duplicated_leading_module_segments() {
     let expanded = expand_model_item_reexport(
         &ApiModule {
+            declaration_location: None,
             path: "demo".to_string(),
             doc_comments: Vec::new(),
             attributes: Vec::new(),
             items: Vec::new(),
             modules: vec![ApiModule {
+                declaration_location: None,
                 path: "demo::credentials".to_string(),
                 doc_comments: Vec::new(),
                 attributes: Vec::new(),
                 items: vec![ApiItem {
+                    declaration_location: None,
                     name: "Secret".to_string(),
                     kind: ApiItemKind::Struct,
                     source_id: Some("secret".to_string()),
@@ -2114,6 +2122,51 @@ fn extracts_derive_macro_helpers_as_members() {
 }
 
 #[test]
+fn locates_derive_macro_helpers_in_long_attributes() {
+    let path = std::path::PathBuf::from(format!(
+        "generate_api_proc_macro_source_test_{}.rs",
+        std::process::id()
+    ));
+    let source = format!(
+        "#[proc_macro_derive(\n    BlobDerive,\n    attributes(\n        blob,\n{}\n    )\n)]\npub fn derive() {{}}\n",
+        "\n".repeat(20)
+    );
+    std::fs::write(&path, source).unwrap();
+
+    let mut macro_item = item(
+        Id(1),
+        Some("BlobDerive"),
+        ItemEnum::ProcMacro(rustdoc_types::ProcMacro {
+            kind: rustdoc_types::MacroKind::Derive,
+            helpers: vec!["blob".to_string()],
+        }),
+    );
+    macro_item.span = Some(rustdoc_types::Span {
+        filename: path.clone(),
+        begin: (28, 1),
+        end: (28, 19),
+    });
+
+    let location = proc_macro_helper_location(&macro_item, "blob");
+
+    std::fs::remove_file(path).unwrap();
+    assert_eq!(
+        location,
+        Some(crate::model::SourceLocation {
+            path: macro_item
+                .span
+                .as_ref()
+                .unwrap()
+                .filename
+                .to_string_lossy()
+                .to_string(),
+            line: 3,
+            column: 8,
+        })
+    );
+}
+
+#[test]
 fn extracts_macro_matcher_arms_as_members() {
     let macro_id = Id(1);
     let krate = crate_with_items(vec![item(
@@ -2531,6 +2584,7 @@ fn package_metadata(name: &str) -> PackageMetadata {
         version: "1.0.0".to_string(),
         manifest_path: std::path::PathBuf::from("Cargo.toml"),
         has_library_target: true,
+        api: Default::default(),
     }
 }
 
@@ -2574,4 +2628,146 @@ impl ItemTestExt for Item {
             .collect();
         self
     }
+}
+
+#[test]
+fn normalizes_repo_relative_source_paths() {
+    assert_eq!(
+        repo_relative_source_path(std::path::Path::new("sdk/core/typespec/src/lib.rs")).as_deref(),
+        Some("sdk/core/typespec/src/lib.rs")
+    );
+    assert_eq!(
+        repo_relative_source_path(
+            &std::env::current_dir()
+                .unwrap()
+                .join("sdk/core/typespec/src/lib.rs")
+        )
+        .as_deref(),
+        Some("sdk/core/typespec/src/lib.rs")
+    );
+    assert_eq!(
+        repo_relative_source_path(std::path::Path::new("../outside.rs")),
+        None
+    );
+}
+
+#[test]
+fn finds_out_of_line_module_declarations() {
+    let source = r#"
+#[path = "other.rs"]
+pub(crate) mod other;
+/// `mod ignored;` is documentation, not a declaration.
+pub mod cloud;
+"#;
+
+    assert_eq!(
+        find_module_declaration(source, "other", 0, 5, Some("other.rs".as_ref()), false),
+        Some((2, 0))
+    );
+    assert_eq!(
+        find_module_declaration(source, "cloud", 0, 5, Some("cloud.rs".as_ref()), true),
+        Some((4, 0))
+    );
+    assert_eq!(
+        find_module_declaration(source, "ignored", 0, 5, None, true),
+        None
+    );
+}
+
+#[test]
+fn limits_module_declaration_search_to_the_parent_span() {
+    let source =
+        "pub mod first {\n    pub mod shared;\n}\npub mod second {\n    pub mod shared;\n}";
+
+    assert_eq!(
+        find_module_declaration(source, "shared", 0, 3, Some("shared.rs".as_ref()), true),
+        Some((1, 4))
+    );
+    assert_eq!(
+        find_module_declaration(source, "shared", 3, 6, Some("shared.rs".as_ref()), true),
+        Some((4, 4))
+    );
+}
+
+#[test]
+fn uses_path_attributes_to_disambiguate_module_declarations() {
+    let source =
+        "#[path = \"unix/shared.rs\"]\nmod shared;\n#[path = \"windows/shared.rs\"]\nmod shared;";
+
+    assert_eq!(
+        find_module_declaration(
+            source,
+            "shared",
+            0,
+            4,
+            Some("src/windows/shared.rs".as_ref()),
+            false
+        ),
+        Some((3, 0))
+    );
+}
+
+#[test]
+fn uses_visibility_to_disambiguate_cfg_module_declarations() {
+    let source = "#[cfg(feature = \"testing\")]\npub mod query;\n#[cfg(not(feature = \"testing\"))]\npub(crate) mod query;";
+
+    assert_eq!(
+        find_module_declaration(source, "query", 0, 4, Some("query.rs".as_ref()), true),
+        Some((1, 0))
+    );
+}
+
+#[test]
+fn locates_macro_arms_relative_to_the_item_span() {
+    let source = "macro_rules! demo {\n    ($value:expr) => { $value };\n}";
+    let parsed = parse_macro_definition(source).unwrap();
+    let offset = parsed.members[0].0;
+    assert!(source[offset..].starts_with("($value:expr)"));
+
+    let mut macro_item = item(Id(1), Some("demo"), ItemEnum::Macro(source.to_string()));
+    macro_item.span = Some(rustdoc_types::Span {
+        filename: "sdk/example/src/lib.rs".into(),
+        begin: (10, 5),
+        end: (12, 2),
+    });
+
+    assert_eq!(
+        source_location_at_offset(&macro_item, source, offset),
+        Some(crate::model::SourceLocation {
+            path: "sdk/example/src/lib.rs".to_string(),
+            line: 10,
+            column: 4,
+        })
+    );
+}
+
+#[test]
+fn uses_actual_source_layout_for_macro_arm_locations() {
+    let actual = "macro_rules! demo {\n    (first) => {\n        one();\n        two();\n    };\n    (second) => { three() };\n} // outside the span";
+    let path = std::path::PathBuf::from(format!(
+        "generate_api_macro_source_test_{}.rs",
+        std::process::id()
+    ));
+    std::fs::write(&path, actual).unwrap();
+    let mut macro_item = item(
+        Id(1),
+        Some("demo"),
+        ItemEnum::Macro(
+            "macro_rules! demo {\n    (first) => { ... };\n    (second) => { ... };\n}".to_string(),
+        ),
+    );
+    macro_item.span = Some(rustdoc_types::Span {
+        filename: path.clone(),
+        begin: (1, 1),
+        end: (7, 2),
+    });
+
+    let members = extract_macro_members(
+        &macro_item,
+        "macro_rules! demo {\n    (first) => { ... };\n    (second) => { ... };\n}",
+    );
+
+    std::fs::remove_file(path).unwrap();
+    assert_eq!(members[0].declaration_location.as_ref().unwrap().line, 1);
+    assert_eq!(members[1].declaration_location.as_ref().unwrap().line, 5);
 }

@@ -69,7 +69,7 @@ function Get-CargoPackages() {
 
 function Get-PackagesFromPackageInfo($packageInfoDirectory) {
   $packages = @()
-  $packageInfoFiles = Get-ChildItem -Path $packageInfoDirectory -Filter '*.json' -File
+  $packageInfoFiles = Get-ChildItem -Path $packageInfoDirectory -Filter '*.json' -File -Recurse
   foreach ($packageInfoFile in $packageInfoFiles) {
     $packageInfo = Get-Content -Path $packageInfoFile.FullName | ConvertFrom-Json
     $packages += $packageInfo
@@ -81,6 +81,164 @@ function Get-PackagesFromPackageInfo($packageInfoDirectory) {
 function Get-PackageNamesFromPackageInfo($packageInfoDirectory) {
   $packages = Get-PackagesFromPackageInfo($packageInfoDirectory)
   $packages.name
+}
+
+function Get-CargoPackageByName(
+  $WorkspacePackages,
+  [string] $PackageName
+) {
+  $package = $WorkspacePackages | Where-Object -Property name -EQ -Value $PackageName | Select-Object -First 1
+  if (!$package) {
+    throw "Package '$PackageName' is not in the workspace."
+  }
+
+  return $package
+}
+
+function Resolve-CargoPackageNames(
+  [string[]] $PackageName
+) {
+  return @(
+    $PackageName `
+    | ForEach-Object { $_ -split ',' } `
+    | ForEach-Object { $_.Trim() } `
+    | Where-Object { $_ } `
+    | Select-Object -Unique
+  )
+}
+
+function Resolve-CargoManifestPath(
+  [string] $ManifestDir
+) {
+  $directoryPath = Resolve-Path -Path $ManifestDir -ErrorAction Stop
+  $manifestPath = [System.IO.Path]::Combine($directoryPath, 'Cargo.toml')
+  if (!(Test-Path -Path $manifestPath -PathType Leaf)) {
+    throw "Cargo manifest '$manifestPath' does not exist."
+  }
+  return (Resolve-Path -Path $manifestPath -ErrorAction Stop).Path
+}
+
+function Get-NormalizedCargoManifestPath(
+  [string] $ManifestPath
+) {
+  return [System.IO.Path]::GetFullPath((Resolve-Path -Path $ManifestPath -ErrorAction Stop).Path)
+}
+
+function Get-CargoManifestPaths(
+  [string[]] $PackageName,
+  [string[]] $ManifestDir,
+  [string] $PackageInfoDirectory,
+  [switch] $Workspace,
+  $WorkspacePackages = $null
+) {
+  if ($ManifestDir) {
+    return @($ManifestDir | ForEach-Object { Resolve-CargoManifestPath -ManifestDir $_ })
+  }
+
+  if ($PackageInfoDirectory) {
+    if (!(Test-Path -Path $PackageInfoDirectory -PathType Container)) {
+      throw "Package info path '$PackageInfoDirectory' does not exist."
+    }
+
+    if (!$WorkspacePackages) {
+      $WorkspacePackages = Get-CargoPackages
+    }
+
+    return @(
+      foreach ($packageInfo in (Get-PackagesFromPackageInfo $PackageInfoDirectory)) {
+        $directoryPathProperty = $packageInfo.PSObject.Properties['DirectoryPath']
+        $nameProperty = $packageInfo.PSObject.Properties['Name']
+        if ($directoryPathProperty -and $directoryPathProperty.Value) {
+          $directoryPath = $directoryPathProperty.Value
+          if (![System.IO.Path]::IsPathRooted($directoryPath)) {
+            $directoryPath = [System.IO.Path]::Combine($RepoRoot, $directoryPath)
+          }
+          Resolve-CargoManifestPath -ManifestDir $directoryPath
+        }
+        elseif ($nameProperty -and $nameProperty.Value) {
+          $package = Get-CargoPackageByName -WorkspacePackages $WorkspacePackages -PackageName $nameProperty.Value
+          $package.manifest_path
+        }
+        else {
+          throw "Package info must contain either a DirectoryPath or Name property."
+        }
+      }
+    ) | Select-Object -Unique
+  }
+
+  if ($PackageName) {
+    if (!$WorkspacePackages) {
+      $WorkspacePackages = Get-CargoPackages
+    }
+
+    return @(
+      foreach ($name in (Resolve-CargoPackageNames -PackageName $PackageName)) {
+        $package = Get-CargoPackageByName -WorkspacePackages $WorkspacePackages -PackageName $name
+        $package.manifest_path
+      }
+    )
+  }
+
+  if ($Workspace -or (!$PackageName -and !$ManifestDir -and !$PackageInfoDirectory)) {
+    return @([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
+  }
+}
+
+function Get-CargoPackagesFromManifestPaths(
+  [string[]] $ManifestPath,
+  $WorkspacePackages = $null
+) {
+  if (!$WorkspacePackages) {
+    $WorkspacePackages = Get-CargoPackages
+  }
+
+  $workspaceManifestPath = Get-NormalizedCargoManifestPath `
+    -ManifestPath ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
+  $packagesByManifestPath = @{}
+  foreach ($workspacePackage in $WorkspacePackages) {
+    $normalizedPackagePath = Get-NormalizedCargoManifestPath -ManifestPath $workspacePackage.manifest_path
+    $packagesByManifestPath[$normalizedPackagePath] = $workspacePackage
+  }
+  $packages = @()
+
+  foreach ($path in $ManifestPath) {
+    $normalizedPath = Get-NormalizedCargoManifestPath -ManifestPath $path
+    if ($normalizedPath -eq $workspaceManifestPath) {
+      $packages += $WorkspacePackages
+      continue
+    }
+
+    $package = $packagesByManifestPath[$normalizedPath]
+    if (!$package) {
+      throw "Manifest '$path' is not a package in the workspace."
+    }
+    $packages += $package
+  }
+
+  return @($packages | Sort-Object -Property name -Unique)
+}
+
+function Get-CargoSelectedPackages(
+  [string[]] $PackageName,
+  [string[]] $ManifestDir,
+  [string] $PackageInfoDirectory,
+  [switch] $Workspace
+) {
+  $workspacePackages = Get-CargoPackages
+  if ($Workspace -or (!$PackageName -and !$ManifestDir -and !$PackageInfoDirectory)) {
+    return $workspacePackages
+  }
+
+  [string[]] $manifestPaths = Get-CargoManifestPaths `
+    -PackageName $PackageName `
+    -ManifestDir $ManifestDir `
+    -PackageInfoDirectory $PackageInfoDirectory `
+    -Workspace:$Workspace `
+    -WorkspacePackages $workspacePackages
+
+  return Get-CargoPackagesFromManifestPaths `
+    -ManifestPath $manifestPaths `
+    -WorkspacePackages $workspacePackages
 }
 
 function Get-VersionParamsFromCgManifest(

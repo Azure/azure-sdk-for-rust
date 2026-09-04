@@ -90,7 +90,7 @@ async fn build_driver_with_faults(
 /// Seeds a known item via the driver under default options.
 async fn seed_item_via_driver(driver: &CosmosDriver, item_id: &str) {
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves for seeding");
     let item_ref = ItemReference::from_name(
@@ -142,7 +142,7 @@ async fn read_item(
     azure_data_cosmos_driver::error::CosmosError,
 > {
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
     let item_ref = ItemReference::from_name(
@@ -167,7 +167,7 @@ async fn create_item(
     azure_data_cosmos_driver::error::CosmosError,
 > {
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
     let item_ref = ItemReference::from_name(
@@ -195,7 +195,7 @@ async fn upsert_item(
     azure_data_cosmos_driver::error::CosmosError,
 > {
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
     let item_ref = ItemReference::from_name(
@@ -727,7 +727,7 @@ async fn write_403_3_retry_honors_excluded_region() {
     recorder.clear();
 
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
     let item_ref = ItemReference::from_name(
@@ -787,7 +787,7 @@ async fn create_item_403_1008_retry_honors_excluded_region() {
     recorder.clear();
 
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
     let item_ref = ItemReference::from_name(
@@ -850,7 +850,7 @@ async fn metadata_refresh_ignores_excluded_regions() {
     recorder.clear();
 
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
     let item_ref = ItemReference::from_name(
@@ -936,7 +936,7 @@ async fn metadata_refresh_regional_fallback_ignores_excluded_regions() {
     metadata_rule.enable();
 
     let container = driver
-        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .resolve_container_by_name(DB_NAME, COLL_NAME, OperationOptions::default())
         .await
         .expect("container resolves");
     let item_ref = ItemReference::from_name(

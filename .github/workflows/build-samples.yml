@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.1
 
       - name: Register PMC repository
         run: |
@@ -41,17 +41,18 @@ jobs:
       - name: Build all samples
         run: |
           failed=()
-          for dir in samples/*/; do
-            name=$(basename "$dir")
+          while IFS= read -r manifest; do
+            name="${manifest#samples/}"
+            name="${name%/Cargo.toml}"
             echo "::group::Building $name"
-            if cargo build --manifest-path "${dir}Cargo.toml" 2>&1; then
+            if cargo build --manifest-path "$manifest" 2>&1; then
               echo "✅ $name built successfully"
             else
               echo "::error::❌ $name failed to build"
               failed+=("$name")
             fi
             echo "::endgroup::"
-          done
+          done < <(find samples -mindepth 2 -maxdepth 2 -name Cargo.toml -print | sort)
 
           if [ ${#failed[@]} -ne 0 ]; then
             echo ""

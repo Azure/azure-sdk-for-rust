@@ -112,6 +112,26 @@ where
         should_remove
     }
 
+    /// Replaces an entry only if it still contains the observed value.
+    pub(crate) async fn replace_if_same(
+        &self,
+        key: &K,
+        observed: &Arc<V>,
+        replacement: Arc<V>,
+    ) -> bool {
+        let mut write_guard = self.map.write().await;
+        let should_replace = write_guard
+            .get(key)
+            .and_then(|lazy| lazy.try_get())
+            .is_some_and(|current| Arc::ptr_eq(&current, observed));
+
+        if should_replace {
+            write_guard.insert(key.clone(), Arc::new(AsyncLazy::from_arc(replacement)));
+        }
+
+        should_replace
+    }
+
     /// Clears all entries from the cache.
     #[cfg(test)]
     pub(crate) async fn clear(&self) {

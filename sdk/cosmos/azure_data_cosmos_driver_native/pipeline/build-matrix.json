@@ -1,0 +1,122 @@
+{
+  "$schema": "./build-matrix.schema.json",
+  "_comment": "Single source of truth for the native-driver cross-build (Deliverable 1) and the Go-module generator (Deliverable 2). Package versions are derived from Cargo metadata, not duplicated here. Syslibs are captured programmatically by Build-NativeMatrix.ps1 via 'rustc --print native-static-libs'. Target-specific replacements must identify an ABI-compatible compiler library and are recorded separately from the original rustc output. The one entry under reference_syslibs is the known-good windows/amd64 line from the Azure/azure-cosmos-driver PR #5 bootstrap, used only for parity checks and offline generation.",
+  "native_interface_crate": "azure_data_cosmos_driver_native",
+  "rust_driver_crate": "azure_data_cosmos_driver",
+  "lib_basename": "azurecosmosdriver",
+  "static_lib_filename": "libazurecosmosdriver.a",
+  "header_filename": "azurecosmosdriver.h",
+  "rust_driver_features": ["tokio", "rustls"],
+  "go_version": "1.25.0",
+  "go_toolchain_version": "1.25.12",
+  "module_root": "github.com/Azure/azure-cosmos-driver",
+  "go_package": "driver",
+  "targets": [
+    {
+      "id": "windows-amd64",
+      "goos": "windows",
+      "goarch": "amd64",
+      "libc": null,
+      "triple": "x86_64-pc-windows-gnu",
+      "c_compiler": "gcc",
+      "module_path": "windows/amd64",
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "static_runtime_ldflags": [
+        "-Wl,-Bstatic",
+        "-lwinpthread",
+        "-Wl,-Bdynamic"
+      ],
+      "risk": null
+    },
+    {
+      "id": "linux-amd64-glibc",
+      "goos": "linux",
+      "goarch": "amd64",
+      "libc": "glibc",
+      "triple": "x86_64-unknown-linux-gnu",
+      "c_compiler": "gcc",
+      "module_path": "linux/amd64",
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "risk": null
+    },
+    {
+      "id": "linux-arm64-glibc",
+      "goos": "linux",
+      "goarch": "arm64",
+      "libc": "glibc",
+      "triple": "aarch64-unknown-linux-gnu",
+      "c_compiler": "aarch64-linux-gnu-gcc",
+      "module_path": "linux/arm64",
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "risk": null
+    },
+    {
+      "id": "darwin-arm64",
+      "goos": "darwin",
+      "goarch": "arm64",
+      "libc": null,
+      "triple": "aarch64-apple-darwin",
+      "c_compiler": "clang",
+      "module_path": "darwin/arm64",
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "risk": null
+    },
+    {
+      "id": "linux-amd64-musl",
+      "goos": "linux",
+      "goarch": "amd64",
+      "libc": "musl",
+      "triple": "x86_64-unknown-linux-musl",
+      "c_compiler": "musl-gcc",
+      "module_path": "linux/amd64-musl",
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "native_static_lib_replacements": [
+        {
+          "rustc_flag": "-lunwind",
+          "consumer_flag": "-lgcc_eh",
+          "compiler_library": "libgcc_eh.a"
+        }
+      ],
+      "risk": null
+    },
+    {
+      "id": "linux-arm64-musl",
+      "goos": "linux",
+      "goarch": "arm64",
+      "libc": "musl",
+      "triple": "aarch64-unknown-linux-musl",
+      "c_compiler": "aarch64-linux-musl-gcc",
+      "module_path": "linux/arm64-musl",
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "native_static_lib_replacements": [
+        {
+          "rustc_flag": "-lunwind",
+          "consumer_flag": "-lgcc_eh",
+          "compiler_library": "libgcc_eh.a"
+        }
+      ],
+      "risk": null
+    }
+  ],
+  "reference_syslibs": {
+    "x86_64-pc-windows-gnu": [
+      "-lws2_32",
+      "-luserenv",
+      "-lntdll",
+      "-lbcrypt",
+      "-lncrypt",
+      "-lsecur32",
+      "-lcrypt32",
+      "-ladvapi32",
+      "-lkernel32",
+      "-luser32",
+      "-lpsapi"
+    ]
+  }
+}

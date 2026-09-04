@@ -5,14 +5,16 @@ use crate::{
     clients::ClientContext,
     diagnostics::CosmosOperationContext,
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
-    models::{BatchResponse, ChangeFeedItem, ItemResponse, PatchInstructions, TransactionalBatch},
+    models::{BatchResponse, ChangeFeedItem, ItemResponse, TransactionalBatch},
     options::{
         BatchOptions, BinaryEncodingOptions, ChangeFeedMode, ChangeFeedOptions,
-        ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, PatchItemOptions,
-        Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, SessionToken,
+        ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, Precondition,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, SessionToken,
     },
     PartitionKey, Query, ResourceIdentity,
 };
+#[cfg(feature = "preview_patch")]
+use crate::{models::PatchInstructions, options::PatchItemOptions};
 
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
@@ -49,13 +51,14 @@ impl ContainerClient {
         context: ClientContext,
         database: &ResourceIdentity,
         container: ResourceIdentity,
+        options: crate::options::ContainerClientOptions,
     ) -> crate::Result<Self> {
         // The container's addressing mode must match the database's: name-with-name
         // or RID-with-RID. Mixing the two is not supported by the service routing.
         let container_ref = match (database, &container) {
             (ResourceIdentity::Name(db_name), ResourceIdentity::Name(container_name)) => context
                 .driver
-                .resolve_container(db_name, container_name)
+                .resolve_container(db_name, container_name, options.operation)
                 .await
                 .map_err(|e| {
                     azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
@@ -67,7 +70,7 @@ impl ContainerClient {
             (ResourceIdentity::Rid(db_rid), ResourceIdentity::Rid(container_rid)) => {
                 let resolved = context
                     .driver
-                    .resolve_container_by_rid(container_rid.as_str())
+                    .resolve_container_by_rid(container_rid.as_str(), options.operation)
                     .await
                     .map_err(|e| {
                         azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
@@ -77,38 +80,20 @@ impl ContainerClient {
                             ))
                             .build()
                     })?;
-
-                // The parent database RID is derived from the container RID, not
-                // taken from this `DatabaseClient`. Reject a container whose parent
-                // database does not match the addressed database so callers can't
-                // accidentally reach into a different database.
                 if resolved.database_rid() != db_rid.as_str() {
                     return Err(azure_data_cosmos_driver::error::CosmosError::builder()
-                        .with_status(
-                            azure_data_cosmos_driver::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID,
-                        )
-                        .with_message(format!(
-                            "container RID '{}' belongs to database '{}', not the addressed database '{}'",
-                            container_rid.as_str(),
-                            resolved.database_rid(),
-                            db_rid.as_str()
-                        ))
+                        .with_status(azure_data_cosmos_driver::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                        .with_message(format!("container RID '{}' belongs to database '{}', not the addressed database '{}'", container_rid.as_str(), resolved.database_rid(), db_rid.as_str()))
                         .build()
                         .into());
                 }
-
                 resolved
             }
             (ResourceIdentity::Name(_), ResourceIdentity::Rid(_))
             | (ResourceIdentity::Rid(_), ResourceIdentity::Name(_)) => {
                 return Err(azure_data_cosmos_driver::error::CosmosError::builder()
-                    .with_status(
-                        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING,
-                    )
-                    .with_message(
-                        "database and container must use the same addressing mode: \
-                         address both by name or both by RID",
-                    )
+                    .with_status(azure_data_cosmos_driver::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING)
+                    .with_message("database and container must use the same addressing mode: address both by name or both by RID")
                     .build()
                     .into());
             }
@@ -119,7 +104,6 @@ impl ContainerClient {
             context,
         })
     }
-
     /// Builds the SDK-side [`CosmosOperationContext`] for this container's
     /// operations, carrying the operation name plus the database and container
     /// identity the driver context does not know.
@@ -236,10 +220,9 @@ impl ContainerClient {
         options: Option<ThroughputOptions>,
     ) -> crate::Result<Option<ThroughputProperties>> {
         let options = options.unwrap_or_default();
-        crate::clients::offers_client::find_offer(
+        crate::clients::offers_client::find_offer_for_container(
             &self.context,
-            self.container_ref.account(),
-            self.container_ref.rid(),
+            &self.container_ref,
             options.operation,
             self.operation_context("read_container_throughput"),
         )
@@ -279,10 +262,9 @@ impl ContainerClient {
     ) -> crate::Result<ThroughputPoller> {
         let options = options.unwrap_or_default();
 
-        crate::clients::offers_client::begin_replace(
+        crate::clients::offers_client::begin_replace_for_container(
             self.context.clone(),
-            self.container_ref.account().clone(),
-            self.container_ref.rid(),
+            &self.container_ref,
             throughput,
             options.operation,
             self.operation_context("replace_container_throughput"),
@@ -483,6 +465,13 @@ impl ContainerClient {
     ///     .into_body().into_single::<Product>()?;
     /// # }
     /// ```
+    ///
+    /// # Tracked PATCH Items
+    ///
+    /// If the item participates in client-side tracked PATCH, this full-document
+    /// replacement must preserve `_azsdkPatchTracking` and its array order.
+    /// Models that do not explicitly represent the property should capture
+    /// unknown fields with `#[serde(flatten)]` and round-trip them unchanged.
     pub async fn replace_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -521,8 +510,13 @@ impl ContainerClient {
         ))
     }
 
-    /// Applies a JSON-PATCH-style update to an item by reading it, applying
-    /// the [`PatchInstructions`] locally, and issuing an ETag-guarded Replace.
+    /// Applies a JSON-PATCH-style update to an item using either one
+    /// server-side PATCH request or client-side Read-Modify-Write. The
+    /// client-side path persists a tracking marker only when required for
+    /// duplicate suppression.
+    ///
+    /// **Preview.** Requires the `preview_patch` feature. This API is not
+    /// production-ready — see [Retry Semantics](#retry-semantics) below.
     ///
     /// The handler refuses to PATCH paths that overlap the container's
     /// partition-key paths: rewriting the partition key would move the
@@ -554,9 +548,6 @@ impl ContainerClient {
     ///     PatchOperation::set("/displayName", serde_json::json!("New name")),
     ///     PatchOperation::increment("/visits", 1i64),
     /// ]);
-    /// // The post-image of the patched item is always available, regardless of
-    /// // `content_response_on_write`: the driver synthesizes it from the locally
-    /// // merged document.
     /// let updated: Product = container_client
     ///     .patch_item("category1", "product1", patch, None)
     ///     .await?
@@ -567,29 +558,35 @@ impl ContainerClient {
     ///
     /// # Response Body
     ///
-    /// Unlike a wire-level Cosmos PATCH (which honors
-    /// `content_response_on_write`), this method always returns the post-image
-    /// of the patched item. The SDK constructs it locally from the merged
-    /// document it just wrote, so no extra round trip is required to read it
-    /// back. Callers that don't need the body can use
-    /// [`ItemResponse::<serde_json::Value>`] or simply discard the response.
+    /// By default both strategies return the post-image. Client-side PATCH
+    /// constructs it from the merged document; server-side PATCH requests it
+    /// from Cosmos DB. An explicit `content_response_on_write = Disabled`
+    /// suppresses the response body for either strategy.
     ///
-    /// # Failure Semantics
+    /// # Execution Tradeoffs
     ///
-    /// PATCH is **not exactly-once** under transport failures. The SDK
-    /// issues the inner Replace as `OperationType::Replace`, which the
-    /// pipeline classifies as idempotent. If a transport-layer error fires
-    /// *after* the inner Replace has been sent but before its response is
-    /// received and the server has already committed the write, the pipeline
-    /// may cross-region retry it. A retry against a replica that has already
-    /// replicated the original commit returns 412, which the RMW loop
-    /// recovers by re-Reading and re-applying. Non-idempotent operations
-    /// (`PatchOperation::increment`, `PatchOperation::add` on an array, `PatchOperation::move`)
-    /// may therefore be applied **more than once** under this scenario.
-    /// Callers that require exactly-once semantics for counters or array
-    /// appends should either build idempotent ops (`PatchOperation::set` on a
-    /// caller-computed value) or detect duplicate-application via a
-    /// monotonic application-level sequence number.
+    /// Server-side PATCH charges for and resolves conflicts at the changed
+    /// paths. Client-side PATCH reads and serializes the complete JSON item
+    /// again, then replaces it, so it consumes Read plus Replace request units
+    /// and resolves multi-write conflicts at document granularity. Select an
+    /// explicit strategy when those differences matter.
+    ///
+    /// # Retry Semantics
+    ///
+    /// [`PatchStrategy::Auto`](crate::options::PatchStrategy::Auto) is the
+    /// default. It uses server-side PATCH for retry-safe lists containing no
+    /// more than 10 instructions. Unsafe or longer lists use tracked
+    /// client-side RMW. Explicit server-side PATCH with more than 10
+    /// instructions fails with HTTP 400 rather than falling back.
+    /// Client-side-only settings do not influence strategy selection and are
+    /// ignored on the server path. To provide a stable identity for
+    /// application-level retries when client-side execution is selected, use
+    /// [`PatchItemOptions::with_tracking_id`]. Explicit unsafe server-side
+    /// PATCH is not retried after an ambiguous outcome.
+    ///
+    /// An explicitly supplied `If-Match` precondition follows standard ETag
+    /// semantics and can return HTTP 412 when it does not match.
+    #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -598,7 +595,7 @@ impl ContainerClient {
         options: Option<PatchItemOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&patch)?;
+        let body = serde_json::to_vec(&patch).map_err(crate::error::convert_json_encode_error)?;
 
         let item_ref = ItemReference::from_name(
             &self.container_ref,
@@ -608,18 +605,18 @@ impl ContainerClient {
 
         // Build the PATCH operation. The handler reads the PatchInstructions back
         // out of the body, so we pass it through verbatim.
-        let mut operation = CosmosOperation::patch_item(item_ref).with_body(body);
-        if let Some(max_attempts) = options.max_attempts {
-            operation = operation.with_patch_max_attempts(max_attempts);
-        }
-        // PATCH manages its own If-Match internally — we only forward the
-        // session token.
+        let operation = apply_patch_options(
+            CosmosOperation::patch_item(item_ref).with_body(body),
+            &options,
+        );
         let operation = apply_item_options(operation, options.session_token, None);
+
+        let operation_options = apply_patch_operation_options(options.operation, options.strategy);
 
         let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(operation, operation_options)
             .await;
 
         Ok(ItemResponse::new(
@@ -696,6 +693,14 @@ impl ContainerClient {
     ///     .into_body().into_single::<Product>()?;
     /// Ok(())
     /// # }
+    /// ```
+    ///
+    /// # Tracked PATCH Items
+    ///
+    /// When upsert replaces an item that participates in client-side tracked
+    /// PATCH, it must preserve `_azsdkPatchTracking` and its array order.
+    /// Models that do not explicitly represent the property should capture
+    /// unknown fields with `#[serde(flatten)]` and round-trip them unchanged.
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -851,14 +856,12 @@ impl ContainerClient {
         ))
     }
 
-    /// Executes a single-partition query against items in the container.
+    /// Executes a query against items in the container.
     ///
     /// The resulting document will be deserialized into the type provided as `T`.
     /// If you want to deserialize the document to a direct representation of the JSON returned, use [`serde_json::Value`] as the target type.
     ///
     /// We recommend using ["turbofish" syntax](https://doc.rust-lang.org/book/appendix-02-operators.html#:~:text=turbofish) (`query_items::<SomeTargetType>(...)`) to specify the target type, as it makes type inference easier.
-    ///
-    /// **NOTE:** Currently, the Azure Cosmos DB SDK for Rust only supports single-partition querying. Cross-partition queries may be supported in the future.
     ///
     /// # Arguments
     ///
@@ -868,9 +871,20 @@ impl ContainerClient {
     ///
     /// # Cross Partition Queries
     ///
-    /// Cross-partition queries are significantly limited in the current version of the Cosmos DB SDK.
-    /// They are run on the gateway and limited to simple projections (`SELECT`) and filtering (`WHERE`).
-    /// For more details, see [the Cosmos DB documentation page on cross-partition queries](https://learn.microsoft.com/en-us/rest/api/cosmos-db/querying-cosmosdb-resources-using-the-rest-api#queries-that-cannot-be-served-by-gateway).
+    /// When `scope` spans multiple partitions, the SDK obtains a query plan and composes the
+    /// client-side pipeline needed to execute it. Supported features include ordinary projections
+    /// and filters, `TOP`, `OFFSET`/`LIMIT`, streaming single- and multiple-column `ORDER BY`, and
+    /// ordered or unordered `DISTINCT`.
+    ///
+    /// Cross-partition vector ordering supports pure `ORDER BY VectorDistance(...)` queries with a
+    /// finite `TOP N` or `OFFSET x LIMIT y` window. The SDK buffers that result window before
+    /// returning the first page, so use narrow projections and choose a result window appropriate
+    /// for the memory available to the application.
+    ///
+    /// The buffered result can be iterated in pages, but it does not support continuation tokens
+    /// for resuming in another process. Aggregates, `GROUP BY`, and hybrid/full-text ranking remain
+    /// unsupported when their query plans require client-side stages that have not been
+    /// implemented.
     ///
     /// # Examples
     ///
@@ -912,6 +926,38 @@ impl ContainerClient {
     /// # }
     /// ```
     ///
+    /// A raw SQL vector search can bind the query vector as a parameter. Vector ordering must not
+    /// specify `ASC` or `DESC`, and must use `TOP N` or `OFFSET`/`LIMIT` when querying across
+    /// partitions:
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// use azure_data_cosmos::{feed::FeedScope, Query};
+    /// use futures::TryStreamExt;
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// #[derive(serde::Deserialize)]
+    /// struct VectorMatch {
+    ///     id: String,
+    ///     score: f64,
+    /// }
+    ///
+    /// let query_vector = vec![0.1_f32, 0.2, 0.3];
+    /// let query = Query::from(
+    ///     "SELECT TOP 5 c.id, VectorDistance(c.embedding, @vector, false) AS score \
+    ///      FROM c ORDER BY VectorDistance(c.embedding, @vector, false)",
+    /// )
+    /// .with_parameter("@vector", &query_vector)?;
+    /// let mut matches = container_client
+    ///     .query_items::<VectorMatch>(query, FeedScope::full_container(), None)
+    ///     .await?;
+    ///
+    /// while let Some(item) = matches.try_next().await? {
+    ///     println!("{}: {}", item.id, item.score);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
     /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
     pub async fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
@@ -920,7 +966,16 @@ impl ContainerClient {
         options: Option<QueryOptions>,
     ) -> crate::Result<QueryItemIterator<T>> {
         let options = options.unwrap_or_default();
+        let plan_options = options.to_plan_options();
         let query = query.into();
+
+        // Resolve binary encoding so the driver advertises a binary *response*
+        // via the negotiation header. Unlike point item writes, the query
+        // request body stays text (`application/query+json` is a query spec,
+        // not a document), so we do not touch body serialization here — the
+        // driver's request-body gate excludes query.
+        let (operation_options, _binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
 
         let container_ref = self.container_ref.clone();
 
@@ -948,16 +1003,16 @@ impl ContainerClient {
             .driver
             .plan_operation(
                 initial_operation,
-                &options.operation,
+                &operation_options,
                 options.feed.continuation_token.as_ref(),
-                &options.feed.to_plan_options(),
+                &plan_options,
             )
             .await?;
         Ok(QueryItemIterator::new(
             self.context.driver.clone(),
             Some(self.container_ref.clone()),
             plan,
-            options.operation,
+            operation_options,
             self.context.diagnostics_handlers.clone(),
             self.operation_context("query_items"),
         ))
@@ -1224,7 +1279,7 @@ impl ContainerClient {
             .context
             .driver
             .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
-            .await;
+            .await?;
 
         if should_force_refresh_feed_ranges(ranges.as_deref(), options.force_refresh()) {
             // A valid container always has at least one partition key range.
@@ -1233,7 +1288,7 @@ impl ContainerClient {
                 .context
                 .driver
                 .resolve_all_partition_key_ranges(&self.container_ref, true)
-                .await;
+                .await?;
         }
 
         let ranges = ranges.ok_or_else(|| {
@@ -1306,7 +1361,7 @@ impl ContainerClient {
                 &driver_pk,
                 options.force_refresh(),
             )
-            .await
+            .await?
             .ok_or_else(|| {
                 crate::DriverCosmosError::builder()
                     .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
@@ -1320,7 +1375,7 @@ impl ContainerClient {
                 .context
                 .driver
                 .resolve_partition_key_ranges_for_key(&self.container_ref, &driver_pk, true)
-                .await
+                .await?
                 .ok_or_else(|| {
                     crate::DriverCosmosError::builder()
                         .with_status(
@@ -1483,6 +1538,40 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
     operation
 }
 
+#[cfg(feature = "preview_patch")]
+fn apply_patch_options(
+    mut operation: CosmosOperation,
+    options: &PatchItemOptions,
+) -> CosmosOperation {
+    if let Some(precondition) = options.precondition.clone() {
+        operation = operation.with_precondition(precondition);
+    }
+    if let Some(max_attempts) = options.max_attempts {
+        operation = operation.with_patch_max_attempts(max_attempts);
+    }
+    if let Some(tracking_id) = options.tracking_id {
+        operation = operation.with_patch_tracking_id(tracking_id.into_driver());
+    }
+    if let Some(capacity) = options.tracking_capacity {
+        operation = operation.with_patch_tracking_capacity(capacity);
+    }
+    if let Some(retention_seconds) = options.tracking_retention_seconds {
+        operation = operation.with_patch_tracking_retention_seconds(retention_seconds);
+    }
+    operation
+}
+
+#[cfg(feature = "preview_patch")]
+fn apply_patch_operation_options(
+    mut operation_options: OperationOptions,
+    strategy: Option<crate::options::PatchStrategy>,
+) -> OperationOptions {
+    if let Some(strategy) = strategy {
+        operation_options.patch_strategy = Some(strategy);
+    }
+    operation_options
+}
+
 fn should_force_refresh_feed_ranges<T>(ranges: Option<&[T]>, force_refresh: bool) -> bool {
     !force_refresh && ranges.is_none_or(<[T]>::is_empty)
 }
@@ -1500,9 +1589,13 @@ fn _assert_futures_are_send() {
     let client: &ContainerClient = todo!();
     let partition_key: PartitionKey = todo!();
     let item_id: &str = todo!();
-    let patch: PatchInstructions = todo!();
-    let options: Option<PatchItemOptions> = todo!();
-    assert_send(client.patch_item(partition_key, item_id, patch, options));
+    assert_send(client.read_item(partition_key.clone(), item_id, None));
+    #[cfg(feature = "preview_patch")]
+    {
+        let patch: PatchInstructions = todo!();
+        let options: Option<PatchItemOptions> = todo!();
+        assert_send(client.patch_item(partition_key, item_id, patch, options));
+    }
 }
 
 #[cfg(test)]
@@ -1514,6 +1607,52 @@ mod tests {
     //! tests.
     use super::*;
     use serde_json::json;
+
+    #[cfg(feature = "preview_patch")]
+    #[test]
+    fn patch_options_forward_to_driver_operation() {
+        let account = azure_data_cosmos_driver::models::AccountReference::with_master_key(
+            azure_core::http::Url::parse("https://localhost").unwrap(),
+            "test-key",
+        );
+        let operation = CosmosOperation::read_all_databases(account);
+        let tracking_id = "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f"
+            .parse::<crate::models::PatchTrackingId>()
+            .unwrap();
+        let options = PatchItemOptions::default()
+            .with_strategy(crate::options::PatchStrategy::ClientSide)
+            .with_precondition(Precondition::if_match(azure_core::http::Etag::from(
+                "\"etag\"",
+            )))
+            .with_max_attempts(std::num::NonZeroU8::new(7).unwrap())
+            .with_tracking_id(tracking_id)
+            .with_tracking_capacity(std::num::NonZeroU16::new(19).unwrap())
+            .with_tracking_retention_seconds(std::num::NonZeroU32::new(23).unwrap());
+
+        let operation = apply_patch_options(operation, &options);
+
+        assert_eq!(operation.patch_max_attempts().unwrap().get(), 7);
+        assert_eq!(
+            operation.patch_tracking_id().unwrap().to_string(),
+            tracking_id.to_string()
+        );
+        assert_eq!(operation.patch_tracking_capacity().unwrap().get(), 19);
+        assert_eq!(
+            operation.precondition(),
+            Some(&Precondition::if_match(azure_core::http::Etag::from(
+                "\"etag\""
+            )))
+        );
+        assert_eq!(
+            operation.patch_tracking_retention_seconds().unwrap().get(),
+            23
+        );
+        let operation_options = apply_patch_operation_options(options.operation, options.strategy);
+        assert_eq!(
+            operation_options.patch_strategy,
+            Some(crate::options::PatchStrategy::ClientSide)
+        );
+    }
 
     #[test]
     fn serialize_item_body_text_matches_serde_to_vec() {

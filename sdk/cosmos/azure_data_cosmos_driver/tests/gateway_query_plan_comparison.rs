@@ -107,7 +107,7 @@ async fn ensure_container(
     }
 
     driver
-        .resolve_container(DB_NAME, container_name)
+        .resolve_container(DB_NAME, container_name, OperationOptions::default())
         .await
         .expect("failed to resolve container")
 }
@@ -178,13 +178,19 @@ async fn fetch_gateway_plan(
 fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Value) {
     let gw_rewritten = gw.get("rewrittenQuery").and_then(|v| v.as_str());
 
-    // ── distinctType ─────────────────────────────────────────────────────────
-    // Carve-out: Gateway downgrades `Ordered` → `Unordered` whenever it emits a
-    // `rewrittenQuery`. This is because the rewritten plan uses an explicit ORDER
-    // BY in the per-partition queries, so the cross-partition aggregation no longer
-    // needs to preserve order at the DISTINCT layer. Local AST analysis does not
-    // perform that rewrite, so it correctly reports `Ordered`. This is consistent
-    // with how the .NET / Java SDKs treat the field.
+    // ── distinctType (no carve-out) ──────────────────────────────────────────
+    // This previously carried a carve-out tolerating `local = Ordered` against
+    // `gw = Unordered` whenever the Gateway emitted a `rewrittenQuery`, on the
+    // theory that the rewrite made ordering unnecessary at the DISTINCT layer.
+    // That explanation was too broad: measured against a live account with
+    // production's `SUPPORTED_QUERY_FEATURES`, the service keeps `Ordered` for
+    // `SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name ASC` *and* emits a
+    // 172-character `rewrittenQuery`. What it actually downgrades is every
+    // other shape — see `gw_distinct` below and `plan::distinct_is_ordered`.
+    //
+    // The local generator now encodes that rule, so it agrees with the service
+    // on every query in this file and the tolerance is unreachable — verified
+    // by instrumenting the branch and running the full suite live (zero hits).
     let local_dt = local
         .get("distinctType")
         .and_then(|v| v.as_str())
@@ -193,9 +199,7 @@ fn compare_query_info(sql: &str, local: &serde_json::Value, gw: &serde_json::Val
         .get("distinctType")
         .and_then(|v| v.as_str())
         .unwrap_or("None");
-    if !(local_dt == gw_dt
-        || (local_dt == "Ordered" && gw_dt == "Unordered" && gw_rewritten.is_some()))
-    {
+    if local_dt != gw_dt {
         panic!("[distinctType] sql={sql}\n  local={local_dt}  gw={gw_dt}");
     }
 
@@ -792,6 +796,23 @@ async fn gw_distinct() {
     validate_pk("SELECT DISTINCT VALUE null").await;
     validate_pk("SELECT DISTINCT VALUE 1").await;
     validate_pk("SELECT DISTINCT VALUE 'a'").await;
+
+    // `Ordered` vs `Unordered` decides whether the DISTINCT stage may
+    // deduplicate by adjacency and hand back a continuation token, so pin the
+    // boundary the service actually draws: the `VALUE` form whose ORDER BY is
+    // exactly the projected path is the only shape that stays `Ordered`.
+    validate_pk("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name ASC").await;
+    validate_pk("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name DESC").await;
+    validate_pk("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.other ASC").await;
+    validate_pk("SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name, c.other").await;
+    validate_pk("SELECT DISTINCT c.name, c.city FROM c ORDER BY c.name ASC").await;
+
+    // Constant DISTINCT collapses to `None` only *without* a FROM clause; with
+    // one the query yields a row per document, so deduplication is real work
+    // and the service reports `Unordered`.
+    validate_pk("SELECT DISTINCT VALUE 1 FROM c").await;
+    validate_pk("SELECT DISTINCT VALUE null FROM c").await;
+    validate_pk("SELECT DISTINCT 1 AS p FROM c").await;
 }
 
 #[tokio::test]

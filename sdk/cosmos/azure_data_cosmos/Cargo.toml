@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.38.0"
+version = "0.39.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors.workspace = true
@@ -17,17 +17,20 @@ categories = ["api-bindings"]
 async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
-azure_data_cosmos_driver = { version = "0.7.0", path = "../azure_data_cosmos_driver", default-features = false }
+azure_data_cosmos_driver = { version = "0.8.0", path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
 opentelemetry = { workspace = true, optional = true, features = ["metrics"] }
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
-serde_json = { workspace = true, features = ["raw_value"] }
+# `float_roundtrip` makes float parsing bit-exact; serde_json's default fast
+# path can land 1 ULP off, which corrupts doubles parsed from text responses.
+serde_json = { workspace = true, features = ["raw_value", "float_roundtrip"] }
 time.workspace = true
 tracing.workspace = true
 url.workspace = true
+uuid = { workspace = true, optional = true, features = ["v4", "fast-rng"] }
 
 # NOTE: Cargo does not support feature-gating dev-dependencies. The `serde` and
 # `tokio test-util` entries below merge into existing features and add no
@@ -106,6 +109,7 @@ metrics = [
 preview_dtx = [
   "azure_data_cosmos_driver/preview_dtx",
 ] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
+preview_patch = ["dep:uuid"] # Enables the preview PATCH API with bounded duplicate suppression. Disabled by default.
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",
@@ -123,6 +127,7 @@ features = [
   "key_auth",
   "metrics",
   "native_tls",
+  "preview_patch",
   "rustls",
 ]
 
@@ -172,3 +177,10 @@ required-features = ["__internal_in_memory_emulator"]
 name = "cosmos"
 path = "examples/cosmos/main.rs"
 required-features = ["control_plane"]
+
+# The PATCH example calls the preview `patch_item` API, which only exists
+# when `preview_patch` is enabled.
+[[example]]
+name = "cosmos_patch"
+path = "examples/cosmos_patch.rs"
+required-features = ["preview_patch"]

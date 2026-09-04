@@ -45,12 +45,37 @@ pub enum ErrorKind {
     ///
     AmqpError(AmqpError),
 
+    /// The service settled the transfer, but it did not durably accept it.
+    ///
+    /// The broker returned an AMQP `Modified` or `Released` outcome. Neither
+    /// outcome means the service stored the events. The buffered producer
+    /// reports this as a delivery failure.
+    ///
+    /// A `Released` or `Modified` outcome does not prove that the service
+    /// discarded the events either. If the caller sends the same events again,
+    /// the service can store them two times.
+    SendNotAccepted(Cow<'static, str>),
+
     /// Receiver was disconnected by the broker because another receiver
     /// attached with the same or higher epoch (owner level). The inner
     /// `AmqpDescribedError` is for logging; match on the variant:
     /// `matches!(err.kind, ErrorKind::ConsumerDisconnected(_))`.
     /// Mirrors `EventHubsException.FailureReason.ConsumerDisconnected` (.NET).
     ConsumerDisconnected(Option<AmqpDescribedError>),
+
+    /// The event carries no offset and no sequence number, so it names no
+    /// position in the partition. A checkpoint built from such an event holds
+    /// no position, and it erases the position the checkpoint store already
+    /// holds.
+    ///
+    /// Mirrors the `InvalidOperationException` that .NET raises for the same
+    /// input ("A checkpoint cannot be created or updated using an empty
+    /// event."). Match on the variant to tell it apart from a store failure:
+    /// `matches!(err.kind, ErrorKind::MissingCheckpointMetadata { .. })`.
+    MissingCheckpointMetadata {
+        /// The identifier of the partition the checkpoint is for.
+        partition_id: String,
+    },
 }
 
 /// Represents an error that can occur in the Event Hubs module.
@@ -95,6 +120,9 @@ impl std::fmt::Display for EventHubsError {
             ErrorKind::SendRejected(e) => write!(f, "Send rejected: {:?}", e),
             ErrorKind::InvalidManagementResponse => f.write_str("Invalid management response"),
             ErrorKind::AmqpError(source) => write!(f, "AMQP Error: {:?}", source),
+            ErrorKind::SendNotAccepted(msg) => {
+                write!(f, "Send was not durably accepted: {}", msg)
+            }
             ErrorKind::ConsumerDisconnected(e) => {
                 write!(
                     f,
@@ -102,6 +130,13 @@ impl std::fmt::Display for EventHubsError {
                     e
                 )
             }
+            ErrorKind::MissingCheckpointMetadata { partition_id } => write!(
+                f,
+                "Cannot record a checkpoint for partition {}. \
+                 The event carries no offset and no sequence number, \
+                 so there is nothing to record.",
+                partition_id
+            ),
         }
     }
 }
