@@ -14,10 +14,14 @@ keywords = ["sdk", "cloud", "blobs"]
 categories = ["api-bindings"]
 
 [features]
-default = ["tokio", "azure_core/default"]
+default = ["arrow", "tokio", "azure_core/default"]
+arrow = ["dep:arrow-array", "dep:arrow-ipc", "dep:arrow-schema"]
 tokio = ["dep:tokio", "azure_core/tokio"]
 
 [dependencies]
+arrow-array = { workspace = true, optional = true }
+arrow-ipc = { workspace = true, optional = true }
+arrow-schema = { workspace = true, optional = true }
 async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", features = ["xml"] }

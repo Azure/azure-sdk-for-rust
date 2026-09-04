@@ -263,6 +263,13 @@ pub enum LeaseStatus {
     Unlocked,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ListBlobsHierarchicalInternalResponseContentType {
+    ApplicationVndApacheArrowStream,
+
+    ApplicationXml,
+}
+
 /// Specifies additional datasets to include when listing blobs in a container.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ListBlobsIncludeItem {
@@ -295,6 +302,13 @@ pub enum ListBlobsIncludeItem {
 
     /// Include versions.
     Versions,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ListBlobsInternalResponseContentType {
+    ApplicationVndApacheArrowStream,
+
+    ApplicationXml,
 }
 
 /// Specifies what additional information should be returned as part of the list operation.

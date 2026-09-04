@@ -12,12 +12,14 @@ use super::{
     BlobClientRenewLeaseResult, BlobClientStartCopyFromUrlResult,
     BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
     BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
-    BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
+    BlobContainerClientGetPropertiesResult, BlobContainerClientListBlobsHierarchicalInternalResult,
+    BlobContainerClientListBlobsInternalResult, BlobContainerClientReleaseLeaseResult,
     BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult, BlobType,
     BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
     BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
     BlockBlobClientUploadInternalResult, BlockList, CopyStatus, ImmutabilityPolicyMode,
-    LeaseDuration, LeaseState, LeaseStatus, PageBlobClientClearPagesResult,
+    LeaseDuration, LeaseState, LeaseStatus, ListBlobsHierarchicalInternalResponseContentType,
+    ListBlobsInternalResponseContentType, PageBlobClientClearPagesResult,
     PageBlobClientCreateResult, PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
     PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
     PublicAccessType, RehydratePriority, SignedIdentifiers, SkuName,
@@ -1725,6 +1727,66 @@ impl BlobContainerClientGetPropertiesResultHeaders
     }
 }
 
+/// Provides access to typed response headers for `BlobContainerClient::list_blobs_hierarchical_internal()`
+///
+/// # Examples
+///
+/// ```ignore
+/// use azure_core::{Result, http::AsyncResponse};
+/// use azure_storage_blob::models::{BlobContainerClientListBlobsHierarchicalInternalResult, BlobContainerClientListBlobsHierarchicalInternalResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: AsyncResponse<BlobContainerClientListBlobsHierarchicalInternalResult> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_type) = response.content_type()? {
+///         println!("content-type: {:?}", content_type);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub(crate) trait BlobContainerClientListBlobsHierarchicalInternalResultHeaders:
+    private::Sealed
+{
+    fn content_type(&self) -> Result<Option<ListBlobsHierarchicalInternalResponseContentType>>;
+}
+
+impl BlobContainerClientListBlobsHierarchicalInternalResultHeaders
+    for AsyncResponse<BlobContainerClientListBlobsHierarchicalInternalResult>
+{
+    /// Content-Type header
+    fn content_type(&self) -> Result<Option<ListBlobsHierarchicalInternalResponseContentType>> {
+        Headers::get_optional_as(self.headers(), &CONTENT_TYPE)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::list_blobs_internal()`
+///
+/// # Examples
+///
+/// ```ignore
+/// use azure_core::{Result, http::AsyncResponse};
+/// use azure_storage_blob::models::{BlobContainerClientListBlobsInternalResult, BlobContainerClientListBlobsInternalResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: AsyncResponse<BlobContainerClientListBlobsInternalResult> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_type) = response.content_type()? {
+///         println!("content-type: {:?}", content_type);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub(crate) trait BlobContainerClientListBlobsInternalResultHeaders: private::Sealed {
+    fn content_type(&self) -> Result<Option<ListBlobsInternalResponseContentType>>;
+}
+
+impl BlobContainerClientListBlobsInternalResultHeaders
+    for AsyncResponse<BlobContainerClientListBlobsInternalResult>
+{
+    /// Content-Type header
+    fn content_type(&self) -> Result<Option<ListBlobsInternalResponseContentType>> {
+        Headers::get_optional_as(self.headers(), &CONTENT_TYPE)
+    }
+}
+
 /// Provides access to typed response headers for `BlobContainerClient::release_lease()`
 ///
 /// # Examples
@@ -2767,11 +2829,13 @@ mod private {
         BlobClientStartCopyFromUrlResult, BlobContainerClientAcquireLeaseResult,
         BlobContainerClientBreakLeaseResult, BlobContainerClientChangeLeaseResult,
         BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
-        BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
-        BlobServiceClientGetAccountInfoResult, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadInternalResult, BlockList,
-        PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
+        BlobContainerClientListBlobsHierarchicalInternalResult,
+        BlobContainerClientListBlobsInternalResult, BlobContainerClientReleaseLeaseResult,
+        BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+        BlockBlobClientUploadInternalResult, BlockList, PageBlobClientClearPagesResult,
+        PageBlobClientCreateResult, PageBlobClientResizeResult,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
         PageBlobClientUploadPagesResult, PageList, SignedIdentifiers,
     };
@@ -2780,6 +2844,8 @@ mod private {
     pub trait Sealed {}
 
     impl Sealed for AsyncResponse<BlobClientDownloadInternalResult> {}
+    impl Sealed for AsyncResponse<BlobContainerClientListBlobsHierarchicalInternalResult> {}
+    impl Sealed for AsyncResponse<BlobContainerClientListBlobsInternalResult> {}
     impl Sealed for Response<AppendBlobClientAppendBlockFromUrlResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientAppendBlockResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientCreateResult, NoFormat> {}

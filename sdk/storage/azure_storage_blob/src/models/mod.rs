@@ -7,6 +7,7 @@ mod download_result;
 pub(crate) mod drains;
 pub(crate) mod error;
 pub(crate) mod extensions;
+mod format;
 pub(crate) mod http_ranges;
 mod method_options;
 
@@ -18,9 +19,14 @@ pub use crate::generated::models::*;
 pub use download_result::{
     BlobClientDownloadIntoResult, BlobClientDownloadResult, BlobDownloadProperties,
 };
+pub(crate) use format::decode_next_marker;
+pub use format::AutoFormat;
 pub use method_options::BlobClientDownloadOptions;
 pub use method_options::BlockBlobClientUploadOptions;
 pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
+pub use method_options::{
+    BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
+};
 pub use upload_result::BlockBlobClientUploadResult;
 pub use upload_result::BlockBlobClientUploadResult as BlobClientUploadResult;
 

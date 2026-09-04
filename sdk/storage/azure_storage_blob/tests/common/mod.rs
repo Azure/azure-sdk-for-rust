@@ -29,12 +29,14 @@ use azure_core::{
 use azure_core_test::{Recording, TestMode};
 use azure_storage_blob::{
     models::{
-        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
-        EncryptionAlgorithmType,
+        BlobContainerClientListBlobsOptions, BlobItem, BlockBlobClientUploadOptions,
+        BlockBlobClientUploadResult, BlockLookupList, EncryptionAlgorithmType,
+        ListBlobsIncludeItem,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
     BlobServiceClient, BlobServiceClientOptions,
 };
+use futures::TryStreamExt;
 
 pub const KB: usize = 1024;
 pub const MB: usize = KB * 1024;
@@ -236,6 +238,21 @@ pub async fn create_test_blob(
                 .await
         }
     }
+}
+
+/// Lists blobs in `container_client` and returns every decoded item across all pages.
+pub async fn list_blobs_with_include(
+    container_client: &BlobContainerClient,
+    include: Option<Vec<ListBlobsIncludeItem>>,
+) -> Result<Vec<BlobItem>> {
+    let items = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            include,
+            ..Default::default()
+        }))?
+        .try_collect()
+        .await?;
+    Ok(items)
 }
 
 pub trait ClientOptionsExt {
