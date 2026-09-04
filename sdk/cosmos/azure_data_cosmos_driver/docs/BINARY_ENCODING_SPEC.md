@@ -35,7 +35,7 @@ since the service persists the binary form directly. A secondary benefit is
 faster serialization/deserialization when the typed path reads and writes the
 binary form natively.
 
-The feature is **opt-in** and **transparent**: when enabled, callers use the
+The feature is **enabled by default** and **transparent**: callers use the
 same `create_item` / `read_item` / `query_items` / etc. APIs and observe
 text-equivalent results.
 
@@ -68,13 +68,28 @@ text-equivalent results.
 | ------------------------------------------- | :----------: | :-----------: | --------- |
 | `read_item`                                 |      —       |    decode     | ✅ done |
 | `create_item` / `upsert_item` / `replace_item` |   encode  |    decode     | ✅ done |
-| `query_items`                               |   deferred   |    decode     | response done; request-encode deferred |
+| `query_items`                               |  — (text spec) |    decode     | ✅ done (response negotiated, standard gateway) |
 | `delete_item`                               |      —       |      —        | n/a |
 | `patch_item`                                |   deferred   |   deferred    | deferred |
 | transactional batch / bulk                  |   deferred   |   deferred    | deferred |
 
 The response-decode boundary is shared, so `query_items` already decodes binary
-response envelopes; only its *request-body* encoding + negotiation header remain.
+response envelopes. A query now also **advertises** a binary response via the
+`x-ms-cosmos-supported-serialization-formats` header; its request body is a
+`application/query+json` query spec (not a document) and intentionally stays
+text — there is no query request-body encoding to do.
+
+> **Gateway 2.0 limitation (follow-up).** Response negotiation is honored on the
+> **standard gateway** path only. On the Gateway 2.0 / thin-client path the
+> request is re-encoded as an RNTBD metadata token list, and there is no
+> `SupportedSerializationFormats` token, so the header cannot survive the
+> thin-client wrapping — a query against a Gateway 2.0 account silently returns
+> **text**. This is a **customer-visible limitation, not benign**: the whole
+> point of query binary negotiation is to fix the integral-`Double`→integer
+> divergence (#5028), so a wide integer that round-trips over binary on the
+> standard gateway can still fail typed deserialization over a thin-client
+> account. Adding the RNTBD `SupportedSerializationFormats` token is tracked as a
+> follow-up.
 
 ## 3. Background: the .NET reference
 
@@ -90,8 +105,8 @@ introduced binary encoding for point operations:
   `EnableBinaryResponseOnPointOperations` request option.
 - Patch, batch, and bulk were explicitly **out of scope**.
 
-The Rust design adopts the same enablement model but goes **straight to native
-serde codecs** on both sides (rather than text↔binary transcoders):
+The Rust design enables binary encoding by default and goes **straight to
+native serde codecs** on both sides (rather than text↔binary transcoders):
 `T: Serialize` is encoded directly to Cosmos binary JSON via
 [`binary_json::to_vec`], and binary responses are deserialized straight into
 `T: Deserialize` via [`binary_json::from_slice`], with no intermediate text or
@@ -399,8 +414,8 @@ small items, where the `Value` allocation dominated the fixed overhead.
 - **Enablement.** Resolved once at client construction, preferring the explicit
   `CosmosClientBuilder::with_binary_encoding_options` /
   `with_binary_encoding_enabled` option and falling back to the
-  `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable; disabled by
-  default.
+  `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable; enabled by
+  default when neither is set.
 
 ### 9.1 Driver-side binary encoding and transcoding
 
@@ -438,11 +453,18 @@ it through. It sets the option via a `with_binary_encoding` helper on
 **Option resolution + operation-type guard.** `execute_operation` resolves
 `binary_encoding` through the same runtime → account → operation layered view
 (`operation_options_view`) as every other option, so a default set at the
-runtime/account layer is honored. Binary encoding is honored **only for point
-item operations** (`OperationType::supports_binary_encoding`: create, read,
-replace, upsert, delete); query, feed, batch, and stored-procedure operations
-are ignored even if a caller (e.g. an FFI host) sets the flag, since those paths
-remain deferred. Patch is dispatched to its own handler before this check and is
+runtime/account layer is honored. Two independent gates apply. Request-body
+transcoding is honored **only for point item operations**
+(`OperationType::supports_binary_request_body`: create, read, replace, upsert;
+delete is excluded — it carries no body, though .NET's
+`IsPointOperationSupportedForBinaryEncoding` does include it). Response
+negotiation (the `x-ms-cosmos-supported-serialization-formats`
+header) covers the same point item ops **plus query**
+(`OperationType::supports_binary_response`) — a query advertises a binary
+response while keeping its `application/query+json` request body text. Feed
+(`ReadFeed` / change feed), batch, and stored-procedure operations are ignored
+even if a caller (e.g. an FFI host) sets the flag, since those paths remain
+deferred. Patch is dispatched to its own handler before this check and is
 likewise excluded.
 
 This matches the guidance that the **driver** (not the backend) performs the
@@ -530,8 +552,8 @@ rare forms is a possible future optimization.)
   `CosmosResponse::transcode_body_to_text` applies the conversion to the
   assembled response body.
 - `azure_data_cosmos_driver/src/models/mod.rs`:
-  `OperationType::supports_binary_encoding` gates binary encoding to point item
-  operations (create/read/replace/upsert/delete).
+  `OperationType::supports_binary_request_body` gates binary encoding to point item
+  operations (create/read/replace/upsert; delete excluded — no body).
 - `azure_data_cosmos_driver/src/driver/cosmos_driver.rs`: `execute_operation`
   resolves `binary_encoding` via the layered `operation_options_view`, applies
   request-side transcoding for supported operation types, and transcodes the
@@ -548,8 +570,8 @@ rare forms is a possible future optimization.)
 - `azure_data_cosmos/src/clients/mod.rs`: `resolve_binary_encoding` prefers the
   explicit `CosmosClientBuilder::with_binary_encoding_options` /
   `with_binary_encoding_enabled` option and falls back to the
-  `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable, resolving a
-  `BinaryEncodingOptions`.
+  `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable, then defaults
+  to enabled, resolving a `BinaryEncodingOptions`.
 - `azure_data_cosmos/src/options/client.rs`: the public `BinaryEncodingOptions`
   (`enabled`, `request_text_response`) exposed through `options`.
 - `azure_data_cosmos_driver/src/models/cosmos_headers.rs`: the

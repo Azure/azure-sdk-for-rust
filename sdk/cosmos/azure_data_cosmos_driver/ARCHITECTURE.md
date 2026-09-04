@@ -102,12 +102,10 @@ The driver currently:
 - ✅ Uses typed metadata models internally for cache resolution (`DatabaseProperties`, `ContainerProperties`)
 - ✅ Returns raw bytes for all data plane  and metadata operations
 
-#### Exception: PATCH (driver-side Read-Modify-Write)
+#### Exception: client-side PATCH Read-Modify-Write
 
-`OperationType::Patch` is the one data plane operation where the driver
-*must* deserialize a response body — the Cosmos DB service does not
-support arbitrary JSON-patch semantics natively, so the driver implements
-PATCH as a Read-Modify-Write loop. The dedicated patch handler
+Client-side `OperationType::Patch` is the one data-plane path where the driver
+must deserialize an item response body. The dedicated patch handler
 (`driver::pipeline::patch_handler`) is the **only** code path allowed
 to parse a data plane body:
 
@@ -123,6 +121,11 @@ selection, diagnostics — continues to treat bodies as opaque
 `Vec<u8>` payloads. The opaque-body invariant is preserved in spirit
 by scoping the exception to a single, isolated handler that runs
 *before* the main pipeline and re-enters it for each internal sub-op.
+
+Server-side PATCH forwards the serialized instruction envelope through the
+normal pipeline without inspecting item data. `PatchStrategy::Auto` uses that
+path for retry-safe lists of at most 10 instructions and client-side RMW
+otherwise.
 
 ---
 
@@ -296,7 +299,7 @@ The `DiagnosticsContext` provides comprehensive visibility into operation execut
 flowchart TD
     DC["<b>DiagnosticsContext</b> (Immutable, per-operation)<br/>• activity_id: ActivityId — unique identifier for the operation<br/>• duration: Duration — total operation time<br/>• status_code: StatusCode — final HTTP status after retries<br/>• sub_status_code: SubStatusCode — Cosmos-specific error classification<br/>• requests: Arc&lt;Vec&lt;RequestDiagnostics&gt;&gt;"]
     RD["<b>RequestDiagnostics</b> (per-HTTP-request details)<br/>• region: Region<br/>• endpoint: String<br/>• status_code: StatusCode<br/>• sub_status_code: Option&lt;SubStatusCode&gt;<br/>• request_charge: f64<br/>• duration_ms: u64"]
-    EC["execution_context: <b>ExecutionContext</b><br/>• Initial — first attempt<br/>• Retry — retry after 429/503/etc.<br/>• Hedging — speculative request<br/>• RegionFailover — cross-region retry<br/>• CircuitBreakerProbe — recovery check"]
+    EC["execution_context: <b>ExecutionContext</b><br/>• Initial — first attempt<br/>• OperationRetry — retry after 429/503/etc.<br/>• Hedging — speculative request<br/>• RegionFailover — cross-region retry<br/>• CircuitBreakerProbe — recovery check"]
     RSS["request_sent: <b>RequestSentStatus</b><br/>• Sent — definitely transmitted<br/>• NotSent — definitely NOT transmitted<br/>• Unknown — cannot determine"]
     RE["events: Vec&lt;<b>RequestEvent</b>&gt;<br/>• timestamp: Instant<br/>• duration_ms: Option&lt;u64&gt;<br/>• details: Option&lt;String&gt;"]
     RET["event_type: <b>RequestEventType</b><br/>• TransportStart<br/>• ResponseHeadersReceived<br/>• TransportComplete<br/>• TransportFailed"]
@@ -474,7 +477,7 @@ Scenario: Request throttled 10 times (429/3200) before succeeding on the 11th at
       "duration_ms": 45
     },
     {
-      "execution_context": "retry",
+      "execution_context": "operation_retry",
       "region": "West US 2",
       "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
       "status_code": 429,
@@ -483,7 +486,7 @@ Scenario: Request throttled 10 times (429/3200) before succeeding on the 11th at
       "duration_ms": 52
     },
     {
-      "execution_context": "retry",
+      "execution_context": "operation_retry",
       "region": "West US 2",
       "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
       "status_code": 429,
@@ -492,7 +495,7 @@ Scenario: Request throttled 10 times (429/3200) before succeeding on the 11th at
       "duration_ms": 78
     },
     {
-      "execution_context": "retry",
+      "execution_context": "operation_retry",
       "region": "West US 2",
       "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
       "status_code": 429,
@@ -501,7 +504,7 @@ Scenario: Request throttled 10 times (429/3200) before succeeding on the 11th at
       "duration_ms": 120
     },
     {
-      "execution_context": "retry",
+      "execution_context": "operation_retry",
       "region": "West US 2",
       "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
       "status_code": 429,
@@ -510,7 +513,7 @@ Scenario: Request throttled 10 times (429/3200) before succeeding on the 11th at
       "duration_ms": 189
     },
     {
-      "execution_context": "retry",
+      "execution_context": "operation_retry",
       "region": "West US 2",
       "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
       "status_code": 429,
@@ -519,7 +522,7 @@ Scenario: Request throttled 10 times (429/3200) before succeeding on the 11th at
       "duration_ms": 312
     },
     {
-      "execution_context": "retry",
+      "execution_context": "operation_retry",
       "region": "West US 2",
       "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
       "status_code": 429,
@@ -528,7 +531,7 @@ Scenario: Request throttled 10 times (429/3200) before succeeding on the 11th at
       "duration_ms": 456
     },
     {
-      "execution_context": "retry",
+      "execution_context": "operation_retry",
       "region": "West US 2",
       "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
       "status_code": 429,
@@ -537,7 +540,7 @@ Scenario: Request throttled 10 times (429/3200) before succeeding on the 11th at
       "duration_ms": 623
     },
     {
-      "execution_context": "retry",
+      "execution_context": "operation_retry",
       "region": "West US 2",
       "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
       "status_code": 429,
@@ -546,7 +549,7 @@ Scenario: Request throttled 10 times (429/3200) before succeeding on the 11th at
       "duration_ms": 780
     },
     {
-      "execution_context": "retry",
+      "execution_context": "operation_retry",
       "region": "West US 2",
       "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
       "status_code": 429,
@@ -555,7 +558,7 @@ Scenario: Request throttled 10 times (429/3200) before succeeding on the 11th at
       "duration_ms": 890
     },
     {
-      "execution_context": "retry",
+      "execution_context": "operation_retry",
       "region": "West US 2",
       "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
       "status_code": 200,
@@ -591,7 +594,7 @@ Same operation with deduplication applied:
         "duration_ms": 45
       },
       "last": {
-        "execution_context": "retry",
+        "execution_context": "operation_retry",
         "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
         "status_code": 200,
         "request_charge": 1.0,
@@ -602,7 +605,7 @@ Same operation with deduplication applied:
           "endpoint": "https://myaccount-westus2.documents.azure.com:443/dbs/myDatabase/colls/myContainer/docs/doc_001",
           "status_code": 429,
           "sub_status_code": 3200,
-          "execution_context": "retry",
+          "execution_context": "operation_retry",
           "count": 9,
           "total_request_charge": 9.0,
           "min_duration_ms": 52,

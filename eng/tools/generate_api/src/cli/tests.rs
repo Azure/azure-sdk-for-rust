@@ -15,6 +15,7 @@ fn defaults_to_markdown_format() {
 
     assert_eq!(args.format, OutputFormat::Markdown);
     assert!(!args.no_docs);
+    assert!(!args.check);
 }
 
 #[test]
@@ -46,4 +47,18 @@ fn accepts_no_docs_switch() {
     ]);
 
     assert!(args.no_docs);
+}
+
+#[test]
+fn accepts_check_switch() {
+    let args = Args::parse_from([
+        "generate_api",
+        "--manifest-path",
+        "sdk/core/azure_core/Cargo.toml",
+        "--check",
+        "--output",
+        "/tmp/generate_api",
+    ]);
+
+    assert!(args.check);
 }
