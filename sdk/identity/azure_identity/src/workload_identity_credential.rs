@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::env::Env;
+use crate::{
+    custom_token_proxy::{CustomTokenProxyConfig, TokenProxyClient},
+    env::Env,
+};
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
@@ -51,6 +54,21 @@ pub struct WorkloadIdentityCredentialOptions {
     /// variable `AZURE_FEDERATED_TOKEN_FILE`.
     pub token_file_path: Option<PathBuf>,
 
+    /// Enables Azure Kubernetes Service (AKS) identity binding proxy support.
+    ///
+    /// When `true`, the credential reads the proxy endpoint from `AZURE_KUBERNETES_TOKEN_PROXY` and optional
+    /// TLS configuration from `AZURE_KUBERNETES_SNI_NAME`, `AZURE_KUBERNETES_CA_FILE`, and
+    /// `AZURE_KUBERNETES_CA_DATA`. When `false` (the default), the credential ignores those variables and
+    /// requests tokens directly from Microsoft Entra ID. See the
+    /// [AKS identity bindings documentation](https://learn.microsoft.com/azure/aks/identity-bindings-concepts)
+    /// for guidance about enabling this option.
+    pub enable_proxy: bool,
+
+    /// HTTP client factory for the AKS identity binding token proxy.
+    ///
+    /// When unset, the built-in client enabled by the `reqwest` feature is used.
+    pub proxy_client: Option<Arc<dyn TokenProxyClient>>,
+
     #[cfg(test)]
     pub(crate) env: Env,
 }
@@ -60,6 +78,8 @@ impl fmt::Debug for WorkloadIdentityCredentialOptions {
         f.debug_struct(type_name::<Self>())
             .field("tenant_id", &self.tenant_id)
             .field("client_id", &self.client_id)
+            .field("enable_proxy", &self.enable_proxy)
+            .field("proxy_client", &self.proxy_client)
             .finish_non_exhaustive()
     }
 }
@@ -93,13 +113,18 @@ impl WorkloadIdentityCredential {
                 "no client id specified. Check pod configuration or set client_id in the options"
             })?
         };
+        let mut credential_options = options.credential_options;
+        if options.enable_proxy {
+            let proxy = CustomTokenProxyConfig::from_env(&env)?;
+            proxy.configure(&mut credential_options.client_options, options.proxy_client)?;
+        }
         Ok(Arc::new(Self(
             ClientAssertionCredential::<Token>::new_exclusive(
                 tenant_id,
                 client_id,
                 Token::new(path)?,
                 stringify!(WorkloadIdentityCredential),
-                Some(options.credential_options),
+                Some(credential_options),
             )?,
         )))
     }
@@ -202,7 +227,9 @@ mod tests {
     };
     use azure_core::{
         http::{
-            headers::Headers, AsyncRawResponse, ClientOptions, Method, RawResponse, Request,
+            headers::{HeaderName, Headers},
+            policies::{Policy, PolicyResult},
+            AsyncRawResponse, ClientOptions, Context, HttpClient, Method, RawResponse, Request,
             StatusCode, Transport, Url,
         },
         Bytes,
@@ -217,6 +244,34 @@ mod tests {
     };
 
     static TEMP_FILE_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+    #[derive(Debug)]
+    struct AddHeaderPolicy;
+
+    #[derive(Debug)]
+    struct MockTokenProxyClient(Arc<dyn HttpClient>);
+
+    impl TokenProxyClient for MockTokenProxyClient {
+        fn create(
+            &self,
+            _options: crate::TokenProxyClientOptions<'_>,
+        ) -> azure_core::Result<Arc<dyn HttpClient>> {
+            Ok(self.0.clone())
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl Policy for AddHeaderPolicy {
+        async fn send(
+            &self,
+            ctx: &Context,
+            request: &mut Request,
+            next: &[Arc<dyn Policy>],
+        ) -> PolicyResult {
+            request.headers_mut().insert("x-test-policy", "applied");
+            next[0].send(ctx, request, &next[1..]).await
+        }
+    }
 
     pub struct TempFile {
         pub path: PathBuf,
@@ -358,6 +413,110 @@ mod tests {
         .expect_err("invalid tenant ID");
     }
 
+    #[tokio::test]
+    async fn disabled_proxy_ignores_invalid_configuration() {
+        let temp_file = TempFile::new(FAKE_ASSERTION);
+        let mock = MockSts::new(
+            vec![token_response()],
+            Some(Arc::new(is_valid_request(
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+                Some(FAKE_ASSERTION.to_string()),
+            ))),
+        );
+        let credential = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
+            client_id: Some(FAKE_CLIENT_ID.to_string()),
+            tenant_id: Some(FAKE_TENANT_ID.to_string()),
+            token_file_path: Some(temp_file.path.clone()),
+            credential_options: ClientAssertionCredentialOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(Arc::new(mock))),
+                    ..Default::default()
+                },
+            },
+            env: Env::from(
+                &[(
+                    "AZURE_KUBERNETES_TOKEN_PROXY",
+                    "http://insecure.example.com",
+                )][..],
+            ),
+            ..Default::default()
+        }))
+        .expect("disabled proxy should ignore its environment variables");
+        credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect("direct Entra transport should remain configured");
+    }
+
+    #[tokio::test]
+    async fn enabled_proxy_redirects_token_request_after_caller_policies() {
+        let temp_file = TempFile::new(FAKE_ASSERTION);
+        let validate_request = is_valid_request(
+            format!("https://proxy.example.com/base/{FAKE_TENANT_ID}"),
+            Some(FAKE_ASSERTION.to_string()),
+        );
+        let mock: Arc<dyn HttpClient> = Arc::new(MockSts::new(
+            vec![token_response()],
+            Some(Arc::new(move |request| {
+                validate_request(request)?;
+                assert_eq!(
+                    request
+                        .headers()
+                        .get_str(&HeaderName::from_static("x-test-policy"))
+                        .expect("policy header"),
+                    "applied"
+                );
+                Ok(())
+            })),
+        ));
+        let credential = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
+            client_id: Some(FAKE_CLIENT_ID.to_string()),
+            tenant_id: Some(FAKE_TENANT_ID.to_string()),
+            token_file_path: Some(temp_file.path.clone()),
+            enable_proxy: true,
+            credential_options: ClientAssertionCredentialOptions {
+                client_options: ClientOptions {
+                    per_call_policies: vec![Arc::new(AddHeaderPolicy)],
+                    ..Default::default()
+                },
+            },
+            proxy_client: Some(Arc::new(MockTokenProxyClient(mock))),
+            env: Env::from(
+                &[(
+                    "AZURE_KUBERNETES_TOKEN_PROXY",
+                    "https://proxy.example.com/base",
+                )][..],
+            ),
+        }))
+        .expect("valid proxy credential");
+
+        let token = credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect("proxy token response");
+        assert_eq!(token.token.secret(), FAKE_TOKEN);
+    }
+
+    #[test]
+    fn enabled_proxy_validates_configuration() {
+        let temp_file = TempFile::new(FAKE_ASSERTION);
+        let error = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
+            client_id: Some(FAKE_CLIENT_ID.to_string()),
+            tenant_id: Some(FAKE_TENANT_ID.to_string()),
+            token_file_path: Some(temp_file.path.clone()),
+            enable_proxy: true,
+            env: Env::from(
+                &[(
+                    "AZURE_KUBERNETES_TOKEN_PROXY",
+                    "http://insecure.example.com",
+                )][..],
+            ),
+            ..Default::default()
+        }))
+        .expect_err("enabled proxy should validate its environment variables");
+        assert!(error.to_string().contains("AZURE_KUBERNETES_TOKEN_PROXY"));
+    }
+
     #[recorded::test(live)]
     async fn live() -> azure_core::Result<()> {
         if env::var("CI_HAS_DEPLOYED_RESOURCES").is_err() {
@@ -445,6 +604,8 @@ mod tests {
                     ),
                 ][..],
             ),
+            enable_proxy: false,
+            ..Default::default()
         }))
         .expect("valid credential");
 

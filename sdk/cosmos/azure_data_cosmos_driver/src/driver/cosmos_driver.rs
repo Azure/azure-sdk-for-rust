@@ -7,8 +7,8 @@ mod query_planning;
 
 use crate::{
     diagnostics::{
-        DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestSentStatus,
-        TransportHttpVersion, TransportSecurity,
+        DiagnosticsContext, DiagnosticsContextBuilder, ExecutionContext, PipelineType,
+        RequestSentStatus, TransportHttpVersion, TransportSecurity,
     },
     driver::{
         cache::{PartitionKeyRangeCache, PkRangeFetchResult},
@@ -22,7 +22,10 @@ use crate::{
             METADATA_MAX_THROTTLE_WAIT,
         },
         pipeline::hedge_budget::HedgeBudget,
-        pipeline::operation_pipeline::{OperationOverrides, RegionPin},
+        pipeline::operation_pipeline::{
+            ContainerRecreationRecoveryOutcome, ContainerRecreationRecoveryTracker,
+            OperationOverrides, RegionPin,
+        },
         routing::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
             CosmosEndpoint, LocationStateStore,
@@ -47,9 +50,7 @@ use query_planning::ResolvedQueryPlan;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
-#[cfg(feature = "preview_dtx")]
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use url::Url;
 use uuid::Uuid;
 
@@ -144,6 +145,10 @@ use super::{
 struct DriverRequestExecutor<'a> {
     driver: &'a CosmosDriver,
     options: &'a OperationOptions,
+    absolute_deadline: Option<Instant>,
+    successful_requests: usize,
+    container_recreation_recovery_disabled: bool,
+    container_recreation_recovery_tracker: Arc<ContainerRecreationRecoveryTracker>,
 }
 
 /// Region pins for the PartitionKeyRange change feed, keyed by container.
@@ -213,6 +218,61 @@ fn request_target_overrides(
     }
 }
 
+fn is_container_recreation_status(status: &crate::error::CosmosStatus) -> bool {
+    (status.status_code() == azure_core::http::StatusCode::BadRequest
+        && status.sub_status() == Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH))
+        || (status.status_code() == azure_core::http::StatusCode::Gone
+            && status.sub_status() == Some(crate::models::SubStatusCode::NAME_CACHE_STALE))
+        || status.is_read_session_not_available()
+}
+
+fn container_recreation_recovery_eligible(
+    operation: &CosmosOperation,
+    options: &OperationOptions,
+) -> bool {
+    if operation.is_patch_sub_operation()
+        || operation.resource_type() == ResourceType::StoredProcedure
+        || operation
+            .container()
+            .is_none_or(|container| container.is_by_rid())
+        || operation.request_headers().session_token.is_some()
+    {
+        return false;
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    if operation.resource_type() == ResourceType::DistributedTransactionBatch {
+        return false;
+    }
+
+    let session_header = azure_core::http::headers::HeaderName::from_static(
+        crate::models::request_header_names::SESSION_TOKEN,
+    );
+    !options
+        .custom_headers
+        .as_ref()
+        .is_some_and(|headers| headers.contains_key(&session_header))
+}
+
+fn hedged_container_recreation_recovery_eligible(
+    operation: &CosmosOperation,
+    overrides: &OperationOverrides,
+    options: &OperationOptions,
+) -> bool {
+    if !operation.is_trivial()
+        || !container_recreation_recovery_eligible(operation, options)
+        || overrides.container_recreation_recovery_disabled
+        || overrides.continuation.is_some()
+        || overrides.partition_key_range_id.is_some()
+        || overrides.feed_range.is_some()
+        || overrides.pkrange_bounds.is_some()
+        || overrides.region_pin.is_some()
+    {
+        return false;
+    }
+    true
+}
+
 impl RequestExecutor for DriverRequestExecutor<'_> {
     fn execute_request<'a>(
         &'a mut self,
@@ -222,12 +282,24 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         continuation: Option<String>,
     ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         let driver = self.driver;
-        let overrides = request_target_overrides(operation.partition_key(), target, continuation);
+        let mut overrides =
+            request_target_overrides(operation.partition_key(), target, continuation);
+        overrides.container_recreation_recovery_disabled =
+            self.container_recreation_recovery_disabled;
+        overrides.container_recreation_recovery_tracker =
+            Some(Arc::clone(&self.container_recreation_recovery_tracker));
 
         Box::pin(async move {
-            driver
-                .execute_operation_direct(operation, overrides, self.options)
-                .await
+            let operation = operation
+                .clone()
+                .with_absolute_deadline(self.absolute_deadline);
+            let result = driver
+                .execute_operation_direct(&operation, overrides, self.options)
+                .await;
+            if result.is_ok() {
+                self.successful_requests += 1;
+            }
+            result
         })
     }
 }
@@ -882,7 +954,7 @@ impl CosmosDriver {
                             .unwrap_or(azure_core::time::Duration::ZERO),
                     )
                     .await;
-                    execution_context = ExecutionContext::Retry;
+                    execution_context = ExecutionContext::OperationRetry;
                     continue;
                 }
             }
@@ -1351,15 +1423,13 @@ impl CosmosDriver {
         db_name: &str,
         container_name: &str,
         options: OperationOptions,
+        absolute_deadline: Option<Instant>,
     ) -> crate::error::Result<ContainerReference> {
         let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
+        let operation = CosmosOperation::read_container_by_name(db_ref, container_name.to_owned())
+            .with_absolute_deadline(absolute_deadline);
 
-        let container_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
-                options,
-            )
-            .await?;
+        let container_result = self.execute_singleton_operation(operation, options).await?;
         let container_headers = container_result.headers().clone();
         let container_diagnostics = container_result.diagnostics();
         let container_props: ContainerProperties =
@@ -2201,10 +2271,13 @@ impl CosmosDriver {
         container: ContainerReference,
         continuation: Option<String>,
         region_pin: Option<RegionPin>,
+        options: OperationOptions,
+        absolute_deadline: Option<Instant>,
     ) -> (Option<PkRangeFetchResult>, Option<CosmosEndpoint>) {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
-        let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
+        let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone())
+            .with_absolute_deadline(absolute_deadline);
 
         // Set changefeed If-None-Match precondition for continuation.
         if let Some(token) = continuation.as_deref() {
@@ -2227,7 +2300,6 @@ impl CosmosDriver {
         // configuration. The pin's endpoint additionally routes the request back
         // to the region that served the cold page, so a failover retry cannot
         // move the chain either.
-        let options = OperationOptions::default();
         let overrides = OperationOverrides {
             region_pin: region_pin.map(Box::new),
             ..Default::default()
@@ -2377,10 +2449,13 @@ impl CosmosDriver {
     /// pinned region cannot wedge later force-refreshes.
     fn pk_range_page_fetcher<'a>(
         &'a self,
+        options: OperationOptions,
+        absolute_deadline: Option<Instant>,
     ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
            + Send
            + 'a {
         move |container, continuation| {
+            let options = options.clone();
             Box::pin(async move {
                 let region_pin = {
                     let mut pins = self
@@ -2400,9 +2475,14 @@ impl CosmosDriver {
                 };
                 let is_cold = region_pin.is_none();
 
-                let (result, serving_endpoint) = self
-                    .fetch_pk_ranges_from_service(container.clone(), continuation, region_pin)
-                    .await;
+                let (result, serving_endpoint) = Box::pin(self.fetch_pk_ranges_from_service(
+                    container.clone(),
+                    continuation,
+                    region_pin,
+                    options,
+                    absolute_deadline,
+                ))
+                .await;
                 // Record the serving region for every successful cold page, so
                 // the continuation pages that follow are pinned to it. Pages
                 // that already carry a pin leave it untouched: the chain must
@@ -2447,11 +2527,12 @@ impl CosmosDriver {
     /// - The operation does not target a partitioned resource
     /// - No container reference or routing target is available
     /// - The cache lookup or fetch fails
-    async fn pre_resolve_partition_key_range_id(
+    pub(crate) async fn pre_resolve_partition_key_range_id(
         &self,
         operation: &CosmosOperation,
         overrides: &OperationOverrides,
         automatic_session_management_active: bool,
+        options: &OperationOptions,
     ) -> Option<PartitionKeyRangeId> {
         let cache = self.pk_range_cache.as_ref()?;
         // Only pre-resolve for partitioned data plane operations.
@@ -2518,7 +2599,7 @@ impl CosmosDriver {
                     container,
                     partition_key,
                     false,
-                    self.pk_range_page_fetcher(),
+                    self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
                 )
                 .await
                 .map(PartitionKeyRangeId::from);
@@ -2544,7 +2625,7 @@ impl CosmosDriver {
                 container,
                 target.min_inclusive()..target.max_exclusive(),
                 false,
-                self.pk_range_page_fetcher(),
+                self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
             )
             .await
             .map(PartitionKeyRangeId::from)
@@ -3208,57 +3289,205 @@ impl CosmosDriver {
                 self.partition_key_range_cache()?;
             }
 
-            let mut executor = DriverRequestExecutor {
-                driver: self,
-                options: &options,
-            };
-
-            let mut topology = container.and_then(|c| {
-                self.pk_range_cache
-                    .as_ref()
-                    .map(|cache| CachedTopologyProvider::new(cache, c, self.pk_range_page_fetcher()))
+            let absolute_deadline = plan.operation.absolute_deadline().or_else(|| {
+                self.operation_options_view(&options)
+                    .end_to_end_latency_policy()
+                    .map(|policy| Instant::now() + policy.timeout())
             });
-
-            let mut context = PipelineContext::new(
-                &mut executor,
-                topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
-            );
-
-            let response = plan.pipeline.next_page(&mut context).await?;
-
-            // Driver-side transcoding: hand back text while the wire stayed
-            // binary. Read from the plan, not from this call's `options`: the
-            // decision was made once by `apply_response_negotiation` — the same
-            // place that set the request header and the `emit_binary` flag on
-            // the pipeline nodes. Re-deriving it per page would let a caller
-            // who varies `request_text_response` between pages get nodes
-            // emitting one encoding while this step applies the other.
-            if plan.transcodes_response_to_text() {
-                if let Some(mut response) = response {
-                    // `next_page` already committed every node's resume
-                    // position, so a failure here leaves the plan claiming rows
-                    // the caller never received. Poison the plan rather than
-                    // move the transcode: this is the single choke point for
-                    // the binary/text contract, and pushing it into the
-                    // pipeline would mean one fallible site per node.
-                    if let Err(err) = response.transcode_body_to_text() {
-                        plan.poison_continuation();
-                        return Err(err);
-                    }
-                    return Ok(Some(response));
-                }
+            let recovery_allowed = !plan.is_resumed
+                && !plan.has_progressed
+                && !plan.container_recreation_recovery_attempted;
+            let (result, successful_requests, recovery_outcome) = self
+                .execute_plan_once(plan, container, &options, absolute_deadline)
+                .await;
+            if recovery_outcome != ContainerRecreationRecoveryOutcome::NotAttempted {
+                plan.container_recreation_recovery_attempted = true;
             }
-            Ok(response)
+            if successful_requests > 0 || matches!(&result, Ok(Some(_))) {
+                plan.has_progressed = true;
+            }
+
+            let Err(error) = result else {
+                return Self::finalize_plan_response(plan, result);
+            };
+            if !recovery_allowed
+                || successful_requests > 0
+                || !is_container_recreation_status(&error.status())
+            {
+                return Err(error);
+            }
+            plan.container_recreation_recovery_attempted = true;
+
+            let mut operation = plan.operation.as_ref().clone();
+            let recovered = match recovery_outcome {
+                ContainerRecreationRecoveryOutcome::NotAttempted => {
+                    container_recreation_recovery_eligible(&operation, &options)
+                        && self
+                            .try_recover_recreated_container(&mut operation, &options)
+                            .await?
+                }
+                ContainerRecreationRecoveryOutcome::PlanRebuildRequired => {
+                    self.canonicalize_operation_container(&mut operation).await?
+                }
+                ContainerRecreationRecoveryOutcome::Attempted => false,
+            };
+            if !recovered {
+                return Err(error);
+            }
+
+            let prior_diagnostics = error.diagnostics();
+            let replacement_container = operation.container().cloned();
+            let plan_options = plan.plan_options.clone();
+            *plan = self
+                .plan_operation(operation, &options, None, &plan_options)
+                .await?;
+            plan.container_recreation_recovery_attempted = true;
+            let (retry_result, retry_successes, _) = self
+                .execute_plan_once(plan, replacement_container, &options, absolute_deadline)
+                .await;
+            let retry_result = match retry_result {
+                Ok(Some(response)) => Ok(Some(match prior_diagnostics {
+                    Some(prior) => response.with_aggregated_prior_diagnostics(&[prior]),
+                    None => response,
+                })),
+                Ok(None) => Ok(None),
+                Err(retry_error) => {
+                    let combined = match (prior_diagnostics, retry_error.diagnostics()) {
+                        (Some(prior), Some(current)) => {
+                            DiagnosticsContext::aggregate_sub_operations(&[prior, current])
+                                .map(Arc::new)
+                        }
+                        (Some(prior), None) => Some(prior),
+                        (None, Some(current)) => Some(current),
+                        (None, None) => None,
+                    };
+                    let mut builder = crate::error::CosmosErrorBuilder::from_error(retry_error);
+                    if let Some(diagnostics) = combined {
+                        builder = builder.with_diagnostics(diagnostics);
+                    }
+                    Err(builder.build())
+                }
+            };
+            if retry_successes > 0 || matches!(&retry_result, Ok(Some(_))) {
+                plan.has_progressed = true;
+            }
+            Self::finalize_plan_response(plan, retry_result)
         })
         .await
+    }
+
+    fn finalize_plan_response(
+        plan: &mut OperationPlan,
+        response: crate::error::Result<Option<CosmosResponse>>,
+    ) -> crate::error::Result<Option<CosmosResponse>> {
+        let response = response?;
+
+        // Driver-side transcoding: hand back text while the wire stayed
+        // binary. Read from the plan, not from this call's `options`: the
+        // decision was fixed when the plan was built.
+        if plan.transcodes_response_to_text() {
+            if let Some(mut response) = response {
+                // `next_page` already committed every node's resume position.
+                // Poison the plan if transcoding fails so a later page or token
+                // cannot silently skip the lost page.
+                if let Err(error) = response.transcode_body_to_text() {
+                    plan.poison_continuation();
+                    return Err(error);
+                }
+                return Ok(Some(response));
+            }
+        }
+        Ok(response)
+    }
+
+    async fn execute_plan_once(
+        &self,
+        plan: &mut OperationPlan,
+        container: Option<ContainerReference>,
+        options: &OperationOptions,
+        absolute_deadline: Option<Instant>,
+    ) -> (
+        crate::error::Result<Option<CosmosResponse>>,
+        usize,
+        ContainerRecreationRecoveryOutcome,
+    ) {
+        let container = plan.operation.container().cloned().or(container);
+        let recovery_tracker = Arc::new(ContainerRecreationRecoveryTracker::default());
+        let mut executor = DriverRequestExecutor {
+            driver: self,
+            options,
+            absolute_deadline,
+            successful_requests: 0,
+            container_recreation_recovery_disabled: plan.container_recreation_recovery_attempted,
+            container_recreation_recovery_tracker: Arc::clone(&recovery_tracker),
+        };
+        let mut topology = container.and_then(|container| {
+            self.pk_range_cache.as_ref().map(|cache| {
+                CachedTopologyProvider::new(
+                    cache,
+                    container,
+                    self.pk_range_page_fetcher(options.clone(), absolute_deadline),
+                )
+            })
+        });
+        let mut context = PipelineContext::new(
+            &mut executor,
+            topology
+                .as_mut()
+                .map(|topology| topology as &mut dyn TopologyProvider),
+        );
+        let result = plan.pipeline.next_page(&mut context).await;
+        (
+            result,
+            executor.successful_requests,
+            recovery_tracker.outcome(),
+        )
     }
 
     async fn execute_operation_direct(
         &self,
         operation: &CosmosOperation,
-        overrides: OperationOverrides,
+        mut overrides: OperationOverrides,
         options: &OperationOptions,
     ) -> crate::error::Result<CosmosResponse> {
+        let mut operation = operation.clone();
+        let retargeted = self
+            .canonicalize_operation_container(&mut operation)
+            .await?;
+        if retargeted {
+            let explicit_session_token = operation.request_headers().session_token.is_some()
+                || options.custom_headers.as_ref().is_some_and(|headers| {
+                    headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
+                        crate::models::request_header_names::SESSION_TOKEN,
+                    ))
+                });
+            if explicit_session_token || overrides.continuation.is_some() {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                    .with_message(
+                        "the named container was recreated; explicit session and continuation \
+                         tokens cannot be carried to the replacement container",
+                    )
+                    .build());
+            }
+            if overrides.partition_key_range_id.is_some()
+                || overrides.feed_range.is_some()
+                || overrides.pkrange_bounds.is_some()
+                || overrides.region_pin.is_some()
+            {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                            .with_sub_status(
+                                crate::models::SubStatusCode::COLLECTION_RID_MISMATCH.value(),
+                            ),
+                    )
+                    .with_message(
+                        "the named container was recreated; the operation plan must be rebuilt",
+                    )
+                    .build());
+            }
+        }
         tracing::debug!(
             operation_type = ?operation.operation_type(),
             resource_type = ?operation.resource_type(),
@@ -3269,6 +3498,12 @@ impl CosmosDriver {
 
         // Step 1: Build the single OperationOptionsView for layered resolution.
         let effective_options = self.operation_options_view(options);
+        if operation.absolute_deadline().is_none() {
+            let deadline = effective_options
+                .end_to_end_latency_policy()
+                .map(|policy| std::time::Instant::now() + policy.timeout());
+            operation = operation.with_absolute_deadline(deadline);
+        }
 
         // Step 2: Resolve effective throughput control headers.
         let effective_throughput_control = if let Some(container) = operation.container() {
@@ -3284,8 +3519,8 @@ impl CosmosDriver {
         let activity_id = ActivityId::new_uuid();
 
         // Step 4: Get authentication (guaranteed to be present by AccountReference)
-        let account = operation.resource_reference().account();
-        let auth = account.auth();
+        let account = operation.resource_reference().account().clone();
+        let auth = account.auth().clone();
 
         // Step 4.1: Resolve account metadata and select write-region endpoint.
         // Uses `get_or_fetch` (cheap, no staleness check) because the
@@ -3294,11 +3529,11 @@ impl CosmosDriver {
         // The lazy `refresh_if_stale` variant is intentionally NOT used here
         // — the timer owns freshness so the per-operation hot path stays
         // free of network round-trips.
-        let account_endpoint = AccountEndpoint::from(account);
+        let account_endpoint = AccountEndpoint::from(&account);
         let account_properties = self
             .runtime
             .account_metadata_cache()
-            .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
+            .get_or_fetch(account_endpoint, || self.fetch_account_properties(&account))
             .await?;
 
         // Keep the operation routing snapshot in sync with current account metadata.
@@ -3310,7 +3545,7 @@ impl CosmosDriver {
         );
 
         let write_region = account_properties.write_account_region();
-        let endpoint = Self::endpoint_for_write_region(account, write_region);
+        let endpoint = Self::endpoint_for_write_region(&account, write_region);
 
         let automatic_session_management_active = self.pk_range_cache.is_some()
             && !effective_options
@@ -3335,9 +3570,10 @@ impl CosmosDriver {
         // key, EPK range) is honored ahead of the operation's own target.
         let pre_resolved_pk_range_id = self
             .pre_resolve_partition_key_range_id(
-                operation,
+                &operation,
                 &overrides,
                 automatic_session_management_active,
+                options,
             )
             .await;
 
@@ -3383,15 +3619,17 @@ impl CosmosDriver {
             azure_core::http::headers::HeaderValue::from(self.user_agent.as_str().to_owned());
 
         // Step 8: Execute via the new operation pipeline
-        super::pipeline::operation_pipeline::execute_operation_pipeline(
-            operation,
-            overrides,
+        let result = super::pipeline::operation_pipeline::execute_operation_pipeline(
+            self,
+            &mut operation,
+            overrides.clone(),
             &effective_options,
+            options,
             options.custom_headers.as_ref(),
             self.location_state_store.as_ref(),
             &transport,
             &endpoint,
-            auth,
+            &auth,
             &user_agent,
             &self.client_id,
             &activity_id,
@@ -3407,7 +3645,242 @@ impl CosmosDriver {
             self.pk_range_cache.is_some(),
             &self.hedge_budget,
         )
-        .await
+        .await;
+
+        let Err(error) = result else {
+            return result;
+        };
+        let hedged = error
+            .diagnostics()
+            .is_some_and(|diagnostics| diagnostics.hedge_diagnostics().is_some());
+        if !hedged
+            || !is_container_recreation_status(&error.status())
+            || !hedged_container_recreation_recovery_eligible(&operation, &overrides, options)
+        {
+            return Err(error);
+        }
+        if let Some(tracker) = &overrides.container_recreation_recovery_tracker {
+            tracker.mark_attempted();
+        }
+        if !self
+            .try_recover_recreated_container(&mut operation, options)
+            .await?
+        {
+            return Err(error);
+        }
+
+        let prior_diagnostics = error.diagnostics();
+        let retry_throughput_control = operation
+            .container()
+            .map(|container| self.effective_throughput_control(&effective_options, container))
+            .transpose()?;
+        let retry_pk_range_id = self
+            .pre_resolve_partition_key_range_id(
+                &operation,
+                &overrides,
+                automatic_session_management_active,
+                options,
+            )
+            .await;
+        overrides.container_recreation_recovery_disabled = true;
+        let (mut retry_diagnostics, retry_transport_security) = Self::new_diagnostics_envelope(
+            &self.runtime,
+            activity_id.clone(),
+            &endpoint,
+            fault_injection_enabled,
+        );
+        if let Some(operation_name) = operation.db_operation_name() {
+            retry_diagnostics.set_operation_name(operation_name);
+        }
+
+        let retry_result = super::pipeline::operation_pipeline::execute_operation_pipeline(
+            self,
+            &mut operation,
+            overrides,
+            &effective_options,
+            options,
+            options.custom_headers.as_ref(),
+            self.location_state_store.as_ref(),
+            &transport,
+            &endpoint,
+            &auth,
+            &user_agent,
+            &self.client_id,
+            &activity_id,
+            pipeline_type,
+            retry_transport_security,
+            retry_diagnostics,
+            &self.session_manager,
+            account_properties
+                .user_consistency_policy
+                .default_consistency_level,
+            retry_throughput_control,
+            retry_pk_range_id,
+            self.pk_range_cache.is_some(),
+            &self.hedge_budget,
+        )
+        .await;
+
+        match retry_result {
+            Ok(response) => Ok(match prior_diagnostics {
+                Some(prior) => response.with_aggregated_prior_diagnostics(&[prior]),
+                None => response,
+            }),
+            Err(retry_error) => {
+                let combined = match (prior_diagnostics, retry_error.diagnostics()) {
+                    (Some(prior), Some(current)) => {
+                        DiagnosticsContext::aggregate_sub_operations(&[prior, current])
+                            .map(Arc::new)
+                    }
+                    (Some(prior), None) => Some(prior),
+                    (None, Some(current)) => Some(current),
+                    (None, None) => None,
+                };
+                let mut builder = crate::error::CosmosErrorBuilder::from_error(retry_error);
+                if let Some(diagnostics) = combined {
+                    builder = builder.with_diagnostics(diagnostics);
+                }
+                Err(builder.build())
+            }
+        }
+    }
+
+    pub(crate) fn try_recover_recreated_container<'a>(
+        &'a self,
+        operation: &'a mut CosmosOperation,
+        options: &'a OperationOptions,
+    ) -> BoxFuture<'a, crate::error::Result<bool>> {
+        Box::pin(async move {
+            let Some(previous) = operation.container().cloned() else {
+                return Ok(false);
+            };
+            let absolute_deadline = operation.absolute_deadline();
+            let Some(resolved) = self
+                .refresh_container_if_recreated_with_deadline(
+                    &previous,
+                    options.clone(),
+                    absolute_deadline,
+                )
+                .await?
+            else {
+                return Ok(false);
+            };
+
+            operation.retarget_container(resolved)?;
+            Ok(true)
+        })
+    }
+
+    async fn adopt_recreated_container(
+        &self,
+        previous: &ContainerReference,
+        replacement: &ContainerReference,
+    ) {
+        if previous.rid() == replacement.rid() {
+            return;
+        }
+
+        self.session_manager.remap_container(previous, replacement);
+        if let Some(cache) = &self.pk_range_cache {
+            cache.invalidate(previous).await;
+        }
+        self.pk_range_region_pins
+            .lock()
+            .expect("partition-key-range region-pin mutex poisoned")
+            .remove(previous);
+    }
+
+    /// Refreshes a name-addressed container and returns replacement metadata when
+    /// its RID changed.
+    ///
+    /// This is an SDK-internal cross-crate seam used by throughput offer lookup.
+    #[doc(hidden)]
+    pub async fn refresh_container_if_recreated(
+        &self,
+        previous: &ContainerReference,
+        options: OperationOptions,
+    ) -> crate::error::Result<Option<ContainerReference>> {
+        self.refresh_container_if_recreated_with_deadline(previous, options, None)
+            .await
+    }
+
+    async fn refresh_container_if_recreated_with_deadline(
+        &self,
+        previous: &ContainerReference,
+        options: OperationOptions,
+        absolute_deadline: Option<Instant>,
+    ) -> crate::error::Result<Option<ContainerReference>> {
+        let Some(database_name) = previous.database_name().map(str::to_owned) else {
+            return Ok(None);
+        };
+
+        let endpoint = self.account().endpoint().as_str().to_owned();
+        let container_name = previous.name().to_owned();
+        let observed_rid = previous.rid().to_owned();
+        let database_name_for_fetch = database_name.clone();
+        let container_name_for_fetch = container_name.clone();
+        let previous_for_refresh = previous.clone();
+        let resolved = self
+            .runtime
+            .container_cache()
+            .refresh_by_name_if_same(
+                &endpoint,
+                &database_name,
+                &container_name,
+                &observed_rid,
+                || async move {
+                    let replacement = Box::pin(self.fetch_container_by_name(
+                        &database_name_for_fetch,
+                        &container_name_for_fetch,
+                        options,
+                        absolute_deadline,
+                    ))
+                    .await?;
+                    if replacement.rid() != previous_for_refresh.rid() {
+                        self.adopt_recreated_container(&previous_for_refresh, &replacement)
+                            .await;
+                    }
+                    Ok(replacement)
+                },
+            )
+            .await?;
+
+        if resolved.rid() == observed_rid {
+            Ok(None)
+        } else {
+            self.adopt_recreated_container(previous, resolved.as_ref())
+                .await;
+            Ok(Some(resolved.as_ref().clone()))
+        }
+    }
+
+    pub(crate) async fn canonicalize_operation_container(
+        &self,
+        operation: &mut CosmosOperation,
+    ) -> crate::error::Result<bool> {
+        let Some(current) = operation.container().cloned() else {
+            return Ok(false);
+        };
+        let Some(database_name) = current.database_name() else {
+            return Ok(false);
+        };
+        let endpoint = current.account().endpoint().as_str();
+        let Some(cached) = self
+            .runtime
+            .container_cache()
+            .get_by_name(endpoint, database_name, current.name())
+            .await
+        else {
+            return Ok(false);
+        };
+        if cached.rid() == current.rid() {
+            return Ok(false);
+        }
+
+        self.adopt_recreated_container(&current, cached.as_ref())
+            .await;
+        operation.retarget_container(cached.as_ref().clone())?;
+        Ok(true)
     }
 
     /// Resolves a container by database and container name.
@@ -3484,6 +3957,7 @@ impl CosmosDriver {
                     &db_name_owned,
                     &container_name_owned,
                     operation_options,
+                    None,
                 )
                     .await
                     .map_err(|err| {
@@ -3627,7 +4101,7 @@ impl CosmosDriver {
 
     async fn plan_operation_inner(
         &self,
-        operation: CosmosOperation,
+        mut operation: CosmosOperation,
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
@@ -3641,6 +4115,39 @@ impl CosmosDriver {
                     "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
                      use CosmosDriverRuntime::create_driver() which initializes automatically"
                 ))
+                .build());
+        }
+
+        let resolved_continuation = continuation.map(ContinuationToken::resolve).transpose()?;
+        let retargeted = self
+            .canonicalize_operation_container(&mut operation)
+            .await?;
+        let explicit_session_token = operation.request_headers().session_token.is_some()
+            || options.custom_headers.as_ref().is_some_and(|headers| {
+                headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
+                    crate::models::request_header_names::SESSION_TOKEN,
+                ))
+            });
+        if retargeted && (explicit_session_token || resolved_continuation.is_some()) {
+            if operation.is_patch_sub_operation() {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                            .with_sub_status(
+                                crate::models::SubStatusCode::COLLECTION_RID_MISMATCH.value(),
+                            ),
+                    )
+                    .with_message(
+                        "the named container was recreated; the PATCH operation must restart",
+                    )
+                    .build());
+            }
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message(
+                    "the named container was recreated; explicit session and continuation tokens \
+                     cannot be carried to the replacement container",
+                )
                 .build());
         }
 
@@ -3672,30 +4179,25 @@ impl CosmosDriver {
         // a resume is not, because the caller already opted in to the fan-out
         // when the operation was first planned.
         let is_fresh = continuation.is_none();
-        let resume_state = match continuation {
+        let resume_state = match resolved_continuation {
             None => None,
-            Some(token) => {
-                match token.resolve()? {
-                    ResolvedToken::ClientV1(state) => {
-                        // Validate the state is valid for this operation.
-                        state.is_valid_for_operation(&operation)?;
-                        Some(state.into_root_node_state())
-                    }
-                    ResolvedToken::ServerOpaque(server_token) => {
-                        if !operation.is_trivial() {
-                            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY)
+            Some(ResolvedToken::ClientV1(state)) => {
+                state.is_valid_for_operation(&operation)?;
+                Some(state.into_root_node_state())
+            }
+            Some(ResolvedToken::ServerOpaque(server_token)) => {
+                if !operation.is_trivial() {
+                    return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY)
                         .with_message(
                             "an opaque server continuation token cannot be used to resume a \
                              cross-partition query; use the SDK-issued continuation token from \
                              QueryPageIterator::to_continuation_token()",
                         )
                         .build());
-                        }
-                        Some(PipelineNodeState::Request {
-                            server_continuation: Some(server_token),
-                        })
-                    }
                 }
+                Some(PipelineNodeState::Request {
+                    server_continuation: Some(server_token),
+                })
             }
         };
 
@@ -3725,8 +4227,11 @@ impl CosmosDriver {
             })?;
             let feed_range = operation.target().cloned().unwrap_or_else(FeedRange::full);
             let container_ref = container.clone();
-            let mut topology =
-                CachedTopologyProvider::new(cache, container_ref, self.pk_range_page_fetcher());
+            let mut topology = CachedTopologyProvider::new(
+                cache,
+                container_ref,
+                self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+            );
             let pipeline = planner::build_unordered_merge(
                 &feed_range,
                 &mut topology,
@@ -3787,8 +4292,11 @@ impl CosmosDriver {
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
-        let mut topology =
-            CachedTopologyProvider::new(cache, container_ref, self.pk_range_page_fetcher());
+        let mut topology = CachedTopologyProvider::new(
+            cache,
+            container_ref,
+            self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+        );
 
         // Route streaming ORDER BY queries to the k-way merge instead of
         // the natural-order sequential drain.
@@ -3798,6 +4306,21 @@ impl CosmosDriver {
             .is_some_and(planner::is_streaming_order_by)
         {
             let pipeline = planner::build_streaming_ordered_merge(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
+
+        if query_plan
+            .query_info
+            .as_ref()
+            .is_some_and(planner::is_non_streaming_order_by)
+        {
+            let pipeline = planner::build_non_streaming_ordered_merge(
                 &query_plan,
                 &mut topology,
                 &operation,
@@ -3831,7 +4354,11 @@ impl CosmosDriver {
     {
         let routing_map = self
             .partition_key_range_cache()?
-            .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
+            .try_lookup(
+                container,
+                force_refresh,
+                self.pk_range_page_fetcher(OperationOptions::default(), None),
+            )
             .await;
 
         let Some(routing_map) = routing_map else {
@@ -3884,7 +4411,11 @@ impl CosmosDriver {
         if epk_range.start == epk_range.end {
             // Full key — point lookup
             let routing_map = cache
-                .try_lookup(container, force_refresh, self.pk_range_page_fetcher())
+                .try_lookup(
+                    container,
+                    force_refresh,
+                    self.pk_range_page_fetcher(OperationOptions::default(), None),
+                )
                 .await;
             let Some(routing_map) = routing_map else {
                 return Ok(None);
@@ -3905,7 +4436,7 @@ impl CosmosDriver {
                     container,
                     &epk_range.start..&epk_range.end,
                     force_refresh,
-                    self.pk_range_page_fetcher(),
+                    self.pk_range_page_fetcher(OperationOptions::default(), None),
                 )
                 .await)
         }
@@ -6576,6 +7107,10 @@ mod tests {
 
     /// Builds a `ContainerReference` from a partition-key-definition JSON blob.
     fn epk_test_container(pk_json: &str) -> ContainerReference {
+        epk_test_container_with_rid(pk_json, "testcontainer_rid")
+    }
+
+    fn epk_test_container_with_rid(pk_json: &str, rid: &str) -> ContainerReference {
         let container_props = crate::models::ContainerProperties {
             id: "testcontainer".into(),
             partition_key: serde_json::from_str(pk_json).unwrap(),
@@ -6586,7 +7121,7 @@ mod tests {
             "testdb",
             "testdb_rid",
             "testcontainer",
-            "testcontainer_rid",
+            rid.to_owned(),
             &container_props,
         )
     }
@@ -6656,6 +7191,34 @@ mod tests {
         assert_eq!(
             error.status(),
             crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
+        );
+    }
+
+    #[tokio::test]
+    async fn pkrange_continuation_is_rejected_after_container_recreation() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let previous = epk_test_container_with_rid(r#"{"paths":["/pk"],"version":2}"#, "old_rid");
+        let replacement =
+            epk_test_container_with_rid(r#"{"paths":["/pk"],"version":2}"#, "new_rid");
+        runtime.container_cache().put(replacement).await;
+        let driver = CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build())
+            .expect("CosmosDriver::new should succeed in tests");
+        let operation = CosmosOperation::read_all_partition_key_ranges(previous)
+            .with_precondition(crate::models::Precondition::if_none_match("old-etag"));
+        let overrides = OperationOverrides {
+            region_pin: Some(Box::new(RegionPin::default())),
+            ..Default::default()
+        };
+
+        let error = driver
+            .execute_operation_direct(&operation, overrides, &OperationOptions::default())
+            .await
+            .expect_err("a partition-range continuation cannot cross container generations");
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                .with_sub_status(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH.value(),),
         );
     }
 
@@ -7126,6 +7689,8 @@ mod tests {
         OperationPlan::new(
             Pipeline::new(Box::new(MockLeaf::with_pages(pages))),
             std::sync::Arc::new(operation),
+            PlanOptions::default(),
+            false,
         )
     }
 

@@ -44,6 +44,8 @@ use crate::query::ast::{
 };
 
 static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
+static INTENDED_COLLECTION_RID: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-intended-collection-rid");
 
 #[cfg(feature = "preview_dtx")]
 static DTX_IDEMPOTENCY_TOKEN: HeaderName =
@@ -137,10 +139,16 @@ pub(crate) async fn handle_operation(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
-    _request_headers: &Headers,
+    request_headers: &Headers,
     request_body: &[u8],
 ) -> AsyncRawResponse {
     let start = Instant::now();
+    if let Some(response) =
+        intended_collection_rid_mismatch(store, region_name, parsed, request_headers, start)
+    {
+        return finalize_response(store, response, parsed.activity_id.as_deref()).await;
+    }
+
     let response = match &parsed.operation {
         OperationType::ReadAccount => handle_read_account(store, parsed, start),
         OperationType::CreateDatabase => {
@@ -276,14 +284,8 @@ pub(crate) async fn handle_operation(
         }
         #[cfg(feature = "preview_dtx")]
         OperationType::DistributedTransaction => {
-            handle_distributed_transaction(
-                store,
-                region_name,
-                _request_headers,
-                request_body,
-                start,
-            )
-            .await
+            handle_distributed_transaction(store, region_name, request_headers, request_body, start)
+                .await
         }
         OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
         OperationType::InvalidInput(desc) => invalid_input_response(desc, start),
@@ -1686,6 +1688,61 @@ pub(crate) async fn handle_operation(
             .without_header(RESOURCE_USAGE.clone())
     }
     finalize_response(store, response, parsed.activity_id.as_deref()).await
+}
+
+fn intended_collection_rid_mismatch(
+    store: &EmulatorStore,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_headers: &Headers,
+    start: Instant,
+) -> Option<AsyncRawResponse> {
+    let intended_rid = request_headers.get_optional_str(&INTENDED_COLLECTION_RID)?;
+    let targets_container_data = match parsed.operation {
+        OperationType::ReadPKRanges
+        | OperationType::ReadFeedItems
+        | OperationType::Create
+        | OperationType::Read
+        | OperationType::Replace
+        | OperationType::Upsert
+        | OperationType::Delete
+        | OperationType::QueryItems
+        | OperationType::QueryPlan
+        | OperationType::Batch
+        | OperationType::DeleteContainer
+        | OperationType::ReadContainer
+        | OperationType::Unsupported(_) => true,
+        #[cfg(feature = "preview_dtx")]
+        OperationType::DistributedTransaction => true,
+        _ => false,
+    };
+    if !targets_container_data {
+        return None;
+    }
+
+    let db_id = parsed.db_id.as_deref()?;
+    let coll_id = parsed.coll_id.as_deref()?;
+    let current = store.region(region_name)?.get_container(db_id, coll_id)?;
+    if current.metadata.rid == intended_rid {
+        return None;
+    }
+
+    Some(
+        error_response(
+            StatusCode::BadRequest,
+            Some(
+                crate::models::SubStatusCode::COLLECTION_RID_MISMATCH
+                    .value()
+                    .into(),
+            ),
+            "BadRequest",
+            "The collection resource ID does not match the intended collection resource ID.",
+            0.0,
+            "",
+            start,
+        )
+        .build(),
+    )
 }
 
 // --- Control-Plane Operations ---

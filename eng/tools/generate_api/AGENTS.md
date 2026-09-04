@@ -5,8 +5,9 @@
 `eng/tools/generate_api` is a Rust CLI that generates the following public API artifacts for a target crate:
 
 1. `API.md` — one fenced `rust` block
-2. `API.comments.patch` — a unified diff that adds doc comments back to `API.md`
-3. `apiview.json` — an APIView tree-style `CodeFile`
+2. `API.md.map` — an ECMA-426 source map for declaration lines in `API.md`
+3. `API.comments.patch` — a unified diff that adds doc comments back to `API.md`
+4. `apiview.json` — an APIView tree-style `CodeFile`
 
 ## Scope
 
@@ -23,12 +24,13 @@ The tool exposes:
 - `--manifest-path <path/to/Cargo.toml>`
 - `--format <markdown|apiview>` default `markdown`
 - `--no-docs` suppresses doc comments in `apiview` and skips `API.comments.patch`
+- `--no-map` skips `API.md.map`; it is a no-op for `apiview`
 - `--check` compares generated content with existing files without writing; missing files pass
 - `--output <directory>`
 
 Behavior:
 
-- default `markdown` writes `API.md` and `API.comments.patch`
+- default `markdown` writes `API.md`, `API.md.map`, and `API.comments.patch`
 - `--format apiview` writes `apiview.json`
 - `--no-docs` suppresses APIView doc comment tokens and the Markdown comments patch
 - check comparisons ignore line-ending differences and mismatches exit `1`
@@ -213,6 +215,16 @@ For traits whose rustdoc-expanded methods carry synthetic async-trait lifetimes:
 - each contiguous doc-comment block becomes its own hunk
 - each hunk includes only the doc comments plus the next non-doc line as context
 - no doc comments means an empty patch file
+
+## Source map output
+
+- `source_map` owns the generic ECMA-426 v3 schema and Base64 VLQ encoding
+- the shared model stores repo-relative zero-based declaration locations
+- `sourceRoot` points from an in-repo output directory to the repository root
+- output outside the repository omits `sourceRoot`; `sources` always stay repo-relative
+- Markdown maps item, module, and member declaration lines only
+- headings, metadata, fences, attributes, documentation, and structural closing lines are unmapped
+- `names` is omitted
 
 ## APIView output design
 

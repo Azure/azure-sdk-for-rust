@@ -71,7 +71,7 @@ pub(super) async fn resolve_query_plan(
         }
     }
 
-    let plan = gateway_query_plan(driver, container, operation, options).await?;
+    let plan = Box::pin(gateway_query_plan(driver, container, operation, options)).await?;
     tracing::debug!(provider = "gateway", ?mode, "using Gateway query plan");
     Ok(ResolvedQueryPlan::Plan(Box::new(plan)))
 }
