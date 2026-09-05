@@ -86,11 +86,12 @@ carries a consolidated `provenance.json` binding the release identity (see
 links the MinGW pthread runtime so the final Go application does not require a
 separate `libwinpthread-1.dll`.
 
-The publication root uses a default-deny `.artifactignore` for `_manifest`,
-with exact exceptions for those six stable filenames. The artifact service
-therefore leaves generated diagnostics in restricted pipeline task retention
-while the published and downstream-consumed artifact contains only the approved
-evidence bundle.
+The pipeline temporarily selects the legacy 1ES SBOM generation path so the
+manifest exists before artifact file selection. The publication root then uses
+a default-deny `.artifactignore` for `_manifest`, with exact exceptions for
+those six stable filenames. The artifact service therefore leaves generated
+diagnostics in restricted pipeline task retention while the published and
+downstream-consumed artifact contains only the approved evidence bundle.
 
 ## Why the static library is not code-signed
 

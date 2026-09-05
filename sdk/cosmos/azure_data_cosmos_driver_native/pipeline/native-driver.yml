@@ -28,6 +28,7 @@ extends:
   parameters:
     Use1ESOfficial: true
     EnableGoInternalModuleProxy: true
+    UseLegacySbomGeneration: true
     stages:
       # -----------------------------------------------------------------------
       # 1. Build each target: capture syslibs, build the .a with

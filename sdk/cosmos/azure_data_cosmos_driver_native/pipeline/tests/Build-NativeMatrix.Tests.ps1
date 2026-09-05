@@ -274,6 +274,15 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $oneEsRedirect | Should -Match '(?s)golang:.*?internalModuleProxy:.*?enabled:\s+true'
     }
 
+    It 'uses legacy SBOM generation so artifact filtering runs after generation' {
+        $pipeline = Get-Content $PipelinePath -Raw
+        $oneEsRedirect = Get-Content $OneEsRedirectPath -Raw
+
+        $pipeline | Should -Match 'UseLegacySbomGeneration:\s+true'
+        $oneEsRedirect | Should -Match '(?s)name:\s+UseLegacySbomGeneration.*?default:\s+false'
+        $oneEsRedirect | Should -Match 'sbomtoolkitPipelineRunnerGenerationEnabled:\s+false'
+    }
+
     It 'publishes directly after the official 1ES build without a custom evidence gate' {
         $pipeline = Get-Content $PipelinePath -Raw
         $buildJobTemplate = Get-Content $BuildJobTemplatePath -Raw

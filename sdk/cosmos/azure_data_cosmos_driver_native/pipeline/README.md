@@ -105,9 +105,11 @@ target repository's branch rules require review and code-owner approval before
 merge.
 
 The publication root contains a default-deny `.artifactignore` for `_manifest`.
-The artifact service excludes every generated manifest file except the six
-approved `_manifest/spdx_2.2` members, so diagnostics remain in restricted
-pipeline task retention and do not appear in the published artifact.
+This pipeline temporarily selects the legacy 1ES SBOM generation path so the
+manifest exists before artifact file selection. The artifact service then
+excludes every generated manifest file except the six approved
+`_manifest/spdx_2.2` members, so diagnostics remain in restricted pipeline task
+retention and do not appear in the published artifact.
 
 ## Local integration test
 
