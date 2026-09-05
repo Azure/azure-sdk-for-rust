@@ -8,6 +8,8 @@
 
 ### Breaking Changes
 
+- `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
+
 ### Bugs Fixed
 
 - Name-addressed container operations now refresh metadata and retry once after container recreation, clearing generation-specific session and partition-routing state before targeting the replacement. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
