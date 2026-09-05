@@ -22,6 +22,7 @@ use crate::{
     driver::{
         cache::{AccountMetadataCache, AccountProperties},
         transport::connectivity_probe::{ConnectivityProbe, ProbeOutcome, ProbeRole},
+        transport::is_emulator_host,
     },
     models::AccountEndpoint,
     options::{PartitionFailoverOptions, Region},
@@ -116,6 +117,12 @@ pub(crate) struct LocationStateStore {
     /// endpoints. Defaults to `false` (fail-open) so behavior is unchanged
     /// when no probe is wired.
     gateway_v2_runtime_blocked: AtomicBool,
+    /// Set from the account payload on every sync: `true` only for a backend
+    /// that cannot decode a Cosmos binary JSON request body (today, the vnext
+    /// emulator). Defaults to `false` (fail-open) so binary encoding stays on
+    /// everywhere until a backend positively identifies itself as unsupported.
+    /// See [`Self::binary_request_encoding_unsupported`].
+    binary_request_encoding_unsupported: AtomicBool,
     probe_succeeded_regions: std::sync::Mutex<HashSet<Region>>,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
@@ -239,6 +246,7 @@ impl LocationStateStore {
             gateway_v2_enabled,
             connectivity_probe,
             gateway_v2_runtime_blocked: AtomicBool::new(false),
+            binary_request_encoding_unsupported: AtomicBool::new(false),
             probe_succeeded_regions: std::sync::Mutex::new(HashSet::new()),
             endpoint_unavailability_ttl,
             // Rate limit for event-driven refreshes emitted by
@@ -676,6 +684,44 @@ impl LocationStateStore {
         self.gateway_v2_enabled && !self.gateway_v2_runtime_blocked.load(Ordering::Acquire)
     }
 
+    /// Whether the connected backend cannot decode a Cosmos binary JSON
+    /// **request body**, so item writes must stay text even when binary
+    /// encoding is enabled.
+    ///
+    /// Only the request body is affected. Response negotiation stays on: a
+    /// backend that does not honor the `CosmosBinary` accept token simply
+    /// replies with text, which the driver already handles.
+    ///
+    /// Defaults to `false` until the first account sync, so an operation
+    /// racing initialization encodes binary — the same behavior as before this
+    /// gate existed.
+    pub(crate) fn binary_request_encoding_unsupported(&self) -> bool {
+        self.binary_request_encoding_unsupported
+            .load(Ordering::Acquire)
+    }
+
+    /// Identifies a backend that rejects binary request bodies.
+    ///
+    /// Deliberately conservative, because wrongly returning `true` would
+    /// silently downgrade a shipped feature:
+    ///
+    /// 1. **The endpoint must be an emulator host.** A real account is always
+    ///    reached over a non-local hostname, so it can never take this path
+    ///    regardless of what its payload contains.
+    /// 2. **The payload must positively look like vnext.** The vnext emulator
+    ///    omits `userReplicationPolicy`; the service and the classic emulator
+    ///    both send it.
+    ///
+    /// Both conditions are required, so the only backend that can be
+    /// classified unsupported is a local emulator that also omits the object.
+    fn detect_binary_request_encoding_unsupported(
+        default_endpoint: &CosmosEndpoint,
+        properties: &AccountProperties,
+    ) -> bool {
+        let endpoint = AccountEndpoint::new(default_endpoint.url().clone());
+        is_emulator_host(&endpoint) && properties.omits_user_replication_policy()
+    }
+
     /// Runs the wired connectivity probe against the Gateway 2.0 endpoints
     /// advertised in `properties` and updates `gateway_v2_runtime_blocked`.
     ///
@@ -822,6 +868,13 @@ impl LocationStateStore {
         properties: Arc<AccountProperties>,
         default_endpoint: &CosmosEndpoint,
     ) {
+        // Recorded before the fast-path returns below so the flag is set even
+        // when nothing else about the account changed.
+        self.binary_request_encoding_unsupported.store(
+            Self::detect_binary_request_encoding_unsupported(&self.default_endpoint, &properties),
+            Ordering::Release,
+        );
+
         // Fast path: same Arc pointer means identical data — nothing changed.
         {
             let last = self.last_synced_properties.lock().unwrap();
@@ -1270,10 +1323,10 @@ mod tests {
             continuous_backup_enabled: false,
             enable_n_region_synchronous_commit: false,
             enable_per_partition_failover_behavior: false,
-            user_replication_policy: ReplicationPolicy {
+            user_replication_policy: Some(ReplicationPolicy {
                 min_replica_set_size: 3,
                 max_replica_set_size: 4,
-            },
+            }),
             user_consistency_policy: ConsistencyPolicy {
                 default_consistency_level: DefaultConsistencyLevel::Session,
             },
@@ -2845,6 +2898,90 @@ mod tests {
                 .gateway_v2_url()
                 .is_some(),
             "with no probe wired the snapshot must keep Gateway 2.0 routing as before"
+        );
+    }
+
+    /// Builds an account payload, optionally including `userReplicationPolicy`
+    /// — the object the vnext emulator omits and every other backend sends.
+    fn payload_for_binary_detection(
+        endpoint: &str,
+        with_replication_policy: bool,
+    ) -> AccountProperties {
+        let mut payload = serde_json::json!({
+            "_self": "",
+            "id": "acct",
+            "_rid": "acct",
+            "writableLocations": [{ "name": "East US", "databaseAccountEndpoint": endpoint }],
+            "readableLocations": [{ "name": "East US", "databaseAccountEndpoint": endpoint }],
+        });
+        if with_replication_policy {
+            payload["userReplicationPolicy"] =
+                serde_json::json!({ "minReplicaSetSize": 3, "maxReplicasetSize": 4 });
+        }
+        serde_json::from_value(payload).expect("valid account payload")
+    }
+
+    fn store_for_endpoint(endpoint: &str) -> (LocationStateStore, CosmosEndpoint) {
+        let account_endpoint = AccountEndpoint::from(url::Url::parse(endpoint).unwrap());
+        let default_endpoint = CosmosEndpoint::global(account_endpoint.url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { unreachable!("refresh is not exercised") });
+            fut
+        });
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            account_endpoint,
+            default_endpoint.clone(),
+            refresh,
+            true,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+        (store, default_endpoint)
+    }
+
+    /// Before any sync the gate is fail-open, so an operation racing
+    /// initialization still encodes binary.
+    #[test]
+    fn binary_request_encoding_is_supported_before_the_first_sync() {
+        let (store, _) = store_for_endpoint("http://localhost:8081/");
+        assert!(!store.binary_request_encoding_unsupported());
+    }
+
+    /// The vnext signature: an emulator host whose payload omits
+    /// `userReplicationPolicy`.
+    #[test]
+    fn binary_request_encoding_is_unsupported_for_a_vnext_emulator() {
+        let (store, default_endpoint) = store_for_endpoint("http://localhost:8081/");
+        let payload = payload_for_binary_detection("http://localhost:8081/", false);
+        store.sync_account_properties(Arc::new(payload), &default_endpoint);
+        assert!(store.binary_request_encoding_unsupported());
+    }
+
+    /// The classic emulator is also a local host but does send the object, so
+    /// it keeps binary encoding.
+    #[test]
+    fn binary_request_encoding_is_supported_for_the_classic_emulator() {
+        let (store, default_endpoint) = store_for_endpoint("https://localhost:8081/");
+        let payload = payload_for_binary_detection("https://localhost:8081/", true);
+        store.sync_account_properties(Arc::new(payload), &default_endpoint);
+        assert!(!store.binary_request_encoding_unsupported());
+    }
+
+    /// The guardrail that keeps this from ever becoming a GA regression: a real
+    /// account is never classified unsupported, even if its payload happens to
+    /// omit the object.
+    #[test]
+    fn binary_request_encoding_stays_supported_for_a_real_account() {
+        let (store, default_endpoint) = store_for_endpoint("https://acct.documents.azure.com:443/");
+        let payload = payload_for_binary_detection("https://acct.documents.azure.com:443/", false);
+        store.sync_account_properties(Arc::new(payload), &default_endpoint);
+        assert!(
+            !store.binary_request_encoding_unsupported(),
+            "a non-emulator host must never disable binary request encoding"
         );
     }
 
