@@ -2760,8 +2760,8 @@ impl CosmosDriver {
         };
         let operation = if binary.enabled && encodes_request_body {
             // A backend that cannot decode a binary request body still gets a
-            // text one; the response negotiation above is left alone because an
-            // unsupporting backend simply answers in text.
+            // text one; the response negotiation above is left alone because
+            // such a backend simply answers in text.
             if self
                 .location_state_store
                 .binary_request_encoding_unsupported()
