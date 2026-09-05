@@ -1,6 +1,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+$script:RequiredEvidenceFiles = @(
+    'manifest.spdx.json'
+    'manifest.spdx.json.sha256'
+    'manifest.spdx.cose'
+    'manifest.cat'
+    'bsi.json'
+    'bsi.cose'
+)
+
 Describe 'Prepare-GoDriverPullRequest generated tree synchronization' {
     BeforeAll {
         $PipelineDirectory = Split-Path -Parent $PSScriptRoot
@@ -114,12 +123,18 @@ import "C"
         $CheckoutRoot = Join-Path $TestDrive 'checkout'
         Remove-Item $GeneratedRoot, $CheckoutRoot -Recurse -Force -ErrorAction SilentlyContinue
         New-GeneratedFixture -Root $GeneratedRoot
+        foreach ($evidenceFile in $RequiredEvidenceFiles) {
+            Write-TestFile `
+                -Path (Join-Path $GeneratedRoot "_manifest/spdx_2.2/$evidenceFile") `
+                -Content "evidence-$evidenceFile`n"
+        }
+        $DiagnosticLogName = "ESRPClientLogs$([DateTime]::UtcNow.ToString('yyyyMMddHHmmssfff')).json"
         Write-TestFile `
-            -Path (Join-Path $GeneratedRoot '_manifest/spdx_2.2/manifest.spdx.json') `
-            -Content "{}`n"
+            -Path (Join-Path $GeneratedRoot "_manifest/spdx_2.2/$DiagnosticLogName") `
+            -Content "restricted diagnostics`n"
         Write-TestFile `
-            -Path (Join-Path $GeneratedRoot '_manifest/spdx_2.2/bsi.cose') `
-            -Content "signed evidence`n"
+            -Path (Join-Path $GeneratedRoot '_manifest/spdx_2.2/unrelated-evidence.tmp') `
+            -Content "unrelated evidence`n"
 
         New-Item -ItemType Directory -Path $CheckoutRoot | Out-Null
         Invoke-TestGit -Root $CheckoutRoot -Arguments @('init', '--quiet')
@@ -136,7 +151,7 @@ import "C"
         Invoke-TestGit -Root $CheckoutRoot -Arguments @('commit', '--quiet', '-m', 'Seed downstream checkout')
     }
 
-    It 'publishes all 1ES evidence while preserving hand-maintained files' {
+    It 'publishes only required signed evidence while preserving hand-maintained files' {
         & $ScriptPath `
             -GeneratedRoot $GeneratedRoot `
             -CheckoutRoot $CheckoutRoot `
@@ -147,12 +162,19 @@ import "C"
         $stagedChanges | Should -Contain "D`twindows/arm64/native/libazurecosmosdriver.a"
         Get-Content (Join-Path $CheckoutRoot 'README.md') -Raw | Should -Be "hand maintained`n"
         $stagedChanges | Where-Object { $_ -match 'README\.md$' } | Should -BeNullOrEmpty
-        Get-Content (Join-Path $CheckoutRoot '_manifest/spdx_2.2/manifest.spdx.json') -Raw |
-            Should -Be "{}`n"
-        Get-Content (Join-Path $CheckoutRoot '_manifest/spdx_2.2/bsi.cose') -Raw |
-            Should -Be "signed evidence`n"
-        $stagedChanges | Should -Contain "A`t_manifest/spdx_2.2/manifest.spdx.json"
-        $stagedChanges | Should -Contain "A`t_manifest/spdx_2.2/bsi.cose"
+        $publishedEvidence = @(
+            Get-ChildItem (Join-Path $CheckoutRoot '_manifest/spdx_2.2') -File |
+                ForEach-Object { $_.Name } |
+                Sort-Object
+        )
+        $publishedEvidence | Should -Be @($RequiredEvidenceFiles | Sort-Object)
+        Test-Path (Join-Path $CheckoutRoot "_manifest/spdx_2.2/$DiagnosticLogName") |
+            Should -BeFalse
+        Test-Path (Join-Path $CheckoutRoot '_manifest/spdx_2.2/unrelated-evidence.tmp') |
+            Should -BeFalse
+        foreach ($evidenceFile in $RequiredEvidenceFiles) {
+            $stagedChanges | Should -Contain "A`t_manifest/spdx_2.2/$evidenceFile"
+        }
         $stagedChanges | Should -Contain "A`tprovenance.json"
     }
 
@@ -167,14 +189,20 @@ import "C"
         } | Should -Throw '*unexpected.txt*'
     }
 
-    It 'requires the standard 1ES SPDX manifest' {
-        Remove-Item (Join-Path $GeneratedRoot '_manifest/spdx_2.2/manifest.spdx.json')
+    It 'fails closed when any required evidence bundle file is missing' {
+        foreach ($evidenceFile in $RequiredEvidenceFiles) {
+            $evidencePath = Join-Path $GeneratedRoot "_manifest/spdx_2.2/$evidenceFile"
+            $evidenceContent = Get-Content $evidencePath -Raw
+            Remove-Item $evidencePath
 
-        {
-            & $ScriptPath `
-                -GeneratedRoot $GeneratedRoot `
-                -CheckoutRoot $CheckoutRoot `
-                -MatrixPath $MatrixPath
-        } | Should -Throw '*missing the required 1ES manifest*'
+            {
+                & $ScriptPath `
+                    -GeneratedRoot $GeneratedRoot `
+                    -CheckoutRoot $CheckoutRoot `
+                    -MatrixPath $MatrixPath
+            } | Should -Throw "*missing required 1ES evidence bundle files*$evidenceFile*"
+
+            Write-TestFile -Path $evidencePath -Content $evidenceContent
+        }
     }
 }

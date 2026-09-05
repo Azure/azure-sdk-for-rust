@@ -6,10 +6,10 @@
 Validates generated Go modules and stages them in an azure-cosmos-driver checkout.
 
 .DESCRIPTION
-Verifies SHA256SUMS, requires the 1ES SPDX manifest, rejects unexpected generated
-paths, synchronizes the pipeline-owned platform and manifest roots to the exact
-generated artifact, validates the Go files, and stages the resulting downstream
-changes. The script does not push or open a pull request.
+Verifies SHA256SUMS, requires the complete signed 1ES SPDX evidence bundle,
+rejects unexpected generated paths, synchronizes the pipeline-owned platform
+roots and the approved evidence files, validates the Go files, and stages the
+resulting downstream changes. The script does not push or open a pull request.
 #>
 [CmdletBinding()]
 param(
@@ -82,6 +82,15 @@ function Test-Is1EsEvidencePath {
     $Path.StartsWith('_manifest/', [StringComparison]::Ordinal)
 }
 
+$requiredEvidenceFiles = @(
+    '_manifest/spdx_2.2/manifest.spdx.json'
+    '_manifest/spdx_2.2/manifest.spdx.json.sha256'
+    '_manifest/spdx_2.2/manifest.spdx.cose'
+    '_manifest/spdx_2.2/manifest.cat'
+    '_manifest/spdx_2.2/bsi.json'
+    '_manifest/spdx_2.2/bsi.cose'
+)
+
 $generatedRootPath = (Resolve-Path $GeneratedRoot).Path
 $checkoutRootPath = (Resolve-Path $CheckoutRoot).Path
 $matrix = Get-Content -Raw $MatrixPath | ConvertFrom-Json
@@ -100,6 +109,9 @@ $expectedLibraries = [Collections.Generic.List[string]]::new()
 $requiredLinkerFlags = @{}
 foreach ($managedRootFile in $managedRootFiles) {
     [void]$expectedFiles.Add($managedRootFile)
+}
+foreach ($requiredEvidenceFile in $requiredEvidenceFiles) {
+    [void]$expectedFiles.Add($requiredEvidenceFile)
 }
 
 foreach ($modulePath in $modulePaths) {
@@ -138,17 +150,19 @@ $actualFiles = @(
     Get-ChildItem $generatedRootPath -Recurse -File |
         ForEach-Object { Get-NormalizedRelativePath -Root $generatedRootPath -Path $_.FullName }
 )
-$requiredManifestPath = '_manifest/spdx_2.2/manifest.spdx.json'
-$manifestFiles = @($actualFiles | Where-Object { Test-Is1EsEvidencePath -Path $_ })
-if ($requiredManifestPath -notin $manifestFiles) {
-    throw "Generated artifact is missing the required 1ES manifest: $requiredManifestPath"
-}
-foreach ($manifestFile in $manifestFiles) {
-    [void]$expectedFiles.Add($manifestFile)
+$missingEvidenceFiles = @($requiredEvidenceFiles | Where-Object { $_ -notin $actualFiles })
+if ($missingEvidenceFiles.Count -gt 0) {
+    throw "Generated artifact is missing required 1ES evidence bundle files: $($missingEvidenceFiles -join ', ')"
 }
 
 $missingFiles = @($expectedFiles | Where-Object { $_ -notin $actualFiles })
-$unexpectedFiles = @($actualFiles | Where-Object { -not $expectedFiles.Contains($_) })
+$unexpectedFiles = @(
+    $actualFiles |
+        Where-Object {
+            -not $expectedFiles.Contains($_) -and
+            -not (Test-Is1EsEvidencePath -Path $_)
+        }
+)
 if ($missingFiles.Count -gt 0 -or $unexpectedFiles.Count -gt 0) {
     throw "Generated artifact layout does not match build-matrix.json. Missing: [$($missingFiles -join ', ')]; unexpected: [$($unexpectedFiles -join ', ')]."
 }

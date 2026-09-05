@@ -9,6 +9,7 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $PipelinePath = Join-Path $PipelineDirectory 'native-driver.yml'
         $JobMatrixScriptPath = Join-Path $PipelineDirectory 'New-NativeJobMatrix.ps1'
         $BuildJobTemplatePath = Join-Path $PipelineDirectory 'native-driver-build-job.yml'
+        $GitPath = @(Get-Command git -CommandType Application)[0].Source
         $RepositoryRoot = (Resolve-Path (Join-Path $PipelineDirectory '../../../..')).Path
         $OneEsRedirectPath = Join-Path $RepositoryRoot 'eng/pipelines/templates/stages/1es-redirect.yml'
         $Matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
@@ -273,6 +274,15 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $oneEsRedirect | Should -Match '(?s)golang:.*?internalModuleProxy:.*?enabled:\s+true'
     }
 
+    It 'uses legacy SBOM generation so artifact filtering runs after generation' {
+        $pipeline = Get-Content $PipelinePath -Raw
+        $oneEsRedirect = Get-Content $OneEsRedirectPath -Raw
+
+        $pipeline | Should -Match 'UseLegacySbomGeneration:\s+true'
+        $oneEsRedirect | Should -Match '(?s)name:\s+UseLegacySbomGeneration.*?default:\s+false'
+        $oneEsRedirect | Should -Match 'sbomtoolkitPipelineRunnerGenerationEnabled:\s+false'
+    }
+
     It 'publishes directly after the official 1ES build without a custom evidence gate' {
         $pipeline = Get-Content $PipelinePath -Raw
         $buildJobTemplate = Get-Content $BuildJobTemplatePath -Raw
@@ -288,5 +298,62 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $pipeline | Should -Match ([regex]::Escape(
             "eq(variables['Build.Reason'], 'Manual')"
         ))
+    }
+
+    It 'limits the published manifest to the release evidence allowlist' {
+        $pipeline = Get-Content $PipelinePath -Raw
+
+        $artifactIgnoreMatch = [regex]::Match(
+            $pipeline,
+            "(?ms)^\s+@'\r?\n(?<rules>.*?)^\s+'@ \| Set-Content `"\`$root/\.artifactignore`""
+        )
+        $artifactIgnoreMatch.Success | Should -BeTrue
+        $artifactIgnoreRules = @(
+            $artifactIgnoreMatch.Groups['rules'].Value -split '\r?\n' |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { $_ }
+        )
+        $artifactIgnoreRules | Should -Be @(
+            '.artifactignore'
+            '_manifest/**'
+            '!_manifest/spdx_2.2/'
+            '_manifest/spdx_2.2/**'
+            '!_manifest/spdx_2.2/manifest.spdx.json'
+            '!_manifest/spdx_2.2/manifest.spdx.json.sha256'
+            '!_manifest/spdx_2.2/manifest.spdx.cose'
+            '!_manifest/spdx_2.2/manifest.cat'
+            '!_manifest/spdx_2.2/bsi.json'
+            '!_manifest/spdx_2.2/bsi.cose'
+        )
+
+        $fixtureRoot = Join-Path $TestDrive 'artifactignore-fixture'
+        $manifestRoot = Join-Path $fixtureRoot '_manifest/spdx_2.2'
+        New-Item -ItemType Directory -Path $manifestRoot -Force | Out-Null
+        $artifactIgnoreRules | Set-Content (Join-Path $fixtureRoot '.gitignore')
+        @(
+            'manifest.spdx.json'
+            'manifest.spdx.json.sha256'
+            'manifest.spdx.cose'
+            'manifest.cat'
+            'bsi.json'
+            'bsi.cose'
+            "ESRPClientLogs$(Get-Random).json"
+            'unrelated-evidence.tmp'
+        ) | ForEach-Object {
+            New-Item -ItemType File -Path (Join-Path $manifestRoot $_) | Out-Null
+        }
+        & $GitPath -C $fixtureRoot init --quiet
+        $visibleManifestFiles = @(
+            & $GitPath -C $fixtureRoot ls-files --others --exclude-standard -- '_manifest'
+        )
+        $visibleManifestFiles | Should -Be @(
+            '_manifest/spdx_2.2/bsi.cose'
+            '_manifest/spdx_2.2/bsi.json'
+            '_manifest/spdx_2.2/manifest.cat'
+            '_manifest/spdx_2.2/manifest.spdx.cose'
+            '_manifest/spdx_2.2/manifest.spdx.json'
+            '_manifest/spdx_2.2/manifest.spdx.json.sha256'
+        )
+        $pipeline | Should -Match '(?s)ArtifactName:\s+azure-cosmos-driver-modules\s+ArtifactPath:.*?SbomEnabled:\s+true'
     }
 }

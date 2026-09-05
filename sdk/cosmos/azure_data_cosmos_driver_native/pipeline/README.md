@@ -2,6 +2,7 @@
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 -->
+<!-- cSpell:ignore artifactignore -->
 
 # Go native driver build pipeline
 
@@ -69,7 +70,7 @@ Publish each target through the official 1ES template with its standard SBOM
 Generate and test the Go modules
     |
     v
-Publish the azure-cosmos-driver-modules pipeline artifact
+Publish the filtered azure-cosmos-driver-modules pipeline artifact
     |
     v
 Verify the downloaded artifact and generated paths
@@ -93,11 +94,22 @@ request with an `/azp run` comment.
 The publication stage runs only after a successful manual build of
 `refs/heads/main`. It mints a short-lived Azure SDK Automation GitHub App token,
 clones the downstream repository, verifies `SHA256SUMS`, excludes the 1ES
-`_manifest` evidence directory from payload validation, copies the complete
-manifest into the downstream repository, rejects files outside the managed
-roots, runs Go validation for each module definition and the Linux AMD64 module,
-and opens a draft pull request. The target repository's branch rules require
-review and code-owner approval before merge.
+`_manifest` evidence directory from payload validation, then exports only the
+required signed evidence bundle: `manifest.spdx.json`,
+`manifest.spdx.json.sha256`, `manifest.spdx.cose`, `manifest.cat`, `bsi.json`,
+and `bsi.cose`. Verbose 1ES and ESRP diagnostic logs remain in restricted
+pipeline storage and are never copied to the downstream repository. The script
+rejects files outside the managed roots, runs Go validation for each module
+definition and the Linux AMD64 module, and opens a draft pull request. The
+target repository's branch rules require review and code-owner approval before
+merge.
+
+The publication root contains a default-deny `.artifactignore` for `_manifest`.
+This pipeline temporarily selects the legacy 1ES SBOM generation path so the
+manifest exists before artifact file selection. The artifact service then
+excludes every generated manifest file except the six approved
+`_manifest/spdx_2.2` members, so diagnostics remain in restricted pipeline task
+retention and do not appear in the published artifact.
 
 ## Local integration test
 

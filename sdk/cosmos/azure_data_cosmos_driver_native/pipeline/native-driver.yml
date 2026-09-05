@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+# cspell:ignore artifactignore
 
 # =============================================================================
 # native-driver.yml  --  Cosmos Go native-driver cross-build + supply-chain evidence
@@ -27,6 +28,7 @@ extends:
   parameters:
     Use1ESOfficial: true
     EnableGoInternalModuleProxy: true
+    UseLegacySbomGeneration: true
     stages:
       # -----------------------------------------------------------------------
       # 1. Build each target: capture syslibs, build the .a with
@@ -99,6 +101,21 @@ extends:
                     ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.FullName.Substring($root.Length+1))" } |
                     Set-Content "$root/SHA256SUMS"
                 displayName: Write SHA256SUMS (published out of the trusted build)
+              - pwsh: |
+                  $root = "$(Build.ArtifactStagingDirectory)/azure-cosmos-driver"
+                  @'
+                  .artifactignore
+                  _manifest/**
+                  !_manifest/spdx_2.2/
+                  _manifest/spdx_2.2/**
+                  !_manifest/spdx_2.2/manifest.spdx.json
+                  !_manifest/spdx_2.2/manifest.spdx.json.sha256
+                  !_manifest/spdx_2.2/manifest.spdx.cose
+                  !_manifest/spdx_2.2/manifest.cat
+                  !_manifest/spdx_2.2/bsi.json
+                  !_manifest/spdx_2.2/bsi.cose
+                  '@ | Set-Content "$root/.artifactignore"
+                displayName: Limit published release evidence
               - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
                 parameters:
                   ArtifactName: azure-cosmos-driver-modules
