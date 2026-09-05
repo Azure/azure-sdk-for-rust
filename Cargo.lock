@@ -372,7 +372,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -397,8 +397,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.1",
- "typespec_client_core 1.2.0-beta.1",
+ "typespec 1.2.0-beta.2",
+ "typespec_client_core 1.2.0-beta.2",
  "ureq",
 ]
 
@@ -426,10 +426,10 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "fe2o3-amqp 0.16.2",
  "fe2o3-amqp-cbs 0.16.0",
  "fe2o3-amqp-ext 0.16.0",
@@ -446,7 +446,7 @@ dependencies = [
  "tokio-rustls",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.1",
+ "typespec 1.2.0-beta.2",
  "typespec_macros 1.0.0",
 ]
 
@@ -455,7 +455,7 @@ name = "azure_core_examples"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "base64",
  "futures",
  "serde",
@@ -488,9 +488,9 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "azure_core_test_macros 0.2.0",
  "azure_identity 1.1.0-beta.1",
@@ -506,7 +506,7 @@ name = "azure_core_test"
 version = "0.2.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_examples",
  "azure_core_test_macros 0.2.0",
  "azure_identity 1.1.0-beta.1",
@@ -778,7 +778,7 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_examples",
  "azure_core_test 0.2.0",
  "clap",
@@ -806,8 +806,8 @@ dependencies = [
  "async-lock",
  "async-stream",
  "async-trait",
- "azure_core 1.2.0-beta.1",
- "azure_core_amqp 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
+ "azure_core_amqp 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
  "azure_messaging_eventhubs",
@@ -834,7 +834,7 @@ name = "azure_messaging_eventhubs_checkpointstore_blob"
 version = "0.9.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_opentelemetry",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
@@ -881,7 +881,7 @@ version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
  "azure_security_keyvault_keys",
@@ -903,7 +903,7 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
  "azure_security_keyvault_test",
@@ -927,7 +927,7 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
  "azure_security_keyvault_test",
@@ -948,7 +948,7 @@ name = "azure_security_keyvault_test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "tokio",
 ]
 
@@ -958,7 +958,7 @@ version = "1.1.0-beta.3"
 dependencies = [
  "async-stream",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
  "azure_storage_common",
@@ -982,7 +982,7 @@ dependencies = [
 name = "azure_storage_common"
 version = "0.2.0"
 dependencies = [
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "serde",
  "serde_json",
  "time",
@@ -993,7 +993,7 @@ name = "azure_storage_queue"
 version = "1.1.0-beta.2"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
  "azure_storage_common",
@@ -1009,7 +1009,7 @@ dependencies = [
 name = "azure_storage_sas"
 version = "0.2.0"
 dependencies = [
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_storage_common",
  "base64",
  "hmac",
@@ -4583,7 +4583,7 @@ dependencies = [
 
 [[package]]
 name = "typespec"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "base64",
  "bytes",
@@ -4622,7 +4622,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "async-trait",
  "base64",
@@ -4642,7 +4642,7 @@ dependencies = [
  "tokio-util",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.1",
+ "typespec 1.2.0-beta.2",
  "typespec_macros 1.0.0",
  "url",
  "uuid",
@@ -4671,7 +4671,7 @@ dependencies = [
  "serde_json",
  "syn 2.0.119",
  "tokio",
- "typespec_client_core 1.2.0-beta.1",
+ "typespec_client_core 1.2.0-beta.2",
 ]
 
 [[package]]
