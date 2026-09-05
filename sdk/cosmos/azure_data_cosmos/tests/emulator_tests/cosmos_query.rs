@@ -29,6 +29,50 @@ fn collect_matching_items(
 struct QueryTestOptions {
     max_item_count: Option<u32>,
     use_continuation_token_resume: bool,
+    result_order: QueryResultOrder,
+}
+
+#[derive(Default)]
+enum QueryResultOrder {
+    #[default]
+    Unordered,
+    Ordered,
+}
+
+fn assert_query_results<T: Eq + std::fmt::Debug>(
+    expected_items: Vec<T>,
+    actual_items: Vec<T>,
+    result_order: QueryResultOrder,
+) {
+    if matches!(result_order, QueryResultOrder::Ordered) {
+        assert_eq!(expected_items, actual_items);
+        return;
+    }
+
+    assert_eq!(
+        expected_items.len(),
+        actual_items.len(),
+        "query returned a different number of items"
+    );
+
+    let mut remaining = actual_items;
+    for expected in expected_items {
+        let Some(index) = remaining.iter().position(|actual| actual == &expected) else {
+            panic!("query result is missing {expected:?}; unmatched actual items: {remaining:?}");
+        };
+        remaining.swap_remove(index);
+    }
+}
+
+#[test]
+fn unordered_query_results_allow_different_order() {
+    assert_query_results(vec![1, 2, 2], vec![2, 1, 2], QueryResultOrder::Unordered);
+}
+
+#[test]
+#[should_panic(expected = "query result is missing")]
+fn unordered_query_results_preserve_multiplicity() {
+    assert_query_results(vec![1, 1], vec![1, 2], QueryResultOrder::Unordered);
 }
 
 async fn execute_query_test<T>(
@@ -108,7 +152,7 @@ where
         }
     }
 
-    assert_eq!(expected_items, actual_items);
+    assert_query_results(expected_items, actual_items, options.result_order);
     Ok(())
 }
 
@@ -316,6 +360,7 @@ pub async fn cross_partition_query_with_order_by() -> Result<(), Box<dyn Error>>
                 QueryTestOptions {
                     max_item_count: Some(7),
                     use_continuation_token_resume: true,
+                    result_order: QueryResultOrder::Ordered,
                 },
             )
             .await?;
@@ -428,6 +473,7 @@ pub async fn cross_partition_query_with_ordered_distinct_resumes() -> Result<(),
                 QueryTestOptions {
                     max_item_count: Some(3),
                     use_continuation_token_resume: true,
+                    result_order: QueryResultOrder::Ordered,
                 },
             )
             .await?;
@@ -626,6 +672,7 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 QueryTestOptions {
                     max_item_count: Some(1),
                     use_continuation_token_resume: false,
+                    ..Default::default()
                 },
             )
             .await?;
@@ -646,10 +693,6 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     )),
     ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
-#[cfg_attr(
-    test_category = "emulator_inmemory",
-    ignore = "unordered cross-partition row order differs in the in-memory emulator"
-)]
 pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
@@ -663,6 +706,7 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 QueryTestOptions {
                     max_item_count: Some(1),
                     use_continuation_token_resume: false,
+                    ..Default::default()
                 },
             )
             .await?;
@@ -774,6 +818,7 @@ pub async fn cross_partition_query_suspend_resume() -> Result<(), Box<dyn Error>
                 QueryTestOptions {
                     max_item_count: Some(1),
                     use_continuation_token_resume: true,
+                    ..Default::default()
                 },
             )
             .await?;

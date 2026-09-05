@@ -200,6 +200,32 @@ impl ResponseBody {
             }
         }
     }
+
+    /// Transcodes text JSON payloads to standalone Cosmos binary JSON buffers.
+    ///
+    /// Each [`Items`](Self::Items) slice is encoded independently, so every
+    /// resulting item carries the `0x80` preamble required for auto-detection.
+    #[allow(dead_code)] // Defensive mirror for direct body conversion; pipeline nodes encode today.
+    pub(crate) fn transcode_to_binary(self) -> crate::error::Result<Self> {
+        fn convert(bytes: Bytes) -> crate::error::Result<Bytes> {
+            if crate::binary_json::is_binary(&bytes) {
+                return Ok(bytes);
+            }
+            crate::binary_json::transcode_to_binary(&bytes)
+                .map(Bytes::from)
+                .map_err(|e| invalid_body_error("failed to transcode response body to binary", e))
+        }
+
+        match self {
+            Self::NoPayload => Ok(Self::NoPayload),
+            Self::Bytes(bytes) => convert(bytes).map(Self::Bytes),
+            Self::Items(items) => items
+                .into_iter()
+                .map(convert)
+                .collect::<crate::error::Result<Vec<_>>>()
+                .map(Self::Items),
+        }
+    }
 }
 
 impl From<Bytes> for ResponseBody {
@@ -279,6 +305,28 @@ mod tests {
     fn no_payload_into_items_yields_empty_vec() {
         let items: Vec<serde_json::Value> = ResponseBody::NoPayload.into_items().unwrap();
         assert!(items.is_empty());
+    }
+
+    #[test]
+    fn transcode_items_to_binary_prefixes_every_item() {
+        let body = ResponseBody::from_items(vec![
+            Bytes::from_static(br#"{"id":"1"}"#),
+            Bytes::from_static(br#"{"id":"2"}"#),
+        ]);
+        let ResponseBody::Items(items) = body.transcode_to_binary().unwrap() else {
+            panic!("expected item body");
+        };
+
+        assert_eq!(items.len(), 2);
+        assert!(items.iter().all(|item| crate::binary_json::is_binary(item)));
+        let decoded: Vec<serde_json::Value> = ResponseBody::from_items(items).into_items().unwrap();
+        assert_eq!(
+            decoded,
+            vec![
+                serde_json::json!({"id": "1"}),
+                serde_json::json!({"id": "2"})
+            ]
+        );
     }
 
     #[test]

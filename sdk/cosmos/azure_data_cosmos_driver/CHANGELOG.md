@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added a fully buffered cross-partition merge for finite non-streaming `ORDER BY` plans, including `VectorDistance(...)`. Unbounded, resumed, DISTINCT, and hybrid non-streaming plans are rejected with typed statuses. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
 
 ### Breaking Changes

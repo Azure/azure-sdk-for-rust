@@ -12,6 +12,7 @@ use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::options::{
     ExcludedRegions, ItemReadOptions, OperationOptions, ThrottlingRetryOptionsBuilder,
 };
+use framework::test_client::rbac_name_based_data_not_ready;
 use framework::{
     assert_local_retry_attempted_on_region, assert_region_contacted_with_retry,
     assert_region_not_contacted, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
@@ -276,19 +277,22 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
                 .container_client(&container_id, None)
                 .await?;
 
-            // Read the item using the fault client - this should succeed because the fault only targets CreateItem
-            let result = run_context
-                .read_item(&fault_container_client, &pk, &item_id, None)
-                .await;
-
-            // Verify the read succeeded
-            assert!(
-                result.is_ok(),
-                "Read should succeed when fault targets CreateItem, but got error: {:?}",
-                result.err()
-            );
-
-            let response = result.unwrap();
+            // The fault client may reach a region where name-based RBAC has not propagated yet.
+            let response = {
+                let mut retries = 0;
+                loop {
+                    match run_context
+                        .read_item(&fault_container_client, &pk, &item_id, None)
+                        .await
+                    {
+                        Err(error) if retries < 60 && rbac_name_based_data_not_ready(&error) => {
+                            retries += 1;
+                            tokio::time::sleep(Duration::from_secs(1)).await;
+                        }
+                        result => break result?,
+                    }
+                }
+            };
             assert_eq!(response.status(), StatusCode::Ok);
 
             Ok(())

@@ -298,7 +298,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
         async |run_context, db_client| {
             let container_id = format!("Container-{}", Uuid::new_v4());
             let container_client = run_context
-                .create_container_with_throughput(
+                .create_container_for_fault_injection(
                     db_client,
                     ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),

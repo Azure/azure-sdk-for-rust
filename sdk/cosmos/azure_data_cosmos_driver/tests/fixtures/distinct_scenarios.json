@@ -2879,7 +2879,9 @@
         "Boston",
         "Portland"
       ],
-      "checkpoint": null,
+      "checkpoint": {
+        "splitAfterPage": 1
+      },
       "expectedContinuation": null,
       "expectedError": null
     }

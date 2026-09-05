@@ -115,6 +115,8 @@ mod seeds {
     pub(super) const FALSE: u128 = seed(0xc1be517fe893b40c, 0xe9fc8a4c531cd0dd);
     pub(super) const TRUE: u128 = seed(0xf86d4abf9a412e74, 0x788488365c8a985d);
     pub(super) const STRING: u128 = seed(0x61f53f0a44204cfb, 0x09481be8ef4b56dd);
+    /// A single number seed keeps DISTINCT encoding-independent: text integers
+    /// and integral binary doubles flow through the same canonical number bytes.
     pub(super) const NUMBER: u128 = seed(0x2400e8b894ce9c2a, 0x790be1eabd7b9481);
     pub(super) const ARRAY: u128 = seed(0xfa573b014c4dc18e, 0xa014512c858eb115);
     pub(super) const OBJECT: u128 = seed(0x77b285ac511aef30, 0x3dcf187245822449);
@@ -337,6 +339,17 @@ mod tests {
         assert_eq!(h(json!(-7)), h(json!(-7.0)));
     }
 
+    #[test]
+    fn text_integer_and_binary_double_have_the_same_hash() {
+        let text: Value = serde_json::from_slice(b"1").unwrap();
+        let binary = crate::binary_json::encode(&json!(1.0));
+        let binary: Value = crate::binary_json::from_slice(&binary).unwrap();
+
+        assert!(text.as_u64().is_some());
+        assert!(binary.as_f64().is_some());
+        assert_eq!(h(text), h(binary));
+    }
+
     /// .NET normalizes `-0.0` to `0.0` in `CosmosNumberHasher`, but neither
     /// peer has a test for it.
     #[test]
@@ -388,7 +401,7 @@ mod tests {
     #[test]
     fn array_order_matters() {
         assert_ne!(h(json!([1, 2])), h(json!([2, 1])));
-        // Elements normalize like scalars do: `5` and `5.0` are one value.
+        // Elements normalize like scalars do: `1` and `1.0` are one value.
         assert_eq!(h(json!([1, 2])), h(json!([1.0, 2.0])));
     }
 

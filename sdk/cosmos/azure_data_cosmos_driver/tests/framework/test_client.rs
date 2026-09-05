@@ -613,6 +613,17 @@ impl DriverTestRunContext {
     /// these helpers inherits them.
     fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
         let mut builder = DriverOptions::builder(self.client.account.clone());
+        #[cfg(test_category = "emulator_vnext")]
+        {
+            // The vNext emulator cannot reliably extract partition keys from binary item bodies.
+            let options = OperationOptionsBuilder::new()
+                .with_binary_encoding(
+                    azure_data_cosmos_driver::options::BinaryEncodingOptions::new()
+                        .with_enabled(false),
+                )
+                .build();
+            builder = builder.with_operation_options(options);
+        }
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
         }
@@ -652,15 +663,20 @@ impl DriverTestRunContext {
         F: FnMut() -> Fut,
         Fut: Future<Output = Result<T, Box<dyn Error>>>,
     {
+        const MAX_ATTEMPTS: u32 = 12;
+
         let mut delay = Duration::from_millis(250);
         let mut last_error = None;
-        for attempt in 1..=6 {
+        for attempt in 1..=MAX_ATTEMPTS {
             match f().await {
                 Ok(result) => return Ok(result),
-                Err(error) if Self::is_transport_generated_503(error.as_ref()) && attempt < 6 => {
+                Err(error)
+                    if Self::is_transport_generated_503(error.as_ref())
+                        && attempt < MAX_ATTEMPTS =>
+                {
                     last_error = Some(error.to_string());
                     eprintln!(
-                        "transient transport failure during {operation}; retrying attempt {attempt}/6 after {delay:?}: {}",
+                        "transient transport failure during {operation}; retrying attempt {attempt}/{MAX_ATTEMPTS} after {delay:?}: {}",
                         last_error.as_deref().unwrap_or("<unknown>")
                     );
                     tokio::time::sleep(delay).await;

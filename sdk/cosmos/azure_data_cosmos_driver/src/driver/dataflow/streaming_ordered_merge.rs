@@ -779,11 +779,8 @@ impl PipelineNode for StreamingOrderedMerge {
 /// the Gateway's rewritten query so a service-side rewrite change does not
 /// invalidate in-flight tokens.
 ///
-/// Because this hashes the *serialized* body, the query body's serialization
-/// shape (serde field order, optional-field emission) is a compatibility
-/// surface: changing it invalidates in-flight tokens with a hard
-/// `CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID` rather than silently
-/// resuming the wrong query.
+/// Bodies retain their exact serialized form for compatibility with existing
+/// tokens. The planner calls this before any optional request encoding.
 pub(super) fn query_fingerprint(body: Option<&[u8]>, scope: Option<&FeedRange>) -> String {
     // The body hash is rendered fixed-width first so the two components can
     // never run together; EPK hex is `[0-9A-F]*`, so neither separator can
@@ -792,7 +789,8 @@ pub(super) fn query_fingerprint(body: Option<&[u8]>, scope: Option<&FeedRange>) 
     // backend and other SDKs may hand back a bound with that padding trimmed.
     // An absent scope hashes as empty, which stays distinct from the
     // full-container range (`-FF`).
-    let body_hash = crate::models::murmur_hash::murmurhash3_128(body.unwrap_or_default(), 0);
+    let body = body.unwrap_or_default();
+    let body_hash = crate::models::murmur_hash::murmurhash3_128(body, 0);
     let scope = match scope {
         Some(range) => format!(
             "{}-{}",
@@ -3105,13 +3103,14 @@ mod tests {
         );
     }
 
-    /// Same body and same scope is stable, so an unchanged query resumes.
+    /// Preserve the exact fingerprint minted before binary query encoding so
+    /// in-flight text tokens remain valid.
     #[test]
-    fn query_fingerprint_is_stable_for_identical_inputs() {
-        let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#;
+    fn parameterized_text_query_fingerprint_matches_historical_value() {
+        let body = br#"{"query":"SELECT * FROM c WHERE c.rank >= @min ORDER BY c.rank","parameters":[{"name":"@min","value":1}]}"#;
         assert_eq!(
             query_fingerprint(Some(body), Some(&range("", "80"))),
-            query_fingerprint(Some(body), Some(&range("", "80"))),
+            "b84b9c269862dcd73781038d90add3be",
         );
     }
 }
