@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Binary request-body encoding is now disabled automatically when the connected backend cannot decode it, so a default (binary-enabled) client works against the vnext emulator instead of failing item writes with `400/1001 PartitionKeyMismatch`. Detection requires both an emulator host and an account payload that omits `userReplicationPolicy`, so a real account is never affected; response negotiation is unchanged, since a backend that does not support binary simply replies with text. ([#5240](https://github.com/Azure/azure-sdk-for-rust/issues/5240))
+
 ### Other Changes
 
 ## 0.7.0 (2026-09-02)

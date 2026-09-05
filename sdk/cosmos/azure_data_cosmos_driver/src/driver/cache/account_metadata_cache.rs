@@ -188,8 +188,14 @@ pub(crate) struct AccountProperties {
     pub enable_per_partition_failover_behavior: bool,
 
     /// User replication settings (min/max replica set sizes).
+    ///
+    /// `None` when the service omits the object entirely. Read it through
+    /// [`user_replication_policy`](Self::user_replication_policy) to get the
+    /// defaulted value; the raw `Option` exists so
+    /// [`omits_user_replication_policy`](Self::omits_user_replication_policy)
+    /// can still see the omission.
     #[serde(default)]
-    pub user_replication_policy: ReplicationPolicy,
+    pub user_replication_policy: Option<ReplicationPolicy>,
 
     /// Default consistency level configured by the user.
     #[serde(default)]
@@ -244,6 +250,30 @@ impl AccountProperties {
             .iter()
             .map(|loc| loc.name.clone())
             .collect()
+    }
+
+    /// User replication policy, falling back to the standard defaults
+    /// (`min = 3`, `max = 4`) when the service omits it.
+    pub(crate) fn user_replication_policy(&self) -> ReplicationPolicy {
+        self.user_replication_policy.clone().unwrap_or_default()
+    }
+
+    /// Whether the payload omitted `userReplicationPolicy` entirely.
+    ///
+    /// The real service and the classic emulator always send this object; the
+    /// vnext emulator does not. That makes the omission the one structural
+    /// signal available to tell a vnext backend apart from every other one,
+    /// which [`CosmosDriver`] uses to decide whether binary request bodies are
+    /// safe to send.
+    ///
+    /// This is a heuristic on an *absent* field, so callers must additionally
+    /// confirm the endpoint is an emulator host before acting on it — see
+    /// [`LocationStateStore::binary_request_encoding_unsupported`].
+    ///
+    /// [`CosmosDriver`]: crate::driver::CosmosDriver
+    /// [`LocationStateStore::binary_request_encoding_unsupported`]: crate::driver::routing::LocationStateStore::binary_request_encoding_unsupported
+    pub(crate) fn omits_user_replication_policy(&self) -> bool {
+        self.user_replication_policy.is_none()
     }
 
     /// Returns `true` if Gateway 2.0 endpoints are available.
@@ -539,7 +569,9 @@ mod tests {
         assert_eq!(props.readable_regions().len(), 2);
         assert_eq!(props.writable_locations.len(), 1);
         assert_eq!(props.readable_locations.len(), 2);
-        assert_eq!(props.user_replication_policy.min_replica_set_size, 3);
+        assert_eq!(props.user_replication_policy().min_replica_set_size, 3);
+        // A full service payload carries the object, so the vnext signal is off.
+        assert!(!props.omits_user_replication_policy());
         assert_eq!(
             props.user_consistency_policy.default_consistency_level,
             DefaultConsistencyLevel::Session
@@ -591,9 +623,15 @@ mod tests {
         let props: AccountProperties = serde_json::from_str(json).expect("deserialize");
 
         // Missing replication policies fall back to the standard defaults.
-        assert_eq!(props.user_replication_policy, ReplicationPolicy::default());
-        assert_eq!(props.user_replication_policy.min_replica_set_size, 3);
-        assert_eq!(props.user_replication_policy.max_replica_set_size, 4);
+        assert_eq!(
+            props.user_replication_policy(),
+            ReplicationPolicy::default()
+        );
+        assert_eq!(props.user_replication_policy().min_replica_set_size, 3);
+        assert_eq!(props.user_replication_policy().max_replica_set_size, 4);
+        // The omission itself stays observable, which is what distinguishes a
+        // vnext backend from the service and the classic emulator.
+        assert!(props.omits_user_replication_policy());
         assert_eq!(
             props.system_replication_policy,
             ReplicationPolicy::default()

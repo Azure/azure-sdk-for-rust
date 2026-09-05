@@ -2678,7 +2678,17 @@ impl CosmosDriver {
             crate::options::BinaryEncodingOptions::default()
         };
         let operation = if binary.enabled && encodes_request_body {
-            Self::apply_request_binary_encoding(operation)?
+            // A backend that cannot decode a binary request body still gets a
+            // text one; the response negotiation above is left alone because an
+            // unsupporting backend simply answers in text.
+            if self
+                .location_state_store
+                .binary_request_encoding_unsupported()
+            {
+                operation
+            } else {
+                Self::apply_request_binary_encoding(operation)?
+            }
         } else {
             operation
         };

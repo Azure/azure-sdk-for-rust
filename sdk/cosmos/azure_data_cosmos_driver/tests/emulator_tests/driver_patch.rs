@@ -29,16 +29,10 @@
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::{
     models::{CosmosNumber, PartitionKey, PatchInstructions, PatchOperation},
-    options::{BinaryEncodingOptions, OperationOptions, OperationOptionsBuilder},
+    options::OperationOptions,
 };
 use serde_json::{json, Value};
 use std::error::Error;
-
-fn patch_test_options() -> OperationOptions {
-    OperationOptionsBuilder::new()
-        .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(false))
-        .build()
-}
 
 // ---------------------------------------------------------------------------
 // A5: basic Set returns the locally-merged post-image
@@ -58,7 +52,7 @@ fn patch_test_options() -> OperationOptions {
 )]
 pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db_options(
-        patch_test_options(),
+        OperationOptions::default(),
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -124,7 +118,7 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db_options(
-        patch_test_options(),
+        OperationOptions::default(),
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -204,7 +198,7 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db_options(
-        patch_test_options(),
+        OperationOptions::default(),
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -830,7 +824,7 @@ fn assert_post_image_props(actual: &Value, expected_props: &Value, case_id: &str
 )]
 pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db_options(
-        patch_test_options(),
+        OperationOptions::default(),
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -926,7 +920,7 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn cosmos_patch_read_missing_item_returns_not_found() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db_options(
-        patch_test_options(),
+        OperationOptions::default(),
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -1007,7 +1001,7 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
     Box::pin(
         DriverTestClient::run_with_unique_db_and_fault_injection_options(
             rules,
-            patch_test_options(),
+            OperationOptions::default(),
             async move |context, database| {
                 let container_name = context.unique_container_name();
                 let container = context
@@ -1086,7 +1080,7 @@ pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
     Box::pin(
         DriverTestClient::run_with_unique_db_and_fault_injection_options(
         rules,
-        patch_test_options(),
+        OperationOptions::default(),
         async move |context, database| {
             let container_name = context.unique_container_name();
             let container = context
