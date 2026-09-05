@@ -169,6 +169,13 @@ below for the production-shape guidance.
 > suppression is bounded by the earlier of retention expiry or FIFO eviction.
 > Every writer must preserve the reserved property and marker order.
 >
+> Query-plan selection is per operation through
+> `cosmos_operation_options_t.query_plan_mode`. Leave it
+> `COSMOS_QUERY_PLAN_MODE_UNSET` to inherit, or set
+> `COSMOS_QUERY_PLAN_MODE_LOCAL_PREFERRED` or
+> `COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY` for an individual query. The
+> environment override remains authoritative over this field.
+>
 > The v1 functions take `(driver, const cosmos_operation_request_t *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.
 > The checked-in [header](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/include/azurecosmosdriver.h) is the authoritative

@@ -30,6 +30,7 @@ mod patch_strategy;
 mod plan_options;
 mod policies;
 mod priority;
+mod query_plan_mode;
 mod read_consistency;
 mod region;
 mod throughput_control;
@@ -61,6 +62,7 @@ pub use policies::{
     ServerCertificateValidation, TlsBackend,
 };
 pub use priority::PriorityLevel;
+pub use query_plan_mode::QueryPlanMode;
 pub(crate) use read_consistency::resolve_effective_consistency;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;

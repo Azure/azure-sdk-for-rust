@@ -15,8 +15,8 @@
 
 use azure_data_cosmos::{
     options::{
-        BinaryEncodingOptions, ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Region,
-        RoutingStrategy,
+        BinaryEncodingOptions, ContentResponseOnWrite, ItemWriteOptions, OperationOptions,
+        OperationOptionsBuilder, QueryPlanMode, Region, RoutingStrategy,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClientBuilder, CosmosRuntimeBuilder,
     FeedScope, Query,
@@ -143,13 +143,19 @@ async fn build_multi_partition_container_with_recorder(
         EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
-    // `None` leaves the option unset, exercising the resolved default.
-    let mut builder = CosmosClientBuilder::new().with_runtime(
-        CosmosRuntimeBuilder::from(emulator.runtime_builder())
-            .build()
-            .await
-            .unwrap(),
-    );
+    // `None` leaves the binary option unset, exercising the resolved default.
+    let mut builder = CosmosClientBuilder::new()
+        .with_runtime(
+            CosmosRuntimeBuilder::from(emulator.runtime_builder())
+                .build()
+                .await
+                .unwrap(),
+        )
+        .with_default_operation_options(
+            OperationOptionsBuilder::new()
+                .with_query_plan_mode(QueryPlanMode::GatewayOnly)
+                .build(),
+        );
     if let Some(binary) = binary {
         builder =
             builder.with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(binary));

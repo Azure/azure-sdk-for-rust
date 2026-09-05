@@ -1585,6 +1585,44 @@ fn offset_limit_parameter_substituted_from_params() {
 }
 
 #[test]
+fn vector_distance_top_order_by_requires_gateway_plan() {
+    let error = plan_with_params_err(
+        "SELECT TOP 5 c.id FROM c \
+         WHERE c.pk = 'tenant-a' \
+         ORDER BY VectorDistance(c.vector, [0.1, 0.2]) ASC",
+        &[],
+    );
+
+    assert_eq!(
+        error.status(),
+        crate::error::CosmosStatus::CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED
+    );
+    assert!(error.to_string().contains("NEEDS_GATEWAY_FALLBACK"));
+}
+
+#[test]
+fn parameterized_vector_distance_window_requires_gateway_plan() {
+    let error = plan_with_params_err(
+        "SELECT VALUE c.id FROM c \
+         WHERE c.pk = @pk \
+         ORDER BY VectorDistance(c.vector, @vector, true) DESC \
+         OFFSET @offset LIMIT @limit",
+        &[
+            ("@pk", serde_json::json!("tenant-b")),
+            ("@vector", serde_json::json!([0.1, 0.2])),
+            ("@offset", serde_json::json!(2)),
+            ("@limit", serde_json::json!(3)),
+        ],
+    );
+
+    assert_eq!(
+        error.status(),
+        crate::error::CosmosStatus::CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED
+    );
+    assert!(error.to_string().contains("NEEDS_GATEWAY_FALLBACK"));
+}
+
+#[test]
 fn top_parameter_missing_value_is_error() {
     let err = plan_with_params_err("SELECT TOP @n * FROM c", &[]);
     let msg = format!("{err}");

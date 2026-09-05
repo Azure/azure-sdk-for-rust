@@ -442,7 +442,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        options::{PartitionFailoverOptions, Region, UserAgentSuffix},
+        options::{PartitionFailoverOptions, QueryPlanMode, Region, UserAgentSuffix},
         RoutingStrategy,
     };
 
@@ -577,6 +577,18 @@ mod tests {
             .build()
             .expect("driver options should build");
         assert_eq!(opts.preferred_regions(), input.as_slice());
+    }
+
+    #[test]
+    fn query_plan_mode_flows_to_driver_options() {
+        let mut input = test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()));
+        input.operation_options.query_plan_mode = Some(QueryPlanMode::GatewayOnly);
+        let opts = input.build().expect("driver options should build");
+
+        assert_eq!(
+            opts.operation_options().query_plan_mode,
+            Some(QueryPlanMode::GatewayOnly)
+        );
     }
 
     /// The user-agent suffix must flow through to the per-driver options so
