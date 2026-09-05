@@ -2581,8 +2581,12 @@ impl DiagnosticsContext {
     /// of the sources' durations (sub-ops are issued sequentially), so
     /// callers see a single total time for the operation.
     ///
+    /// This method is public only as a doc-hidden diagnostics seam for the
+    /// higher-level `azure_data_cosmos` crate.
+    ///
     /// Returns `None` only when `sources` is empty.
-    pub(crate) fn aggregate_sub_operations(sources: &[Arc<DiagnosticsContext>]) -> Option<Self> {
+    #[doc(hidden)]
+    pub fn aggregate_sub_operations(sources: &[Arc<DiagnosticsContext>]) -> Option<Self> {
         let last = sources.last()?;
         // Carry each source's operation name down onto the requests it
         // contributed. The aggregate reports a single operation name (the

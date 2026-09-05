@@ -220,10 +220,9 @@ impl ContainerClient {
         options: Option<ThroughputOptions>,
     ) -> crate::Result<Option<ThroughputProperties>> {
         let options = options.unwrap_or_default();
-        crate::clients::offers_client::find_offer(
+        crate::clients::offers_client::find_offer_for_container(
             &self.context,
-            self.container_ref.account(),
-            self.container_ref.rid(),
+            &self.container_ref,
             options.operation,
             self.operation_context("read_container_throughput"),
         )
@@ -263,10 +262,9 @@ impl ContainerClient {
     ) -> crate::Result<ThroughputPoller> {
         let options = options.unwrap_or_default();
 
-        crate::clients::offers_client::begin_replace(
+        crate::clients::offers_client::begin_replace_for_container(
             self.context.clone(),
-            self.container_ref.account().clone(),
-            self.container_ref.rid(),
+            &self.container_ref,
             throughput,
             options.operation,
             self.operation_context("replace_container_throughput"),

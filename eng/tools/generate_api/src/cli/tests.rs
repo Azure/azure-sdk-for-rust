@@ -15,6 +15,7 @@ fn defaults_to_markdown_format() {
 
     assert_eq!(args.format, OutputFormat::Markdown);
     assert!(!args.no_docs);
+    assert!(!args.no_map);
     assert!(!args.check);
 }
 
@@ -61,4 +62,22 @@ fn accepts_check_switch() {
     ]);
 
     assert!(args.check);
+}
+
+#[test]
+fn accepts_no_map_switch_for_any_format() {
+    for format in ["markdown", "apiview"] {
+        let args = Args::parse_from([
+            "generate_api",
+            "--manifest-path",
+            "sdk/core/azure_core/Cargo.toml",
+            "--format",
+            format,
+            "--no-map",
+            "--output",
+            "/tmp/generate_api",
+        ]);
+
+        assert!(args.no_map);
+    }
 }
