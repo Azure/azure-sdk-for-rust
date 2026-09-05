@@ -8,6 +8,8 @@
 
 ### Breaking Changes
 
+- Reviewed public API type consistency for time durations and integer sizes. `ResponseHeaders::server_duration_ms()` and `retry_after_ms()` are replaced by `server_duration()` and `retry_after()`, both returning `Option<Duration>`; `TransactionalBatchOperationResult::retry_after_milliseconds()` and `DistributedTransactionResponse::retry_after_ms()` are similarly replaced by `retry_after() -> Option<Duration>`. `ThroughputProperties::manual`, `autoscale`, `throughput()`, `autoscale_maximum()`, and `autoscale_increment()` now use `u32` instead of the platform-dependent `usize`, matching the RU/s values Cosmos DB actually returns. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
+
 ### Bugs Fixed
 
 - Name-based container clients now automatically recover when a container is deleted and recreated. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
@@ -41,6 +43,7 @@
 - Added the non-default `control_plane` feature that gates the control-plane APIs (database and container CRUD, and throughput/offer management). It is intentionally independent of `key_auth` so these APIs are not tied to key-based authentication. ([#4854](https://github.com/Azure/azure-sdk-for-rust/pull/4854))
 - Added full text search policy support: the `FullTextPolicy` and `FullTextPath` models, `ContainerProperties::full_text_policy` (with `with_full_text_policy`), the `FullTextIndex` model, and `IndexingPolicy::full_text_indexes` (with `with_full_text_index`). Containers configured for full text search can now be created and read with this SDK instead of only through another SDK or the portal. ([#5034](https://github.com/Azure/azure-sdk-for-rust/pull/5034))
 - Added the vector index tuning options the service accepts: `VectorIndex::quantizer_type` (the new `QuantizerType` enum), `quantization_byte_size`, `indexing_search_list_size`, and `vector_index_shard_key`, each with a matching `with_*` setter. ([#5034](https://github.com/Azure/azure-sdk-for-rust/pull/5034))
+- Added `PatchTrackingId`, `PatchInstructions::is_retry_safe`, `PatchItemOptions::with_tracking_id`, `PatchItemOptions::with_tracking_capacity`, `PatchItemOptions::with_tracking_retention`, `ItemResponse::patch_tracking_id`, `CosmosError::patch_tracking_id`, `FaultInjectionErrorType::ResponseTimeoutAfterService`, and public PATCH tracking property, retention, and default-capacity constants for bounded duplicate suppression across application retries. ([#5173](https://github.com/Azure/azure-sdk-for-rust/pull/5173))
 
 ### Breaking Changes
 

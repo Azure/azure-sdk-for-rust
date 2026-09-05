@@ -28,7 +28,7 @@ const MAX_BACKOFF: Duration = Duration::from_secs(30);
 pub async fn ensure_container(
     db_client: &DatabaseClient,
     container_name: &str,
-    throughput: usize,
+    throughput: u32,
     default_ttl: Option<TimeToLive>,
 ) -> Result<ContainerClient, Box<dyn std::error::Error>> {
     // Try to resolve the existing container first. `container_client` is

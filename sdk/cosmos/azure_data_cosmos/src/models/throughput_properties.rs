@@ -28,7 +28,7 @@ pub struct ThroughputProperties {
 }
 
 impl ThroughputProperties {
-    pub fn manual(throughput: usize) -> ThroughputProperties {
+    pub fn manual(throughput: u32) -> ThroughputProperties {
         ThroughputProperties {
             resource: String::new(),
             offer: Offer {
@@ -44,8 +44,8 @@ impl ThroughputProperties {
     }
 
     pub fn autoscale(
-        starting_maximum_throughput: usize,
-        increment_percent: Option<usize>,
+        starting_maximum_throughput: u32,
+        increment_percent: Option<u32>,
     ) -> ThroughputProperties {
         ThroughputProperties {
             resource: String::new(),
@@ -68,15 +68,15 @@ impl ThroughputProperties {
         }
     }
 
-    pub fn throughput(&self) -> Option<usize> {
+    pub fn throughput(&self) -> Option<u32> {
         self.offer.offer_throughput
     }
 
-    pub fn autoscale_maximum(&self) -> Option<usize> {
+    pub fn autoscale_maximum(&self) -> Option<u32> {
         Some(self.offer.offer_autopilot_settings.as_ref()?.max_throughput)
     }
 
-    pub fn autoscale_increment(&self) -> Option<usize> {
+    pub fn autoscale_increment(&self) -> Option<u32> {
         Some(
             self.offer
                 .offer_autopilot_settings
@@ -95,7 +95,7 @@ impl ThroughputProperties {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Offer {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub offer_throughput: Option<usize>,
+    pub offer_throughput: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
 }
@@ -104,7 +104,7 @@ pub(crate) struct Offer {
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct OfferAutoscaleSettings {
-    pub max_throughput: usize,
+    pub max_throughput: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
 }
@@ -121,7 +121,7 @@ pub(crate) struct AutoscaleAutoUpgradePolicy {
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AutoscaleThroughputPolicy {
-    pub increment_percent: usize,
+    pub increment_percent: u32,
 }
 
 impl ThroughputProperties {

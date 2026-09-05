@@ -243,7 +243,7 @@ pub struct CosmosRequestHeaders {
     pub precondition: Option<Precondition>,
 
     /// Manual throughput in RU/s (`x-ms-offer-throughput`).
-    pub offer_throughput: Option<usize>,
+    pub offer_throughput: Option<u32>,
 
     /// Autoscale settings (`x-ms-cosmos-offer-autopilot-settings`).
     ///
@@ -468,7 +468,7 @@ fn header_value_from_cow(value: &Cow<'static, str>) -> HeaderValue {
 #[non_exhaustive]
 pub struct OfferAutoscaleSettings {
     /// Maximum throughput in RU/s for autoscale.
-    pub max_throughput: usize,
+    pub max_throughput: u32,
 
     /// Auto-upgrade policy for scaling behavior.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -477,7 +477,7 @@ pub struct OfferAutoscaleSettings {
 
 impl OfferAutoscaleSettings {
     /// Creates autoscale settings with the given maximum throughput.
-    pub fn new(max_throughput: usize) -> Self {
+    pub fn new(max_throughput: u32) -> Self {
         Self {
             max_throughput,
             auto_upgrade_policy: None,
@@ -485,7 +485,7 @@ impl OfferAutoscaleSettings {
     }
 
     /// Sets the auto-upgrade policy with the given increment percent.
-    pub fn with_increment_percent(mut self, increment_percent: usize) -> Self {
+    pub fn with_increment_percent(mut self, increment_percent: u32) -> Self {
         self.auto_upgrade_policy = Some(AutoscaleAutoUpgradePolicy {
             throughput_policy: Some(AutoscaleThroughputPolicy { increment_percent }),
         });
@@ -509,7 +509,7 @@ pub struct AutoscaleAutoUpgradePolicy {
 #[non_exhaustive]
 pub struct AutoscaleThroughputPolicy {
     /// Percentage to increment throughput during auto-upgrade.
-    pub increment_percent: usize,
+    pub increment_percent: u32,
 }
 
 /// Cosmos-specific headers extracted from HTTP response.

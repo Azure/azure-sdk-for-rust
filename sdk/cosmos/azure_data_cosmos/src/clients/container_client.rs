@@ -1555,8 +1555,11 @@ fn apply_patch_options(
     if let Some(capacity) = options.tracking_capacity {
         operation = operation.with_patch_tracking_capacity(capacity);
     }
-    if let Some(retention_seconds) = options.tracking_retention_seconds {
-        operation = operation.with_patch_tracking_retention_seconds(retention_seconds);
+    if let Some(retention) = options.tracking_retention {
+        let seconds = retention.as_secs().clamp(1, u64::from(u32::MAX)) as u32;
+        operation = operation.with_patch_tracking_retention_seconds(
+            std::num::NonZeroU32::new(seconds).expect("clamped to at least 1"),
+        );
     }
     operation
 }
@@ -1627,7 +1630,7 @@ mod tests {
             .with_max_attempts(std::num::NonZeroU8::new(7).unwrap())
             .with_tracking_id(tracking_id)
             .with_tracking_capacity(std::num::NonZeroU16::new(19).unwrap())
-            .with_tracking_retention_seconds(std::num::NonZeroU32::new(23).unwrap());
+            .with_tracking_retention(std::time::Duration::from_secs(23));
 
         let operation = apply_patch_options(operation, &options);
 

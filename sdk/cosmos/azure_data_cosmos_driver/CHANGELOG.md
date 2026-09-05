@@ -8,6 +8,8 @@
 
 ### Breaking Changes
 
+- `CosmosRequestHeaders::offer_throughput`, `OfferAutoscaleSettings::max_throughput`, `OfferAutoscaleSettings::new`, `OfferAutoscaleSettings::with_increment_percent`, and `AutoscaleThroughputPolicy::increment_percent` now use `u32` instead of the platform-dependent `usize`, matching the RU/s values Cosmos DB actually returns. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
+
 ### Bugs Fixed
 
 - Name-addressed container operations now refresh metadata and retry once after container recreation, clearing generation-specific session and partition-routing state before targeting the replacement. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))

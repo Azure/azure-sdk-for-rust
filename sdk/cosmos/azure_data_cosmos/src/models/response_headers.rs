@@ -80,11 +80,13 @@ impl ResponseHeaders {
         self.0.offer_replace_pending
     }
 
-    /// Server-side request processing time in milliseconds
+    /// Server-side request processing time
     /// (`x-ms-request-duration-ms`). Non-finite / negative values are filtered
     /// to `None` during parsing.
-    pub fn server_duration_ms(&self) -> Option<f64> {
-        self.0.server_duration_ms
+    pub fn server_duration(&self) -> Option<std::time::Duration> {
+        self.0
+            .server_duration_ms
+            .map(|ms| std::time::Duration::from_secs_f64(ms / 1000.0))
     }
 
     /// Logical sequence number of the partition replica that served this request
@@ -103,10 +105,10 @@ impl ResponseHeaders {
         self.0.item_count
     }
 
-    /// Server-suggested retry delay in milliseconds on throttling
+    /// Server-suggested retry delay on throttling
     /// (`x-ms-retry-after-ms`).
-    pub fn retry_after_ms(&self) -> Option<u64> {
-        self.0.retry_after_ms
+    pub fn retry_after(&self) -> Option<std::time::Duration> {
+        self.0.retry_after_ms.map(std::time::Duration::from_millis)
     }
 
     /// Caller-supplied correlation ID echoed back by the server

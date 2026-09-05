@@ -381,9 +381,10 @@ impl TransactionalBatchOperationResult {
         self.request_charge
     }
 
-    /// Returns the retry after duration in milliseconds, if applicable.
-    pub fn retry_after_milliseconds(&self) -> Option<u64> {
+    /// Returns the server-suggested retry delay, if applicable.
+    pub fn retry_after(&self) -> Option<std::time::Duration> {
         self.retry_after_milliseconds
+            .map(std::time::Duration::from_millis)
     }
 
     /// Returns the substatus code for this operation, if applicable.
