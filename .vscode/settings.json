@@ -9,8 +9,12 @@
   "cmake.ignoreCMakeListsMissing": true,
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
+  "json.format.keepLines": true,
   "files.associations": {
     "CODEOWNERS": "ignore"
+  },
+  "workbench.editorAssociations": {
+    "**/api/API.md": "heaths.azureApiReview.preview"
   },
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
