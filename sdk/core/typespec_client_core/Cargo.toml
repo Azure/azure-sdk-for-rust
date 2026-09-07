@@ -1,6 +1,6 @@
 [package]
 name = "typespec_client_core"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 authors.workspace = true
 edition.workspace = true
 description = "Client runtime for TypeSpec-generated libraries."
@@ -30,7 +30,7 @@ tokio = { workspace = true, optional = true, features = [
   "time",
 ] }
 tracing.workspace = true
-typespec = { path = "../typespec", version = "1.2.0-beta.1", default-features = false }
+typespec = { path = "../typespec", version = "1.2.0-beta.2", default-features = false }
 typespec_macros = { workspace = true, optional = true }
 url.workspace = true
 uuid.workspace = true

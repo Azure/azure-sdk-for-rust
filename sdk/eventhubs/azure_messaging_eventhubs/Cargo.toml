@@ -20,14 +20,14 @@ edition.workspace = true
 async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false }
 # Unreleased: AmqpTransport for AMQP-over-WebSockets (issue #3601). Path plus
 # version per the dependency policy in AGENTS.md.
 # `default-features = false` so that the `default` feature below is what selects
 # the TLS stack, in the same shape as `azure_core` above. With the default
 # features on here, a consumer that turns them off could not drop the rustls
 # stack to bring their own.
-azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.2.0-beta.1", default-features = false }
+azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.2.0-beta.2", default-features = false }
 base64.workspace = true
 futures.workspace = true
 hmac.workspace = true
