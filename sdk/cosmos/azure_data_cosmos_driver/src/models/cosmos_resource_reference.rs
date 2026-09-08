@@ -141,6 +141,35 @@ impl CosmosResourceReference {
         }
     }
 
+    /// Replaces the resolved metadata for the same name-addressed container.
+    pub(crate) fn retarget_container(
+        &mut self,
+        replacement: ContainerReference,
+    ) -> crate::error::Result<()> {
+        let current = self.container().ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message("operation does not target a container")
+                .build()
+        })?;
+
+        let same_logical_container = !current.is_by_rid()
+            && !replacement.is_by_rid()
+            && current.account().endpoint() == replacement.account().endpoint()
+            && current.database_name() == replacement.database_name()
+            && current.name() == replacement.name();
+        if !same_logical_container {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message("replacement metadata does not identify the same named container")
+                .build());
+        }
+
+        self.account = replacement.account().clone();
+        self.scope = ResourceScope::Container(replacement);
+        Ok(())
+    }
+
     /// Returns the database reference, if this operation is anchored directly to a
     /// database (not a container-or-below resource).
     fn database(&self) -> Option<&DatabaseReference> {

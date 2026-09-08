@@ -6,6 +6,8 @@
 pub mod account_metadata_refresh;
 pub mod batch;
 pub mod binary_response_format;
+#[cfg(feature = "fault_injection")]
+pub mod container_recreation;
 pub mod control_plane;
 pub mod distinct;
 #[cfg(feature = "preview_dtx")]

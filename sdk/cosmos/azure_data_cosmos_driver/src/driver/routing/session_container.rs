@@ -173,9 +173,9 @@ impl SessionContainer {
     /// The `session_token_value` is the raw `x-ms-session-token` header value
     /// which may contain multiple comma-separated `<pkRangeId>:<vector>` segments.
     ///
-    /// The name→RID index is always updated from the container reference.
-    /// **RID mismatch detection**: If the name was previously mapped to a different
-    /// RID, the old RID's tokens are cleared (the container was likely recreated).
+    /// A differing existing name→RID mapping is left unchanged. Container
+    /// recreation remaps names explicitly through [`Self::remap_container`], so a
+    /// late response from the old container cannot restore stale session state.
     pub(crate) fn set_session_token(
         &self,
         container: &ContainerReference,
@@ -230,12 +230,12 @@ impl SessionContainer {
 
         let rid = ResourceId::new(collection_rid.to_owned());
 
-        // RID mismatch detection: if the name pointed at a different RID, clear old.
-        if let Some(old_rid) = guard.name_to_rid.get(np) {
-            if old_rid.as_str() != collection_rid {
-                let old_rid = old_rid.clone();
-                guard.tokens.remove(&old_rid);
-            }
+        if guard
+            .name_to_rid
+            .get(np)
+            .is_some_and(|current| current.as_str() != collection_rid)
+        {
+            return Ok(());
         }
         guard.name_to_rid.insert(np.to_owned(), rid.clone());
 
@@ -251,6 +251,38 @@ impl SessionContainer {
         }
 
         Ok(())
+    }
+
+    /// Atomically moves a name-addressed container's session state to a new RID.
+    ///
+    /// Returns `false` when the name already points to a third RID, indicating
+    /// that a newer recreation won and this caller must not move the mapping
+    /// backwards.
+    pub(crate) fn remap_container(
+        &self,
+        old: &ContainerReference,
+        new: &ContainerReference,
+    ) -> bool {
+        let old_path = index_path(old);
+        if old_path != index_path(new) || old.is_by_rid() || new.is_by_rid() {
+            return false;
+        }
+
+        let old_rid = ResourceId::new(old.rid().to_owned());
+        let new_rid = ResourceId::new(new.rid().to_owned());
+        let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
+
+        if guard
+            .name_to_rid
+            .get(old_path)
+            .is_some_and(|current| current != &old_rid && current != &new_rid)
+        {
+            return false;
+        }
+
+        guard.tokens.remove(&old_rid);
+        guard.name_to_rid.insert(old_path.to_owned(), new_rid);
+        true
     }
 }
 
@@ -419,27 +451,34 @@ mod tests {
     }
 
     #[test]
-    fn rid_mismatch_clears_old_tokens() {
+    fn explicit_remap_clears_old_tokens_and_rejects_late_capture() {
         let sc = SessionContainer::new();
         let c_old = test_container("db1", "c1", "rid_old");
         sc.set_session_token(&c_old, "0:1#100#1=10");
 
-        // Same name, different RID → container recreated
         let c_new = test_container("db1", "c1", "rid_new");
+        assert!(sc.remap_container(&c_old, &c_new));
         sc.set_session_token(&c_new, "0:1#50#1=5");
+        sc.set_session_token(&c_old, "0:1#500#1=50");
 
-        // The old RID's tokens were removed, but resolving via c_old still
-        // works through the name→RID fallback (name now points to rid_new).
         let old_token = sc.resolve_session_token(&c_old).unwrap();
-        assert!(
-            old_token.as_str().contains("50"),
-            "should resolve to new container's token via name fallback"
-        );
+        assert_eq!(old_token.as_str(), "0:1#50#1=5");
         assert!(sc.resolve_session_token(&c_new).is_some());
 
-        // Confirm the old RID's direct tokens are truly gone by checking
-        // that a container with a completely different name but rid_old has nothing.
         let c_different_name = test_container("db1", "other", "rid_old");
         assert!(sc.resolve_session_token(&c_different_name).is_none());
+    }
+
+    #[test]
+    fn stale_remap_cannot_replace_newer_mapping() {
+        let sc = SessionContainer::new();
+        let c1 = test_container("db1", "c1", "rid1");
+        let c2 = test_container("db1", "c1", "rid2");
+        let c3 = test_container("db1", "c1", "rid3");
+
+        sc.set_session_token(&c1, "0:1#10");
+        assert!(sc.remap_container(&c1, &c2));
+        assert!(sc.remap_container(&c2, &c3));
+        assert!(!sc.remap_container(&c1, &c2));
     }
 }
