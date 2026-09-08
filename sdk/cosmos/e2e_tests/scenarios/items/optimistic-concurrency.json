@@ -1,0 +1,126 @@
+{
+  "$schema": "../../schema/scenario.v1.json",
+  "specVersion": "1.0",
+  "id": "item.optimistic-concurrency",
+  "title": "A stale ETag cannot overwrite a newer item",
+  "requirement": "If-Match accepts the current ETag, rejects a stale ETag with 412, and preserves the successful update.",
+  "maturity": "candidate",
+  "precedents": [
+    {
+      "sdk": "dotnet",
+      "path": "Microsoft.Azure.Cosmos/tests/Microsoft.Azure.Cosmos.EmulatorTests/CosmosItemTests.cs",
+      "test": "ItemRequestOptionAccessConditionTest"
+    }
+  ],
+  "profile": "hostedEmulatorSmoke",
+  "tags": [
+    "prSmoke",
+    "item",
+    "negative"
+  ],
+  "backends": {
+    "hostedEmulatorGatewayV1": {
+      "applicability": "required",
+      "fidelity": "full"
+    },
+    "hostedEmulatorGatewayV2": {
+      "applicability": "required",
+      "fidelity": "full",
+      "requires": [
+        "gatewayV2"
+      ]
+    },
+    "azureLive": {
+      "applicability": "supported",
+      "fidelity": "full"
+    }
+  },
+  "fixtures": [
+    {
+      "id": "hashV2",
+      "container": {
+        "partitionKey": {
+          "paths": [
+            "/pk"
+          ],
+          "kind": "Hash",
+          "version": 2
+        }
+      },
+      "items": [
+        {
+          "id": "existing",
+          "seed": true,
+          "partitionKeyValues": [
+            "A"
+          ],
+          "document": {
+            "id": "etag-1",
+            "pk": "A",
+            "value": 1
+          }
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "replaceCurrent",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "replaceItem",
+        "input": {
+          "id": "etag-1",
+          "pk": "A",
+          "value": 2,
+          "ifMatch": "initialEtag"
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "status": 200,
+        "state": {
+          "value": 2
+        }
+      }
+    },
+    {
+      "id": "replaceStale",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "replaceItem",
+        "input": {
+          "id": "etag-1",
+          "pk": "A",
+          "value": 3,
+          "ifMatch": "initialEtag"
+        }
+      },
+      "expected": {
+        "outcome": "error",
+        "status": 412,
+        "subStatus": 0,
+        "errorCategory": "preconditionFailed",
+        "state": {
+          "value": 2
+        }
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "replace_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 412
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "deleteDatabase": true
+  }
+}

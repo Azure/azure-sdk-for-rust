@@ -1,0 +1,201 @@
+{
+  "$schema": "../../schema/scenario.v1.json",
+  "specVersion": "1.0",
+  "id": "item.create-conflict",
+  "title": "Creating a duplicate identity returns conflict",
+  "requirement": "A duplicate create returns 409 and leaves the original document unchanged.",
+  "maturity": "candidate",
+  "precedents": [
+    {
+      "sdk": "python",
+      "path": "sdk/cosmos/azure-cosmos/tests/test_crud.py",
+      "test": "duplicate document create"
+    }
+  ],
+  "profile": "hostedEmulatorSmoke",
+  "tags": [
+    "prSmoke",
+    "item",
+    "negative"
+  ],
+  "backends": {
+    "hostedEmulatorGatewayV1": {
+      "applicability": "required",
+      "fidelity": "full"
+    },
+    "hostedEmulatorGatewayV2": {
+      "applicability": "required",
+      "fidelity": "full",
+      "requires": [
+        "gatewayV2"
+      ]
+    },
+    "azureLive": {
+      "applicability": "supported",
+      "fidelity": "full"
+    }
+  },
+  "fixtures": [
+    {
+      "id": "hashV1",
+      "container": {
+        "partitionKey": {
+          "paths": [
+            "/pk"
+          ],
+          "kind": "Hash",
+          "version": 1
+        }
+      },
+      "items": [
+        {
+          "id": "original",
+          "seed": true,
+          "partitionKeyValues": [
+            "A"
+          ],
+          "document": {
+            "id": "duplicate-1",
+            "pk": "A",
+            "value": 1
+          }
+        },
+        {
+          "id": "duplicate",
+          "seed": false,
+          "partitionKeyValues": [
+            "A"
+          ],
+          "document": {
+            "id": "duplicate-1",
+            "pk": "A",
+            "value": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "hashV2",
+      "container": {
+        "partitionKey": {
+          "paths": [
+            "/pk"
+          ],
+          "kind": "Hash",
+          "version": 2
+        }
+      },
+      "items": [
+        {
+          "id": "original",
+          "seed": true,
+          "partitionKeyValues": [
+            "A"
+          ],
+          "document": {
+            "id": "duplicate-1",
+            "pk": "A",
+            "value": 1
+          }
+        },
+        {
+          "id": "duplicate",
+          "seed": false,
+          "partitionKeyValues": [
+            "A"
+          ],
+          "document": {
+            "id": "duplicate-1",
+            "pk": "A",
+            "value": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "hierarchicalV2",
+      "container": {
+        "partitionKey": {
+          "paths": [
+            "/tenant",
+            "/user"
+          ],
+          "kind": "MultiHash",
+          "version": 2
+        }
+      },
+      "items": [
+        {
+          "id": "original",
+          "seed": true,
+          "partitionKeyValues": [
+            "tenant-a",
+            "user-1"
+          ],
+          "document": {
+            "id": "duplicate-1",
+            "tenant": "tenant-a",
+            "user": "user-1",
+            "value": 1
+          }
+        },
+        {
+          "id": "duplicate",
+          "seed": false,
+          "partitionKeyValues": [
+            "tenant-a",
+            "user-1"
+          ],
+          "document": {
+            "id": "duplicate-1",
+            "tenant": "tenant-a",
+            "user": "user-1",
+            "value": 2
+          }
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "duplicateCreate",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "createItem",
+        "input": {
+          "itemRef": "duplicate"
+        }
+      },
+      "expected": {
+        "outcome": "error",
+        "status": 409,
+        "subStatus": 0,
+        "errorCategory": "conflict",
+        "state": {
+          "itemRef": "original",
+          "unchanged": true
+        }
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "create_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 409
+        },
+        "requestCount": {
+          "comparator": "atLeast",
+          "value": 1
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "deleteDatabase": true
+  }
+}

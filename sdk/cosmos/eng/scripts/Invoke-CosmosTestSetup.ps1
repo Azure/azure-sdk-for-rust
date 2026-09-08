@@ -8,6 +8,94 @@
 # Work around a temporary issue where Invoke-LoggedCommand, which calls us, needs LASTEXITCODE to be set
 $global:LASTEXITCODE = 0
 
+function Test-CosmosE2eScenarioDocuments {
+    $e2eTestRoot = ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'e2e_tests'))
+    $scenarioSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'scenario.v1.json'))
+    $profileSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'profile.v1.json'))
+
+    Get-ChildItem ([System.IO.Path]::Combine($e2eTestRoot, 'scenarios')) -Recurse -Filter '*.json' | ForEach-Object {
+        if (-not (Get-Content $_.FullName -Raw | Test-Json -SchemaFile $scenarioSchema)) {
+            throw "Cosmos E2E scenario failed schema validation: $($_.FullName)"
+        }
+    }
+    Get-ChildItem ([System.IO.Path]::Combine($e2eTestRoot, 'profiles')) -Filter '*.json' | ForEach-Object {
+        if (-not (Get-Content $_.FullName -Raw | Test-Json -SchemaFile $profileSchema)) {
+            throw "Cosmos E2E profile failed schema validation: $($_.FullName)"
+        }
+    }
+}
+
+function New-CosmosE2eEmulatorConfig {
+    param(
+        [Parameter(Mandatory)]
+        [string] $Profile,
+
+        [Parameter(Mandatory)]
+        [bool] $GatewayV2Enabled
+    )
+
+    if ($Profile -notmatch '^[a-zA-Z][a-zA-Z0-9]*$') {
+        throw "Invalid AZURE_COSMOS_E2E_PROFILE value '$Profile'."
+    }
+    $e2eTestRoot = ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'e2e_tests'))
+    $profilePath = ([System.IO.Path]::Combine($e2eTestRoot, 'profiles', "$Profile.json"))
+    if (-not (Test-Path $profilePath)) {
+        throw "E2E profile '$Profile' does not exist at '$profilePath'."
+    }
+    $profileDocument = Get-Content $profilePath -Raw | ConvertFrom-Json
+    $accountDefinitions = @($profileDocument.accounts)
+    $accountDefinition = if ($env:AZURE_COSMOS_E2E_ACCOUNT) {
+        @($accountDefinitions | Where-Object { $_.id -eq $env:AZURE_COSMOS_E2E_ACCOUNT })
+    }
+    elseif ($accountDefinitions.Count -eq 1) {
+        @($accountDefinitions[0])
+    }
+    else {
+        throw "AZURE_COSMOS_E2E_ACCOUNT is required for profile '$Profile'."
+    }
+    if ($accountDefinition.Count -ne 1) {
+        throw "Profile '$Profile' does not contain exactly one account named '$env:AZURE_COSMOS_E2E_ACCOUNT'."
+    }
+    $accountDefinition = $accountDefinition[0]
+    $regions = @($accountDefinition.regions | ForEach-Object {
+            $region = [ordered]@{
+                name = [string]$_.name
+                gatewayPort = 0
+            }
+            if ($GatewayV2Enabled) {
+                $region.gateway20Port = 0
+            }
+            [pscustomobject]$region
+        })
+    $configuration = [ordered]@{
+        account = [ordered]@{
+            id = "e2e-$Profile-$($accountDefinition.id)"
+            writeMode = [string]$accountDefinition.writeMode
+            consistency = [string]$accountDefinition.consistency
+            perPartitionFailover = [bool]$accountDefinition.perPartitionFailover
+            throttling = $false
+            regions = $regions
+            replication = [ordered]@{
+                minDelayMs = [uint64]$accountDefinition.replication.minDelayMs
+                maxDelayMs = [uint64]$accountDefinition.replication.maxDelayMs
+                maxBufferedReplications = 10000
+            }
+        }
+        management = @{ port = 0 }
+        databases = @()
+    }
+    $mode = if ($GatewayV2Enabled) { 'v2' } else { 'v1' }
+    $path = ([System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "azure-cosmos-e2e-$Profile-$($accountDefinition.id)-$mode.json"))
+    $configuration | ConvertTo-Json -Depth 10 | Set-Content $path
+    return $path
+}
+
+if (-not $env:AZURE_COSMOS_E2E_TESTS_VALIDATED) {
+    Test-CosmosE2eScenarioDocuments
+    $env:AZURE_COSMOS_E2E_TESTS_VALIDATED = '1'
+    Write-Host 'Validated Cosmos SDK E2E scenario documents.'
+}
+
 # Append COSMOS_RUSTFLAGS (from test-resources.bicep) to RUSTFLAGS if present
 if ($env:COSMOS_RUSTFLAGS) {
     $env:RUSTFLAGS = "$($env:RUSTFLAGS) $($env:COSMOS_RUSTFLAGS)"
@@ -58,6 +146,11 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
     $ready = $false
     $expectedGateway20 = $env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'inmemory-v2'
+    if ($env:AZURE_COSMOS_E2E_PROFILE) {
+        $configuration = New-CosmosE2eEmulatorConfig `
+            -Profile $env:AZURE_COSMOS_E2E_PROFILE `
+            -GatewayV2Enabled $expectedGateway20
+    }
     $managementEndpoint = $env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT
     $accountEndpoint = $env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT
     if ($managementEndpoint -and $accountEndpoint) {
@@ -173,8 +266,13 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     $env:AZURE_COSMOS_CONNECTION_STRING = "AccountEndpoint=$accountEndpoint;AccountKey=$emulatorKey;"
     $env:AZURE_COSMOS_TEST_MODE = 'required'
     $env:RUSTFLAGS = $env:RUSTFLAGS -replace '\s*--cfg=test_category="[^"]*"', ''
-    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_inmemory`""
-    if ($expectedGateway20) {
+    if ($env:AZURE_COSMOS_E2E_PROFILE) {
+        $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"e2e`""
+    }
+    else {
+        $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_inmemory`""
+    }
+    if ($expectedGateway20 -and -not $env:AZURE_COSMOS_E2E_PROFILE) {
         $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_inmemory_gateway_v2`""
     }
     $env:RUST_TEST_THREADS = '1'

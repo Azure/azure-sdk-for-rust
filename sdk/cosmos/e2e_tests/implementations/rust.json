@@ -1,0 +1,17 @@
+{
+  "specVersion": "1.0",
+  "sdk": "rust",
+  "testTarget": "e2e_tests",
+  "scenarios": [
+    { "id": "management.capabilities", "test": "capability_document_is_versioned", "status": "active" },
+    { "id": "bootstrap.primary-success", "test": "bootstrap_primary_endpoint", "status": "active" },
+    { "id": "item.lifecycle", "test": "item_lifecycle", "status": "active" },
+    { "id": "item.upsert-create-update", "test": "upsert_creates_then_updates", "status": "active" },
+    { "id": "item.create-conflict", "test": "duplicate_create_preserves_original", "status": "active" },
+    { "id": "item.not-found-wrong-partition-key", "test": "not_found_does_not_cross_partition_keys", "status": "active" },
+    { "id": "item.optimistic-concurrency", "test": "stale_etag_preserves_successful_update", "status": "active" },
+    { "id": "query.parameterized-filter", "test": "parameterized_query_filters_and_orders", "status": "active" },
+    { "id": "query.invalid-syntax", "test": "invalid_query_is_not_an_empty_feed", "status": "active" },
+    { "id": "diagnostics.success-and-error", "test": "diagnostics_cover_success_and_error", "status": "active" }
+  ]
+}

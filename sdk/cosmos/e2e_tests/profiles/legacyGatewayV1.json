@@ -1,0 +1,30 @@
+{
+  "$schema": "../schema/profile.v1.json",
+  "specVersion": "1.0",
+  "id": "legacyGatewayV1",
+  "accounts": [{
+    "id": "sessionSingleRegion",
+    "writeMode": "single",
+    "consistency": "session",
+    "regions": [
+      {
+        "name": "East US"
+      }
+    ],
+    "replication": {
+      "minDelayMs": 0,
+      "maxDelayMs": 0
+    },
+    "perPartitionFailover": false
+  }],
+  "runtimes": [{
+    "id": "gatewayV1PpcbDisabled",
+    "gatewayV2": "disabled",
+    "ppcb": "disabled"
+  }],
+  "clients": [{
+    "id": "textAccountOrder",
+    "binaryEncoding": "disabled",
+    "routing": "accountOrder"
+  }]
+}

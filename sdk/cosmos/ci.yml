@@ -120,6 +120,20 @@ extends:
         Path: sdk/cosmos/inmemory-emulator-matrix.json
         Selection: all
         GenerateVMJobs: true
+      # The full consistency × read-consistency-strategy lifecycle matrix is
+      # intentionally scheduled rather than blocking every PR. Jobs select
+      # account/runtime/client cells from the two focused profiles. Non-Strong
+      # account definitions inject a deterministic replication delay so
+      # regional 404/session-recovery behavior is actually exercised.
+      - ${{ if or(eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}:
+        - Name: Cosmos_e2e_consistency
+          Path: sdk/cosmos/e2e-consistency-matrix.json
+          Selection: all
+          GenerateVMJobs: true
+        - Name: Cosmos_e2e_read_consistency_overrides
+          Path: sdk/cosmos/e2e-read-consistency-override-matrix.json
+          Selection: all
+          GenerateVMJobs: true
     LiveTestMatrixConfigs:
       - Name: Cosmos_live_test
         Path: sdk/cosmos/live-platform-matrix.json

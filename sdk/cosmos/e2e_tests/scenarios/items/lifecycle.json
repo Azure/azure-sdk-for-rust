@@ -1,0 +1,600 @@
+{
+  "$schema": "../../schema/scenario.v1.json",
+  "specVersion": "1.0",
+  "id": "item.lifecycle",
+  "title": "An item completes its CRUD lifecycle",
+  "requirement": "Create, read, replace, and delete preserve the addressed item identity and expose stable statuses.",
+  "maturity": "candidate",
+  "precedents": [
+    {
+      "sdk": "java",
+      "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/CosmosItemTest.java",
+      "test": "createItem/readItem/replaceItem/deleteItem"
+    }
+  ],
+  "tags": [
+    "prSmoke",
+    "item"
+  ],
+  "backends": {
+    "hostedEmulatorGatewayV1": {
+      "applicability": "required",
+      "fidelity": "full"
+    },
+    "hostedEmulatorGatewayV2": {
+      "applicability": "required",
+      "fidelity": "full",
+      "requires": [
+        "gatewayV2"
+      ]
+    },
+    "azureLive": {
+      "applicability": "supported",
+      "fidelity": "full"
+    }
+  },
+  "fixtures": [
+    {
+      "id": "hashV2",
+      "container": {
+        "partitionKey": {
+          "paths": [
+            "/pk"
+          ],
+          "kind": "Hash",
+          "version": 2
+        }
+      },
+      "items": []
+    }
+  ],
+  "executions": [
+    {
+      "id": "hostedSmokeDefault",
+      "profile": "hostedEmulatorSmoke",
+      "account": "sessionSingleRegion",
+      "runtime": "sdkDefault",
+      "client": "sdkDefault",
+      "readConsistencyStrategy": "Default",
+      "readRegion": "East US",
+      "sessionToken": "automatic",
+      "expectedRead": {
+        "acceptableInitialStatuses": [],
+        "terminalStatus": { "statusCode": 200 }
+      }
+    },
+    {
+      "id": "strongDefault",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "strong",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Default",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [],
+        "terminalStatus": { "statusCode": 200 }
+      }
+    },
+    {
+      "id": "strongEventual",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "strong",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Eventual",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [],
+        "terminalStatus": { "statusCode": 200 }
+      }
+    },
+    {
+      "id": "strongSession",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "strong",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Session",
+      "readRegion": "West US",
+      "sessionToken": "createResponse",
+      "expectedRead": {
+        "acceptableInitialStatuses": [],
+        "terminalStatus": { "statusCode": 200 }
+      }
+    },
+    {
+      "id": "strongLatestCommitted",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "strong",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "LatestCommitted",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [],
+        "terminalStatus": { "statusCode": 200 }
+      }
+    },
+    {
+      "id": "strongGlobalStrong",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "strong",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "GlobalStrong",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [],
+        "terminalStatus": { "statusCode": 200 }
+      }
+    },
+    {
+      "id": "boundedDefault",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "boundedStaleness",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Default",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "boundedEventual",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "boundedStaleness",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Eventual",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "boundedSession",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "boundedStaleness",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Session",
+      "readRegion": "West US",
+      "sessionToken": "createResponse",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "boundedLatestCommitted",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "boundedStaleness",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "LatestCommitted",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "boundedGlobalStrong",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "boundedStaleness",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "GlobalStrong",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [],
+        "terminalStatus": { "statusCode": 400 }
+      }
+    },
+    {
+      "id": "sessionDefault",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "session",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Default",
+      "readRegion": "West US",
+      "sessionToken": "automatic",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "sessionEventual",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "session",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Eventual",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "sessionSession",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "session",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Session",
+      "readRegion": "West US",
+      "sessionToken": "createResponse",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "sessionLatestCommitted",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "session",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "LatestCommitted",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "sessionGlobalStrong",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "session",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "GlobalStrong",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [],
+        "terminalStatus": { "statusCode": 400 }
+      }
+    },
+    {
+      "id": "prefixDefault",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "consistentPrefix",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Default",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "prefixEventual",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "consistentPrefix",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Eventual",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "prefixSession",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "consistentPrefix",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Session",
+      "readRegion": "West US",
+      "sessionToken": "createResponse",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "prefixLatestCommitted",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "consistentPrefix",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "LatestCommitted",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "prefixGlobalStrong",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "consistentPrefix",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "GlobalStrong",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [],
+        "terminalStatus": { "statusCode": 400 }
+      }
+    },
+    {
+      "id": "eventualDefault",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "eventual",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Default",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "eventualEventual",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "eventual",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Eventual",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "eventualSession",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "eventual",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "Session",
+      "readRegion": "West US",
+      "sessionToken": "createResponse",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "eventualLatestCommitted",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "eventual",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "LatestCommitted",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }],
+        "terminalStatus": { "statusCode": 200 },
+        "maxWaitMs": 5000
+      }
+    },
+    {
+      "id": "eventualGlobalStrong",
+      "profile": "lifecycleConsistencyMatrix",
+      "account": "eventual",
+      "runtime": "unset",
+      "client": "unset",
+      "readConsistencyStrategy": "GlobalStrong",
+      "readRegion": "West US",
+      "sessionToken": "none",
+      "expectedRead": {
+        "acceptableInitialStatuses": [],
+        "terminalStatus": { "statusCode": 400 }
+      }
+    },
+    { "id": "overrideUnsetUnsetInherit", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "unset", "client": "unset", "readConsistencyStrategy": "Inherit", "readRegion": "West US", "sessionToken": "automatic", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideEventualUnsetInherit", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "eventual", "client": "unset", "readConsistencyStrategy": "Inherit", "readRegion": "West US", "sessionToken": "none", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideSessionUnsetInherit", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "session", "client": "unset", "readConsistencyStrategy": "Inherit", "readRegion": "West US", "sessionToken": "automatic", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideUnsetLatestInherit", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "unset", "client": "latestCommitted", "readConsistencyStrategy": "Inherit", "readRegion": "West US", "sessionToken": "none", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideEventualLatestInherit", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "eventual", "client": "latestCommitted", "readConsistencyStrategy": "Inherit", "readRegion": "West US", "sessionToken": "none", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideSessionLatestInherit", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "session", "client": "latestCommitted", "readConsistencyStrategy": "Inherit", "readRegion": "West US", "sessionToken": "none", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+
+    { "id": "overrideUnsetUnsetDefault", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "unset", "client": "unset", "readConsistencyStrategy": "Default", "readRegion": "West US", "sessionToken": "createResponse", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideEventualUnsetDefault", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "eventual", "client": "unset", "readConsistencyStrategy": "Default", "readRegion": "West US", "sessionToken": "createResponse", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideSessionUnsetDefault", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "session", "client": "unset", "readConsistencyStrategy": "Default", "readRegion": "West US", "sessionToken": "createResponse", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideUnsetLatestDefault", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "unset", "client": "latestCommitted", "readConsistencyStrategy": "Default", "readRegion": "West US", "sessionToken": "createResponse", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideEventualLatestDefault", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "eventual", "client": "latestCommitted", "readConsistencyStrategy": "Default", "readRegion": "West US", "sessionToken": "createResponse", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideSessionLatestDefault", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "session", "client": "latestCommitted", "readConsistencyStrategy": "Default", "readRegion": "West US", "sessionToken": "createResponse", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 1002 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+
+    { "id": "overrideUnsetUnsetEventual", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "unset", "client": "unset", "readConsistencyStrategy": "Eventual", "readRegion": "West US", "sessionToken": "none", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideEventualUnsetEventual", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "eventual", "client": "unset", "readConsistencyStrategy": "Eventual", "readRegion": "West US", "sessionToken": "none", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideSessionUnsetEventual", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "session", "client": "unset", "readConsistencyStrategy": "Eventual", "readRegion": "West US", "sessionToken": "none", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideUnsetLatestEventual", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "unset", "client": "latestCommitted", "readConsistencyStrategy": "Eventual", "readRegion": "West US", "sessionToken": "none", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideEventualLatestEventual", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "eventual", "client": "latestCommitted", "readConsistencyStrategy": "Eventual", "readRegion": "West US", "sessionToken": "none", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } },
+    { "id": "overrideSessionLatestEventual", "profile": "readConsistencyOverrideMatrix", "account": "session", "runtime": "session", "client": "latestCommitted", "readConsistencyStrategy": "Eventual", "readRegion": "West US", "sessionToken": "none", "expectedRead": { "acceptableInitialStatuses": [{ "statusCode": 404, "subStatusCode": 0 }], "terminalStatus": { "statusCode": 200 }, "maxWaitMs": 5000 } }
+  ],
+  "steps": [
+    {
+      "id": "create",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "createItem",
+        "input": {
+          "id": "item-1",
+          "pk": "A",
+          "value": 1
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "status": 201,
+        "state": {
+          "value": 1
+        }
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "create_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 201
+        },
+        "requestCount": {
+          "comparator": "atLeast",
+          "value": 1
+        }
+      }
+    },
+    {
+      "id": "read",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "readItem",
+        "input": {
+          "id": "item-1",
+          "pk": "A"
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "status": 200,
+        "state": {
+          "value": 1
+        }
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "read_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 200
+        },
+        "requestCount": {
+          "comparator": "atLeast",
+          "value": 1
+        }
+      }
+    },
+    {
+      "id": "replace",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "replaceItem",
+        "input": {
+          "id": "item-1",
+          "pk": "A",
+          "value": 2
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "status": 200,
+        "state": {
+          "value": 2
+        }
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "replace_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 200
+        },
+        "requestCount": {
+          "comparator": "atLeast",
+          "value": 1
+        }
+      }
+    },
+    {
+      "id": "delete",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "deleteItem",
+        "input": {
+          "id": "item-1",
+          "pk": "A"
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "status": 204,
+        "state": {
+          "exists": false
+        }
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "delete_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 204
+        },
+        "requestCount": {
+          "comparator": "atLeast",
+          "value": 1
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "deleteDatabase": true
+  }
+}

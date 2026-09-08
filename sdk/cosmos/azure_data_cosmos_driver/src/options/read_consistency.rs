@@ -40,12 +40,15 @@ pub enum ReadConsistencyStrategy {
     /// read-your-writes within any single session.
     Session,
 
-    /// Returns the latest committed version of the requested item across replicas.
+    /// Returns the latest committed version available across replicas in the
+    /// selected read region.
     ///
     /// On accounts whose default consistency is Session, ConsistentPrefix, or Eventual,
     /// this strategy upgrades the read to a quorum read (1:2 client-to-backend
     /// amplification) without weakening any other operation. On Strong / BoundedStaleness
-    /// accounts it behaves like the account default.
+    /// accounts it behaves like the account default. This is a region-local
+    /// quorum read, not a cross-region replication barrier: a newly written
+    /// item can be temporarily absent from a lagging secondary region.
     LatestCommitted,
 
     /// Reads the latest version across all regions.

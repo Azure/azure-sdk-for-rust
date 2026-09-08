@@ -1,0 +1,148 @@
+{
+  "$schema": "../../schema/scenario.v1.json",
+  "specVersion": "1.0",
+  "id": "diagnostics.success-and-error",
+  "title": "Success and error paths expose critical diagnostics",
+  "requirement": "Public diagnostics identify the logical operation, effective status, activity, attempts, and contacted region on successful and failed operations.",
+  "maturity": "candidate",
+  "precedents": [
+    {
+      "sdk": "java",
+      "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/CosmosDiagnosticsE2ETest.java",
+      "test": "onlyCustomDiagnosticsHandler"
+    }
+  ],
+  "profile": "hostedEmulatorSmoke",
+  "tags": [
+    "prSmoke",
+    "diagnostics"
+  ],
+  "backends": {
+    "hostedEmulatorGatewayV1": {
+      "applicability": "required",
+      "fidelity": "full"
+    },
+    "hostedEmulatorGatewayV2": {
+      "applicability": "required",
+      "fidelity": "full",
+      "requires": [
+        "gatewayV2"
+      ]
+    },
+    "azureLive": {
+      "applicability": "supported",
+      "fidelity": "full"
+    }
+  },
+  "fixtures": [
+    {
+      "id": "hashV2",
+      "container": {
+        "partitionKey": {
+          "paths": [
+            "/pk"
+          ],
+          "kind": "Hash",
+          "version": 2
+        }
+      },
+      "items": [
+        {
+          "id": "existing",
+          "seed": true,
+          "partitionKeyValues": [
+            "A"
+          ],
+          "document": {
+            "id": "item-1",
+            "pk": "A",
+            "value": 1
+          }
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "successfulRead",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "readItem",
+        "input": {
+          "id": "item-1",
+          "pk": "A"
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "status": 200
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "read_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 200
+        },
+        "requestCount": {
+          "comparator": "atLeast",
+          "value": 1
+        },
+        "regionsContacted": {
+          "comparator": "contains",
+          "value": [
+            "eastus"
+          ]
+        }
+      }
+    },
+    {
+      "id": "missingRead",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "readItem",
+        "input": {
+          "id": "missing",
+          "pk": "A"
+        }
+      },
+      "expected": {
+        "outcome": "error",
+        "status": 404,
+        "subStatus": 0,
+        "errorCategory": "notFound"
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "read_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 404
+        },
+        "requestCount": {
+          "comparator": "atLeast",
+          "value": 1
+        },
+        "regionsContacted": {
+          "comparator": "contains",
+          "value": [
+            "eastus"
+          ]
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "deleteDatabase": true
+  }
+}

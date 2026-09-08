@@ -1,0 +1,125 @@
+{
+  "$schema": "../../schema/scenario.v1.json",
+  "specVersion": "1.0",
+  "id": "query.parameterized-filter",
+  "title": "A parameterized partition query filters and orders results",
+  "requirement": "Query parameters are bound without string substitution and deterministic ORDER BY results preserve order.",
+  "maturity": "candidate",
+  "precedents": [
+    {
+      "sdk": "java",
+      "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/CosmosItemTest.java",
+      "test": "queryItems"
+    }
+  ],
+  "profile": "hostedEmulatorSmoke",
+  "tags": [
+    "prSmoke",
+    "query"
+  ],
+  "backends": {
+    "hostedEmulatorGatewayV1": {
+      "applicability": "required",
+      "fidelity": "full"
+    },
+    "hostedEmulatorGatewayV2": {
+      "applicability": "required",
+      "fidelity": "full",
+      "requires": [
+        "gatewayV2"
+      ]
+    },
+    "azureLive": {
+      "applicability": "supported",
+      "fidelity": "full"
+    }
+  },
+  "fixtures": [
+    {
+      "id": "hashV2",
+      "container": {
+        "partitionKey": {
+          "paths": [
+            "/pk"
+          ],
+          "kind": "Hash",
+          "version": 2
+        }
+      },
+      "items": [
+        {
+          "id": "item1",
+          "seed": true,
+          "partitionKeyValues": [
+            "A"
+          ],
+          "document": {
+            "id": "item-1",
+            "pk": "A",
+            "score": 1
+          }
+        },
+        {
+          "id": "item2",
+          "seed": true,
+          "partitionKeyValues": [
+            "A"
+          ],
+          "document": {
+            "id": "item-2",
+            "pk": "A",
+            "score": 2
+          }
+        },
+        {
+          "id": "item3",
+          "seed": true,
+          "partitionKeyValues": [
+            "A"
+          ],
+          "document": {
+            "id": "item-3",
+            "pk": "A",
+            "score": 3
+          }
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "query",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "queryItems",
+        "input": {
+          "text": "SELECT * FROM c WHERE c.pk = @pk AND c.score >= @min ORDER BY c.score ASC",
+          "parameters": [
+            {
+              "name": "@pk",
+              "value": "A"
+            },
+            {
+              "name": "@min",
+              "value": 2
+            }
+          ],
+          "partitionKey": "A"
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "status": 200,
+        "state": {
+          "ids": [
+            "item-2",
+            "item-3"
+          ]
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "deleteDatabase": true
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "specVersion": "1.0",
+  "backends": ["hostedEmulatorGatewayV1", "hostedEmulatorGatewayV2", "azureLive"],
+  "applicability": ["required", "supported", "simulated", "notApplicable"],
+  "maturity": ["candidate", "stable", "deprecated"],
+  "operations": [
+    "readCapabilities",
+    "buildClient",
+    "createItem",
+    "readItem",
+    "replaceItem",
+    "upsertItem",
+    "deleteItem",
+    "queryItems"
+  ],
+  "errorCategories": ["badRequest", "notFound", "conflict", "preconditionFailed"],
+  "diagnosticComparators": ["exact", "present", "absent", "contains", "atLeast", "atMost", "setEquals", "orderedSubsequence"]
+}

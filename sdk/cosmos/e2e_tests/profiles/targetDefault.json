@@ -1,0 +1,33 @@
+{
+  "$schema": "../schema/profile.v1.json",
+  "specVersion": "1.0",
+  "id": "targetDefault",
+  "accounts": [{
+    "id": "sessionTwoRegionDelayed",
+    "writeMode": "single",
+    "consistency": "session",
+    "regions": [
+      {
+        "name": "East US"
+      },
+      {
+        "name": "West US"
+      }
+    ],
+    "replication": {
+      "minDelayMs": 500,
+      "maxDelayMs": 500
+    },
+    "perPartitionFailover": true
+  }],
+  "runtimes": [{
+    "id": "gatewayV2Ppcb",
+    "gatewayV2": "enabled",
+    "ppcb": "enabled"
+  }],
+  "clients": [{
+    "id": "binaryProximity",
+    "binaryEncoding": "enabled",
+    "routing": "proximity"
+  }]
+}

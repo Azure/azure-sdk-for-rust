@@ -1,0 +1,134 @@
+{
+  "$schema": "../../schema/scenario.v1.json",
+  "specVersion": "1.0",
+  "id": "item.not-found-wrong-partition-key",
+  "title": "Missing identity and wrong partition key return not found",
+  "requirement": "Point reads do not leak an item across partition-key identities and return 404 without mutation.",
+  "maturity": "candidate",
+  "precedents": [
+    {
+      "sdk": "rust",
+      "path": "sdk/cosmos/azure_data_cosmos_driver/tests/in_memory_emulator_tests/error_cases.rs",
+      "test": "read_item_not_found"
+    }
+  ],
+  "profile": "hostedEmulatorSmoke",
+  "tags": [
+    "prSmoke",
+    "item",
+    "negative"
+  ],
+  "backends": {
+    "hostedEmulatorGatewayV1": {
+      "applicability": "required",
+      "fidelity": "full"
+    },
+    "hostedEmulatorGatewayV2": {
+      "applicability": "required",
+      "fidelity": "full",
+      "requires": [
+        "gatewayV2"
+      ]
+    },
+    "azureLive": {
+      "applicability": "supported",
+      "fidelity": "full"
+    }
+  },
+  "fixtures": [
+    {
+      "id": "hashV2",
+      "container": {
+        "partitionKey": {
+          "paths": [
+            "/pk"
+          ],
+          "kind": "Hash",
+          "version": 2
+        }
+      },
+      "items": [
+        {
+          "id": "existing",
+          "seed": true,
+          "partitionKeyValues": [
+            "A"
+          ],
+          "document": {
+            "id": "item-1",
+            "pk": "A",
+            "value": 1
+          }
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "missing",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "readItem",
+        "input": {
+          "id": "missing",
+          "pk": "A"
+        }
+      },
+      "expected": {
+        "outcome": "error",
+        "status": 404,
+        "subStatus": 0,
+        "errorCategory": "notFound"
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "read_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 404
+        }
+      }
+    },
+    {
+      "id": "wrongPartitionKey",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "readItem",
+        "input": {
+          "id": "item-1",
+          "pk": "B"
+        }
+      },
+      "expected": {
+        "outcome": "error",
+        "status": 404,
+        "subStatus": 0,
+        "errorCategory": "notFound",
+        "state": {
+          "originalUnchanged": true
+        }
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "read_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 404
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "deleteDatabase": true
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "$schema": "../../schema/scenario.v1.json",
+  "specVersion": "1.0",
+  "id": "item.upsert-create-update",
+  "title": "Upsert creates then updates one identity",
+  "requirement": "Upsert returns 201 for a missing identity and 200 when replacing it, without creating a duplicate.",
+  "maturity": "candidate",
+  "precedents": [
+    {
+      "sdk": "dotnet",
+      "path": "Microsoft.Azure.Cosmos/tests/Microsoft.Azure.Cosmos.EmulatorTests/CosmosItemTests.cs",
+      "test": "UpsertItemTest"
+    }
+  ],
+  "profile": "hostedEmulatorSmoke",
+  "tags": [
+    "prSmoke",
+    "item"
+  ],
+  "backends": {
+    "hostedEmulatorGatewayV1": {
+      "applicability": "required",
+      "fidelity": "full"
+    },
+    "hostedEmulatorGatewayV2": {
+      "applicability": "required",
+      "fidelity": "full",
+      "requires": [
+        "gatewayV2"
+      ]
+    },
+    "azureLive": {
+      "applicability": "supported",
+      "fidelity": "full"
+    }
+  },
+  "fixtures": [
+    {
+      "id": "hashV2",
+      "container": {
+        "partitionKey": {
+          "paths": [
+            "/pk"
+          ],
+          "kind": "Hash",
+          "version": 2
+        }
+      },
+      "items": []
+    }
+  ],
+  "steps": [
+    {
+      "id": "upsertCreate",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "upsertItem",
+        "input": {
+          "id": "upsert-1",
+          "pk": "A",
+          "value": 1
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "status": 201,
+        "state": {
+          "value": 1
+        }
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "upsert_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 201
+        }
+      }
+    },
+    {
+      "id": "upsertUpdate",
+      "action": {
+        "kind": "sdkOperation",
+        "operation": "upsertItem",
+        "input": {
+          "id": "upsert-1",
+          "pk": "A",
+          "value": 2
+        }
+      },
+      "expected": {
+        "outcome": "success",
+        "status": 200,
+        "state": {
+          "value": 2,
+          "itemCount": 1
+        }
+      },
+      "diagnostics": {
+        "operationName": {
+          "comparator": "exact",
+          "value": "upsert_item"
+        },
+        "activityId": {
+          "comparator": "present"
+        },
+        "effectiveStatus": {
+          "comparator": "exact",
+          "value": 200
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "deleteDatabase": true
+  }
+}
