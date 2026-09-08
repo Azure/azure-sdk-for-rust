@@ -371,7 +371,8 @@ fn effective_binary_encoding(
 ) -> Option<BinaryEncodingOptions> {
     #[cfg(test_category = "emulator_vnext")]
     {
-        // The vNext emulator cannot reliably extract partition keys from binary item bodies.
+        // Temporary workaround for #5240; product code should eventually
+        // negotiate vNext binary support.
         Some(binary_encoding.unwrap_or_else(|| BinaryEncodingOptions::new().with_enabled(false)))
     }
 

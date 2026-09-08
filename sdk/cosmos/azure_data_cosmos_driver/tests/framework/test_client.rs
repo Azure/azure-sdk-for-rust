@@ -615,8 +615,8 @@ impl DriverTestRunContext {
         let mut builder = DriverOptions::builder(self.client.account.clone());
         #[cfg(test_category = "emulator_vnext")]
         {
-            // Preserve explicit test configuration while disabling the default
-            // binary item bodies that vNext cannot reliably route.
+            // Temporary workaround for #5240; product code should eventually
+            // negotiate vNext binary support. Explicit test configuration wins.
             if self
                 .client
                 .runtime

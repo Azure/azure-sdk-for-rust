@@ -10,13 +10,13 @@ A subset of the C++ query engine has been ported to Rust, enabling:
 
 The implementation lives entirely inside the `azure_data_cosmos_driver` crate. In normal builds the query subsystem remains crate-private; test builds and the `__internal_testing` feature expose temporary validation entry points (`query` and `__test_only_generate_query_plan_for_pk_paths`) so parity tests can exercise the local planner without making it part of the supported surface.
 
-The supported SDK query path still uses Gateway query plans today. The local planner and evaluator are scaffolding that is validated in isolation, but they are not yet wired into production query execution.
+The supported SDK query path now integrates the local planner as a pre-Gateway optimization in `CosmosDriver::resolve_query_plan`. The local planner covers every query family backed by the current dataflow pipeline: plain queries (including JOIN, subquery, and UDF shapes), TOP, OFFSET/LIMIT, streaming ORDER BY, and DISTINCT compositions. It reproduces the service rewrites those stages require and falls back for unsupported aggregate, GROUP BY, DCOUNT, non-streaming ORDER BY, and hybrid-search metadata. Contradictory partition key filters (provably empty results) short-circuit to an empty `DrainedLeaf` pipeline, skipping both the Gateway and backend. See `src/query/local_plan_adapter.rs` for the production adapter and shared emulator conversion.
 
 ---
 
 ## Architecture
 
-```
+```text
 SQL Text
   → Lexer (hand-crafted tokenizer)
   → Parser (recursive descent with Pratt precedence)
@@ -47,12 +47,13 @@ The pipeline goes directly from SQL AST to partition key extraction and structur
 
 All modules live under `azure_data_cosmos_driver::query`. The module is `pub(crate)` in normal builds and exposed only for tests / `__internal_testing` validation:
 
-```
+```text
 sdk/cosmos/azure_data_cosmos_driver/src/query/
 ├── mod.rs            # Module root, re-exports parse()
 ├── ast/mod.rs        # SQL AST types (SqlProgram, SqlQuery, SqlScalarExpression, etc.)
 ├── lexer/mod.rs      # Hand-crafted tokenizer (TokenKind, Lexer, keyword lookup)
 ├── parser/mod.rs     # Recursive descent parser, Pratt precedence for expressions
+├── local_plan_adapter.rs # Production eligibility, provider adapter, and shared EPK conversion
 ├── plan/
 │   ├── mod.rs        # Query plan generation + LocalQueryInfo type
 │   └── tests/
@@ -80,6 +81,7 @@ sdk/cosmos/azure_data_cosmos_driver/src/query/
 ### SQL Parser
 
 Full recursive descent parser for the Cosmos DB SQL dialect:
+
 - SELECT (star, list, VALUE), DISTINCT, TOP
 - FROM with aliases, JOINs, array iterators, subqueries
 - WHERE with all scalar expression types
@@ -144,6 +146,55 @@ intentionally trades full Cosmos parity for emulator usability — see
 - **Exhaustive structural plan comparison tests** covering every `QueryInfo` field, PK extraction pattern, hierarchical PK, AND/OR intersection, nested paths, aliases, and edge cases
 - **Inline unit tests** in each module (lexer, parser, plan, eval, value), including typed `GatewayQueryPlan` deserialization coverage in `gateway_plan.rs`
 - **Live Gateway validation tests** in `tests/gateway_query_plan_comparison.rs`, behind `__internal_testing`, comparing local plans against Gateway responses using `CosmosOperation::query_plan`
+- **Provider-selection integration tests** against the in-memory emulator, proving eligible and contradictory queries avoid Gateway query-plan requests while rewrite-required queries retain Gateway behavior.
+- **Production-adapter live tests** compare locally generated structural fields,
+  rewrite presence, and canonical query ranges with Gateway plans, then execute
+  representative supported shapes against a live account.
+
+## Production provider and fallback contract
+
+Normal builds resolve cross-partition query plans in this order:
+
+1. Local Rust planner.
+2. Gateway query-plan endpoint.
+
+Set `QueryPlanMode::GatewayOnly` on `OperationOptions` to bypass local planning.
+Use `DriverOptionsBuilder::with_operation_options` or
+`CosmosClientBuilder::with_default_operation_options` to change the default for
+a driver or client, and the operation-specific `with_operation_options` setter
+to override it for one query.
+
+Query-plan mode follows the standard operation → account → runtime →
+environment option hierarchy. `AZURE_COSMOS_QUERY_PLAN_MODE` supplies the
+lowest-priority process default. For livesite mitigation,
+`AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE=gateway` authoritatively forces Gateway
+planning above every programmatic layer. Environment settings are captured
+when the runtime is constructed.
+
+When `__internal_native_query_plan` is enabled, the existing native-first behavior is preserved:
+
+1. Native FFI provider.
+2. Local Rust planner.
+3. Gateway query-plan endpoint.
+
+The local provider accepts plain `SELECT`/`WHERE`, projections, `SELECT VALUE`,
+JOINs, subqueries, UDFs, partition-key equality/`IN`, TOP, OFFSET/LIMIT,
+streaming ORDER BY, and DISTINCT combinations. ORDER BY and result-window
+rewrites follow the service's ordering: ORDER BY first, then OFFSET/LIMIT, then
+TOP, with partial DISTINCT results kept below the global window. It declines
+aggregates, GROUP BY, DCOUNT, non-streaming ORDER BY, hybrid search, and any
+projection whose required rewrite cannot be generated safely.
+
+Local equality and `IN` filters are converted to canonical EPK ranges with the
+container's partition-key definition. This includes hierarchical partition-key
+prefix ranges. Unconstrained queries use the full EPK range; contradictory
+filters produce a drained plan before topology or backend I/O.
+
+Fallback occurs only while selecting a provider. After the local plan is
+accepted, topology, pipeline, transport, and service errors retain their
+original semantics and do not trigger another provider. Tracing records only
+bounded provider and fallback-reason identifiers; it never records query text
+or parameter/partition-key values.
 
 ---
 
@@ -171,7 +222,6 @@ a future PR can close the gap without re-discovering it from scratch.
 | Distributed query coordination               | Gateway's responsibility                                                 |
 | KQL / JavaScript query support               | Not needed                                                               |
 | Full ORDER BY / GROUP BY in plan routing     | Plan generation detects these features; execution is server-side         |
-| Production query execution using local plans | Still pending; the supported SDK path continues to request Gateway plans |
 
 ## Alternatives considered
 

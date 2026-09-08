@@ -4,13 +4,12 @@
 //! C ABI surface for `cosmos_driver_options_t` — wraps the driver's
 //! [`azure_data_cosmos_driver::options::DriverOptions`].
 //!
-//! `DriverOptions` itself is small (3 fields per spec section 4.2): the bound
-//! account, the per-driver `OperationOptions`, and a `Vec<Region>` of
-//! preferred regions. Construction is a single flat call: the host fills a
+//! Construction is a single flat call: the host fills a
 //! [`CosmosDriverOptionsConfig`] `#[repr(C)]` struct (preferred regions + a
-//! pointer to the flat `cosmos_operation_options_t`) and passes it, together
-//! with the account handle, to [`cosmos_driver_options_build`]. Drivers that
-//! don't configure operation options inherit the driver's own defaults.
+//! pointer to the flat `cosmos_operation_options_t`) and
+//! passes it, together with the account handle, to
+//! [`cosmos_driver_options_build`]. Drivers that don't configure operation
+//! options inherit the driver's own defaults.
 //!
 //! The settings frequently confused with "per-driver" defaults
 //! (excluded regions, consistency, content-response-on-write,
@@ -152,7 +151,6 @@ unsafe fn decode_preferred_regions(
 /// - `operation_options`: pointer to a flat
 ///   [`cosmos_operation_options_t`](crate::op_request::CosmosOperationOptions),
 ///   or NULL to inherit the driver defaults.
-///
 /// The account reference stays a separate handle parameter on
 /// [`cosmos_driver_options_build`] — it owns `Arc`-shared state and cannot be
 /// flattened into bytes.
