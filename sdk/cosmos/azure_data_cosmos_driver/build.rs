@@ -4,7 +4,15 @@
 //
 // Some CI/build setups enable `-W unexpected-cfgs`, and in newer Rust toolchains
 // unknown cfg names are warned/denied unless explicitly declared via check-cfg.
+use rustc_version::version;
+
 fn main() {
+    let version = match version() {
+        Ok(version) => version.to_string(),
+        Err(_) => "unknown".to_owned(),
+    };
+    println!("cargo:rustc-env=AZSDK_RUSTC_VERSION={version}");
+
     println!("cargo:rustc-check-cfg=cfg(fuzzing)");
     // Allow `#[cfg_attr(not(test_category = "..."), ignore)]` in `tests/*.rs`.
     println!(
