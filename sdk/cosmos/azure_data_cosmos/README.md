@@ -4,6 +4,9 @@ This client library enables client applications to connect to Azure Cosmos DB vi
 
 [Source code] | [Package (crates.io)] | [API reference documentation] | [Azure Cosmos DB for NoSQL documentation]
 
+See the [Cosmos SDK project documentation] for project, architecture,
+specification, and decision records.
+
 ## Getting started
 
 ### Install the package
@@ -233,3 +236,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure Cosmos DB for NoSQL documentation]: https://learn.microsoft.com/azure/cosmos-db/nosql/
 [Package (crates.io)]: https://crates.io/crates/azure_data_cosmos
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos
+[Cosmos SDK project documentation]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md
