@@ -11,6 +11,8 @@
 
 ### Bugs Fixed
 
+- Name-addressed container operations now refresh metadata and retry once after container recreation, clearing generation-specific session and partition-routing state before targeting the replacement. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
+
 ### Other Changes
 
 ## 0.7.0 (2026-09-02)
