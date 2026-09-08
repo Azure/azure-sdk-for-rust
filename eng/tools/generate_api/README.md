@@ -23,7 +23,8 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 
 ### Outputs
 
-- default `markdown` output writes `API.md`, `API.md.map`, and `API.comments.patch`
+- default `markdown` output writes `API.md`, `API.metadata.yml`, `API.md.map`, and
+ `API.comments.patch`
 - `--no-docs` skips `API.comments.patch`
 - `--no-map` skips `API.md.map`
 - `--format apiview` writes `apiview.json`
@@ -37,6 +38,8 @@ starts with the crate name. Multiline descriptions render with the `Description`
 line before the description text. Children of the `default` feature are also listed. `API.md` never
 contains
 documentation comments.
+`API.metadata.yml` is written next to `API.md` and records the normalized SHA-256 of `API.md`, the
+crate version, the `generate_api` version, and the rustc version used for generation.
 `API.comments.patch` is a unified diff that adds them back, so it can be applied to toggle
 documentation comments on:
 

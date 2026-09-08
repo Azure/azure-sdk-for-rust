@@ -5,9 +5,10 @@
 `eng/tools/generate_api` is a Rust CLI that generates the following public API artifacts for a target crate:
 
 1. `API.md` — one fenced `rust` block
-2. `API.md.map` — an ECMA-426 source map for declaration lines in `API.md`
-3. `API.comments.patch` — a unified diff that adds doc comments back to `API.md`
-4. `apiview.json` — an APIView tree-style `CodeFile`
+2. `API.metadata.yml` — YAML metadata for `API.md`
+3. `API.md.map` — an ECMA-426 source map for declaration lines in `API.md`
+4. `API.comments.patch` — a unified diff that adds doc comments back to `API.md`
+5. `apiview.json` — an APIView tree-style `CodeFile`
 
 ## Scope
 
@@ -31,6 +32,7 @@ The tool exposes:
 Behavior:
 
 - default `markdown` writes `API.md`, `API.md.map`, and `API.comments.patch`
+- default `markdown` also writes `API.metadata.yml`
 - `--format apiview` writes `apiview.json`
 - `--no-docs` suppresses APIView doc comment tokens and the Markdown comments patch
 - check comparisons ignore line-ending differences and mismatches exit `1`
@@ -182,6 +184,7 @@ Documentation handling:
 Package metadata rendering:
 
 - Markdown renders the crate name first; APIView uses only the top-level `PackageName`
+- Markdown also writes `API.metadata.yml` with `apiMdSha256`, `packageVersion`, `parserVersion`, and `rustVersion`
 - missing description, edition, or rust-version values are omitted
 - multiline descriptions render with the `Description` label on its own line
 - features use `default` plus `package.metadata.docs.rs.features` when present

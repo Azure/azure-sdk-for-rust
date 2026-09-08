@@ -23,6 +23,25 @@ pub(crate) fn load_model(request: &Request) -> Result<ApiModel, String> {
     Ok((*loader.load_model_for_workspace(&metadata.current_package)?).clone())
 }
 
+pub(crate) fn rust_version() -> Result<String, String> {
+    let channel = env!("TOOLCHAIN_CHANNEL");
+    let mut command = Command::new("rustc");
+    command.arg(format!("+{channel}")).arg("-Vv");
+
+    let output = run_command(command, "Failed to query rustc version")?;
+    let version = String::from_utf8(output.stdout)
+        .map_err(|error| format!("Failed to decode rustc version: {error}"))?;
+    parse_rust_version(&version)
+}
+
+fn parse_rust_version(version_output: &str) -> Result<String, String> {
+    version_output
+        .lines()
+        .find_map(|line| line.strip_prefix("release: "))
+        .map(ToOwned::to_owned)
+        .ok_or_else(|| "rustc -Vv output did not contain a release field".to_string())
+}
+
 fn run_command(mut command: Command, error_prefix: &str) -> Result<std::process::Output, String> {
     diagnostics::info(format!(
         "Running command: {} {}",
@@ -368,7 +387,9 @@ impl PackageMetadata {
 
 #[cfg(test)]
 mod tests {
-    use super::{crate_target_name, select_features, CargoPackage, CargoTarget};
+    use super::{
+        crate_target_name, parse_rust_version, select_features, CargoPackage, CargoTarget,
+    };
     use std::{collections::BTreeMap, path::PathBuf};
 
     #[test]
@@ -547,5 +568,28 @@ mod tests {
             select_features(BTreeMap::new(), Some(&["test".to_string()])),
             BTreeMap::from([("default".to_string(), Vec::new())])
         );
+    }
+
+    #[test]
+    fn parses_rust_release_field_from_verbose_version_output() {
+        let version = parse_rust_version(
+            "rustc 1.99.0-nightly (abcdef012 2026-09-01)\n\
+             binary: rustc\n\
+             commit-hash: abcdef0123456789\n\
+             commit-date: 2026-09-01\n\
+             host: x86_64-unknown-linux-gnu\n\
+             release: 1.99.0-nightly\n\
+             LLVM version: 21.0.0\n",
+        )
+        .unwrap();
+
+        assert_eq!(version, "1.99.0-nightly");
+    }
+
+    #[test]
+    fn rejects_verbose_version_output_without_release_field() {
+        let error = parse_rust_version("rustc 1.99.0-nightly\n").unwrap_err();
+
+        assert_eq!(error, "rustc -Vv output did not contain a release field");
     }
 }

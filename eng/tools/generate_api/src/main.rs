@@ -44,6 +44,17 @@ fn run() -> Result<(), String> {
             let rendered = render::markdown::render_from_lines(&lines);
             save_or_check(&request, &output_path, &rendered)?;
 
+            let metadata_path =
+                output::output_file_path(&request, cli::MARKDOWN_METADATA_FILE_NAME);
+            let rust_version = driver::rust_version()?;
+            let metadata = output::render_markdown_metadata(
+                &rendered,
+                &model.package_version,
+                &model.parser_version,
+                &rust_version,
+            )?;
+            save_or_check(&request, &metadata_path, &metadata)?;
+
             if !request.no_map {
                 let map_path = output::output_file_path(&request, cli::SOURCE_MAP_FILE_NAME);
                 let mappings = render::markdown::source_mappings_from_lines(&lines);
