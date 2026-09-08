@@ -149,6 +149,9 @@ const SDK_NAME: &str = "cosmos-driver";
 /// SDK version, retrieved from Cargo.toml at compile time.
 const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+/// Rust compiler version, retrieved from build.rs at compile time.
+const RUSTC_VERSION: &str = env!("AZSDK_RUSTC_VERSION");
+
 /// User agent string for HTTP requests.
 ///
 /// The user agent is automatically computed with a static prefix containing:
@@ -196,14 +199,6 @@ impl UserAgent {
         let os_name = std::env::consts::OS;
         let os_arch = std::env::consts::ARCH;
 
-        // `RUSTC_VERSION` is an optional compile-time environment variable that should
-        // contain the Rust compiler version (e.g., "1.85.0"). It can be set by:
-        // - CI/CD pipelines (e.g., `RUSTC_VERSION=$(rustc --version | cut -d' ' -f2)`)
-        // - A build script (`build.rs`) that captures `rustc --version` output
-        // - Manual export before building
-        // If not set, falls back to "unknown" in the user agent string.
-        let rust_version = option_env!("RUSTC_VERSION").unwrap_or("unknown");
-
         let mut value = String::with_capacity(
             AZSDK_USER_AGENT_PREFIX.len()
                 + SDK_NAME.len()
@@ -214,7 +209,7 @@ impl UserAgent {
                 + 1
                 + os_arch.len()
                 + 7
-                + rust_version.len(),
+                + RUSTC_VERSION.len(),
         );
         value.push_str(AZSDK_USER_AGENT_PREFIX);
         value.push_str(SDK_NAME);
@@ -225,7 +220,7 @@ impl UserAgent {
         value.push('/');
         value.push_str(os_arch);
         value.push_str(" rustc/");
-        value.push_str(rust_version);
+        value.push_str(RUSTC_VERSION);
         value
     }
 
@@ -442,6 +437,19 @@ mod tests {
         let ua = UserAgent::default();
         assert!(ua.as_str().starts_with("azsdk-rust-cosmos-driver/"));
         assert!(ua.suffix().is_none());
+    }
+
+    #[test]
+    fn rustc_version_is_set_by_build_script() {
+        assert!(!RUSTC_VERSION.is_empty());
+        assert_ne!(RUSTC_VERSION, "unknown");
+
+        let ua = UserAgent::default();
+        assert!(
+            ua.as_str().contains(&format!(" rustc/{RUSTC_VERSION}")),
+            "unexpected user agent: {}",
+            ua.as_str()
+        );
     }
 
     #[test]
