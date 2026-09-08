@@ -272,12 +272,20 @@ async fn provision_database_and_container(
     let db_name = format!("gw_v2-test-db-{unique}");
     let container_name = format!("gw_v2-test-container-{unique}");
 
-    client.create_database(&db_name, None).await?;
+    if let Err(error) = client.create_database(&db_name, None).await {
+        if error.status().status_code() != StatusCode::Conflict {
+            return Err(error.into());
+        }
+    }
     let db_client = client.database_client(&db_name);
 
     let pk_def: PartitionKeyDefinition = "/pk".into();
     let properties = ContainerProperties::new(container_name.clone(), pk_def);
-    db_client.create_container(properties, None).await?;
+    if let Err(error) = db_client.create_container(properties, None).await {
+        if error.status().status_code() != StatusCode::Conflict {
+            return Err(error.into());
+        }
+    }
     let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
     let body = container_client.read(None).await?.into_body().single()?;
