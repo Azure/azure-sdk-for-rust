@@ -8,6 +8,11 @@ use std::sync::{Arc, Mutex};
 use azure_core::http::{Method, Request};
 use azure_data_cosmos_driver::in_memory_emulator::RequestObserver;
 
+static IS_QUERY: azure_core::http::headers::HeaderName =
+    azure_core::http::headers::HeaderName::from_static("x-ms-documentdb-isquery");
+static IS_QUERY_PLAN: azure_core::http::headers::HeaderName =
+    azure_core::http::headers::HeaderName::from_static("x-ms-cosmos-is-query-plan-request");
+
 /// Classification of a recorded request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RequestKind {
@@ -15,6 +20,10 @@ enum RequestKind {
     Topology,
     /// Routing metadata (e.g., `GET .../pkranges`).
     RoutingMetadata,
+    /// Gateway query-plan request.
+    QueryPlan,
+    /// Query execution request.
+    DocumentQuery,
     /// Actual data-plane operation (item CRUD).
     DataPlane,
 }
@@ -58,6 +67,29 @@ impl HostRecorder {
             .count()
     }
 
+    pub fn query_plan_count(&self) -> usize {
+        self.count(RequestKind::QueryPlan)
+    }
+
+    #[cfg_attr(feature = "__internal_native_query_plan", allow(dead_code))]
+    pub fn document_query_count(&self) -> usize {
+        self.count(RequestKind::DocumentQuery)
+    }
+
+    #[cfg_attr(feature = "__internal_native_query_plan", allow(dead_code))]
+    pub fn routing_metadata_count(&self) -> usize {
+        self.count(RequestKind::RoutingMetadata)
+    }
+
+    fn count(&self, kind: RequestKind) -> usize {
+        self.requests
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|(_, observed)| *observed == kind)
+            .count()
+    }
+
     /// Hosts of `GET /` topology fetches only.
     #[cfg_attr(not(feature = "fault_injection"), allow(dead_code))]
     pub fn topology_hosts(&self) -> Vec<String> {
@@ -83,10 +115,20 @@ impl RequestObserver for HostRecorder {
         let path = request.url().path();
         let method = request.method();
 
+        let is_true = |name| {
+            request
+                .headers()
+                .get_optional_str(name)
+                .is_some_and(|value| value.eq_ignore_ascii_case("true"))
+        };
         let kind = if method == Method::Get && path == "/" {
             RequestKind::Topology
         } else if method == Method::Get && path.ends_with("/pkranges") {
             RequestKind::RoutingMetadata
+        } else if is_true(&IS_QUERY_PLAN) {
+            RequestKind::QueryPlan
+        } else if is_true(&IS_QUERY) {
+            RequestKind::DocumentQuery
         } else {
             RequestKind::DataPlane
         };

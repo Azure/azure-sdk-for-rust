@@ -27,7 +27,7 @@ if ($env:AZURE_COSMOS_FUZZ -eq '1' -and -not $env:AZURE_COSMOS_FUZZ_RAN) {
     }
     else {
         Write-Host "==> Cosmos binary-JSON fuzz: golden-vector corpus validation (-runs=0)"
-        & "$PSScriptRoot\Run-BinaryJsonFuzz.ps1" -ValidateOnly
+        & "$PSScriptRoot\Run-BinaryJsonFuzz.ps1" -ValidateOnly -Toolchain ([Channels]::Nightly())
     }
     # Strip any test_category cfg COSMOS_RUSTFLAGS injected so the subsequent
     # cargo build/test runs only the always-on offline unit tests (no

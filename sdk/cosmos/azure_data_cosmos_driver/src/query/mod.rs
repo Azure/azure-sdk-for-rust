@@ -14,6 +14,7 @@ pub(crate) mod common;
 pub(crate) mod eval;
 pub(crate) mod gateway_plan;
 pub(crate) mod lexer;
+pub(crate) mod local_plan_adapter;
 pub(crate) mod parser;
 pub(crate) mod plan;
 #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
@@ -63,5 +64,7 @@ pub(crate) const SUPPORTED_QUERY_FEATURES: &str =
 #[doc(hidden)]
 pub const __TEST_ONLY_SUPPORTED_QUERY_FEATURES: &str = "Aggregate,CompositeAggregate,CountIf,DCount,Distinct,GroupBy,HybridSearch,MultipleAggregates,MultipleOrderBy,NonStreamingOrderBy,NonValueAggregate,OffsetAndLimit,OrderBy,Top,WeightedRankFusion";
 
+#[cfg(any(test, feature = "__internal_testing"))]
+pub use local_plan_adapter::__test_only_generate_production_query_plan;
 #[cfg(any(test, feature = "__internal_testing"))]
 pub use plan::__test_only_generate_query_plan_for_pk_paths;
