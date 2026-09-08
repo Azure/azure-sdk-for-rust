@@ -332,7 +332,14 @@ async fn configured_host_mode_is_exercised() -> TestResult {
         .await
 }
 
-/// Proves the production driver transparently refreshes stale routing after a split.
+/// Proves the production driver — with no special knowledge that a real
+/// partition split just happened — transparently recovers by refreshing its
+/// stale PKRange cache and routing to the new child partitions.
+///
+/// This is the actual client-side recovery behavior the hosted in-memory
+/// emulator exists to make testable (see Spec 0027: Hosted emulator), rather than only
+/// verifying the management API's own HTTP contract in isolation (which
+/// `management.rs`'s own test module already covers).
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "emulator_inmemory"),

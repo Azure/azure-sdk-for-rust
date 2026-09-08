@@ -2,6 +2,9 @@
 
 This crate provides procedural macros for the Azure Cosmos DB SDK for Rust. It is intended for internal use. No official Microsoft support is provided when using this package directly.
 
+See the [Cosmos SDK project documentation] for the configuration architecture
+that these macros support.
+
 ## `#[derive(CosmosOptions)]`
 
 Generates layered configuration boilerplate for option group structs, including:
@@ -12,3 +15,5 @@ Generates layered configuration boilerplate for option group structs, including:
 - **`Default` impl** (all `Option<T>` fields default to `None`)
 
 See the Hierarchical Configuration Model specification for details.
+
+[Cosmos SDK project documentation]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md

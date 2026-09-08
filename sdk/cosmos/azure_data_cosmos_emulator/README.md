@@ -10,9 +10,16 @@ it over the Cosmos DB wire protocol.
 > provides no service compatibility, durability, performance, or support
 > guarantees.
 
+See the [Cosmos SDK project documentation](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md) for project,
+architecture, specifications, and finalized decisions.
+
 For the full design — rationale and scope, configuration schema, management
-REST API, Gateway 2.0 support, and CI integration — see `AGENTS.md`
-and the architecture decision records under `docs/adr/`.
+REST API, Gateway 2.0 support, and CI integration — see the
+[hosted emulator specification](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0027-hosted-emulator.md). The
+[in-memory emulator specification](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0021-in-memory-emulator.md)
+covers the driver-internal engine, and the
+[transport security specification](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0023-emulator-transport-security-and-authentication.md)
+covers the host security boundary.
 
 ## What it hosts
 
