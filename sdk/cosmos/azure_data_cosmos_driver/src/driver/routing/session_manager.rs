@@ -47,15 +47,26 @@ fn is_reading_from_master(resource_type: ResourceType, operation_type: Operation
 /// checks, user-provided token precedence) on top of raw cache operations.
 #[derive(Debug)]
 pub(crate) struct SessionManager {
-    container: SessionContainer,
+    container: Option<Box<SessionContainer>>,
 }
 
 impl SessionManager {
-    /// Creates a new session manager with an empty cache.
+    /// Creates an enabled session manager with empty storage for unit tests.
+    #[cfg(test)]
     pub(crate) fn new() -> Self {
+        Self::with_enabled(true)
+    }
+
+    /// Creates a session manager, allocating storage only when enabled.
+    pub(crate) fn with_enabled(enabled: bool) -> Self {
         Self {
-            container: SessionContainer::new(),
+            container: enabled.then(|| Box::new(SessionContainer::new())),
         }
+    }
+
+    /// Returns whether automatic session token storage is available.
+    pub(crate) fn is_enabled(&self) -> bool {
+        self.container.is_some()
     }
 
     /// Resolves the session token that should be sent on the next request.
@@ -83,6 +94,7 @@ impl SessionManager {
         if let Some(token) = user_token {
             return Some(token.clone());
         }
+        let session_container = self.container.as_deref()?;
 
         // TODO(partition-key-range-parents): When a PKRange cache is available,
         // use it to resolve parent range IDs during splits/merges. Currently
@@ -91,10 +103,10 @@ impl SessionManager {
 
         let container = operation.container()?;
         match pk_range_id {
-            Some(pk_range_id) => self
-                .container
-                .resolve_session_token_for_range(container, pk_range_id),
-            None => self.container.resolve_session_token(container),
+            Some(pk_range_id) => {
+                session_container.resolve_session_token_for_range(container, pk_range_id)
+            }
+            None => session_container.resolve_session_token(container),
         }
     }
 
@@ -109,6 +121,10 @@ impl SessionManager {
         operation: &CosmosOperation,
         headers: &CosmosResponseHeaders,
     ) {
+        let Some(session_container) = self.container.as_deref() else {
+            return;
+        };
+
         // Skip capture for master/metadata resource operations. Session tokens
         // from metadata partition replicas should not be used for data reads.
         // For DocumentCollection, only ReadFeed/Query/SqlQuery target master;
@@ -130,7 +146,7 @@ impl SessionManager {
             None => return,
         };
 
-        self.container.set_session_token(container, session_token);
+        session_container.set_session_token(container, session_token);
     }
 
     /// Clears the old RID's cached tokens and moves the logical container name
@@ -140,7 +156,9 @@ impl SessionManager {
         old: &ContainerReference,
         new: &ContainerReference,
     ) -> bool {
-        self.container.remap_container(old, new)
+        self.container
+            .as_deref()
+            .is_some_and(|container| container.remap_container(old, new))
     }
 
     /// Merges per-operation DTX session tokens into the shared session cache.
@@ -151,6 +169,10 @@ impl SessionManager {
         operations: &[crate::models::DistributedTransactionOperation],
         is_session_consistency: bool,
     ) -> crate::error::Result<()> {
+        let Some(session_container) = self.container.as_deref() else {
+            return Ok(());
+        };
+
         // Only a 2xx-success committed response under Session consistency turns a
         // malformed per-operation token into a hard error. A `304 NotModified`
         // or any non-success envelope must not fail on token bookkeeping.
@@ -178,9 +200,8 @@ impl SessionManager {
             // missing partition key range prefixes from side-channel fields.
             let token = token.trim();
 
-            if let Err(error) = self
-                .container
-                .set_session_token_checked(&operation.target.container, token)
+            if let Err(error) =
+                session_container.set_session_token_checked(&operation.target.container, token)
             {
                 if throw_on_malformed {
                     return Err(dtx_malformed_session_token_error(format!(
@@ -207,22 +228,19 @@ impl SessionManager {
         operation: &crate::models::DistributedTransactionOperation,
         partition_key_range: Option<&PartitionKeyRange>,
     ) -> Option<SessionToken> {
+        let session_container = self.container.as_deref()?;
         if let Some(range) = partition_key_range {
             let parents = range.parents.as_deref().unwrap_or(&[]);
-            if let Some(token) = self
-                .container
-                .resolve_session_token_for_partition_key_range(
-                    &operation.target.container,
-                    &range.id,
-                    parents,
-                )
-            {
+            if let Some(token) = session_container.resolve_session_token_for_partition_key_range(
+                &operation.target.container,
+                &range.id,
+                parents,
+            ) {
                 return Some(token);
             }
         }
 
-        self.container
-            .resolve_session_token(&operation.target.container)
+        session_container.resolve_session_token(&operation.target.container)
     }
 }
 
@@ -283,6 +301,35 @@ mod tests {
             "doc1",
         ));
         assert!(mgr.resolve_session_token(&op, None, None).is_none());
+    }
+
+    #[test]
+    fn disabled_manager_allocates_no_container_and_preserves_user_tokens() {
+        let mgr = SessionManager::with_enabled(false);
+        assert!(!mgr.is_enabled());
+        assert!(mgr.container.is_none());
+
+        let container = test_container();
+        let op = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let headers = make_response_headers(
+            Some("0:1#100#1=10"),
+            Some("coll_rid1"),
+            Some("dbs/db1/colls/coll1"),
+        );
+        mgr.capture_session_token(&op, &headers);
+
+        assert!(mgr.resolve_session_token(&op, None, None).is_none());
+        let user_token = SessionToken::new("user-provided");
+        assert_eq!(
+            mgr.resolve_session_token(&op, Some(&user_token), None)
+                .unwrap()
+                .as_str(),
+            "user-provided"
+        );
     }
 
     #[test]
@@ -533,13 +580,18 @@ mod tests {
             error_message: None,
         };
 
+        let operations = [operation];
         let error = mgr
-            .merge_distributed_transaction_session_tokens(&response, &[operation], true)
+            .merge_distributed_transaction_session_tokens(&response, &operations, true)
             .unwrap_err();
         assert_eq!(
             error.status().status_code(),
             azure_core::http::StatusCode::InternalServerError
         );
+
+        SessionManager::with_enabled(false)
+            .merge_distributed_transaction_session_tokens(&response, &operations, true)
+            .expect("disabled session management should skip DTX token validation");
     }
 
     #[cfg(feature = "preview_dtx")]

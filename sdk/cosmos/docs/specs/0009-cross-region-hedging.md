@@ -1417,12 +1417,18 @@ have the session token captured from a prior request that went to Region A.
 
 **Resolution:** The `SessionManager` is shared across all hedges. Each pipeline
 invocation:
+
 1. Reads the latest session token before sending (STAGE 3).
 2. Captures the response session token after receiving (post-STAGE 4).
 
 Because hedges run in parallel, a hedge to Region B may use a session token from
 Region A. If that fails with 404/1002, the pipeline's session retry logic handles
 it internally — this is indistinguishable from normal session retry behavior.
+
+When `session_token_management_enabled` is false at the driver or operation
+layer, hedge legs skip automatic lookup and winner capture. A caller-supplied
+token is still sent, and a resulting 404/1002 still enters the normal session
+retry path.
 
 **Concurrent capture from competing hedges.** Even after `execute_hedged()`
 cancels losing hedges and returns the winner, a losing hedge's transport

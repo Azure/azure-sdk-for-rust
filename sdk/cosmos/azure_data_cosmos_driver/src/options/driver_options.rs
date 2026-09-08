@@ -102,6 +102,15 @@ pub struct DriverOptions {
     /// session token management is also disabled; user-provided session tokens are
     /// still sent unchanged.
     partition_key_range_cache_enabled: bool,
+    /// Whether the driver allocates and maintains automatic session-token state.
+    ///
+    /// When disabled, session tokens are not captured from responses or resolved
+    /// for later requests. User-provided session tokens are still sent unchanged.
+    /// Session-consistent requests without an explicit token can therefore observe
+    /// a weaker effective guarantee.
+    /// Per-operation options cannot re-enable management because no session-token
+    /// container exists for this driver.
+    session_token_management_enabled: bool,
     /// Driver-level limits on simultaneous cross-region attempts.
     ///
     /// Hedging adds a regional attempt to complete an operation when the first is
@@ -168,6 +177,11 @@ impl DriverOptions {
         self.partition_key_range_cache_enabled
     }
 
+    /// Returns whether automatic session token management is enabled.
+    pub fn session_token_management_enabled(&self) -> bool {
+        self.session_token_management_enabled
+    }
+
     /// Returns the driver-level cross-region hedging limits.
     pub fn hedging_options(&self) -> &HedgingOptions {
         &self.hedging_options
@@ -190,6 +204,7 @@ pub struct DriverOptionsBuilder {
     throughput_control_groups: ThroughputControlGroupRegistry,
     partition_failover_options: Option<PartitionFailoverOptions>,
     partition_key_range_cache_enabled: bool,
+    session_token_management_enabled: bool,
     hedging_options: Option<HedgingOptions>,
 }
 
@@ -206,6 +221,7 @@ impl DriverOptionsBuilder {
             throughput_control_groups: ThroughputControlGroupRegistry::new(),
             partition_failover_options: None,
             partition_key_range_cache_enabled: true,
+            session_token_management_enabled: true,
             hedging_options: None,
         }
     }
@@ -225,6 +241,19 @@ impl DriverOptionsBuilder {
     /// session tokens are still sent unchanged.
     pub fn with_partition_key_range_cache_enabled(mut self, enabled: bool) -> Self {
         self.partition_key_range_cache_enabled = enabled;
+        self
+    }
+
+    /// Enables or disables automatic session token management.
+    ///
+    /// Disabling this prevents the driver from allocating session-token storage,
+    /// capturing tokens from responses, or resolving tokens for later requests.
+    /// User-provided session tokens are still sent unchanged, and partition key
+    /// range topology caching remains independently configurable. Session-consistent
+    /// requests without an explicit token can therefore observe a weaker effective
+    /// guarantee.
+    pub fn with_session_token_management_enabled(mut self, enabled: bool) -> Self {
+        self.session_token_management_enabled = enabled;
         self
     }
 
@@ -390,6 +419,7 @@ impl DriverOptionsBuilder {
             throughput_control_groups: self.throughput_control_groups,
             partition_failover_options,
             partition_key_range_cache_enabled: self.partition_key_range_cache_enabled,
+            session_token_management_enabled: self.session_token_management_enabled,
             hedging_options: self.hedging_options.unwrap_or_default(),
         }
     }
@@ -428,6 +458,7 @@ mod tests {
             .max_session_retry_count
             .is_none());
         assert!(options.partition_key_range_cache_enabled());
+        assert!(options.session_token_management_enabled());
     }
 
     #[test]
@@ -437,6 +468,16 @@ mod tests {
             .build();
 
         assert!(!options.partition_key_range_cache_enabled());
+    }
+
+    #[test]
+    fn builder_disables_session_token_management() {
+        let options = DriverOptionsBuilder::new(test_account())
+            .with_session_token_management_enabled(false)
+            .build();
+
+        assert!(!options.session_token_management_enabled());
+        assert!(options.partition_key_range_cache_enabled());
     }
 
     #[test]

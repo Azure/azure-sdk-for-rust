@@ -162,7 +162,7 @@ azure_data_cosmos (SDK)                 azure_data_cosmos_driver
 ──────────────────────                  ────────────────────────
 options.session_token  ─────────────▶   CosmosOperation::with_session_token
 OperationOptions
-  .session_capturing_disabled ──────▶   pipeline consistency gate
+  .session_token_management_enabled ▶   pipeline consistency gate
   .read_consistency_strategy  ──────▶   ReadConsistencyStrategy::is_session_effective
   .max_session_retry_count    ──────▶   OperationRetryState session budget
 
@@ -175,9 +175,10 @@ ContainerClient::get_latest_session_token  (pure, uses SessionTokenSegment)
 ```
 
 - **The driver owns automatic session state.** `CosmosDriver` holds exactly one
-  `SessionManager`, which wraps the `SessionContainer` cache
+  `SessionManager`, which optionally owns a boxed `SessionContainer` cache
   (`driver/routing/session_manager.rs`, `driver/routing/session_container.rs`).
-  Nothing above the driver mutates it.
+  Disabled drivers allocate no session container. Nothing above the driver
+  mutates it.
 - **The SDK owns the public surface.** Per-operation `session_token` fields on
   `ItemReadOptions`, `ItemWriteOptions`, `PatchItemOptions`, `FeedOptions`,
   `QueryOptions`, `ChangeFeedOptions`, batch and DTX options; the
@@ -202,9 +203,13 @@ The pipeline computes, per attempt:
 
 ```text
 automatic_session_management_effective =
-    partition_key_range_cache_enabled
-    && !session_capturing_disabled
+    driver_session_manager_allocated
+    && session_token_management_enabled
     && read_consistency_strategy.is_session_effective(account_default)
+
+driver_session_manager_allocated =
+    partition_key_range_cache_enabled
+    && driver_session_token_management_enabled
 ```
 
 `is_session_effective` is true when the strategy is `Session`, or when the
@@ -213,10 +218,12 @@ strategy is `Default` and the account default consistency level is `Session`.
 lane, so the pipeline neither resolves cached tokens nor captures response
 tokens.
 
-`session_capturing_disabled` is a single switch that turns off *both* automatic
-halves — no cache-based attach and no capture. Explicit per-operation tokens
-remain operation headers and are written directly to the transport request;
-they do not depend on the guarded automatic resolver (see §4).
+`session_token_management_enabled` is a positive switch that controls *both*
+automatic halves — cache-based attach and capture. The driver-level false value
+is authoritative because no session container is allocated; an operation-level
+true value cannot re-enable it. Explicit per-operation tokens remain operation
+headers and are written directly to the transport request; they do not depend
+on the guarded automatic resolver (see §4).
 
 ---
 
@@ -459,9 +466,10 @@ formatting of driver state.
 - **Read-then-write races are benign.** Two concurrent operations may resolve the
   same token and capture different advances; the merge is commutative and
   monotone within a topology version, so the cache converges to the maximum.
-- **No persistence, no eviction.** State is process-local and lives for the life
-  of the client, except for the RID-mismatch purge on container recreation.
-  Memory is bounded by (containers touched × ranges per container).
+- **No persistence, no eviction.** When enabled, state is process-local and lives
+  for the life of the client, except for the RID-mismatch purge on container
+  recreation. Memory is bounded by (containers touched × ranges per container).
+  Disabled clients allocate no session container.
 - **Boundary with routing state.** Session state is separate from the location
   cache, endpoint-unavailability state, and PK-range cache. Session retries read
   routing state but never mutate endpoint health, and no routing decision mutates
@@ -485,8 +493,8 @@ formatting of driver state.
 4. **A caller-supplied token is never merged with the cache.** It replaces it for
    that request. Callers combining sessions must merge explicitly via
    `SessionToken::merge` or `ContainerClient::get_latest_session_token`.
-5. **`session_capturing_disabled` is coarse** — it disables capture *and*
-   resolution together; there is no capture-only mode.
+5. **`session_token_management_enabled` is coarse** — false disables capture
+   *and* resolution together; there is no capture-only mode.
 6. **No cross-client or cross-process sharing** is built in; applications that
    need it must ferry tokens themselves.
 7. **Consistency-level diagnostics attribute is not yet populated** on the

@@ -459,15 +459,21 @@ the normal recovery handlers still applies:
 
 ## 8. Session-Token Handling
 
-Before serialization, when Session consistency is effective, each operation that
-does not already carry a caller-supplied session token is stamped from the session
-container. The driver resolves the operation's partition key range through the
-PKRange cache, prefers an exact range token, walks parent range tokens for freshly
-split children, and falls back to the compound collection-level token when the
-range cannot be resolved. This mirrors .NET PR #5958's best-effort
-`ResolvePartitionLocalToken` behavior.
+Before serialization, when Session consistency and automatic session-token
+management are effective, each operation that does not already carry a
+caller-supplied session token is stamped from the session container. The driver
+resolves the operation's partition key range through the PKRange cache, prefers
+an exact range token, walks parent range tokens for freshly split children, and
+falls back to the compound collection-level token when the range cannot be
+resolved. This mirrors .NET PR #5958's best-effort `ResolvePartitionLocalToken`
+behavior.
 
-After a **terminal success** (the outer loop returning `Ok`), the driver calls
+When driver-level session-token management is disabled, the driver allocates no
+session container and skips automatic DTX token resolution, response validation,
+and merging. Caller-supplied per-operation DTX tokens remain unchanged.
+
+After a **terminal success** (the outer loop returning `Ok`) with automatic
+management enabled, the driver calls
 `merge_distributed_transaction_session_tokens`. Because a distributed transaction
 spans partitions, tokens are **per operation**, keyed by the operation's
 `partitionKeyRangeId`. The merge:

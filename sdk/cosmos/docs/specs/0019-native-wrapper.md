@@ -1039,35 +1039,33 @@ The shared `CosmosDriverRuntime` is built via the wrapper's mirrored `CosmosDriv
 
 > **Landing prerequisites.** The companion implementation prototype lives in PR [#4452](https://github.com/Azure/azure-sdk-for-rust/pull/4452) ("Implement `azure_data_cosmos_driver_native` crate"). #4452 is the implementation of this spec — its symbol set, `_t` suffix policy, and `export.rename` configuration **must** be reconciled with §2.2 before either PR merges (#4452 currently checks in headers using `cosmos_cosmos_*` symbols without `_t` suffix, which §2.2 mandates CI must reject). Any builder method below whose Rust counterpart only exists on a branch in #4452 is marked "*landed in #4452*" inline; once #4452 merges, those marks are removed.
 
-`DriverOptions` in the driver crate is a small, account-scoped settings bag (3 fields: the bound `AccountReference`, an `Arc<OperationOptions>` carrying the per-driver operation defaults, and a `Vec<Region>` of preferred regions — see `src/options/driver_options.rs:44-127`). The wrapper exposes a builder handle that mirrors `DriverOptionsBuilder` exactly — including the fact that the builder is constructed from an `AccountReference`:
+`DriverOptions` is an account-scoped settings bag. The native wrapper builds it
+from one flat configuration value and the separate account handle:
 
 ```c
-typedef struct cosmos_driver_options_builder cosmos_driver_options_builder_t;
 typedef struct cosmos_driver_options cosmos_driver_options_t;
 
-/* Mirrors DriverOptionsBuilder::new(account). The account ref is borrowed
- * during build; the produced cosmos_driver_options_t holds its own clone. */
-cosmos_driver_options_builder_t *cosmos_driver_options_builder_new(
-    const cosmos_account_ref_t *account);
-void cosmos_driver_options_builder_free(cosmos_driver_options_builder_t *b);
+typedef struct cosmos_driver_options_config {
+    const char *const *preferred_regions;
+    size_t preferred_regions_len;
+    const cosmos_operation_options_t *operation_options;
+    int8_t session_token_management_enabled; /* 0 unset, 1 false, 2 true */
+} cosmos_driver_options_config_t;
 
-/* Mirrors DriverOptionsBuilder::with_preferred_regions. */
-cosmos_status_code_t cosmos_driver_options_builder_with_preferred_regions(
-    cosmos_driver_options_builder_t *b,
-    const char *const *regions, size_t regions_len);
-
-/* Mirrors DriverOptionsBuilder::with_operation_options. Takes ownership of
- * the provided cosmos_operation_options_t handle (consumed). */
-cosmos_status_code_t cosmos_driver_options_builder_with_operation_options(
-    cosmos_driver_options_builder_t *b,
-    cosmos_operation_options_t *operation_options);
-
-cosmos_driver_options_t *cosmos_driver_options_builder_build(
-    cosmos_driver_options_builder_t *b);  /* consumes builder */
+cosmos_driver_options_config_t cosmos_driver_options_config_default(void);
+cosmos_status_code_t cosmos_driver_options_build(
+    const cosmos_account_ref_t *account,
+    const cosmos_driver_options_config_t *config,
+    cosmos_driver_options_t **out_options);
 void cosmos_driver_options_free(cosmos_driver_options_t *opts);
 ```
 
-That is the **entire** `DriverOptions` surface. The settings frequently associated with "per-driver" defaults in older Cosmos SDKs — `excluded_regions`, `read_consistency_strategy`, `content_response_on_write`, throughput-control group, priority, end-to-end timeout, per-partition circuit-breaker tuning (8 knobs), retry counts (`max_failover_retry_count`, `max_session_retry_count`), `session_capturing_disabled`, `endpoint_unavailability_ttl`, and custom headers — all live on `OperationOptions` in this driver (`src/options/operation_options.rs:41-188`, 17 public fields), not `DriverOptions`. They are exposed under `cosmos_operation_options_*` (per-call) and can be set as driver-wide defaults by stashing them in the `DriverOptions` via `cosmos_driver_options_builder_with_operation_options`. **`max_item_count` is the exception**: it lives directly on `CosmosOperation::with_max_item_count` (not on `OperationOptions`) and is exposed through the §4.6.2 mutators rather than `cosmos_operation_options_*`. See Phase 5 in §8 for the full enumeration of `OperationOptions` setters the wrapper ships.
+The session-management tri-state defaults to enabled. Setting it to false
+prevents the driver from allocating automatic session-token storage; an
+operation-level true value cannot re-enable absent storage. Explicit operation
+tokens are still sent, and partition-key-range topology remains independently
+available. Session-consistent requests without an explicit token can therefore
+observe a weaker effective guarantee.
 
 Likewise, transport-side knobs (connection pool sizing, user-agent suffix, workload id, correlation id, emulator-certificate trust) live on `CosmosDriverRuntimeBuilder` and are exposed under `cosmos_runtime_builder_*`, **not** `cosmos_driver_options_*`. There is no `cosmos_driver_options_builder_with_allow_emulator_invalid_certs` — that knob lives on the runtime.
 
@@ -1395,18 +1393,26 @@ distinguish "inherit from a lower layer" from an explicit value:
 - **enum fields** (`read_consistency_strategy`, `content_response_on_write`),
   stored as raw `int32` and validated on conversion: `0` = unset (inherit),
   other values map to the driver variant.
-- **tri-state bools** (`session_capturing_disabled`,
+- **tri-state bools** (`session_token_management_enabled`,
   `per_partition_circuit_breaker_enabled`): `0` unset / `1` false / `2` true.
 - **`int32` numeric fields** (retry / circuit-breaker counters): `< 0` = unset.
 - **`int64` duration fields** (`*_ms`): `< 0` = unset, else milliseconds.
 - **string / array fields** (`throughput_control_group`, `excluded_regions`,
   `custom_headers`): NULL / length `0` = unset.
 
+> **Migration note:** `session_token_management_enabled` replaces the negative
+> `session_capturing_disabled` field and reverses its polarity. This is not a
+> name-only migration: old value `2` (disabled) maps to new value `1` (false),
+> while old value `1` maps to new value `2` (true). Value `0` remains unset and
+> resolves to enabled behavior. Native bindings must also regenerate
+> `cosmos_driver_options_config_t` because it gained the trailing driver-level
+> tri-state field.
+
 ```c
 typedef struct cosmos_operation_options {
     int32_t read_consistency_strategy;  /* cosmos_read_consistency_strategy_t; 0 = unset */
     int32_t content_response_on_write;  /* cosmos_content_response_on_write_t; 0 = unset */
-    int8_t  session_capturing_disabled;                 /* tri-state */
+    int8_t  session_token_management_enabled;           /* tri-state */
     int8_t  per_partition_circuit_breaker_enabled;      /* tri-state */
     int32_t max_failover_retry_count;                   /* < 0 = unset */
     int32_t max_session_retry_count;                    /* < 0 = unset */
@@ -2106,8 +2112,8 @@ Each item below is independent; ship as feature-gated when ready.
         uint32_t max_failover_retry_count;               /* flag bit 15 */
         uint32_t max_session_retry_count;                /* flag bit 16 */
 
-        /* Session capture */
-        bool session_capturing_disabled;                 /* flag bit 17 */
+        /* Session token management */
+        bool session_token_management_enabled;           /* flag bit 17 */
 
         /* Region availability */
         uint64_t endpoint_unavailability_ttl_ms;         /* flag bit 18 */

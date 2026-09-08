@@ -95,14 +95,14 @@ pub struct OperationOptions {
     /// How long an endpoint is considered unavailable after a failure.
     pub endpoint_unavailability_ttl: Option<Duration>,
 
-    /// Disables automatic session token management.
+    /// Enables automatic session token management for this request.
     ///
-    /// When `None` or `Some(false)`, session tokens are captured from responses
-    /// and sent on subsequent requests for session consistency. Set to `Some(true)`
-    /// to disable both automatic capture and automatic resolution. User-provided
-    /// session tokens are unaffected. This setting cannot enable automatic session
-    /// token management when the driver's partition key range cache is disabled.
-    pub session_capturing_disabled: Option<bool>,
+    /// When `None` or `Some(true)`, session tokens are captured from responses
+    /// and sent on subsequent requests for session consistency. Set to `Some(false)`
+    /// to disable both automatic capture and automatic resolution for this request.
+    /// User-provided session tokens are unaffected. This setting cannot enable
+    /// automatic session token management when it is disabled on the driver.
+    pub session_token_management_enabled: Option<bool>,
 
     /// Maximum number of session-consistency retries on 404/1002 errors.
     #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]

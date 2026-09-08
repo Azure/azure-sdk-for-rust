@@ -7,10 +7,12 @@
 - Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes. Added layered `OperationOptions::query_plan_mode`, `QueryPlanMode::{LocalPreferred, GatewayOnly}`, and the authoritative `AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE=gateway` break-glass setting to force Gateway planning globally or per operation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
 - Added a fully buffered cross-partition merge for finite non-streaming `ORDER BY` plans, including `VectorDistance(...)`. Unbounded, resumed, DISTINCT, and hybrid non-streaming plans are rejected with typed statuses. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
+- Added `DriverOptionsBuilder::with_session_token_management_enabled` to omit automatic session-token storage and bookkeeping without disabling partition-key-range topology. ([#5191](https://github.com/Azure/azure-sdk-for-rust/issues/5191))
 
 ### Breaking Changes
 
 - `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
+- Renamed the operation option `session_capturing_disabled` to the positive `session_token_management_enabled`. ([#5191](https://github.com/Azure/azure-sdk-for-rust/issues/5191))
 
 ### Bugs Fixed
 

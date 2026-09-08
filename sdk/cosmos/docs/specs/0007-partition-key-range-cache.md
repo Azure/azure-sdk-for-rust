@@ -933,6 +933,15 @@ compares the `change_feed_next_if_none_match` on the cached map against the valu
 the caller saw. If the cache has already been refreshed by another request (new ETag),
 the predicate returns `false`, avoiding redundant fetches.
 
+### 13.6 Independent Session-Token Management
+
+`DriverOptions::session_token_management_enabled` controls automatic
+session-token storage, lookup, and capture, not partition topology. Disabling
+session management while leaving `partition_key_range_cache_enabled` true keeps
+`/pkranges` discovery, split refresh, query routing, PPAF, and PPCB available.
+Disabling the PK-range cache also prevents automatic session storage because the
+driver cannot perform range-scoped token resolution.
+
 ---
 
 ## 14. SDK Deprecation & Migration

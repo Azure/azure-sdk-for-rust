@@ -70,7 +70,7 @@ use crate::partition_key::{CosmosPartitionKeyComponent, PartitionKeyHandle};
 ///
 /// - **enum fields** (`*_strategy`, `content_response_on_write`): `0` = unset
 ///   (inherit), any other value = the corresponding driver variant.
-/// - **tri-state bools** (`session_capturing_disabled`): `0` = unset,
+/// - **tri-state bools** (`session_token_management_enabled`): `0` = unset,
 ///   `1` = `false`, `2` = `true`.
 /// - **i32 numeric fields** (retry counters): `< 0` = unset,
 ///   `>= 0` = the value.
@@ -88,7 +88,7 @@ const TRISTATE_TRUE: i8 = 2;
 
 /// Decodes a tri-state bool. Returns `Err(INVALID_OPTION_VALUE)` for an
 /// out-of-range discriminant.
-fn decode_tristate_bool(v: i8) -> Result<Option<bool>, CosmosErrorCode> {
+pub(crate) fn decode_tristate_bool(v: i8) -> Result<Option<bool>, CosmosErrorCode> {
     match v {
         TRISTATE_UNSET => Ok(None),
         TRISTATE_FALSE => Ok(Some(false)),
@@ -409,8 +409,8 @@ pub struct CosmosOperationOptions {
     /// discriminant. `0` (`Unset`) inherits. Stored as a raw `i32` so invalid
     /// host values can be rejected before materializing the enum.
     pub patch_strategy: i32,
-    /// Disable automatic session token management. Tri-state bool.
-    pub session_capturing_disabled: i8,
+    /// Enable automatic session token management. Tri-state bool.
+    pub session_token_management_enabled: i8,
     /// Max region-failover retries. `< 0` = unset.
     pub max_failover_retry_count: i32,
     /// Max session-consistency retries on 404/1002. `< 0` = unset.
@@ -497,7 +497,8 @@ impl CosmosOperationOptions {
                 .to_driver()?;
         opts.patch_strategy = CosmosPatchStrategy::from_i32(self.patch_strategy)?.to_driver();
         opts.query_plan_mode = CosmosQueryPlanMode::from_i32(self.query_plan_mode)?.to_driver();
-        opts.session_capturing_disabled = decode_tristate_bool(self.session_capturing_disabled)?;
+        opts.session_token_management_enabled =
+            decode_tristate_bool(self.session_token_management_enabled)?;
 
         opts.max_failover_retry_count = decode_opt_u32(self.max_failover_retry_count);
         opts.max_session_retry_count = decode_opt_u32(self.max_session_retry_count);
@@ -595,7 +596,7 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
             CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset as i32,
         patch_strategy: CosmosPatchStrategy::CosmosPatchStrategyUnset as i32,
         query_plan_mode: CosmosQueryPlanMode::CosmosQueryPlanModeUnset as i32,
-        session_capturing_disabled: TRISTATE_UNSET,
+        session_token_management_enabled: TRISTATE_UNSET,
         max_failover_retry_count: -1,
         max_session_retry_count: -1,
         end_to_end_timeout_ms: -1,
@@ -1675,7 +1676,7 @@ mod tests {
             o.query_plan_mode,
             CosmosQueryPlanMode::CosmosQueryPlanModeUnset as i32
         );
-        assert_eq!(o.session_capturing_disabled, TRISTATE_UNSET);
+        assert_eq!(o.session_token_management_enabled, TRISTATE_UNSET);
         assert_eq!(o.max_failover_retry_count, -1);
         assert_eq!(o.max_session_retry_count, -1);
         assert_eq!(o.end_to_end_timeout_ms, -1);
@@ -1700,13 +1701,27 @@ mod tests {
         assert_eq!(driver.content_response_on_write, None);
         assert_eq!(driver.patch_strategy, None);
         assert_eq!(driver.query_plan_mode, None);
-        assert_eq!(driver.session_capturing_disabled, None);
+        assert_eq!(driver.session_token_management_enabled, None);
         assert_eq!(driver.max_failover_retry_count, None);
         assert_eq!(driver.max_session_retry_count, None);
         assert_eq!(driver.end_to_end_latency_policy, None);
         assert_eq!(driver.excluded_regions, None);
         assert!(driver.throughput_control.is_none());
         assert!(driver.binary_encoding.is_none());
+    }
+
+    #[test]
+    fn session_management_flag_converts_to_driver_option() {
+        let mut o = cosmos_operation_options_default();
+        o.session_token_management_enabled = TRISTATE_FALSE;
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        assert_eq!(driver.session_token_management_enabled, Some(false));
+
+        o.session_token_management_enabled = TRISTATE_TRUE;
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        assert_eq!(driver.session_token_management_enabled, Some(true));
     }
 
     #[cfg(target_pointer_width = "64")]
@@ -1725,7 +1740,7 @@ mod tests {
         );
         assert_eq!(offset_of!(CosmosOperationOptions, patch_strategy), 8);
         assert_eq!(
-            offset_of!(CosmosOperationOptions, session_capturing_disabled),
+            offset_of!(CosmosOperationOptions, session_token_management_enabled),
             12
         );
         assert_eq!(

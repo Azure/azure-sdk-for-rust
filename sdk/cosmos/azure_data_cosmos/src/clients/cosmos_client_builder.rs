@@ -100,6 +100,7 @@ pub struct CosmosClientBuilder {
     /// Options to use for per-partition failover (PPAF, PPCB)
     partition_failover_options: Option<PartitionFailoverOptions>,
     partition_key_range_cache_enabled: Option<bool>,
+    session_token_management_enabled: Option<bool>,
 }
 
 impl CosmosClientBuilder {
@@ -165,6 +166,18 @@ impl CosmosClientBuilder {
     /// session tokens are still sent unchanged.
     pub fn with_partition_key_range_cache_enabled(mut self, enabled: bool) -> Self {
         self.partition_key_range_cache_enabled = Some(enabled);
+        self
+    }
+
+    /// Enables or disables automatic session token management for this client.
+    ///
+    /// When disabled, the client does not allocate session-token storage, capture
+    /// tokens from responses, or resolve them for later requests. User-provided
+    /// session tokens are still sent unchanged. Partition key range topology
+    /// caching remains independently configurable. Session-consistent requests
+    /// without an explicit token can therefore observe a weaker effective guarantee.
+    pub fn with_session_token_management_enabled(mut self, enabled: bool) -> Self {
+        self.session_token_management_enabled = Some(enabled);
         self
     }
 
@@ -337,6 +350,7 @@ impl CosmosClientBuilder {
             partition_key_range_cache_enabled: self
                 .partition_key_range_cache_enabled
                 .unwrap_or(true),
+            session_token_management_enabled: self.session_token_management_enabled.unwrap_or(true),
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules,
             throughput_control_groups: self.throughput_control_groups,
@@ -372,6 +386,7 @@ struct DriverOptionsInput {
     user_agent_suffix: Option<UserAgentSuffix>,
     partition_failover_options: Option<PartitionFailoverOptions>,
     partition_key_range_cache_enabled: bool,
+    session_token_management_enabled: bool,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
     throughput_control_groups: Vec<ThroughputControlGroupOptions>,
@@ -395,7 +410,8 @@ impl DriverOptionsInput {
         let mut builder = azure_data_cosmos_driver::options::DriverOptions::builder(self.account)
             .with_preferred_regions(preferred_regions)
             .with_operation_options(self.operation_options)
-            .with_partition_key_range_cache_enabled(self.partition_key_range_cache_enabled);
+            .with_partition_key_range_cache_enabled(self.partition_key_range_cache_enabled)
+            .with_session_token_management_enabled(self.session_token_management_enabled);
         if let Some(suffix) = self.user_agent_suffix {
             builder = builder.with_user_agent_suffix(suffix);
         }
@@ -512,6 +528,7 @@ mod tests {
             user_agent_suffix: None,
             partition_failover_options: None,
             partition_key_range_cache_enabled: true,
+            session_token_management_enabled: true,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
             throughput_control_groups: Vec::new(),
@@ -657,5 +674,18 @@ mod tests {
         .expect("driver options should build");
 
         assert!(!opts.partition_key_range_cache_enabled());
+    }
+
+    #[test]
+    fn session_token_management_option_flows_to_driver_options() {
+        let opts = DriverOptionsInput {
+            session_token_management_enabled: false,
+            ..test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))
+        }
+        .build()
+        .expect("driver options should build");
+
+        assert!(!opts.session_token_management_enabled());
+        assert!(opts.partition_key_range_cache_enabled());
     }
 }
