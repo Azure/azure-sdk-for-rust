@@ -121,19 +121,26 @@ extends:
         Selection: all
         GenerateVMJobs: true
     # Cosmos_live_test runs against fixed, self-owned accounts (see
-    # sdk/cosmos/pipeline/README.md) instead of resources deployed fresh each run,
+    # sdk/cosmos/eng/pipelines/README.md) instead of resources deployed fresh each run,
     # so it lives in FixedAccountMatrixConfigs rather than LiveTestMatrixConfigs.
     # PreTestRunSteps resolves the account selected by each matrix leg's
     # AccountSelector from the rust-ci secret, in place of
     # ARM deployment (DisableAzureResourceCreation: true is set automatically for
     # this leg by archetype-sdk-client.yml).
+    #
+    # Unlike per-run ARM-deployed accounts there is no resource-group teardown after
+    # each run, so per-run test databases (test-db-<run-id>) from cancelled/crashed
+    # runs can accumulate on these accounts. Run
+    # sdk/cosmos/eng/pipelines/account-provisioning/Remove-StaleCosmosTestDatabases.ps1
+    # periodically to sweep them - not wired up here because it needs Contributor
+    # access to the sdk-ci subscription, which has no ADO service connection yet.
     FixedAccountMatrixConfigs:
       - Name: Cosmos_live_test
         Path: sdk/cosmos/live-platform-matrix.json
         Selection: sparse
         GenerateVMJobs: true
     PreTestRunSteps:
-      - template: /sdk/cosmos/pipeline/resolve-test-account-steps.yml
+      - template: /sdk/cosmos/eng/pipelines/resolve-test-account-steps.yml
         parameters:
           AccountSelector: $(AccountSelector)
     LiveTestMatrixConfigs:

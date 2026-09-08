@@ -57,7 +57,7 @@ parameters:
 # LiveTestMatrixConfigs, jobs generated from these configs skip ARM deployment entirely
 # (DisableAzureResourceCreation: true) and run PreTestRunSteps in its place, with
 # UseFederatedAuth forced off since no Azure tenant auth is needed. See
-# sdk/cosmos/pipeline/README.md for the motivating example.
+# sdk/cosmos/eng/pipelines/README.md for the motivating example.
 - name: FixedAccountMatrixConfigs
   type: object
   default: []

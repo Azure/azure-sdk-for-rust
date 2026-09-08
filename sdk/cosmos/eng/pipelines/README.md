@@ -86,16 +86,18 @@ before. Thin-client/GatewayV2 legs are also unaffected/out of scope.
 Run the resolver's local test suite (no ADO, no Azure access required):
 
 ```powershell
-pwsh sdk/cosmos/pipeline/resolve-cosmos-test-account.tests.ps1
+pwsh sdk/cosmos/eng/pipelines/resolve-cosmos-test-account.tests.ps1
 ```
 
-You can also invoke the resolver directly against the sample JSON:
+You can also invoke the resolver directly against the sample JSON. Dot-source
+it (note the leading `. `) so the resolved variables land directly in your
+current shell instead of just being printed:
 
 ```powershell
 $env:COSMOS_ACCOUNTS_LOCAL = 'true'
 $env:COSMOS_ACCOUNT_SELECTOR = 'session-singlewrite'
-$env:COSMOS_TEST_ACCOUNTS_JSON = Get-Content -Raw sdk/cosmos/pipeline/live-test-accounts.sample.json
-./sdk/cosmos/pipeline/resolve-cosmos-test-account.ps1
+$env:COSMOS_TEST_ACCOUNTS_JSON = Get-Content -Raw sdk/cosmos/eng/pipelines/live-test-accounts.sample.json
+. ./sdk/cosmos/eng/pipelines/resolve-cosmos-test-account.ps1
 ```
 
 ## Adding or rotating an account

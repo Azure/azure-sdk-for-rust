@@ -581,7 +581,11 @@ impl DriverTestRunContext {
     fn new(client: DriverTestClient) -> Self {
         Self {
             client: Arc::new(client),
-            run_id: Uuid::new_v4().to_string()[..8].to_string(),
+            // v7 (not v4) so a cleanup sweep can decode the creation time straight from the
+            // name; kept un-truncated (unlike unique_container_name) because v7's timestamp
+            // occupies the leading hex digits - truncating there would drop all randomness
+            // and risk collisions between runs started in the same time bucket.
+            run_id: Uuid::now_v7().simple().to_string(),
         }
     }
 

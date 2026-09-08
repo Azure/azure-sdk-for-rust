@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/Azure/azure-sdk-for-rust/sdk/cosmos/pipeline/live-test-accounts.schema.json",
+  "$id": "https://github.com/Azure/azure-sdk-for-rust/sdk/cosmos/eng/pipelines/live-test-accounts.schema.json",
   "title": "Cosmos live-test fixed accounts config",
   "description": "Single-secret JSON describing the fixed, self-owned Cosmos DB accounts used by the Rust Cosmos live tests (resource group 'sdk-ci' in a permanent, non-ephemeral subscription). Stored as an ADO variable-group secret and refreshed by account-provisioning/New-CosmosLiveTestAccounts.ps1 whenever an account is rotated. Each live-test matrix leg selects one account by its logical AccountSelector.",
   "type": "object",

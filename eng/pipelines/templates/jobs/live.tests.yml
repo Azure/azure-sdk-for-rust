@@ -31,7 +31,7 @@ parameters:
 # When true, skips build-test-resource-config.yml/deploy-test-resources.yml (and thus any
 # per-run ARM deployment / Azure tenant auth) and runs PreTestRunSteps in their place. Used
 # by legs that test against fixed, self-owned accounts instead of resources deployed fresh
-# each run (see sdk/cosmos/pipeline/README.md for the motivating example).
+# each run (see sdk/cosmos/eng/pipelines/README.md for the motivating example).
 - name: DisableAzureResourceCreation
   type: boolean
   default: false
@@ -108,7 +108,7 @@ jobs:
           ${{insert}}: ${{ parameters.EnvVars }}
   - ${{ else }}:
     # No ARM deployment and no Azure tenant auth for this leg - resolve a fixed,
-    # self-owned account instead (see sdk/cosmos/pipeline/README.md).
+    # self-owned account instead (see sdk/cosmos/eng/pipelines/README.md).
     - ${{ parameters.PreTestRunSteps }}
 
   # To allow tests to run in parallel to Pack, we don't reuse the PackageInfo directory

@@ -20,13 +20,17 @@
          create per-run.
       4. Reads each account's endpoint + primary (and optional secondary) key.
       5. Assembles the versioned account JSON (matching
-         sdk/cosmos/pipeline/live-test-accounts.schema.json) and emits it (to stdout,
-         and to -OutputPath if provided).
+         sdk/cosmos/eng/pipelines/live-test-accounts.schema.json) and emits it (to stdout,
+         and to -OutputPath and/or -KeyVaultName if provided).
 
-    This script does NOT touch any ADO variable group. Update the fixed-accounts secret
-    (see sdk/cosmos/pipeline/README.md) manually with the JSON it outputs.
+    This script does NOT touch any ADO variable group directly - the variable group
+    only links to a Key Vault secret. When -KeyVaultName is provided, this script writes
+    a new version of that secret directly (preferred: the JSON never touches a local
+    file or console history). Otherwise, copy the JSON it prints (or -OutputPath's
+    contents) into the secret manually - see sdk/cosmos/eng/pipelines/README.md.
 
-    Uses the Az PowerShell modules (Az.Accounts, Az.Resources, Az.CosmosDB).
+    Uses the Az PowerShell modules (Az.Accounts, Az.Resources, Az.CosmosDB, and
+    Az.KeyVault when -KeyVaultName is provided).
 
 .PARAMETER SubscriptionId
     Subscription hosting the resource group and the Cosmos accounts. Must be a
@@ -54,6 +58,21 @@
     Optional path to write the assembled JSON to. The JSON is always also written to
     stdout. NOTE: the JSON contains account keys - treat any file you write as a secret.
 
+.PARAMETER KeyVaultName
+    Optional Key Vault to push the assembled JSON to directly (as a new version of
+    -SecretName), using your current `Connect-AzAccount` session. Preferred over
+    -OutputPath / stdout: it avoids the secret ever touching a local file or the
+    console, other than transiently in memory.
+
+.PARAMETER SecretName
+    Name of the Key Vault secret to write when -KeyVaultName is specified. Defaults to
+    'rust-ci' (the secret backing the 'Test Secrets for Cosmos Live Tests - user
+    administered' variable group).
+
+.EXAMPLE
+    # Create/refresh accounts and push the JSON straight to the Key Vault secret
+    ./New-CosmosLiveTestAccounts.ps1 -SubscriptionId <sub> -KeyVaultName <kv-name>
+
 .EXAMPLE
     # Create/refresh accounts and write the JSON to a file, then update the secret manually
     ./New-CosmosLiveTestAccounts.ps1 -SubscriptionId <sub> -OutputPath ./accounts.json
@@ -63,7 +82,8 @@
     ./New-CosmosLiveTestAccounts.ps1 -SubscriptionId <sub> -WhatIf
 
 .NOTES
-    Requires: PowerShell 7+, Az modules, and Contributor on the subscription.
+    Requires: PowerShell 7+, Az modules, and Contributor on the subscription (plus
+    Key Vault Secrets Officer on the vault when using -KeyVaultName).
     Idempotent: safe to re-run.
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
@@ -82,7 +102,11 @@ param(
     [ValidatePattern('^[a-z0-9]{1,10}$')]
     [string] $AccountNamePrefix = 'sdkci',
 
-    [string] $OutputPath
+    [string] $OutputPath,
+
+    [string] $KeyVaultName,
+
+    [string] $SecretName = 'rust-ci'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -91,7 +115,11 @@ Set-StrictMode -Version Latest
 function Write-Info([string]$msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
 
 # --- Prerequisites -----------------------------------------------------------
-foreach ($m in @('Az.Accounts', 'Az.Resources', 'Az.CosmosDB')) {
+$requiredModules = @('Az.Accounts', 'Az.Resources', 'Az.CosmosDB')
+if ($KeyVaultName) {
+    $requiredModules += 'Az.KeyVault'
+}
+foreach ($m in $requiredModules) {
     if (-not (Get-Module -ListAvailable -Name $m)) {
         throw "Required module '$m' is not installed. Install with: Install-Module $m -Scope CurrentUser"
     }
@@ -193,7 +221,11 @@ foreach ($acct in $definition.accounts) {
         }
     }
     else {
-        Write-Info "Cosmos account '$accountName' already exists (selector=$selector); reconciling capabilities"
+        # All-or-nothing: an existing account either already has the required
+        # capabilities (created correctly) or it doesn't (created wrong / drifted).
+        # We don't patch capabilities in place - that risks leaving the account in a
+        # state that doesn't match any of test-resources.bicep, the definition file, or
+        # a clean create. Fail loudly and tell the operator to delete + re-run instead.
         $required = @('EnableNoSQLVectorSearch', 'EnableNoSQLFullTextSearch')
         $current = @()
         if ($existing.Capabilities) {
@@ -201,15 +233,9 @@ foreach ($acct in $definition.accounts) {
         }
         $missing = @($required | Where-Object { $current -notcontains $_ })
         if ($missing.Count -gt 0) {
-            $target = @(($current + $missing) | Select-Object -Unique | ForEach-Object { @{ name = $_ } })
-            if ($PSCmdlet.ShouldProcess($accountName, "Update capabilities: add $($missing -join ', ')")) {
-                Write-Info "Adding missing capabilities on '$accountName': $($missing -join ', ')"
-                $null = Update-AzCosmosDBAccount -ResourceGroupName $ResourceGroupName -Name $accountName -Capabilities $target
-            }
+            throw "Cosmos account '$accountName' (selector=$selector) already exists but is missing required capabilities: $($missing -join ', '). Delete the account and re-run this script to recreate it correctly; capabilities cannot be reconciled in place."
         }
-        else {
-            Write-Info "Capabilities on '$accountName' already include: $($required -join ', ')"
-        }
+        Write-Info "Cosmos account '$accountName' already exists (selector=$selector) with required capabilities"
     }
 
     # Ensure the shared test database exists (mirrors the `database` resource that
@@ -266,6 +292,15 @@ if ($OutputPath) {
     }
 }
 
-Write-Info "Assembled $($secret.accounts.Count) accounts. Update the fixed-accounts ADO secret manually with this JSON (see sdk/cosmos/pipeline/README.md)."
+if ($KeyVaultName) {
+    if (-not $WhatIfPreference -and $PSCmdlet.ShouldProcess("$KeyVaultName/$SecretName", 'Set Key Vault secret version')) {
+        $secureJson = ConvertTo-SecureString -String $secretJson -AsPlainText -Force
+        $null = Set-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName -SecretValue $secureJson
+        Write-Info "Pushed new version of secret '$SecretName' to Key Vault '$KeyVaultName' ($($secret.accounts.Count) accounts)."
+    }
+}
+else {
+    Write-Info "Assembled $($secret.accounts.Count) accounts. Update the fixed-accounts secret manually with this JSON (see sdk/cosmos/eng/pipelines/README.md), or re-run with -KeyVaultName to push it directly."
+}
 # Emit the JSON to stdout so it can be captured/redirected.
 Write-Output $secretJson

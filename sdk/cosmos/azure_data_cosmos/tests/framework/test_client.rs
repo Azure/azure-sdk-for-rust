@@ -319,7 +319,7 @@ pub async fn probe_data_plane_ready(
         tokio::time::sleep(RETRY_DELAY).await;
     }
 
-    unreachable!("data-plane readiness attempts are non-zero")
+    unreachable!("loop should be exited by 'return' when attempts are exhausted")
 }
 
 /// Options for configuring test execution.

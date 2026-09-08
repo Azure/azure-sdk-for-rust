@@ -14,7 +14,12 @@
 #                              (the value of the fixed-accounts ADO secret).
 #   COSMOS_ACCOUNT_SELECTOR    Logical account name to select (e.g. session-multiwrite).
 #   COSMOS_ACCOUNTS_LOCAL      Optional. When "true", prints KEY=VALUE to stdout instead of
-#                              emitting Azure DevOps ##vso logging commands (used for local tests).
+#                              emitting Azure DevOps ##vso logging commands (used for local
+#                              tests), and also sets each variable directly via
+#                              Set-Item env:NAME. The Set-Item call only lands in your shell
+#                              if you dot-source this script (". ./resolve-cosmos-test-account.ps1");
+#                              running it normally (./resolve-cosmos-test-account.ps1) still only
+#                              prints, since a non-dot-sourced script runs in a child scope.
 #
 # Exit codes: 0 on success; non-zero on any validation failure.
 [CmdletBinding()]
@@ -88,6 +93,11 @@ $rustFlags = "--cfg=test_category=`"$testCategory`""
 
 function Emit-Public([string]$name, [string]$value) {
     if ($Local) {
+        # Set-Item only affects the current process/scope: it lands in the caller's
+        # shell if this script is dot-sourced, and is a harmless no-op otherwise (e.g.
+        # the Pester tests, which invoke it via `pwsh -File` as a child process).
+        # Write-Output is kept unconditionally so non-dot-sourced callers still see it.
+        Set-Item -Path "env:$name" -Value $value
         Write-Output "$name=$value"
     }
     else {
@@ -103,6 +113,7 @@ function Emit-Public([string]$name, [string]$value) {
 # propagation to subsequent tasks.
 function Emit-Secret([string]$name, [string]$value) {
     if ($Local) {
+        Set-Item -Path "env:$name" -Value $value
         Write-Output "$name=$value"
     }
     else {

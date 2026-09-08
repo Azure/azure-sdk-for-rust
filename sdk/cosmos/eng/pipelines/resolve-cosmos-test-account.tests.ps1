@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 #
 # Local tests for resolve-cosmos-test-account.ps1 (no ADO required).
-# Run: pwsh sdk/cosmos/pipeline/resolve-cosmos-test-account.tests.ps1
+# Run: pwsh sdk/cosmos/eng/pipelines/resolve-cosmos-test-account.tests.ps1
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
