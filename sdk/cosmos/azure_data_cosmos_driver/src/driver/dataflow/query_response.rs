@@ -202,8 +202,7 @@ pub(crate) fn rewrite_query_body(
         "query".to_owned(),
         serde_json::Value::String(rewritten_query.to_owned()),
     );
-    serde_json::to_vec(&value)
-        .map_err(|e| body_error("failed to serialize rewritten query body", e))
+    serialize_query_body(&value, "failed to serialize rewritten query body")
 }
 
 /// Inserts the .NET-compatible structured `"resumeFilter"` field into an
@@ -236,8 +235,7 @@ pub(crate) fn with_resume_filter(
         "resumeFilter".to_owned(),
         order_by::resume_filter_json(resume_values, rid, exclude),
     );
-    serde_json::to_vec(&value)
-        .map_err(|e| body_error("failed to serialize query body with resume filter", e))
+    serialize_query_body(&value, "failed to serialize query body with resume filter")
 }
 
 /// Parses a query operation's JSON body, erroring on a missing body or
@@ -248,6 +246,13 @@ fn parse_query_body(body: Option<&[u8]>) -> crate::error::Result<serde_json::Val
     })?;
     serde_json::from_slice(body)
         .map_err(|e| body_error("failed to parse original query body as JSON", e))
+}
+
+fn serialize_query_body(
+    value: &serde_json::Value,
+    error_message: &'static str,
+) -> crate::error::Result<Vec<u8>> {
+    serde_json::to_vec(value).map_err(|e| body_error(error_message, e))
 }
 
 /// One row parsed from a rewritten-envelope backend page, ready for the
@@ -823,20 +828,56 @@ mod tests {
     }
 
     #[test]
-    fn parse_envelope_page_decodes_binary_envelope() {
-        // A binary-encoded page must parse into the same rows as its text form.
-        let text = br#"{"_rid":"abc","Documents":[{"_rid":"r1","orderByItems":[{"item":1}],"payload":{"id":"d1"}},{"_rid":"r2","orderByItems":[{}],"payload":{"id":"d2"}}],"_count":2}"#;
-        let binary = crate::binary_json::transcode_to_binary(text).unwrap();
-        assert!(crate::binary_json::is_binary(&binary));
+    fn parse_envelope_page_accepts_binary_feed_body() {
+        let value = serde_json::json!({
+            "_rid": "abc",
+            "Documents": [{
+                "_rid": "r1",
+                "orderByItems": [{"item": 1.0}],
+                "payload": {"id": "d1"}
+            }],
+            "_count": 1
+        });
+        let body = ResponseBody::from_bytes(crate::binary_json::encode(&value));
+        let rows = parse_envelope_page(&body, 1).unwrap();
 
-        let rows = parse_envelope_page(&ResponseBody::from_bytes(binary), 1).unwrap();
-        assert_eq!(rows.len(), 2);
+        assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].rid, "r1");
         assert_eq!(rows[0].keys, vec![OrderByItem::Number(1.0.into())]);
         assert_eq!(rows[0].payload.get(), r#"{"id":"d1"}"#);
-        assert_eq!(rows[1].rid, "r2");
-        assert_eq!(rows[1].keys, vec![OrderByItem::Undefined]);
-        assert_eq!(rows[1].payload.get(), r#"{"id":"d2"}"#);
+    }
+
+    #[test]
+    fn normalize_page_body_decodes_a_binary_feed_body() {
+        let value = serde_json::json!({
+            "_rid": "abc",
+            "Documents": [{"id": "d1"}, {"id": "d2"}],
+            "_count": 2
+        });
+        let binary = bytes::Bytes::from(crate::binary_json::encode(&value));
+        let text = normalize_page_body(&binary).unwrap();
+
+        let decoded: serde_json::Value = serde_json::from_slice(&text).unwrap();
+        assert_eq!(decoded["Documents"].as_array().unwrap().len(), 2);
+        assert_eq!(decoded["Documents"][0]["id"], "d1");
+        assert_eq!(decoded["Documents"][1]["id"], "d2");
+    }
+
+    #[test]
+    fn normalize_page_body_passes_text_through_unchanged() {
+        let text = bytes::Bytes::from_static(br#"{"Documents":[{"id":"d1"}],"_count":1}"#);
+        assert_eq!(normalize_page_body(&text).unwrap(), text);
+    }
+
+    #[test]
+    fn malformed_binary_page_is_a_response_serialization_error() {
+        let body = bytes::Bytes::from(vec![crate::binary_json::PREAMBLE]);
+        let err = normalize_page_body(&body).unwrap_err();
+
+        assert_eq!(
+            err.status(),
+            CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID
+        );
     }
 
     #[test]

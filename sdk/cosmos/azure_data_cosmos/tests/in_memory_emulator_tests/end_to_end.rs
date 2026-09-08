@@ -191,6 +191,35 @@ fn assert_emulator_item_response(resp: &ItemResponse, expected_status: StatusCod
     );
 }
 
+async fn create_database_if_needed(
+    client: &CosmosClient,
+    db_name: &str,
+) -> Result<(), Box<dyn Error>> {
+    match client.create_database(db_name, None).await {
+        Ok(_) => Ok(()),
+        // A timed-out create may have succeeded before its retry observes the resource.
+        Err(e) if e.status().status_code() == StatusCode::Conflict => Ok(()),
+        Err(e) => Err(e.into()),
+    }
+}
+
+async fn create_container_if_needed(
+    client: &CosmosClient,
+    db_name: &str,
+    props: ContainerProperties,
+    options: Option<CreateContainerOptions>,
+) -> Result<(), Box<dyn Error>> {
+    match client
+        .database_client(db_name)
+        .create_container(props, options)
+        .await
+    {
+        Ok(_) => Ok(()),
+        Err(e) if e.status().status_code() == StatusCode::Conflict => Ok(()),
+        Err(e) => Err(e.into()),
+    }
+}
+
 /// Reads an item, retrying transient `503 ServiceUnavailable` errors a bounded
 /// number of times. Used by failover tests where the SDK's failover budget can
 /// occasionally be exhausted on the failing region under CI contention before
@@ -309,7 +338,7 @@ impl SdkDualBackend {
 
     async fn create_real_database(&self, db_name: &str) -> Result<(), Box<dyn Error>> {
         if let Some(ref client) = self.real_client {
-            client.create_database(db_name, None).await?;
+            create_database_if_needed(client, db_name).await?;
         }
         Ok(())
     }
@@ -321,9 +350,8 @@ impl SdkDualBackend {
         pk_path: &str,
     ) -> Result<(), Box<dyn Error>> {
         if let Some(ref client) = self.real_client {
-            let db_client = client.database_client(db_name);
             let props = ContainerProperties::new(container_name.to_string(), pk_path.into());
-            db_client.create_container(props, None).await?;
+            create_container_if_needed(client, db_name, props, None).await?;
         }
         Ok(())
     }
@@ -489,10 +517,20 @@ async fn sdk_create_database_and_container_through_driver() {
     assert_eq!(emu_create_db.status(), StatusCode::Created);
 
     if let Some(ref real_client) = backend.real_client {
-        let real_create_db = real_client.create_database(&db_name, None).await.unwrap();
-        assert_eq!(real_create_db.status(), emu_create_db.status());
-
-        let real_db: DatabaseProperties = real_create_db.into_model().unwrap();
+        let real_db: DatabaseProperties = match real_client.create_database(&db_name, None).await {
+            Ok(response) => {
+                assert_eq!(response.status(), emu_create_db.status());
+                response.into_model().unwrap()
+            }
+            Err(e) if e.status().status_code() == StatusCode::Conflict => real_client
+                .database_client(&db_name)
+                .read(None)
+                .await
+                .unwrap()
+                .into_model()
+                .unwrap(),
+            Err(e) => panic!("failed to create real database: {e}"),
+        };
         assert_eq!(real_db.id.as_deref(), Some(db_name.as_str()));
     }
 
@@ -509,16 +547,24 @@ async fn sdk_create_database_and_container_through_driver() {
 
     if let Some(ref real_client) = backend.real_client {
         let real_db_client = real_client.database_client(&db_name);
-        let real_create_container = real_db_client
-            .create_container(props.clone(), None)
-            .await
-            .unwrap();
-        assert_eq!(
-            real_create_container.status(),
-            emu_create_container.status()
-        );
-
-        let real_container_props: ContainerProperties = real_create_container.into_model().unwrap();
+        let real_container_props: ContainerProperties =
+            match real_db_client.create_container(props.clone(), None).await {
+                Ok(response) => {
+                    assert_eq!(response.status(), emu_create_container.status());
+                    response.into_model().unwrap()
+                }
+                Err(e) if e.status().status_code() == StatusCode::Conflict => {
+                    resolve_container_when_ready(real_client, &db_name, container_name)
+                        .await
+                        .unwrap()
+                        .read(None)
+                        .await
+                        .unwrap()
+                        .into_model()
+                        .unwrap()
+                }
+                Err(e) => panic!("failed to create real container: {e}"),
+            };
         assert_eq!(real_container_props.id, container_name);
     }
 
@@ -630,10 +676,10 @@ async fn sdk_container_throughput_read_and_replace() {
         .unwrap();
 
     if let Some(ref real_client) = backend.real_client {
-        real_client.create_database(&db_name, None).await.unwrap();
-        real_client
-            .database_client(&db_name)
-            .create_container(props.clone(), Some(options))
+        create_database_if_needed(real_client, &db_name)
+            .await
+            .unwrap();
+        create_container_if_needed(real_client, &db_name, props.clone(), Some(options))
             .await
             .unwrap();
     }
@@ -660,9 +706,7 @@ async fn sdk_container_throughput_read_and_replace() {
     assert_eq!(emu_throughput.throughput(), Some(500));
 
     if let Some(ref real_client) = backend.real_client {
-        let real_container = real_client
-            .database_client(&db_name)
-            .container_client(container_name, None)
+        let real_container = resolve_container_when_ready(real_client, &db_name, container_name)
             .await
             .unwrap();
         let real_throughput = real_container.read_throughput(None).await.unwrap().unwrap();
@@ -1758,13 +1802,14 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     {
         let real_db_name = format!("sdk-fi-real-{run_id}");
         // Create DB + container on real account.
-        real_client
-            .create_database(&real_db_name, None)
+        create_database_if_needed(&real_client, &real_db_name)
             .await
             .unwrap();
         let real_db = real_client.database_client(&real_db_name);
         let props = ContainerProperties::new("testcoll".to_string(), "/pk".into());
-        real_db.create_container(props, None).await.unwrap();
+        create_container_if_needed(&real_client, &real_db_name, props, None)
+            .await
+            .unwrap();
         // Real accounts provision containers asynchronously; tolerate the
         // transient 404/1013 CollectionCreateInProgress before the first read.
         let real_container = resolve_container_when_ready(&real_client, &real_db_name, "testcoll")

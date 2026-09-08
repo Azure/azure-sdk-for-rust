@@ -13,6 +13,7 @@ fn main() {
     };
     println!("cargo:rustc-env=AZSDK_RUSTC_VERSION={version}");
 
+    println!("cargo:rustc-check-cfg=cfg(fuzzing)");
     // Allow `#[cfg_attr(not(test_category = "..."), ignore)]` in `tests/*.rs`.
     println!(
         "cargo:rustc-check-cfg=cfg(test_category, values(\"emulator\", \"emulator_vnext\", \"emulator_inmemory\", \"emulator_inmemory_gateway_v2\", \"multi_write\", \"multi_region\", \"gateway_v2\", \"gateway_v2_multi_region\", \"native_query_plan\"))"
