@@ -78,13 +78,13 @@ azure-cosmos-driver/
 The pipeline-owned `_manifest/spdx_2.2` root contains only the minimum signed
 evidence bundle: `manifest.spdx.json`, `manifest.spdx.json.sha256`,
 `manifest.spdx.cose`, `manifest.cat`, `bsi.json`, and `bsi.cose`. Verbose 1ES
-and ESRP diagnostic logs remain in restricted pipeline storage and are excluded
-from the downstream repository. Each module contains a `go.mod`, generated cgo
-linker files, the C header, and the matching static library. The root also
-carries a consolidated `provenance.json` binding the release identity (see
-[provenance.json](#provenancejson)). The Windows linker file also statically
-links the MinGW pthread runtime so the final Go application does not require a
-separate `libwinpthread-1.dll`.
+and ESRP diagnostic logs may remain in the downloaded pipeline artifact, but
+are excluded when staging the downstream repository. Each module contains a
+`go.mod`, generated cgo linker files, the C header, and the matching static
+library. The root also carries a consolidated `provenance.json` binding the
+release identity (see [provenance.json](#provenancejson)). The Windows linker
+file also statically links the MinGW pthread runtime so the final Go application
+does not require a separate `libwinpthread-1.dll`.
 
 ## Why the static library is not code-signed
 

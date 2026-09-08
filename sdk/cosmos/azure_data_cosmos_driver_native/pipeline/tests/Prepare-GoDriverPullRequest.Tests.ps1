@@ -151,7 +151,10 @@ import "C"
         Invoke-TestGit -Root $CheckoutRoot -Arguments @('commit', '--quiet', '-m', 'Seed downstream checkout')
     }
 
-    It 'publishes only required signed evidence while preserving hand-maintained files' {
+    It 'omits artifact diagnostics from the generated downstream PR' {
+        Test-Path (Join-Path $GeneratedRoot "_manifest/spdx_2.2/$DiagnosticLogName") |
+            Should -BeTrue
+
         & $ScriptPath `
             -GeneratedRoot $GeneratedRoot `
             -CheckoutRoot $CheckoutRoot `
@@ -172,6 +175,9 @@ import "C"
             Should -BeFalse
         Test-Path (Join-Path $CheckoutRoot '_manifest/spdx_2.2/unrelated-evidence.tmp') |
             Should -BeFalse
+        $stagedPaths = @(& git -C $CheckoutRoot diff --cached --name-only)
+        $stagedPaths | Where-Object { $_ -match 'ClientLogs|\.log$|unrelated-evidence' } |
+            Should -BeNullOrEmpty
         foreach ($evidenceFile in $RequiredEvidenceFiles) {
             $stagedChanges | Should -Contain "A`t_manifest/spdx_2.2/$evidenceFile"
         }

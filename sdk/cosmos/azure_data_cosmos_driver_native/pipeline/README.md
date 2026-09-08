@@ -96,12 +96,12 @@ clones the downstream repository, verifies `SHA256SUMS`, excludes the 1ES
 `_manifest` evidence directory from payload validation, then exports only the
 required signed evidence bundle: `manifest.spdx.json`,
 `manifest.spdx.json.sha256`, `manifest.spdx.cose`, `manifest.cat`, `bsi.json`,
-and `bsi.cose`. Verbose 1ES and ESRP diagnostic logs remain in restricted
-pipeline storage and are never copied to the downstream repository. The script
-rejects files outside the managed roots, runs Go validation for each module
-definition and the Linux AMD64 module, and opens a draft pull request. The
-target repository's branch rules require review and code-owner approval before
-merge.
+and `bsi.cose`. The downloaded pipeline artifact may contain verbose 1ES and
+ESRP diagnostic logs, but the downstream staging script never copies them into
+the checkout. The script rejects files outside the managed roots, runs Go
+validation for each module definition and the Linux AMD64 module, and opens a
+draft pull request. The target repository's branch rules require review and
+code-owner approval before merge.
 
 ## Local integration test
 
