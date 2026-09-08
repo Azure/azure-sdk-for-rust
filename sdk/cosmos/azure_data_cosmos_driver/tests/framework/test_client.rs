@@ -824,8 +824,17 @@ impl DriverTestRunContext {
         let operation =
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
-        let create_result = driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+        let create_result = self
+            .retry_transient_transport("create container", || {
+                let operation = operation.clone();
+                let driver = driver.clone();
+                async move {
+                    driver
+                        .execute_singleton_operation(operation, OperationOptions::default())
+                        .await
+                        .map_err(Into::into)
+                }
+            })
             .await;
         // Tolerate a 409 Conflict from the create itself: a client-side
         // timeout (surfaced as a synthetic `TransportGenerated503`) doesn't
@@ -834,8 +843,15 @@ impl DriverTestRunContext {
         // already exists. Fall through to the resolve-retry loop below
         // exactly as a successful create would, since that's what actually
         // produces the `ContainerReference` this method returns.
-        match create_result {
-            Err(error) if error.status().status_code() == StatusCode::Conflict => {}
+        let mut ambiguous_create_error = match create_result {
+            Err(error)
+                if error
+                    .downcast_ref::<CosmosError>()
+                    .is_some_and(|error| error.status().status_code() == StatusCode::Conflict) =>
+            {
+                None
+            }
+            Err(error) if Self::is_transport_generated_503(error.as_ref()) => Some(error),
             other => {
                 let result = other?;
                 // Check for success status (201 Created)
@@ -844,8 +860,9 @@ impl DriverTestRunContext {
                 if !status.map(|s| s.is_success()).unwrap_or(false) {
                     return Err(format!("Failed to create container, status: {:?}", status).into());
                 }
+                None
             }
-        }
+        };
         let db_name = database
             .name()
             .ok_or_else(|| "database reference must be name-based".to_string())?;
@@ -872,15 +889,23 @@ impl DriverTestRunContext {
                     let create_in_progress = status.status_code() == StatusCode::NotFound
                         && status.sub_status()
                             == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
-                    if create_in_progress {
+                    let ambiguous_not_found = ambiguous_create_error.is_some()
+                        && status.status_code() == StatusCode::NotFound;
+                    if create_in_progress || ambiguous_not_found {
                         tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
                         delay_ms = (delay_ms * 2).min(5000);
                         last_err_msg = Some(format!("{e}"));
                         continue;
                     }
+                    if let Some(error) = ambiguous_create_error.take() {
+                        return Err(error);
+                    }
                     return Err(e.into());
                 }
             }
+        }
+        if let Some(error) = ambiguous_create_error.take() {
+            return Err(error);
         }
         Err(format!(
             "resolve_container_by_name failed after 12 retries: {}",

@@ -113,7 +113,7 @@ async fn ensure_container(
 }
 
 /// Fetch a gateway query plan for the given SQL on a container.
-async fn fetch_gateway_plan(
+async fn fetch_gateway_plan_once(
     driver: &CosmosDriver,
     container: &ContainerReference,
     sql: &str,
@@ -164,6 +164,33 @@ async fn fetch_gateway_plan(
         })?
         .into_body()
         .into_single()
+}
+
+async fn fetch_gateway_plan(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    sql: &str,
+    parameters: &[(&str, serde_json::Value)],
+) -> Result<serde_json::Value, azure_data_cosmos_driver::CosmosError> {
+    const MAX_ATTEMPTS: u32 = 6;
+    let mut delay = std::time::Duration::from_millis(250);
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        match fetch_gateway_plan_once(driver, container, sql, parameters).await {
+            Ok(plan) => return Ok(plan),
+            Err(error) if error.status().is_transport_generated_503() && attempt < MAX_ATTEMPTS => {
+                eprintln!(
+                    "Gateway query plan request hit a transient transport failure; retrying \
+                     attempt {attempt}/{MAX_ATTEMPTS} after {delay:?}: {error}"
+                );
+                tokio::time::sleep(delay).await;
+                delay = (delay * 2).min(std::time::Duration::from_secs(5));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    unreachable!("the bounded retry loop returns on its final attempt")
 }
 
 /// Compare a locally-generated `queryInfo` JSON object against what the Cosmos DB
