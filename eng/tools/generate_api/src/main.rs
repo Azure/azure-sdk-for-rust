@@ -10,6 +10,7 @@ mod output;
 mod render;
 mod rustdoc_compat;
 mod source_cache;
+mod source_map;
 
 use std::path::Path;
 
@@ -42,6 +43,20 @@ fn run() -> Result<(), String> {
             let lines = render::markdown::render_lines(&model);
             let rendered = render::markdown::render_from_lines(&lines);
             save_or_check(&request, &output_path, &rendered)?;
+
+            if !request.no_map {
+                let map_path = output::output_file_path(&request, cli::SOURCE_MAP_FILE_NAME);
+                let mappings = render::markdown::source_mappings_from_lines(&lines);
+                let repository_root = std::env::current_dir()
+                    .map_err(|error| format!("Failed to resolve repository root: {error}"))?;
+                let map = source_map::render(
+                    cli::OutputFormat::Markdown.default_file_name(),
+                    &mappings,
+                    &request.output_dir,
+                    &repository_root,
+                )?;
+                save_or_check(&request, &map_path, &map)?;
+            }
 
             if !request.no_docs {
                 let patch_path = output::output_file_path(&request, cli::COMMENTS_PATCH_FILE_NAME);

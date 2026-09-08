@@ -23,12 +23,14 @@ These rules apply in addition to the repository root [AGENTS.md](../../AGENTS.md
 
 - Keep versions for `sdk/core` dependencies managed from the root workspace `Cargo.toml`.
 - Prefer `workspace = true` in `sdk/core` crate manifests when inheriting workspace-managed dependencies.
+- When evaluating a release, focus on normal `[dependencies]` that affect the published crate. Dev-only test/example/doc wiring may remain local unless the same manifest also names that package in normal dependencies.
 - For unreleased local `sdk/core` dependencies, use the workspace table for the needed `path + version` entry.
 - Keep crates in next-release state in their own manifests; manage cross-crate version wiring from the workspace table.
 
 ### Published vs. unpublished graphs
 
 - Mixing published and local versions of `typespec`, `typespec_client_core`, `azure_core`, or crates that expose their types can create duplicate-type failures.
+- Cargo also requires a single canonical source for a package within one manifest. If a crate appears in both normal and dev dependencies, do not mix a published source in one entry with a local path in the other.
 - Common breakage looks like mismatched `ClientOptions`, `TokenCredential`, or trait implementations that appear identical but come from different crate instances.
 - When changing one side of a test/example graph to local source, check all directly exchanged public types in that graph and keep them on the same crate instance.
 

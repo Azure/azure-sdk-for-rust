@@ -728,12 +728,25 @@ async fn execute_hedged(
   (preferring recent measurements for fast reaction). Hard-coded safety gates
   clamp the effective threshold to the range **50 ms – 4000 ms**; configurable
   min/max bounds can tighten this range further.
-- The primary (first) attempt always uses `ExecutionContext::Initial` so that
-  diagnostics can clearly distinguish whether hedging occurred. A hedged attempt
-  uses `ExecutionContext::Hedging`. This makes it easy to identify concurrent
-  execution caused by the original attempt not producing a terminal result
-  within the configured threshold.
-- Both attempts are tracked in `DiagnosticsContext`
+- The primary (first) leg of the race carries the `ExecutionContext` the
+  *non-hedged* path would have used for that same attempt, so the reason a
+  hedged operation was already retrying is never lost. Concretely:
+  - **STAGE 2b** (a fresh operation that crosses the latency threshold) — the
+    retry counters are still zero, so the primary leg is `Initial`.
+  - **STAGE 7** (an already-retrying operation whose next attempt is upgraded
+    into a hedge) — the primary leg keeps the retry's own context, e.g.
+    `OperationRetry` or `RegionFailover`.
+
+  The *hedged* leg is always `ExecutionContext::Hedging`. Hedging is therefore
+  identified by the presence of the `Hedging` leg, not by the primary being
+  `Initial`, which keeps concurrent execution unambiguous without erasing why
+  the operation was retrying in the first place.
+- Both legs of the race are tracked in `DiagnosticsContext`, including the leg
+  that loses and is cancelled: each leg records into a private builder, but
+  every attempt it *completes* is mirrored into an operation-scoped hedge
+  journal, so a reply already received by the loser is still reported (region
+  history, RU charge, status). An attempt still in flight when its leg is
+  cancelled observed nothing and is deliberately not reported.
 - The hedged attempt's RU charge is always reported regardless of which wins
 - **Deadline enforcement**: The hedged attempt shares the original e2e deadline.
   By the time the hedged attempt starts, at least `hedging_threshold` has

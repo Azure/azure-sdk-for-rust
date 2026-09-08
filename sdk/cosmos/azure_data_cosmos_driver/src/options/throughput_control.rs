@@ -342,17 +342,27 @@ impl ThroughputControlGroupRegistry {
     ) -> Result<(), ThroughputControlGroupRegistrationError> {
         let key = group.key();
 
-        // Check for duplicate key
-        if self.groups.contains_key(&key) {
+        // A name-addressed container keeps one logical identity across RID
+        // generations. Reject a second registration for the same logical
+        // container and group name so recreation fallback stays deterministic.
+        if self.groups.contains_key(&key)
+            || self.groups.values().any(|existing| {
+                existing.name() == group.name()
+                    && same_logical_container(existing.container(), group.container())
+            })
+        {
             return Err(ThroughputControlGroupRegistrationError::DuplicateGroup(key));
         }
 
         // Check for duplicate default
         if group.is_default() {
-            if let Some(existing_default) = self.defaults.get(group.container()) {
+            if let Some(existing_default) = self.groups.values().find(|existing| {
+                existing.is_default()
+                    && same_logical_container(existing.container(), group.container())
+            }) {
                 return Err(ThroughputControlGroupRegistrationError::DuplicateDefault {
                     container: group.container().clone(),
-                    existing_default: existing_default.clone(),
+                    existing_default: existing_default.name().clone(),
                 });
             }
             self.defaults
@@ -381,7 +391,11 @@ impl ThroughputControlGroupRegistry {
             container: container.clone(),
             name: name.clone(),
         };
-        self.groups.get(&key)
+        self.groups.get(&key).or_else(|| {
+            self.groups.values().find(|group| {
+                group.name() == name && same_logical_container(group.container(), container)
+            })
+        })
     }
 
     /// Returns the default group for a container, if one exists.
@@ -389,13 +403,20 @@ impl ThroughputControlGroupRegistry {
         &self,
         container: &ContainerReference,
     ) -> Option<&Arc<ThroughputControlGroupOptions>> {
-        self.defaults.get(container).and_then(|name| {
-            let key = ThroughputControlGroupKey {
-                container: container.clone(),
-                name: name.clone(),
-            };
-            self.groups.get(&key)
-        })
+        self.defaults
+            .get(container)
+            .and_then(|name| {
+                let key = ThroughputControlGroupKey {
+                    container: container.clone(),
+                    name: name.clone(),
+                };
+                self.groups.get(&key)
+            })
+            .or_else(|| {
+                self.groups.values().find(|group| {
+                    group.is_default() && same_logical_container(group.container(), container)
+                })
+            })
     }
 
     /// Returns all groups registered for a specific container.
@@ -405,7 +426,7 @@ impl ThroughputControlGroupRegistry {
     ) -> Vec<&Arc<ThroughputControlGroupOptions>> {
         self.groups
             .iter()
-            .filter(|(key, _)| &key.container == container)
+            .filter(|(key, _)| same_logical_container(&key.container, container))
             .map(|(_, group)| group)
             .collect()
     }
@@ -433,6 +454,15 @@ impl ThroughputControlGroupRegistry {
     }
 }
 
+fn same_logical_container(left: &ContainerReference, right: &ContainerReference) -> bool {
+    left == right
+        || (!left.is_by_rid()
+            && !right.is_by_rid()
+            && left.account().endpoint() == right.account().endpoint()
+            && left.database_name() == right.database_name()
+            && left.name() == right.name())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -452,6 +482,10 @@ mod tests {
     }
 
     fn test_container() -> ContainerReference {
+        test_container_with_rid("testcontainer_rid")
+    }
+
+    fn test_container_with_rid(rid: &str) -> ContainerReference {
         let account = AccountReference::with_master_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
@@ -461,7 +495,7 @@ mod tests {
             "testdb",
             "testdb_rid",
             "testcontainer",
-            "testcontainer_rid",
+            rid.to_owned(),
             &test_container_props(),
         )
     }
@@ -565,6 +599,52 @@ mod tests {
     }
 
     #[test]
+    fn registry_rejects_duplicate_logical_group_after_recreation() {
+        let mut registry = ThroughputControlGroupRegistry::new();
+        let original = test_container_with_rid("old_rid");
+        let replacement = test_container_with_rid("new_rid");
+
+        registry
+            .register(
+                ThroughputControlGroupOptions::new("same-name", original, false)
+                    .with_throughput_bucket(100),
+            )
+            .unwrap();
+        let result = registry.register(
+            ThroughputControlGroupOptions::new("same-name", replacement, false)
+                .with_throughput_bucket(200),
+        );
+
+        assert!(matches!(
+            result,
+            Err(ThroughputControlGroupRegistrationError::DuplicateGroup(_))
+        ));
+    }
+
+    #[test]
+    fn registry_rejects_duplicate_logical_default_after_recreation() {
+        let mut registry = ThroughputControlGroupRegistry::new();
+        let original = test_container_with_rid("old_rid");
+        let replacement = test_container_with_rid("new_rid");
+
+        registry
+            .register(
+                ThroughputControlGroupOptions::new("default-1", original, true)
+                    .with_throughput_bucket(100),
+            )
+            .unwrap();
+        let result = registry.register(
+            ThroughputControlGroupOptions::new("default-2", replacement, true)
+                .with_throughput_bucket(200),
+        );
+
+        assert!(matches!(
+            result,
+            Err(ThroughputControlGroupRegistrationError::DuplicateDefault { .. })
+        ));
+    }
+
+    #[test]
     fn same_name_different_containers_allowed() {
         let mut registry = ThroughputControlGroupRegistry::new();
         let container1 = test_container();
@@ -659,6 +739,32 @@ mod tests {
         assert!(registry
             .get_by_container_and_name(&container, &missing)
             .is_none());
+    }
+
+    #[test]
+    fn registry_lookup_survives_named_container_recreation() {
+        let mut registry = ThroughputControlGroupRegistry::new();
+        let original = test_container_with_rid("old_rid");
+        let replacement = test_container_with_rid("new_rid");
+        let group = ThroughputControlGroupOptions::new("lookup-test", original, true)
+            .with_throughput_bucket(10);
+        registry.register(group).unwrap();
+
+        let name = ThroughputControlGroupName::new("lookup-test");
+        assert_eq!(
+            registry
+                .get_by_container_and_name(&replacement, &name)
+                .expect("logical-name lookup should survive a RID change")
+                .throughput_bucket(),
+            Some(10),
+        );
+        assert_eq!(
+            registry
+                .get_default_for_container(&replacement)
+                .expect("default lookup should survive a RID change")
+                .name(),
+            &name,
+        );
     }
 
     #[test]
