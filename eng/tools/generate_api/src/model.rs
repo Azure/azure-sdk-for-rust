@@ -3,6 +3,13 @@
 
 use std::collections::BTreeMap;
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub(crate) struct SourceLocation {
+    pub(crate) path: String,
+    pub(crate) line: usize,
+    pub(crate) column: usize,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct ApiModel {
     pub(crate) package_name: String,
@@ -20,6 +27,7 @@ impl ApiModel {
     ) -> Self {
         let root_module = ApiModule {
             path: package_name.clone(),
+            declaration_location: None,
             doc_comments: Vec::new(),
             attributes: Vec::new(),
             items: Vec::new(),
@@ -99,6 +107,7 @@ impl PackageMetadata {
 #[derive(Debug, Clone)]
 pub(crate) struct ApiModule {
     pub(crate) path: String,
+    pub(crate) declaration_location: Option<SourceLocation>,
     pub(crate) doc_comments: Vec<String>,
     pub(crate) attributes: Vec<ApiAttribute>,
     pub(crate) items: Vec<ApiItem>,
@@ -117,6 +126,7 @@ impl ApiModule {
 pub(crate) struct ApiItem {
     pub(crate) name: String,
     pub(crate) kind: ApiItemKind,
+    pub(crate) declaration_location: Option<SourceLocation>,
     pub(crate) source_id: Option<String>,
     pub(crate) navigation_paths: Vec<ApiNavigationPath>,
     pub(crate) owner_name: Option<String>,
@@ -145,6 +155,7 @@ pub(crate) struct ApiAttribute {
 pub(crate) struct ApiMember {
     pub(crate) name: String,
     pub(crate) kind: ApiMemberKind,
+    pub(crate) declaration_location: Option<SourceLocation>,
     pub(crate) doc_comments: Vec<String>,
     pub(crate) attributes: Vec<ApiAttribute>,
     pub(crate) declaration: String,

@@ -26,7 +26,7 @@ use crate::{
     models::{CosmosResponse, CosmosResponsePayload, PatchTrackingId},
 };
 
-pub mod cosmos_status;
+pub(crate) mod cosmos_status;
 pub use cosmos_status::{CosmosStatus, SubStatusCode};
 
 pub(crate) mod backtrace;

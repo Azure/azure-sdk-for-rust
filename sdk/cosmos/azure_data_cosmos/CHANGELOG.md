@@ -4,9 +4,14 @@
 
 ### Features Added
 
+- Added `QueryPlanMode::{LocalPreferred, GatewayOnly}` to `OperationOptions`, allowing applications to force Gateway query planning globally or for an individual query as a livesite mitigation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
+- Added finite cross-partition `ORDER BY VectorDistance(...)` queries with `TOP` or `OFFSET`/`LIMIT`. Results are fully buffered before the first page and cannot be resumed from continuation tokens. Hybrid/full-text vector ranking remains unsupported. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
+
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- Name-based container clients now automatically recover when a container is deleted and recreated. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
 
 ### Other Changes
 
