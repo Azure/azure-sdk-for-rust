@@ -1,0 +1,40 @@
+parameters:
+  - name: ToolchainConfig
+    type: string
+    default: $(Build.SourcesDirectory)/eng/templates/ms-rust-toolchain.toml
+  - name: MaxAttempts
+    type: number
+    default: 3
+  - name: WorkingDirectory
+    type: string
+    default: $(System.DefaultWorkingDirectory)
+  - name: ConfigureRegistry
+    type: boolean
+    default: true
+
+steps:
+  - pwsh: |
+      $source = '${{ parameters.ToolchainConfig }}'
+      if (-not (Test-Path -Path $source -PathType Leaf)) {
+        throw "Microsoft Rust toolchain configuration was not found: $source"
+      }
+
+      Copy-Item `
+        -Path $source `
+        -Destination '$(Build.SourcesDirectory)/rust-toolchain.toml' `
+        -Force
+      Write-Host "##vso[task.setvariable variable=RUSTUP_EXE]msrustup"
+    displayName: Configure pinned Microsoft Rust toolchain
+
+  - task: RustInstaller@1
+    displayName: Install Microsoft Rust toolchain
+    inputs:
+      toolchainFeed: https://pkgs.dev.azure.com/azure-sdk/internal/_packaging/ms-rust-tools/nuget/v3/index.json
+
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: active
+      MaxAttempts: ${{ parameters.MaxAttempts }}
+      WorkingDirectory: ${{ parameters.WorkingDirectory }}
+      ConfigureRegistry: ${{ parameters.ConfigureRegistry }}
+      InstallToolchain: false

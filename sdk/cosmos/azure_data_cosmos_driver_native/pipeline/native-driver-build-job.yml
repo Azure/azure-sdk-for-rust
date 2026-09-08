@@ -28,9 +28,7 @@ jobs:
         image: $(OSVmImage)
       os: ${{ parameters.OSName }}
     steps:
-      - template: /eng/pipelines/templates/steps/use-rust.yml@self
-        parameters:
-          Toolchain: active
+      - template: /eng/pipelines/templates/steps/use-ms-rust.yml@self
 
       - ${{ if eq(parameters.OSName, 'windows') }}:
         - pwsh: |

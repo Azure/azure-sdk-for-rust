@@ -60,7 +60,8 @@ param(
     [string]   $CCompiler,
     [switch]   $SkipBuild,
     [switch]   $NoAuditable,
-    [switch]   $StaticOnly
+    [switch]   $StaticOnly,
+    [string]   $ToolchainConfigPath
 )
 
 Set-StrictMode -Version 3.0
@@ -71,6 +72,18 @@ $CrateDir    = Split-Path -Parent $PipelineDir
 $RepoRoot    = (Resolve-Path (Join-Path $CrateDir '..' '..' '..')).Path
 $MatrixPath  = Join-Path $PipelineDir 'build-matrix.json'
 $MetadataFilename = 'rust-driver-native-interface-metadata.json'
+
+. ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'shared', 'common.ps1'))
+
+if (-not $ToolchainConfigPath) {
+    $ToolchainConfigPath = [System.IO.Path]::Combine(
+        $RepoRoot,
+        'eng',
+        'templates',
+        'ms-rust-toolchain.toml'
+    )
+}
+$microsoftRustConfig = Get-MicrosoftRustToolchainConfiguration -Path $ToolchainConfigPath
 
 if (-not $OutputRoot) { $OutputRoot = Join-Path $PipelineDir 'artifacts' }
 New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
@@ -84,20 +97,42 @@ if ($CCompiler -and $rows.Count -ne 1) {
 }
 
 $compilers = @{}
+$compilerCommands = @{}
 foreach ($row in $rows) {
     $compiler = if ($CCompiler) { $CCompiler } else { $row.c_compiler }
     if (-not $compiler) {
         throw "No C compiler is configured for target '$($row.id)'."
     }
-    if (-not (Get-Command $compiler -CommandType Application -ErrorAction SilentlyContinue)) {
+    $compilerCommand = Get-Command $compiler -CommandType Application -ErrorAction SilentlyContinue
+    if (-not $compilerCommand) {
         throw "C compiler '$compiler' is not available for target '$($row.id)'."
     }
     $compilers[$row.id] = $compiler
+    $compilerCommands[$row.id] = $compilerCommand
 }
 
-function Get-ToolVersion([string] $exe, [string[]] $verArgs) {
-    try { (& $exe @verArgs 2>&1 | Select-Object -First 1) -join ' ' }
-    catch { $null }
+function Invoke-RequiredToolOutput(
+    [string] $Executable,
+    [string[]] $Arguments,
+    [string] $Description
+) {
+    try {
+        $output = @(& $Executable @Arguments 2>&1)
+    }
+    catch {
+        throw "Unable to execute ${Description}: $($_.Exception.Message)"
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Description failed with exit code $LASTEXITCODE`n$($output -join "`n")"
+    }
+
+    $text = ($output | ForEach-Object { [string]$_ }) -join "`n"
+    if ([string]::IsNullOrWhiteSpace($text)) {
+        throw "$Description returned no identity information."
+    }
+
+    return $text.Trim()
 }
 
 # Programmatically parse the `native-static-libs:` note out of a
@@ -174,8 +209,66 @@ function Resolve-ConsumerNativeStaticLibs(
 }
 
 function Test-TripleInstalled([string] $triple) {
-    (& rustup target list --installed 2>$null) -contains $triple
+    $installedTargets = @(
+        (& $rustupExecutable target list --installed 2>&1) |
+            Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*(INFO|WARN)\b' } |
+            ForEach-Object { ([string]$_).Trim() }
+    )
+    if ($LASTEXITCODE -ne 0) {
+        throw "$rustupExecutable target list --installed failed with exit code $LASTEXITCODE."
+    }
+
+    return $installedTargets -contains $triple
 }
+
+$rustupExecutable = Get-RustupExecutable
+$rustupName = [System.IO.Path]::GetFileNameWithoutExtension($rustupExecutable)
+if ($rustupName -cne 'msrustup') {
+    throw "Microsoft Rust is required: RUSTUP_EXE must resolve to msrustup, found '$rustupExecutable'."
+}
+
+$managerVersion = Invoke-RequiredToolOutput `
+    -Executable $rustupExecutable `
+    -Arguments @('--version') `
+    -Description 'Microsoft Rust toolchain manager'
+$activeToolchainOutput = Invoke-RequiredToolOutput `
+    -Executable $rustupExecutable `
+    -Arguments @('show', 'active-toolchain') `
+    -Description 'Microsoft Rust active toolchain query'
+$activeToolchain = (
+    $activeToolchainOutput -split "`r?`n" |
+        Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*(INFO|WARN)\b' } |
+        Select-Object -First 1
+)
+if (
+    -not $activeToolchain -or
+    -not (Test-MicrosoftRustActiveToolchain `
+        -ActiveToolchain $activeToolchain.Trim() `
+        -Channel $microsoftRustConfig.Channel)
+) {
+    throw "Active Rust toolchain '$activeToolchain' does not match pinned Microsoft channel '$($microsoftRustConfig.Channel)'."
+}
+$activeToolchain = $activeToolchain.Trim()
+
+$rustcVerboseVersion = Invoke-RequiredToolOutput `
+    -Executable 'rustc' `
+    -Arguments @('-Vv') `
+    -Description 'rustc -Vv'
+if ($rustcVerboseVersion -notmatch '(?im)^rustc\s+.*\bmicrosoft\b') {
+    throw "rustc -Vv does not identify a Microsoft Rust compiler; refusing a possible upstream fallback."
+}
+$rustcReleaseMatch = [regex]::Match(
+    $rustcVerboseVersion,
+    '(?m)^release:\s*(\S+)\s*$'
+)
+if (-not $rustcReleaseMatch.Success) {
+    throw "rustc -Vv did not report a release identity."
+}
+$rustcRelease = $rustcReleaseMatch.Groups[1].Value
+$cargoVersion = Invoke-RequiredToolOutput `
+    -Executable 'cargo' `
+    -Arguments @('--version') `
+    -Description 'cargo --version'
 
 $sourceCommit = (& git -C $RepoRoot rev-parse HEAD 2>$null)
 if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve the source commit.' }
@@ -205,12 +298,20 @@ $summary = @()
 foreach ($row in $rows) {
     Write-Host "==> $($row.id) ($($row.triple))" -ForegroundColor Cyan
     $compiler = $compilers[$row.id]
+    $compilerCommand = $compilerCommands[$row.id]
+
+    if ($row.triple -notin $microsoftRustConfig.Targets) {
+        throw "[$($row.id)] target '$($row.triple)' is absent from the Microsoft Rust toolchain configuration."
+    }
 
     if (-not (Test-TripleInstalled $row.triple)) {
-        Write-Host "    target not installed; attempting 'rustup target add $($row.triple)'"
-        & rustup target add $row.triple *> $null
+        Write-Host "    target not installed; attempting '$rustupExecutable target add $($row.triple)'"
+        & $rustupExecutable target add $row.triple *> $null
         if ($LASTEXITCODE -ne 0) {
-            throw "rustup target add failed for $($row.triple) with exit code $LASTEXITCODE"
+            throw "$rustupExecutable target add failed for $($row.triple) with exit code $LASTEXITCODE"
+        }
+        if (-not (Test-TripleInstalled $row.triple)) {
+            throw "$rustupExecutable did not install required target '$($row.triple)'."
         }
     }
     $targetOut = Join-Path $OutputRoot $row.id
@@ -312,7 +413,7 @@ foreach ($row in $rows) {
     $headerSha = (Get-FileHash $headerSrc -Algorithm SHA256).Hash.ToLowerInvariant()
 
     $manifest = [ordered]@{
-        schema_version           = 3
+        schema_version           = 4
         artifact_id              = $row.id
         goos                     = $row.goos
         goarch                   = $row.goarch
@@ -341,11 +442,26 @@ foreach ($row in $rows) {
         }
         rustc_native_static_libs = $rustcSyslibs
         native_static_libs       = $syslibs
-        toolchains = [ordered]@{
-            rustc              = Get-ToolVersion 'rustc' @('--version')
-            cargo              = Get-ToolVersion 'cargo' @('--version')
-            c_compiler         = $compiler
-            c_compiler_version = Get-ToolVersion $compiler @('--version')
+        toolchain = [ordered]@{
+            provider = 'microsoft'
+            manager = [ordered]@{
+                executable = $rustupExecutable
+                version    = $managerVersion
+            }
+            channel               = $microsoftRustConfig.Channel
+            active_toolchain      = $activeToolchain
+            rustc_verbose_version = $rustcVerboseVersion
+            rustc_release         = $rustcRelease
+            cargo_version         = $cargoVersion
+            target                = $row.triple
+            linker = [ordered]@{
+                command    = $compiler
+                executable = $compilerCommand.Source
+                version    = Invoke-RequiredToolOutput `
+                    -Executable $compiler `
+                    -Arguments @('--version') `
+                    -Description "$compiler --version"
+            }
         }
         generated_utc = (Get-Date).ToUniversalTime().ToString('o')
     }

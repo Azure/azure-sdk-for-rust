@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 -->
-<!-- cSpell:ignore Authenticode codesign dylib staticlib rustls mingw musl SPDX -->
+<!-- cSpell:ignore Authenticode codesign dylib staticlib rustls mingw musl msrustup SPDX -->
 
 # How the Go native driver is built and verified
 
@@ -51,15 +51,20 @@ The metadata records:
 - the Rust target;
 - the source repository commit;
 - the native-interface and driver versions;
-- the Rust and Cargo tool versions;
+- the `msrustup` executable, manager version, and active pinned Microsoft Rust
+  channel;
+- the complete `rustc -Vv` output and Cargo version;
+- the linker command, resolved executable path, and version output;
 - the operating-system libraries required by the Go linker; and
 - the SHA256 checksums of the built libraries and C header.
 
 Before generating output, `New-GoModules.ps1` verifies that every selected
 artifact matches its matrix identity and recorded file hashes, that all targets
-come from the same source commit and package versions, and that every target
-contains the same C header. After those checks pass, it creates the directory
-layout expected by `Azure/azure-cosmos-driver`:
+come from the same source commit, package versions, and Microsoft Rust release,
+and that every target contains the same C header. Missing provenance, upstream
+Rust, unpinned channels, and mixed toolchains fail the build. After those checks
+pass, it creates the directory layout expected by
+`Azure/azure-cosmos-driver`:
 
 ```text
 azure-cosmos-driver/
@@ -106,6 +111,29 @@ The Go release therefore uses this chain:
 
 No unsigned Microsoft shared library is loaded at runtime in this model. The
 `.a` becomes part of the customer's Go executable.
+
+## Pinned Microsoft Rust toolchain
+
+The production native-driver jobs opt into the shared
+`eng/pipelines/templates/steps/use-ms-rust.yml` template. That template copies
+`eng/templates/ms-rust-toolchain.toml` to the repository root and invokes
+`RustInstaller@1` against the private `ms-rust-tools` feed. Other pipeline
+consumers continue to use the standard upstream Rust path.
+
+The configuration pins `ms-prod-1.95` and declares the six Rust target triples
+required by the release matrix. It does not list `rust-std` as a host component;
+cross-target standard libraries are installed through the toolchain target
+mechanism.
+
+`Build-NativeMatrix.ps1` requires `RUSTUP_EXE` to select `msrustup`, validates the
+active channel against the centralized pin, and checks each target with
+`msrustup target list --installed`. A missing target is installed only through
+`msrustup` and verified again. Any missing manager, upstream fallback, channel
+mismatch, or unsupported target stops the build before Cargo runs.
+
+The target list must still be exercised by a manual build in the internal Azure
+DevOps project. Local tests verify the fail-closed behavior but cannot prove that
+the private feed currently supplies every target.
 
 ## Release evidence
 
@@ -158,8 +186,11 @@ binds the published static libraries back to their exact source:
   authoritative pin);
 - `native_interface_crate` / `native_interface_version` — the wrapper crate and
   the `AZURECOSMOSDRIVER_H_VERSION` header contract; and
+- `toolchain` — the Microsoft provider, `msrustup` manager identity, pinned
+  channel, Rust release, and Cargo version shared by every target; and
 - `targets[]` — one entry per built row with its `id`, `triple`, `module_path`,
-  and the SHA256 of the static library and C header.
+  full `rustc -Vv` output, linker identity, and the SHA256 of the static library
+  and C header.
 
 `New-GoModules.ps1` cross-validates that every selected target agrees on the
 identity fields before emitting the file, so a mismatched or tampered target
@@ -226,10 +257,11 @@ Open a draft pull request in Azure/azure-cosmos-driver
 Receive GitHub code-owner review and approval
 ```
 
-The checked-in pipeline extends the official 1ES wrapper and uses the standard
-managed pool definitions for Linux, Windows, and Apple Silicon macOS. It remains
-unregistered, so an owner must create its internal Azure DevOps definition
-before it can run.
+The checked-in pipeline extends the official 1ES wrapper, uses the standard
+managed pool definitions for Linux, Windows, and Apple Silicon macOS, and
+installs Microsoft Rust from an internal feed. It remains unregistered, so an
+owner must create its internal Azure DevOps definition and confirm all six
+toolchain targets with a manual run before release.
 
 The publication stage runs only for a successful non-pull-request build of
 `refs/heads/main`. It uses the existing Azure SDK Automation GitHub App to clone
@@ -244,7 +276,9 @@ repository then requires one approval and code-owner approval before merge.
 
 ## Local integration test
 
-`Invoke-LocalSupplyChain.ps1` exercises the mechanics on a developer machine. It:
+`Invoke-LocalSupplyChain.ps1` exercises the mechanics on a developer machine
+that already has the pinned Microsoft Rust toolchain installed through
+`msrustup` and selects it with `RUSTUP_EXE=msrustup`. It:
 
 1. builds the native libraries;
 2. applies a disposable test signature to the Windows DLL;

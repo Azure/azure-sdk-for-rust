@@ -50,14 +50,15 @@ foreach ($property in @(
     'libc',
     'triple',
     'rustc_native_static_libs',
-    'native_static_libs'
+    'native_static_libs',
+    'toolchain'
 )) {
     if ($metadata.PSObject.Properties.Name -notcontains $property) {
         throw "[$TargetId] metadata is missing '$property'."
     }
 }
-if ($metadata.schema_version -ne 3) {
-    throw "[$TargetId] metadata 'schema_version' does not match expected version 3."
+if ($metadata.schema_version -ne 4) {
+    throw "[$TargetId] metadata 'schema_version' does not match expected version 4."
 }
 $expectedIdentity = @{
     artifact_id = $target.id
@@ -70,6 +71,21 @@ foreach ($property in $expectedIdentity.Keys) {
     if ([string]$metadata.$property -cne [string]$expectedIdentity[$property]) {
         throw "[$TargetId] metadata '$property' does not match build-matrix.json."
     }
+}
+if ([string]$metadata.toolchain.provider -cne 'microsoft') {
+    throw "[$TargetId] metadata toolchain provider is not Microsoft Rust."
+}
+$manager = [System.IO.Path]::GetFileNameWithoutExtension(
+    [string]$metadata.toolchain.manager.executable
+)
+if ($manager -cne 'msrustup') {
+    throw "[$TargetId] metadata toolchain manager is not msrustup."
+}
+if ([string]$metadata.toolchain.channel -notmatch '^ms-prod-\d+(?:\.\d+)+$') {
+    throw "[$TargetId] metadata Microsoft Rust channel is not explicitly pinned."
+}
+if ([string]$metadata.toolchain.target -cne [string]$target.triple) {
+    throw "[$TargetId] metadata toolchain target does not match build-matrix.json."
 }
 
 $libraryPath = Join-Path $targetRoot $matrix.static_lib_filename

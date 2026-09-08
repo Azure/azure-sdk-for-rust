@@ -19,6 +19,10 @@ parameters:
   - name: ConfigureRegistry
     type: boolean
     default: true
+  - name: InstallToolchain
+    type: boolean
+    # RustInstaller@1 handles installation for Microsoft Rust consumers.
+    default: true
 
 steps:
 # `variables/rust.yml` relocates CARGO_HOME off the OS volume. Cargo finds its own
@@ -72,14 +76,15 @@ steps:
     env:
       SYSTEM_ACCESSTOKEN: $(VSS_NUGET_ACCESSTOKEN)
 
-- task: PowerShell@2
-  displayName: "Use Rust ${{ parameters.Toolchain }}"
-  inputs:
-    pwsh: true
-    filePath: $(Build.SourcesDirectory)/eng/scripts/Use-Rust.ps1
-    arguments: >
-      -Toolchain '${{ parameters.Toolchain }}'
-      -MaxAttempts ${{ parameters.MaxAttempts }}
-      -SetDefault $${{ parameters.SetDefault }}
-      -OutsideDirectory '$(Pipeline.Workspace)'
-    workingDirectory: ${{ parameters.WorkingDirectory }}
+- ${{ if parameters.InstallToolchain }}:
+  - task: PowerShell@2
+    displayName: "Use Rust ${{ parameters.Toolchain }}"
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/Use-Rust.ps1
+      arguments: >
+        -Toolchain '${{ parameters.Toolchain }}'
+        -MaxAttempts ${{ parameters.MaxAttempts }}
+        -SetDefault $${{ parameters.SetDefault }}
+        -OutsideDirectory '$(Pipeline.Workspace)'
+      workingDirectory: ${{ parameters.WorkingDirectory }}
