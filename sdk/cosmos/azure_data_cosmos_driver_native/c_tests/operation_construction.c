@@ -43,8 +43,8 @@ static int test_options_default_is_all_unset(void)
               "patch strategy ServerSide ABI value (=%d)", COSMOS_PATCH_STRATEGY_SERVER_SIDE);
        ASSERT(opts.patch_strategy == COSMOS_PATCH_STRATEGY_UNSET,
               "patch_strategy unset (=%d)", opts.patch_strategy);
-       ASSERT(opts.session_capturing_disabled == 0,
-              "session_capturing unset (=%d)", opts.session_capturing_disabled);
+       ASSERT(opts.session_token_management_enabled == 0,
+              "session management unset (=%d)", opts.session_token_management_enabled);
        ASSERT(opts.max_failover_retry_count < 0,
               "max_failover unset (=%d)", opts.max_failover_retry_count);
        ASSERT(opts.max_session_retry_count < 0,

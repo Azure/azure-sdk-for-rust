@@ -405,7 +405,6 @@ pub(crate) async fn execute_operation_pipeline(
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<ResolvedThroughputControl>,
     pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
-    partition_key_range_cache_enabled: bool,
     hedge_budget: &HedgeBudget,
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
@@ -440,19 +439,19 @@ pub(crate) async fn execute_operation_pipeline(
         .copied()
         .unwrap_or(default_wait);
 
-    // Determine if session consistency is active for this operation.
-    let session_capturing_disabled = options
-        .session_capturing_disabled()
+    // Determine whether automatic session management is active for this operation.
+    let session_token_management_enabled = options
+        .session_token_management_enabled()
         .copied()
-        .unwrap_or(false);
+        .unwrap_or(true);
     let read_consistency_strategy = options
         .read_consistency_strategy()
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
     let effective_consistency =
         resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
-    let session_consistency_active = partition_key_range_cache_enabled
-        && !session_capturing_disabled
+    let automatic_session_management_active = session_manager.is_enabled()
+        && session_token_management_enabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
 
     // Rule 4 (RCS validation): GlobalStrong is
@@ -591,8 +590,8 @@ pub(crate) async fn execute_operation_pipeline(
             attempt_read_consistency_strategy,
             account_default_consistency,
         );
-        let attempt_session_consistency_active = partition_key_range_cache_enabled
-            && !session_capturing_disabled
+        let attempt_automatic_session_management_active = session_manager.is_enabled()
+            && session_token_management_enabled
             && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
 
         // Emit one structured debug record per attempt with the chosen
@@ -683,7 +682,7 @@ pub(crate) async fn execute_operation_pipeline(
                     effective_consistency,
                     read_consistency_strategy,
                     session_manager,
-                    session_consistency_active,
+                    automatic_session_management_active,
                     options,
                     throughput_control,
                     deadline,
@@ -794,7 +793,7 @@ pub(crate) async fn execute_operation_pipeline(
             } else {
                 ReadConsistencyStrategy::Default
             },
-            resolved_session_token: attempt_session_consistency_active
+            resolved_session_token: attempt_automatic_session_management_active
                 .then(|| {
                     // Scope the session token to the target partition-key-range
                     // only for thin-client (Gateway 2.0) requests: the RNTBD
@@ -897,7 +896,7 @@ pub(crate) async fn execute_operation_pipeline(
         // Abort, or a retry action. 409/412 map to Abort, and the Abort
         // variant does not carry headers — capturing after evaluation
         // would silently drop tokens from those responses.
-        if attempt_session_consistency_active {
+        if attempt_automatic_session_management_active {
             if let Some(cosmos_headers) = result.cosmos_headers() {
                 if should_capture_session_token_from_status(
                     cosmos_headers.substatus.as_ref(),
@@ -957,7 +956,7 @@ pub(crate) async fn execute_operation_pipeline(
                         Box::pin(driver.pre_resolve_partition_key_range_id(
                             operation,
                             &overrides,
-                            session_consistency_active,
+                            automatic_session_management_active,
                             operation_options,
                         ))
                         .await;
@@ -1292,7 +1291,7 @@ pub(crate) async fn execute_operation_pipeline(
                     effective_consistency,
                     read_consistency_strategy,
                     session_manager,
-                    session_consistency_active,
+                    automatic_session_management_active,
                     options,
                     throughput_control,
                     deadline,
@@ -2922,9 +2921,8 @@ struct AttemptContext<'a> {
     /// rationale as `effective_consistency`.
     read_consistency_strategy: ReadConsistencyStrategy,
     session_manager: &'a SessionManager,
-    /// Whether session consistency is in effect for this operation
-    /// (drives session-token resolve/capture inside the attempt).
-    session_consistency_active: bool,
+    /// Whether automatic session-token resolve/capture is active for this operation.
+    automatic_session_management_active: bool,
     options: &'a OperationOptionsView<'a>,
     throughput_control: Option<ResolvedThroughputControl>,
     /// End-to-end deadline (operation timeout) — passed through to each
@@ -3300,7 +3298,7 @@ async fn perform_single_attempt(
     // Scope to the target range only for thin-client (Gateway 2.0); classic
     // gateway keeps the composite token (see main-loop rationale).
     let resolved_session_token = ctx
-        .session_consistency_active
+        .automatic_session_management_active
         .then(|| {
             let scoped_pk_range_id = if matches!(routing.transport_mode, TransportMode::GatewayV2) {
                 ctx.partition_key_range_id.as_ref().map(|id| id.as_str())
@@ -3405,7 +3403,7 @@ async fn perform_single_attempt(
 /// whose response the caller never observes would leak stale state and
 /// violate read-your-writes against the winning region.
 fn capture_session_token_for_winner(ctx: &AttemptContext<'_>, result: &TransportResult) {
-    if !ctx.session_consistency_active {
+    if !ctx.automatic_session_management_active {
         return;
     }
     if let Some(cosmos_headers) = result.cosmos_headers() {

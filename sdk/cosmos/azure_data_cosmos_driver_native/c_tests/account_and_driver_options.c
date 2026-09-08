@@ -150,8 +150,12 @@ static int test_driver_options_build_happy_path(void) {
 
     const char *regions[] = {"East US", "West US 3"};
     cosmos_driver_options_config_t cfg = cosmos_driver_options_config_default();
+    ASSERT(cfg.session_token_management_enabled == 0,
+           "session management defaults to unset (=%d)",
+           cfg.session_token_management_enabled);
     cfg.preferred_regions = regions;
     cfg.preferred_regions_len = 2;
+    cfg.session_token_management_enabled = 1;
 
     cosmos_driver_options_t *opts = NULL;
     int32_t rc = cosmos_driver_options_build(account, &cfg, &opts);

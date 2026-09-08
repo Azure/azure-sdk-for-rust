@@ -5,8 +5,11 @@
 ### Features Added
 
 - Added a fully buffered cross-partition merge for finite non-streaming `ORDER BY` plans, including `VectorDistance(...)`. Unbounded, resumed, DISTINCT, and hybrid non-streaming plans are rejected with typed statuses. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
+- Added `DriverOptionsBuilder::with_session_token_management_enabled` to omit automatic session-token storage and bookkeeping without disabling partition-key-range topology. ([#5191](https://github.com/Azure/azure-sdk-for-rust/issues/5191))
 
 ### Breaking Changes
+
+- Renamed the operation option `session_capturing_disabled` to the positive `session_token_management_enabled`. ([#5191](https://github.com/Azure/azure-sdk-for-rust/issues/5191))
 
 ### Bugs Fixed
 

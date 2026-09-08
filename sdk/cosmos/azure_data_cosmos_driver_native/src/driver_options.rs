@@ -4,13 +4,11 @@
 //! C ABI surface for `cosmos_driver_options_t` — wraps the driver's
 //! [`azure_data_cosmos_driver::options::DriverOptions`].
 //!
-//! `DriverOptions` itself is small (3 fields per spec section 4.2): the bound
-//! account, the per-driver `OperationOptions`, and a `Vec<Region>` of
-//! preferred regions. Construction is a single flat call: the host fills a
-//! [`CosmosDriverOptionsConfig`] `#[repr(C)]` struct (preferred regions + a
-//! pointer to the flat `cosmos_operation_options_t`) and passes it, together
-//! with the account handle, to [`cosmos_driver_options_build`]. Drivers that
-//! don't configure operation options inherit the driver's own defaults.
+//! `DriverOptions` contains the bound account, per-driver `OperationOptions`,
+//! preferred regions, and driver-lifetime controls. Construction is a single
+//! flat call: the host fills a [`CosmosDriverOptionsConfig`] `#[repr(C)]`
+//! struct and passes it, together with the account handle, to
+//! [`cosmos_driver_options_build`].
 //!
 //! The settings frequently confused with "per-driver" defaults
 //! (excluded regions, consistency, content-response-on-write,
@@ -152,6 +150,7 @@ unsafe fn decode_preferred_regions(
 /// - `operation_options`: pointer to a flat
 ///   [`cosmos_operation_options_t`](crate::op_request::CosmosOperationOptions),
 ///   or NULL to inherit the driver defaults.
+/// - `session_token_management_enabled`: `0` = unset, `1` = false, `2` = true.
 ///
 /// The account reference stays a separate handle parameter on
 /// [`cosmos_driver_options_build`] — it owns `Arc`-shared state and cannot be
@@ -170,6 +169,9 @@ pub struct CosmosDriverOptionsConfig {
     /// Per-driver default operation options, or NULL to inherit the driver
     /// defaults.
     pub operation_options: *const crate::op_request::CosmosOperationOptions,
+    /// Whether automatic session token storage, capture, and resolution are
+    /// enabled. Tri-state bool (`0` unset / `1` false / `2` true).
+    pub session_token_management_enabled: i8,
 }
 
 /// Returns an all-unset [`CosmosDriverOptionsConfig`] by value. The host
@@ -181,6 +183,7 @@ pub extern "C" fn cosmos_driver_options_config_default() -> CosmosDriverOptionsC
         preferred_regions: std::ptr::null(),
         preferred_regions_len: 0,
         operation_options: std::ptr::null(),
+        session_token_management_enabled: 0,
     }
 }
 
@@ -249,6 +252,14 @@ pub extern "C" fn cosmos_driver_options_build(
             };
             builder = builder.with_operation_options(driver_opts);
         }
+
+        match crate::op_request::decode_tristate_bool(cfg.session_token_management_enabled) {
+            Ok(Some(enabled)) => {
+                builder = builder.with_session_token_management_enabled(enabled);
+            }
+            Ok(None) => {}
+            Err(code) => return code.as_status_code(),
+        }
     }
 
     let handle = DriverOptionsHandle::into_raw(builder.build());
@@ -290,6 +301,7 @@ mod tests {
         assert!(c.preferred_regions.is_null());
         assert_eq!(c.preferred_regions_len, 0);
         assert!(c.operation_options.is_null());
+        assert_eq!(c.session_token_management_enabled, 0);
     }
 
     #[test]
@@ -323,6 +335,7 @@ mod tests {
         assert!(!opts.is_null());
         let inner = DriverOptionsHandle::inner_arc(opts).unwrap();
         assert!(inner.inner.preferred_regions().is_empty());
+        assert!(inner.inner.session_token_management_enabled());
         drop(inner);
         cosmos_driver_options_free(opts);
         crate::account_ref::cosmos_account_ref_free(account);
@@ -340,6 +353,7 @@ mod tests {
         cfg.preferred_regions = arr.as_ptr();
         cfg.preferred_regions_len = arr.len();
         cfg.operation_options = &op_opts;
+        cfg.session_token_management_enabled = 1;
 
         let mut opts: *mut DriverOptionsHandle = ptr::null_mut();
         assert_eq!(
@@ -356,9 +370,28 @@ mod tests {
         // Region::new normalizes (lowercased, spaces stripped) — same as the
         // incremental setter's roundtrip test.
         assert_eq!(names, vec!["eastus", "westus3"]);
+        assert!(!inner.inner.session_token_management_enabled());
         drop(inner);
         cosmos_driver_options_free(opts);
         crate::account_ref::cosmos_account_ref_free(account);
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    #[test]
+    fn driver_options_config_abi_layout_is_stable() {
+        use std::mem::{offset_of, size_of};
+
+        assert_eq!(size_of::<CosmosDriverOptionsConfig>(), 32);
+        assert_eq!(offset_of!(CosmosDriverOptionsConfig, preferred_regions), 0);
+        assert_eq!(
+            offset_of!(CosmosDriverOptionsConfig, preferred_regions_len),
+            8
+        );
+        assert_eq!(offset_of!(CosmosDriverOptionsConfig, operation_options), 16);
+        assert_eq!(
+            offset_of!(CosmosDriverOptionsConfig, session_token_management_enabled),
+            24
+        );
     }
 
     #[test]
@@ -372,6 +405,21 @@ mod tests {
         assert_eq!(
             cosmos_driver_options_build(account, &cfg, &mut opts),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+        assert!(opts.is_null());
+        crate::account_ref::cosmos_account_ref_free(account);
+    }
+
+    #[test]
+    fn flat_build_rejects_invalid_session_management_value() {
+        let account = make_account();
+        let mut cfg = cosmos_driver_options_config_default();
+        cfg.session_token_management_enabled = 3;
+        let mut opts: *mut DriverOptionsHandle = ptr::null_mut();
+
+        assert_eq!(
+            cosmos_driver_options_build(account, &cfg, &mut opts),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
         );
         assert!(opts.is_null());
         crate::account_ref::cosmos_account_ref_free(account);

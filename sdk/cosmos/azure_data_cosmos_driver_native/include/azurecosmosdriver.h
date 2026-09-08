@@ -1340,9 +1340,9 @@ typedef struct cosmos_operation_options_t {
    */
   int32_t patch_strategy;
   /**
-   * Disable automatic session token management. Tri-state bool.
+   * Enable automatic session token management. Tri-state bool.
    */
-  int8_t session_capturing_disabled;
+  int8_t session_token_management_enabled;
   /**
    * Max region-failover retries. `< 0` = unset.
    */
@@ -1440,6 +1440,7 @@ typedef struct cosmos_operation_options_t {
  * - `operation_options`: pointer to a flat
  *   [`cosmos_operation_options_t`](crate::op_request::CosmosOperationOptions),
  *   or NULL to inherit the driver defaults.
+ * - `session_token_management_enabled`: `0` = unset, `1` = false, `2` = true.
  *
  * The account reference stays a separate handle parameter on
  * [`cosmos_driver_options_build`] — it owns `Arc`-shared state and cannot be
@@ -1463,6 +1464,11 @@ typedef struct cosmos_driver_options_config_t {
    * defaults.
    */
   const struct cosmos_operation_options_t *operation_options;
+  /**
+   * Whether automatic session token storage, capture, and resolution are
+   * enabled. Tri-state bool (`0` unset / `1` false / `2` true).
+   */
+  int8_t session_token_management_enabled;
 } cosmos_driver_options_config_t;
 
 /**

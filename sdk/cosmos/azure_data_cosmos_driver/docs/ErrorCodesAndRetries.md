@@ -127,6 +127,10 @@ Outside these explicit exceptions, excluded regions remain a hard per-operation 
 
 The session token is preserved on all retry attempts — it is never cleared to allow stale reads, as that would violate the customer's chosen consistency guarantees. When all session retries are exhausted, the 404/1002 error is surfaced to the caller.
 
+Disabling automatic session-token management does not disable this retry
+classification. Requests carrying caller-supplied tokens can still receive
+404/1002 and retain the same retry behavior.
+
 ### 408 — Request Timeout
 
 | Operation                                            | Action                          | Budget              |

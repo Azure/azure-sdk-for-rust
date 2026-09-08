@@ -5,8 +5,11 @@
 ### Features Added
 
 - Added finite cross-partition `ORDER BY VectorDistance(...)` queries with `TOP` or `OFFSET`/`LIMIT`. Results are fully buffered before the first page and cannot be resumed from continuation tokens. Hybrid/full-text vector ranking remains unsupported. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
+- Added `CosmosClientBuilder::with_session_token_management_enabled` to disable automatic session-token storage and bookkeeping while retaining explicit token support. ([#5191](https://github.com/Azure/azure-sdk-for-rust/issues/5191))
 
 ### Breaking Changes
+
+- Renamed the driver operation option `session_capturing_disabled` to the positive `session_token_management_enabled`. ([#5191](https://github.com/Azure/azure-sdk-for-rust/issues/5191))
 
 ### Bugs Fixed
 

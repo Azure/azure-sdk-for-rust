@@ -1810,6 +1810,8 @@ impl CosmosDriver {
         // Read the hedge ceiling once, here: it is fixed for the driver's
         // lifetime, and `options` is moved into `Self` below.
         let hedge_budget = HedgeBudget::new(options.hedging_options());
+        let session_token_management_enabled = options.partition_key_range_cache_enabled()
+            && options.session_token_management_enabled();
         let pk_range_cache = options
             .partition_key_range_cache_enabled()
             .then(PartitionKeyRangeCache::new);
@@ -1827,7 +1829,7 @@ impl CosmosDriver {
             pk_range_cache,
             pk_range_region_pins: Mutex::new(HashMap::new()),
             hedge_budget,
-            session_manager: SessionManager::new(),
+            session_manager: SessionManager::with_enabled(session_token_management_enabled),
             initialized: AtomicBool::new(false),
             user_agent,
             client_id,
@@ -3053,12 +3055,12 @@ impl CosmosDriver {
         }
 
         let operation_count = request.operations.len();
-        let is_session_consistency = {
+        let automatic_session_management_active = {
             let effective_options = self.operation_options_view(&options);
-            let session_capturing_disabled = effective_options
-                .session_capturing_disabled()
+            let session_token_management_enabled = effective_options
+                .session_token_management_enabled()
                 .copied()
-                .unwrap_or(false);
+                .unwrap_or(true);
             let read_consistency_strategy = effective_options
                 .read_consistency_strategy()
                 .copied()
@@ -3071,8 +3073,8 @@ impl CosmosDriver {
                     self.fetch_account_properties(self.options.account())
                 })
                 .await?;
-            self.pk_range_cache.is_some()
-                && !session_capturing_disabled
+            self.session_manager.is_enabled()
+                && session_token_management_enabled
                 && read_consistency_strategy.is_session_effective(
                     account_properties
                         .user_consistency_policy
@@ -3083,7 +3085,7 @@ impl CosmosDriver {
         // token with the resolved session token *before* serialization so the
         // coordinator honors read-your-own-writes (mirrors .NET
         // ResolvePartitionLocalToken).
-        if is_session_consistency {
+        if automatic_session_management_active {
             self.resolve_distributed_transaction_session_tokens(&mut request.operations)
                 .await;
         }
@@ -3162,14 +3164,14 @@ impl CosmosDriver {
                 outer_deadline,
             );
             let Some(retry_delay) = retry_delay else {
-                // Cache-disabled mode disables automatic session management.
-                // Explicit per-operation tokens remain in the request unchanged.
-                if is_session_consistency {
+                // Disabled automatic management leaves explicit per-operation
+                // tokens in the request unchanged.
+                if automatic_session_management_active {
                     self.session_manager
                         .merge_distributed_transaction_session_tokens(
                             &response,
                             &request.operations,
-                            is_session_consistency,
+                            true,
                         )?;
                 }
 
@@ -3538,11 +3540,11 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(&account, write_region);
 
-        let automatic_session_management_active = self.pk_range_cache.is_some()
-            && !effective_options
-                .session_capturing_disabled()
+        let automatic_session_management_active = self.session_manager.is_enabled()
+            && effective_options
+                .session_token_management_enabled()
                 .copied()
-                .unwrap_or(false)
+                .unwrap_or(true)
             && effective_options
                 .read_consistency_strategy()
                 .copied()
@@ -3633,7 +3635,6 @@ impl CosmosDriver {
                 .default_consistency_level,
             effective_throughput_control,
             pre_resolved_pk_range_id,
-            self.pk_range_cache.is_some(),
             &self.hedge_budget,
         )
         .await;
@@ -3707,7 +3708,6 @@ impl CosmosDriver {
                 .default_consistency_level,
             retry_throughput_control,
             retry_pk_range_id,
-            self.pk_range_cache.is_some(),
             &self.hedge_budget,
         )
         .await;
