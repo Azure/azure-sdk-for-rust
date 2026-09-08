@@ -380,7 +380,6 @@ impl DriverOptionsBuilder {
                     PartitionFailoverOptions::default()
                 }),
         };
-
         DriverOptions {
             account: self.account,
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
@@ -490,6 +489,12 @@ mod tests {
             .build();
 
         assert_eq!(options.preferred_regions(), &regions);
+    }
+
+    #[test]
+    fn query_plan_mode_is_unset_by_default() {
+        let options = DriverOptionsBuilder::new(test_account()).build_from_env(&|_| None);
+        assert_eq!(options.operation_options().query_plan_mode, None);
     }
 
     // ── Partition-failover / PPCB end-to-end env resolution ─────────────────

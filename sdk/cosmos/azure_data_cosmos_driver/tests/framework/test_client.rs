@@ -615,14 +615,23 @@ impl DriverTestRunContext {
         let mut builder = DriverOptions::builder(self.client.account.clone());
         #[cfg(test_category = "emulator_vnext")]
         {
-            // The vNext emulator cannot reliably extract partition keys from binary item bodies.
-            let options = OperationOptionsBuilder::new()
-                .with_binary_encoding(
-                    azure_data_cosmos_driver::options::BinaryEncodingOptions::new()
-                        .with_enabled(false),
-                )
-                .build();
-            builder = builder.with_operation_options(options);
+            // Temporary workaround for #5240; product code should eventually
+            // negotiate vNext binary support. Explicit test configuration wins.
+            if self
+                .client
+                .runtime
+                .default_operation_options()
+                .binary_encoding
+                .is_none()
+            {
+                let options = OperationOptionsBuilder::new()
+                    .with_binary_encoding(
+                        azure_data_cosmos_driver::options::BinaryEncodingOptions::new()
+                            .with_enabled(false),
+                    )
+                    .build();
+                builder = builder.with_operation_options(options);
+            }
         }
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
