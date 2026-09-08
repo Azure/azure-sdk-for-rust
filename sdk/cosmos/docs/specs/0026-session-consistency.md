@@ -13,17 +13,17 @@ behavior interacts with routing, retries, feeds, transactions, and diagnostics.
 It is deliberately a *high-level, coherent* view. Detailed mechanics that already
 have their own specs are linked, not duplicated:
 
-- Retry classification and budgets — [0006 Error Codes and Retries](0006-error-codes-and-retries.md)
-- Partition-key-range resolution — [0007 Partition Key Range Cache](0007-partition-key-range-cache.md)
-- Region failover and partition-level failover — [0008 Partition-Level Failover](0008-partition-level-failover.md)
-- Cross-region hedging — [0009 Cross-Region Hedging](0009-cross-region-hedging.md)
-- Hub-region processing-only header — [0010 Hub-Region Processing Header](0010-hub-region-processing-header.md)
-- Feed/query pagination — [0012 Feed Operations and Dataflow](0012-feed-operations-and-dataflow.md)
-- PATCH read-modify-write — [0017 Patch Handler](0017-patch-handler.md)
-- Diagnostics shape — [0018 Diagnostics Contract](0018-diagnostics-contract.md)
+- Retry classification and budgets — 0006 Error Codes and Retries (`0006-error-codes-and-retries.md`)
+- Partition-key-range resolution — 0007 Partition Key Range Cache (`0007-partition-key-range-cache.md`)
+- Region failover and partition-level failover — 0008 Partition-Level Failover (`0008-partition-level-failover.md`)
+- Cross-region hedging — 0009 Cross-Region Hedging (`0009-cross-region-hedging.md`)
+- Hub-region processing-only header — 0010 Hub-Region Processing Header (`0010-hub-region-processing-header.md`)
+- Feed/query pagination — 0012 Feed Operations and Dataflow (`0012-feed-operations-and-dataflow.md`)
+- PATCH read-modify-write — 0017 Patch Handler (`0017-patch-handler.md`)
+- Diagnostics shape — 0018 Diagnostics Contract (`0018-diagnostics-contract.md`)
 - Distributed transactions and strict per-operation merge rationale —
-  [0022 Distributed Transactions](0022-distributed-transactions.md#8-session-token-handling)
-  and [0022 §10.7](0022-distributed-transactions.md#107-strict-per-operation-session-token-merge)
+  0022 Distributed Transactions (`0022-distributed-transactions.md#8-session-token-handling`)
+  and 0022 §10.7 (`0022-distributed-transactions.md#107-strict-per-operation-session-token-merge`)
 
 ---
 
@@ -191,7 +191,7 @@ ContainerClient::get_latest_session_token  (pure, uses SessionTokenSegment)
 
 Configuration resolves through the standard layered option model (operation →
 account → runtime → environment, see
-[0002 Hierarchical Configuration Model](0002-hierarchical-configuration-model.md)).
+0002 Hierarchical Configuration Model (`0002-hierarchical-configuration-model.md`)).
 `AZURE_COSMOS_READ_CONSISTENCY_STRATEGY` and
 `AZURE_COSMOS_MAX_SESSION_RETRY_COUNT` are the session-relevant environment
 knobs.
@@ -288,7 +288,7 @@ Session state is *global to the client* but tokens are *per partition key range*
 and requests are *per region*. Three interactions follow:
 
 - **Partition scoping.** The attempt's partition key range ID comes first from
-  PK-range pre-resolution (see [0007](0007-partition-key-range-cache.md)) and
+  PK-range pre-resolution (see 0007 (`0007-partition-key-range-cache.md`)) and
   otherwise from the first response's `x-ms-documentdb-partitionkeyrangeid`
   header. It drives both Gateway V2 token scoping (§4) and partition-level
   routing overrides.
@@ -305,7 +305,7 @@ succeed" would silently downgrade the customer's chosen guarantee.
 
 Cross-region hedging races preserve the same token on both arms, and a `1002`
 observed on either arm propagates into the surrounding retry state (see
-[0009](0009-cross-region-hedging.md)).
+0009 (`0009-cross-region-hedging.md`)).
 
 ---
 
@@ -314,7 +314,7 @@ observed on either arm propagates into the surrounding retry state (see
 `404/1002` means the token is ahead of every replica the region could serve from.
 The classification lives in `driver/pipeline/retry_evaluation.rs`
 (`try_handle_read_session_not_available`), and the full table of statuses and
-budgets is in [0006](0006-error-codes-and-retries.md#4041002--read-session-not-available).
+budgets is in 0006 (`0006-error-codes-and-retries.md#4041002--read-session-not-available`).
 
 At a contract level:
 
@@ -331,16 +331,16 @@ At a contract level:
 - **Hub-region latch**: the first `1002` on a single-master data-plane operation
   latches `x-ms-cosmos-hub-region-processing-only` for the remainder of the
   operation, including propagation across hedge siblings. See
-  [0010](0010-hub-region-processing-header.md) for the trigger conditions and
+  0010 (`0010-hub-region-processing-header.md`) for the trigger conditions and
   wire contract.
 - **Tokens are preserved** across every session retry.
 
 Related failures that are *not* session-specific but interact with session state:
 
 - `410/1002` (range referenced by the token is gone) is routing staleness; the
-  PK-range cache refresh path owns it ([0007](0007-partition-key-range-cache.md)).
+  PK-range cache refresh path owns it (0007 (`0007-partition-key-range-cache.md`)).
 - `410` split/merge and `403/3` write-forbidden drive topology and failover
-  handling ([0008](0008-partition-level-failover.md)); the next capture naturally
+  handling (0008 (`0008-partition-level-failover.md`)); the next capture naturally
   carries the higher-version token, and §2.3's version rule prevents the old and
   new topologies from being averaged into a false token.
 
@@ -367,7 +367,7 @@ resolves and captures a token. What is specific to pagination is **aggregation**
   region (which suppresses hedging), but it does not carry session state; a
   resumed feed relies on the client cache or a caller-supplied token.
 
-See [0012](0012-feed-operations-and-dataflow.md) for pagination mechanics.
+See 0012 (`0012-feed-operations-and-dataflow.md`) for pagination mechanics.
 
 ---
 
@@ -393,8 +393,8 @@ committed-but-not-safely-tokenized outcome. Under weaker consistency modes,
 best-effort handling avoids failing an otherwise successful operation for
 bookkeeping that is not required to preserve the selected guarantee.
 
-Full details: [0022 §8](0022-distributed-transactions.md#8-session-token-handling)
-and [0022 §10.7](0022-distributed-transactions.md#107-strict-per-operation-session-token-merge).
+Full details: 0022 §8 (`0022-distributed-transactions.md#8-session-token-handling`)
+and 0022 §10.7 (`0022-distributed-transactions.md#107-strict-per-operation-session-token-merge`).
 
 Note that the parent-range walk exists **only** on the DTX resolution path today;
 see §13.
@@ -405,7 +405,7 @@ see §13.
 
 The driver implements PATCH as a client-side read-modify-write loop, which makes
 session state part of its correctness argument
-([0017](0017-patch-handler.md)):
+(0017 (`0017-patch-handler.md`)):
 
 - The internal `Read` runs against the write region as a `LatestCommitted` read
   with no session token, so it observes the newest committed state. If write
@@ -430,7 +430,7 @@ Session behavior is observable without reaching into internals:
 - **Per-request records** in `DiagnosticsContext` carry the response
   `session_token` alongside `request_charge` and `activity_id`, so a captured
   chain can be reconstructed from a single operation's diagnostics
-  ([0018](0018-diagnostics-contract.md)).
+  (0018 (`0018-diagnostics-contract.md`)).
 - **Execution context** annotates each attempt as `Initial`, `Retry`, or
   `RegionFailover`; a session retry classifies as `Retry` and takes precedence
   over failover classification when both counters are non-zero.
@@ -490,7 +490,7 @@ formatting of driver state.
 6. **No cross-client or cross-process sharing** is built in; applications that
    need it must ferry tokens themselves.
 7. **Consistency-level diagnostics attribute is not yet populated** on the
-   automatic operation path ([0018](0018-diagnostics-contract.md)).
+   automatic operation path (0018 (`0018-diagnostics-contract.md`)).
 8. **V1 tokens carry no region progress**, so recency comparison for accounts
    still emitting V1 degrades to a single global LSN.
 

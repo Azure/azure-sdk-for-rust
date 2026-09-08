@@ -40,7 +40,7 @@ authentication may compile but cannot make these requests succeed.
 
 ## Authoritative references
 
-- [`azure_data_cosmos` feature definitions](../../azure_data_cosmos/Cargo.toml)
+- `azure_data_cosmos` feature definitions (`../../azure_data_cosmos/Cargo.toml`)
 - PRs [#1853](https://github.com/Azure/azure-sdk-for-rust/pull/1853),
   [#4854](https://github.com/Azure/azure-sdk-for-rust/pull/4854), and
   [#3500](https://github.com/Azure/azure-sdk-for-rust/pull/3500)

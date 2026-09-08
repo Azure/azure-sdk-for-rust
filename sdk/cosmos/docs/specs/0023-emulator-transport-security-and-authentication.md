@@ -11,7 +11,7 @@ contain listener-specific TLS, certificate, or token-validation logic. At the sa
 credentials must never be accepted over plaintext transport.
 
 The listener, configuration, and protocol ownership boundaries are defined by
-the [hosted emulator specification](0027-hosted-emulator.md). This document
+the hosted emulator specification (`0027-hosted-emulator.md`). This document
 defines the security policy applied at that host boundary.
 
 ## Decision
@@ -56,5 +56,5 @@ use a local JWKS file without weakening signature, issuer, or audience validatio
 
 ## References
 
-- [Hosted emulator](0027-hosted-emulator.md)
-- [In-memory emulator](0021-in-memory-emulator.md)
+- Hosted emulator (`0027-hosted-emulator.md`)
+- In-memory emulator (`0021-in-memory-emulator.md`)

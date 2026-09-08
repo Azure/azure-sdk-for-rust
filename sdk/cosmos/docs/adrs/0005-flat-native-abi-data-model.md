@@ -33,7 +33,7 @@ driver-state objects. They are not the default data-transfer mechanism.
 
 This ADR decides the data and ownership model only. Submission, waiting,
 cancellation, batching, shutdown, and other completion-queue mechanics remain
-specified by [specification 0020](../specs/0020-native-async-invocation.md).
+specified by specification 0020 (`../specs/0020-native-async-invocation.md`).
 
 ## Consequences and exceptions
 
@@ -46,6 +46,6 @@ invariants.
 
 ## Authoritative references
 
-- [Native wrapper specification](../specs/0019-native-wrapper.md)
-- [Native async invocation specification](../specs/0020-native-async-invocation.md)
+- Native wrapper specification (`../specs/0019-native-wrapper.md`)
+- Native async invocation specification (`../specs/0020-native-async-invocation.md`)
 - Merged PR `Azure/azure-sdk-for-rust#4515`

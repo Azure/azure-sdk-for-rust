@@ -19,7 +19,7 @@ The original `azure_data_cosmos_native` crate (commits `de5bf3ba8` → `ccf43caa
 - Created an upside-down dependency for non-Rust SDKs: a Java/.NET/Python SDK consuming the C ABI would receive responses that had already been parsed by Rust's `serde`, then re-serialized to a string, only to be re-parsed by the host language.
 
 The `azure_data_cosmos_driver` crate was explicitly designed (see
-[`Architecture.md`](../Architecture.md) "Schema-Agnostic Data Plane") to be the
+`Architecture.md` (`../Architecture.md`) "Schema-Agnostic Data Plane") to be the
 reuse point for **all** non-Rust language SDKs. Wrapping the driver — not the
 typed SDK — is the correct boundary.
 
@@ -565,7 +565,7 @@ Rationale:
 
 ### 3.5 Error model
 
-The wrapper's error surface is built on two complementary types — a **packed `cosmos_status_code_t`** numeric return value for the C function contract, and a rich `cosmos_error_t` payload that mirrors the driver's `azure_data_cosmos::Error` (introduced in [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442)). Both surfaces are derived from the driver's single canonical `CosmosStatus` taxonomy — there is **no** parallel FFI-specific error enum (this is the unification landed in [#4696](https://github.com/Azure/azure-sdk-for-rust/issues/4696); the authoritative implementation and the crate README's "Error & status model" section describe the same model). Both **must** be exposed because the host SDKs sitting on top of this wrapper need full error fidelity for **diagnosability** and for **routing failure classes into language-native exception types** — they do **not** re-implement retry / throttling / conditional-write recovery (that's the driver's responsibility, by design — see [`Architecture.md`](../Architecture.md) "Schema-Agnostic Data Plane"). Concretely:
+The wrapper's error surface is built on two complementary types — a **packed `cosmos_status_code_t`** numeric return value for the C function contract, and a rich `cosmos_error_t` payload that mirrors the driver's `azure_data_cosmos::Error` (introduced in [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442)). Both surfaces are derived from the driver's single canonical `CosmosStatus` taxonomy — there is **no** parallel FFI-specific error enum (this is the unification landed in [#4696](https://github.com/Azure/azure-sdk-for-rust/issues/4696); the authoritative implementation and the crate README's "Error & status model" section describe the same model). Both **must** be exposed because the host SDKs sitting on top of this wrapper need full error fidelity for **diagnosability** and for **routing failure classes into language-native exception types** — they do **not** re-implement retry / throttling / conditional-write recovery (that's the driver's responsibility, by design — see `Architecture.md` (`../Architecture.md`) "Schema-Agnostic Data Plane"). Concretely:
 
 - **Diagnosability.** `400 Bad Request` is the canonical example: callers cannot debug it without the gateway response body, headers (`x-ms-activity-id`, `x-ms-substatus`), and the driver's `DiagnosticsContext` for the failed attempt. The rich payload exposes all three.
 - **Failure-class routing.** Host SDKs translate `cosmos_error_is_not_found(e)` / `_is_conflict(e)` / `_is_precondition_failed(e)` / `_is_throttled(e)` etc. into their language-native exceptions (`CosmosException` subclasses in Java, dedicated error variants in Go, `CosmosException.StatusCode` in .NET). Routing is **classification**, not retry.

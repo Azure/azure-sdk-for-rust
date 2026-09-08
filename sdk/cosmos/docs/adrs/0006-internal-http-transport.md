@@ -46,9 +46,9 @@ transport contracts.
 
 ## Authoritative references
 
-- [Operation and transport pipelines specification](../specs/0005-operation-and-transport-pipelines.md)
-- [Gateway V2 specification](../specs/0011-gateway-v2.md)
-- [Emulator transport security specification](../specs/0023-emulator-transport-security-and-authentication.md)
+- Operation and transport pipelines specification (`../specs/0005-operation-and-transport-pipelines.md`)
+- Gateway V2 specification (`../specs/0011-gateway-v2.md`)
+- Emulator transport security specification (`../specs/0023-emulator-transport-security-and-authentication.md`)
 - Merged PRs `Azure/azure-sdk-for-rust#3744`,
   `Azure/azure-sdk-for-rust#3829`, `Azure/azure-sdk-for-rust#3912`,
   `Azure/azure-sdk-for-rust#3957`, `Azure/azure-sdk-for-rust#4223`,

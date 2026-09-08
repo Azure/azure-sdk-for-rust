@@ -43,14 +43,14 @@ never the typed SDK.
 The SDK absorbs driver changes through adapters, while non-Rust SDKs reuse the
 same engine. This adds conversion code and three release boundaries. Any
 cross-layer type sharing is limited by
-[ADR-0002](0002-schema-agnostic-driver-boundary.md); it does not collapse the
+ADR-0002 (`0002-schema-agnostic-driver-boundary.md`); it does not collapse the
 support or versioning boundaries above.
 
 ## Authoritative references
 
-- [Project support boundaries](../Project.md#product-and-support-boundaries)
-- [Architecture layers](../Architecture.md#layers)
-- [`azure_data_cosmos_driver_native` package contract](../../azure_data_cosmos_driver_native/Cargo.toml)
+- Project support boundaries (`../Project.md#product-and-support-boundaries`)
+- Architecture layers (`../Architecture.md#layers`)
+- `azure_data_cosmos_driver_native` package contract (`../../azure_data_cosmos_driver_native/Cargo.toml`)
 - Merged PRs `Azure/azure-sdk-for-rust#3772`,
   `Azure/azure-sdk-for-rust#4103`, and `Azure/azure-sdk-for-rust#4515`
-- [Native wrapper specification](../specs/0019-native-wrapper.md)
+- Native wrapper specification (`../specs/0019-native-wrapper.md`)

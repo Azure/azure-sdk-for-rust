@@ -1590,7 +1590,7 @@ The driver emits the `x-ms-cosmos-hub-region-processing-only: True`
 request header on retries triggered by a `404 / 1002
 (READ_SESSION_NOT_AVAILABLE)` response, scoped to **single-master
 data-plane** operations. The header is specified in
-[`0010-hub-region-processing-header.md`](0010-hub-region-processing-header.md)
+`0010-hub-region-processing-header.md` (`0010-hub-region-processing-header.md`)
 and implemented in [Rust PR #4389][pr-4389] (parity baseline with
 [.NET PR #5447](https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5447)).
 

@@ -11,6 +11,3 @@ AGENTS.md
 eng/**
 # Allow relative links for the top-level eval suite (evals is a cross-cutting asset at repo root).
 evals/**
-# Central Cosmos documentation uses relative links so moves are checked locally
-# without pinning links to a repository branch.
-sdk/cosmos/docs/**

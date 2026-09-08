@@ -18,7 +18,7 @@ adopt. Two goals drive nearly every design choice:
 The Rust SDK is a thin, typed layer over that engine. It owns serialization and
 the public API shape; the driver owns everything about talking to the service.
 The crate split itself is a finalized decision
-([adrs/0001-sdk-driver-native-layering.md](adrs/0001-sdk-driver-native-layering.md)).
+(adrs/0001-sdk-driver-native-layering.md (`adrs/0001-sdk-driver-native-layering.md`)).
 
 ## Audiences
 
@@ -29,9 +29,9 @@ The crate split itself is a finalized decision
 - **Other-language SDK teams** (.NET, Java, Go, Python, native C/C++) who
   consume the driver through its C ABI wrapper.
 - **Coding agents**, which should read this file and
-  [Architecture.md](Architecture.md) for orientation, then the numbered
-  [specs](specs/) and [ADRs](adrs/) for detail, and
-  [`sdk/cosmos/AGENTS.md`](../AGENTS.md) for the rules that govern code changes.
+  Architecture.md (`Architecture.md`) for orientation, then the numbered
+  specs (`specs/`) and ADRs (`adrs/`) for detail, and
+  `sdk/cosmos/AGENTS.md` (`../AGENTS.md`) for the rules that govern code changes.
 
 ## Product and support boundaries
 
@@ -68,8 +68,8 @@ Azure Cosmos DB Emulator product, and should never be described as one.
   schemas or language types. It may perform bounded, schema-independent
   processing for wire encodings, query operators, and protocol implementation.
   Typed serialization belongs to each language SDK. See
-  [adrs/0002-schema-agnostic-driver-boundary.md](adrs/0002-schema-agnostic-driver-boundary.md),
-  and [Architecture.md](Architecture.md) for the bounded processing performed
+  adrs/0002-schema-agnostic-driver-boundary.md (`adrs/0002-schema-agnostic-driver-boundary.md`),
+  and Architecture.md (`Architecture.md`) for the bounded processing performed
   inside the driver.
 - **No general model sharing across crate boundaries.** Conversions are
   explicit so the driver can evolve without forcing an SDK major version.
@@ -78,51 +78,51 @@ Azure Cosmos DB Emulator product, and should never be described as one.
 - **Make feature contracts visible.** Cargo feature names distinguish backend
   selection, capability enablement, preview APIs, unsupported/no-SLA APIs, and
   internal-only surfaces. See
-  [adrs/0007-cargo-feature-categories.md](adrs/0007-cargo-feature-categories.md).
+  adrs/0007-cargo-feature-categories.md (`adrs/0007-cargo-feature-categories.md`).
 - **Data-oriented pipelines.** Execution state is decomposed into focused,
   mostly immutable components transformed by narrow stage functions instead of a
   mutable god-object context. This keeps stages unit-testable in isolation.
 - **Layered, resolvable configuration.** Options resolve from operation →
   account → runtime → environment, generated consistently by macros rather than
   duplicated per option struct. See
-  [adrs/0008-layered-operation-configuration.md](adrs/0008-layered-operation-configuration.md)
+  adrs/0008-layered-operation-configuration.md (`adrs/0008-layered-operation-configuration.md`)
   and
-  [adrs/0009-environment-variables-are-options.md](adrs/0009-environment-variables-are-options.md).
+  adrs/0009-environment-variables-are-options.md (`adrs/0009-environment-variables-are-options.md`).
 - **Diagnostics are always collected; emission is a choice.** The driver
   materializes one canonical diagnostics record per operation; the SDK decides
   what becomes metrics, spans, or logs. See
-  [adrs/0014-diagnostics-collection-and-emission.md](adrs/0014-diagnostics-collection-and-emission.md).
+  adrs/0014-diagnostics-collection-and-emission.md (`adrs/0014-diagnostics-collection-and-emission.md`).
 - **Keep transport internal.** The driver owns HTTP clients, pooling, and
   Gateway V2 framing so availability and protocol behavior cannot be bypassed
   by an injected pipeline. Build-time backends remain selectable. See
-  [adrs/0006-internal-http-transport.md](adrs/0006-internal-http-transport.md).
+  adrs/0006-internal-http-transport.md (`adrs/0006-internal-http-transport.md`).
 - **Route through discovered regions.** The default account endpoint discovers
   topology; steady-state requests use regional endpoints. See
-  [adrs/0012-regional-endpoint-routing.md](adrs/0012-regional-endpoint-routing.md).
+  adrs/0012-regional-endpoint-routing.md (`adrs/0012-regional-endpoint-routing.md`).
 - **Use one machine-readable error taxonomy.** HTTP status and Cosmos
   sub-status classify service, client, transport, and FFI failures consistently.
   See
-  [adrs/0011-status-substatus-error-taxonomy.md](adrs/0011-status-substatus-error-taxonomy.md).
+  adrs/0011-status-substatus-error-taxonomy.md (`adrs/0011-status-substatus-error-taxonomy.md`).
 - **Keep basic resource CRUD nearby.** Database and container CRUD remain
   available behind the auth-agnostic `control_plane` capability; full
   management belongs to Azure Resource Manager. See
-  [adrs/0013-basic-control-plane-operations.md](adrs/0013-basic-control-plane-operations.md).
+  adrs/0013-basic-control-plane-operations.md (`adrs/0013-basic-control-plane-operations.md`).
 - **Deterministic testing.** A memory-backed emulator, fault injection, and
   recorded/live test tiers make failover, retry, and outage behavior reproducible
   in CI rather than only observable in production.
 
 ## Navigating the documentation
 
-- [docs/README.md](README.md) — layout of this directory and where new documents
+- docs/README.md (`README.md`) — layout of this directory and where new documents
   belong.
-- [Architecture.md](Architecture.md) — how the crates, pipelines, and shared
+- Architecture.md (`Architecture.md`) — how the crates, pipelines, and shared
   state fit together.
-- [specs/](specs/) — numbered, mutable feature specifications (the detailed
+- specs/ (`specs/`) — numbered, mutable feature specifications (the detailed
   designs).
-- [adrs/](adrs/) — numbered, finalized architecture decisions, immutable once
+- adrs/ (`adrs/`) — numbered, finalized architecture decisions, immutable once
   accepted.
-- [reports/](reports/) — historical investigations and measurement results.
+- reports/ (`reports/`) — historical investigations and measurement results.
 - Crate `README.md`, `CHANGELOG.md`, and `CONTRIBUTING.md` files stay with their
-  crates; [`sdk/cosmos/AGENTS.md`](../AGENTS.md) carries the coding rules.
+  crates; `sdk/cosmos/AGENTS.md` (`../AGENTS.md`) carries the coding rules.
 
 [guidelines]: https://azure.github.io/azure-sdk/rust_introduction.html

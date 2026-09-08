@@ -40,7 +40,7 @@ range lookup, and invalidation or topology changes may require later refreshes.
 
 ## Authoritative references
 
-- [Partition-key-range cache specification](../specs/0007-partition-key-range-cache.md)
+- Partition-key-range cache specification (`../specs/0007-partition-key-range-cache.md`)
 - Merged PRs `Azure/azure-sdk-for-rust#3799`,
   `Azure/azure-sdk-for-rust#3864`, `Azure/azure-sdk-for-rust#3553`, and
   `Azure/azure-sdk-for-rust#4007`

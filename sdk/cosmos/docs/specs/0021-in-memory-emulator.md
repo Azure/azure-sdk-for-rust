@@ -62,7 +62,7 @@ An **in-memory emulator** that intercepts requests at the `HttpClient` transport
 - Network hosting remains outside the in-process `HttpClient` interception contract described by
   this document. The separate `azure_data_cosmos_emulator` host supports Gateway V1 and a scoped
   Gateway 2.0 adapter; see the
-  [hosted emulator specification](0027-hosted-emulator.md).
+  hosted emulator specification (`0027-hosted-emulator.md`).
 - Change feed.
 - Stored procedures / triggers / UDFs.
 - Complete Cosmos SQL service parity beyond the local query evaluator and local query-plan analyzer.
@@ -219,7 +219,7 @@ The emulator serves `GET /` requests with synthesized account properties from co
 Region membership, write mode and the current write region are runtime-mutable, because the real
 service changes them under a running client and the driver is expected to notice through its
 background account refresh (`BACKGROUND_REFRESH_INTERVAL`, 5 minutes) without a restart.
-The [hosted emulator specification](0027-hosted-emulator.md) defines how the
+The hosted emulator specification (`0027-hosted-emulator.md`) defines how the
 out-of-process management API exposes the relevant mutations.
 
 ```rust
@@ -1381,7 +1381,7 @@ The `GET /dbs/{db}/colls/{coll}/pkranges` feed reflects the updated topology:
 Bulk, Patch, ChangeFeed, stored procedures, triggers, and UDFs remain unsupported and return
 **501 Not Implemented** or the closest service-shaped error for that route. The in-process client
 does not select a network transport, while the
-[hosted emulator](0027-hosted-emulator.md) supports the documented subset of
+hosted emulator (`0027-hosted-emulator.md`) supports the documented subset of
 Gateway 2.0 over HTTP/2.
 
 Query support is intentionally scoped to the local SQL evaluator and local query-plan analyzer used by the SDK tests. Transactional batch supports document operations within one logical partition and rolls back the whole batch on failure.

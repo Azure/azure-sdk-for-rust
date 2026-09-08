@@ -44,7 +44,7 @@ sanctioned additional naming category.
 
 ## Authoritative references
 
-- [`azure_data_cosmos` features](../../azure_data_cosmos/Cargo.toml)
-- [`azure_data_cosmos_driver` features](../../azure_data_cosmos_driver/Cargo.toml)
+- `azure_data_cosmos` features (`../../azure_data_cosmos/Cargo.toml`)
+- `azure_data_cosmos_driver` features (`../../azure_data_cosmos_driver/Cargo.toml`)
 - Preview-feature precedent in merged PR
   `Azure/azure-sdk-for-rust#4702`

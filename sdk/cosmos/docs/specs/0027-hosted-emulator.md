@@ -563,7 +563,7 @@ topology shared by account discovery and request dispatch:
 The management API mutates this state out of process. In-process tests use the
 same store operations directly. Detailed membership, region-ID, session-token,
 draining, seeding-policy, and write-mode semantics remain owned by the
-[in-memory emulator specification](0021-in-memory-emulator.md).
+in-memory emulator specification (`0021-in-memory-emulator.md`).
 
 ### Known races
 
@@ -620,7 +620,7 @@ decides whether standard gateway traffic uses HTTP/2 or falls back to HTTP/1.1.
 
 Authentication and TLS are host-boundary concerns. The supported modes and
 trust requirements are defined by the
-[emulator transport security and authentication specification](0023-emulator-transport-security-and-authentication.md).
+emulator transport security and authentication specification (`0023-emulator-transport-security-and-authentication.md`).
 The store and operation handlers receive only requests that have passed host
 policy and do not depend on certificate or identity libraries.
 
@@ -660,10 +660,10 @@ compatibility solely from the Rust test suite.
 
 ## Related documents
 
-- [In-memory emulator](0021-in-memory-emulator.md) -- store, operation, and
+- In-memory emulator (`0021-in-memory-emulator.md`) -- store, operation, and
   dynamic membership semantics.
-- [Emulator transport security and authentication](0023-emulator-transport-security-and-authentication.md)
+- Emulator transport security and authentication (`0023-emulator-transport-security-and-authentication.md`)
   -- TLS and credential validation at the host boundary.
-- [Gateway V2](0011-gateway-v2.md) -- client-side Gateway 2.0 behavior.
-- [Operation and transport pipelines](0005-operation-and-transport-pipelines.md)
+- Gateway V2 (`0011-gateway-v2.md`) -- client-side Gateway 2.0 behavior.
+- Operation and transport pipelines (`0005-operation-and-transport-pipelines.md`)
   -- driver execution and transport layering.

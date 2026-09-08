@@ -50,4 +50,4 @@ debt, not sanctioned exceptions or precedents for new direct reads.
 
 ## Authoritative references
 
-- [Configuration options specification](../specs/0001-configuration-options.md)
+- Configuration options specification (`../specs/0001-configuration-options.md`)

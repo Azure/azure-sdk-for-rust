@@ -20,9 +20,9 @@
 
 ### Related Specs
 
-- [`0005-operation-and-transport-pipelines.md`](0005-operation-and-transport-pipelines.md) — sharded HTTP/2 transport, timeout regime, hedging, `(HttpClient, host:port)` shard key. Gateway 2.0 reuses the sharded transport defined there verbatim; this spec does **not** introduce a new timeout or hedging policy.
-- [`0007-partition-key-range-cache.md`](0007-partition-key-range-cache.md) — PKRange cache semantics and `EffectivePartitionKey` usage (EPK computation in §5.4, 410 handling in §5.6).
-- [`0008-partition-level-failover.md`](0008-partition-level-failover.md) — per-partition region override semantics (PLF precedence over Gateway 2.0 routing in §5.6).
+- `0005-operation-and-transport-pipelines.md` (`0005-operation-and-transport-pipelines.md`) — sharded HTTP/2 transport, timeout regime, hedging, `(HttpClient, host:port)` shard key. Gateway 2.0 reuses the sharded transport defined there verbatim; this spec does **not** introduce a new timeout or hedging policy.
+- `0007-partition-key-range-cache.md` (`0007-partition-key-range-cache.md`) — PKRange cache semantics and `EffectivePartitionKey` usage (EPK computation in §5.4, 410 handling in §5.6).
+- `0008-partition-level-failover.md` (`0008-partition-level-failover.md`) — per-partition region override semantics (PLF precedence over Gateway 2.0 routing in §5.6).
 
 ---
 

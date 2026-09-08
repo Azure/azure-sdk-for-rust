@@ -40,7 +40,7 @@ an independent precedence chain.
 
 ## Authoritative references
 
-- [Configuration options specification](../specs/0001-configuration-options.md)
-- [Hierarchical configuration model](../specs/0002-hierarchical-configuration-model.md)
+- Configuration options specification (`../specs/0001-configuration-options.md`)
+- Hierarchical configuration model (`../specs/0002-hierarchical-configuration-model.md`)
 - Merged PRs `Azure/azure-sdk-for-rust#3778`,
   `Azure/azure-sdk-for-rust#3803`, and `Azure/azure-sdk-for-rust#3744`

@@ -5,7 +5,7 @@ Rust SDK and driver. It captures the goals, the wire/transcoding model, the
 component layout, testing, and the current support status.
 
 For the phased implementation plan and low-level wire details, see
-[`0015-binary-encoding.md`](0015-binary-encoding.md).
+`0015-binary-encoding.md` (`0015-binary-encoding.md`).
 
 ---
 
@@ -731,5 +731,5 @@ issue; #2 and #3 are the actionable binary items.
 
 ## Reference
 
-* Design + phased plan: [`0015-binary-encoding.md`](0015-binary-encoding.md)
+* Design + phased plan: `0015-binary-encoding.md` (`0015-binary-encoding.md`)
 * Wire constants transcribed from .NET `Microsoft.Azure.Cosmos/src/Json/JsonBinaryEncoding.*`

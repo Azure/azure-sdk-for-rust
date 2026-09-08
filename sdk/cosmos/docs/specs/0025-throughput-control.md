@@ -8,7 +8,7 @@ Licensed under the MIT License.
 **Status:** Partially implemented — server-side signalling only. This document
 describes what exists today and names the gaps explicitly.
 **Crates:** `azure_data_cosmos_driver` (canonical), `azure_data_cosmos` (re-export)
-**Supersedes the deferral in:** [0001 — Configuration options](0001-configuration-options.md),
+**Supersedes the deferral in:** 0001 — Configuration options (`0001-configuration-options.md`),
 which deferred `priority` and `throughput_bucket` to "a throughput control
 follow-up spec" (PR [#3803]).
 

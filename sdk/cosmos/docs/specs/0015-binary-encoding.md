@@ -45,7 +45,7 @@ text-equivalent results.
 - Decode binary response bodies for **reads**, **write responses**, and
   **query** result envelopes.
 - Keep the data-plane driver **schema-agnostic** — it never parses item bodies
-  (see [Architecture.md](../Architecture.md)).
+  (see Architecture.md (`../Architecture.md`)).
 - Make decoding robust via **first-byte auto-detection**, independent of
   header negotiation.
 - Offer an opt-in **text-response** mode via
@@ -59,7 +59,7 @@ text-equivalent results.
 - **Patch**, **transactional batch**, and **bulk** operations. These mirror the
   .NET out-of-scope set. Patch in particular is the only driver code path that
   decodes-merges-re-encodes a body (see
-  [0017-patch-handler.md](0017-patch-handler.md)), so it needs the codec but
+  0017-patch-handler.md (`0017-patch-handler.md`)), so it needs the codec but
   is sequenced after the core read/write/query path lands.
 
 ## 2. Scope
@@ -585,6 +585,6 @@ rare forms is a possible future optimization.)
   <https://github.com/Azure/azure-cosmos-dotnet-v3/pull/4652>
 - .NET type markers —
   `Microsoft.Azure.Cosmos/src/Json/JsonBinaryEncoding.TypeMarker.cs`
-- [Architecture.md](../Architecture.md) — schema-agnostic data-plane principle.
-- [0017-patch-handler.md](0017-patch-handler.md) — the deferred body-parsing path.
-- [0005-operation-and-transport-pipelines.md](0005-operation-and-transport-pipelines.md) — header application.
+- Architecture.md (`../Architecture.md`) — schema-agnostic data-plane principle.
+- 0017-patch-handler.md (`0017-patch-handler.md`) — the deferred body-parsing path.
+- 0005-operation-and-transport-pipelines.md (`0005-operation-and-transport-pipelines.md`) — header application.

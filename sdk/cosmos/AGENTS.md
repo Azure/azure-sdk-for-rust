@@ -16,8 +16,9 @@ This file contains coding guidelines and architectural patterns specific to the 
   [`docs/Architecture.md`](docs/Architecture.md) for project and architecture
   context, then use the indexes in `docs/README.md` to find relevant specs,
   ADRs, and reports.
-- Keep relative Markdown-to-Markdown links within `docs/`; the link-check
-  workflow validates them. Use absolute links from crate READMEs.
+- Do not use relative links in `docs/`. Keep useful target paths as plain code
+  instead, for example, `specs/0017-patch-handler.md`. Use absolute links from
+  crate READMEs.
 - Do not link from Markdown to Rust source files. Those implementation links
   atrophy as code moves.
 - Do not load the entire documentation set when only a few indexed documents

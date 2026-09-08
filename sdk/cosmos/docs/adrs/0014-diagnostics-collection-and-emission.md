@@ -52,5 +52,5 @@ logging is permitted; eager public telemetry export is not the default.
 
 ## Authoritative references
 
-- [Diagnostics contract](../specs/0018-diagnostics-contract.md)
+- Diagnostics contract (`../specs/0018-diagnostics-contract.md`)
 - PR [#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789)

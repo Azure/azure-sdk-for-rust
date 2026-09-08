@@ -264,8 +264,8 @@ transport client, which is the entire point:
 - 503 / 408 / 410-1002 drive cross-region failover and endpoint-unavailability
   marking.
 - 429 drives the throttling retry policy, bounded by
-  `ThrottlingRetryOptions` (see [0025](0025-throughput-control.md) for the
-  related throughput-control headers, and [0006](0006-error-codes-and-retries.md)
+  `ThrottlingRetryOptions` (see 0025 (`0025-throughput-control.md`) for the
+  related throughput-control headers, and 0006 (`0006-error-codes-and-retries.md`)
   for the retry classification).
 - 449 drives the RetryWith policy.
 - 404-1002 drives session retries; 403-3 drives write failover; 403-1008 drives

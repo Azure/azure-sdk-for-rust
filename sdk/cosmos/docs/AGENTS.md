@@ -1,7 +1,7 @@
 # Cosmos Documentation Instructions
 
-- Start with [README.md](README.md), then read [Project.md](Project.md) and
-  [Architecture.md](Architecture.md) for project context.
+- Start with README.md (`README.md`), then read Project.md (`Project.md`) and
+  Architecture.md (`Architecture.md`) for project context.
 - Inventory the available specs, ADRs, and reports through README, then read
   only the documents relevant to the task. Do not load the entire documentation
   set.
@@ -23,7 +23,7 @@
   immutability.
 - Put historical investigations and measurement results in `reports/` without
   sequence numbers.
-- Update [README.md](README.md) and affected links whenever adding, moving, or
+- Update README.md (`README.md`) and affected links whenever adding, moving, or
   superseding a document.
 - Link to detailed specs and ADRs instead of duplicating their content in
   `Project.md` or `Architecture.md`.
