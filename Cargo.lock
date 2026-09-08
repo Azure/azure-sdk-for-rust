@@ -377,7 +377,7 @@ dependencies = [
  "async-lock",
  "async-trait",
  "azure_core_examples",
- "azure_core_macros 1.1.0-beta.1",
+ "azure_core_macros 1.0.0",
  "azure_core_test 0.2.0",
  "bytes",
  "clap",
@@ -447,7 +447,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "typespec 1.2.0-beta.1",
- "typespec_macros 1.1.0-beta.1",
+ "typespec_macros 1.0.0",
 ]
 
 [[package]]
@@ -559,9 +559,11 @@ dependencies = [
 name = "azure_core_test_macros"
 version = "0.2.0"
 dependencies = [
+ "azure_core_test 0.2.0",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+ "tokio",
 ]
 
 [[package]]
@@ -577,7 +579,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.38.0"
+version = "0.39.0"
 dependencies = [
  "arbitrary",
  "async-lock",
@@ -622,7 +624,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "arc-swap",
  "async-lock",
@@ -785,6 +787,7 @@ dependencies = [
  "openssl",
  "pin-project",
  "rand 0.10.2",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_test",
@@ -4640,7 +4643,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "typespec 1.2.0-beta.1",
- "typespec_macros 1.1.0-beta.1",
+ "typespec_macros 1.0.0",
  "url",
  "uuid",
 ]

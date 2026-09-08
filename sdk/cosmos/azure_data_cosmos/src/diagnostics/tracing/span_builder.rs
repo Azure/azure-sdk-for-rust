@@ -22,7 +22,9 @@ use opentelemetry::{
     Array, Context, KeyValue, StringValue, Value,
 };
 
-use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, RequestDiagnostics};
+use azure_data_cosmos_driver::diagnostics::{
+    DiagnosticsContext, ExecutionContext, RequestDiagnostics,
+};
 
 use crate::diagnostics::attributes;
 use crate::diagnostics::CosmosOperationContext;
@@ -32,6 +34,19 @@ const DEFAULT_OPERATION_SPAN_NAME: &str = "cosmosdb.operation";
 
 /// Span name for each per-attempt ("child") span.
 const REQUEST_SPAN_NAME: &str = "cosmosdb.request";
+
+/// Builds an OpenTelemetry ordered `string[]` [`Value`] from region names.
+///
+/// The Cosmos semantic conventions model region lists (contacted, requested,
+/// responded) as ordered `string[]`; this emits an array value rather than a
+/// joined scalar.
+fn region_string_array<'a>(regions: impl IntoIterator<Item = &'a str>) -> Value {
+    let values: Vec<StringValue> = regions
+        .into_iter()
+        .map(|region| StringValue::from(region.to_string()))
+        .collect();
+    Value::Array(Array::String(values))
+}
 
 /// Emits a backdated operation span with one child span per retained attempt.
 ///
@@ -168,6 +183,67 @@ pub(crate) fn emit_backdated_span_tree<T>(
             Value::Array(Array::String(values)),
         ));
     }
+    // Hedging surfacing: only when a cross-region hedge actually fanned out.
+    // These attributes stay off the common (non-hedged) sampled span entirely.
+    //
+    // Fan-out is decided by `hedging_started()` (materialized from the
+    // dispatch-time fan-out log), consistently with the hedged metric counter
+    // and the sampled log line. The per-outcome `HEDGE_REGION` /
+    // `HEDGE_TERMINAL_STATE` fields are additionally gated on
+    // `hedge_diagnostics()`, which is `None` when a both-transient race was
+    // resolved by a later failover attempt — so those fields are simply absent
+    // there rather than carrying empty or placeholder values. The region
+    // history is still emitted on that path, which is exactly where it is most
+    // useful.
+    //
+    // Both region arrays come from the driver already bounded by
+    // `max_request_diagnostics`, so a retry storm cannot produce an unbounded
+    // span attribute. When the driver elided the middle of a history, the
+    // matching `*_total` count is emitted alongside so the truncation is
+    // explicit in the telemetry rather than silent.
+    if diagnostics.hedging_started() {
+        root_attrs.push(KeyValue::new(attributes::HEDGING_STARTED, true));
+        if let Some(hedge) = diagnostics.hedge_diagnostics() {
+            if let Some(alternate) = hedge.alternate_region() {
+                root_attrs.push(KeyValue::new(
+                    attributes::HEDGE_REGION,
+                    alternate.as_str().to_string(),
+                ));
+            }
+            root_attrs.push(KeyValue::new(
+                attributes::HEDGE_TERMINAL_STATE,
+                hedge.terminal_state().as_str(),
+            ));
+        }
+        let requested = diagnostics.requested_regions();
+        if !requested.is_empty() {
+            root_attrs.push(KeyValue::new(
+                attributes::REQUESTED_REGIONS,
+                region_string_array(requested.iter().map(|r| r.region.as_str())),
+            ));
+            let total = diagnostics.total_requested_regions();
+            if total > requested.len() {
+                root_attrs.push(KeyValue::new(
+                    attributes::REQUESTED_REGIONS_TOTAL,
+                    total as i64,
+                ));
+            }
+        }
+        let responded = diagnostics.responded_regions();
+        if !responded.is_empty() {
+            root_attrs.push(KeyValue::new(
+                attributes::RESPONDED_REGIONS,
+                region_string_array(responded.iter().map(|region| region.as_str())),
+            ));
+            let total = diagnostics.total_responded_regions();
+            if total > responded.len() {
+                root_attrs.push(KeyValue::new(
+                    attributes::RESPONDED_REGIONS_TOTAL,
+                    total as i64,
+                ));
+            }
+        }
+    }
     // Prefer the caller-supplied server-address override (mirroring the metrics
     // handler) before falling back to the host of the first contacted endpoint,
     // so an override changes both the metric and the root span consistently.
@@ -262,6 +338,18 @@ pub(crate) fn emit_backdated_span_tree<T>(
                     region.as_str().to_string(),
                 )])),
             ));
+        }
+        // Tag the speculative hedge leg so the child span is attributable to the
+        // hedge fan-out rather than an initial/retry dispatch. This tag is
+        // present only for a *retained* hedge-leg record: when the primary wins
+        // a clean race the alternate leg is structurally cancelled before it
+        // produces a per-request record, so no child span exists for it. In that
+        // case the authoritative hedge signal lives on the root span
+        // (`hedge_started` / `hedge_region` / `hedge_terminal_state`, plus the
+        // alternate region in `requested_regions`), so the fan-out is still
+        // attributable even without a tagged child.
+        if matches!(req.execution_context(), ExecutionContext::Hedging) {
+            child_attrs.push(KeyValue::new(attributes::HEDGE_LEG, true));
         }
         if let Some(addr) = server_address(req) {
             child_attrs.push(KeyValue::new(attributes::SERVER_ADDRESS, addr));

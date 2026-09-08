@@ -245,6 +245,57 @@ impl CosmosMetricsHandler {
     }
 }
 
+impl CosmosMetricsHandler {
+    /// Value of the `hedge_terminal_state` dimension when a hedge demonstrably
+    /// fanned out but the race retained no terminal outcome.
+    ///
+    /// The both-transient→failover path deliberately leaves `hedge_diagnostics`
+    /// unset so a later successful retry does not carry a misleading
+    /// `BothTransient` state. Those operations really did hedge, so they must be
+    /// counted; this sentinel keeps the counter's attribute schema uniform
+    /// (every data point carries the dimension, so `group by
+    /// hedge_terminal_state` never fragments) while staying distinguishable
+    /// from every real `HedgeTerminalState` value.
+    const HEDGE_TERMINAL_STATE_UNRESOLVED: &'static str = "unresolved";
+
+    /// Records the hedged-operation counter for an operation that fanned out a
+    /// cross-region hedge.
+    ///
+    /// The low-cardinality `hedge_terminal_state` dimension is always attached;
+    /// the higher-cardinality `hedge_region` dimension is added only under the
+    /// extended-attributes opt-in (mirroring how contacted regions are gated on
+    /// the duration metric).
+    ///
+    /// Fan-out is decided by [`DiagnosticsContext::hedging_started`], which is
+    /// materialized from the dispatch-time fan-out log and is therefore the
+    /// authoritative signal — gating on `hedge_diagnostics` instead would
+    /// silently undercount, because a both-transient race that later succeeds
+    /// through failover retains no terminal outcome. An aggregated operation
+    /// (e.g. PATCH) whose sub-op hedged is counted once for the whole operation.
+    fn record_hedged(&self, diagnostics: &DiagnosticsContext, base_attrs: &[KeyValue]) {
+        if !diagnostics.hedging_started() {
+            return;
+        }
+        let hedge = diagnostics.hedge_diagnostics();
+        let mut attrs = base_attrs.to_vec();
+        attrs.push(KeyValue::new(
+            attributes::ATTR_HEDGE_TERMINAL_STATE,
+            hedge.map_or(Self::HEDGE_TERMINAL_STATE_UNRESOLVED, |hedge| {
+                hedge.terminal_state().as_str()
+            }),
+        ));
+        if self.options.extended_attributes_enabled() {
+            if let Some(alternate) = hedge.and_then(|hedge| hedge.alternate_region()) {
+                attrs.push(KeyValue::new(
+                    attributes::ATTR_HEDGE_REGION,
+                    alternate.as_str().to_string(),
+                ));
+            }
+        }
+        self.instruments.hedged.add(1, &attrs);
+    }
+}
+
 impl Default for CosmosMetricsHandler {
     fn default() -> Self {
         Self::new()
@@ -284,6 +335,13 @@ impl DiagnosticsHandler for CosmosMetricsHandler {
                 self.instruments.returned_rows.record(rows, &attributes);
             }
         }
+
+        // Hedging counter: emitted only when opted in and a hedge actually
+        // fanned out. `record_hedged` re-checks fan-out so the invariant holds
+        // regardless of call site.
+        if self.options.hedged_metric_enabled() {
+            self.record_hedged(diagnostics, &attributes);
+        }
     }
 
     fn on_client_created(&self, client: &CosmosClientInfo) -> Option<ClientLifetimeToken> {
@@ -316,7 +374,9 @@ mod tests {
     use super::*;
     use crate::CosmosStatus;
     use azure_core::http::StatusCode;
+    use azure_data_cosmos_driver::diagnostics::{HedgeDiagnostics, HedgeTerminalState};
     use azure_data_cosmos_driver::models::ActivityId;
+    use azure_data_cosmos_driver::options::Region;
     use opentelemetry::metrics::MeterProvider as _;
     use opentelemetry_sdk::metrics::data::{AggregatedMetrics, MetricData, ResourceMetrics};
     use opentelemetry_sdk::metrics::{InMemoryMetricExporter, PeriodicReader, SdkMeterProvider};
@@ -357,6 +417,25 @@ mod tests {
             ActivityId::new_uuid(),
             Duration::from_millis(42),
             Some(CosmosStatus::new(StatusCode::from(status_code))),
+        )
+    }
+
+    /// Completed context whose operation fanned out an `AlternateWon` hedge to
+    /// West US 2.
+    fn hedged_completed(status_code: u16) -> DiagnosticsContext {
+        let hedge = HedgeDiagnostics::for_testing(
+            Region::EAST_US,
+            Some(Region::WEST_US_2),
+            Some(Region::WEST_US_2),
+            HedgeTerminalState::AlternateWon,
+        );
+        DiagnosticsContext::for_testing_with_hedge(
+            ActivityId::new_uuid(),
+            Duration::from_millis(42),
+            Some(CosmosStatus::new(StatusCode::from(status_code))),
+            Some("read_item"),
+            Vec::new(),
+            Some(hedge),
         )
     }
 
@@ -792,5 +871,172 @@ mod tests {
             Some("my-account.documents.azure.com".to_string())
         );
         assert_eq!(host_of("not a url"), None);
+    }
+
+    /// Returns the attributes (as a string map) and summed value of the
+    /// `azure.cosmosdb.client.operation.hedged` counter, if present.
+    fn hedged_point(metrics: &[ResourceMetrics]) -> Option<(HashMap<String, String>, u64)> {
+        for rm in metrics {
+            for sm in rm.scope_metrics() {
+                for m in sm.metrics() {
+                    if m.name() != attributes::METRIC_OPERATION_HEDGED {
+                        continue;
+                    }
+                    if let AggregatedMetrics::U64(MetricData::Sum(sum)) = m.data() {
+                        if let Some(point) = sum.data_points().next() {
+                            let attrs = point
+                                .attributes()
+                                .map(|kv| {
+                                    (kv.key.as_str().to_string(), kv.value.as_str().into_owned())
+                                })
+                                .collect();
+                            return Some((attrs, point.value()));
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    #[test]
+    fn hedged_metric_off_by_default_even_for_hedged_operation() {
+        let harness = test_meter();
+        let handler = CosmosMetricsHandler::with_meter(harness.meter.clone());
+
+        let cx = Context::new().with_value(operation_context());
+        handler.handle(&hedged_completed(200), &cx);
+
+        // The stable duration metric is emitted, but the opt-in hedged counter is not.
+        let names = metric_names(&harness.collect());
+        assert!(names
+            .iter()
+            .any(|n| n == attributes::METRIC_OPERATION_DURATION));
+        assert!(!names
+            .iter()
+            .any(|n| n == attributes::METRIC_OPERATION_HEDGED));
+    }
+
+    #[test]
+    fn hedged_metric_emitted_for_hedged_operation_when_enabled() {
+        let harness = test_meter();
+        let options = MetricsOptions::default().with_hedged_metric(true);
+        let handler = CosmosMetricsHandler::with_meter_and_options(harness.meter.clone(), options);
+
+        let cx = Context::new().with_value(operation_context());
+        handler.handle(&hedged_completed(200), &cx);
+
+        let metrics = harness.collect();
+        let (attrs, value) = hedged_point(&metrics).expect("hedged counter should be emitted");
+        assert_eq!(value, 1);
+
+        // Operation identity carries through, plus the low-cardinality terminal state.
+        assert_eq!(
+            attrs
+                .get(attributes::ATTR_DB_OPERATION_NAME)
+                .map(String::as_str),
+            Some("read_item")
+        );
+        assert_eq!(
+            attrs
+                .get(attributes::ATTR_HEDGE_TERMINAL_STATE)
+                .map(String::as_str),
+            Some("alternate_won")
+        );
+        // The high-cardinality region dimension stays off without extended attributes.
+        assert!(!attrs.contains_key(attributes::ATTR_HEDGE_REGION));
+    }
+
+    #[test]
+    fn hedged_metric_adds_region_dimension_under_extended_attributes() {
+        let harness = test_meter();
+        let options = MetricsOptions::default()
+            .with_hedged_metric(true)
+            .with_extended_attributes(true);
+        let handler = CosmosMetricsHandler::with_meter_and_options(harness.meter.clone(), options);
+
+        let cx = Context::new().with_value(operation_context());
+        handler.handle(&hedged_completed(200), &cx);
+
+        let metrics = harness.collect();
+        let (attrs, _) = hedged_point(&metrics).expect("hedged counter should be emitted");
+        assert_eq!(
+            attrs.get(attributes::ATTR_HEDGE_REGION).map(String::as_str),
+            Some("westus2")
+        );
+    }
+
+    #[test]
+    fn hedged_metric_not_emitted_for_non_hedged_operation() {
+        let harness = test_meter();
+        let options = MetricsOptions::default().with_hedged_metric(true);
+        let handler = CosmosMetricsHandler::with_meter_and_options(harness.meter.clone(), options);
+
+        // Enabled, but this operation never hedged: no counter data point.
+        let cx = Context::new().with_value(operation_context());
+        handler.handle(&completed(200), &cx);
+
+        let metrics = harness.collect();
+        assert!(
+            hedged_point(&metrics).is_none(),
+            "a non-hedged operation must not increment the hedged counter"
+        );
+    }
+
+    #[test]
+    fn hedged_metric_counts_hedge_without_terminal_state() {
+        // A hedge that fanned out both-transient and was then resolved by a later
+        // failover attempt leaves a retained `Hedging` request (so
+        // `hedging_started()` is true) but no recorded terminal outcome
+        // (`finalize_both_transient` deliberately does not stamp `hedge_diagnostics`
+        // on the non-terminal path — see operation_pipeline.rs). That operation
+        // really did hedge, so it must be counted; the dimension carries the
+        // `unresolved` sentinel rather than being omitted, which keeps the
+        // counter's attribute schema uniform for `group by hedge_terminal_state`.
+        use azure_data_cosmos_driver::diagnostics::{ExecutionContext, RequestDiagnostics};
+        use azure_data_cosmos_driver::models::RequestCharge;
+        use std::time::Instant;
+
+        let harness = test_meter();
+        let options = MetricsOptions::default().with_hedged_metric(true);
+        let handler = CosmosMetricsHandler::with_meter_and_options(harness.meter.clone(), options);
+
+        let now = Instant::now();
+        let hedge_leg = RequestDiagnostics::for_testing(
+            "https://acct-westus2.documents.azure.com:443/",
+            Some(Region::WEST_US_2),
+            CosmosStatus::new(StatusCode::Ok),
+            RequestCharge::new(1.0),
+            now - Duration::from_millis(50),
+            now,
+        )
+        .with_execution_context_for_testing(ExecutionContext::Hedging);
+        let ctx = DiagnosticsContext::for_testing_with_hedge(
+            ActivityId::new_uuid(),
+            Duration::from_millis(42),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_item"),
+            vec![hedge_leg],
+            None,
+        );
+        assert!(
+            ctx.hedging_started(),
+            "a Hedging-tagged request makes hedging_started() true"
+        );
+
+        let cx = Context::new().with_value(operation_context());
+        handler.handle(&ctx, &cx);
+
+        let metrics = harness.collect();
+        let (attrs, value) = hedged_point(&metrics)
+            .expect("a hedge that fanned out is counted even without a terminal outcome");
+        assert_eq!(value, 1);
+        assert_eq!(
+            attrs
+                .get(attributes::ATTR_HEDGE_TERMINAL_STATE)
+                .map(String::as_str),
+            Some("unresolved"),
+            "the dimension is always present so the counter's schema stays uniform"
+        );
     }
 }
