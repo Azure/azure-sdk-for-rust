@@ -5,6 +5,7 @@
 // Some CI/build setups enable `-W unexpected-cfgs`, and in newer Rust toolchains
 // unknown cfg names are warned/denied unless explicitly declared via check-cfg.
 fn main() {
+    println!("cargo:rustc-check-cfg=cfg(fuzzing)");
     // Allow `#[cfg_attr(not(test_category = "..."), ignore)]` in `tests/*.rs`.
     println!(
         "cargo:rustc-check-cfg=cfg(test_category, values(\"emulator\", \"emulator_vnext\", \"emulator_inmemory\", \"emulator_inmemory_gateway_v2\", \"multi_write\", \"multi_region\", \"gateway_v2\", \"gateway_v2_multi_region\", \"native_query_plan\"))"

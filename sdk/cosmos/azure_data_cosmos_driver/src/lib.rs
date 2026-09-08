@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
-#![recursion_limit = "256"]
+// Nightly sanitizer builds need deeper trait evaluation for container-recreation futures.
+#![cfg_attr(fuzzing, recursion_limit = "256")]
 
 //! Azure Cosmos DB Driver - Core Implementation Layer
 //!

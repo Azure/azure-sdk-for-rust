@@ -62,6 +62,10 @@ fn assert_query_results<T: Eq + std::fmt::Debug>(
         };
         remaining.swap_remove(index);
     }
+    assert!(
+        remaining.is_empty(),
+        "query returned unexpected items: {remaining:?}"
+    );
 }
 
 #[test]
