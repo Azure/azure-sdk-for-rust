@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
+#![recursion_limit = "256"]
 
 //! Azure Cosmos DB Driver - Core Implementation Layer
 //!
