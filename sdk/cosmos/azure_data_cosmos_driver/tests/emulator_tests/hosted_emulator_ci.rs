@@ -64,8 +64,7 @@ async fn configured_host_mode_is_exercised() -> Result<(), Box<dyn std::error::E
 /// stale PKRange cache and routing to the new child partitions.
 ///
 /// This is the actual client-side recovery behavior the hosted in-memory
-/// emulator exists to make testable (see ADR-001 in
-/// `sdk/cosmos/azure_data_cosmos_emulator/docs/adr/`), as opposed to only
+/// emulator exists to make testable (see Spec 0027: Hosted emulator), rather than only
 /// verifying the management API's own HTTP contract in isolation (which
 /// `management.rs`'s own test module already covers).
 #[tokio::test]

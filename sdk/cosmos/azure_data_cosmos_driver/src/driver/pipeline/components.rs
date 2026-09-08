@@ -492,8 +492,7 @@ impl OperationRetryState {
 ///   over to another region is not the correct response to a concurrency
 ///   conflict).
 ///
-/// Mirrors the policy described in
-/// `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`.
+/// Mirrors the legacy timeout and retry configuration policy.
 #[derive(Clone, Debug)]
 pub(crate) struct RetryWithRetryState {
     /// Number of 449 retries already attempted for this operation.
