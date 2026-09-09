@@ -17,6 +17,23 @@ pub(crate) fn output_file_path(request: &Request, file_name: &str) -> PathBuf {
     request.output_dir.join(file_name)
 }
 
+pub(crate) fn render_markdown_metadata(
+    api_md_contents: &str,
+    package_version: &str,
+    parser_version: &str,
+    rust_version: &str,
+) -> Result<String, String> {
+    let api_md_sha256 = sha256_hex(api_md_contents.as_bytes())
+        .map_err(|error| format!("Failed to hash API.md content: {error}"))?;
+
+    Ok(format!(
+        "apiMdSha256: {api_md_sha256}\npackageVersion: {}\nparserVersion: {}\nrustVersion: {}\n",
+        yaml_scalar(package_version),
+        yaml_scalar(parser_version),
+        yaml_scalar(rust_version),
+    ))
+}
+
 pub(crate) fn write_file(path: &Path, contents: &str) -> Result<(), String> {
     let parent = path
         .parent()
@@ -58,6 +75,11 @@ pub(crate) fn check_file(path: &Path, contents: &str) -> Result<bool, String> {
     }
 }
 
+fn sha256_hex(reader: impl Read) -> io::Result<String> {
+    let hash = sha256(reader)?;
+    Ok(hash.iter().map(|byte| format!("{byte:02x}")).collect())
+}
+
 fn sha256(mut reader: impl Read) -> io::Result<[u8; 32]> {
     let mut contents = Vec::new();
     reader.read_to_end(&mut contents)?;
@@ -75,6 +97,59 @@ fn sha256(mut reader: impl Read) -> io::Result<[u8; 32]> {
     }
 
     Ok(Sha256::digest(normalized).into())
+}
+
+fn yaml_scalar(value: &str) -> String {
+    if requires_yaml_quotes(value) {
+        format!("'{}'", value.replace('\'', "''"))
+    } else {
+        value.to_string()
+    }
+}
+
+fn requires_yaml_quotes(value: &str) -> bool {
+    if value.is_empty()
+        || value.chars().next().is_some_and(char::is_whitespace)
+        || value.chars().last().is_some_and(char::is_whitespace)
+    {
+        return true;
+    }
+
+    if value.contains('\n')
+        || value.contains('\r')
+        || value.contains('\t')
+        || value.contains(": ")
+        || value.contains(" #")
+    {
+        return true;
+    }
+
+    matches!(
+        value.chars().next(),
+        Some(
+            '-' | '?'
+                | ':'
+                | '!'
+                | '&'
+                | '*'
+                | '{'
+                | '}'
+                | '['
+                | ']'
+                | ','
+                | '#'
+                | '|'
+                | '>'
+                | '\''
+                | '"'
+                | '%'
+                | '@'
+                | '`'
+        )
+    ) || matches!(
+        value.to_ascii_lowercase().as_str(),
+        "null" | "~" | "true" | "false" | "yes" | "no" | "on" | "off"
+    )
 }
 
 #[cfg(test)]

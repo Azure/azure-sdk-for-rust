@@ -51,7 +51,7 @@ pub struct DriverTestClient {
     /// per-operation helpers (`create_database`, `read_item`, …). Empty by
     /// default; populated by [`run_with_unique_db_and_hedging`] for the
     /// hedging path, which requires application-preferred regions to be set
-    /// per `HEDGING_SPEC.md` §5.2.
+    /// per Spec 0009: Cross-region hedging, §5.2.
     preferred_regions: Vec<Region>,
     /// Driver-level fault-injection rules applied to every driver created by
     /// the per-operation helpers. Empty by default; populated by the
@@ -458,8 +458,8 @@ impl DriverTestClient {
 
     /// Like [`run_with_unique_db_and_fault_injection_options`](Self::run_with_unique_db_and_fault_injection_options)
     /// but additionally pre-configures driver-level `preferred_regions`,
-    /// which is required for cross-region hedging eligibility per
-    /// `HEDGING_SPEC.md` §5.2 (the §5.1 `should_hedge()` short-circuits
+    /// which is required for cross-region hedging eligibility per Spec 0009:
+    /// Cross-region hedging, §5.2 (the §5.1 `should_hedge()` short-circuits
     /// when no application-preferred regions are configured).
     ///
     /// The `preferred_regions` are stored on the client and applied to every
@@ -613,6 +613,26 @@ impl DriverTestRunContext {
     /// these helpers inherits them.
     fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
         let mut builder = DriverOptions::builder(self.client.account.clone());
+        #[cfg(test_category = "emulator_vnext")]
+        {
+            // Temporary workaround for #5240; product code should eventually
+            // negotiate vNext binary support. Explicit test configuration wins.
+            if self
+                .client
+                .runtime
+                .default_operation_options()
+                .binary_encoding
+                .is_none()
+            {
+                let options = OperationOptionsBuilder::new()
+                    .with_binary_encoding(
+                        azure_data_cosmos_driver::options::BinaryEncodingOptions::new()
+                            .with_enabled(false),
+                    )
+                    .build();
+                builder = builder.with_operation_options(options);
+            }
+        }
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
         }
@@ -652,15 +672,20 @@ impl DriverTestRunContext {
         F: FnMut() -> Fut,
         Fut: Future<Output = Result<T, Box<dyn Error>>>,
     {
+        const MAX_ATTEMPTS: u32 = 12;
+
         let mut delay = Duration::from_millis(250);
         let mut last_error = None;
-        for attempt in 1..=6 {
+        for attempt in 1..=MAX_ATTEMPTS {
             match f().await {
                 Ok(result) => return Ok(result),
-                Err(error) if Self::is_transport_generated_503(error.as_ref()) && attempt < 6 => {
+                Err(error)
+                    if Self::is_transport_generated_503(error.as_ref())
+                        && attempt < MAX_ATTEMPTS =>
+                {
                     last_error = Some(error.to_string());
                     eprintln!(
-                        "transient transport failure during {operation}; retrying attempt {attempt}/6 after {delay:?}: {}",
+                        "transient transport failure during {operation}; retrying attempt {attempt}/{MAX_ATTEMPTS} after {delay:?}: {}",
                         last_error.as_deref().unwrap_or("<unknown>")
                     );
                     tokio::time::sleep(delay).await;

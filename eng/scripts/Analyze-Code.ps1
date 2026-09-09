@@ -62,6 +62,7 @@ $packagesToAnalyze = Get-CargoSelectedPackages `
   -ManifestDir $ManifestDir `
   -PackageInfoDirectory $packageInfoPath
 $workspaceManifestPath = [System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')
+$exportApiScript = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'Export-API.ps1')
 $packageArgs = if ($PackageName -or $ManifestDir) {
   '--package ' + ($packagesToAnalyze.name -join ' --package ')
 }
@@ -96,6 +97,20 @@ $checkApiSupersetManifest = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'tools'
 
 if (!$SkipPackageAnalysis) {
   $checkApiSupersetCrates = @('typespec', 'typespec_client_core', 'azure_core')
+  $exportApiParams = @{
+    Check = $true
+  }
+  if ($PackageName) {
+    $exportApiParams['PackageName'] = $PackageName
+  }
+  elseif ($ManifestDir) {
+    $exportApiParams['ManifestDir'] = $ManifestDir
+  }
+  elseif ($packageInfoPath) {
+    $exportApiParams['PackageInfoDirectory'] = $packageInfoPath
+  }
+
+  & $exportApiScript @exportApiParams
 
   if (!$PackageName -and !$ManifestDir -and !$packageInfoPath) {
     Write-Host "Analyzing workspace`n"
