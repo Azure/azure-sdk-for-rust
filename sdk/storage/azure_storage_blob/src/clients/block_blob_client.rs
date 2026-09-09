@@ -17,10 +17,7 @@ use crate::{
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
-    http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, NoFormat, Pipeline, RequestContent, Url,
-    },
+    http::{Body, NoFormat, RequestContent, Url},
     tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
@@ -50,35 +47,19 @@ impl BlockBlobClient {
         }
 
         let mut options = options.unwrap_or_default();
-        super::apply_client_defaults(&mut options.client_options);
-
-        let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
-        if let Some(token_credential) = credential {
-            if !blob_url.scheme().starts_with("https") {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("{blob_url} must use https"),
-                ));
-            }
-            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
-                token_credential,
-                vec!["https://storage.azure.com/.default"],
-            )));
-        }
-
-        let pipeline = Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            options.client_options.clone(),
-            Vec::default(),
-            per_retry_policies,
-            None,
-        );
+        let pipeline = super::build_pipeline(
+            &blob_url,
+            credential,
+            options.session_options.as_ref(),
+            &mut options.client_options,
+            &options.version,
+        )?;
 
         Ok(Self {
             endpoint: blob_url,
-            version: options.version,
             pipeline,
+            session_options: options.session_options,
+            version: options.version,
         })
     }
 

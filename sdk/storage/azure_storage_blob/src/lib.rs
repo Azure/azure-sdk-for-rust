@@ -21,4 +21,7 @@ pub use clients::*;
 pub use parsers::*;
 mod logging;
 pub mod models;
+mod session;
 pub use models::error::{Result, StorageError};
+pub use session::options::{SessionMode, SessionOptions};
+pub use session::provider::{ContainerSessionProvider, SessionProvider};

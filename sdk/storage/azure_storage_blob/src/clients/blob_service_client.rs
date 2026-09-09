@@ -4,14 +4,7 @@
 pub use crate::generated::clients::{BlobServiceClient, BlobServiceClientOptions};
 
 use crate::{BlobClient, BlobContainerClient};
-use azure_core::{
-    credentials::TokenCredential,
-    http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Pipeline, Url,
-    },
-    tracing, Result,
-};
+use azure_core::{credentials::TokenCredential, http::Url, tracing, Result};
 use std::sync::Arc;
 
 impl BlobServiceClient {
@@ -37,35 +30,19 @@ impl BlobServiceClient {
             ));
         }
         let mut options = options.unwrap_or_default();
-        super::apply_client_defaults(&mut options.client_options);
-
-        let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
-        if let Some(token_credential) = credential {
-            if !service_url.scheme().starts_with("https") {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("{service_url} must use https"),
-                ));
-            }
-            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
-                token_credential,
-                vec!["https://storage.azure.com/.default"],
-            )));
-        }
-
-        let pipeline = Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            options.client_options.clone(),
-            Vec::default(),
-            per_retry_policies,
-            None,
-        );
+        let pipeline = super::build_pipeline(
+            &service_url,
+            credential,
+            options.session_options.as_ref(),
+            &mut options.client_options,
+            &options.version,
+        )?;
 
         Ok(Self {
             endpoint: service_url,
-            version: options.version,
             pipeline,
+            session_options: options.session_options,
+            version: options.version,
         })
     }
 
@@ -85,6 +62,7 @@ impl BlobServiceClient {
         BlobContainerClient {
             endpoint: container_url,
             pipeline: self.pipeline.clone(),
+            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         }
@@ -107,6 +85,7 @@ impl BlobServiceClient {
         BlobClient {
             endpoint: blob_url,
             pipeline: self.pipeline.clone(),
+            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         }
