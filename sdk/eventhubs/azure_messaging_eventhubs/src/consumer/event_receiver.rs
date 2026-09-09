@@ -385,6 +385,7 @@ mod tests {
             Url::parse("amqps://example.servicebus.windows.net").unwrap(),
             None,
             None,
+            Default::default(),
             Arc::new(azure_core_test::credentials::MockCredential),
             Default::default(),
             None,
