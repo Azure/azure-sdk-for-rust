@@ -1417,7 +1417,6 @@ have the session token captured from a prior request that went to Region A.
 
 **Resolution:** The `SessionManager` is shared across all hedges. Each pipeline
 invocation:
-
 1. Reads the latest session token before sending (STAGE 3).
 2. Captures the response session token after receiving (post-STAGE 4).
 
