@@ -99,6 +99,16 @@ pub enum ArchiveStatus {
     UnknownValue(String),
 }
 
+/// The type of authentication required to create the session. The only type currently supported is HMAC.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) enum AuthenticationType {
+    /// HMAC authentication.
+    Hmac,
+
+    /// Any other value not defined in `AuthenticationType`.
+    UnknownValue(String),
+}
+
 /// The blob copy source tags types.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BlobCopySourceTags {
@@ -166,6 +176,16 @@ pub enum DeleteSnapshotsOptionType {
 
     /// Only delete the snapshots.
     Only,
+}
+
+/// The download hint for a blob.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) enum DownloadHint {
+    /// The blob layout can be retrieved with the Get Blob Layout operation.
+    Layout,
+
+    /// Any other value not defined in `DownloadHint`.
+    UnknownValue(String),
 }
 
 /// The algorithm used to produce the encryption key hash.

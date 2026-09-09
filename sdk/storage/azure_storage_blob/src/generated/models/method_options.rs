@@ -606,6 +606,86 @@ pub struct BlobClientGetTagsOptions<'a> {
     pub version_id: Option<String>,
 }
 
+/// Options to be passed to `BlobClient::list_layout()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobClientListLayoutOptions<'a> {
+    /// The algorithm used to produce the encryption key hash. Must be provided if the encryption key is provided.
+    pub encryption_algorithm: Option<EncryptionAlgorithmType>,
+
+    /// Specifies the encryption key to use to encrypt the data provided in the request.
+    pub encryption_key: Option<String>,
+
+    /// The SHA-256 hash of the provided encryption key. Must be provided if the encryption key is provided.
+    pub encryption_key_sha256: Option<String>,
+
+    /// Specify this value to operate only on a blob with a matching Etag value.
+    pub if_match: Option<Etag>,
+
+    /// Specify this value to operate only on a blob if it has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// Specify this value to operate only on a blob with a non-matching Etag value.
+    pub if_none_match: Option<Etag>,
+
+    /// Specifies a SQL-like where clause on blob tags to operate only on a blob with matching tags.
+    pub if_tags: Option<String>,
+
+    /// Specify this value to operate only on a blob if it has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: PagerOptions<'a>,
+
+    /// Specifies the range of the blob to operate on.
+    pub range: Option<HttpRange>,
+
+    /// Specifies the snapshot of the blob.
+    pub snapshot: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+
+    /// Specifies the version ID of the blob.
+    pub version_id: Option<String>,
+}
+
+impl BlobClientListLayoutOptions<'_> {
+    /// Transforms this [`BlobClientListLayoutOptions`] into a new `BlobClientListLayoutOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> BlobClientListLayoutOptions<'static> {
+        BlobClientListLayoutOptions {
+            encryption_algorithm: self.encryption_algorithm,
+            encryption_key: self.encryption_key,
+            encryption_key_sha256: self.encryption_key_sha256,
+            if_match: self.if_match,
+            if_modified_since: self.if_modified_since,
+            if_none_match: self.if_none_match,
+            if_tags: self.if_tags,
+            if_unmodified_since: self.if_unmodified_since,
+            lease_id: self.lease_id,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+            range: self.range,
+            snapshot: self.snapshot,
+            timeout: self.timeout,
+            version_id: self.version_id,
+        }
+    }
+}
+
 /// Options to be passed to `BlobClient::release_lease()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientReleaseLeaseOptions<'a> {
@@ -995,6 +1075,16 @@ pub struct BlobContainerClientCreateOptions<'a> {
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `BlobContainerClient::create_session()`
+#[derive(Clone, Default, SafeDebug)]
+pub(crate) struct BlobContainerClientCreateSessionOptions<'a> {
+    /// Allows customization of the method call.
+    pub(crate) method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub(crate) timeout: Option<i32>,
 }
 
 /// Options to be passed to `BlobContainerClient::delete()`
