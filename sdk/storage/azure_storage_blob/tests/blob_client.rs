@@ -1909,7 +1909,8 @@ async fn test_download_layout_aware_routing() -> Result<(), Box<dyn Error>> {
         } else {
             "no"
         };
-        eprintln!("  {kind:<6}  {range:<24}  {routed:<7}  {hint:<7}  {sent_to}");
+        let status = request.status;
+        eprintln!("  {kind:<6}  {status:<3}  {range:<24}  {routed:<7}  {hint:<7}  {sent_to}");
     }
 
     if routed.is_empty() {
