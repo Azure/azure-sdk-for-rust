@@ -9,7 +9,7 @@ use super::{
         Blob_itemsBlobItem, Blob_itemsFilterBlobItem, Blob_tag_setBlobTag, Committed_blocksBlock,
         Container_itemsContainerItem, CorsCorsRule, Uncommitted_blocksBlock,
     },
-    AccessTier, ArchiveStatus, BlobType, CopyStatus, GeoReplicationStatusType,
+    AccessTier, ArchiveStatus, AuthenticationType, BlobType, CopyStatus, GeoReplicationStatusType,
     ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
     RehydratePriority, StorageErrorCode,
 };
@@ -197,6 +197,84 @@ pub struct BlobItem {
     /// The version ID of the blob.
     #[serde(rename = "VersionId", skip_serializing_if = "Option::is_none")]
     pub version_id: Option<String>,
+}
+
+/// The result of the Get Blob Layout API.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "BlobLayout")]
+pub struct BlobLayout {
+    /// The endpoints that serve the ranges of the blob.
+    #[serde(rename = "Endpoints", skip_serializing_if = "Option::is_none")]
+    pub endpoints: Option<BlobLayoutEndpoints>,
+
+    /// The continuation marker used for this request.
+    #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
+    pub marker: Option<String>,
+
+    /// The maximum number of ranges to return per request.
+    #[serde(rename = "MaxResults", skip_serializing_if = "Option::is_none")]
+    pub max_results: Option<i32>,
+
+    /// If the number of ranges exceeds MaxResults, a NextMarker is returned for use in subsequent requests to continue listing.
+    #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
+    pub next_marker: Option<String>,
+
+    /// The ranges that make up the blob.
+    #[serde(default, rename = "Ranges")]
+    pub ranges: BlobLayoutRanges,
+}
+
+/// An endpoint that serves ranges of a blob.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "Endpoint")]
+pub struct BlobLayoutEndpoint {
+    /// The index of the endpoint, referenced by Range elements.
+    #[serde(rename = "@Index", skip_serializing_if = "Option::is_none")]
+    pub index: Option<i32>,
+
+    /// The host:port of the endpoint.
+    #[serde(rename = "@Value", skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+
+/// The endpoints that serve the ranges of a blob.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "Endpoints")]
+pub struct BlobLayoutEndpoints {
+    /// The list of endpoints.
+    #[serde(rename = "Endpoint", skip_serializing_if = "Option::is_none")]
+    pub endpoint: Option<Vec<BlobLayoutEndpoint>>,
+}
+
+/// A range of a blob, and the endpoint that serves it.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "Range")]
+pub struct BlobLayoutRange {
+    /// The end byte offset of the range.
+    #[serde(rename = "@End", skip_serializing_if = "Option::is_none")]
+    pub end: Option<i64>,
+
+    /// Index into the Endpoints array indicating which endpoint serves this range.
+    #[serde(rename = "@EndpointIndex", skip_serializing_if = "Option::is_none")]
+    pub endpoint_index: Option<i32>,
+
+    /// The start byte offset of the range.
+    #[serde(rename = "@Start", skip_serializing_if = "Option::is_none")]
+    pub start: Option<i64>,
+}
+
+/// The ranges that make up a blob.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "Ranges")]
+pub struct BlobLayoutRanges {
+    /// The list of ranges.
+    #[serde(default, rename = "Range")]
+    pub range: Vec<BlobLayoutRange>,
 }
 
 /// Represents a blob name.
@@ -781,6 +859,42 @@ pub struct CorsRule {
     pub max_age_in_seconds: Option<i32>,
 }
 
+/// The configuration used to create a session.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[serde(rename = "CreateSessionRequest")]
+pub(crate) struct CreateSessionConfiguration {
+    /// The type of authentication required to create the session. The only type currently supported is HMAC.
+    #[serde(rename = "AuthenticationType", skip_serializing_if = "Option::is_none")]
+    pub(crate) authentication_type: Option<AuthenticationType>,
+}
+
+/// The response of the Create Session API.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "CreateSessionResult")]
+pub(crate) struct CreateSessionResponse {
+    /// The type of authentication required to create the session. The only type currently supported is HMAC.
+    #[serde(rename = "AuthenticationType", skip_serializing_if = "Option::is_none")]
+    pub(crate) authentication_type: Option<AuthenticationType>,
+
+    /// The credentials used to authorize subsequent requests in the session.
+    #[serde(rename = "Credentials", skip_serializing_if = "Option::is_none")]
+    pub(crate) credentials: Option<SessionCredentials>,
+
+    /// The time when the session will expire.
+    #[serde(
+        default,
+        rename = "Expiration",
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::time::rfc7231::option"
+    )]
+    pub(crate) expiration: Option<OffsetDateTime>,
+
+    /// A unique identifier for the created session.
+    #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
+    pub(crate) id: Option<String>,
+}
+
 /// The error response.
 ///
 /// This defines the wire format only. Language SDKs wrap this in idiomatic error types.
@@ -1174,6 +1288,21 @@ pub struct RetentionPolicy {
     /// Whether the policy is enabled.
     #[serde(rename = "Enabled", skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+
+/// The credentials associated with a session.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "Credentials")]
+pub(crate) struct SessionCredentials {
+    /// Only returned when AuthenticationType is HMAC. A symmetric encryption key used to sign requests in the session using the
+    /// Shared Key protocol.
+    #[serde(rename = "SessionKey", skip_serializing_if = "Option::is_none")]
+    pub(crate) session_key: Option<String>,
+
+    /// An opaque token used to authorize subsequent requests in the session. Must be treated as a security credential.
+    #[serde(rename = "SessionToken", skip_serializing_if = "Option::is_none")]
+    pub(crate) session_token: Option<String>,
 }
 
 /// A signed identifier.

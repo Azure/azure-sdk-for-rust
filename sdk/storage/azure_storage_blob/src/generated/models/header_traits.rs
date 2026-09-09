@@ -14,15 +14,16 @@ use super::{
     BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesResult, BlobContainerClientListBlobsHierarchicalInternalResult,
     BlobContainerClientListBlobsInternalResult, BlobContainerClientReleaseLeaseResult,
-    BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult, BlobType,
-    BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
+    BlobContainerClientRenewLeaseResult, BlobLayout, BlobServiceClientGetAccountInfoResult,
+    BlobType, BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
     BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
-    BlockBlobClientUploadInternalResult, BlockList, CopyStatus, ImmutabilityPolicyMode,
-    LeaseDuration, LeaseState, LeaseStatus, ListBlobsHierarchicalInternalResponseContentType,
-    ListBlobsInternalResponseContentType, PageBlobClientClearPagesResult,
-    PageBlobClientCreateResult, PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
-    PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
-    PublicAccessType, RehydratePriority, SignedIdentifiers, SkuName,
+    BlockBlobClientUploadInternalResult, BlockList, CopyStatus, DownloadHint,
+    ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus,
+    ListBlobsHierarchicalInternalResponseContentType, ListBlobsInternalResponseContentType,
+    PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
+    PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
+    PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
+    SignedIdentifiers, SkuName,
 };
 use azure_core::{
     base64,
@@ -43,8 +44,11 @@ const ARCHIVE_STATUS: HeaderName = HeaderName::from_static("x-ms-archive-status"
 const BLOB_APPEND_OFFSET: HeaderName = HeaderName::from_static("x-ms-blob-append-offset");
 const BLOB_COMMITTED_BLOCK_COUNT: HeaderName =
     HeaderName::from_static("x-ms-blob-committed-block-count");
+const BLOB_CONTENT_ENCODING: HeaderName = HeaderName::from_static("x-ms-blob-content-encoding");
 const BLOB_CONTENT_LENGTH: HeaderName = HeaderName::from_static("x-ms-blob-content-length");
 const BLOB_CONTENT_MD5: HeaderName = HeaderName::from_static("x-ms-blob-content-md5");
+const BLOB_CONTENT_TYPE: HeaderName = HeaderName::from_static("x-ms-blob-content-type");
+const BLOB_CREATION_TIME: HeaderName = HeaderName::from_static("x-ms-blob-creation-time");
 const BLOB_PUBLIC_ACCESS: HeaderName = HeaderName::from_static("x-ms-blob-public-access");
 const BLOB_SEALED: HeaderName = HeaderName::from_static("x-ms-blob-sealed");
 const BLOB_SEQUENCE_NUMBER: HeaderName = HeaderName::from_static("x-ms-blob-sequence-number");
@@ -71,6 +75,7 @@ const DEFAULT_ENCRYPTION_SCOPE: HeaderName =
     HeaderName::from_static("x-ms-default-encryption-scope");
 const DENY_ENCRYPTION_SCOPE_OVERRIDE: HeaderName =
     HeaderName::from_static("x-ms-deny-encryption-scope-override");
+const DOWNLOAD_HINT: HeaderName = HeaderName::from_static("x-ms-download-hint");
 const ENCRYPTION_KEY_SHA256: HeaderName = HeaderName::from_static("x-ms-encryption-key-sha256");
 const ENCRYPTION_SCOPE: HeaderName = HeaderName::from_static("x-ms-encryption-scope");
 const ETAG: HeaderName = HeaderName::from_static("etag");
@@ -647,6 +652,7 @@ pub(crate) trait BlobClientDownloadInternalResultHeaders: private::Sealed {
     fn copy_status(&self) -> Result<Option<CopyStatus>>;
     fn copy_status_description(&self) -> Result<Option<String>>;
     fn creation_time(&self) -> Result<Option<OffsetDateTime>>;
+    fn download_hint(&self) -> Result<Option<DownloadHint>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn immutability_policy_mode(&self) -> Result<Option<ImmutabilityPolicyMode>>;
@@ -803,6 +809,11 @@ impl BlobClientDownloadInternalResultHeaders for AsyncResponse<BlobClientDownloa
         Headers::get_optional_with(self.headers(), &CREATION_TIME, |h| {
             parse_rfc7231(h.as_str())
         })
+    }
+
+    /// Indicates the download hint for the blob.
+    fn download_hint(&self) -> Result<Option<DownloadHint>> {
+        Headers::get_optional_as(self.headers(), &DOWNLOAD_HINT)
     }
 
     /// The SHA-256 hash of the provided encryption key.
@@ -1876,6 +1887,358 @@ impl BlobContainerClientRenewLeaseResultHeaders
     }
 }
 
+/// Provides access to typed response headers for `BlobClient::list_layout()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{BlobLayout, BlobLayoutHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobLayout, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(cache_control) = response.cache_control()? {
+///         println!("cache-control: {:?}", cache_control);
+///     }
+///     if let Some(content_disposition) = response.content_disposition()? {
+///         println!("content-disposition: {:?}", content_disposition);
+///     }
+///     if let Some(content_encoding) = response.content_encoding()? {
+///         println!("content-encoding: {:?}", content_encoding);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobLayoutHeaders: private::Sealed {
+    fn cache_control(&self) -> Result<Option<String>>;
+    fn content_disposition(&self) -> Result<Option<String>>;
+    fn content_encoding(&self) -> Result<Option<String>>;
+    fn content_language(&self) -> Result<Option<String>>;
+    fn content_length(&self) -> Result<Option<u64>>;
+    fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+    fn etag(&self) -> Result<Option<Etag>>;
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn access_tier(&self) -> Result<Option<String>>;
+    fn access_tier_change_time(&self) -> Result<Option<OffsetDateTime>>;
+    fn access_tier_inferred(&self) -> Result<Option<bool>>;
+    fn archive_status(&self) -> Result<Option<ArchiveStatus>>;
+    fn blob_committed_block_count(&self) -> Result<Option<i32>>;
+    fn blob_content_encoding(&self) -> Result<Option<String>>;
+    fn blob_content_length(&self) -> Result<Option<i64>>;
+    fn blob_content_md5(&self) -> Result<Option<Vec<u8>>>;
+    fn blob_content_type(&self) -> Result<Option<String>>;
+    fn blob_creation_time(&self) -> Result<Option<OffsetDateTime>>;
+    fn is_sealed(&self) -> Result<Option<bool>>;
+    fn blob_sequence_number(&self) -> Result<Option<i64>>;
+    fn blob_type(&self) -> Result<Option<BlobType>>;
+    fn copy_completion_time(&self) -> Result<Option<OffsetDateTime>>;
+    fn destination_snapshot(&self) -> Result<Option<String>>;
+    fn copy_id(&self) -> Result<Option<String>>;
+    fn copy_progress(&self) -> Result<Option<String>>;
+    fn copy_source(&self) -> Result<Option<String>>;
+    fn copy_status(&self) -> Result<Option<CopyStatus>>;
+    fn copy_status_description(&self) -> Result<Option<String>>;
+    fn creation_time(&self) -> Result<Option<OffsetDateTime>>;
+    fn encryption_key_sha256(&self) -> Result<Option<String>>;
+    fn encryption_scope(&self) -> Result<Option<String>>;
+    fn expires_on(&self) -> Result<Option<OffsetDateTime>>;
+    fn immutability_policy_mode(&self) -> Result<Option<ImmutabilityPolicyMode>>;
+    fn immutability_policy_expires_on(&self) -> Result<Option<OffsetDateTime>>;
+    fn is_incremental_copy(&self) -> Result<Option<bool>>;
+    fn is_current_version(&self) -> Result<Option<bool>>;
+    fn last_accessed(&self) -> Result<Option<OffsetDateTime>>;
+    fn duration(&self) -> Result<Option<LeaseDuration>>;
+    fn lease_state(&self) -> Result<Option<LeaseState>>;
+    fn lease_status(&self) -> Result<Option<LeaseStatus>>;
+    fn legal_hold(&self) -> Result<Option<bool>>;
+    fn metadata(&self) -> Result<HashMap<String, String>>;
+    fn object_replication_rules(&self) -> Result<HashMap<String, String>>;
+    fn object_replication_policy_id(&self) -> Result<Option<String>>;
+    fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>>;
+    fn is_server_encrypted(&self) -> Result<Option<bool>>;
+    fn smart_access_tier(&self) -> Result<Option<String>>;
+    fn tag_count(&self) -> Result<Option<i64>>;
+    fn version_id(&self) -> Result<Option<String>>;
+}
+
+impl BlobLayoutHeaders for Response<BlobLayout, XmlFormat> {
+    /// The Cache-Control of the blob.
+    fn cache_control(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &CACHE_CONTROL)
+    }
+
+    /// The Content-Disposition of the blob.
+    fn content_disposition(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &CONTENT_DISPOSITION)
+    }
+
+    /// The Content-Encoding of the blob.
+    fn content_encoding(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &CONTENT_ENCODING)
+    }
+
+    /// The Content-Language of the blob.
+    fn content_language(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &CONTENT_LANGUAGE)
+    }
+
+    /// The number of bytes present in the response body.
+    fn content_length(&self) -> Result<Option<u64>> {
+        Headers::get_optional_as(self.headers(), &CONTENT_LENGTH)
+    }
+
+    /// The blob content MD5 hash. Only returned if the full blob is read.
+    fn content_md5(&self) -> Result<Option<Vec<u8>>> {
+        Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
+    }
+
+    /// An opaque identifier for the current state of the resource.
+    fn etag(&self) -> Result<Option<Etag>> {
+        Headers::get_optional_as(self.headers(), &ETAG)
+    }
+
+    /// The date-time that the resource was last modified.
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// The access tier of the blob.
+    fn access_tier(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ACCESS_TIER)
+    }
+
+    /// The time the tier was changed on the blob. This is only returned if the tier on the blob was ever set.
+    fn access_tier_change_time(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &ACCESS_TIER_CHANGE_TIME, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// Included if the access tier is inferred.
+    fn access_tier_inferred(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &ACCESS_TIER_INFERRED)
+    }
+
+    /// Included if the blob rehydrate operation is pending. Indicates the destination tier.
+    fn archive_status(&self) -> Result<Option<ArchiveStatus>> {
+        Headers::get_optional_as(self.headers(), &ARCHIVE_STATUS)
+    }
+
+    /// The number of committed blocks present in the blob.
+    fn blob_committed_block_count(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &BLOB_COMMITTED_BLOCK_COUNT)
+    }
+
+    /// The Content-Encoding of the blob.
+    fn blob_content_encoding(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &BLOB_CONTENT_ENCODING)
+    }
+
+    /// The size of the blob in bytes.
+    fn blob_content_length(&self) -> Result<Option<i64>> {
+        Headers::get_optional_as(self.headers(), &BLOB_CONTENT_LENGTH)
+    }
+
+    /// MD5 hash of the full blob content only returned for ranged reads. This is the hash of the complete blob, not just the
+    /// requested range.
+    fn blob_content_md5(&self) -> Result<Option<Vec<u8>>> {
+        Headers::get_optional_with(self.headers(), &BLOB_CONTENT_MD5, |h| {
+            base64::decode(h.as_str())
+        })
+    }
+
+    /// The Content-Type of the blob.
+    fn blob_content_type(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &BLOB_CONTENT_TYPE)
+    }
+
+    /// The date-time the blob was created.
+    fn blob_creation_time(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &BLOB_CREATION_TIME, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// Whether the blob is sealed.
+    fn is_sealed(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &BLOB_SEALED)
+    }
+
+    /// The current sequence number for a page blob.
+    fn blob_sequence_number(&self) -> Result<Option<i64>> {
+        Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
+    }
+
+    /// The type of the blob.
+    fn blob_type(&self) -> Result<Option<BlobType>> {
+        Headers::get_optional_as(self.headers(), &BLOB_TYPE)
+    }
+
+    /// If this blob was the destination of a copy, specifies the completion time of the last attempted copy operation.
+    fn copy_completion_time(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &COPY_COMPLETION_TIME, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// Included if the blob is incremental copy blob or incremental copy snapshot, if x-ms-copy-status is success.
+    fn destination_snapshot(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &COPY_DESTINATION_SNAPSHOT)
+    }
+
+    /// Identifier for this copy operation.
+    fn copy_id(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &COPY_ID)
+    }
+
+    /// If this blob was the destination of a copy, specifies the number of bytes copied and the total bytes in the source.
+    fn copy_progress(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &COPY_PROGRESS)
+    }
+
+    /// If this blob was the destination of a copy, specifies the source URL.
+    fn copy_source(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &COPY_SOURCE)
+    }
+
+    /// Status of the copy operation.
+    fn copy_status(&self) -> Result<Option<CopyStatus>> {
+        Headers::get_optional_as(self.headers(), &COPY_STATUS)
+    }
+
+    /// If this blob was the destination of a copy, specifies the cause of the copy operation failure.
+    fn copy_status_description(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &COPY_STATUS_DESCRIPTION)
+    }
+
+    /// The date-time the blob was created.
+    fn creation_time(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &CREATION_TIME, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// The SHA-256 hash of the provided encryption key.
+    fn encryption_key_sha256(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
+    }
+
+    /// Specifies the encryption scope used to encrypt the data.
+    fn encryption_scope(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
+    }
+
+    /// The date-time this blob will expire.
+    fn expires_on(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &EXPIRY_TIME, |h| parse_rfc7231(h.as_str()))
+    }
+
+    /// Indicates the immutability policy mode of the blob.
+    fn immutability_policy_mode(&self) -> Result<Option<ImmutabilityPolicyMode>> {
+        Headers::get_optional_as(self.headers(), &IMMUTABILITY_POLICY_MODE)
+    }
+
+    /// The date-time that indicates the time at which the blob immutability policy will expire.
+    fn immutability_policy_expires_on(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &IMMUTABILITY_POLICY_UNTIL_DATE, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// Included if the blob is incremental copy blob.
+    fn is_incremental_copy(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &INCREMENTAL_COPY)
+    }
+
+    /// Indicates whether this is the current version of the blob.
+    fn is_current_version(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &IS_CURRENT_VERSION)
+    }
+
+    /// The date-time value that indicates the time at which the blob was last read or written.
+    fn last_accessed(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &LAST_ACCESS_TIME, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// Specifies the duration of the lease.
+    fn duration(&self) -> Result<Option<LeaseDuration>> {
+        Headers::get_optional_as(self.headers(), &LEASE_DURATION)
+    }
+
+    /// The lease state of the blob.
+    fn lease_state(&self) -> Result<Option<LeaseState>> {
+        Headers::get_optional_as(self.headers(), &LEASE_STATE)
+    }
+
+    /// The lease status of the blob.
+    fn lease_status(&self) -> Result<Option<LeaseStatus>> {
+        Headers::get_optional_as(self.headers(), &LEASE_STATUS)
+    }
+
+    /// Indicates whether the blob has a legal hold.
+    fn legal_hold(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &LEGAL_HOLD)
+    }
+
+    /// The metadata headers.
+    fn metadata(&self) -> Result<HashMap<String, String>> {
+        let mut values = HashMap::new();
+        for h in self.headers().iter() {
+            let name = h.0.as_str();
+            if name.len() > META.len() && name.starts_with(META) {
+                values.insert(name[META.len()..].to_owned(), h.1.as_str().to_owned());
+            }
+        }
+        Ok(values)
+    }
+
+    /// The object replication status headers.
+    fn object_replication_rules(&self) -> Result<HashMap<String, String>> {
+        let mut values = HashMap::new();
+        for h in self.headers().iter() {
+            let name = h.0.as_str();
+            if name.len() > OR.len() && name.starts_with(OR) {
+                values.insert(name[OR.len()..].to_owned(), h.1.as_str().to_owned());
+            }
+        }
+        Ok(values)
+    }
+
+    /// The object replication policy ID.
+    fn object_replication_policy_id(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &OR_POLICY_ID)
+    }
+
+    /// The priority of the rehydration operation.
+    fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>> {
+        Headers::get_optional_as(self.headers(), &REHYDRATE_PRIORITY)
+    }
+
+    /// Indicates whether the contents of the request are successfully encrypted.
+    fn is_server_encrypted(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &SERVER_ENCRYPTED)
+    }
+
+    /// The underlying tier of a smart tier blob. Only returned if the blob is in Smart tier.
+    fn smart_access_tier(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &SMART_ACCESS_TIER)
+    }
+
+    /// The number of tags associated with the blob.
+    fn tag_count(&self) -> Result<Option<i64>> {
+        Headers::get_optional_as(self.headers(), &TAG_COUNT)
+    }
+
+    /// The version ID of the blob.
+    fn version_id(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &VERSION_ID)
+    }
+}
+
 /// Provides access to typed response headers for `BlobServiceClient::get_account_info()`
 ///
 /// # Examples
@@ -2831,7 +3194,7 @@ mod private {
         BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
         BlobContainerClientListBlobsHierarchicalInternalResult,
         BlobContainerClientListBlobsInternalResult, BlobContainerClientReleaseLeaseResult,
-        BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult,
+        BlobContainerClientRenewLeaseResult, BlobLayout, BlobServiceClientGetAccountInfoResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
         BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
         BlockBlobClientUploadInternalResult, BlockList, PageBlobClientClearPagesResult,
@@ -2866,6 +3229,7 @@ mod private {
     impl Sealed for Response<BlobContainerClientGetPropertiesResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientReleaseLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientRenewLeaseResult, NoFormat> {}
+    impl Sealed for Response<BlobLayout, XmlFormat> {}
     impl Sealed for Response<BlobServiceClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientCommitBlockListResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> {}
