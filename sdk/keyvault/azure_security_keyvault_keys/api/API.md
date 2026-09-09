@@ -62,6 +62,8 @@ pub mod clients {
         async fn release(&self, key_name: &str, parameters: RequestContent<ReleaseParameters>, options: Option<KeyClientReleaseOptions<'_>>) -> Result<Response<KeyReleaseResult>>;
         async fn restore_key(&self, parameters: RequestContent<RestoreKeyParameters>, options: Option<KeyClientRestoreKeyOptions<'_>>) -> Result<Response<Key>>;
         async fn rotate_key(&self, key_name: &str, options: Option<KeyClientRotateKeyOptions<'_>>) -> Result<Response<Key>>;
+        async fn secure_unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<SecureKeyUnWrapOperationParameters>, options: Option<KeyClientSecureUnwrapKeyOptions<'_>>) -> Result<Response<SecureKeyOperationResult>>;
+        async fn secure_wrap_key(&self, key_name: &str, parameters: RequestContent<SecureKeyWrapOperationParameters>, options: Option<KeyClientSecureWrapKeyOptions<'_>>) -> Result<Response<SecureKeyOperationResult>>;
         async fn sign(&self, key_name: &str, parameters: RequestContent<SignParameters>, options: Option<KeyClientSignOptions<'_>>) -> Result<Response<KeyOperationResult>>;
         async fn unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyOperationParameters>, options: Option<KeyClientUnwrapKeyOptions<'_>>) -> Result<Response<KeyOperationResult>>;
         async fn update_key_properties(&self, key_name: &str, parameters: RequestContent<UpdateKeyPropertiesParameters>, options: Option<KeyClientUpdateKeyPropertiesOptions<'_>>) -> Result<Response<Key>>;
@@ -146,6 +148,11 @@ pub mod models {
         pub scheduled_purge_date: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<std::collections::HashMap<String, String>>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct ExternalKey {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub id: Option<String>,
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct GetRandomBytesParameters {
@@ -246,8 +253,12 @@ pub mod models {
         pub expires: Option<azure_core::time::OffsetDateTime>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub exportable: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub external_key: Option<ExternalKey>,
         #[serde(rename = "hsmPlatform", skip_serializing)]
         pub hsm_platform: Option<String>,
+        #[serde(skip_serializing)]
+        pub key_size: Option<i32>,
         #[serde(default, rename = "nbf", skip_serializing_if = "Option::is_none", with = "azure_core::time::unix_time::option")]
         pub not_before: Option<azure_core::time::OffsetDateTime>,
         #[serde(rename = "recoverableDays", skip_serializing)]
@@ -347,6 +358,15 @@ pub mod models {
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyClientRotateKeyOptions<'a> {
+        pub method_options: azure_core::http::ClientMethodOptions<'a>,
+    }
+    #[derive(Clone, Debug, Default)]
+    pub struct KeyClientSecureUnwrapKeyOptions<'a> {
+        pub method_options: azure_core::http::ClientMethodOptions<'a>,
+    }
+    #[derive(Clone, Debug, Default)]
+    pub struct KeyClientSecureWrapKeyOptions<'a> {
+        pub key_version: Option<String>,
         pub method_options: azure_core::http::ClientMethodOptions<'a>,
     }
     #[derive(Clone, Debug, Default)]
@@ -552,6 +572,38 @@ pub mod models {
         fn try_from(value: RestoreKeyParameters) -> Result<Self>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    #[non_exhaustive]
+    pub struct SecureKeyOperationResult {
+        #[serde(rename = "alg", skip_serializing_if = "Option::is_none")]
+        pub algorithm: Option<super::JsonWebKeyWrapAlgorithm>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub kid: Option<String>,
+        #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
+        pub value: Option<Vec<u8>>,
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct SecureKeyUnWrapOperationParameters {
+        #[serde(rename = "alg", skip_serializing_if = "Option::is_none")]
+        pub algorithm: Option<super::JsonWebKeyWrapAlgorithm>,
+        #[serde(rename = "target", skip_serializing_if = "Option::is_none")]
+        pub target_attestation_token: Option<String>,
+        #[serde(default, deserialize_with = "base64::option::deserialize_url_safe", serialize_with = "base64::option::serialize_url_safe", skip_serializing_if = "Option::is_none")]
+        pub value: Option<Vec<u8>>,
+    }
+    impl TryFrom<SecureKeyUnWrapOperationParameters> for azure_core::http::RequestContent<super::SecureKeyUnWrapOperationParameters> {
+        type Error = Error;
+        fn try_from(value: SecureKeyUnWrapOperationParameters) -> Result<Self>;
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct SecureKeyWrapOperationParameters {
+        #[serde(rename = "alg", skip_serializing_if = "Option::is_none")]
+        pub algorithm: Option<super::JsonWebKeyWrapAlgorithm>,
+    }
+    impl TryFrom<SecureKeyWrapOperationParameters> for azure_core::http::RequestContent<super::SecureKeyWrapOperationParameters> {
+        type Error = Error;
+        fn try_from(value: SecureKeyWrapOperationParameters) -> Result<Self>;
+    }
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     pub struct SignParameters {
         #[serde(rename = "alg", skip_serializing_if = "Option::is_none")]
         pub algorithm: Option<super::SignatureAlgorithm>,
@@ -685,6 +737,38 @@ pub mod models {
         fn from(e: &'a EncryptionAlgorithm) -> Self;
     }
     impl<'de> Deserialize<'de> for super::EncryptionAlgorithm {
+        fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub enum JsonWebKeyWrapAlgorithm {
+        A128Kw,
+        A128Kwpad,
+        A192Kw,
+        A192Kwpad,
+        A256Kw,
+        A256Kwpad,
+        CkmAesKeyWrap,
+        CkmAesKeyWrapPad,
+        RsaOaep256,
+        UnknownValue(String),
+    }
+    impl AsRef<str> for super::JsonWebKeyWrapAlgorithm {
+        fn as_ref(&self) -> &str;
+    }
+    impl Display for super::JsonWebKeyWrapAlgorithm {
+        fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result;
+    }
+    impl FromStr for super::JsonWebKeyWrapAlgorithm {
+        type Err = Infallible;
+        fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err>;
+    }
+    impl Serialize for super::JsonWebKeyWrapAlgorithm {
+        fn serialize<S>(&self, s: S) -> ::core::result::Result<<S as >::Ok, <S as >::Error> where S: Serializer;
+    }
+    impl<'a> From<&'a JsonWebKeyWrapAlgorithm> for &'a str {
+        fn from(e: &'a JsonWebKeyWrapAlgorithm) -> Self;
+    }
+    impl<'de> Deserialize<'de> for super::JsonWebKeyWrapAlgorithm {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
