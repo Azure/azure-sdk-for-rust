@@ -165,13 +165,21 @@ try {
   Set-Location $RepoRoot
 
   [array]$packages = Get-PackagesToBuild
-  $packageParams = @("--manifest-path", ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')))
-  foreach ($package in $packages) {
-    $packageParams += "--package", $package.name
+  $packageParams = if ($packages.Count -gt 1) {
+    @('--manifest-path', ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')))
+  }
+  else {
+    @('--manifest-path', "'$($packages[0].manifest_path)'")
+  }
+
+  if ($packages.Count -gt 1) {
+    foreach ($package in $packages) {
+      $packageParams += '--package', $package.name
+    }
   }
 
   if ($NoVerify) {
-    $packageParams += "--no-verify"
+    $packageParams += '--no-verify'
   }
 
   # Some packages are not publishable, in cases where the script is not in a
@@ -183,22 +191,25 @@ try {
     $subCommand = @("publish", "--dry-run")
   }
 
-  LogGroupStart "cargo $($subCommand -join ' ') --locked --allow-dirty $($packageParams -join ' ')"
-  Write-Host "cargo $($subCommand -join ' ') --locked --allow-dirty $($packageParams -join ' ')"
-  & cargo @subCommand --locked --allow-dirty @packageParams 2>&1 `
-  | Tee-Object -Variable packResult `
-  | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
-  LogGroupEnd
+  $packResult = Invoke-LoggedCommand `
+    "cargo $($subCommand -join ' ') --locked --allow-dirty $($packageParams -join ' ') 2>&1" `
+    -GroupOutput `
+    -DoNotExitOnFailedExitCode `
+    -OutputProcessor {
+      param($line)
+      Write-Host $line -ForegroundColor Gray
+      $line
+    }
 
-  Write-Host "Finished packing crates"
   if ($LASTEXITCODE) {
     if ($packResult -match 'cannot update the lock file') {
       LogWarning "cargo package could not update the lock file. Rebase on the main branch and try again."
     }
 
-    Write-Host "cargo publish failed with exit code $LASTEXITCODE"
+    LogError "cargo $($subCommand -join ' ') failed with exit code $LASTEXITCODE"
     exit $LASTEXITCODE
   }
+  Write-Host "Finished packing crates"
 
   if ($APIReview) {
     foreach ($package in $packages) {
