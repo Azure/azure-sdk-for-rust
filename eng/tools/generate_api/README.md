@@ -12,6 +12,27 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
   --output target/generate_api/azure_core
 ```
 
+To write only `API.md` and `API.metadata.yml` under a crate's `api/` directory:
+
+```sh
+cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
+  --manifest-path sdk/core/azure_core/Cargo.toml \
+  --output sdk/core/azure_core/api \
+  --no-docs \
+  --no-map
+```
+
+To verify those two files without writing them:
+
+```sh
+cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
+  --manifest-path sdk/core/azure_core/Cargo.toml \
+  --output sdk/core/azure_core/api \
+  --no-docs \
+  --no-map \
+  --check
+```
+
 ### Arguments
 
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
