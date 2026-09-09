@@ -166,6 +166,7 @@ impl AmqpConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_broker::test_broker_address;
 
     #[test]
     fn amqp_connection_options_with_max_frame_size() {
@@ -337,75 +338,75 @@ mod tests {
     #[cfg(not(target_os = "macos"))]
     #[tokio::test]
     async fn amqp_connection_open() {
-        if let Ok(address) = std::env::var("TEST_BROKER_ADDRESS") {
-            let connection = AmqpConnection::new();
-            let url = Url::parse(&address).unwrap();
-            connection
-                .open("test".to_string(), url, None)
-                .await
-                .unwrap();
-        } else {
-            println!("TEST_BROKER_ADDRESS is not set. Skipping test.");
-        }
+        let Some(address) = test_broker_address() else {
+            return;
+        };
+
+        let connection = AmqpConnection::new();
+        let url = Url::parse(&address).unwrap();
+        connection
+            .open("test".to_string(), url, None)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn amqp_connection_open_with_error() {
-        if std::env::var("TEST_BROKER_ADDRESS").is_ok() {
-            let connection = AmqpConnection::new();
-            let url = Url::parse("amqp://localhost:32767").unwrap();
-            assert!(connection
-                .open("test".to_string(), url, None)
-                .await
-                .is_err());
-        } else {
-            println!("TEST_BROKER_ADDRESS is not set. Skipping test.");
+        if test_broker_address().is_none() {
+            return;
         }
+
+        let connection = AmqpConnection::new();
+        let url = Url::parse("amqp://localhost:32767").unwrap();
+        assert!(connection
+            .open("test".to_string(), url, None)
+            .await
+            .is_err());
     }
 
     #[cfg(not(target_os = "macos"))]
     #[tokio::test]
     async fn amqp_connection_close() {
-        if let Ok(address) = std::env::var("TEST_BROKER_ADDRESS") {
-            let connection = AmqpConnection::new();
-            let url = Url::parse(&address).unwrap();
-            connection
-                .open("test".to_string(), url, None)
-                .await
-                .unwrap();
-            connection.close().await.unwrap();
-        } else {
-            println!("TEST_BROKER_ADDRESS is not set. Skipping test.");
-        }
+        let Some(address) = test_broker_address() else {
+            return;
+        };
+
+        let connection = AmqpConnection::new();
+        let url = Url::parse(&address).unwrap();
+        connection
+            .open("test".to_string(), url, None)
+            .await
+            .unwrap();
+        connection.close().await.unwrap();
     }
 
     #[cfg(not(target_os = "macos"))]
     #[tokio::test]
     async fn amqp_connection_close_with_error() {
         tracing_subscriber::fmt::init();
-        if let Ok(address) = std::env::var("TEST_BROKER_ADDRESS") {
-            let connection = AmqpConnection::new();
-            let url = Url::parse(&address).unwrap();
-            connection
-                .open("test".to_string(), url, None)
-                .await
-                .unwrap();
-            let res = connection
-                .close_with_error(
-                    AmqpSymbol::from("amqp:internal-error"),
-                    Some("Internal error.".to_string()),
-                    None,
-                )
-                .await;
-            match res {
-                Ok(_) => {}
-                Err(err) => {
-                    println!("Error: {:?}", err);
-                    assert!(err.to_string().contains("Internal error."));
-                }
+        let Some(address) = test_broker_address() else {
+            return;
+        };
+
+        let connection = AmqpConnection::new();
+        let url = Url::parse(&address).unwrap();
+        connection
+            .open("test".to_string(), url, None)
+            .await
+            .unwrap();
+        let res = connection
+            .close_with_error(
+                AmqpSymbol::from("amqp:internal-error"),
+                Some("Internal error.".to_string()),
+                None,
+            )
+            .await;
+        match res {
+            Ok(_) => {}
+            Err(err) => {
+                println!("Error: {:?}", err);
+                assert!(err.to_string().contains("Internal error."));
             }
-        } else {
-            println!("TEST_BROKER_ADDRESS is not set. Skipping test.");
         }
     }
 }
