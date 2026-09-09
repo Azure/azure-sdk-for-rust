@@ -12,7 +12,7 @@ Run this after regenerating sources or changing Rust code that can affect a crat
 1. Collect changed non-deleted files from Git. By default, use both staged and unstaged local changes:
 
    ```bash
-   { git diff --staged --name-only --diff-filter=d; git diff --name-only --diff-filter=d; } | sort -u
+   { git diff --staged --name-only --diff-filter=d; git diff --name-only --diff-filter=d; git ls-files --others --exclude-standard -- 'sdk'; } | sort -u
    ```
 
 2. If the user wants branch-based detection instead, diff against the merge base with `main`:
@@ -21,6 +21,9 @@ Run this after regenerating sources or changing Rust code that can affect a crat
    base="$(git merge-base main HEAD)"
    git diff --name-only --diff-filter=d "$base"...HEAD | sort -u
    ```
+
+   This branch-based mode only considers tracked branch changes; use the default local-change mode
+   when untracked files should also trigger API regeneration.
 
 3. Assume service crates live under `sdk/<service-directory>/<crate-name>`. For each changed file under `sdk/`,
    derive the candidate crate directory from the first three path segments and keep it only when
