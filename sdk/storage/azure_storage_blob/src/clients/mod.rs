@@ -14,7 +14,7 @@ use azure_core::{
 };
 use std::{
     net::{Ipv4Addr, Ipv6Addr},
-    sync::Arc,
+    sync::{Arc, OnceLock},
 };
 
 use crate::{
@@ -43,19 +43,24 @@ pub use page_blob_client::{PageBlobClient, PageBlobClientOptions};
 /// The OAuth scope used for Entra ID authentication against Storage.
 const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
 
-#[allow(clippy::needless_update)]
+fn default_transport() -> &'static Transport {
+    static DEFAULT_TRANSPORT: OnceLock<Transport> = OnceLock::new();
+    DEFAULT_TRANSPORT.get_or_init(|| {
+        Transport::new(new_http_client(Some(HttpClientOptions {
+            automatic_decompression: false,
+        })))
+    })
+}
+
 fn apply_client_defaults(options: &mut ClientOptions) {
     if options.transport.is_none() {
-        options.transport = Some(Transport::new(new_http_client(Some(HttpClientOptions {
-            automatic_decompression: false,
-            ..Default::default()
-        }))))
+        options.transport = Some(default_transport().clone())
     }
     apply_storage_logging_defaults(options);
 }
 
-/// Builds a client pipeline while preserving the original options for the
-/// session provider's own client before applying defaults to this client.
+/// Builds a client pipeline, sharing the configured transport with the session
+/// provider so session creation and authenticated requests use the same network context.
 fn build_pipeline(
     endpoint: &Url,
     credential: Option<Arc<dyn TokenCredential>>,
@@ -63,6 +68,7 @@ fn build_pipeline(
     client_options: &mut ClientOptions,
     version: &str,
 ) -> Result<Pipeline> {
+    apply_client_defaults(client_options);
     let default_session_options = SessionOptions::default();
     let session_options = session_options.unwrap_or(&default_session_options);
     let per_retry_policies = build_auth_policies(
@@ -72,7 +78,6 @@ fn build_pipeline(
         client_options,
         version,
     )?;
-    apply_client_defaults(client_options);
 
     Ok(Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
@@ -317,6 +322,11 @@ mod tests {
             .cloned()
             .flatten();
         auth
+    }
+
+    #[test]
+    fn default_transport_is_shared() {
+        assert!(std::ptr::eq(default_transport(), default_transport()));
     }
 
     #[test]

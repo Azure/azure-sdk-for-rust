@@ -22,6 +22,7 @@ use azure_storage_blob::{
     SessionMode, SessionOptions, SessionProvider,
 };
 use common::{ClientOptionsExt, StorageAccount};
+use serial_test::serial;
 use std::{
     error::Error,
     sync::{
@@ -41,6 +42,29 @@ struct SessionAuthCounts {
     session_error_codes: Mutex<Vec<String>>,
     bearer_get: AtomicUsize,
     non_get_session: AtomicUsize,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct SessionAuthCountsSnapshot {
+    create_session: usize,
+    session_get: usize,
+    session_unauthorized: usize,
+    session_error_codes: Vec<String>,
+    bearer_get: usize,
+    non_get_session: usize,
+}
+
+impl SessionAuthCounts {
+    fn snapshot(&self) -> SessionAuthCountsSnapshot {
+        SessionAuthCountsSnapshot {
+            create_session: self.create_session.load(Ordering::SeqCst),
+            session_get: self.session_get.load(Ordering::SeqCst),
+            session_unauthorized: self.session_unauthorized.load(Ordering::SeqCst),
+            session_error_codes: self.session_error_codes.lock().unwrap().clone(),
+            bearer_get: self.bearer_get.load(Ordering::SeqCst),
+            non_get_session: self.non_get_session.load(Ordering::SeqCst),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -181,6 +205,7 @@ fn shared_provider_client(
 }
 
 #[recorded::test]
+#[serial(blob_session)]
 async fn session_download_uses_session_token(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
     let counts = Arc::new(SessionAuthCounts::default());
@@ -200,18 +225,17 @@ async fn session_download_uses_session_token(ctx: TestContext) -> Result<(), Box
     blob.download_into(&mut buffer, None).await?;
     assert_eq!(buffer, data);
 
-    assert!(
-        counts.create_session.load(Ordering::SeqCst) >= 1,
-        "expected a CreateSession call"
-    );
-    assert!(
-        counts.session_get.load(Ordering::SeqCst) >= 1,
-        "download should use session authentication"
-    );
     assert_eq!(
-        counts.non_get_session.load(Ordering::SeqCst),
-        0,
-        "non-GET requests must not use session authentication"
+        counts.snapshot(),
+        SessionAuthCountsSnapshot {
+            create_session: 1,
+            session_get: 1,
+            session_unauthorized: 0,
+            session_error_codes: Vec::new(),
+            bearer_get: 0,
+            non_get_session: 0,
+        },
+        "one download should mint and successfully use one session without bearer fallback"
     );
 
     container.delete(None).await?;
@@ -219,6 +243,7 @@ async fn session_download_uses_session_token(ctx: TestContext) -> Result<(), Box
 }
 
 #[recorded::test]
+#[serial(blob_session)]
 async fn comp_operation_falls_back_to_bearer(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
     let counts = Arc::new(SessionAuthCounts::default());
@@ -244,18 +269,16 @@ async fn comp_operation_falls_back_to_bearer(ctx: TestContext) -> Result<(), Box
         .await?;
 
     assert_eq!(
-        counts.create_session.load(Ordering::SeqCst),
-        0,
-        "comp operations should not acquire a session"
-    );
-    assert!(
-        counts.bearer_get.load(Ordering::SeqCst) >= 1,
-        "comp GET should use bearer authentication"
-    );
-    assert_eq!(
-        counts.session_get.load(Ordering::SeqCst),
-        0,
-        "comp GET must not use session authentication"
+        counts.snapshot(),
+        SessionAuthCountsSnapshot {
+            create_session: 0,
+            session_get: 0,
+            session_unauthorized: 0,
+            session_error_codes: Vec::new(),
+            bearer_get: 1,
+            non_get_session: 0,
+        },
+        "one comp GET should use bearer directly without acquiring or trying a session"
     );
 
     container.delete(None).await?;
@@ -263,6 +286,7 @@ async fn comp_operation_falls_back_to_bearer(ctx: TestContext) -> Result<(), Box
 }
 
 #[recorded::test]
+#[serial(blob_session)]
 async fn sessions_are_cached_per_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
     let counts = Arc::new(SessionAuthCounts::default());
@@ -305,22 +329,16 @@ async fn sessions_are_cached_per_container(ctx: TestContext) -> Result<(), Box<d
     }
 
     assert_eq!(
-        counts.create_session.load(Ordering::SeqCst),
-        2,
-        "each container should mint one session and reuse it (session GETs: {}, session 401s: {}, session error codes: {:?}, bearer GETs: {})",
-        counts.session_get.load(Ordering::SeqCst),
-        counts.session_unauthorized.load(Ordering::SeqCst),
-        counts.session_error_codes.lock().unwrap(),
-        counts.bearer_get.load(Ordering::SeqCst),
-    );
-    assert!(
-        counts.session_get.load(Ordering::SeqCst) >= 4,
-        "all four downloads should use session authentication"
-    );
-    assert_eq!(
-        counts.non_get_session.load(Ordering::SeqCst),
-        0,
-        "non-GET requests must not use session authentication"
+        counts.snapshot(),
+        SessionAuthCountsSnapshot {
+            create_session: 2,
+            session_get: 4,
+            session_unauthorized: 0,
+            session_error_codes: Vec::new(),
+            bearer_get: 0,
+            non_get_session: 0,
+        },
+        "four downloads across two containers should mint one session per container and never fall back to bearer"
     );
 
     first_container.delete(None).await?;
@@ -329,6 +347,7 @@ async fn sessions_are_cached_per_container(ctx: TestContext) -> Result<(), Box<d
 }
 
 #[recorded::test]
+#[serial(blob_session)]
 async fn shared_provider_reuses_session_across_clients(
     ctx: TestContext,
 ) -> Result<(), Box<dyn Error>> {
@@ -389,22 +408,16 @@ async fn shared_provider_reuses_session_across_clients(
     assert_eq!(buffer, data);
 
     assert_eq!(
-        counts.create_session.load(Ordering::SeqCst),
-        1,
-        "a shared provider should mint exactly one session for both clients (session GETs: {}, session 401s: {}, session error codes: {:?}, bearer GETs: {})",
-        counts.session_get.load(Ordering::SeqCst),
-        counts.session_unauthorized.load(Ordering::SeqCst),
-        counts.session_error_codes.lock().unwrap(),
-        counts.bearer_get.load(Ordering::SeqCst),
-    );
-    assert!(
-        counts.session_get.load(Ordering::SeqCst) >= 2,
-        "both downloads should use the shared session"
-    );
-    assert_eq!(
-        counts.non_get_session.load(Ordering::SeqCst),
-        0,
-        "non-GET requests must not use session authentication"
+        counts.snapshot(),
+        SessionAuthCountsSnapshot {
+            create_session: 1,
+            session_get: 2,
+            session_unauthorized: 0,
+            session_error_codes: Vec::new(),
+            bearer_get: 0,
+            non_get_session: 0,
+        },
+        "two clients sharing a provider should reuse one session without bearer fallback"
     );
 
     container.delete(None).await?;
