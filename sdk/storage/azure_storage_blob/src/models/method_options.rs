@@ -16,6 +16,31 @@ use crate::models::{
     ImmutabilityPolicyMode, ListBlobsIncludeItem,
 };
 
+/// Determines whether locality-aware routing is used for the parallel range
+/// requests issued by a download.
+///
+/// This is a performance optimization only - the bytes returned are identical
+/// regardless of the mode used. When routing is enabled, the blob's layout is
+/// fetched and each range request is sent to the endpoint that serves it, falling
+/// back to the client's configured endpoint when no layout is available.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum LayoutAwareRouting {
+    /// The locality-aware routing behavior is determined by the client library and
+    /// may change in future releases. Currently equivalent to
+    /// [`LayoutAwareRouting::Disabled`].
+    #[default]
+    Auto,
+
+    /// Never route range requests based on the blob's layout. All requests are sent
+    /// to the client's configured endpoint.
+    Disabled,
+
+    /// Opt in to locality-aware routing. The blob's layout is fetched and each range
+    /// download is routed to the endpoint that serves it.
+    Enabled,
+}
+
 /// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientDownloadOptions<'a> {
@@ -45,6 +70,13 @@ pub struct BlobClientDownloadOptions<'a> {
 
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
     pub lease_id: Option<String>,
+
+    /// Determines whether locality-aware routing is used for the parallel range
+    /// requests issued by this download. This is a performance optimization only:
+    /// the bytes returned are identical regardless of the mode.
+    ///
+    /// Defaults to [`LayoutAwareRouting::Auto`].
+    pub layout_aware_routing: LayoutAwareRouting,
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,

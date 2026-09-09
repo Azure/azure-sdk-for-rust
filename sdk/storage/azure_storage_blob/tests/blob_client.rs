@@ -3,17 +3,21 @@
 
 mod common;
 
+use async_trait::async_trait;
 use azure_core::{
+    credentials::TokenCredential,
     error::ErrorKind,
     http::{
         headers::{HeaderName, Headers, CONTENT_TYPE},
-        AsyncRawResponse, ClientOptions, Method, RequestContent, StatusCode, Transport, Url,
-        XmlFormat,
+        policies::{Policy, PolicyResult},
+        AsyncRawResponse, ClientOptions, Context, Method, Request, RequestContent, StatusCode,
+        Transport, Url, XmlFormat,
     },
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
     Bytes,
 };
 use azure_core_test::{http::MockHttpClient, recorded, Matcher, TestContext, TestMode, VarOptions};
+use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
     models::{
         AccessTier, AccountKind, ArchiveStatus, BlobClientAcquireLeaseOptions,
@@ -23,8 +27,8 @@ use azure_storage_blob::{
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlobClientStartCopyFromUrlResultHeaders, BlobTags, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientUploadOptions, CopyStatus, ImmutabilityPolicyMode, KeyInfo, LeaseState,
-        RehydratePriority, StorageErrorCode,
+        BlockBlobClientUploadOptions, CopyStatus, ImmutabilityPolicyMode, KeyInfo,
+        LayoutAwareRouting, LeaseState, RehydratePriority, StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
@@ -44,7 +48,7 @@ use std::{
     num::NonZero,
     sync::{
         atomic::{AtomicUsize, Ordering},
-        mpsc, Arc,
+        mpsc, Arc, Mutex,
     },
     time::Duration,
 };
@@ -1522,6 +1526,403 @@ async fn test_managed_download_into_etag_lock(ctx: TestContext) -> Result<(), Bo
         match &locked_etag {
             Some(etag) => assert_eq!(etag, req_etag_lock),
             None => locked_etag = Some(req_etag_lock.to_string()),
+        }
+    }
+
+    Ok(())
+}
+
+fn parse_bytes_range(range: &str) -> (usize, usize) {
+    let spec = range.strip_prefix("bytes=").expect("bytes= prefix");
+    let (start, end) = spec.split_once('-').expect("start-end");
+    (
+        start.parse().expect("range start"),
+        end.parse().expect("range end"),
+    )
+}
+
+fn live_layout_blob_url() -> Option<Url> {
+    let account = std::env::var("AZURE_STORAGE_ACCOUNT_NAME").ok()?;
+    let account = account.trim().trim_matches('"').trim();
+    if account.is_empty() {
+        return None;
+    }
+    Url::parse(&format!(
+        "https://{account}.blob.core.windows.net/layout-routing-test/routing-test-blob"
+    ))
+    .ok()
+}
+
+#[tokio::test]
+async fn test_download_layout_aware_routing_routes_chunks() -> Result<(), Box<dyn Error>> {
+    const DATA: [u8; 12] = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+    const LAYOUT: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
+<BlobLayout>
+  <Endpoints>
+    <Endpoint Index="0" Value="epa.blob.core.windows.net:443" />
+    <Endpoint Index="1" Value="epb.blob.core.windows.net:443" />
+    <Endpoint Index="2" Value="epc.blob.core.windows.net:443" />
+  </Endpoints>
+  <Ranges>
+    <Range Start="0" End="3" EndpointIndex="0" />
+    <Range Start="4" End="7" EndpointIndex="1" />
+    <Range Start="8" End="11" EndpointIndex="2" />
+  </Ranges>
+</BlobLayout>"#;
+
+    #[derive(Clone)]
+    struct Seen {
+        is_layout: bool,
+        url_host: Option<String>,
+        host_header: Option<String>,
+        range: Option<String>,
+    }
+
+    let seen = Arc::new(Mutex::new(Vec::<Seen>::new()));
+    let seen_capture = seen.clone();
+    let mock_client = Arc::new(MockHttpClient::new(move |request| {
+        let is_layout = request
+            .url()
+            .query()
+            .is_some_and(|query| query.contains("comp=layout"));
+        let url_host = request.url().host_str().map(str::to_owned);
+        let host_header = request
+            .headers()
+            .get_optional_str(&"host".into())
+            .map(str::to_owned);
+        let range = request
+            .headers()
+            .get_optional_str(&"range".into())
+            .map(str::to_owned);
+        seen_capture.lock().unwrap().push(Seen {
+            is_layout,
+            url_host,
+            host_header,
+            range: range.clone(),
+        });
+
+        let response = if is_layout {
+            let mut headers = Headers::new();
+            headers.insert("etag", "\"routing-etag\"");
+            AsyncRawResponse::from_bytes(StatusCode::Ok, headers, Bytes::from_static(LAYOUT))
+        } else {
+            let range = range.expect("data request must carry a range header");
+            let (start, end) = parse_bytes_range(&range);
+            let slice = DATA[start..=end].to_vec();
+            let mut headers = Headers::new();
+            headers.insert(
+                "content-range",
+                format!("bytes {start}-{end}/{}", DATA.len()),
+            );
+            headers.insert("content-length", slice.len().to_string());
+            headers.insert("etag", "\"routing-etag\"");
+            headers.insert("x-ms-download-hint", "layout");
+            AsyncRawResponse::from_bytes(StatusCode::PartialContent, headers, Bytes::from(slice))
+        };
+        async move { Ok(response) }.boxed()
+    }));
+
+    let blob_client = BlobClient::new(
+        Url::parse("https://acct.blob.core.windows.net/container/blob")?,
+        None,
+        Some(BlobClientOptions {
+            client_options: ClientOptions {
+                transport: Some(Transport::new(mock_client)),
+                ..Default::default()
+            },
+            ..Default::default()
+        }),
+    )?;
+
+    let body = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            layout_aware_routing: LayoutAwareRouting::Enabled,
+            partition_size: Some(NonZero::new(4).unwrap()),
+            parallel: Some(NonZero::new(2).unwrap()),
+            ..Default::default()
+        }))
+        .await?
+        .body
+        .collect()
+        .await?;
+
+    assert_eq!(&body[..], &DATA[..]);
+    let seen = seen.lock().unwrap();
+    let layout_requests: Vec<&Seen> = seen.iter().filter(|request| request.is_layout).collect();
+    let data_requests: Vec<&Seen> = seen.iter().filter(|request| !request.is_layout).collect();
+    assert_eq!(layout_requests.len(), 1);
+    assert_eq!(
+        layout_requests[0].url_host.as_deref(),
+        Some("acct.blob.core.windows.net")
+    );
+
+    assert_eq!(data_requests.len(), 3);
+    for request in &data_requests {
+        let range = request.range.as_deref().expect("range header");
+        match range {
+            "bytes=0-3" => assert_eq!(
+                request.url_host.as_deref(),
+                Some("acct.blob.core.windows.net"),
+                "the initial chunk should not be routed"
+            ),
+            "bytes=4-7" | "bytes=8-11" => {
+                let expected = if range == "bytes=4-7" {
+                    "epb.blob.core.windows.net"
+                } else {
+                    "epc.blob.core.windows.net"
+                };
+                assert_eq!(request.url_host.as_deref(), Some(expected));
+                assert_eq!(
+                    request.host_header.as_deref(),
+                    Some("acct.blob.core.windows.net")
+                );
+            }
+            other => panic!("unexpected data range: {other}"),
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_download_layout_aware_routing_skips_without_hint() -> Result<(), Box<dyn Error>> {
+    const DATA: [u8; 8] = [10, 11, 12, 13, 14, 15, 16, 17];
+
+    let layout_requests = Arc::new(AtomicUsize::new(0));
+    let hosts = Arc::new(Mutex::new(Vec::<Option<String>>::new()));
+    let layout_capture = layout_requests.clone();
+    let hosts_capture = hosts.clone();
+    let mock_client = Arc::new(MockHttpClient::new(move |request| {
+        let is_layout = request
+            .url()
+            .query()
+            .is_some_and(|query| query.contains("comp=layout"));
+        hosts_capture
+            .lock()
+            .unwrap()
+            .push(request.url().host_str().map(str::to_owned));
+        let range = request
+            .headers()
+            .get_optional_str(&"range".into())
+            .map(str::to_owned);
+
+        let response = if is_layout {
+            layout_capture.fetch_add(1, Ordering::SeqCst);
+            AsyncRawResponse::from_bytes(StatusCode::NoContent, Headers::new(), Bytes::new())
+        } else {
+            let range = range.expect("data request must carry a range header");
+            let (start, end) = parse_bytes_range(&range);
+            let slice = DATA[start..=end].to_vec();
+            let mut headers = Headers::new();
+            headers.insert(
+                "content-range",
+                format!("bytes {start}-{end}/{}", DATA.len()),
+            );
+            headers.insert("content-length", slice.len().to_string());
+            headers.insert("etag", "\"no-hint-etag\"");
+            AsyncRawResponse::from_bytes(StatusCode::PartialContent, headers, Bytes::from(slice))
+        };
+        async move { Ok(response) }.boxed()
+    }));
+
+    let blob_client = BlobClient::new(
+        Url::parse("https://acct.blob.core.windows.net/container/blob")?,
+        None,
+        Some(BlobClientOptions {
+            client_options: ClientOptions {
+                transport: Some(Transport::new(mock_client)),
+                ..Default::default()
+            },
+            ..Default::default()
+        }),
+    )?;
+
+    let body = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            layout_aware_routing: LayoutAwareRouting::Enabled,
+            partition_size: Some(NonZero::new(4).unwrap()),
+            parallel: Some(NonZero::new(2).unwrap()),
+            ..Default::default()
+        }))
+        .await?
+        .body
+        .collect()
+        .await?;
+
+    assert_eq!(&body[..], &DATA[..]);
+    assert_eq!(layout_requests.load(Ordering::SeqCst), 0);
+    for host in hosts.lock().unwrap().iter() {
+        assert_eq!(host.as_deref(), Some("acct.blob.core.windows.net"));
+    }
+    Ok(())
+}
+
+#[derive(Debug)]
+struct RoutingObserver {
+    seen: Arc<Mutex<Vec<RoutedRequest>>>,
+}
+
+#[derive(Debug)]
+struct RoutedRequest {
+    is_layout: bool,
+    range: Option<String>,
+    sent_to: Option<String>,
+    original_host: Option<String>,
+    download_hint: Option<String>,
+    status: StatusCode,
+}
+
+#[async_trait]
+impl Policy for RoutingObserver {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        let is_layout = request
+            .url()
+            .query()
+            .is_some_and(|query| query.contains("comp=layout"));
+        let range = request
+            .headers()
+            .get_optional_str(&"range".into())
+            .map(str::to_owned);
+        let sent_to = request.url().host_str().map(str::to_owned);
+        let original_host = request
+            .headers()
+            .get_optional_str(&"host".into())
+            .map(str::to_owned);
+        let response = next[0].send(ctx, request, &next[1..]).await?;
+        let download_hint = response
+            .headers()
+            .get_optional_str(&"x-ms-download-hint".into())
+            .map(str::to_owned);
+        self.seen.lock().unwrap().push(RoutedRequest {
+            is_layout,
+            range,
+            sent_to,
+            original_host,
+            download_hint,
+            status: response.status(),
+        });
+        Ok(response)
+    }
+}
+
+#[recorded::test(live)]
+async fn test_download_layout_aware_routing() -> Result<(), Box<dyn Error>> {
+    let Some(url) = live_layout_blob_url() else {
+        eprintln!(
+            "skipping test_download_layout_aware_routing: set AZURE_STORAGE_ACCOUNT_NAME to run it"
+        );
+        return Ok(());
+    };
+    let credential: Arc<dyn TokenCredential> = DeveloperToolsCredential::new(None)?;
+    let account_host = url.host_str().unwrap_or_default().to_owned();
+    let observed = Arc::new(Mutex::new(Vec::<RoutedRequest>::new()));
+    let observer: Arc<dyn Policy> = Arc::new(RoutingObserver {
+        seen: observed.clone(),
+    });
+
+    let mut container_url = url.clone();
+    container_url
+        .path_segments_mut()
+        .expect("blob URL must be a base")
+        .pop();
+    let container_client = BlobContainerClient::new(container_url, Some(credential.clone()), None)?;
+    if let Err(error) = container_client.create(None).await {
+        if error.http_status() != Some(StatusCode::Conflict) {
+            return Err(error.into());
+        }
+    }
+
+    let blob_client = BlobClient::new(
+        url,
+        Some(credential),
+        Some(BlobClientOptions {
+            client_options: ClientOptions {
+                per_try_policies: vec![observer],
+                ..Default::default()
+            },
+            ..Default::default()
+        }),
+    )?;
+
+    const BLOB_SIZE: usize = 64 * 1024 * 1024;
+    let data: Vec<u8> = (0..BLOB_SIZE).map(|index| (index % 251) as u8).collect();
+    blob_client
+        .upload(RequestContent::from(data.clone()), None)
+        .await?;
+    observed.lock().unwrap().clear();
+
+    let body = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            layout_aware_routing: LayoutAwareRouting::Enabled,
+            partition_size: Some(NonZero::new(16 * 1024 * 1024).unwrap()),
+            parallel: Some(NonZero::new(4).unwrap()),
+            ..Default::default()
+        }))
+        .await?
+        .body
+        .collect()
+        .await?;
+    assert_eq!(&body[..], &data[..]);
+
+    let mut buffer = vec![0u8; data.len()];
+    let result = blob_client
+        .download_into(
+            &mut buffer,
+            Some(BlobClientDownloadOptions {
+                layout_aware_routing: LayoutAwareRouting::Enabled,
+                partition_size: Some(NonZero::new(16 * 1024 * 1024).unwrap()),
+                parallel: Some(NonZero::new(4).unwrap()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    assert_eq!(result.len, data.len());
+    assert_eq!(&buffer[..], &data[..]);
+
+    let observed = observed.lock().unwrap();
+    let layout_calls = observed.iter().filter(|request| request.is_layout).count();
+    let data_chunks = observed.iter().filter(|request| !request.is_layout).count();
+    let routed: Vec<&RoutedRequest> = observed
+        .iter()
+        .filter(|request| !request.is_layout && request.original_host.is_some())
+        .collect();
+
+    eprintln!();
+    eprintln!("=== layout-aware routing ======================================");
+    eprintln!("  account host          : {account_host}");
+    eprintln!("  Get Blob Layout calls : {layout_calls}");
+    eprintln!(
+        "  data chunks           : {data_chunks} ({} routed)",
+        routed.len()
+    );
+    for request in observed.iter() {
+        let kind = if request.is_layout { "layout" } else { "data" };
+        let range = request.range.as_deref().unwrap_or("(whole blob)");
+        let sent_to = request.sent_to.as_deref().unwrap_or("?");
+        let hint = request.download_hint.as_deref().unwrap_or("-");
+        let routed = if request.original_host.is_some() {
+            "yes"
+        } else {
+            "no"
+        };
+        eprintln!("  {kind:<6}  {range:<24}  {routed:<7}  {hint:<7}  {sent_to}");
+    }
+
+    if routed.is_empty() {
+        eprintln!(
+            "NOTE: no chunk was rewritten - the account returned no layout hint for this blob"
+        );
+    } else {
+        for request in &routed {
+            assert_eq!(
+                request.original_host.as_deref(),
+                Some(account_host.as_str()),
+                "a rewritten chunk did not preserve the account Host header"
+            );
         }
     }
 

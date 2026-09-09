@@ -5,27 +5,36 @@ pub use crate::generated::clients::{BlobClient, BlobClientOptions};
 
 use crate::{
     generated::{
-        clients::BlobClient as GeneratedBlobClient, models::BlobClientDownloadInternalOptions,
+        clients::BlobClient as GeneratedBlobClient,
+        models::{BlobClientDownloadInternalOptions, BlobClientListLayoutOptions},
     },
     models::{
         BlobClientDownloadIntoResult, BlobClientDownloadOptions, BlobClientDownloadResult,
         BlobClientUploadOptions, BlobClientUploadResult, BlobDownloadProperties, HttpRange,
-        StorageErrorCode,
+        LayoutAwareRouting, StorageErrorCode,
     },
-    partitioned_transfer::{self, PartitionedDownloadBehavior},
+    partitioned_transfer::{self, Layout, LayoutEndpoint, PartitionedDownloadBehavior},
     AppendBlobClient, BlockBlobClient, PageBlobClient,
 };
 use async_trait::async_trait;
 use azure_core::{
+    async_runtime::get_async_runtime,
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
+        headers::Headers,
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncRawResponse, Etag, NoFormat, Pipeline, RequestContent, StatusCode, Url, UrlExt,
+        AsyncRawResponse, Context, Etag, NoFormat, Pipeline, RequestContent, StatusCode, Url,
+        UrlExt,
     },
     tracing, Bytes, Result,
 };
-use std::{ops::Range, sync::Arc};
+use futures::lock::Mutex;
+use std::{
+    ops::Range,
+    sync::{Arc, OnceLock},
+    time::{Duration, Instant},
+};
 
 impl BlobClient {
     /// Creates a new BlobClient from a blob URL.
@@ -71,7 +80,7 @@ impl BlobClient {
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
-            Vec::default(),
+            vec![Arc::new(partitioned_transfer::LayoutRoutingPolicy)],
             per_retry_policies,
             None,
         );
@@ -194,14 +203,16 @@ impl BlobClient {
         let partition_size = options
             .partition_size
             .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_DOWNLOAD_PARTITION_SIZE);
-        let range = options.range.clone();
         let inner_client = GeneratedBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         };
-        let behavior = BlobClientDownloadBehavior::new(inner_client, options.into());
+        let layout_request = layout_request_from_options(&options);
+        let range = options.range.clone();
+        let behavior =
+            BlobClientDownloadBehavior::new(inner_client, options.into(), layout_request);
         let response =
             partitioned_transfer::download(range, parallel, partition_size, Arc::new(behavior))
                 .await?;
@@ -238,14 +249,16 @@ impl BlobClient {
         let partition_size = options
             .partition_size
             .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_DOWNLOAD_PARTITION_SIZE);
-        let range = options.range.clone();
         let inner_client = GeneratedBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         };
-        let behavior = BlobClientDownloadBehavior::new(inner_client, options.into());
+        let layout_request = layout_request_from_options(&options);
+        let range = options.range.clone();
+        let behavior =
+            BlobClientDownloadBehavior::new(inner_client, options.into(), layout_request);
         let (_, headers, len) = partitioned_transfer::download_into(
             buffer,
             range,
@@ -304,11 +317,22 @@ impl BlobClient {
 struct BlobClientDownloadBehavior<'a> {
     client: GeneratedBlobClient,
     options: BlobClientDownloadInternalOptions<'a>,
+    layout_request: Option<BlobClientListLayoutOptions<'static>>,
+    cache: OnceLock<Option<LayoutCache>>,
 }
 
 impl<'a> BlobClientDownloadBehavior<'a> {
-    fn new(client: GeneratedBlobClient, options: BlobClientDownloadInternalOptions<'a>) -> Self {
-        Self { client, options }
+    fn new(
+        client: GeneratedBlobClient,
+        options: BlobClientDownloadInternalOptions<'a>,
+        layout_request: Option<BlobClientListLayoutOptions<'static>>,
+    ) -> Self {
+        Self {
+            client,
+            options,
+            layout_request,
+            cache: OnceLock::new(),
+        }
     }
 }
 
@@ -320,6 +344,19 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
         etag_lock: Option<Etag>,
     ) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
+        if let Some(Some(cache)) = self.cache.get() {
+            if let Some(range) = &range {
+                if let Some(layout) = cache.current(&self.client).await {
+                    if let Some(endpoint) = layout.ideal_endpoint(range.start as i64) {
+                        opt.method_options.context = opt
+                            .method_options
+                            .context
+                            .clone()
+                            .with_value(LayoutEndpoint(endpoint.to_owned()));
+                    }
+                }
+            }
+        }
         opt.range = range.map(HttpRange::from);
         if let Some(etag) = etag_lock {
             opt.if_match = Some(etag);
@@ -332,5 +369,381 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
             .download_internal(Some(opt))
             .await
             .map(AsyncRawResponse::from)
+    }
+
+    async fn prepare(&self, initial_headers: &Headers, etag_lock: Option<&Etag>) -> Result<()> {
+        let Some(layout_request) = &self.layout_request else {
+            return Ok(());
+        };
+        if initial_headers.get_optional_str(&"x-ms-download-hint".into()) != Some("layout") {
+            let _ = self.cache.set(None);
+            return Ok(());
+        }
+        let mut request = layout_request.clone();
+        if request.if_match.is_none() {
+            request.if_match = etag_lock.cloned();
+        }
+        let context = self.options.method_options.context.clone();
+        let cache = partitioned_transfer::fetch_layout(&self.client, &context, &request)
+            .await?
+            .map(|prefetch| LayoutCache::new(request, Arc::new(prefetch.layout)));
+        let _ = self.cache.set(cache);
+        Ok(())
+    }
+}
+
+const LAYOUT_TTL: Duration = Duration::from_secs(300);
+const LAYOUT_REFRESH_BUFFER: Duration = Duration::from_secs(30);
+const LAYOUT_REFRESH_BACKOFF: Duration = Duration::from_secs(30);
+
+struct LayoutCache {
+    request: BlobClientListLayoutOptions<'static>,
+    state: Arc<Mutex<CachedLayout>>,
+}
+
+struct CachedLayout {
+    layout: Arc<Layout>,
+    refresh_at: Instant,
+    expires_at: Instant,
+    refreshing: bool,
+    retry_at: Option<Instant>,
+}
+
+impl CachedLayout {
+    fn new(layout: Arc<Layout>) -> Self {
+        let now = Instant::now();
+        Self {
+            layout,
+            refresh_at: now + (LAYOUT_TTL - LAYOUT_REFRESH_BUFFER),
+            expires_at: now + LAYOUT_TTL,
+            refreshing: false,
+            retry_at: None,
+        }
+    }
+}
+
+impl LayoutCache {
+    fn new(request: BlobClientListLayoutOptions<'static>, layout: Arc<Layout>) -> Self {
+        Self {
+            request,
+            state: Arc::new(Mutex::new(CachedLayout::new(layout))),
+        }
+    }
+
+    async fn current(&self, client: &GeneratedBlobClient) -> Option<Arc<Layout>> {
+        let mut state = self.state.lock().await;
+        let now = Instant::now();
+        let backing_off = matches!(state.retry_at, Some(at) if now < at);
+        if now >= state.refresh_at && !state.refreshing && !backing_off {
+            state.refreshing = true;
+            let _refresh = get_async_runtime().spawn(Box::pin(Self::refresh(
+                clone_blob_client(client),
+                self.request.clone(),
+                self.state.clone(),
+            )));
+        }
+        (now < state.expires_at).then(|| state.layout.clone())
+    }
+
+    async fn refresh(
+        client: GeneratedBlobClient,
+        request: BlobClientListLayoutOptions<'static>,
+        state: Arc<Mutex<CachedLayout>>,
+    ) {
+        let result = partitioned_transfer::fetch_layout(&client, &Context::new(), &request).await;
+        let mut state = state.lock().await;
+        match result {
+            Ok(Some(prefetch)) => {
+                *state = CachedLayout::new(Arc::new(prefetch.layout));
+            }
+            Ok(None) | Err(_) => {
+                state.refreshing = false;
+                state.retry_at = Some(Instant::now() + LAYOUT_REFRESH_BACKOFF);
+            }
+        }
+    }
+}
+
+fn clone_blob_client(client: &GeneratedBlobClient) -> GeneratedBlobClient {
+    GeneratedBlobClient {
+        endpoint: client.endpoint.clone(),
+        pipeline: client.pipeline.clone(),
+        version: client.version.clone(),
+        tracer: client.tracer.clone(),
+    }
+}
+
+fn layout_request_from_options(
+    options: &BlobClientDownloadOptions<'_>,
+) -> Option<BlobClientListLayoutOptions<'static>> {
+    matches!(options.layout_aware_routing, LayoutAwareRouting::Enabled)
+        .then(|| layout_options_from_download(options))
+}
+
+fn layout_options_from_download(
+    options: &BlobClientDownloadOptions<'_>,
+) -> BlobClientListLayoutOptions<'static> {
+    BlobClientListLayoutOptions {
+        encryption_algorithm: options.encryption_algorithm,
+        encryption_key: options.encryption_key.clone(),
+        encryption_key_sha256: options.encryption_key_sha256.clone(),
+        if_match: options.if_match.clone(),
+        if_modified_since: options.if_modified_since,
+        if_none_match: options.if_none_match.clone(),
+        if_tags: options.if_tags.clone(),
+        if_unmodified_since: options.if_unmodified_since,
+        lease_id: options.lease_id.clone(),
+        range: options.range.clone(),
+        snapshot: options.snapshot.clone(),
+        timeout: options.timeout,
+        version_id: options.version_id.clone(),
+        ..Default::default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::http::{ClientOptions, FixedRetryOptions, HttpClient, RetryOptions, Transport};
+    use azure_core_test::http::MockHttpClient;
+    use futures::FutureExt as _;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    const LAYOUT_V1: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
+<BlobLayout>
+  <Endpoints>
+    <Endpoint Index="0" Value="epv1.blob.storage.azure.net:443" />
+  </Endpoints>
+  <Ranges>
+    <Range Start="0" End="8388607" EndpointIndex="0" />
+  </Ranges>
+</BlobLayout>"#;
+
+    const LAYOUT_V2: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
+<BlobLayout>
+  <Endpoints>
+    <Endpoint Index="0" Value="epv2.blob.storage.azure.net:443" />
+  </Endpoints>
+  <Ranges>
+    <Range Start="0" End="8388607" EndpointIndex="0" />
+  </Ranges>
+</BlobLayout>"#;
+
+    fn mock_client(transport: Arc<dyn HttpClient>) -> GeneratedBlobClient {
+        BlobClient::new(
+            "https://acct.blob.core.windows.net/container/blob"
+                .parse()
+                .unwrap(),
+            None,
+            Some(BlobClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(transport)),
+                    retry: RetryOptions::fixed(FixedRetryOptions {
+                        max_retries: 0,
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )
+        .unwrap()
+    }
+
+    fn etag_headers() -> Headers {
+        let mut headers = Headers::new();
+        headers.insert("etag", "etag-1".to_owned());
+        headers
+    }
+
+    async fn seed_layout(
+        client: &GeneratedBlobClient,
+        request: &BlobClientListLayoutOptions<'static>,
+    ) -> Layout {
+        partitioned_transfer::fetch_layout(client, &Context::new(), request)
+            .await
+            .unwrap()
+            .unwrap()
+            .layout
+    }
+
+    #[tokio::test]
+    async fn refresh_success_updates_layout_and_resets_deadlines() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counter = calls.clone();
+        let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(move |_req| {
+            let count = counter.fetch_add(1, Ordering::SeqCst);
+            async move {
+                let body = if count == 0 { LAYOUT_V1 } else { LAYOUT_V2 };
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    etag_headers(),
+                    Bytes::from_static(body),
+                ))
+            }
+            .boxed()
+        }));
+        let client = mock_client(mock);
+        let request = BlobClientListLayoutOptions::default();
+        let state = Arc::new(Mutex::new(CachedLayout {
+            layout: Arc::new(seed_layout(&client, &request).await),
+            refresh_at: Instant::now(),
+            expires_at: Instant::now(),
+            refreshing: true,
+            retry_at: None,
+        }));
+
+        LayoutCache::refresh(client, request, state.clone()).await;
+        let state = state.lock().await;
+        assert_eq!(
+            state.layout.ideal_endpoint(0),
+            Some("epv2.blob.storage.azure.net:443")
+        );
+        assert!(!state.refreshing);
+        assert!(state.retry_at.is_none());
+        assert!(state.expires_at > Instant::now());
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test]
+    async fn current_routes_while_valid_and_suspends_once_expired() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counter = calls.clone();
+        let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(move |_req| {
+            counter.fetch_add(1, Ordering::SeqCst);
+            async move {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    etag_headers(),
+                    Bytes::from_static(LAYOUT_V1),
+                ))
+            }
+            .boxed()
+        }));
+        let client = mock_client(mock);
+        let request = BlobClientListLayoutOptions::default();
+        let cache = LayoutCache::new(
+            request.clone(),
+            Arc::new(seed_layout(&client, &request).await),
+        );
+
+        assert_eq!(
+            cache.current(&client).await.unwrap().ideal_endpoint(0),
+            Some("epv1.blob.storage.azure.net:443")
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+
+        {
+            let mut state = cache.state.lock().await;
+            let now = Instant::now();
+            state.refresh_at = now - Duration::from_secs(1);
+            state.expires_at = now - Duration::from_secs(1);
+            state.retry_at = Some(now + Duration::from_secs(300));
+        }
+        assert!(cache.current(&client).await.is_none());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn current_refreshes_in_background_without_blocking() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counter = calls.clone();
+        let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(move |_req| {
+            let count = counter.fetch_add(1, Ordering::SeqCst);
+            async move {
+                let body = if count == 0 { LAYOUT_V1 } else { LAYOUT_V2 };
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    etag_headers(),
+                    Bytes::from_static(body),
+                ))
+            }
+            .boxed()
+        }));
+        let client = mock_client(mock);
+        let request = BlobClientListLayoutOptions::default();
+        let cache = LayoutCache::new(
+            request.clone(),
+            Arc::new(seed_layout(&client, &request).await),
+        );
+
+        {
+            let mut state = cache.state.lock().await;
+            let now = Instant::now();
+            state.refresh_at = now - Duration::from_secs(1);
+            state.expires_at = now + Duration::from_secs(100);
+        }
+
+        assert_eq!(
+            cache.current(&client).await.unwrap().ideal_endpoint(0),
+            Some("epv1.blob.storage.azure.net:443")
+        );
+
+        let mut spins = 0;
+        loop {
+            {
+                let state = cache.state.lock().await;
+                if !state.refreshing
+                    && state.layout.ideal_endpoint(0) == Some("epv2.blob.storage.azure.net:443")
+                {
+                    assert!(state.expires_at > Instant::now() + Duration::from_secs(200));
+                    assert!(state.retry_at.is_none());
+                    break;
+                }
+            }
+            assert!(spins < 10_000, "background refresh did not complete");
+            spins += 1;
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test]
+    async fn refresh_failure_keeps_layout_and_backs_off() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counter = calls.clone();
+        let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(move |_req| {
+            let count = counter.fetch_add(1, Ordering::SeqCst);
+            async move {
+                if count == 0 {
+                    Ok(AsyncRawResponse::from_bytes(
+                        StatusCode::Ok,
+                        etag_headers(),
+                        Bytes::from_static(LAYOUT_V1),
+                    ))
+                } else {
+                    Ok(AsyncRawResponse::from_bytes(
+                        StatusCode::InternalServerError,
+                        Headers::new(),
+                        Bytes::from_static(b""),
+                    ))
+                }
+            }
+            .boxed()
+        }));
+        let client = mock_client(mock);
+        let request = BlobClientListLayoutOptions::default();
+        let expires_at = Instant::now() + Duration::from_secs(100);
+        let state = Arc::new(Mutex::new(CachedLayout {
+            layout: Arc::new(seed_layout(&client, &request).await),
+            refresh_at: Instant::now(),
+            expires_at,
+            refreshing: true,
+            retry_at: None,
+        }));
+
+        LayoutCache::refresh(client, request, state.clone()).await;
+        let state = state.lock().await;
+        assert_eq!(
+            state.layout.ideal_endpoint(0),
+            Some("epv1.blob.storage.azure.net:443")
+        );
+        assert!(!state.refreshing);
+        assert_eq!(state.expires_at, expires_at);
+        match state.retry_at {
+            Some(retry_at) => assert!(retry_at > Instant::now()),
+            None => panic!("expected a backoff to be set"),
+        }
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
     }
 }
