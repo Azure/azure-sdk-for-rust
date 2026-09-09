@@ -79,6 +79,17 @@ Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/mai
 cargo doc
 ```
 
+#### API artifact export
+
+Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Analyze-Code.ps1)
+
+Verifies that generated `API.md` and `API.metadata.yml` files are up to date for the selected
+crates.
+
+```bash
+pwsh ./eng/tools/Export-API.ps1 -Check -PackageName <crate-name>
+```
+
 #### Docs-rs
 
 Documentation: [cargo-docs-rs](https://github.com/dtolnay/cargo-docs-rs)
