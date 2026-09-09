@@ -14,7 +14,30 @@ type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
 #[cfg(not(feature = "fe2o3_amqp"))]
 type ConnectionImplementation = super::noop::NoopAmqpConnection;
 
+/// The transport used to carry the AMQP protocol.
+///
+/// The supported transport is AMQP over TCP/TLS.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum AmqpTransport {
+    /// AMQP framing over a TCP/TLS socket (port 5671). This is the default.
+    #[default]
+    Tcp,
+}
+
 /// Options for configuring an AMQP connection.
+///
+/// Build it from [`Default`] and set only the fields you need, so a later field
+/// addition does not break the call site:
+///
+/// ```
+/// use azure_core_amqp::{AmqpConnectionOptions, AmqpTransport};
+///
+/// #[allow(clippy::needless_update)]
+/// let options = AmqpConnectionOptions {
+///     transport: Some(AmqpTransport::Tcp),
+///     ..Default::default()
+/// };
+/// ```
 #[derive(Debug, Default, Clone)]
 pub struct AmqpConnectionOptions {
     /// Maximum frame size for the connection in bytes.
@@ -36,7 +59,11 @@ pub struct AmqpConnectionOptions {
     /// Buffer size for the connection.
     pub buffer_size: Option<usize>,
     /// Custom endpoint for the connection. Used to connect to a local AMQP proxy server.
+    ///
+    /// The host and an explicit port determine the address that the connection dials.
     pub custom_endpoint: Option<Url>,
+    /// The transport used to carry the AMQP protocol. Defaults to [`AmqpTransport::Tcp`].
+    pub transport: Option<AmqpTransport>,
 }
 
 /// Trait defining the asynchronous APIs for AMQP connection operations.
@@ -248,6 +275,7 @@ mod tests {
                     .collect(),
             ),
             buffer_size: Some(1024),
+            transport: Some(AmqpTransport::Tcp),
         };
 
         assert_eq!(connection_options.max_frame_size, Some(1024));
@@ -279,6 +307,7 @@ mod tests {
             connection_options.custom_endpoint,
             Some(Url::parse("http://localhost:8080").unwrap())
         );
+        assert_eq!(connection_options.transport, Some(AmqpTransport::Tcp));
     }
 
     // On macOS, there is a periodic issue where loopback TCP connections fail.

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::{
-    connection::{AmqpConnectionApis, AmqpConnectionOptions},
+    connection::{AmqpConnectionApis, AmqpConnectionOptions, AmqpTransport},
     error::{AmqpErrorKind, Result},
     fe2o3::error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError},
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
@@ -131,22 +131,26 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 builder = builder.buffer_size(buffer_size);
             }
 
-            // `custom_endpoint` redirects the socket to a proxy while the
-            // AMQP `hostname` stays the real service host.
-            if let Some(custom_endpoint) = options.custom_endpoint {
-                endpoint = custom_endpoint;
-                builder = builder.hostname(url.host_str());
-            }
+            let handle = match options.transport.unwrap_or_default() {
+                AmqpTransport::Tcp => {
+                    // `custom_endpoint` redirects the socket to a proxy while the
+                    // AMQP `hostname` stays the real service host.
+                    if let Some(custom_endpoint) = options.custom_endpoint {
+                        endpoint = custom_endpoint;
+                        builder = builder.hostname(url.host_str());
+                    }
 
-            // Use the operating system trust store for rustls. Other TLS stacks
-            // selected through `fe2o3-amqp` keep their default connector.
-            #[cfg(feature = "fe2o3_amqp_rustls")]
-            let builder = builder.rustls_connector(platform_verifier_connector()?);
+                    // Use the operating system trust store for rustls. Other TLS stacks
+                    // selected through `fe2o3-amqp` keep their default connector.
+                    #[cfg(feature = "fe2o3_amqp_rustls")]
+                    let builder = builder.rustls_connector(platform_verifier_connector()?);
 
-            let handle = builder
-                .open(endpoint)
-                .await
-                .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?;
+                    builder
+                        .open(endpoint)
+                        .await
+                        .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
+                }
+            };
 
             self.connection
                 .set(Mutex::new(handle))
