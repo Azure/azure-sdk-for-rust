@@ -2190,19 +2190,19 @@ mod tests {
     // is applied when the AMQP connection is opened. This verifies the field is
     // stored on the RecoverableConnection.
     #[test]
-    fn constructor_with_websocket_transport() {
+    fn constructor_with_tcp_transport() {
         let url = Url::parse("amqps://example.com").unwrap();
         let connection_manager = RecoverableConnection::new(
             url,
             None,
             None,
-            AmqpTransport::WebSocket,
+            AmqpTransport::Tcp,
             Arc::new(MockCredential),
             Default::default(),
             None,
         );
 
-        assert_eq!(connection_manager.transport, AmqpTransport::WebSocket);
+        assert_eq!(connection_manager.transport, AmqpTransport::Tcp);
     }
 
     // The stored transport must also reach the options handed to
@@ -2212,22 +2212,20 @@ mod tests {
     fn connection_options_carry_the_transport() {
         let url = Url::parse("amqps://example.com").unwrap();
         let custom_endpoint = Url::parse("amqps://proxy.example.com:8081").unwrap();
-        for transport in [AmqpTransport::Tcp, AmqpTransport::WebSocket] {
-            let connection_manager = RecoverableConnection::new(
-                url.clone(),
-                None,
-                Some(custom_endpoint.clone()),
-                transport,
-                Arc::new(MockCredential),
-                Default::default(),
-                None,
-            );
+        let connection_manager = RecoverableConnection::new(
+            url.clone(),
+            None,
+            Some(custom_endpoint.clone()),
+            AmqpTransport::Tcp,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
 
-            let options = connection_manager.connection_options();
-            assert_eq!(options.transport, Some(transport));
-            assert_eq!(options.custom_endpoint, Some(custom_endpoint.clone()));
-            assert!(options.properties.is_some());
-        }
+        let options = connection_manager.connection_options();
+        assert_eq!(options.transport, Some(AmqpTransport::Tcp));
+        assert_eq!(options.custom_endpoint, Some(custom_endpoint.clone()));
+        assert!(options.properties.is_some());
     }
 
     #[test]

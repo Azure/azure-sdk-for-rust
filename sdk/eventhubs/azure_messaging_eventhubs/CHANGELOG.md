@@ -1,5 +1,11 @@
 # Release History
 
+## 0.17.0 (Unreleased)
+
+### Breaking Changes
+
+- Removed AMQP-over-WebSockets support, including the `AmqpTransport::WebSocket` variant and the `fe2o3_amqp_ws` and `fe2o3_amqp_ws_rustls` features, to eliminate the prohibited `sha1` dependency. `AmqpTransport::Tcp` and the APIs that select the transport remain available. ([#5261](https://github.com/Azure/azure-sdk-for-rust/issues/5261))
+
 ## 0.16.0 (2026-09-08)
 
 ### Features Added

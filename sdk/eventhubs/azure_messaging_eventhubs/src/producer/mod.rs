@@ -687,11 +687,6 @@ pub mod builders {
         /// Note: The custom endpoint option allows a customer to specify an AMQP proxy
         /// which will be used to forward requests to the actual Event Hub instance.
         ///
-        /// An explicit port on the endpoint carries into the address that the client
-        /// dials. Under [`AmqpTransport::WebSocket`] that is the `wss://` address, so
-        /// name the port that the proxy accepts WebSockets on, and leave the port out
-        /// to dial the default port 443.
-        ///
         pub fn with_custom_endpoint(mut self, endpoint: String) -> Self {
             self.custom_endpoint = Some(endpoint);
             self
@@ -700,10 +695,7 @@ pub mod builders {
         /// Sets the transport used to communicate with the Event Hub.
         ///
         /// # Arguments
-        /// * `transport` - The transport to use. Defaults to
-        ///   [`AmqpTransport::Tcp`]. Use [`AmqpTransport::WebSocket`] to
-        ///   tunnel AMQP over WebSockets (port 443) when the native AMQP
-        ///   ports are blocked.
+        /// * `transport` - The transport to use. Defaults to [`AmqpTransport::Tcp`].
         ///
         /// # Returns
         /// The updated [`ProducerClientBuilder`].
@@ -846,24 +838,15 @@ mod tests {
     use azure_core_test::{recorded, TestContext};
     use std::sync::Arc;
 
-    // Every `open` path on the builder reads the transport through one helper,
-    // so this covers the plumbing that the connection-string path shares.
     #[test]
-    fn builder_reads_the_transport_through_one_helper() {
-        assert_eq!(
-            ProducerClient::builder()
-                .with_transport(AmqpTransport::WebSocket)
-                .transport(),
-            AmqpTransport::WebSocket
-        );
+    fn builder_transport_defaults_to_tcp() {
+        assert_eq!(ProducerClient::builder().transport(), AmqpTransport::Tcp);
         assert_eq!(
             ProducerClient::builder()
                 .with_transport(AmqpTransport::Tcp)
                 .transport(),
             AmqpTransport::Tcp
         );
-        // An unset transport keeps the TCP default.
-        assert_eq!(ProducerClient::builder().transport(), AmqpTransport::Tcp);
     }
 
     #[recorded::test(live)]
