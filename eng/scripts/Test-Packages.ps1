@@ -19,6 +19,20 @@ $activeToolchain = Get-ResolvedRustToolchain
 $usesJsonTestOutput = Test-IsNightlyRustToolchain
 $cargoFeatureArgs = if ($FeatureSet -eq 'All') { @('--all-features') } else { @() }
 
+function Get-TestPackagesFromCargoPackages(
+  $CargoPackages
+) {
+  return @(
+    foreach ($package in $CargoPackages) {
+      $packageDirectory = Split-Path -Path $package.manifest_path -Parent
+      [PSCustomObject]@{
+        Name = $package.name
+        DirectoryPath = [System.IO.Path]::GetRelativePath($RepoRoot, $packageDirectory).Replace('\', '/')
+      }
+    }
+  )
+}
+
 # Helper function to run cargo test, capturing JSON output only when the active
 # toolchain supports `--format json -Z unstable-options`.
 function Invoke-CargoTest (
@@ -85,9 +99,13 @@ if ($PackageInfoDirectory) {
     exit 1
   }
 
-  $packagesToTest = Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
-  | Get-Content -Raw
-  | ConvertFrom-Json
+  $packagesToTest = @(Get-PackagesFromPackageInfo $PackageInfoDirectory)
+  if (!$packagesToTest) {
+    $fallbackPackageNames = Get-CanaryPackageNames
+    Write-Host "No service crates were identified. Falling back to '$($fallbackPackageNames -join "', '")'."
+    $packagesToTest = Get-TestPackagesFromCargoPackages `
+      -CargoPackages (Get-CargoSelectedPackages -PackageName $fallbackPackageNames)
+  }
 }
 else {
   $packagesToTest = Get-AllPackageInfoFromRepo

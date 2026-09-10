@@ -37,6 +37,8 @@ jobs:
           ConfigureRegistry: false
 
   - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
+    parameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
 
   # Always skip audit. Audit requires contact with restricted endpoints and is
   # excluded from use in internal builds. Instead, teams must check on the state

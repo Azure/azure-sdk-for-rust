@@ -58,17 +58,29 @@ if ($PackageInfoDirectory -and !(Test-Path -Path $PackageInfoDirectory -PathType
 }
 
 $workspacePackages = Get-CargoPackages
+$resolvedPackageName = $PackageName
+$resolvedPackageInfoPath = $packageInfoPath
+if (!$resolvedPackageName -and !$ManifestDir -and $resolvedPackageInfoPath) {
+  $packageInfoPackages = @(Get-PackagesFromPackageInfo $resolvedPackageInfoPath)
+
+  if (!$packageInfoPackages) {
+    $resolvedPackageName = Get-CanaryPackageNames
+    $resolvedPackageInfoPath = $null
+    Write-Host "No service crates were identified. Falling back to '$($resolvedPackageName -join "', '")'."
+  }
+}
+
 $selectedManifestPaths = Get-CargoManifestPaths `
-  -PackageName $PackageName `
+  -PackageName $resolvedPackageName `
   -ManifestDir $ManifestDir `
-  -PackageInfoDirectory $packageInfoPath `
+  -PackageInfoDirectory $resolvedPackageInfoPath `
   -WorkspacePackages $workspacePackages
 $packagesToAnalyze = Get-CargoPackagesFromManifestPaths `
   -ManifestPath $selectedManifestPaths `
   -WorkspacePackages $workspacePackages
 $workspaceManifestPath = [System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')
 $exportApiScript = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'Export-API.ps1')
-$hasPackageSelection = $PackageName -or $ManifestDir -or $packageInfoPath
+$hasPackageSelection = $resolvedPackageName -or $ManifestDir -or $resolvedPackageInfoPath
 $azureCoreManifestPath = (
   Get-CargoPackageByName `
     -WorkspacePackages $workspacePackages `
@@ -128,14 +140,14 @@ if (!$SkipPackageAnalysis) {
   $exportApiParams = @{
     Check = $true
   }
-  if ($PackageName) {
-    $exportApiParams['PackageName'] = $PackageName
+  if ($resolvedPackageName) {
+    $exportApiParams['PackageName'] = $resolvedPackageName
   }
   elseif ($ManifestDir) {
     $exportApiParams['ManifestDir'] = $ManifestDir
   }
-  elseif ($packageInfoPath) {
-    $exportApiParams['PackageInfoDirectory'] = $packageInfoPath
+  elseif ($resolvedPackageInfoPath) {
+    $exportApiParams['PackageInfoDirectory'] = $resolvedPackageInfoPath
   }
 
   $exportApiArgs = @('-Check')
@@ -145,7 +157,7 @@ if (!$SkipPackageAnalysis) {
   }
   Invoke-LoggedCommand "& '$exportApiScript' $($exportApiArgs -join ' ')" -GroupOutput
 
-  if (!$PackageName -and !$ManifestDir -and !$packageInfoPath) {
+  if (!$resolvedPackageName -and !$ManifestDir -and !$resolvedPackageInfoPath) {
     Write-Host "Analyzing workspace`n"
     Invoke-LoggedCommand "&$verifyDependenciesScript $workspaceManifestPath" -GroupOutput
     Invoke-LoggedCommand "&$verifyKeywordsScript $workspaceManifestPath" -GroupOutput
