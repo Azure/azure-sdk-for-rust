@@ -13,55 +13,7 @@ use crate::e2e_test_cases::{
     support::{assert_critical_diagnostics, should_run},
 };
 
-struct DuplicateCreateCase {
-    id: &'static str,
-    partition_key_definition: PartitionKeyDefinition,
-    partition_key: PartitionKey,
-    original: Value,
-    duplicate: Value,
-}
-
-fn duplicate_create_cases() -> Vec<DuplicateCreateCase> {
-    let simple = |id, version| DuplicateCreateCase {
-        id,
-        partition_key_definition: PartitionKeyDefinition::new(vec!["/pk".into()])
-            .with_kind(PartitionKeyKind::Hash)
-            .with_version(version),
-        partition_key: PartitionKey::from("A"),
-        original: json!({ "id": "duplicate-1", "pk": "A", "value": 1 }),
-        duplicate: json!({ "id": "duplicate-1", "pk": "A", "value": 2 }),
-    };
-    vec![
-        simple("hashV1", PartitionKeyVersion::V1),
-        simple("hashV2", PartitionKeyVersion::V2),
-        DuplicateCreateCase {
-            id: "hierarchicalV2",
-            partition_key_definition: PartitionKeyDefinition::new(vec![
-                "/tenant".into(),
-                "/user".into(),
-            ])
-            .with_kind(PartitionKeyKind::MultiHash)
-            .with_version(PartitionKeyVersion::V2),
-            partition_key: PartitionKey::from(vec![
-                PartitionKeyValue::from("tenant-a"),
-                PartitionKeyValue::from("user-1"),
-            ]),
-            original: json!({
-                "id": "duplicate-1",
-                "tenant": "tenant-a",
-                "user": "user-1",
-                "value": 1
-            }),
-            duplicate: json!({
-                "id": "duplicate-1",
-                "tenant": "tenant-a",
-                "user": "user-1",
-                "value": 2
-            }),
-        },
-    ]
-}
-
+// Run the same conflict contract for Hash V1, Hash V2, and hierarchical V2 partition keys.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator_inmemory", test_category = "e2e")),
@@ -83,6 +35,7 @@ async fn duplicate_create_preserves_original() -> TestResult {
         );
 
         E2eTestFixture::run_with_partition_key(case.partition_key_definition, async |fixture| {
+            // Arrange the original value 1 document.
             fixture
                 .container
                 .create_item(
@@ -92,6 +45,8 @@ async fn duplicate_create_preserves_original() -> TestResult {
                     None,
                 )
                 .await?;
+
+            // Creating value 2 with the same ID and partition key returns conflict.
             let error = fixture
                 .container
                 .create_item(
@@ -118,6 +73,8 @@ async fn duplicate_create_preserves_original() -> TestResult {
                 "create_item",
                 StatusCode::Conflict,
             );
+
+            // The failed duplicate create leaves every original field unchanged.
             let stored: Value = fixture
                 .container
                 .read_item(case.partition_key.clone(), document_id, None)
@@ -140,4 +97,56 @@ async fn duplicate_create_preserves_original() -> TestResult {
         .await?;
     }
     Ok(())
+}
+
+// Partition-key cases ---------------------------------------------------------
+
+struct DuplicateCreateCase {
+    id: &'static str,
+    partition_key_definition: PartitionKeyDefinition,
+    partition_key: PartitionKey,
+    original: Value,
+    duplicate: Value,
+}
+
+fn duplicate_create_cases() -> Vec<DuplicateCreateCase> {
+    let simple_hash = |id, version| DuplicateCreateCase {
+        id,
+        partition_key_definition: PartitionKeyDefinition::new(vec!["/pk".into()])
+            .with_kind(PartitionKeyKind::Hash)
+            .with_version(version),
+        partition_key: PartitionKey::from("A"),
+        original: json!({ "id": "duplicate-1", "pk": "A", "value": 1 }),
+        duplicate: json!({ "id": "duplicate-1", "pk": "A", "value": 2 }),
+    };
+
+    vec![
+        simple_hash("hashV1", PartitionKeyVersion::V1),
+        simple_hash("hashV2", PartitionKeyVersion::V2),
+        DuplicateCreateCase {
+            id: "hierarchicalV2",
+            partition_key_definition: PartitionKeyDefinition::new(vec![
+                "/tenant".into(),
+                "/user".into(),
+            ])
+            .with_kind(PartitionKeyKind::MultiHash)
+            .with_version(PartitionKeyVersion::V2),
+            partition_key: PartitionKey::from(vec![
+                PartitionKeyValue::from("tenant-a"),
+                PartitionKeyValue::from("user-1"),
+            ]),
+            original: json!({
+                "id": "duplicate-1",
+                "tenant": "tenant-a",
+                "user": "user-1",
+                "value": 1
+            }),
+            duplicate: json!({
+                "id": "duplicate-1",
+                "tenant": "tenant-a",
+                "user": "user-1",
+                "value": 2
+            }),
+        },
+    ]
 }

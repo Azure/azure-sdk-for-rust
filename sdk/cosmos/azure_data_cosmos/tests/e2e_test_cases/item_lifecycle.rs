@@ -1,8 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::time::Duration;
+
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
+    clients::ContainerClient,
     options::{
         AvailabilityStrategy, ItemReadOptions, OperationOptions, ReadConsistencyStrategy, Region,
     },
@@ -10,170 +13,658 @@ use azure_data_cosmos::{
 };
 
 use crate::e2e_test_cases::{
-    catalog::{selected_profile_for, AccountDefinition, ClientDefinition, Profile},
+    catalog::{
+        selected_profile_for, AccountDefinition, ClientDefinition, Profile, RuntimeDefinition,
+    },
     fixture::{build_client_with_defaults, E2eTestFixture, TestResult},
     support::{assert_critical_diagnostics, item, write_options_with_content, Item},
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct ExpectedStatus {
-    status_code: u16,
-    sub_status_code: Option<u16>,
+const REPLICATION_TIMEOUT: Duration = Duration::from_secs(5);
+const RETRY_DELAY: Duration = Duration::from_millis(50);
+
+// The JSON profile selects the account, runtime, and client configuration. Rust then expands
+// that setup into the operation-level cases below:
+//
+// * hostedEmulatorSmoke: one account-default read;
+// * lifecycleConsistencyMatrix: Default, Eventual, Session, LatestCommitted, and GlobalStrong;
+// * readConsistencyOverrideMatrix: inherit defaults, restore account default, and Eventual.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator_inmemory", test_category = "e2e")),
+    ignore = "requires the externally hosted in-memory emulator"
+)]
+async fn item_lifecycle() -> TestResult {
+    let Some(profile) = selected_profile_for("item.lifecycle")? else {
+        return Ok(());
+    };
+    let setup = SelectedLifecycleSetup::from_profile(&profile)?;
+    let read_cases = read_cases_for_selected_profile(&setup)?;
+
+    for read_case in read_cases {
+        run_lifecycle_case(&setup, &read_case).await?;
+    }
+    Ok(())
 }
 
-impl ExpectedStatus {
-    const fn new(status_code: u16, sub_status_code: Option<u16>) -> Self {
-        Self {
-            status_code,
-            sub_status_code,
+// This is the lifecycle contract. Keep the operation sequence and its assertions visible here;
+// helpers below translate profiles, construct the varying read, and handle polling mechanics.
+async fn run_lifecycle_case(
+    setup: &SelectedLifecycleSetup<'_>,
+    read_case: &PostCreateReadCase,
+) -> TestResult {
+    let execution = setup.execution_name(read_case.name);
+    let client = setup.build_client().await?;
+
+    E2eTestFixture::run_with_client(client, "/pk".into(), async |fixture| {
+        let item_id = format!("lifecycle-{}", execution.replace('/', "-"));
+
+        // Create an item and capture the session token used by explicit Session reads.
+        let created = fixture
+            .container
+            .create_item("A", &item_id, item(&item_id, "A", 1), None)
+            .await?;
+        assert_eq!(created.status().status_code(), StatusCode::Created);
+        assert_critical_diagnostics(&created.diagnostics(), "create_item", StatusCode::Created);
+        let create_session_token = created
+            .headers()
+            .session_token()
+            .map(|token| token.as_str().to_owned());
+
+        // Read the created item using this case's operation-level consistency behavior.
+        let read_outcome = read_created_item(
+            &fixture.container,
+            &item_id,
+            create_session_token,
+            read_case,
+            &execution,
+        )
+        .await?;
+        match read_outcome {
+            PostCreateReadOutcome::Item(actual) => assert_eq!(
+                actual,
+                item(&item_id, "A", 1),
+                "read returned the wrong item for '{execution}'"
+            ),
+            PostCreateReadOutcome::RejectedBeforeTransport => assert_eq!(
+                read_case.expectation,
+                ReadExpectation::RejectedBeforeTransport,
+                "read was rejected unexpectedly for '{execution}'"
+            ),
+        }
+
+        // Replace the item and verify the returned model.
+        let replaced = fixture
+            .container
+            .replace_item(
+                "A",
+                &item_id,
+                item(&item_id, "A", 2),
+                Some(write_options_with_content()),
+            )
+            .await?;
+        assert_eq!(replaced.status().status_code(), StatusCode::Ok);
+        assert_critical_diagnostics(&replaced.diagnostics(), "replace_item", StatusCode::Ok);
+        assert_eq!(replaced.into_model::<Item>()?, item(&item_id, "A", 2));
+
+        // Delete the item, then use the delete session token to verify a plain 404/0.
+        let deleted = fixture.container.delete_item("A", &item_id, None).await?;
+        assert_eq!(deleted.status().status_code(), StatusCode::NoContent);
+        assert_critical_diagnostics(&deleted.diagnostics(), "delete_item", StatusCode::NoContent);
+        let delete_session_token = deleted
+            .headers()
+            .session_token()
+            .map(|token| token.as_str().to_owned())
+            .ok_or("delete response must carry a session token")?;
+        assert_item_deleted(
+            &fixture.container,
+            &item_id,
+            delete_session_token,
+            &execution,
+        )
+        .await?;
+
+        Ok(())
+    })
+    .await
+}
+
+// Operation cases -------------------------------------------------------------
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SessionTokenBehavior {
+    SdkManaged,
+    ExplicitCreateResponse,
+    Omitted,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ReadExpectation {
+    SucceedsImmediately,
+    EventuallySucceeds {
+        allowed_transient_statuses: &'static [TransientReadStatus],
+    },
+    RejectedBeforeTransport,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TransientReadStatus {
+    PlainNotFound,
+    SessionNotAvailable,
+}
+
+impl TransientReadStatus {
+    const fn http_status(self) -> ExpectedHttpStatus {
+        match self {
+            Self::PlainNotFound => PLAIN_NOT_FOUND,
+            Self::SessionNotAvailable => SESSION_NOT_AVAILABLE,
         }
     }
-
-    fn matches(self, status_code: u16, sub_status_code: Option<u16>) -> bool {
-        self.status_code == status_code
-            && self
-                .sub_status_code
-                .is_none_or(|expected| expected == sub_status_code.unwrap_or(0))
-    }
 }
 
-const PLAIN_NOT_FOUND: ExpectedStatus = ExpectedStatus::new(404, Some(0));
-const SESSION_NOT_AVAILABLE: ExpectedStatus = ExpectedStatus::new(404, Some(1002));
-const READ_SUCCEEDED: ExpectedStatus = ExpectedStatus::new(200, None);
-const CLIENT_REJECTED: ExpectedStatus = ExpectedStatus::new(400, None);
-
-#[derive(Debug)]
-struct LifecycleReadCase {
-    id: String,
-    operation_strategy: Option<&'static str>,
-    explicit_session_token: bool,
-    acceptable_initial_statuses: &'static [ExpectedStatus],
-    terminal_status: ExpectedStatus,
-    max_wait_ms: Option<u64>,
+#[derive(Debug, PartialEq, Eq)]
+enum PostCreateReadOutcome {
+    Item(Item),
+    RejectedBeforeTransport,
 }
 
-impl LifecycleReadCase {
-    fn succeeds(
-        id: impl Into<String>,
-        operation_strategy: Option<&'static str>,
-        explicit_session_token: bool,
-        acceptable_initial_statuses: &'static [ExpectedStatus],
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PostCreateReadCase {
+    name: &'static str,
+    consistency_override: Option<ReadConsistencyStrategy>,
+    session_token: SessionTokenBehavior,
+    expectation: ReadExpectation,
+}
+
+impl PostCreateReadCase {
+    const fn new(
+        name: &'static str,
+        consistency_override: Option<ReadConsistencyStrategy>,
+        session_token: SessionTokenBehavior,
+        expectation: ReadExpectation,
     ) -> Self {
         Self {
-            id: id.into(),
-            operation_strategy,
-            explicit_session_token,
-            acceptable_initial_statuses,
-            terminal_status: READ_SUCCEEDED,
-            max_wait_ms: (!acceptable_initial_statuses.is_empty()).then_some(5_000),
+            name,
+            consistency_override,
+            session_token,
+            expectation,
         }
-    }
-
-    fn rejects(id: impl Into<String>, operation_strategy: &'static str) -> Self {
-        Self {
-            id: id.into(),
-            operation_strategy: Some(operation_strategy),
-            explicit_session_token: false,
-            acceptable_initial_statuses: &[],
-            terminal_status: CLIENT_REJECTED,
-            max_wait_ms: None,
-        }
-    }
-
-    fn is_terminal(&self, status_code: u16, sub_status_code: Option<u16>) -> bool {
-        self.terminal_status.matches(status_code, sub_status_code)
-    }
-
-    fn is_acceptable_initial(&self, status_code: u16, sub_status_code: Option<u16>) -> bool {
-        self.acceptable_initial_statuses
-            .iter()
-            .any(|expected| expected.matches(status_code, sub_status_code))
     }
 }
 
-fn lifecycle_cases(
-    profile: &Profile,
-    account: &AccountDefinition,
-    runtime_default: Option<&str>,
-    client_default: Option<&str>,
-) -> TestResult<Vec<LifecycleReadCase>> {
-    match profile.id.as_str() {
-        "hostedEmulatorSmoke" => Ok(vec![LifecycleReadCase::succeeds(
-            "hostedSmokeDefault",
-            Some("Default"),
-            false,
-            &[],
+fn read_cases_for_selected_profile(
+    setup: &SelectedLifecycleSetup<'_>,
+) -> TestResult<Vec<PostCreateReadCase>> {
+    match setup.profile.id.as_str() {
+        "hostedEmulatorSmoke" => Ok(vec![PostCreateReadCase::new(
+            "default_strategy_reads_created_item",
+            Some(ReadConsistencyStrategy::Default),
+            SessionTokenBehavior::SdkManaged,
+            ReadExpectation::SucceedsImmediately,
         )]),
-        "lifecycleConsistencyMatrix" => Ok(consistency_cases(account)),
-        "readConsistencyOverrideMatrix" => Ok(override_cases(runtime_default, client_default)),
+        "lifecycleConsistencyMatrix" => Ok(read_cases_for_account_consistency(setup.account)),
+        "readConsistencyOverrideMatrix" => Ok(read_cases_for_default_precedence(
+            setup.account,
+            setup.runtime.default_read_consistency_strategy.as_deref(),
+            setup.client.default_read_consistency_strategy.as_deref(),
+        )?),
         profile => Err(format!("item.lifecycle does not implement profile '{profile}'").into()),
     }
 }
 
-fn consistency_cases(account: &AccountDefinition) -> Vec<LifecycleReadCase> {
-    let strong = account.consistency == "strong";
-    let account_session = account.consistency == "session";
-    [
-        ("Default", account_session, false),
-        ("Eventual", false, false),
-        ("Session", true, true),
-        ("LatestCommitted", false, false),
-        ("GlobalStrong", false, false),
+fn read_cases_for_account_consistency(account: &AccountDefinition) -> Vec<PostCreateReadCase> {
+    let is_strong_account = account.consistency == "strong";
+
+    let regional_read = if is_strong_account {
+        ReadExpectation::SucceedsImmediately
+    } else {
+        eventually_succeeds_after(TransientReadStatus::PlainNotFound)
+    };
+    let session_read = if is_strong_account {
+        ReadExpectation::SucceedsImmediately
+    } else {
+        eventually_succeeds_after(TransientReadStatus::SessionNotAvailable)
+    };
+    let account_default_read = match account.consistency.as_str() {
+        "strong" => ReadExpectation::SucceedsImmediately,
+        "session" => session_read,
+        _ => regional_read,
+    };
+    let account_default_token = if account.consistency == "session" {
+        SessionTokenBehavior::SdkManaged
+    } else {
+        SessionTokenBehavior::Omitted
+    };
+    let global_strong_read = if is_strong_account {
+        ReadExpectation::SucceedsImmediately
+    } else {
+        ReadExpectation::RejectedBeforeTransport
+    };
+
+    vec![
+        PostCreateReadCase::new(
+            "default_strategy_uses_account_consistency",
+            Some(ReadConsistencyStrategy::Default),
+            account_default_token,
+            account_default_read,
+        ),
+        PostCreateReadCase::new(
+            "eventual_strategy_allows_replication_lag",
+            Some(ReadConsistencyStrategy::Eventual),
+            SessionTokenBehavior::Omitted,
+            regional_read,
+        ),
+        PostCreateReadCase::new(
+            "session_strategy_uses_create_token",
+            Some(ReadConsistencyStrategy::Session),
+            SessionTokenBehavior::ExplicitCreateResponse,
+            session_read,
+        ),
+        PostCreateReadCase::new(
+            "latest_committed_is_region_local",
+            Some(ReadConsistencyStrategy::LatestCommitted),
+            SessionTokenBehavior::Omitted,
+            regional_read,
+        ),
+        PostCreateReadCase::new(
+            "global_strong_requires_strong_account",
+            Some(ReadConsistencyStrategy::GlobalStrong),
+            SessionTokenBehavior::Omitted,
+            global_strong_read,
+        ),
     ]
-    .into_iter()
-    .map(|(strategy, session_read, explicit_session_token)| {
-        let id = format!("{}/{}", account.id, strategy);
-        if strategy == "GlobalStrong" && !strong {
-            LifecycleReadCase::rejects(id, strategy)
-        } else if strong {
-            LifecycleReadCase::succeeds(id, Some(strategy), explicit_session_token, &[])
-        } else if session_read {
-            LifecycleReadCase::succeeds(
-                id,
-                Some(strategy),
-                explicit_session_token,
-                &[SESSION_NOT_AVAILABLE],
-            )
-        } else {
-            LifecycleReadCase::succeeds(
-                id,
-                Some(strategy),
-                explicit_session_token,
-                &[PLAIN_NOT_FOUND],
-            )
-        }
-    })
-    .collect()
 }
 
-fn override_cases(
+fn read_cases_for_default_precedence(
+    account: &AccountDefinition,
     runtime_default: Option<&str>,
     client_default: Option<&str>,
-) -> Vec<LifecycleReadCase> {
-    let inherited_session = client_default
-        .or(runtime_default)
-        .is_none_or(|strategy| strategy == "Session");
-    let inherited_statuses: &'static [ExpectedStatus] = if inherited_session {
-        &[SESSION_NOT_AVAILABLE]
-    } else {
-        &[PLAIN_NOT_FOUND]
+) -> TestResult<Vec<PostCreateReadCase>> {
+    if account.consistency != "session" {
+        return Err(format!(
+            "readConsistencyOverrideMatrix requires a Session account, got '{}'",
+            account.consistency
+        )
+        .into());
+    }
+    // Effective precedence is operation > client > runtime > account. These cases vary only the
+    // operation value; the JSON profile supplies the selected client and runtime defaults.
+    let inherited_uses_session = match client_default.or(runtime_default) {
+        Some(strategy) => parse_read_consistency(strategy)? == ReadConsistencyStrategy::Session,
+        None => account.consistency == "session",
     };
-    vec![
-        LifecycleReadCase::succeeds("override/Inherit", None, false, inherited_statuses),
-        LifecycleReadCase::succeeds(
-            "override/Default",
-            Some("Default"),
-            true,
-            &[SESSION_NOT_AVAILABLE],
+    let inherited_expectation = if inherited_uses_session {
+        eventually_succeeds_after(TransientReadStatus::SessionNotAvailable)
+    } else {
+        eventually_succeeds_after(TransientReadStatus::PlainNotFound)
+    };
+    let inherited_token = if inherited_uses_session {
+        SessionTokenBehavior::SdkManaged
+    } else {
+        SessionTokenBehavior::Omitted
+    };
+
+    Ok(vec![
+        PostCreateReadCase::new(
+            "inherits_client_then_runtime_then_account_default",
+            None,
+            inherited_token,
+            inherited_expectation,
         ),
-        LifecycleReadCase::succeeds(
-            "override/Eventual",
-            Some("Eventual"),
-            false,
-            &[PLAIN_NOT_FOUND],
+        PostCreateReadCase::new(
+            "default_override_restores_account_consistency",
+            Some(ReadConsistencyStrategy::Default),
+            SessionTokenBehavior::ExplicitCreateResponse,
+            eventually_succeeds_after(TransientReadStatus::SessionNotAvailable),
         ),
-    ]
+        PostCreateReadCase::new(
+            "eventual_override_wins_over_all_defaults",
+            Some(ReadConsistencyStrategy::Eventual),
+            SessionTokenBehavior::Omitted,
+            eventually_succeeds_after(TransientReadStatus::PlainNotFound),
+        ),
+    ])
 }
+
+fn eventually_succeeds_after(status: TransientReadStatus) -> ReadExpectation {
+    ReadExpectation::EventuallySucceeds {
+        allowed_transient_statuses: match status {
+            TransientReadStatus::PlainNotFound => &[TransientReadStatus::PlainNotFound],
+            TransientReadStatus::SessionNotAvailable => &[TransientReadStatus::SessionNotAvailable],
+        },
+    }
+}
+
+// Selected JSON setup ---------------------------------------------------------
+
+struct SelectedLifecycleSetup<'a> {
+    profile: &'a Profile,
+    account: &'a AccountDefinition,
+    runtime: &'a RuntimeDefinition,
+    client: &'a ClientDefinition,
+    routing: RoutingStrategy,
+}
+
+impl<'a> SelectedLifecycleSetup<'a> {
+    fn from_profile(profile: &'a Profile) -> TestResult<Self> {
+        let account_ids: Vec<_> = profile
+            .accounts
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+        let runtime_ids: Vec<_> = profile
+            .runtimes
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+        let client_ids: Vec<_> = profile
+            .clients
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+
+        let account = profile.account(selected_axis("AZURE_COSMOS_E2E_ACCOUNT", &account_ids)?);
+        let runtime = profile.runtime(selected_axis("AZURE_COSMOS_E2E_RUNTIME", &runtime_ids)?);
+        let client = profile.client(selected_axis("AZURE_COSMOS_E2E_CLIENT", &client_ids)?);
+        let read_region = lifecycle_read_region(profile)?;
+        let routing = lifecycle_routing(client, &read_region)?;
+
+        Ok(Self {
+            profile,
+            account,
+            runtime,
+            client,
+            routing,
+        })
+    }
+
+    async fn build_client(&self) -> TestResult<azure_data_cosmos::CosmosClient> {
+        build_client_with_defaults(
+            self.routing.clone(),
+            parse_optional_read_consistency(
+                self.runtime.default_read_consistency_strategy.as_deref(),
+            )?,
+            parse_optional_read_consistency(
+                self.client.default_read_consistency_strategy.as_deref(),
+            )?,
+            parse_setup_switch(&self.runtime.gateway_v2, "backendDefault")?,
+            parse_setup_switch(&self.runtime.ppcb, "sdkDefault")?,
+            parse_setup_switch(&self.client.binary_encoding, "sdkDefault")?,
+        )
+        .await
+    }
+
+    fn execution_name(&self, case_name: &str) -> String {
+        format!(
+            "{}/{}/{}/{}/{}",
+            self.profile.id, self.account.id, self.runtime.id, self.client.id, case_name
+        )
+    }
+}
+
+// Retry mechanics -------------------------------------------------------------
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ExpectedSubstatus {
+    Any,
+    ZeroOrMissing,
+    Exact(u16),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ExpectedHttpStatus {
+    status_code: StatusCode,
+    substatus: ExpectedSubstatus,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ActualHttpStatus {
+    status_code: StatusCode,
+    substatus: Option<u16>,
+}
+
+impl ExpectedHttpStatus {
+    fn matches(self, status_code: StatusCode, substatus: Option<u16>) -> bool {
+        self.status_code == status_code
+            && match self.substatus {
+                ExpectedSubstatus::Any => true,
+                ExpectedSubstatus::ZeroOrMissing => {
+                    substatus.is_none() || matches!(substatus, Some(0))
+                }
+                ExpectedSubstatus::Exact(expected) => {
+                    matches!(substatus, Some(actual) if actual == expected)
+                }
+            }
+    }
+}
+
+const PLAIN_NOT_FOUND: ExpectedHttpStatus = ExpectedHttpStatus {
+    status_code: StatusCode::NotFound,
+    substatus: ExpectedSubstatus::ZeroOrMissing,
+};
+const SESSION_NOT_AVAILABLE: ExpectedHttpStatus = ExpectedHttpStatus {
+    status_code: StatusCode::NotFound,
+    substatus: ExpectedSubstatus::Exact(1002),
+};
+const READ_SUCCEEDED: ExpectedHttpStatus = ExpectedHttpStatus {
+    status_code: StatusCode::Ok,
+    substatus: ExpectedSubstatus::Any,
+};
+const CLIENT_REJECTED: ExpectedHttpStatus = ExpectedHttpStatus {
+    status_code: StatusCode::BadRequest,
+    substatus: ExpectedSubstatus::Any,
+};
+
+async fn read_created_item(
+    container: &ContainerClient,
+    item_id: &str,
+    create_session_token: Option<String>,
+    read_case: &PostCreateReadCase,
+    execution: &str,
+) -> TestResult<PostCreateReadOutcome> {
+    let mut operation = OperationOptions::default();
+    operation.read_consistency_strategy = read_case.consistency_override;
+    operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
+    let mut options = ItemReadOptions::default().with_operation_options(operation);
+    if read_case.session_token == SessionTokenBehavior::ExplicitCreateResponse {
+        options = options.with_session_token(
+            create_session_token.ok_or("create response must carry a session token")?,
+        );
+    }
+
+    let deadline = tokio::time::Instant::now() + read_case.expectation.timeout();
+    let mut observed_statuses = Vec::new();
+    loop {
+        match container
+            .read_item("A", item_id, Some(options.clone()))
+            .await
+        {
+            Ok(response) => {
+                let status = ActualHttpStatus {
+                    status_code: response.status().status_code(),
+                    substatus: response.status().sub_status().map(|value| value.value()),
+                };
+                record_request_statuses(&response.diagnostics(), &mut observed_statuses);
+                observed_statuses.push(status);
+                if read_case
+                    .expectation
+                    .terminal_status()
+                    .matches(status.status_code, status.substatus)
+                {
+                    assert_critical_diagnostics(
+                        &response.diagnostics(),
+                        "read_item",
+                        StatusCode::Ok,
+                    );
+                    return Ok(PostCreateReadOutcome::Item(response.into_model::<Item>()?));
+                }
+                verify_transient_status(
+                    read_case,
+                    status,
+                    deadline,
+                    execution,
+                    &observed_statuses,
+                )?;
+            }
+            Err(error) => {
+                let status = ActualHttpStatus {
+                    status_code: error.status().status_code(),
+                    substatus: error.status().sub_status().map(|value| value.value()),
+                };
+                if let Some(diagnostics) = error.diagnostics() {
+                    record_request_statuses(&diagnostics, &mut observed_statuses);
+                }
+                observed_statuses.push(status);
+                if read_case
+                    .expectation
+                    .terminal_status()
+                    .matches(status.status_code, status.substatus)
+                {
+                    if read_case.expectation == ReadExpectation::RejectedBeforeTransport {
+                        assert!(
+                            error.response().is_none(),
+                            "client validation for '{execution}' unexpectedly received a response"
+                        );
+                        let diagnostics = error
+                            .diagnostics()
+                            .expect("client rejection must carry diagnostics");
+                        assert_eq!(
+                            diagnostics.request_count(),
+                            0,
+                            "client validation must reject '{execution}' before transport"
+                        );
+                    }
+                    return Ok(PostCreateReadOutcome::RejectedBeforeTransport);
+                }
+                verify_transient_status(
+                    read_case,
+                    status,
+                    deadline,
+                    execution,
+                    &observed_statuses,
+                )?;
+            }
+        }
+        tokio::time::sleep(RETRY_DELAY).await;
+    }
+}
+
+async fn assert_item_deleted(
+    container: &ContainerClient,
+    item_id: &str,
+    delete_session_token: String,
+    execution: &str,
+) -> TestResult {
+    let mut operation = OperationOptions::default();
+    operation.read_consistency_strategy = Some(ReadConsistencyStrategy::Session);
+    operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
+    let options = ItemReadOptions::default()
+        .with_operation_options(operation)
+        .with_session_token(delete_session_token);
+    let deadline = tokio::time::Instant::now() + REPLICATION_TIMEOUT;
+
+    loop {
+        match container
+            .read_item("A", item_id, Some(options.clone()))
+            .await
+        {
+            Err(error)
+                if PLAIN_NOT_FOUND.matches(
+                    error.status().status_code(),
+                    error.status().sub_status().map(|value| value.value()),
+                ) =>
+            {
+                return Ok(());
+            }
+            Err(error)
+                if SESSION_NOT_AVAILABLE.matches(
+                    error.status().status_code(),
+                    error.status().sub_status().map(|value| value.value()),
+                ) && tokio::time::Instant::now() < deadline => {}
+            Ok(_) if tokio::time::Instant::now() < deadline => {}
+            Ok(_) => {
+                return Err(format!(
+                    "deleted item for '{execution}' remained visible after {REPLICATION_TIMEOUT:?}"
+                )
+                .into())
+            }
+            Err(error) => return Err(error.into()),
+        }
+        tokio::time::sleep(RETRY_DELAY).await;
+    }
+}
+
+impl ReadExpectation {
+    const fn terminal_status(self) -> ExpectedHttpStatus {
+        match self {
+            Self::SucceedsImmediately | Self::EventuallySucceeds { .. } => READ_SUCCEEDED,
+            Self::RejectedBeforeTransport => CLIENT_REJECTED,
+        }
+    }
+
+    const fn allowed_transient_statuses(self) -> &'static [TransientReadStatus] {
+        match self {
+            Self::EventuallySucceeds {
+                allowed_transient_statuses,
+            } => allowed_transient_statuses,
+            Self::SucceedsImmediately | Self::RejectedBeforeTransport => &[],
+        }
+    }
+
+    const fn timeout(self) -> Duration {
+        match self {
+            Self::EventuallySucceeds { .. } => REPLICATION_TIMEOUT,
+            Self::SucceedsImmediately | Self::RejectedBeforeTransport => Duration::ZERO,
+        }
+    }
+}
+
+fn verify_transient_status(
+    read_case: &PostCreateReadCase,
+    actual: ActualHttpStatus,
+    deadline: tokio::time::Instant,
+    execution: &str,
+    observed_statuses: &[ActualHttpStatus],
+) -> TestResult {
+    let allowed = read_case.expectation.allowed_transient_statuses();
+    if !allowed.iter().any(|expected| {
+        expected
+            .http_status()
+            .matches(actual.status_code, actual.substatus)
+    }) {
+        return Err(format!(
+            "'{execution}' observed unexpected read status {actual:?}; expected transient {allowed:?} or terminal {:?}; observed {observed_statuses:?}",
+            read_case.expectation.terminal_status()
+        )
+        .into());
+    }
+    if tokio::time::Instant::now() >= deadline {
+        return Err(format!(
+            "'{execution}' did not reach terminal status {:?} within {:?}; observed {observed_statuses:?}",
+            read_case.expectation.terminal_status(),
+            read_case.expectation.timeout()
+        )
+        .into());
+    }
+    Ok(())
+}
+
+fn record_request_statuses(
+    diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
+    observed: &mut Vec<ActualHttpStatus>,
+) {
+    observed.extend(
+        diagnostics
+            .requests()
+            .iter()
+            .map(|request| ActualHttpStatus {
+                status_code: request.status().status_code(),
+                substatus: request.status().sub_status().map(|value| value.value()),
+            }),
+    );
+}
+
+// Profile value translation ---------------------------------------------------
 
 fn lifecycle_read_region(profile: &Profile) -> TestResult<Region> {
     match profile.id.as_str() {
@@ -220,11 +711,14 @@ fn selected_axis<'a>(environment_variable: &str, available: &'a [&str]) -> TestR
     }
 }
 
-fn parse_optional_strategy(value: Option<&str>) -> TestResult<Option<ReadConsistencyStrategy>> {
-    value
-        .map(str::parse::<ReadConsistencyStrategy>)
-        .transpose()
-        .map_err(Into::into)
+fn parse_optional_read_consistency(
+    value: Option<&str>,
+) -> TestResult<Option<ReadConsistencyStrategy>> {
+    value.map(parse_read_consistency).transpose()
+}
+
+fn parse_read_consistency(value: &str) -> TestResult<ReadConsistencyStrategy> {
+    value.parse::<ReadConsistencyStrategy>().map_err(Into::into)
 }
 
 fn parse_setup_switch(value: &str, default: &str) -> TestResult<Option<bool>> {
@@ -236,427 +730,188 @@ fn parse_setup_switch(value: &str, default: &str) -> TestResult<Option<bool>> {
     }
 }
 
-#[tokio::test]
-#[cfg_attr(
-    not(any(test_category = "emulator_inmemory", test_category = "e2e")),
-    ignore = "requires the externally hosted in-memory emulator"
-)]
-async fn item_lifecycle() -> TestResult {
-    let Some(profile) = selected_profile_for("item.lifecycle")? else {
-        return Ok(());
-    };
-    run_lifecycle_consistency_matrix(&profile).await
-}
-
-async fn run_lifecycle_consistency_matrix(profile: &Profile) -> TestResult {
-    let account_ids: Vec<_> = profile
-        .accounts
-        .iter()
-        .map(|definition| definition.id.as_str())
-        .collect();
-    let runtime_ids: Vec<_> = profile
-        .runtimes
-        .iter()
-        .map(|definition| definition.id.as_str())
-        .collect();
-    let client_ids: Vec<_> = profile
-        .clients
-        .iter()
-        .map(|definition| definition.id.as_str())
-        .collect();
-    let account_id = selected_axis("AZURE_COSMOS_E2E_ACCOUNT", &account_ids)?;
-    let runtime_id = selected_axis("AZURE_COSMOS_E2E_RUNTIME", &runtime_ids)?;
-    let client_id = selected_axis("AZURE_COSMOS_E2E_CLIENT", &client_ids)?;
-    let account = profile.account(account_id);
-    let runtime = profile.runtime(runtime_id);
-    let client_definition = profile.client(client_id);
-    let runtime_strategy =
-        parse_optional_strategy(runtime.default_read_consistency_strategy.as_deref())?;
-    let client_strategy = parse_optional_strategy(
-        client_definition
-            .default_read_consistency_strategy
-            .as_deref(),
-    )?;
-    let cases = lifecycle_cases(
-        profile,
-        account,
-        runtime.default_read_consistency_strategy.as_deref(),
-        client_definition
-            .default_read_consistency_strategy
-            .as_deref(),
-    )?;
-    let read_region = lifecycle_read_region(profile)?;
-    let routing = lifecycle_routing(client_definition, &read_region)?;
-    let gateway_v2_enabled = parse_setup_switch(&runtime.gateway_v2, "backendDefault")?;
-    let ppcb_enabled = parse_setup_switch(&runtime.ppcb, "sdkDefault")?;
-    let binary_encoding_enabled =
-        parse_setup_switch(&client_definition.binary_encoding, "sdkDefault")?;
-
-    for case in cases {
-        let client = build_client_with_defaults(
-            routing.clone(),
-            runtime_strategy,
-            client_strategy,
-            gateway_v2_enabled,
-            ppcb_enabled,
-            binary_encoding_enabled,
-        )
-        .await?;
-
-        E2eTestFixture::run_with_client(client, "/pk".into(), async |fixture| {
-            let item_id = format!("lifecycle-{}", case.id.replace('/', "-"));
-            let created = fixture
-                .container
-                .create_item("A", &item_id, item(&item_id, "A", 1), None)
-                .await?;
-            assert_eq!(created.status().status_code(), StatusCode::Created);
-            assert_critical_diagnostics(
-                &created.diagnostics(),
-                "create_item",
-                StatusCode::Created,
-            );
-            let create_token = created.headers().session_token().cloned();
-
-            let mut operation = OperationOptions::default();
-            operation.read_consistency_strategy = parse_optional_strategy(case.operation_strategy)?;
-            operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
-            let mut read_options = ItemReadOptions::default().with_operation_options(operation);
-            let mut terminal_item = None;
-            if case.explicit_session_token {
-                read_options = read_options.with_session_token(
-                    create_token
-                        .clone()
-                        .ok_or("create response must carry a session token")?,
-                );
-            }
-
-            let deadline = tokio::time::Instant::now()
-                + std::time::Duration::from_millis(case.max_wait_ms.unwrap_or_default());
-            let mut observed_statuses = Vec::new();
-            loop {
-                let (status_code, sub_status_code, terminal) = match fixture
-                    .container
-                    .read_item("A", &item_id, Some(read_options.clone()))
-                    .await
-                {
-                    Ok(read) => {
-                        let status_code = u16::from(read.status().status_code());
-                        let sub_status_code =
-                            read.status().sub_status().map(|value| value.value());
-                        let terminal = case.is_terminal(status_code, sub_status_code);
-                        for request in read.diagnostics().requests().iter() {
-                            let request_status = u16::from(request.status().status_code());
-                            let request_sub_status =
-                                request.status().sub_status().map(|value| value.value());
-                            if case.is_acceptable_initial(request_status, request_sub_status) {
-                                observed_statuses
-                                    .push((request_status, request_sub_status.unwrap_or(0)));
-                            }
-                        }
-                        if terminal {
-                            assert_critical_diagnostics(
-                                &read.diagnostics(),
-                                "read_item",
-                                StatusCode::Ok,
-                            );
-                            terminal_item = Some(read.into_model::<Item>()?);
-                        }
-                        (status_code, sub_status_code, terminal)
-                    }
-                    Err(error) => {
-                        let status_code = u16::from(error.status().status_code());
-                        let sub_status_code =
-                            error.status().sub_status().map(|value| value.value());
-                        let terminal = case.is_terminal(status_code, sub_status_code);
-                        if let Some(diagnostics) = error.diagnostics() {
-                            if terminal && case.terminal_status == CLIENT_REJECTED {
-                                assert_eq!(
-                                    diagnostics.request_count(),
-                                    0,
-                                    "client validation must reject '{}' before transport",
-                                    case.id
-                                );
-                            }
-                            for request in diagnostics.requests().iter() {
-                                let request_status = u16::from(request.status().status_code());
-                                let request_sub_status =
-                                    request.status().sub_status().map(|value| value.value());
-                                if case.is_acceptable_initial(request_status, request_sub_status) {
-                                    observed_statuses
-                                        .push((request_status, request_sub_status.unwrap_or(0)));
-                                }
-                            }
-                        }
-                        (status_code, sub_status_code, terminal)
-                    }
-                };
-                observed_statuses.push((status_code, sub_status_code.unwrap_or(0)));
-                if terminal {
-                    break;
-                }
-                if !case.is_acceptable_initial(status_code, sub_status_code) {
-                    return Err(format!(
-                        "execution '{}' observed unexpected read status {status_code}/{}; expected transient {:?} or terminal {:?}; observed {observed_statuses:?}",
-                        case.id,
-                        sub_status_code.unwrap_or(0),
-                        case.acceptable_initial_statuses,
-                        case.terminal_status,
-                    )
-                    .into());
-                }
-                if tokio::time::Instant::now() >= deadline {
-                    return Err(format!(
-                        "execution '{}' did not reach terminal status {:?} within {} ms; observed {observed_statuses:?}",
-                        case.id,
-                        case.terminal_status,
-                        case.max_wait_ms.unwrap_or_default(),
-                    )
-                    .into());
-                }
-                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-            }
-
-            if case.terminal_status == READ_SUCCEEDED {
-                assert_eq!(
-                    terminal_item,
-                    Some(item(&item_id, "A", 1)),
-                    "terminal read for '{}' returned the wrong item",
-                    case.id
-                );
-            } else {
-                assert!(terminal_item.is_none());
-            }
-            let replaced = fixture
-                .container
-                .replace_item(
-                    "A",
-                    &item_id,
-                    item(&item_id, "A", 2),
-                    Some(write_options_with_content()),
-                )
-                .await?;
-            assert_eq!(replaced.status().status_code(), StatusCode::Ok);
-            assert_critical_diagnostics(
-                &replaced.diagnostics(),
-                "replace_item",
-                StatusCode::Ok,
-            );
-            assert_eq!(replaced.into_model::<Item>()?, item(&item_id, "A", 2));
-            let deleted = fixture.container.delete_item("A", &item_id, None).await?;
-            assert_eq!(deleted.status().status_code(), StatusCode::NoContent);
-            assert_critical_diagnostics(
-                &deleted.diagnostics(),
-                "delete_item",
-                StatusCode::NoContent,
-            );
-            let delete_token = deleted
-                .headers()
-                .session_token()
-                .cloned()
-                .ok_or("delete response must carry a session token")?;
-            let mut delete_read_operation = OperationOptions::default();
-            delete_read_operation.read_consistency_strategy =
-                Some(ReadConsistencyStrategy::Session);
-            delete_read_operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
-            let delete_read_options = ItemReadOptions::default()
-                .with_operation_options(delete_read_operation)
-                .with_session_token(delete_token);
-
-            let delete_deadline =
-                tokio::time::Instant::now() + std::time::Duration::from_secs(5);
-            loop {
-                match fixture
-                    .container
-                    .read_item("A", &item_id, Some(delete_read_options.clone()))
-                    .await
-                {
-                    Err(error)
-                        if PLAIN_NOT_FOUND.matches(
-                            u16::from(error.status().status_code()),
-                            error.status().sub_status().map(|value| value.value()),
-                        ) =>
-                    {
-                        break;
-                    }
-                    Err(error)
-                        if SESSION_NOT_AVAILABLE.matches(
-                            u16::from(error.status().status_code()),
-                            error.status().sub_status().map(|value| value.value()),
-                        ) && tokio::time::Instant::now() < delete_deadline =>
-                    {
-                        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-                    }
-                    Ok(_) if tokio::time::Instant::now() < delete_deadline => {
-                        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-                    }
-                    Ok(_) => {
-                        return Err(format!(
-                            "deleted item for '{}' remained visible after 5 seconds",
-                            case.id
-                        )
-                        .into())
-                    }
-                    Err(error) => return Err(error.into()),
-                }
-            }
-            Ok(())
-        })
-        .await?;
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{
-        consistency_cases, override_cases, ExpectedStatus, CLIENT_REJECTED, PLAIN_NOT_FOUND,
-        READ_SUCCEEDED, SESSION_NOT_AVAILABLE,
-    };
+    use super::*;
 
     #[test]
-    fn status_matching_normalizes_missing_substatus_to_zero() {
-        assert!(PLAIN_NOT_FOUND.matches(404, None));
-        assert!(PLAIN_NOT_FOUND.matches(404, Some(0)));
-        assert!(!PLAIN_NOT_FOUND.matches(404, Some(1002)));
-        assert!(READ_SUCCEEDED.matches(200, Some(0)));
-        assert!(!ExpectedStatus::new(200, None).matches(404, None));
-    }
-
-    #[test]
-    fn account_consistency_matrix_covers_all_operation_strategies() {
-        let profile = serde_json::from_str::<super::Profile>(include_str!(
+    fn account_consistency_cases_cover_every_account_and_strategy() {
+        let profile = serde_json::from_str::<Profile>(include_str!(
             "../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"
         ))
         .expect("consistency profile must deserialize");
-        let expectations = [
-            ("strong", [None, None, None, None, None]),
+        let immediate = ReadExpectation::SucceedsImmediately;
+        let plain_not_found = eventually_succeeds_after(TransientReadStatus::PlainNotFound);
+        let session_not_available =
+            eventually_succeeds_after(TransientReadStatus::SessionNotAvailable);
+        let rejected = ReadExpectation::RejectedBeforeTransport;
+        let expected_by_account = [
+            ("strong", [immediate; 5]),
             (
                 "boundedStaleness",
                 [
-                    Some(PLAIN_NOT_FOUND),
-                    Some(PLAIN_NOT_FOUND),
-                    Some(SESSION_NOT_AVAILABLE),
-                    Some(PLAIN_NOT_FOUND),
-                    None,
+                    plain_not_found,
+                    plain_not_found,
+                    session_not_available,
+                    plain_not_found,
+                    rejected,
                 ],
             ),
             (
                 "session",
                 [
-                    Some(SESSION_NOT_AVAILABLE),
-                    Some(PLAIN_NOT_FOUND),
-                    Some(SESSION_NOT_AVAILABLE),
-                    Some(PLAIN_NOT_FOUND),
-                    None,
+                    session_not_available,
+                    plain_not_found,
+                    session_not_available,
+                    plain_not_found,
+                    rejected,
                 ],
             ),
             (
                 "consistentPrefix",
                 [
-                    Some(PLAIN_NOT_FOUND),
-                    Some(PLAIN_NOT_FOUND),
-                    Some(SESSION_NOT_AVAILABLE),
-                    Some(PLAIN_NOT_FOUND),
-                    None,
+                    plain_not_found,
+                    plain_not_found,
+                    session_not_available,
+                    plain_not_found,
+                    rejected,
                 ],
             ),
             (
                 "eventual",
                 [
-                    Some(PLAIN_NOT_FOUND),
-                    Some(PLAIN_NOT_FOUND),
-                    Some(SESSION_NOT_AVAILABLE),
-                    Some(PLAIN_NOT_FOUND),
-                    None,
+                    plain_not_found,
+                    plain_not_found,
+                    session_not_available,
+                    plain_not_found,
+                    rejected,
                 ],
             ),
         ];
 
-        for (account, transient_statuses) in expectations {
-            let cases = consistency_cases(profile.account(account));
+        for (account, expected) in expected_by_account {
+            let cases = read_cases_for_account_consistency(profile.account(account));
+            assert_eq!(
+                cases.iter().map(|case| case.name).collect::<Vec<_>>(),
+                [
+                    "default_strategy_uses_account_consistency",
+                    "eventual_strategy_allows_replication_lag",
+                    "session_strategy_uses_create_token",
+                    "latest_committed_is_region_local",
+                    "global_strong_requires_strong_account",
+                ],
+                "case names for {account}"
+            );
             assert_eq!(
                 cases
                     .iter()
-                    .map(|case| case.operation_strategy)
+                    .map(|case| case.consistency_override)
                     .collect::<Vec<_>>(),
                 [
-                    Some("Default"),
-                    Some("Eventual"),
-                    Some("Session"),
-                    Some("LatestCommitted"),
-                    Some("GlobalStrong"),
-                ]
+                    Some(ReadConsistencyStrategy::Default),
+                    Some(ReadConsistencyStrategy::Eventual),
+                    Some(ReadConsistencyStrategy::Session),
+                    Some(ReadConsistencyStrategy::LatestCommitted),
+                    Some(ReadConsistencyStrategy::GlobalStrong),
+                ],
+                "operation consistency overrides for {account}"
             );
             assert_eq!(
                 cases
                     .iter()
-                    .map(|case| case.explicit_session_token)
+                    .map(|case| case.expectation)
                     .collect::<Vec<_>>(),
-                [false, false, true, false, false]
+                expected,
+                "read expectations for {account}"
             );
-            for (index, expected_transient) in transient_statuses.into_iter().enumerate() {
-                assert_eq!(
-                    cases[index].acceptable_initial_statuses,
-                    expected_transient.as_slice()
-                );
-                let terminal = if index == 4 && account != "strong" {
-                    CLIENT_REJECTED
+            assert_eq!(
+                cases
+                    .iter()
+                    .map(|case| case.session_token)
+                    .collect::<Vec<_>>(),
+                [
+                    if account == "session" {
+                        SessionTokenBehavior::SdkManaged
+                    } else {
+                        SessionTokenBehavior::Omitted
+                    },
+                    SessionTokenBehavior::Omitted,
+                    SessionTokenBehavior::ExplicitCreateResponse,
+                    SessionTokenBehavior::Omitted,
+                    SessionTokenBehavior::Omitted,
+                ],
+                "session-token behavior for {account}"
+            );
+        }
+    }
+
+    #[test]
+    fn override_cases_show_client_runtime_account_precedence() {
+        let profile = serde_json::from_str::<Profile>(include_str!(
+            "../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"
+        ))
+        .expect("override profile must deserialize");
+        let account = profile.account("session");
+
+        for runtime in &profile.runtimes {
+            for client in &profile.clients {
+                let inherited_uses_session = client
+                    .default_read_consistency_strategy
+                    .as_deref()
+                    .or(runtime.default_read_consistency_strategy.as_deref())
+                    .is_none_or(|strategy| strategy == "Session");
+                let inherited_expectation = if inherited_uses_session {
+                    eventually_succeeds_after(TransientReadStatus::SessionNotAvailable)
                 } else {
-                    READ_SUCCEEDED
+                    eventually_succeeds_after(TransientReadStatus::PlainNotFound)
                 };
-                assert_eq!(cases[index].terminal_status, terminal);
-                assert_eq!(cases[index].max_wait_ms, expected_transient.map(|_| 5_000));
+                let inherited_token = if inherited_uses_session {
+                    SessionTokenBehavior::SdkManaged
+                } else {
+                    SessionTokenBehavior::Omitted
+                };
+
+                let actual = read_cases_for_default_precedence(
+                    account,
+                    runtime.default_read_consistency_strategy.as_deref(),
+                    client.default_read_consistency_strategy.as_deref(),
+                )
+                .expect("profile defaults must be valid");
+                let expected = [
+                    PostCreateReadCase::new(
+                        "inherits_client_then_runtime_then_account_default",
+                        None,
+                        inherited_token,
+                        inherited_expectation,
+                    ),
+                    PostCreateReadCase::new(
+                        "default_override_restores_account_consistency",
+                        Some(ReadConsistencyStrategy::Default),
+                        SessionTokenBehavior::ExplicitCreateResponse,
+                        eventually_succeeds_after(TransientReadStatus::SessionNotAvailable),
+                    ),
+                    PostCreateReadCase::new(
+                        "eventual_override_wins_over_all_defaults",
+                        Some(ReadConsistencyStrategy::Eventual),
+                        SessionTokenBehavior::Omitted,
+                        eventually_succeeds_after(TransientReadStatus::PlainNotFound),
+                    ),
+                ];
+                assert_eq!(
+                    actual, expected,
+                    "runtime '{}' and client '{}'",
+                    runtime.id, client.id
+                );
             }
         }
     }
 
     #[test]
-    fn override_matrix_keeps_operation_cases_in_source() {
-        let profile = serde_json::from_str::<super::Profile>(include_str!(
-            "../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"
-        ))
-        .expect("override profile must deserialize");
-
-        for runtime in &profile.runtimes {
-            for client in &profile.clients {
-                let cases = override_cases(
-                    runtime.default_read_consistency_strategy.as_deref(),
-                    client.default_read_consistency_strategy.as_deref(),
-                );
-                assert_eq!(
-                    cases
-                        .iter()
-                        .map(|case| case.operation_strategy)
-                        .collect::<Vec<_>>(),
-                    [None, Some("Default"), Some("Eventual")]
-                );
-                assert_eq!(
-                    cases
-                        .iter()
-                        .map(|case| case.explicit_session_token)
-                        .collect::<Vec<_>>(),
-                    [false, true, false]
-                );
-                let inherited = if client
-                    .default_read_consistency_strategy
-                    .as_deref()
-                    .or(runtime.default_read_consistency_strategy.as_deref())
-                    .is_none_or(|strategy| strategy == "Session")
-                {
-                    SESSION_NOT_AVAILABLE
-                } else {
-                    PLAIN_NOT_FOUND
-                };
-                assert_eq!(cases[0].acceptable_initial_statuses, [inherited]);
-                assert_eq!(
-                    cases[1].acceptable_initial_statuses,
-                    [SESSION_NOT_AVAILABLE]
-                );
-                assert_eq!(cases[2].acceptable_initial_statuses, [PLAIN_NOT_FOUND]);
-                assert!(cases.iter().all(|case| {
-                    case.terminal_status == READ_SUCCEEDED && case.max_wait_ms == Some(5_000)
-                }));
-            }
-        }
+    fn status_matching_distinguishes_wildcard_zero_and_exact_substatus() {
+        assert!(READ_SUCCEEDED.matches(StatusCode::Ok, Some(42)));
+        assert!(PLAIN_NOT_FOUND.matches(StatusCode::NotFound, None));
+        assert!(PLAIN_NOT_FOUND.matches(StatusCode::NotFound, Some(0)));
+        assert!(!PLAIN_NOT_FOUND.matches(StatusCode::NotFound, Some(1002)));
+        assert!(SESSION_NOT_AVAILABLE.matches(StatusCode::NotFound, Some(1002)));
     }
 }

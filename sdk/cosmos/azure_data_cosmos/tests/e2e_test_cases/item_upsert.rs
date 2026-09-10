@@ -20,6 +20,7 @@ async fn upsert_creates_then_updates() -> TestResult {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {
+        // Case 1: upserting a missing identity creates value 1 and returns 201.
         let created = fixture
             .container
             .upsert_item(
@@ -31,6 +32,8 @@ async fn upsert_creates_then_updates() -> TestResult {
             .await?;
         assert_eq!(created.status().status_code(), StatusCode::Created);
         assert_critical_diagnostics(&created.diagnostics(), "upsert_item", StatusCode::Created);
+
+        // Case 2: upserting the same identity replaces it with value 2 and returns 200.
         let updated = fixture
             .container
             .upsert_item(
@@ -42,7 +45,9 @@ async fn upsert_creates_then_updates() -> TestResult {
             .await?;
         assert_eq!(updated.status().status_code(), StatusCode::Ok);
         assert_critical_diagnostics(&updated.diagnostics(), "upsert_item", StatusCode::Ok);
-        assert_eq!(updated.into_model::<Item>()?.value, 2);
+        assert_eq!(updated.into_model::<Item>()?, item("upsert-1", "A", 2));
+
+        // Both operations addressed one identity; no duplicate document was created.
         let items: Vec<Item> = fixture
             .container
             .query_items(

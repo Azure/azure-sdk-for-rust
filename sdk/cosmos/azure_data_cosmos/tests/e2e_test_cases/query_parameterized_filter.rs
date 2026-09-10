@@ -19,12 +19,15 @@ async fn parameterized_query_filters_and_orders() -> TestResult {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {
+        // Arrange three ordered scores in one logical partition.
         for score in 1..=3 {
             let id = format!("item-{score}");
             let mut value = item(&id, "A", score);
             value.score = Some(score);
             fixture.container.create_item("A", &id, value, None).await?;
         }
+
+        // Bind values as parameters and restrict execution to partition A.
         let query = Query::from(
             "SELECT * FROM c WHERE c.pk = @pk AND c.score >= @min ORDER BY c.score ASC",
         )
@@ -35,6 +38,8 @@ async fn parameterized_query_filters_and_orders() -> TestResult {
             .query_items::<Item>(query, FeedScope::partition("A"), None)
             .await?;
         let items: Vec<Item> = results.by_ref().try_collect().await?;
+
+        // The filter excludes score 1 and ORDER BY preserves score 2 before score 3.
         assert_eq!(
             items
                 .iter()

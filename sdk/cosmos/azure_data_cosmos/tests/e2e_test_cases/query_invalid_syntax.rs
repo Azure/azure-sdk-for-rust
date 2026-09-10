@@ -20,6 +20,7 @@ async fn invalid_query_is_not_an_empty_feed() -> TestResult {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {
+        // Query failures may surface while creating the iterator or while reading its first page.
         let result = fixture
             .container
             .query_items::<Item>("SELECT FROM", FeedScope::partition("A"), None)
@@ -32,6 +33,8 @@ async fn invalid_query_is_not_an_empty_feed() -> TestResult {
                 .expect("invalid query must produce an error")
                 .expect_err("invalid query must not produce a page"),
         };
+
+        // Invalid syntax is a typed bad request, never an empty successful feed.
         assert_eq!(error.status().status_code(), StatusCode::BadRequest);
         Ok(())
     })

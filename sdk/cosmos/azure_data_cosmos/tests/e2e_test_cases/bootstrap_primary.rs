@@ -17,12 +17,18 @@ async fn bootstrap_primary_endpoint() -> TestResult {
     if !should_run("bootstrap.primary-success")? {
         return Ok(());
     }
+
+    // Building the public SDK client against the reachable primary endpoint succeeds.
     let client = build_client().await?;
     assert!(hosted_only());
+
+    // The initialized client can complete its first account operation.
     let database_id = format!("e2e-bootstrap-{}", azure_core::Uuid::new_v4());
     let response = client.create_database(&database_id, None).await?;
     assert_eq!(response.status().status_code(), StatusCode::Created);
     response.into_model()?;
+
+    // Remove the resource created only to prove successful bootstrap.
     client.database_client(&database_id).delete(None).await?;
     Ok(())
 }

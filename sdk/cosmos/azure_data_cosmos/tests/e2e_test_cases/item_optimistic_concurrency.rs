@@ -19,6 +19,7 @@ async fn stale_etag_preserves_successful_update() -> TestResult {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {
+        // Arrange an item and retain its initial ETag.
         let created = fixture
             .container
             .create_item("A", "etag-1", item("etag-1", "A", 1), None)
@@ -28,6 +29,8 @@ async fn stale_etag_preserves_successful_update() -> TestResult {
             .etag()
             .expect("create must return an ETag")
             .clone();
+
+        // Case 1: the current ETag permits the update from value 1 to value 2.
         let current_options = ItemWriteOptions::default()
             .with_precondition(Precondition::IfMatch(initial_etag.clone()));
         let replaced = fixture
@@ -35,6 +38,8 @@ async fn stale_etag_preserves_successful_update() -> TestResult {
             .replace_item("A", "etag-1", item("etag-1", "A", 2), Some(current_options))
             .await?;
         assert_eq!(replaced.status().status_code(), StatusCode::Ok);
+
+        // Case 2: reusing the now-stale initial ETag cannot overwrite value 2.
         let stale_options = ItemWriteOptions::default()
             .with_precondition(Precondition::IfMatch(Etag::from(initial_etag.to_string())));
         let error = fixture
@@ -58,14 +63,15 @@ async fn stale_etag_preserves_successful_update() -> TestResult {
             "replace_item",
             StatusCode::PreconditionFailed,
         );
+
+        // The rejected write leaves the successful value 2 update intact.
         assert_eq!(
             fixture
                 .container
                 .read_item("A", "etag-1", None)
                 .await?
-                .into_model::<Item>()?
-                .value,
-            2
+                .into_model::<Item>()?,
+            item("etag-1", "A", 2)
         );
         Ok(())
     })

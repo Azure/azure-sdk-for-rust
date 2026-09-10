@@ -19,10 +19,13 @@ async fn diagnostics_cover_success_and_error() -> TestResult {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {
+        // Arrange one readable item in East US.
         fixture
             .container
             .create_item("A", "item-1", item("item-1", "A", 1), None)
             .await?;
+
+        // Success diagnostics identify the operation, 200 status, activity, request, and region.
         let success = fixture.container.read_item("A", "item-1", None).await?;
         assert_eq!(success.status().status_code(), StatusCode::Ok);
         assert_critical_diagnostics(&success.diagnostics(), "read_item", StatusCode::Ok);
@@ -30,6 +33,8 @@ async fn diagnostics_cover_success_and_error() -> TestResult {
             .diagnostics()
             .regions_contacted()
             .contains(&Region::EAST_US));
+
+        // Error diagnostics preserve the same fields while reporting the terminal plain 404.
         let error = fixture
             .container
             .read_item("A", "missing", None)
